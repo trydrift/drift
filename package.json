@@ -1,0 +1,49 @@
+{
+  "name": "drift",
+  "version": "0.1.0",
+  "description": "Drift detects dependency API changes, proves which ones break your code, and drives GitHub Copilot to fix them in a reviewable, atomically-committed pull request.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "drift": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "action.yml",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test --experimental-strip-types \"test/**/*.test.ts\"",
+    "serve": "node dist/runners/webhook.js",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@octokit/rest": "^21.1.1",
+    "@octokit/webhooks": "^13.6.1",
+    "semver": "^7.6.3",
+    "typescript": "^5.7.3",
+    "yaml": "^2.7.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/semver": "^7.5.8"
+  },
+  "keywords": [
+    "dependencies",
+    "breaking-changes",
+    "github-copilot",
+    "automated-refactoring",
+    "openapi"
+  ]
+}
