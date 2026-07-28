@@ -108,6 +108,13 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
         locator: `${change.name}@${change.from} → @${change.to} (.d.ts)`,
         title: `${surfaceChanges.length} API surface change(s) in ${change.name}`,
         content: formatSurfaceChanges(surfaceChanges),
+        findings: surfaceChanges.map((c) => ({
+          code: c.kind,
+          symbol: c.symbol,
+          detail: c.detail,
+          before: c.before,
+          after: c.after,
+        })),
         weight: WEIGHTS['type-surface-diff'],
       });
     }
@@ -255,6 +262,11 @@ async function gatherSpecEvidence(ctx: EvidenceContext): Promise<Evidence[]> {
       locator: specPath,
       title: `${findings.length} breaking change(s) in ${specPath}`,
       content: formatOpenApiFindings(findings),
+      findings: findings.map((f) => ({
+        code: f.kind,
+        symbol: f.location,
+        detail: f.detail,
+      })),
       weight: WEIGHTS['openapi-diff'],
     });
   }

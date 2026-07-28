@@ -45,5 +45,8 @@
     "github-copilot",
     "automated-refactoring",
     "openapi"
-  ]
+  ],
+  "optionalDependencies": {
+    "@anthropic-ai/sdk": "^0.68.0"
+  }
 }
