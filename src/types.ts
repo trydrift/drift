@@ -71,6 +71,24 @@ export type EvidenceSource =
   | 'semver-heuristic';
 
 /**
+ * A machine-extracted finding attached to an Evidence record.
+ *
+ * Computed evidence sources (the type-surface and OpenAPI diffs) already know
+ * exactly which symbol changed and how. Carrying that structure alongside the
+ * human-readable text means the analyser reads facts instead of re-parsing its
+ * own prose — which would be both fragile and circular.
+ */
+export interface StructuredFinding {
+  /** Rule identifier, e.g. `export-removed`, `path-removed`. */
+  code: string;
+  /** The identifier, endpoint, or option key this concerns. */
+  symbol: string;
+  detail: string;
+  before?: string;
+  after?: string;
+}
+
+/**
  * A retrieved, citable fact about what changed upstream.
  *
  * Evidence is the difference between Drift and "ask an LLM to guess". Every
@@ -88,6 +106,8 @@ export interface Evidence {
   title: string;
   /** Verbatim excerpt. Never paraphrased — this is what a reviewer audits. */
   content: string;
+  /** Present on computed sources; absent on prose sources. */
+  findings?: StructuredFinding[];
   /**
    * How directly this evidence speaks to breakage.
    * 1.0 = a machine-computed diff of the actual API surface.

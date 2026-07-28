@@ -123,7 +123,9 @@ export const DriftConfigSchema = z.object({
        */
       enabled: z.boolean().default(false),
       provider: z.enum(['anthropic']).default('anthropic'),
-      model: z.string().default('claude-sonnet-5'),
+      model: z.string().default('claude-opus-5'),
+      /** Thinking depth / token spend for the extraction call. */
+      effort: z.enum(['low', 'medium', 'high', 'xhigh', 'max']).default('medium'),
       /** Env var holding the API key. Never the key itself. */
       apiKeyEnv: z.string().default('ANTHROPIC_API_KEY'),
     })
