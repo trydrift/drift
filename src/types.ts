@@ -207,6 +207,14 @@ export interface RemediationPlan {
   branchName: string;
   /** Branch the eventual PR merges back into. */
   baseBranch: string;
+  /**
+   * Commit this plan was derived from.
+   *
+   * Recorded in the report footer so the approval flow can reproduce the plan
+   * from a filed issue without storing it anywhere — the analysis is
+   * deterministic, so the same commit yields the same plan.
+   */
+  headSha: string;
   changes: DependencyChange[];
   evidence: Evidence[];
   breakingChanges: BreakingChange[];

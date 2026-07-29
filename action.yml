@@ -1,0 +1,72 @@
+name: 'Drift'
+description: >-
+  Detects dependency API changes, proves which ones break your code, and drives
+  GitHub Copilot to fix them in a reviewable, atomically-committed pull request.
+author: 'Drift'
+
+branding:
+  icon: 'git-branch'
+  color: 'purple'
+
+inputs:
+  repo-token:
+    description: >-
+      Token for repository operations (reading files, creating the branch,
+      filing the approval issue). The workflow's built-in GITHUB_TOKEN is
+      sufficient and is the recommended value.
+    required: false
+    default: ${{ github.token }}
+
+  copilot-token:
+    description: >-
+      A USER-SCOPED token for the GitHub Copilot coding agent API. This must be
+      a fine-grained personal access token or an OAuth/GitHub App *user* token —
+      the agent API rejects App installation tokens, because Copilot is billed
+      per seat. Needs read+write on actions, contents, issues, and pull
+      requests. Store it as a repository secret; Drift reads it from your
+      environment and never transmits it anywhere except api.github.com.
+
+      Omit this to run in analysis-only mode: Drift will still detect breaking
+      changes and file an approval issue, but cannot dispatch a fix.
+    required: false
+
+  mode:
+    description: >-
+      "auto" dispatches a fix as soon as a breaking change is detected, subject
+      to every guardrail in drift.yml. "approve" analyses and files an issue for
+      a human. Overrides the `mode` set in drift.yml. Default: whatever
+      drift.yml says, which is "approve" if unset.
+    required: false
+
+  dry-run:
+    description: >-
+      Analyse and report without creating branches, issues, or agent tasks. Use
+      this to evaluate Drift against your repository before granting it write
+      access.
+    required: false
+    default: 'false'
+
+  config-path:
+    description: 'Path to the Drift config file. Default: .github/drift.yml'
+    required: false
+
+  log-level:
+    description: 'debug | info | warn | error'
+    required: false
+    default: 'info'
+
+outputs:
+  status:
+    description: 'dispatched | skipped | blocked | failed'
+  summary:
+    description: 'One-line summary of what Drift did'
+  branch:
+    description: 'The branch Drift created, if any'
+  pull-request-url:
+    description: 'URL of the pull request, if one was opened'
+  approval-issue:
+    description: 'Number of the approval issue, if one was filed'
+
+runs:
+  using: 'node20'
+  main: 'dist/runners/action-entry.js'
