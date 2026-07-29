@@ -72,3 +72,14 @@ export { createLogger } from './util/logger.js';
 export type { Logger, LogLevel } from './util/logger.js';
 export { matchGlob, matchesAny } from './util/glob.js';
 export { stableId, slugify } from './util/id.js';
+
+export { analyzeRepository } from './analysis.js';
+export type { AnalysisOptions, AnalysisResult, AnalysisStage } from './analysis.js';
+export type { RepoProvider, RefRange } from './repo/provider.js';
+export {
+  LocalGitProvider,
+  inspectLocalRepo,
+  lastCommitTouching,
+  parseSlug,
+} from './repo/local-git.js';
+export type { LocalRepoInfo } from './repo/local-git.js';

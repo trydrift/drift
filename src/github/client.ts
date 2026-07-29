@@ -1,6 +1,7 @@
 import { Octokit } from '@octokit/rest';
 import type { RepoContext } from '../types.js';
 import type { Logger } from '../util/logger.js';
+import type { RepoProvider } from '../repo/provider.js';
 
 /**
  * GitHub API access.
@@ -222,6 +223,20 @@ export class GitHubClient {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Adapt this client to the transport-agnostic RepoProvider interface.
+   *
+   * The analysis pipeline depends on the interface, never on Octokit, so the
+   * same stages run unchanged against a local checkout in the editor and
+   * against the API in CI.
+   */
+  asRepoProvider(repo: RepoContext): RepoProvider {
+    return {
+      changedFiles: () => this.changedFiles(repo),
+      readFile: (path, ref) => this.readFile(repo, path, ref),
+    };
   }
 
   /** Escape hatch for calls the wrapper does not cover. */
