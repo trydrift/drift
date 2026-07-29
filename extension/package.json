@@ -1,0 +1,327 @@
+{
+  "name": "drift",
+  "displayName": "Drift — Dependency Breaking Changes",
+  "description": "Finds which dependency updates break your code, proves it with evidence, and fixes them with the AI agent you already use.",
+  "version": "0.1.0",
+  "publisher": "drift",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "SCM Providers",
+    "AI"
+  ],
+  "keywords": [
+    "dependencies",
+    "breaking changes",
+    "upgrade",
+    "copilot",
+    "ai",
+    "refactor"
+  ],
+  "icon": "media/icon.png",
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "Drift runs git commands and can invoke local AI agent binaries, so it requires a trusted workspace."
+    }
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "drift.analyze",
+        "title": "Check for Breaking Changes",
+        "category": "Drift",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "drift.fixAll",
+        "title": "Fix All Breaking Changes",
+        "category": "Drift",
+        "icon": "$(wand)"
+      },
+      {
+        "command": "drift.fixCommit",
+        "title": "Fix This Commit Only",
+        "category": "Drift"
+      },
+      {
+        "command": "drift.showReport",
+        "title": "Show Report",
+        "category": "Drift",
+        "icon": "$(preview)"
+      },
+      {
+        "command": "drift.explainChange",
+        "title": "Explain This Breaking Change",
+        "category": "Drift"
+      },
+      {
+        "command": "drift.selectAgent",
+        "title": "Select AI Agent",
+        "category": "Drift",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "drift.openSettings",
+        "title": "Open Settings",
+        "category": "Drift",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "drift.signInToGitHub",
+        "title": "Sign in to GitHub",
+        "category": "Drift",
+        "icon": "$(github)"
+      },
+      {
+        "command": "drift.pushBranch",
+        "title": "Push the Fix Branch",
+        "category": "Drift",
+        "icon": "$(repo-push)"
+      },
+      {
+        "command": "drift.showLog",
+        "title": "Show Log",
+        "category": "Drift",
+        "icon": "$(output)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "drift",
+          "title": "Drift",
+          "icon": "media/activity-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "drift": [
+        {
+          "id": "drift.changes",
+          "name": "Breaking Changes",
+          "icon": "media/activity-icon.svg",
+          "contextualTitle": "Drift"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "drift.changes",
+        "contents": "Drift finds which dependency updates break your code, and fixes them with the AI agent you already use.\n\nNo API keys. No tokens to paste.\n\n[Check for Breaking Changes](command:drift.analyze)\n\n[Choose an AI agent](command:drift.selectAgent)",
+        "when": "drift.status == idle"
+      },
+      {
+        "view": "drift.changes",
+        "contents": "Open a folder that is a git repository to use Drift.\n\n[Open Folder](command:vscode.openFolder)",
+        "when": "drift.status == no-repo"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "drift.analyze",
+          "when": "view == drift.changes",
+          "group": "navigation@1"
+        },
+        {
+          "command": "drift.fixAll",
+          "when": "view == drift.changes && drift.hasFindings",
+          "group": "navigation@2"
+        },
+        {
+          "command": "drift.showReport",
+          "when": "view == drift.changes",
+          "group": "navigation@3"
+        },
+        {
+          "command": "drift.selectAgent",
+          "when": "view == drift.changes",
+          "group": "1_config@1"
+        },
+        {
+          "command": "drift.openSettings",
+          "when": "view == drift.changes",
+          "group": "1_config@2"
+        },
+        {
+          "command": "drift.signInToGitHub",
+          "when": "view == drift.changes",
+          "group": "1_config@3"
+        },
+        {
+          "command": "drift.showLog",
+          "when": "view == drift.changes",
+          "group": "9_debug@1"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "drift.fixCommit",
+          "when": "view == drift.changes && viewItem == drift.commit",
+          "group": "inline"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "drift.fixCommit",
+          "when": "false"
+        },
+        {
+          "command": "drift.explainChange",
+          "when": "false"
+        },
+        {
+          "command": "drift.pushBranch",
+          "when": "drift.status == fixed"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Drift",
+      "properties": {
+        "drift.agent.preferred": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "copilot-lm",
+            "copilot-cloud",
+            "claude",
+            "codex",
+            "gemini",
+            "aider",
+            "opencode",
+            "ollama"
+          ],
+          "enumDescriptions": [
+            "Use the best agent available right now",
+            "GitHub Copilot, through the model already in your editor",
+            "GitHub Copilot cloud agent — runs on GitHub and opens a pull request",
+            "Claude Code CLI",
+            "OpenAI Codex CLI",
+            "Google Gemini CLI",
+            "Aider",
+            "OpenCode",
+            "Ollama — a model running on your own machine"
+          ],
+          "markdownDescription": "Which AI agent fixes your code. Drift drives an agent **you already have** and never asks for an API key.\n\nRun **Drift: Select AI Agent** to see which are installed.",
+          "order": 1
+        },
+        "drift.agent.copilotModelFamily": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Optional model family for the in-editor Copilot agent (for example `gpt-4o`). Leave blank to let VS Code choose.",
+          "order": 2
+        },
+        "drift.agent.ollamaHost": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Where your Ollama server is listening.",
+          "order": 3
+        },
+        "drift.agent.ollamaModel": {
+          "type": "string",
+          "default": "qwen2.5-coder",
+          "description": "Which Ollama model to use. A coding-tuned model works far better here than a general one.",
+          "order": 4
+        },
+        "drift.agent.timeoutSeconds": {
+          "type": "number",
+          "default": 600,
+          "minimum": 30,
+          "description": "How long to let an agent work on a single commit before giving up.",
+          "order": 5
+        },
+        "drift.analysis.runOnStartup": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Check for breaking changes when a folder opens. Drift stays silent unless it finds something.",
+          "order": 10
+        },
+        "drift.analysis.includePatch": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Analyse patch bumps too. Breakage there is usually accidental, but it does happen — around 5% of npm packages have been broken by a minor or patch release.",
+          "order": 11
+        },
+        "drift.analysis.includeDev": {
+          "type": "boolean",
+          "default": false,
+          "description": "Analyse dev dependencies. They rarely break production code paths.",
+          "order": 12
+        },
+        "drift.analysis.includeTransitive": {
+          "type": "boolean",
+          "default": false,
+          "description": "Analyse lockfile-only changes you did not ask for. Noisy, and rarely actionable.",
+          "order": 13
+        },
+        "drift.analysis.ignore": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "Package name patterns to never analyse, for example `@types/*`. Added to any `ignore` list in `.github/drift.yml`.",
+          "order": 14
+        },
+        "drift.ui.showInlineDiagnostics": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Flag affected lines in the editor and the Problems panel. Severity follows Drift's confidence: high is an error, low is information.",
+          "order": 20
+        },
+        "drift.fix.customInstructions": {
+          "type": "string",
+          "editPresentation": "multilineText",
+          "default": "",
+          "markdownDescription": "Repository conventions passed to every agent. The highest-leverage setting for output quality.\n\nFor example: *\"This repo uses Vitest, not Jest. Prefer named exports. All HTTP goes through src/lib/http.ts.\"*",
+          "order": 21
+        },
+        "drift.logLevel": {
+          "type": "string",
+          "default": "info",
+          "enum": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ],
+          "description": "How much Drift writes to its output channel.",
+          "order": 90
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "package": "npm run typecheck && npm run build && npx --yes @vscode/vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/vscode": "^1.95.0",
+    "esbuild": "^0.28.1",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@octokit/rest": "^21.1.1",
+    "semver": "^7.6.3",
+    "yaml": "^2.7.0",
+    "zod": "^3.24.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RodolpheKouyoumdjian/Drift.git"
+  }
+}

@@ -181,6 +181,11 @@ function describeChange(change: BreakingChange): string {
         ? change.summary.charAt(0).toLowerCase() + change.summary.slice(1)
         : 'raise the minimum runtime version';
     case 'config-change':
+      // An ESM migration is by far the most common change of this kind, and
+      // "update configuration" tells a reviewer nothing about what to expect
+      // in the diff. Name it.
+      if (/\bESM\b/i.test(change.summary)) return 'migrate to ESM imports';
+      if (/commonjs/i.test(change.summary)) return 'replace dropped CommonJS usage';
       return 'update configuration for the new version';
     case 'behaviour-change':
       return symbol ? `handle changed \`${symbol}\` behaviour` : 'handle changed behaviour';
