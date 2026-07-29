@@ -1,0 +1,84 @@
+# Drift — detect breaking dependency changes and fix them.
+#
+# Copy this file to `.github/workflows/drift.yml`.
+#
+# Two things to know before you enable it:
+#
+#   1. The `copilot-token` secret must be a USER-scoped token (a fine-grained
+#      PAT). GitHub's Copilot agent API rejects the built-in GITHUB_TOKEN and
+#      any GitHub App installation token, because Copilot is billed per seat.
+#      See docs/copilot-integration.md.
+#
+#   2. Drift ships in `approve` mode by default: it analyses, files an issue,
+#      and waits for you. Switch to `auto` in `.github/drift.yml` once you
+#      trust what it produces.
+
+name: Drift
+
+on:
+  push:
+    branches: [main]
+    # Only run when a dependency manifest actually changed. Without this the
+    # job starts on every push and does nothing useful 99% of the time.
+    paths:
+      - '**/package.json'
+      - '**/package-lock.json'
+      - '**/yarn.lock'
+      - '**/pnpm-lock.yaml'
+      - '**/requirements*.txt'
+      - '**/pyproject.toml'
+      - '**/poetry.lock'
+      - '**/Pipfile'
+      - '**/go.mod'
+      - '**/Cargo.toml'
+      - '**/pom.xml'
+      - '**/build.gradle*'
+      - '**/Gemfile'
+      - '**/Gemfile.lock'
+
+  # Lets you re-run Drift against the current commit from the Actions tab.
+  workflow_dispatch:
+
+  # Enables the `/drift apply` approval flow on issues Drift files.
+  issue_comment:
+    types: [created]
+
+# Prevents two Drift runs from racing to create the same branch.
+concurrency:
+  group: drift-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  drift:
+    # On comment events, only run for `/drift apply` on a Drift issue.
+    if: >-
+      github.event_name != 'issue_comment' ||
+      (contains(github.event.comment.body, '/drift apply') &&
+       contains(github.event.issue.labels.*.name, 'drift'))
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write # create the fix branch
+      issues: write # file and comment on the approval issue
+      pull-requests: write # let Copilot open the PR
+      checks: write # post the Drift check run
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          # Drift needs the previous commit to diff manifests against, and the
+          # working tree to search for affected code.
+          fetch-depth: 2
+
+      - name: Run Drift
+        id: drift
+        uses: drift-sh/drift@v0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          copilot-token: ${{ secrets.DRIFT_COPILOT_TOKEN }}
+
+      - name: Report outcome
+        if: always()
+        run: echo "${{ steps.drift.outputs.status }}: ${{ steps.drift.outputs.summary }}"
