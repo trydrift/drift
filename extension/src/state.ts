@@ -14,7 +14,7 @@ export type DriftStatus =
   | { kind: 'idle' }
   | { kind: 'no-repo' }
   | { kind: 'analysing'; detail: string }
-  | { kind: 'clean'; summary: string; at: number }
+  | { kind: 'clean'; summary: string; at: number; plan?: RemediationPlan }
   | { kind: 'findings'; plan: RemediationPlan; at: number }
   | { kind: 'fixing'; plan: RemediationPlan; commitOrder: number; detail: string }
   | { kind: 'fixed'; plan: RemediationPlan; branch: string; commits: number; warnings: string[] }
@@ -44,7 +44,7 @@ export class DriftState {
   /** The current plan, when one exists in any state that carries one. */
   get plan(): RemediationPlan | null {
     const s = this._status;
-    return 'plan' in s ? s.plan : null;
+    return 'plan' in s ? (s.plan ?? null) : null;
   }
 
   get isBusy(): boolean {
@@ -84,7 +84,9 @@ export function describeStatus(status: DriftStatus): string {
     case 'analysing':
       return `Drift: ${status.detail}`;
     case 'clean':
-      return 'Drift: no breaking changes';
+      return status.plan?.changes.length
+        ? `Drift: ${status.plan.changes.length} dependency change${status.plan.changes.length === 1 ? '' : 's'} checked`
+        : 'Drift: no breaking changes';
     case 'findings': {
       const n = status.plan.breakingChanges.length;
       const files = new Set(status.plan.impactSites.map((s) => s.file)).size;

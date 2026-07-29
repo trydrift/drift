@@ -19,6 +19,8 @@ import type { DriftState } from '../state.js';
 
 export type DriftNode =
   | { type: 'message'; label: string; detail?: string; icon?: string; command?: vscode.Command }
+  | { type: 'section'; label: string; detail?: string; icon: string; children: DriftNode[] }
+  | { type: 'checked-dependency'; change: DependencyChange }
   | { type: 'dependency'; change: DependencyChange }
   | { type: 'breaking'; change: BreakingChange }
   | { type: 'site'; site: ImpactSite; change: BreakingChange }
@@ -41,6 +43,10 @@ export class DriftTreeProvider implements vscode.TreeDataProvider<DriftNode> {
     switch (node.type) {
       case 'message':
         return messageItem(node);
+      case 'section':
+        return sectionItem(node);
+      case 'checked-dependency':
+        return checkedDependencyItem(node.change);
       case 'dependency':
         return dependencyItem(node.change);
       case 'breaking':
@@ -60,6 +66,7 @@ export class DriftTreeProvider implements vscode.TreeDataProvider<DriftNode> {
     if (!node) return this.rootNodes();
 
     const plan = this.state.plan;
+    if (node.type === 'section') return node.children;
     if (!plan) return [];
 
     if (node.type === 'dependency') {
@@ -113,14 +120,7 @@ export class DriftTreeProvider implements vscode.TreeDataProvider<DriftNode> {
         return [{ type: 'message', label: status.detail, icon: 'loading~spin' }];
 
       case 'clean':
-        return [
-          {
-            type: 'message',
-            label: 'No breaking changes',
-            detail: status.summary,
-            icon: 'pass-filled',
-          },
-        ];
+        return cleanNodes(status);
 
       case 'error':
         return [
@@ -195,6 +195,34 @@ function messageItem(node: Extract<DriftNode, { type: 'message' }>): vscode.Tree
   return item;
 }
 
+function sectionItem(node: Extract<DriftNode, { type: 'section' }>): vscode.TreeItem {
+  const item = new vscode.TreeItem(node.label, vscode.TreeItemCollapsibleState.Expanded);
+  item.description = node.detail;
+  item.tooltip = node.detail;
+  item.iconPath = new vscode.ThemeIcon(node.icon);
+  return item;
+}
+
+function checkedDependencyItem(change: DependencyChange): vscode.TreeItem {
+  const item = new vscode.TreeItem(change.name, vscode.TreeItemCollapsibleState.None);
+  item.description = `${change.from ?? '—'} → ${change.to ?? '—'}`;
+  item.iconPath = new vscode.ThemeIcon('package');
+  item.contextValue = 'drift.checkedDependency';
+  item.tooltip = new vscode.MarkdownString(
+    [
+      `**${change.name}**`,
+      '',
+      `${change.from ?? '—'} → ${change.to ?? '—'} (${change.bump})`,
+      '',
+      `Ecosystem: ${change.ecosystem}`,
+      `Declared in: \`${change.manifestPath}\``,
+      '',
+      'No breaking evidence from this version change was found.',
+    ].join('\n'),
+  );
+  return item;
+}
+
 function dependencyItem(change: DependencyChange): vscode.TreeItem {
   const item = new vscode.TreeItem(change.name, vscode.TreeItemCollapsibleState.Expanded);
   item.description = `${change.from ?? '—'} → ${change.to ?? '—'}`;
@@ -211,6 +239,85 @@ function dependencyItem(change: DependencyChange): vscode.TreeItem {
     ].join('\n'),
   );
   return item;
+}
+
+function cleanNodes(status: Extract<DriftState['status'], { kind: 'clean' }>): DriftNode[] {
+  const plan = status.plan;
+
+  if (!plan) {
+    return [
+      {
+        type: 'message',
+        label: 'Nothing to analyse yet',
+        detail: 'Drift needs a dependency change in git or your working tree.',
+        icon: 'search',
+        command: { command: 'drift.analyze', title: 'Check again' },
+      },
+      {
+        type: 'message',
+        label: 'Try an update candidate',
+        detail: 'Update a dependency locally, then run Drift before committing.',
+        icon: 'arrow-up',
+      },
+    ];
+  }
+
+  const checked = plan.changes.length;
+  const evidenceCount = plan.evidence.length;
+  const warnings = plan.warnings.length;
+  const shown = plan.changes.slice(0, 12);
+  const hidden = Math.max(0, plan.changes.length - shown.length);
+
+  return [
+    {
+      type: 'message',
+      label: 'No breaking changes found',
+      detail: `${checked} dependency change${checked === 1 ? '' : 's'} checked · ${evidenceCount} evidence record${evidenceCount === 1 ? '' : 's'}`,
+      icon: 'pass-filled',
+      command: { command: 'drift.showReport', title: 'Show report' },
+    },
+    {
+      type: 'section',
+      label: 'Checked Dependencies',
+      detail: hidden ? `${shown.length} shown, ${hidden} more in report` : `${shown.length}`,
+      icon: 'checklist',
+      children: [
+        ...shown.map((change) => ({ type: 'checked-dependency', change }) as const),
+        ...(hidden
+          ? [
+              {
+                type: 'message',
+                label: `${hidden} more`,
+                detail: 'Open the report to see the full list.',
+                icon: 'ellipsis',
+                command: { command: 'drift.showReport', title: 'Show report' },
+              } as const,
+            ]
+          : []),
+      ],
+    },
+    {
+      type: 'section',
+      label: 'Next',
+      detail: warnings ? `${warnings} note${warnings === 1 ? '' : 's'}` : undefined,
+      icon: 'sparkle',
+      children: [
+        {
+          type: 'message',
+          label: 'Re-check recent dependency changes',
+          detail: 'Looks at uncommitted manifests or the latest manifest commit.',
+          icon: 'refresh',
+          command: { command: 'drift.analyze', title: 'Analyze' },
+        },
+        {
+          type: 'message',
+          label: 'Upgrade candidates',
+          detail: 'Next step: compare installed versions with newer releases.',
+          icon: 'versions',
+        },
+      ],
+    },
+  ];
 }
 
 const CONFIDENCE_ICON: Record<string, { icon: string; color: string }> = {

@@ -1,7 +1,16 @@
+# Only dist/extension.js, the manifest, media, README and LICENSE ship.
 src/**
-../src/**
+test/**
 node_modules/**
 tsconfig.json
 esbuild.mjs
 .vscode/**
+.gitignore
+
+# Test and preview artifacts that land in dist/ alongside the real bundle.
+dist/harness.cjs
+dist/report-preview.html
+dist/report-themed.html
+dist/report.png
 **/*.map
+**/*.vsix

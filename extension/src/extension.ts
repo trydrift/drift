@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { runAnalysis } from './analyze.js';
 import { runFix } from './fix.js';
 import { DriftState } from './state.js';
-import { DriftTreeProvider } from './ui/tree.js';
+import { DriftHomeView } from './ui/home.js';
 import { DriftCodeActionProvider, DriftDiagnostics } from './ui/diagnostics.js';
 import { DriftReportPanel } from './ui/report.js';
 import { DriftStatusBar } from './ui/statusbar.js';
@@ -31,14 +31,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   const diagnostics = new DriftDiagnostics(state);
   const statusBar = new DriftStatusBar(state);
-  const tree = new DriftTreeProvider(state);
+  const home = new DriftHomeView(context.extensionUri, state);
 
-  context.subscriptions.push(diagnostics, statusBar);
+  context.subscriptions.push(diagnostics, statusBar, home);
 
   context.subscriptions.push(
-    vscode.window.createTreeView('drift.changes', {
-      treeDataProvider: tree,
-      showCollapseAll: true,
+    vscode.window.registerWebviewViewProvider('drift.changes', home, {
+      webviewOptions: { retainContextWhenHidden: true },
     }),
   );
 
@@ -242,9 +241,9 @@ async function startFix(state: DriftState, onlyCommit: number | undefined): Prom
 /**
  * Agent picker.
  *
- * Shows everything Drift knows how to drive, available or not, each with a
- * one-line reason and how to enable it. Hiding unavailable agents would leave
- * someone wondering why the tool they use isn't listed.
+ * Shows agents Drift can actually use right now. The side panel still has a
+ * collapsed unavailable list for setup hints; the picker is for making a
+ * decision, so it stays compact.
  */
 async function selectAgent(state: DriftState): Promise<void> {
   const repo = state.repo;
@@ -260,6 +259,9 @@ async function selectAgent(state: DriftState): Promise<void> {
 
   const current = vscode.workspace.getConfiguration('drift').get<string>('agent.preferred', 'auto');
 
+  const available = discovered.filter((d) => d.availability.available);
+  const unavailable = discovered.length - available.length;
+
   const items: (vscode.QuickPickItem & { id: string })[] = [
     {
       id: 'auto',
@@ -267,24 +269,24 @@ async function selectAgent(state: DriftState): Promise<void> {
       description: current === 'auto' ? 'current' : undefined,
       detail: 'Use the best agent available right now.',
     },
-    ...discovered.map((d) => ({
+    ...available.map((d) => ({
       id: d.agent.id,
-      label: `${d.availability.available ? '$(check)' : '$(circle-slash)'} ${d.agent.label}`,
+      label: `$(check) ${d.agent.label}`,
       description: [
         d.agent.id === current ? 'current' : '',
         d.availability.detail ?? '',
       ]
         .filter(Boolean)
         .join(' · '),
-      detail: d.availability.available
-        ? d.agent.description
-        : `Unavailable — ${d.availability.reason}`,
+      detail: d.agent.description,
     })),
   ];
 
   const picked = await vscode.window.showQuickPick(items, {
     title: 'Drift: which AI agent should fix your code?',
-    placeHolder: 'Drift drives an agent you already have. It never asks for an API key.',
+    placeHolder: unavailable
+      ? `${unavailable} unavailable agent${unavailable === 1 ? '' : 's'} hidden. Open the Drift panel to manage setup hints.`
+      : 'Drift drives an agent you already have. It never asks for an API key.',
     matchOnDetail: true,
   });
 

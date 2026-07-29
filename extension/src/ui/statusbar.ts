@@ -91,7 +91,14 @@ function tooltipFor(state: DriftState): vscode.MarkdownString {
       break;
     }
     case 'clean':
-      lines.push(status.summary, '', '_Click to re-analyse._');
+      lines.push(status.summary);
+      if (status.plan?.changes.length) {
+        lines.push('', `Checked ${status.plan.changes.length} dependency change(s).`);
+        for (const change of status.plan.changes.slice(0, 5)) {
+          lines.push(`- ${change.name}: ${change.from ?? '—'} → ${change.to ?? '—'}`);
+        }
+      }
+      lines.push('', '_Click to re-analyse._');
       break;
     case 'fixed':
       lines.push(`${status.commits} commit(s) on \`${status.branch}\`.`, '', '_Click to open the report._');

@@ -108,6 +108,7 @@
         {
           "id": "drift.changes",
           "name": "Breaking Changes",
+          "type": "webview",
           "icon": "media/activity-icon.svg",
           "contextualTitle": "Drift"
         }

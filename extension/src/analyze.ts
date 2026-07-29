@@ -127,7 +127,7 @@ export async function runAnalysis(options: AnalyzeOptions): Promise<AnalyzeResul
     }
 
     if (!result.plan || result.plan.breakingChanges.length === 0) {
-      state.set({ kind: 'clean', summary: result.summary, at: Date.now() });
+      state.set({ kind: 'clean', summary: result.summary, plan: result.plan ?? undefined, at: Date.now() });
       return result;
     }
 
