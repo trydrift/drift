@@ -103,7 +103,7 @@ because the expensive part (inference) is already paid for by someone else.
 
 ## Status
 
-Working MVP. Seven-stage pipeline complete, six package ecosystems, 101 tests,
+Working MVP. Seven-stage pipeline complete, six package ecosystems, 106 tests,
 verified end to end.
 
 Known limitations are documented rather than hidden — including single-hop

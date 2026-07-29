@@ -139,6 +139,11 @@ becoming a search symbol. Corroboration across independent sources raises
 confidence: the changelog saying `foo` was removed *and* the `.d.ts` diff showing
 `foo` gone is where automatic fixing is actually safe.
 
+Two breaking changes get dedicated handling because they rename nothing and so
+no symbol-based rule can catch them: **ESM-only migrations** (which break every
+CommonJS consumer) and **raised runtime minimums**. Both are announced as
+statements of fact — "This package is now pure ESM" — rather than as warnings.
+
 An optional LLM pass improves recall on unparseable prose. It is off by default,
 runs last, never overrides a rule, is capped at `medium` confidence, and is told to
 extract only from supplied evidence.
@@ -198,9 +203,25 @@ Drift departs from the paper in three places, deliberately. See
 
 ---
 
+## Validated against a real upgrade
+
+Pointed at [`sindresorhus/got`](https://github.com/sindresorhus/got) at the commit
+bumping `@szmarczak/http-timer` 4.0.6 → 5.0.1, Drift:
+
+- read the v5.0.0 release notes and extracted **"This package is now pure ESM"**
+  and **"Required Node.js >=14.16"** — the two changes that actually break
+  consumers, neither of which renames a single export;
+- located **9 impact sites across 6 files** — the ESM change at real import
+  sites, the runtime bump in CI config and engine fields, not in source comments;
+- **blocked automatic dispatch**, because one site was in
+  `.github/workflows/main.yml`, a protected path.
+
+The first run of that experiment found nothing at all. Fixing it surfaced four
+genuine bugs, [documented in the commit history](../../commits/main).
+
 ## Status
 
-MVP. The pipeline is complete and tested end to end; 101 tests cover every stage.
+MVP. The pipeline is complete and tested end to end; 106 tests cover every stage.
 Known limitations are documented in [docs/architecture.md](docs/architecture.md#known-limitations)
 rather than hidden — including the ones we'd rather not advertise.
 
