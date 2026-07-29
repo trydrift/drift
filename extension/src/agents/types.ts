@@ -25,6 +25,8 @@ export interface AgentAvailability {
   reason?: string;
   /** e.g. the resolved model name or binary version. */
   detail?: string;
+  /** Local signals such as installed VS Code extensions or signed-in account state. */
+  signals?: string[];
 }
 
 export interface FileSnapshot {

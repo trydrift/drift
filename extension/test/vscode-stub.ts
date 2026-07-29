@@ -194,6 +194,15 @@ export const lm = {
   selectChatModels: async () => [],
 };
 
+export const extensions = {
+  all: [] as {
+    id: string;
+    extensionPath: string;
+    packageJSON?: Record<string, unknown>;
+  }[],
+  getExtension: (id: string) => extensions.all.find((entry) => entry.id === id),
+};
+
 export class LanguageModelError extends Error {}
 
 export const LanguageModelChatMessage = {

@@ -101,7 +101,11 @@ function renderHtml(state: DriftState, webview: vscode.Webview, focusChangeId?: 
   const nonce = makeNonce();
   const plan = state.plan;
 
-  const body = plan ? renderPlan(plan, state, focusChangeId) : renderEmpty(state);
+  const body = plan
+    ? plan.breakingChanges.length > 0
+      ? renderPlan(plan, state, focusChangeId)
+      : renderCleanPlan(plan, state)
+    : renderEmpty(state);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -138,6 +142,7 @@ function renderEmpty(state: DriftState): string {
         <div class="big-icon ok">✓</div>
         <h2>No breaking changes</h2>
         <p>${escapeHtml(status.summary)}</p>
+        <button class="primary" data-command="drift.analyze">Check again</button>
       </div>`);
   }
 
@@ -198,10 +203,10 @@ ${banner}
 
 <div class="stats">
   ${stat(String(plan.breakingChanges.length), 'breaking change' + (plan.breakingChanges.length === 1 ? '' : 's'))}
-  ${stat(String(plan.impactSites.length), 'impact site' + (plan.impactSites.length === 1 ? '' : 's'))}
+  ${stat(String(plan.impactSites.length), 'repo match' + (plan.impactSites.length === 1 ? '' : 'es'))}
   ${stat(String(files), 'file' + (files === 1 ? '' : 's'))}
   ${stat(String(plan.commits.length), 'commit' + (plan.commits.length === 1 ? '' : 's'))}
-  ${stat(plan.risk, 'risk', riskClass(plan.risk))}
+  ${stat(plan.risk, 'repo risk', riskClass(plan.risk))}
 </div>
 
 <div class="actions">
@@ -218,6 +223,66 @@ ${renderEvidence(plan)}
 `;
 }
 
+function renderCleanPlan(plan: RemediationPlan, state: DriftState): string {
+  const status = state.status;
+  const checked = plan.changes.length;
+  const evidenceCount = plan.evidence.length;
+  const warnings =
+    status.kind === 'clean' && plan.warnings.length
+      ? section(`
+        <h2>Notes</h2>
+        <ul class="warn-list">
+          ${plan.warnings.map((w) => `<li>${escapeHtml(w)}</li>`).join('')}
+        </ul>`)
+      : '';
+
+  return `
+<header>
+  <h1>No breaking changes found</h1>
+  <p class="sub">${escapeHtml(status.kind === 'clean' ? status.summary : 'The analysed dependency changes did not produce actionable breakage.')}</p>
+</header>
+
+<div class="stats">
+  ${stat(String(checked), 'dependency change' + (checked === 1 ? '' : 's'))}
+  ${stat(String(evidenceCount), 'evidence record' + (evidenceCount === 1 ? '' : 's'))}
+  ${stat('0', 'breaking changes', 'risk-none')}
+  ${stat('0', 'planned commits', 'risk-none')}
+</div>
+
+<div class="actions">
+  <button class="primary" data-command="drift.analyze">Check again</button>
+  <button data-command="drift.selectAgent">Choose AI agent</button>
+</div>
+
+<section>
+  <h2>What Drift Checked</h2>
+  <p class="muted">Drift compares dependency versions from git or your working tree, then looks for breaking evidence between those two versions.</p>
+  <div class="checked-list">
+    ${plan.changes.map(renderCheckedChange).join('')}
+  </div>
+</section>
+
+<section>
+  <h2>Upgrade Candidates</h2>
+  <p class="muted">The next useful workflow is a registry scan: compare your installed versions with newer releases, show packages that have breaking evidence, then let you choose which one to localize and fix.</p>
+</section>
+
+${warnings}
+${renderEvidence(plan)}
+`;
+}
+
+function renderCheckedChange(change: RemediationPlan['changes'][number]): string {
+  return `
+<div class="checked-row">
+  <div>
+    <code>${escapeHtml(change.name)}</code>
+    <span class="muted">${escapeHtml(change.ecosystem)} · ${escapeHtml(change.bump)}</span>
+  </div>
+  <span>${escapeHtml(change.from ?? '—')} → <b>${escapeHtml(change.to ?? '—')}</b></span>
+</div>`;
+}
+
 function renderBlockers(plan: RemediationPlan): string {
   return section(`
     <h3 class="warn-head">Drift stopped short</h3>
@@ -229,11 +294,32 @@ function renderBlockers(plan: RemediationPlan): string {
 function renderBreakingChanges(plan: RemediationPlan, focusChangeId?: string): string {
   if (plan.breakingChanges.length === 0) return '';
 
-  const cards = plan.breakingChanges
-    .map((change) => renderChangeCard(change, plan, change.id === focusChangeId))
-    .join('');
+  const found = plan.breakingChanges.filter((change) =>
+    plan.impactSites.some((site) => site.breakingChangeId === change.id),
+  );
+  const notFound = plan.breakingChanges.filter((change) =>
+    !plan.impactSites.some((site) => site.breakingChangeId === change.id),
+  );
 
-  return `<section><h2>What broke</h2>${cards}</section>`;
+  return `<section>
+    <h2>What broke</h2>
+    ${renderChangeGroup('Found in this repo', found, plan, focusChangeId, true)}
+    ${renderChangeGroup('Not found in this repo', notFound, plan, focusChangeId, false)}
+  </section>`;
+}
+
+function renderChangeGroup(
+  title: string,
+  changes: readonly BreakingChange[],
+  plan: RemediationPlan,
+  focusChangeId: string | undefined,
+  open: boolean,
+): string {
+  if (changes.length === 0) return '';
+  return `<details class="change-group" ${open ? 'open' : ''}>
+    <summary><span>${escapeHtml(title)}</span><small>${changes.length} breaking change${changes.length === 1 ? '' : 's'}</small></summary>
+    ${changes.map((change) => renderChangeCard(change, plan, change.id === focusChangeId)).join('')}
+  </details>`;
 }
 
 function renderChangeCard(
@@ -259,7 +345,12 @@ function renderChangeCard(
           )
           .join('')}
        </ul>`
-    : `<p class="muted">Not used anywhere in this repository — no fix planned.</p>`;
+    : `<p class="muted">Drift found this upstream breaking change, but did not find the affected symbols in this repository. No local edit is planned.</p>`;
+
+  const remediation =
+    change.remediation.length > 180 || /\n|[-*]\s/.test(change.remediation)
+      ? `<details class="fix"><summary>Required fix</summary><div class="markdown">${renderMarkdown(change.remediation)}</div></details>`
+      : `<p class="fix"><b>Required fix:</b> ${escapeHtml(change.remediation)}</p>`;
 
   return `
 <article class="card ${focused ? 'focused' : ''}" id="${escapeAttr(change.id)}">
@@ -269,7 +360,7 @@ function renderChangeCard(
     <code class="dep">${escapeHtml(change.dependency)}</code>
   </div>
   <h3>${escapeHtml(change.summary)}</h3>
-  <p class="fix"><b>Fix:</b> ${escapeHtml(change.remediation)}</p>
+  ${remediation}
   ${
     evidence.length
       ? `<p class="evidence">Evidence: ${evidence
@@ -281,6 +372,7 @@ function renderChangeCard(
           .join(' · ')}</p>`
       : ''
   }
+  <p class="muted">${escapeHtml(sites.length ? 'Repo risk is based on these local matches.' : 'Repo risk stays none when there are no local matches to edit.')}</p>
   ${siteList}
 </article>`;
 }
@@ -331,7 +423,7 @@ function renderEvidenceItem(evidence: Evidence): string {
     }
     <span class="weight">weight ${evidence.weight.toFixed(2)}</span>
   </summary>
-  <pre>${escapeHtml(evidence.content.slice(0, 4000))}</pre>
+  <div class="markdown evidence-body">${renderMarkdown(evidence.content.slice(0, 4000))}</div>
 </details>`;
 }
 
@@ -351,6 +443,56 @@ function notice(kind: 'ok' | 'info' | 'warn', title: string, detail: string): st
 
 function riskClass(risk: string): string {
   return `risk-${risk}`;
+}
+
+function renderMarkdown(text: string): string {
+  const escaped = escapeHtml(text);
+  const blocks: string[] = [];
+  let inList = false;
+
+  const closeList = () => {
+    if (!inList) return '';
+    inList = false;
+    return '</ul>';
+  };
+
+  for (const raw of escaped.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line) {
+      blocks.push(closeList());
+      continue;
+    }
+
+    const heading = /^(#{1,4})\s+(.+)$/.exec(line);
+    if (heading) {
+      blocks.push(closeList(), `<h3>${inlineMarkdown(heading[2]!)}</h3>`);
+      continue;
+    }
+
+    const bullet = /^[-*]\s+(.+)$/.exec(line);
+    if (bullet) {
+      if (!inList) {
+        blocks.push('<ul>');
+        inList = true;
+      }
+      blocks.push(`<li>${inlineMarkdown(bullet[1]!)}</li>`);
+      continue;
+    }
+
+    blocks.push(closeList(), `<p>${inlineMarkdown(line)}</p>`);
+  }
+
+  blocks.push(closeList());
+  return blocks.filter(Boolean).join('');
+}
+
+function inlineMarkdown(text: string): string {
+  return text
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_match, label: string, url: string) => {
+      return `<a data-url="${escapeAttr(url)}">${label}</a>`;
+    });
 }
 
 function escapeHtml(text: string): string {
@@ -430,6 +572,7 @@ button.small { padding: 3px 10px; font-size: 0.82em; }
 .kind { font-size: 0.78rem; color: var(--vscode-descriptionForeground); }
 .dep { margin-left: auto; }
 .fix { margin: 8px 0; }
+.fix summary { cursor: pointer; color: var(--vscode-textLink-foreground); }
 .evidence { font-size: 0.88em; margin: 6px 0; }
 
 a { color: var(--vscode-textLink-foreground); cursor: pointer; text-decoration: none; }
@@ -443,11 +586,32 @@ a:hover { text-decoration: underline; color: var(--vscode-textLink-activeForegro
 .in { font-size: 0.82em; color: var(--vscode-descriptionForeground); }
 .excerpt { flex: 1 1 260px; opacity: .85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+.change-group { border: 1px solid var(--vscode-panel-border); border-radius: 6px; margin-bottom: 12px; overflow: hidden; }
+.change-group > summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.change-group[open] > summary { border-bottom: 1px solid var(--vscode-panel-border); }
+.change-group summary small { color: var(--vscode-descriptionForeground); font-weight: 400; }
+.change-group .card { border-width: 0 0 1px 3px; border-radius: 0; margin: 0; }
+.change-group .card:last-child { border-bottom: 0; }
+
 .commits { padding-left: 20px; }
 .commits li { margin-bottom: 10px; }
 .commit-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .commit-msg { flex: 1 1 auto; }
 .commit-files { margin-top: 4px; font-size: 0.82em; opacity: .75; }
+
+.checked-list { border: 1px solid var(--vscode-panel-border); border-radius: 6px; overflow: hidden; }
+.checked-row { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+               padding: 9px 12px; border-top: 1px solid var(--vscode-panel-border); }
+.checked-row:first-child { border-top: 0; }
+.checked-row > div { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; min-width: 0; }
+.checked-row > span { white-space: nowrap; color: var(--vscode-descriptionForeground); }
 
 .evidence-item { border: 1px solid var(--vscode-panel-border); border-radius: 5px;
                  padding: 8px 10px; margin-bottom: 8px; }
@@ -459,6 +623,21 @@ a:hover { text-decoration: underline; color: var(--vscode-textLink-activeForegro
 pre { background: var(--vscode-textCodeBlock-background); padding: 10px; border-radius: 4px;
       overflow-x: auto; font-family: var(--vscode-editor-font-family); font-size: 0.85em;
       white-space: pre-wrap; word-break: break-word; margin: 8px 0 0; }
+.markdown {
+  background: transparent;
+  max-height: 260px;
+  overflow: auto;
+}
+.markdown p { margin: 0 0 7px; }
+.markdown p:last-child { margin-bottom: 0; }
+.markdown ul { margin: 6px 0 8px; padding-left: 20px; }
+.markdown h3 { margin: 10px 0 4px; }
+.evidence-body {
+  background: var(--vscode-textCodeBlock-background);
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 8px;
+}
 
 .notice { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px;
           border-radius: 5px; margin-bottom: var(--gap); border-left: 3px solid; }

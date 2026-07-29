@@ -28,6 +28,7 @@ export class CopilotLanguageModelAgent implements FixAgent {
   constructor(private readonly family?: string) {}
 
   async detect(): Promise<AgentAvailability> {
+    const signals = copilotExtensionSignal();
     try {
       // Deliberately not filtered by family here: asking broadly tells us
       // whether Copilot is usable at all, which is the question being asked.
@@ -35,12 +36,19 @@ export class CopilotLanguageModelAgent implements FixAgent {
       if (models.length === 0) {
         return {
           available: false,
-          reason: 'No Copilot model available. Sign in to GitHub Copilot in VS Code.',
+          reason: signals.length
+            ? 'Copilot is installed, but no Copilot model is available. Sign in to GitHub Copilot in VS Code.'
+            : 'No Copilot model available. Install and sign in to GitHub Copilot in VS Code.',
+          signals,
         };
       }
-      return { available: true, detail: models.map((m) => m.family).join(', ') };
+      return {
+        available: true,
+        detail: models.map((m) => m.family).join(', '),
+        signals: [...signals, 'Copilot model access active'],
+      };
     } catch (err) {
-      return { available: false, reason: describeLmError(err) };
+      return { available: false, reason: describeLmError(err), signals };
     }
   }
 
@@ -113,6 +121,14 @@ export class CopilotLanguageModelAgent implements FixAgent {
       cancellation.dispose();
     }
   }
+}
+
+function copilotExtensionSignal(): string[] {
+  const extension = vscode.extensions.all.find((entry) => entry.id.toLowerCase() === 'github.copilot');
+  if (!extension) return [];
+  const name = String(extension.packageJSON?.displayName ?? extension.packageJSON?.name ?? extension.id);
+  const version = String(extension.packageJSON?.version ?? '').trim();
+  return [`${name}${version ? ` ${version}` : ''} extension installed`];
 }
 
 function renderFiles(task: FixTask): string {

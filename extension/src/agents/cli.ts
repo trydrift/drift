@@ -1,5 +1,9 @@
+import { access } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { delimiter, dirname, join } from 'node:path';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
+import * as vscode from 'vscode';
 import { buildFixPrompt, type AgentAvailability, type AgentContext, type FixAgent, type FixOutcome, type FixTask } from './types.js';
 
 const run = promisify(execFile);
@@ -32,6 +36,12 @@ export interface CliAgentSpec {
   /** Passed on stdin instead of argv when the prompt is large. */
   promptOnStdin?: boolean;
   versionArgs?: string[];
+  /** VS Code chat extensions that can bundle or configure this agent. */
+  extensionIds?: string[];
+  /** Candidate executable paths inside installed VS Code extensions. */
+  extensionBinaryPaths?: string[];
+  /** Optional local auth/subscription probe. Must not prompt. */
+  detectAuth?: (command: string) => Promise<string | null>;
   docsUrl: string;
 }
 
@@ -44,6 +54,12 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
     buildArgs: () => ['-p', '--permission-mode', 'acceptEdits'],
     promptOnStdin: true,
     versionArgs: ['--version'],
+    extensionIds: ['anthropic.claude-code'],
+    extensionBinaryPaths: [
+      'resources/native-binary/claude',
+      'resources/native-binary/claude.exe',
+    ],
+    detectAuth: detectClaudeAuth,
     docsUrl: 'https://claude.com/claude-code',
   },
   {
@@ -54,6 +70,15 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
     buildArgs: () => ['exec', '--full-auto'],
     promptOnStdin: true,
     versionArgs: ['--version'],
+    extensionIds: ['openai.chatgpt'],
+    extensionBinaryPaths: [
+      'bin/macos-x86_64/codex',
+      'bin/macos-aarch64/codex',
+      'bin/linux-x64/codex',
+      'bin/linux-arm64/codex',
+      'bin/windows-x64/codex.exe',
+    ],
+    detectAuth: detectCodexAuth,
     docsUrl: 'https://github.com/openai/codex',
   },
   {
@@ -92,6 +117,7 @@ export class CliFixAgent implements FixAgent {
   readonly id: string;
   readonly label: string;
   readonly description: string;
+  private executable: string | null = null;
 
   constructor(
     private readonly spec: CliAgentSpec,
@@ -103,35 +129,47 @@ export class CliFixAgent implements FixAgent {
   }
 
   async detect(): Promise<AgentAvailability> {
-    const found = await which(this.spec.command);
+    const found = await resolveCommand(this.spec);
     if (!found) {
+      const extension = installedExtensionSummary(this.spec);
       return {
         available: false,
-        reason: `\`${this.spec.command}\` is not on your PATH. See ${this.spec.docsUrl}`,
+        reason: extension
+          ? `${extension} is installed, but Drift could not find its \`${this.spec.command}\` binary. See ${this.spec.docsUrl}`
+          : `\`${this.spec.command}\` is not on your PATH and no matching VS Code extension bundle was found. See ${this.spec.docsUrl}`,
+        signals: extension ? [extension] : undefined,
       };
     }
 
+    this.executable = found.path;
+    const signals = [...found.signals];
+
     if (this.spec.versionArgs) {
       try {
-        const { stdout } = await run(this.spec.command, this.spec.versionArgs, { timeout: 10_000 });
-        return { available: true, detail: stdout.trim().split('\n')[0] };
+        const { stdout } = await run(found.path, this.spec.versionArgs, { timeout: 10_000 });
+        const auth = this.spec.detectAuth ? await this.spec.detectAuth(found.path) : null;
+        if (auth) signals.push(auth);
+        return { available: true, detail: stdout.trim().split('\n')[0] || found.path, signals };
       } catch {
         // On PATH but not answering `--version` is still probably usable.
-        return { available: true, detail: found };
+        const auth = this.spec.detectAuth ? await this.spec.detectAuth(found.path) : null;
+        if (auth) signals.push(auth);
+        return { available: true, detail: found.path, signals };
       }
     }
 
-    return { available: true, detail: found };
+    return { available: true, detail: found.path, signals };
   }
 
   async run(task: FixTask, ctx: AgentContext): Promise<FixOutcome> {
     const prompt = [buildFixPrompt(task), '', '## Your task', '', task.commit.instructions].join('\n');
 
     const args = this.spec.buildArgs(prompt);
+    const command = this.executable ?? (await resolveCommand(this.spec))?.path ?? this.spec.command;
     ctx.report(`Running ${this.spec.command} in ${task.workspaceRoot}…`);
 
     try {
-      const { code, stdout, stderr } = await this.exec(args, prompt, task.workspaceRoot, ctx);
+      const { code, stdout, stderr } = await this.exec(command, args, prompt, task.workspaceRoot, ctx);
 
       if (ctx.signal.aborted) return { status: 'failed', message: 'Cancelled.' };
 
@@ -155,15 +193,16 @@ export class CliFixAgent implements FixAgent {
   }
 
   private exec(
+    command: string,
     args: string[],
     prompt: string,
     cwd: string,
     ctx: AgentContext,
   ): Promise<{ code: number; stdout: string; stderr: string }> {
     return new Promise((resolve, reject) => {
-      const child = spawn(this.spec.command, args, {
+      const child = spawn(command, args, {
         cwd,
-        env: { ...process.env, DRIFT: '1' },
+        env: { ...process.env, PATH: withCommandDir(command), DRIFT: '1' },
         windowsHide: true,
       });
 
@@ -218,6 +257,155 @@ export async function which(command: string): Promise<string | null> {
   try {
     const { stdout } = await run(probe, [command], { timeout: 5000, windowsHide: true });
     return stdout.trim().split('\n')[0]?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveCommand(spec: CliAgentSpec): Promise<{ path: string; signals: string[] } | null> {
+  const onPath = await which(spec.command);
+  const extension = installedExtensionSummary(spec);
+  if (onPath) {
+    return { path: onPath, signals: extension ? [extension, 'Available on PATH'] : ['Available on PATH'] };
+  }
+
+  const bundled = await bundledExtensionBinary(spec);
+  if (bundled) {
+    return {
+      path: bundled.path,
+      signals: [`${bundled.displayName} extension installed`, 'Bundled binary found'],
+    };
+  }
+
+  const common = await commonInstallBinary(spec.command);
+  if (common) return { path: common, signals: ['Found in a common local bin directory'] };
+
+  return null;
+}
+
+async function bundledExtensionBinary(
+  spec: CliAgentSpec,
+): Promise<{ path: string; displayName: string } | null> {
+  for (const extension of installedExtensions(spec)) {
+    const displayName = String(
+      extension.packageJSON?.displayName ?? extension.packageJSON?.name ?? extension.id,
+    );
+    for (const relative of spec.extensionBinaryPaths ?? []) {
+      const path = join(extension.extensionPath, relative);
+      if (await canExecute(path)) return { path, displayName };
+    }
+  }
+  return null;
+}
+
+function installedExtensionSummary(spec: CliAgentSpec): string | null {
+  const extension = installedExtensions(spec)[0];
+  if (!extension) return null;
+  const name = String(extension.packageJSON?.displayName ?? extension.packageJSON?.name ?? extension.id);
+  const version = String(extension.packageJSON?.version ?? '').trim();
+  return `${name}${version ? ` ${version}` : ''} extension installed`;
+}
+
+function installedExtensions(spec: CliAgentSpec): readonly vscode.Extension<unknown>[] {
+  const ids = new Set((spec.extensionIds ?? []).map((id) => id.toLowerCase()));
+  if (ids.size === 0) return [];
+  return vscode.extensions.all.filter((extension) => ids.has(extension.id.toLowerCase()));
+}
+
+async function commonInstallBinary(command: string): Promise<string | null> {
+  const home = process.env.HOME;
+  const suffix = process.platform === 'win32' ? `${command}.exe` : command;
+  const dirs = [
+    home ? join(home, '.local/bin') : '',
+    home ? join(home, '.npm-global/bin') : '',
+    home ? join(home, '.bun/bin') : '',
+    home ? join(home, '.cargo/bin') : '',
+    '/opt/homebrew/bin',
+    '/usr/local/bin',
+  ].filter(Boolean);
+
+  for (const dir of dirs) {
+    const candidate = join(dir, suffix);
+    if (await canExecute(candidate)) return candidate;
+  }
+
+  return null;
+}
+
+async function canExecute(path: string): Promise<boolean> {
+  try {
+    await access(path, constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function withCommandDir(command: string): string {
+  const dir = dirname(command);
+  const current = process.env.PATH ?? '';
+  return command.includes('/') && !current.split(delimiter).includes(dir) ? `${dir}${delimiter}${current}` : current;
+}
+
+async function detectClaudeAuth(command: string): Promise<string | null> {
+  try {
+    const { stdout } = await run(command, ['auth', 'status'], { timeout: 5000 });
+    const json = JSON.parse(stdout) as { loggedIn?: boolean; authMethod?: string; apiProvider?: string };
+    return json.loggedIn
+      ? `Claude signed in (${json.authMethod ?? json.apiProvider ?? 'auth active'})`
+      : 'Claude not signed in';
+  } catch (err) {
+    const stdout = (err as { stdout?: string })?.stdout;
+    if (stdout) {
+      try {
+        const json = JSON.parse(stdout) as { loggedIn?: boolean };
+        if (json.loggedIn === false) return 'Claude not signed in';
+      } catch {
+        // Fall through to an unknown signal.
+      }
+    }
+    return 'Claude auth status unknown';
+  }
+}
+
+async function detectCodexAuth(command: string): Promise<string | null> {
+  try {
+    const { stdout } = await run(command, ['doctor', '--json', '--summary'], {
+      timeout: 8000,
+      maxBuffer: 2 * 1024 * 1024,
+    });
+    return summarizeCodexDoctor(stdout);
+  } catch (err) {
+    const stdout = (err as { stdout?: string })?.stdout;
+    return stdout ? summarizeCodexDoctor(stdout) : 'Codex auth status unknown';
+  }
+}
+
+function summarizeCodexDoctor(text: string): string | null {
+  const jsonStart = text.indexOf('{');
+  if (jsonStart === -1) return null;
+
+  try {
+    const body = JSON.parse(text.slice(jsonStart)) as {
+      checks?: {
+        'auth.credentials'?: {
+          status?: string;
+          summary?: string;
+          details?: Record<string, string>;
+        };
+      };
+    };
+    const auth = body.checks?.['auth.credentials'];
+    if (!auth) return null;
+    const mode = auth.details?.['stored auth mode'];
+    const hasChatGpt = auth.details?.['stored ChatGPT tokens'] === 'true';
+    const hasApiKey = auth.details?.['stored API key'] === 'true';
+    if (auth.status === 'ok') {
+      if (mode === 'chatgpt' && hasChatGpt) return 'Codex ChatGPT auth configured';
+      if (hasApiKey) return 'Codex API key auth configured';
+      return `Codex ${auth.summary ?? 'auth configured'}`;
+    }
+    return `Codex ${auth.summary ?? 'auth not configured'}`;
   } catch {
     return null;
   }

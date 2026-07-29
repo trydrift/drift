@@ -141,8 +141,11 @@ Each commit's instructions are **scoped to its own files**. Without that scoping
 the agent fixes everything it notices in one pass and the commit boundaries
 collapse.
 
-Risk is driven by what Drift is asking to *change*, not how alarming the release
-sounds. Behaviour and default changes score highest: the code compiles either
+Risk is driven by what Drift is asking to *change* in the repository, not how
+alarming the upstream release sounds. The UI calls this **repo risk** on purpose:
+an upstream breaking change can be real and still have `none` repo risk when
+Drift found no matching local usage and planned no edit. Behaviour and default
+changes score highest once they overlap local code: the code compiles either
 way, so neither the type checker nor a smoke test catches a wrong fix.
 
 **A guardrail blocker downgrades the run to approval-required — it never discards
