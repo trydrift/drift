@@ -1,0 +1,146 @@
+# Drift configuration — copy to `.github/drift.yml`.
+#
+# Every value below is the default. You can delete this whole file and Drift
+# still works; it will run in `approve` mode and ask before touching anything.
+#
+# Full reference: docs/configuration.md
+
+# ---------------------------------------------------------------------------
+# Autonomy
+# ---------------------------------------------------------------------------
+
+# `approve` — Drift analyses, files an issue with the plan, and waits for you
+#             to comment `/drift apply`.
+# `auto`    — Drift dispatches Copilot the moment it detects a breaking change,
+#             subject to every guardrail below.
+#
+# Start on `approve`. Read a few plans. Move to `auto` when they stop
+# surprising you.
+mode: approve
+
+# In `auto` mode, plans riskier than this fall back to asking a human instead
+# of being dispatched. Nothing is ever dropped — you still get the issue.
+maxAutoRisk: medium
+
+# Branches whose dependency changes Drift watches.
+watchBranches: [main, master, develop]
+
+# ---------------------------------------------------------------------------
+# What to analyse
+# ---------------------------------------------------------------------------
+
+ecosystems: [npm, pypi, go, cargo, maven, rubygems]
+
+triggerOn:
+  major: true
+  minor: true
+  # Patch bumps break consumers ~5% of the time in practice, but enabling this
+  # is noisy. Turn it on if you've been burned.
+  patch: false
+  # Lockfile-only moves you didn't ask for. Off by default because transitive
+  # churn is constant and rarely actionable.
+  transitive: false
+  # Dev dependencies rarely break production code paths.
+  dev: false
+
+# Never analyse these. Glob patterns match the package name.
+ignore: []
+#  - "@types/*"
+#  - "eslint*"
+
+# Always require a human, even in `auto` mode. Use this for the dependencies
+# that would ruin your week.
+alwaysApprove: []
+#  - "stripe"
+#  - "next"
+
+# ---------------------------------------------------------------------------
+# Evidence — how Drift learns what actually changed upstream
+# ---------------------------------------------------------------------------
+
+evidence:
+  githubReleases: true
+  changelog: true
+
+  # Diffs the actual TypeScript declarations of the old and new versions.
+  # This is the strongest signal available for npm packages, and the answer to
+  # changelogs that omit a removal.
+  typeSurface: true
+
+  openapi: true
+
+  # OpenAPI specs this repo *consumes*. Drift diffs these between commits and
+  # finds the client code that breaks — this catches upstream service changes
+  # that no package manager would ever tell you about.
+  openapiSpecs: []
+  #  - "api/openapi.yaml"
+  #  - "spec/partner-api.json"
+
+  maxReleases: 25
+
+# ---------------------------------------------------------------------------
+# Guardrails — the reason it's safe to leave `auto` on
+# ---------------------------------------------------------------------------
+
+guardrails:
+  # Drift will not direct an agent to edit anything matching these.
+  protectedPaths:
+    - '.github/workflows/**'
+    - '**/*.lock'
+    - 'infra/**'
+    - 'terraform/**'
+    - '**/secrets/**'
+
+  # A plan wider than this asks for a human first.
+  maxFilesChanged: 50
+
+  # Batched upgrades make regressions hard to attribute.
+  maxDependenciesPerRun: 10
+
+  # Refuse to dispatch on a version number alone, with no changelog, release
+  # notes, or API diff to justify it. Strongly recommended.
+  requireEvidence: true
+
+  # Findings below this confidence are reported but not acted on unattended.
+  minConfidence: medium
+
+  # Tells the agent, explicitly, not to make tests pass by weakening them.
+  forbidTestWeakening: true
+
+# ---------------------------------------------------------------------------
+# How the fix is produced
+# ---------------------------------------------------------------------------
+
+remediation:
+  # `per-breaking-change` — one commit per issue (recommended: revert and
+  #                         bisect stay meaningful)
+  # `per-dependency`      — one commit per package
+  # `single`              — one commit for everything
+  commitGranularity: per-breaking-change
+
+  branchPrefix: 'drift/'
+  draftPr: true
+
+  # Optional model hint for the Copilot agent.
+  # model: ""
+
+  # Appended verbatim to every agent task. Put your repo's conventions here.
+  customInstructions: ''
+  # customInstructions: |
+  #   This repo uses Vitest, not Jest. Run `pnpm test` to verify.
+  #   Prefer named exports. Do not add barrel files.
+
+# ---------------------------------------------------------------------------
+# Optional LLM assistance
+# ---------------------------------------------------------------------------
+
+# Off by default. Drift's deterministic rule engine needs no API key and no
+# model. Enable this only to improve recall on prose changelogs that the rules
+# cannot parse — findings it produces are capped at `medium` confidence and so
+# can never clear the dispatch gate on their own.
+llm:
+  enabled: false
+  provider: anthropic
+  model: claude-opus-5
+  effort: medium
+  apiKeyEnv: ANTHROPIC_API_KEY
