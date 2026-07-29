@@ -99,7 +99,14 @@ interface ProseRule {
   pattern: RegExp;
   /** Builds the summary from the regex match. */
   summarize: (m: RegExpMatchArray) => string;
-  /** Symbol group index in the pattern. */
+  /**
+   * Capture-group index holding the affected symbol.
+   *
+   * `0` is a sentinel meaning "this change has no symbol" — package-wide
+   * changes like an ESM migration break consumers without touching a single
+   * export name. The caller substitutes the dependency name so localization
+   * can still find the import sites.
+   */
   symbolGroup: number;
   /** Replacement symbol group index, for renames. */
   replacementGroup?: number;
@@ -182,11 +189,36 @@ const PROSE_RULES: ProseRule[] = [
     summarize: (m) => `\`${m[1]}\` moved to \`${m[2]}\``,
   },
   {
+    // `required` as well as `requires`: real release notes say
+    // "**Required Node.js >=14.16**", not "now requires Node.js".
     id: 'prose-min-runtime',
     kind: 'runtime-requirement',
-    pattern: /\b(?:requires|now requires|minimum(?: supported)?)\s+(node(?:\.js)?|python|go|ruby|java|rust)\s*(?:version\s*)?([>=^~]*\s*[\d.]+)/i,
+    pattern:
+      /\b(?:requires?|required|now requires?|minimum(?: supported)?)\s+(node(?:\.js)?|python|go|ruby|java|rust)\s*(?:version\s*)?([>=^~]*\s*[\d.]+)/i,
     symbolGroup: 1,
     summarize: (m) => `Minimum ${m[1]} version raised to ${m[2]?.trim()}`,
+  },
+  {
+    /**
+     * ESM-only migration.
+     *
+     * This breaks every CommonJS consumer without renaming a single export,
+     * so no symbol-based rule can catch it. Maintainers announce it as a
+     * statement of fact — "This package is now pure ESM" — which is why it
+     * needs a rule of its own rather than falling out of the removal patterns.
+     */
+    id: 'prose-esm-only',
+    kind: 'config-change',
+    pattern: /\b(?:is now |now )?(?:pure ESM|ESM[\s-]only|ESM package)\b/i,
+    symbolGroup: 0,
+    summarize: () => 'The package is now ESM-only and no longer supports `require()`',
+  },
+  {
+    id: 'prose-dropped-commonjs',
+    kind: 'config-change',
+    pattern: /\b(?:dropped|removed|no longer (?:supports|provides))\s+CommonJS\b/i,
+    symbolGroup: 0,
+    summarize: () => 'CommonJS support was dropped',
   },
   {
     id: 'prose-dropped-support',
@@ -217,8 +249,9 @@ export function matchProse(passage: string): ProseMatch[] {
     const match = rule.pattern.exec(text);
     if (!match) continue;
 
-    const symbol = match[rule.symbolGroup];
-    if (!symbol) continue;
+    // Group 0 marks a package-wide change; anything else must actually capture.
+    const symbol = rule.symbolGroup === 0 ? null : match[rule.symbolGroup];
+    if (rule.symbolGroup !== 0 && !symbol) continue;
 
     const replacement = rule.replacementGroup ? match[rule.replacementGroup] : undefined;
 
@@ -226,7 +259,7 @@ export function matchProse(passage: string): ProseMatch[] {
       ruleId: rule.id,
       kind: rule.kind,
       summary: rule.summarize(match),
-      symbols: [symbol],
+      symbols: symbol ? [symbol] : [],
       replacementSymbols: replacement ? [replacement] : [],
       passage: text,
     });
@@ -255,6 +288,11 @@ export function remediationForProse(match: ProseMatch, dependency: string): stri
       return `Behaviour changed: ${match.summary}. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.`;
     case 'runtime-requirement':
       return `${match.summary}. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.`;
+    case 'config-change':
+      if (match.ruleId === 'prose-esm-only' || match.ruleId === 'prose-dropped-commonjs') {
+        return `\`${dependency}\` is now ESM-only. Every \`require('${dependency}')\` must become a static \`import\`, and the importing files must themselves be ESM. If this repository is CommonJS, the smallest correct change is usually a dynamic \`await import('${dependency}')\` at the call site — do NOT downgrade the dependency, and do NOT convert the whole repository to ESM as part of this fix. If neither option works cleanly, stop and explain the situation in the pull request description rather than forcing it.`;
+      }
+      return `Configuration must change: ${match.summary}.`;
     default:
       return `Review usages of \`${symbol}\` and update them: ${match.summary}`;
   }

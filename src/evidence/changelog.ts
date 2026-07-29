@@ -203,10 +203,23 @@ export function extractBreakingPassages(body: string): string[] {
   return dedupe(passages);
 }
 
-const BREAKING_HEADING = /breaking|incompatib|removed|migration|upgrade\s+guide|deprecat/i;
+const BREAKING_HEADING =
+  /breaking|incompatib|removed|migration|upgrade\s+guide|deprecat|pure esm|esm[\s-]only|commonjs/i;
 
+/**
+ * Inline breakage markers.
+ *
+ * The ESM and runtime-version clauses are here because they are the two most
+ * consequential breaking changes in the modern JS ecosystem and neither is
+ * phrased like an API change. A package going ESM-only breaks every CommonJS
+ * consumer without renaming a single export, and maintainers announce it as a
+ * statement of fact ("This package is now pure ESM") rather than as a warning.
+ *
+ * `required` is matched alongside `requires` for the same reason: real release
+ * notes say "**Required Node.js >=14.16**", not "now requires Node.js".
+ */
 const BREAKING_INLINE =
-  /\b(BREAKING(\s+CHANGE)?|breaking change|no longer|has been removed|have been removed|was removed|were removed|is removed|renamed to|renamed from|replaced by|replaced with|now requires|must now|dropped support|drop support|removed support|is now required|are now required|moved to|deprecated in favou?r of)\b/i;
+  /\b(BREAKING(\s+CHANGE)?|breaking change|no longer|has been removed|have been removed|was removed|were removed|is removed|renamed to|renamed from|replaced by|replaced with|now requires?|required\s+node|must now|dropped support|drop support|removed support|is now required|are now required|moved to|deprecated in favou?r of|pure ESM|ESM[\s-]only|now ESM|dropped CommonJS|no longer (?:supports|provides) CommonJS|minimum\s+(?:supported\s+)?(?:node|python|go|ruby|java|rust))\b/i;
 
 function dedupe(values: readonly string[]): string[] {
   return [...new Set(values.map((v) => v.trim()).filter(Boolean))];

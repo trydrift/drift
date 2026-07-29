@@ -51,7 +51,40 @@ export type Language =
   | 'rust'
   | 'java'
   | 'ruby'
+  /** Runtime-version declarations: CI workflows, engine fields, images. */
+  | 'config'
   | 'other';
+
+/**
+ * Files that declare a runtime version.
+ *
+ * Collected so runtime-requirement findings can be localized where the fix
+ * actually belongs. Searching source code for "Node.js" only ever finds
+ * comments and prose.
+ */
+const RUNTIME_CONFIG_BASENAMES = new Set([
+  'package.json',
+  '.nvmrc',
+  '.node-version',
+  '.ruby-version',
+  '.python-version',
+  '.tool-versions',
+  'dockerfile',
+  'go.mod',
+  'pyproject.toml',
+  'setup.py',
+  'setup.cfg',
+  'runtime.txt',
+  '.ruby-gemset',
+]);
+
+export function isRuntimeConfigPath(path: string): boolean {
+  const base = (path.split('/').pop() ?? '').toLowerCase();
+  if (RUNTIME_CONFIG_BASENAMES.has(base)) return true;
+  if (base.startsWith('dockerfile')) return true;
+  // CI workflow definitions, where the runtime version is usually pinned.
+  return /^\.github\/workflows\/.+\.ya?ml$/.test(path) || /^\.(gitlab-ci|circleci)/.test(path);
+}
 
 const EXTENSION_LANGUAGES: Record<string, Language> = {
   '.ts': 'typescript',
@@ -138,7 +171,10 @@ export async function walkSourceFiles(
 
       if (!entry.isFile()) continue;
 
-      const language = languageOf(entry.name);
+      const repoPath = toPosix(relative(root, full));
+      const language: Language = isRuntimeConfigPath(repoPath)
+        ? 'config'
+        : languageOf(entry.name);
       if (language === 'other') continue;
       // Minified and generated bundles produce useless multi-thousand-column
       // "impact sites" that a reviewer cannot act on.
@@ -149,12 +185,7 @@ export async function walkSourceFiles(
         if (info.size > maxFileBytes) continue;
 
         const content = await readFile(full, 'utf8');
-        files.push({
-          path: toPosix(relative(root, full)),
-          language,
-          content,
-          lineCount: countLines(content),
-        });
+        files.push({ path: repoPath, language, content, lineCount: countLines(content) });
       } catch {
         continue;
       }
