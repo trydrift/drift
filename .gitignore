@@ -1,5 +1,7 @@
 node_modules/
 dist/
+# action/ is intentionally NOT ignored: GitHub Actions does not run npm
+# install for node20 actions, so the bundled entrypoint must be committed.
 *.log
 .env
 .env.*

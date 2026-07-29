@@ -69,4 +69,4 @@ outputs:
 
 runs:
   using: 'node20'
-  main: 'dist/runners/action-entry.js'
+  main: 'action/index.cjs'

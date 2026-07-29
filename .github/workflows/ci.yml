@@ -30,8 +30,33 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Verify the Action entrypoint exists
-        run: test -f dist/runners/action-entry.js
+      # The bundled action is committed, because GitHub Actions does not run
+      # npm install for node20 actions. A stale bundle is the classic silent
+      # failure for this pattern: source is fixed, shipped action is not.
+      - name: Verify the committed action bundle is up to date
+        run: |
+          npm run build:action
+          if ! git diff --quiet -- action/; then
+            echo "::error::action/index.cjs is stale. Run 'npm run build:action' and commit the result."
+            git diff --stat -- action/
+            exit 1
+          fi
+          echo "action bundle is current"
+
+      # Runs the bundle with node_modules removed entirely. If anything was left
+      # unbundled it fails with ERR_MODULE_NOT_FOUND instead of Drift's own
+      # error, which is exactly the case this catches.
+      - name: Verify the action bundle is self-contained
+        run: |
+          mv node_modules node_modules.hidden
+          node action/index.cjs > /tmp/out.txt 2>&1 || true
+          mv node_modules.hidden node_modules
+          cat /tmp/out.txt
+          if grep -qE "Cannot find module|ERR_MODULE_NOT_FOUND|ERR_REQUIRE_ESM" /tmp/out.txt; then
+            echo "::error::bundle is not self-contained"; exit 1
+          fi
+          grep -q "drift:error" /tmp/out.txt \
+            || { echo "::error::bundle did not reach Drift's own code"; exit 1; }
 
       - name: Verify the CLI runs
         run: node dist/cli.js --version
