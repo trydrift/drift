@@ -1,0 +1,75 @@
+# Drift running against Drift.
+#
+# Uses `uses: ./` — the action from this same checkout — so it works even while
+# this repository is private. Referencing a private action from a *different*
+# repository does not resolve; that needs this repo to be public.
+#
+# Trigger it by hand from the Actions tab, or let it fire when Drift's own
+# dependencies change.
+
+name: Drift (self-test)
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Analyse only — create no branches, issues, or agent tasks'
+        type: boolean
+        default: true
+      mode:
+        description: 'approve = file an issue and wait · auto = dispatch Copilot'
+        type: choice
+        options: [approve, auto]
+        default: approve
+
+  push:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  checks: write
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Drift diffs the manifest against the previous commit.
+          fetch-depth: 2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # The committed bundle is what the action actually runs. Rebuilding here
+      # means a self-test never passes against a stale artifact.
+      - name: Build the action bundle
+        run: npm ci && npm run build:action
+
+      - name: Run Drift on itself
+        id: drift
+        uses: ./
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          # Optional. Without it, Drift analyses and files an approval issue
+          # but cannot dispatch a fix.
+          copilot-token: ${{ secrets.DRIFT_COPILOT_TOKEN }}
+          dry-run: ${{ inputs.dry-run || 'true' }}
+          mode: ${{ inputs.mode || 'approve' }}
+          log-level: debug
+
+      - name: Result
+        if: always()
+        run: |
+          echo "status:  ${{ steps.drift.outputs.status }}"
+          echo "summary: ${{ steps.drift.outputs.summary }}"
+          echo "branch:  ${{ steps.drift.outputs.branch }}"
+          echo "issue:   ${{ steps.drift.outputs.approval-issue }}"
