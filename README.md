@@ -54,6 +54,9 @@ Drift's intended failure mode is asking you too often. Not editing code it shoul
 
 ### 1. Add the workflow
 
+> **Not on the Marketplace yet** — `uses: drift-sh/drift@v0` will not resolve.
+> Reference your own fork, or see [testing on a real repo](docs/testing-on-a-real-repo.md).
+
 Copy [`examples/workflows/drift.yml`](examples/workflows/drift.yml) to
 `.github/workflows/drift.yml`.
 
@@ -200,6 +203,7 @@ Drift departs from the paper in three places, deliberately. See
 | [Trust & safety](docs/trust-and-safety.md) | Guardrails, threat model, failure modes |
 | [Research mapping](docs/research.md) | What Drift took from the paper, and what it changed |
 | [Deployment](docs/deployment.md) | Action, CLI, and self-hosted webhook |
+| [Testing on a real repo](docs/testing-on-a-real-repo.md) | Four ways to try it, in ascending order of commitment |
 
 ---
 

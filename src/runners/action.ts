@@ -33,6 +33,15 @@ export async function runAction(): Promise<number> {
   const inputs = readInputs();
   const logger = createLogger(inputs.logLevel);
 
+  // Fail fast rather than running the whole pipeline and dying on a 401 at the
+  // very end, after the user has waited through evidence gathering.
+  if (!inputs.repoToken) {
+    logger.error(
+      'No repository token available. Pass `repo-token: ${{ secrets.GITHUB_TOKEN }}` to the action, or set GITHUB_TOKEN.',
+    );
+    return 1;
+  }
+
   const event = await readEventPayload();
   const repo = resolveRepoContext(event, inputs.workspace);
 
