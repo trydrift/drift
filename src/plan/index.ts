@@ -48,6 +48,7 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
     id: stableId('plan', repo.owner, repo.repo, repo.afterSha),
     branchName: branchNameFor(config, changes, repo.afterSha),
     baseBranch: repo.baseBranch,
+    headSha: repo.afterSha,
     changes: [...changes],
     evidence: [...evidence],
     breakingChanges: [...breakingChanges],
