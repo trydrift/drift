@@ -1,7 +1,7 @@
 import type { BreakingChange, Confidence, DependencyChange, Ecosystem, ImpactSite } from '../types.js';
 import type { Logger } from '../util/logger.js';
 import { unitAtLine, type FileIndex, type RepoIndex } from '../index/metarag.js';
-import type { SourceFile } from '../index/walk.js';
+import { isRuntimeConfigPath, type SourceFile } from '../index/walk.js';
 
 /**
  * Localization: where does this breaking change actually bite?
@@ -45,6 +45,14 @@ export function localize(
   const sites: ImpactSite[] = [];
 
   for (const change of breakingChanges) {
+    // A runtime requirement has no code symbol. Searching source for "Node.js"
+    // matches comments and documentation, which is a pure false positive — the
+    // fix lives in CI config, engine fields, and container images.
+    if (change.kind === 'runtime-requirement') {
+      sites.push(...localizeRuntimeRequirement(change, contentByPath));
+      continue;
+    }
+
     const candidates = candidateFiles(change, index, ecosystems.get(change.dependency));
 
     if (candidates.length === 0) {
@@ -64,6 +72,68 @@ export function localize(
 
   return sites;
 }
+
+/**
+ * Locate a runtime-version requirement.
+ *
+ * Targets the places a runtime version is actually declared — CI workflows,
+ * engine fields, version files, container images — and matches the declaration
+ * line rather than the runtime's name. `.nvmrc` and friends contain nothing but
+ * the version, so the whole file is the site.
+ */
+function localizeRuntimeRequirement(
+  change: BreakingChange,
+  contentByPath: Map<string, string>,
+): ImpactSite[] {
+  const runtime = (change.symbols[0] ?? 'node').toLowerCase().replace('.js', '');
+  const declaration = DECLARATION_MATCHERS[runtime] ?? DECLARATION_MATCHERS.node!;
+
+  const sites: ImpactSite[] = [];
+
+  for (const [path, content] of contentByPath) {
+    if (!isRuntimeConfigPath(path)) continue;
+
+    const bare = /(^|\/)\.(nvmrc|node-version|ruby-version|python-version|tool-versions)$/.test(path);
+    if (bare) {
+      sites.push({
+        breakingChangeId: change.id,
+        file: path,
+        line: 1,
+        excerpt: content.trim().split('\n')[0]?.slice(0, 200) ?? '',
+        matchedSymbol: change.symbols[0] ?? runtime,
+        confidence: 'high',
+      });
+      continue;
+    }
+
+    const lines = content.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]!;
+      if (!declaration.test(line)) continue;
+
+      sites.push({
+        breakingChangeId: change.id,
+        file: path,
+        line: i + 1,
+        excerpt: line.trim().slice(0, 200),
+        matchedSymbol: change.symbols[0] ?? runtime,
+        confidence: 'high',
+      });
+    }
+  }
+
+  return sites;
+}
+
+/** Where each runtime's version is declared, per file convention. */
+const DECLARATION_MATCHERS: Record<string, RegExp> = {
+  node: /node[-_]?version\s*:|"node"\s*:|FROM\s+node:|engines/i,
+  python: /python[-_]?version\s*:|requires-python|python_requires|FROM\s+python:/i,
+  ruby: /ruby[-_]?version\s*:|^\s*ruby\s+["']|FROM\s+ruby:/i,
+  go: /go[-_]?version\s*:|^go\s+\d|FROM\s+golang:/i,
+  java: /java[-_]?version\s*:|<maven\.compiler|FROM\s+(?:openjdk|eclipse-temurin):/i,
+  rust: /rust[-_]?version\s*:|channel\s*=|FROM\s+rust:/i,
+};
 
 /**
  * Files worth searching for a given breaking change.
@@ -216,16 +286,19 @@ function matcherFor(symbol: string): RegExp | null {
   const trimmed = symbol.trim();
   if (!trimmed || trimmed.length < 2) return null;
 
-  const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const escaped = trimmed.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
 
-  // URL paths: match as a quoted or templated string fragment rather than a
-  // bare identifier, since `/users` is not an identifier in any language.
+  // URL paths: match as a string fragment rather than an identifier, since
+  // `/users` is not an identifier in any language.
   if (trimmed.startsWith('/')) return new RegExp(escaped);
 
-  // Qualified names like `Client.request` need an exact dotted match.
-  if (trimmed.includes('.')) return new RegExp(`\\b${escaped}\\b`);
+  // `\b` is defined against word characters, so anchoring it next to `@` or `/`
+  // never matches — `\b@scope/pkg\b` finds nothing at all, silently. Apply each
+  // boundary only where the adjacent character is actually a word character.
+  const leading = /^\w/.test(trimmed) ? '\\b' : '(?<![\\w$])';
+  const trailing = /\w$/.test(trimmed) ? '\\b' : '(?![\\w$])';
 
-  return new RegExp(`\\b${escaped}\\b`);
+  return new RegExp(`${leading}${escaped}${trailing}`);
 }
 
 function confidenceFor(

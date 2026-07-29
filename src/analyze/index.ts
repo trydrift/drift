@@ -146,13 +146,18 @@ function fromProseEvidence(record: Evidence, dependency: string): BreakingChange
       if (seen.has(key)) continue;
       seen.add(key);
 
+      // A package-wide change (an ESM migration, say) names no export. The
+      // package itself becomes the search symbol so localization still finds
+      // the import and `require()` sites that need changing.
+      const symbols = match.symbols.length > 0 ? match.symbols : [dependency];
+
       out.push({
         id: stableId('bc', dependency, match.ruleId, match.symbols.join(',')),
         dependency,
         kind: match.kind,
         summary: match.summary,
         remediation: remediationForProse(match, dependency),
-        symbols: match.symbols,
+        symbols,
         replacementSymbols: match.replacementSymbols.length ? match.replacementSymbols : undefined,
         // Prose starts at `medium`: a maintainer stating "X was removed" is a
         // strong signal, but changelogs are written by humans in a hurry and

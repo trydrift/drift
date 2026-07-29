@@ -280,6 +280,50 @@ const c = createClient();`,
     assert.equal(sites.length, 1, 'beautifulsoup4 is imported as bs4');
   });
 
+  test('matches a scoped package name, where \\b would silently fail', () => {
+    const files = [
+      file('src/a.ts', 'typescript', `import timer from '@szmarczak/http-timer';\ntimer();`),
+    ];
+
+    const scoped = { ...dependencyChange, name: '@szmarczak/http-timer' };
+    const change = {
+      ...removedExport,
+      dependency: '@szmarczak/http-timer',
+      kind: 'config-change' as const,
+      symbols: ['@szmarczak/http-timer'],
+    };
+
+    const sites = localize([change], [scoped], buildIndex(files), files, { logger });
+    assert.ok(
+      sites.length > 0,
+      '`\\b@scope/pkg\\b` never matches, because \\b is defined against word characters',
+    );
+  });
+
+  test('locates a runtime requirement in config, not in source prose', () => {
+    const files = [
+      file('src/a.ts', 'typescript', `// Requires Node.js 14 or later to run.\nexport const x = 1;`),
+      file('.nvmrc', 'config', '12.22.0\n'),
+      file('package.json', 'config', `{\n  "engines": { "node": ">=12" }\n}`),
+    ];
+
+    const runtimeChange = {
+      ...removedExport,
+      kind: 'runtime-requirement' as const,
+      symbols: ['Node.js'],
+    };
+
+    const sites = localize([runtimeChange], [dependencyChange], buildIndex(files), files, { logger });
+    const paths = sites.map((s) => s.file);
+
+    assert.ok(paths.includes('.nvmrc'));
+    assert.ok(paths.includes('package.json'));
+    assert.ok(
+      !paths.includes('src/a.ts'),
+      'matching "Node.js" in a source comment is a pure false positive',
+    );
+  });
+
   test('deduplicates multiple symbol hits on one line', () => {
     const files = [
       file(

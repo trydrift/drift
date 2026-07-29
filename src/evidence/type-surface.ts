@@ -89,7 +89,15 @@ async function resolveTypesEntry(packageName: string, version: string): Promise<
 
   if (pkg) {
     const declared = pkg.types ?? pkg.typings ?? typesFromExports(pkg.exports);
-    if (declared) return normalizePath(declared);
+    if (declared) {
+      // A `types` field routinely points at a directory or an extensionless
+      // path (`"types": "dist/source"`) rather than a `.d.ts` file. Fetching it
+      // verbatim 404s and silently costs us the strongest evidence we have, so
+      // try the conventional expansions before giving up.
+      for (const candidate of expandTypesEntry(normalizePath(declared))) {
+        if (await exists(packageName, version, candidate)) return candidate;
+      }
+    }
 
     // A JS entry point often has a sibling declaration file.
     if (pkg.main) {
@@ -110,6 +118,19 @@ async function resolveTypesEntry(packageName: string, version: string): Promise<
   if (await exists(dtName, 'latest', 'index.d.ts')) return `@types:${dtName}`;
 
   return null;
+}
+
+/**
+ * Candidate paths a `types` field could mean, most likely first.
+ *
+ * Covers the file itself, the extensionless form, and the directory form —
+ * `"types": "dist/source"` means `dist/source/index.d.ts` in practice.
+ */
+function expandTypesEntry(declared: string): string[] {
+  if (declared.endsWith('.d.ts')) return [declared];
+
+  const base = declared.replace(/\.(c|m)?[jt]s$/, '').replace(/\/$/, '');
+  return [`${base}.d.ts`, `${base}/index.d.ts`, declared];
 }
 
 function typesFromExports(exportsField: unknown): string | null {

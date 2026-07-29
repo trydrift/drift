@@ -78,6 +78,29 @@ describe('prose rules', () => {
     assert.equal(matches[0]?.kind, 'runtime-requirement');
   });
 
+  test('catches an ESM-only migration, which renames no export', () => {
+    const matches = matchProse('## This package is now pure ESM');
+    assert.equal(matches[0]?.kind, 'config-change');
+    assert.deepEqual(matches[0]?.symbols, [], 'a package-wide change names no symbol');
+  });
+
+  test('catches "Required Node.js >=14.16", not just "now requires"', () => {
+    const matches = matchProse('**Required Node.js >=14.16**');
+    assert.equal(matches[0]?.kind, 'runtime-requirement');
+    assert.match(matches[0]!.summary, /14\.16/);
+  });
+
+  test('extracts ESM and runtime passages from a real release body', () => {
+    // Verbatim from szmarczak/http-timer v5.0.0 — both of these were missed
+    // until a live run against the real repository surfaced them.
+    const body =
+      '## This package is now pure ESM\n\nSee https://gist.github.com/x\n\n## Bug fixes\n\n- `abort` listener should be removed\n\n**Required Node.js >=14.16**';
+
+    const passages = extractBreakingPassages(body);
+    assert.ok(passages.some((p) => /pure ESM/i.test(p)));
+    assert.ok(passages.some((p) => /Required Node\.js/i.test(p)));
+  });
+
   test('requires backticks, so prose does not become a search symbol', () => {
     assert.equal(
       matchProse('We removed a lot of dead code in this release.').length,
