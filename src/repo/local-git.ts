@@ -15,6 +15,15 @@ const run = promisify(execFile);
  * clone, a missing parent commit, or a brand-new repository with one commit
  * are all normal states, not errors worth failing a run over.
  */
+/**
+ * Sentinel `ref` meaning "the working tree as it is right now".
+ *
+ * The editor's most common case is a dependency the user just installed but has
+ * not committed. That state is not a commit and has no SHA, so it needs its own
+ * marker rather than being forced into one.
+ */
+export const WORKING_TREE = ':working-tree:';
+
 export class LocalGitProvider implements RepoProvider {
   constructor(
     private readonly cwd: string,
@@ -22,14 +31,14 @@ export class LocalGitProvider implements RepoProvider {
   ) {}
 
   async changedFiles(): Promise<string[]> {
-    // `--diff-filter=d` drops deletions: a manifest that no longer exists has
-    // no "after" state to compare, and the detector reads both sides.
-    const out = await this.git([
-      'diff',
-      '--name-only',
-      `${this.range.before}`,
-      `${this.range.after}`,
-    ]);
+    // Against the working tree, `git diff <before>` already means "compare the
+    // tree to that commit" — passing a second ref would be a syntax error.
+    const args =
+      this.range.after === WORKING_TREE
+        ? ['diff', '--name-only', this.range.before]
+        : ['diff', '--name-only', this.range.before, this.range.after];
+
+    const out = await this.git(args);
     if (out === null) return [];
 
     return out
@@ -39,6 +48,17 @@ export class LocalGitProvider implements RepoProvider {
   }
 
   async readFile(path: string, ref: string): Promise<string | null> {
+    if (ref === WORKING_TREE) {
+      // Read from disk rather than the index, so unstaged edits are included —
+      // "what the file says now" is what the user means.
+      try {
+        const { readFile } = await import('node:fs/promises');
+        const { join } = await import('node:path');
+        return await readFile(join(this.cwd, path), 'utf8');
+      } catch {
+        return null;
+      }
+    }
     return this.git(['show', `${ref}:${path}`]);
   }
 
