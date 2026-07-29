@@ -472,6 +472,18 @@ function extractJsUnits(content: string, path: string): CodeUnit[] {
         exported,
       );
     } else if (ts.isVariableStatement(node)) {
+      // Only module-level bindings are indexed. A `const` inside a function
+      // body is a one-line unit that would win the innermost-match lookup and
+      // report a call site as being "in `client`" rather than "in `fetchUser`",
+      // which is worse than useless in a review.
+      const atModuleLevel =
+        node.parent !== undefined &&
+        (ts.isSourceFile(node.parent) || ts.isModuleBlock(node.parent));
+      if (!atModuleLevel) {
+        ts.forEachChild(node, (child) => visit(child, className));
+        return;
+      }
+
       for (const declaration of node.declarationList.declarations) {
         if (!ts.isIdentifier(declaration.name)) continue;
         // An arrow function assigned to a const is a function in every sense

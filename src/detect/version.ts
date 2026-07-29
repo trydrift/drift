@@ -19,11 +19,17 @@ export function normalizeVersion(raw: string | null | undefined): string | null 
   if (v === '*' || v === 'latest' || v === '') return null;
 
   // Take the first component of a compound range: ">=2.0.0 <3.0.0" -> ">=2.0.0".
-  const firstPart = v.split(/\s*(?:\|\||,)\s*/)[0]!.trim();
-  v = firstPart.split(/\s+/)[0]!.trim();
+  v = v.split(/\s*(?:\|\||,)\s*/)[0]!.trim();
 
-  // Strip range operators, Ruby's `~>`, Maven brackets, Go's `v` prefix.
-  v = v.replace(/^[\^~><=!]+/, '').replace(/^v/i, '').replace(/^[[(]/, '').replace(/[\])]$/, '');
+  // Strip leading operators *before* splitting on whitespace. Ruby writes its
+  // pessimistic constraint as `~> 4.1`, with a space, so splitting first would
+  // leave us holding the operator and discarding the version.
+  v = v.replace(/^[\^~><=!]+\s*/, '').replace(/^[[(]\s*/, '');
+
+  v = v.split(/\s+/)[0]!.trim();
+
+  // Maven's closing bracket, and Go's `v` prefix.
+  v = v.replace(/^v/i, '').replace(/[\])]$/, '');
 
   // Go pseudo-versions and `+incompatible` suffixes.
   v = v.replace(/\+incompatible$/, '');
