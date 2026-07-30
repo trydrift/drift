@@ -451,6 +451,7 @@
     "build": "node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "node test/build.mjs && node --test dist/panel.test.cjs",
     "package": "npm run typecheck && npm run build && npx --yes @vscode/vsce package --no-dependencies && code --install-extension drift-0.1.0.vsix --force"
   },
   "devDependencies": {

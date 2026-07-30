@@ -30,6 +30,20 @@ jobs:
       - name: Test
         run: npm test
 
+      # The extension has its own suite: the panel is rendered in plain Node and
+      # asserted against, which is the only automated check on the UI markup.
+      - name: Extension typecheck and tests
+        working-directory: extension
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+
+      # A panel that typechecks but does not bundle is still a broken extension.
+      - name: Verify the extension bundles
+        working-directory: extension
+        run: npm run build
+
       # The bundled action is committed, because GitHub Actions does not run
       # npm install for node20 actions. A stale bundle is the classic silent
       # failure for this pattern: source is fixed, shipped action is not.
