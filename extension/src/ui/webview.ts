@@ -1,5 +1,5 @@
 import type { Attachment, SessionEffort, SessionMode, SessionPermission, ThreadItem } from '../session.js';
-import { describeEffort, describeMode, describePermission } from '../labels.js';
+import { describeEffort, describeMode, describePermission, describePermissionShort } from '../labels.js';
 import type { UpgradeCandidate } from '../upgrades.js';
 import { describeSeverity, severityOf, type UpgradeSeverity } from '../severity.js';
 import type { ReviewGroup, ReviewTotals } from '../review/store.js';
@@ -223,6 +223,16 @@ function renderQuestion(item: Extract<ThreadItem, { kind: 'question' }>): string
 /* Packages                                                            */
 /* ------------------------------------------------------------------ */
 
+/**
+ * The scan result.
+ *
+ * One card, not a scatter of boxes. Everything a scan produced — the count that
+ * decides what to do next, the packages that need attention, and the far longer
+ * list that does not — lives inside a single bordered surface with hairline
+ * separators, so it reads as one answer to one question rather than as three
+ * widgets that happen to be stacked. Rows carry no borders of their own; the
+ * card supplies the frame.
+ */
 function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: ViewModel): string {
   const candidates = item.ids.map((id) => vm.candidates[id]).filter((c): c is UpgradeCandidate => Boolean(c));
   if (candidates.length === 0) {
@@ -237,53 +247,59 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
     <div class="who">${LOGO_SMALL}<span>Drift</span></div>
     <div class="body markdown">${renderMarkdown(item.headline)}</div>
 
-    <div class="result-tabs">
-      ${tally(affected.length, 'need your attention', 'affected')}
-      ${tally(safe.length, 'safe to upgrade', 'clean')}
-      ${failed.length ? tally(failed.length, 'could not be checked', 'error') : ''}
+    <div class="card packages">
+      <div class="card-head">
+        <span class="card-title">${ICON_PACKAGE}<b>Packages</b></span>
+        <span class="tallies">
+          ${affected.length ? tally(affected.length, 'affected', 'affected') : ''}
+          ${safe.length ? tally(safe.length, 'safe', 'clean') : ''}
+          ${failed.length ? tally(failed.length, 'unknown', 'error') : ''}
+        </span>
+      </div>
+
+      ${
+        affected.length
+          ? `<section class="pkg-group">
+              <h4 class="pkg-subhead affected">${ICON_ALERT}<span>Affects your code</span><small>${affected.length}</small></h4>
+              <div class="pkg-list">${affected.map((c) => renderCandidate(c, affected.length === 1)).join('')}</div>
+              ${
+                affected.length > 1
+                  ? `<div class="pkg-group-foot"><button class="primary wide" data-action="fixAll">Fix all ${affected.length} with ${escapeHtml(vm.agentLabel)}</button></div>`
+                  : ''
+              }
+            </section>`
+          : ''
+      }
+
+      ${
+        safe.length
+          ? `<details class="pkg-group">
+              <summary><h4 class="pkg-subhead clean">${ICON_CHEVRON_RIGHT}${ICON_CHECK}<span>Safe to upgrade</span><small>${safe.length}</small></h4></summary>
+              <div class="pkg-list">${safe.map((c) => renderCandidate(c, false)).join('')}</div>
+            </details>`
+          : ''
+      }
+
+      ${
+        failed.length
+          ? `<details class="pkg-group">
+              <summary><h4 class="pkg-subhead error">${ICON_CHEVRON_RIGHT}${ICON_ERROR}<span>Could not check</span><small>${failed.length}</small></h4></summary>
+              <div class="pkg-list">${failed.map((c) => renderCandidate(c, false)).join('')}</div>
+            </details>`
+          : ''
+      }
     </div>
-
-    ${
-      affected.length
-        ? `<section class="group">
-            <h4>${ICON_ALERT} Affects your code</h4>
-            ${affected.map((c) => renderCandidate(c, true)).join('')}
-            ${
-              affected.length > 1
-                ? `<button class="primary wide" data-action="fixAll">Fix all ${affected.length} with ${escapeHtml(vm.agentLabel)}</button>`
-                : ''
-            }
-          </section>`
-        : ''
-    }
-
-    ${
-      safe.length
-        ? `<details class="group collapsed">
-            <summary><h4>${ICON_CHECK} Safe to upgrade <small>${safe.length}</small></h4></summary>
-            ${safe.map((c) => renderCandidate(c, false)).join('')}
-          </details>`
-        : ''
-    }
-
-    ${
-      failed.length
-        ? `<details class="group collapsed">
-            <summary><h4>${ICON_ERROR} Could not check <small>${failed.length}</small></h4></summary>
-            ${failed.map((c) => renderCandidate(c, false)).join('')}
-          </details>`
-        : ''
-    }
   </div>`;
 }
 
 function tally(count: number, label: string, tone: string): string {
-  return `<div class="tally ${tone}"><b>${count}</b><span>${escapeHtml(label)}</span></div>`;
+  return `<span class="tally ${tone}"><b>${count}</b> ${escapeHtml(label)}</span>`;
 }
 
 function renderCandidate(candidate: UpgradeCandidate, open: boolean): string {
   const severity = severityOf(candidate);
   const busy = candidate.status === 'checking' || candidate.status === 'upgrading';
+  const target = versionLabel(candidate, candidate.selected);
 
   return `<details class="pkg ${severity}" ${open ? 'open' : ''}>
     <summary>
@@ -299,17 +315,10 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean): string {
       <p class="verdict-long">${escapeHtml(candidate.error ?? candidate.summary)}</p>
 
       <div class="pkg-target">
-        <label>
-          <span>Target version</span>
-          <select data-action="selectVersion" data-id="${escapeAttr(candidate.id)}">
-            ${candidate.versions
-              .map(
-                (version) =>
-                  `<option value="${escapeAttr(version)}" ${version === candidate.selected ? 'selected' : ''}>${escapeHtml(version)}${version === candidate.safeLatest ? ' — within your range' : ''}${version === candidate.latest ? ' — latest' : ''}</option>`,
-              )
-              .join('')}
-          </select>
-        </label>
+        <span class="field-label">Target version</span>
+        <button class="ctl bordered" data-action="pickVersion" data-id="${escapeAttr(candidate.id)}" title="Choose which version to check and install">
+          <span>${escapeHtml(target)}</span>${ICON_CHEVRON}
+        </button>
         <span class="kind">${escapeHtml(candidate.kind)}</span>
       </div>
 
@@ -330,6 +339,13 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean): string {
       </div>
     </div>
   </details>`;
+}
+
+/** The one-line description of a version, shared by the button and the quick pick. */
+export function versionLabel(candidate: UpgradeCandidate, version: string): string {
+  if (version === candidate.latest) return `${version} — latest`;
+  if (version === candidate.safeLatest) return `${version} — within your range`;
+  return version;
 }
 
 function busyLabel(candidate: UpgradeCandidate): string {
@@ -511,6 +527,18 @@ function renderChangeGroup(group: ReviewGroup): string {
 /* Composer                                                           */
 /* ------------------------------------------------------------------ */
 
+/**
+ * The composer.
+ *
+ * Every control in the bar is a button that opens a *VS Code* quick pick, not an
+ * HTML `<select>`. The difference is not cosmetic: a native select in a webview
+ * renders with the operating system's widget — Aqua on macOS, a Win32 combo on
+ * Windows — which is visibly foreign inside the editor, ignores the colour
+ * theme, and cannot show the description text that makes these choices
+ * intelligible. Handing the choice back to the extension host gets the editor's
+ * own list, with its icons, filter box, keyboard model and theme, for free, and
+ * is exactly what Copilot Chat does with its model picker.
+ */
 function renderComposer(vm: ViewModel): string {
   const placeholder = vm.awaitingAnswer
     ? 'Type your answer, or pick an option above…'
@@ -525,10 +553,9 @@ function renderComposer(vm: ViewModel): string {
             ${vm.attachments
               .map(
                 (a) =>
-                  `<span class="chip">${attachmentIcon(a)}${escapeHtml(a.label)}<button data-action="detach" data-value="${escapeAttr(a.value)}" aria-label="Remove">×</button></span>`,
+                  `<span class="chip">${attachmentIcon(a)}<span class="chip-label">${escapeHtml(a.label)}</span><button data-action="detach" data-value="${escapeAttr(a.value)}" title="Remove" aria-label="Remove ${escapeAttr(a.label)}">${ICON_CLOSE}</button></span>`,
               )
               .join('')}
-            <button class="chip ghost" data-action="attach">${ICON_ATTACH}Add context</button>
           </div>`
         : ''
     }
@@ -548,58 +575,30 @@ function renderComposer(vm: ViewModel): string {
     <textarea id="input" rows="1" placeholder="${escapeAttr(placeholder)}">${escapeHtml(vm.draft)}</textarea>
 
     <div class="composer-bar">
-      ${vm.attachments.length === 0 ? `<button class="flat" data-action="attach" title="Attach a file or folder as context">${ICON_ATTACH}</button>` : ''}
+      <button class="ctl icon" data-action="attach" title="Add context — a file, a folder, your selection, or a file from your computer" aria-label="Add context">${ICON_ATTACH}</button>
 
-      <label class="picker" title="Ask explains and proposes. Agent edits your files.">
-        <select data-action="setMode">
-          ${(['agent', 'ask'] as SessionMode[])
-            .map((mode) => `<option value="${mode}" ${vm.mode === mode ? 'selected' : ''}>${describeMode(mode)}</option>`)
-            .join('')}
-        </select>
-      </label>
+      <button class="ctl" data-action="pickMode" title="Ask explains and proposes. Agent edits your files.">
+        ${vm.mode === 'agent' ? ICON_AGENT : ICON_ASK}<span>${escapeHtml(describeMode(vm.mode))}</span>${ICON_CHEVRON}
+      </button>
 
-      <label class="picker" title="Which AI agent does the work">
-        <select data-action="setAgent">
-          <option value="auto" ${vm.agentId === 'auto' ? 'selected' : ''}>Auto — best available</option>
-          ${vm.agents
-            .filter((a) => a.available)
-            .map(
-              (a) =>
-                `<option value="${escapeAttr(a.id)}" ${vm.agentId === a.id ? 'selected' : ''}>${escapeHtml(a.label)}</option>`,
-            )
-            .join('')}
-          <option value="__pick">Set up an agent…</option>
-        </select>
-      </label>
+      <button class="ctl" data-action="pickAgent" title="Which AI agent does the work">
+        <span>${escapeHtml(vm.agentId === 'auto' ? `${vm.agentLabel}` : vm.agentLabel)}</span>${ICON_CHEVRON}
+      </button>
 
-      <label class="picker" title="How widely Drift looks: Quick checks runtime majors only, Thorough includes dev dependencies and patch releases">
-        <select data-action="setEffort">
-          ${(['quick', 'balanced', 'thorough'] as SessionEffort[])
-            .map(
-              (effort) =>
-                `<option value="${effort}" ${vm.effort === effort ? 'selected' : ''}>${describeEffort(effort)}</option>`,
-            )
-            .join('')}
-        </select>
-      </label>
+      <button class="ctl" data-action="pickEffort" title="How widely Drift looks: Quick checks runtime majors only, Thorough includes dev dependencies and patch releases">
+        <span>${escapeHtml(describeEffort(vm.effort))}</span>${ICON_CHEVRON}
+      </button>
 
-      <label class="picker" title="What the agent may do without asking">
-        <select data-action="setPermission">
-          ${(['ask', 'auto-edit', 'full-auto'] as SessionPermission[])
-            .map(
-              (permission) =>
-                `<option value="${permission}" ${vm.permission === permission ? 'selected' : ''}>${describePermission(permission)}</option>`,
-            )
-            .join('')}
-        </select>
-      </label>
+      <button class="ctl" data-action="pickPermission" title="${escapeAttr(`What the agent may do without asking — ${describePermission(vm.permission)}`)}">
+        ${ICON_SHIELD}<span>${escapeHtml(describePermissionShort(vm.permission))}</span>${ICON_CHEVRON}
+      </button>
 
       <span class="spacer"></span>
 
       ${
         vm.busy
           ? `<button class="stop" data-action="stop" title="Stop">${ICON_STOP}</button>`
-          : `<button class="send" data-action="submit" title="Send (Enter)">${ICON_SEND}</button>`
+          : `<button class="send" data-action="submit" title="Send (Enter)" aria-label="Send">${ICON_SEND}</button>`
       }
     </div>
   </div>`;
@@ -753,11 +752,20 @@ const ICON_PACKAGE = svg('<path d="M8 1 2 4v8l6 3 6-3V4L8 1zm0 1.7 4 2L8 6.8 4 4
 const ICON_SELECTION = svg('<path d="M2 2h5v1.5H3.5V7H2V2zm7 0h5v5h-1.5V3.5H9V2zM2 9h1.5v3.5H7V14H2V9zm10.5 0H14v5H9v-1.5h3.5V9z"/>');
 const ICON_USER = svg('<path d="M8 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 7c3 0 5.5 1.6 5.5 3.5V14h-11v-1.5C2.5 10.6 5 9 8 9z"/>');
 const ICON_ATTACH = svg('<path d="M8 1.5a2.5 2.5 0 0 1 2.5 2.5v6a4 4 0 0 1-8 0V5H4v5a2.5 2.5 0 0 0 5 0V4a1 1 0 0 0-2 0v6H5.5V4A2.5 2.5 0 0 1 8 1.5z"/>');
-const ICON_SEND = svg('<path d="M8 2 3 7h3.2v7h3.6V7H13L8 2z"/>', 16);
-const ICON_STOP = svg('<rect x="4" y="4" width="8" height="8" rx="1"/>', 16);
+const ICON_SEND = svg('<path d="M8 2 3 7h3.2v7h3.6V7H13L8 2z"/>', 14);
+const ICON_STOP = svg('<rect x="4.5" y="4.5" width="7" height="7" rx="1.2"/>', 13);
 const ICON_SEARCH = svg('<path d="M10.5 9.5 14 13l-1 1-3.5-3.5A5 5 0 1 1 10.5 9.5zM6.5 3a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/>', 16);
 const ICON_HISTORY = svg('<path d="M8 1.5A6.5 6.5 0 1 0 14.5 8H13A5 5 0 1 1 8 3v2.5L11.5 3.2 8 1V1.5zM7.25 5v4l3.2 1.9.75-1.25L8.75 8.3V5h-1.5z"/>', 16);
 const ICON_DIFF = svg('<path d="M4.5 1.5h1.5v3H9v1.5H6v3H4.5v-3h-3V4.5h3v-3zM8 11h6v1.5H8V11z"/>');
+const ICON_CHEVRON = svg('<path d="M8 10.2 4.4 6.6l.9-.9L8 8.4l2.7-2.7.9.9L8 10.2z"/>', 12);
+const ICON_CHEVRON_RIGHT = svg('<path d="M6.2 3.4 5.3 4.3 9 8l-3.7 3.7.9.9L11 8 6.2 3.4z"/>', 12).replace(
+  'class="i"',
+  'class="i i-chevron"',
+);
+const ICON_CLOSE = svg('<path d="M8 6.94 11.06 3.88l1.06 1.06L9.06 8l3.06 3.06-1.06 1.06L8 9.06l-3.06 3.06-1.06-1.06L6.94 8 3.88 4.94l1.06-1.06L8 6.94z"/>', 11);
+const ICON_AGENT = svg('<path d="M8 1.2 9 3.3h2.3l-1.2 2 1.2 2H9L8 9.4 7 7.3H4.7l1.2-2-1.2-2H7L8 1.2zM3.5 10.5h9V14h-9v-3.5z"/>', 12);
+const ICON_ASK = svg('<path d="M8 1.5a6.5 6.5 0 1 1-3.3 12.1L1.5 14.5l.9-3.2A6.5 6.5 0 0 1 8 1.5z"/>', 12);
+const ICON_SHIELD = svg('<path d="M8 1 3 3v4.2c0 3 2.1 5.8 5 6.8 2.9-1 5-3.8 5-6.8V3L8 1z"/>', 12);
 const ICON_COMMIT = svg('<path d="M8 5a3 3 0 0 1 2.9 2.25H15v1.5h-4.1A3 3 0 0 1 5.1 8.75H1v-1.5h4.1A3 3 0 0 1 8 5z"/>');
 
 /* ------------------------------------------------------------------ */
@@ -813,15 +821,48 @@ button:hover { background: var(--vscode-button-secondaryHoverBackground); }
 button.primary { color: var(--vscode-button-foreground); background: var(--vscode-button-background); }
 button.primary:hover { background: var(--vscode-button-hoverBackground); }
 button:disabled { opacity: .45; cursor: default; }
-button.wide { width: 100%; margin-top: 6px; }
-select {
-  font: inherit;
-  border: 1px solid var(--vscode-dropdown-border, transparent);
-  color: var(--vscode-dropdown-foreground);
-  background: var(--vscode-dropdown-background);
+button.wide { width: 100%; }
+
+/* Toolbar controls ------------------------------------------------ */
+/* Every picker in the panel is one of these: a flat, theme-coloured
+   button that opens a real VS Code quick pick. Fixed height plus
+   centred flex is what keeps the label optically centred at any font
+   size, which an OS-drawn dropdown in a webview never manages. */
+.ctl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 22px;
+  min-width: 0;
+  padding: 0 5px;
+  border: 1px solid transparent;
   border-radius: 4px;
-  padding: 2px 4px;
-  max-width: 100%;
+  background: none;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ctl > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ctl svg.i { vertical-align: 0; opacity: .9; }
+.ctl:hover {
+  color: var(--vscode-foreground);
+  background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+}
+.ctl:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+.ctl.icon { padding: 0 4px; }
+.ctl.bordered {
+  border-color: var(--vscode-dropdown-border, var(--vscode-panel-border));
+  background: var(--vscode-dropdown-background);
+  color: var(--vscode-dropdown-foreground);
+  justify-content: space-between;
+  padding: 0 4px 0 7px;
 }
 
 /* Thread ---------------------------------------------------------- */
@@ -964,54 +1005,65 @@ select {
 .hint { font-size: 11px; color: var(--vscode-descriptionForeground); }
 
 /* Package results ------------------------------------------------- */
-.result-tabs { display: flex; gap: 6px; margin: 8px 0; }
-.tally {
-  flex: 1;
-  min-width: 0;
+/* One card. The frame belongs to the card, the separators to the rows;
+   nothing inside draws a box of its own, which is what stops a long scan
+   from reading as a pile of unrelated widgets. */
+.card {
+  margin-top: 8px;
   border: 1px solid var(--vscode-panel-border);
-  border-radius: 5px;
-  padding: 6px 8px;
+  border-radius: 6px;
   background: var(--vscode-editorWidget-background);
+  overflow: hidden;
 }
-.tally b { display: block; font-size: 16px; line-height: 1.1; }
-.tally span { display: block; font-size: 10px; color: var(--vscode-descriptionForeground); }
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: var(--vscode-editorWidget-background);
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+.card-title { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+.card-title svg.i { color: var(--vscode-descriptionForeground); }
+.tallies { display: flex; align-items: center; gap: 10px; margin-left: auto; font-size: 10px; }
+.tally { color: var(--vscode-descriptionForeground); white-space: nowrap; }
+.tally b { font-variant-numeric: tabular-nums; }
 .tally.affected b { color: var(--vscode-editorWarning-foreground); }
 .tally.clean b { color: var(--vscode-testing-iconPassed); }
 .tally.error b { color: var(--vscode-editorError-foreground); }
-.group { margin-top: 10px; }
-.group > h4, .group > summary h4 {
+.pkg-group + .pkg-group { border-top: 1px solid var(--vscode-panel-border); }
+.pkg-group > summary { cursor: pointer; list-style: none; }
+.pkg-group > summary::-webkit-details-marker { display: none; }
+.pkg-group[open] > summary .i-chevron { transform: rotate(90deg); }
+.pkg-subhead {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 6px;
+  padding: 6px 10px;
   color: var(--vscode-descriptionForeground);
   text-transform: uppercase;
   font-size: 10px;
   letter-spacing: .04em;
 }
-.group > summary { cursor: pointer; list-style: none; }
-.group > summary::-webkit-details-marker { display: none; }
-.group > summary h4 small { text-transform: none; letter-spacing: 0; }
-.pkg {
-  border: 1px solid var(--vscode-panel-border);
-  border-left: 2px solid var(--vscode-descriptionForeground);
-  border-radius: 5px;
-  background: var(--vscode-editorWidget-background);
-  margin-bottom: 5px;
-  overflow: hidden;
-}
-.pkg.affected { border-left-color: var(--vscode-editorWarning-foreground); }
-.pkg.clean, .pkg.upstream-only { border-left-color: var(--vscode-testing-iconPassed); }
-.pkg.error { border-left-color: var(--vscode-editorError-foreground); }
+.pkg-group > summary:hover .pkg-subhead { background: var(--vscode-list-hoverBackground); }
+.pkg-subhead span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pkg-subhead small { text-transform: none; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.pkg-subhead.affected > svg.i:last-of-type { color: var(--vscode-editorWarning-foreground); }
+.pkg-subhead.clean > svg.i:last-of-type { color: var(--vscode-testing-iconPassed); }
+.pkg-subhead.error > svg.i:last-of-type { color: var(--vscode-editorError-foreground); }
+.pkg-group-foot { padding: 2px 10px 9px; }
+.pkg { border-top: 1px solid color-mix(in srgb, var(--vscode-panel-border) 55%, transparent); }
 .pkg > summary {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
-  padding: 7px 9px;
+  padding: 7px 10px;
   cursor: pointer;
   list-style: none;
 }
+.pkg > summary:hover { background: var(--vscode-list-hoverBackground); }
+.pkg[open] > summary { background: var(--vscode-list-inactiveSelectionBackground, var(--vscode-list-hoverBackground)); }
 .pkg > summary::-webkit-details-marker { display: none; }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--vscode-testing-iconPassed); }
 .dot.affected { background: var(--vscode-editorWarning-foreground); }
@@ -1033,11 +1085,12 @@ select {
   border-color: var(--vscode-editorWarning-foreground);
 }
 .verdict.clean, .verdict.upstream-only { color: var(--vscode-testing-iconPassed); border-color: transparent; }
-.pkg-body { padding: 0 9px 9px; border-top: 1px solid var(--vscode-panel-border); }
-.verdict-long { margin: 8px 0; color: var(--vscode-descriptionForeground); }
-.pkg-target { display: flex; gap: 8px; align-items: end; margin-bottom: 8px; }
-.pkg-target label { display: grid; gap: 3px; flex: 1; min-width: 0; font-size: 11px; color: var(--vscode-descriptionForeground); }
-.pkg-target .kind { font-size: 10px; color: var(--vscode-descriptionForeground); padding-bottom: 4px; }
+.pkg-body { padding: 2px 10px 10px 25px; }
+.verdict-long { margin: 6px 0 8px; color: var(--vscode-descriptionForeground); }
+.pkg-target { display: flex; gap: 7px; align-items: center; margin-bottom: 8px; }
+.pkg-target .field-label { font-size: 11px; color: var(--vscode-descriptionForeground); white-space: nowrap; }
+.pkg-target .ctl { flex: 0 1 auto; max-width: 190px; }
+.pkg-target .kind { margin-left: auto; font-size: 10px; color: var(--vscode-descriptionForeground); }
 .pkg-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .pkg-actions button { flex: 1 1 auto; white-space: nowrap; }
 .detail { display: flex; flex-direction: column; gap: 6px; margin-bottom: 9px; }
@@ -1127,34 +1180,43 @@ ul.sites span { font-size: 11px; color: var(--vscode-descriptionForeground); }
   flex: 0 0 auto;
   margin: 6px 10px 10px;
   border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--vscode-input-background);
-  padding: 6px 8px 5px;
+  padding: 6px 6px 5px;
 }
 .composer:focus-within { border-color: var(--vscode-focusBorder); }
 .composer.answering { border-color: var(--vscode-focusBorder); }
-.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 5px; }
-.chips.small { margin: 0 0 0 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 2px 5px; }
+.chips.small { margin: 0; }
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 10px;
+  height: 19px;
+  font-size: 11px;
+  line-height: 1;
   border: 1px solid var(--vscode-panel-border);
-  border-radius: 10px;
-  padding: 1px 7px;
+  border-radius: 4px;
+  padding: 0 3px 0 6px;
   color: var(--vscode-descriptionForeground);
+  background: var(--vscode-badge-background);
   max-width: 100%;
 }
+.chips.small .chip { background: none; }
+.chip svg.i { vertical-align: 0; opacity: .8; }
+.chip-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: rtl; }
 .chip button {
+  display: inline-grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
   border: 0;
+  border-radius: 3px;
   background: none;
-  padding: 0 0 0 2px;
+  padding: 0;
   color: inherit;
-  font-size: 12px;
-  line-height: 1;
 }
-.chip.ghost { cursor: pointer; background: none; }
+.chip button:hover { background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground)); }
 #input {
   font: inherit;
   display: block;
@@ -1164,38 +1226,26 @@ ul.sites span { font-size: 11px; color: var(--vscode-descriptionForeground); }
   resize: none;
   border: 0;
   outline: none;
-  padding: 3px 0;
+  padding: 3px 2px 5px;
   color: var(--vscode-input-foreground);
   background: transparent;
 }
-.composer-bar { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-.composer-bar .spacer { flex: 1 1 auto; }
-.picker select {
-  border-color: transparent;
-  background: transparent;
-  color: var(--vscode-descriptionForeground);
-  font-size: 11px;
-  padding: 2px 2px;
-  max-width: 118px;
-}
-.picker select:hover { color: var(--vscode-foreground); background: var(--vscode-toolbar-hoverBackground, transparent); }
-button.flat {
-  border: 0;
-  background: none;
-  color: var(--vscode-descriptionForeground);
-  padding: 3px 4px;
-}
-button.flat:hover { color: var(--vscode-foreground); background: var(--vscode-toolbar-hoverBackground, transparent); }
+.composer-bar { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
+.composer-bar .spacer { flex: 1 1 auto; min-width: 8px; }
 button.send, button.stop {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   padding: 0;
+  border: 0;
+  border-radius: 4px;
   display: inline-grid;
   place-items: center;
   color: var(--vscode-button-foreground);
   background: var(--vscode-button-background);
 }
-button.stop { background: var(--vscode-editorError-foreground); }
+button.send:hover { background: var(--vscode-button-hoverBackground); }
+button.send svg.i, button.stop svg.i { vertical-align: 0; }
+button.stop { background: var(--vscode-editorError-foreground); color: var(--vscode-editor-background); }
 .commands {
   display: flex;
   flex-direction: column;
@@ -1358,7 +1408,7 @@ if (input) {
 
 document.addEventListener('click', (event) => {
   const target = event.target.closest('[data-action]');
-  if (!target || target.tagName === 'SELECT') return;
+  if (!target) return;
 
   const action = target.dataset.action;
 
@@ -1381,12 +1431,6 @@ document.addEventListener('click', (event) => {
     line: target.dataset.line ? Number(target.dataset.line) : undefined,
     url: target.dataset.url,
   });
-});
-
-document.addEventListener('change', (event) => {
-  const target = event.target.closest('[data-action]');
-  if (!target || target.tagName !== 'SELECT') return;
-  vscode.postMessage({ type: target.dataset.action, value: target.value, id: target.dataset.id });
 });
 
 window.addEventListener('message', (event) => {

@@ -82,6 +82,20 @@ extension/src/
 rendered and asserted against in plain Node (`extension/test/panel.test.ts`),
 which is the only automated check on several thousand lines of generated markup.
 
+### The panel owns no widgets
+
+`webview.ts` renders no `<select>`, and the test suite asserts it never will. A
+form control inside a webview is drawn by the operating system: it ignores the
+colour theme, it mis-centres its own label, and it has nowhere to put the
+sentence explaining what an option does. So every picker in the panel — mode,
+agent, effort, permission, target version, and the two ways to attach context —
+is a plain button that posts a `pick*` message; `home.ts` answers it with
+`vscode.window.showQuickPick` and writes the result back through `session.ts`.
+
+The cost is one round trip through the extension host. The return is that the
+panel is themed, keyboard-navigable and filterable for free, and that adding an
+option means adding a line to an array rather than styling a dropdown.
+
 ### Severity is repo-relative
 
 One judgement, in one place, because the UI depends on getting it right:

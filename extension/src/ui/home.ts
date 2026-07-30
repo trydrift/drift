@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { join, relative } from 'node:path';
+import { basename, dirname, join, relative } from 'node:path';
 import type { RemediationPlan, RepoContext } from '../../../src/types.js';
 import { buildPlan } from '../../../src/plan/index.js';
 import { inspectLocalRepo } from '../../../src/repo/local-git.js';
@@ -7,8 +7,21 @@ import { DriftConfigSchema, type DriftConfig } from '../../../src/config/schema.
 import { loadWorkspaceConfig, runAnalysis } from '../analyze.js';
 import { runFix } from '../fix.js';
 import type { DriftState } from '../state.js';
-import { DriftSession } from '../session.js';
-import { describePermission } from '../labels.js';
+import {
+  DriftSession,
+  type Attachment,
+  type SessionEffort,
+  type SessionMode,
+  type SessionPermission,
+} from '../session.js';
+import {
+  describeEffort,
+  describeMode,
+  describePermission,
+  explainEffort,
+  explainMode,
+  explainPermission,
+} from '../labels.js';
 import type { DriftReview, ReviewGroup } from '../review/store.js';
 import { discoverAgents, invalidateAgentCache, type DiscoveredAgent } from '../agents/registry.js';
 import type { AttachedContext } from '../agents/types.js';
@@ -43,23 +56,31 @@ type Incoming =
   | { type: 'submit'; text: string }
   | { type: 'draft'; text: string }
   | { type: 'answer'; id: string; value: string }
-  | { type: 'setAgent' | 'setMode' | 'setEffort' | 'setPermission'; value: string }
+  | { type: 'pickMode' | 'pickEffort' | 'pickPermission' | 'pickAgent' }
   | { type: 'attach' }
   | { type: 'detach'; value: string }
-  | { type: 'pickAgent' }
   | { type: 'stop' }
   | { type: 'signIn' }
   | { type: 'showReport' }
   | { type: 'openFile'; file: string; line: number }
   | { type: 'openUrl'; url: string }
   | { type: 'openDiff'; path: string }
-  | { type: 'selectVersion'; id: string; value: string }
+  | { type: 'pickVersion'; id: string }
   | { type: 'upgrade'; id: string; mode: 'safe' | 'force' }
   | { type: 'fixPackage'; id: string }
   | { type: 'fixAll' }
   | { type: 'keepFile' | 'undoFile'; path: string }
   | { type: 'keepGroup' | 'undoGroup'; order: number }
   | { type: 'keepAll' | 'undoAll' };
+
+/**
+ * Directories the context picker never offers.
+ *
+ * These hold thousands of files that nobody attaches on purpose, and leaving
+ * them in makes the filter box useless — the point of the picker is that typing
+ * three characters finds the file you meant.
+ */
+const EXCLUDED_FROM_CONTEXT = '**/{node_modules,.git,dist,out,build,coverage,.next,.turbo,.venv,__pycache__}/**';
 
 interface WorkspaceContext {
   root: string;
@@ -148,29 +169,23 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       case 'answer':
         this.session.answer(message.id, message.value);
         return;
-      case 'setAgent':
-        await this.setAgent(message.value);
+      case 'pickMode':
+        await this.pickMode();
         return;
-      case 'setMode':
-        await this.session.setMode(message.value as 'ask' | 'agent');
+      case 'pickEffort':
+        await this.pickEffort();
         return;
-      case 'setEffort':
-        await this.session.setEffort(message.value as 'quick' | 'balanced' | 'thorough');
+      case 'pickPermission':
+        await this.pickPermission();
         return;
-      case 'setPermission':
-        await this.session.setPermission(message.value as 'ask' | 'auto-edit' | 'full-auto');
-        this.session.notice('info', `Permission set to **${describePermission(this.session.permission)}**.`);
+      case 'pickAgent':
+        await this.pickAgent();
         return;
       case 'attach':
         await this.attach();
         return;
       case 'detach':
         this.session.detach(message.value);
-        return;
-      case 'pickAgent':
-        await vscode.commands.executeCommand('drift.selectAgent');
-        invalidateAgentCache();
-        await this.refreshAgents();
         return;
       case 'stop':
         this.running?.cancel();
@@ -193,8 +208,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       case 'openDiff':
         await vscode.commands.executeCommand('drift.openChangeDiff', message.path);
         return;
-      case 'selectVersion':
-        await this.retarget(message.id, message.value);
+      case 'pickVersion':
+        await this.pickVersion(message.id);
         return;
       case 'upgrade':
         await this.upgrade([message.id], message.mode);
@@ -271,10 +286,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         this.showReview();
         return;
       case '/agent':
-        await vscode.commands.executeCommand('drift.selectAgent');
-        invalidateAgentCache();
-        await this.refreshAgents();
-        this.session.notice('info', `Agent set to **${this.agentLabel()}**.`);
+        await this.pickAgent();
         return;
       case '/clear':
         this.session.clear();
@@ -810,48 +822,272 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   /* Context, agents, identity                                         */
   /* ---------------------------------------------------------------- */
 
+  /* ---------------------------------------------------------------- */
+  /* Composer pickers                                                  */
+  /* ---------------------------------------------------------------- */
+
+  /**
+   * One choice, made in VS Code's own list.
+   *
+   * The panel is a webview, so a `<select>` in it is drawn by the operating
+   * system: it ignores the colour theme, it cannot show the sentence explaining
+   * what each option does, and it looks like it belongs to a different program.
+   * Bouncing the choice out to `showQuickPick` costs one message and gets the
+   * editor's list, filter box and keyboard model exactly as the rest of VS Code
+   * has them. The tick marks the setting in force, the way every picker in the
+   * editor does.
+   */
+  private async choose<T extends string>(
+    title: string,
+    placeHolder: string,
+    current: T,
+    choices: readonly { value: T; label: string; description?: string; detail?: string }[],
+  ): Promise<T | undefined> {
+    type Item = vscode.QuickPickItem & { value: T };
+    const picked = await vscode.window.showQuickPick<Item>(
+      choices.map((choice) => ({
+        label: `${choice.value === current ? '$(check)' : '$(blank)'} ${choice.label}`,
+        description: choice.description,
+        detail: choice.detail,
+        value: choice.value,
+      })),
+      { title, placeHolder, matchOnDetail: true },
+    );
+
+    return picked && picked.value !== current ? picked.value : undefined;
+  }
+
+  private async pickMode(): Promise<void> {
+    const mode = await this.choose<SessionMode>(
+      'Drift: chat mode',
+      'What should Drift do with what it finds?',
+      this.session.mode,
+      (['agent', 'ask'] as SessionMode[]).map((value) => ({
+        value,
+        label: describeMode(value),
+        detail: explainMode(value),
+      })),
+    );
+    if (mode) await this.session.setMode(mode);
+  }
+
+  private async pickEffort(): Promise<void> {
+    const effort = await this.choose<SessionEffort>(
+      'Drift: effort',
+      'How widely should Drift look?',
+      this.session.effort,
+      (['quick', 'balanced', 'thorough'] as SessionEffort[]).map((value) => ({
+        value,
+        label: describeEffort(value),
+        description: value === 'balanced' ? 'default' : undefined,
+        detail: explainEffort(value),
+      })),
+    );
+    if (effort) await this.session.setEffort(effort);
+  }
+
+  private async pickPermission(): Promise<void> {
+    const permission = await this.choose<SessionPermission>(
+      'Drift: what the agent may do',
+      'How much should the agent do without asking?',
+      this.session.permission,
+      (['ask', 'auto-edit', 'full-auto'] as SessionPermission[]).map((value) => ({
+        value,
+        label: describePermission(value),
+        detail: explainPermission(value),
+      })),
+    );
+    if (!permission) return;
+
+    await this.session.setPermission(permission);
+    this.session.notice('info', `Permission set to **${describePermission(permission)}**.`);
+  }
+
+  /**
+   * The agent picker.
+   *
+   * Only agents that are usable right now are offered here, because a list in
+   * the composer is for switching, not for shopping. The full list — including
+   * the ones that need a sign-in or an install, each with the reason — is one
+   * entry away, under the same command the palette uses.
+   */
+  private async pickAgent(): Promise<void> {
+    type Item = vscode.QuickPickItem & { id?: string };
+
+    const preferred = vscode.workspace.getConfiguration('drift').get<string>('agent.preferred', 'auto');
+    const available = this.agents.filter((entry) => entry.availability.available);
+    const tick = (id: string) => (preferred === id ? '$(check)' : '$(blank)');
+
+    const items: Item[] = [
+      {
+        label: `${tick('auto')} Auto`,
+        description: available[0] ? available[0].agent.label : 'nothing available yet',
+        detail: 'Use the best agent installed on this machine',
+        id: 'auto',
+      },
+      ...available.map<Item>((entry) => ({
+        label: `${tick(entry.agent.id)} ${entry.agent.label}`,
+        detail: entry.availability.detail,
+        id: entry.agent.id,
+      })),
+      { label: '', kind: vscode.QuickPickItemKind.Separator },
+      {
+        label: '$(gear) Set up an agent…',
+        detail: 'Every agent Drift supports, including the ones not ready yet',
+        id: '__pick',
+      },
+    ];
+
+    const picked = await vscode.window.showQuickPick(items, {
+      title: 'Drift: AI agent',
+      placeHolder: 'Which agent should do the editing?',
+      matchOnDetail: true,
+    });
+
+    if (!picked?.id || (picked.id === preferred && picked.id !== '__pick')) return;
+    await this.setAgent(picked.id);
+  }
+
+  private async pickVersion(id: string): Promise<void> {
+    const candidate = this.candidates.get(id);
+    if (!candidate) return;
+
+    type Item = vscode.QuickPickItem & { version: string };
+    const picked = await vscode.window.showQuickPick<Item>(
+      candidate.versions.map((version) => ({
+        label: `${version === candidate.selected ? '$(check)' : '$(blank)'} ${version}`,
+        description:
+          version === candidate.latest
+            ? 'latest published'
+            : version === candidate.safeLatest
+              ? 'within your package.json range'
+              : undefined,
+        version,
+      })),
+      {
+        title: `${candidate.name}: target version`,
+        placeHolder: `Currently checking ${candidate.selected} — picking another re-reads the evidence`,
+      },
+    );
+
+    if (!picked || picked.version === candidate.selected) return;
+    await this.retarget(id, picked.version);
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Context                                                           */
+  /* ---------------------------------------------------------------- */
+
+  /**
+   * Add context.
+   *
+   * Two doors, because they answer different questions. Almost always the
+   * developer means "that file over there in my project", and for that the right
+   * control is VS Code's own filterable list of workspace files — the thing
+   * `#file` opens in Copilot Chat — not the operating system's file browser,
+   * which starts from nowhere useful and cannot fuzzy-match a path. The OS
+   * browser is still the only way to reach something outside the workspace, so
+   * it stays, named for what it is rather than presented as the default.
+   */
   private async attach(): Promise<void> {
     const ctx = await this.context();
-    if (!ctx) return;
-
-    const choice = await vscode.window.showQuickPick(
-      [
-        { label: '$(file) File…', id: 'file', detail: 'Point the agent at a specific file' },
-        { label: '$(folder) Folder…', id: 'folder', detail: 'Scope the agent to one area of the repo' },
-        {
-          label: '$(selection) Current selection',
-          id: 'selection',
-          detail: 'The lines highlighted in the active editor',
-        },
-      ],
-      { title: 'Add context for Drift', placeHolder: 'What should the agent look at?' },
-    );
-    if (!choice) return;
-
-    if (choice.id === 'selection') {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor || editor.selection.isEmpty) {
-        this.session.notice('warn', 'Select some code in an editor first.');
-        return;
-      }
-      const path = relative(ctx.root, editor.document.uri.fsPath).replace(/\\/g, '/');
-      const from = editor.selection.start.line + 1;
-      const to = editor.selection.end.line + 1;
-      this.session.attach({ kind: 'selection', label: `${path}:${from}-${to}`, value: `${path}:${from}-${to}` });
+    if (!ctx) {
+      this.session.notice('warn', 'Open a folder to attach context from it.');
       return;
     }
 
+    type Door = vscode.QuickPickItem & { id: 'workspace' | 'upload' };
+    const choice = await vscode.window.showQuickPick<Door>(
+      [
+        {
+          label: '$(search) Add context',
+          detail: 'Search this project for a file, a folder, or use your editor selection',
+          id: 'workspace',
+        },
+        {
+          label: '$(desktop-download) Upload from computer',
+          detail: 'Browse the file system for something outside this project',
+          id: 'upload',
+        },
+      ],
+      { title: 'Add context for Drift', placeHolder: 'What should the agent look at?', matchOnDetail: true },
+    );
+    if (!choice) return;
+
+    if (choice.id === 'upload') await this.attachFromDisk(ctx.root);
+    else await this.attachFromWorkspace(ctx.root);
+  }
+
+  /** The workspace picker: everything indexable in the project, filterable by path. */
+  private async attachFromWorkspace(root: string): Promise<void> {
+    type Item = vscode.QuickPickItem & { attach?: Attachment; folders?: true };
+
+    const editor = vscode.window.activeTextEditor;
+    const selection = editor && !editor.selection.isEmpty ? describeSelection(root, editor) : null;
+
+    const uris = await vscode.workspace.findFiles('**/*', EXCLUDED_FROM_CONTEXT, 4000);
+    const paths = uris.map((uri) => relative(root, uri.fsPath).replace(/\\/g, '/')).sort();
+
+    const items: Item[] = [
+      ...(selection
+        ? [
+            {
+              label: `$(list-selection) ${selection.label}`,
+              detail: 'The lines highlighted in the active editor',
+              attach: selection,
+            },
+          ]
+        : []),
+      { label: '$(folder) Folder…', detail: 'Scope the agent to one area of the project', folders: true as const },
+      { label: 'Files', kind: vscode.QuickPickItemKind.Separator },
+      ...paths.map<Item>((path) => ({
+        label: `$(file) ${basename(path)}`,
+        description: dirname(path) === '.' ? undefined : dirname(path),
+        attach: { kind: 'file', label: path, value: path },
+      })),
+    ];
+
+    const picked = await vscode.window.showQuickPick(items, {
+      title: 'Add context for Drift',
+      placeHolder: 'Type to filter this project by path',
+      matchOnDescription: true,
+    });
+    if (!picked) return;
+
+    if (picked.folders) await this.attachFolder(paths);
+    else if (picked.attach) this.session.attach(picked.attach);
+  }
+
+  private async attachFolder(paths: readonly string[]): Promise<void> {
+    const folders = [...new Set(paths.map(dirname).filter((dir) => dir !== '.'))].sort();
+    if (folders.length === 0) {
+      this.session.notice('info', 'Every file in this project is at the top level — attach one directly.');
+      return;
+    }
+
+    const picked = await vscode.window.showQuickPick(
+      folders.map((folder) => ({ label: `$(folder) ${folder}`, folder })),
+      { title: 'Add a folder as context', placeHolder: 'Type to filter folders' },
+    );
+    if (picked) this.session.attach({ kind: 'folder', label: picked.folder, value: picked.folder });
+  }
+
+  /** The system browser, for the genuine case it is good at: files not in the project. */
+  private async attachFromDisk(root: string): Promise<void> {
     const picked = await vscode.window.showOpenDialog({
-      canSelectFiles: choice.id === 'file',
-      canSelectFolders: choice.id === 'folder',
-      canSelectMany: choice.id === 'file',
-      defaultUri: vscode.Uri.file(ctx.root),
+      canSelectFiles: true,
+      canSelectFolders: true,
+      canSelectMany: true,
+      defaultUri: vscode.Uri.file(root),
       openLabel: 'Add as context',
+      title: 'Upload from computer',
     });
 
     for (const uri of picked ?? []) {
-      const path = relative(ctx.root, uri.fsPath).replace(/\\/g, '/') || '.';
-      this.session.attach({ kind: choice.id as 'file' | 'folder', label: path, value: path });
+      const path = relative(root, uri.fsPath).replace(/\\/g, '/') || '.';
+      const stat = await Promise.resolve(vscode.workspace.fs.stat(uri)).catch(() => null);
+      const kind = stat?.type === vscode.FileType.Directory ? 'folder' : 'file';
+      this.session.attach({ kind, label: path, value: path });
     }
   }
 
@@ -1059,6 +1295,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     this.view.webview.html = renderPanel(model);
   }
+}
+
+/** The active editor's selection, as an attachment `resolveContext` can read back. */
+function describeSelection(root: string, editor: vscode.TextEditor): Attachment {
+  const path = relative(root, editor.document.uri.fsPath).replace(/\\/g, '/');
+  const span = `${path}:${editor.selection.start.line + 1}-${editor.selection.end.line + 1}`;
+  return { kind: 'selection', label: span, value: span };
 }
 
 function toChoice(entry: DiscoveredAgent): AgentChoice {
