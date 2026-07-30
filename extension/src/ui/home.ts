@@ -10,6 +10,7 @@ import type { DriftState } from '../state.js';
 import { DriftSession, describePermission } from '../session.js';
 import type { DriftReview, ReviewGroup } from '../review/store.js';
 import { discoverAgents, invalidateAgentCache, type DiscoveredAgent } from '../agents/registry.js';
+import type { AttachedContext } from '../agents/types.js';
 import { getGitHubSession, getRateLimitToken } from '../github-auth.js';
 import {
   describeSeverity,
@@ -409,6 +410,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
               dev: profile.includeDev,
             },
           },
+          breadth: {
+            includeDev: profile.includeDev,
+            maxSites: profile.maxSites,
+            maxPackages: profile.maxPackages,
+          },
           githubToken: await getRateLimitToken(),
           token,
           onProgress: ({ phase, detail, done, total }) => step.progress(phase, detail, done, total),
@@ -711,6 +717,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
             question,
             (options ?? ['Yes', 'No']).map((option) => ({ label: option, value: option })),
           ),
+        context: await this.resolveContext(ctx.root),
         onLog: (message) => step.progress('Agent', message),
         progress: { report: ({ message }) => step.progress('Working', message ?? '') },
         token,
@@ -850,6 +857,45 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       const path = relative(ctx.root, uri.fsPath).replace(/\\/g, '/') || '.';
       this.session.attach({ kind: choice.id as 'file' | 'folder', label: path, value: path });
     }
+  }
+
+  /**
+   * Turn attachment chips into something an agent can read.
+   *
+   * Files and selections are inlined, capped, because that is what makes them
+   * useful without a tool loop. Folders are named but not walked — dumping a
+   * directory into a prompt buries the evidence that matters under boilerplate.
+   */
+  private async resolveContext(root: string): Promise<AttachedContext[]> {
+    const out: AttachedContext[] = [];
+
+    for (const attachment of this.session.context) {
+      if (attachment.kind === 'folder' || attachment.kind === 'package') {
+        out.push({ kind: attachment.kind, label: attachment.label, value: attachment.value });
+        continue;
+      }
+
+      const [path = '', span] = attachment.value.split(':');
+      try {
+        const bytes = await vscode.workspace.fs.readFile(vscode.Uri.file(join(root, path)));
+        const text = Buffer.from(bytes).toString('utf8');
+
+        if (attachment.kind === 'selection' && span) {
+          const [from, to] = span.split('-').map((part) => Number(part));
+          const lines = text.split('\n').slice(Math.max(0, (from ?? 1) - 1), to ?? from ?? 1);
+          out.push({ ...attachment, content: lines.join('\n') });
+          continue;
+        }
+
+        out.push({ ...attachment, content: text });
+      } catch {
+        // An attachment that has since been deleted is not worth failing over;
+        // the path alone still tells the agent where the developer was looking.
+        out.push({ kind: attachment.kind, label: attachment.label, value: attachment.value });
+      }
+    }
+
+    return out;
   }
 
   private async setAgent(id: string): Promise<void> {
