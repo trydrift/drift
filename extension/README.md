@@ -34,11 +34,19 @@ Type `/` for commands:
 
 Anything that isn't a command and isn't an answer to a question becomes a standing instruction for the agent — see `drift.fix.customInstructions` below.
 
+### Scan results
+
+A scan produces one card, not a scatter of boxes: a header with the counts that decide what to do next, then **Affects your code** listed openly, and **Safe to upgrade** collapsed behind a count. Rows are separated by hairlines inside the card rather than each drawing its own frame, so fourteen packages read as one answer instead of fourteen widgets. Expanding a row shows the summary, the target-version picker, the breaking changes Drift matched to your files, and the evidence it read to decide.
+
 ### The composer controls
 
-Four pickers, sitting where the thing they affect happens:
+Four pickers, sitting where the thing they affect happens. Each one opens VS
+Code's own quick pick — the same list the command palette uses, with its filter
+box, its keyboard model and its theme — rather than an operating-system dropdown
+that happens to be embedded in a webview. Every option carries the sentence that
+explains it, which is the part a native dropdown has nowhere to put.
 
-- **Agent** — which AI does the editing. Drift drives one you already have.
+- **Agent** — which AI does the editing. Drift drives one you already have. The picker lists what is usable right now; *Set up an agent…* at the bottom opens the full list, including the ones that need a sign-in or an install.
 - **Ask / Agent** — Ask analyses and explains, and never edits. Agent edits files.
 - **Effort** — this changes what is *actually analysed*, not how long it takes. Quick covers runtime dependencies and stops at 25 packages. Balanced covers every runtime dependency. Thorough adds dev, optional and peer dependencies, and patch releases.
 - **Permission** — how much rope the agent gets:
@@ -48,7 +56,12 @@ Four pickers, sitting where the thing they affect happens:
 
 ### Attaching context
 
-The paperclip adds a file, a folder, or the current editor selection as reference material. Attachments tell the agent where to look for a convention or a helper; they never widen which files it is allowed to edit.
+The paperclip offers two doors:
+
+- **Add context** — searches *this project* in VS Code's own filterable list. Type three characters of a path to find a file, pick a folder to scope the agent to one area, or attach the lines currently selected in your editor. Nothing opens the operating system's file browser.
+- **Upload from computer** — the system browser, for the one case it is genuinely better at: reference material that lives outside the workspace.
+
+Attachments tell the agent where to look for a convention or a helper; they never widen which files it is allowed to edit.
 
 ### Drift asks questions
 

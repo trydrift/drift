@@ -69,10 +69,32 @@ test('an empty session renders the welcome state and a composer', () => {
   assert.match(html, /class="composer/);
   assert.match(html, /data-command="\/scan"/);
   // The composer, not a header toolbar, owns the per-turn settings.
-  assert.match(html, /data-action="setAgent"/);
-  assert.match(html, /data-action="setMode"/);
-  assert.match(html, /data-action="setEffort"/);
-  assert.match(html, /data-action="setPermission"/);
+  assert.match(html, /data-action="pickAgent"/);
+  assert.match(html, /data-action="pickMode"/);
+  assert.match(html, /data-action="pickEffort"/);
+  assert.match(html, /data-action="pickPermission"/);
+  assert.match(html, /data-action="attach"/);
+});
+
+test('no control in the panel is an OS-drawn form widget', () => {
+  // A native dropdown inside a webview is painted by the operating system: it
+  // ignores the colour theme, mis-centres its own label, and cannot show the
+  // sentence that explains each option. Every picker here is a button that hands
+  // the choice back to the extension host, which opens VS Code's quick pick.
+  const c = candidate({ impactCount: 2, impactFiles: 1 });
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'p1', kind: 'packages', headline: 'One upgrade.', ids: [c.id] }],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  assert.ok(!/<select\b/.test(html), 'no native dropdowns');
+  assert.ok(!/<option\b/.test(html), 'no native dropdown options');
+  assert.ok(!/<input\b/.test(html), 'no native inputs beyond the composer textarea');
+  // The target-version control is the one inside a result row, and it is a
+  // button too — consistency here is the whole point.
+  assert.match(html, /data-action="pickVersion" data-id="/);
 });
 
 test('the nonce is applied to both the script and the CSP', () => {

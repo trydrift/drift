@@ -291,7 +291,9 @@ repository enforces for everyone.
 
 These three exist as settings so a team can commit a default in
 `.vscode/settings.json`, but the expected way to change them is the picker in the
-composer, where the effect is visible.
+composer, where the effect is visible. Each picker opens a VS Code quick pick
+listing the options with a line explaining what each one does, so the setting
+does not have to be looked up to be understood.
 
 | Setting | Values | Meaning |
 |---|---|---|
