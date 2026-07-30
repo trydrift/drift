@@ -404,11 +404,19 @@
           "description": "Analyse dev dependencies. They rarely break production code paths.",
           "order": 12
         },
+        "drift.analysis.concurrency": {
+          "type": "number",
+          "default": 8,
+          "minimum": 1,
+          "maximum": 16,
+          "markdownDescription": "How many packages to check at once. Checking one is almost entirely waiting on the network, so raising this shortens a scan roughly in proportion — up to the point where the GitHub API starts rate-limiting, which turns evidence into 'could not check'.",
+          "order": 13
+        },
         "drift.analysis.includeTransitive": {
           "type": "boolean",
           "default": false,
           "description": "Analyse lockfile-only changes you did not ask for. Noisy, and rarely actionable.",
-          "order": 13
+          "order": 14
         },
         "drift.analysis.ignore": {
           "type": "array",
@@ -417,7 +425,7 @@
           },
           "default": [],
           "markdownDescription": "Package name patterns to never analyse, for example `@types/*`. Added to any `ignore` list in `.github/drift.yml`.",
-          "order": 14
+          "order": 15
         },
         "drift.ui.showInlineDiagnostics": {
           "type": "boolean",
@@ -452,7 +460,7 @@
     "watch": "node esbuild.mjs --watch",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "node test/build.mjs && node --test dist/panel.test.cjs",
-    "package": "npm run typecheck && npm run build && npx --yes @vscode/vsce package --no-dependencies && code --install-extension drift-0.1.0.vsix --force"
+    "package": "npm run typecheck && npm run build && npx --yes @vscode/vsce package --no-dependencies --out drift.vsix && code --install-extension ./drift.vsix --force"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",

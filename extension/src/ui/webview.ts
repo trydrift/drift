@@ -1,5 +1,5 @@
 import type { Attachment, SessionEffort, SessionMode, SessionPermission, ThreadItem } from '../session.js';
-import { describeEffort, describeMode, describePermission, describePermissionShort } from '../labels.js';
+import { describeEffort, describeMode, describePermission } from '../labels.js';
 import type { UpgradeCandidate } from '../upgrades.js';
 import { describeSeverity, severityOf, type UpgradeSeverity } from '../severity.js';
 import type { ReviewGroup, ReviewTotals } from '../review/store.js';
@@ -35,6 +35,38 @@ export interface SlashCommand {
   description: string;
 }
 
+/** One row in the composer menu. `id` comes straight back to the host. */
+export interface MenuItem {
+  id: string;
+  label: string;
+  detail?: string;
+  /** Right-aligned, for the value a setting currently holds. */
+  hint?: string;
+  checked?: boolean;
+  icon?: keyof typeof MENU_ICONS;
+  /** Extra words the search box should match, never displayed. */
+  keywords?: string;
+}
+
+export interface MenuSection {
+  /** Matches the anchor a control opens the menu at. */
+  id: string;
+  title: string;
+  items: MenuItem[];
+}
+
+/**
+ * Something changed since the scan on screen.
+ *
+ * A result list that silently describes a repository that no longer exists is
+ * worse than no list at all, so the panel says so and offers the one action that
+ * fixes it.
+ */
+export interface StaleHint {
+  reason: 'dependencies' | 'code';
+  label: string;
+}
+
 export interface ViewModel {
   nonce: string;
   repoLabel: string | null;
@@ -51,8 +83,13 @@ export interface ViewModel {
   candidates: Record<string, UpgradeCandidate>;
   review: { groups: readonly ReviewGroup[]; totals: ReviewTotals } | null;
   busy: boolean;
+  /** Whether the running operation may be interrupted. Scans may not. */
+  cancellable: boolean;
   awaitingAnswer: boolean;
   commands: readonly SlashCommand[];
+  /** Everything the composer menu offers, in the order it is shown. */
+  menu: readonly MenuSection[];
+  stale: StaleHint | null;
   /** Restored after a re-render so typing is never lost. */
   draft: string;
 }
@@ -61,6 +98,7 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
   { name: '/scan', description: 'Check every dependency for a newer version and see what would break' },
   { name: '/recent', description: 'Analyse the dependency change already in your git history' },
   { name: '/upgrade', args: '<package>', description: 'Upgrade one package and check the impact' },
+  { name: '/upgrade-all', description: 'Install every upgrade that does not affect your code' },
   { name: '/fix', args: '[package]', description: 'Let your AI agent fix the affected code' },
   { name: '/review', description: 'Show changes waiting to be kept or undone' },
   { name: '/agent', description: 'Choose which AI agent does the work' },
@@ -79,7 +117,15 @@ export function renderPanel(vm: ViewModel): string {
 </head>
 <body>
   <div class="thread" id="thread">
-    ${vm.thread.length === 0 ? renderWelcome(vm) : vm.thread.map((item) => renderItem(item, vm)).join('')}
+    ${vm.thread.map((item) => renderItem(item, vm)).join('')}
+    ${
+      // The introduction stays until the conversation starts, not until the
+      // first scan starts. A dependency check running on open is Drift talking
+      // to itself; clearing the one thing that explains what the panel is for,
+      // half a second after it appeared, leaves a developer watching a progress
+      // bar with no idea what it is for.
+      vm.thread.some((item) => item.kind === 'user') ? '' : renderWelcome(vm, vm.thread.length > 0)
+    }
   </div>
 
   ${renderComposer(vm)}
@@ -93,9 +139,9 @@ export function renderPanel(vm: ViewModel): string {
 /* Welcome                                                             */
 /* ------------------------------------------------------------------ */
 
-function renderWelcome(vm: ViewModel): string {
-  return `<div class="welcome">
-    <div class="mark">${LOGO}</div>
+function renderWelcome(vm: ViewModel, compact = false): string {
+  return `<div class="welcome ${compact ? 'compact' : ''}">
+    ${compact ? '' : `<div class="mark">${LOGO}</div>`}
     <h2>Which upgrades actually break your code?</h2>
     <p>Drift reads changelogs, release notes and API surfaces, proves which changes touch <em>your</em> files, then lets the AI agent you already have fix them. No API keys.</p>
     <div class="suggestions">
@@ -115,7 +161,7 @@ function renderWelcome(vm: ViewModel): string {
     ${
       vm.agents.some((a) => a.available)
         ? `<p class="foot">Ready to use <b>${escapeHtml(vm.agentLabel)}</b>.</p>`
-        : `<p class="foot warn">No AI agent found yet. Drift can still analyse and prove impact — <a data-action="pickAgent">choose an agent</a> when you want fixes.</p>`
+        : `<p class="foot warn">No AI agent found yet. Drift can still analyse and prove impact — <a data-action="openMenu" data-anchor="model">choose an agent</a> when you want fixes.</p>`
     }
   </div>`;
 }
@@ -128,7 +174,17 @@ function renderItem(item: ThreadItem, vm: ViewModel): string {
   switch (item.kind) {
     case 'user':
       return `<div class="turn user">
-        <div class="who">${ICON_USER}<span>You</span></div>
+        <div class="who">
+          ${ICON_USER}<span>You</span>
+          ${
+            // Rewind is offered on the turn that caused the change, because that
+            // is where the developer looks when they want it undone: "put it
+            // back to before I asked for this".
+            item.checkpoint
+              ? `<button class="ctl rewind" data-action="rewind" data-id="${escapeAttr(item.id)}" title="Restore every file to how it was before this message, and drop the conversation from here down">${ICON_REWIND}<span>Rewind</span></button>`
+              : ''
+          }
+        </div>
         <div class="bubble">${renderMarkdown(item.text)}</div>
         ${
           item.attachments.length
@@ -186,7 +242,7 @@ function renderStep(item: Extract<ThreadItem, { kind: 'step' }>): string {
     ${item.total > 0 ? `<div class="bar"><span style="width:${pct}%"></span></div>` : ''}
     ${
       item.log.length > 1
-        ? `<details class="log"><summary>${item.log.length} step${item.log.length === 1 ? '' : 's'}</summary><ol>${item.log
+        ? `<details class="log" data-key="log:${escapeAttr(item.id)}"><summary>${item.log.length} step${item.log.length === 1 ? '' : 's'}</summary><ol>${item.log
             .slice(-60)
             .map((line) => `<li>${escapeHtml(line)}</li>`)
             .join('')}</ol></details>`
@@ -255,7 +311,10 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
           ${safe.length ? tally(safe.length, 'safe', 'clean') : ''}
           ${failed.length ? tally(failed.length, 'unknown', 'error') : ''}
         </span>
+        <button class="ctl icon" data-action="rescan" title="Check every dependency again" aria-label="Rescan">${ICON_REFRESH}</button>
       </div>
+
+      ${vm.stale ? renderStale(vm.stale) : ''}
 
       ${
         affected.length
@@ -273,16 +332,25 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
 
       ${
         safe.length
-          ? `<details class="pkg-group">
+          ? `<details class="pkg-group" data-key="grp:safe">
               <summary><h4 class="pkg-subhead clean">${ICON_CHEVRON_RIGHT}${ICON_CHECK}<span>Safe to upgrade</span><small>${safe.length}</small></h4></summary>
               <div class="pkg-list">${safe.map((c) => renderCandidate(c, false)).join('')}</div>
+              ${
+                // The counterpart to "Fix all". These are the upgrades with
+                // nothing to decide — no code here touches what changed — so the
+                // whole group is one action, taken within the ranges already in
+                // package.json.
+                safe.length > 1
+                  ? `<div class="pkg-group-foot"><button class="wide" data-action="upgradeAll" title="Install every one of these, each within the range already in package.json">Upgrade all ${safe.length}</button></div>`
+                  : ''
+              }
             </details>`
           : ''
       }
 
       ${
         failed.length
-          ? `<details class="pkg-group">
+          ? `<details class="pkg-group" data-key="grp:failed">
               <summary><h4 class="pkg-subhead error">${ICON_CHEVRON_RIGHT}${ICON_ERROR}<span>Could not check</span><small>${failed.length}</small></h4></summary>
               <div class="pkg-list">${failed.map((c) => renderCandidate(c, false)).join('')}</div>
             </details>`
@@ -296,12 +364,20 @@ function tally(count: number, label: string, tone: string): string {
   return `<span class="tally ${tone}"><b>${count}</b> ${escapeHtml(label)}</span>`;
 }
 
+function renderStale(stale: StaleHint): string {
+  return `<div class="stale">
+    ${ICON_INFO}
+    <span>${escapeHtml(stale.label)}</span>
+    <button data-action="rescan">Rescan</button>
+  </div>`;
+}
+
 function renderCandidate(candidate: UpgradeCandidate, open: boolean): string {
   const severity = severityOf(candidate);
   const busy = candidate.status === 'checking' || candidate.status === 'upgrading';
   const target = versionLabel(candidate, candidate.selected);
 
-  return `<details class="pkg ${severity}" ${open ? 'open' : ''}>
+  return `<details class="pkg ${severity}" data-key="pkg:${escapeAttr(candidate.name)}" ${open ? 'open' : ''}>
     <summary>
       <span class="dot ${severity}"></span>
       <span class="pkg-name">
@@ -378,7 +454,7 @@ function renderCandidateDetail(candidate: UpgradeCandidate, plan: RemediationPla
 
     ${
       unmatched.length
-        ? `<details class="sub">
+        ? `<details class="sub" data-key="unmatched:${escapeAttr(candidate.name)}">
             <summary>${unmatched.length} upstream change${unmatched.length === 1 ? '' : 's'} that ${unmatched.length === 1 ? 'does' : 'do'} not touch your code</summary>
             <p class="hint">Drift found ${unmatched.length === 1 ? 'this' : 'these'} in the release notes, then searched this repository for the affected APIs and found nothing. Listed so you can check the reasoning, not because there is anything to do.</p>
             ${unmatched.map((change) => renderBreak(change, plan, false)).join('')}
@@ -388,7 +464,7 @@ function renderCandidateDetail(candidate: UpgradeCandidate, plan: RemediationPla
 
     ${
       plan.evidence.length
-        ? `<details class="sub">
+        ? `<details class="sub" data-key="evidence:${escapeAttr(candidate.name)}">
             <summary>Evidence Drift read <small>${plan.evidence.length} source${plan.evidence.length === 1 ? '' : 's'}</small></summary>
             ${renderEvidence(plan.evidence)}
           </details>`
@@ -401,7 +477,7 @@ function renderBreak(change: BreakingChange, plan: RemediationPlan, expanded: bo
   const sites = plan.impactSites.filter((site) => site.breakingChangeId === change.id);
   const evidence = plan.evidence.filter((entry) => change.citations.includes(entry.id));
 
-  return `<details class="break" ${expanded ? 'open' : ''}>
+  return `<details class="break" data-key="brk:${escapeAttr(change.id)}" ${expanded ? 'open' : ''}>
     <summary>
       <span class="confidence ${change.confidence}">${escapeHtml(change.confidence)}</span>
       <span class="break-summary">${escapeHtml(change.summary)}</span>
@@ -430,7 +506,7 @@ function renderEvidence(evidence: readonly Evidence[]): string {
     ${evidence
       .slice(0, 6)
       .map(
-        (entry) => `<details>
+        (entry) => `<details data-key="ev:${escapeAttr(entry.id)}">
           <summary>
             <span class="source">${escapeHtml(entry.source)}</span>
             ${
@@ -530,14 +606,18 @@ function renderChangeGroup(group: ReviewGroup): string {
 /**
  * The composer.
  *
- * Every control in the bar is a button that opens a *VS Code* quick pick, not an
- * HTML `<select>`. The difference is not cosmetic: a native select in a webview
- * renders with the operating system's widget — Aqua on macOS, a Win32 combo on
- * Windows — which is visibly foreign inside the editor, ignores the colour
- * theme, and cannot show the description text that makes these choices
- * intelligible. Handing the choice back to the extension host gets the editor's
- * own list, with its icons, filter box, keyboard model and theme, for free, and
- * is exactly what Copilot Chat does with its model picker.
+ * One menu, opened from the composer and drawn in the composer. Bouncing each
+ * choice out to `showQuickPick` was correct about one thing — an OS-drawn
+ * `<select>` in a webview is unusable — and wrong about everything else: the
+ * quick pick opens at the top of the window, a long way from the button that
+ * summoned it, it takes over the whole editor for a two-item choice, and five
+ * separate pickers make five separate things to learn. A themed menu anchored to
+ * its own trigger is what every other chat extension does, and it is the shape
+ * that reads as part of the composer rather than as an interruption of it.
+ *
+ * The one choice still handed to the host is picking a file, because that is a
+ * search across thousands of paths and VS Code's fuzzy path picker is genuinely
+ * the better tool for it.
  */
 function renderComposer(vm: ViewModel): string {
   const placeholder = vm.awaitingAnswer
@@ -574,34 +654,76 @@ function renderComposer(vm: ViewModel): string {
 
     <textarea id="input" rows="1" placeholder="${escapeAttr(placeholder)}">${escapeHtml(vm.draft)}</textarea>
 
+    ${renderMenu(vm)}
+
     <div class="composer-bar">
-      <button class="ctl icon" data-action="attach" title="Add context — a file, a folder, your selection, or a file from your computer" aria-label="Add context">${ICON_ATTACH}</button>
+      <button class="ctl icon" data-action="openMenu" data-anchor="context" title="Add context, or change the agent and how it behaves" aria-label="Open menu">${ICON_PLUS}</button>
 
-      <button class="ctl" data-action="pickMode" title="Ask explains and proposes. Agent edits your files.">
-        ${vm.mode === 'agent' ? ICON_AGENT : ICON_ASK}<span>${escapeHtml(describeMode(vm.mode))}</span>${ICON_CHEVRON}
-      </button>
-
-      <button class="ctl" data-action="pickAgent" title="Which AI agent does the work">
-        <span>${escapeHtml(vm.agentId === 'auto' ? `${vm.agentLabel}` : vm.agentLabel)}</span>${ICON_CHEVRON}
-      </button>
-
-      <button class="ctl" data-action="pickEffort" title="How widely Drift looks: Quick checks runtime majors only, Thorough includes dev dependencies and patch releases">
-        <span>${escapeHtml(describeEffort(vm.effort))}</span>${ICON_CHEVRON}
-      </button>
-
-      <button class="ctl" data-action="pickPermission" title="${escapeAttr(`What the agent may do without asking — ${describePermission(vm.permission)}`)}">
-        ${ICON_SHIELD}<span>${escapeHtml(describePermissionShort(vm.permission))}</span>${ICON_CHEVRON}
+      <button class="ctl summary" data-action="openMenu" data-anchor="model" title="${escapeAttr(
+        `${vm.agentLabel} · ${describeMode(vm.mode)} · ${describeEffort(vm.effort)} effort · ${describePermission(vm.permission)}`,
+      )}">
+        ${vm.mode === 'agent' ? ICON_AGENT : ICON_ASK}<span>${escapeHtml(vm.agentLabel)}</span>${ICON_CHEVRON}
       </button>
 
       <span class="spacer"></span>
 
       ${
         vm.busy
-          ? `<button class="stop" data-action="stop" title="Stop">${ICON_STOP}</button>`
+          ? vm.cancellable
+            ? `<button class="stop" data-action="stop" title="Stop">${ICON_STOP}</button>`
+            : // A dependency check is the one thing that must run to completion:
+              // a half-scanned repository reports packages as safe purely because
+              // nothing looked at them yet, which is the one wrong answer Drift
+              // must never give. So there is no stop button — just an honest
+              // statement that it is working.
+              `<span class="working" title="Drift is checking your dependencies. This one runs to the end — a half-finished check would report packages as safe just because nothing looked at them." aria-label="Working"><span class="spinner"></span></span>`
           : `<button class="send" data-action="submit" title="Send (Enter)" aria-label="Send">${ICON_SEND}</button>`
       }
     </div>
   </div>`;
+}
+
+/**
+ * The composer menu.
+ *
+ * Always in the document, hidden until asked for, so opening it is a class
+ * change rather than a round trip to the extension host — and so a re-render
+ * mid-scan can put it back exactly as it was. Sections are titled and the filter
+ * matches across all of them at once, which is what makes one menu tolerable
+ * where five buttons were not: you type "thorough" and get the effort row
+ * without knowing which control it used to live under.
+ */
+function renderMenu(vm: ViewModel): string {
+  return `<div class="menu" id="menu" hidden>
+    <div class="menu-search">
+      ${ICON_SEARCH_SMALL}
+      <input id="menu-filter" type="text" placeholder="Search actions…" autocomplete="off" spellcheck="false" aria-label="Search actions">
+    </div>
+    <div class="menu-list" id="menu-list">
+      ${vm.menu
+        .map(
+          (section) => `<div class="menu-section" data-section="${escapeAttr(section.id)}">
+            <div class="menu-title">${escapeHtml(section.title)}</div>
+            ${section.items.map(renderMenuItem).join('')}
+          </div>`,
+        )
+        .join('')}
+      <div class="menu-empty" hidden>Nothing matches.</div>
+    </div>
+  </div>`;
+}
+
+function renderMenuItem(item: MenuItem): string {
+  const search = `${item.label} ${item.detail ?? ''} ${item.hint ?? ''} ${item.keywords ?? ''}`.toLowerCase();
+  return `<button class="menu-item ${item.checked ? 'checked' : ''}" data-action="menu" data-id="${escapeAttr(item.id)}" data-search="${escapeAttr(search)}">
+    <span class="menu-check">${item.checked ? ICON_CHECK : ''}</span>
+    <span class="menu-icon">${item.icon ? MENU_ICONS[item.icon] : ''}</span>
+    <span class="menu-text">
+      <b>${escapeHtml(item.label)}</b>
+      ${item.detail ? `<small>${escapeHtml(item.detail)}</small>` : ''}
+    </span>
+    ${item.hint ? `<span class="menu-hint">${escapeHtml(item.hint)}</span>` : ''}
+  </button>`;
 }
 
 function attachmentIcon(attachment: Attachment): string {
@@ -767,6 +889,29 @@ const ICON_AGENT = svg('<path d="M8 1.2 9 3.3h2.3l-1.2 2 1.2 2H9L8 9.4 7 7.3H4.7
 const ICON_ASK = svg('<path d="M8 1.5a6.5 6.5 0 1 1-3.3 12.1L1.5 14.5l.9-3.2A6.5 6.5 0 0 1 8 1.5z"/>', 12);
 const ICON_SHIELD = svg('<path d="M8 1 3 3v4.2c0 3 2.1 5.8 5 6.8 2.9-1 5-3.8 5-6.8V3L8 1z"/>', 12);
 const ICON_COMMIT = svg('<path d="M8 5a3 3 0 0 1 2.9 2.25H15v1.5h-4.1A3 3 0 0 1 5.1 8.75H1v-1.5h4.1A3 3 0 0 1 8 5z"/>');
+const ICON_PLUS = svg('<path d="M7.25 3h1.5v4.25H13v1.5H8.75V13h-1.5V8.75H3v-1.5h4.25V3z"/>', 15);
+const ICON_REWIND = svg('<path d="M8 2.5a5.5 5.5 0 1 1-5.29 7h1.58A4 4 0 1 0 8 4a3.97 3.97 0 0 0-2.83 1.17L7 7H2.5V2.5l1.6 1.6A5.48 5.48 0 0 1 8 2.5z"/>', 12);
+const ICON_REFRESH = svg('<path d="M8 3V1L5 3.5 8 6V4a3.5 3.5 0 1 1-3.4 4.35l-1.46.36A5 5 0 1 0 8 3z"/>', 13);
+const ICON_SEARCH_SMALL = svg('<path d="M10.5 9.5 14 13l-1 1-3.5-3.5A5 5 0 1 1 10.5 9.5zM6.5 3a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/>', 12);
+const ICON_UPLOAD = svg('<path d="M8 1.5 12 5.5h-2.75v4h-2.5v-4H4L8 1.5zM2.5 11h11v3.5h-11V11z"/>', 13);
+const ICON_GEAR = svg('<path d="M8 5.5A2.5 2.5 0 1 0 8 10.5 2.5 2.5 0 0 0 8 5.5zm6 3.1V7.4l-1.6-.3a4.6 4.6 0 0 0-.5-1.2l.9-1.3-.9-.9-1.3.9a4.6 4.6 0 0 0-1.2-.5L9.1 2H6.9l-.3 1.6a4.6 4.6 0 0 0-1.2.5l-1.3-.9-.9.9.9 1.3a4.6 4.6 0 0 0-.5 1.2L2 7.4v2.2l1.6.3c.1.4.3.8.5 1.2l-.9 1.3.9.9 1.3-.9c.4.2.8.4 1.2.5l.3 1.6h2.2l.3-1.6c.4-.1.8-.3 1.2-.5l1.3.9.9-.9-.9-1.3c.2-.4.4-.8.5-1.2l1.6-.3z"/>', 13);
+const ICON_SPEED = svg('<path d="M8 2.5A6.5 6.5 0 0 0 2.2 12h11.6A6.5 6.5 0 0 0 8 2.5zm2.9 3.1L8.9 9a1.1 1.1 0 1 1-1-1l3-2.4z"/>', 13);
+
+/** Icons the menu may use, named rather than passed as markup. */
+const MENU_ICONS = {
+  file: ICON_FILE,
+  folder: ICON_FOLDER,
+  selection: ICON_SELECTION,
+  upload: ICON_UPLOAD,
+  package: ICON_PACKAGE,
+  agent: ICON_AGENT,
+  ask: ICON_ASK,
+  shield: ICON_SHIELD,
+  gear: ICON_GEAR,
+  speed: ICON_SPEED,
+  close: ICON_CLOSE,
+  search: ICON_SEARCH_SMALL,
+} as const;
 
 /* ------------------------------------------------------------------ */
 /* Styles                                                              */
@@ -896,8 +1041,26 @@ button.wide { width: 100%; }
 .markdown ul { margin: 4px 0 6px; padding-left: 18px; }
 .markdown h4 { margin: 8px 0 4px; }
 
+/* Rewind ---------------------------------------------------------- */
+/* Sits in the turn's own header, visible only when the pointer is in the
+   turn — always-on undo affordances on every message are visual noise, and
+   this one is destructive enough that it should take an intention to find. */
+.ctl.rewind { margin-left: auto; height: 18px; font-size: 10px; opacity: 0; transition: opacity .1s; }
+.turn.user:hover .ctl.rewind, .ctl.rewind:focus-visible { opacity: 1; }
+
 /* Welcome --------------------------------------------------------- */
 .welcome { text-align: center; padding: 22px 6px 6px; }
+/* After a scan the introduction is no longer the first thing on screen, so
+   it stops behaving like a splash and becomes a footer: same words, less
+   room, still there until the conversation actually starts. */
+.welcome.compact {
+  text-align: left;
+  padding: 0;
+  border-top: 1px solid var(--vscode-panel-border);
+  padding-top: 12px;
+}
+.welcome.compact h2 { font-size: 13px; }
+.welcome.compact > p { font-size: 11px; }
 .welcome .mark { color: var(--vscode-textLink-foreground); margin-bottom: 8px; }
 .welcome > p { color: var(--vscode-descriptionForeground); margin-bottom: 14px; }
 .suggestions { display: flex; flex-direction: column; gap: 6px; }
@@ -939,8 +1102,15 @@ button.wide { width: 100%; }
   background: var(--vscode-editorWidget-background);
   padding: 9px 10px;
 }
-.step-head { display: flex; align-items: center; gap: 7px; }
-.step-head .count { margin-left: auto; font-size: 11px; color: var(--vscode-descriptionForeground); font-variant-numeric: tabular-nums; }
+/* Nothing in a step may push past the card's border. The title wraps, the
+   live phase line ellipsises, and both are constrained by min-width: 0 —
+   without it a flex child refuses to shrink below its content and simply
+   overflows, which is exactly how "Checking your dependencies" ended up
+   sitting on top of the frame. */
+.step-head { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.step-head svg.i, .step-head .spinner { align-self: center; }
+.step-head b { min-width: 0; flex: 1 1 auto; overflow-wrap: anywhere; }
+.step-head .count { flex: 0 0 auto; font-size: 11px; color: var(--vscode-descriptionForeground); font-variant-numeric: tabular-nums; }
 .step.done .step-head svg { color: var(--vscode-testing-iconPassed); }
 .step.failed .step-head svg { color: var(--vscode-editorError-foreground); }
 .step-now {
@@ -950,9 +1120,10 @@ button.wide { width: 100%; }
   font-size: 11px;
   min-width: 0;
 }
-.step-now .phase { color: var(--vscode-foreground); white-space: nowrap; }
+.step-now .phase { color: var(--vscode-foreground); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .step-now .detail {
   color: var(--vscode-descriptionForeground);
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1031,6 +1202,21 @@ button.wide { width: 100%; }
 .tally.affected b { color: var(--vscode-editorWarning-foreground); }
 .tally.clean b { color: var(--vscode-testing-iconPassed); }
 .tally.error b { color: var(--vscode-editorError-foreground); }
+.card-head .ctl.icon { margin-left: 4px; flex: 0 0 auto; }
+
+/* Something changed under the results ----------------------------- */
+.stale {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  font-size: 11px;
+  border-bottom: 1px solid var(--vscode-panel-border);
+  background: var(--vscode-inputValidation-infoBackground, var(--vscode-editorWidget-background));
+  color: var(--vscode-foreground);
+}
+.stale > span { flex: 1; min-width: 0; }
+.stale button { padding: 1px 8px; font-size: 11px; flex: 0 0 auto; }
 .pkg-group + .pkg-group { border-top: 1px solid var(--vscode-panel-border); }
 .pkg-group > summary { cursor: pointer; list-style: none; }
 .pkg-group > summary::-webkit-details-marker { display: none; }
@@ -1177,6 +1363,7 @@ ul.sites span { font-size: 11px; color: var(--vscode-descriptionForeground); }
 
 /* Composer -------------------------------------------------------- */
 .composer {
+  position: relative;
   flex: 0 0 auto;
   margin: 6px 10px 10px;
   border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
@@ -1270,6 +1457,107 @@ button.command[hidden] { display: none; }
 button.command:hover, button.command.active { background: var(--vscode-list-activeSelectionBackground); color: var(--vscode-list-activeSelectionForeground); }
 button.command .args { color: var(--vscode-descriptionForeground); font-weight: 400; }
 button.command small { font-size: 10px; }
+
+/* Working, uninterruptibly ---------------------------------------- */
+.working {
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+}
+
+/* The composer menu ------------------------------------------------ */
+/* Drawn in the panel, anchored to whichever control opened it, and styled
+   from the editor's own menu tokens so it is the widget VS Code would have
+   drawn. It opens upward because the composer is at the bottom of a narrow
+   sidebar; there is never room below. */
+.menu {
+  position: absolute;
+  bottom: calc(100% - 4px);
+  left: 4px;
+  z-index: 20;
+  width: max-content;
+  min-width: 240px;
+  max-width: min(360px, calc(100vw - 28px));
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--vscode-menu-border, var(--vscode-editorWidget-border, var(--vscode-panel-border)));
+  border-radius: 6px;
+  background: var(--vscode-menu-background, var(--vscode-editorWidget-background));
+  box-shadow: 0 4px 14px var(--vscode-widget-shadow, rgba(0, 0, 0, .36));
+  overflow: hidden;
+}
+.menu[hidden] { display: none; }
+.menu-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--vscode-menu-separatorBackground, var(--vscode-panel-border));
+}
+.menu-search svg.i { color: var(--vscode-descriptionForeground); }
+#menu-filter {
+  font: inherit;
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  padding: 0;
+  color: var(--vscode-input-foreground);
+  background: transparent;
+}
+.menu-list { overflow-y: auto; max-height: min(330px, 55vh); padding: 4px; }
+.menu-section[hidden] { display: none; }
+.menu-title {
+  padding: 5px 6px 3px;
+  font-size: 10px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--vscode-descriptionForeground);
+}
+.menu-section + .menu-section .menu-title {
+  margin-top: 3px;
+  border-top: 1px solid var(--vscode-menu-separatorBackground, var(--vscode-panel-border));
+  padding-top: 7px;
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  border: 0;
+  border-radius: 4px;
+  padding: 4px 6px;
+  background: none;
+  color: var(--vscode-menu-foreground, var(--vscode-foreground));
+  text-align: left;
+}
+.menu-item[hidden] { display: none; }
+.menu-item:hover, .menu-item.active {
+  background: var(--vscode-menu-selectionBackground, var(--vscode-list-activeSelectionBackground));
+  color: var(--vscode-menu-selectionForeground, var(--vscode-list-activeSelectionForeground));
+}
+.menu-check { width: 13px; flex: 0 0 auto; display: inline-grid; place-items: center; }
+.menu-check svg.i { color: var(--vscode-menu-selectionForeground, var(--vscode-foreground)); }
+.menu-icon { display: inline-grid; place-items: center; flex: 0 0 auto; opacity: .85; }
+.menu-icon:empty { display: none; }
+.menu-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.menu-text b { font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-text small { font-size: 10px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-item:hover .menu-text small, .menu-item.active .menu-text small { color: inherit; opacity: .8; }
+.menu-hint {
+  flex: 0 0 auto;
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.menu-item:hover .menu-hint, .menu-item.active .menu-hint { color: inherit; opacity: .8; }
+.menu-empty { padding: 8px 10px; font-size: 11px; color: var(--vscode-descriptionForeground); }
+.menu-empty[hidden] { display: none; }
+.ctl.summary { max-width: 45%; }
 `;
 
 /* ------------------------------------------------------------------ */
@@ -1281,8 +1569,31 @@ const vscode = acquireVsCodeApi();
 const input = document.getElementById('input');
 const commands = document.getElementById('commands');
 const thread = document.getElementById('thread');
+const menu = document.getElementById('menu');
+const menuFilter = document.getElementById('menu-filter');
 
 const state = vscode.getState() || {};
+
+function patchState(patch) {
+  vscode.setState({ ...(vscode.getState() || {}), ...patch });
+}
+
+/* Disclosure state survives re-rendering.
+   Every update replaces the document, so a disclosure the developer opened
+   would slam shut the moment the next package arrived — which is precisely
+   when they are reading it. Each one carries a stable key; what they chose
+   is remembered against that key and reapplied, and the markup's own \`open\`
+   attribute stays the default for anything never touched. */
+const disclosures = state.disclosures || {};
+for (const element of document.querySelectorAll('details[data-key]')) {
+  const key = element.dataset.key;
+  const remembered = disclosures[key];
+  if (remembered !== undefined) element.open = remembered;
+  element.addEventListener('toggle', () => {
+    const current = vscode.getState() || {};
+    patchState({ disclosures: { ...(current.disclosures || {}), [key]: element.open } });
+  });
+}
 
 /* Keep the scroll position across re-renders, but follow new content when the
    developer is already at the bottom — the same rule every chat UI uses. */
@@ -1358,6 +1669,116 @@ function complete(name) {
   input.focus();
 }
 
+/* The composer menu ------------------------------------------------ */
+
+function menuItems() {
+  return menu ? [...menu.querySelectorAll('.menu-item:not([hidden])')] : [];
+}
+
+function anchorMenu(anchor) {
+  if (!menu) return;
+  const trigger = document.querySelector('[data-action="openMenu"][data-anchor="' + anchor + '"]');
+  const composer = menu.parentElement;
+  if (!trigger || !composer) return;
+
+  /* Anchored to the control that opened it, then pulled back inside the
+     panel if that would hang it off the edge — a menu half off-screen in a
+     200px sidebar is worse than one that is merely near its trigger. */
+  const left = trigger.getBoundingClientRect().left - composer.getBoundingClientRect().left;
+  menu.style.left = '0px';
+  const width = menu.getBoundingClientRect().width;
+  const max = Math.max(0, composer.clientWidth - width - 4);
+  menu.style.left = Math.max(0, Math.min(left, max)) + 'px';
+}
+
+function openMenu(anchor) {
+  if (!menu) return;
+  menu.hidden = false;
+  anchorMenu(anchor);
+
+  /* Opening at a section scrolls to it rather than filtering to it: the
+     other section is one flick away, which is the whole point of merging
+     them into a single menu. */
+  const section = menu.querySelector('.menu-section[data-section="' + anchor + '"]');
+  if (section) section.scrollIntoView({ block: 'nearest' });
+
+  patchState({ menu: { open: true, anchor, query: menuFilter ? menuFilter.value : '' } });
+  if (menuFilter) {
+    menuFilter.focus();
+    menuFilter.select();
+  }
+  syncMenu();
+}
+
+function closeMenu(refocus) {
+  if (!menu || menu.hidden) return;
+  menu.hidden = true;
+  if (menuFilter) menuFilter.value = '';
+  patchState({ menu: { open: false, anchor: 'context', query: '' } });
+  if (refocus && input) input.focus();
+}
+
+function syncMenu() {
+  if (!menu) return;
+  const query = (menuFilter ? menuFilter.value : '').trim().toLowerCase();
+  const words = query.split(/\\s+/).filter(Boolean);
+
+  for (const item of menu.querySelectorAll('.menu-item')) {
+    const haystack = item.dataset.search || '';
+    item.hidden = !words.every((word) => haystack.includes(word));
+    item.classList.remove('active');
+  }
+  /* A section header with nothing under it is a lie about what is available. */
+  for (const section of menu.querySelectorAll('.menu-section')) {
+    section.hidden = section.querySelectorAll('.menu-item:not([hidden])').length === 0;
+  }
+
+  const items = menuItems();
+  const empty = menu.querySelector('.menu-empty');
+  if (empty) empty.hidden = items.length > 0;
+  if (query && items[0]) items[0].classList.add('active');
+
+  patchState({ menu: { open: !menu.hidden, anchor: (vscode.getState() || {}).menu?.anchor || 'context', query } });
+}
+
+function moveMenu(delta) {
+  const items = menuItems();
+  if (items.length === 0) return;
+  const current = items.findIndex((item) => item.classList.contains('active'));
+  const next = (current + delta + items.length) % items.length;
+  items.forEach((item) => item.classList.remove('active'));
+  items[next].classList.add('active');
+  items[next].scrollIntoView({ block: 'nearest' });
+}
+
+if (menu && menuFilter) {
+  menuFilter.addEventListener('input', syncMenu);
+  menuFilter.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown') { event.preventDefault(); moveMenu(1); return; }
+    if (event.key === 'ArrowUp') { event.preventDefault(); moveMenu(-1); return; }
+    if (event.key === 'Escape') { event.preventDefault(); closeMenu(true); return; }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      const active = menu.querySelector('.menu-item.active') || menuItems()[0];
+      if (active) active.click();
+    }
+  });
+
+  /* A re-render lands mid-scan every hundred milliseconds. Without this the
+     menu would blink out from under the pointer; with it, it is still open,
+     still filtered, still where it was. */
+  if (state.menu && state.menu.open) {
+    menu.hidden = false;
+    menuFilter.value = state.menu.query || '';
+    anchorMenu(state.menu.anchor || 'context');
+    syncMenu();
+    // The developer is typing in here, not in the composer, so the caret has
+    // to come back here too.
+    menuFilter.focus();
+    menuFilter.setSelectionRange(menuFilter.value.length, menuFilter.value.length);
+  }
+}
+
 if (input) {
   grow();
 
@@ -1408,12 +1829,31 @@ if (input) {
 
 document.addEventListener('click', (event) => {
   const target = event.target.closest('[data-action]');
+
+  // Anywhere else dismisses the menu, the way a menu is supposed to behave.
+  if (menu && !menu.hidden && !menu.contains(event.target) && (!target || target.dataset.action !== 'openMenu')) {
+    closeMenu(false);
+  }
+
   if (!target) return;
 
   const action = target.dataset.action;
 
   if (action === 'submit') { send(); return; }
   if (action === 'complete') { complete(target.dataset.command); return; }
+  if (action === 'openMenu') {
+    const anchor = target.dataset.anchor || 'context';
+    const wasOpen = menu && !menu.hidden;
+    const sameAnchor = (vscode.getState() || {}).menu?.anchor === anchor;
+    if (wasOpen && sameAnchor) closeMenu(true);
+    else openMenu(anchor);
+    return;
+  }
+  if (action === 'menu') {
+    closeMenu(true);
+    vscode.postMessage({ type: 'menu', id: target.dataset.id });
+    return;
+  }
   if (action === 'run') {
     vscode.postMessage({ type: 'submit', text: target.dataset.command });
     return;
@@ -1435,6 +1875,7 @@ document.addEventListener('click', (event) => {
 
 window.addEventListener('message', (event) => {
   const data = event.data;
+  if (data?.type === 'openMenu') { openMenu(data.anchor || 'context'); return; }
   if (!input) return;
   if (data?.type === 'insert') {
     const start = input.selectionStart ?? input.value.length;

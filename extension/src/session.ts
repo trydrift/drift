@@ -39,7 +39,18 @@ export interface QuestionOption {
 }
 
 export type ThreadItem =
-  | { id: string; kind: 'user'; text: string; attachments: Attachment[] }
+  | {
+      id: string;
+      kind: 'user';
+      text: string;
+      attachments: Attachment[];
+      /**
+       * The snapshot taken before this message was acted on, if the workspace
+       * is a git repository. Its presence is what puts a rewind control on the
+       * turn.
+       */
+      checkpoint?: string;
+    }
   | { id: string; kind: 'assistant'; text: string }
   | { id: string; kind: 'notice'; tone: 'info' | 'warn' | 'error' | 'success'; text: string }
   | {
@@ -125,8 +136,23 @@ export class DriftSession {
   /* Items                                                             */
   /* ---------------------------------------------------------------- */
 
-  user(text: string): void {
-    this.push({ id: this.nextId(), kind: 'user', text, attachments: [...this.attachments] });
+  user(text: string, checkpoint?: string): void {
+    this.push({ id: this.nextId(), kind: 'user', text, attachments: [...this.attachments], checkpoint });
+  }
+
+  /**
+   * Drop an item and everything after it.
+   *
+   * The conversation half of a rewind. An outstanding question is abandoned
+   * along with it — the work that asked it no longer exists, so waiting for an
+   * answer would hang the panel on a promise nobody can keep.
+   */
+  truncateFrom(id: string): void {
+    const at = this.items.findIndex((item) => item.id === id);
+    if (at === -1) return;
+    this.rejectPending();
+    this.items = this.items.slice(0, at);
+    this.emitter.fire();
   }
 
   say(text: string): void {

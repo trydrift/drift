@@ -54,8 +54,25 @@ function model(over: Partial<ViewModel> = {}): ViewModel {
     candidates: {},
     review: null,
     busy: false,
+    cancellable: true,
     awaitingAnswer: false,
     commands: SLASH_COMMANDS,
+    menu: [
+      {
+        id: 'context',
+        title: 'Context',
+        items: [{ id: 'context:file', label: 'Add a file…', detail: 'Search this project by path', icon: 'file' }],
+      },
+      {
+        id: 'model',
+        title: 'Model',
+        items: [
+          { id: 'agent:auto', label: 'Auto', hint: 'agent', checked: true },
+          { id: 'effort:thorough', label: 'Thorough', hint: 'effort' },
+        ],
+      },
+    ],
+    stale: null,
     draft: '',
     ...over,
   };
@@ -65,22 +82,33 @@ test('an empty session renders the welcome state and a composer', () => {
   const html = renderPanel(model());
 
   assert.match(html, /<!DOCTYPE html>/);
-  assert.match(html, /class="welcome"/);
+  assert.match(html, /class="welcome /);
   assert.match(html, /class="composer/);
   assert.match(html, /data-command="\/scan"/);
-  // The composer, not a header toolbar, owns the per-turn settings.
-  assert.match(html, /data-action="pickAgent"/);
-  assert.match(html, /data-action="pickMode"/);
-  assert.match(html, /data-action="pickEffort"/);
-  assert.match(html, /data-action="pickPermission"/);
-  assert.match(html, /data-action="attach"/);
+  // One menu, opened from the composer, holding every per-turn setting.
+  assert.match(html, /data-action="openMenu" data-anchor="context"/);
+  assert.match(html, /data-action="openMenu" data-anchor="model"/);
+  assert.match(html, /id="menu-filter"/);
+});
+
+test('the composer menu is one list, searchable, in two named sections', () => {
+  const html = renderPanel(model());
+
+  assert.match(html, /data-section="context"/);
+  assert.match(html, /data-section="model"/);
+  // Every row carries the words it can be found by, so one filter box reaches
+  // settings that used to live behind five separate buttons.
+  assert.match(html, /data-action="menu" data-id="effort:thorough"/);
+  assert.match(html, /data-search="[^"]*effort[^"]*"/);
+  // The menu ships hidden and is opened in the webview, not by the host.
+  assert.match(html, /<div class="menu" id="menu" hidden>/);
 });
 
 test('no control in the panel is an OS-drawn form widget', () => {
   // A native dropdown inside a webview is painted by the operating system: it
   // ignores the colour theme, mis-centres its own label, and cannot show the
-  // sentence that explains each option. Every picker here is a button that hands
-  // the choice back to the extension host, which opens VS Code's quick pick.
+  // sentence that explains each option. The menu is themed markup; the only
+  // native elements are the two text-entry fields, which VS Code themes itself.
   const c = candidate({ impactCount: 2, impactFiles: 1 });
   const html = renderPanel(
     model({
@@ -91,7 +119,9 @@ test('no control in the panel is an OS-drawn form widget', () => {
 
   assert.ok(!/<select\b/.test(html), 'no native dropdowns');
   assert.ok(!/<option\b/.test(html), 'no native dropdown options');
-  assert.ok(!/<input\b/.test(html), 'no native inputs beyond the composer textarea');
+  const inputs = [...html.matchAll(/<input\b[^>]*>/g)].map((match) => match[0]);
+  assert.equal(inputs.length, 1, 'the menu filter is the only input');
+  assert.match(inputs[0]!, /type="text"/);
   // The target-version control is the one inside a result row, and it is a
   // button too — consistency here is the whole point.
   assert.match(html, /data-action="pickVersion" data-id="/);
@@ -164,9 +194,122 @@ test('a running step shows the specific phase, detail and progress', () => {
   assert.match(html, /react 18\.3\.1 → 19\.2\.0/);
   assert.match(html, /12 \/ 48/);
   assert.match(html, /width:25%/);
-  // Busy swaps send for stop, so a long scan is always interruptible.
+  // Agent work is interruptible, and says so with a stop button.
   assert.match(html, /data-action="stop"/);
   assert.ok(!/data-action="submit"/.test(html));
+});
+
+test('a dependency check offers no way to stop it', () => {
+  // A scan stopped half way has not checked the packages it never reached, but
+  // the tallies, the safe list and the headline would all read as though it had.
+  // The one wrong answer Drift must never give is "safe" about something nothing
+  // looked at, so this run has no stop button at all.
+  const html = renderPanel(
+    model({
+      busy: true,
+      cancellable: false,
+      thread: [
+        {
+          id: 'i1',
+          kind: 'step',
+          title: 'Checking your dependencies',
+          phase: 'Reading release notes',
+          detail: 'react',
+          done: 3,
+          total: 40,
+          state: 'running',
+          log: ['a', 'b'],
+        },
+      ],
+    }),
+  );
+
+  assert.ok(!/data-action="stop"/.test(html), 'a scan cannot be interrupted');
+  assert.ok(!/data-action="submit"/.test(html));
+  assert.match(html, /class="working"/);
+});
+
+test('the introduction survives the opening scan and goes when talking starts', () => {
+  const scanning = renderPanel(
+    model({
+      busy: true,
+      cancellable: false,
+      thread: [
+        { id: 's1', kind: 'step', title: 'Checking your dependencies', phase: 'Reading', detail: '', done: 0, total: 9, state: 'running', log: [] },
+      ],
+    }),
+  );
+
+  // Still explaining what the panel is for, now underneath the work it started.
+  assert.match(scanning, /class="welcome compact"/);
+  assert.ok(scanning.indexOf('class="step') < scanning.indexOf('class="welcome'), 'the scan comes first');
+
+  const talking = renderPanel(
+    model({ thread: [{ id: 'u1', kind: 'user', text: 'hello', attachments: [] }] }),
+  );
+  assert.ok(!/class="welcome/.test(talking), 'the conversation replaces the introduction');
+});
+
+test('a turn with a checkpoint offers a rewind', () => {
+  const withCheckpoint = renderPanel(
+    model({ thread: [{ id: 'u1', kind: 'user', text: '/fix', attachments: [], checkpoint: 'c1' }] }),
+  );
+  assert.match(withCheckpoint, /data-action="rewind" data-id="u1"/);
+
+  // No snapshot, no button: a folder that is not a git repository cannot be
+  // rewound, and offering the control anyway would be a promise Drift cannot keep.
+  const without = renderPanel(model({ thread: [{ id: 'u1', kind: 'user', text: '/fix', attachments: [] }] }));
+  assert.ok(!/data-action="rewind"/.test(without));
+});
+
+test('safe upgrades can be taken in one action, unknown ones cannot', () => {
+  const clean = candidate({ id: 'a@1->2', name: 'a', breakingCount: 0, summary: 'no breaking changes' });
+  const upstream = candidate({ id: 'b@1->2', name: 'b' });
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'p1', kind: 'packages', headline: 'Two upgrades.', ids: [clean.id, upstream.id] }],
+      candidates: { [clean.id]: clean, [upstream.id]: upstream },
+    }),
+  );
+
+  assert.match(html, /data-action="upgradeAll"/);
+  assert.match(html, /Upgrade all 2/);
+});
+
+test('a scan whose results have gone stale says so and offers a rescan', () => {
+  const c = candidate();
+  const html = renderPanel(
+    model({
+      stale: { reason: 'dependencies', label: 'package.json changed since this scan.' },
+      thread: [{ id: 'p1', kind: 'packages', headline: 'One upgrade.', ids: [c.id] }],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  assert.match(html, /package.json changed since this scan/);
+  assert.match(html, /data-action="rescan"/);
+});
+
+test('every disclosure carries a key, so re-rendering cannot collapse it', () => {
+  // The panel re-renders many times a second during a scan. Without a stable
+  // key on each <details>, everything the developer opened slams shut each time
+  // a package arrives — exactly when they are reading it.
+  const c = candidate({ impactCount: 2, impactFiles: 1 });
+  const html = renderPanel(
+    model({
+      thread: [
+        { id: 's1', kind: 'step', title: 'Checking', phase: 'x', detail: '', done: 1, total: 2, state: 'running', log: ['a', 'b'] },
+        { id: 'p1', kind: 'packages', headline: 'One upgrade.', ids: [c.id] },
+      ],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  for (const tag of html.matchAll(/<details\b[^>]*>/g)) {
+    assert.match(tag[0], /data-key="/, `a <details> has no key: ${tag[0]}`);
+  }
+  assert.match(html, /data-key="log:s1"/);
+  assert.match(html, /data-key="pkg:lodash"/);
 });
 
 test('an open question renders its options and no answer', () => {
