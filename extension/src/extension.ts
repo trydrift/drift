@@ -2,6 +2,9 @@ import * as vscode from 'vscode';
 import { runAnalysis } from './analyze.js';
 import { runFix } from './fix.js';
 import { DriftState } from './state.js';
+import { DriftSession } from './session.js';
+import { DriftReview } from './review/store.js';
+import { DriftReviewUi } from './review/ui.js';
 import { DriftHomeView } from './ui/home.js';
 import { DriftCodeActionProvider, DriftDiagnostics } from './ui/diagnostics.js';
 import { DriftReportPanel } from './ui/report.js';
@@ -27,13 +30,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(output);
 
   const state = new DriftState();
-  context.subscriptions.push(state);
+  const session = new DriftSession();
+  const review = new DriftReview();
+  context.subscriptions.push(state, session, review);
 
   const diagnostics = new DriftDiagnostics(state);
   const statusBar = new DriftStatusBar(state);
-  const home = new DriftHomeView(context.extensionUri, state);
+  const reviewUi = new DriftReviewUi(review);
+  const home = new DriftHomeView(context.extensionUri, state, session, review, output);
 
-  context.subscriptions.push(diagnostics, statusBar, home);
+  context.subscriptions.push(diagnostics, statusBar, reviewUi, home);
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider('drift.changes', home, {
@@ -49,12 +55,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     ),
   );
 
-  registerCommands(context, state);
+  registerCommands(context, state, session, review, reviewUi, home);
 
   // Sign-in state changes what the agent picker can offer.
   context.subscriptions.push(onDidChangeGitHubAuth(() => invalidateAgentCache()));
 
-  await initialise(state);
+  await initialise(state, home);
 }
 
 export function deactivate(): void {
@@ -65,11 +71,16 @@ export function deactivate(): void {
  * First run.
  *
  * Analyses automatically when the setting allows, because the most valuable
- * moment for this tool is the one where you did not know to ask. It stays
- * silent when there is nothing to report — an unprompted analysis that finds
- * nothing should be invisible.
+ * moment for this tool is the one where you did not know to ask.
+ *
+ * The bar for interrupting is deliberately high: a notification appears only
+ * when a breaking change actually lands on code in *this* repository. Breaking
+ * changes that exist upstream but that nothing here calls are recorded in the
+ * panel and nowhere else. A warning about seven breaking changes that turn out
+ * to affect nothing is worse than saying nothing at all — it costs the developer
+ * their attention and teaches them to dismiss the next one.
  */
-async function initialise(state: DriftState): Promise<void> {
+async function initialise(state: DriftState, home: DriftHomeView): Promise<void> {
   const folder = vscode.workspace.workspaceFolders?.[0];
   if (!folder) {
     state.set({ kind: 'no-repo' });
@@ -91,22 +102,45 @@ async function initialise(state: DriftState): Promise<void> {
   }
 
   const result = await runAnalysis({ state });
+  const plan = result.plan;
+  if (!plan || plan.impactSites.length === 0) return;
 
-  if (result.plan && result.plan.breakingChanges.length > 0) {
-    const count = result.plan.breakingChanges.length;
-    const choice = await vscode.window.showWarningMessage(
-      `Drift found ${count} breaking change${count === 1 ? '' : 's'} from a dependency update.`,
-      'Show report',
-      'Fix them',
-    );
-    if (choice === 'Show report') DriftReportPanel.show(state);
-    if (choice === 'Fix them') await vscode.commands.executeCommand('drift.fixAll');
-  }
+  const files = new Set(plan.impactSites.map((site) => site.file)).size;
+  const choice = await vscode.window.showWarningMessage(
+    `Drift: a dependency update affects ${files} file${files === 1 ? '' : 's'} in this repository.`,
+    'Open Drift',
+    'Show report',
+  );
+
+  if (choice === 'Open Drift') await home.reveal();
+  if (choice === 'Show report') DriftReportPanel.show(state);
 }
 
-function registerCommands(context: vscode.ExtensionContext, state: DriftState): void {
+function registerCommands(
+  context: vscode.ExtensionContext,
+  state: DriftState,
+  session: DriftSession,
+  review: DriftReview,
+  reviewUi: DriftReviewUi,
+  home: DriftHomeView,
+): void {
   const register = (id: string, handler: (...args: never[]) => unknown) =>
     context.subscriptions.push(vscode.commands.registerCommand(id, handler));
+
+  /* Review — the same vocabulary as the CodeLenses in the editor. */
+  register('drift.keepHunk', ((path: string, hunkId: string) => review.keepHunk(path, hunkId)) as never);
+  register('drift.undoHunk', ((path: string, hunkId: string) => review.undoHunk(path, hunkId)) as never);
+  register('drift.keepFile', ((path: string) => review.keepFile(path)) as never);
+  register('drift.undoFile', ((path: string) => review.undoFile(path)) as never);
+  register('drift.keepAllChanges', () => review.keepAll());
+  register('drift.undoAllChanges', () => review.undoAll());
+  register('drift.openChangeDiff', ((path: string) => reviewUi.openDiff(path)) as never);
+  register('drift.nextChange', () => reviewUi.revealNext());
+  register('drift.reviewChanges', () => home.reveal());
+  register('drift.newSession', () => {
+    session.clear();
+    return home.reveal();
+  });
 
   register('drift.analyze', async () => {
     if (state.isBusy) {
@@ -133,8 +167,8 @@ function registerCommands(context: vscode.ExtensionContext, state: DriftState): 
     DriftReportPanel.show(state);
   });
 
-  register('drift.fixAll', () => startFix(state, undefined));
-  register('drift.fixCommit', ((order: number) => startFix(state, order)) as never);
+  register('drift.fixAll', () => startFix(state, review, home, undefined));
+  register('drift.fixCommit', ((order: number) => startFix(state, review, home, order)) as never);
 
   register('drift.showReport', () => DriftReportPanel.show(state));
 
@@ -164,7 +198,12 @@ function registerCommands(context: vscode.ExtensionContext, state: DriftState): 
   register('drift.pushBranch', () => pushBranch(state));
 }
 
-async function startFix(state: DriftState, onlyCommit: number | undefined): Promise<void> {
+async function startFix(
+  state: DriftState,
+  review: DriftReview,
+  home: DriftHomeView,
+  onlyCommit: number | undefined,
+): Promise<void> {
   const plan = state.plan;
   if (!plan) {
     void vscode.window.showInformationMessage('Drift: run an analysis first.');
@@ -182,13 +221,35 @@ async function startFix(state: DriftState, onlyCommit: number | undefined): Prom
       title: onlyCommit ? `Drift: fixing commit ${onlyCommit}` : 'Drift: fixing breaking changes',
       cancellable: true,
     },
-    (progress, token) => runFix({ state, plan, onlyCommit, progress, token }),
+    (progress, token) =>
+      runFix({
+        state,
+        plan,
+        onlyCommit,
+        progress,
+        token,
+        review,
+        permission: vscode.workspace
+          .getConfiguration('drift')
+          .get<'ask' | 'auto-edit' | 'full-auto'>('session.permission', 'auto-edit'),
+      }),
   );
 
   output.info(result.message);
   for (const warning of result.warnings) output.warn(warning);
 
   switch (result.status) {
+    case 'proposed': {
+      const choice = await vscode.window.showInformationMessage(
+        result.message,
+        'Review changes',
+        'Undo all',
+      );
+      if (choice === 'Review changes') await home.reveal();
+      if (choice === 'Undo all') await review.undoAll();
+      break;
+    }
+
     case 'committed': {
       const actions = ['Show report', 'View diff'];
       if (await hasRemote(state)) actions.push('Push branch');

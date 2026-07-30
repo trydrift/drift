@@ -92,6 +92,62 @@
         "title": "Show Log",
         "category": "Drift",
         "icon": "$(output)"
+      },
+      {
+        "command": "drift.keepHunk",
+        "title": "Keep This Change",
+        "category": "Drift"
+      },
+      {
+        "command": "drift.undoHunk",
+        "title": "Undo This Change",
+        "category": "Drift"
+      },
+      {
+        "command": "drift.keepFile",
+        "title": "Keep All Changes in This File",
+        "category": "Drift"
+      },
+      {
+        "command": "drift.undoFile",
+        "title": "Undo All Changes in This File",
+        "category": "Drift"
+      },
+      {
+        "command": "drift.keepAllChanges",
+        "title": "Keep All Changes",
+        "category": "Drift",
+        "icon": "$(check-all)"
+      },
+      {
+        "command": "drift.undoAllChanges",
+        "title": "Undo All Changes",
+        "category": "Drift",
+        "icon": "$(discard)"
+      },
+      {
+        "command": "drift.openChangeDiff",
+        "title": "Open Diff for a Changed File",
+        "category": "Drift",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "drift.nextChange",
+        "title": "Go to Next Change",
+        "category": "Drift",
+        "icon": "$(arrow-down)"
+      },
+      {
+        "command": "drift.reviewChanges",
+        "title": "Review Changes",
+        "category": "Drift",
+        "icon": "$(git-pull-request)"
+      },
+      {
+        "command": "drift.newSession",
+        "title": "New Session",
+        "category": "Drift",
+        "icon": "$(add)"
       }
     ],
     "viewsContainers": {
@@ -107,56 +163,54 @@
       "drift": [
         {
           "id": "drift.changes",
-          "name": "Breaking Changes",
+          "name": "Drift",
           "type": "webview",
           "icon": "media/activity-icon.svg",
           "contextualTitle": "Drift"
         }
       ]
     },
-    "viewsWelcome": [
-      {
-        "view": "drift.changes",
-        "contents": "Drift finds which dependency updates break your code, and fixes them with the AI agent you already use.\n\nNo API keys. No tokens to paste.\n\n[Check for Breaking Changes](command:drift.analyze)\n\n[Choose an AI agent](command:drift.selectAgent)",
-        "when": "drift.status == idle"
-      },
-      {
-        "view": "drift.changes",
-        "contents": "Open a folder that is a git repository to use Drift.\n\n[Open Folder](command:vscode.openFolder)",
-        "when": "drift.status == no-repo"
-      }
-    ],
     "menus": {
       "view/title": [
         {
-          "command": "drift.analyze",
+          "command": "drift.newSession",
           "when": "view == drift.changes",
           "group": "navigation@1"
         },
         {
-          "command": "drift.fixAll",
-          "when": "view == drift.changes && drift.hasFindings",
+          "command": "drift.nextChange",
+          "when": "view == drift.changes && drift.reviewing",
           "group": "navigation@2"
+        },
+        {
+          "command": "drift.keepAllChanges",
+          "when": "view == drift.changes && drift.reviewing",
+          "group": "navigation@3"
+        },
+        {
+          "command": "drift.undoAllChanges",
+          "when": "view == drift.changes && drift.reviewing",
+          "group": "navigation@4"
         },
         {
           "command": "drift.showReport",
           "when": "view == drift.changes",
-          "group": "navigation@3"
+          "group": "1_report@1"
         },
         {
           "command": "drift.selectAgent",
           "when": "view == drift.changes",
-          "group": "1_config@1"
+          "group": "2_config@1"
         },
         {
           "command": "drift.openSettings",
           "when": "view == drift.changes",
-          "group": "1_config@2"
+          "group": "2_config@2"
         },
         {
           "command": "drift.signInToGitHub",
           "when": "view == drift.changes",
-          "group": "1_config@3"
+          "group": "2_config@3"
         },
         {
           "command": "drift.showLog",
@@ -164,11 +218,16 @@
           "group": "9_debug@1"
         }
       ],
-      "view/item/context": [
+      "editor/title": [
         {
-          "command": "drift.fixCommit",
-          "when": "view == drift.changes && viewItem == drift.commit",
-          "group": "inline"
+          "command": "drift.keepFile",
+          "when": "drift.reviewing",
+          "group": "navigation@1"
+        },
+        {
+          "command": "drift.undoFile",
+          "when": "drift.reviewing",
+          "group": "navigation@2"
         }
       ],
       "commandPalette": [
@@ -181,11 +240,50 @@
           "when": "false"
         },
         {
+          "command": "drift.keepHunk",
+          "when": "false"
+        },
+        {
+          "command": "drift.undoHunk",
+          "when": "false"
+        },
+        {
+          "command": "drift.openChangeDiff",
+          "when": "false"
+        },
+        {
+          "command": "drift.keepFile",
+          "when": "drift.reviewing"
+        },
+        {
+          "command": "drift.undoFile",
+          "when": "drift.reviewing"
+        },
+        {
+          "command": "drift.keepAllChanges",
+          "when": "drift.reviewing"
+        },
+        {
+          "command": "drift.undoAllChanges",
+          "when": "drift.reviewing"
+        },
+        {
+          "command": "drift.nextChange",
+          "when": "drift.reviewing"
+        },
+        {
           "command": "drift.pushBranch",
           "when": "drift.status == fixed"
         }
       ]
     },
+    "keybindings": [
+      {
+        "command": "drift.nextChange",
+        "key": "alt+d",
+        "when": "drift.reviewing"
+      }
+    ],
     "configuration": {
       "title": "Drift",
       "properties": {
@@ -216,6 +314,52 @@
           ],
           "markdownDescription": "Which AI agent fixes your code. Drift drives an agent **you already have** and never asks for an API key.\n\nRun **Drift: Select AI Agent** to see which are installed.",
           "order": 1
+        },
+        "drift.session.mode": {
+          "type": "string",
+          "default": "agent",
+          "enum": [
+            "agent",
+            "ask"
+          ],
+          "enumDescriptions": [
+            "Drift may edit your files through your AI agent",
+            "Drift only analyses and explains; it never edits"
+          ],
+          "markdownDescription": "Set from the picker in the Drift panel. **Ask** analyses and explains. **Agent** lets your AI agent edit code.",
+          "order": 6
+        },
+        "drift.session.effort": {
+          "type": "string",
+          "default": "balanced",
+          "enum": [
+            "quick",
+            "balanced",
+            "thorough"
+          ],
+          "enumDescriptions": [
+            "Runtime dependencies, major and minor bumps, first 25 packages",
+            "Every runtime dependency, major and minor bumps",
+            "Everything, including dev dependencies and patch releases"
+          ],
+          "markdownDescription": "Set from the picker in the Drift panel. How widely Drift looks — this changes what is actually analysed, not just how long it takes.",
+          "order": 7
+        },
+        "drift.session.permission": {
+          "type": "string",
+          "default": "auto-edit",
+          "enum": [
+            "ask",
+            "auto-edit",
+            "full-auto"
+          ],
+          "enumDescriptions": [
+            "Ask in the panel before editing each group of files",
+            "Edit files, then wait for you to keep or undo each change",
+            "Edit files and commit each group without stopping"
+          ],
+          "markdownDescription": "Set from the picker in the Drift panel. How much your AI agent may do unsupervised.\n\nOn the default, **Edit, then review**, nothing is ever committed until you keep it.",
+          "order": 8
         },
         "drift.agent.copilotModelFamily": {
           "type": "string",
@@ -307,7 +451,7 @@
     "build": "node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "package": "npm run typecheck && npm run build && npx --yes @vscode/vsce package --no-dependencies"
+    "package": "npm run typecheck && npm run build && npx --yes @vscode/vsce package --no-dependencies && code --install-extension drift-0.1.0.vsix --force"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",

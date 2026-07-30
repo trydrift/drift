@@ -151,12 +151,14 @@ function alignment(a: readonly string[], b: readonly string[]): Op[] {
 /**
  * Turn an op stream into hunks.
  *
- * Runs of changed lines separated by fewer than two unchanged lines are merged.
- * Two adjacent one-line edits are one edit as far as a reviewer is concerned,
- * and offering them as separate keep/undo decisions is busywork.
+ * Only runs separated by a single unchanged line are merged. Two edits touching
+ * the same statement are one decision as far as a reviewer is concerned, but the
+ * window stays deliberately narrow: merging across more context would fuse, say,
+ * an import change and a call-site change into one hunk, and those are exactly
+ * the two things a reviewer wants to accept independently.
  */
 function groupHunks(ops: readonly Op[], offset: number, a: readonly string[], b: readonly string[]): Hunk[] {
-  const CONTEXT_MERGE = 2;
+  const CONTEXT_MERGE = 1;
   const hunks: Hunk[] = [];
 
   let aLine = offset;
