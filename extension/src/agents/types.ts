@@ -68,6 +68,18 @@ export interface FixOutcome {
 export interface AgentContext {
   /** Streams human-readable progress into the UI. */
   report: (message: string) => void;
+  /**
+   * Put a question to the developer and wait for the answer.
+   *
+   * A coding agent working unsupervised has exactly two options at a genuine
+   * fork: guess, or ask. Guessing is how a dependency fix quietly changes
+   * behaviour. Asking costs one click, so Drift makes asking available to every
+   * agent that can express a question.
+   *
+   * Resolves to an empty string if the developer walks away, which agents should
+   * treat as "make the safe choice and flag it".
+   */
+  ask?: (question: string, options?: string[]) => Promise<string>;
   /** Cancelled when the user aborts. Agents must honour it. */
   signal: AbortSignal;
 }
@@ -160,6 +172,12 @@ export function buildFixPrompt(task: FixTask): string {
       '   and add a `TODO(drift):` comment explaining what is unresolved. A',
       '   flagged unknown is useful; a confident guess is not.',
       '5. Do not invent APIs. If the evidence names no replacement, say so.',
+      '6. If a decision genuinely needs the developer — two valid migrations, a',
+      '   behaviour change only they can rule on — ask instead of guessing. Emit',
+      `   \`${QUESTION_MARKER} <your question> | <option> | <option>\` as the first`,
+      '   line of your reply, output nothing else, and stop. You will be asked',
+      '   again with the answer. Use this sparingly; a question that the evidence',
+      '   already answers wastes the developer\'s attention.',
     ].join('\n'),
   );
 
@@ -173,6 +191,40 @@ export function buildFixPrompt(task: FixTask): string {
 /** Marker format used to get whole files back from a text-completion model. */
 export const FILE_BEGIN = '=== DRIFT FILE:';
 export const FILE_END = '=== DRIFT END ===';
+
+/** Marker a model uses to hand a decision back to the developer. */
+export const QUESTION_MARKER = '=== DRIFT QUESTION:';
+
+export interface AgentQuestion {
+  text: string;
+  options: string[];
+}
+
+/**
+ * Pull a question out of a model response.
+ *
+ * Only honoured when the model produced no file blocks — a reply containing
+ * both edits and a question has already made the decision it claims to be
+ * asking about, and the edits are the honest signal.
+ */
+export function parseQuestion(text: string): AgentQuestion | null {
+  if (text.includes(FILE_BEGIN)) return null;
+
+  const line = text
+    .split('\n')
+    .map((entry) => entry.trim())
+    .find((entry) => entry.startsWith(QUESTION_MARKER));
+  if (!line) return null;
+
+  const [question, ...options] = line
+    .slice(QUESTION_MARKER.length)
+    .split('|')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (!question) return null;
+  return { text: question, options };
+}
 
 export function buildEditProtocolInstructions(files: readonly FileSnapshot[]): string {
   return [

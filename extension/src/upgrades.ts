@@ -18,6 +18,21 @@ const run = promisify(execFile);
 
 export type UpgradeStatus = 'checking' | 'ready' | 'clean' | 'error' | 'upgrading';
 
+/**
+ * How much a developer should care.
+ *
+ * This distinction is the whole point of Drift and it must survive into the UI
+ * intact. "Seven breaking changes" is a fact about the package. "None of them
+ * touch your code" is the fact about *you*, and it is the one that decides
+ * whether this upgrade is a five-second job or an afternoon.
+ *
+ *   affected       Breaking changes that match code in this repository.
+ *   upstream-only  Breaking changes that exist, but nothing here uses them.
+ *   clean          No breaking change found for this target version.
+ *   error          Drift could not finish checking.
+ */
+export type UpgradeSeverity = 'affected' | 'upstream-only' | 'clean' | 'error';
+
 export interface UpgradeCandidate {
   id: string;
   name: string;
@@ -33,6 +48,8 @@ export interface UpgradeCandidate {
   evidenceCount: number;
   breakingCount: number;
   impactCount: number;
+  /** Distinct repository files with at least one impact site. */
+  impactFiles: number;
   risk: string;
   summary: string;
   plan?: RemediationPlan;
@@ -43,6 +60,53 @@ export interface UpgradeScanResult {
   candidates: UpgradeCandidate[];
   checked: number;
   skipped: number;
+}
+
+/**
+ * Live scan progress.
+ *
+ * Deliberately structured rather than a bare string. "Scanning" tells a
+ * developer nothing; "Reading the changelog for react 18.3.1 → 19.2.0 (12 of
+ * 48)" tells them the tool is working and roughly how long is left.
+ */
+export interface ScanProgress {
+  /** Short label for the current phase, e.g. `Reading changelog`. */
+  phase: string;
+  /** What specifically is being worked on, e.g. `react 18.3.1 → 19.2.0`. */
+  detail: string;
+  /** Packages finished so far. */
+  done: number;
+  /** Packages to check in total, once known. */
+  total: number;
+}
+
+export function severityOf(candidate: UpgradeCandidate): UpgradeSeverity {
+  if (candidate.status === 'error') return 'error';
+  if (candidate.impactCount > 0) return 'affected';
+  if (candidate.breakingCount > 0) return 'upstream-only';
+  return 'clean';
+}
+
+/**
+ * The line shown on a package row.
+ *
+ * Never leads with a raw breaking-change count when nothing here is affected —
+ * that reads as an alarm, and an alarm that turns out to be nothing is how a
+ * tool teaches people to ignore it.
+ */
+export function describeSeverity(candidate: UpgradeCandidate): string {
+  switch (severityOf(candidate)) {
+    case 'error':
+      return 'Could not check';
+    case 'affected': {
+      const files = candidate.impactFiles;
+      return `Affects your code · ${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'} in ${files} file${files === 1 ? '' : 's'}`;
+    }
+    case 'upstream-only':
+      return `Safe for your code · ${candidate.breakingCount} upstream change${candidate.breakingCount === 1 ? '' : 's'}, none used here`;
+    case 'clean':
+      return 'Safe for your code · no breaking changes found';
+  }
 }
 
 interface PackageJson {
@@ -62,10 +126,18 @@ export async function scanNpmUpgrades(args: {
   repo: RepoContext;
   config: DriftConfig;
   githubToken?: string;
-  onProgress?: (message: string) => void;
+  onProgress?: (progress: ScanProgress) => void;
+  /** Called as soon as each package resolves, so the UI can fill in gradually. */
+  onCandidate?: (candidate: UpgradeCandidate) => void;
+  token?: { isCancellationRequested: boolean };
 }): Promise<UpgradeScanResult> {
-  const { root, repo, config, githubToken, onProgress } = args;
+  const { root, repo, config, githubToken, onProgress, onCandidate, token } = args;
   const logger = createLogger(vscode.workspace.getConfiguration('drift').get('logLevel', 'info'));
+
+  const report = (phase: string, detail: string, done = 0, total = 0) =>
+    onProgress?.({ phase, detail, done, total });
+
+  report('Reading manifest', 'package.json');
   const manifest = await readJson<PackageJson>(join(root, 'package.json'));
   if (!manifest) return { candidates: [], checked: 0, skipped: 0 };
 
@@ -74,17 +146,31 @@ export async function scanNpmUpgrades(args: {
   );
 
   const deps = directDependencies(manifest, lock);
+
+  report('Indexing your code', 'Walking source files', 0, deps.length);
   const files = await walkSourceFiles(root);
   const index = buildIndex(files);
+  report(
+    'Indexing your code',
+    `${files.length} file${files.length === 1 ? '' : 's'} indexed · ${deps.length} direct dependenc${deps.length === 1 ? 'y' : 'ies'} to check`,
+    0,
+    deps.length,
+  );
 
   let skipped = 0;
+  let done = 0;
   const candidates: UpgradeCandidate[] = [];
 
   for (const dep of deps) {
-    onProgress?.(`Checking ${dep.name}`);
+    if (token?.isCancellationRequested) break;
+
+    report('Checking npm registry', `${dep.name} (installed ${dep.current})`, done, deps.length);
     const available = await availableVersions(dep.name, dep.current, dep.range).catch(() => null);
+
     if (!available || available.versions.length === 0) {
       skipped += 1;
+      done += 1;
+      report('Up to date', `${dep.name}@${dep.current}`, done, deps.length);
       continue;
     }
 
@@ -101,9 +187,18 @@ export async function scanNpmUpgrades(args: {
       files,
       index,
       logger,
+      onProgress: (phase, detail) => report(phase, detail, done, deps.length),
     });
 
     candidates.push(candidate);
+    onCandidate?.(candidate);
+    done += 1;
+    report(
+      severityOf(candidate) === 'affected' ? 'Needs your attention' : 'Checked',
+      `${candidate.name} ${candidate.current} → ${candidate.selected} · ${describeSeverity(candidate).toLowerCase()}`,
+      done,
+      deps.length,
+    );
   }
 
   return {
@@ -120,8 +215,10 @@ export async function reanalyzeUpgrade(args: {
   repo: RepoContext;
   config: DriftConfig;
   githubToken?: string;
+  onProgress?: (phase: string, detail: string) => void;
 }): Promise<UpgradeCandidate> {
   const logger = createLogger(vscode.workspace.getConfiguration('drift').get('logLevel', 'info'));
+  args.onProgress?.('Indexing your code', `Re-checking ${args.candidate.name}@${args.version}`);
   const files = await walkSourceFiles(args.root);
   const index = buildIndex(files);
 
@@ -143,6 +240,7 @@ export async function reanalyzeUpgrade(args: {
     files,
     index,
     logger,
+    onProgress: args.onProgress,
   });
 }
 
@@ -176,7 +274,11 @@ async function analyzeUpgrade(args: {
   files: Awaited<ReturnType<typeof walkSourceFiles>>;
   index: ReturnType<typeof buildIndex>;
   logger: ReturnType<typeof createLogger>;
+  onProgress?: (phase: string, detail: string) => void;
 }): Promise<UpgradeCandidate> {
+  const label = `${args.dep.name} ${args.dep.current} → ${args.selected}`;
+  const report = args.onProgress ?? (() => undefined);
+
   const change: DependencyChange = {
     name: args.dep.name,
     ecosystem: 'npm',
@@ -190,15 +292,28 @@ async function analyzeUpgrade(args: {
   };
 
   try {
+    report('Reading release notes and changelog', label);
     const evidence = await gatherEvidence([change], {
       config: args.config,
       logger: args.logger,
       githubToken: args.githubToken,
     });
+
+    report(
+      'Comparing the public API surface',
+      `${label} · ${evidence.length} evidence source${evidence.length === 1 ? '' : 's'}`,
+    );
     const breakingChanges = await analyze([change], evidence, {
       config: args.config,
       logger: args.logger,
     });
+
+    report(
+      breakingChanges.length > 0
+        ? `Searching your code for ${breakingChanges.length} breaking change${breakingChanges.length === 1 ? '' : 's'}`
+        : 'No breaking changes to look for',
+      label,
+    );
     const impactSites = localize(breakingChanges, [change], args.index, args.files, {
       logger: args.logger,
       maxSitesPerChange: 40,
@@ -227,11 +342,9 @@ async function analyzeUpgrade(args: {
       evidenceCount: evidence.length,
       breakingCount: breakingChanges.length,
       impactCount: impactSites.length,
+      impactFiles: new Set(impactSites.map((site) => site.file)).size,
       risk: plan.risk,
-      summary:
-        breakingChanges.length > 0
-          ? `${breakingChanges.length} breaking change${breakingChanges.length === 1 ? '' : 's'} detected`
-          : 'No breaking evidence found for this target version',
+      summary: summarize(breakingChanges.length, impactSites.length, args.dep.name),
       plan,
     };
   } catch (err) {
@@ -250,11 +363,29 @@ async function analyzeUpgrade(args: {
       evidenceCount: 0,
       breakingCount: 0,
       impactCount: 0,
+      impactFiles: 0,
       risk: 'unknown',
       summary: 'Could not inspect this upgrade',
       error: (err as Error).message,
     };
   }
+}
+
+/**
+ * The one-line verdict.
+ *
+ * Written from the developer's point of view, not the registry's: what this
+ * upgrade means for *this* repository comes first, and the upstream count is
+ * context rather than a headline.
+ */
+function summarize(breakingCount: number, impactCount: number, name: string): string {
+  if (breakingCount === 0) {
+    return `No breaking changes found for this version of ${name}.`;
+  }
+  if (impactCount === 0) {
+    return `${breakingCount} breaking change${breakingCount === 1 ? '' : 's'} in ${name}, but this repository does not use any of the affected APIs. Safe to upgrade.`;
+  }
+  return `${impactCount} place${impactCount === 1 ? '' : 's'} in this repository use${impactCount === 1 ? 's' : ''} an API that ${name} changed.`;
 }
 
 function directDependencies(
@@ -342,8 +473,11 @@ async function readJson<T>(path: string): Promise<T | null> {
   }
 }
 
+/** Order by what the developer has to act on, not by upstream noise. */
 function compareCandidates(a: UpgradeCandidate, b: UpgradeCandidate): number {
-  if (a.breakingCount !== b.breakingCount) return b.breakingCount - a.breakingCount;
+  const rank = { affected: 0, error: 1, 'upstream-only': 2, clean: 3 } as const;
+  const bySeverity = rank[severityOf(a)] - rank[severityOf(b)];
+  if (bySeverity !== 0) return bySeverity;
   if (a.impactCount !== b.impactCount) return b.impactCount - a.impactCount;
   return a.name.localeCompare(b.name);
 }

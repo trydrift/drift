@@ -2,6 +2,7 @@ import {
   buildEditProtocolInstructions,
   buildFixPrompt,
   parseFileBlocks,
+  parseQuestion,
   saysNoChanges,
   type AgentAvailability,
   type AgentContext,
@@ -74,7 +75,7 @@ export class OllamaAgent implements FixAgent {
   async run(task: FixTask, ctx: AgentContext): Promise<FixOutcome> {
     ctx.report(`Asking ${this.model} to fix ${task.files.length} file(s)…`);
 
-    const prompt = [
+    let prompt = [
       buildFixPrompt(task),
       '',
       buildEditProtocolInstructions(task.files),
@@ -90,55 +91,37 @@ export class OllamaAgent implements FixAgent {
     const timeout = AbortSignal.timeout(this.timeoutMs);
     const signal = AbortSignal.any([ctx.signal, timeout]);
 
-    try {
-      const response = await fetch(`${this.host}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: this.model,
-          prompt,
-          stream: true,
-          options: {
-            // Whole-file rewrites are long; a short context silently truncates
-            // the reply and the result parses as a partial file.
-            num_ctx: 16384,
-          },
-        }),
-        signal,
-      });
-
-      if (!response.ok || !response.body) {
-        return { status: 'failed', message: `Ollama returned ${response.status}.` };
+    // Two passes at most: one for the model to raise a question, one to act on
+    // the answer. A model that only ever asks would otherwise never finish.
+    for (let round = 0; round < 2; round += 1) {
+      let text: string;
+      try {
+        text = await this.generate(prompt, signal, ctx);
+      } catch (err) {
+        if (ctx.signal.aborted) return { status: 'failed', message: 'Cancelled.' };
+        if (timeout.aborted) {
+          return {
+            status: 'failed',
+            message: `${this.model} timed out. Local models are slow on large files — raise drift.agent.timeoutSeconds or use a smaller scope.`,
+          };
+        }
+        return { status: 'failed', message: `Ollama failed: ${(err as Error).message}` };
       }
 
-      let text = '';
-      let reported = 0;
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() ?? '';
-
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          try {
-            const chunk = JSON.parse(line) as { response?: string };
-            if (chunk.response) text += chunk.response;
-          } catch {
-            // A partial JSON line across chunk boundaries; the buffer handles it.
-          }
-        }
-
-        if (text.length - reported > 2000) {
-          reported = text.length;
-          ctx.report(`Generating… (${Math.round(text.length / 1000)}k chars)`);
-        }
+      const question = round === 0 ? parseQuestion(text) : null;
+      if (question && ctx.ask) {
+        ctx.report('Waiting for your answer…');
+        const answer = await ctx.ask(question.text, question.options);
+        prompt = [
+          prompt,
+          '',
+          '## Answer from the developer',
+          '',
+          answer
+            ? `You asked: ${question.text}\nThey answered: ${answer}\n\nProceed on that basis and do not ask again.`
+            : `You asked: ${question.text}\nThey did not answer. Make the safest change you can justify from the evidence and add a \`TODO(drift):\` comment wherever you were unsure.`,
+        ].join('\n');
+        continue;
       }
 
       if (saysNoChanges(text)) {
@@ -154,15 +137,63 @@ export class OllamaAgent implements FixAgent {
       }
 
       return { status: 'applied', edits, message: `${this.model} rewrote ${edits.length} file(s).` };
-    } catch (err) {
-      if (ctx.signal.aborted) return { status: 'failed', message: 'Cancelled.' };
-      if (timeout.aborted) {
-        return {
-          status: 'failed',
-          message: `${this.model} timed out. Local models are slow on large files — raise drift.agent.timeoutSeconds or use a smaller scope.`,
-        };
-      }
-      return { status: 'failed', message: `Ollama failed: ${(err as Error).message}` };
     }
+
+    return { status: 'failed', message: `${this.model} asked a question instead of editing.` };
+  }
+
+  /** One streaming completion, accumulated into text. */
+  private async generate(prompt: string, signal: AbortSignal, ctx: AgentContext): Promise<string> {
+    const response = await fetch(`${this.host}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: this.model,
+        prompt,
+        stream: true,
+        options: {
+          // Whole-file rewrites are long; a short context silently truncates
+          // the reply and the result parses as a partial file.
+          num_ctx: 16384,
+        },
+      }),
+      signal,
+    });
+
+    if (!response.ok || !response.body) {
+      throw new Error(`Ollama returned ${response.status}.`);
+    }
+
+    let text = '';
+    let reported = 0;
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const chunk = JSON.parse(line) as { response?: string };
+          if (chunk.response) text += chunk.response;
+        } catch {
+          // A partial JSON line across chunk boundaries; the buffer handles it.
+        }
+      }
+
+      if (text.length - reported > 2000) {
+        reported = text.length;
+        ctx.report(`Generating… (${Math.round(text.length / 1000)}k chars)`);
+      }
+    }
+
+    return text;
   }
 }
