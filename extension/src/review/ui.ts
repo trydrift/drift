@@ -190,23 +190,6 @@ class HunkLensProvider implements vscode.CodeLensProvider, vscode.Disposable {
       const line = Math.min(hunk.start, Math.max(0, document.lineCount - 1));
       const range = new vscode.Range(line, 0, line, 0);
 
-      // Skip the file-level row's line so the two do not stack on line 1.
-      if (line === 0 && lenses.length > 0) {
-        lenses.push(
-          new vscode.CodeLens(range, {
-            title: '$(check) Keep',
-            command: 'drift.keepHunk',
-            arguments: [file.path, hunk.id],
-          }),
-          new vscode.CodeLens(range, {
-            title: '$(discard) Undo',
-            command: 'drift.undoHunk',
-            arguments: [file.path, hunk.id],
-          }),
-        );
-        continue;
-      }
-
       lenses.push(
         new vscode.CodeLens(range, {
           title: '$(check) Keep',

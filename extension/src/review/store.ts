@@ -47,6 +47,12 @@ export interface ReviewGroup {
   /** Commit body. */
   body?: string;
   files: ReviewFile[];
+  /**
+   * Every path snapshotted for this group, kept even after its files are
+   * resolved. The commit handler runs *after* the last change is resolved, at
+   * which point `files` is empty — so this is what tells it what to commit.
+   */
+  paths: string[];
   /** Set once this group has been committed. */
   committed?: { sha: string; branch: string };
 }
@@ -151,7 +157,7 @@ export class DriftReview implements vscode.Disposable {
     const existing = this.entries.get(group.order);
     if (!existing) {
       this.order.push(group.order);
-      this.entries.set(group.order, { ...group, files: [] });
+      this.entries.set(group.order, { ...group, files: [], paths: [] });
     }
 
     const entry = this.entries.get(group.order)!;
@@ -159,6 +165,7 @@ export class DriftReview implements vscode.Disposable {
     entry.body = group.body;
 
     for (const file of files) {
+      if (!entry.paths.includes(file.path)) entry.paths.push(file.path);
       if (entry.files.some((f) => f.path === file.path)) continue;
       entry.files.push({
         path: file.path,

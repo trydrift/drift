@@ -119,6 +119,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   }
 
   dispose(): void {
+    if (this.renderTimer) clearTimeout(this.renderTimer);
     for (const d of this.disposables) d.dispose();
   }
 
@@ -784,11 +785,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     const { Git } = await import('../git.js');
     const git = new Git(root);
-    const paths = group.files.map((file) => file.path);
-    const scope = paths.length > 0 ? paths : this.plannedFiles(group.order);
 
     try {
-      const sha = await git.commitPaths(scope, group.title, group.body ?? '');
+      const sha = await git.commitPaths(group.paths, group.title, group.body ?? '');
       if (!sha) {
         this.session.notice('info', `Nothing left to commit for "${group.title}".`);
         return null;
@@ -805,10 +804,6 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       this.session.notice('error', `Commit failed: ${(err as Error).message}`);
       return null;
     }
-  }
-
-  private plannedFiles(order: number): string[] {
-    return this.state.plan?.commits.find((commit) => commit.order === order)?.files.slice() ?? [];
   }
 
   /* ---------------------------------------------------------------- */
@@ -1020,7 +1015,25 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     return this.agents.find((entry) => entry.agent.id === preferred)?.agent.label ?? 'your AI agent';
   }
 
+  /**
+   * Coalesce renders.
+   *
+   * A scan reports progress many times a second, and each render replaces the
+   * webview's HTML wholesale. Without this, the composer is rebuilt under the
+   * developer's fingers while they type. The delay is short enough that progress
+   * still reads as live and long enough that a burst of updates costs one render.
+   */
+  private renderTimer: ReturnType<typeof setTimeout> | null = null;
+
   private render(): void {
+    if (!this.view || this.renderTimer) return;
+    this.renderTimer = setTimeout(() => {
+      this.renderTimer = null;
+      this.paint();
+    }, 100);
+  }
+
+  private paint(): void {
     if (!this.view) return;
 
     const totals = this.review.totals();

@@ -201,6 +201,7 @@ test('the changes card lists files with keep and undo at both levels', () => {
           {
             order: 1,
             title: 'fix(deps): migrate lodash chain calls',
+            paths: ['src/report.ts'],
             files: [
               {
                 path: 'src/report.ts',
@@ -235,10 +236,17 @@ test('a committed group reports its sha and offers no further action', () => {
       review: {
         totals: { files: 1, hunks: 1, added: 1, removed: 0, groups: 1 },
         groups: [
-          { order: 1, title: 'done', files: [], committed: { sha: 'abcdef1234', branch: 'drift/fix' } },
+          {
+            order: 1,
+            title: 'done',
+            paths: ['done.ts'],
+            files: [],
+            committed: { sha: 'abcdef1234', branch: 'drift/fix' },
+          },
           {
             order: 2,
             title: 'still open',
+            paths: ['a.ts'],
             files: [
               {
                 path: 'a.ts',

@@ -1310,11 +1310,32 @@ function complete(name) {
 
 if (input) {
   grow();
-  input.focus();
+
+  /* Every update replaces the whole document, so focus and caret have to be put
+     back by hand. Restoring them only when the composer already had focus keeps
+     Drift from stealing the cursor out of the developer's editor. */
+  if (state.focused !== false) {
+    input.focus();
+    const caret = typeof state.caret === 'number' ? Math.min(state.caret, input.value.length) : input.value.length;
+    input.setSelectionRange(caret, caret);
+  }
+
+  const remember = () =>
+    vscode.setState({
+      ...vscode.getState(),
+      caret: input.selectionStart,
+      focused: document.activeElement === input,
+    });
+
+  input.addEventListener('blur', remember);
+  input.addEventListener('focus', remember);
+  input.addEventListener('keyup', remember);
+  input.addEventListener('click', remember);
 
   input.addEventListener('input', () => {
     grow();
     syncCommands();
+    remember();
     vscode.postMessage({ type: 'draft', text: input.value });
   });
 

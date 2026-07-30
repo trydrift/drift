@@ -27,6 +27,9 @@ if (!REPO) {
   process.exit(1);
 }
 
+// `process.exit` does not narrow the type, and this file is typechecked.
+const repoPath: string = REPO;
+
 let failures = 0;
 function check(label: string, ok: boolean, detail = ''): void {
   console.log(`${ok ? '  ok  ' : ' FAIL '} ${label}${detail ? ` — ${detail}` : ''}`);
@@ -36,7 +39,7 @@ function check(label: string, ok: boolean, detail = ''): void {
 async function main(): Promise<void> {
   console.log('=== 1. analysis (no credentials) ===');
 
-  const info = await inspectLocalRepo(REPO);
+  const info = await inspectLocalRepo(repoPath);
   if (!info) throw new Error(`${REPO} is not a git repository`);
   console.log(`repo ${info.slug ?? '(no remote)'} @ ${info.headSha.slice(0, 7)}`);
 
@@ -48,12 +51,12 @@ async function main(): Promise<void> {
       baseBranch: info.branch,
       beforeSha: range.before,
       afterSha: range.after,
-      workspace: REPO,
+      workspace: repoPath,
     },
     config: DriftConfigSchema.parse({}),
     logger: createLogger('error'),
-    provider: new LocalGitProvider(REPO, range),
-    workspace: REPO,
+    provider: new LocalGitProvider(repoPath, range),
+    workspace: repoPath,
   });
 
   const plan = result.plan;
@@ -70,10 +73,10 @@ async function main(): Promise<void> {
 
   console.log('\n=== 2. state machine ===');
 
-  workspace.workspaceFolders = [{ uri: { fsPath: REPO } }];
+  workspace.workspaceFolders = [{ uri: { fsPath: repoPath } }];
 
   const state = new DriftState();
-  state.setRepo(info, REPO);
+  state.setRepo(info, repoPath);
 
   const seen: string[] = [];
   state.onDidChange((s) => seen.push(s.kind));
@@ -125,7 +128,7 @@ async function main(): Promise<void> {
   const prompt = buildFixPrompt({
     plan,
     commit: plan.commits[0]!,
-    workspaceRoot: REPO,
+    workspaceRoot: repoPath,
     files: [],
   });
   check('prompt carries evidence', prompt.includes('Evidence'));
