@@ -297,6 +297,65 @@ test('attachment chips render with a remove button', () => {
   assert.match(html, /data-action="detach" data-value="src\/http.ts"/);
 });
 
+test('a panel with every item type produces balanced markup', () => {
+  // Unbalanced tags in a webview do not throw — the browser silently reparents
+  // everything after the mistake, and the panel just looks broken. So this walks
+  // a fully-populated render and checks the tags actually close.
+  const c = candidate({ impactCount: 5, impactFiles: 2, risk: 'medium' });
+  const html = renderPanel(
+    model({
+      attachments: [{ kind: 'file', label: 'src/http.ts', value: 'src/http.ts' }],
+      awaitingAnswer: true,
+      thread: [
+        { id: 'u1', kind: 'user', text: '/scan', attachments: [] },
+        { id: 'a1', kind: 'assistant', text: 'Here is what I found:\n\n- one\n- two\n\n```ts\nconst x = 1;\n```' },
+        { id: 's1', kind: 'step', title: 'Checking', phase: 'Reading changelog', detail: 'lodash 4 → 5', done: 3, total: 9, state: 'done', log: ['a', 'b'] },
+        { id: 'p1', kind: 'packages', headline: '**1 of 1** affects your code.', ids: [c.id] },
+        { id: 'q1', kind: 'question', text: 'Which migration?', options: [{ label: 'A', value: 'a' }], allowFreeText: true },
+        { id: 'n1', kind: 'notice', tone: 'warn', text: 'heads up' },
+        { id: 'ch1', kind: 'changes', title: 'Changes waiting' },
+      ],
+      candidates: { [c.id]: c },
+      review: {
+        totals: { files: 1, hunks: 1, added: 2, removed: 1, groups: 1 },
+        groups: [
+          {
+            order: 1,
+            title: 'fix: migrate',
+            paths: ['src/a.ts'],
+            files: [
+              {
+                path: 'src/a.ts',
+                baseline: 'x',
+                current: 'y',
+                hunks: [{ id: '0-0', start: 0, end: 1, baselineStart: 0, baselineEnd: 1, modifiedLines: ['y'], baselineLines: ['x'] }],
+                stat: { added: 2, removed: 1 },
+              },
+            ],
+          },
+        ],
+      },
+    }),
+  );
+
+  const voids = new Set(['meta', 'br', 'hr', 'img', 'input', 'source', 'path', 'circle', 'rect', 'use']);
+  const stack: string[] = [];
+
+  for (const match of html.matchAll(/<(\/?)([a-zA-Z][a-zA-Z0-9]*)\b([^>]*)>/g)) {
+    const closing = match[1] === '/';
+    const name = match[2]!.toLowerCase();
+    if (voids.has(name) || match[3]!.trimEnd().endsWith('/')) continue;
+
+    if (closing) {
+      assert.equal(stack.pop(), name, `</${name}> closed the wrong element`);
+    } else {
+      stack.push(name);
+    }
+  }
+
+  assert.deepEqual(stack, [], 'every tag is closed');
+});
+
 test('every slash command is offered in the palette', () => {
   const html = renderPanel(model());
   for (const command of SLASH_COMMANDS) {
