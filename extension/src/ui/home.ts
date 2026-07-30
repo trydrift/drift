@@ -35,8 +35,18 @@ import {
   severityOf,
   type UpgradeCandidate,
 } from '../upgrades.js';
+import { Checkpoints } from '../checkpoint.js';
 import { DriftReportPanel } from './report.js';
-import { makeNonce, renderPanel, SLASH_COMMANDS, type AgentChoice, type ViewModel } from './webview.js';
+import {
+  makeNonce,
+  renderPanel,
+  SLASH_COMMANDS,
+  type AgentChoice,
+  type MenuItem,
+  type MenuSection,
+  type StaleHint,
+  type ViewModel,
+} from './webview.js';
 
 /**
  * The Drift panel.
@@ -56,9 +66,11 @@ type Incoming =
   | { type: 'submit'; text: string }
   | { type: 'draft'; text: string }
   | { type: 'answer'; id: string; value: string }
-  | { type: 'pickMode' | 'pickEffort' | 'pickPermission' | 'pickAgent' }
-  | { type: 'attach' }
+  | { type: 'menu'; id: string }
   | { type: 'detach'; value: string }
+  | { type: 'rewind'; id: string }
+  | { type: 'rescan' }
+  | { type: 'upgradeAll' }
   | { type: 'stop' }
   | { type: 'signIn' }
   | { type: 'showReport' }
@@ -95,8 +107,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private agents: DiscoveredAgent[] = [];
   private signedInLabel: string | null = null;
   private running: vscode.CancellationTokenSource | null = null;
+  private cancellable = true;
   private draft = '';
   private scanned = false;
+  private checkpoints: Checkpoints | null = null;
+  private stale: StaleHint | null = null;
+  private staleFiles = new Set<string>();
 
   private readonly disposables: vscode.Disposable[] = [];
 
@@ -114,6 +130,18 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       vscode.authentication.onDidChangeSessions((event) => {
         if (event.provider.id === 'github') void this.refreshIdentity();
       }),
+    );
+
+    // A result list describes the repository at the moment it was produced. The
+    // moment a manifest or a source file moves, it is describing something that
+    // no longer exists — so the panel says which files changed and offers the
+    // one action that makes it true again, rather than quietly going stale.
+    const manifests = vscode.workspace.createFileSystemWatcher('**/{package.json,package-lock.json}');
+    this.disposables.push(
+      manifests,
+      manifests.onDidChange((uri) => this.markStale(uri, 'dependencies')),
+      manifests.onDidCreate((uri) => this.markStale(uri, 'dependencies')),
+      vscode.workspace.onDidSaveTextDocument((document) => this.markStale(document.uri, 'code')),
     );
 
     // Keeping a whole group is the developer saying "this is right" — which is
@@ -169,25 +197,29 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       case 'answer':
         this.session.answer(message.id, message.value);
         return;
-      case 'pickMode':
-        await this.pickMode();
-        return;
-      case 'pickEffort':
-        await this.pickEffort();
-        return;
-      case 'pickPermission':
-        await this.pickPermission();
-        return;
-      case 'pickAgent':
-        await this.pickAgent();
-        return;
-      case 'attach':
-        await this.attach();
+      case 'menu':
+        await this.runMenuItem(message.id);
         return;
       case 'detach':
         this.session.detach(message.value);
         return;
+      case 'rewind':
+        await this.rewind(message.id);
+        return;
+      case 'rescan':
+        await this.scan();
+        return;
+      case 'upgradeAll':
+        await this.upgrade(this.safeIds(), 'safe');
+        return;
       case 'stop':
+        if (!this.cancellable) {
+          this.session.notice(
+            'info',
+            'The dependency check runs to the end. Stopping half way would leave packages marked safe that nothing has looked at yet.',
+          );
+          return;
+        }
         this.running?.cancel();
         this.session.notice('info', 'Stopping…');
         return;
@@ -263,7 +295,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       return;
     }
 
-    this.session.user(text);
+    // Recorded before anything acts on the message, so "rewind" means exactly
+    // what it says: the repository as it was when you pressed Enter.
+    const checkpoint = await this.checkpoint(text);
+    this.session.user(text, checkpoint?.id);
     this.draft = '';
 
     const [command = '', ...rest] = text.split(/\s+/);
@@ -282,11 +317,14 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       case '/fix':
         await this.fix(argument ? this.idsMatching(argument) : this.affectedIds());
         return;
+      case '/upgrade-all':
+        await this.upgrade(this.safeIds(), 'safe');
+        return;
       case '/review':
         this.showReview();
         return;
       case '/agent':
-        await this.pickAgent();
+        this.openMenu('model');
         return;
       case '/clear':
         this.session.clear();
@@ -396,7 +434,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
   private async scan(options: { quiet?: boolean } = {}): Promise<void> {
     if (this.busy) {
-      this.session.notice('info', 'Already working — stop the current run first.');
+      this.session.notice('info', this.busyMessage());
       return;
     }
 
@@ -407,6 +445,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     }
 
     this.scanned = true;
+    this.clearStale();
     const step = this.session.step('Checking your dependencies');
     const profile = this.session.effortProfile;
 
@@ -469,12 +508,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         step.fail('Scan failed');
         this.session.notice('error', (err as Error).message);
       }
-    });
+    }, { cancellable: false });
   }
 
   private async analyzeRecent(): Promise<void> {
     if (this.busy) {
-      this.session.notice('info', 'Already working — stop the current run first.');
+      this.session.notice('info', this.busyMessage());
       return;
     }
 
@@ -679,7 +718,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
   private async fix(ids: readonly string[]): Promise<void> {
     if (this.busy) {
-      this.session.notice('info', 'Already working — stop the current run first.');
+      this.session.notice('info', this.busyMessage());
       return;
     }
 
@@ -776,6 +815,90 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     });
   }
 
+  /* ---------------------------------------------------------------- */
+  /* Rewind                                                            */
+  /* ---------------------------------------------------------------- */
+
+  private async checkpoint(label: string): Promise<{ id: string } | null> {
+    const ctx = await this.context();
+    if (!ctx) return null;
+    this.checkpoints ??= new Checkpoints(ctx.root);
+    return this.checkpoints.capture(label);
+  }
+
+  /**
+   * Put the repository, and the conversation, back to before a message.
+   *
+   * Both together, because either alone is a trap: files restored under a
+   * transcript that still describes the edits invites the developer to act on
+   * work that no longer exists, and a truncated transcript over changed files
+   * hides them entirely. This is the one destructive action in the panel, so it
+   * asks first, in a modal, naming the number of files it will throw away.
+   */
+  private async rewind(itemId: string): Promise<void> {
+    if (this.busy) {
+      this.session.notice('info', this.busyMessage());
+      return;
+    }
+
+    const item = this.session.thread.find((entry) => entry.id === itemId);
+    if (!item || item.kind !== 'user' || !item.checkpoint || !this.checkpoints) return;
+
+    const checkpoint = this.checkpoints.get(item.checkpoint);
+    if (!checkpoint) {
+      this.session.notice('warn', 'That checkpoint is gone — a later rewind already passed it.');
+      return;
+    }
+
+    const preview = await this.rewindPreview(checkpoint.tree);
+    const choice = await vscode.window.showWarningMessage(
+      `Rewind to before "${truncate(item.text, 60)}"?`,
+      {
+        modal: true,
+        detail:
+          preview.length === 0
+            ? 'No files have changed since then. The conversation from that message down will be cleared.'
+            : `${preview.length} file${preview.length === 1 ? '' : 's'} will be restored to how they were, and everything in the conversation from that message down will be cleared. This cannot be undone.\n\n${preview.slice(0, 12).join('\n')}${preview.length > 12 ? `\n…and ${preview.length - 12} more` : ''}`,
+      },
+      'Rewind',
+    );
+    if (choice !== 'Rewind') return;
+
+    try {
+      const result = await this.checkpoints.restore(item.checkpoint);
+      this.session.truncateFrom(itemId);
+
+      // The message that started it goes back in the composer: the usual reason
+      // to rewind is to say the same thing differently.
+      this.draft = item.text;
+
+      // Pending review entries describe edits that no longer exist on disk.
+      const ctx = await this.context();
+      if (ctx) this.review.begin(ctx.root);
+
+      this.session.notice(
+        'success',
+        result.files.length === 0
+          ? 'Rewound. Nothing on disk had changed since then.'
+          : `Rewound — ${result.files.length} file${result.files.length === 1 ? '' : 's'} restored to how they were.${
+              result.commitsSince
+                ? ' Commits made since then are still in your history: Drift restores files, it never rewrites history.'
+                : ''
+            }`,
+      );
+      this.render();
+    } catch (err) {
+      this.session.notice('error', `Could not rewind: ${(err as Error).message}`);
+    }
+  }
+
+  private async rewindPreview(tree: string): Promise<string[]> {
+    const ctx = await this.context();
+    if (!ctx) return [];
+    const { Git } = await import('../git.js');
+    return new Git(ctx.root).changedAgainstTree(tree).catch(() => []);
+  }
+
   private showReview(): void {
     if (this.review.isEmpty) {
       this.session.notice('info', 'Nothing is waiting for review.');
@@ -827,125 +950,165 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   /* ---------------------------------------------------------------- */
 
   /**
-   * One choice, made in VS Code's own list.
+   * Everything the composer menu offers.
    *
-   * The panel is a webview, so a `<select>` in it is drawn by the operating
-   * system: it ignores the colour theme, it cannot show the sentence explaining
-   * what each option does, and it looks like it belongs to a different program.
-   * Bouncing the choice out to `showQuickPick` costs one message and gets the
-   * editor's list, filter box and keyboard model exactly as the rest of VS Code
-   * has them. The tick marks the setting in force, the way every picker in the
-   * editor does.
-   */
-  private async choose<T extends string>(
-    title: string,
-    placeHolder: string,
-    current: T,
-    choices: readonly { value: T; label: string; description?: string; detail?: string }[],
-  ): Promise<T | undefined> {
-    type Item = vscode.QuickPickItem & { value: T };
-    const picked = await vscode.window.showQuickPick<Item>(
-      choices.map((choice) => ({
-        label: `${choice.value === current ? '$(check)' : '$(blank)'} ${choice.label}`,
-        description: choice.description,
-        detail: choice.detail,
-        value: choice.value,
-      })),
-      { title, placeHolder, matchOnDetail: true },
-    );
-
-    return picked && picked.value !== current ? picked.value : undefined;
-  }
-
-  private async pickMode(): Promise<void> {
-    const mode = await this.choose<SessionMode>(
-      'Drift: chat mode',
-      'What should Drift do with what it finds?',
-      this.session.mode,
-      (['agent', 'ask'] as SessionMode[]).map((value) => ({
-        value,
-        label: describeMode(value),
-        detail: explainMode(value),
-      })),
-    );
-    if (mode) await this.session.setMode(mode);
-  }
-
-  private async pickEffort(): Promise<void> {
-    const effort = await this.choose<SessionEffort>(
-      'Drift: effort',
-      'How widely should Drift look?',
-      this.session.effort,
-      (['quick', 'balanced', 'thorough'] as SessionEffort[]).map((value) => ({
-        value,
-        label: describeEffort(value),
-        description: value === 'balanced' ? 'default' : undefined,
-        detail: explainEffort(value),
-      })),
-    );
-    if (effort) await this.session.setEffort(effort);
-  }
-
-  private async pickPermission(): Promise<void> {
-    const permission = await this.choose<SessionPermission>(
-      'Drift: what the agent may do',
-      'How much should the agent do without asking?',
-      this.session.permission,
-      (['ask', 'auto-edit', 'full-auto'] as SessionPermission[]).map((value) => ({
-        value,
-        label: describePermission(value),
-        detail: explainPermission(value),
-      })),
-    );
-    if (!permission) return;
-
-    await this.session.setPermission(permission);
-    this.session.notice('info', `Permission set to **${describePermission(permission)}**.`);
-  }
-
-  /**
-   * The agent picker.
+   * Built here rather than in the renderer because it is entirely a question of
+   * what this workspace can do right now — which agents are installed, what is
+   * already attached, what the active editor has selected. The renderer takes it
+   * as data and draws it; it makes no decisions about what belongs in the list.
    *
-   * Only agents that are usable right now are offered here, because a list in
-   * the composer is for switching, not for shopping. The full list — including
-   * the ones that need a sign-in or an install, each with the reason — is one
-   * entry away, under the same command the palette uses.
+   * Two sections, both searchable at once. Every row carries the words a
+   * developer might type to find it, including the ones that name the setting
+   * family rather than the value — "effort", "permission", "model" — because the
+   * whole point of collapsing five controls into one menu is that you no longer
+   * have to know which control a thing used to live under.
    */
-  private async pickAgent(): Promise<void> {
-    type Item = vscode.QuickPickItem & { id?: string };
+  private menuSections(): MenuSection[] {
+    return [
+      { id: 'context', title: 'Context', items: this.contextItems() },
+      { id: 'model', title: 'Model', items: this.modelItems() },
+    ];
+  }
 
-    const preferred = vscode.workspace.getConfiguration('drift').get<string>('agent.preferred', 'auto');
-    const available = this.agents.filter((entry) => entry.availability.available);
-    const tick = (id: string) => (preferred === id ? '$(check)' : '$(blank)');
+  private contextItems(): MenuItem[] {
+    const editor = vscode.window.activeTextEditor;
+    const hasSelection = Boolean(editor && !editor.selection.isEmpty);
 
-    const items: Item[] = [
+    return [
+      ...this.session.context.map<MenuItem>((attachment) => ({
+        id: `detach:${attachment.value}`,
+        label: attachment.label,
+        detail: 'Attached — pick to remove',
+        icon: attachment.kind === 'folder' ? 'folder' : attachment.kind === 'selection' ? 'selection' : 'file',
+        checked: true,
+        keywords: 'remove detach attached context',
+      })),
       {
-        label: `${tick('auto')} Auto`,
-        description: available[0] ? available[0].agent.label : 'nothing available yet',
-        detail: 'Use the best agent installed on this machine',
-        id: 'auto',
+        id: 'context:file',
+        label: 'Add a file…',
+        detail: 'Search this project by path',
+        icon: 'file',
+        keywords: 'attach context add file search',
       },
-      ...available.map<Item>((entry) => ({
-        label: `${tick(entry.agent.id)} ${entry.agent.label}`,
-        detail: entry.availability.detail,
-        id: entry.agent.id,
-      })),
-      { label: '', kind: vscode.QuickPickItemKind.Separator },
       {
-        label: '$(gear) Set up an agent…',
-        detail: 'Every agent Drift supports, including the ones not ready yet',
-        id: '__pick',
+        id: 'context:folder',
+        label: 'Add a folder…',
+        detail: 'Scope the agent to one area of the project',
+        icon: 'folder',
+        keywords: 'attach context add folder directory scope',
+      },
+      ...(hasSelection
+        ? [
+            {
+              id: 'context:selection',
+              label: 'Editor selection',
+              detail: 'The lines highlighted in the active editor',
+              icon: 'selection' as const,
+              keywords: 'attach context selection highlighted lines',
+            },
+          ]
+        : []),
+      {
+        id: 'context:upload',
+        label: 'Upload from computer…',
+        detail: 'Something outside this project',
+        icon: 'upload',
+        keywords: 'attach context upload browse disk external',
       },
     ];
+  }
 
-    const picked = await vscode.window.showQuickPick(items, {
-      title: 'Drift: AI agent',
-      placeHolder: 'Which agent should do the editing?',
-      matchOnDetail: true,
-    });
+  private modelItems(): MenuItem[] {
+    const preferred = vscode.workspace.getConfiguration('drift').get<string>('agent.preferred', 'auto');
+    const available = this.agents.filter((entry) => entry.availability.available);
 
-    if (!picked?.id || (picked.id === preferred && picked.id !== '__pick')) return;
-    await this.setAgent(picked.id);
+    return [
+      {
+        id: 'agent:auto',
+        label: 'Auto',
+        detail: available[0] ? `Currently ${available[0].agent.label}` : 'Nothing available yet',
+        hint: 'agent',
+        icon: 'agent',
+        checked: preferred === 'auto',
+        keywords: 'model agent auto best',
+      },
+      ...available.map<MenuItem>((entry) => ({
+        id: `agent:${entry.agent.id}`,
+        label: entry.agent.label,
+        detail: entry.availability.detail,
+        hint: 'agent',
+        icon: 'agent',
+        checked: preferred === entry.agent.id,
+        keywords: 'model agent ai',
+      })),
+      {
+        id: 'agent:__pick',
+        label: 'Set up an agent…',
+        detail: 'Every agent Drift supports, including the ones not ready yet',
+        icon: 'gear',
+        keywords: 'model agent install sign in setup',
+      },
+      ...(['agent', 'ask'] as SessionMode[]).map<MenuItem>((value) => ({
+        id: `mode:${value}`,
+        label: describeMode(value),
+        detail: explainMode(value),
+        hint: 'mode',
+        icon: value === 'agent' ? 'agent' : 'ask',
+        checked: this.session.mode === value,
+        keywords: 'mode chat edit explain',
+      })),
+      ...(['quick', 'balanced', 'thorough'] as SessionEffort[]).map<MenuItem>((value) => ({
+        id: `effort:${value}`,
+        label: describeEffort(value),
+        detail: explainEffort(value),
+        hint: 'effort',
+        icon: 'speed',
+        checked: this.session.effort === value,
+        keywords: 'effort breadth depth how widely scan',
+      })),
+      ...(['ask', 'auto-edit', 'full-auto'] as SessionPermission[]).map<MenuItem>((value) => ({
+        id: `permission:${value}`,
+        label: describePermission(value),
+        detail: explainPermission(value),
+        hint: 'permission',
+        icon: 'shield',
+        checked: this.session.permission === value,
+        keywords: 'permission autonomy allow approve commit',
+      })),
+    ];
+  }
+
+  /** Dispatch a menu row. The id is the contract between the two halves. */
+  private async runMenuItem(id: string): Promise<void> {
+    const [kind = '', ...rest] = id.split(':');
+    const value = rest.join(':');
+
+    switch (kind) {
+      case 'detach':
+        this.session.detach(value);
+        return;
+      case 'context':
+        await this.addContext(value);
+        return;
+      case 'agent':
+        await this.setAgent(value);
+        return;
+      case 'mode':
+        await this.session.setMode(value as SessionMode);
+        return;
+      case 'effort':
+        await this.session.setEffort(value as SessionEffort);
+        return;
+      case 'permission':
+        await this.session.setPermission(value as SessionPermission);
+        this.session.notice('info', `Permission set to **${describePermission(value as SessionPermission)}**.`);
+        return;
+    }
+  }
+
+  /** Open the composer menu from the host, for `/agent` and the welcome link. */
+  private openMenu(anchor: 'context' | 'model'): void {
+    void this.view?.webview.postMessage({ type: 'openMenu', anchor });
   }
 
   private async pickVersion(id: string): Promise<void> {
@@ -979,83 +1142,58 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   /* ---------------------------------------------------------------- */
 
   /**
-   * Add context.
+   * Act on one row of the menu's Context section.
    *
-   * Two doors, because they answer different questions. Almost always the
-   * developer means "that file over there in my project", and for that the right
-   * control is VS Code's own filterable list of workspace files — the thing
-   * `#file` opens in Copilot Chat — not the operating system's file browser,
-   * which starts from nowhere useful and cannot fuzzy-match a path. The OS
-   * browser is still the only way to reach something outside the workspace, so
-   * it stays, named for what it is rather than presented as the default.
+   * Picking *which* file is the one choice still handed to VS Code, and
+   * deliberately so: it is a fuzzy search over thousands of paths, and the
+   * editor's own path picker — the thing `#file` opens in Copilot Chat — is
+   * better at it than any list a webview could draw. What the menu replaced was
+   * the part that was never a search: five two-item settings, each behind a
+   * full-window palette.
    */
-  private async attach(): Promise<void> {
+  private async addContext(what: string): Promise<void> {
     const ctx = await this.context();
     if (!ctx) {
       this.session.notice('warn', 'Open a folder to attach context from it.');
       return;
     }
 
-    type Door = vscode.QuickPickItem & { id: 'workspace' | 'upload' };
-    const choice = await vscode.window.showQuickPick<Door>(
-      [
-        {
-          label: '$(search) Add context',
-          detail: 'Search this project for a file, a folder, or use your editor selection',
-          id: 'workspace',
-        },
-        {
-          label: '$(desktop-download) Upload from computer',
-          detail: 'Browse the file system for something outside this project',
-          id: 'upload',
-        },
-      ],
-      { title: 'Add context for Drift', placeHolder: 'What should the agent look at?', matchOnDetail: true },
-    );
-    if (!choice) return;
+    if (what === 'upload') {
+      await this.attachFromDisk(ctx.root);
+      return;
+    }
 
-    if (choice.id === 'upload') await this.attachFromDisk(ctx.root);
-    else await this.attachFromWorkspace(ctx.root);
-  }
-
-  /** The workspace picker: everything indexable in the project, filterable by path. */
-  private async attachFromWorkspace(root: string): Promise<void> {
-    type Item = vscode.QuickPickItem & { attach?: Attachment; folders?: true };
-
-    const editor = vscode.window.activeTextEditor;
-    const selection = editor && !editor.selection.isEmpty ? describeSelection(root, editor) : null;
+    if (what === 'selection') {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor || editor.selection.isEmpty) {
+        this.session.notice('info', 'Nothing is selected in the editor right now.');
+        return;
+      }
+      this.session.attach(describeSelection(ctx.root, editor));
+      return;
+    }
 
     const uris = await vscode.workspace.findFiles('**/*', EXCLUDED_FROM_CONTEXT, 4000);
-    const paths = uris.map((uri) => relative(root, uri.fsPath).replace(/\\/g, '/')).sort();
+    const paths = uris.map((uri) => relative(ctx.root, uri.fsPath).replace(/\\/g, '/')).sort();
 
-    const items: Item[] = [
-      ...(selection
-        ? [
-            {
-              label: `$(list-selection) ${selection.label}`,
-              detail: 'The lines highlighted in the active editor',
-              attach: selection,
-            },
-          ]
-        : []),
-      { label: '$(folder) Folder…', detail: 'Scope the agent to one area of the project', folders: true as const },
-      { label: 'Files', kind: vscode.QuickPickItemKind.Separator },
-      ...paths.map<Item>((path) => ({
+    if (what === 'folder') {
+      await this.attachFolder(paths);
+      return;
+    }
+
+    const picked = await vscode.window.showQuickPick(
+      paths.map((path) => ({
         label: `$(file) ${basename(path)}`,
         description: dirname(path) === '.' ? undefined : dirname(path),
-        attach: { kind: 'file', label: path, value: path },
+        path,
       })),
-    ];
-
-    const picked = await vscode.window.showQuickPick(items, {
-      title: 'Add context for Drift',
-      placeHolder: 'Type to filter this project by path',
-      matchOnDescription: true,
-    });
-    if (!picked) return;
-
-    if (picked.folders) await this.attachFolder(paths);
-    else if (picked.attach) this.session.attach(picked.attach);
+      {
+        title: 'Add a file as context',
+        placeHolder: 'Type to filter this project by path',
+        matchOnDescription: true,
+      },
+    );
+    if (picked) this.session.attach({ kind: 'file', label: picked.path, value: picked.path });
   }
 
   private async attachFolder(paths: readonly string[]): Promise<void> {
@@ -1196,15 +1334,27 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   /* Plumbing                                                          */
   /* ---------------------------------------------------------------- */
 
-  /** Run one cancellable operation at a time and keep the UI's busy flag honest. */
-  private async run(work: (token: vscode.CancellationToken) => Promise<void>): Promise<void> {
+  /**
+   * Run one operation at a time and keep the UI's busy flag honest.
+   *
+   * `cancellable: false` is for work whose partial result would be a lie. A scan
+   * stopped half way has not "checked" the packages it never reached, but every
+   * surface in the panel — the tallies, the safe list, the headline — would read
+   * as though it had. Everything an agent does is interruptible; the check that
+   * decides what is safe is not.
+   */
+  private async run(
+    work: (token: vscode.CancellationToken) => Promise<void>,
+    options: { cancellable?: boolean } = {},
+  ): Promise<void> {
     if (this.running) {
-      this.session.notice('info', 'Already working — stop the current run first.');
+      this.session.notice('info', this.busyMessage());
       return;
     }
 
     const source = new vscode.CancellationTokenSource();
     this.running = source;
+    this.cancellable = options.cancellable !== false;
     this.render();
 
     try {
@@ -1215,8 +1365,59 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     } finally {
       source.dispose();
       this.running = null;
+      this.cancellable = true;
       this.render();
     }
+  }
+
+  private busyMessage(): string {
+    return this.cancellable
+      ? 'Already working — stop the current run first.'
+      : 'Still checking your dependencies. This one finishes before anything else starts.';
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Staleness                                                         */
+  /* ---------------------------------------------------------------- */
+
+  private markStale(uri: vscode.Uri, reason: StaleHint['reason']): void {
+    // Nothing is stale before the first scan, and Drift's own edits are not news
+    // — the run that made them reports what it did.
+    if (!this.scanned || this.busy) return;
+    if (uri.scheme !== 'file') return;
+
+    const root = this.state.workspaceRoot ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!root) return;
+
+    const path = relative(root, uri.fsPath).replace(/\\/g, '/');
+    if (!path || path.startsWith('..') || path.split('/').includes('node_modules')) return;
+
+    // A dependency change outranks a code change: it can turn a package from
+    // safe into affected, whereas an edit can only move where the impact is.
+    if (this.stale?.reason === 'dependencies' && reason === 'code') return;
+    if (this.stale?.reason !== reason) this.staleFiles.clear();
+
+    this.staleFiles.add(path);
+    this.stale = { reason, label: this.staleLabel(reason) };
+    this.render();
+  }
+
+  private staleLabel(reason: StaleHint['reason']): string {
+    const files = [...this.staleFiles];
+    const first = files[0] ?? '';
+    const rest = files.length - 1;
+
+    if (reason === 'dependencies') {
+      return `${first} changed since this scan${rest > 0 ? ` (and ${rest} more)` : ''} — these results may no longer be right.`;
+    }
+    return files.length === 1
+      ? `You edited ${first} since this scan. Rescanning re-checks where the breaking changes land.`
+      : `You edited ${files.length} files since this scan. Rescanning re-checks where the breaking changes land.`;
+  }
+
+  private clearStale(): void {
+    this.stale = null;
+    this.staleFiles.clear();
   }
 
   private refreshPackageList(): void {
@@ -1227,6 +1428,23 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private affectedIds(): string[] {
     return [...this.candidates.values()]
       .filter((candidate) => severityOf(candidate) === 'affected')
+      .map((candidate) => candidate.id);
+  }
+
+  /**
+   * The upgrades with nothing to decide.
+   *
+   * Everything Drift checked and found either clean upstream, or breaking
+   * upstream in ways no code here uses. Packages it could not check are
+   * excluded: "unknown" is not "safe", and sweeping them into a bulk action
+   * would be the one place Drift claimed something it had not proved.
+   */
+  private safeIds(): string[] {
+    return [...this.candidates.values()]
+      .filter((candidate) => {
+        const severity = severityOf(candidate);
+        return severity !== 'affected' && severity !== 'error';
+      })
       .map((candidate) => candidate.id);
   }
 
@@ -1288,8 +1506,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       candidates: Object.fromEntries(this.candidates),
       review: totals.files > 0 ? { groups: this.review.groups(), totals } : null,
       busy: this.busy,
+      cancellable: this.cancellable,
       awaitingAnswer: this.session.awaitingAnswer,
       commands: SLASH_COMMANDS,
+      menu: this.menuSections(),
+      stale: this.stale,
       draft: this.draft,
     };
 
@@ -1302,6 +1523,12 @@ function describeSelection(root: string, editor: vscode.TextEditor): Attachment 
   const path = relative(root, editor.document.uri.fsPath).replace(/\\/g, '/');
   const span = `${path}:${editor.selection.start.line + 1}-${editor.selection.end.line + 1}`;
   return { kind: 'selection', label: span, value: span };
+}
+
+/** Fit a message into a dialog title without letting it run off the end. */
+function truncate(text: string, limit: number): string {
+  const flat = text.replace(/\s+/g, ' ').trim();
+  return flat.length <= limit ? flat : `${flat.slice(0, limit - 1)}…`;
 }
 
 function toChoice(entry: DiscoveredAgent): AgentChoice {

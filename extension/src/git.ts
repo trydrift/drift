@@ -1,4 +1,6 @@
 import { execFile } from 'node:child_process';
+import { rm } from 'node:fs/promises';
+import { join } from 'node:path';
 import { promisify } from 'node:util';
 
 const run = promisify(execFile);
@@ -25,12 +27,13 @@ export class GitError extends Error {
 export class Git {
   constructor(private readonly cwd: string) {}
 
-  private async exec(args: string[]): Promise<string> {
+  private async exec(args: string[], env?: NodeJS.ProcessEnv): Promise<string> {
     try {
       const { stdout } = await run('git', args, {
         cwd: this.cwd,
         maxBuffer: 32 * 1024 * 1024,
         windowsHide: true,
+        env: env ? { ...process.env, ...env } : undefined,
       });
       return stdout;
     } catch (err) {
@@ -45,6 +48,10 @@ export class Git {
     } catch {
       return null;
     }
+  }
+
+  async gitDir(): Promise<string> {
+    return (await this.exec(['rev-parse', '--absolute-git-dir'])).trim();
   }
 
   async currentBranch(): Promise<string> {
@@ -166,5 +173,75 @@ export class Git {
 
   async stashPop(): Promise<void> {
     await this.exec(['stash', 'pop']);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Snapshots — the machinery behind rewind                             */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Record the working tree as a git tree object, without touching anything.
+   *
+   * Everything here runs against a scratch index file, so the developer's own
+   * staging area is exactly as they left it afterwards. That matters: a
+   * checkpoint is taken on every turn, silently, and a feature that quietly
+   * restaged someone's half-built commit each time they typed would be worse
+   * than having no rewind at all.
+   *
+   * The snapshot is what `git add -A` would stage, which means `.gitignore` is
+   * honoured — `node_modules` is not copied, but `package.json` and the lockfile
+   * are, and those are the files an upgrade actually changes.
+   */
+  async snapshotTree(): Promise<string> {
+    const indexFile = join(await this.gitDir(), 'drift-snapshot-index');
+    const env = { GIT_INDEX_FILE: indexFile };
+
+    await rm(indexFile, { force: true });
+    try {
+      // Seed from HEAD so the snapshot records deletions, not just edits. A
+      // repository with no commits yet has no HEAD to seed from, and an empty
+      // index is the right starting point there.
+      if (await this.tryExec(['rev-parse', '--verify', 'HEAD'])) {
+        await this.exec(['read-tree', 'HEAD'], env);
+      }
+      await this.exec(['add', '-A'], env);
+      return (await this.exec(['write-tree'], env)).trim();
+    } finally {
+      await rm(indexFile, { force: true });
+    }
+  }
+
+  /** Paths that differ between a snapshot tree and the working tree right now. */
+  async changedAgainstTree(tree: string): Promise<string[]> {
+    const tracked = (await this.tryExec(['diff', '--name-only', tree])) ?? '';
+    const untracked = (await this.tryExec(['ls-files', '--others', '--exclude-standard'])) ?? '';
+    return [
+      ...new Set(
+        [...tracked.split('\n'), ...untracked.split('\n')].map((line) => line.trim()).filter(Boolean),
+      ),
+    ];
+  }
+
+  /**
+   * Put the working tree back to a snapshot.
+   *
+   * Files edited since are reverted, files created since are removed, files
+   * deleted since come back. Commits are left alone — Drift does not rewrite
+   * history, so rewinding past a commit restores the files and leaves the commit
+   * in the log, which is the honest outcome and the recoverable one.
+   */
+  async restoreTree(tree: string): Promise<void> {
+    // Staging first is what lets `read-tree -u --reset` see files created after
+    // the snapshot; git will only remove a path from the working tree if it
+    // knows about it.
+    await this.exec(['add', '-A']);
+    await this.exec(['read-tree', '-u', '--reset', tree]);
+    // `read-tree --reset` leaves the index matching the snapshot rather than
+    // HEAD, which would show every restored file as staged. Resetting to HEAD
+    // gives the ordinary reading: file contents exactly as they were, changes
+    // against HEAD shown as unstaged. What a rewind does not reproduce is which
+    // of those changes had been staged at the time — content is restored, the
+    // staging area is not.
+    await this.exec(['reset', '-q']);
   }
 }

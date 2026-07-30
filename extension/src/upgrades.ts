@@ -133,8 +133,13 @@ export async function scanNpmUpgrades(args: {
   let done = 0;
   const candidates: UpgradeCandidate[] = [];
 
-  for (const dep of deps) {
-    if (token?.isCancellationRequested) break;
+  // Checking a package is almost entirely waiting: a registry request, a
+  // changelog fetch, a release-notes call, a type-declaration download. Doing
+  // that one package at a time made a scan take as long as the sum of every
+  // network round trip in the project. Running several at once turns that sum
+  // into something much closer to the slowest one.
+  await inParallel(deps, concurrency(), async (dep) => {
+    if (token?.isCancellationRequested) return;
 
     report('Checking npm registry', `${dep.name} (installed ${dep.current})`, done, deps.length);
     const available = await availableVersions(dep.name, dep.current, dep.range).catch(() => null);
@@ -143,8 +148,10 @@ export async function scanNpmUpgrades(args: {
       skipped += 1;
       done += 1;
       report('Up to date', `${dep.name}@${dep.current}`, done, deps.length);
-      continue;
+      return;
     }
+
+    if (token?.isCancellationRequested) return;
 
     const selected = available.safeLatest ?? available.latest;
     const candidate = await analyzeUpgrade({
@@ -172,13 +179,46 @@ export async function scanNpmUpgrades(args: {
       done,
       deps.length,
     );
-  }
+  });
 
   return {
     candidates: candidates.sort(compareCandidates),
     checked: deps.length,
     skipped,
   };
+}
+
+/**
+ * How many packages to check at once.
+ *
+ * High enough that a fifty-dependency project finishes in the time a developer
+ * will actually wait, low enough to stay a polite client of the npm registry and
+ * the GitHub API — the unauthenticated GitHub rate limit is the real ceiling
+ * here, and blowing through it turns evidence into "could not check", which is
+ * worse than being slower.
+ */
+function concurrency(): number {
+  const configured = vscode.workspace.getConfiguration('drift').get<number>('analysis.concurrency', 8);
+  return Math.max(1, Math.min(16, Math.floor(configured) || 8));
+}
+
+/** Run `worker` over `items`, at most `limit` in flight, preserving no order. */
+async function inParallel<T>(
+  items: readonly T[],
+  limit: number,
+  worker: (item: T) => Promise<void>,
+): Promise<void> {
+  let next = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    for (;;) {
+      const index = next;
+      next += 1;
+      const item = items[index];
+      if (item === undefined) return;
+      await worker(item);
+    }
+  });
+  await Promise.all(runners);
 }
 
 export async function reanalyzeUpgrade(args: {
