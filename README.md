@@ -100,6 +100,40 @@ writes anything.
 
 ---
 
+## Or use it in your editor
+
+The same engine ships as a VS Code extension that needs **no tokens and no
+account**, because nothing in the analysis requires one. See
+[`extension/`](extension/).
+
+```bash
+cd extension && npm install && npm run package
+```
+
+The panel is a conversation with a composer, the shape Copilot Chat and Claude
+use. Type `/scan` and it checks every dependency for a newer version, naming each
+step as it goes, then answers the question that actually matters:
+
+> **3 of 14 upgrades affect code in this repository. The other 11 are safe to take as-is.**
+
+That distinction is the point. A package can have seven breaking changes and still
+be a five-second upgrade for you, because your code never calls the parts that
+changed — so Drift reports it in neutral colour with the upstream detail one click
+away. Colour and notifications are reserved for changes that land on a file here.
+
+`/fix` hands the affected code to whichever AI agent you already have — Copilot,
+Claude Code, Codex, Gemini, Aider, OpenCode, or a local Ollama model. Its edits
+arrive as a **proposal**: written into the working tree so you can read them in
+context, tinted, with **Keep** and **Undo** on every hunk, and nothing committed
+until you keep it. Keeping a group commits exactly the files the plan named for
+it.
+
+When a decision is genuinely yours — two valid migrations, a dirty working tree —
+Drift asks in the thread and waits, and the agent can raise a question the same
+way instead of guessing.
+
+---
+
 ## How it works
 
 Seven stages. Each is independently testable, and each can legitimately produce
@@ -204,6 +238,7 @@ Drift departs from the paper in three places, deliberately. See
 | [Research mapping](docs/research.md) | What Drift took from the paper, and what it changed |
 | [Deployment](docs/deployment.md) | Action, CLI, and self-hosted webhook |
 | [Testing on a real repo](docs/testing-on-a-real-repo.md) | Four ways to try it, in ascending order of commitment |
+| [The VS Code extension](extension/README.md) | The editor front end — panel, agents, review |
 
 ---
 
@@ -225,7 +260,8 @@ genuine bugs, [documented in the commit history](../../commits/main).
 
 ## Status
 
-MVP. The pipeline is complete and tested end to end; 106 tests cover every stage.
+MVP. The pipeline is complete and tested end to end. 132 tests cover every stage,
+the diff engine the review UI rests on, and the panel's rendered markup.
 Known limitations are documented in [docs/architecture.md](docs/architecture.md#known-limitations)
 rather than hidden — including the ones we'd rather not advertise.
 

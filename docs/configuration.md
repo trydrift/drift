@@ -280,6 +280,73 @@ guardrails:
 
 ---
 
+## VS Code settings
+
+The extension reads the same `.github/drift.yml`, then layers VS Code settings on
+top. **The file is the team's policy; settings are the individual's preference**,
+so a developer can widen what they see locally without changing what the
+repository enforces for everyone.
+
+### Set from the panel composer
+
+These three exist as settings so a team can commit a default in
+`.vscode/settings.json`, but the expected way to change them is the picker in the
+composer, where the effect is visible.
+
+| Setting | Values | Meaning |
+|---|---|---|
+| `drift.session.mode` | `agent` (default), `ask` | `ask` analyses and explains but never edits |
+| `drift.session.effort` | `quick`, `balanced` (default), `thorough` | How widely to look — see below |
+| `drift.session.permission` | `ask`, `auto-edit` (default), `full-auto` | How much the agent may do unsupervised |
+
+**Effort changes what is analysed, not just how long it takes:**
+
+| | Dependencies | Bumps | Impact sites per change | Packages |
+|---|---|---|---|---|
+| `quick` | runtime only | major, minor | 12 | first 25 |
+| `balanced` | runtime only | major, minor | 40 | all |
+| `thorough` | runtime, dev, optional, peer | major, minor, patch | 120 | all |
+
+**Permission:**
+
+| | Before editing | After editing |
+|---|---|---|
+| `ask` | Asks in the thread, per commit group | Waits for keep/undo |
+| `auto-edit` | Edits | Waits for keep/undo; commits a group when it is fully kept |
+| `full-auto` | Edits | Commits each group immediately |
+
+On `ask` and `auto-edit`, **nothing reaches a commit without a human keeping it.**
+
+### The one worth setting by hand
+
+`drift.fix.customInstructions` — your repository's conventions, passed to every
+agent on every run. The highest-leverage setting for output quality:
+
+```text
+This repo uses Vitest, not Jest. Prefer named exports.
+All HTTP goes through src/lib/http.ts — never call fetch directly.
+```
+
+Anything you type into the panel that is not a command and not an answer to a
+question is appended here, so the composer doubles as the way to add a convention
+mid-session.
+
+### The rest
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `drift.agent.preferred` | `auto` | Which agent, or best available |
+| `drift.agent.copilotModelFamily` | — | Pin an in-editor Copilot model family |
+| `drift.agent.ollamaHost` / `ollamaModel` | `localhost:11434`, `qwen2.5-coder` | Local model |
+| `drift.agent.timeoutSeconds` | `600` | Per commit unit |
+| `drift.analysis.runOnStartup` | `true` | Analyse on open, and scan when the panel first opens |
+| `drift.analysis.includePatch` / `includeDev` / `includeTransitive` | `false` | Widen `/recent` analysis |
+| `drift.analysis.ignore` | `[]` | Package patterns to skip, added to `ignore` in `drift.yml` |
+| `drift.ui.showInlineDiagnostics` | `true` | Flag affected lines in the Problems panel |
+| `drift.logLevel` | `info` | Output channel verbosity |
+
+---
+
 ## Environment variables
 
 | Variable | Purpose |
