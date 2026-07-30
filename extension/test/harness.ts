@@ -1,8 +1,8 @@
 /**
  * Headless test of the extension's UI logic.
  *
- * Runs the real analysis against a real repository, then drives the real tree
- * provider, diagnostics, state machine, and report renderer over the result —
+ * Runs the real analysis against a real repository, then drives the real
+ * diagnostics, state machine, and report renderer over the result —
  * with `vscode` swapped for a stub. Everything except the editor chrome is the
  * code that actually ships.
  *
@@ -16,7 +16,6 @@ import { LocalGitProvider, inspectLocalRepo } from '../../src/repo/local-git.js'
 import { DriftConfigSchema } from '../../src/config/schema.js';
 import { createLogger } from '../../src/util/logger.js';
 import { DriftState } from '../src/state.js';
-import { DriftTreeProvider, type DriftNode } from '../src/ui/tree.js';
 import { DriftDiagnostics } from '../src/ui/diagnostics.js';
 import { CLI_AGENT_SPECS, which } from '../src/agents/cli.js';
 import { parseFileBlocks, saysNoChanges, buildFixPrompt } from '../src/agents/types.js';
@@ -86,47 +85,7 @@ async function main(): Promise<void> {
   check('plan is reachable from state', state.plan?.id === plan.id);
   check('busy flag clears after analysis', !state.isBusy);
 
-  console.log('\n=== 3. tree ===');
-
-  const tree = new DriftTreeProvider(state);
-  const roots = tree.getChildren();
-  check('tree has root nodes', roots.length > 0, `${roots.length}`);
-
-  const depNode = roots.find((n) => n.type === 'dependency');
-  check('renders a dependency node', depNode !== undefined);
-
-  if (depNode) {
-    const item = tree.getTreeItem(depNode);
-    check('dependency shows the version move', Boolean(item.description), String(item.description));
-
-    const breaking = tree.getChildren(depNode);
-    check('dependency expands to breaking changes', breaking.length > 0, `${breaking.length}`);
-
-    const first = breaking[0];
-    if (first) {
-      const bItem = tree.getTreeItem(first);
-      check('breaking change has an icon', bItem.iconPath !== undefined);
-
-      const sites = tree.getChildren(first);
-      check('breaking change expands to sites', sites.length > 0, `${sites.length}`);
-
-      const site = sites[0];
-      if (site) {
-        const sItem = tree.getTreeItem(site);
-        check('site is clickable', sItem.command !== undefined);
-        check('site shows file:line', String(sItem.description).includes(':'), String(sItem.description));
-      }
-    }
-  }
-
-  const commitsRoot = roots.find((n: DriftNode) => n.type === 'commits-root');
-  check('renders the commit plan', commitsRoot !== undefined);
-  if (commitsRoot) {
-    const commits = tree.getChildren(commitsRoot);
-    check('commits are listed', commits.length === plan.commits.length, `${commits.length}`);
-  }
-
-  console.log('\n=== 4. diagnostics ===');
+  console.log('\n=== 3. diagnostics ===');
 
   const diagnostics = new DriftDiagnostics(state);
   diagnostics.render();
@@ -140,7 +99,7 @@ async function main(): Promise<void> {
   check('flagged files in the Problems panel', flaggedFiles > 0, `${flaggedFiles} file(s)`);
   check('marker count matches impact sites', totalMarkers === plan.impactSites.length, `${totalMarkers}`);
 
-  console.log('\n=== 5. report rendering ===');
+  console.log('\n=== 4. report rendering ===');
 
   // renderHtml is module-private; exercise it the way the panel does.
   const { __renderForTest } = await import('../src/ui/report.js');
@@ -161,7 +120,7 @@ async function main(): Promise<void> {
   writeFileSync(out, html);
   console.log(`  wrote ${resolve(out)}`);
 
-  console.log('\n=== 6. agent plumbing ===');
+  console.log('\n=== 5. agent plumbing ===');
 
   const prompt = buildFixPrompt({
     plan,

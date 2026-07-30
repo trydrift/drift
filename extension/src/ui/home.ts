@@ -1,129 +1,182 @@
 import * as vscode from 'vscode';
 import { join, relative } from 'node:path';
-import type { BreakingChange, Evidence, RemediationPlan, RepoContext } from '../../../src/types.js';
+import type { RemediationPlan, RepoContext } from '../../../src/types.js';
 import { buildPlan } from '../../../src/plan/index.js';
 import { inspectLocalRepo } from '../../../src/repo/local-git.js';
 import { DriftConfigSchema, type DriftConfig } from '../../../src/config/schema.js';
 import { loadWorkspaceConfig, runAnalysis } from '../analyze.js';
 import { runFix } from '../fix.js';
 import type { DriftState } from '../state.js';
+import { DriftSession, describePermission } from '../session.js';
+import type { DriftReview, ReviewGroup } from '../review/store.js';
 import { discoverAgents, invalidateAgentCache, type DiscoveredAgent } from '../agents/registry.js';
 import { getGitHubSession, getRateLimitToken } from '../github-auth.js';
 import {
+  describeSeverity,
   installNpmForcedUpgrade,
   installNpmUpgrade,
   reanalyzeUpgrade,
   scanNpmUpgrades,
+  severityOf,
   type UpgradeCandidate,
 } from '../upgrades.js';
 import { DriftReportPanel } from './report.js';
-
-type Message =
-  | { role: 'drift'; text: string }
-  | { role: 'user'; text: string }
-  | { role: 'agent'; text: string };
-
-type Incoming =
-  | { type: 'scanUpgrades' }
-  | { type: 'analyzeRecent' }
-  | { type: 'selectVersion'; id: string; version: string }
-  | { type: 'toggleCandidate'; id: string; selected: boolean }
-  | { type: 'upgradeCandidate'; id: string; mode?: UpgradeMode; fix?: boolean }
-  | { type: 'upgradeSelected'; mode?: UpgradeMode; fix?: boolean }
-  | { type: 'fixCandidate'; id: string }
-  | { type: 'fixSelected' }
-  | { type: 'openFile'; file: string; line: number }
-  | { type: 'openUrl'; url: string }
-  | { type: 'showReport' }
-  | { type: 'selectAgent' }
-  | { type: 'setAgent'; id: string }
-  | { type: 'signIn' }
-  | { type: 'pickFile' }
-  | { type: 'pickFolder' }
-  | { type: 'sendMessage'; text: string };
-
-type UpgradeMode = 'safe' | 'force';
+import { makeNonce, renderPanel, SLASH_COMMANDS, type AgentChoice, type ViewModel } from './webview.js';
 
 /**
- * The main Drift column.
+ * The Drift panel.
  *
- * A `WebviewView` is still native VS Code UI: it lives in the activity-bar
- * column, uses theme tokens, and behaves like Copilot/Claude-style side panels.
- * The tree remains useful for simple hierarchies, but dropdowns, real buttons,
- * agent chips, and a chat/progress thread need a richer view surface.
+ * One conversation, one composer, one place where work happens. Every command
+ * the developer can run is reachable by typing it, and every result — a scan, a
+ * question, a set of proposed edits — lands in the thread underneath the message
+ * that caused it. Nothing acts at a distance.
+ *
+ * The controller is deliberately thin: it turns messages from the webview into
+ * calls on the same modules the command palette uses, and turns their progress
+ * into thread items. Rendering is a pure function of state, and the state lives
+ * in `DriftSession`, `DriftReview`, and `DriftState`.
  */
+
+type Incoming =
+  | { type: 'submit'; text: string }
+  | { type: 'draft'; text: string }
+  | { type: 'answer'; id: string; value: string }
+  | { type: 'setAgent' | 'setMode' | 'setEffort' | 'setPermission'; value: string }
+  | { type: 'attach' }
+  | { type: 'detach'; value: string }
+  | { type: 'pickAgent' }
+  | { type: 'stop' }
+  | { type: 'signIn' }
+  | { type: 'showReport' }
+  | { type: 'openFile'; file: string; line: number }
+  | { type: 'openUrl'; url: string }
+  | { type: 'openDiff'; path: string }
+  | { type: 'selectVersion'; id: string; value: string }
+  | { type: 'upgrade'; id: string; mode: 'safe' | 'force' }
+  | { type: 'fixPackage'; id: string }
+  | { type: 'fixAll' }
+  | { type: 'keepFile' | 'undoFile'; path: string }
+  | { type: 'keepGroup' | 'undoGroup'; order: number }
+  | { type: 'keepAll' | 'undoAll' };
+
+interface WorkspaceContext {
+  root: string;
+  info: NonNullable<Awaited<ReturnType<typeof inspectLocalRepo>>>;
+  repo: RepoContext;
+  config: DriftConfig;
+}
+
 export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposable {
   private view: vscode.WebviewView | undefined;
-  private candidates: UpgradeCandidate[] = [];
-  private selected = new Set<string>();
+  private candidates = new Map<string, UpgradeCandidate>();
   private agents: DiscoveredAgent[] = [];
   private signedInLabel: string | null = null;
-  private scanStatus: 'idle' | 'scanning' | 'ready' | 'error' = 'idle';
-  private scanSummary = 'Scan installed npm packages for available upgrades.';
-  private messages: Message[] = [
-    {
-      role: 'drift',
-      text: 'Pick one package or select several. Drift will inspect breaking evidence before any AI fix runs.',
-    },
-  ];
-  private disposables: vscode.Disposable[] = [];
+  private running: vscode.CancellationTokenSource | null = null;
+  private draft = '';
+  private scanned = false;
+
+  private readonly disposables: vscode.Disposable[] = [];
 
   constructor(
     private readonly extensionUri: vscode.Uri,
     private readonly state: DriftState,
+    private readonly session: DriftSession,
+    private readonly review: DriftReview,
+    private readonly output: vscode.LogOutputChannel,
   ) {
     this.disposables.push(
       state.onDidChange(() => this.render()),
+      session.onDidChange(() => this.render()),
+      review.onDidChange(() => this.render()),
       vscode.authentication.onDidChangeSessions((event) => {
         if (event.provider.id === 'github') void this.refreshIdentity();
       }),
     );
+
+    // Keeping a whole group is the developer saying "this is right" — which is
+    // exactly when the commit the planner described should exist.
+    review.setCommitHandler(async (group) => this.commitGroup(group));
   }
 
   resolveWebviewView(view: vscode.WebviewView): void {
     this.view = view;
-    view.webview.options = {
-      enableScripts: true,
-      localResourceRoots: [this.extensionUri],
-    };
+    view.webview.options = { enableScripts: true, localResourceRoots: [this.extensionUri] };
     this.disposables.push(view.webview.onDidReceiveMessage((message: Incoming) => this.handle(message)));
+
     void this.refreshIdentity();
     void this.refreshAgents();
-    void this.scanUpgrades();
     this.render();
+
+    // Opening the panel is a request to know the state of your dependencies, so
+    // the first scan starts itself. Every step of it is named in the thread as it
+    // happens, which is the difference between a tool that looks busy and one
+    // that looks stuck.
+    if (vscode.workspace.getConfiguration('drift').get<boolean>('analysis.runOnStartup', true)) {
+      void this.scanOnStartup();
+    }
   }
 
   dispose(): void {
     for (const d of this.disposables) d.dispose();
   }
 
+  /** Bring the panel forward, e.g. from a notification action. */
+  async reveal(): Promise<void> {
+    await vscode.commands.executeCommand('drift.changes.focus');
+    this.view?.show?.(true);
+  }
+
+  get busy(): boolean {
+    return this.running !== null;
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Message handling                                                  */
+  /* ---------------------------------------------------------------- */
+
   private async handle(message: Incoming): Promise<void> {
     switch (message.type) {
-      case 'scanUpgrades':
-        await this.scanUpgrades(true);
+      case 'submit':
+        await this.submit(message.text);
         return;
-      case 'analyzeRecent':
-        await this.analyzeRecent();
+      case 'draft':
+        this.draft = message.text;
         return;
-      case 'selectVersion':
-        await this.selectVersion(message.id, message.version);
+      case 'answer':
+        this.session.answer(message.id, message.value);
         return;
-      case 'toggleCandidate':
-        if (message.selected) this.selected.add(message.id);
-        else this.selected.delete(message.id);
-        this.render();
+      case 'setAgent':
+        await this.setAgent(message.value);
         return;
-      case 'upgradeCandidate':
-        await this.upgradeCandidates([message.id], message.mode ?? 'safe', Boolean(message.fix));
+      case 'setMode':
+        await this.session.setMode(message.value as 'ask' | 'agent');
         return;
-      case 'upgradeSelected':
-        await this.upgradeCandidates([...this.selected], message.mode ?? 'safe', Boolean(message.fix));
+      case 'setEffort':
+        await this.session.setEffort(message.value as 'quick' | 'balanced' | 'thorough');
         return;
-      case 'fixCandidate':
-        await this.fixCandidates([message.id]);
+      case 'setPermission':
+        await this.session.setPermission(message.value as 'ask' | 'auto-edit' | 'full-auto');
+        this.session.notice('info', `Permission set to **${describePermission(this.session.permission)}**.`);
         return;
-      case 'fixSelected':
-        await this.fixCandidates([...this.selected]);
+      case 'attach':
+        await this.attach();
+        return;
+      case 'detach':
+        this.session.detach(message.value);
+        return;
+      case 'pickAgent':
+        await vscode.commands.executeCommand('drift.selectAgent');
+        invalidateAgentCache();
+        await this.refreshAgents();
+        return;
+      case 'stop':
+        this.running?.cancel();
+        this.session.notice('info', 'Stopping…');
+        return;
+      case 'signIn':
+        await getGitHubSession({ createIfNone: true });
+        await this.refreshIdentity();
+        await this.refreshAgents();
         return;
       case 'showReport':
         DriftReportPanel.show(this.state);
@@ -134,247 +187,693 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       case 'openUrl':
         await vscode.env.openExternal(vscode.Uri.parse(message.url));
         return;
-      case 'selectAgent':
-        await vscode.commands.executeCommand('drift.selectAgent');
-        invalidateAgentCache();
-        await this.refreshAgents();
+      case 'openDiff':
+        await vscode.commands.executeCommand('drift.openChangeDiff', message.path);
         return;
-      case 'setAgent':
-        await this.setAgent(message.id);
+      case 'selectVersion':
+        await this.retarget(message.id, message.value);
         return;
-      case 'signIn':
-        await getGitHubSession({ createIfNone: true });
-        await this.refreshIdentity();
-        await this.refreshAgents();
+      case 'upgrade':
+        await this.upgrade([message.id], message.mode);
         return;
-      case 'pickFile':
-        await this.pickMention('file');
+      case 'fixPackage':
+        await this.fix([message.id]);
         return;
-      case 'pickFolder':
-        await this.pickMention('folder');
+      case 'fixAll':
+        await this.fix(this.affectedIds());
         return;
-      case 'sendMessage':
-        await this.addChatInstruction(message.text);
+      case 'keepFile':
+        await this.review.keepFile(message.path);
+        return;
+      case 'undoFile':
+        await this.review.undoFile(message.path);
+        return;
+      case 'keepGroup':
+        await this.review.keepGroup(message.order);
+        return;
+      case 'undoGroup':
+        await this.review.undoGroup(message.order);
+        this.session.notice('info', 'Reverted those files to how they were.');
+        return;
+      case 'keepAll':
+        await this.review.keepAll();
+        return;
+      case 'undoAll':
+        await this.review.undoAll();
+        this.session.notice('info', 'Reverted every file Drift changed. Nothing was committed.');
         return;
     }
   }
 
-  private async scanUpgrades(force = false): Promise<void> {
-    if (this.scanStatus === 'scanning') return;
-    if (!force && this.candidates.length > 0) return;
+  /**
+   * Route what the developer typed.
+   *
+   * Slash commands are exact and always win. An outstanding question takes the
+   * next free-text message as its answer, because that is what the developer
+   * means when they type after being asked something. Everything else is matched
+   * against intent, and anything that matches nothing becomes a standing
+   * instruction for the agent — the one thing plain prose is genuinely good for
+   * here, and the setting with the biggest effect on fix quality.
+   */
+  private async submit(raw: string): Promise<void> {
+    const text = raw.trim();
+    if (!text) return;
 
-    const ctx = await this.context();
-    if (!ctx) {
-      this.scanStatus = 'error';
-      this.scanSummary = 'Open a git repository with package.json to scan upgrades.';
-      this.render();
+    if (this.session.awaitingAnswer && !text.startsWith('/')) {
+      this.session.user(text);
+      this.session.answerPending(text);
       return;
     }
 
-    this.scanStatus = 'scanning';
-    this.scanSummary = 'Checking npm registry and Drift evidence...';
-    this.render();
+    this.session.user(text);
+    this.draft = '';
 
-    try {
-      const result = await scanNpmUpgrades({
+    const [command = '', ...rest] = text.split(/\s+/);
+    const argument = rest.join(' ').trim();
+
+    switch (command.toLowerCase()) {
+      case '/scan':
+        await this.scan();
+        return;
+      case '/recent':
+        await this.analyzeRecent();
+        return;
+      case '/upgrade':
+        await this.upgradeByName(argument);
+        return;
+      case '/fix':
+        await this.fix(argument ? this.idsMatching(argument) : this.affectedIds());
+        return;
+      case '/review':
+        this.showReview();
+        return;
+      case '/agent':
+        await vscode.commands.executeCommand('drift.selectAgent');
+        invalidateAgentCache();
+        await this.refreshAgents();
+        this.session.notice('info', `Agent set to **${this.agentLabel()}**.`);
+        return;
+      case '/clear':
+        this.session.clear();
+        return;
+      case '/help':
+        this.help();
+        return;
+    }
+
+    if (command.startsWith('/')) {
+      this.session.notice('warn', `Unknown command \`${command}\`. Type \`/help\` to see what Drift can do.`);
+      return;
+    }
+
+    await this.interpret(text);
+  }
+
+  private async interpret(text: string): Promise<void> {
+    const lower = text.toLowerCase();
+
+    const named = [...this.candidates.values()].find((candidate) =>
+      lower.includes(candidate.name.toLowerCase()),
+    );
+    if (named) {
+      await this.describe(named);
+      return;
+    }
+
+    if (/\b(scan|outdated|updates?|upgrades?|newer|dependenc)/.test(lower)) {
+      await this.scan();
+      return;
+    }
+    if (/\b(recent|last|changed|history|bump)/.test(lower)) {
+      await this.analyzeRecent();
+      return;
+    }
+    if (/\b(fix|repair|migrate|update my code)/.test(lower)) {
+      await this.fix(this.affectedIds());
+      return;
+    }
+    if (/\b(review|keep|undo|diff)/.test(lower) && !this.review.isEmpty) {
+      this.showReview();
+      return;
+    }
+    if (/\b(help|what can you|how do)/.test(lower)) {
+      this.help();
+      return;
+    }
+
+    // Not a request Drift can act on, so treat it as what it most likely is:
+    // something the developer wants every agent run to know about this repo.
+    const config = vscode.workspace.getConfiguration('drift');
+    const current = config.get<string>('fix.customInstructions', '').trim();
+    await config.update(
+      'fix.customInstructions',
+      [current, text].filter(Boolean).join('\n'),
+      vscode.ConfigurationTarget.Workspace,
+    );
+
+    this.session.say(
+      [
+        "I have added that to this workspace's Drift instructions, so every agent run from now on will be told:",
+        '',
+        `> ${text}`,
+        '',
+        'I can act on `/scan`, `/recent`, `/upgrade <package>`, `/fix`, and `/review` — type `/help` for the full list.',
+      ].join('\n'),
+    );
+  }
+
+  private help(): void {
+    this.session.say(
+      [
+        '**What Drift does**',
+        '',
+        'It reads changelogs, release notes, registry metadata and published type surfaces for the packages you depend on, works out which changes are genuinely breaking, then searches *your* code for the affected APIs. Only what it can prove touches your files is treated as something to fix.',
+        '',
+        '**Commands**',
+        '',
+        ...SLASH_COMMANDS.map(
+          (command) => `- \`${command.name}${command.args ? ` ${command.args}` : ''}\` — ${command.description}`,
+        ),
+        '',
+        '**The composer controls**',
+        '',
+        '- **Agent** — which AI does the editing. Drift drives one you already have and never asks for an API key.',
+        '- **Ask / Agent** — Ask analyses and explains; Agent edits files.',
+        '- **Effort** — Quick checks runtime dependencies only; Thorough adds dev dependencies and patch releases.',
+        '- **Permission** — whether the agent asks first, edits then waits for your review, or edits and commits.',
+        '',
+        '**Review**',
+        '',
+        'Agent edits are never committed until you keep them. Changed lines are highlighted in the editor with Keep and Undo on every hunk, and the change list in this panel opens the real diff editor.',
+      ].join('\n'),
+    );
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Scanning                                                          */
+  /* ---------------------------------------------------------------- */
+
+  /** Called on activation when the setting allows, and by `/scan`. */
+  async scanOnStartup(): Promise<void> {
+    if (this.scanned) return;
+    await this.scan({ quiet: true });
+  }
+
+  private async scan(options: { quiet?: boolean } = {}): Promise<void> {
+    if (this.busy) {
+      this.session.notice('info', 'Already working — stop the current run first.');
+      return;
+    }
+
+    const ctx = await this.context();
+    if (!ctx) {
+      this.session.notice('warn', 'Open a git repository with a `package.json` to scan dependencies.');
+      return;
+    }
+
+    this.scanned = true;
+    const step = this.session.step('Checking your dependencies');
+    const profile = this.session.effortProfile;
+
+    await this.run(async (token) => {
+      try {
+        const found: UpgradeCandidate[] = [];
+        const result = await scanNpmUpgrades({
+          root: ctx.root,
+          repo: ctx.repo,
+          config: {
+            ...ctx.config,
+            triggerOn: {
+              ...ctx.config.triggerOn,
+              patch: profile.includePatch,
+              dev: profile.includeDev,
+            },
+          },
+          githubToken: await getRateLimitToken(),
+          token,
+          onProgress: ({ phase, detail, done, total }) => step.progress(phase, detail, done, total),
+          onCandidate: (candidate) => {
+            this.candidates.set(candidate.id, candidate);
+            found.push(candidate);
+            // Fill the list in as results arrive rather than after the whole
+            // sweep; a partial answer now beats a complete one in a minute.
+            this.session.updatePackages(
+              headline(found, 0),
+              [...found].sort(bySeverity).map((c) => c.id),
+            );
+          },
+        });
+
+        const ranked = result.candidates.slice().sort(bySeverity);
+        step.done(
+          `Checked ${result.checked} package${result.checked === 1 ? '' : 's'} · ${ranked.filter((c) => severityOf(c) === 'affected').length} need attention`,
+        );
+
+        if (ranked.length === 0) {
+          this.session.updatePackages(
+            `Every one of your ${result.checked} direct dependenc${result.checked === 1 ? 'y is' : 'ies are'} already at the newest version.`,
+            [],
+          );
+          return;
+        }
+
+        this.session.updatePackages(headline(ranked, result.checked), ranked.map((c) => c.id));
+
+        const affected = ranked.filter((c) => severityOf(c) === 'affected');
+        if (affected.length > 0 && !options.quiet) {
+          this.session.say(
+            `I can hand ${affected.length === 1 ? 'this' : 'these'} to **${this.agentLabel()}** — say \`/fix\`, or use the button above.`,
+          );
+        }
+      } catch (err) {
+        step.fail('Scan failed');
+        this.session.notice('error', (err as Error).message);
+      }
+    });
+  }
+
+  private async analyzeRecent(): Promise<void> {
+    if (this.busy) {
+      this.session.notice('info', 'Already working — stop the current run first.');
+      return;
+    }
+
+    const step = this.session.step('Analysing the dependency change in your git history');
+
+    await this.run(async (token) => {
+      const result = await runAnalysis({
+        state: this.state,
+        token,
+        progress: { report: ({ message }) => step.progress(message ?? 'Working', '') },
+      });
+
+      const plan = result.plan;
+      if (!plan || plan.breakingChanges.length === 0) {
+        step.done('Nothing breaking found');
+        this.session.say(result.summary);
+        return;
+      }
+
+      const files = new Set(plan.impactSites.map((site) => site.file)).size;
+      step.done(`${plan.changes.length} dependency change${plan.changes.length === 1 ? '' : 's'} analysed`);
+
+      // The distinction that matters, stated first.
+      if (files === 0) {
+        this.session.say(
+          [
+            `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them, and **none of them touch this repository**. Nothing to do.`,
+            '',
+            'Open the report if you want to see the reasoning and the sources.',
+          ].join('\n'),
+        );
+      } else {
+        this.session.say(
+          `**${files} file${files === 1 ? '' : 's'}** in this repository use an API that changed, across ${plan.impactSites.length} site${plan.impactSites.length === 1 ? '' : 's'}. Say \`/fix\` and **${this.agentLabel()}** will work through them, one commit per concern.`,
+        );
+      }
+    });
+  }
+
+  private async describe(candidate: UpgradeCandidate): Promise<void> {
+    const severity = severityOf(candidate);
+    const lines = [
+      `**${candidate.name}** ${candidate.current} → ${candidate.selected}`,
+      '',
+      candidate.summary,
+      '',
+      `- ${describeSeverity(candidate)}`,
+      `- ${candidate.evidenceCount} evidence source${candidate.evidenceCount === 1 ? '' : 's'} read`,
+      `- Newest version within your \`package.json\` range: ${candidate.safeLatest ?? 'none'}`,
+      `- Newest published: ${candidate.latest}`,
+    ];
+
+    if (severity === 'affected') {
+      lines.push('', `Say \`/fix ${candidate.name}\` to let ${this.agentLabel()} update the affected code.`);
+    } else if (severity === 'upstream-only' || severity === 'clean') {
+      lines.push('', `Say \`/upgrade ${candidate.name}\` to install it.`);
+    }
+
+    this.session.say(lines.join('\n'));
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Upgrading                                                         */
+  /* ---------------------------------------------------------------- */
+
+  private async upgradeByName(name: string): Promise<void> {
+    if (!name) {
+      this.session.notice('warn', 'Which package? Try `/upgrade react`.');
+      return;
+    }
+
+    const ids = this.idsMatching(name);
+    if (ids.length === 0) {
+      this.session.notice(
+        'warn',
+        `I have not checked \`${name}\` yet. Run \`/scan\` first, or check the name.`,
+      );
+      return;
+    }
+
+    await this.upgrade(ids, 'safe');
+  }
+
+  private async retarget(id: string, version: string): Promise<void> {
+    const ctx = await this.context();
+    const candidate = this.candidates.get(id);
+    if (!ctx || !candidate) return;
+
+    const step = this.session.step(`Re-checking ${candidate.name} at ${version}`);
+
+    await this.run(async () => {
+      this.candidates.set(id, { ...candidate, selected: version, status: 'checking' });
+      this.refreshPackageList();
+
+      const updated = await reanalyzeUpgrade({
+        candidate,
+        version,
         root: ctx.root,
         repo: ctx.repo,
         config: ctx.config,
         githubToken: await getRateLimitToken(),
-        onProgress: (detail) => {
-          this.scanSummary = detail;
-          this.render();
-        },
+        onProgress: (phase, detail) => step.progress(phase, detail),
       });
-      this.candidates = result.candidates;
-      this.selected = new Set(result.candidates.filter((c) => c.breakingCount > 0).map((c) => c.id));
-      this.scanStatus = 'ready';
-      this.scanSummary =
-        result.candidates.length > 0
-          ? `${result.candidates.length} upgrade candidate${result.candidates.length === 1 ? '' : 's'} found from ${result.checked} package${result.checked === 1 ? '' : 's'}.`
-          : `No newer npm versions found across ${result.checked} package${result.checked === 1 ? '' : 's'}.`;
-      this.messages.unshift({
-        role: 'drift',
-        text: this.scanSummary,
-      });
-    } catch (err) {
-      this.scanStatus = 'error';
-      this.scanSummary = (err as Error).message;
-      this.messages.unshift({ role: 'drift', text: `Upgrade scan failed: ${this.scanSummary}` });
-    }
 
-    this.render();
-  }
-
-  private async analyzeRecent(): Promise<void> {
-    const result = await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: 'Drift: checking recent dependency changes' },
-      (progress, token) => runAnalysis({ state: this.state, progress, token }),
-    );
-    this.messages.unshift({ role: 'drift', text: result.summary });
-    this.render();
-  }
-
-  private async selectVersion(id: string, version: string): Promise<void> {
-    const ctx = await this.context();
-    const candidate = this.candidates.find((c) => c.id === id);
-    if (!ctx || !candidate) return;
-
-    this.replaceCandidate({ ...candidate, selected: version, status: 'checking', summary: 'Rechecking evidence...' });
-    this.render();
-
-    const updated = await reanalyzeUpgrade({
-      candidate,
-      version,
-      root: ctx.root,
-      repo: ctx.repo,
-      config: ctx.config,
-      githubToken: await getRateLimitToken(),
+      this.candidates.delete(id);
+      this.candidates.set(updated.id, updated);
+      this.refreshPackageList();
+      step.done(describeSeverity(updated));
     });
-    this.replaceCandidate(updated);
-    if (this.selected.delete(id) || updated.breakingCount > 0) this.selected.add(updated.id);
-    this.render();
   }
 
-  private async upgradeCandidates(ids: string[], mode: UpgradeMode, fix: boolean): Promise<void> {
+  private async upgrade(ids: readonly string[], mode: 'safe' | 'force'): Promise<void> {
     const ctx = await this.context();
-    const candidates = this.candidates.filter((c) => ids.includes(c.id));
+    const candidates = ids
+      .map((id) => this.candidates.get(id))
+      .filter((c): c is UpgradeCandidate => Boolean(c));
+
     if (!ctx || candidates.length === 0) {
-      this.messages.unshift({ role: 'drift', text: 'Select at least one upgrade candidate first.' });
-      this.render();
+      this.session.notice('warn', 'Nothing selected to upgrade. Run `/scan` first.');
       return;
     }
 
-    await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: 'Drift: upgrading dependencies' },
-      async (progress) => {
-        const nextIds: string[] = [];
-        for (const candidate of candidates) {
-          const target =
-            mode === 'force' ? candidate.latest : (candidate.safeLatest ?? candidate.selected);
-          let updatedCandidate = { ...candidate, selected: target };
+    // Forcing past the declared range is a real decision with real consequences,
+    // so it is put to the developer rather than buried in a button label.
+    if (mode === 'force') {
+      const answer = await this.session.ask(
+        `Install ${candidates.map((c) => `**${c.name}@${c.latest}**`).join(', ')} with \`npm install --force\`? That widens the range in \`package.json\` and can leave peer dependencies unsatisfied.`,
+        [
+          { label: 'Yes, force it', value: 'force', description: 'I will deal with any peer conflicts' },
+          { label: 'Stay within my range', value: 'safe', description: 'Install the newest compatible version instead' },
+          { label: 'Cancel', value: 'cancel' },
+        ],
+        false,
+      );
+      if (answer === 'cancel' || answer === '') {
+        this.session.notice('info', 'Left your dependencies alone.');
+        return;
+      }
+      if (answer === 'safe') mode = 'safe';
+    }
 
-          if (target !== candidate.selected) {
-            progress.report({ message: `Checking ${candidate.name}@${target}` });
-            this.replaceCandidate({ ...updatedCandidate, status: 'checking', summary: 'Rechecking evidence...' });
-            this.render();
-            updatedCandidate = await reanalyzeUpgrade({
-              candidate,
-              version: target,
-              root: ctx.root,
-              repo: ctx.repo,
-              config: ctx.config,
-              githubToken: await getRateLimitToken(),
-            });
-          }
+    const step = this.session.step(`Upgrading ${candidates.length} package${candidates.length === 1 ? '' : 's'}`);
 
-          progress.report({ message: `${candidate.name}@${target}` });
-          this.replaceCandidate({ ...updatedCandidate, status: 'upgrading', summary: 'Updating package files...' });
-          this.render();
-          if (mode === 'force') await installNpmForcedUpgrade(ctx.root, updatedCandidate);
-          else await installNpmUpgrade(ctx.root, updatedCandidate);
-          this.replaceCandidate({ ...updatedCandidate, status: 'ready', summary: 'Dependency files updated.' });
-          this.messages.unshift({
-            role: 'drift',
-            text:
-              mode === 'force'
-                ? `Forced ${candidate.name} to ${target} with npm --force. Review dependency conflicts before committing.`
-                : `Safely updated ${candidate.name} to ${target} within the compatible npm range.`,
+    await this.run(async () => {
+      for (const candidate of candidates) {
+        const target = mode === 'force' ? candidate.latest : (candidate.safeLatest ?? candidate.selected);
+        let current = candidate;
+
+        if (target !== candidate.selected) {
+          step.progress('Re-checking evidence', `${candidate.name}@${target}`);
+          current = await reanalyzeUpgrade({
+            candidate,
+            version: target,
+            root: ctx.root,
+            repo: ctx.repo,
+            config: ctx.config,
+            githubToken: await getRateLimitToken(),
+            onProgress: (phase, detail) => step.progress(phase, detail),
           });
-          nextIds.push(updatedCandidate.id);
+          this.candidates.delete(candidate.id);
         }
-        ids.splice(0, ids.length, ...nextIds);
-      },
-    );
 
-    this.render();
-    if (fix) await this.fixCandidates(ids);
+        step.progress('Running npm install', `${current.name}@${target}`);
+        this.candidates.set(current.id, { ...current, status: 'upgrading' });
+        this.refreshPackageList();
+
+        try {
+          if (mode === 'force') await installNpmForcedUpgrade(ctx.root, current);
+          else await installNpmUpgrade(ctx.root, current);
+        } catch (err) {
+          this.candidates.set(current.id, { ...current, status: 'error', error: (err as Error).message });
+          this.refreshPackageList();
+          step.fail(`npm install failed for ${current.name}`);
+          this.session.notice('error', `\`npm install ${current.name}@${target}\` failed: ${(err as Error).message}`);
+          return;
+        }
+
+        this.candidates.set(current.id, { ...current, status: 'ready' });
+        this.refreshPackageList();
+        this.session.notice(
+          'success',
+          mode === 'force'
+            ? `Forced **${current.name}** to ${target}. Check \`npm ls\` for peer-dependency conflicts before committing.`
+            : `Updated **${current.name}** to ${target}, within the range already in \`package.json\`.`,
+        );
+      }
+
+      step.done('Dependency files updated');
+
+      const affected = candidates.filter((c) => this.currentFor(c) && severityOf(this.currentFor(c)!) === 'affected');
+      if (affected.length > 0) {
+        this.session.say(
+          `${affected.length === 1 ? 'That upgrade needs' : 'Those upgrades need'} code changes here. Say \`/fix\` and **${this.agentLabel()}** will make them.`,
+        );
+      }
+    });
   }
 
-  private async fixCandidates(ids: string[]): Promise<void> {
+  /* ---------------------------------------------------------------- */
+  /* Fixing                                                            */
+  /* ---------------------------------------------------------------- */
+
+  private async fix(ids: readonly string[]): Promise<void> {
+    if (this.busy) {
+      this.session.notice('info', 'Already working — stop the current run first.');
+      return;
+    }
+
+    if (this.session.mode === 'ask') {
+      this.session.say(
+        'The composer is set to **Ask**, so I will not edit anything. Switch it to **Agent** to let your AI agent make the changes.',
+      );
+      return;
+    }
+
     const ctx = await this.context();
-    const candidates = this.candidates.filter((c) => ids.includes(c.id) && c.plan);
-    if (!ctx || candidates.length === 0) {
-      this.messages.unshift({ role: 'drift', text: 'Select a candidate with breaking-change analysis first.' });
-      this.render();
+    if (!ctx) {
+      this.session.notice('warn', 'Open a git repository to fix code.');
       return;
     }
 
-    const plan = combinePlans(ctx.repo, ctx.config, candidates.map((c) => c.plan!));
-    if (plan.commits.length === 0) {
-      this.messages.unshift({
-        role: 'drift',
-        text: 'No repo matches were found, so there is nothing for an AI agent to edit.',
-      });
-      this.render();
+    const candidates = ids
+      .map((id) => this.candidates.get(id))
+      .filter((c): c is UpgradeCandidate => Boolean(c?.plan));
+
+    const plan =
+      candidates.length > 0
+        ? combinePlans(ctx.repo, ctx.config, candidates.map((c) => c.plan!))
+        : this.state.plan;
+
+    if (!plan) {
+      this.session.notice('warn', 'Nothing to fix yet. Run `/scan` or `/recent` first.');
       return;
     }
 
+    if (plan.commits.length === 0 || plan.impactSites.length === 0) {
+      this.session.say(
+        'There is nothing for an agent to edit — no code in this repository uses the APIs that changed. Upgrading is all that is needed.',
+      );
+      return;
+    }
+
+    const step = this.session.step(`${this.agentLabel()} is fixing ${plan.impactSites.length} site${plan.impactSites.length === 1 ? '' : 's'}`);
     this.state.set({ kind: 'findings', plan, at: Date.now() });
-    const result = await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: 'Drift: fixing selected upgrades', cancellable: true },
-      (progress, token) => runFix({ state: this.state, plan, progress, token }),
-    );
-    this.messages.unshift({
-      role: result.status === 'failed' ? 'drift' : 'agent',
-      text: result.message,
+
+    await this.run(async (token) => {
+      const result = await runFix({
+        state: this.state,
+        plan,
+        review: this.review,
+        permission: this.session.permission,
+        ask: (question, options) =>
+          this.session.ask(
+            question,
+            (options ?? ['Yes', 'No']).map((option) => ({ label: option, value: option })),
+          ),
+        onLog: (message) => step.progress('Agent', message),
+        progress: { report: ({ message }) => step.progress('Working', message ?? '') },
+        token,
+      });
+
+      for (const warning of result.warnings) this.session.notice('warn', warning);
+
+      switch (result.status) {
+        case 'proposed':
+          step.done(`${result.pendingFiles} file${result.pendingFiles === 1 ? '' : 's'} changed`);
+          this.session.say(
+            [
+              result.message,
+              '',
+              'Changed lines are highlighted in your editor with **Keep** and **Undo** on each one. Keeping a whole group commits it on its own.',
+            ].join('\n'),
+          );
+          this.showReview();
+          return;
+        case 'committed':
+          step.done(`${result.commits} commit${result.commits === 1 ? '' : 's'}`);
+          this.session.say(result.message);
+          return;
+        case 'delegated':
+          step.done('Handed to GitHub');
+          this.session.say(result.message);
+          return;
+        case 'nothing':
+          step.done('No changes');
+          this.session.say(result.message);
+          return;
+        case 'cancelled':
+          step.fail('Cancelled');
+          this.session.notice('info', result.message);
+          return;
+        case 'failed':
+          step.fail('Failed');
+          this.session.notice('error', result.message);
+          this.output.error(result.message);
+          return;
+      }
     });
-    for (const warning of result.warnings) this.messages.unshift({ role: 'drift', text: warning });
-    this.render();
   }
 
-  private async addChatInstruction(text: string): Promise<void> {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    this.messages.unshift({ role: 'user', text: trimmed });
+  private showReview(): void {
+    if (this.review.isEmpty) {
+      this.session.notice('info', 'Nothing is waiting for review.');
+      return;
+    }
+    this.session.showChanges('Changes waiting for you');
+  }
 
-    const config = vscode.workspace.getConfiguration('drift');
-    const current = config.get<string>('fix.customInstructions', '').trim();
-    const next = [current, trimmed].filter(Boolean).join('\n');
-    await config.update('fix.customInstructions', next, vscode.ConfigurationTarget.Workspace);
+  /**
+   * Commit a fully-kept group.
+   *
+   * Only the files the plan named for this group are committed, so an agent that
+   * wandered somewhere else does not get swept in — the atomic-commit promise has
+   * to hold at the moment of committing, not just at planning time.
+   */
+  private async commitGroup(group: ReviewGroup): Promise<{ sha: string; branch: string } | null> {
+    const root = this.review.workspaceRoot ?? this.state.workspaceRoot;
+    if (!root) return null;
 
-    this.messages.unshift({
-      role: 'agent',
-      text: "Got it. I added that to this workspace's Drift instructions for the next upgrade fix.",
+    const { Git } = await import('../git.js');
+    const git = new Git(root);
+    const paths = group.files.map((file) => file.path);
+    const scope = paths.length > 0 ? paths : this.plannedFiles(group.order);
+
+    try {
+      const sha = await git.commitPaths(scope, group.title, group.body ?? '');
+      if (!sha) {
+        this.session.notice('info', `Nothing left to commit for "${group.title}".`);
+        return null;
+      }
+      const branch = await git.currentBranch().catch(() => 'HEAD');
+      this.session.notice('success', `Committed **${sha.slice(0, 7)}** — ${group.title}`);
+      if (this.review.isEmpty) {
+        this.session.say(
+          `That is everything. The work is on \`${branch}\`, one commit per concern, and nothing has been pushed.`,
+        );
+      }
+      return { sha, branch };
+    } catch (err) {
+      this.session.notice('error', `Commit failed: ${(err as Error).message}`);
+      return null;
+    }
+  }
+
+  private plannedFiles(order: number): string[] {
+    return this.state.plan?.commits.find((commit) => commit.order === order)?.files.slice() ?? [];
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Context, agents, identity                                         */
+  /* ---------------------------------------------------------------- */
+
+  private async attach(): Promise<void> {
+    const ctx = await this.context();
+    if (!ctx) return;
+
+    const choice = await vscode.window.showQuickPick(
+      [
+        { label: '$(file) File…', id: 'file', detail: 'Point the agent at a specific file' },
+        { label: '$(folder) Folder…', id: 'folder', detail: 'Scope the agent to one area of the repo' },
+        {
+          label: '$(selection) Current selection',
+          id: 'selection',
+          detail: 'The lines highlighted in the active editor',
+        },
+      ],
+      { title: 'Add context for Drift', placeHolder: 'What should the agent look at?' },
+    );
+    if (!choice) return;
+
+    if (choice.id === 'selection') {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor || editor.selection.isEmpty) {
+        this.session.notice('warn', 'Select some code in an editor first.');
+        return;
+      }
+      const path = relative(ctx.root, editor.document.uri.fsPath).replace(/\\/g, '/');
+      const from = editor.selection.start.line + 1;
+      const to = editor.selection.end.line + 1;
+      this.session.attach({ kind: 'selection', label: `${path}:${from}-${to}`, value: `${path}:${from}-${to}` });
+      return;
+    }
+
+    const picked = await vscode.window.showOpenDialog({
+      canSelectFiles: choice.id === 'file',
+      canSelectFolders: choice.id === 'folder',
+      canSelectMany: choice.id === 'file',
+      defaultUri: vscode.Uri.file(ctx.root),
+      openLabel: 'Add as context',
     });
-    this.render();
+
+    for (const uri of picked ?? []) {
+      const path = relative(ctx.root, uri.fsPath).replace(/\\/g, '/') || '.';
+      this.session.attach({ kind: choice.id as 'file' | 'folder', label: path, value: path });
+    }
   }
 
   private async setAgent(id: string): Promise<void> {
+    if (id === '__pick') {
+      await vscode.commands.executeCommand('drift.selectAgent');
+      invalidateAgentCache();
+      await this.refreshAgents();
+      return;
+    }
+
     await vscode.workspace
       .getConfiguration('drift')
       .update('agent.preferred', id, vscode.ConfigurationTarget.Global);
     invalidateAgentCache();
     await this.refreshAgents();
-    const picked =
-      id === 'auto' ? 'Automatic' : this.agents.find((entry) => entry.agent.id === id)?.agent.label ?? id;
-    this.messages.unshift({ role: 'drift', text: `AI agent set to ${picked}.` });
-    this.render();
-  }
-
-  private async pickMention(kind: 'file' | 'folder'): Promise<void> {
-    const ctx = await this.context();
-    if (!ctx || !this.view) return;
-
-    const picked = await vscode.window.showOpenDialog({
-      canSelectFiles: kind === 'file',
-      canSelectFolders: kind === 'folder',
-      canSelectMany: false,
-      defaultUri: vscode.Uri.file(ctx.root),
-      openLabel: kind === 'file' ? 'Mention File' : 'Mention Folder',
-    });
-    const uri = picked?.[0];
-    if (!uri) return;
-
-    const rel = relative(ctx.root, uri.fsPath).replace(/\\/g, '/');
-    await this.view.webview.postMessage({ type: 'insertText', text: `@${rel || '.'} ` });
+    this.session.notice('info', `Agent set to **${this.agentLabel()}**.`);
   }
 
   private async openFile(file: string, line: number): Promise<void> {
     const ctx = await this.context();
     if (!ctx) return;
+    const target = Math.max(0, (line || 1) - 1);
     await vscode.window.showTextDocument(vscode.Uri.file(join(ctx.root, file)), {
-      selection: new vscode.Range(Math.max(0, line - 1), 0, Math.max(0, line - 1), 0),
+      selection: new vscode.Range(target, 0, target, 0),
       preview: true,
       viewColumn: vscode.ViewColumn.One,
     });
@@ -388,21 +887,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
   private async refreshAgents(): Promise<void> {
     const ctx = await this.context();
-    if (!ctx) {
-      this.agents = [];
-      this.render();
-      return;
-    }
-    this.agents = await discoverAgents({ slug: ctx.info.slug, baseBranch: ctx.info.branch }, { force: true });
+    this.agents = ctx
+      ? await discoverAgents({ slug: ctx.info.slug, baseBranch: ctx.info.branch }, { force: true })
+      : [];
     this.render();
   }
 
-  private async context(): Promise<{
-    root: string;
-    info: NonNullable<Awaited<ReturnType<typeof inspectLocalRepo>>>;
-    repo: RepoContext;
-    config: DriftConfig;
-  } | null> {
+  private async context(): Promise<WorkspaceContext | null> {
     const folder = vscode.workspace.workspaceFolders?.[0];
     if (!folder) return null;
 
@@ -423,28 +914,129 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     return { root, info, repo, config };
   }
 
-  private replaceCandidate(candidate: UpgradeCandidate): void {
-    const index = this.candidates.findIndex((c) => c.name === candidate.name);
-    if (index === -1) this.candidates.push(candidate);
-    else this.candidates[index] = candidate;
+  /* ---------------------------------------------------------------- */
+  /* Plumbing                                                          */
+  /* ---------------------------------------------------------------- */
+
+  /** Run one cancellable operation at a time and keep the UI's busy flag honest. */
+  private async run(work: (token: vscode.CancellationToken) => Promise<void>): Promise<void> {
+    if (this.running) {
+      this.session.notice('info', 'Already working — stop the current run first.');
+      return;
+    }
+
+    const source = new vscode.CancellationTokenSource();
+    this.running = source;
+    this.render();
+
+    try {
+      await work(source.token);
+    } catch (err) {
+      this.session.notice('error', (err as Error).message);
+      this.output.error(String(err));
+    } finally {
+      source.dispose();
+      this.running = null;
+      this.render();
+    }
+  }
+
+  private refreshPackageList(): void {
+    const ranked = [...this.candidates.values()].sort(bySeverity);
+    this.session.updatePackages(headline(ranked, 0), ranked.map((c) => c.id));
+  }
+
+  private affectedIds(): string[] {
+    return [...this.candidates.values()]
+      .filter((candidate) => severityOf(candidate) === 'affected')
+      .map((candidate) => candidate.id);
+  }
+
+  private idsMatching(name: string): string[] {
+    const needle = name.trim().toLowerCase().replace(/^@?/, '');
+    return [...this.candidates.values()]
+      .filter((candidate) => candidate.name.toLowerCase().replace(/^@?/, '').includes(needle))
+      .map((candidate) => candidate.id);
+  }
+
+  private currentFor(candidate: UpgradeCandidate): UpgradeCandidate | undefined {
+    return (
+      this.candidates.get(candidate.id) ??
+      [...this.candidates.values()].find((entry) => entry.name === candidate.name)
+    );
+  }
+
+  private agentLabel(): string {
+    const preferred = vscode.workspace.getConfiguration('drift').get<string>('agent.preferred', 'auto');
+    const available = this.agents.filter((entry) => entry.availability.available);
+    if (preferred === 'auto') return available[0]?.agent.label ?? 'your AI agent';
+    return this.agents.find((entry) => entry.agent.id === preferred)?.agent.label ?? 'your AI agent';
   }
 
   private render(): void {
     if (!this.view) return;
-    const nonce = makeNonce();
-    this.view.webview.html = renderHtml({
-      nonce,
-      status: this.state.status.kind,
+
+    const totals = this.review.totals();
+    const model: ViewModel = {
+      nonce: makeNonce(),
+      repoLabel: this.state.repo?.slug ?? null,
       signedInLabel: this.signedInLabel,
-      currentAgent: vscode.workspace.getConfiguration('drift').get<string>('agent.preferred', 'auto'),
-      agents: this.agents,
-      candidates: this.candidates,
-      selected: this.selected,
-      scanStatus: this.scanStatus,
-      scanSummary: this.scanSummary,
-      messages: this.messages,
-    });
+      agents: this.agents.map(toChoice),
+      agentId: vscode.workspace.getConfiguration('drift').get<string>('agent.preferred', 'auto'),
+      agentLabel: this.agentLabel(),
+      mode: this.session.mode,
+      effort: this.session.effort,
+      permission: this.session.permission,
+      attachments: this.session.context,
+      thread: this.session.thread,
+      candidates: Object.fromEntries(this.candidates),
+      review: totals.files > 0 ? { groups: this.review.groups(), totals } : null,
+      busy: this.busy,
+      awaitingAnswer: this.session.awaitingAnswer,
+      commands: SLASH_COMMANDS,
+      draft: this.draft,
+    };
+
+    this.view.webview.html = renderPanel(model);
   }
+}
+
+function toChoice(entry: DiscoveredAgent): AgentChoice {
+  return {
+    id: entry.agent.id,
+    label: entry.agent.label,
+    available: entry.availability.available,
+    detail: entry.availability.detail,
+    reason: entry.availability.reason,
+  };
+}
+
+function bySeverity(a: UpgradeCandidate, b: UpgradeCandidate): number {
+  const rank = { affected: 0, error: 1, 'upstream-only': 2, clean: 3 } as const;
+  const diff = rank[severityOf(a)] - rank[severityOf(b)];
+  return diff !== 0 ? diff : a.name.localeCompare(b.name);
+}
+
+/**
+ * The sentence above the results.
+ *
+ * Leads with how many upgrades touch this repository, because that is the number
+ * that decides what the developer does next. The count of upstream breaking
+ * changes is not mentioned here at all — it is available on each package, where
+ * it has the context that makes it meaningful.
+ */
+function headline(candidates: readonly UpgradeCandidate[], checked: number): string {
+  const affected = candidates.filter((c) => severityOf(c) === 'affected').length;
+  const safe = candidates.length - affected;
+  const scope = checked > 0 ? ` out of ${checked} checked` : '';
+
+  if (candidates.length === 0) return 'No newer versions available.';
+
+  if (affected === 0) {
+    return `**${candidates.length} upgrade${candidates.length === 1 ? '' : 's'} available**${scope}, and none of them affect code in this repository. Safe to take.`;
+  }
+
+  return `**${affected} of ${candidates.length} upgrade${candidates.length === 1 ? '' : 's'}**${scope} affect${affected === 1 ? 's' : ''} code in this repository.${safe > 0 ? ` The other ${safe} ${safe === 1 ? 'is' : 'are'} safe to take as-is.` : ''}`;
 }
 
 function combinePlans(repo: RepoContext, config: DriftConfig, plans: RemediationPlan[]): RemediationPlan {
@@ -457,1027 +1049,3 @@ function combinePlans(repo: RepoContext, config: DriftConfig, plans: Remediation
     impactSites: plans.flatMap((p) => p.impactSites),
   });
 }
-
-function renderHtml(input: {
-  nonce: string;
-  status: string;
-  signedInLabel: string | null;
-  currentAgent: string;
-  agents: DiscoveredAgent[];
-  candidates: UpgradeCandidate[];
-  selected: Set<string>;
-  scanStatus: 'idle' | 'scanning' | 'ready' | 'error';
-  scanSummary: string;
-  messages: Message[];
-}): string {
-  const availableAgents = input.agents.filter((a) => a.availability.available);
-  const selectedCount = input.selected.size;
-  const selectedAgent =
-    input.currentAgent === 'auto'
-      ? (availableAgents[0]?.agent.label ?? 'Automatic')
-      : (input.agents.find((entry) => entry.agent.id === input.currentAgent)?.agent.label ?? 'Automatic');
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${input.nonce}';">
-<style>${STYLES}</style>
-</head>
-<body>
-  <header class="top">
-    <div>
-      <h1>Drift</h1>
-      <p>Dependency upgrades with evidence first, AI second.</p>
-    </div>
-    <button class="identity-action ${input.signedInLabel ? 'ok' : ''}" data-action="signIn">
-      ${input.signedInLabel ? `GitHub: ${escapeHtml(input.signedInLabel)}` : 'Sign in to GitHub'}
-    </button>
-  </header>
-
-  <details class="panel agents">
-    <summary>
-      <span>AI agent</span>
-      <small>${escapeHtml(selectedAgent)}</small>
-    </summary>
-    <div class="agent-picker">
-      <label for="agentSelect">Agent</label>
-      <select id="agentSelect" data-action="setAgent">
-        <option value="auto" ${input.currentAgent === 'auto' ? 'selected' : ''}>Automatic - best available</option>
-        ${availableAgents.map((entry) => renderAgentOption(entry, input.currentAgent)).join('')}
-      </select>
-    </div>
-    ${renderUnavailableAgents(input.agents.filter((entry) => !entry.availability.available))}
-  </details>
-
-  <details class="panel upgrades" open>
-    <summary>
-      <span>Upgrade Candidates</span>
-      <small>${selectedCount} selected</small>
-    </summary>
-    <section class="toolbar">
-      <button class="primary" data-action="scanUpgrades">${input.scanStatus === 'scanning' ? 'Scanning...' : 'Scan upgrades'}</button>
-      <button data-action="analyzeRecent">Analyze recent change</button>
-      <button data-action="upgradeSelected" data-mode="safe" ${selectedCount ? '' : 'disabled'}>Safe upgrade</button>
-      <button data-action="upgradeSelected" data-mode="force" ${selectedCount ? '' : 'disabled'}>Force latest</button>
-      <button data-action="fixSelected" ${selectedCount ? '' : 'disabled'}>Fix selected</button>
-    </section>
-
-    <section class="scan-state ${input.scanStatus}">
-      <span class="dot"></span>
-      <span>${escapeHtml(input.scanSummary)}</span>
-    </section>
-
-    <main class="cards">
-      ${input.candidates.length ? input.candidates.map((c) => renderCandidate(c, input.selected.has(c.id))).join('') : renderEmptyCandidates(input.scanStatus)}
-    </main>
-  </details>
-
-  <section class="chatbox" aria-label="Drift chat">
-    <div class="messages">
-      ${input.messages.map(renderMessage).join('')}
-    </div>
-    <form class="composer">
-      <textarea name="text" rows="2" placeholder="Ask Drift or add fix instructions..."></textarea>
-      <div class="composer-actions">
-        <button type="button" class="icon" title="Mention file" data-action="pickFile">@F</button>
-        <button type="button" class="icon" title="Mention folder" data-action="pickFolder">@D</button>
-        <button class="send" type="submit" title="Send" aria-label="Send">↑</button>
-      </div>
-    </form>
-  </section>
-
-  <script nonce="${input.nonce}">${SCRIPT}</script>
-</body>
-</html>`;
-}
-
-function renderAgentOption(entry: DiscoveredAgent, currentAgent: string): string {
-  return `<option value="${escapeAttr(entry.agent.id)}" ${entry.agent.id === currentAgent ? 'selected' : ''}>${escapeHtml(entry.agent.label)}</option>`;
-}
-
-function renderUnavailableAgents(agents: DiscoveredAgent[]): string {
-  if (agents.length === 0) return '';
-  return `<details class="unavailable-agents">
-    <summary>${agents.length} unavailable agent${agents.length === 1 ? '' : 's'}</summary>
-    <div class="agent-list">
-      ${agents.map(renderUnavailableAgent).join('')}
-    </div>
-  </details>`;
-}
-
-function renderUnavailableAgent(entry: DiscoveredAgent): string {
-  const signals = entry.availability.signals ?? [];
-  return `<article class="agent-card unavailable">
-    <div>
-      <strong>${escapeHtml(entry.agent.label)}</strong>
-      <small>${escapeHtml(entry.agent.kind)}</small>
-    </div>
-    <p>${escapeHtml(entry.availability.reason ?? entry.agent.description)}</p>
-    ${entry.availability.detail ? `<code>${escapeHtml(entry.availability.detail)}</code>` : ''}
-    ${signals.length ? `<div class="signals">${signals.map((signal) => `<span>${escapeHtml(signal)}</span>`).join('')}</div>` : ''}
-  </article>`;
-}
-
-function renderCandidate(candidate: UpgradeCandidate, selected: boolean): string {
-  const domId = domSafe(candidate.id);
-  const hasRepoImpact = (candidate.plan?.impactSites.length ?? candidate.impactCount) > 0;
-  const statusLabel =
-    candidate.status === 'checking'
-      ? 'Checking evidence'
-      : candidate.status === 'upgrading'
-        ? 'Updating files'
-        : candidate.status === 'error'
-          ? 'Needs attention'
-          : candidate.breakingCount > 0
-            ? `${candidate.breakingCount} breaking`
-            : 'No breaking evidence';
-  const canFix = Boolean(candidate.plan && candidate.plan.commits.length > 0);
-  const safeLabel = candidate.safeLatest
-    ? `safe ${candidate.safeLatest}`
-    : 'no safe-range update';
-  const forcedLabel =
-    candidate.latest === candidate.selected ? `${candidate.latest} latest` : `latest ${candidate.latest}`;
-
-  return `<details class="update-row ${candidate.breakingCount > 0 ? 'has-breaks' : 'clean'} ${hasRepoImpact ? 'repo-impact' : 'no-repo-impact'}" ${hasRepoImpact ? 'open' : ''}>
-    <summary class="row-head">
-      <label class="check">
-        <input type="checkbox" data-action="toggleCandidate" data-id="${escapeAttr(candidate.id)}" ${selected ? 'checked' : ''} />
-        <span></span>
-      </label>
-      <div class="package">
-        <strong>${escapeHtml(candidate.name)}</strong>
-        <small>${escapeHtml(candidate.kind)} · ${escapeHtml(candidate.current)} -> ${escapeHtml(candidate.selected)} · ${escapeHtml(statusLabel)}</small>
-      </div>
-      <span class="status-chip ${candidateStatusClass(candidate)}">${escapeHtml(hasRepoImpact ? 'found in repo' : statusLabel)}</span>
-    </summary>
-
-    <div class="version-row">
-      <label>
-        Target
-        <select data-action="selectVersion" data-id="${escapeAttr(candidate.id)}">
-        ${candidate.versions
-          .map(
-            (version) =>
-              `<option value="${escapeAttr(version)}" ${version === candidate.selected ? 'selected' : ''}>${escapeHtml(version)}${version === candidate.latest ? ' latest' : ''}${version === candidate.safeLatest ? ' safe' : ''}</option>`,
-          )
-          .join('')}
-        </select>
-      </label>
-      <div class="target-notes">
-        <span class="${candidate.safeLatest ? 'ok' : 'muted'}">${escapeHtml(safeLabel)}</span>
-        <span class="warn">${escapeHtml(forcedLabel)}</span>
-      </div>
-    </div>
-
-    <div class="metrics">
-      ${metric(String(candidate.breakingCount), 'upstream breaks', 'metric-break', candidate.breakingCount > 0 ? `#breaks-${domId}` : '', 'Open upstream break sources')}
-      ${metric(String(candidate.impactCount), 'repo matches', 'metric-impact')}
-      ${metric(String(candidate.evidenceCount), 'evidence', 'metric-evidence', candidate.evidenceCount > 0 ? `#evidence-${domId}` : '', 'Open evidence sources')}
-      ${metric(candidate.risk, 'repo risk', `metric-risk risk-${candidate.risk}`, '', riskDetail(candidate))}
-    </div>
-
-    <div class="summary">${renderMarkdown(candidate.error ?? candidate.summary)}</div>
-    ${renderCandidateBreakdown(candidate)}
-
-    <div class="row-actions">
-      <button data-action="upgradeCandidate" data-mode="safe" data-id="${escapeAttr(candidate.id)}" ${candidate.safeLatest ? '' : 'disabled'}>Safe upgrade</button>
-      <button data-action="upgradeCandidate" data-mode="force" data-id="${escapeAttr(candidate.id)}">Force latest</button>
-      <button class="primary" data-action="fixCandidate" data-id="${escapeAttr(candidate.id)}" ${canFix ? '' : 'disabled'}>Fix repo matches</button>
-    </div>
-  </details>`;
-}
-
-function renderCandidateBreakdown(candidate: UpgradeCandidate): string {
-  const plan = candidate.plan;
-  if (!plan) return '';
-  const domId = domSafe(candidate.id);
-
-  if (plan.breakingChanges.length === 0) {
-    return `<details class="breakdown" id="evidence-${domId}">
-      <summary>What Drift checked</summary>
-      <p class="explain">No breaking change was identified in the available release notes, changelog, type surface, or registry evidence for this target version.</p>
-      ${renderEvidenceList(plan.evidence)}
-    </details>`;
-  }
-
-  const withSites = plan.breakingChanges.filter((change) =>
-    plan.impactSites.some((site) => site.breakingChangeId === change.id),
-  );
-  const withoutSites = plan.breakingChanges.filter((change) =>
-    !plan.impactSites.some((site) => site.breakingChangeId === change.id),
-  );
-
-  return `<div class="breakdown" id="breaks-${domId}">
-    ${renderBreakGroup('Found in this repo', withSites, candidate, plan, true)}
-    ${renderBreakGroup('Not found in this repo', withoutSites, candidate, plan, false)}
-    <details class="break-group evidence-group" id="evidence-${domId}">
-      <summary>
-        <span>Evidence sources</span>
-        <small>${plan.evidence.length} source${plan.evidence.length === 1 ? '' : 's'}</small>
-      </summary>
-      ${renderEvidenceList(plan.evidence)}
-    </details>
-  </div>`;
-}
-
-function renderBreakGroup(
-  title: string,
-  changes: readonly BreakingChange[],
-  candidate: UpgradeCandidate,
-  plan: RemediationPlan,
-  open: boolean,
-): string {
-  if (changes.length === 0) return '';
-  return `<details class="break-group" ${open ? 'open' : ''}>
-    <summary>
-      <span>${escapeHtml(title)}</span>
-      <small>${changes.length} breaking change${changes.length === 1 ? '' : 's'}</small>
-    </summary>
-    ${changes.map((change) => renderBreakItem(change, candidate, plan)).join('')}
-  </details>`;
-}
-
-function renderBreakItem(
-  change: BreakingChange,
-  candidate: UpgradeCandidate,
-  plan: RemediationPlan,
-): string {
-  const evidence = plan.evidence.filter((entry) => change.citations.includes(entry.id));
-  const sites = plan.impactSites.filter((site) => site.breakingChangeId === change.id);
-  return `<section class="break ${sites.length ? 'matched' : 'unmatched'}">
-    <div class="break-head">
-      <span class="badge ${change.confidence}">${escapeHtml(change.confidence)}</span>
-      <span>${escapeHtml(change.kind)}</span>
-      <span class="impact-pill ${sites.length ? 'hit' : 'miss'}">${sites.length ? `${sites.length} repo match${sites.length === 1 ? '' : 'es'}` : 'not found here'}</span>
-    </div>
-    <h3>${escapeHtml(change.summary)}</h3>
-    ${change.symbols.length ? `<p class="symbols">${change.symbols.map((symbol) => `<code>${escapeHtml(symbol)}</code>`).join(' ')}</p>` : ''}
-    <details class="required-fix">
-      <summary>Required fix</summary>
-      <div>${renderMarkdown(change.remediation)}</div>
-    </details>
-    <p class="explain">${escapeHtml(riskReason(candidate, sites.length))}</p>
-    ${
-      sites.length
-        ? `<ul class="sites">${sites
-            .slice(0, 12)
-            .map(
-              (site) =>
-                `<li><a data-action="openFile" data-file="${escapeAttr(site.file)}" data-line="${site.line}"><code>${escapeHtml(site.file)}:${site.line}</code></a><span>${escapeHtml(site.excerpt)}</span></li>`,
-            )
-            .join('')}</ul>`
-        : '<p class="explain">Drift found this upstream breaking change, but did not find the affected symbols in this repository. No local edit is planned unless you decide to investigate it manually.</p>'
-    }
-    ${renderEvidenceList(evidence)}
-  </section>`;
-}
-
-function renderEvidenceList(evidence: readonly Evidence[]): string {
-  if (evidence.length === 0) return '<p class="explain">No evidence records are attached.</p>';
-  return `<div class="evidence-list">
-    ${evidence
-      .slice(0, 6)
-      .map(
-        (entry) => `<details>
-          <summary>
-            <span class="source">${escapeHtml(entry.source)}</span>
-            ${renderEvidenceTitle(entry)}
-            <span class="weight">weight ${entry.weight.toFixed(2)}</span>
-          </summary>
-          <div class="markdown evidence-body">${renderMarkdown(entry.content.slice(0, 1800))}</div>
-        </details>`,
-      )
-      .join('')}
-  </div>`;
-}
-
-function renderEvidenceTitle(entry: Evidence): string {
-  if (entry.url) return `<a data-action="openUrl" data-url="${escapeAttr(entry.url)}">${escapeHtml(entry.title)}</a>`;
-  if (entry.locator) return `<span>${escapeHtml(entry.title)} · ${escapeHtml(entry.locator)}</span>`;
-  return `<span>${escapeHtml(entry.title)}</span>`;
-}
-
-function riskDetail(candidate: UpgradeCandidate): string {
-  if (candidate.risk !== 'none') return `Risk is ${candidate.risk} because breaking changes overlap local usage.`;
-  if (candidate.breakingCount === 0) return 'Risk is none because no breaking change was identified for this version.';
-  if (candidate.impactCount === 0) return 'Risk is none because Drift found breaking changes upstream but no local usage to fix.';
-  return 'Risk is none because no actionable local edit is planned.';
-}
-
-function riskReason(candidate: UpgradeCandidate, siteCount: number): string {
-  if (candidate.risk === 'none' && siteCount === 0) {
-    return 'Risk is none for this finding because it was not found in the local codebase.';
-  }
-  if (candidate.risk === 'none') return riskDetail(candidate);
-  return `This contributes to ${candidate.risk} risk because Drift found local code that may need to change.`;
-}
-
-function renderEmptyCandidates(status: string): string {
-  if (status === 'scanning') {
-    return '<div class="empty"><div class="spinner"></div><b>Scanning upgrade candidates</b><span>Reading package.json, npm metadata, release notes, and API surfaces.</span></div>';
-  }
-  return '<div class="empty"><b>No upgrade candidates loaded</b><span>Run a scan to compare installed packages with newer releases.</span></div>';
-}
-
-function renderMessage(message: Message): string {
-  return `<div class="msg ${message.role}"><b>${message.role === 'user' ? 'You' : message.role === 'agent' ? 'Agent' : 'Drift'}</b><div class="markdown">${renderMarkdown(message.text)}</div></div>`;
-}
-
-function metric(value: string, label: string, className = '', target = '', title = ''): string {
-  const content = `<b>${escapeHtml(value)}</b><span>${escapeHtml(label)}</span>`;
-  if (target) {
-    return `<button class="metric ${className} linked" data-action="revealSection" data-target="${escapeAttr(target)}" title="${escapeAttr(title)}">${content}</button>`;
-  }
-  return `<div class="metric ${className}" ${title ? `title="${escapeAttr(title)}"` : ''}>${content}</div>`;
-}
-
-function candidateStatusClass(candidate: UpgradeCandidate): string {
-  if (candidate.status === 'error') return 'danger';
-  if (candidate.impactCount > 0) return 'danger';
-  if (candidate.breakingCount > 0) return 'warn';
-  if (candidate.status === 'checking' || candidate.status === 'upgrading') return 'info';
-  return 'ok';
-}
-
-function renderMarkdown(text: string): string {
-  const escaped = escapeHtml(text);
-  const blocks: string[] = [];
-  let inList = false;
-
-  const closeList = () => {
-    if (!inList) return '';
-    inList = false;
-    return '</ul>';
-  };
-
-  for (const raw of escaped.split(/\r?\n/)) {
-    const line = raw.trim();
-    if (!line) {
-      blocks.push(closeList());
-      continue;
-    }
-
-    const heading = /^(#{1,4})\s+(.+)$/.exec(line);
-    if (heading) {
-      blocks.push(closeList(), `<h4>${inlineMarkdown(heading[2]!)}</h4>`);
-      continue;
-    }
-
-    const bullet = /^[-*]\s+(.+)$/.exec(line);
-    if (bullet) {
-      if (!inList) {
-        blocks.push('<ul>');
-        inList = true;
-      }
-      blocks.push(`<li>${inlineMarkdown(bullet[1]!)}</li>`);
-      continue;
-    }
-
-    blocks.push(closeList(), `<p>${inlineMarkdown(line)}</p>`);
-  }
-
-  blocks.push(closeList());
-  return blocks.filter(Boolean).join('');
-}
-
-function inlineMarkdown(text: string): string {
-  return text
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_match, label: string, url: string) => {
-      return `<a data-action="openUrl" data-url="${escapeAttr(url)}">${label}</a>`;
-    });
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function escapeAttr(text: string): string {
-  return escapeHtml(text).replace(/'/g, '&#39;');
-}
-
-function makeNonce(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let out = '';
-  for (let i = 0; i < 32; i++) out += chars.charAt(Math.floor(Math.random() * chars.length));
-  return out;
-}
-
-function domSafe(text: string): string {
-  return text.replace(/[^a-z0-9_-]+/gi, '-').replace(/^-+|-+$/g, '') || 'candidate';
-}
-
-const SCRIPT = `
-const vscode = acquireVsCodeApi();
-
-document.addEventListener('click', (event) => {
-  const target = event.target.closest('[data-action]');
-  if (!target) return;
-  const action = target.dataset.action;
-  if (target.tagName === 'SELECT' || target.type === 'checkbox') return;
-  if (action === 'revealSection') {
-    revealSection(target.dataset.target);
-    return;
-  }
-  vscode.postMessage({
-    type: action,
-    id: target.dataset.id,
-    mode: target.dataset.mode,
-    file: target.dataset.file,
-    line: Number(target.dataset.line),
-    url: target.dataset.url,
-  });
-});
-
-function revealSection(target) {
-  if (!target) return;
-  const id = target.startsWith('#') ? target.slice(1) : target;
-  const section = document.getElementById(id);
-  if (!section) return;
-  let node = section;
-  while (node) {
-    if (node.tagName === 'DETAILS') node.open = true;
-    node = node.parentElement;
-  }
-  section.scrollIntoView({ block: 'start', behavior: 'smooth' });
-  section.classList.remove('revealed');
-  requestAnimationFrame(() => section.classList.add('revealed'));
-}
-
-document.addEventListener('change', (event) => {
-  const target = event.target.closest('[data-action]');
-  if (!target) return;
-  if (target.dataset.action === 'setAgent') {
-    vscode.postMessage({ type: 'setAgent', id: target.value });
-  }
-  if (target.dataset.action === 'selectVersion') {
-    vscode.postMessage({ type: 'selectVersion', id: target.dataset.id, version: target.value });
-  }
-  if (target.dataset.action === 'toggleCandidate') {
-    vscode.postMessage({ type: 'toggleCandidate', id: target.dataset.id, selected: target.checked });
-  }
-});
-
-document.querySelector('.composer')?.addEventListener('submit', (event) => {
-  event.preventDefault();
-  const input = event.currentTarget.elements.text;
-  vscode.postMessage({ type: 'sendMessage', text: input.value });
-  input.value = '';
-});
-
-window.addEventListener('message', (event) => {
-  if (event.data?.type !== 'insertText') return;
-  const input = document.querySelector('.composer [name="text"]');
-  if (!input) return;
-  const start = input.selectionStart ?? input.value.length;
-  const end = input.selectionEnd ?? input.value.length;
-  input.value = input.value.slice(0, start) + event.data.text + input.value.slice(end);
-  const next = start + event.data.text.length;
-  input.focus();
-  input.setSelectionRange(next, next);
-});
-`;
-
-const STYLES = `
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  padding: 14px;
-  color: var(--vscode-foreground);
-  background: var(--vscode-sideBar-background);
-  font: var(--vscode-font-size) var(--vscode-font-family);
-}
-button, select, textarea { font: inherit; }
-button {
-  border: 1px solid var(--vscode-button-border, transparent);
-  border-radius: 5px;
-  padding: 6px 10px;
-  color: var(--vscode-button-secondaryForeground);
-  background: var(--vscode-button-secondaryBackground);
-  cursor: pointer;
-}
-button:hover { background: var(--vscode-button-secondaryHoverBackground); }
-button.primary, button.send {
-  color: var(--vscode-button-foreground);
-  background: var(--vscode-button-background);
-}
-button.primary:hover, button.send:hover { background: var(--vscode-button-hoverBackground); }
-button:disabled { cursor: default; opacity: .45; }
-.top {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: flex-start;
-  margin-bottom: 12px;
-}
-h1 { margin: 0; font-size: 18px; line-height: 1.2; }
-h3 { margin: 6px 0; font-size: 13px; }
-p { margin: 0; }
-.top p, small, .summary, .scan-state, .empty span, .explain {
-  color: var(--vscode-descriptionForeground);
-}
-.identity-action {
-  white-space: nowrap;
-  max-width: 46%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.identity-action.ok {
-  color: var(--vscode-testing-iconPassed);
-  border-color: var(--vscode-testing-iconPassed);
-  background: transparent;
-}
-.panel {
-  border: 1px solid var(--vscode-panel-border);
-  background: var(--vscode-editorWidget-background);
-  border-radius: 7px;
-  margin-bottom: 12px;
-  overflow: hidden;
-}
-.panel > summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 10px;
-  cursor: pointer;
-  font-weight: 600;
-}
-.panel > summary small {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 400;
-}
-.panel[open] > summary { border-bottom: 1px solid var(--vscode-panel-border); }
-.panel > :not(summary) { margin: 10px; }
-.toolbar {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-.agent-picker {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 8px;
-}
-.agent-picker label {
-  color: var(--vscode-descriptionForeground);
-}
-select {
-  min-width: 0;
-  border: 1px solid var(--vscode-dropdown-border);
-  color: var(--vscode-dropdown-foreground);
-  background: var(--vscode-dropdown-background);
-  border-radius: 5px;
-  padding: 5px 7px;
-}
-.agent-list {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-.agent-card {
-  border: 1px solid var(--vscode-panel-border);
-  border-left: 3px solid var(--vscode-descriptionForeground);
-  border-radius: 6px;
-  padding: 8px;
-  background: var(--vscode-input-background);
-}
-.agent-card.available { border-left-color: var(--vscode-testing-iconPassed); }
-.agent-card.unavailable { opacity: .78; }
-.agent-card.active { border-color: var(--vscode-focusBorder); }
-.agent-card div:first-child {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  align-items: baseline;
-}
-.agent-card p {
-  margin-top: 4px;
-  line-height: 1.35;
-}
-.agent-card code {
-  display: block;
-  margin-top: 5px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.signals {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 6px;
-}
-.signals span, .empty-chip {
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  padding: 2px 7px;
-  color: var(--vscode-descriptionForeground);
-}
-.unavailable-agents {
-  border-top: 1px solid var(--vscode-panel-border);
-  padding-top: 8px;
-}
-.unavailable-agents > summary {
-  cursor: pointer;
-  color: var(--vscode-descriptionForeground);
-}
-.scan-state {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.dot {
-  flex: 0 0 auto;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--vscode-charts-blue);
-}
-.scan-state.ready .dot { background: var(--vscode-testing-iconPassed); }
-.scan-state.error .dot { background: var(--vscode-testing-iconFailed); }
-.scan-state.scanning .dot { animation: pulse .8s infinite alternate; }
-.cards {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.update-row {
-  border: 1px solid var(--vscode-panel-border);
-  border-left: 2px solid var(--vscode-descriptionForeground);
-  background: var(--vscode-editorWidget-background);
-  border-radius: 4px;
-  overflow: hidden;
-}
-.update-row.has-breaks { border-left-color: var(--vscode-editorWarning-foreground); }
-.update-row.repo-impact { border-left-color: var(--vscode-testing-iconFailed); }
-.update-row.clean { border-left-color: var(--vscode-testing-iconPassed); }
-.update-row > :not(summary) { margin: 10px; }
-.row-head {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: center;
-  padding: 10px;
-  cursor: pointer;
-  list-style: none;
-}
-.row-head::-webkit-details-marker { display: none; }
-.update-row[open] > .row-head { border-bottom: 1px solid var(--vscode-panel-border); }
-.package {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.package strong { overflow-wrap: anywhere; }
-.status-chip {
-  border-radius: 3px;
-  padding: 2px 7px;
-  font-size: 11px;
-  white-space: nowrap;
-}
-.status-chip.ok { color: var(--vscode-testing-iconPassed); background: color-mix(in srgb, var(--vscode-testing-iconPassed) 14%, transparent); }
-.status-chip.info { color: var(--vscode-charts-blue); background: color-mix(in srgb, var(--vscode-charts-blue) 14%, transparent); }
-.status-chip.warn { color: var(--vscode-editorWarning-foreground); background: color-mix(in srgb, var(--vscode-editorWarning-foreground) 14%, transparent); }
-.status-chip.danger { color: var(--vscode-testing-iconFailed); background: color-mix(in srgb, var(--vscode-testing-iconFailed) 14%, transparent); }
-.version-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 6px;
-}
-.version-row label {
-  display: grid;
-  gap: 4px;
-  color: var(--vscode-descriptionForeground);
-}
-.version-row select { width: 100%; }
-.target-notes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.target-notes span {
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 3px;
-  padding: 2px 7px;
-  font-size: 11px;
-}
-.target-notes .ok { color: var(--vscode-testing-iconPassed); border-color: var(--vscode-testing-iconPassed); }
-.target-notes .warn { color: var(--vscode-editorWarning-foreground); border-color: var(--vscode-editorWarning-foreground); }
-.target-notes .muted { color: var(--vscode-descriptionForeground); }
-.check input { display: none; }
-.check span {
-  width: 18px;
-  height: 18px;
-  display: block;
-  border-radius: 4px;
-  border: 1px solid var(--vscode-checkbox-border);
-  background: var(--vscode-checkbox-background);
-}
-.check input:checked + span {
-  background: var(--vscode-button-background);
-  border-color: var(--vscode-button-background);
-}
-.check input:checked + span::after {
-  content: "";
-  display: block;
-  width: 9px;
-  height: 5px;
-  border-left: 2px solid var(--vscode-button-foreground);
-  border-bottom: 2px solid var(--vscode-button-foreground);
-  transform: rotate(-45deg);
-  margin: 4px 0 0 4px;
-}
-.metrics {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 6px;
-  margin: 10px 0;
-}
-.metric {
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 4px;
-  padding: 6px;
-  min-width: 0;
-  text-align: left;
-  background: var(--vscode-input-background);
-  color: var(--vscode-foreground);
-}
-.metric.linked {
-  cursor: pointer;
-}
-.metric.linked:hover,
-.metric.linked:focus {
-  border-color: var(--vscode-focusBorder);
-  outline: none;
-}
-.metric-break b { color: var(--vscode-editorWarning-foreground); }
-.metric-impact b { color: var(--vscode-testing-iconFailed); }
-.metric-evidence b { color: var(--vscode-charts-blue); }
-.metric-risk.risk-none b { color: var(--vscode-testing-iconPassed); }
-.metric-risk.risk-low b { color: var(--vscode-charts-blue); }
-.metric-risk.risk-medium b { color: var(--vscode-editorWarning-foreground); }
-.metric-risk.risk-high b { color: var(--vscode-testing-iconFailed); }
-.metric b {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.metric span {
-  display: block;
-  color: var(--vscode-descriptionForeground);
-  font-size: 11px;
-}
-.summary {
-  margin-bottom: 10px;
-  line-height: 1.35;
-}
-.breakdown {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-.break-group {
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 6px;
-  overflow: hidden;
-}
-.break-group > summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px;
-  cursor: pointer;
-  font-weight: 600;
-}
-.break-group[open] > summary {
-  border-bottom: 1px solid var(--vscode-panel-border);
-}
-.break-group summary small {
-  color: var(--vscode-descriptionForeground);
-  font-weight: 400;
-}
-.break {
-  margin: 0;
-  padding: 10px;
-  border-top: 1px solid var(--vscode-panel-border);
-}
-.break:first-of-type { border-top: 0; }
-.break.matched { background: color-mix(in srgb, var(--vscode-testing-iconFailed) 5%, transparent); }
-.break-head {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-  color: var(--vscode-descriptionForeground);
-  font-size: 11px;
-}
-.badge {
-  text-transform: uppercase;
-  background: var(--vscode-badge-background);
-  color: var(--vscode-badge-foreground);
-  border-radius: 3px;
-  padding: 1px 5px;
-}
-.badge.high { background: var(--vscode-testing-iconFailed); color: var(--vscode-button-foreground); }
-.badge.medium { background: var(--vscode-editorWarning-foreground); color: var(--vscode-editor-background); }
-.badge.low { background: var(--vscode-charts-blue); color: var(--vscode-button-foreground); }
-.impact-pill {
-  margin-left: auto;
-  border-radius: 3px;
-  padding: 1px 7px;
-}
-.impact-pill.hit {
-  color: var(--vscode-testing-iconFailed);
-  background: color-mix(in srgb, var(--vscode-testing-iconFailed) 14%, transparent);
-}
-.impact-pill.miss {
-  color: var(--vscode-descriptionForeground);
-  border: 1px solid var(--vscode-panel-border);
-}
-.symbols {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 6px;
-}
-.required-fix {
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 5px;
-  margin: 8px 0;
-  padding: 6px;
-}
-.required-fix > summary {
-  cursor: pointer;
-  color: var(--vscode-textLink-foreground);
-}
-.sites {
-  margin: 7px 0;
-  padding: 0;
-  list-style: none;
-}
-.sites li {
-  margin-bottom: 4px;
-  overflow-wrap: anywhere;
-  display: grid;
-  gap: 2px;
-}
-.evidence-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 8px;
-}
-.evidence-list details {
-  border: 1px solid var(--vscode-panel-border);
-  border-radius: 5px;
-  padding: 6px;
-}
-.evidence-list summary {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  cursor: pointer;
-  overflow-wrap: anywhere;
-}
-.evidence-list summary .weight {
-  margin-left: auto;
-  color: var(--vscode-descriptionForeground);
-}
-.evidence-group > .evidence-list {
-  margin: 8px;
-}
-.revealed {
-  outline: 1px solid var(--vscode-focusBorder);
-  outline-offset: -1px;
-}
-.source {
-  font-size: 10px;
-  text-transform: uppercase;
-  background: var(--vscode-badge-background);
-  color: var(--vscode-badge-foreground);
-  border-radius: 3px;
-  padding: 1px 5px;
-}
-.evidence-body {
-  max-height: 220px;
-  overflow: auto;
-  margin-top: 6px;
-}
-.markdown p { margin: 0 0 6px; }
-.markdown p:last-child { margin-bottom: 0; }
-.markdown ul { margin: 4px 0 6px; padding-left: 18px; }
-.markdown h4 { margin: 8px 0 4px; font-size: 12px; }
-code {
-  font-family: var(--vscode-editor-font-family);
-  font-size: .92em;
-  background: var(--vscode-textCodeBlock-background);
-  border-radius: 3px;
-  padding: 1px 4px;
-}
-.row-actions {
-  display: flex;
-  gap: 8px;
-}
-.row-actions button { flex: 1; }
-.empty {
-  border: 1px dashed var(--vscode-panel-border);
-  border-radius: 7px;
-  padding: 18px 12px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.spinner {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 2px solid var(--vscode-panel-border);
-  border-top-color: var(--vscode-progressBar-background);
-  margin: 0 auto;
-  animation: spin .9s linear infinite;
-}
-.chatbox {
-  border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
-  background: var(--vscode-input-background);
-  border-radius: 6px;
-  padding: 8px;
-}
-.chatbox:focus-within {
-  border-color: var(--vscode-focusBorder);
-}
-.messages {
-  display: flex;
-  flex-direction: column-reverse;
-  gap: 8px;
-  max-height: 220px;
-  overflow: auto;
-  margin-bottom: 8px;
-}
-.msg {
-  border-radius: 5px;
-  padding: 8px;
-  background: var(--vscode-editorWidget-background);
-}
-.msg b {
-  display: block;
-  margin-bottom: 3px;
-}
-.msg.user { border: 1px solid var(--vscode-focusBorder); }
-.msg.agent { border: 1px solid var(--vscode-testing-iconPassed); }
-.msg span {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-.composer {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 6px;
-  align-items: stretch;
-  border-top: 1px solid var(--vscode-panel-border);
-  padding-top: 8px;
-}
-.composer-actions {
-  display: flex;
-  gap: 4px;
-  align-items: end;
-}
-button.icon, button.send {
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  display: inline-grid;
-  place-items: center;
-}
-button.icon {
-  font-size: 11px;
-  background: transparent;
-}
-textarea {
-  min-width: 0;
-  resize: none;
-  border: 0;
-  color: var(--vscode-input-foreground);
-  background: var(--vscode-input-background);
-  border-radius: 0;
-  padding: 5px 0;
-  outline: none;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes pulse { from { opacity: .4; } to { opacity: 1; } }
-`;
