@@ -6,7 +6,7 @@ import type { DriftState } from './state.js';
 import type { SessionPermission } from './session.js';
 import type { DriftReview } from './review/store.js';
 import { resolveAgent, type RegistryContext } from './agents/registry.js';
-import type { FixAgent, FixOutcome, FixTask } from './agents/types.js';
+import type { AttachedContext, FixAgent, FixOutcome, FixTask } from './agents/types.js';
 
 /**
  * The fix flow.
@@ -38,6 +38,8 @@ export interface FixOptions {
   permission?: SessionPermission;
   /** Puts a question to the developer in the panel thread. */
   ask?: (question: string, options?: string[]) => Promise<string>;
+  /** Files, folders or selections the developer attached as reference material. */
+  context?: AttachedContext[];
   /** Mirrors agent chatter into the panel thread. */
   onLog?: (message: string) => void;
 }
@@ -164,6 +166,7 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
       files: before,
       ask: options.ask,
       onLog: options.onLog,
+      context: options.context,
     });
 
     if (outcome.warnings?.length) warnings.push(...outcome.warnings);
@@ -253,6 +256,7 @@ async function applyOneCommit(args: {
   files: { path: string; content: string }[];
   ask?: (question: string, options?: string[]) => Promise<string>;
   onLog?: (message: string) => void;
+  context?: AttachedContext[];
 }): Promise<FixOutcome> {
   const { agent, plan, commit, root, token, progress, files } = args;
 
@@ -267,6 +271,7 @@ async function applyOneCommit(args: {
     customInstructions: plan.commits.length
       ? vscode.workspace.getConfiguration('drift').get<string>('fix.customInstructions', '')
       : '',
+    context: args.context,
   };
 
   try {

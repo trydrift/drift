@@ -41,6 +41,16 @@ export interface FileEdit {
   content: string;
 }
 
+/** A file, folder, or selection the developer pointed the agent at. */
+export interface AttachedContext {
+  kind: 'file' | 'folder' | 'package' | 'selection';
+  label: string;
+  /** Workspace-relative path, package name, or `file:from-to`. */
+  value: string;
+  /** Contents, for attachments small enough to inline. */
+  content?: string;
+}
+
 export interface FixTask {
   plan: RemediationPlan;
   /** The single commit unit being worked on. One concern at a time. */
@@ -50,6 +60,13 @@ export interface FixTask {
   files: FileSnapshot[];
   /** Extra repository conventions from settings. */
   customInstructions?: string;
+  /**
+   * Context the developer attached in the panel.
+   *
+   * Reference material, not scope: an attachment tells the agent where to look
+   * for a convention or a helper, and never widens which files it may edit.
+   */
+  context?: AttachedContext[];
 }
 
 export type FixStatus = 'applied' | 'no-changes' | 'failed' | 'delegated';
@@ -183,6 +200,28 @@ export function buildFixPrompt(task: FixTask): string {
 
   if (task.customInstructions?.trim()) {
     sections.push(`## Repository conventions\n\n${task.customInstructions.trim()}`);
+  }
+
+  if (task.context?.length) {
+    const lines = [
+      '## Context the developer attached',
+      '',
+      'Reference material. Read it to match this codebase, but do NOT edit any of',
+      'it — the files in scope for this commit are listed above and nowhere else.',
+      '',
+    ];
+
+    for (const entry of task.context) {
+      lines.push(`### ${entry.kind}: ${entry.value}`);
+      if (entry.content) {
+        lines.push('```');
+        lines.push(entry.content.slice(0, 4000));
+        lines.push('```');
+      }
+      lines.push('');
+    }
+
+    sections.push(lines.join('\n'));
   }
 
   return sections.join('\n\n');

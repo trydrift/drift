@@ -121,17 +121,31 @@ interface NpmPackument {
   'dist-tags'?: Record<string, string>;
 }
 
+/** How widely to look. Comes from the effort picker in the panel composer. */
+export interface ScanBreadth {
+  /** Include dev, optional and peer dependencies. */
+  includeDev: boolean;
+  /** Cap on impact sites recorded per breaking change. */
+  maxSites: number;
+  /** Cap on packages checked. `0` means no cap. */
+  maxPackages: number;
+}
+
+const DEFAULT_BREADTH: ScanBreadth = { includeDev: false, maxSites: 40, maxPackages: 0 };
+
 export async function scanNpmUpgrades(args: {
   root: string;
   repo: RepoContext;
   config: DriftConfig;
   githubToken?: string;
+  breadth?: ScanBreadth;
   onProgress?: (progress: ScanProgress) => void;
   /** Called as soon as each package resolves, so the UI can fill in gradually. */
   onCandidate?: (candidate: UpgradeCandidate) => void;
   token?: { isCancellationRequested: boolean };
 }): Promise<UpgradeScanResult> {
   const { root, repo, config, githubToken, onProgress, onCandidate, token } = args;
+  const breadth = args.breadth ?? DEFAULT_BREADTH;
   const logger = createLogger(vscode.workspace.getConfiguration('drift').get('logLevel', 'info'));
 
   const report = (phase: string, detail: string, done = 0, total = 0) =>
@@ -145,7 +159,8 @@ export async function scanNpmUpgrades(args: {
     join(root, 'package-lock.json'),
   );
 
-  const deps = directDependencies(manifest, lock);
+  const all = directDependencies(manifest, lock, breadth.includeDev);
+  const deps = breadth.maxPackages > 0 ? all.slice(0, breadth.maxPackages) : all;
 
   report('Indexing your code', 'Walking source files', 0, deps.length);
   const files = await walkSourceFiles(root);
@@ -187,6 +202,7 @@ export async function scanNpmUpgrades(args: {
       files,
       index,
       logger,
+      maxSites: breadth.maxSites,
       onProgress: (phase, detail) => report(phase, detail, done, deps.length),
     });
 
@@ -274,6 +290,7 @@ async function analyzeUpgrade(args: {
   files: Awaited<ReturnType<typeof walkSourceFiles>>;
   index: ReturnType<typeof buildIndex>;
   logger: ReturnType<typeof createLogger>;
+  maxSites?: number;
   onProgress?: (phase: string, detail: string) => void;
 }): Promise<UpgradeCandidate> {
   const label = `${args.dep.name} ${args.dep.current} → ${args.selected}`;
@@ -316,7 +333,7 @@ async function analyzeUpgrade(args: {
     );
     const impactSites = localize(breakingChanges, [change], args.index, args.files, {
       logger: args.logger,
-      maxSitesPerChange: 40,
+      maxSitesPerChange: args.maxSites ?? 40,
     });
     const plan = buildPlan({
       repo: args.repo,
@@ -391,13 +408,19 @@ function summarize(breakingCount: number, impactCount: number, name: string): st
 function directDependencies(
   manifest: PackageJson,
   lock: { packages?: Record<string, { version?: string }> } | null,
+  includeDev: boolean,
 ): { name: string; kind: DependencyKind; current: string; manifestPath: string; range: string }[] {
-  const sections: [keyof PackageJson, DependencyKind][] = [
-    ['dependencies', 'runtime'],
-    ['devDependencies', 'dev'],
-    ['optionalDependencies', 'optional'],
-    ['peerDependencies', 'peer'],
-  ];
+  // Runtime dependencies are what ship, so they are always checked. The rest are
+  // opt-in: a broken test helper is a nuisance, a broken runtime import is an
+  // outage, and mixing the two dilutes the signal.
+  const sections: [keyof PackageJson, DependencyKind][] = includeDev
+    ? [
+        ['dependencies', 'runtime'],
+        ['devDependencies', 'dev'],
+        ['optionalDependencies', 'optional'],
+        ['peerDependencies', 'peer'],
+      ]
+    : [['dependencies', 'runtime']];
 
   const out: { name: string; kind: DependencyKind; current: string; manifestPath: string; range: string }[] = [];
   const seen = new Set<string>();

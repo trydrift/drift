@@ -201,11 +201,20 @@ ${banner}
     .join(' · ')}</p>
 </header>
 
+${
+  // Lead with the verdict for *this* repository. A page that opens with a
+  // breaking-change count reads as an alarm even when the answer is "nothing to
+  // do", and an alarm that turns out to be nothing gets ignored next time.
+  plan.impactSites.length === 0
+    ? `<p class="verdict-clear">None of these changes touch code in this repository. Safe to upgrade.</p>`
+    : `<p class="verdict-hit">${files} file${files === 1 ? '' : 's'} here use an API that changed.</p>`
+}
+
 <div class="stats">
-  ${stat(String(plan.breakingChanges.length), 'breaking change' + (plan.breakingChanges.length === 1 ? '' : 's'))}
-  ${stat(String(plan.impactSites.length), 'repo match' + (plan.impactSites.length === 1 ? '' : 'es'))}
-  ${stat(String(files), 'file' + (files === 1 ? '' : 's'))}
-  ${stat(String(plan.commits.length), 'commit' + (plan.commits.length === 1 ? '' : 's'))}
+  ${stat(String(files), 'file' + (files === 1 ? '' : 's') + ' affected here', plan.impactSites.length ? '' : 'risk-none')}
+  ${stat(String(plan.impactSites.length), 'code site' + (plan.impactSites.length === 1 ? '' : 's'))}
+  ${stat(String(plan.commits.length), 'planned commit' + (plan.commits.length === 1 ? '' : 's'))}
+  ${stat(String(plan.breakingChanges.length), 'upstream change' + (plan.breakingChanges.length === 1 ? '' : 's'))}
   ${stat(plan.risk, 'repo risk', riskClass(plan.risk))}
 </div>
 
@@ -532,6 +541,18 @@ h2 { font-size: 1.05rem; margin: 28px 0 10px; font-weight: 600;
      border-bottom: 1px solid var(--vscode-panel-border); padding-bottom: 6px; }
 h3 { font-size: 0.98rem; margin: 6px 0; font-weight: 600; }
 .sub { color: var(--vscode-descriptionForeground); margin: 0; }
+.verdict-clear, .verdict-hit {
+  margin: 0 0 14px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  border-left: 3px solid var(--vscode-testing-iconPassed);
+  background: var(--vscode-editorWidget-background);
+  font-size: 14px;
+}
+.verdict-hit {
+  border-left-color: var(--vscode-editorWarning-foreground);
+  color: var(--vscode-editorWarning-foreground);
+}
 .muted { color: var(--vscode-descriptionForeground); font-size: 0.9em; }
 code { font-family: var(--vscode-editor-font-family); font-size: 0.9em;
        background: var(--vscode-textCodeBlock-background); padding: 1px 5px; border-radius: 3px; }
