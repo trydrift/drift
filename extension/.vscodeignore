@@ -9,6 +9,7 @@ esbuild.mjs
 
 # Test and preview artifacts that land in dist/ alongside the real bundle.
 dist/harness.cjs
+dist/*.test.cjs
 dist/report-preview.html
 dist/report-themed.html
 dist/report.png

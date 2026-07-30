@@ -350,22 +350,3 @@ function write(key: string, value: string): Thenable<void> {
     .getConfiguration('drift')
     .update(key, value, vscode.ConfigurationTarget.Workspace);
 }
-
-export function describeMode(mode: SessionMode): string {
-  return mode === 'ask' ? 'Ask' : 'Agent';
-}
-
-export function describeEffort(effort: SessionEffort): string {
-  return effort === 'quick' ? 'Quick' : effort === 'thorough' ? 'Thorough' : 'Balanced';
-}
-
-export function describePermission(permission: SessionPermission): string {
-  switch (permission) {
-    case 'ask':
-      return 'Ask first';
-    case 'auto-edit':
-      return 'Edit, then review';
-    case 'full-auto':
-      return 'Edit and commit';
-  }
-}

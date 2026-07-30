@@ -7,7 +7,8 @@ import { DriftConfigSchema, type DriftConfig } from '../../../src/config/schema.
 import { loadWorkspaceConfig, runAnalysis } from '../analyze.js';
 import { runFix } from '../fix.js';
 import type { DriftState } from '../state.js';
-import { DriftSession, describePermission } from '../session.js';
+import { DriftSession } from '../session.js';
+import { describePermission } from '../labels.js';
 import type { DriftReview, ReviewGroup } from '../review/store.js';
 import { discoverAgents, invalidateAgentCache, type DiscoveredAgent } from '../agents/registry.js';
 import type { AttachedContext } from '../agents/types.js';

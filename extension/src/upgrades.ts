@@ -13,25 +13,11 @@ import { buildIndex } from '../../src/index/metarag.js';
 import { localize } from '../../src/localize/index.js';
 import { buildPlan } from '../../src/plan/index.js';
 import { createLogger } from '../../src/util/logger.js';
+import { compareSeverity, describeSeverity, severityOf, type UpgradeSeverity } from './severity.js';
 
 const run = promisify(execFile);
 
 export type UpgradeStatus = 'checking' | 'ready' | 'clean' | 'error' | 'upgrading';
-
-/**
- * How much a developer should care.
- *
- * This distinction is the whole point of Drift and it must survive into the UI
- * intact. "Seven breaking changes" is a fact about the package. "None of them
- * touch your code" is the fact about *you*, and it is the one that decides
- * whether this upgrade is a five-second job or an afternoon.
- *
- *   affected       Breaking changes that match code in this repository.
- *   upstream-only  Breaking changes that exist, but nothing here uses them.
- *   clean          No breaking change found for this target version.
- *   error          Drift could not finish checking.
- */
-export type UpgradeSeverity = 'affected' | 'upstream-only' | 'clean' | 'error';
 
 export interface UpgradeCandidate {
   id: string;
@@ -78,35 +64,6 @@ export interface ScanProgress {
   done: number;
   /** Packages to check in total, once known. */
   total: number;
-}
-
-export function severityOf(candidate: UpgradeCandidate): UpgradeSeverity {
-  if (candidate.status === 'error') return 'error';
-  if (candidate.impactCount > 0) return 'affected';
-  if (candidate.breakingCount > 0) return 'upstream-only';
-  return 'clean';
-}
-
-/**
- * The line shown on a package row.
- *
- * Never leads with a raw breaking-change count when nothing here is affected —
- * that reads as an alarm, and an alarm that turns out to be nothing is how a
- * tool teaches people to ignore it.
- */
-export function describeSeverity(candidate: UpgradeCandidate): string {
-  switch (severityOf(candidate)) {
-    case 'error':
-      return 'Could not check';
-    case 'affected': {
-      const files = candidate.impactFiles;
-      return `Affects your code · ${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'} in ${files} file${files === 1 ? '' : 's'}`;
-    }
-    case 'upstream-only':
-      return `Safe for your code · ${candidate.breakingCount} upstream change${candidate.breakingCount === 1 ? '' : 's'}, none used here`;
-    case 'clean':
-      return 'Safe for your code · no breaking changes found';
-  }
 }
 
 interface PackageJson {
@@ -498,9 +455,10 @@ async function readJson<T>(path: string): Promise<T | null> {
 
 /** Order by what the developer has to act on, not by upstream noise. */
 function compareCandidates(a: UpgradeCandidate, b: UpgradeCandidate): number {
-  const rank = { affected: 0, error: 1, 'upstream-only': 2, clean: 3 } as const;
-  const bySeverity = rank[severityOf(a)] - rank[severityOf(b)];
+  const bySeverity = compareSeverity(a, b);
   if (bySeverity !== 0) return bySeverity;
   if (a.impactCount !== b.impactCount) return b.impactCount - a.impactCount;
   return a.name.localeCompare(b.name);
 }
+
+export { describeSeverity, severityOf, type UpgradeSeverity };

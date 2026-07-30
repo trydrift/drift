@@ -1,6 +1,7 @@
 import type { Attachment, SessionEffort, SessionMode, SessionPermission, ThreadItem } from '../session.js';
-import { describeEffort, describeMode, describePermission } from '../session.js';
-import { describeSeverity, severityOf, type UpgradeCandidate, type UpgradeSeverity } from '../upgrades.js';
+import { describeEffort, describeMode, describePermission } from '../labels.js';
+import type { UpgradeCandidate } from '../upgrades.js';
+import { describeSeverity, severityOf, type UpgradeSeverity } from '../severity.js';
 import type { ReviewGroup, ReviewTotals } from '../review/store.js';
 import type { BreakingChange, Evidence, RemediationPlan } from '../../../src/types.js';
 
