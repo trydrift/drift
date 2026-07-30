@@ -48,8 +48,68 @@ src/
 ├── dispatch/             Stage 6 — Copilot + approval flow
 ├── report/               Stage 7 — the Drift Report
 ├── github/               Octokit wrapper
+├── repo/                 RepoProvider seam — GitHub API or local git
 └── runners/              Action, webhook server, entry points
 ```
+
+The VS Code extension is a second front end over the same stages 1–6. It adds no
+analysis of its own; everything below either drives the shared pipeline or renders
+its output.
+
+```
+extension/src/
+├── extension.ts          Activation, commands, wiring
+├── analyze.ts            Picks a commit range, then calls analyzeRepository
+├── upgrades.ts           Scans npm for newer versions and runs 1–5 per package
+├── fix.ts                Branch, per-commit agent run, scoped commit
+├── severity.ts           Repo-relative verdict. No imports — see below
+├── labels.ts             Composer setting names. No imports
+├── diff.ts               LCS line diff → hunks, for review
+├── session.ts            The panel transcript, context, and per-turn settings
+├── review/
+│   ├── store.ts          Pending edits; keep/undo per hunk, file, or group
+│   └── ui.ts             Line tinting, per-hunk CodeLenses, native diff
+├── agents/               One adapter per AI agent, plus discovery
+└── ui/
+    ├── home.ts           Panel controller — messages in, thread items out
+    ├── webview.ts        Pure render function for the whole panel
+    ├── report.ts         The full-page Drift Report
+    └── diagnostics.ts    Problems panel + code actions
+```
+
+`severity.ts` and `labels.ts` import nothing at all, and `webview.ts` imports no
+`vscode`. That is load-bearing rather than tidy: it means the entire panel can be
+rendered and asserted against in plain Node (`extension/test/panel.test.ts`),
+which is the only automated check on several thousand lines of generated markup.
+
+### Severity is repo-relative
+
+One judgement, in one place, because the UI depends on getting it right:
+
+| Severity | Meaning |
+|---|---|
+| `affected` | A breaking change matches code in this repository |
+| `upstream-only` | Breaking changes exist; nothing here calls them |
+| `clean` | No breaking change found for the target version |
+| `error` | Drift could not finish checking |
+
+Only `affected` earns colour, a notification, or a status-bar background. An
+upstream breaking change that no local code calls is information, and presenting
+it as an alert is how a tool trains people to dismiss it.
+
+### Review is a proposal, not a commit
+
+`fix.ts` snapshots every file in a commit unit *before* the agent runs, which is
+the only way to get an honest baseline from a CLI agent that edits the working
+tree itself. Afterwards, `review/store.ts` diffs snapshot against disk and holds
+the result.
+
+Keep and undo both shrink the diff to nothing, from opposite ends — keep moves the
+baseline forward onto the new lines, undo moves the file back onto the baseline —
+so there is never a half-resolved state to reason about. When a group has nothing
+left, and only then, the store's commit handler commits exactly the files the plan
+named for it. Hunks record their ranges on *both* sides precisely so that
+resolving one cannot corrupt the line numbers of the others.
 
 ---
 

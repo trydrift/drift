@@ -17,7 +17,7 @@ from a free tool.
 
 ---
 
-## The five layers
+## The six layers
 
 ### 1 · Evidence before action
 
@@ -89,13 +89,38 @@ Most importantly:
 > clearly-marked `TODO(drift):` comment, and say so in the pull request
 > description. A flagged unknown is useful; a confident guess is not.
 
+### 6 · Human review, in the editor
+
+In the VS Code extension, an agent's edits are a **proposal**. They are written
+into the working tree — so they can be read with real syntax highlighting and real
+type errors, rather than as a diff in a panel — but on the default permission mode
+nothing reaches a commit until a human keeps it.
+
+The review surface is the editor itself: changed lines are tinted, and every hunk
+carries its own Keep and Undo. Undo goes through VS Code's workspace API, so a
+revert lands in the normal undo stack and in any editor already open on the file.
+
+Two properties make this trustworthy rather than decorative:
+
+- **The baseline is captured before the agent runs.** That is the only honest
+  baseline available for a CLI agent that edits the tree itself and never reports
+  what it replaced.
+- **Keep and undo are total.** Both shrink the diff to nothing, from opposite ends,
+  so there is no half-resolved state. Hunks record their line ranges on both sides,
+  which is what stops resolving one from corrupting the others.
+
+A group is committed only when every change in it has been kept, and the commit
+touches only the files the plan named for that group.
+
 ---
 
 ## What Drift will never do
 
 | | |
 |---|---|
-| **Merge anything** | The output is always a PR for a human |
+| **Merge anything** | The output is always a PR, or a local commit, for a human |
+| **Commit an unreviewed edit** | Unless you set `drift.session.permission` to `full-auto` |
+| **Push from the editor** | `Drift: Push the Fix Branch` is explicit and manual |
 | **Force-push** | Only fresh branches, never rewriting history |
 | **Touch the base branch** | Work happens on `drift/*` |
 | **Change dependency versions** | The upgrade is the input, not the task |

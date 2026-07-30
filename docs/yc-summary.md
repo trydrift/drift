@@ -2,8 +2,9 @@
 
 ## One line
 
-Drift finds out which dependency updates actually break your code, proves it,
-and drives GitHub Copilot to fix them in a reviewable pull request.
+Drift finds out which dependency updates actually break your code, proves it, and
+drives the AI agent you already have to fix them — in your editor, or as a
+reviewable pull request.
 
 ## The problem
 
@@ -38,6 +39,28 @@ Three questions Dependabot doesn't answer:
    relied on.
 
 It never merges anything.
+
+## Two front ends, one engine
+
+**A GitHub Action.** Runs on every dependency bump, files an issue with the plan,
+and opens a pull request once approved. Zero infrastructure — see the business
+model below.
+
+**A VS Code extension.** The same six analysis stages, running locally, with no
+token and no account, because nothing in the analysis needs one. This is the
+distribution wedge: a developer can install it and get an answer in one minute
+without talking to anyone or asking their org for permission.
+
+The extension's panel is a conversation, the shape developers already know from
+Copilot Chat and Claude. It leads with the number that decides what they do next —
+*"3 of 14 upgrades affect code in this repository"* — and treats the other eleven
+as safe, in neutral colour, because an alert that turns out to be nothing is how a
+tool teaches people to dismiss it.
+
+Fixes arrive as a proposal: written into the working tree so they can be read in
+context, with Keep and Undo on every hunk, and nothing committed until a human
+keeps it. When a decision is genuinely the developer's, Drift asks in the thread
+and waits — and so can the agent, rather than guessing.
 
 ## Why it can be trusted
 
@@ -103,8 +126,8 @@ because the expensive part (inference) is already paid for by someone else.
 
 ## Status
 
-Working MVP. Seven-stage pipeline complete, six package ecosystems, 106 tests,
-verified end to end.
+Working MVP. Seven-stage pipeline complete, six package ecosystems, two front
+ends, 132 tests, verified end to end against a real upgrade in a real repository.
 
 Known limitations are documented rather than hidden — including single-hop
 localization, npm-only computed diffs, and prompt injection via
@@ -121,6 +144,9 @@ attacker-influenced changelogs as mitigated rather than solved.
 | **Meta-RAG index** | AST-aligned, adapted from arXiv:2510.03480 — with structural summaries instead of LLM-generated ones, so the core pipeline needs no model at all. |
 | **Separated commits** | One per concern, dependency-ordered. `git revert` and `git bisect` stay meaningful. |
 | **Zero-infrastructure deployment** | Runs entirely inside the customer's trust boundary. |
+| **Agent-agnostic** | Drives Copilot, Claude Code, Codex, Gemini, Aider, OpenCode, or a local Ollama model. Drift ships no model and asks for no API key, so inference is already paid for. |
+| **Repo-relative severity** | The judgement of whether a breaking change matters *here* is a single testable function, and only it earns colour or a notification. |
+| **Hunk-level review** | Agent edits are held as a proposal with per-hunk Keep and Undo. The invariant — resolving one hunk cannot corrupt the others — is tested directly. |
 
 ## Research foundation
 
@@ -142,3 +168,11 @@ drift analyze
 ```
 
 Full pipeline, real report, nothing written.
+
+Or, with no token at all:
+
+```bash
+cd extension && npm install && npm run package
+```
+
+Then open the Drift panel in any repository and type `/scan`.
