@@ -25,13 +25,15 @@ export class DriftStatusBar implements vscode.Disposable {
     this.item.tooltip = tooltipFor(this.state);
     this.item.command = commandFor(status.kind);
 
-    // Only a real finding earns a colour. Everything else stays neutral.
-    this.item.backgroundColor =
-      status.kind === 'findings'
-        ? new vscode.ThemeColor('statusBarItem.warningBackground')
-        : status.kind === 'error'
-          ? new vscode.ThemeColor('statusBarItem.errorBackground')
-          : undefined;
+    // Only code in *this* repository earns a colour. Upstream breaking changes
+    // nobody here calls are information, not an alert, and colouring them is how
+    // a tool trains people to dismiss it.
+    const affected = status.kind === 'findings' && status.plan.impactSites.length > 0;
+    this.item.backgroundColor = affected
+      ? new vscode.ThemeColor('statusBarItem.warningBackground')
+      : status.kind === 'error'
+        ? new vscode.ThemeColor('statusBarItem.errorBackground')
+        : undefined;
 
     if (status.kind === 'no-repo') this.item.hide();
     else this.item.show();
@@ -47,6 +49,8 @@ function iconFor(kind: string): string {
     case 'analysing':
     case 'fixing':
       return 'loading~spin';
+    case 'reviewing':
+      return 'git-pull-request';
     case 'findings':
       return 'warning';
     case 'clean':
@@ -64,6 +68,8 @@ function iconFor(kind: string): string {
 
 function commandFor(kind: string): string {
   switch (kind) {
+    case 'reviewing':
+      return 'drift.reviewChanges';
     case 'findings':
     case 'fixed':
     case 'delegated':
@@ -82,7 +88,12 @@ function tooltipFor(state: DriftState): vscode.MarkdownString {
   switch (status.kind) {
     case 'findings': {
       const plan = status.plan;
-      lines.push(`${plan.breakingChanges.length} breaking change(s) found.`);
+      const files = new Set(plan.impactSites.map((s) => s.file)).size;
+      lines.push(
+        files > 0
+          ? `${plan.breakingChanges.length} breaking change(s), affecting ${files} file(s) here.`
+          : `${plan.breakingChanges.length} breaking change(s) upstream. None of them touch this repository.`,
+      );
       lines.push('');
       for (const change of plan.breakingChanges.slice(0, 5)) {
         lines.push(`- ${change.summary}`);
@@ -90,6 +101,13 @@ function tooltipFor(state: DriftState): vscode.MarkdownString {
       lines.push('', '_Click to open the report._');
       break;
     }
+    case 'reviewing':
+      lines.push(
+        `${status.files} file(s) changed on \`${status.branch}\` and waiting for you to keep or undo them.`,
+        '',
+        '_Nothing has been committed._',
+      );
+      break;
     case 'clean':
       lines.push(status.summary);
       if (status.plan?.changes.length) {

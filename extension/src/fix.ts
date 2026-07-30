@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import type { CommitUnit, RemediationPlan } from '../../src/types.js';
 import { Git } from './git.js';
 import type { DriftState } from './state.js';
+import type { SessionPermission } from './session.js';
+import type { DriftReview } from './review/store.js';
 import { resolveAgent, type RegistryContext } from './agents/registry.js';
 import type { FixAgent, FixOutcome, FixTask } from './agents/types.js';
 
@@ -18,6 +20,7 @@ import type { FixAgent, FixOutcome, FixTask } from './agents/types.js';
  *   - Never runs on a dirty tree without the user's explicit say-so.
  *   - Works on a new branch, never the one you were on.
  *   - Applies edits through the workspace API, so everything lands in undo.
+ *   - Nothing is committed until a human keeps it, unless they asked for that.
  *   - Commits only the files the plan named.
  *   - Never pushes, never merges. Leaving is `git checkout -`.
  */
@@ -29,19 +32,30 @@ export interface FixOptions {
   onlyCommit?: number;
   progress: vscode.Progress<{ message?: string; increment?: number }>;
   token: vscode.CancellationToken;
+  /** Holds edits for keep/undo review. Without it, edits commit immediately. */
+  review?: DriftReview;
+  /** How much the agent may do unsupervised. Defaults to `auto-edit`. */
+  permission?: SessionPermission;
+  /** Puts a question to the developer in the panel thread. */
+  ask?: (question: string, options?: string[]) => Promise<string>;
+  /** Mirrors agent chatter into the panel thread. */
+  onLog?: (message: string) => void;
 }
 
 export interface FixResult {
-  status: 'committed' | 'delegated' | 'nothing' | 'failed' | 'cancelled';
+  status: 'committed' | 'proposed' | 'delegated' | 'nothing' | 'failed' | 'cancelled';
   branch?: string;
   commits: number;
+  /** Files waiting for keep/undo, when the result is `proposed`. */
+  pendingFiles?: number;
   url?: string;
   warnings: string[];
   message: string;
 }
 
 export async function runFix(options: FixOptions): Promise<FixResult> {
-  const { state, plan, progress, token } = options;
+  const { state, plan, progress, token, review } = options;
+  const permission: SessionPermission = options.permission ?? 'auto-edit';
 
   const root = state.workspaceRoot;
   const repo = state.repo;
@@ -73,7 +87,7 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
     return runCloudAgent(agent, plan, state, progress, token);
   }
 
-  const guard = await ensureCleanTree(git);
+  const guard = await ensureCleanTree(git, options.ask);
   if (!guard.ok) return fail(guard.message);
 
   const commits = options.onlyCommit
@@ -92,7 +106,10 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
 
   const warnings: string[] = [];
   let committed = 0;
+  let pendingFiles = 0;
   const step = 100 / commits.length;
+
+  if (review) review.begin(root);
 
   for (const commit of commits) {
     if (token.isCancellationRequested) {
@@ -107,7 +124,47 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
     });
     progress.report({ message: `(${commit.order}/${plan.commits.length}) ${commit.message}` });
 
-    const outcome = await applyOneCommit({ agent, plan, commit, git, root, token, progress });
+    // Asking before touching anything is the point of `ask` mode: at this
+    // moment nothing has been written, so declining costs nothing.
+    if (permission === 'ask' && options.ask) {
+      const answer = await options.ask(
+        `Let ${agent.label} edit ${commit.files.length} file${commit.files.length === 1 ? '' : 's'} for "${commit.message}"?`,
+        ['Yes, go ahead', 'Skip this one', 'Stop'],
+      );
+      if (/^stop/i.test(answer)) {
+        return {
+          status: 'cancelled',
+          branch: plan.branchName,
+          commits: committed,
+          pendingFiles,
+          warnings,
+          message: 'Stopped before editing anything else.',
+        };
+      }
+      if (/^skip/i.test(answer)) {
+        warnings.push(`Skipped commit ${commit.order} ("${commit.message}") at your request.`);
+        progress.report({ increment: step });
+        continue;
+      }
+    }
+
+    const before = await readFiles(root, commit.files);
+    review?.snapshot(
+      { order: commit.order, title: commit.message, body: commit.body },
+      before,
+    );
+
+    const outcome = await applyOneCommit({
+      agent,
+      plan,
+      commit,
+      root,
+      token,
+      progress,
+      files: before,
+      ask: options.ask,
+      onLog: options.onLog,
+    });
 
     if (outcome.warnings?.length) warnings.push(...outcome.warnings);
 
@@ -116,27 +173,43 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
         status: 'failed',
         branch: plan.branchName,
         commits: committed,
+        pendingFiles,
         warnings,
         message: `Commit ${commit.order} failed: ${outcome.message}`,
       };
     }
 
-    if (outcome.status === 'applied') {
-      const sha = await git.commitPaths(commit.files, commit.message, commit.body);
-      if (sha) {
-        committed += 1;
-        progress.report({ increment: step, message: `Committed ${sha.slice(0, 7)}` });
-      } else {
-        // The agent ran but produced nothing inside this commit's scope.
+    if (outcome.status !== 'applied') {
+      progress.report({ increment: step });
+      continue;
+    }
+
+    // With a review store, edits stay uncommitted until a human keeps them, and
+    // the store's commit handler does the commit at that point. Without one —
+    // or in full-auto — commit here, as before.
+    if (review && permission !== 'full-auto') {
+      const settled = await review.settle(commit.order);
+      const files = settled?.files.length ?? 0;
+      pendingFiles += files;
+      if (files === 0) {
         warnings.push(`Commit ${commit.order} ("${commit.message}") produced no changes.`);
-        progress.report({ increment: step });
       }
+      progress.report({ increment: step, message: `${files} file(s) ready for review` });
+      continue;
+    }
+
+    const sha = await git.commitPaths(commit.files, commit.message, commit.body);
+    if (sha) {
+      committed += 1;
+      progress.report({ increment: step, message: `Committed ${sha.slice(0, 7)}` });
     } else {
+      // The agent ran but produced nothing inside this commit's scope.
+      warnings.push(`Commit ${commit.order} ("${commit.message}") produced no changes.`);
       progress.report({ increment: step });
     }
   }
 
-  if (committed === 0) {
+  if (committed === 0 && pendingFiles === 0) {
     // Leave the user where they started rather than on an empty branch.
     await git.checkout(repo.branch).catch(() => undefined);
     return {
@@ -144,6 +217,18 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
       commits: 0,
       warnings,
       message: `${agent.label} made no changes. You are back on ${repo.branch}.`,
+    };
+  }
+
+  if (pendingFiles > 0) {
+    state.set({ kind: 'reviewing', plan, branch: plan.branchName, files: pendingFiles, warnings });
+    return {
+      status: 'proposed',
+      branch: plan.branchName,
+      commits: committed,
+      pendingFiles,
+      warnings,
+      message: `${agent.label} changed ${pendingFiles} file${pendingFiles === 1 ? '' : 's'} on ${plan.branchName}. Nothing is committed — keep or undo each change.`,
     };
   }
 
@@ -162,14 +247,14 @@ async function applyOneCommit(args: {
   agent: FixAgent;
   plan: RemediationPlan;
   commit: CommitUnit;
-  git: Git;
   root: string;
   token: vscode.CancellationToken;
   progress: vscode.Progress<{ message?: string }>;
+  files: { path: string; content: string }[];
+  ask?: (question: string, options?: string[]) => Promise<string>;
+  onLog?: (message: string) => void;
 }): Promise<FixOutcome> {
-  const { agent, plan, commit, root, token, progress } = args;
-
-  const files = await readFiles(root, commit.files);
+  const { agent, plan, commit, root, token, progress, files } = args;
 
   const controller = new AbortController();
   const cancelSub = token.onCancellationRequested(() => controller.abort());
@@ -186,7 +271,11 @@ async function applyOneCommit(args: {
 
   try {
     const outcome = await agent.run(task, {
-      report: (message) => progress.report({ message: `${commit.order}: ${message}` }),
+      report: (message) => {
+        progress.report({ message: `${commit.order}: ${message}` });
+        args.onLog?.(message);
+      },
+      ask: args.ask,
       signal: controller.signal,
     });
 
@@ -326,9 +415,27 @@ async function runCloudAgent(
  * review and hard to undo. Asking costs one click; getting this wrong costs
  * someone their afternoon.
  */
-async function ensureCleanTree(git: Git): Promise<{ ok: true } | { ok: false; message: string }> {
+async function ensureCleanTree(
+  git: Git,
+  ask?: (question: string, options?: string[]) => Promise<string>,
+): Promise<{ ok: true } | { ok: false; message: string }> {
   const dirty = await git.dirtyFiles();
   if (dirty.length === 0) return { ok: true };
+
+  // In the panel, asking in the thread beats a modal: the developer can see the
+  // file list Drift is worried about while they decide.
+  if (ask) {
+    const answer = await ask(
+      `You have ${dirty.length} uncommitted change${dirty.length === 1 ? '' : 's'} (${dirty.slice(0, 3).join(', ')}${dirty.length > 3 ? ', …' : ''}). Mixing them with Drift's edits makes the result hard to review.`,
+      ['Stash mine and continue', 'Continue anyway', 'Cancel'],
+    );
+    if (/^stash/i.test(answer)) {
+      await git.stash('drift: work in progress before fix');
+      return { ok: true };
+    }
+    if (/^continue/i.test(answer)) return { ok: true };
+    return { ok: false, message: 'Cancelled — your working tree was left untouched.' };
+  }
 
   const choice = await vscode.window.showWarningMessage(
     `You have ${dirty.length} uncommitted change(s). Drift's edits would be mixed in with them, which makes the result hard to review.`,

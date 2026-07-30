@@ -17,6 +17,7 @@ export type DriftStatus =
   | { kind: 'clean'; summary: string; at: number; plan?: RemediationPlan }
   | { kind: 'findings'; plan: RemediationPlan; at: number }
   | { kind: 'fixing'; plan: RemediationPlan; commitOrder: number; detail: string }
+  | { kind: 'reviewing'; plan: RemediationPlan; branch: string; files: number; warnings: string[] }
   | { kind: 'fixed'; plan: RemediationPlan; branch: string; commits: number; warnings: string[] }
   | { kind: 'delegated'; plan: RemediationPlan; url?: string; message: string }
   | { kind: 'error'; message: string };
@@ -67,6 +68,14 @@ export class DriftState {
       'drift.hasFindings',
       status.kind === 'findings' || status.kind === 'fixing',
     );
+    // Only true when something in *this* repository is affected; it gates the
+    // "fix" affordances, which are meaningless without a local impact site.
+    void vscode.commands.executeCommand(
+      'setContext',
+      'drift.hasImpact',
+      'plan' in status ? Boolean(status.plan?.impactSites.length) : false,
+    );
+    void vscode.commands.executeCommand('setContext', 'drift.reviewing', status.kind === 'reviewing');
   }
 
   dispose(): void {
@@ -90,10 +99,15 @@ export function describeStatus(status: DriftStatus): string {
     case 'findings': {
       const n = status.plan.breakingChanges.length;
       const files = new Set(status.plan.impactSites.map((s) => s.file)).size;
-      return `Drift: ${n} breaking change${n === 1 ? '' : 's'}, ${files} file${files === 1 ? '' : 's'}`;
+      // An upstream breaking change that this repository never calls is not
+      // something to put a number in front of a developer about.
+      if (files === 0) return `Drift: ${n} upstream change${n === 1 ? '' : 's'}, none used here`;
+      return `Drift: ${files} file${files === 1 ? '' : 's'} affected`;
     }
     case 'fixing':
       return `Drift: fixing (${status.commitOrder}/${status.plan.commits.length})`;
+    case 'reviewing':
+      return `Drift: ${status.files} file${status.files === 1 ? '' : 's'} to review`;
     case 'fixed':
       return `Drift: ${status.commits} commit${status.commits === 1 ? '' : 's'} on ${status.branch}`;
     case 'delegated':

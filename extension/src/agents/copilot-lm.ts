@@ -3,6 +3,7 @@ import {
   buildEditProtocolInstructions,
   buildFixPrompt,
   parseFileBlocks,
+  parseQuestion,
   saysNoChanges,
   type AgentAvailability,
   type AgentContext,
@@ -80,38 +81,59 @@ export class CopilotLanguageModelAgent implements FixAgent {
     const cancellation = toCancellationToken(ctx.signal);
 
     try {
-      const response = await model.sendRequest(messages, {}, cancellation.token);
+      // Two rounds at most: one for the model to ask a question, one to act on
+      // the answer. Any more and an agent that likes asking could loop forever.
+      for (let round = 0; round < 2; round += 1) {
+        const response = await model.sendRequest(messages, {}, cancellation.token);
 
-      let text = '';
-      let lastReport = 0;
-      for await (const fragment of response.text) {
-        text += fragment;
-        // Throttled so a long generation does not spam the progress UI.
-        if (text.length - lastReport > 2000) {
-          lastReport = text.length;
-          ctx.report(`Receiving changes… (${Math.round(text.length / 1000)}k chars)`);
+        let text = '';
+        let lastReport = 0;
+        for await (const fragment of response.text) {
+          text += fragment;
+          // Throttled so a long generation does not spam the progress UI.
+          if (text.length - lastReport > 2000) {
+            lastReport = text.length;
+            ctx.report(`Receiving changes… (${Math.round(text.length / 1000)}k chars)`);
+          }
         }
-      }
 
-      if (saysNoChanges(text)) {
-        return { status: 'no-changes', message: 'Copilot reported no changes were needed.' };
-      }
+        const question = parseQuestion(text);
+        if (question && ctx.ask && round === 0) {
+          ctx.report('Waiting for your answer…');
+          const answer = await ctx.ask(question.text, question.options);
+          messages.push(
+            vscode.LanguageModelChatMessage.Assistant(text.trim()),
+            vscode.LanguageModelChatMessage.User(
+              answer
+                ? `The developer answered: ${answer}\n\nProceed with the fix on that basis. Do not ask again.`
+                : 'The developer did not answer. Make the safest change you can justify from the evidence, and add a `TODO(drift):` comment wherever you were unsure.',
+            ),
+          );
+          continue;
+        }
 
-      const edits = parseFileBlocks(text);
-      if (edits.length === 0) {
+        if (saysNoChanges(text)) {
+          return { status: 'no-changes', message: 'Copilot reported no changes were needed.' };
+        }
+
+        const edits = parseFileBlocks(text);
+        if (edits.length === 0) {
+          return {
+            status: 'failed',
+            message:
+              'Copilot replied but produced no file blocks in the expected format. Nothing was changed.',
+          };
+        }
+
         return {
-          status: 'failed',
-          message:
-            'Copilot replied but produced no file blocks in the expected format. Nothing was changed.',
+          status: 'applied',
+          edits,
+          message: `Copilot rewrote ${edits.length} file(s).`,
+          warnings: extractTodos(edits),
         };
       }
 
-      return {
-        status: 'applied',
-        edits,
-        message: `Copilot rewrote ${edits.length} file(s).`,
-        warnings: extractTodos(edits),
-      };
+      return { status: 'failed', message: 'Copilot kept asking questions instead of editing.' };
     } catch (err) {
       if (ctx.signal.aborted) {
         return { status: 'failed', message: 'Cancelled.' };
