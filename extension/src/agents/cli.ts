@@ -267,15 +267,16 @@ export class CliFixAgent implements FixAgent {
   }
 
   async run(task: FixTask, ctx: AgentContext): Promise<FixOutcome> {
+    // Effort changes how hard this agent thinks about the task — never which
+    // parts of it to attempt. Every impact site above is still in scope.
+    const thinking = this.thinking(task);
     const prompt = [
       buildFixPrompt(task),
       '',
       '## Your task',
       '',
       task.commit.instructions,
-      // Effort changes how hard this agent thinks about the task — never which
-      // parts of it to attempt. Every impact site above is still in scope.
-      ...(this.thinking(task) ? ['', this.thinking(task)] : []),
+      ...(thinking ? ['', thinking] : []),
     ].join('\n');
 
     const args = [...this.spec.buildArgs(prompt), ...this.selection(task)];
