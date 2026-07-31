@@ -30,6 +30,7 @@ src/
 ├── config/               drift.yml schema and loading
 ├── detect/               Stage 1 — manifest diffing
 │   ├── version.ts        Semver normalisation across ecosystems
+│   ├── package-manager.ts  Which tool owns a directory, and what it runs
 │   └── ecosystems/       npm, python, go, cargo, maven, rubygems, toml
 ├── evidence/             Stage 2 — citable ground truth
 │   ├── registry.ts       npm, PyPI, crates.io, Go proxy, Maven, RubyGems
@@ -60,7 +61,7 @@ its output.
 extension/src/
 ├── extension.ts          Activation, commands, wiring
 ├── analyze.ts            Picks a commit range, then calls analyzeRepository
-├── upgrades.ts           Scans npm for newer versions and runs 1–5 per package
+├── upgrades.ts           Scans every detected registry and runs 1–5 per package
 ├── fix.ts                Branch, per-commit agent run, scoped commit
 ├── severity.ts           Repo-relative verdict. No imports — see below
 ├── labels.ts             Composer setting names. No imports
@@ -157,6 +158,16 @@ Two decisions worth knowing:
 
 `0.x` minor bumps bypass the `minor` toggle, because semver §4 makes them
 breaking and that's a common source of surprise.
+
+**Which manifest to read is a different question from which tool to run.**
+`package-manager.ts` answers the second: it maps a directory listing to the
+package managers that claim it, preferring lockfiles over manifests, and
+produces the exact argv that installs a chosen version. Where two lockfiles
+claim one ecosystem — the residue of a half-finished migration — that is
+reported as an ambiguity for a human to settle rather than guessed at, because
+guessing writes the wrong lockfile into someone's repository. Gradle has no
+command that pins a version, and says so instead of running something that
+changes nothing.
 
 ### 2 · Evidence
 
