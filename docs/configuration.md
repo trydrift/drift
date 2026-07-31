@@ -289,25 +289,39 @@ repository enforces for everyone.
 
 ### Set from the panel composer
 
-These three exist as settings so a team can commit a default in
-`.vscode/settings.json`, but the expected way to change them is the picker in the
-composer, where the effect is visible. Each picker opens a VS Code quick pick
-listing the options with a line explaining what each one does, so the setting
-does not have to be looked up to be understood.
+These exist as settings so a team can commit a default in
+`.vscode/settings.json`, but the expected way to change them is the control in
+the composer, where the effect is visible. Each one opens a themed menu anchored
+under its own button, listing the options with a line explaining what each does,
+so the setting does not have to be looked up to be understood.
 
-| Setting | Values | Meaning |
+| Setting | Scope | Values | Meaning |
+|---|---|---|---|
+| `drift.session.mode` | workspace | `agent` (default), `ask` | `ask` analyses and explains but never edits |
+| `drift.session.permission` | workspace | `ask`, `auto-edit` (default), `full-auto` | How much the agent may do unsupervised |
+| `drift.agent.models` | global | `{ "<agent id>": "<model id>" }` | The model chosen inside each subscription |
+| `drift.agent.efforts` | global | `{ "<agent id>": "low" \| "medium" \| "high" \| "xhigh" }` | How hard that subscription's model thinks |
+
+The model and the effort are kept per subscription and globally, because both are
+statements about a product rather than about a repository: "when I use Claude,
+use Opus on Ultracode" should still hold in the next project.
+
+**Effort is a reasoning budget, and only that.** It never changes which
+dependencies are checked, how many impact sites are recorded, or which fixes are
+attempted — every level does all of the work the evidence calls for. What scope a
+scan has is decided by `drift.analysis.includeDev`, `includePatch` and
+`ignore`, and it means the same thing at every effort level.
+
+Each agent names its own stops, and Drift uses the vendor's word:
+
+| Agent | Stops | How it is passed |
 |---|---|---|
-| `drift.session.mode` | `agent` (default), `ask` | `ask` analyses and explains but never edits |
-| `drift.session.effort` | `quick`, `balanced` (default), `thorough` | How widely to look — see below |
-| `drift.session.permission` | `ask`, `auto-edit` (default), `full-auto` | How much the agent may do unsupervised |
+| Claude Code | Low, Medium, High, **Ultracode** | thinking depth in the prompt (`think` → `ultrathink`) |
+| Codex | Low, Medium, High, **Extra High** | `-c model_reasoning_effort="…"` |
+| Copilot (in-editor), Copilot cloud, Gemini CLI, Aider, OpenCode, Ollama | — | no reasoning control, so the dial is not drawn |
 
-**Effort changes what is analysed, not just how long it takes:**
-
-| | Dependencies | Bumps | Impact sites per change | Packages |
-|---|---|---|---|---|
-| `quick` | runtime only | major, minor | 12 | first 25 |
-| `balanced` | runtime only | major, minor | 40 | all |
-| `thorough` | runtime, dev, optional, peer | major, minor, patch | 120 | all |
+A model that cannot honour the top stop narrows the dial rather than offering a
+position that would do nothing — Claude Haiku stops at High.
 
 **Permission:**
 

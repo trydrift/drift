@@ -27,10 +27,14 @@ Type `/` for commands:
 | `/scan` | Check every dependency for a newer version and what would break |
 | `/recent` | Analyse the dependency change already in your git history |
 | `/upgrade <package>` | Upgrade one package and check the impact |
+| `/upgrade-all` | Install every upgrade that does not affect your code |
 | `/fix [package]` | Let your AI agent fix the affected code |
 | `/review` | Show changes waiting to be kept or undone |
 | `/agent` | Choose which AI agent does the work |
+| `/clear` | Start a new conversation |
 | `/help` | What Drift can do |
+
+The same list is a click away under **Tools** in the composer, for the commands you have not learned yet.
 
 Anything that isn't a command and isn't an answer to a question becomes a standing instruction for the agent — see `drift.fix.customInstructions` below.
 
@@ -40,28 +44,32 @@ A scan produces one card, not a scatter of boxes: a header with the counts that 
 
 ### The composer controls
 
-Four pickers, sitting where the thing they affect happens. Each one opens VS
-Code's own quick pick — the same list the command palette uses, with its filter
-box, its keyboard model and its theme — rather than an operating-system dropdown
-that happens to be embedded in a webview. Every option carries the sentence that
-explains it, which is the part a native dropdown has nowhere to put.
+Every control sits in the composer, where the thing it affects happens, and each
+one opens the same themed menu anchored under its own button — with a filter box,
+arrow-key navigation, and the sentence that explains each option. Only the
+sections belonging to the button you pressed are shown, so no control hides a
+setting it does not name.
 
-- **Agent** — which AI does the editing. Drift drives one you already have. The picker lists what is usable right now; *Set up an agent…* at the bottom opens the full list, including the ones that need a sign-in or an install.
-- **Ask / Agent** — Ask analyses and explains, and never edits. Agent edits files.
-- **Effort** — this changes what is *actually analysed*, not how long it takes. Quick covers runtime dependencies and stops at 25 packages. Balanced covers every runtime dependency. Thorough adds dev, optional and peer dependencies, and patch releases.
-- **Permission** — how much rope the agent gets:
+- **+** — context, and which subscription and model does the work. Picking a subscription drills into its models inside the same menu; *Set up an agent…* opens the full list, including the ones that need a sign-in or an install.
+- **Tools** — everything Drift itself can do: scan, check the last dependency change, upgrade, fix, review, help. The slash commands, made clickable.
+- **Effort** — how hard your agent thinks about each fix, in that agent's own vocabulary: Claude runs Low, Medium, High and **Ultracode**; Codex runs Low, Medium, High and **Extra High**. Backends with no reasoning budget — Copilot's in-editor models, Ollama — show no dial at all rather than a control that does nothing. Effort never changes which dependencies Drift checks or which fixes it attempts; every level does all of the work found, and only the thinking per fix changes.
+- **Ask / Agent** and **Permission** — Ask analyses and explains, and never edits. Agent edits, under one of:
   - *Ask first* — Drift asks in the thread before editing each group of files.
   - *Edit, then review* (default) — edits are written, nothing is committed until you keep it.
   - *Edit and commit* — edits and commits each group without stopping.
 
 ### Attaching context
 
-The paperclip offers two doors:
+Under **+**:
 
-- **Add context** — searches *this project* in VS Code's own filterable list. Type three characters of a path to find a file, pick a folder to scope the agent to one area, or attach the lines currently selected in your editor. Nothing opens the operating system's file browser.
+- **Add a file / Add a folder** — searches *this project* in VS Code's own filterable list, opened immediately over a path index kept warm in the background. Type three characters of a path to find a file, pick a folder to scope the agent to one area, or attach the lines currently selected in your editor.
 - **Upload from computer** — the system browser, for the one case it is genuinely better at: reference material that lives outside the workspace.
 
 Attachments tell the agent where to look for a convention or a helper; they never widen which files it is allowed to edit.
+
+### Conversations
+
+`+` in the view's title bar files the current thread and opens an empty one, immediately. **Drift: Conversation History** reopens anything from the last 40 threads in this workspace, and **Drift: Clear Conversation History** deletes all of them — transcripts hold your package names, file paths and your own words about the repository, so there is a way to be rid of them that is not "delete the workspace".
 
 ### Drift asks questions
 
@@ -105,7 +113,7 @@ Drift doesn't ship a model and doesn't want your API key. It drives what you alr
 | **GitHub Copilot** | Nothing — uses the model already in your editor |
 | **GitHub Copilot cloud agent** | One-click sign-in. Runs on GitHub, opens a PR |
 | **Claude Code** | Already installed and logged in? It's detected |
-| **Codex CLI** | Same |
+| **Codex** | Same |
 | **Gemini CLI** | Same |
 | **Aider** / **OpenCode** | Same |
 | **Ollama** | A model on your own machine. Nothing leaves your laptop |
@@ -137,7 +145,9 @@ Two deliberately separate actions:
 
 | Command | What it does |
 |---|---|
-| **Drift: New Session** | Clear the thread |
+| **Drift: New Session** | File the thread and start an empty one |
+| **Drift: Conversation History** | Reopen an earlier conversation |
+| **Drift: Clear Conversation History** | Delete every saved conversation in this workspace |
 | **Drift: Check for Breaking Changes** | Analyse the dependency change in git |
 | **Drift: Review Changes** | Open the panel on what's waiting |
 | **Drift: Go to Next Change** | Jump to the next unresolved hunk (`Alt+D`) |
@@ -157,7 +167,9 @@ All in the normal settings UI (**Drift: Open Settings**). The one worth setting:
 > This repo uses Vitest, not Jest. Prefer named exports.
 > All HTTP goes through `src/lib/http.ts` — never call fetch directly.
 
-The composer pickers write to `drift.session.mode`, `drift.session.effort` and `drift.session.permission`, so a team can set a default in workspace settings. Others: which agent to prefer, whether to analyse on startup, whether to include patch/dev/transitive changes, packages to ignore, and inline diagnostics.
+The composer writes to `drift.session.mode` and `drift.session.permission` (per workspace, so a team can set a default), and to `drift.agent.models` and `drift.agent.efforts` (per subscription, globally — "when I use Claude, use Opus on Ultracode" is a statement about Claude, not about this repository). Others: which agent to prefer, whether to analyse on startup, whether to include patch/dev/transitive changes, packages to ignore, and inline diagnostics.
+
+How much Drift analyses is a settings question, never an effort question: `drift.analysis.includeDev` and `drift.analysis.includePatch` decide what a scan covers, and they mean the same thing at every effort level.
 
 If your repo has a `.github/drift.yml` (used by the [Drift GitHub Action](https://github.com/RodolpheKouyoumdjian/Drift)), the extension reads it too. Your VS Code settings layer on top — the file is the team's policy, settings are your local preference.
 
@@ -179,7 +191,7 @@ Stated plainly, because a tool that hides these hasn't earned trust:
 - **Non-JS/TS parsing is pattern-based.** File and line are always exact; the enclosing symbol can be off in unusual formatting.
 - **Behaviour changes are the weak spot.** "Retries are now exponential" has no symbol to search for and no compile error to catch. Drift raises risk and flags it rather than pretending.
 - **Small local models struggle** with whole-file rewrites. Use a coding-tuned model with Ollama.
-- **`/scan` is a network sweep.** On a large `package.json` the first run takes a while; Quick effort exists for exactly that reason, and every step is named while it runs.
+- **`/scan` is a network sweep.** On a large `package.json` the first run takes a while — it checks every direct dependency rather than a sample, results fill in as they arrive, and every step is named while it runs. Narrow it with `drift.analysis.ignore` or by leaving `drift.analysis.includeDev` off.
 
 ## License
 

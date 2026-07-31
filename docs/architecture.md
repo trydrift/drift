@@ -65,7 +65,12 @@ extension/src/
 ├── severity.ts           Repo-relative verdict. No imports — see below
 ├── labels.ts             Composer setting names. No imports
 ├── diff.ts               LCS line diff → hunks, for review
+├── git.ts                The git commands the extension shells out to
+├── checkpoint.ts         Pre-message tree snapshots, for rewind
 ├── session.ts            The panel transcript, context, and per-turn settings
+├── history.ts            Past conversations, per workspace
+├── state.ts              The status every surface renders from
+├── github-auth.ts        VS Code's own OAuth, only where an identity is needed
 ├── review/
 │   ├── store.ts          Pending edits; keep/undo per hunk, file, or group
 │   └── ui.ts             Line tinting, per-hunk CodeLenses, native diff
@@ -74,6 +79,7 @@ extension/src/
     ├── home.ts           Panel controller — messages in, thread items out
     ├── webview.ts        Pure render function for the whole panel
     ├── report.ts         The full-page Drift Report
+    ├── statusbar.ts      The status-bar item
     └── diagnostics.ts    Problems panel + code actions
 ```
 
@@ -87,14 +93,20 @@ which is the only automated check on several thousand lines of generated markup.
 `webview.ts` renders no `<select>`, and the test suite asserts it never will. A
 form control inside a webview is drawn by the operating system: it ignores the
 colour theme, it mis-centres its own label, and it has nowhere to put the
-sentence explaining what an option does. So every picker in the panel — mode,
-agent, effort, permission, target version, and the two ways to attach context —
-is a plain button that posts a `pick*` message; `home.ts` answers it with
-`vscode.window.showQuickPick` and writes the result back through `session.ts`.
+sentence explaining what an option does.
 
-The cost is one round trip through the extension host. The return is that the
-panel is themed, keyboard-navigable and filterable for free, and that adding an
-option means adding a line to an array rather than styling a dropdown.
+So every control in the composer — context, model, tools, effort, mode,
+permission — opens one themed menu, drawn in the webview and anchored under the
+button that summoned it. `home.ts` supplies it as data (`MenuSection[]`) and gets
+back the id of whatever was chosen; the webview holds the open state, the filter
+text and the drill-in, so opening a menu is a class change rather than a round
+trip. The two native inputs left are the menu's filter box and the effort dial's
+range input, both of which VS Code themes itself.
+
+What is still handed to the host is the choice that is genuinely a search:
+picking a file or folder to attach, where the editor's fuzzy path picker beats
+anything a webview could draw. That one opens immediately as a live quick pick
+over a path index warmed in the background, rather than after a project walk.
 
 ### Severity is repo-relative
 
