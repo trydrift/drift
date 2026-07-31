@@ -1273,11 +1273,17 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     };
 
     return SLASH_COMMANDS.map<MenuItem>((command) => ({
-      id: `tool:${command.name}${command.args ? ' ' : ''}`,
-      label: `${command.name}${command.args ? ` ${command.args}` : ''}`,
+      // A trailing space means "this needs an argument, put it in the composer".
+      // Only a *required* one does: `/fix [package]` without a package is the
+      // whole point of `/fix`, whereas `/upgrade` alone has nothing to act on.
+      id: `tool:${command.name}${command.args?.startsWith('<') ? ' ' : ''}`,
+      label: command.title,
       detail: command.description,
+      // The command itself, kept where a keyboard shortcut would sit: this menu
+      // is how the slash commands get learned, not a replacement for them.
+      hint: command.name,
       icon: icons[command.name] ?? 'gear',
-      keywords: `tool command ${command.description}`,
+      keywords: `tool command ${command.name} ${command.description}`,
     }));
   }
 
