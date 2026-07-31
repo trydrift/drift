@@ -193,6 +193,20 @@ export class DriftSession {
   private attachments: Attachment[] = [];
   private counter = 0;
   private pending: { id: string; resolve: (answer: string) => void } | null = null;
+  /**
+   * Which open roots the next scan acts on. Empty means "all of them" — the
+   * common case, and the reason this is a set of exclusions-from-nothing
+   * rather than a set that starts empty and has to be filled in: a window
+   * with one folder open should never make anyone visit a menu first.
+   *
+   * Kept in memory rather than in `drift.*` settings, unlike the mode/
+   * permission/effort controls next to it — those describe a preference that
+   * should follow the developer between sessions, but a root's filesystem
+   * path is specific to this machine and this exact multi-root layout, and
+   * persisting it would mean a setting that silently stops matching reality
+   * the moment a folder is added or removed from the window.
+   */
+  private excludedRoots = new Set<string>();
 
   private readonly emitter = new vscode.EventEmitter<void>();
   readonly onDidChange = this.emitter.event;
@@ -221,6 +235,34 @@ export class DriftSession {
   clear(): void {
     this.rejectPending();
     this.items = [];
+    this.emitter.fire();
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Scope                                                              */
+  /* ---------------------------------------------------------------- */
+
+  /** Every open root's path is included unless explicitly excluded. */
+  isRootIncluded(path: string): boolean {
+    return !this.excludedRoots.has(path);
+  }
+
+  toggleRoot(path: string, allPaths: readonly string[]): void {
+    if (this.excludedRoots.has(path)) {
+      this.excludedRoots.delete(path);
+    } else if (allPaths.filter((p) => this.isRootIncluded(p)).length > 1) {
+      // Never let every root end up excluded — that is not "scope to
+      // nothing", it is a control with no way back to "scope to everything"
+      // short of finding the reset action, and a scan that silently checked
+      // nothing would be the one wrong answer Drift must never give.
+      this.excludedRoots.add(path);
+    }
+    this.emitter.fire();
+  }
+
+  resetScope(): void {
+    if (this.excludedRoots.size === 0) return;
+    this.excludedRoots.clear();
     this.emitter.fire();
   }
 

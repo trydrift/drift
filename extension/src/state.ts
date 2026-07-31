@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
+import { basename } from 'node:path';
 import type { RemediationPlan } from '../../src/types.js';
 import type { LocalRepoInfo } from '../../src/repo/local-git.js';
+import type { NestedProject } from '../../src/detect/nested.js';
 
 /**
  * Extension state.
@@ -22,10 +24,30 @@ export type DriftStatus =
   | { kind: 'delegated'; plan: RemediationPlan; url?: string; message: string }
   | { kind: 'error'; message: string };
 
+/**
+ * One open project Drift can scan — a VS Code workspace folder, or a nested
+ * project discovered inside one (an undeclared sub-package, or a directory
+ * with its own `.git`). Multiple can be active at once: a multi-root VS Code
+ * window, or a repository shaped like this one, with a root manifest and an
+ * undeclared subdirectory manifest neither npm nor Drift previously knew were
+ * related.
+ */
+export interface RepoRoot {
+  /** Absolute filesystem path. */
+  path: string;
+  /** Shown in the UI — the folder's own name. */
+  label: string;
+  repo: LocalRepoInfo | null;
+  /** From `Git.repoRoot()` — may differ from `path` if it's a subdirectory of a larger repo. */
+  gitRoot: string | null;
+  /** Undeclared projects found inside this root, from `discoverNestedProjects()`. */
+  subprojects: NestedProject[];
+}
+
 export class DriftState {
   private _status: DriftStatus = { kind: 'idle' };
-  private _repo: LocalRepoInfo | null = null;
-  private _workspaceRoot: string | null = null;
+  private _roots: RepoRoot[] = [];
+  private _activeRootPath: string | null = null;
 
   private readonly emitter = new vscode.EventEmitter<DriftStatus>();
   readonly onDidChange = this.emitter.event;
@@ -34,12 +56,23 @@ export class DriftState {
     return this._status;
   }
 
+  /** Every open root Drift knows about. Empty until the first activation pass. */
+  get roots(): readonly RepoRoot[] {
+    return this._roots;
+  }
+
+  /** The root every single-root command acts on, absent an explicit choice. */
+  get activeRoot(): RepoRoot | null {
+    const active = this._activeRootPath && this._roots.find((r) => r.path === this._activeRootPath);
+    return active || this._roots[0] || null;
+  }
+
   get repo(): LocalRepoInfo | null {
-    return this._repo;
+    return this.activeRoot?.repo ?? null;
   }
 
   get workspaceRoot(): string | null {
-    return this._workspaceRoot;
+    return this.activeRoot?.path ?? null;
   }
 
   /** The current plan, when one exists in any state that carries one. */
@@ -52,9 +85,43 @@ export class DriftState {
     return this._status.kind === 'analysing' || this._status.kind === 'fixing';
   }
 
+  setRoots(roots: readonly RepoRoot[]): void {
+    this._roots = [...roots];
+    if (this._activeRootPath && !this._roots.some((r) => r.path === this._activeRootPath)) {
+      this._activeRootPath = null;
+    }
+    // Every view renders from this store, so a root list change is as much a
+    // reason to redraw as a status change — the status bar's folder label and
+    // the panel's scope both depend on it.
+    this.emitter.fire(this._status);
+  }
+
+  setActiveRoot(path: string): void {
+    if (!this._roots.some((r) => r.path === path)) return;
+    this._activeRootPath = path;
+    this.emitter.fire(this._status);
+  }
+
+  /**
+   * Update one root's repo info in place, adding it if it isn't tracked yet.
+   *
+   * Kept for the single-root call sites (`analyze.ts`'s periodic re-detect,
+   * for one) that only ever know about one folder at a time — they don't
+   * need to reason about every open root just to refresh their own.
+   */
   setRepo(repo: LocalRepoInfo | null, workspaceRoot: string | null): void {
-    this._repo = repo;
-    this._workspaceRoot = workspaceRoot;
+    if (!workspaceRoot) return;
+    const existing = this._roots.find((r) => r.path === workspaceRoot);
+    if (existing) {
+      existing.repo = repo;
+    } else {
+      this._roots = [
+        ...this._roots,
+        { path: workspaceRoot, label: basename(workspaceRoot), repo, gitRoot: null, subprojects: [] },
+      ];
+    }
+    this._activeRootPath ??= workspaceRoot;
+    this.emitter.fire(this._status);
   }
 
   set(status: DriftStatus): void {

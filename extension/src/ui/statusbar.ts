@@ -10,10 +10,15 @@ import { describeStatus, type DriftState } from '../state.js';
  */
 export class DriftStatusBar implements vscode.Disposable {
   private readonly item: vscode.StatusBarItem;
+  /** Shown only with more than one open root — which one every command acts on. */
+  private readonly rootItem: vscode.StatusBarItem;
 
   constructor(private readonly state: DriftState) {
     this.item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 90);
     this.item.name = 'Drift';
+    this.rootItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 89);
+    this.rootItem.name = 'Drift: Repository';
+    this.rootItem.command = 'drift.switchRepo';
     state.onDidChange(() => this.render());
     this.render();
   }
@@ -37,10 +42,24 @@ export class DriftStatusBar implements vscode.Disposable {
 
     if (status.kind === 'no-repo') this.item.hide();
     else this.item.show();
+
+    // A single-folder window has nothing to disambiguate — showing a picker
+    // that always offers exactly one, unchanging choice would be a control
+    // that does nothing, which is worse than no control.
+    const roots = this.state.roots;
+    if (roots.length > 1) {
+      const active = this.state.activeRoot;
+      this.rootItem.text = `$(repo) ${active?.label ?? 'choose a repository'}`;
+      this.rootItem.tooltip = `Drift is scoped to ${active?.label ?? 'no repository'}. ${roots.length} repositories are open — click to switch.`;
+      this.rootItem.show();
+    } else {
+      this.rootItem.hide();
+    }
   }
 
   dispose(): void {
     this.item.dispose();
+    this.rootItem.dispose();
   }
 }
 

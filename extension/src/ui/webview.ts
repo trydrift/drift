@@ -125,6 +125,13 @@ export interface ViewModel {
    */
   effortLabel: string | null;
   permission: SessionPermission;
+  /**
+   * The scope button's label — `null` hides the button entirely, the same
+   * rule the effort dial follows for an agent with no reasoning budget: a
+   * control that can only ever offer one, unchanging choice is worse than no
+   * control, because it is one more thing to read past for no reason.
+   */
+  scopeLabel: string | null;
   attachments: readonly Attachment[];
   thread: readonly ThreadItem[];
   /** Keyed by candidate id, for `packages` thread items. */
@@ -181,6 +188,17 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     description: 'Let your AI agent fix the affected code',
   },
   { name: '/review', title: 'Review changes', description: 'Show changes waiting to be kept or undone' },
+  {
+    name: '/commit',
+    title: 'Commit the dependency changes',
+    description: 'Branch and commit the manifests and lockfiles an upgrade changed',
+  },
+  { name: '/push', title: 'Push this branch', description: 'Send the current branch to origin' },
+  {
+    name: '/pr',
+    title: 'Open a pull request',
+    description: 'Push if needed, then raise a pull request carrying the evidence',
+  },
   { name: '/agent', title: 'Choose the AI agent', description: 'Choose which AI agent does the work' },
   { name: '/clear', title: 'New conversation', description: 'Start a new session' },
   { name: '/help', title: 'What Drift can do', description: 'Commands, agents, and how review works' },
@@ -499,6 +517,10 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
   const affected = candidates.filter((c) => severityOf(c) === 'affected');
   const safe = candidates.filter((c) => severityOf(c) !== 'affected' && severityOf(c) !== 'error');
   const failed = candidates.filter((c) => severityOf(c) === 'error');
+  // More than one repository actually contributed to this list — not just
+  // more than one open, since a scope-narrowed scan should read the same as
+  // a single-repository one.
+  const showRepo = new Set(candidates.map((c) => c.repoRoot).filter(Boolean)).size > 1;
 
   return `<div class="turn assistant">
     <div class="who">${LOGO_SMALL}<span>Drift</span></div>
@@ -521,7 +543,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
         affected.length
           ? `<section class="pkg-group">
               <h4 class="pkg-subhead affected">${ICON_ALERT}<span>Affects your code</span><small>${affected.length}</small></h4>
-              <div class="pkg-list">${affected.map((c) => renderCandidate(c, affected.length === 1)).join('')}</div>
+              <div class="pkg-list">${affected.map((c) => renderCandidate(c, affected.length === 1, showRepo)).join('')}</div>
               ${
                 affected.length > 1
                   ? `<div class="pkg-group-foot"><button class="primary wide" data-action="fixAll">Fix all ${affected.length} with ${escapeHtml(vm.agentLabel)}</button></div>`
@@ -535,7 +557,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
         safe.length
           ? `<details class="pkg-group" data-key="grp:safe">
               <summary><h4 class="pkg-subhead clean">${ICON_CHEVRON_RIGHT}${ICON_CHECK}<span>Safe to upgrade</span><small>${safe.length}</small></h4></summary>
-              <div class="pkg-list">${safe.map((c) => renderCandidate(c, false)).join('')}</div>
+              <div class="pkg-list">${safe.map((c) => renderCandidate(c, false, showRepo)).join('')}</div>
               ${
                 // The counterpart to "Fix all". These are the upgrades with
                 // nothing to decide — no code here touches what changed — so the
@@ -553,7 +575,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
         failed.length
           ? `<details class="pkg-group" data-key="grp:failed">
               <summary><h4 class="pkg-subhead error">${ICON_CHEVRON_RIGHT}${ICON_ERROR}<span>Could not check</span><small>${failed.length}</small></h4></summary>
-              <div class="pkg-list">${failed.map((c) => renderCandidate(c, false)).join('')}</div>
+              <div class="pkg-list">${failed.map((c) => renderCandidate(c, false, showRepo)).join('')}</div>
             </details>`
           : ''
       }
@@ -574,19 +596,29 @@ function renderStale(stale: StaleHint): string {
 }
 
 /**
- * Which package in the monorepo this dependency belongs to.
+ * Which repository and which package in it this dependency belongs to.
  *
- * Rendered only when the scan crossed a workspace boundary — in a
- * single-package repository the same label sits on every row saying nothing,
- * and a label that never varies is one more thing to read past.
+ * Each half is rendered only when the scan actually crossed that boundary —
+ * a repository tag only once results came from more than one open root, a
+ * workspace tag only once a scan crossed a package boundary within one
+ * repository. In the common single-repository, single-package case, neither
+ * fires: a label that never varies is one more thing to read past.
  */
-function workspaceTag(candidate: UpgradeCandidate): string {
-  const label = candidate.workspaceName ?? candidate.workspace;
-  if (!label) return '';
-  return `<span class="pkg-workspace" title="Declared in ${escapeAttr(candidate.manifestPath)}">${escapeHtml(label)}</span>`;
+function workspaceTag(candidate: UpgradeCandidate, showRepo: boolean): string {
+  const repo = showRepo ? (candidate.repoLabel ?? null) : null;
+  const member = candidate.workspaceName ?? candidate.workspace ?? null;
+  if (!repo && !member) return '';
+
+  const repoTag = repo
+    ? `<span class="pkg-workspace pkg-repo" title="Open root">${escapeHtml(repo)}</span>`
+    : '';
+  const memberTag = member
+    ? `<span class="pkg-workspace" title="Declared in ${escapeAttr(candidate.manifestPath)}">${escapeHtml(member)}</span>`
+    : '';
+  return repoTag + memberTag;
 }
 
-function renderCandidate(candidate: UpgradeCandidate, open: boolean): string {
+function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = false): string {
   const severity = severityOf(candidate);
   const busy = candidate.status === 'checking' || candidate.status === 'upgrading';
   const target = versionLabel(candidate, candidate.selected);
@@ -596,7 +628,7 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean): string {
       <span class="dot ${severity}"></span>
       <span class="pkg-name">
         <b>${escapeHtml(candidate.name)}</b>
-        ${workspaceTag(candidate)}
+        ${workspaceTag(candidate, showRepo)}
         <span class="versions">${escapeHtml(candidate.current)} <span class="arrow">→</span> ${escapeHtml(candidate.selected)}</span>
       </span>
       <span class="verdict ${severity}">${escapeHtml(busy ? busyLabel(candidate) : shortVerdict(candidate, severity))}</span>
@@ -887,6 +919,16 @@ function renderComposer(vm: ViewModel): string {
               `Effort: ${vm.effortLabel}. How hard ${vm.agentLabel} thinks about each fix.`,
             )}">
               ${ICON_SPEED}<span>${escapeHtml(vm.effortLabel)}</span>
+            </button>`
+          : ''
+      }
+
+      ${
+        vm.scopeLabel
+          ? `<button class="ctl" data-action="openMenu" data-anchor="scope" title="${escapeAttr(
+              `Scanning ${vm.scopeLabel}. More than one repository is open — choose which ones the next scan covers.`,
+            )}">
+              ${ICON_REPO}<span>${escapeHtml(vm.scopeLabel)}</span>
             </button>`
           : ''
       }
@@ -1207,6 +1249,10 @@ const ICON_SEARCH_SMALL = svg('<path d="M10.5 9.5 14 13l-1 1-3.5-3.5A5 5 0 1 1 1
 const ICON_UPLOAD = svg('<path d="M8 1.5 12 5.5h-2.75v4h-2.5v-4H4L8 1.5zM2.5 11h11v3.5h-11V11z"/>', 13);
 const ICON_GEAR = svg('<path d="M8 5.5A2.5 2.5 0 1 0 8 10.5 2.5 2.5 0 0 0 8 5.5zm6 3.1V7.4l-1.6-.3a4.6 4.6 0 0 0-.5-1.2l.9-1.3-.9-.9-1.3.9a4.6 4.6 0 0 0-1.2-.5L9.1 2H6.9l-.3 1.6a4.6 4.6 0 0 0-1.2.5l-1.3-.9-.9.9.9 1.3a4.6 4.6 0 0 0-.5 1.2L2 7.4v2.2l1.6.3c.1.4.3.8.5 1.2l-.9 1.3.9.9 1.3-.9c.4.2.8.4 1.2.5l.3 1.6h2.2l.3-1.6c.4-.1.8-.3 1.2-.5l1.3.9.9-.9-.9-1.3c.2-.4.4-.8.5-1.2l1.6-.3z"/>', 13);
 const ICON_CHECKLIST = svg('<path d="M2 3.5 3.4 5 6 2.4l-.9-.9L3.4 3.2 2.9 2.6 2 3.5zm0 6L3.4 11 6 8.4l-.9-.9L3.4 9.2l-.5-.6L2 9.5zM7.5 3h6.5v1.5H7.5V3zm0 6h6.5v1.5H7.5V9z"/>', 13);
+const ICON_REPO = svg(
+  '<path d="M4 1.5h8A1.5 1.5 0 0 1 13.5 3v10A1.5 1.5 0 0 1 12 14.5H4A1.5 1.5 0 0 1 2.5 13V3A1.5 1.5 0 0 1 4 1.5zm0 1.5A.5.5 0 0 0 3.5 3v10a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5V3a.5.5 0 0 0-.5-.5H4zM5 5h6v1.3H5V5zm0 2.6h6V9H5V7.6zm0 2.6h4v1.3H5v-1.3z"/>',
+  13,
+);
 const ICON_DASH = svg('<path d="M3.5 7.25h9v1.5h-9z"/>', 11);
 const ICON_BACK = svg('<path d="M6.8 3.4 7.7 4.3 5 7h9v1.5H5l2.7 2.7-.9.9L2.6 7.75 6.8 3.4z"/>', 12);
 const ICON_SPEED = svg('<path d="M8 2.5A6.5 6.5 0 0 0 2.2 12h11.6A6.5 6.5 0 0 0 8 2.5zm2.9 3.1L8.9 9a1.1 1.1 0 1 1-1-1l3-2.4z"/>', 13);
@@ -1232,6 +1278,7 @@ const MENU_ICONS = {
   diff: ICON_DIFF,
   plus: ICON_PLUS,
   info: ICON_INFO,
+  repo: ICON_REPO,
 } as const;
 
 /* ------------------------------------------------------------------ */
@@ -1595,6 +1642,10 @@ button.wide { width: 100%; }
   font-size: 0.85em; opacity: 0.7; padding: 0 4px; border-radius: 3px;
   border: 1px solid var(--vscode-panel-border); margin: 1px 0;
 }
+/* The repository a row came from outranks which package within it — shown
+   first, and a shade more visible, so two tags on one row still read as a
+   hierarchy rather than a pair of unrelated labels. */
+.pkg-repo { opacity: 0.85; border-color: var(--vscode-focusBorder); }
 .versions { font-size: 11px; color: var(--vscode-descriptionForeground); font-variant-numeric: tabular-nums; }
 .versions .arrow { opacity: .6; }
 .verdict {

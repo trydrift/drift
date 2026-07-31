@@ -4,6 +4,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { detectWorkspaces, memberDirectories } from '../../src/detect/workspace.js';
+import { discoverNestedProjects } from '../../src/detect/nested.js';
 import {
   ambiguityKey,
   discoverTargets,
@@ -193,5 +194,42 @@ describe('a workspace is many packages, not one', () => {
   test('manifests are addressed relative to the repository root', async () => {
     const { targets } = await discoverTargets(mono, ['packages/api']);
     assert.equal(targets[0]!.manifestPath, 'packages/api/package.json');
+  });
+});
+
+describe('an undeclared sub-package is still a scan target', () => {
+  // This is this repository's own shape: a root `package.json` and an
+  // `extension/package.json`, tied together by nothing but a shared checkout.
+  // `scanUpgrades` merges `discoverNestedProjects`'s result into the same
+  // `dirs` a declared workspace member would occupy, which is what this
+  // asserts — without that merge, `extension/` is invisible to a scan.
+  let repo = '';
+
+  before(() => {
+    repo = mkdtempSync(join(tmpdir(), 'drift-undeclared-'));
+    const put = (path: string, content: string) => {
+      const full = join(repo, path);
+      mkdirSync(join(full, '..'), { recursive: true });
+      writeFileSync(full, content);
+    };
+    put('package.json', '{"name":"root","dependencies":{"left-pad":"^1.0.0"}}');
+    put('extension/package.json', '{"name":"extension","dependencies":{"semver":"^7.0.0"}}');
+  });
+
+  after(() => rmSync(repo, { recursive: true, force: true }));
+
+  test('a manifest with no workspaces field does not hide its sibling', async () => {
+    const nested = await discoverNestedProjects(repo, vscodeWorkspaceFs(), ['']);
+    assert.deepEqual(
+      nested.map((p) => p.dir),
+      ['extension'],
+    );
+
+    const dirs = ['', ...nested.filter((p) => !p.hasOwnGit).map((p) => p.dir)];
+    const { targets } = await discoverTargets(repo, dirs);
+    assert.deepEqual(
+      targets.map((t) => t.manifestPath),
+      ['package.json', 'extension/package.json'],
+    );
   });
 });

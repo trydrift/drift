@@ -1,7 +1,8 @@
 import * as vscode from 'vscode';
+import { basename } from 'node:path';
 import { runAnalysis } from './analyze.js';
 import { runFix } from './fix.js';
-import { DriftState } from './state.js';
+import { DriftState, type RepoRoot } from './state.js';
 import { DriftSession } from './session.js';
 import { DriftReview } from './review/store.js';
 import { DriftReviewUi } from './review/ui.js';
@@ -12,6 +13,10 @@ import { DriftStatusBar } from './ui/statusbar.js';
 import { discoverAgents, invalidateAgentCache } from './agents/registry.js';
 import { isSignedIn, onDidChangeGitHubAuth } from './github-auth.js';
 import { inspectLocalRepo } from '../../src/repo/local-git.js';
+import { Git } from './git.js';
+import { vscodeWorkspaceFs } from './upgrades.js';
+import { detectWorkspaces, memberDirectories } from '../../src/detect/workspace.js';
+import { discoverNestedProjects } from '../../src/detect/nested.js';
 
 /**
  * Drift for VS Code.
@@ -68,7 +73,42 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   // Sign-in state changes what the agent picker can offer.
   context.subscriptions.push(onDidChangeGitHubAuth(() => invalidateAgentCache()));
 
+  // A folder can be added or removed from the window at any time — a repo
+  // opened alongside this one, or one closed — without a reload.
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeWorkspaceFolders(async () => {
+      state.setRoots(await buildRepoRoots());
+      if (state.roots.length === 0) state.set({ kind: 'no-repo' });
+    }),
+  );
+
   await initialise(state, home);
+}
+
+/**
+ * One `RepoRoot` per open VS Code workspace folder.
+ *
+ * Every folder is inspected independently: its own git identity (which can
+ * differ from the folder path itself, if the folder is a subdirectory of a
+ * larger checkout), and its own undeclared nested projects — the same
+ * discovery this repository's own layout motivated, a root manifest plus a
+ * sibling subdirectory manifest with nothing but a shared checkout tying
+ * them together.
+ */
+async function buildRepoRoots(): Promise<RepoRoot[]> {
+  const folders = vscode.workspace.workspaceFolders ?? [];
+  return Promise.all(folders.map((folder) => buildRepoRoot(folder.uri.fsPath)));
+}
+
+async function buildRepoRoot(path: string): Promise<RepoRoot> {
+  const [repo, gitRoot] = await Promise.all([inspectLocalRepo(path), new Git(path).repoRoot()]);
+
+  const fs = vscodeWorkspaceFs();
+  const workspaces = await detectWorkspaces(path, fs).catch(() => []);
+  const declaredMembers = memberDirectories(workspaces);
+  const subprojects = await discoverNestedProjects(path, fs, declaredMembers).catch(() => []);
+
+  return { path, label: basename(path), repo, gitRoot, subprojects };
 }
 
 export function deactivate(): void {
@@ -89,16 +129,15 @@ export function deactivate(): void {
  * their attention and teaches them to dismiss the next one.
  */
 async function initialise(state: DriftState, home: DriftHomeView): Promise<void> {
-  const folder = vscode.workspace.workspaceFolders?.[0];
-  if (!folder) {
+  const folders = vscode.workspace.workspaceFolders ?? [];
+  if (folders.length === 0) {
     state.set({ kind: 'no-repo' });
     return;
   }
 
-  const info = await inspectLocalRepo(folder.uri.fsPath);
-  state.setRepo(info, folder.uri.fsPath);
+  state.setRoots(await buildRepoRoots());
 
-  if (!info) {
+  if (!state.activeRoot?.repo) {
     state.set({ kind: 'no-repo' });
     return;
   }
@@ -213,6 +252,42 @@ function registerCommands(
   });
 
   register('drift.pushBranch', () => pushBranch(state));
+
+  register('drift.switchRepo', () => switchRepo(state));
+}
+
+/**
+ * Choose which open root every single-root command in the panel acts on.
+ *
+ * Only meaningful with more than one folder open — a multi-root VS Code
+ * window, or two unrelated repositories opened side by side. Undeclared
+ * nested projects (an undeclared sub-package, like this repository's own
+ * `extension/`) don't get their own entry here: `/scan` already covers them
+ * as part of their parent root, which is what "focus on a specific folder"
+ * usually means in practice. A nested directory with its own `.git` is
+ * different — it's a separate repository, reported after a scan rather than
+ * offered here, since switching to it would need its own root to be built
+ * the way a real workspace folder is.
+ */
+async function switchRepo(state: DriftState): Promise<void> {
+  const roots = state.roots;
+  if (roots.length === 0) {
+    void vscode.window.showInformationMessage('Drift: no repository is open.');
+    return;
+  }
+
+  const active = state.activeRoot;
+  const picked = await vscode.window.showQuickPick(
+    roots.map((root) => ({
+      label: `${root.path === active?.path ? '$(check) ' : ''}${root.label}`,
+      description: root.repo?.slug ?? undefined,
+      detail: root.path,
+      root,
+    })),
+    { placeHolder: 'Which repository should Drift work on?' },
+  );
+
+  if (picked) state.setActiveRoot(picked.root.path);
 }
 
 async function startFix(
@@ -406,9 +481,18 @@ async function pushBranch(state: DriftState): Promise<void> {
       { location: vscode.ProgressLocation.Notification, title: `Drift: pushing ${status.branch}` },
       () => git.push(status.branch),
     );
-    void vscode.window.showInformationMessage(
-      `Drift: pushed ${status.branch}. Open a pull request when you are ready.`,
+    // The branch is on the remote and the next step is always the same one, so
+    // it is offered here rather than left as a link the developer has to build
+    // by hand out of the branch name.
+    const { compareUrl } = await import('./ship.js');
+    const url = compareUrl(await git.remoteUrl(), (await git.defaultBranch()) ?? 'main', status.branch);
+    const choice = await vscode.window.showInformationMessage(
+      `Drift: pushed ${status.branch}.`,
+      ...(url ? ['Open a pull request'] : []),
     );
+    if (choice === 'Open a pull request' && url) {
+      await vscode.env.openExternal(vscode.Uri.parse(url));
+    }
   } catch (err) {
     void vscode.window.showErrorMessage(`Drift: push failed. ${(err as Error).message}`);
   }

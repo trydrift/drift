@@ -15,6 +15,7 @@ import {
   type FixOutcome,
   type FixTask,
 } from './types.js';
+import { envWithShellPath } from '../shell-path.js';
 
 const run = promisify(execFile);
 
@@ -330,17 +331,19 @@ export class CliFixAgent implements FixAgent {
     return keyword ? `Before editing anything, ${keyword} about how these changes fit together.` : '';
   }
 
-  private exec(
+  private async exec(
     command: string,
     args: string[],
     prompt: string,
     cwd: string,
     ctx: AgentContext,
   ): Promise<{ code: number; stdout: string; stderr: string }> {
+    const shellEnv = await envWithShellPath();
+    const path = withCommandDir(command, shellEnv.PATH ?? '');
     return new Promise((resolve, reject) => {
       const child = spawn(command, args, {
         cwd,
-        env: { ...process.env, PATH: withCommandDir(command), DRIFT: '1' },
+        env: { ...shellEnv, PATH: path, DRIFT: '1' },
         windowsHide: true,
       });
 
@@ -393,7 +396,12 @@ export class CliFixAgent implements FixAgent {
 export async function which(command: string): Promise<string | null> {
   const probe = process.platform === 'win32' ? 'where' : 'which';
   try {
-    const { stdout } = await run(probe, [command], { timeout: 5000, windowsHide: true });
+    // A GUI-launched VS Code does not see the PATH a terminal sees — nvm,
+    // volta, fnm, and asdf all add to PATH from shell profile scripts that
+    // only run for interactive shells. Resolve against the same PATH the
+    // user's own terminal would use, or `which` reliably misses anything
+    // installed that way.
+    const { stdout } = await run(probe, [command], { timeout: 5000, windowsHide: true, env: await envWithShellPath() });
     return stdout.trim().split('\n')[0]?.trim() || null;
   } catch {
     return null;
@@ -479,9 +487,8 @@ async function canExecute(path: string): Promise<boolean> {
   }
 }
 
-function withCommandDir(command: string): string {
+function withCommandDir(command: string, current: string): string {
   const dir = dirname(command);
-  const current = process.env.PATH ?? '';
   return command.includes('/') && !current.split(delimiter).includes(dir) ? `${dir}${delimiter}${current}` : current;
 }
 

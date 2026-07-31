@@ -2,11 +2,13 @@ import * as vscode from 'vscode';
 import { basename, dirname, join, relative } from 'node:path';
 import type { RemediationPlan, RepoContext } from '../../../src/types.js';
 import { buildPlan } from '../../../src/plan/index.js';
+import { renderPullRequestBody } from '../../../src/report/markdown.js';
 import { inspectLocalRepo } from '../../../src/repo/local-git.js';
 import { DriftConfigSchema, type DriftConfig } from '../../../src/config/schema.js';
 import { loadWorkspaceConfig, runAnalysis } from '../analyze.js';
 import { runFix } from '../fix.js';
-import type { DriftState } from '../state.js';
+import type { DriftState, RepoRoot } from '../state.js';
+import type { NestedProject } from '../../../src/detect/nested.js';
 import {
   DriftSession,
   type Attachment,
@@ -40,6 +42,17 @@ import {
   type ManagerPreferences,
   type UpgradeCandidate,
 } from '../upgrades.js';
+import {
+  compareUrl,
+  dependencyFilesIn,
+  dependencyPaths,
+  openPullRequest,
+  pullRequestBody,
+  remoteSlug,
+  upgradeBranchName,
+  upgradeCommitMessage,
+  type CommitMessage,
+} from '../ship.js';
 import { Checkpoints } from '../checkpoint.js';
 import { DriftReportPanel } from './report.js';
 import {
@@ -137,7 +150,23 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private draft = '';
   private draftToken = 0;
   private scanned = false;
-  private checkpoints: Checkpoints | null = null;
+  /**
+   * What the last successful upgrade installed.
+   *
+   * Kept so `/commit`, `/push` and `/pr` can describe the work in the same terms
+   * the upgrade did — the same packages, the same evidence — instead of falling
+   * back to "some dependency files changed" once the offer scrolls out of view.
+   */
+  private lastUpgraded: UpgradeCandidate[] = [];
+  /**
+   * One `Checkpoints` per root, not one for the panel.
+   *
+   * A `tree` sha is only meaningful relative to the repository it came from —
+   * restoring root A's checkpoint through root B's `Git` instance would
+   * silently corrupt the wrong working tree. Keying by root path is what
+   * keeps a rewind honest when more than one repository is open.
+   */
+  private checkpointsByRoot = new Map<string, Checkpoints>();
   private stale: StaleHint | null = null;
   private staleFiles = new Set<string>();
   private readonly history: DriftHistory;
@@ -208,7 +237,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     // Warmed now so the context picker has its list in hand the first time it
     // is opened, rather than making the developer wait for a project walk.
-    const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const root = this.state.activeRoot?.path ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (root) void this.projectPaths(root).catch(() => []);
 
     // Opening the panel is a request to know the state of your dependencies, so
@@ -558,6 +587,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       case '/upgrade-all':
         await this.upgrade(this.safeIds(), 'safe');
         return;
+      case '/commit':
+        await this.commitDependencyChanges();
+        return;
+      case '/push':
+        await this.pushCurrentBranch();
+        return;
+      case '/pr':
+      case '/pull-request':
+        await this.openPullRequestForBranch();
+        return;
       case '/review':
         this.showReview();
         return;
@@ -603,6 +642,20 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       await this.fix(this.affectedIds());
       return;
     }
+    // Pull request first: "push this and open a PR" is one request, and the
+    // pull-request path pushes on the way through.
+    if (/\b(pull request|pr)\b/.test(lower)) {
+      await this.openPullRequestForBranch();
+      return;
+    }
+    if (/\b(commit|branch|stage)\b/.test(lower)) {
+      await this.commitDependencyChanges();
+      return;
+    }
+    if (/\bpush\b/.test(lower)) {
+      await this.pushCurrentBranch();
+      return;
+    }
     if (/\b(review|keep|undo|diff)/.test(lower) && !this.review.isEmpty) {
       this.showReview();
       return;
@@ -628,7 +681,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         '',
         `> ${text}`,
         '',
-        'I can act on `/scan`, `/recent`, `/upgrade <package>`, `/fix`, and `/review` — type `/help` for the full list.',
+        'I can act on `/scan`, `/recent`, `/upgrade <package>`, `/fix`, `/review`, `/commit`, `/push` and `/pr` — type `/help` for the full list.',
       ].join('\n'),
     );
   }
@@ -657,6 +710,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         '**Review**',
         '',
         'Agent edits are never committed until you keep them. Changed lines are highlighted in the editor with Keep and Undo on every hunk, and the change list in this panel opens the real diff editor.',
+        '',
+        '**Git**',
+        '',
+        'When an upgrade lands, Drift offers to put it on a branch, commit it with a message that carries the evidence, push it, and open a pull request whose description says what changed upstream and what it touches here. Every step asks first, and you can stop at any of them — `/commit`, `/push` and `/pr` pick the flow back up later.',
+        '',
+        'The commit only ever contains the manifests and lockfiles the upgrade changed, so unfinished work elsewhere in your tree stays yours. Drift never force-pushes, never rewrites history, and never commits to your default branch without you choosing it.',
       ].join('\n'),
     );
   }
@@ -828,14 +887,25 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     );
   }
 
+  /** Every open root, filtered to what the scope picker has selected — all of them, absent a choice. */
+  private selectedRoots(): readonly RepoRoot[] {
+    const roots = this.state.roots;
+    if (roots.length <= 1) return roots;
+    const included = roots.filter((root) => this.session.isRootIncluded(root.path));
+    // Every root got excluded some other way than the toggle that already
+    // refuses to let this happen — stale state from a closed folder, say.
+    // Scanning nothing is never the right recovery from that.
+    return included.length > 0 ? included : roots;
+  }
+
   private async scan(options: { quiet?: boolean } = {}): Promise<void> {
     if (this.busy) {
       this.session.notice('info', this.busyMessage());
       return;
     }
 
-    const ctx = await this.context();
-    if (!ctx) {
+    const roots = this.selectedRoots();
+    if (roots.length === 0) {
       this.session.notice(
         'warn',
         'Open a git repository with a dependency manifest — `package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `Gemfile`, or `pom.xml` — to scan dependencies.',
@@ -843,71 +913,121 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       return;
     }
 
-    const managers = await this.resolveManagers(ctx.root);
-    if (!managers) return;
+    const contexts = (await Promise.all(roots.map((root) => this.contextFor(root.path)))).filter(
+      (ctx): ctx is WorkspaceContext => ctx !== null,
+    );
+    if (contexts.length === 0) {
+      this.session.notice('warn', 'None of the selected repositories are git repositories Drift can read.');
+      return;
+    }
+
+    // Only labelled, and only rendered with a repository tag per package, once
+    // there is more than one to tell apart — a tag that never varies is one
+    // more thing to read past, the same rule `workspaceTag` already follows
+    // for workspace members within a single repository.
+    const multiRoot = contexts.length > 1;
 
     this.scanned = true;
     this.clearStale();
-    const step = this.session.step('Checking your dependencies');
+    const step = this.session.step(
+      multiRoot ? `Checking your dependencies across ${contexts.length} repositories` : 'Checking your dependencies',
+    );
 
     await this.run(async (token) => {
-      try {
-        const found: UpgradeCandidate[] = [];
-        const result = await scanUpgrades({
-          root: ctx.root,
-          repo: ctx.repo,
-          managers,
-          // Every direct dependency, every time. What counts as a dependency
-          // worth checking is a settings question — `drift.analysis.includeDev`
-          // and `includePatch`, already merged into this config — and never a
-          // side effect of how hard the agent was asked to think. A scan that
-          // silently looked at less would report packages as safe because
-          // nothing had looked at them.
-          config: ctx.config,
-          breadth: {
-            includeDev: ctx.config.triggerOn.dev,
-            maxSites: 400,
-            maxPackages: 0,
-          },
-          githubToken: await getRateLimitToken(),
-          token,
-          onProgress: ({ phase, detail, done, total }) => step.progress(phase, detail, done, total),
-          onCandidate: (candidate) => {
-            this.candidates.set(candidate.id, candidate);
-            found.push(candidate);
-            // Fill the list in as results arrive rather than after the whole
-            // sweep; a partial answer now beats a complete one in a minute.
-            this.session.updatePackages(
-              headline(found, 0),
-              [...found].sort(bySeverity).map((c) => c.id),
-            );
-          },
-        });
+      const found: UpgradeCandidate[] = [];
+      const nestedGitRepos: NestedProject[] = [];
+      let checked = 0;
+      let failures = 0;
 
-        const ranked = result.candidates.slice().sort(bySeverity);
-        step.done(
-          `Checked ${result.checked} package${result.checked === 1 ? '' : 's'} · ${ranked.filter((c) => severityOf(c) === 'affected').length} need attention`,
-        );
+      for (const ctx of contexts) {
+        if (token.isCancellationRequested) break;
 
-        if (ranked.length === 0) {
-          this.session.updatePackages(
-            `Every one of your ${result.checked} direct dependenc${result.checked === 1 ? 'y is' : 'ies are'} already at the newest version.`,
-            [],
-          );
-          return;
+        const repoLabel = multiRoot
+          ? (roots.find((root) => root.path === ctx.root)?.label ?? basename(ctx.root))
+          : undefined;
+
+        const managers = await this.resolveManagers(ctx.root);
+        if (!managers) continue;
+
+        try {
+          const result = await scanUpgrades({
+            root: ctx.root,
+            repo: ctx.repo,
+            managers,
+            // Every direct dependency, every time. What counts as a dependency
+            // worth checking is a settings question — `drift.analysis.includeDev`
+            // and `includePatch`, already merged into this config — and never a
+            // side effect of how hard the agent was asked to think. A scan that
+            // silently looked at less would report packages as safe because
+            // nothing had looked at them.
+            config: ctx.config,
+            breadth: {
+              includeDev: ctx.config.triggerOn.dev,
+              maxSites: 400,
+              maxPackages: 0,
+            },
+            githubToken: await getRateLimitToken(),
+            token,
+            repoLabel,
+            onProgress: ({ phase, detail, done, total }) =>
+              step.progress(repoLabel ? `${repoLabel}: ${phase}` : phase, detail, done, total),
+            onCandidate: (candidate) => {
+              this.candidates.set(candidate.id, candidate);
+              found.push(candidate);
+              // Fill the list in as results arrive rather than after the whole
+              // sweep; a partial answer now beats a complete one in a minute.
+              this.session.updatePackages(
+                headline(found, checked),
+                [...found].sort(bySeverity).map((c) => c.id),
+              );
+            },
+          });
+
+          checked += result.checked;
+          nestedGitRepos.push(...result.nestedGitRepos);
+        } catch (err) {
+          failures += 1;
+          this.session.notice('error', repoLabel ? `${repoLabel}: ${(err as Error).message}` : (err as Error).message);
         }
+      }
 
-        this.session.updatePackages(headline(ranked, result.checked), ranked.map((c) => c.id));
-
-        const affected = ranked.filter((c) => severityOf(c) === 'affected');
-        if (affected.length > 0 && !options.quiet) {
-          this.session.say(
-            `I can hand ${affected.length === 1 ? 'this' : 'these'} to **${this.agentLabel()}** — say \`/fix\`, or use the button above.`,
-          );
-        }
-      } catch (err) {
+      if (failures === contexts.length) {
         step.fail('Scan failed');
-        this.session.notice('error', (err as Error).message);
+        return;
+      }
+
+      const ranked = found.slice().sort(bySeverity);
+      step.done(
+        `Checked ${checked} package${checked === 1 ? '' : 's'} · ${ranked.filter((c) => severityOf(c) === 'affected').length} need attention`,
+      );
+
+      // A directory with its own `.git` is a separate repository, most often
+      // a submodule — Drift never folds its commits into this one's, so it
+      // was deliberately left out of the scan rather than silently merged.
+      if (nestedGitRepos.length > 0) {
+        const dirs = nestedGitRepos.map((p) => p.dir).join(', ');
+        const plural = nestedGitRepos.length === 1;
+        this.session.notice(
+          'info',
+          `Found ${nestedGitRepos.length} nested git repositor${plural ? 'y' : 'ies'} (${dirs}) — Drift keeps each repository's history separate, so open ${plural ? 'it' : 'them'} as ${plural ? 'its own folder' : 'their own folders'} to scan ${plural ? 'it' : 'them'} too.`,
+        );
+      }
+
+      if (ranked.length === 0) {
+        this.session.updatePackages(
+          `Every one of your ${checked} direct dependenc${checked === 1 ? 'y is' : 'ies are'} already at the newest version.`,
+          [],
+        );
+        return;
+      }
+
+      this.session.updatePackages(headline(ranked, checked), ranked.map((c) => c.id));
+
+      const affected = ranked.filter((c) => severityOf(c) === 'affected');
+      if (affected.length > 0 && !options.quiet) {
+        this.session.say(
+          `I can hand ${affected.length === 1 ? 'this' : 'these'} to **${this.agentLabel()}** — say \`/fix\`, or use the button above.`,
+        );
       }
     }, { cancellable: false });
   }
@@ -998,10 +1118,20 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     await this.upgrade(ids, 'safe');
   }
 
+  /** `ctx`, unless the candidate belongs to a different open root than the active one. */
+  private async contextForCandidate(
+    candidate: UpgradeCandidate,
+    active: WorkspaceContext,
+  ): Promise<WorkspaceContext> {
+    if (!candidate.repoRoot || candidate.repoRoot === active.root) return active;
+    return (await this.contextFor(candidate.repoRoot)) ?? active;
+  }
+
   private async retarget(id: string, version: string): Promise<void> {
     const ctx = await this.context();
     const candidate = this.candidates.get(id);
     if (!ctx || !candidate) return;
+    const candidateCtx = await this.contextForCandidate(candidate, ctx);
 
     const step = this.session.step(`Re-checking ${candidate.name} at ${version}`);
 
@@ -1012,9 +1142,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       const updated = await reanalyzeUpgrade({
         candidate,
         version,
-        root: ctx.root,
-        repo: ctx.repo,
-        config: ctx.config,
+        root: candidateCtx.root,
+        repo: candidateCtx.repo,
+        config: candidateCtx.config,
         githubToken: await getRateLimitToken(),
         onProgress: (phase, detail) => step.progress(phase, detail),
       });
@@ -1060,6 +1190,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     await this.run(async () => {
       for (const candidate of candidates) {
+        const candidateCtx = await this.contextForCandidate(candidate, ctx);
         const target = mode === 'force' ? candidate.latest : (candidate.safeLatest ?? candidate.selected);
         let current = candidate;
 
@@ -1068,9 +1199,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           current = await reanalyzeUpgrade({
             candidate,
             version: target,
-            root: ctx.root,
-            repo: ctx.repo,
-            config: ctx.config,
+            root: candidateCtx.root,
+            repo: candidateCtx.repo,
+            config: candidateCtx.config,
             githubToken: await getRateLimitToken(),
             onProgress: (phase, detail) => step.progress(phase, detail),
           });
@@ -1083,7 +1214,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         this.refreshPackageList();
 
         try {
-          await installUpgrade(ctx.root, current, mode);
+          await installUpgrade(candidateCtx.root, current, mode);
         } catch (err) {
           this.candidates.set(current.id, { ...current, status: 'error', error: (err as Error).message });
           this.refreshPackageList();
@@ -1119,7 +1250,479 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           `${affected.length === 1 ? 'That upgrade needs' : 'Those upgrades need'} code changes here. Say \`/fix\` and **${this.agentLabel()}** will make them.`,
         );
       }
+
+      // An upgrade that stops at a modified lockfile has done the interesting
+      // half of the job and left the tedious half. The branch, the message and
+      // the pull request body are all things Drift already knows, so they are
+      // offered here rather than left as homework — except when there is code to
+      // fix first, where committing now would split one change across two
+      // commits and leave the branch broken in the middle.
+      this.lastUpgraded = candidates.map((c) => this.currentFor(c) ?? c);
+      if (affected.length === 0) await this.offerToCommit(this.lastUpgraded);
+      else
+        this.session.say(
+          'Once the code is fixed, say `/commit` and I will branch, commit and open a pull request for the whole change.',
+        );
     });
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Branching, committing, pushing, pull requests                     */
+  /* ---------------------------------------------------------------- */
+
+  /**
+   * The branch-name prefix Drift uses, so a team can keep its own convention.
+   *
+   * An explicit editor setting wins, because it is the more specific statement
+   * of intent. Absent one, the repository's own `.github/drift.yml` already
+   * names the prefix its cloud fixes use, and a branch made in the panel should
+   * look like a branch made anywhere else in the same repository.
+   */
+  private branchPrefix(config?: DriftConfig): string {
+    const setting = vscode.workspace.getConfiguration('drift').inspect<string>('git.branchPrefix');
+    const explicit =
+      setting?.workspaceFolderValue ?? setting?.workspaceValue ?? setting?.globalValue;
+    const chosen = explicit ?? config?.remediation.branchPrefix ?? 'drift';
+    return chosen.replace(/\/+$/, '') || 'drift';
+  }
+
+  /**
+   * Offer to turn an upgrade into a commit, and then into a pull request.
+   *
+   * Candidates are grouped by the repository they came from: with more than one
+   * root open, a single `/upgrade-all` can touch two checkouts, and one commit
+   * spanning both is not a thing git can express.
+   */
+  private async offerToCommit(candidates: readonly UpgradeCandidate[]): Promise<void> {
+    const ctx = await this.context();
+    if (!ctx) return;
+
+    const byRoot = new Map<string, UpgradeCandidate[]>();
+    for (const candidate of candidates) {
+      const root = candidate.repoRoot ?? ctx.root;
+      byRoot.set(root, [...(byRoot.get(root) ?? []), candidate]);
+    }
+
+    for (const [root, group] of byRoot) {
+      const { Git } = await import('../git.js');
+      const git = new Git(root);
+      const dirty = await git.dirtyFiles().catch(() => []);
+      const paths = dependencyPaths(group, dirty);
+
+      // Nothing on disk changed — the install was a no-op, or the developer
+      // already committed it themselves. Either way there is nothing to offer.
+      if (paths.length === 0) continue;
+
+      await this.ship(root, {
+        paths,
+        branchName: upgradeBranchName(group, { prefix: this.branchPrefix(ctx.config) }),
+        message: upgradeCommitMessage(group),
+        prBody: pullRequestBody(group),
+        summary:
+          group.length === 1
+            ? `**${group[0]!.name}** is now ${group[0]!.selected}.`
+            : `${group.length} packages upgraded.`,
+      });
+    }
+  }
+
+  /**
+   * `/commit` — commit whatever dependency work is sitting in the tree.
+   *
+   * Uses the last upgrade when there was one, because that carries the evidence
+   * and the version numbers. Absent that, it falls back to whatever manifests
+   * and lockfiles are dirty, which is the honest thing to describe when Drift
+   * did not do the installing.
+   */
+  private async commitDependencyChanges(): Promise<void> {
+    const ctx = await this.context();
+    if (!ctx) {
+      this.session.notice('warn', 'Open a git repository to commit.');
+      return;
+    }
+
+    if (this.lastUpgraded.length > 0) {
+      await this.offerToCommit(this.lastUpgraded);
+      return;
+    }
+
+    const { Git } = await import('../git.js');
+    const git = new Git(ctx.root);
+    const paths = dependencyFilesIn(await git.dirtyFiles().catch(() => []));
+
+    if (paths.length === 0) {
+      this.session.notice(
+        'info',
+        'No manifest or lockfile has changed, so there is no dependency work to commit. Run `/scan` to see what is available.',
+      );
+      return;
+    }
+
+    await this.ship(ctx.root, {
+      paths,
+      branchName: `${this.branchPrefix(ctx.config)}/dependencies-${new Date().toISOString().slice(0, 10)}`,
+      message: {
+        subject: 'chore(deps): update dependencies',
+        body: paths.map((path) => `- ${path}`).join('\n'),
+      },
+      prBody: [
+        'Updates dependency manifests and lockfiles.',
+        '',
+        ...paths.map((path) => `- \`${path}\``),
+      ].join('\n'),
+      summary: `${paths.length} dependency file${paths.length === 1 ? '' : 's'} changed.`,
+    });
+  }
+
+  /**
+   * The branch → commit → push → pull request offer.
+   *
+   * Every step is a question with an answer that stops. Nothing here rewrites
+   * history, touches the base branch, or force-pushes, and the commit is scoped
+   * to the paths passed in — a developer with unfinished work elsewhere in the
+   * tree gets the dependency commit and keeps the rest.
+   */
+  private async ship(
+    root: string,
+    plan: { paths: string[]; branchName: string; message: CommitMessage; prBody: string; summary: string },
+  ): Promise<void> {
+    const { Git } = await import('../git.js');
+    const git = new Git(root);
+
+    const current = await git.currentBranch().catch(() => 'HEAD');
+    const detached = current === 'HEAD';
+    const unborn = await git.isUnborn().catch(() => false);
+    const fileList = plan.paths.map((path) => `\`${path}\``).join(', ');
+
+    const answer = await this.session.ask(
+      `${plan.summary} ${plan.paths.length === 1 ? 'One file is' : `${plan.paths.length} files are`} changed and uncommitted: ${fileList}. What should I do with ${plan.paths.length === 1 ? 'it' : 'them'}?`,
+      [
+        {
+          label: 'Branch and commit',
+          value: 'branch',
+          description: `Create \`${plan.branchName}\` and commit there`,
+        },
+        ...(detached || unborn
+          ? []
+          : [
+              {
+                label: `Commit on \`${current}\``,
+                value: 'here',
+                description: 'Stay on the branch you are on',
+              },
+            ]),
+        { label: 'Stage only', value: 'stage', description: 'I will write the commit myself' },
+        { label: 'Leave it', value: 'no', description: 'The files stay changed and uncommitted' },
+      ],
+      false,
+    );
+
+    if (answer === 'no' || answer === '') {
+      this.session.notice('info', 'Left uncommitted. Say `/commit` whenever you are ready.');
+      return;
+    }
+
+    if (answer === 'stage') {
+      try {
+        await git.stagePaths(plan.paths);
+        this.session.notice(
+          'success',
+          `Staged ${plan.paths.length} file${plan.paths.length === 1 ? '' : 's'}. Suggested message:\n\n\`\`\`\n${plan.message.subject}\n\n${plan.message.body}\n\`\`\``,
+        );
+      } catch (err) {
+        this.session.notice('error', `Could not stage those files: ${(err as Error).message}`);
+      }
+      return;
+    }
+
+    let branch = current;
+    if (answer === 'branch') {
+      try {
+        const { created } = await git.createBranch(plan.branchName);
+        branch = plan.branchName;
+        this.session.notice(
+          'info',
+          created
+            ? `Created and switched to \`${branch}\`.`
+            : `\`${branch}\` already existed, so I switched to it rather than making a second one.`,
+        );
+      } catch (err) {
+        this.session.notice(
+          'error',
+          `Could not create \`${plan.branchName}\`: ${(err as Error).message}. Nothing was committed.`,
+        );
+        return;
+      }
+    }
+
+    let sha: string | null = null;
+    try {
+      sha = await git.commitPaths(plan.paths, plan.message.subject, plan.message.body);
+    } catch (err) {
+      this.session.notice('error', `Commit failed: ${(err as Error).message}`);
+      return;
+    }
+
+    if (!sha) {
+      this.session.notice('info', 'Those files matched what is already committed, so there was nothing to commit.');
+      return;
+    }
+
+    this.session.notice('success', `Committed **${sha.slice(0, 7)}** on \`${branch}\` — ${plan.message.subject}`);
+    await this.offerToPush(root, branch, plan);
+  }
+
+  /**
+   * Offer to push, and to open the pull request.
+   *
+   * Pushing is where Drift stops being a local tool, so it is the one place
+   * that asks for GitHub access — and it asks only after there is a commit
+   * worth pushing.
+   */
+  private async offerToPush(
+    root: string,
+    branch: string,
+    plan: { message: CommitMessage; prBody: string },
+  ): Promise<void> {
+    const { Git } = await import('../git.js');
+    const git = new Git(root);
+
+    if (!(await git.hasRemote())) {
+      this.session.say(
+        `The commit is on \`${branch}\`. This repository has no \`origin\` remote, so there is nowhere to push it yet.`,
+      );
+      return;
+    }
+
+    const remote = await git.remoteUrl();
+    const slug = remoteSlug(remote);
+    const base = await git.defaultBranch();
+    // A pull request needs somewhere to merge *into*. Committing straight onto
+    // the default branch is a legitimate choice, but it leaves no PR to open,
+    // and saying so beats offering a button that returns a 422.
+    const canOpenPr = Boolean(slug) && Boolean(base) && base !== branch;
+
+    const answer = await this.session.ask(
+      canOpenPr
+        ? `Push \`${branch}\` to \`origin\` and open a pull request into \`${base}\`?`
+        : `Push \`${branch}\` to \`origin\`?${
+            slug && base === branch ? ` It is your default branch, so there is no pull request to open.` : ''
+          }`,
+      [
+        ...(canOpenPr
+          ? [{ label: 'Push and open a pull request', value: 'pr', description: `${branch} → ${base}` }]
+          : []),
+        { label: 'Push only', value: 'push', description: 'Send the branch, open the PR yourself' },
+        { label: 'Not yet', value: 'no', description: 'The commit stays local' },
+      ],
+      false,
+    );
+
+    if (answer === 'no' || answer === '') {
+      this.session.notice('info', `Kept local. Say \`/push\` when you want \`${branch}\` on the remote.`);
+      return;
+    }
+
+    const step = this.session.step(`Pushing ${branch}`);
+    try {
+      step.progress('Pushing', `${branch} → origin`);
+      await git.push(branch);
+      step.done(`Pushed ${branch}`);
+    } catch (err) {
+      step.fail('Push failed');
+      this.session.notice(
+        'error',
+        `Could not push \`${branch}\`: ${(err as Error).message}. The commit is safe locally.`,
+      );
+      return;
+    }
+
+    if (answer !== 'pr' || !slug || !base) {
+      const url = compareUrl(remote, base ?? 'main', branch);
+      this.session.say(
+        url
+          ? `\`${branch}\` is on the remote. [Open a pull request](${url}) when you are ready.`
+          : `\`${branch}\` is on the remote.`,
+      );
+      return;
+    }
+
+    await this.createPullRequest({ slug, remote, base, branch, plan });
+  }
+
+  /**
+   * Open the pull request through GitHub's API, falling back to the browser.
+   *
+   * The fallback matters more than the API path: a developer who declines the
+   * sign-in prompt, or whose token cannot open pull requests on this repository,
+   * still has a pushed branch and one link away from the same outcome. Failing
+   * to open a PR is never allowed to look like failing to do the work.
+   */
+  private async createPullRequest(args: {
+    slug: string;
+    remote: string | null;
+    base: string;
+    branch: string;
+    plan: { message: CommitMessage; prBody: string };
+  }): Promise<void> {
+    const fallback = compareUrl(args.remote, args.base, args.branch);
+    const session = await getGitHubSession({ createIfNone: true });
+
+    if (!session) {
+      this.session.say(
+        fallback
+          ? `\`${args.branch}\` is pushed. Without GitHub access I cannot open the pull request for you — [open it here](${fallback}) instead.`
+          : `\`${args.branch}\` is pushed. Open the pull request from GitHub when you are ready.`,
+      );
+      return;
+    }
+
+    const step = this.session.step('Opening a pull request');
+    try {
+      const pr = await openPullRequest({
+        token: session.accessToken,
+        slug: args.slug,
+        head: args.branch,
+        base: args.base,
+        title: args.plan.message.subject,
+        body: args.plan.prBody,
+      });
+
+      step.done(pr.existing ? `Pull request #${pr.number} already open` : `Opened #${pr.number}`);
+      this.session.say(
+        pr.existing
+          ? `A pull request for \`${args.branch}\` was already open: [#${pr.number}](${pr.url}). The new commit is on it.`
+          : `Opened [#${pr.number}](${pr.url}) — \`${args.branch}\` into \`${args.base}\`. The description carries the evidence: what changed upstream, and what it touches here.`,
+      );
+      await vscode.env.openExternal(vscode.Uri.parse(pr.url));
+    } catch (err) {
+      step.fail('Could not open the pull request');
+      this.session.notice(
+        'warn',
+        fallback
+          ? `GitHub would not open the pull request: ${(err as Error).message} — [open it yourself](${fallback}). The branch is pushed either way.`
+          : `GitHub would not open the pull request: ${(err as Error).message}. The branch is pushed either way.`,
+      );
+    }
+  }
+
+  /**
+   * The same offer, for a fix the developer has just kept.
+   *
+   * The pull request body is the report Drift already renders for the cloud
+   * agent's PRs — the breaking changes, the sites, the evidence behind each one.
+   * A local fix deserves the same review material as a remote one.
+   */
+  private async offerToPushFix(root: string, branch: string): Promise<void> {
+    const plan = this.state.plan;
+    const ctx = await this.contextFor(root);
+    const packages = plan ? [...new Set(plan.changes.map((change) => change.name))] : [];
+
+    const subject =
+      packages.length === 0
+        ? 'fix: update code for upgraded dependencies'
+        : packages.length === 1
+          ? `fix: update code for ${packages[0]}`
+          : `fix: update code for ${packages.length} upgraded dependencies`;
+
+    await this.offerToPush(root, branch, {
+      message: { subject, body: '' },
+      prBody:
+        plan && ctx
+          ? renderPullRequestBody(plan, ctx.config)
+          : `Code changes made with Drift on \`${branch}\`.`,
+    });
+  }
+
+  /** `/push` — send the current branch to `origin`, nothing else. */
+  private async pushCurrentBranch(): Promise<void> {
+    const ctx = await this.context();
+    if (!ctx) {
+      this.session.notice('warn', 'Open a git repository to push.');
+      return;
+    }
+
+    const { Git } = await import('../git.js');
+    const git = new Git(ctx.root);
+    const branch = await git.currentBranch().catch(() => 'HEAD');
+
+    if (branch === 'HEAD') {
+      this.session.notice('warn', 'You are on a detached HEAD, so there is no branch to push. Say `/commit` to make one.');
+      return;
+    }
+    if (!(await git.hasRemote())) {
+      this.session.notice('warn', 'This repository has no `origin` remote, so there is nowhere to push.');
+      return;
+    }
+
+    const step = this.session.step(`Pushing ${branch}`);
+    try {
+      await git.push(branch);
+      step.done(`Pushed ${branch}`);
+      const url = compareUrl(await git.remoteUrl(), (await git.defaultBranch()) ?? 'main', branch);
+      this.session.say(
+        url
+          ? `\`${branch}\` is on the remote. Say \`/pr\` and I will open the pull request, or [open it yourself](${url}).`
+          : `\`${branch}\` is on the remote.`,
+      );
+    } catch (err) {
+      step.fail('Push failed');
+      this.session.notice('error', `Could not push \`${branch}\`: ${(err as Error).message}`);
+    }
+  }
+
+  /** `/pr` — push if needed, then open the pull request for the current branch. */
+  private async openPullRequestForBranch(): Promise<void> {
+    const ctx = await this.context();
+    if (!ctx) {
+      this.session.notice('warn', 'Open a git repository to raise a pull request.');
+      return;
+    }
+
+    const { Git } = await import('../git.js');
+    const git = new Git(ctx.root);
+    const branch = await git.currentBranch().catch(() => 'HEAD');
+    const remote = await git.remoteUrl();
+    const slug = remoteSlug(remote);
+    const base = await git.defaultBranch();
+
+    if (branch === 'HEAD') {
+      this.session.notice('warn', 'You are on a detached HEAD. Say `/commit` to put this work on a branch first.');
+      return;
+    }
+    if (!slug) {
+      this.session.notice('warn', 'This repository has no GitHub `origin` remote, so there is no pull request to open.');
+      return;
+    }
+    if (!base || base === branch) {
+      this.session.notice(
+        'warn',
+        `\`${branch}\` is the branch a pull request would merge into. Say \`/commit\` and I will put the work on its own branch first.`,
+      );
+      return;
+    }
+
+    if (!(await git.hasUpstream(branch))) {
+      const step = this.session.step(`Pushing ${branch}`);
+      try {
+        await git.push(branch);
+        step.done(`Pushed ${branch}`);
+      } catch (err) {
+        step.fail('Push failed');
+        this.session.notice('error', `Could not push \`${branch}\`: ${(err as Error).message}`);
+        return;
+      }
+    }
+
+    const plan =
+      this.lastUpgraded.length > 0
+        ? { message: upgradeCommitMessage(this.lastUpgraded), prBody: pullRequestBody(this.lastUpgraded) }
+        : {
+            message: { subject: `Changes on ${branch}`, body: '' },
+            prBody: `Opened from the Drift panel for \`${branch}\`.`,
+          };
+
+    await this.createPullRequest({ slug, remote, base, branch, plan });
   }
 
   /* ---------------------------------------------------------------- */
@@ -1245,11 +1848,19 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   /* Rewind                                                            */
   /* ---------------------------------------------------------------- */
 
+  private checkpointsFor(root: string): Checkpoints {
+    let checkpoints = this.checkpointsByRoot.get(root);
+    if (!checkpoints) {
+      checkpoints = new Checkpoints(root);
+      this.checkpointsByRoot.set(root, checkpoints);
+    }
+    return checkpoints;
+  }
+
   private async checkpoint(label: string): Promise<{ id: string } | null> {
     const ctx = await this.context();
     if (!ctx) return null;
-    this.checkpoints ??= new Checkpoints(ctx.root);
-    return this.checkpoints.capture(label);
+    return this.checkpointsFor(ctx.root).capture(label);
   }
 
   /**
@@ -1268,9 +1879,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     }
 
     const item = this.session.thread.find((entry) => entry.id === itemId);
-    if (!item || item.kind !== 'user' || !item.checkpoint || !this.checkpoints) return;
+    if (!item || item.kind !== 'user' || !item.checkpoint) return;
 
-    const checkpoint = this.checkpoints.get(item.checkpoint);
+    const rewindCtx = await this.context();
+    if (!rewindCtx) return;
+    const checkpoints = this.checkpointsFor(rewindCtx.root);
+
+    const checkpoint = checkpoints.get(item.checkpoint);
     if (!checkpoint) {
       this.session.notice('warn', 'That checkpoint is gone — a later rewind already passed it.');
       return;
@@ -1291,7 +1906,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     if (choice !== 'Rewind') return;
 
     try {
-      const result = await this.checkpoints.restore(item.checkpoint);
+      const result = await checkpoints.restore(item.checkpoint);
       this.session.truncateFrom(itemId);
 
       // The message that started it goes back in the composer: the usual reason
@@ -1359,6 +1974,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         this.session.say(
           `That is everything. The work is on \`${branch}\`, one commit per concern, and nothing has been pushed.`,
         );
+        // Scheduled rather than awaited: this runs inside the Keep handler, and
+        // the button should stop looking pressed before the next question
+        // appears underneath it.
+        setTimeout(() => void this.offerToPushFix(root, branch), 0);
       }
       return { sha, branch };
     } catch (err) {
@@ -1432,7 +2051,50 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       { id: 'permission', anchor: 'permission', title: 'Permission', items: this.permissionItems() },
     );
 
+    // Only meaningful with more than one root open — the button itself is
+    // hidden in that case (see `scopeLabel` in the view model), so this
+    // section would never be reachable anyway, but leaving it out entirely
+    // is the more honest signal to read from the data alone.
+    if (this.state.roots.length > 1) {
+      sections.push({ id: 'scope', anchor: 'scope', title: 'Repositories', items: this.scopeItems() });
+    }
+
     return sections;
+  }
+
+  /**
+   * One row per open root, checkable independently — a scan covers every
+   * checked one. Undeclared nested projects (an undeclared sub-package, like
+   * this repository's own `extension/`) get no row of their own: `/scan`
+   * already includes them in their parent root automatically, which is what
+   * "focus on a repository" means in practice. A nested directory with its
+   * own `.git` is different — a genuinely separate repository — but it only
+   * becomes choosable here once it is opened as its own folder, the same as
+   * any other root; a scan reports it by name so that's a deliberate next
+   * step, not a silent promotion.
+   */
+  private scopeItems(): MenuItem[] {
+    const roots = this.state.roots;
+    const allSelected = roots.every((root) => this.session.isRootIncluded(root.path));
+
+    return [
+      {
+        id: 'scope:__all',
+        label: 'All repositories',
+        detail: `Scan every open repository — ${roots.length} right now`,
+        icon: 'repo',
+        checked: allSelected,
+        keywords: 'scope repository all reset every',
+      },
+      ...roots.map<MenuItem>((root) => ({
+        id: `scope:${root.path}`,
+        label: root.label,
+        detail: root.repo?.slug ?? root.path,
+        icon: 'repo',
+        checked: this.session.isRootIncluded(root.path),
+        keywords: `scope repository folder ${root.label}`,
+      })),
+    ];
   }
 
   /**
@@ -1784,6 +2446,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         await this.session.setPermission(value as SessionPermission);
         this.session.notice('info', `Permission set to **${describePermission(value as SessionPermission)}**.`);
         return;
+      case 'scope':
+        if (value === '__all') this.session.resetScope();
+        else this.session.toggleRoot(value, this.state.roots.map((root) => root.path));
+        return;
     }
   }
 
@@ -2095,16 +2761,25 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private async context(): Promise<WorkspaceContext | null> {
     if (this.contextCache && Date.now() - this.contextCache.at < 3000) return this.contextCache.value;
 
-    const value = await this.readContext();
+    // The active root, not always the first folder — with more than one
+    // open, `Drift: Switch Repository` decides which one every command in
+    // this panel acts on.
+    const root = this.state.activeRoot?.path ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const value = root ? await this.contextFor(root) : null;
     this.contextCache = { at: Date.now(), value };
     return value;
   }
 
-  private async readContext(): Promise<WorkspaceContext | null> {
-    const folder = vscode.workspace.workspaceFolders?.[0];
-    if (!folder) return null;
-
-    const root = folder.uri.fsPath;
+  /**
+   * The context for one specific root, not necessarily the active one.
+   *
+   * Every candidate remembers which root it came from (`repoRoot`), so an
+   * upgrade or a re-check on a candidate from a non-active root — the normal
+   * case once more than one root is being scanned at once — still resolves
+   * the right manifest directory and the right git identity, rather than
+   * silently reusing whichever root happens to be active right now.
+   */
+  private async contextFor(root: string): Promise<WorkspaceContext | null> {
     const info = await inspectLocalRepo(root);
     if (!info) return null;
 
@@ -2264,6 +2939,17 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     return this.agents.find((entry) => entry.agent.id === preferred)?.agent.label ?? 'your AI agent';
   }
 
+  /** `null` hides the scope button — nothing to disambiguate with one root open. */
+  private scopeLabel(): string | null {
+    const roots = this.state.roots;
+    if (roots.length <= 1) return null;
+
+    const selected = this.selectedRoots();
+    if (selected.length === roots.length) return `${roots.length} repositories`;
+    if (selected.length === 1) return selected[0]!.label;
+    return `${selected.length} of ${roots.length} repositories`;
+  }
+
   /**
    * Coalesce renders.
    *
@@ -2305,6 +2991,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       mode: this.session.mode,
       effortLabel: this.effortLabel(),
       permission: this.session.permission,
+      scopeLabel: this.scopeLabel(),
       attachments: this.session.context,
       thread: this.session.thread,
       candidates: Object.fromEntries(this.candidates),

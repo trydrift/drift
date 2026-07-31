@@ -54,6 +54,19 @@ export class Git {
     return (await this.exec(['rev-parse', '--absolute-git-dir'])).trim();
   }
 
+  /**
+   * The working-tree root for this directory, or `null` outside a repository.
+   *
+   * A VS Code workspace folder is not necessarily a repository's root — it
+   * can be a subdirectory of a larger checkout, or itself contain a nested
+   * repository (most often a submodule). This is what lets the caller tell
+   * those apart instead of assuming `cwd` and "the repo" are the same thing.
+   */
+  async repoRoot(): Promise<string | null> {
+    const out = await this.tryExec(['rev-parse', '--show-toplevel']);
+    return out?.trim() || null;
+  }
+
   async currentBranch(): Promise<string> {
     return (await this.exec(['rev-parse', '--abbrev-ref', 'HEAD'])).trim();
   }
@@ -99,6 +112,52 @@ export class Git {
 
   async checkout(ref: string): Promise<void> {
     await this.exec(['checkout', ref]);
+  }
+
+  /** True when HEAD points at a commit rather than a branch. */
+  async isDetached(): Promise<boolean> {
+    return (await this.currentBranch()) === 'HEAD';
+  }
+
+  /** True when the repository has no commits yet, so there is no HEAD to branch from. */
+  async isUnborn(): Promise<boolean> {
+    return (await this.tryExec(['rev-parse', '--verify', 'HEAD'])) === null;
+  }
+
+  /** Stage paths without committing, for the developer who wants to write their own commit. */
+  async stagePaths(paths: readonly string[]): Promise<void> {
+    if (paths.length === 0) return;
+    await this.exec(['add', '--', ...paths]);
+  }
+
+  async remoteUrl(remote = 'origin'): Promise<string | null> {
+    return (await this.tryExec(['remote', 'get-url', remote]))?.trim() || null;
+  }
+
+  /** True when `branch` already tracks something upstream. */
+  async hasUpstream(branch: string): Promise<boolean> {
+    return (await this.tryExec(['rev-parse', '--abbrev-ref', `${branch}@{upstream}`])) !== null;
+  }
+
+  /**
+   * The branch a pull request should target.
+   *
+   * `origin/HEAD` is the remote's own answer and the only authoritative one, but
+   * it is a local symbolic ref that plenty of clones simply never set. The
+   * fallbacks are conventional rather than authoritative, which is why the
+   * caller shows the result before opening anything against it.
+   */
+  async defaultBranch(remote = 'origin'): Promise<string | null> {
+    const head = await this.tryExec(['symbolic-ref', '--short', `refs/remotes/${remote}/HEAD`]);
+    const named = head?.trim().replace(`${remote}/`, '');
+    if (named) return named;
+
+    for (const candidate of ['main', 'master']) {
+      if (await this.tryExec(['rev-parse', '--verify', `refs/remotes/${remote}/${candidate}`])) {
+        return candidate;
+      }
+    }
+    return null;
   }
 
   /**
