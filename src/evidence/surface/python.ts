@@ -1,0 +1,313 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { isAvailable } from '../../util/exec.js';
+import { fetchJson } from '../../util/http.js';
+import { diffSurfaces, type SurfaceApi, type SurfaceKind } from '../type-surface.js';
+import { unavailable, type SurfaceProvider, type SurfaceRequest, type SurfaceOutcome } from './types.js';
+
+/**
+ * Python public-symbol diffing.
+ *
+ * Python has no `cargo public-api`, no japicmp, and no compiler that will tell
+ * you what a package exports — so this is a reconstruction, and it is weighted
+ * one notch below the true computed diffs to say so. It parses each version's
+ * sources with Python's own `ast` module, honouring `__all__` where a package
+ * declares one and the leading-underscore convention where it does not,
+ * preferring `.pyi` stubs when the package ships them.
+ *
+ * The archive is downloaded and extracted, never installed. `pip download`
+ * would execute the package's own build backend, and Drift does not run a
+ * third party's code to find out what it contains.
+ */
+
+const TOOL = 'python ast';
+const REMEDY = 'Install Python 3 and make `python3` available on PATH.';
+
+/**
+ * One notch under the true computed diffs.
+ *
+ * Deliberately below 0.95, so `analyze` caps a lone Python surface diff at
+ * `medium` confidence. Known false negatives are why: re-exports through
+ * `from . import *`, symbols created at import time by a decorator or a
+ * metaclass, and anything conditional on the Python version or platform are all
+ * invisible to a static read.
+ */
+const WEIGHT = 0.9;
+
+export const pythonSurface: SurfaceProvider = {
+  ecosystem: 'pypi',
+  tool: TOOL,
+  weight: WEIGHT,
+
+  async compute(request: SurfaceRequest): Promise<SurfaceOutcome> {
+    if (!(await isAvailable(request.exec, 'python3', ['--version']))) {
+      return unavailable(
+        TOOL,
+        'tool-missing',
+        `Python 3 is not installed, so ${request.name}'s public symbols could not be compared.`,
+        REMEDY,
+      );
+    }
+
+    await mkdir(request.workdir, { recursive: true });
+    const scriptPath = join(request.workdir, 'surface.py');
+    await writeFile(scriptPath, SURFACE_SCRIPT, 'utf8');
+
+    const before = await surfaceOf(request, request.from, scriptPath);
+    if (!before.ok) return before.failure;
+    const after = await surfaceOf(request, request.to, scriptPath);
+    if (!after.ok) return after.failure;
+
+    return {
+      available: true,
+      changes: diffSurfaces(before.api, after.api),
+      tool: TOOL,
+      weight: WEIGHT,
+      locator: `${request.name} ${request.from} → ${request.to} (public symbols, best-effort)`,
+    };
+  },
+};
+
+type SurfaceAttempt = { ok: true; api: SurfaceApi } | { ok: false; failure: SurfaceOutcome };
+
+async function surfaceOf(
+  request: SurfaceRequest,
+  version: string,
+  scriptPath: string,
+): Promise<SurfaceAttempt> {
+  const source = await sourceArchiveUrl(request.name, version);
+  if (!source) {
+    return {
+      ok: false,
+      failure: unavailable(
+        TOOL,
+        'version-unavailable',
+        `PyPI has no source archive for ${request.name} ${version}. It may be private, yanked, or published only as a built wheel Drift cannot open.`,
+      ),
+    };
+  }
+
+  const dir = join(request.workdir, `probe-${version.replace(/[^\w.-]/g, '_')}`);
+  const archive = join(dir, source.filename);
+
+  try {
+    await mkdir(dir, { recursive: true });
+    const response = await fetch(source.url, { signal: AbortSignal.timeout(60_000) });
+    if (!response.ok) {
+      return {
+        ok: false,
+        failure: unavailable(TOOL, 'version-unavailable', `PyPI returned ${response.status} for ${source.url}.`),
+      };
+    }
+    await writeFile(archive, Buffer.from(await response.arrayBuffer()));
+  } catch (err) {
+    return {
+      ok: false,
+      failure: unavailable(TOOL, 'toolchain-failed', `Could not download ${source.url}: ${(err as Error).message}`),
+    };
+  }
+
+  // `tar` reads both gzip tarballs and zip archives, and extracting an archive
+  // executes nothing in it.
+  const extracted = await request.exec('tar', ['-xf', archive, '-C', dir], {
+    timeoutMs: request.timeoutMs,
+  });
+  if (extracted.code !== 0) {
+    return {
+      ok: false,
+      failure: unavailable(
+        TOOL,
+        'toolchain-failed',
+        `Could not unpack ${source.filename}: ${firstLine(extracted.stderr)}`,
+      ),
+    };
+  }
+
+  const read = await request.exec('python3', [scriptPath, dir], { timeoutMs: request.timeoutMs });
+  if (read.code !== 0) {
+    return {
+      ok: false,
+      failure: unavailable(
+        TOOL,
+        'parse-failed',
+        `Could not read ${request.name} ${version}'s public symbols: ${firstLine(read.stderr)}`,
+      ),
+    };
+  }
+
+  const api = parsePythonSurface(read.stdout);
+  if (!api) {
+    return {
+      ok: false,
+      failure: unavailable(TOOL, 'parse-failed', `Unreadable symbol listing for ${request.name} ${version}.`),
+    };
+  }
+  if (api.size === 0) {
+    return {
+      ok: false,
+      failure: unavailable(
+        TOOL,
+        'no-public-surface',
+        `${request.name} ${version} declares no public symbols Drift could read statically.`,
+      ),
+    };
+  }
+
+  return { ok: true, api };
+}
+
+interface SourceArchive {
+  url: string;
+  filename: string;
+}
+
+/** The sdist if there is one, else a wheel — both are archives `tar` can open. */
+async function sourceArchiveUrl(name: string, version: string): Promise<SourceArchive | null> {
+  const data = await fetchJson<{
+    releases?: Record<string, { url: string; filename: string; packagetype: string }[]>;
+  }>(`https://pypi.org/pypi/${encodeURIComponent(name)}/json`);
+
+  const files = data?.releases?.[version] ?? [];
+  const sdist = files.find((f) => f.packagetype === 'sdist');
+  const wheel = files.find((f) => f.packagetype === 'bdist_wheel');
+  const chosen = sdist ?? wheel;
+  return chosen ? { url: chosen.url, filename: chosen.filename } : null;
+}
+
+const PY_KINDS: Record<string, SurfaceKind> = {
+  function: 'function',
+  class: 'class',
+  variable: 'variable',
+};
+
+interface PythonSymbol {
+  name: string;
+  kind: string;
+  signature: string;
+  members?: string[];
+}
+
+/** Read the JSON the helper script emits into the shared surface shape. */
+export function parsePythonSurface(json: string): SurfaceApi | null {
+  let parsed: PythonSymbol[];
+  try {
+    parsed = JSON.parse(json) as PythonSymbol[];
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(parsed)) return null;
+
+  const api: SurfaceApi = new Map();
+  for (const symbol of parsed) {
+    if (!symbol?.name) continue;
+    api.set(symbol.name, {
+      name: symbol.name,
+      kind: PY_KINDS[symbol.kind] ?? 'variable',
+      signature: symbol.signature ?? symbol.name,
+      members: symbol.members ?? [],
+      requiredMembers: [],
+    });
+  }
+  return api;
+}
+
+/**
+ * The helper, kept here as one string so there is no build step for it.
+ *
+ * It parses rather than imports, which is the whole point: importing a package
+ * to inspect it runs its module-level code, and Drift will not run a
+ * dependency's code to describe it.
+ */
+const SURFACE_SCRIPT = `import ast, json, os, sys
+
+def public(name):
+    return not name.startswith('_') or (name.startswith('__') and name.endswith('__'))
+
+def signature(node):
+    if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        args = node.args
+        names = [a.arg for a in getattr(args, 'posonlyargs', [])] + [a.arg for a in args.args]
+        if args.vararg: names.append('*' + args.vararg.arg)
+        names += [a.arg for a in args.kwonlyargs]
+        if args.kwarg: names.append('**' + args.kwarg.arg)
+        defaults = len(args.defaults) + len([d for d in args.kw_defaults or [] if d is not None])
+        return 'def %s(%s) defaults=%d' % (node.name, ', '.join(names), defaults)
+    if isinstance(node, ast.ClassDef):
+        bases = [ast.unparse(b) if hasattr(ast, 'unparse') else '?' for b in node.bases]
+        return 'class %s(%s)' % (node.name, ', '.join(bases))
+    return node.name if hasattr(node, 'name') else ''
+
+def members(node):
+    out = []
+    for item in node.body:
+        if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            if public(item.name): out.append(item.name)
+        elif isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
+            if public(item.target.id): out.append(item.target.id)
+        elif isinstance(item, ast.Assign):
+            for target in item.targets:
+                if isinstance(target, ast.Name) and public(target.id): out.append(target.id)
+    return out
+
+def declared_all(tree):
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == '__all__':
+                    try:
+                        return set(ast.literal_eval(node.value))
+                    except Exception:
+                        return None
+    return None
+
+# Prefer a stub over the implementation: a .pyi is the author's own statement
+# of the public interface, which beats inferring one.
+sources = {}
+for base, dirs, files in os.walk(sys.argv[1]):
+    dirs[:] = [d for d in dirs if d not in ('test', 'tests', '.git', '__pycache__')]
+    for name in files:
+        if not (name.endswith('.py') or name.endswith('.pyi')): continue
+        path = os.path.join(base, name)
+        key = path[:-1] if name.endswith('.pyi') else path
+        if key in sources and name.endswith('.py'): continue
+        sources[key] = path
+
+symbols = {}
+for path in sorted(sources.values()):
+    try:
+        with open(path, 'r', encoding='utf-8', errors='replace') as handle:
+            tree = ast.parse(handle.read(), path)
+    except Exception:
+        continue
+
+    exported = declared_all(tree)
+    module = os.path.basename(path).rsplit('.', 1)[0]
+    prefix = '' if module in ('__init__', '__main__') else module + '.'
+
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            name = node.name
+            kind = 'class' if isinstance(node, ast.ClassDef) else 'function'
+            body = members(node) if isinstance(node, ast.ClassDef) else []
+        elif isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            name, kind, body = node.targets[0].id, 'variable', []
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            name, kind, body = node.target.id, 'variable', []
+        else:
+            continue
+
+        if exported is not None:
+            if name not in exported: continue
+        elif not public(name):
+            continue
+
+        key = prefix + name
+        if key not in symbols:
+            symbols[key] = {'name': key, 'kind': kind, 'signature': signature(node) if kind != 'variable' else name, 'members': sorted(body)}
+
+json.dump(sorted(symbols.values(), key=lambda s: s['name']), sys.stdout)
+`;
+
+function firstLine(text: string): string {
+  return text.split('\n').find((line) => line.trim().length > 0)?.trim() ?? 'no output';
+}
