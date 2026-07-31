@@ -46,10 +46,6 @@ function model(over: Partial<ViewModel> = {}): ViewModel {
     agents: [{ id: 'copilot-lm', label: 'GitHub Copilot', available: true }],
     agentId: 'auto',
     agentLabel: 'GitHub Copilot',
-    providers: [
-      { id: 'copilot-lm', label: 'GitHub Copilot', short: 'Copilot', modelLabel: 'GPT-5', selected: true },
-      { id: 'claude', label: 'Claude Code', short: 'Claude', modelLabel: 'Opus', selected: false },
-    ],
     mode: 'agent',
     effort: 'balanced',
     permission: 'auto-edit',
@@ -117,31 +113,58 @@ test('an empty session renders the welcome state and a composer', () => {
   assert.match(html, /id="menu-filter"/);
 });
 
-test('each subscription is its own button, showing the model chosen inside it', () => {
+test('the plus button holds context and model, and models drill in per subscription', () => {
   // A subscription is not a model. Someone paying for Claude has Opus, Sonnet
-  // and Haiku; bundling those into one "Claude" row throws away the choice that
-  // changes the result. One button per thing you pay for, each opening only its
-  // own models.
-  const html = renderPanel(model());
+  // and Haiku, so picking a subscription is the first of two steps and opens
+  // that subscription's own models — a drill-in inside the same menu, which
+  // costs nothing because it never leaves the webview.
+  const html = renderPanel(
+    model({
+      menu: [
+        { id: 'context', anchor: 'context', title: 'Context', items: [{ id: 'context:file', label: 'Add a file…' }] },
+        {
+          id: 'model',
+          anchor: 'context',
+          title: 'Model',
+          items: [{ id: 'agent:claude', label: 'Claude Code', detail: 'Opus', submenu: 'model:claude', checked: true }],
+        },
+        {
+          id: 'model:claude',
+          anchor: 'model:claude',
+          title: 'Claude Code',
+          items: [
+            { id: 'back', label: 'All subscriptions', submenu: 'context', icon: 'back' },
+            { id: 'model:claude:sonnet', label: 'Claude Sonnet' },
+          ],
+        },
+      ],
+    }),
+  );
 
-  assert.match(html, /data-action="openMenu" data-anchor="model:copilot-lm"/);
-  assert.match(html, /data-action="openMenu" data-anchor="model:claude"/);
-  assert.match(html, /class="provider-model">Opus</);
-  assert.match(html, /ctl provider selected/);
-  // And the models live in a section that only that button opens.
+  // Both sections open from the one plus button.
+  assert.match(html, /data-section="context" data-anchor="context"/);
+  assert.match(html, /data-section="model" data-anchor="context"/);
+  // The subscription row opens its own section rather than acting.
+  assert.match(html, /data-action="openMenu" data-anchor="model:claude"[^>]*data-search="[^"]*claude/i);
   assert.match(html, /data-section="model:claude" data-anchor="model:claude"/);
   assert.match(html, /data-action="menu" data-id="model:claude:sonnet"/);
+  // And a way back out of the drill-in.
+  assert.match(html, /data-action="openMenu" data-anchor="context"[^>]*>[\s\S]*?All subscriptions/);
 });
 
-test('the plus button offers context and nothing else', () => {
-  // A control whose menu holds settings it does not name is a control with a
-  // misleading label. Context is opened from plus; the model is not.
+test('the control row never wraps and the composer stays at the bottom', () => {
+  // #root replaced the body as the flex column when rendering became a body
+  // swap; without that the thread stops filling the panel and the composer
+  // floats up under the last message.
   const html = renderPanel(model());
 
-  assert.match(html, /data-section="context" data-anchor="context"/);
-  const contextSection = html.slice(html.indexOf('data-section="context"'));
-  const nextSection = contextSection.indexOf('data-section="model');
-  assert.ok(!contextSection.slice(0, nextSection).includes('data-id="model:'), 'no models under the plus button');
+  assert.match(html, /#root\s*\{[^}]*flex:\s*1 1 auto[^}]*\}/);
+  assert.match(html, /\.composer-bar\s*\{[^}]*flex-wrap:\s*nowrap/);
+});
+
+test('a slash command is one row, not two', () => {
+  const html = renderPanel(model());
+  assert.match(html, /button\.command\s*\{[^}]*white-space:\s*nowrap/);
 });
 
 test('effort is a dial with the stops the model can honour', () => {

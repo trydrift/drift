@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { CopilotLanguageModelAgent } from './copilot-lm.js';
+import { CopilotLanguageModelAgent, discoverLanguageModelAgents } from './copilot-lm.js';
 import { CopilotCloudAgent } from './copilot-cloud.js';
 import { OllamaAgent } from './ollama.js';
 import { CLI_AGENT_SPECS, CliFixAgent } from './cli.js';
@@ -64,7 +64,10 @@ export async function discoverAgents(
     return cache.agents;
   }
 
-  const agents = buildAgents(ctx);
+  // Whatever else this editor has models for — xAI, Alibaba, Mistral, an
+  // in-house gateway — is a subscription Drift can drive, and it is found by
+  // asking rather than by shipping a list of vendors it has heard of.
+  const agents = [...buildAgents(ctx), ...(await discoverLanguageModelAgents().catch(() => []))];
 
   // Probing in parallel matters: a serial sweep across five CLI lookups plus a
   // network check makes opening the picker feel broken.

@@ -23,7 +23,7 @@ import { getGitHubSession, GITHUB_SCOPES } from '../github-auth.js';
  */
 export class CopilotCloudAgent implements FixAgent {
   readonly id = 'copilot-cloud';
-  readonly label = 'GitHub Copilot (cloud agent)';
+  readonly label = 'Copilot Cloud';
   readonly description = 'Runs on GitHub and opens a pull request. Signs in with one click.';
   readonly kind = 'cloud' as const;
 

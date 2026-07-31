@@ -312,29 +312,7 @@
         "drift.agent.preferred": {
           "type": "string",
           "default": "auto",
-          "enum": [
-            "auto",
-            "copilot-lm",
-            "copilot-cloud",
-            "claude",
-            "codex",
-            "gemini",
-            "aider",
-            "opencode",
-            "ollama"
-          ],
-          "enumDescriptions": [
-            "Use the best agent available right now",
-            "GitHub Copilot, through the model already in your editor",
-            "GitHub Copilot cloud agent — runs on GitHub and opens a pull request",
-            "Claude Code CLI",
-            "OpenAI Codex CLI",
-            "Google Gemini CLI",
-            "Aider",
-            "OpenCode",
-            "Ollama — a model running on your own machine"
-          ],
-          "markdownDescription": "Which AI agent fixes your code. Drift drives an agent **you already have** and never asks for an API key.\n\nRun **Drift: Select AI Agent** to see which are installed.",
+          "markdownDescription": "Which AI agent fixes your code. Drift drives an agent **you already have** and never asks for an API key.\n\nSet from the Drift panel: **+ → Model**. `auto` uses the best available.\n\nKnown ids: `copilot-lm`, `copilot-cloud`, `claude`, `codex`, `gemini`, `aider`, `opencode`, `ollama`, and `lm:<vendor>` for any other chat-model provider registered in your editor — Drift discovers those, so the list is not fixed.",
           "order": 1
         },
         "drift.agent.models": {

@@ -44,26 +44,6 @@ export interface SlashCommand {
   description: string;
 }
 
-/**
- * One subscription, and the model chosen inside it.
- *
- * The composer draws one of these per thing the developer actually pays for,
- * because that is how they think about it: "use Claude" and "use Opus" are
- * different decisions, and flattening every model from every provider into one
- * list made the second decision impossible to find and the first one ambiguous.
- */
-export interface ProviderChoice {
-  /** Agent id. */
-  id: string;
-  /** Full name, for the tooltip. */
-  label: string;
-  /** What fits on a button in a 300px sidebar. */
-  short: string;
-  /** The model picked inside this subscription, if it offers a choice. */
-  modelLabel?: string;
-  selected: boolean;
-}
-
 /** One row in the composer menu. `id` comes straight back to the host. */
 export interface MenuItem {
   id: string;
@@ -75,6 +55,14 @@ export interface MenuItem {
   icon?: keyof typeof MENU_ICONS;
   /** Extra words the search box should match, never displayed. */
   keywords?: string;
+  /**
+   * Opens another section of this menu instead of acting.
+   *
+   * Used for the subscriptions: picking "Claude Code" is not a decision, it is
+   * a request to see Claude's models. Drilling in happens inside the webview,
+   * so it costs nothing and never leaves the menu.
+   */
+  submenu?: string;
 }
 
 export interface MenuSection {
@@ -122,8 +110,6 @@ export interface ViewModel {
   agents: AgentChoice[];
   agentId: string;
   agentLabel: string;
-  /** One button per subscription the developer can actually use right now. */
-  providers: ProviderChoice[];
   mode: SessionMode;
   effort: SessionEffort;
   permission: SessionPermission;
@@ -832,9 +818,7 @@ function renderComposer(vm: ViewModel): string {
     ${renderMenu(vm)}
 
     <div class="composer-bar">
-      <button class="ctl icon" data-action="openMenu" data-anchor="context" title="Attach a file, a folder, or the editor selection" aria-label="Add context">${ICON_PLUS}</button>
-
-      ${renderProviders(vm)}
+      <button class="ctl icon" data-action="openMenu" data-anchor="context" title="Add context, or choose which model does the work" aria-label="Context and model">${ICON_PLUS}</button>
 
       <button class="ctl" data-action="openMenu" data-anchor="effort" title="${escapeAttr(
         `Effort: ${describeEffort(vm.effort)}. How widely Drift looks, and how hard the model thinks.`,
@@ -866,38 +850,6 @@ function renderComposer(vm: ViewModel): string {
       }
     </div>
   </div>`;
-}
-
-/**
- * One button per subscription.
- *
- * A subscription is the thing a developer has decided to pay for; the model is
- * the thing they decide per task. Bundling every model from every provider into
- * a single list made the first invisible and the second unfindable, so each
- * provider gets its own button showing the model currently selected inside it,
- * and its own menu listing only that provider's models.
- *
- * When nothing is installed there is exactly one button, and it goes to setup —
- * an empty row of provider buttons would say nothing about why.
- */
-function renderProviders(vm: ViewModel): string {
-  if (vm.providers.length === 0) {
-    return `<button class="ctl bordered" data-action="openMenu" data-anchor="model:setup" title="Drift drives an AI agent you already have. It never asks for an API key.">
-      ${ICON_AGENT}<span>Choose an agent</span>${ICON_CHEVRON}
-    </button>`;
-  }
-
-  return vm.providers
-    .map(
-      (provider) => `<button class="ctl provider ${provider.selected ? 'selected' : ''}" data-action="openMenu" data-anchor="model:${escapeAttr(provider.id)}" title="${escapeAttr(
-        provider.modelLabel ? `${provider.label} — ${provider.modelLabel}` : provider.label,
-      )}">
-        <span class="provider-name">${escapeHtml(provider.short)}</span>
-        ${provider.modelLabel ? `<span class="provider-model">${escapeHtml(provider.modelLabel)}</span>` : ''}
-        ${ICON_CHEVRON}
-      </button>`,
-    )
-    .join('');
 }
 
 /**
@@ -972,7 +924,11 @@ function renderSlider(slider: MenuSlider): string {
 
 function renderMenuItem(item: MenuItem): string {
   const search = `${item.label} ${item.detail ?? ''} ${item.hint ?? ''} ${item.keywords ?? ''}`.toLowerCase();
-  return `<button class="menu-item ${item.checked ? 'checked' : ''}" data-action="menu" data-id="${escapeAttr(item.id)}" data-search="${escapeAttr(search)}">
+  const opens = item.submenu
+    ? `data-action="openMenu" data-anchor="${escapeAttr(item.submenu)}"`
+    : `data-action="menu" data-id="${escapeAttr(item.id)}"`;
+
+  return `<button class="menu-item ${item.checked ? 'checked' : ''}" ${opens} data-search="${escapeAttr(search)}">
     <span class="menu-check">${item.checked ? ICON_CHECK : ''}</span>
     <span class="menu-icon">${item.icon ? MENU_ICONS[item.icon] : ''}</span>
     <span class="menu-text">
@@ -980,6 +936,7 @@ function renderMenuItem(item: MenuItem): string {
       ${item.detail ? `<small>${escapeHtml(item.detail)}</small>` : ''}
     </span>
     ${item.hint ? `<span class="menu-hint">${escapeHtml(item.hint)}</span>` : ''}
+    ${item.submenu ? `<span class="menu-more">${ICON_CHEVRON_RIGHT}</span>` : ''}
   </button>`;
 }
 
@@ -1154,6 +1111,7 @@ const ICON_UPLOAD = svg('<path d="M8 1.5 12 5.5h-2.75v4h-2.5v-4H4L8 1.5zM2.5 11h
 const ICON_GEAR = svg('<path d="M8 5.5A2.5 2.5 0 1 0 8 10.5 2.5 2.5 0 0 0 8 5.5zm6 3.1V7.4l-1.6-.3a4.6 4.6 0 0 0-.5-1.2l.9-1.3-.9-.9-1.3.9a4.6 4.6 0 0 0-1.2-.5L9.1 2H6.9l-.3 1.6a4.6 4.6 0 0 0-1.2.5l-1.3-.9-.9.9.9 1.3a4.6 4.6 0 0 0-.5 1.2L2 7.4v2.2l1.6.3c.1.4.3.8.5 1.2l-.9 1.3.9.9 1.3-.9c.4.2.8.4 1.2.5l.3 1.6h2.2l.3-1.6c.4-.1.8-.3 1.2-.5l1.3.9.9-.9-.9-1.3c.2-.4.4-.8.5-1.2l1.6-.3z"/>', 13);
 const ICON_CHECKLIST = svg('<path d="M2 3.5 3.4 5 6 2.4l-.9-.9L3.4 3.2 2.9 2.6 2 3.5zm0 6L3.4 11 6 8.4l-.9-.9L3.4 9.2l-.5-.6L2 9.5zM7.5 3h6.5v1.5H7.5V3zm0 6h6.5v1.5H7.5V9z"/>', 13);
 const ICON_DASH = svg('<path d="M3.5 7.25h9v1.5h-9z"/>', 11);
+const ICON_BACK = svg('<path d="M6.8 3.4 7.7 4.3 5 7h9v1.5H5l2.7 2.7-.9.9L2.6 7.75 6.8 3.4z"/>', 12);
 const ICON_SPEED = svg('<path d="M8 2.5A6.5 6.5 0 0 0 2.2 12h11.6A6.5 6.5 0 0 0 8 2.5zm2.9 3.1L8.9 9a1.1 1.1 0 1 1-1-1l3-2.4z"/>', 13);
 
 /** Icons the menu may use, named rather than passed as markup. */
@@ -1170,6 +1128,7 @@ const MENU_ICONS = {
   speed: ICON_SPEED,
   close: ICON_CLOSE,
   search: ICON_SEARCH_SMALL,
+  back: ICON_BACK,
 } as const;
 
 /* ------------------------------------------------------------------ */
@@ -1187,6 +1146,16 @@ body {
   background: var(--vscode-sideBar-background);
   font: var(--vscode-font-size)/1.5 var(--vscode-font-family);
   overflow: hidden;
+}
+/* The document is written once and everything inside #root is replaced on each
+   update, so #root has to be the flex column the body used to be — otherwise the
+   thread stops growing to fill the panel and the composer floats up under the
+   last message instead of sitting at the bottom where it belongs. */
+#root {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 a { color: var(--vscode-textLink-foreground); cursor: pointer; text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -1259,7 +1228,11 @@ button.wide { width: 100%; }
   color: var(--vscode-foreground);
   background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
 }
-.ctl:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: -1px; }
+/* Hover and the open menu already say which control is in play. An outline
+   on top of that reads as a validation error on a button that is merely
+   focused, so the focused control is shown the same way it is hovered. */
+.ctl:focus-visible { outline: none; background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground)); }
+.menu-item:focus-visible { outline: none; }
 .ctl.icon { padding: 0 4px; }
 .ctl.bordered {
   border-color: var(--vscode-dropdown-border, var(--vscode-panel-border));
@@ -1675,7 +1648,9 @@ ul.sites span { font-size: 11px; color: var(--vscode-descriptionForeground); }
   color: var(--vscode-input-foreground);
   background: transparent;
 }
-.composer-bar { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; }
+/* One row, always. A control row that wraps changes the composer's height as
+   labels change, which moves the send button under the developer's pointer. */
+.composer-bar { display: flex; align-items: center; gap: 2px; flex-wrap: nowrap; min-width: 0; }
 .composer-bar .spacer { flex: 1 1 auto; min-width: 8px; }
 button.send, button.stop {
   width: 22px;
@@ -1702,19 +1677,28 @@ button.stop { background: var(--vscode-editorError-foreground); color: var(--vsc
   padding-bottom: 6px;
 }
 .commands[hidden] { display: none; }
+/* One command, one line. The name and what it does belong on the same row —
+   stacked, ten commands became a wall the eye has to climb, and the list is
+   read by scanning names down the left edge. Anything that does not fit is
+   ellipsised rather than allowed to wrap. */
 button.command {
   border: 0;
   background: none;
   text-align: left;
   display: flex;
-  flex-direction: column;
-  padding: 4px 6px;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 6px;
   border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
 }
 button.command[hidden] { display: none; }
 button.command:hover, button.command.active { background: var(--vscode-list-activeSelectionBackground); color: var(--vscode-list-activeSelectionForeground); }
+button.command b { flex: 0 0 auto; font-weight: 500; }
 button.command .args { color: var(--vscode-descriptionForeground); font-weight: 400; }
-button.command small { font-size: 10px; }
+button.command small { flex: 1 1 auto; min-width: 0; font-size: 10px; overflow: hidden; text-overflow: ellipsis; }
+button.command:hover small, button.command.active small { color: inherit; opacity: .8; }
 
 /* Working, uninterruptibly ---------------------------------------- */
 .working {
@@ -1734,9 +1718,10 @@ button.command small { font-size: 10px; }
   bottom: calc(100% - 4px);
   left: 4px;
   z-index: 20;
-  width: max-content;
-  min-width: 240px;
-  max-width: min(360px, calc(100vw - 28px));
+  /* One width for every section. A menu that resized itself as the developer
+     drilled from the subscriptions into a model list jumped under the pointer
+     each time, which made the drill-in feel like a different widget opening. */
+  width: min(288px, calc(100vw - 28px));
   display: flex;
   flex-direction: column;
   border: 1px solid var(--vscode-menu-border, var(--vscode-editorWidget-border, var(--vscode-panel-border)));
@@ -1803,6 +1788,7 @@ button.command small { font-size: 10px; }
 .menu-text b { font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .menu-text small { font-size: 10px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .menu-item:hover .menu-text small, .menu-item.active .menu-text small { color: inherit; opacity: .8; }
+.menu-more { flex: 0 0 auto; display: inline-grid; place-items: center; opacity: .7; }
 .menu-hint {
   flex: 0 0 auto;
   font-size: 10px;
@@ -1816,32 +1802,12 @@ button.command small { font-size: 10px; }
 .menu-empty { padding: 8px 10px; font-size: 11px; color: var(--vscode-descriptionForeground); }
 .menu-empty[hidden] { display: none; }
 
-/* Subscription buttons -------------------------------------------- */
-/* One per thing the developer pays for. The selected one is the only
-   filled control in the row, so "which of these am I using" is answered
-   without reading any of the labels. */
-.ctl.provider { gap: 4px; max-width: 45%; padding: 0 3px 0 6px; }
-.ctl.provider .provider-name { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ctl.provider .provider-model {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  opacity: .75;
-  font-size: 10px;
-  border-left: 1px solid var(--vscode-panel-border);
-  padding-left: 4px;
-}
-.ctl.provider.selected {
-  color: var(--vscode-foreground);
-  background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
-  border-color: var(--vscode-focusBorder);
-}
-.ctl.provider.selected .provider-model { opacity: .9; }
-
 /* The effort dial -------------------------------------------------- */
-.slider { padding: 4px 8px 2px; }
+/* Fixed size, deliberately. The dial's explanation changes with every
+   position, and a menu that resized itself around the current sentence
+   moved the handle out from under the pointer mid-drag. Both dimensions
+   are sized for the longest stop, so nothing moves as it is dragged. */
+.slider { width: 252px; padding: 4px 8px 2px; }
 .slider input[type="range"] {
   width: 100%;
   margin: 2px 0;
@@ -1849,6 +1815,11 @@ button.command small { font-size: 10px; }
   background: transparent;
   cursor: pointer;
 }
+/* The editor draws a focus ring around a range input the moment it is
+   touched, which reads as an error state on a control that is working
+   exactly as intended. */
+.slider input[type="range"]:focus,
+.slider input[type="range"]:focus-visible { outline: none; }
 .slider-ticks {
   display: flex;
   justify-content: space-between;
@@ -1857,7 +1828,15 @@ button.command small { font-size: 10px; }
   color: var(--vscode-descriptionForeground);
 }
 .slider-ticks span.on { color: var(--vscode-foreground); font-weight: 600; }
-.slider-detail { margin: 4px 0 2px; font-size: 10px; line-height: 1.35; color: var(--vscode-descriptionForeground); }
+.slider-detail {
+  margin: 4px 0 2px;
+  font-size: 10px;
+  line-height: 1.35;
+  /* Two lines, always: the height of the longest stop's explanation. */
+  height: 2.7em;
+  overflow: hidden;
+  color: var(--vscode-descriptionForeground);
+}
 
 /* The plan, as a checklist ---------------------------------------- */
 .card.tasks .card-title b { font-weight: 600; }
@@ -2213,6 +2192,11 @@ function anchorMenu(anchor) {
   const trigger = document.querySelector('[data-action="openMenu"][data-anchor="' + anchor + '"]');
   const composer = menu.parentElement;
   if (!trigger || !composer) return;
+
+  // Drilling from the subscriptions into one subscription's models is opened by
+  // a row inside the menu itself. Following that as an anchor would walk the
+  // menu across the panel one step per click; it stays where it was opened.
+  if (menu.contains(trigger)) return;
 
   /* Anchored to the control that opened it, then pulled back inside the panel
      if that would hang it off the edge — a menu half off-screen in a 200px
