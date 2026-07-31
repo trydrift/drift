@@ -1,8 +1,9 @@
-import type { RemediationPlan, RepoContext } from './types.js';
+import type { DependencyChange, RemediationPlan, RepoContext } from './types.js';
 import type { DriftConfig } from './config/schema.js';
 import type { Logger } from './util/logger.js';
 import type { RepoProvider } from './repo/provider.js';
 import { detectChanges, isManifestPath, triage, type ManifestSnapshot } from './detect/index.js';
+import { detectWorkspaces, labelWorkspaces, memberDirectories, nodeWorkspaceFs } from './detect/workspace.js';
 import { gatherEvidence } from './evidence/index.js';
 import { analyze } from './analyze/index.js';
 import { buildIndex } from './index/metarag.js';
@@ -67,7 +68,16 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     return empty('No dependency manifest changed in this range.');
   }
 
-  const changes = detectChanges(snapshots);
+  // Workspace layout, before triage, so every downstream stage knows which
+  // package a change belongs to rather than treating the checkout as one thing.
+  const layouts = workspace ? await detectWorkspaces(workspace, nodeWorkspaceFs()) : [];
+  if (layouts.length > 0) {
+    logger.info(
+      `Workspace: ${layouts.map((l) => `${l.kind} (${l.members.length} member(s))`).join(', ')}`,
+    );
+  }
+
+  const changes = labelWorkspaces(detectChanges(snapshots), layouts);
   logger.info(`Detected ${changes.length} dependency change(s)`);
 
   if (changes.length === 0) {
@@ -103,13 +113,24 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   logger.info(`Identified ${breakingChanges.length} breaking change(s)`);
 
   /* Stage 5 — localize */
-  let impactSites: RemediationPlan['impactSites'] = [];
+  const impactSites: RemediationPlan['impactSites'] = [];
 
   if (breakingChanges.length > 0 && workspace) {
     progress('localize', 'Searching for affected code');
-    const files = await walkSourceFiles(workspace);
+    const members = memberDirectories(layouts);
+    // The index stays repository-wide so an import crossing a package boundary
+    // still resolves; it is the *sites* that are scoped to the member whose
+    // manifest moved.
+    const files = await walkSourceFiles(workspace, { members });
     const index = buildIndex(files);
-    impactSites = localize(breakingChanges, actionable, index, files, { logger });
+
+    for (const [member, changesHere] of groupByMember(actionable)) {
+      const ids = new Set(changesHere.map((c) => c.name));
+      const relevant = breakingChanges.filter((b) => ids.has(b.dependency));
+      if (relevant.length === 0) continue;
+      impactSites.push(...localize(relevant, changesHere, index, files, { logger, member }));
+    }
+
     logger.info(`Found ${impactSites.length} impact site(s)`);
   } else if (breakingChanges.length > 0) {
     logger.warn('No local checkout available; affected code cannot be located.');
@@ -136,6 +157,25 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
         ? `${plan.breakingChanges.length} breaking change(s), ${new Set(plan.impactSites.map((s) => s.file)).size} file(s) affected`
         : 'No code in this repository is affected by these dependency changes.',
   };
+}
+
+/**
+ * Group changes by the workspace member that declared them.
+ *
+ * `undefined` — a repository with no workspace — is one group with no boundary,
+ * which is the single-package behaviour unchanged.
+ */
+function groupByMember(
+  changes: readonly DependencyChange[],
+): [string | undefined, DependencyChange[]][] {
+  const groups = new Map<string | undefined, DependencyChange[]>();
+  for (const change of changes) {
+    const key = change.workspace;
+    const list = groups.get(key) ?? [];
+    list.push(change);
+    groups.set(key, list);
+  }
+  return [...groups.entries()];
 }
 
 async function collectManifestSnapshots(

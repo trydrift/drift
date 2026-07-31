@@ -817,3 +817,37 @@ test('every slash command is offered in the palette', () => {
     assert.ok(html.includes(`data-command="${command.name}"`), `${command.name} is missing`);
   }
 });
+
+test('a monorepo row says which package the dependency belongs to', () => {
+  // In a workspace, *which* package moved is the first thing a reviewer needs.
+  const api = candidate({
+    id: 'packages/api/package.json#lodash',
+    manifestPath: 'packages/api/package.json',
+    workspace: 'packages/api',
+    workspaceName: '@acme/api',
+  });
+
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'p1', kind: 'packages', headline: 'One upgrade.', ids: [api.id] }],
+      candidates: { [api.id]: api },
+    }),
+  );
+
+  assert.match(html, /class="pkg-workspace"[^>]*>@acme\/api</);
+  assert.match(html, /title="Declared in packages\/api\/package.json"/);
+});
+
+test('a single-package repository carries no workspace label', () => {
+  // A label that sits on every row and never varies is one more thing to read
+  // past, which is how a panel stops being read at all.
+  const c = candidate();
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'p1', kind: 'packages', headline: 'One upgrade.', ids: [c.id] }],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  assert.ok(!/pkg-workspace/.test(html.replace(/<style[\s\S]*?<\/style>/g, '')));
+});

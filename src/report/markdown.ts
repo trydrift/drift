@@ -1,3 +1,4 @@
+import { describeMember } from '../detect/workspace.js';
 import type {
   BreakingChange,
   Confidence,
@@ -93,8 +94,14 @@ export function renderApprovalIssue(plan: RemediationPlan, config: DriftConfig):
 }
 
 function renderHeader(plan: RemediationPlan): string {
+  // In a monorepo, *which package* moved is the first thing a reviewer needs;
+  // in a single-package repository it is a label with no information in it.
+  const members = new Set(plan.changes.map((c) => c.workspace).filter((w) => w !== undefined));
   const changes = plan.changes
-    .map((c) => `\`${c.name}\` ${c.from ?? '—'} → **${c.to ?? '—'}**`)
+    .map((c) => {
+      const where = members.size > 1 ? describeMember(c) : null;
+      return `\`${c.name}\` ${c.from ?? '—'} → **${c.to ?? '—'}**${where ? ` _(in ${where})_` : ''}`;
+    })
     .join(', ');
 
   return [

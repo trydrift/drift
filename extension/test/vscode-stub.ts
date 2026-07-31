@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 
 /**
  * Minimal `vscode` stand-in for headless testing.
@@ -118,6 +118,8 @@ export const Uri = {
 /** Settings the tests need; overridable per test. */
 export const __settings = new Map<string, unknown>();
 
+export const FileType = { Unknown: 0, File: 1, Directory: 2, SymbolicLink: 64 } as const;
+
 export const workspace = {
   workspaceFolders: [] as { uri: { fsPath: string } }[],
   getConfiguration: (_section?: string) => ({
@@ -132,8 +134,11 @@ export const workspace = {
     readFile: async (uri: { fsPath: string }) => readFileSync(uri.fsPath),
     readDirectory: async (uri: { fsPath: string }) =>
       readdirSync(uri.fsPath, { withFileTypes: true }).map(
-        (entry) => [entry.name, entry.isDirectory() ? 2 : 1] as [string, number],
+        (entry) => [entry.name, entry.isDirectory() ? FileType.Directory : FileType.File] as [string, number],
       ),
+    stat: async (uri: { fsPath: string }) => ({
+      type: statSync(uri.fsPath).isDirectory() ? FileType.Directory : FileType.File,
+    }),
   },
   applyEdit: async () => true,
   saveAll: async () => true,
