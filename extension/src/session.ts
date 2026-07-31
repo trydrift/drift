@@ -71,10 +71,15 @@ export function normalizeEffort(value: string | undefined): SessionEffort {
  * up has not asked the other to follow.
  */
 export function readEffort(agentId: string): SessionEffort {
-  const efforts = vscode.workspace
-    .getConfiguration('drift')
-    .get<Record<string, string>>('agent.efforts', {});
-  return normalizeEffort(efforts?.[agentId]);
+  const config = vscode.workspace.getConfiguration('drift');
+  const stored = config.get<Record<string, string>>('agent.efforts', {})?.[agentId];
+  if (stored) return normalizeEffort(stored);
+
+  // Nothing set for this subscription yet, so honour the single dial Drift used
+  // to have. Someone who asked for `thorough` last week asked for the top of the
+  // scale, and quietly resetting them to the default would be the wrong way to
+  // rename a setting.
+  return normalizeEffort(config.get<string>('session.effort'));
 }
 
 /** How much rope the agent gets. Mirrors Claude Code's permission modes. */

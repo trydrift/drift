@@ -353,6 +353,22 @@
           "markdownDescription": "How hard each subscription's model is asked to think, keyed by agent id — for example `{ \"claude\": \"xhigh\" }`.\n\nSet from the effort dial in the Drift panel, where each level carries the name its own vendor uses: Claude runs `low`–`high` and `xhigh` (**Ultracode**), Codex runs `low`–`high` and `xhigh` (**Extra High**). Agents whose API has no reasoning budget — the in-editor Copilot models, Ollama — have no dial.\n\nThis only changes the reasoning spent on each fix. It never changes which dependencies Drift checks or which fixes it attempts — see `#drift.analysis.includeDev#` and `#drift.analysis.includePatch#` for that.",
           "order": 7
         },
+        "drift.session.effort": {
+          "type": "string",
+          "enum": [
+            "quick",
+            "balanced",
+            "thorough",
+            "max",
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "markdownDeprecationMessage": "Replaced by `#drift.agent.efforts#`, which is set per subscription and carries each vendor's own names for its stops.\n\nEffort no longer changes what Drift analyses — it never should have. Use `#drift.analysis.includeDev#` and `#drift.analysis.includePatch#` for that. An existing value here is still honoured as the starting position of every agent's dial.",
+          "markdownDescription": "Deprecated. Use `#drift.agent.efforts#`.",
+          "order": 7
+        },
         "drift.session.permission": {
           "type": "string",
           "default": "auto-edit",

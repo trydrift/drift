@@ -1,4 +1,4 @@
-import type { SessionEffort, SessionMode, SessionPermission } from './session.js';
+import type { SessionMode, SessionPermission } from './session.js';
 
 /**
  * Human-readable names for the composer settings.
@@ -11,26 +11,6 @@ import type { SessionEffort, SessionMode, SessionPermission } from './session.js
 
 export function describeMode(mode: SessionMode): string {
   return mode === 'ask' ? 'Ask' : 'Agent';
-}
-
-/**
- * The generic name for an effort level.
- *
- * Only a fallback: every agent that has a reasoning budget names its own stops
- * — Claude's top one is Ultracode, Codex's is Extra High — and the panel prefers
- * the provider's word. This is what is shown when there is no agent to ask.
- */
-export function describeEffort(effort: SessionEffort): string {
-  switch (effort) {
-    case 'low':
-      return 'Low';
-    case 'high':
-      return 'High';
-    case 'xhigh':
-      return 'Max';
-    default:
-      return 'Medium';
-  }
 }
 
 export function describePermission(permission: SessionPermission): string {
