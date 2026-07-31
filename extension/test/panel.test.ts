@@ -93,7 +93,9 @@ function model(over: Partial<ViewModel> = {}): ViewModel {
         id: 'tools',
         anchor: 'tools',
         title: 'Tools',
-        items: [{ id: 'tool:/scan', label: '/scan', detail: 'Check every dependency', icon: 'search' }],
+        items: [
+          { id: 'tool:/scan', label: 'Scan dependencies', detail: 'Check every dependency', hint: '/scan', icon: 'search' },
+        ],
       },
       {
         id: 'permission',
@@ -202,6 +204,30 @@ test('Tools is a menu of everything Drift can do', () => {
   assert.match(html, /data-action="openMenu" data-anchor="tools"/);
   assert.match(html, /data-section="tools" data-anchor="tools"/);
   assert.match(html, /data-id="tool:\/scan"/);
+  // Named the way someone who has never typed a slash command would name it,
+  // with the command itself kept as the hint — which is how it gets learned.
+  assert.match(html, /<b>Scan dependencies<\/b>/);
+  assert.match(html, /class="menu-hint">\/scan</);
+  // Every command has such a name, or the menu would show a raw slash command.
+  for (const command of SLASH_COMMANDS) {
+    assert.ok(command.title && !command.title.startsWith('/'), `${command.name} needs a readable title`);
+  }
+});
+
+test('each dial label is centred on its own handle', () => {
+  // Evenly spaced labels are not the same points as the handle's stops: a
+  // handle travels the track minus its own width, so spread labels drift away
+  // from the circle they name — worst in the middle, which is where the eye
+  // checks them.
+  const html = renderPanel(model());
+
+  const ticks = [...html.matchAll(/<span class="[^"]*" style="left:([^"]+)"/g)].map((match) => match[1]);
+  assert.equal(ticks.length, 4);
+  assert.ok(ticks[0]!.includes('* 0.0000'), 'the first label sits on the first handle position');
+  assert.ok(ticks[3]!.includes('* 1.0000'), 'the last label sits on the last handle position');
+  // Placed against the handle's own size, which is why the panel draws it.
+  assert.ok(ticks[1]!.includes('var(--thumb)'));
+  assert.match(html, /\.slider-ticks span \{[^}]*translateX\(-50%\)/s);
 });
 
 test('an answer is typed out rather than dropped in whole', () => {

@@ -40,6 +40,14 @@ export interface AgentChoice {
 export interface SlashCommand {
   name: string;
   args?: string;
+  /**
+   * The command's name for people who have not learned to type it.
+   *
+   * The Tools menu is read by someone who does not yet know the vocabulary, so
+   * it leads with this and keeps `/scan` as a quiet hint on the right — which is
+   * also how the command is learned.
+   */
+  title: string;
   description: string;
 }
 
@@ -145,15 +153,37 @@ export interface ViewModel {
 }
 
 export const SLASH_COMMANDS: readonly SlashCommand[] = [
-  { name: '/scan', description: 'Check every dependency for a newer version and see what would break' },
-  { name: '/recent', description: 'Analyse the dependency change already in your git history' },
-  { name: '/upgrade', args: '<package>', description: 'Upgrade one package and check the impact' },
-  { name: '/upgrade-all', description: 'Install every upgrade that does not affect your code' },
-  { name: '/fix', args: '[package]', description: 'Let your AI agent fix the affected code' },
-  { name: '/review', description: 'Show changes waiting to be kept or undone' },
-  { name: '/agent', description: 'Choose which AI agent does the work' },
-  { name: '/clear', description: 'Start a new session' },
-  { name: '/help', description: 'What Drift can do' },
+  {
+    name: '/scan',
+    title: 'Scan dependencies',
+    description: 'Check every dependency for a newer version and see what would break',
+  },
+  {
+    name: '/recent',
+    title: 'Check the last dependency change',
+    description: 'Analyse the dependency change already in your git history',
+  },
+  {
+    name: '/upgrade',
+    args: '<package>',
+    title: 'Upgrade a package',
+    description: 'Upgrade one package and check the impact',
+  },
+  {
+    name: '/upgrade-all',
+    title: 'Upgrade everything safe',
+    description: 'Install every upgrade that does not affect your code',
+  },
+  {
+    name: '/fix',
+    args: '[package]',
+    title: 'Fix affected code',
+    description: 'Let your AI agent fix the affected code',
+  },
+  { name: '/review', title: 'Review changes', description: 'Show changes waiting to be kept or undone' },
+  { name: '/agent', title: 'Choose the AI agent', description: 'Choose which AI agent does the work' },
+  { name: '/clear', title: 'New conversation', description: 'Start a new session' },
+  { name: '/help', title: 'What Drift can do', description: 'Commands, agents, and how review works' },
 ];
 
 /**
@@ -911,18 +941,26 @@ function renderMenu(vm: ViewModel): string {
  *
  * Drawn from the selected model's own stops, so the track never offers a
  * position the model cannot honour. The label under it changes as the handle
- * moves and says what that position actually costs, because "high" means
- * nothing on its own — "adds dev dependencies and patch releases" does.
+ * moves and says what that position actually does to the model, because "high"
+ * means nothing on its own — "thinks harder on each change" does.
+ *
+ * Each label is placed at the centre of the handle's position for that stop
+ * rather than spread evenly across the row. Those are not the same points: a
+ * handle travels between `thumb/2` and `width - thumb/2`, so evenly spaced
+ * labels drift away from the thing they name, worst in the middle. The track is
+ * inset far enough that the first and last labels have room to sit centred
+ * without hanging off the menu.
  */
 function renderSlider(slider: MenuSlider): string {
   const current = slider.stops[slider.value] ?? slider.stops[0]!;
+  const last = slider.stops.length - 1;
 
   return `<div class="slider" data-slider="${escapeAttr(slider.id)}">
     <input
       type="range"
       id="slider-${escapeAttr(slider.id)}"
       min="0"
-      max="${slider.stops.length - 1}"
+      max="${last}"
       step="1"
       value="${slider.value}"
       data-action="slider"
@@ -933,7 +971,7 @@ function renderSlider(slider: MenuSlider): string {
       ${slider.stops
         .map(
           (stop, index) =>
-            `<span class="${index === slider.value ? 'on' : ''}">${escapeHtml(stop.label)}</span>`,
+            `<span class="${index === slider.value ? 'on' : ''}" style="left:${stopCentre(index, last)}">${escapeHtml(stop.label)}</span>`,
         )
         .join('')}
     </div>
@@ -941,6 +979,19 @@ function renderSlider(slider: MenuSlider): string {
       slider.stops.map((stop) => stop.detail).join('|'),
     )}">${escapeHtml(current.detail)}</p>
   </div>`;
+}
+
+/**
+ * Where the handle's centre sits at a given stop, as a CSS length.
+ *
+ * The handle travels the track minus its own width, starting half a handle in —
+ * so this is that same arithmetic, in `calc`, against whatever width the menu
+ * turns out to be. The label is then pulled back by half its own width in CSS,
+ * which puts its centre exactly over the circle's.
+ */
+function stopCentre(index: number, last: number): string {
+  const fraction = last > 0 ? index / last : 0.5;
+  return `calc(var(--inset) + var(--thumb) / 2 + (100% - 2 * var(--inset) - var(--thumb)) * ${fraction.toFixed(4)})`;
 }
 
 function renderMenuItem(item: MenuItem): string {
@@ -1846,29 +1897,68 @@ button.command:hover small, button.command.active small { color: inherit; opacit
 .menu-empty[hidden] { display: none; }
 
 /* The effort dial -------------------------------------------------- */
-/* Fixed size, deliberately. The dial's explanation changes with every
+/* Fixed height, deliberately. The dial's explanation changes with every
    position, and a menu that resized itself around the current sentence
-   moved the handle out from under the pointer mid-drag. Both dimensions
-   are sized for the longest stop, so nothing moves as it is dragged. */
-.slider { width: 252px; padding: 4px 8px 2px; }
+   moved the handle out from under the pointer mid-drag. The explanation is
+   given the height of the longest stop, so nothing moves as it is dragged. */
+.slider {
+  /* Fills the menu, which sets its own width. The label positions are a
+     fraction of whatever that turns out to be, so nothing here depends on a
+     hard-coded number. */
+  padding: 4px 8px 2px;
+  /* The two numbers the label placement is derived from. The handle is drawn
+     here rather than left to the platform precisely so that its size is known:
+     a label can only be centred under a circle whose width is not a guess. */
+  --thumb: 12px;
+  /* How far the track is held back from the edges. Enough that the outermost
+     labels can sit centred on their handles without leaving the menu. */
+  --inset: 24px;
+}
 .slider input[type="range"] {
-  width: 100%;
-  margin: 2px 0;
-  accent-color: var(--vscode-progressBar-background);
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: calc(100% - 2 * var(--inset));
+  margin: 4px var(--inset) 2px;
+  height: var(--thumb);
   background: transparent;
   cursor: pointer;
+}
+.slider input[type="range"]::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--vscode-foreground) 26%, transparent);
+}
+.slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: var(--thumb);
+  height: var(--thumb);
+  border-radius: 50%;
+  border: none;
+  background: var(--vscode-button-background, var(--vscode-progressBar-background));
+  /* Centres the circle on a 3px track. */
+  margin-top: calc((3px - var(--thumb)) / 2);
 }
 /* The editor draws a focus ring around a range input the moment it is
    touched, which reads as an error state on a control that is working
    exactly as intended. */
 .slider input[type="range"]:focus,
 .slider input[type="range"]:focus-visible { outline: none; }
+/* Each label is absolutely placed at its own handle's centre — see
+   stopCentre() — and pulled back by half its width, so it reads as belonging
+   to that circle rather than to the gap beside it. */
 .slider-ticks {
-  display: flex;
-  justify-content: space-between;
-  gap: 4px;
+  position: relative;
+  height: 14px;
   font-size: 10px;
   color: var(--vscode-descriptionForeground);
+}
+.slider-ticks span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  line-height: 14px;
 }
 .slider-ticks span.on { color: var(--vscode-foreground); font-weight: 600; }
 .slider-detail {
