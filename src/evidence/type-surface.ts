@@ -126,20 +126,34 @@ async function resolveTypesEntry(packageName: string, version: string): Promise<
  * Covers the file itself, the extensionless form, and the directory form —
  * `"types": "dist/source"` means `dist/source/index.d.ts` in practice.
  */
-function expandTypesEntry(declared: string): string[] {
-  if (declared.endsWith('.d.ts')) return [declared];
+export function expandTypesEntry(declared: string): string[] {
+  if (/\.d\.(c|m)?ts$/.test(declared)) return [declared, declared.replace(/\.d\.(c|m)?ts$/, '.d.ts')];
 
+  // `.d.cts` and `.d.mts` must be recognised *before* the extension is
+  // stripped. Treating `index.d.cts` as an extensionless path produced
+  // `index.d.d.ts`, which 404s — and losing the entry point costs the whole
+  // computed diff, which is the strongest evidence Drift has. That is exactly
+  // how zod 4 was reported as having no breaking changes.
   const base = declared.replace(/\.(c|m)?[jt]s$/, '').replace(/\/$/, '');
-  return [`${base}.d.ts`, `${base}/index.d.ts`, declared];
+  return [`${base}.d.ts`, `${base}.d.cts`, `${base}.d.mts`, `${base}/index.d.ts`, declared];
 }
 
-function typesFromExports(exportsField: unknown): string | null {
+export function typesFromExports(exportsField: unknown): string | null {
+  // `"exports": { ".": "./lib/entry.js" }` — the shorthand form, where the
+  // subpath maps straight to a file with no conditions at all. There is no
+  // `types` condition to find, but the sibling declaration next to that file is
+  // the package's entry surface, and `expandTypesEntry` knows how to look for
+  // it. typescript 7 publishes exactly this shape.
+  if (typeof exportsField === 'string') return exportsField;
   if (!exportsField || typeof exportsField !== 'object') return null;
 
   // Walk the conditional-exports tree looking for any `types` condition,
   // preferring the root entry (".") when one exists.
   const visit = (node: unknown, depth: number): string | null => {
-    if (depth > 6 || !node || typeof node !== 'object') return null;
+    if (depth > 6 || !node) return null;
+    // A subpath that maps straight to a file, with no conditions under it.
+    if (typeof node === 'string') return depth > 0 ? node : null;
+    if (typeof node !== 'object') return null;
     const record = node as Record<string, unknown>;
 
     const types = record.types ?? record.typings;
@@ -181,26 +195,35 @@ async function collectDeclarationSources(
   }
 
   const MAX_FILES = 25;
+  // Each re-export now expands to five candidate paths rather than two, so the
+  // queue holds candidate *groups* and stops at the first that resolves. A
+  // package with a thirty-line barrel costs thirty-odd requests, not a hundred
+  // and fifty.
   const sources: DeclarationSource[] = [];
   const seen = new Set<string>();
-  const queue: string[] = [entryPath];
+  const queue: string[][] = [[entryPath]];
 
   while (queue.length > 0 && sources.length < MAX_FILES) {
-    const path = queue.shift()!;
-    if (seen.has(path)) continue;
-    seen.add(path);
+    const candidates = queue.shift()!.filter((path) => !seen.has(path));
+    if (candidates.length === 0) continue;
 
-    const content = await fetchText(`${JSDELIVR_CDN}/${packageName}@${version}/${path}`, {
-      retries: 0,
-    });
-    if (!content) continue;
-
-    sources.push({ path, content });
-
-    for (const specifier of relativeReExports(content)) {
-      for (const resolved of resolveRelative(path, specifier)) {
-        if (!seen.has(resolved)) queue.push(resolved);
+    let resolved: DeclarationSource | null = null;
+    for (const path of candidates) {
+      seen.add(path);
+      const content = await fetchText(`${JSDELIVR_CDN}/${packageName}@${version}/${path}`, {
+        retries: 0,
+      });
+      if (content) {
+        resolved = { path, content };
+        break;
       }
+    }
+    if (!resolved) continue;
+
+    sources.push(resolved);
+
+    for (const specifier of relativeReExports(resolved.content)) {
+      queue.push(resolveRelative(resolved.path, specifier));
     }
   }
 
@@ -216,12 +239,27 @@ function relativeReExports(content: string): string[] {
   return [...out];
 }
 
-/** Candidate paths a relative specifier could resolve to, most likely first. */
-function resolveRelative(fromPath: string, specifier: string): string[] {
+/**
+ * Candidate paths a relative specifier could resolve to, most likely first.
+ *
+ * A dual-published package writes its CommonJS declarations against `.cjs`
+ * specifiers (`export * from "./external.cjs"`), and its ESM ones against
+ * `.js`. Stripping only `.js`/`.ts` left `external.cjs` intact and probed
+ * `external.cjs.d.ts`, so every re-export in the CJS half of such a package
+ * resolved to nothing — the entry file parsed, contributed no symbols of its
+ * own, and the surface came back empty.
+ */
+export function resolveRelative(fromPath: string, specifier: string): string[] {
   const dir = fromPath.includes('/') ? fromPath.slice(0, fromPath.lastIndexOf('/')) : '';
   const joined = normalizePath(dir ? `${dir}/${specifier}` : specifier);
-  const base = joined.replace(/\.(d\.ts|js|ts)$/, '');
-  return [`${base}.d.ts`, `${base}/index.d.ts`];
+  const base = joined.replace(/\.(d\.(c|m)?ts|(c|m)?js|(c|m)?ts)$/, '');
+  return [
+    `${base}.d.ts`,
+    `${base}.d.cts`,
+    `${base}.d.mts`,
+    `${base}/index.d.ts`,
+    `${base}/index.d.cts`,
+  ];
 }
 
 function normalizePath(path: string): string {

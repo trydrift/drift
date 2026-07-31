@@ -40,6 +40,7 @@ function candidate(over: Partial<UpgradeCandidate> = {}): UpgradeCandidate {
     impactCount: 0,
     impactFiles: 0,
     risk: 'none',
+    gaps: [],
     summary: 'No breaking changes found for this version of react.',
     ...over,
   };

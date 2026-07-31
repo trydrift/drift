@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderBody, renderPanel, SLASH_COMMANDS, type ViewModel } from '../src/ui/webview.js';
+import { crossesMajor, renderBody, renderPanel, SLASH_COMMANDS, type ViewModel } from '../src/ui/webview.js';
 import { describeSeverity, severityOf } from '../src/severity.js';
 import type { UpgradeCandidate } from '../src/upgrades.js';
 
@@ -35,6 +35,7 @@ function candidate(over: Partial<UpgradeCandidate> = {}): UpgradeCandidate {
     impactCount: 0,
     impactFiles: 0,
     risk: 'none',
+    gaps: [],
     summary: '7 breaking changes in lodash, but this repository does not use any of the affected APIs.',
     ...over,
   };
@@ -899,4 +900,65 @@ test('a single-repository result carries no repository label even when repoRoot 
   );
 
   assert.ok(!/pkg-repo/.test(html.replace(/<style[\s\S]*?<\/style>/g, '')));
+});
+
+/**
+ * The failure that made this verdict necessary.
+ *
+ * Drift scanned this very repository, found nothing it could read about zod 4
+ * or typescript 7, and rendered both as "Safe for your code · no breaking
+ * changes found". Both were installed; both broke the build. Nothing about the
+ * panel may ever again turn an absence of evidence into a green row.
+ */
+test('an unverified upgrade is never rendered as safe', () => {
+  const c = candidate({
+    name: 'zod',
+    current: '3.24.1',
+    selected: '4.4.3',
+    latest: '4.4.3',
+    breakingCount: 0,
+    impactCount: 0,
+    impactFiles: 0,
+    gaps: ['zod publishes no TypeScript declarations Drift could compare.'],
+  });
+
+  assert.equal(severityOf(c), 'unchecked');
+  assert.match(describeSeverity(c), /Not verified/);
+  assert.ok(!/Safe/.test(describeSeverity(c)), 'must not contain the word "safe"');
+
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'i1', kind: 'packages', headline: 'One upgrade available.', ids: [c.id] }],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  assert.match(html, /Not verified/);
+  assert.match(html, /Could not verify/);
+  assert.match(html, /class="dot unchecked"/);
+  // The reason is on the page, not in a log file.
+  assert.match(html, /no TypeScript declarations Drift could compare/);
+  // And it is not filed under the collapsed "Safe to upgrade" group.
+  assert.ok(!/pkg-subhead clean/.test(html) || !/grp:safe/.test(html.split('Could not verify')[0]!));
+});
+
+test('a one-click major upgrade says that it is a major', () => {
+  const c = candidate({ current: '3.24.1', selected: '3.25.76', latest: '4.4.3', safeLatest: '3.25.76' });
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'i1', kind: 'packages', headline: 'One upgrade available.', ids: [c.id] }],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  assert.match(html, /Upgrade to 4\.4\.3 \(major\)/);
+  assert.match(html, /class="risky"/);
+});
+
+test('crossesMajor reads the leading number and nothing else', () => {
+  assert.equal(crossesMajor('3.24.1', '4.0.0'), true);
+  assert.equal(crossesMajor('3.24.1', '3.25.76'), false);
+  assert.equal(crossesMajor('v5.7.3', '7.0.2'), true);
+  assert.equal(crossesMajor('1.0.0', '1.0.0'), false);
+  assert.equal(crossesMajor('not-a-version', '4.0.0'), false);
 });

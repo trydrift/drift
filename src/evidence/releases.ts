@@ -89,11 +89,52 @@ export async function fetchReleaseNotes(
       });
     }
 
+    // Deliberately no "we have enough now" break. Releases arrive newest-first,
+    // so stopping once `maxReleases` were collected meant never paginating back
+    // to the major release at the bottom of the range — the one release that
+    // actually documents the migration. Pagination stops when the range is
+    // exhausted, and `selectReleases` decides what to keep.
     if (sawOlderThanRange || releases.length < PER_PAGE) break;
-    if (collected.length >= maxReleases) break;
   }
 
-  return collected
-    .sort((a, b) => semver.rcompare(a.version, b.version))
-    .slice(0, maxReleases);
+  return selectReleases(collected, maxReleases);
+}
+
+/**
+ * Which releases to keep when the range holds more than the cap.
+ *
+ * Sorting newest-first and slicing keeps the wrong end. Upgrading zod 3.24.1 →
+ * 4.4.3 spans about a hundred releases, and taking the twenty newest kept
+ * 4.4.3 down to 4.1.7 — patch notes — while dropping every release that
+ * crossed a major boundary, which is where a maintainer writes down what
+ * breaks. The result was a major upgrade reported as having no breaking
+ * changes.
+ *
+ * So major and minor boundaries are taken first, oldest first, because the
+ * `x.0.0` release is where the migration is documented. Whatever budget is
+ * left goes to the newest remaining releases, which is where "we broke this by
+ * accident, sorry" tends to appear.
+ */
+export function selectReleases(releases: readonly ReleaseNote[], max: number): ReleaseNote[] {
+  const ordered = [...releases].sort((a, b) => semver.rcompare(a.version, b.version));
+  if (ordered.length <= max) return ordered;
+
+  const boundaries = ordered
+    .filter((release) => {
+      const parsed = semver.parse(release.version);
+      return parsed !== null && parsed.patch === 0 && !parsed.prerelease.length;
+    })
+    .sort((a, b) => semver.compare(a.version, b.version));
+
+  const kept = new Map<string, ReleaseNote>();
+  for (const release of boundaries) {
+    if (kept.size >= max) break;
+    kept.set(release.version, release);
+  }
+  for (const release of ordered) {
+    if (kept.size >= max) break;
+    kept.set(release.version, release);
+  }
+
+  return [...kept.values()].sort((a, b) => semver.rcompare(a.version, b.version));
 }

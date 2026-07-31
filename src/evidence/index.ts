@@ -203,8 +203,8 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
   const to = change.to!;
 
   if (change.ecosystem === 'npm') {
-    const surfaceChanges = await diffTypeSurfaces(change.name, from, to, logger);
-    if (!surfaceChanges) {
+    const surface = await diffTypeSurfaces(change.name, from, to, logger);
+    if (!surface) {
       ctx.onUnavailableSurface?.(
         change,
         unavailable(
@@ -215,10 +215,22 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
       );
       return null;
     }
-    if (surfaceChanges.length === 0) return null;
+    if (surface.changes.length === 0) {
+      if (!surface.comparable) {
+        ctx.onUnavailableSurface?.(
+          change,
+          unavailable(
+            'TypeScript declarations',
+            'no-public-surface',
+            `${change.name} re-exports its public API from other packages, so comparing its own declarations proves nothing about this upgrade.`,
+          ),
+        );
+      }
+      return null;
+    }
 
     return surfaceRecord(change, {
-      changes: surfaceChanges,
+      changes: surface.changes,
       weight: WEIGHTS['type-surface-diff'],
       locator: `${change.name}@${from} → @${to} (.d.ts)`,
       url: `https://www.npmjs.com/package/${change.name}/v/${to}`,
@@ -263,19 +275,34 @@ function surfaceRecord(
   };
 }
 
+/**
+ * The smallest surface worth calling a comparison.
+ *
+ * A package whose entry declaration is one re-export of another package —
+ * `@octokit/rest` is the canonical example — resolves to a single symbol on
+ * both sides and diffs to nothing. Reporting that as "no API changes" claims a
+ * comparison that never happened; the honest answer is that this package's
+ * surface is not local enough to compare.
+ */
+const MIN_COMPARABLE_SYMBOLS = 3;
+
 async function diffTypeSurfaces(
   packageName: string,
   from: string,
   to: string,
   logger: Logger,
-): Promise<SurfaceChange[] | null> {
+): Promise<{ changes: SurfaceChange[]; comparable: boolean } | null> {
   try {
     const [before, after] = await Promise.all([
       fetchTypeSurface(packageName, from),
       fetchTypeSurface(packageName, to),
     ]);
     if (!before || !after) return null;
-    return diffSurfaces(before.api, after.api);
+    return {
+      changes: diffSurfaces(before.api, after.api),
+      comparable:
+        before.api.size >= MIN_COMPARABLE_SYMBOLS && after.api.size >= MIN_COMPARABLE_SYMBOLS,
+    };
   } catch (err) {
     // Never let an untyped or oddly-packaged dependency fail the run.
     logger.debug(`Type surface diff failed for ${packageName}: ${(err as Error).message}`);
