@@ -31,6 +31,7 @@ src/
 ├── detect/               Stage 1 — manifest diffing
 │   ├── version.ts        Semver normalisation across ecosystems
 │   ├── package-manager.ts  Which tool owns a directory, and what it runs
+│   ├── workspace.ts      Monorepo members, and where each package ends
 │   └── ecosystems/       npm, python, go, cargo, maven, rubygems, toml
 ├── evidence/             Stage 2 — citable ground truth
 │   ├── registry.ts       npm, PyPI, crates.io, Go proxy, Maven, RubyGems
@@ -242,6 +243,17 @@ An AST-aligned index of imports, code units, and signatures — Drift's adaptati
 of the paper's Meta-RAG, with structural rather than LLM-generated summaries
 (see [research.md](research.md)).
 
+**The workspace boundary is the second precision lever.** A monorepo is many
+projects sharing a checkout, not one project with many manifests. A bump in
+`packages/api/package.json` is localized against `packages/api` alone — a
+sibling that shares the dependency declares its own version and gets its own
+analysis. The *index* stays repository-wide, so an import crossing a package
+boundary still resolves; only the impact sites are scoped. Members are read
+from `workspaces`/`pnpm-workspace.yaml`, Cargo `[workspace]`, `go.work`, Maven
+`<modules>`, and Gradle `settings.gradle[.kts]`; a Cargo virtual manifest is
+correctly *not* a member of its own workspace. Findings carry the member's
+package name wherever a repository has more than one.
+
 **The import graph is the precision lever.** A file that never imports `express`
 cannot be broken by an `express` change, however many times `Router` appears in
 it. Endpoint changes are the exception — HTTP calls have no import edge — and
@@ -345,9 +357,10 @@ raises risk and flags these for humans rather than pretending to handle them.
 warns at runtime rather than silently reporting zero impact sites. The Action
 doesn't have this problem.
 
-**Monorepos are handled naively.** All manifests are analysed together; Drift
-doesn't model workspace boundaries, so a change in one package can surface impact
-sites in a sibling that shares the dependency.
+**Workspace patterns are read literally.** Member globs support a literal path
+and a trailing `*` or `**`. Anything more elaborate — brace expansion, mid-segment
+wildcards, exclusions beyond a leading `!` — yields a missing member rather than
+a wrong one, which is the direction that fails visibly.
 
 **No verification of Copilot's output.** Drift dispatches and reports; it does
 not currently poll the task to completion and check CI. The scaffolding

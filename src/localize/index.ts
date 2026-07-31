@@ -2,6 +2,7 @@ import type { BreakingChange, Confidence, DependencyChange, Ecosystem, ImpactSit
 import type { Logger } from '../util/logger.js';
 import { unitAtLine, type FileIndex, type RepoIndex } from '../index/metarag.js';
 import { isRuntimeConfigPath, type SourceFile } from '../index/walk.js';
+import { withinMember } from '../detect/workspace.js';
 
 /**
  * Localization: where does this breaking change actually bite?
@@ -27,6 +28,18 @@ export interface LocalizeOptions {
   logger: Logger;
   /** Cap per breaking change, so one common word can't flood the plan. */
   maxSitesPerChange?: number;
+  /**
+   * Restrict impact sites to one workspace member's directory.
+   *
+   * A bump in `packages/api/package.json` is a fact about `packages/api`. A
+   * sibling that happens to share the dependency declares its own version and
+   * gets its own analysis; attributing api's bump to web's files was Drift's
+   * oldest known wrong answer.
+   *
+   * The *index* stays repository-wide, so an import that crosses a package
+   * boundary still resolves — only the sites are scoped.
+   */
+  member?: string;
 }
 
 export function localize(
@@ -36,7 +49,7 @@ export function localize(
   files: readonly SourceFile[],
   options: LocalizeOptions,
 ): ImpactSite[] {
-  const { logger, maxSitesPerChange = 100 } = options;
+  const { logger, maxSitesPerChange = 100, member } = options;
 
   const contentByPath = new Map(files.map((f) => [f.path, f.content]));
   const indexByPath = new Map(index.files.map((f) => [f.path, f]));
@@ -49,11 +62,13 @@ export function localize(
     // matches comments and documentation, which is a pure false positive — the
     // fix lives in CI config, engine fields, and container images.
     if (change.kind === 'runtime-requirement') {
-      sites.push(...localizeRuntimeRequirement(change, contentByPath));
+      sites.push(...inMember(localizeRuntimeRequirement(change, contentByPath), member));
       continue;
     }
 
-    const candidates = candidateFiles(change, index, ecosystems.get(change.dependency));
+    const candidates = candidateFiles(change, index, ecosystems.get(change.dependency)).filter(
+      (file) => member === undefined || withinMember(file.path, member),
+    );
 
     if (candidates.length === 0) {
       logger.debug(`No importers found for ${change.dependency}; ${change.id} has no impact sites`);
@@ -71,6 +86,10 @@ export function localize(
   }
 
   return sites;
+}
+
+function inMember(sites: readonly ImpactSite[], member: string | undefined): ImpactSite[] {
+  return member === undefined ? [...sites] : sites.filter((site) => withinMember(site.file, member));
 }
 
 /**

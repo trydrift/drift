@@ -3,9 +3,11 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { detectWorkspaces, memberDirectories } from '../../src/detect/workspace.js';
 import {
   ambiguityKey,
   discoverTargets,
+  vscodeWorkspaceFs,
   upgradeCommandFor,
   type UpgradeCandidate,
 } from '../src/upgrades.js';
@@ -146,5 +148,50 @@ describe('the command an upgrade will run', () => {
       upgradeCommandFor(candidate({ packageManager: 'gradle', ecosystem: 'maven' })),
       null,
     );
+  });
+});
+
+describe('a workspace is many packages, not one', () => {
+  let mono = '';
+
+  before(() => {
+    mono = mkdtempSync(join(tmpdir(), 'drift-mono-'));
+    const put = (path: string, content: string) => {
+      const full = join(mono, path);
+      mkdirSync(join(full, '..'), { recursive: true });
+      writeFileSync(full, content);
+    };
+    put('package.json', '{"name":"root","workspaces":["packages/*"]}');
+    put('package-lock.json', '{}');
+    put('packages/api/package.json', '{"name":"@acme/api","dependencies":{"left-pad":"^1.0.0"}}');
+    put('packages/web/package.json', '{"name":"@acme/web"}');
+    put('packages/web/pnpm-lock.yaml', 'lockfileVersion: 6\n');
+  });
+
+  after(() => rmSync(mono, { recursive: true, force: true }));
+
+  test('every member is discovered through VS Code\'s own filesystem', async () => {
+    const layouts = await detectWorkspaces(mono, vscodeWorkspaceFs());
+    assert.deepEqual(layouts.map((l) => l.kind), ['npm-workspaces']);
+    assert.deepEqual(memberDirectories(layouts), ['', 'packages/api', 'packages/web']);
+  });
+
+  test('each member keeps its own package manager', async () => {
+    const layouts = await detectWorkspaces(mono, vscodeWorkspaceFs());
+    const { targets } = await discoverTargets(mono, memberDirectories(layouts));
+
+    assert.deepEqual(
+      targets.map((t) => [t.dir, t.manager.id]),
+      [
+        ['', 'npm'],
+        ['packages/api', 'npm'],
+        ['packages/web', 'pnpm'],
+      ],
+    );
+  });
+
+  test('manifests are addressed relative to the repository root', async () => {
+    const { targets } = await discoverTargets(mono, ['packages/api']);
+    assert.equal(targets[0]!.manifestPath, 'packages/api/package.json');
   });
 });

@@ -573,6 +573,19 @@ function renderStale(stale: StaleHint): string {
   </div>`;
 }
 
+/**
+ * Which package in the monorepo this dependency belongs to.
+ *
+ * Rendered only when the scan crossed a workspace boundary — in a
+ * single-package repository the same label sits on every row saying nothing,
+ * and a label that never varies is one more thing to read past.
+ */
+function workspaceTag(candidate: UpgradeCandidate): string {
+  const label = candidate.workspaceName ?? candidate.workspace;
+  if (!label) return '';
+  return `<span class="pkg-workspace" title="Declared in ${escapeAttr(candidate.manifestPath)}">${escapeHtml(label)}</span>`;
+}
+
 function renderCandidate(candidate: UpgradeCandidate, open: boolean): string {
   const severity = severityOf(candidate);
   const busy = candidate.status === 'checking' || candidate.status === 'upgrading';
@@ -583,6 +596,7 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean): string {
       <span class="dot ${severity}"></span>
       <span class="pkg-name">
         <b>${escapeHtml(candidate.name)}</b>
+        ${workspaceTag(candidate)}
         <span class="versions">${escapeHtml(candidate.current)} <span class="arrow">→</span> ${escapeHtml(candidate.selected)}</span>
       </span>
       <span class="verdict ${severity}">${escapeHtml(busy ? busyLabel(candidate) : shortVerdict(candidate, severity))}</span>
@@ -1576,6 +1590,11 @@ button.wide { width: 100%; }
 .dot.error { background: var(--vscode-editorError-foreground); }
 .pkg-name { min-width: 0; display: flex; flex-direction: column; }
 .pkg-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pkg-workspace {
+  align-self: flex-start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 0.85em; opacity: 0.7; padding: 0 4px; border-radius: 3px;
+  border: 1px solid var(--vscode-panel-border); margin: 1px 0;
+}
 .versions { font-size: 11px; color: var(--vscode-descriptionForeground); font-variant-numeric: tabular-nums; }
 .versions .arrow { opacity: .6; }
 .verdict {

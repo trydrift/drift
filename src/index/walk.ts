@@ -1,6 +1,7 @@
 import type { Dirent } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
+import { memberOf } from '../detect/workspace.js';
 
 /**
  * Source-file discovery.
@@ -119,6 +120,14 @@ export interface SourceFile {
   language: Language;
   content: string;
   lineCount: number;
+  /**
+   * The workspace member whose directory contains this file.
+   *
+   * `''` is the repository root, `null` is a file no member claims, and
+   * `undefined` means the walk was not given a member list — a single-package
+   * repository, where the question does not arise.
+   */
+  member?: string | null;
 }
 
 export interface WalkOptions {
@@ -128,6 +137,14 @@ export interface WalkOptions {
   maxFiles?: number;
   /** Extra directory names to skip. */
   extraIgnores?: readonly string[];
+  /**
+   * Workspace member directories, so each file records which package owns it.
+   *
+   * The walk stays repository-wide on purpose: an import that crosses a package
+   * boundary is a real edge and the index needs it. It is *localization* that
+   * respects the boundary, using the label recorded here.
+   */
+  members?: readonly string[];
 }
 
 /**
@@ -141,7 +158,7 @@ export async function walkSourceFiles(
   root: string,
   options: WalkOptions = {},
 ): Promise<SourceFile[]> {
-  const { maxFileBytes = 512 * 1024, maxFiles = 5000, extraIgnores = [] } = options;
+  const { maxFileBytes = 512 * 1024, maxFiles = 5000, extraIgnores = [], members } = options;
   const ignored = new Set([...IGNORED_DIRECTORIES, ...extraIgnores]);
 
   const files: SourceFile[] = [];
@@ -185,7 +202,13 @@ export async function walkSourceFiles(
         if (info.size > maxFileBytes) continue;
 
         const content = await readFile(full, 'utf8');
-        files.push({ path: repoPath, language, content, lineCount: countLines(content) });
+        files.push({
+          path: repoPath,
+          language,
+          content,
+          lineCount: countLines(content),
+          ...(members ? { member: memberOf(repoPath, members) } : {}),
+        });
       } catch {
         continue;
       }

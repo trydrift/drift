@@ -58,6 +58,16 @@ export interface DependencyChange {
   /** Raw version ranges as written, useful for reproducing the edit. */
   rawFrom?: string | null;
   rawTo?: string | null;
+  /**
+   * The workspace member directory whose manifest declared this.
+   *
+   * Absent in a single-package repository, where the question does not arise.
+   * `''` is the workspace root. This is the boundary localization respects: a
+   * bump in `packages/api` is a fact about `packages/api`.
+   */
+  workspace?: string;
+  /** That member's own package name, when its manifest declares one. */
+  workspaceName?: string;
 }
 
 /** Where a piece of evidence came from. Drives how much we trust it. */
