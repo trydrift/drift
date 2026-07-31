@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { join } from 'node:path';
+import type { CheckOutcome } from '../verify.js';
 import {
   acceptInBaseline,
   diffHunks,
@@ -55,6 +56,15 @@ export interface ReviewGroup {
   paths: string[];
   /** Set once this group has been committed. */
   committed?: { sha: string; branch: string };
+  /**
+   * Results of the project's own checks, run after the agent edited this group.
+   *
+   * Never gates anything. A reviewer deciding whether to keep an edit is better
+   * served by "your test suite fails here" than by Drift withholding the choice.
+   */
+  checks?: CheckOutcome[];
+  /** True while those checks are still running. */
+  checking?: boolean;
 }
 
 export interface ReviewTotals {
@@ -197,6 +207,26 @@ export class DriftReview implements vscode.Disposable {
     entry.files = kept;
     this.emitter.fire();
     return entry.files.length > 0 ? entry : undefined;
+  }
+
+  /**
+   * Attach local check results to a group.
+   *
+   * Deliberately separate from `settle`: verification is slower than diffing,
+   * and the review surface must be usable the moment the agent stops rather
+   * than after a test suite finishes.
+   */
+  setChecks(order: number, checks: CheckOutcome[] | null, running = false): void {
+    const entry = this.entries.get(order);
+    if (!entry) return;
+    if (checks) entry.checks = checks;
+    else delete entry.checks;
+    entry.checking = running;
+    this.emitter.fire();
+  }
+
+  checksFor(order: number): CheckOutcome[] | undefined {
+    return this.entries.get(order)?.checks;
   }
 
   /** Files under review, for the CodeLens and decoration providers. */

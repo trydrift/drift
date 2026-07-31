@@ -27,6 +27,7 @@ import {
 import type { AttachedContext, EffortStop } from '../agents/types.js';
 import { getGitHubSession, getRateLimitToken } from '../github-auth.js';
 import type { PackageManagerId } from '../../../src/detect/package-manager.js';
+import { availableChecks, describeOutcomes, runChecks } from '../verify.js';
 import {
   ambiguityKey,
   describeSeverity,
@@ -718,6 +719,115 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     return stored;
   }
 
+/**
+   * Offer to run the project's own checks over what the agent just wrote.
+   *
+   * The honest question after a fix is not whether Drift believes it, but
+   * whether your toolchain still passes — and that answer already exists in
+   * the repository, costs nothing, and reaches no network.
+   *
+   * A failure never blocks Keep. It is reported next to the group it belongs
+   * to and the decision stays where it was, which is the same shape as every
+   * other guardrail here: reduce confidence, never remove the choice.
+   */
+  private async offerVerification(root: string, dirs: readonly string[]): Promise<void> {
+    const orders = this.review.groups().filter((g) => !g.committed).map((g) => g.order);
+    if (orders.length === 0) return;
+
+    const dir = dirs[0] ?? '';
+    const checks = await availableChecks(root, dir);
+    if (checks.length === 0) return;
+
+    const answer = await this.session.ask(
+      `Run ${checks.map((c) => `\`${c.label}\``).join(', ')} before you decide? ${
+        checks.length === 1 ? 'It is' : 'They are'
+      } your own ${checks.map((c) => c.source).join(' and ')} — nothing leaves this machine, and a failure will not stop you keeping anything.`,
+      [
+        { label: 'Run them', value: 'run', description: checks.map((c) => c.label).join(' · ') },
+        { label: 'Skip', value: 'skip', description: 'Review the changes without running anything' },
+      ],
+      false,
+    );
+    if (answer !== 'run') return;
+
+    const step = this.session.step('Running your checks');
+    for (const order of orders) this.review.setChecks(order, null, true);
+
+    await this.run(async (token) => {
+      const outcomes = await runChecks({
+        root,
+        dir,
+        checks,
+        token,
+        onProgress: (check, index, total) =>
+          step.progress(check.label, `${index + 1} of ${total}`, index, total),
+      });
+
+      // The checks validate the working tree, not one group in isolation, so
+      // every pending group carries the same result rather than pretending to
+      // attribute a test failure to a particular commit unit.
+      for (const order of orders) this.review.setChecks(order, outcomes);
+
+      const failed = outcomes.filter((o) => o.status === 'failed');
+      step.done(describeOutcomes(outcomes));
+
+      this.session.notice(
+        failed.length > 0 ? 'warn' : 'success',
+        failed.length > 0
+          ? `${describeOutcomes(outcomes)}. The result is shown above each changed file — keep or undo as you see fit.`
+          : `${describeOutcomes(outcomes)}. That is your own toolchain, not Drift's opinion.`,
+      );
+    });
+  }
+
+/**
+   * Run the project's checks after an upgrade, when the developer asks.
+   *
+   * There is no review store here — an upgrade edits a manifest and a lockfile
+   * rather than proposing hunks — so the result is reported in the transcript
+   * where the upgrade was reported.
+   */
+  private async verifyUpgrade(root: string, candidates: readonly UpgradeCandidate[]): Promise<void> {
+    const dir = [...new Set(candidates.map((c) => c.workspace ?? ''))].sort(
+      (a, b) => b.length - a.length,
+    )[0] ?? '';
+
+    const checks = await availableChecks(root, dir);
+    if (checks.length === 0) return;
+
+    const answer = await this.session.ask(
+      `Run ${checks.map((c) => `\`${c.label}\``).join(', ')} against the upgraded dependencies? Local only — nothing leaves this machine.`,
+      [
+        { label: 'Run them', value: 'run', description: checks.map((c) => c.label).join(' · ') },
+        { label: 'Skip', value: 'skip', description: 'I will run them myself' },
+      ],
+      false,
+    );
+    if (answer !== 'run') return;
+
+    const step = this.session.step('Running your checks');
+    const outcomes = await runChecks({
+      root,
+      dir,
+      checks,
+      onProgress: (check, index, total) =>
+        step.progress(check.label, `${index + 1} of ${total}`, index, total),
+    });
+
+    step.done(describeOutcomes(outcomes));
+    const failed = outcomes.filter((o) => o.status === 'failed');
+    this.session.notice(
+      failed.length > 0 ? 'warn' : 'success',
+      failed.length > 0
+        ? [
+            `${describeOutcomes(outcomes)} after the upgrade.`,
+            '',
+            ...failed.map((o) => [`\`${o.label}\``, '```', o.output, '```'].join('\n')),
+          ].join('\n')
+        : `${describeOutcomes(outcomes)} after the upgrade.`,
+    );
+  }
+
   private async scan(options: { quiet?: boolean } = {}): Promise<void> {
     if (this.busy) {
       this.session.notice('info', this.busyMessage());
@@ -999,6 +1109,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
       step.done('Dependency files updated');
 
+      // An upgrade writes a lockfile and a manifest, which is exactly the kind
+      // of change a project's own build catches and a diff does not.
+      await this.verifyUpgrade(ctx.root, candidates);
+
       const affected = candidates.filter((c) => this.currentFor(c) && severityOf(this.currentFor(c)!) === 'affected');
       if (affected.length > 0) {
         this.session.say(
@@ -1100,6 +1214,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
             ].join('\n'),
           );
           this.showReview();
+          await this.offerVerification(ctx.root, memberDirsOf(plan));
           return;
         case 'committed':
           tasks.finishAll('done');
@@ -2334,6 +2449,18 @@ function activeGroupId(plan: RemediationPlan, state: DriftState): string {
   const status = state.status;
   const order = status.kind === 'fixing' ? status.commitOrder : plan.commits[0]?.order;
   return `c${order ?? 1}`;
+}
+
+/**
+ * Workspace member directories a plan touches, nearest first.
+ *
+ * Checks run where the affected package lives, so a monorepo runs that
+ * package's tests rather than every package's.
+ */
+function memberDirsOf(plan: RemediationPlan): string[] {
+  const dirs = new Set<string>();
+  for (const change of plan.changes) if (change.workspace !== undefined) dirs.add(change.workspace);
+  return dirs.size === 0 ? [''] : [...dirs].sort((a, b) => b.length - a.length);
 }
 
 /** The manifest file the developer would open, without its directory. */

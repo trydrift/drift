@@ -1,0 +1,173 @@
+import { tryJson } from './ecosystems/types.js';
+import { scanTomlTables } from './ecosystems/toml.js';
+import type { Command, PackageManagerId } from './package-manager.js';
+
+/**
+ * The local checks a project already has.
+ *
+ * After an agent edits code, the honest question is not "does Drift think this
+ * is right" but "does your own toolchain still pass". That answer exists in
+ * every repository already, and running it costs nothing and reaches no
+ * network — it is the strongest signal Drift can offer a reviewer without
+ * asking them to read every line.
+ *
+ * Only checks that actually exist are offered. Proposing `npm run typecheck` to
+ * a project with no such script produces a failure that means nothing, and a
+ * meaningless failure is worse than no check at all.
+ */
+
+export type CheckKind = 'typecheck' | 'test' | 'build';
+
+export interface LocalCheck {
+  kind: CheckKind;
+  /** What the developer sees, e.g. `npm run typecheck`. */
+  label: string;
+  command: Command;
+  /** Where Drift found it, so the offer can be justified. */
+  source: string;
+}
+
+/**
+ * Ordered typecheck → test → build.
+ *
+ * A type error explains a test failure, and a test failure explains a broken
+ * build. Running them the other way round makes the reviewer read the least
+ * informative output first.
+ */
+const ORDER: CheckKind[] = ['typecheck', 'test', 'build'];
+
+/** Script names that mean each kind, most conventional first. */
+const SCRIPT_NAMES: Record<CheckKind, string[]> = {
+  typecheck: ['typecheck', 'type-check', 'types', 'check-types', 'tsc', 'check'],
+  test: ['test', 'tests', 'test:unit'],
+  build: ['build', 'compile'],
+};
+
+/**
+ * Which local checks this manifest offers.
+ *
+ * `manifest` is the content of the file the package manager owns; `null` means
+ * it could not be read, which yields the checks that need no manifest (a Cargo
+ * or Go project's checks are the toolchain's, not the project's).
+ */
+export function detectChecks(
+  manager: PackageManagerId,
+  manifest: string | null,
+): LocalCheck[] {
+  const found = checksFor(manager, manifest);
+  return ORDER.flatMap((kind) => found.filter((check) => check.kind === kind));
+}
+
+function checksFor(manager: PackageManagerId, manifest: string | null): LocalCheck[] {
+  switch (manager) {
+    case 'npm':
+    case 'pnpm':
+    case 'yarn':
+    case 'yarn-berry':
+    case 'bun':
+      return nodeScripts(manager, manifest);
+    case 'cargo':
+      return [
+        check('typecheck', { command: 'cargo', args: ['check'] }, 'the Cargo toolchain'),
+        check('test', { command: 'cargo', args: ['test'] }, 'the Cargo toolchain'),
+        check('build', { command: 'cargo', args: ['build'] }, 'the Cargo toolchain'),
+      ];
+    case 'go':
+      return [
+        check('typecheck', { command: 'go', args: ['vet', './...'] }, 'the Go toolchain'),
+        check('test', { command: 'go', args: ['test', './...'] }, 'the Go toolchain'),
+        check('build', { command: 'go', args: ['build', './...'] }, 'the Go toolchain'),
+      ];
+    case 'poetry':
+    case 'uv':
+    case 'pip':
+      return pythonChecks(manager, manifest);
+    case 'bundler':
+      return rubyChecks(manifest);
+    case 'maven':
+      return [
+        check('typecheck', { command: 'mvn', args: ['-q', 'test-compile'] }, 'Maven'),
+        check('test', { command: 'mvn', args: ['-q', 'test'] }, 'Maven'),
+        check('build', { command: 'mvn', args: ['-q', 'package', '-DskipTests'] }, 'Maven'),
+      ];
+    case 'gradle':
+      return [
+        check('test', { command: 'gradle', args: ['test'] }, 'Gradle'),
+        check('build', { command: 'gradle', args: ['build', '-x', 'test'] }, 'Gradle'),
+      ];
+  }
+}
+
+/**
+ * Node projects declare their own checks, so Drift reads them rather than
+ * assuming. The runner differs per manager but the script names do not.
+ */
+function nodeScripts(manager: PackageManagerId, manifest: string | null): LocalCheck[] {
+  const scripts = tryJson<{ scripts?: Record<string, string> }>(manifest ?? '')?.scripts;
+  if (!scripts) return [];
+
+  const runner = manager === 'yarn' || manager === 'yarn-berry' ? 'yarn' : manager;
+  const out: LocalCheck[] = [];
+
+  for (const kind of ORDER) {
+    const name = SCRIPT_NAMES[kind].find((candidate) => typeof scripts[candidate] === 'string');
+    if (!name) continue;
+
+    // `npm test` is the shorthand every Node developer knows; `yarn` needs no
+    // `run` at all. Matching what a human would type keeps the offer legible.
+    const args =
+      name === 'test' && manager !== 'yarn' && manager !== 'yarn-berry'
+        ? ['test']
+        : runner === 'yarn'
+          ? [name]
+          : ['run', name];
+
+    out.push(check(kind, { command: runner, args }, `\`scripts.${name}\` in package.json`));
+  }
+
+  return out;
+}
+
+function pythonChecks(manager: PackageManagerId, manifest: string | null): LocalCheck[] {
+  const content = manifest ?? '';
+  const tables = scanTomlTables(content);
+  const has = (header: string) => tables.some((t) => t.header === header || t.header.startsWith(`${header}.`));
+  // The dependency lists are where a tool is declared even when it has no
+  // config table of its own.
+  const mentions = (tool: string) => new RegExp(`["']${tool}\\b`, 'i').test(content);
+
+  const prefix = manager === 'poetry' ? ['poetry', 'run'] : manager === 'uv' ? ['uv', 'run'] : null;
+  const wrap = (command: string, args: string[]): Command =>
+    prefix ? { command: prefix[0]!, args: [...prefix.slice(1), command, ...args] } : { command, args };
+
+  const out: LocalCheck[] = [];
+
+  if (has('tool.mypy') || mentions('mypy')) {
+    out.push(check('typecheck', wrap('mypy', ['.']), 'mypy, declared in pyproject.toml'));
+  } else if (has('tool.pyright') || mentions('pyright')) {
+    out.push(check('typecheck', wrap('pyright', []), 'pyright, declared in pyproject.toml'));
+  }
+
+  if (has('tool.pytest') || has('tool.pytest.ini_options') || mentions('pytest')) {
+    out.push(check('test', wrap('pytest', []), 'pytest, declared in pyproject.toml'));
+  }
+
+  return out;
+}
+
+function rubyChecks(manifest: string | null): LocalCheck[] {
+  const content = manifest ?? '';
+  const out: LocalCheck[] = [];
+
+  if (/gem\s+["']rspec/.test(content)) {
+    out.push(check('test', { command: 'bundle', args: ['exec', 'rspec'] }, 'rspec, declared in the Gemfile'));
+  } else if (/gem\s+["'](minitest|rake)/.test(content)) {
+    out.push(check('test', { command: 'bundle', args: ['exec', 'rake', 'test'] }, 'rake, declared in the Gemfile'));
+  }
+
+  return out;
+}
+
+function check(kind: CheckKind, command: Command, source: string): LocalCheck {
+  return { kind, label: [command.command, ...command.args].join(' '), command, source };
+}
