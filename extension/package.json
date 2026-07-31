@@ -148,6 +148,18 @@
         "title": "New Session",
         "category": "Drift",
         "icon": "$(add)"
+      },
+      {
+        "command": "drift.history",
+        "title": "Conversation History",
+        "category": "Drift",
+        "icon": "$(history)"
+      },
+      {
+        "command": "drift.toggleFullScreen",
+        "title": "Toggle Full Screen",
+        "category": "Drift",
+        "icon": "$(screen-full)"
       }
     ],
     "viewsContainers": {
@@ -178,19 +190,29 @@
           "group": "navigation@1"
         },
         {
+          "command": "drift.history",
+          "when": "view == drift.changes",
+          "group": "navigation@2"
+        },
+        {
+          "command": "drift.toggleFullScreen",
+          "when": "view == drift.changes",
+          "group": "navigation@3"
+        },
+        {
           "command": "drift.nextChange",
           "when": "view == drift.changes && drift.reviewing",
-          "group": "navigation@2"
+          "group": "navigation@4"
         },
         {
           "command": "drift.keepAllChanges",
           "when": "view == drift.changes && drift.reviewing",
-          "group": "navigation@3"
+          "group": "navigation@5"
         },
         {
           "command": "drift.undoAllChanges",
           "when": "view == drift.changes && drift.reviewing",
-          "group": "navigation@4"
+          "group": "navigation@6"
         },
         {
           "command": "drift.showReport",
@@ -315,6 +337,15 @@
           "markdownDescription": "Which AI agent fixes your code. Drift drives an agent **you already have** and never asks for an API key.\n\nRun **Drift: Select AI Agent** to see which are installed.",
           "order": 1
         },
+        "drift.agent.models": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": "string"
+          },
+          "markdownDescription": "The model chosen inside each subscription, keyed by agent id — for example `{ \"claude\": \"opus\" }`.\n\nSet from the subscription buttons in the Drift panel. A subscription with no entry uses whatever model it picks by default.",
+          "order": 2
+        },
         "drift.session.mode": {
           "type": "string",
           "default": "agent",
@@ -335,14 +366,16 @@
           "enum": [
             "quick",
             "balanced",
-            "thorough"
+            "thorough",
+            "max"
           ],
           "enumDescriptions": [
             "Runtime dependencies, major and minor bumps, first 25 packages",
             "Every runtime dependency, major and minor bumps",
-            "Everything, including dev dependencies and patch releases"
+            "Everything, including dev dependencies and patch releases",
+            "Everything with no caps, and the model reasons as hard as it can"
           ],
-          "markdownDescription": "Set from the picker in the Drift panel. How widely Drift looks — this changes what is actually analysed, not just how long it takes.",
+          "markdownDescription": "Set from the effort dial in the Drift panel. How widely Drift looks, and — where the agent supports it — how hard the model thinks. This changes what is actually analysed, not just how long it takes.",
           "order": 7
         },
         "drift.session.permission": {
@@ -365,19 +398,19 @@
           "type": "string",
           "default": "",
           "markdownDescription": "Optional model family for the in-editor Copilot agent (for example `gpt-4o`). Leave blank to let VS Code choose.",
-          "order": 2
+          "order": 3
         },
         "drift.agent.ollamaHost": {
           "type": "string",
           "default": "http://localhost:11434",
           "description": "Where your Ollama server is listening.",
-          "order": 3
+          "order": 4
         },
         "drift.agent.ollamaModel": {
           "type": "string",
           "default": "qwen2.5-coder",
           "description": "Which Ollama model to use. A coding-tuned model works far better here than a general one.",
-          "order": 4
+          "order": 5
         },
         "drift.agent.timeoutSeconds": {
           "type": "number",

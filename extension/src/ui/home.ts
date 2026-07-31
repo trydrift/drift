@@ -9,11 +9,14 @@ import { runFix } from '../fix.js';
 import type { DriftState } from '../state.js';
 import {
   DriftSession,
+  EFFORT_ORDER,
   type Attachment,
   type SessionEffort,
   type SessionMode,
   type SessionPermission,
+  type TaskGroup,
 } from '../session.js';
+import { DriftHistory, describeWhen, newConversationId } from '../history.js';
 import {
   describeEffort,
   describeMode,
@@ -23,7 +26,12 @@ import {
   explainPermission,
 } from '../labels.js';
 import type { DriftReview, ReviewGroup } from '../review/store.js';
-import { discoverAgents, invalidateAgentCache, type DiscoveredAgent } from '../agents/registry.js';
+import {
+  discoverAgents,
+  invalidateAgentCache,
+  type AgentModel,
+  type DiscoveredAgent,
+} from '../agents/registry.js';
 import type { AttachedContext } from '../agents/types.js';
 import { getGitHubSession, getRateLimitToken } from '../github-auth.js';
 import {
@@ -39,11 +47,13 @@ import { Checkpoints } from '../checkpoint.js';
 import { DriftReportPanel } from './report.js';
 import {
   makeNonce,
+  renderBody,
   renderPanel,
   SLASH_COMMANDS,
   type AgentChoice,
   type MenuItem,
   type MenuSection,
+  type ProviderChoice,
   type StaleHint,
   type ViewModel,
 } from './webview.js';
@@ -63,6 +73,7 @@ import {
  */
 
 type Incoming =
+  | { type: 'ready' }
   | { type: 'submit'; text: string }
   | { type: 'draft'; text: string }
   | { type: 'answer'; id: string; value: string }
@@ -101,18 +112,39 @@ interface WorkspaceContext {
   config: DriftConfig;
 }
 
+/**
+ * One place the panel is drawn.
+ *
+ * There are two: the sidebar view, and the full-screen editor tab. Both show the
+ * same conversation, because a panel that forgets what you were doing when you
+ * expand it is not the same panel made bigger.
+ */
+interface Surface {
+  webview: vscode.Webview;
+  /** Set once the document's script has announced itself. */
+  ready: boolean;
+}
+
 export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposable {
   private view: vscode.WebviewView | undefined;
+  private full: vscode.WebviewPanel | null = null;
+  private surfaces: Surface[] = [];
   private candidates = new Map<string, UpgradeCandidate>();
   private agents: DiscoveredAgent[] = [];
+  /** Models each subscription is currently offering, keyed by agent id. */
+  private models = new Map<string, AgentModel[]>();
   private signedInLabel: string | null = null;
   private running: vscode.CancellationTokenSource | null = null;
   private cancellable = true;
   private draft = '';
+  private draftToken = 0;
   private scanned = false;
   private checkpoints: Checkpoints | null = null;
   private stale: StaleHint | null = null;
   private staleFiles = new Set<string>();
+  private readonly history: DriftHistory;
+  private conversationId = newConversationId();
+  private saveTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly disposables: vscode.Disposable[] = [];
 
@@ -122,10 +154,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     private readonly session: DriftSession,
     private readonly review: DriftReview,
     private readonly output: vscode.LogOutputChannel,
+    memento: vscode.Memento,
   ) {
+    this.history = new DriftHistory(memento);
+
     this.disposables.push(
       state.onDidChange(() => this.render()),
-      session.onDidChange(() => this.render()),
+      session.onDidChange(() => {
+        this.render();
+        this.autosave();
+      }),
       review.onDidChange(() => this.render()),
       vscode.authentication.onDidChangeSessions((event) => {
         if (event.provider.id === 'github') void this.refreshIdentity();
@@ -150,13 +188,19 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   }
 
   resolveWebviewView(view: vscode.WebviewView): void {
+    // The sidebar view is resolved again whenever it is closed and reopened, and
+    // the old webview is dead by then — keeping it in the list would mean
+    // posting every update at something that will never draw it.
+    this.surfaces = this.surfaces.filter((surface) => surface.webview !== this.view?.webview);
+
     this.view = view;
     view.webview.options = { enableScripts: true, localResourceRoots: [this.extensionUri] };
-    this.disposables.push(view.webview.onDidReceiveMessage((message: Incoming) => this.handle(message)));
+    this.disposables.push(view.onDidDispose(() => this.detach(view.webview)));
+    this.attach(view.webview);
 
     void this.refreshIdentity();
     void this.refreshAgents();
-    this.render();
+    this.paint();
 
     // Opening the panel is a request to know the state of your dependencies, so
     // the first scan starts itself. Every step of it is named in the thread as it
@@ -169,13 +213,166 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
   dispose(): void {
     if (this.renderTimer) clearTimeout(this.renderTimer);
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    this.full?.dispose();
     for (const d of this.disposables) d.dispose();
   }
 
   /** Bring the panel forward, e.g. from a notification action. */
   async reveal(): Promise<void> {
+    if (this.full) {
+      this.full.reveal();
+      return;
+    }
     await vscode.commands.executeCommand('drift.changes.focus');
     this.view?.show?.(true);
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Surfaces                                                          */
+  /* ---------------------------------------------------------------- */
+
+  /**
+   * Start talking to a webview.
+   *
+   * The document is written exactly once per surface. Everything after that is a
+   * `render` message carrying the new body, which the webview swaps into place —
+   * the script, its listeners and the developer's half-typed message all survive.
+   * Reassigning `webview.html` on every update, which is what this replaced, tore
+   * the document down and rebuilt it each time; on a panel holding a finished
+   * scan that is hundreds of milliseconds per click, and it is why every button
+   * in the panel felt like it was thinking about it.
+   */
+  private attach(webview: vscode.Webview): void {
+    const surface: Surface = { webview, ready: false };
+    this.surfaces.push(surface);
+
+    this.disposables.push(
+      webview.onDidReceiveMessage((message: Incoming) => {
+        if (message.type === 'ready') {
+          surface.ready = true;
+          void webview.postMessage({ type: 'render', body: renderBody(this.viewModel()) });
+          return;
+        }
+        void this.handle(message);
+      }),
+    );
+
+    webview.html = renderPanel(this.viewModel());
+  }
+
+  private detach(webview: vscode.Webview): void {
+    this.surfaces = this.surfaces.filter((surface) => surface.webview !== webview);
+  }
+
+  /**
+   * The panel, in the editor area, as large as the window.
+   *
+   * A sidebar view cannot be made full screen — so the panel moves to an editor
+   * tab, which can. Toggling back disposes the tab and puts the sidebar where it
+   * was. The conversation is untouched by either move: both surfaces render the
+   * same state.
+   */
+  async toggleFullScreen(): Promise<void> {
+    if (this.full) {
+      this.full.dispose();
+      return;
+    }
+
+    const panel = vscode.window.createWebviewPanel(
+      'drift.full',
+      'Drift',
+      { viewColumn: vscode.ViewColumn.Active, preserveFocus: false },
+      { enableScripts: true, retainContextWhenHidden: true, localResourceRoots: [this.extensionUri] },
+    );
+
+    panel.iconPath = vscode.Uri.joinPath(this.extensionUri, 'media', 'activity-icon.svg');
+    panel.onDidDispose(() => {
+      this.full = null;
+      this.detach(panel.webview);
+      void this.reveal();
+    });
+
+    this.full = panel;
+    this.attach(panel.webview);
+
+    // The sidebar copy would only be a narrow duplicate of what is now filling
+    // the window.
+    await vscode.commands.executeCommand('workbench.action.closeSidebar');
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* Conversations                                                     */
+  /* ---------------------------------------------------------------- */
+
+  /** Put the current conversation away and start an empty one. */
+  async newSession(): Promise<void> {
+    await this.saveConversation();
+    this.conversationId = newConversationId();
+    this.session.clear();
+    this.setDraft('');
+    await this.reveal();
+  }
+
+  /**
+   * Reopen something from history.
+   *
+   * The current conversation is filed first, so switching away from a live
+   * thread never loses it — the developer picked a different conversation, not
+   * "throw this one away".
+   */
+  async showHistory(): Promise<void> {
+    await this.saveConversation();
+
+    const entries = this.history.list();
+    if (entries.length === 0) {
+      void vscode.window.showInformationMessage('Drift: no earlier conversations in this workspace yet.');
+      return;
+    }
+
+    type Item = vscode.QuickPickItem & { id: string };
+    const picked = await vscode.window.showQuickPick<Item>(
+      entries.map((entry) => ({
+        id: entry.id,
+        label: `${entry.id === this.conversationId ? '$(comment-discussion)' : '$(history)'} ${entry.title}`,
+        description: describeWhen(entry.at),
+        detail: `${entry.messages} message${entry.messages === 1 ? '' : 's'}`,
+      })),
+      { title: 'Drift: conversation history', placeHolder: 'Pick a conversation to reopen', matchOnDetail: true },
+    );
+    if (!picked) return;
+
+    const entry = this.history.get(picked.id);
+    if (!entry) return;
+
+    this.conversationId = entry.id;
+    this.session.restore(entry.items);
+    this.setDraft('');
+    await this.reveal();
+  }
+
+  private async saveConversation(): Promise<void> {
+    if (this.session.isEmpty) return;
+    await this.history.save({
+      id: this.conversationId,
+      title: this.session.title,
+      items: this.session.snapshot(),
+    });
+  }
+
+  /** Write the live conversation down, cheaply, a moment after it settles. */
+  private autosave(): void {
+    if (this.saveTimer) return;
+    this.saveTimer = setTimeout(() => {
+      this.saveTimer = null;
+      void this.saveConversation();
+    }, 2000);
+  }
+
+  /** The draft belongs to the host only when the host sets it. */
+  private setDraft(text: string): void {
+    this.draft = text;
+    this.draftToken += 1;
   }
 
   get busy(): boolean {
@@ -188,6 +385,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
   private async handle(message: Incoming): Promise<void> {
     switch (message.type) {
+      case 'ready':
+        return;
       case 'submit':
         await this.submit(message.text);
         return;
@@ -295,11 +494,17 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       return;
     }
 
-    // Recorded before anything acts on the message, so "rewind" means exactly
+    // The message goes up first, always. Taking a checkpoint shells out to git,
+    // and waiting for that before echoing what the developer typed made the
+    // panel look like it had not registered the message at all — the single
+    // biggest source of "why is this so slow". The snapshot still happens
+    // before anything acts on the message, so "rewind" keeps meaning exactly
     // what it says: the repository as it was when you pressed Enter.
+    const itemId = this.session.user(text);
+    this.setDraft('');
+
     const checkpoint = await this.checkpoint(text);
-    this.session.user(text, checkpoint?.id);
-    this.draft = '';
+    if (checkpoint) this.session.setCheckpoint(itemId, checkpoint.id);
 
     const [command = '', ...rest] = text.split(/\s+/);
     const argument = rest.join(' ').trim();
@@ -324,10 +529,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         this.showReview();
         return;
       case '/agent':
-        this.openMenu('model');
+        this.openMenu('model:setup');
         return;
       case '/clear':
-        this.session.clear();
+        await this.newSession();
         return;
       case '/help':
         this.help();
@@ -756,7 +961,18 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       return;
     }
 
-    const step = this.session.step(`${this.agentLabel()} is fixing ${plan.impactSites.length} site${plan.impactSites.length === 1 ? '' : 's'}`);
+    // The plan goes up before a single file is touched: every concern, the
+    // package it belongs to, and the exact sites underneath it. A developer
+    // watching this can tell what is about to happen while there is still time
+    // to stop it, and afterwards can see which sites the agent actually changed
+    // — neither of which is legible in a stream of agent chatter.
+    const files = new Set(plan.impactSites.map((site) => site.file)).size;
+    const tasks = this.session.tasks(
+      `${this.agentLabel()} is fixing ${plan.impactSites.length} site${plan.impactSites.length === 1 ? '' : 's'}`,
+      `${plan.commits.length} commit${plan.commits.length === 1 ? '' : 's'}, one per concern, across ${files} file${files === 1 ? '' : 's'}. Nothing is committed until you keep it.`,
+      buildTaskGroups(plan),
+    );
+
     this.state.set({ kind: 'findings', plan, at: Date.now() });
 
     await this.run(async (token) => {
@@ -771,8 +987,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
             (options ?? ['Yes', 'No']).map((option) => ({ label: option, value: option })),
           ),
         context: await this.resolveContext(ctx.root),
-        onLog: (message) => step.progress('Agent', message),
-        progress: { report: ({ message }) => step.progress('Working', message ?? '') },
+        onCommitStart: (commit) => tasks.start(`c${commit.order}`),
+        onCommitEnd: (commit, outcome, changed) => tasks.finish(`c${commit.order}`, outcome, changed),
+        // Agent chatter belongs against the concern it is about, not in a
+        // separate log the developer has to correlate by hand.
+        onLog: (message) => tasks.note(activeGroupId(plan, this.state), message.slice(0, 120)),
+        progress: { report: () => undefined },
         token,
       });
 
@@ -780,7 +1000,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
       switch (result.status) {
         case 'proposed':
-          step.done(`${result.pendingFiles} file${result.pendingFiles === 1 ? '' : 's'} changed`);
+          tasks.finishAll('unchanged');
           this.session.say(
             [
               result.message,
@@ -791,23 +1011,23 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           this.showReview();
           return;
         case 'committed':
-          step.done(`${result.commits} commit${result.commits === 1 ? '' : 's'}`);
+          tasks.finishAll('done');
           this.session.say(result.message);
           return;
         case 'delegated':
-          step.done('Handed to GitHub');
+          tasks.finishAll('done');
           this.session.say(result.message);
           return;
         case 'nothing':
-          step.done('No changes');
+          tasks.finishAll('unchanged');
           this.session.say(result.message);
           return;
         case 'cancelled':
-          step.fail('Cancelled');
+          tasks.finishAll('skipped');
           this.session.notice('info', result.message);
           return;
         case 'failed':
-          step.fail('Failed');
+          tasks.finishAll('failed');
           this.session.notice('error', result.message);
           this.output.error(result.message);
           return;
@@ -870,7 +1090,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
       // The message that started it goes back in the composer: the usual reason
       // to rewind is to say the same thing differently.
-      this.draft = item.text;
+      this.setDraft(item.text);
 
       // Pending review entries describe edits that no longer exist on disk.
       const ctx = await this.context();
@@ -950,24 +1170,216 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   /* ---------------------------------------------------------------- */
 
   /**
-   * Everything the composer menu offers.
+   * Everything the composer menu offers, grouped by the control that opens it.
    *
    * Built here rather than in the renderer because it is entirely a question of
-   * what this workspace can do right now — which agents are installed, what is
-   * already attached, what the active editor has selected. The renderer takes it
-   * as data and draws it; it makes no decisions about what belongs in the list.
+   * what this workspace can do right now — which subscriptions are installed,
+   * which models each of them is currently offering, what is already attached.
+   * The renderer takes it as data and draws it.
    *
-   * Two sections, both searchable at once. Every row carries the words a
-   * developer might type to find it, including the ones that name the setting
-   * family rather than the value — "effort", "permission", "model" — because the
-   * whole point of collapsing five controls into one menu is that you no longer
-   * have to know which control a thing used to live under.
+   * Every section names its anchor, and the menu shows only the sections
+   * belonging to whichever control was clicked. That is the rule that makes the
+   * row of controls readable: the plus button offers context and nothing else,
+   * a subscription button offers that subscription's models and nothing else,
+   * and no button hides a setting it does not name.
    */
   private menuSections(): MenuSection[] {
-    return [
-      { id: 'context', title: 'Context', items: this.contextItems() },
-      { id: 'model', title: 'Model', items: this.modelItems() },
+    const sections: MenuSection[] = [
+      { id: 'context', anchor: 'context', title: 'Context', items: this.contextItems() },
     ];
+
+    for (const entry of this.available()) {
+      sections.push({
+        id: `model:${entry.agent.id}`,
+        anchor: `model:${entry.agent.id}`,
+        title: entry.agent.label,
+        items: this.modelItems(entry),
+      });
+    }
+
+    sections.push(
+      { id: 'agents', anchor: 'model:setup', title: 'AI agents', items: this.agentItems() },
+      {
+        id: 'effort',
+        anchor: 'effort',
+        title: 'Effort',
+        slider: this.effortSlider(),
+        items: [],
+      },
+      { id: 'mode', anchor: 'permission', title: 'Mode', items: this.modeItems() },
+      { id: 'permission', anchor: 'permission', title: 'Permission', items: this.permissionItems() },
+    );
+
+    return sections;
+  }
+
+  /** Subscriptions Drift can actually drive right now. */
+  private available(): DiscoveredAgent[] {
+    return this.agents.filter((entry) => entry.availability.available);
+  }
+
+  /**
+   * One button per subscription, showing the model chosen inside it.
+   *
+   * The button shows the model and nothing about context, which is the other
+   * half of the plus button's promise: two controls, two subjects, neither one
+   * quietly doing the other's job.
+   */
+  private providerChoices(): ProviderChoice[] {
+    const preferred = vscode.workspace.getConfiguration('drift').get<string>('agent.preferred', 'auto');
+    const available = this.available();
+    const active = preferred === 'auto' ? available[0]?.agent.id : preferred;
+
+    return available.map((entry) => {
+      const chosen = this.session.model(entry.agent.id);
+      const model = this.models.get(entry.agent.id)?.find((candidate) => candidate.id === chosen);
+
+      return {
+        id: entry.agent.id,
+        label: entry.agent.label,
+        short: shortProviderName(entry.agent.label),
+        modelLabel: model?.label ?? chosen,
+        selected: entry.agent.id === active,
+      };
+    });
+  }
+
+  /** The models inside one subscription. */
+  private modelItems(entry: DiscoveredAgent): MenuItem[] {
+    const id = entry.agent.id;
+    const models = this.models.get(id) ?? [];
+    const chosen = this.session.model(id);
+    const items: MenuItem[] = [];
+
+    items.push({
+      id: `model:${id}:`,
+      label: 'Default',
+      detail: entry.availability.detail ?? 'Whatever this subscription picks',
+      icon: 'agent',
+      checked: !chosen,
+      keywords: 'model default automatic',
+    });
+
+    for (const model of models) {
+      items.push({
+        id: `model:${id}:${model.id}`,
+        label: model.label,
+        detail: model.detail,
+        icon: 'agent',
+        checked: chosen === model.id,
+        keywords: `model ${model.id}`,
+      });
+    }
+
+    // A model the developer typed by hand is still their choice: nothing here
+    // knows every id every provider will ship next month.
+    if (chosen && !models.some((model) => model.id === chosen)) {
+      items.push({
+        id: `model:${id}:${chosen}`,
+        label: chosen,
+        detail: 'Set by hand',
+        icon: 'agent',
+        checked: true,
+        keywords: `model ${chosen}`,
+      });
+    }
+
+    if (entry.agent.acceptsCustomModel) {
+      items.push({
+        id: `custom:${id}`,
+        label: 'Other model…',
+        detail: 'Type a model id this agent accepts',
+        icon: 'gear',
+        keywords: 'model custom other id',
+      });
+    }
+
+    return items;
+  }
+
+  /** Which subscription does the work, plus a way to install another. */
+  private agentItems(): MenuItem[] {
+    const preferred = vscode.workspace.getConfiguration('drift').get<string>('agent.preferred', 'auto');
+    const available = this.available();
+
+    return [
+      {
+        id: 'agent:auto',
+        label: 'Automatic',
+        detail: available[0] ? `Currently ${available[0].agent.label}` : 'Nothing available yet',
+        icon: 'agent',
+        checked: preferred === 'auto',
+        keywords: 'agent auto best',
+      },
+      ...available.map<MenuItem>((entry) => ({
+        id: `agent:${entry.agent.id}`,
+        label: entry.agent.label,
+        detail: entry.availability.detail,
+        icon: 'agent',
+        checked: preferred === entry.agent.id,
+        keywords: 'agent subscription ai',
+      })),
+      {
+        id: 'agent:__pick',
+        label: 'Set up an agent…',
+        detail: 'Every agent Drift supports, including the ones not ready yet',
+        icon: 'gear',
+        keywords: 'agent install sign in setup',
+      },
+    ];
+  }
+
+  private modeItems(): MenuItem[] {
+    return (['agent', 'ask'] as SessionMode[]).map<MenuItem>((value) => ({
+      id: `mode:${value}`,
+      label: describeMode(value),
+      detail: explainMode(value),
+      icon: value === 'agent' ? 'agent' : 'ask',
+      checked: this.session.mode === value,
+      keywords: 'mode chat edit explain',
+    }));
+  }
+
+  private permissionItems(): MenuItem[] {
+    return (['ask', 'auto-edit', 'full-auto'] as SessionPermission[]).map<MenuItem>((value) => ({
+      id: `permission:${value}`,
+      label: describePermission(value),
+      detail: explainPermission(value),
+      icon: 'shield',
+      checked: this.session.permission === value,
+      keywords: 'permission autonomy allow approve commit',
+    }));
+  }
+
+  /**
+   * The effort dial, with the stops the selected model can honour.
+   *
+   * A model with no reasoning budget still gets the first three, because those
+   * change what Drift itself analyses. What it does not get is a fourth position
+   * that would move the handle and change nothing.
+   */
+  private effortSlider(): MenuSection['slider'] {
+    const stops = this.effortStops();
+    const current = Math.max(0, stops.indexOf(this.session.effort));
+
+    return {
+      id: 'effort',
+      value: current === -1 ? 1 : current,
+      stops: stops.map((value) => ({ value, label: describeEffort(value), detail: explainEffort(value) })),
+    };
+  }
+
+  private effortStops(): SessionEffort[] {
+    const preferred = vscode.workspace.getConfiguration('drift').get<string>('agent.preferred', 'auto');
+    const available = this.available();
+    const active = preferred === 'auto' ? available[0] : available.find((entry) => entry.agent.id === preferred);
+    if (!active) return [...EFFORT_ORDER];
+
+    const chosen = this.session.model(active.agent.id);
+    const models = this.models.get(active.agent.id) ?? [];
+    const model = models.find((candidate) => candidate.id === chosen) ?? models[0];
+
+    return model?.efforts?.length ? [...model.efforts] : [...EFFORT_ORDER];
   }
 
   private contextItems(): MenuItem[] {
@@ -1018,66 +1430,6 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     ];
   }
 
-  private modelItems(): MenuItem[] {
-    const preferred = vscode.workspace.getConfiguration('drift').get<string>('agent.preferred', 'auto');
-    const available = this.agents.filter((entry) => entry.availability.available);
-
-    return [
-      {
-        id: 'agent:auto',
-        label: 'Auto',
-        detail: available[0] ? `Currently ${available[0].agent.label}` : 'Nothing available yet',
-        hint: 'agent',
-        icon: 'agent',
-        checked: preferred === 'auto',
-        keywords: 'model agent auto best',
-      },
-      ...available.map<MenuItem>((entry) => ({
-        id: `agent:${entry.agent.id}`,
-        label: entry.agent.label,
-        detail: entry.availability.detail,
-        hint: 'agent',
-        icon: 'agent',
-        checked: preferred === entry.agent.id,
-        keywords: 'model agent ai',
-      })),
-      {
-        id: 'agent:__pick',
-        label: 'Set up an agent…',
-        detail: 'Every agent Drift supports, including the ones not ready yet',
-        icon: 'gear',
-        keywords: 'model agent install sign in setup',
-      },
-      ...(['agent', 'ask'] as SessionMode[]).map<MenuItem>((value) => ({
-        id: `mode:${value}`,
-        label: describeMode(value),
-        detail: explainMode(value),
-        hint: 'mode',
-        icon: value === 'agent' ? 'agent' : 'ask',
-        checked: this.session.mode === value,
-        keywords: 'mode chat edit explain',
-      })),
-      ...(['quick', 'balanced', 'thorough'] as SessionEffort[]).map<MenuItem>((value) => ({
-        id: `effort:${value}`,
-        label: describeEffort(value),
-        detail: explainEffort(value),
-        hint: 'effort',
-        icon: 'speed',
-        checked: this.session.effort === value,
-        keywords: 'effort breadth depth how widely scan',
-      })),
-      ...(['ask', 'auto-edit', 'full-auto'] as SessionPermission[]).map<MenuItem>((value) => ({
-        id: `permission:${value}`,
-        label: describePermission(value),
-        detail: explainPermission(value),
-        hint: 'permission',
-        icon: 'shield',
-        checked: this.session.permission === value,
-        keywords: 'permission autonomy allow approve commit',
-      })),
-    ];
-  }
-
   /** Dispatch a menu row. The id is the contract between the two halves. */
   private async runMenuItem(id: string): Promise<void> {
     const [kind = '', ...rest] = id.split(':');
@@ -1093,6 +1445,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       case 'agent':
         await this.setAgent(value);
         return;
+      case 'model': {
+        // `model:<agent>:<model>`, where an empty model means "this
+        // subscription's default".
+        const [agentId = '', ...model] = value.split(':');
+        await this.setModel(agentId, model.join(':'));
+        return;
+      }
+      case 'custom':
+        await this.askForModel(value);
+        return;
       case 'mode':
         await this.session.setMode(value as SessionMode);
         return;
@@ -1106,9 +1468,53 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     }
   }
 
+  /**
+   * Choose a model, and with it the subscription it belongs to.
+   *
+   * Picking Opus is picking Claude. Making the developer select the
+   * subscription first and the model second would be asking them to say the
+   * same thing twice.
+   */
+  private async setModel(agentId: string, model: string): Promise<void> {
+    await this.session.setModel(agentId, model || undefined);
+
+    const preferred = vscode.workspace.getConfiguration('drift').get<string>('agent.preferred', 'auto');
+    if (preferred !== agentId) await this.setAgent(agentId, { quiet: true });
+    else invalidateAgentCache();
+
+    // The effort the model cannot honour has to give way to one it can.
+    const stops = this.effortStops();
+    if (!stops.includes(this.session.effort)) {
+      await this.session.setEffort(stops[stops.length - 1] ?? 'balanced');
+    }
+
+    const label = this.models.get(agentId)?.find((entry) => entry.id === model)?.label ?? model;
+    this.session.notice(
+      'info',
+      label
+        ? `Now using **${label}** on ${this.agentLabel()}.`
+        : `Now using **${this.agentLabel()}** with whichever model it picks.`,
+    );
+
+    await this.refreshAgents();
+  }
+
+  /** For the ids nothing here can know: a fork, a preview, next month's model. */
+  private async askForModel(agentId: string): Promise<void> {
+    const agent = this.agents.find((entry) => entry.agent.id === agentId)?.agent;
+    const typed = await vscode.window.showInputBox({
+      title: `${agent?.label ?? 'Agent'}: model id`,
+      prompt: 'Exactly as the agent expects it. Leave blank to go back to the default.',
+      value: this.session.model(agentId) ?? '',
+      placeHolder: 'for example: opus, gpt-5-codex, qwen2.5-coder:14b',
+    });
+    if (typed === undefined) return;
+    await this.setModel(agentId, typed.trim());
+  }
+
   /** Open the composer menu from the host, for `/agent` and the welcome link. */
-  private openMenu(anchor: 'context' | 'model'): void {
-    void this.view?.webview.postMessage({ type: 'openMenu', anchor });
+  private openMenu(anchor: string): void {
+    for (const surface of this.surfaces) void surface.webview.postMessage({ type: 'openMenu', anchor });
   }
 
   private async pickVersion(id: string): Promise<void> {
@@ -1268,7 +1674,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     return out;
   }
 
-  private async setAgent(id: string): Promise<void> {
+  private async setAgent(id: string, options: { quiet?: boolean } = {}): Promise<void> {
     if (id === '__pick') {
       await vscode.commands.executeCommand('drift.selectAgent');
       invalidateAgentCache();
@@ -1281,7 +1687,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       .update('agent.preferred', id, vscode.ConfigurationTarget.Global);
     invalidateAgentCache();
     await this.refreshAgents();
-    this.session.notice('info', `Agent set to **${this.agentLabel()}**.`);
+    if (!options.quiet) this.session.notice('info', `Agent set to **${this.agentLabel()}**.`);
   }
 
   private async openFile(file: string, line: number): Promise<void> {
@@ -1307,9 +1713,51 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       ? await discoverAgents({ slug: ctx.info.slug, baseBranch: ctx.info.branch }, { force: true })
       : [];
     this.render();
+    await this.refreshModels();
   }
 
+  /**
+   * Ask each usable subscription what it is offering.
+   *
+   * Done after the agents have been drawn rather than as part of drawing them:
+   * a Copilot seat is queried over the network and Ollama over a socket, and the
+   * row of buttons should not wait on either. They fill in a moment later.
+   */
+  private async refreshModels(): Promise<void> {
+    const usable = this.available();
+
+    await Promise.all(
+      usable.map(async (entry) => {
+        if (!entry.agent.listModels) return;
+        const models = await entry.agent.listModels().catch(() => []);
+        if (models.length > 0) this.models.set(entry.agent.id, models);
+      }),
+    );
+
+    this.render();
+  }
+
+  /**
+   * The workspace, cached.
+   *
+   * `inspectLocalRepo` shells out to git and `loadWorkspaceConfig` reads and
+   * parses a file, and almost every handler in this class needs both — opening a
+   * file, attaching context, taking a checkpoint. Doing that work per click made
+   * clicks cost a git invocation each. The window is short enough that a branch
+   * switch is picked up within a couple of seconds, and any write Drift makes
+   * clears it outright.
+   */
+  private contextCache: { at: number; value: WorkspaceContext | null } | null = null;
+
   private async context(): Promise<WorkspaceContext | null> {
+    if (this.contextCache && Date.now() - this.contextCache.at < 3000) return this.contextCache.value;
+
+    const value = await this.readContext();
+    this.contextCache = { at: Date.now(), value };
+    return value;
+  }
+
+  private async readContext(): Promise<WorkspaceContext | null> {
     const folder = vscode.workspace.workspaceFolders?.[0];
     if (!folder) return null;
 
@@ -1366,6 +1814,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       source.dispose();
       this.running = null;
       this.cancellable = true;
+      // Anything Drift just did may have moved the branch or rewritten a
+      // manifest, so the cached view of the workspace is no longer trustworthy.
+      this.contextCache = null;
       this.render();
     }
   }
@@ -1381,10 +1832,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   /* ---------------------------------------------------------------- */
 
   private markStale(uri: vscode.Uri, reason: StaleHint['reason']): void {
+    if (uri.scheme !== 'file') return;
+    this.contextCache = null;
     // Nothing is stale before the first scan, and Drift's own edits are not news
     // — the run that made them reports what it did.
     if (!this.scanned || this.busy) return;
-    if (uri.scheme !== 'file') return;
 
     const root = this.state.workspaceRoot ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (!root) return;
@@ -1472,32 +1924,42 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   /**
    * Coalesce renders.
    *
-   * A scan reports progress many times a second, and each render replaces the
-   * webview's HTML wholesale. Without this, the composer is rebuilt under the
-   * developer's fingers while they type. The delay is short enough that progress
-   * still reads as live and long enough that a burst of updates costs one render.
+   * A scan reports progress many times a second. Without this the panel would
+   * post an update per progress line; with it a burst costs one. The delay is
+   * short enough that progress still reads as live, and it is now the only
+   * latency between a state change and the screen — the update itself is a
+   * message carrying a string of markup, not a document reload.
    */
   private renderTimer: ReturnType<typeof setTimeout> | null = null;
 
   private render(): void {
-    if (!this.view || this.renderTimer) return;
+    if (this.surfaces.length === 0 || this.renderTimer) return;
     this.renderTimer = setTimeout(() => {
       this.renderTimer = null;
       this.paint();
-    }, 100);
+    }, 60);
   }
 
   private paint(): void {
-    if (!this.view) return;
+    if (this.surfaces.length === 0) return;
 
+    const body = renderBody(this.viewModel());
+    for (const surface of this.surfaces) {
+      if (surface.ready) void surface.webview.postMessage({ type: 'render', body });
+    }
+  }
+
+  private viewModel(): ViewModel {
     const totals = this.review.totals();
-    const model: ViewModel = {
+
+    return {
       nonce: makeNonce(),
       repoLabel: this.state.repo?.slug ?? null,
       signedInLabel: this.signedInLabel,
       agents: this.agents.map(toChoice),
       agentId: vscode.workspace.getConfiguration('drift').get<string>('agent.preferred', 'auto'),
       agentLabel: this.agentLabel(),
+      providers: this.providerChoices(),
       mode: this.session.mode,
       effort: this.session.effort,
       permission: this.session.permission,
@@ -1512,9 +1974,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       menu: this.menuSections(),
       stale: this.stale,
       draft: this.draft,
+      draftToken: this.draftToken,
     };
-
-    this.view.webview.html = renderPanel(model);
   }
 }
 
@@ -1531,6 +1992,19 @@ function truncate(text: string, limit: number): string {
   return flat.length <= limit ? flat : `${flat.slice(0, limit - 1)}…`;
 }
 
+/**
+ * "Claude Code" on a button 90 pixels wide is "Claude".
+ *
+ * The full name stays in the tooltip and in the menu's own heading, where there
+ * is room for it. What the button has to carry is which subscription this is,
+ * and the first word does that for every agent Drift supports.
+ */
+function shortProviderName(label: string): string {
+  const trimmed = label.replace(/\s*\(.*\)\s*$/, '').trim();
+  const first = trimmed.split(/\s+/)[0] ?? trimmed;
+  return first.length >= 4 ? first : trimmed;
+}
+
 function toChoice(entry: DiscoveredAgent): AgentChoice {
   return {
     id: entry.agent.id,
@@ -1539,6 +2013,68 @@ function toChoice(entry: DiscoveredAgent): AgentChoice {
     detail: entry.availability.detail,
     reason: entry.availability.reason,
   };
+}
+
+/**
+ * The plan, turned into something with checkboxes.
+ *
+ * One group per commit unit, because that is the unit the fix flow actually
+ * works in and the unit the developer will later keep or undo. Underneath it,
+ * one task per breaking change per file, naming the line — which is the level at
+ * which a developer can check the claim rather than take it on faith.
+ */
+function buildTaskGroups(plan: RemediationPlan): TaskGroup[] {
+  const changeById = new Map(plan.breakingChanges.map((change) => [change.id, change]));
+
+  return plan.commits.map((commit) => {
+    const sites = plan.impactSites.filter(
+      (site) => commit.files.includes(site.file) && commit.breakingChangeIds.includes(site.breakingChangeId),
+    );
+
+    // Twenty sites in one file for the same change is one task, not twenty
+    // rows: the agent will read the file once, and the developer wants the
+    // file, not a transcript of every line in it.
+    const seen = new Map<string, { file: string; line: number; changeId: string; count: number }>();
+    for (const site of sites) {
+      const key = `${site.breakingChangeId}|${site.file}`;
+      const existing = seen.get(key);
+      if (existing) {
+        existing.count += 1;
+        existing.line = Math.min(existing.line, site.line);
+        continue;
+      }
+      seen.set(key, { file: site.file, line: site.line, changeId: site.breakingChangeId, count: 1 });
+    }
+
+    const packages = new Set(
+      commit.breakingChangeIds.map((id) => changeById.get(id)?.dependency).filter(Boolean) as string[],
+    );
+
+    return {
+      id: `c${commit.order}`,
+      title: commit.message,
+      package: packages.size === 1 ? [...packages][0] : undefined,
+      state: 'pending',
+      tasks: [...seen.values()].map((entry, index) => {
+        const change = changeById.get(entry.changeId);
+        return {
+          id: `c${commit.order}-${index}`,
+          label: change?.summary ?? 'Update the affected code',
+          file: entry.file,
+          line: entry.line,
+          detail: entry.count > 1 ? `${entry.count} sites in this file` : undefined,
+          state: 'pending' as const,
+        };
+      }),
+    };
+  });
+}
+
+/** Which group agent chatter belongs against: the one being worked on. */
+function activeGroupId(plan: RemediationPlan, state: DriftState): string {
+  const status = state.status;
+  const order = status.kind === 'fixing' ? status.commitOrder : plan.commits[0]?.order;
+  return `c${order ?? 1}`;
 }
 
 function bySeverity(a: UpgradeCandidate, b: UpgradeCandidate): number {

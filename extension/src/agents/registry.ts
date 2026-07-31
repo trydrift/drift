@@ -37,13 +37,18 @@ export function buildAgents(ctx: RegistryContext): FixAgent[] {
   const config = vscode.workspace.getConfiguration('drift');
   const timeoutMs = Math.max(30, config.get<number>('agent.timeoutSeconds', 600)) * 1000;
 
+  // A model picked in the composer outranks the one in settings. The setting is
+  // the default for a subscription; the composer is what the developer chose
+  // for this repository, and detection has to probe what will actually run.
+  const chosen = config.get<Record<string, string>>('agent.models', {}) ?? {};
+
   return [
-    new CopilotLanguageModelAgent(config.get<string>('agent.copilotModelFamily') || undefined),
+    new CopilotLanguageModelAgent(chosen['copilot-lm'] || config.get<string>('agent.copilotModelFamily') || undefined),
     new CopilotCloudAgent(ctx.slug, ctx.baseBranch),
     ...CLI_AGENT_SPECS.map((spec) => new CliFixAgent(spec, timeoutMs)),
     new OllamaAgent(
       config.get<string>('agent.ollamaHost', 'http://localhost:11434').replace(/\/$/, ''),
-      config.get<string>('agent.ollamaModel', 'qwen2.5-coder'),
+      chosen['ollama'] || config.get<string>('agent.ollamaModel', 'qwen2.5-coder'),
       timeoutMs,
     ),
   ];
@@ -115,4 +120,4 @@ export async function resolveAgent(
   return best ? { agent: best.agent } : null;
 }
 
-export type { FixAgent, AgentAvailability };
+export type { AgentModel, FixAgent, AgentAvailability } from './types.js';

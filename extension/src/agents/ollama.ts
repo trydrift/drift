@@ -6,6 +6,7 @@ import {
   saysNoChanges,
   type AgentAvailability,
   type AgentContext,
+  type AgentModel,
   type FixAgent,
   type FixOutcome,
   type FixTask,
@@ -27,6 +28,7 @@ export class OllamaAgent implements FixAgent {
   readonly label = 'Ollama (local)';
   readonly description = 'A model on your own machine. Nothing leaves your laptop.';
   readonly kind = 'in-editor' as const;
+  readonly acceptsCustomModel = true;
 
   constructor(
     private readonly host: string,
@@ -72,8 +74,28 @@ export class OllamaAgent implements FixAgent {
     }
   }
 
+  /** Every model actually pulled on this machine. Nothing to configure. */
+  async listModels(): Promise<AgentModel[]> {
+    try {
+      const response = await fetch(`${this.host}/api/tags`, { signal: AbortSignal.timeout(3000) });
+      if (!response.ok) return [];
+      const data = (await response.json()) as { models?: { name: string; details?: { parameter_size?: string } }[] };
+      return (data.models ?? []).map((model) => ({
+        id: model.name,
+        label: model.name,
+        detail: model.details?.parameter_size ? `${model.details.parameter_size} on this machine` : 'On this machine',
+        // A local model has no reasoning budget to spend, and the biggest ones
+        // are already slow enough that "max" would only mean "waits longer".
+        efforts: ['quick', 'balanced', 'thorough'],
+      }));
+    } catch {
+      return [];
+    }
+  }
+
   async run(task: FixTask, ctx: AgentContext): Promise<FixOutcome> {
-    ctx.report(`Asking ${this.model} to fix ${task.files.length} file(s)…`);
+    const model = task.model || this.model;
+    ctx.report(`Asking ${model} to fix ${task.files.length} file(s)…`);
 
     let prompt = [
       buildFixPrompt(task),
@@ -96,13 +118,13 @@ export class OllamaAgent implements FixAgent {
     for (let round = 0; round < 2; round += 1) {
       let text: string;
       try {
-        text = await this.generate(prompt, signal, ctx);
+        text = await this.generate(model, prompt, signal, ctx);
       } catch (err) {
         if (ctx.signal.aborted) return { status: 'failed', message: 'Cancelled.' };
         if (timeout.aborted) {
           return {
             status: 'failed',
-            message: `${this.model} timed out. Local models are slow on large files — raise drift.agent.timeoutSeconds or use a smaller scope.`,
+            message: `${model} timed out. Local models are slow on large files — raise drift.agent.timeoutSeconds or use a smaller scope.`,
           };
         }
         return { status: 'failed', message: `Ollama failed: ${(err as Error).message}` };
@@ -125,30 +147,30 @@ export class OllamaAgent implements FixAgent {
       }
 
       if (saysNoChanges(text)) {
-        return { status: 'no-changes', message: `${this.model} reported no changes were needed.` };
+        return { status: 'no-changes', message: `${model} reported no changes were needed.` };
       }
 
       const edits = parseFileBlocks(text);
       if (edits.length === 0) {
         return {
           status: 'failed',
-          message: `${this.model} produced no file blocks in the expected format. Smaller local models often struggle with this; try a larger coding model.`,
+          message: `${model} produced no file blocks in the expected format. Smaller local models often struggle with this; try a larger coding model.`,
         };
       }
 
-      return { status: 'applied', edits, message: `${this.model} rewrote ${edits.length} file(s).` };
+      return { status: 'applied', edits, message: `${model} rewrote ${edits.length} file(s).` };
     }
 
-    return { status: 'failed', message: `${this.model} asked a question instead of editing.` };
+    return { status: 'failed', message: `${model} asked a question instead of editing.` };
   }
 
   /** One streaming completion, accumulated into text. */
-  private async generate(prompt: string, signal: AbortSignal, ctx: AgentContext): Promise<string> {
+  private async generate(model: string, prompt: string, signal: AbortSignal, ctx: AgentContext): Promise<string> {
     const response = await fetch(`${this.host}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: this.model,
+        model,
         prompt,
         stream: true,
         options: {

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import type { CommitUnit, RemediationPlan } from '../../src/types.js';
 import { Git } from './git.js';
 import type { DriftState } from './state.js';
-import type { SessionPermission } from './session.js';
+import type { SessionEffort, SessionPermission } from './session.js';
 import type { DriftReview } from './review/store.js';
 import { resolveAgent, type RegistryContext } from './agents/registry.js';
 import type { AttachedContext, FixAgent, FixOutcome, FixTask } from './agents/types.js';
@@ -42,6 +42,20 @@ export interface FixOptions {
   context?: AttachedContext[];
   /** Mirrors agent chatter into the panel thread. */
   onLog?: (message: string) => void;
+  /**
+   * Called as each commit unit is picked up and put down.
+   *
+   * This is what lets the panel show a checklist rather than a transcript: the
+   * caller knows exactly which concern is in progress, and which files actually
+   * changed when it finished — including "none", which is a real answer and not
+   * a failure.
+   */
+  onCommitStart?: (commit: CommitUnit) => void;
+  onCommitEnd?: (
+    commit: CommitUnit,
+    outcome: 'done' | 'unchanged' | 'skipped' | 'failed',
+    changedFiles: readonly string[],
+  ) => void;
 }
 
 export interface FixResult {
@@ -145,10 +159,13 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
       }
       if (/^skip/i.test(answer)) {
         warnings.push(`Skipped commit ${commit.order} ("${commit.message}") at your request.`);
+        options.onCommitEnd?.(commit, 'skipped', []);
         progress.report({ increment: step });
         continue;
       }
     }
+
+    options.onCommitStart?.(commit);
 
     const before = await readFiles(root, commit.files);
     review?.snapshot(
@@ -167,11 +184,16 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
       ask: options.ask,
       onLog: options.onLog,
       context: options.context,
+      // The composer's two choices, carried through to whatever backend can act
+      // on them. An agent that ignores either is no worse off for being told.
+      model: driftConfig().get<Record<string, string>>('agent.models', {})?.[agent.id],
+      effort: driftConfig().get<SessionEffort>('session.effort', 'balanced'),
     });
 
     if (outcome.warnings?.length) warnings.push(...outcome.warnings);
 
     if (outcome.status === 'failed') {
+      options.onCommitEnd?.(commit, 'failed', []);
       return {
         status: 'failed',
         branch: plan.branchName,
@@ -183,6 +205,7 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
     }
 
     if (outcome.status !== 'applied') {
+      options.onCommitEnd?.(commit, 'unchanged', []);
       progress.report({ increment: step });
       continue;
     }
@@ -197,6 +220,11 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
       if (files === 0) {
         warnings.push(`Commit ${commit.order} ("${commit.message}") produced no changes.`);
       }
+      options.onCommitEnd?.(
+        commit,
+        files === 0 ? 'unchanged' : 'done',
+        settled?.files.map((file) => file.path) ?? [],
+      );
       progress.report({ increment: step, message: `${files} file(s) ready for review` });
       continue;
     }
@@ -204,10 +232,12 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
     const sha = await git.commitPaths(commit.files, commit.message, commit.body);
     if (sha) {
       committed += 1;
+      options.onCommitEnd?.(commit, 'done', commit.files);
       progress.report({ increment: step, message: `Committed ${sha.slice(0, 7)}` });
     } else {
       // The agent ran but produced nothing inside this commit's scope.
       warnings.push(`Commit ${commit.order} ("${commit.message}") produced no changes.`);
+      options.onCommitEnd?.(commit, 'unchanged', []);
       progress.report({ increment: step });
     }
   }
@@ -257,6 +287,8 @@ async function applyOneCommit(args: {
   ask?: (question: string, options?: string[]) => Promise<string>;
   onLog?: (message: string) => void;
   context?: AttachedContext[];
+  model?: string;
+  effort?: SessionEffort;
 }): Promise<FixOutcome> {
   const { agent, plan, commit, root, token, progress, files } = args;
 
@@ -272,6 +304,8 @@ async function applyOneCommit(args: {
       ? vscode.workspace.getConfiguration('drift').get<string>('fix.customInstructions', '')
       : '',
     context: args.context,
+    model: args.model,
+    effort: args.effort,
   };
 
   try {
@@ -456,6 +490,10 @@ async function ensureCleanTree(
   if (choice === 'Continue anyway') return { ok: true };
 
   return { ok: false, message: 'Cancelled — your working tree was left untouched.' };
+}
+
+function driftConfig(): vscode.WorkspaceConfiguration {
+  return vscode.workspace.getConfiguration('drift');
 }
 
 function fail(message: string): FixResult {

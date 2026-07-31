@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderPanel, SLASH_COMMANDS, type ViewModel } from '../src/ui/webview.js';
+import { renderBody, renderPanel, SLASH_COMMANDS, type ViewModel } from '../src/ui/webview.js';
 import { describeSeverity, severityOf } from '../src/severity.js';
 import type { UpgradeCandidate } from '../src/upgrades.js';
 
@@ -46,6 +46,10 @@ function model(over: Partial<ViewModel> = {}): ViewModel {
     agents: [{ id: 'copilot-lm', label: 'GitHub Copilot', available: true }],
     agentId: 'auto',
     agentLabel: 'GitHub Copilot',
+    providers: [
+      { id: 'copilot-lm', label: 'GitHub Copilot', short: 'Copilot', modelLabel: 'GPT-5', selected: true },
+      { id: 'claude', label: 'Claude Code', short: 'Claude', modelLabel: 'Opus', selected: false },
+    ],
     mode: 'agent',
     effort: 'balanced',
     permission: 'auto-edit',
@@ -60,20 +64,44 @@ function model(over: Partial<ViewModel> = {}): ViewModel {
     menu: [
       {
         id: 'context',
+        anchor: 'context',
         title: 'Context',
         items: [{ id: 'context:file', label: 'Add a file…', detail: 'Search this project by path', icon: 'file' }],
       },
       {
-        id: 'model',
-        title: 'Model',
+        id: 'model:claude',
+        anchor: 'model:claude',
+        title: 'Claude Code',
         items: [
-          { id: 'agent:auto', label: 'Auto', hint: 'agent', checked: true },
-          { id: 'effort:thorough', label: 'Thorough', hint: 'effort' },
+          { id: 'model:claude:opus', label: 'Claude Opus', checked: true },
+          { id: 'model:claude:sonnet', label: 'Claude Sonnet' },
         ],
+      },
+      {
+        id: 'effort',
+        anchor: 'effort',
+        title: 'Effort',
+        items: [],
+        slider: {
+          id: 'effort',
+          value: 1,
+          stops: [
+            { value: 'quick', label: 'Quick', detail: 'Runtime dependencies only' },
+            { value: 'balanced', label: 'Balanced', detail: 'Every runtime dependency' },
+            { value: 'thorough', label: 'Thorough', detail: 'Adds dev dependencies' },
+          ],
+        },
+      },
+      {
+        id: 'permission',
+        anchor: 'permission',
+        title: 'Permission',
+        items: [{ id: 'permission:auto-edit', label: 'Edit, then review', checked: true }],
       },
     ],
     stale: null,
     draft: '',
+    draftToken: 0,
     ...over,
   };
 }
@@ -85,23 +113,56 @@ test('an empty session renders the welcome state and a composer', () => {
   assert.match(html, /class="welcome /);
   assert.match(html, /class="composer/);
   assert.match(html, /data-command="\/scan"/);
-  // One menu, opened from the composer, holding every per-turn setting.
   assert.match(html, /data-action="openMenu" data-anchor="context"/);
-  assert.match(html, /data-action="openMenu" data-anchor="model"/);
   assert.match(html, /id="menu-filter"/);
 });
 
-test('the composer menu is one list, searchable, in two named sections', () => {
+test('each subscription is its own button, showing the model chosen inside it', () => {
+  // A subscription is not a model. Someone paying for Claude has Opus, Sonnet
+  // and Haiku; bundling those into one "Claude" row throws away the choice that
+  // changes the result. One button per thing you pay for, each opening only its
+  // own models.
   const html = renderPanel(model());
 
-  assert.match(html, /data-section="context"/);
-  assert.match(html, /data-section="model"/);
-  // Every row carries the words it can be found by, so one filter box reaches
-  // settings that used to live behind five separate buttons.
-  assert.match(html, /data-action="menu" data-id="effort:thorough"/);
-  assert.match(html, /data-search="[^"]*effort[^"]*"/);
-  // The menu ships hidden and is opened in the webview, not by the host.
-  assert.match(html, /<div class="menu" id="menu" hidden>/);
+  assert.match(html, /data-action="openMenu" data-anchor="model:copilot-lm"/);
+  assert.match(html, /data-action="openMenu" data-anchor="model:claude"/);
+  assert.match(html, /class="provider-model">Opus</);
+  assert.match(html, /ctl provider selected/);
+  // And the models live in a section that only that button opens.
+  assert.match(html, /data-section="model:claude" data-anchor="model:claude"/);
+  assert.match(html, /data-action="menu" data-id="model:claude:sonnet"/);
+});
+
+test('the plus button offers context and nothing else', () => {
+  // A control whose menu holds settings it does not name is a control with a
+  // misleading label. Context is opened from plus; the model is not.
+  const html = renderPanel(model());
+
+  assert.match(html, /data-section="context" data-anchor="context"/);
+  const contextSection = html.slice(html.indexOf('data-section="context"'));
+  const nextSection = contextSection.indexOf('data-section="model');
+  assert.ok(!contextSection.slice(0, nextSection).includes('data-id="model:'), 'no models under the plus button');
+});
+
+test('effort is a dial with the stops the model can honour', () => {
+  const html = renderPanel(model());
+
+  assert.match(html, /data-action="openMenu" data-anchor="effort"/);
+  assert.match(html, /<input\b[^>]*type="range"[^>]*data-action="slider"/);
+  assert.match(html, /data-values="quick,balanced,thorough"/);
+  // The label under the handle says what a position costs, not just its name.
+  assert.match(html, /class="slider-detail"[^>]*>Every runtime dependency</);
+});
+
+test('permission is its own button, beside send', () => {
+  const html = renderPanel(model());
+
+  assert.match(html, /data-action="openMenu" data-anchor="permission"/);
+  assert.match(html, /data-section="permission" data-anchor="permission"/);
+  assert.ok(
+    html.indexOf('data-anchor="permission"') < html.indexOf('data-action="submit"'),
+    'the permission button sits next to send',
+  );
 });
 
 test('no control in the panel is an OS-drawn form widget', () => {
@@ -119,9 +180,12 @@ test('no control in the panel is an OS-drawn form widget', () => {
 
   assert.ok(!/<select\b/.test(html), 'no native dropdowns');
   assert.ok(!/<option\b/.test(html), 'no native dropdown options');
-  const inputs = [...html.matchAll(/<input\b[^>]*>/g)].map((match) => match[0]);
-  assert.equal(inputs.length, 1, 'the menu filter is the only input');
-  assert.match(inputs[0]!, /type="text"/);
+  // Two native inputs, both of which VS Code themes itself: the menu's filter
+  // box and the effort dial. Everything else is themed markup.
+  const inputs = [...html.matchAll(/<input\b[^>]*/g)].map((match) => match[0]);
+  assert.equal(inputs.length, 2, 'only the filter and the dial are native');
+  assert.ok(inputs.some((input) => /type="text"/.test(input)));
+  assert.ok(inputs.some((input) => /type="range"/.test(input)));
   // The target-version control is the one inside a result row, and it is a
   // button too — consistency here is the whole point.
   assert.match(html, /data-action="pickVersion" data-id="/);
@@ -240,9 +304,11 @@ test('the introduction survives the opening scan and goes when talking starts', 
     }),
   );
 
-  // Still explaining what the panel is for, now underneath the work it started.
+  // Still explaining what the panel is for, and standing above the work it
+  // started: a developer meeting this panel for the first time reads downwards,
+  // so the reason has to come before the progress bar.
   assert.match(scanning, /class="welcome compact"/);
-  assert.ok(scanning.indexOf('class="step') < scanning.indexOf('class="welcome'), 'the scan comes first');
+  assert.ok(scanning.indexOf('class="welcome') < scanning.indexOf('class="step'), 'the introduction comes first');
 
   const talking = renderPanel(
     model({ thread: [{ id: 'u1', kind: 'user', text: 'hello', attachments: [] }] }),
@@ -476,6 +542,22 @@ test('a panel with every item type produces balanced markup', () => {
         { id: 'a1', kind: 'assistant', text: 'Here is what I found:\n\n- one\n- two\n\n```ts\nconst x = 1;\n```' },
         { id: 's1', kind: 'step', title: 'Checking', phase: 'Reading changelog', detail: 'lodash 4 → 5', done: 3, total: 9, state: 'done', log: ['a', 'b'] },
         { id: 'p1', kind: 'packages', headline: '**1 of 1** affects your code.', ids: [c.id] },
+        {
+          id: 't1',
+          kind: 'tasks',
+          title: 'Fixing 2 sites',
+          subtitle: '1 commit across 1 file.',
+          groups: [
+            {
+              id: 'c1',
+              title: 'fix(deps): migrate',
+              package: 'lodash',
+              state: 'active',
+              note: 'Editing src/a.ts',
+              tasks: [{ id: 'c1-0', label: '_.chain() removed', file: 'src/a.ts', line: 3, state: 'active' }],
+            },
+          ],
+        },
         { id: 'q1', kind: 'question', text: 'Which migration?', options: [{ label: 'A', value: 'a' }], allowFreeText: true },
         { id: 'n1', kind: 'notice', tone: 'warn', text: 'heads up' },
         { id: 'ch1', kind: 'changes', title: 'Changes waiting' },
@@ -519,6 +601,117 @@ test('a panel with every item type produces balanced markup', () => {
   }
 
   assert.deepEqual(stack, [], 'every tag is closed');
+});
+
+test('agent work is a checklist, not a blob of text', () => {
+  // What a developer asks continuously while an agent runs: what is the plan,
+  // where is it now, what has it already changed. All three are answerable
+  // without reading a transcript.
+  const html = renderPanel(
+    model({
+      busy: true,
+      thread: [
+        {
+          id: 't1',
+          kind: 'tasks',
+          title: 'Claude Code is fixing 3 sites',
+          subtitle: '2 commits, one per concern, across 2 files.',
+          groups: [
+            {
+              id: 'c1',
+              title: 'fix(deps): migrate lodash chain calls',
+              package: 'lodash',
+              state: 'active',
+              note: 'Editing src/report.ts',
+              tasks: [
+                {
+                  id: 'c1-0',
+                  label: '_.chain() was removed',
+                  file: 'src/report.ts',
+                  line: 42,
+                  detail: '3 sites in this file',
+                  state: 'active',
+                },
+              ],
+            },
+            {
+              id: 'c2',
+              title: 'fix(deps): update express handlers',
+              package: 'express',
+              state: 'pending',
+              tasks: [{ id: 'c2-0', label: 'res.send(status) removed', file: 'src/http.ts', line: 9, state: 'pending' }],
+            },
+          ],
+        },
+      ],
+    }),
+  );
+
+  assert.match(html, /1 of 2 done|0<\/b> of 2/);
+  assert.match(html, /fix\(deps\): migrate lodash chain calls/);
+  // The specific claim, at the line it is about, as a link that can be checked.
+  assert.match(html, /data-action="openFile" data-file="src\/report.ts" data-line="42"/);
+  assert.match(html, /_\.chain\(\) was removed/);
+  // The one in progress is open; the one still ahead is not.
+  assert.match(html, /class="task-group active"[^>]*open/);
+  assert.match(html, /class="task-group pending" data-key="task:c2"\s*>/);
+  assert.match(html, /Editing src\/report.ts/);
+});
+
+test('a finished task says whether the file actually changed', () => {
+  // "Unchanged" is a real answer: the evidence pointed at a site the agent
+  // judged already correct. Ticking it would be a lie about what happened.
+  const html = renderPanel(
+    model({
+      thread: [
+        {
+          id: 't1',
+          kind: 'tasks',
+          title: 'Done',
+          subtitle: '',
+          groups: [
+            {
+              id: 'c1',
+              title: 'fix(deps): migrate',
+              state: 'done',
+              tasks: [
+                { id: 'a', label: 'changed', file: 'a.ts', line: 1, state: 'done' },
+                { id: 'b', label: 'untouched', file: 'b.ts', line: 1, state: 'unchanged' },
+              ],
+            },
+          ],
+        },
+      ],
+    }),
+  );
+
+  assert.match(html, /class="box done"/);
+  assert.match(html, /class="box skipped"/);
+  assert.match(html, /No change needed|Changed/);
+});
+
+test('updates are a body swap, not a document reload', () => {
+  // Reassigning webview.html tears the document down and re-runs the script on
+  // every progress line — which is what made every button in the panel feel
+  // like it was thinking about it. The body is rendered on its own and posted.
+  const vm = model();
+  const body = renderBody(vm);
+
+  assert.ok(!body.includes('<!DOCTYPE html>'), 'the body carries no document');
+  assert.ok(!body.includes('<script'), 'the script is written once, not per update');
+  assert.match(body, /class="thread" id="thread"/);
+  assert.match(body, /class="composer/);
+  // The full document contains exactly that body, so both paths render the same
+  // panel and only one of them pays for a reload.
+  assert.ok(renderPanel(vm).includes(body));
+});
+
+test('the composer keeps a draft the host did not set', () => {
+  // The token changes only when the host assigns the text itself — after a
+  // submit, after a rewind. Between those, what is in the box belongs to the
+  // developer, who may have typed while a render was in flight.
+  const html = renderPanel(model({ draft: 'check react', draftToken: 7 }));
+  assert.match(html, /<textarea[^>]*data-token="7"[^>]*>check react<\/textarea>/);
 });
 
 test('every slash command is offered in the palette', () => {

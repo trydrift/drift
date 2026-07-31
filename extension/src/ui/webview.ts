@@ -1,5 +1,14 @@
-import type { Attachment, SessionEffort, SessionMode, SessionPermission, ThreadItem } from '../session.js';
-import { describeEffort, describeMode, describePermission } from '../labels.js';
+import type {
+  Attachment,
+  SessionEffort,
+  SessionMode,
+  SessionPermission,
+  Task,
+  TaskGroup,
+  TaskState,
+  ThreadItem,
+} from '../session.js';
+import { describeEffort, describeMode, describePermission, describePermissionShort } from '../labels.js';
 import type { UpgradeCandidate } from '../upgrades.js';
 import { describeSeverity, severityOf, type UpgradeSeverity } from '../severity.js';
 import type { ReviewGroup, ReviewTotals } from '../review/store.js';
@@ -35,6 +44,26 @@ export interface SlashCommand {
   description: string;
 }
 
+/**
+ * One subscription, and the model chosen inside it.
+ *
+ * The composer draws one of these per thing the developer actually pays for,
+ * because that is how they think about it: "use Claude" and "use Opus" are
+ * different decisions, and flattening every model from every provider into one
+ * list made the second decision impossible to find and the first one ambiguous.
+ */
+export interface ProviderChoice {
+  /** Agent id. */
+  id: string;
+  /** Full name, for the tooltip. */
+  label: string;
+  /** What fits on a button in a 300px sidebar. */
+  short: string;
+  /** The model picked inside this subscription, if it offers a choice. */
+  modelLabel?: string;
+  selected: boolean;
+}
+
 /** One row in the composer menu. `id` comes straight back to the host. */
 export interface MenuItem {
   id: string;
@@ -49,10 +78,29 @@ export interface MenuItem {
 }
 
 export interface MenuSection {
-  /** Matches the anchor a control opens the menu at. */
   id: string;
+  /** The control that opens this section. Several sections may share one. */
+  anchor: string;
   title: string;
   items: MenuItem[];
+  /** Rendered above the items, for a setting that is a range rather than a list. */
+  slider?: MenuSlider;
+}
+
+/**
+ * A setting with an order to it.
+ *
+ * Effort is not a set of unrelated options — it is one dial from "answer me now"
+ * to "think as hard as you can", and a list of radio buttons hides that. The
+ * stops come from the selected model, so a model with no reasoning budget never
+ * shows a position that would do nothing.
+ */
+export interface MenuSlider {
+  /** Prefix for the id sent back, e.g. `effort`. */
+  id: string;
+  /** Index into `stops`. */
+  value: number;
+  stops: { value: string; label: string; detail: string }[];
 }
 
 /**
@@ -74,6 +122,8 @@ export interface ViewModel {
   agents: AgentChoice[];
   agentId: string;
   agentLabel: string;
+  /** One button per subscription the developer can actually use right now. */
+  providers: ProviderChoice[];
   mode: SessionMode;
   effort: SessionEffort;
   permission: SessionPermission;
@@ -92,6 +142,14 @@ export interface ViewModel {
   stale: StaleHint | null;
   /** Restored after a re-render so typing is never lost. */
   draft: string;
+  /**
+   * Bumped only when the host sets the draft itself.
+   *
+   * Between bumps the composer's contents belong to the developer, who may have
+   * typed a character while a render was in flight. Without this the panel
+   * occasionally swallowed the last keystroke of a fast typist.
+   */
+  draftToken: number;
 }
 
 export const SLASH_COMMANDS: readonly SlashCommand[] = [
@@ -106,6 +164,14 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
   { name: '/help', description: 'What Drift can do' },
 ];
 
+/**
+ * The whole document.
+ *
+ * Written once per webview. Every subsequent update posts `renderBody` instead,
+ * because assigning `webview.html` tears down the document and re-runs the
+ * script — which, on a panel holding a full scan, is the difference between a
+ * click landing instantly and a click landing a second later.
+ */
 export function renderPanel(vm: ViewModel): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -116,23 +182,29 @@ export function renderPanel(vm: ViewModel): string {
 <style>${STYLES}</style>
 </head>
 <body>
-  <div class="thread" id="thread">
-    ${vm.thread.map((item) => renderItem(item, vm)).join('')}
-    ${
-      // The introduction stays until the conversation starts, not until the
-      // first scan starts. A dependency check running on open is Drift talking
-      // to itself; clearing the one thing that explains what the panel is for,
-      // half a second after it appeared, leaves a developer watching a progress
-      // bar with no idea what it is for.
-      vm.thread.some((item) => item.kind === 'user') ? '' : renderWelcome(vm, vm.thread.length > 0)
-    }
-  </div>
-
-  ${renderComposer(vm)}
-
+  <div id="root">${renderBody(vm)}</div>
   <script nonce="${vm.nonce}">${SCRIPT}</script>
 </body>
 </html>`;
+}
+
+/** Everything inside `#root`. Swapped in place on every update. */
+export function renderBody(vm: ViewModel): string {
+  const started = vm.thread.some((item) => item.kind === 'user');
+
+  return `<div class="thread" id="thread">
+    ${
+      // The introduction comes first, above the dependency check it started.
+      // It is the only thing on screen that says what the panel is for, and a
+      // developer who opens Drift for the first time reads downwards: putting
+      // it under a progress bar means they meet the work before the reason for
+      // it. It stays until the conversation actually starts.
+      started ? '' : renderWelcome(vm, vm.thread.length > 0)
+    }
+    ${vm.thread.map((item) => renderItem(item, vm)).join('')}
+  </div>
+
+  ${renderComposer(vm)}`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -161,7 +233,7 @@ function renderWelcome(vm: ViewModel, compact = false): string {
     ${
       vm.agents.some((a) => a.available)
         ? `<p class="foot">Ready to use <b>${escapeHtml(vm.agentLabel)}</b>.</p>`
-        : `<p class="foot warn">No AI agent found yet. Drift can still analyse and prove impact — <a data-action="openMenu" data-anchor="model">choose an agent</a> when you want fixes.</p>`
+        : `<p class="foot warn">No AI agent found yet. Drift can still analyse and prove impact — <a data-action="openMenu" data-anchor="model:setup">choose an agent</a> when you want fixes.</p>`
     }
   </div>`;
 }
@@ -208,6 +280,9 @@ function renderItem(item: ThreadItem, vm: ViewModel): string {
     case 'packages':
       return renderPackages(item, vm);
 
+    case 'tasks':
+      return renderTasks(item);
+
     case 'question':
       return renderQuestion(item);
 
@@ -249,6 +324,106 @@ function renderStep(item: Extract<ThreadItem, { kind: 'step' }>): string {
         : ''
     }
   </div>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* The plan, as a checklist                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * What the agent is going to do, before it does it.
+ *
+ * The alternative — and what this replaced — is a wall of streamed agent
+ * chatter, which asks the developer to read a transcript to answer three
+ * questions they will ask continuously: what is the plan, where is it now, and
+ * what has it already changed. A checklist answers all three without reading:
+ * every commit unit is a row, every breaking change under it names the file and
+ * line it lands on, and the state of each is a box that is empty, spinning, or
+ * ticked.
+ *
+ * The whole list exists before the first edit, so the shape of the work is
+ * visible while there is still time to stop it.
+ */
+function renderTasks(item: Extract<ThreadItem, { kind: 'tasks' }>): string {
+  const settled = item.groups.filter((group) => group.state !== 'pending' && group.state !== 'active').length;
+  const active = item.groups.some((group) => group.state === 'active');
+
+  return `<div class="turn assistant">
+    <div class="who">${LOGO_SMALL}<span>Drift</span></div>
+    <div class="card tasks">
+      <div class="card-head">
+        <span class="card-title">${ICON_CHECKLIST}<b>${escapeHtml(item.title)}</b></span>
+        <span class="tallies"><span class="tally"><b>${settled}</b> of ${item.groups.length} done</span></span>
+      </div>
+      ${item.subtitle ? `<p class="tasks-sub">${escapeHtml(item.subtitle)}</p>` : ''}
+      ${item.groups.map((group, index) => renderTaskGroup(group, index + 1, active)).join('')}
+    </div>
+  </div>`;
+}
+
+function renderTaskGroup(group: TaskGroup, order: number, listActive: boolean): string {
+  // The group in progress opens itself; the rest stay shut so a twelve-commit
+  // plan is still one screen. Once nothing is running, everything that produced
+  // a result is worth reading, so it all opens.
+  const open = group.state === 'active' || (!listActive && group.state !== 'pending');
+
+  return `<details class="task-group ${group.state}" data-key="task:${escapeAttr(group.id)}" ${open ? 'open' : ''}>
+    <summary>
+      ${taskBox(group.state)}
+      <span class="task-order">${order}</span>
+      <span class="task-title">
+        <b>${escapeHtml(group.title)}</b>
+        ${group.note ? `<small class="task-note">${escapeHtml(group.note)}</small>` : ''}
+      </span>
+      ${group.package ? `<span class="task-pkg">${escapeHtml(group.package)}</span>` : ''}
+      <span class="task-state ${group.state}">${escapeHtml(stateLabel(group.state, group.tasks.length))}</span>
+    </summary>
+    <ul class="task-list">
+      ${group.tasks.map(renderTask).join('')}
+    </ul>
+  </details>`;
+}
+
+function renderTask(task: Task): string {
+  const where =
+    task.file !== undefined
+      ? `<a data-action="openFile" data-file="${escapeAttr(task.file)}" data-line="${task.line ?? 1}"><code>${escapeHtml(task.file)}${task.line ? `:${task.line}` : ''}</code></a>`
+      : '';
+
+  return `<li class="task ${task.state}">
+    ${taskBox(task.state)}
+    <span class="task-body">
+      <span class="task-label">${escapeHtml(task.label)}</span>
+      ${where}
+      ${task.detail ? `<span class="task-detail">${escapeHtml(task.detail)}</span>` : ''}
+    </span>
+  </li>`;
+}
+
+/** The box itself: empty, spinning, ticked, or crossed. */
+function taskBox(state: TaskState): string {
+  if (state === 'active') return '<span class="spinner"></span>';
+  if (state === 'done') return `<span class="box done">${ICON_CHECK}</span>`;
+  if (state === 'failed') return `<span class="box failed">${ICON_CLOSE}</span>`;
+  if (state === 'skipped' || state === 'unchanged') return `<span class="box skipped">${ICON_DASH}</span>`;
+  return '<span class="box"></span>';
+}
+
+function stateLabel(state: TaskState, count: number): string {
+  switch (state) {
+    case 'active':
+      return 'Working';
+    case 'done':
+      return 'Changed';
+    case 'unchanged':
+      return 'No change needed';
+    case 'skipped':
+      return 'Skipped';
+    case 'failed':
+      return 'Failed';
+    default:
+      return `${count} site${count === 1 ? '' : 's'}`;
+  }
 }
 
 function renderQuestion(item: Extract<ThreadItem, { kind: 'question' }>): string {
@@ -652,20 +827,30 @@ function renderComposer(vm: ViewModel): string {
         .join('')}
     </div>
 
-    <textarea id="input" rows="1" placeholder="${escapeAttr(placeholder)}">${escapeHtml(vm.draft)}</textarea>
+    <textarea id="input" rows="1" data-token="${vm.draftToken}" placeholder="${escapeAttr(placeholder)}">${escapeHtml(vm.draft)}</textarea>
 
     ${renderMenu(vm)}
 
     <div class="composer-bar">
-      <button class="ctl icon" data-action="openMenu" data-anchor="context" title="Add context, or change the agent and how it behaves" aria-label="Open menu">${ICON_PLUS}</button>
+      <button class="ctl icon" data-action="openMenu" data-anchor="context" title="Attach a file, a folder, or the editor selection" aria-label="Add context">${ICON_PLUS}</button>
 
-      <button class="ctl summary" data-action="openMenu" data-anchor="model" title="${escapeAttr(
-        `${vm.agentLabel} · ${describeMode(vm.mode)} · ${describeEffort(vm.effort)} effort · ${describePermission(vm.permission)}`,
+      ${renderProviders(vm)}
+
+      <button class="ctl" data-action="openMenu" data-anchor="effort" title="${escapeAttr(
+        `Effort: ${describeEffort(vm.effort)}. How widely Drift looks, and how hard the model thinks.`,
       )}">
-        ${vm.mode === 'agent' ? ICON_AGENT : ICON_ASK}<span>${escapeHtml(vm.agentLabel)}</span>${ICON_CHEVRON}
+        ${ICON_SPEED}<span>${escapeHtml(describeEffort(vm.effort))}</span>
       </button>
 
       <span class="spacer"></span>
+
+      <button class="ctl" data-action="openMenu" data-anchor="permission" title="${escapeAttr(
+        `${describeMode(vm.mode)} · ${describePermission(vm.permission)}`,
+      )}" aria-label="Permissions">
+        ${vm.mode === 'agent' ? ICON_SHIELD : ICON_ASK}<span>${escapeHtml(
+          vm.mode === 'ask' ? 'Ask only' : describePermissionShort(vm.permission),
+        )}</span>${ICON_CHEVRON}
+      </button>
 
       ${
         vm.busy
@@ -684,32 +869,104 @@ function renderComposer(vm: ViewModel): string {
 }
 
 /**
+ * One button per subscription.
+ *
+ * A subscription is the thing a developer has decided to pay for; the model is
+ * the thing they decide per task. Bundling every model from every provider into
+ * a single list made the first invisible and the second unfindable, so each
+ * provider gets its own button showing the model currently selected inside it,
+ * and its own menu listing only that provider's models.
+ *
+ * When nothing is installed there is exactly one button, and it goes to setup —
+ * an empty row of provider buttons would say nothing about why.
+ */
+function renderProviders(vm: ViewModel): string {
+  if (vm.providers.length === 0) {
+    return `<button class="ctl bordered" data-action="openMenu" data-anchor="model:setup" title="Drift drives an AI agent you already have. It never asks for an API key.">
+      ${ICON_AGENT}<span>Choose an agent</span>${ICON_CHEVRON}
+    </button>`;
+  }
+
+  return vm.providers
+    .map(
+      (provider) => `<button class="ctl provider ${provider.selected ? 'selected' : ''}" data-action="openMenu" data-anchor="model:${escapeAttr(provider.id)}" title="${escapeAttr(
+        provider.modelLabel ? `${provider.label} — ${provider.modelLabel}` : provider.label,
+      )}">
+        <span class="provider-name">${escapeHtml(provider.short)}</span>
+        ${provider.modelLabel ? `<span class="provider-model">${escapeHtml(provider.modelLabel)}</span>` : ''}
+        ${ICON_CHEVRON}
+      </button>`,
+    )
+    .join('');
+}
+
+/**
  * The composer menu.
  *
  * Always in the document, hidden until asked for, so opening it is a class
  * change rather than a round trip to the extension host — and so a re-render
- * mid-scan can put it back exactly as it was. Sections are titled and the filter
- * matches across all of them at once, which is what makes one menu tolerable
- * where five buttons were not: you type "thorough" and get the effort row
- * without knowing which control it used to live under.
+ * mid-scan can put it back exactly as it was.
+ *
+ * Every control opens the same widget at its own anchor, and only the sections
+ * belonging to that anchor are shown. That is what keeps the plus button honest:
+ * it offers context and nothing else, because a button that also changes the
+ * model is a button whose label is a lie.
  */
 function renderMenu(vm: ViewModel): string {
-  return `<div class="menu" id="menu" hidden>
+  return `<div class="menu" id="menu" data-anchor="context" hidden>
     <div class="menu-search">
       ${ICON_SEARCH_SMALL}
-      <input id="menu-filter" type="text" placeholder="Search actions…" autocomplete="off" spellcheck="false" aria-label="Search actions">
+      <input id="menu-filter" type="text" placeholder="Search…" autocomplete="off" spellcheck="false" aria-label="Search this menu">
     </div>
     <div class="menu-list" id="menu-list">
       ${vm.menu
         .map(
-          (section) => `<div class="menu-section" data-section="${escapeAttr(section.id)}">
+          (section) => `<div class="menu-section" data-section="${escapeAttr(section.id)}" data-anchor="${escapeAttr(section.anchor)}">
             <div class="menu-title">${escapeHtml(section.title)}</div>
+            ${section.slider ? renderSlider(section.slider) : ''}
             ${section.items.map(renderMenuItem).join('')}
           </div>`,
         )
         .join('')}
       <div class="menu-empty" hidden>Nothing matches.</div>
     </div>
+  </div>`;
+}
+
+/**
+ * The effort dial.
+ *
+ * Drawn from the selected model's own stops, so the track never offers a
+ * position the model cannot honour. The label under it changes as the handle
+ * moves and says what that position actually costs, because "high" means
+ * nothing on its own — "adds dev dependencies and patch releases" does.
+ */
+function renderSlider(slider: MenuSlider): string {
+  const current = slider.stops[slider.value] ?? slider.stops[0]!;
+
+  return `<div class="slider" data-slider="${escapeAttr(slider.id)}">
+    <input
+      type="range"
+      id="slider-${escapeAttr(slider.id)}"
+      min="0"
+      max="${slider.stops.length - 1}"
+      step="1"
+      value="${slider.value}"
+      data-action="slider"
+      data-id="${escapeAttr(slider.id)}"
+      data-values="${escapeAttr(slider.stops.map((stop) => stop.value).join(','))}"
+      aria-label="${escapeAttr(slider.id)}">
+    <div class="slider-ticks">
+      ${slider.stops
+        .map(
+          (stop, index) =>
+            `<span class="${index === slider.value ? 'on' : ''}">${escapeHtml(stop.label)}</span>`,
+        )
+        .join('')}
+    </div>
+    <p class="slider-detail" id="slider-detail-${escapeAttr(slider.id)}" data-details="${escapeAttr(
+      slider.stops.map((stop) => stop.detail).join('|'),
+    )}">${escapeHtml(current.detail)}</p>
   </div>`;
 }
 
@@ -895,6 +1152,8 @@ const ICON_REFRESH = svg('<path d="M8 3V1L5 3.5 8 6V4a3.5 3.5 0 1 1-3.4 4.35l-1.
 const ICON_SEARCH_SMALL = svg('<path d="M10.5 9.5 14 13l-1 1-3.5-3.5A5 5 0 1 1 10.5 9.5zM6.5 3a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/>', 12);
 const ICON_UPLOAD = svg('<path d="M8 1.5 12 5.5h-2.75v4h-2.5v-4H4L8 1.5zM2.5 11h11v3.5h-11V11z"/>', 13);
 const ICON_GEAR = svg('<path d="M8 5.5A2.5 2.5 0 1 0 8 10.5 2.5 2.5 0 0 0 8 5.5zm6 3.1V7.4l-1.6-.3a4.6 4.6 0 0 0-.5-1.2l.9-1.3-.9-.9-1.3.9a4.6 4.6 0 0 0-1.2-.5L9.1 2H6.9l-.3 1.6a4.6 4.6 0 0 0-1.2.5l-1.3-.9-.9.9.9 1.3a4.6 4.6 0 0 0-.5 1.2L2 7.4v2.2l1.6.3c.1.4.3.8.5 1.2l-.9 1.3.9.9 1.3-.9c.4.2.8.4 1.2.5l.3 1.6h2.2l.3-1.6c.4-.1.8-.3 1.2-.5l1.3.9.9-.9-.9-1.3c.2-.4.4-.8.5-1.2l1.6-.3z"/>', 13);
+const ICON_CHECKLIST = svg('<path d="M2 3.5 3.4 5 6 2.4l-.9-.9L3.4 3.2 2.9 2.6 2 3.5zm0 6L3.4 11 6 8.4l-.9-.9L3.4 9.2l-.5-.6L2 9.5zM7.5 3h6.5v1.5H7.5V3zm0 6h6.5v1.5H7.5V9z"/>', 13);
+const ICON_DASH = svg('<path d="M3.5 7.25h9v1.5h-9z"/>', 11);
 const ICON_SPEED = svg('<path d="M8 2.5A6.5 6.5 0 0 0 2.2 12h11.6A6.5 6.5 0 0 0 8 2.5zm2.9 3.1L8.9 9a1.1 1.1 0 1 1-1-1l3-2.4z"/>', 13);
 
 /** Icons the menu may use, named rather than passed as markup. */
@@ -1050,14 +1309,13 @@ button.wide { width: 100%; }
 
 /* Welcome --------------------------------------------------------- */
 .welcome { text-align: center; padding: 22px 6px 6px; }
-/* After a scan the introduction is no longer the first thing on screen, so
-   it stops behaving like a splash and becomes a footer: same words, less
-   room, still there until the conversation actually starts. */
+/* Once there is work underneath it, the introduction stops behaving like a
+   splash screen and becomes a header: same words, less room, and a rule
+   separating it from the results it is standing above. */
 .welcome.compact {
   text-align: left;
-  padding: 0;
-  border-top: 1px solid var(--vscode-panel-border);
-  padding-top: 12px;
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--vscode-panel-border);
 }
 .welcome.compact h2 { font-size: 13px; }
 .welcome.compact > p { font-size: 11px; }
@@ -1557,7 +1815,118 @@ button.command small { font-size: 10px; }
 .menu-item:hover .menu-hint, .menu-item.active .menu-hint { color: inherit; opacity: .8; }
 .menu-empty { padding: 8px 10px; font-size: 11px; color: var(--vscode-descriptionForeground); }
 .menu-empty[hidden] { display: none; }
-.ctl.summary { max-width: 45%; }
+
+/* Subscription buttons -------------------------------------------- */
+/* One per thing the developer pays for. The selected one is the only
+   filled control in the row, so "which of these am I using" is answered
+   without reading any of the labels. */
+.ctl.provider { gap: 4px; max-width: 45%; padding: 0 3px 0 6px; }
+.ctl.provider .provider-name { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctl.provider .provider-model {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: .75;
+  font-size: 10px;
+  border-left: 1px solid var(--vscode-panel-border);
+  padding-left: 4px;
+}
+.ctl.provider.selected {
+  color: var(--vscode-foreground);
+  background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+  border-color: var(--vscode-focusBorder);
+}
+.ctl.provider.selected .provider-model { opacity: .9; }
+
+/* The effort dial -------------------------------------------------- */
+.slider { padding: 4px 8px 2px; }
+.slider input[type="range"] {
+  width: 100%;
+  margin: 2px 0;
+  accent-color: var(--vscode-progressBar-background);
+  background: transparent;
+  cursor: pointer;
+}
+.slider-ticks {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+}
+.slider-ticks span.on { color: var(--vscode-foreground); font-weight: 600; }
+.slider-detail { margin: 4px 0 2px; font-size: 10px; line-height: 1.35; color: var(--vscode-descriptionForeground); }
+
+/* The plan, as a checklist ---------------------------------------- */
+.card.tasks .card-title b { font-weight: 600; }
+.tasks-sub {
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  border-bottom: 1px solid color-mix(in srgb, var(--vscode-panel-border) 55%, transparent);
+}
+.task-group + .task-group { border-top: 1px solid color-mix(in srgb, var(--vscode-panel-border) 55%, transparent); }
+.task-group > summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  cursor: pointer;
+  list-style: none;
+}
+.task-group > summary::-webkit-details-marker { display: none; }
+.task-group > summary:hover { background: var(--vscode-list-hoverBackground); }
+.task-group.active > summary { background: var(--vscode-list-inactiveSelectionBackground, var(--vscode-list-hoverBackground)); }
+.task-order {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--vscode-descriptionForeground);
+}
+.task-title { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.task-title b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-note { font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.task-pkg {
+  flex: 0 0 auto;
+  font-size: 9px;
+  border-radius: 3px;
+  padding: 1px 5px;
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  max-width: 30%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-state { flex: 0 0 auto; font-size: 10px; color: var(--vscode-descriptionForeground); white-space: nowrap; }
+.task-state.done { color: var(--vscode-testing-iconPassed); }
+.task-state.failed { color: var(--vscode-editorError-foreground); }
+/* The box: empty until the work is done, so a glance down the left edge
+   is a progress bar you can read. */
+.box {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 3px;
+  color: var(--vscode-editor-background);
+}
+.box.done { background: var(--vscode-testing-iconPassed); border-color: transparent; }
+.box.failed { background: var(--vscode-editorError-foreground); border-color: transparent; }
+.box.skipped { color: var(--vscode-descriptionForeground); }
+.box svg.i { width: 9px; height: 9px; }
+ul.task-list { margin: 0; padding: 0 10px 8px 28px; list-style: none; display: grid; gap: 5px; }
+li.task { display: flex; gap: 7px; align-items: flex-start; font-size: 11px; }
+li.task .box, li.task .spinner { margin-top: 3px; }
+li.task.unchanged .task-label, li.task.skipped .task-label { color: var(--vscode-descriptionForeground); }
+.task-body { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.task-label { overflow-wrap: anywhere; }
+.task-detail { color: var(--vscode-descriptionForeground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 `;
 
 /* ------------------------------------------------------------------ */
@@ -1566,44 +1935,70 @@ button.command small { font-size: 10px; }
 
 const SCRIPT = `
 const vscode = acquireVsCodeApi();
-const input = document.getElementById('input');
-const commands = document.getElementById('commands');
-const thread = document.getElementById('thread');
-const menu = document.getElementById('menu');
-const menuFilter = document.getElementById('menu-filter');
+const root = document.getElementById('root');
 
-const state = vscode.getState() || {};
+/* The panel is re-rendered constantly — a scan reports progress many times a
+   second — and everything the developer is in the middle of has to survive
+   that: the half-typed message, the caret inside it, the scroll position, the
+   disclosure they just opened, the menu they have open right now.
 
-function patchState(patch) {
-  vscode.setState({ ...(vscode.getState() || {}), ...patch });
-}
+   The document itself is written once. Updates arrive as a body string and are
+   swapped into #root, which keeps this script, its listeners and the webview's
+   own state alive. Reassigning webview.html instead tears the document down and
+   re-runs everything, and on a panel holding a full scan that is the difference
+   between a click landing instantly and a click landing a second later. */
 
-/* Disclosure state survives re-rendering.
-   Every update replaces the document, so a disclosure the developer opened
-   would slam shut the moment the next package arrived — which is precisely
-   when they are reading it. Each one carries a stable key; what they chose
-   is remembered against that key and reapplied, and the markup's own \`open\`
-   attribute stays the default for anything never touched. */
-const disclosures = state.disclosures || {};
-for (const element of document.querySelectorAll('details[data-key]')) {
-  const key = element.dataset.key;
-  const remembered = disclosures[key];
-  if (remembered !== undefined) element.open = remembered;
-  element.addEventListener('toggle', () => {
-    const current = vscode.getState() || {};
-    patchState({ disclosures: { ...(current.disclosures || {}), [key]: element.open } });
+const ui = {
+  draft: '',
+  draftToken: -1,
+  caret: null,
+  focused: false,
+  scrollTop: 0,
+  atBottom: true,
+  disclosures: {},
+  menu: { open: false, anchor: 'context', query: '' },
+};
+
+Object.assign(ui, vscode.getState() || {});
+
+let input = null;
+let commands = null;
+let thread = null;
+let menu = null;
+let menuFilter = null;
+
+function save() {
+  vscode.setState({
+    draft: ui.draft,
+    draftToken: ui.draftToken,
+    caret: ui.caret,
+    focused: ui.focused,
+    scrollTop: ui.scrollTop,
+    atBottom: ui.atBottom,
+    disclosures: ui.disclosures,
+    menu: ui.menu,
   });
 }
 
-/* Keep the scroll position across re-renders, but follow new content when the
-   developer is already at the bottom — the same rule every chat UI uses. */
-if (thread) {
-  const atBottom = state.atBottom !== false;
-  thread.scrollTop = atBottom ? thread.scrollHeight : (state.scrollTop || 0);
-  thread.addEventListener('scroll', () => {
-    const bottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 24;
-    vscode.setState({ ...vscode.getState(), scrollTop: thread.scrollTop, atBottom: bottom });
-  });
+/* Read the live DOM back into \`ui\` before it is thrown away. */
+function capture() {
+  if (input) {
+    ui.draft = input.value;
+    ui.caret = input.selectionStart;
+    ui.focused = document.activeElement === input;
+  }
+  if (thread) {
+    ui.scrollTop = thread.scrollTop;
+    ui.atBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 24;
+  }
+  if (menu) {
+    ui.menu = {
+      open: !menu.hidden,
+      anchor: menu.dataset.anchor || 'context',
+      query: menuFilter ? menuFilter.value : '',
+    };
+  }
+  save();
 }
 
 function grow() {
@@ -1612,13 +2007,129 @@ function grow() {
   input.style.height = Math.min(input.scrollHeight, 160) + 'px';
 }
 
+/* ------------------------------------------------------------------ */
+/* Mounting                                                            */
+/* ------------------------------------------------------------------ */
+
+function mount() {
+  input = document.getElementById('input');
+  commands = document.getElementById('commands');
+  thread = document.getElementById('thread');
+  menu = document.getElementById('menu');
+  menuFilter = document.getElementById('menu-filter');
+
+  /* Disclosures. Each carries a stable key; what the developer chose is
+     remembered against that key and reapplied, so a package they opened does
+     not slam shut when the next one arrives. */
+  for (const element of document.querySelectorAll('details[data-key]')) {
+    const key = element.dataset.key;
+    const remembered = ui.disclosures[key];
+    if (remembered !== undefined) element.open = remembered;
+    element.addEventListener('toggle', () => {
+      ui.disclosures[key] = element.open;
+      save();
+    });
+  }
+
+  /* Follow new content when already at the bottom, hold position otherwise —
+     the rule every chat UI uses. */
+  if (thread) {
+    thread.scrollTop = ui.atBottom ? thread.scrollHeight : ui.scrollTop;
+    thread.addEventListener('scroll', () => {
+      ui.scrollTop = thread.scrollTop;
+      ui.atBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 24;
+      save();
+    });
+  }
+
+  if (input) {
+    /* The host owns the draft only when it says so. It stamps a token whenever
+       it sets the text itself — after a submit, after a rewind — and otherwise
+       whatever is in the box belongs to the developer, who may have typed a
+       character while this render was in flight. */
+    const token = Number(input.dataset.token);
+    if (token !== ui.draftToken) {
+      ui.draftToken = token;
+      ui.draft = input.value;
+      ui.caret = input.value.length;
+    } else {
+      input.value = ui.draft;
+    }
+
+    grow();
+
+    if (ui.focused) {
+      input.focus();
+      const caret = typeof ui.caret === 'number' ? Math.min(ui.caret, input.value.length) : input.value.length;
+      input.setSelectionRange(caret, caret);
+    }
+
+    const remember = () => {
+      ui.caret = input.selectionStart;
+      ui.focused = document.activeElement === input;
+      save();
+    };
+
+    input.addEventListener('blur', remember);
+    input.addEventListener('focus', remember);
+    input.addEventListener('keyup', remember);
+    input.addEventListener('click', remember);
+
+    input.addEventListener('input', () => {
+      ui.draft = input.value;
+      grow();
+      syncCommands();
+      remember();
+      vscode.postMessage({ type: 'draft', text: input.value });
+    });
+
+    input.addEventListener('keydown', onComposerKey);
+  }
+
+  if (menu && menuFilter) {
+    menuFilter.addEventListener('input', syncMenu);
+    menuFilter.addEventListener('keydown', onMenuKey);
+
+    /* Still open, still filtered, still anchored where it was. A menu that
+       blinks out from under the pointer every time a package arrives is
+       unusable, and packages arrive for as long as a scan runs. */
+    if (ui.menu.open) {
+      menu.hidden = false;
+      menuFilter.value = ui.menu.query || '';
+      anchorMenu(ui.menu.anchor || 'context');
+      syncMenu();
+      menuFilter.focus();
+      menuFilter.setSelectionRange(menuFilter.value.length, menuFilter.value.length);
+    } else {
+      syncMenu();
+    }
+  }
+
+  for (const slider of document.querySelectorAll('input[type="range"][data-action="slider"]')) {
+    slider.addEventListener('input', () => previewSlider(slider));
+    // Committed on release, not on every pixel: each commit is a settings
+    // write, and the label already moves live.
+    slider.addEventListener('change', () => {
+      const values = (slider.dataset.values || '').split(',');
+      const value = values[Number(slider.value)];
+      if (value) vscode.postMessage({ type: 'menu', id: slider.dataset.id + ':' + value });
+    });
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Composer                                                            */
+/* ------------------------------------------------------------------ */
+
 function send() {
   if (!input) return;
   const text = input.value.trim();
   if (!text) return;
   input.value = '';
+  ui.draft = '';
   grow();
   hideCommands();
+  save();
   vscode.postMessage({ type: 'submit', text });
 }
 
@@ -1665,11 +2176,31 @@ function moveActive(delta) {
 function complete(name) {
   if (!input) return;
   input.value = name + ' ';
+  ui.draft = input.value;
   hideCommands();
   input.focus();
+  save();
 }
 
-/* The composer menu ------------------------------------------------ */
+function onComposerKey(event) {
+  if (commands && !commands.hidden) {
+    if (event.key === 'ArrowDown') { event.preventDefault(); moveActive(1); return; }
+    if (event.key === 'ArrowUp') { event.preventDefault(); moveActive(-1); return; }
+    if (event.key === 'Escape') { event.preventDefault(); hideCommands(); return; }
+    if (event.key === 'Tab' || (event.key === 'Enter' && !event.shiftKey)) {
+      const active = commands.querySelector('.command.active');
+      if (active) { event.preventDefault(); complete(active.dataset.command); return; }
+    }
+  }
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    send();
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* The menu                                                            */
+/* ------------------------------------------------------------------ */
 
 function menuItems() {
   return menu ? [...menu.querySelectorAll('.menu-item:not([hidden])')] : [];
@@ -1677,13 +2208,15 @@ function menuItems() {
 
 function anchorMenu(anchor) {
   if (!menu) return;
+  menu.dataset.anchor = anchor;
+
   const trigger = document.querySelector('[data-action="openMenu"][data-anchor="' + anchor + '"]');
   const composer = menu.parentElement;
   if (!trigger || !composer) return;
 
-  /* Anchored to the control that opened it, then pulled back inside the
-     panel if that would hang it off the edge — a menu half off-screen in a
-     200px sidebar is worse than one that is merely near its trigger. */
+  /* Anchored to the control that opened it, then pulled back inside the panel
+     if that would hang it off the edge — a menu half off-screen in a 200px
+     sidebar is worse than one that is merely near its trigger. */
   const left = trigger.getBoundingClientRect().left - composer.getBoundingClientRect().left;
   menu.style.left = '0px';
   const width = menu.getBoundingClientRect().width;
@@ -1694,51 +2227,56 @@ function anchorMenu(anchor) {
 function openMenu(anchor) {
   if (!menu) return;
   menu.hidden = false;
+  if (menuFilter) menuFilter.value = '';
   anchorMenu(anchor);
-
-  /* Opening at a section scrolls to it rather than filtering to it: the
-     other section is one flick away, which is the whole point of merging
-     them into a single menu. */
-  const section = menu.querySelector('.menu-section[data-section="' + anchor + '"]');
-  if (section) section.scrollIntoView({ block: 'nearest' });
-
-  patchState({ menu: { open: true, anchor, query: menuFilter ? menuFilter.value : '' } });
+  syncMenu();
+  ui.menu = { open: true, anchor, query: '' };
+  save();
   if (menuFilter) {
     menuFilter.focus();
     menuFilter.select();
   }
-  syncMenu();
 }
 
 function closeMenu(refocus) {
   if (!menu || menu.hidden) return;
   menu.hidden = true;
   if (menuFilter) menuFilter.value = '';
-  patchState({ menu: { open: false, anchor: 'context', query: '' } });
+  ui.menu = { open: false, anchor: ui.menu.anchor, query: '' };
+  save();
   if (refocus && input) input.focus();
 }
 
+/* Only the sections belonging to the control that opened the menu are shown.
+   The plus button offers context and nothing else; the model button offers that
+   provider's models and nothing else. A control whose menu contains settings it
+   does not name is a control with a misleading label. */
 function syncMenu() {
   if (!menu) return;
+  const anchor = menu.dataset.anchor || 'context';
   const query = (menuFilter ? menuFilter.value : '').trim().toLowerCase();
   const words = query.split(/\\s+/).filter(Boolean);
 
-  for (const item of menu.querySelectorAll('.menu-item')) {
-    const haystack = item.dataset.search || '';
-    item.hidden = !words.every((word) => haystack.includes(word));
-    item.classList.remove('active');
-  }
-  /* A section header with nothing under it is a lie about what is available. */
   for (const section of menu.querySelectorAll('.menu-section')) {
-    section.hidden = section.querySelectorAll('.menu-item:not([hidden])').length === 0;
+    const mine = section.dataset.anchor === anchor;
+    for (const item of section.querySelectorAll('.menu-item')) {
+      const haystack = item.dataset.search || '';
+      item.hidden = !mine || !words.every((word) => haystack.includes(word));
+      item.classList.remove('active');
+    }
+    // A heading with nothing under it is a lie about what is available; a
+    // section that is only a slider has no items and must still show.
+    const items = section.querySelectorAll('.menu-item:not([hidden])').length;
+    section.hidden = !mine || (items === 0 && !section.querySelector('.slider'));
   }
 
   const items = menuItems();
   const empty = menu.querySelector('.menu-empty');
-  if (empty) empty.hidden = items.length > 0;
+  if (empty) empty.hidden = items.length > 0 || Boolean(menu.querySelector('.menu-section:not([hidden]) .slider'));
   if (query && items[0]) items[0].classList.add('active');
 
-  patchState({ menu: { open: !menu.hidden, anchor: (vscode.getState() || {}).menu?.anchor || 'context', query } });
+  ui.menu = { open: !menu.hidden, anchor, query };
+  save();
 }
 
 function moveMenu(delta) {
@@ -1751,81 +2289,37 @@ function moveMenu(delta) {
   items[next].scrollIntoView({ block: 'nearest' });
 }
 
-if (menu && menuFilter) {
-  menuFilter.addEventListener('input', syncMenu);
-  menuFilter.addEventListener('keydown', (event) => {
-    if (event.key === 'ArrowDown') { event.preventDefault(); moveMenu(1); return; }
-    if (event.key === 'ArrowUp') { event.preventDefault(); moveMenu(-1); return; }
-    if (event.key === 'Escape') { event.preventDefault(); closeMenu(true); return; }
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      const active = menu.querySelector('.menu-item.active') || menuItems()[0];
-      if (active) active.click();
-    }
-  });
-
-  /* A re-render lands mid-scan every hundred milliseconds. Without this the
-     menu would blink out from under the pointer; with it, it is still open,
-     still filtered, still where it was. */
-  if (state.menu && state.menu.open) {
-    menu.hidden = false;
-    menuFilter.value = state.menu.query || '';
-    anchorMenu(state.menu.anchor || 'context');
-    syncMenu();
-    // The developer is typing in here, not in the composer, so the caret has
-    // to come back here too.
-    menuFilter.focus();
-    menuFilter.setSelectionRange(menuFilter.value.length, menuFilter.value.length);
+function onMenuKey(event) {
+  if (event.key === 'ArrowDown') { event.preventDefault(); moveMenu(1); return; }
+  if (event.key === 'ArrowUp') { event.preventDefault(); moveMenu(-1); return; }
+  if (event.key === 'Escape') { event.preventDefault(); closeMenu(true); return; }
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    const active = menu.querySelector('.menu-item.active') || menuItems()[0];
+    if (active) active.click();
   }
 }
 
-if (input) {
-  grow();
+/* The dial's label follows the handle, so the developer sees what a position
+   means before they let go of it. */
+function previewSlider(slider) {
+  const index = Number(slider.value);
+  const wrapper = slider.closest('.slider');
+  if (!wrapper) return;
 
-  /* Every update replaces the whole document, so focus and caret have to be put
-     back by hand. Restoring them only when the composer already had focus keeps
-     Drift from stealing the cursor out of the developer's editor. */
-  if (state.focused !== false) {
-    input.focus();
-    const caret = typeof state.caret === 'number' ? Math.min(state.caret, input.value.length) : input.value.length;
-    input.setSelectionRange(caret, caret);
+  const ticks = [...wrapper.querySelectorAll('.slider-ticks span')];
+  ticks.forEach((tick, i) => tick.classList.toggle('on', i === index));
+
+  const detail = wrapper.querySelector('.slider-detail');
+  if (detail) {
+    const details = (detail.dataset.details || '').split('|');
+    if (details[index]) detail.textContent = details[index];
   }
-
-  const remember = () =>
-    vscode.setState({
-      ...vscode.getState(),
-      caret: input.selectionStart,
-      focused: document.activeElement === input,
-    });
-
-  input.addEventListener('blur', remember);
-  input.addEventListener('focus', remember);
-  input.addEventListener('keyup', remember);
-  input.addEventListener('click', remember);
-
-  input.addEventListener('input', () => {
-    grow();
-    syncCommands();
-    remember();
-    vscode.postMessage({ type: 'draft', text: input.value });
-  });
-
-  input.addEventListener('keydown', (event) => {
-    if (!commands.hidden) {
-      if (event.key === 'ArrowDown') { event.preventDefault(); moveActive(1); return; }
-      if (event.key === 'ArrowUp') { event.preventDefault(); moveActive(-1); return; }
-      if (event.key === 'Escape') { event.preventDefault(); hideCommands(); return; }
-      if (event.key === 'Tab' || (event.key === 'Enter' && !event.shiftKey)) {
-        const active = commands.querySelector('.command.active');
-        if (active) { event.preventDefault(); complete(active.dataset.command); return; }
-      }
-    }
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      send();
-    }
-  });
 }
+
+/* ------------------------------------------------------------------ */
+/* Events                                                              */
+/* ------------------------------------------------------------------ */
 
 document.addEventListener('click', (event) => {
   const target = event.target.closest('[data-action]');
@@ -1839,13 +2333,15 @@ document.addEventListener('click', (event) => {
 
   const action = target.dataset.action;
 
+  // The dial handles its own events; a click on it is a drag, not a command.
+  if (action === 'slider') return;
+
   if (action === 'submit') { send(); return; }
   if (action === 'complete') { complete(target.dataset.command); return; }
   if (action === 'openMenu') {
     const anchor = target.dataset.anchor || 'context';
-    const wasOpen = menu && !menu.hidden;
-    const sameAnchor = (vscode.getState() || {}).menu?.anchor === anchor;
-    if (wasOpen && sameAnchor) closeMenu(true);
+    const open = menu && !menu.hidden;
+    if (open && menu.dataset.anchor === anchor) closeMenu(true);
     else openMenu(anchor);
     return;
   }
@@ -1875,15 +2371,31 @@ document.addEventListener('click', (event) => {
 
 window.addEventListener('message', (event) => {
   const data = event.data;
+
+  if (data?.type === 'render') {
+    capture();
+    root.innerHTML = data.body;
+    mount();
+    return;
+  }
   if (data?.type === 'openMenu') { openMenu(data.anchor || 'context'); return; }
   if (!input) return;
   if (data?.type === 'insert') {
     const start = input.selectionStart ?? input.value.length;
     input.value = input.value.slice(0, start) + data.text + input.value.slice(start);
+    ui.draft = input.value;
     grow();
     input.focus();
     input.setSelectionRange(start + data.text.length, start + data.text.length);
+    save();
   }
   if (data?.type === 'focus') input.focus();
 });
+
+mount();
+
+// The host holds the transcript; this tells it there is somewhere to put it.
+// Sent last so a webview restored from a reload is repainted rather than left
+// showing whatever markup it was serialised with.
+vscode.postMessage({ type: 'ready' });
 `;

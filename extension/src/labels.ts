@@ -14,7 +14,16 @@ export function describeMode(mode: SessionMode): string {
 }
 
 export function describeEffort(effort: SessionEffort): string {
-  return effort === 'quick' ? 'Quick' : effort === 'thorough' ? 'Thorough' : 'Balanced';
+  switch (effort) {
+    case 'quick':
+      return 'Quick';
+    case 'thorough':
+      return 'Thorough';
+    case 'max':
+      return 'Max';
+    default:
+      return 'Balanced';
+  }
 }
 
 export function describePermission(permission: SessionPermission): string {
@@ -67,6 +76,8 @@ export function explainEffort(effort: SessionEffort): string {
       return 'Every runtime dependency, major and minor bumps';
     case 'thorough':
       return 'Adds dev dependencies and patch releases — slower, finds more';
+    case 'max':
+      return 'Everything, no caps, and the model reasons as hard as it can';
   }
 }
 
