@@ -32,6 +32,14 @@ A semver bump alone is weighted 0.25 — deliberately below the dispatch thresho
 "The major number went up" is a reason to look, not a reason to edit someone's
 code.
 
+Computed API-surface diffs are weighted 1.00 in every ecosystem that has one
+(npm, Cargo, Go, Maven) — with one exception. Python's is 0.90, because it
+reconstructs a public surface from source rather than reading what was shipped;
+that keeps a lone Python surface diff at `medium` confidence. Ruby has no
+computed surface and stays on prose. None of this is special-cased downstream:
+`analyze` derives confidence from the weight alone, so a new ecosystem is a new
+number, never a new branch in a guardrail.
+
 ### 2 · Confidence gating
 
 | Confidence | Source | Auto-dispatch under defaults |

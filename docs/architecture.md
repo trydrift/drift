@@ -37,7 +37,8 @@ src/
 │   ├── changelog.ts      CHANGELOG + migration guide retrieval and slicing
 │   ├── releases.ts       GitHub release notes for a version range
 │   ├── openapi.ts        Consumer-breaking spec diff engine
-│   └── type-surface.ts   TypeScript .d.ts API diff via the compiler API
+│   ├── type-surface.ts   TypeScript .d.ts API diff via the compiler API
+│   └── surface/          Computed API diffs for cargo, go, maven, pypi
 ├── analyze/              Stage 3 — evidence → breaking changes
 │   ├── rules.ts          Deterministic mapping + prose patterns
 │   └── llm.ts            Optional recall assist (off by default)
@@ -182,6 +183,36 @@ Declarations are *fetched*, not installed: the old version is gone from
 `node_modules` after the upgrade, and fetching means never executing a
 third-party install script.
 
+**API-surface diff, elsewhere** — the same question in five ecosystems, each
+answered by that ecosystem's own tool, each returning the same `SurfaceChange[]`
+so nothing downstream learns which produced it:
+
+| Ecosystem | Tool | Weight | Reads |
+|---|---|---|---|
+| npm | TypeScript compiler API | 1.00 | published `.d.ts` |
+| cargo | `cargo public-api` | 1.00 | rustdoc JSON |
+| go | `go doc -all` in a scratch module | 1.00 | exported symbols |
+| maven | `japicmp` | 1.00 | classfiles of both jars |
+| pypi | `ast` in a Python subprocess | 0.90 | sources or `.pyi` stubs |
+| rubygems | — | — | prose only |
+
+Every one of these depends on a tool Drift does not ship. A missing toolchain is
+an ordinary outcome with a stated reason — "`cargo public-api` is not installed"
+and "that version was yanked" lead a developer to different actions, and
+collapsing both into "could not check" throws that away.
+
+Python sits at 0.90 on purpose, which caps a lone Python surface diff at
+`medium` confidence. It is a reconstruction rather than a reading of what
+shipped, and its known false negatives are: re-exports through `import *`,
+symbols created at import time by a decorator or metaclass, and anything
+conditional on the Python version or platform. Archives are downloaded and
+unpacked, never installed — `pip download` would execute the package's own build
+backend, and Drift does not run a third party's code to find out what is in it.
+
+Ruby is deliberately absent. There is no reliable static public surface for a
+gem, and forcing a low-confidence signal into the highest-weight slot is a lie
+told by a number.
+
 **OpenAPI diff** — reports only consumer-breaking direction. Tightening what a
 server accepts (new required field, narrowed request enum) or loosening what it
 returns (removed field, widened response enum) breaks callers. The mirror cases
@@ -297,8 +328,14 @@ AST parsing. Python, Go, Rust, Java, and Ruby use declaration-line matching, so
 enclosing-symbol attribution can be wrong in unusual formatting. The file and
 line are always exact; the symbol is a convenience.
 
-**Type-surface diffing is npm-only.** No equivalent computed signal exists yet
-for PyPI, Cargo, Maven, or RubyGems, so those rely on prose evidence.
+**Computed API diffs need a local toolchain.** Only npm's works with no
+installed tool. Cargo, Go, Maven, and PyPI diffs degrade to prose evidence, with
+the reason stated, when their tool is missing. RubyGems has no computed signal
+at all.
+
+**Go surfaces read the module root only.** `go doc -all` is run against the
+module path, so an API that lives entirely in subpackages is not compared.
+Grouped `const (...)` blocks are also not read.
 
 **Behaviour changes are the weak spot.** A changelog saying "retries are now
 exponential" has no symbol to search for and no compile error to catch. Drift

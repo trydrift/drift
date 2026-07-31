@@ -15,6 +15,8 @@ import { fetchRegistryInfo } from './registry.js';
 import { fetchReleaseNotes } from './releases.js';
 import { diffSpecs, parseSpec, type OpenApiFinding } from './openapi.js';
 import { diffSurfaces, fetchTypeSurface, type SurfaceChange } from './type-surface.js';
+import { computeSurfaceDiff, unavailable, type SurfaceUnavailable } from './surface/index.js';
+import type { Exec } from '../util/exec.js';
 
 /**
  * Evidence weights.
@@ -45,6 +47,16 @@ export interface EvidenceContext {
   readRepoFile?: (path: string, ref: string) => Promise<string | null>;
   beforeSha?: string;
   afterSha?: string;
+  /** Command runner for the ecosystem diffing tools. Injected by tests. */
+  exec?: Exec;
+  /**
+   * Called when a computed surface diff could not be produced.
+   *
+   * An absent diff is a fact about the run, not about the dependency, and the
+   * report says which — "japicmp is not installed" and "that version was
+   * yanked" lead a developer to different actions.
+   */
+  onUnavailableSurface?: (change: DependencyChange, reason: SurfaceUnavailable) => void;
 }
 
 /** Gather all available evidence for a batch of dependency changes. */
@@ -95,29 +107,12 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
     });
   }
 
-  // The machine-verified type surface diff. npm only, and only when the
-  // package ships declarations — but when it applies it is decisive.
-  if (config.evidence.typeSurface && change.ecosystem === 'npm') {
-    const surfaceChanges = await diffTypeSurfaces(change.name, change.from, change.to, logger);
-    if (surfaceChanges && surfaceChanges.length > 0) {
-      out.push({
-        id: stableId('ev', change.name, 'surface', change.from, change.to),
-        source: 'type-surface-diff',
-        dependency: change.name,
-        url: `https://www.npmjs.com/package/${change.name}/v/${change.to}`,
-        locator: `${change.name}@${change.from} → @${change.to} (.d.ts)`,
-        title: `${surfaceChanges.length} API surface change(s) in ${change.name}`,
-        content: formatSurfaceChanges(surfaceChanges),
-        findings: surfaceChanges.map((c) => ({
-          code: c.kind,
-          symbol: c.symbol,
-          detail: c.detail,
-          before: c.before,
-          after: c.after,
-        })),
-        weight: WEIGHTS['type-surface-diff'],
-      });
-    }
+  // The machine-verified API surface diff. Every ecosystem answers the same
+  // question here, with the weight its evidence honestly earns; when it
+  // applies it is decisive.
+  if (config.evidence.typeSurface) {
+    const surface = await surfaceEvidence(change, ctx);
+    if (surface) out.push(surface);
   }
 
   const githubRepo = registry?.githubRepo;
@@ -189,6 +184,83 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
   }
 
   return out;
+}
+
+/**
+ * The computed API-surface diff for one dependency move.
+ *
+ * npm is served from jsDelivr with no local toolchain; everything else goes
+ * through `surface/`, which shells out to the ecosystem's own diffing tool.
+ * Both produce the same `SurfaceChange[]`, so nothing downstream — analyze,
+ * plan, or any guardrail — learns which ecosystem it came from.
+ *
+ * A surface that could not be computed is recorded on the change so the report
+ * and the panel can say *why* rather than showing an absence.
+ */
+async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): Promise<Evidence | null> {
+  const { logger } = ctx;
+  const from = change.from!;
+  const to = change.to!;
+
+  if (change.ecosystem === 'npm') {
+    const surfaceChanges = await diffTypeSurfaces(change.name, from, to, logger);
+    if (!surfaceChanges) {
+      ctx.onUnavailableSurface?.(
+        change,
+        unavailable(
+          'TypeScript declarations',
+          'no-public-surface',
+          `${change.name} publishes no TypeScript declarations Drift could compare, so this upgrade rests on prose evidence.`,
+        ),
+      );
+      return null;
+    }
+    if (surfaceChanges.length === 0) return null;
+
+    return surfaceRecord(change, {
+      changes: surfaceChanges,
+      weight: WEIGHTS['type-surface-diff'],
+      locator: `${change.name}@${from} → @${to} (.d.ts)`,
+      url: `https://www.npmjs.com/package/${change.name}/v/${to}`,
+    });
+  }
+
+  const outcome = await computeSurfaceDiff(change, { logger, exec: ctx.exec });
+  if (!outcome.available) {
+    logger.debug(`No computed surface for ${change.name}: ${outcome.detail}`);
+    ctx.onUnavailableSurface?.(change, outcome);
+    return null;
+  }
+  if (outcome.changes.length === 0) return null;
+
+  return surfaceRecord(change, {
+    changes: outcome.changes,
+    weight: outcome.weight,
+    locator: `${outcome.locator} · computed by ${outcome.tool}`,
+  });
+}
+
+function surfaceRecord(
+  change: DependencyChange,
+  args: { changes: SurfaceChange[]; weight: number; locator: string; url?: string },
+): Evidence {
+  return {
+    id: stableId('ev', change.name, 'surface', change.from ?? '', change.to ?? ''),
+    source: 'type-surface-diff',
+    dependency: change.name,
+    url: args.url,
+    locator: args.locator,
+    title: `${args.changes.length} API surface change(s) in ${change.name}`,
+    content: formatSurfaceChanges(args.changes),
+    findings: args.changes.map((c) => ({
+      code: c.kind,
+      symbol: c.symbol,
+      detail: c.detail,
+      before: c.before,
+      after: c.after,
+    })),
+    weight: args.weight,
+  };
 }
 
 async function diffTypeSurfaces(
@@ -314,6 +386,7 @@ function truncate(text: string, max: number): string {
 export { WEIGHTS as EVIDENCE_WEIGHTS };
 export * from './openapi.js';
 export * from './type-surface.js';
+export * from './surface/index.js';
 export * from './changelog.js';
 export * from './registry.js';
 export * from './releases.js';
