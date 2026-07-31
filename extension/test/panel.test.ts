@@ -20,6 +20,8 @@ function candidate(over: Partial<UpgradeCandidate> = {}): UpgradeCandidate {
     id: 'lodash@4.17.21->5.0.0',
     name: 'lodash',
     kind: 'runtime',
+    ecosystem: 'npm',
+    packageManager: 'npm',
     manifestPath: 'package.json',
     current: '4.17.21',
     range: '^4.17.0',

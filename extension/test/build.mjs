@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs';
 import { build } from 'esbuild';
 
 /**
@@ -19,18 +20,20 @@ await build({
 });
 
 /**
- * The panel render tests, bundled for the same reason: extension sources use
- * `.js` specifiers that only a bundler resolves. Rendering the real panel in
- * plain Node is the only automated check that the largest file in the extension
+ * Every test file, bundled for the same reason: extension sources use `.js`
+ * specifiers that only a bundler resolves. Rendering the real panel in plain
+ * Node is the only automated check that the largest file in the extension
  * produces the markup it claims to.
  */
-await build({
-  entryPoints: ['test/panel.test.ts'],
-  bundle: true,
-  platform: 'node',
-  target: 'node20',
-  format: 'cjs',
-  outfile: 'dist/panel.test.cjs',
-  alias: { vscode: './test/vscode-stub.ts' },
-  logLevel: 'warning',
-});
+for (const name of readdirSync('test').filter((f) => f.endsWith('.test.ts'))) {
+  await build({
+    entryPoints: [`test/${name}`],
+    bundle: true,
+    platform: 'node',
+    target: 'node20',
+    format: 'cjs',
+    outfile: `dist/${name.replace(/\.ts$/, '.cjs')}`,
+    alias: { vscode: './test/vscode-stub.ts' },
+    logLevel: 'warning',
+  });
+}

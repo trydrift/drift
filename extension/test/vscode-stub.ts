@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync } from 'node:fs';
+
 /**
  * Minimal `vscode` stand-in for headless testing.
  *
@@ -123,10 +125,15 @@ export const workspace = {
       (__settings.has(key) ? (__settings.get(key) as T) : (fallback as T)),
     update: async () => undefined,
   }),
+  // Backed by the real filesystem: the code under test reads manifests and
+  // lockfiles, and a fake tree would only test the fake. Tests point it at a
+  // temporary directory they built themselves.
   fs: {
-    readFile: async () => {
-      throw new Error('not found');
-    },
+    readFile: async (uri: { fsPath: string }) => readFileSync(uri.fsPath),
+    readDirectory: async (uri: { fsPath: string }) =>
+      readdirSync(uri.fsPath, { withFileTypes: true }).map(
+        (entry) => [entry.name, entry.isDirectory() ? 2 : 1] as [string, number],
+      ),
   },
   applyEdit: async () => true,
   saveAll: async () => true,

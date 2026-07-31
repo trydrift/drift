@@ -26,13 +26,17 @@ import {
 } from '../agents/registry.js';
 import type { AttachedContext, EffortStop } from '../agents/types.js';
 import { getGitHubSession, getRateLimitToken } from '../github-auth.js';
+import type { PackageManagerId } from '../../../src/detect/package-manager.js';
 import {
+  ambiguityKey,
   describeSeverity,
-  installNpmForcedUpgrade,
-  installNpmUpgrade,
+  discoverTargets,
+  installUpgrade,
   reanalyzeUpgrade,
-  scanNpmUpgrades,
+  scanUpgrades,
+  upgradeCommandFor,
   severityOf,
+  type ManagerPreferences,
   type UpgradeCandidate,
 } from '../upgrades.js';
 import { Checkpoints } from '../checkpoint.js';
@@ -94,6 +98,9 @@ type Incoming =
  * them in makes the filter box useless — the point of the picker is that typing
  * three characters finds the file you meant.
  */
+/** Workspace memento key for "which package manager owns this ecosystem". */
+const MANAGER_KEY = 'drift.packageManagers';
+
 const EXCLUDED_FROM_CONTEXT = '**/{node_modules,.git,dist,out,build,coverage,.next,.turbo,.venv,__pycache__}/**';
 
 interface WorkspaceContext {
@@ -144,7 +151,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     private readonly session: DriftSession,
     private readonly review: DriftReview,
     private readonly output: vscode.LogOutputChannel,
-    memento: vscode.Memento,
+    private readonly memento: vscode.Memento,
   ) {
     this.history = new DriftHistory(memento);
 
@@ -164,7 +171,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // moment a manifest or a source file moves, it is describing something that
     // no longer exists — so the panel says which files changed and offers the
     // one action that makes it true again, rather than quietly going stale.
-    const manifests = vscode.workspace.createFileSystemWatcher('**/{package.json,package-lock.json}');
+    const manifests = vscode.workspace.createFileSystemWatcher(
+      '**/{package.json,package-lock.json,pnpm-lock.yaml,yarn.lock,bun.lock,bun.lockb,pyproject.toml,requirements.txt,poetry.lock,uv.lock,go.mod,go.sum,Cargo.toml,Cargo.lock,Gemfile,Gemfile.lock,pom.xml,build.gradle,build.gradle.kts}',
+    );
     this.disposables.push(
       manifests,
       manifests.onDidChange((uri) => this.markStale(uri, 'dependencies')),
@@ -661,6 +670,54 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     await this.scan({ quiet: true });
   }
 
+  /**
+   * Settle which tool owns each ecosystem before anything is scanned.
+   *
+   * Two lockfiles for one ecosystem is a real state to walk into — a
+   * half-finished pnpm migration leaves both behind — and guessing picks a
+   * loser and writes the wrong lockfile. Answers are remembered per workspace,
+   * because a repository's build tooling is not a per-scan decision.
+   *
+   * Returns `null` when the developer declined to choose, which cancels the
+   * scan rather than proceeding on a guess.
+   */
+  private async resolveManagers(root: string): Promise<ManagerPreferences | null> {
+    const stored = new Map<string, PackageManagerId>(
+      Object.entries(this.memento.get<Record<string, PackageManagerId>>(MANAGER_KEY, {})),
+    );
+
+    const { ambiguities } = await discoverTargets(root, [''], stored);
+    if (ambiguities.length === 0) return stored;
+
+    for (const ambiguity of ambiguities) {
+      const where = ambiguity.dir ? `\`${ambiguity.dir}\`` : 'this repository';
+      const answer = await this.session.ask(
+        `${where} has ${ambiguity.candidates.length} package managers claiming the same dependencies: ${ambiguity.candidates
+          .map((c) => `**${c.manager.label}** (${c.evidence.join(', ')})`)
+          .join(', ')}. Which one do you actually use?`,
+        [
+          ...ambiguity.candidates.map((c) => ({
+            label: c.manager.label,
+            value: c.manager.id,
+            description: `Read ${c.evidence[0]} and run \`${c.manager.label}\` for upgrades`,
+          })),
+          { label: 'Cancel the scan', value: 'cancel' },
+        ],
+        false,
+      );
+
+      if (answer === 'cancel' || answer === '') {
+        this.session.notice('info', 'Scan cancelled. Delete the lockfile you no longer use, or pick a manager next time.');
+        return null;
+      }
+
+      stored.set(ambiguityKey(ambiguity.dir, ambiguity.ecosystem), answer as PackageManagerId);
+    }
+
+    await this.memento.update(MANAGER_KEY, Object.fromEntries(stored));
+    return stored;
+  }
+
   private async scan(options: { quiet?: boolean } = {}): Promise<void> {
     if (this.busy) {
       this.session.notice('info', this.busyMessage());
@@ -669,9 +726,15 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     const ctx = await this.context();
     if (!ctx) {
-      this.session.notice('warn', 'Open a git repository with a `package.json` to scan dependencies.');
+      this.session.notice(
+        'warn',
+        'Open a git repository with a dependency manifest — `package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `Gemfile`, or `pom.xml` — to scan dependencies.',
+      );
       return;
     }
+
+    const managers = await this.resolveManagers(ctx.root);
+    if (!managers) return;
 
     this.scanned = true;
     this.clearStale();
@@ -680,9 +743,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     await this.run(async (token) => {
       try {
         const found: UpgradeCandidate[] = [];
-        const result = await scanNpmUpgrades({
+        const result = await scanUpgrades({
           root: ctx.root,
           repo: ctx.repo,
+          managers,
           // Every direct dependency, every time. What counts as a dependency
           // worth checking is a settings question — `drift.analysis.includeDev`
           // and `includePatch`, already merged into this config — and never a
@@ -789,7 +853,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       '',
       `- ${describeSeverity(candidate)}`,
       `- ${candidate.evidenceCount} evidence source${candidate.evidenceCount === 1 ? '' : 's'} read`,
-      `- Newest version within your \`package.json\` range: ${candidate.safeLatest ?? 'none'}`,
+      `- Newest version within your \`${manifestName(candidate)}\` range: ${candidate.safeLatest ?? 'none'}`,
       `- Newest published: ${candidate.latest}`,
     ];
 
@@ -867,7 +931,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // so it is put to the developer rather than buried in a button label.
     if (mode === 'force') {
       const answer = await this.session.ask(
-        `Install ${candidates.map((c) => `**${c.name}@${c.latest}**`).join(', ')} with \`npm install --force\`? That widens the range in \`package.json\` and can leave peer dependencies unsatisfied.`,
+        `Install ${candidates.map((c) => `**${c.name}@${c.latest}**`).join(', ')} past the range your manifest declares? That widens the constraint and can leave peer dependencies unsatisfied.`,
         [
           { label: 'Yes, force it', value: 'force', description: 'I will deal with any peer conflicts' },
           { label: 'Stay within my range', value: 'safe', description: 'Install the newest compatible version instead' },
@@ -903,18 +967,23 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           this.candidates.delete(candidate.id);
         }
 
-        step.progress('Running npm install', `${current.name}@${target}`);
+        const command = upgradeCommandFor(current, mode);
+        step.progress(command ? `Running ${command}` : 'Upgrading', `${current.name}@${target}`);
         this.candidates.set(current.id, { ...current, status: 'upgrading' });
         this.refreshPackageList();
 
         try {
-          if (mode === 'force') await installNpmForcedUpgrade(ctx.root, current);
-          else await installNpmUpgrade(ctx.root, current);
+          await installUpgrade(ctx.root, current, mode);
         } catch (err) {
           this.candidates.set(current.id, { ...current, status: 'error', error: (err as Error).message });
           this.refreshPackageList();
-          step.fail(`npm install failed for ${current.name}`);
-          this.session.notice('error', `\`npm install ${current.name}@${target}\` failed: ${(err as Error).message}`);
+          step.fail(`Upgrade failed for ${current.name}`);
+          this.session.notice(
+            'error',
+            command
+              ? `\`${command}\` failed: ${(err as Error).message}`
+              : (err as Error).message,
+          );
           return;
         }
 
@@ -923,8 +992,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         this.session.notice(
           'success',
           mode === 'force'
-            ? `Forced **${current.name}** to ${target}. Check \`npm ls\` for peer-dependency conflicts before committing.`
-            : `Updated **${current.name}** to ${target}, within the range already in \`package.json\`.`,
+            ? `Forced **${current.name}** to ${target}. Check for peer-dependency conflicts before committing.`
+            : `Updated **${current.name}** to ${target}, within the range already in \`${manifestName(current)}\`.`,
         );
       }
 
@@ -1671,7 +1740,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           version === candidate.latest
             ? 'latest published'
             : version === candidate.safeLatest
-              ? 'within your package.json range'
+              ? `within your ${manifestName(candidate)} range`
               : undefined,
         version,
       })),
@@ -2265,6 +2334,12 @@ function activeGroupId(plan: RemediationPlan, state: DriftState): string {
   const status = state.status;
   const order = status.kind === 'fixing' ? status.commitOrder : plan.commits[0]?.order;
   return `c${order ?? 1}`;
+}
+
+/** The manifest file the developer would open, without its directory. */
+function manifestName(candidate: UpgradeCandidate): string {
+  const path = candidate.manifestPath;
+  return path.includes('/') ? path.slice(path.lastIndexOf('/') + 1) : path;
 }
 
 function bySeverity(a: UpgradeCandidate, b: UpgradeCandidate): number {
