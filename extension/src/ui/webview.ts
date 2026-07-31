@@ -1690,6 +1690,11 @@ ul.sites span { font-size: 11px; color: var(--vscode-descriptionForeground); }
    labels change, which moves the send button under the developer's pointer. */
 .composer-bar { display: flex; align-items: center; gap: 2px; flex-wrap: nowrap; min-width: 0; }
 .composer-bar .spacer { flex: 1 1 auto; min-width: 8px; }
+/* Four controls and a send button in a sidebar that can be 200px wide: the
+   labelled ones give up their text before anything wraps or overflows, and the
+   icon still says which control it is. Send never shrinks. */
+.composer-bar .ctl { flex: 0 1 auto; }
+.composer-bar .ctl.icon, .composer-bar button.send, .composer-bar button.stop { flex: 0 0 auto; }
 button.send, button.stop {
   width: 22px;
   height: 22px;
