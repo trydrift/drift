@@ -44,12 +44,28 @@ export interface AgentModel {
   label: string;
   detail?: string;
   /**
-   * Effort stops this model can honour, weakest first.
+   * This model's own effort scale, when it differs from its subscription's.
    *
-   * The composer's slider is drawn from this, so a model with no reasoning
-   * control never offers a stop that would do nothing.
+   * The composer's dial is drawn from this, so a model that cannot honour a
+   * stop never offers one.
    */
-  efforts?: SessionEffort[];
+  efforts?: readonly EffortStop[];
+}
+
+/**
+ * One position on an agent's effort dial.
+ *
+ * Every provider names its own reasoning budget, and the panel uses that name
+ * rather than inventing a house vocabulary: Claude's top stop is Ultracode,
+ * Codex's is Extra High, and a developer reading either should see the word
+ * their subscription uses. `value` is the ordinal Drift stores and passes back;
+ * `label` and `detail` are the provider's.
+ */
+export interface EffortStop {
+  value: SessionEffort;
+  label: string;
+  /** What this position actually does to the model. */
+  detail: string;
 }
 
 export interface FileSnapshot {
@@ -135,6 +151,13 @@ export interface FixAgent {
   readonly kind: AgentKind;
   /** Whether a model id typed by hand is worth offering. */
   readonly acceptsCustomModel?: boolean;
+  /**
+   * This subscription's effort scale, in its own vocabulary.
+   *
+   * Absent means the backend has no reasoning control at all, and the composer
+   * then hides the dial rather than showing one that does nothing.
+   */
+  readonly efforts?: readonly EffortStop[];
   detect(): Promise<AgentAvailability>;
   /** The models available inside this subscription. Absent means "just the one". */
   listModels?(): Promise<AgentModel[]>;

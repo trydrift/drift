@@ -1,6 +1,5 @@
 import type {
   Attachment,
-  SessionEffort,
   SessionMode,
   SessionPermission,
   Task,
@@ -8,7 +7,7 @@ import type {
   TaskState,
   ThreadItem,
 } from '../session.js';
-import { describeEffort, describeMode, describePermission, describePermissionShort } from '../labels.js';
+import { describeMode, describePermission, describePermissionShort } from '../labels.js';
 import type { UpgradeCandidate } from '../upgrades.js';
 import { describeSeverity, severityOf, type UpgradeSeverity } from '../severity.js';
 import type { ReviewGroup, ReviewTotals } from '../review/store.js';
@@ -111,7 +110,12 @@ export interface ViewModel {
   agentId: string;
   agentLabel: string;
   mode: SessionMode;
-  effort: SessionEffort;
+  /**
+   * What the active agent calls the effort it is set to — `Ultracode`, `Extra
+   * High`, whatever its vendor says. `null` when the agent has no reasoning
+   * budget at all, and the control is then left out rather than drawn dead.
+   */
+  effortLabel: string | null;
   permission: SessionPermission;
   attachments: readonly Attachment[];
   thread: readonly ThreadItem[];
@@ -136,6 +140,8 @@ export interface ViewModel {
    * occasionally swallowed the last keystroke of a fast typist.
    */
   draftToken: number;
+  /** Namespaces the typewriter's per-message bookkeeping. */
+  conversationId: string;
 }
 
 export const SLASH_COMMANDS: readonly SlashCommand[] = [
@@ -252,9 +258,13 @@ function renderItem(item: ThreadItem, vm: ViewModel): string {
       </div>`;
 
     case 'assistant':
+      // `data-type` is what the typewriter keys its progress on. It carries the
+      // conversation id as well as the item id because item ids restart at `i1`
+      // in every thread, and a reopened conversation must not retype what it
+      // already typed.
       return `<div class="turn assistant">
         <div class="who">${LOGO_SMALL}<span>Drift</span></div>
-        <div class="body markdown">${renderMarkdown(item.text)}</div>
+        <div class="body markdown" data-type="${escapeAttr(`${vm.conversationId}:${item.id}`)}">${renderMarkdown(item.text)}</div>
       </div>`;
 
     case 'notice':
@@ -820,11 +830,22 @@ function renderComposer(vm: ViewModel): string {
     <div class="composer-bar">
       <button class="ctl icon" data-action="openMenu" data-anchor="context" title="Add context, or choose which model does the work" aria-label="Context and model">${ICON_PLUS}</button>
 
-      <button class="ctl" data-action="openMenu" data-anchor="effort" title="${escapeAttr(
-        `Effort: ${describeEffort(vm.effort)}. How widely Drift looks, and how hard the model thinks.`,
-      )}">
-        ${ICON_SPEED}<span>${escapeHtml(describeEffort(vm.effort))}</span>
+      <button class="ctl" data-action="openMenu" data-anchor="tools" title="Everything Drift can do: scan, check the last dependency change, upgrade, fix, review">
+        ${ICON_TOOLS}<span>Tools</span>
       </button>
+
+      ${
+        // Only drawn for agents that actually have a reasoning budget. Effort
+        // changes how hard the model thinks and nothing else — never which
+        // packages are checked or which fixes are attempted.
+        vm.effortLabel
+          ? `<button class="ctl" data-action="openMenu" data-anchor="effort" title="${escapeAttr(
+              `Effort: ${vm.effortLabel}. How hard ${vm.agentLabel} thinks about each fix.`,
+            )}">
+              ${ICON_SPEED}<span>${escapeHtml(vm.effortLabel)}</span>
+            </button>`
+          : ''
+      }
 
       <span class="spacer"></span>
 
@@ -1069,6 +1090,10 @@ export function makeNonce(): string {
 const svg = (body: string, size = 14): string =>
   `<svg class="i" width="${size}" height="${size}" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">${body}</svg>`;
 
+/** The same, drawn as a line. For glyphs a filled shape makes too heavy. */
+const stroke = (body: string, size = 14, width = 1.3): string =>
+  `<svg class="i" width="${size}" height="${size}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+
 const LOGO = `<svg width="34" height="34" viewBox="0 0 32 32" fill="none" aria-hidden="true">
   <path d="M4 22c5-1 7-12 12-12s7 11 12 10" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
   <circle cx="16" cy="10" r="2.6" fill="currentColor"/>
@@ -1088,7 +1113,14 @@ const ICON_PACKAGE = svg('<path d="M8 1 2 4v8l6 3 6-3V4L8 1zm0 1.7 4 2L8 6.8 4 4
 const ICON_SELECTION = svg('<path d="M2 2h5v1.5H3.5V7H2V2zm7 0h5v5h-1.5V3.5H9V2zM2 9h1.5v3.5H7V14H2V9zm10.5 0H14v5H9v-1.5h3.5V9z"/>');
 const ICON_USER = svg('<path d="M8 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 7c3 0 5.5 1.6 5.5 3.5V14h-11v-1.5C2.5 10.6 5 9 8 9z"/>');
 const ICON_ATTACH = svg('<path d="M8 1.5a2.5 2.5 0 0 1 2.5 2.5v6a4 4 0 0 1-8 0V5H4v5a2.5 2.5 0 0 0 5 0V4a1 1 0 0 0-2 0v6H5.5V4A2.5 2.5 0 0 1 8 1.5z"/>');
-const ICON_SEND = svg('<path d="M8 2 3 7h3.2v7h3.6V7H13L8 2z"/>', 14);
+/**
+ * Send.
+ *
+ * Drawn as a stroke rather than a filled wedge. A solid arrowhead at this size
+ * reads as a heavy, almost warning-shaped blob next to the hairline controls
+ * beside it; a thin line matches the weight of the rest of the composer.
+ */
+const ICON_SEND = stroke('<path d="M8 12.5V3.9M8 3.5l-3.6 3.6M8 3.5l3.6 3.6"/>', 15, 1.3);
 const ICON_STOP = svg('<rect x="4.5" y="4.5" width="7" height="7" rx="1.2"/>', 13);
 const ICON_SEARCH = svg('<path d="M10.5 9.5 14 13l-1 1-3.5-3.5A5 5 0 1 1 10.5 9.5zM6.5 3a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/>', 16);
 const ICON_HISTORY = svg('<path d="M8 1.5A6.5 6.5 0 1 0 14.5 8H13A5 5 0 1 1 8 3v2.5L11.5 3.2 8 1V1.5zM7.25 5v4l3.2 1.9.75-1.25L8.75 8.3V5h-1.5z"/>', 16);
@@ -1113,6 +1145,8 @@ const ICON_CHECKLIST = svg('<path d="M2 3.5 3.4 5 6 2.4l-.9-.9L3.4 3.2 2.9 2.6 2
 const ICON_DASH = svg('<path d="M3.5 7.25h9v1.5h-9z"/>', 11);
 const ICON_BACK = svg('<path d="M6.8 3.4 7.7 4.3 5 7h9v1.5H5l2.7 2.7-.9.9L2.6 7.75 6.8 3.4z"/>', 12);
 const ICON_SPEED = svg('<path d="M8 2.5A6.5 6.5 0 0 0 2.2 12h11.6A6.5 6.5 0 0 0 8 2.5zm2.9 3.1L8.9 9a1.1 1.1 0 1 1-1-1l3-2.4z"/>', 13);
+const ICON_TOOLS = svg('<path d="M10.7 1.5a4 4 0 0 0-3.6 5.7L1.8 12.5l1.7 1.7 5.3-5.3a4 4 0 0 0 5-5.2L11.6 5.5 10 3.9l2.8-2.2a4 4 0 0 0-2.1-.2z"/>', 13);
+const ICON_HISTORY_SMALL = svg('<path d="M8 1.5A6.5 6.5 0 1 0 14.5 8H13A5 5 0 1 1 8 3v2.5L11.5 3.2 8 1V1.5zM7.25 5v4l3.2 1.9.75-1.25L8.75 8.3V5h-1.5z"/>', 13);
 
 /** Icons the menu may use, named rather than passed as markup. */
 const MENU_ICONS = {
@@ -1129,6 +1163,10 @@ const MENU_ICONS = {
   close: ICON_CLOSE,
   search: ICON_SEARCH_SMALL,
   back: ICON_BACK,
+  history: ICON_HISTORY_SMALL,
+  diff: ICON_DIFF,
+  plus: ICON_PLUS,
+  info: ICON_INFO,
 } as const;
 
 /* ------------------------------------------------------------------ */
@@ -1936,6 +1974,10 @@ const ui = {
   atBottom: true,
   disclosures: {},
   menu: { open: false, anchor: 'context', query: '' },
+  /* How much of each answer has been typed out, keyed by conversation and item.
+     Persisted so a re-render — of which there are many per second during a scan
+     — resumes the animation instead of restarting it. */
+  typed: {},
 };
 
 Object.assign(ui, vscode.getState() || {});
@@ -1956,6 +1998,7 @@ function save() {
     atBottom: ui.atBottom,
     disclosures: ui.disclosures,
     menu: ui.menu,
+    typed: ui.typed,
   });
 }
 
@@ -1984,6 +2027,86 @@ function grow() {
   if (!input) return;
   input.style.height = 'auto';
   input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+}
+
+/* ------------------------------------------------------------------ */
+/* The typewriter                                                      */
+/* ------------------------------------------------------------------ */
+
+/* Answers arrive complete — the host has the whole string before it renders
+   anything — and dropping a screen of prose into the panel in one frame reads
+   as a stall followed by a wall of text. Typing it out instead means the panel
+   is visibly working from the first character, and the developer starts reading
+   the first line while the rest lands.
+
+   It types the *rendered* markup rather than the source, by walking the text
+   nodes and trimming them: the headings, code spans and links are already in
+   place, so nothing reflows as the text fills in.
+
+   Only the newest answer types. Everything above it has been read already, and
+   replaying a restored conversation would be a wait in front of known content.
+   Progress is stored per message, so the many re-renders a running scan causes
+   resume the animation rather than restarting it, and -1 means finished. */
+
+let typing = null;
+
+function textNodesIn(element) {
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  return nodes;
+}
+
+function typewriter() {
+  if (typing) { clearInterval(typing); typing = null; }
+
+  const bodies = [...document.querySelectorAll('[data-type]')];
+  const live = new Set(bodies.map((el) => el.dataset.type));
+  for (const key of Object.keys(ui.typed)) if (!live.has(key)) delete ui.typed[key];
+
+  const last = bodies[bodies.length - 1];
+  for (const el of bodies) if (el !== last) ui.typed[el.dataset.type] = -1;
+  if (!last) return;
+
+  const key = last.dataset.type;
+  const nodes = textNodesIn(last);
+  const full = nodes.map((node) => node.nodeValue);
+  const total = full.reduce((sum, text) => sum + text.length, 0);
+
+  let shown = ui.typed[key] === undefined ? 0 : ui.typed[key];
+  if (shown === -1 || shown >= total || total === 0) {
+    ui.typed[key] = -1;
+    return;
+  }
+
+  const reveal = (count) => {
+    let left = count;
+    nodes.forEach((node, index) => {
+      const text = full[index];
+      if (left >= text.length) { node.nodeValue = text; left -= text.length; }
+      else { node.nodeValue = text.slice(0, left); left = 0; }
+    });
+  };
+
+  // Sized so a long answer still finishes in about a second: the point is to
+  // show work happening, not to make the developer watch an animation.
+  const step = Math.max(2, Math.ceil(total / 70));
+  reveal(shown);
+
+  typing = setInterval(() => {
+    if (!last.isConnected) { clearInterval(typing); typing = null; return; }
+
+    shown = Math.min(total, shown + step);
+    reveal(shown);
+    ui.typed[key] = shown >= total ? -1 : shown;
+    if (thread && ui.atBottom) thread.scrollTop = thread.scrollHeight;
+
+    if (shown >= total) {
+      clearInterval(typing);
+      typing = null;
+      save();
+    }
+  }, 16);
 }
 
 /* ------------------------------------------------------------------ */
@@ -2083,6 +2206,9 @@ function mount() {
       syncMenu();
     }
   }
+
+  // Before the first paint of this body, so the untyped tail never flashes.
+  typewriter();
 
   for (const slider of document.querySelectorAll('input[type="range"][data-action="slider"]')) {
     slider.addEventListener('input', () => previewSlider(slider));

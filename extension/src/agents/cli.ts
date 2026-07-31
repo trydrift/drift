@@ -4,12 +4,13 @@ import { delimiter, dirname, join } from 'node:path';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import * as vscode from 'vscode';
-import { reasoningEffort } from '../session.js';
+import type { SessionEffort } from '../session.js';
 import {
   buildFixPrompt,
   type AgentAvailability,
   type AgentContext,
   type AgentModel,
+  type EffortStop,
   type FixAgent,
   type FixOutcome,
   type FixTask,
@@ -54,8 +55,23 @@ export interface CliAgentSpec {
   models?: readonly AgentModel[];
   /** How this CLI takes a model id. */
   modelArgs?: (model: string) => string[];
-  /** How this CLI takes a reasoning budget, if it takes one at all. */
-  effortArgs?: (effort: 'low' | 'medium' | 'high') => string[];
+  /**
+   * This CLI's reasoning budget, named the way its vendor names it.
+   *
+   * Absent means the agent has no such control, and the composer hides the dial
+   * rather than offering a setting that changes nothing.
+   */
+  efforts?: readonly EffortStop[];
+  /** How this CLI takes a reasoning budget on the command line. */
+  effortArgs?: (effort: SessionEffort) => string[];
+  /**
+   * How this CLI takes a reasoning budget in the prompt.
+   *
+   * Claude Code has no flag for it — the depth of thinking is asked for in
+   * words, and the words are load-bearing. Returning an empty string asks for
+   * nothing, which is what the lowest stop means.
+   */
+  effortPrompt?: (effort: SessionEffort) => string;
   versionArgs?: string[];
   /** VS Code chat extensions that can bundle or configure this agent. */
   extensionIds?: string[];
@@ -65,6 +81,36 @@ export interface CliAgentSpec {
   detectAuth?: (command: string) => Promise<string | null>;
   docsUrl: string;
 }
+
+/**
+ * Claude's effort scale, in Anthropic's words.
+ *
+ * Claude Code takes its thinking budget in the prompt rather than on the
+ * command line, and the keywords are the documented interface: `think`,
+ * `think harder`, `ultrathink`. The lowest stop asks for nothing at all, which
+ * is the fastest the CLI goes.
+ */
+const CLAUDE_EFFORTS: readonly EffortStop[] = [
+  { value: 'low', label: 'Low', detail: 'Edits directly, without extended thinking. Fastest.' },
+  { value: 'medium', label: 'Medium', detail: 'Thinks through each change before making it.' },
+  { value: 'high', label: 'High', detail: 'Thinks harder — worth it on tangled migrations.' },
+  { value: 'xhigh', label: 'Ultracode', detail: 'Ultrathink: the deepest reasoning Claude Code offers.' },
+];
+
+const CLAUDE_THINKING: Record<SessionEffort, string> = {
+  low: '',
+  medium: 'think',
+  high: 'think harder',
+  xhigh: 'ultrathink',
+};
+
+/** Codex's scale. `model_reasoning_effort` takes these verbatim. */
+const CODEX_EFFORTS: readonly EffortStop[] = [
+  { value: 'low', label: 'Low', detail: 'Minimal reasoning. Fastest.' },
+  { value: 'medium', label: 'Medium', detail: 'The default reasoning budget.' },
+  { value: 'high', label: 'High', detail: 'More reasoning per edit.' },
+  { value: 'xhigh', label: 'Extra High', detail: 'The largest reasoning budget Codex accepts.' },
+];
 
 export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
   {
@@ -81,10 +127,13 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
         id: 'haiku',
         label: 'Claude Haiku',
         detail: 'Fastest and cheapest. Fine for mechanical renames.',
-        efforts: ['quick', 'balanced', 'thorough'],
+        // Haiku has no ultrathink budget to spend, so its dial stops at High.
+        efforts: CLAUDE_EFFORTS.slice(0, 3),
       },
     ],
     modelArgs: (model) => ['--model', model],
+    efforts: CLAUDE_EFFORTS,
+    effortPrompt: (effort) => CLAUDE_THINKING[effort],
     versionArgs: ['--version'],
     extensionIds: ['anthropic.claude-code'],
     extensionBinaryPaths: [
@@ -96,7 +145,7 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
   },
   {
     id: 'codex',
-    label: 'Codex CLI',
+    label: 'Codex',
     description: "OpenAI's coding agent.",
     command: 'codex',
     buildArgs: () => ['exec', '--full-auto'],
@@ -106,6 +155,7 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
       { id: 'gpt-5', label: 'GPT-5', detail: 'The general model.' },
     ],
     modelArgs: (model) => ['--model', model],
+    efforts: CODEX_EFFORTS,
     effortArgs: (effort) => ['-c', `model_reasoning_effort="${effort}"`],
     versionArgs: ['--version'],
     extensionIds: ['openai.chatgpt'],
@@ -129,12 +179,7 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
     versionArgs: ['--version'],
     models: [
       { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', detail: 'The reasoning model.' },
-      {
-        id: 'gemini-2.5-flash',
-        label: 'Gemini 2.5 Flash',
-        detail: 'Faster, cheaper, shallower.',
-        efforts: ['quick', 'balanced', 'thorough'],
-      },
+      { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', detail: 'Faster, cheaper, shallower.' },
     ],
     modelArgs: (model) => ['-m', model],
     docsUrl: 'https://github.com/google-gemini/gemini-cli',
@@ -170,6 +215,7 @@ export class CliFixAgent implements FixAgent {
   readonly label: string;
   readonly description: string;
   readonly acceptsCustomModel: boolean;
+  readonly efforts: readonly EffortStop[] | undefined;
   private executable: string | null = null;
 
   constructor(
@@ -180,6 +226,7 @@ export class CliFixAgent implements FixAgent {
     this.label = spec.label;
     this.description = spec.description;
     this.acceptsCustomModel = Boolean(spec.modelArgs);
+    this.efforts = spec.efforts;
   }
 
   async listModels(): Promise<AgentModel[]> {
@@ -220,7 +267,16 @@ export class CliFixAgent implements FixAgent {
   }
 
   async run(task: FixTask, ctx: AgentContext): Promise<FixOutcome> {
-    const prompt = [buildFixPrompt(task), '', '## Your task', '', task.commit.instructions].join('\n');
+    const prompt = [
+      buildFixPrompt(task),
+      '',
+      '## Your task',
+      '',
+      task.commit.instructions,
+      // Effort changes how hard this agent thinks about the task — never which
+      // parts of it to attempt. Every impact site above is still in scope.
+      ...(this.thinking(task) ? ['', this.thinking(task)] : []),
+    ].join('\n');
 
     const args = [...this.spec.buildArgs(prompt), ...this.selection(task)];
     const command = this.executable ?? (await resolveCommand(this.spec))?.path ?? this.spec.command;
@@ -260,8 +316,17 @@ export class CliFixAgent implements FixAgent {
   private selection(task: FixTask): string[] {
     const args: string[] = [];
     if (task.model && this.spec.modelArgs) args.push(...this.spec.modelArgs(task.model));
-    if (task.effort && this.spec.effortArgs) args.push(...this.spec.effortArgs(reasoningEffort(task.effort)));
+    if (task.effort && this.spec.effortArgs) args.push(...this.spec.effortArgs(task.effort));
     return args;
+  }
+
+  /**
+   * The sentence that carries the reasoning budget, for CLIs that take it in
+   * words rather than in flags.
+   */
+  private thinking(task: FixTask): string {
+    const keyword = task.effort && this.spec.effortPrompt ? this.spec.effortPrompt(task.effort) : '';
+    return keyword ? `Before editing anything, ${keyword} about how these changes fit together.` : '';
   }
 
   private exec(

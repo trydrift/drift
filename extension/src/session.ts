@@ -19,17 +19,63 @@ import * as vscode from 'vscode';
 export type SessionMode = 'ask' | 'agent';
 
 /**
- * How hard to look.
+ * How hard the model thinks. Nothing else.
  *
- * Real breadth, not a label: each level changes what is actually analysed, and
- * — where the agent's backend exposes it — how much reasoning the model spends
- * on each fix. `max` is offered only for models that can actually honour it,
- * which is why the composer's slider asks the agent which stops it has.
+ * Effort is a reasoning budget handed to the agent the developer chose, and it
+ * is deliberately *not* a scope control: Drift always analyses every dependency
+ * it can and always attempts every fix the evidence calls for. A dial that
+ * quietly narrowed the search would mean a low setting reported packages as safe
+ * because nothing looked at them — the one wrong answer this tool must never
+ * give.
+ *
+ * The four levels are ordinal, and each provider names them itself: what Claude
+ * calls Ultracode, Codex calls Extra High. Those names come from the agent, via
+ * `EffortStop`, so the dial always uses the vocabulary of the subscription the
+ * developer is paying for.
  */
-export type SessionEffort = 'quick' | 'balanced' | 'thorough' | 'max';
+export type SessionEffort = 'low' | 'medium' | 'high' | 'xhigh';
 
 /** The slider's stops, weakest first. Index is the slider's value. */
-export const EFFORT_ORDER: readonly SessionEffort[] = ['quick', 'balanced', 'thorough', 'max'];
+export const EFFORT_ORDER: readonly SessionEffort[] = ['low', 'medium', 'high', 'xhigh'];
+
+export const DEFAULT_EFFORT: SessionEffort = 'medium';
+
+/**
+ * Read a stored effort, tolerating the vocabulary Drift used to use.
+ *
+ * Older workspaces hold `quick`/`balanced`/`thorough`/`max`, which described how
+ * widely Drift looked rather than how hard the model thought. They map onto the
+ * new scale by position so nobody's setting silently resets.
+ */
+export function normalizeEffort(value: string | undefined): SessionEffort {
+  switch (value) {
+    case 'low':
+    case 'quick':
+      return 'low';
+    case 'high':
+    case 'thorough':
+      return 'high';
+    case 'xhigh':
+    case 'max':
+      return 'xhigh';
+    default:
+      return DEFAULT_EFFORT;
+  }
+}
+
+/**
+ * The effort the given subscription is set to.
+ *
+ * Kept per agent, for the same reason the model is: "High" on Codex and
+ * "Ultracode" on Claude are different products, and a developer who dialled one
+ * up has not asked the other to follow.
+ */
+export function readEffort(agentId: string): SessionEffort {
+  const efforts = vscode.workspace
+    .getConfiguration('drift')
+    .get<Record<string, string>>('agent.efforts', {});
+  return normalizeEffort(efforts?.[agentId]);
+}
 
 /** How much rope the agent gets. Mirrors Claude Code's permission modes. */
 export type SessionPermission = 'ask' | 'auto-edit' | 'full-auto';
@@ -135,47 +181,6 @@ export interface TaskListHandle {
   /** Close a group. Tasks whose file actually changed are ticked. */
   finish: (groupId: string, state: TaskState, changedFiles?: readonly string[]) => void;
   finishAll: (state: TaskState) => void;
-}
-
-export interface EffortProfile {
-  /** Analyse patch bumps as well as major/minor. */
-  includePatch: boolean;
-  /** Analyse dev dependencies. */
-  includeDev: boolean;
-  /** Cap on impact sites recorded per breaking change. */
-  maxSites: number;
-  /** Cap on packages checked in one scan. `0` means no cap. */
-  maxPackages: number;
-}
-
-export const EFFORT_PROFILES: Record<SessionEffort, EffortProfile> = {
-  // Enough to answer "is anything on fire?" in a few seconds.
-  quick: { includePatch: false, includeDev: false, maxSites: 12, maxPackages: 25 },
-  // The default: every runtime dependency, every major and minor bump.
-  balanced: { includePatch: false, includeDev: false, maxSites: 40, maxPackages: 0 },
-  // Everything, including the ~5% of patch releases that break something.
-  thorough: { includePatch: true, includeDev: true, maxSites: 120, maxPackages: 0 },
-  // Thorough, with the caps lifted and the model asked to reason hard. Offered
-  // only where the agent's backend actually has a knob for that.
-  max: { includePatch: true, includeDev: true, maxSites: 400, maxPackages: 0 },
-};
-
-/**
- * Effort, in the vocabulary the agent backends use.
- *
- * Codex takes `model_reasoning_effort`, Claude takes a thinking budget, and the
- * Copilot LM API takes nothing at all. Mapping once, here, keeps each agent from
- * inventing its own scale.
- */
-export function reasoningEffort(effort: SessionEffort): 'low' | 'medium' | 'high' {
-  switch (effort) {
-    case 'quick':
-      return 'low';
-    case 'balanced':
-      return 'medium';
-    default:
-      return 'high';
-  }
 }
 
 export class DriftSession {
@@ -532,16 +537,13 @@ export class DriftSession {
     return read<SessionMode>('session.mode', 'agent');
   }
 
-  get effort(): SessionEffort {
-    return read<SessionEffort>('session.effort', 'balanced');
-  }
-
   get permission(): SessionPermission {
     return read<SessionPermission>('session.permission', 'auto-edit');
   }
 
-  get effortProfile(): EffortProfile {
-    return EFFORT_PROFILES[this.effort];
+  /** How hard the given subscription has been asked to think. */
+  effort(agentId: string): SessionEffort {
+    return readEffort(agentId);
   }
 
   /**
@@ -571,8 +573,18 @@ export class DriftSession {
     this.emitter.fire();
   }
 
-  async setEffort(effort: SessionEffort): Promise<void> {
-    await write('session.effort', effort);
+  /**
+   * Set the effort for one subscription.
+   *
+   * Written globally, like the model, because a reasoning budget is a statement
+   * about the subscription — "when I use Claude, use Ultracode" — not about the
+   * repository that happens to be open.
+   */
+  async setEffort(agentId: string, effort: SessionEffort): Promise<void> {
+    const config = vscode.workspace.getConfiguration('drift');
+    const efforts = { ...(config.get<Record<string, string>>('agent.efforts', {}) ?? {}) };
+    efforts[agentId] = effort;
+    await config.update('agent.efforts', efforts, vscode.ConfigurationTarget.Global);
     this.emitter.fire();
   }
 

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import type { CommitUnit, RemediationPlan } from '../../src/types.js';
 import { Git } from './git.js';
 import type { DriftState } from './state.js';
-import type { SessionEffort, SessionPermission } from './session.js';
+import { readEffort, type SessionEffort, type SessionPermission } from './session.js';
 import type { DriftReview } from './review/store.js';
 import { resolveAgent, type RegistryContext } from './agents/registry.js';
 import type { AttachedContext, FixAgent, FixOutcome, FixTask } from './agents/types.js';
@@ -187,7 +187,7 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
       // The composer's two choices, carried through to whatever backend can act
       // on them. An agent that ignores either is no worse off for being told.
       model: driftConfig().get<Record<string, string>>('agent.models', {})?.[agent.id],
-      effort: driftConfig().get<SessionEffort>('session.effort', 'balanced'),
+      effort: readEffort(agent.id),
     });
 
     if (outcome.warnings?.length) warnings.push(...outcome.warnings);

@@ -146,7 +146,7 @@ function registerCommands(
   register('drift.reviewChanges', () => home.reveal());
   register('drift.newSession', () => home.newSession());
   register('drift.history', () => home.showHistory());
-  register('drift.toggleFullScreen', () => home.toggleFullScreen());
+  register('drift.clearHistory', () => home.clearHistory());
 
   register('drift.analyze', async () => {
     if (state.isBusy) {

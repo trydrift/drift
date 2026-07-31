@@ -156,10 +156,10 @@
         "icon": "$(history)"
       },
       {
-        "command": "drift.toggleFullScreen",
-        "title": "Toggle Full Screen",
+        "command": "drift.clearHistory",
+        "title": "Clear Conversation History",
         "category": "Drift",
-        "icon": "$(screen-full)"
+        "icon": "$(trash)"
       }
     ],
     "viewsContainers": {
@@ -193,11 +193,6 @@
           "command": "drift.history",
           "when": "view == drift.changes",
           "group": "navigation@2"
-        },
-        {
-          "command": "drift.toggleFullScreen",
-          "when": "view == drift.changes",
-          "group": "navigation@3"
         },
         {
           "command": "drift.nextChange",
@@ -238,6 +233,11 @@
           "command": "drift.showLog",
           "when": "view == drift.changes",
           "group": "9_debug@1"
+        },
+        {
+          "command": "drift.clearHistory",
+          "when": "view == drift.changes",
+          "group": "1_report@2"
         }
       ],
       "editor/title": [
@@ -338,22 +338,19 @@
           "markdownDescription": "Set from the picker in the Drift panel. **Ask** analyses and explains. **Agent** lets your AI agent edit code.",
           "order": 6
         },
-        "drift.session.effort": {
-          "type": "string",
-          "default": "balanced",
-          "enum": [
-            "quick",
-            "balanced",
-            "thorough",
-            "max"
-          ],
-          "enumDescriptions": [
-            "Runtime dependencies, major and minor bumps, first 25 packages",
-            "Every runtime dependency, major and minor bumps",
-            "Everything, including dev dependencies and patch releases",
-            "Everything with no caps, and the model reasons as hard as it can"
-          ],
-          "markdownDescription": "Set from the effort dial in the Drift panel. How widely Drift looks, and — where the agent supports it — how hard the model thinks. This changes what is actually analysed, not just how long it takes.",
+        "drift.agent.efforts": {
+          "type": "object",
+          "default": {},
+          "additionalProperties": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "xhigh"
+            ]
+          },
+          "markdownDescription": "How hard each subscription's model is asked to think, keyed by agent id — for example `{ \"claude\": \"xhigh\" }`.\n\nSet from the effort dial in the Drift panel, where each level carries the name its own vendor uses: Claude runs `low`–`high` and `xhigh` (**Ultracode**), Codex runs `low`–`high` and `xhigh` (**Extra High**). Agents whose API has no reasoning budget — the in-editor Copilot models, Ollama — have no dial.\n\nThis only changes the reasoning spent on each fix. It never changes which dependencies Drift checks or which fixes it attempts — see `#drift.analysis.includeDev#` and `#drift.analysis.includePatch#` for that.",
           "order": 7
         },
         "drift.session.permission": {

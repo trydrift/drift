@@ -84,9 +84,6 @@ export class OllamaAgent implements FixAgent {
         id: model.name,
         label: model.name,
         detail: model.details?.parameter_size ? `${model.details.parameter_size} on this machine` : 'On this machine',
-        // A local model has no reasoning budget to spend, and the biggest ones
-        // are already slow enough that "max" would only mean "waits longer".
-        efforts: ['quick', 'balanced', 'thorough'],
       }));
     } catch {
       return [];

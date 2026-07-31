@@ -13,16 +13,23 @@ export function describeMode(mode: SessionMode): string {
   return mode === 'ask' ? 'Ask' : 'Agent';
 }
 
+/**
+ * The generic name for an effort level.
+ *
+ * Only a fallback: every agent that has a reasoning budget names its own stops
+ * — Claude's top one is Ultracode, Codex's is Extra High — and the panel prefers
+ * the provider's word. This is what is shown when there is no agent to ask.
+ */
 export function describeEffort(effort: SessionEffort): string {
   switch (effort) {
-    case 'quick':
-      return 'Quick';
-    case 'thorough':
-      return 'Thorough';
-    case 'max':
+    case 'low':
+      return 'Low';
+    case 'high':
+      return 'High';
+    case 'xhigh':
       return 'Max';
     default:
-      return 'Balanced';
+      return 'Medium';
   }
 }
 
@@ -64,20 +71,6 @@ export function explainPermission(permission: SessionPermission): string {
       return 'The agent edits, then waits for you to keep or undo each change';
     case 'full-auto':
       return 'The agent edits and commits each group on its own';
-  }
-}
-
-/** What each effort level actually costs and covers. */
-export function explainEffort(effort: SessionEffort): string {
-  switch (effort) {
-    case 'quick':
-      return 'Runtime dependencies, major and minor bumps, first 25 packages';
-    case 'balanced':
-      return 'Every runtime dependency, major and minor bumps';
-    case 'thorough':
-      return 'Adds dev dependencies and patch releases — slower, finds more';
-    case 'max':
-      return 'Everything, no caps, and the model reasons as hard as it can';
   }
 }
 
