@@ -160,25 +160,46 @@ const PROSE_RULES: ProseRule[] = [
     summarize: (m) => `\`${m[1]}\` is deprecated in favour of \`${m[2]}\``,
   },
   {
+    /**
+     * The verb rarely follows the symbol directly.
+     *
+     * Maintainers write "`$defs` entries no longer include a redundant `id`"
+     * and "`z.union([])` and discriminated unions no longer crash", not
+     * "`x` no longer y". Requiring adjacency meant zod's own release notes —
+     * the ones Drift did fetch — produced no findings at all. Up to three
+     * intervening words is enough for the noun phrases that actually occur,
+     * and short enough that the symbol still governs the sentence.
+     */
     id: 'prose-no-longer',
     kind: 'behaviour-change',
-    pattern: /`([\w$.]+)`(?:\(\))?\s+no\s+longer\s+(.{3,90}?)(?:[.;]|$)/i,
+    pattern: /`([\w$.]+)(?:\([^`]*\))?`(?:\(\))?(?:[\w\s,`()[\]{}$.]{0,40}?)\s+no\s+longer\s+(.{3,90}?)(?:[.;]|$)/i,
     symbolGroup: 1,
     summarize: (m) => `\`${m[1]}\` no longer ${m[2]?.trim()}`,
   },
   {
     id: 'prose-now-requires',
     kind: 'signature-change',
-    pattern: /`([\w$.]+)`(?:\(\))?\s+now\s+(?:requires|takes|accepts|expects)\s+(.{3,90}?)(?:[.;]|$)/i,
+    pattern: /`([\w$.]+)(?:\([^`]*\))?`(?:\(\))?(?:[\w\s,`()[\]{}$.]{0,40}?)\s+now\s+(?:requires|takes|accepts|expects)\s+(.{3,90}?)(?:[.;]|$)/i,
     symbolGroup: 1,
     summarize: (m) => `\`${m[1]}\` now requires ${m[2]?.trim()}`,
   },
   {
     id: 'prose-now-returns',
     kind: 'type-change',
-    pattern: /`([\w$.]+)`(?:\(\))?\s+now\s+returns\s+(.{3,90}?)(?:[.;]|$)/i,
+    pattern: /`([\w$.]+)(?:\([^`]*\))?`(?:\(\))?(?:[\w\s,`()[\]{}$.]{0,40}?)\s+now\s+returns\s+(.{3,90}?)(?:[.;]|$)/i,
     symbolGroup: 1,
     summarize: (m) => `\`${m[1]}\` now returns ${m[2]?.trim()}`,
+  },
+  {
+    /**
+     * "`x` must now be …" / "`x` is now …" — the same statement in the other
+     * voice, and just as common in practice.
+     */
+    id: 'prose-is-now',
+    kind: 'behaviour-change',
+    pattern: /`([\w$.]+)(?:\([^`]*\))?`(?:\(\))?(?:[\w\s,`()[\]{}$.]{0,40}?)\s+(?:is|are|must)\s+now\s+(.{3,90}?)(?:[.;]|$)/i,
+    symbolGroup: 1,
+    summarize: (m) => `\`${m[1]}\` is now ${m[2]?.trim()}`,
   },
   {
     id: 'prose-moved',

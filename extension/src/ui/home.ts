@@ -1087,8 +1087,17 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       `- Newest published: ${candidate.latest}`,
     ];
 
+    if (candidate.gaps.length > 0) {
+      lines.push('', '**What Drift could not check:**', ...candidate.gaps.map((gap) => `- ${gap}`));
+    }
+
     if (severity === 'affected') {
       lines.push('', `Say \`/fix ${candidate.name}\` to let ${this.agentLabel()} update the affected code.`);
+    } else if (severity === 'unchecked') {
+      lines.push(
+        '',
+        `I have nothing to go on for this one, so I will not call it safe. Read the release notes, then say \`/upgrade ${candidate.name}\` if you want it anyway.`,
+      );
     } else if (severity === 'upstream-only' || severity === 'clean') {
       lines.push('', `Say \`/upgrade ${candidate.name}\` to install it.`);
     }
@@ -1184,6 +1193,48 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         return;
       }
       if (answer === 'safe') mode = 'safe';
+    }
+
+    // Installing something Drift could not read is a decision, not a default.
+    // It is put to the developer in the same shape as forcing past a range,
+    // because it carries the same kind of risk: Drift has no idea what this
+    // does to their code, and saying nothing would imply it does.
+    const unverified = candidates.filter((candidate) => severityOf(candidate) === 'unchecked');
+    if (unverified.length > 0) {
+      const names = unverified.map((c) => `**${c.name}**`).join(', ');
+      const answer = await this.session.ask(
+        `I could not verify ${names}. ${
+          unverified.length === 1 ? 'There was' : 'There were'
+        } no reachable changelog, release notes or type declarations to check against, so "no breaking changes" is not something I can claim here. Install ${unverified.length === 1 ? 'it' : 'them'} anyway?`,
+        [
+          {
+            label: 'Install anyway',
+            value: 'yes',
+            description: 'I have read the release notes myself',
+          },
+          {
+            label: 'Skip the unverified ones',
+            value: 'skip',
+            description: 'Upgrade only what Drift could check',
+          },
+          { label: 'Cancel', value: 'cancel' },
+        ],
+        false,
+      );
+
+      if (answer === 'cancel' || answer === '') {
+        this.session.notice('info', 'Left your dependencies alone.');
+        return;
+      }
+      if (answer === 'skip') {
+        const remaining = candidates.filter((c) => severityOf(c) !== 'unchecked');
+        if (remaining.length === 0) {
+          this.session.notice('info', 'That left nothing to install.');
+          return;
+        }
+        candidates.length = 0;
+        candidates.push(...remaining);
+      }
     }
 
     const step = this.session.step(`Upgrading ${candidates.length} package${candidates.length === 1 ? '' : 's'}`);
@@ -2913,7 +2964,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     return [...this.candidates.values()]
       .filter((candidate) => {
         const severity = severityOf(candidate);
-        return severity !== 'affected' && severity !== 'error';
+        return severity === 'clean' || severity === 'upstream-only';
       })
       .map((candidate) => candidate.id);
   }
@@ -3157,7 +3208,7 @@ function manifestName(candidate: UpgradeCandidate): string {
 }
 
 function bySeverity(a: UpgradeCandidate, b: UpgradeCandidate): number {
-  const rank = { affected: 0, error: 1, 'upstream-only': 2, clean: 3 } as const;
+  const rank = { affected: 0, error: 1, 'upstream-only': 2, unchecked: 3, clean: 4 } as const;
   const diff = rank[severityOf(a)] - rank[severityOf(b)];
   return diff !== 0 ? diff : a.name.localeCompare(b.name);
 }
@@ -3172,16 +3223,29 @@ function bySeverity(a: UpgradeCandidate, b: UpgradeCandidate): number {
  */
 function headline(candidates: readonly UpgradeCandidate[], checked: number): string {
   const affected = candidates.filter((c) => severityOf(c) === 'affected').length;
-  const safe = candidates.length - affected;
+  const unchecked = candidates.filter((c) => severityOf(c) === 'unchecked').length;
+  const safe = candidates.length - affected - unchecked;
   const scope = checked > 0 ? ` out of ${checked} checked` : '';
 
   if (candidates.length === 0) return 'No newer versions available.';
 
-  if (affected === 0) {
+  // Never folded into "safe". A headline that counts an unverified upgrade as
+  // safe is the same claim that put zod 4 and typescript 7 into this
+  // repository, one level further up the page.
+  const caveat =
+    unchecked === 0
+      ? ''
+      : ` ${unchecked} ${unchecked === 1 ? 'could not be verified at all — read that one yourself' : 'could not be verified at all — read those yourself'}.`;
+
+  if (affected === 0 && safe === candidates.length) {
     return `**${candidates.length} upgrade${candidates.length === 1 ? '' : 's'} available**${scope}, and none of them affect code in this repository. Safe to take.`;
   }
 
-  return `**${affected} of ${candidates.length} upgrade${candidates.length === 1 ? '' : 's'}**${scope} affect${affected === 1 ? 's' : ''} code in this repository.${safe > 0 ? ` The other ${safe} ${safe === 1 ? 'is' : 'are'} safe to take as-is.` : ''}`;
+  if (affected === 0) {
+    return `**${candidates.length} upgrade${candidates.length === 1 ? '' : 's'} available**${scope}. ${safe === 0 ? 'None' : `${safe}`} affect${safe === 1 ? 's' : ''} code in this repository.${caveat}`;
+  }
+
+  return `**${affected} of ${candidates.length} upgrade${candidates.length === 1 ? '' : 's'}**${scope} affect${affected === 1 ? 's' : ''} code in this repository.${safe > 0 ? ` ${safe} ${safe === 1 ? 'is' : 'are'} safe to take as-is.` : ''}${caveat}`;
 }
 
 function combinePlans(repo: RepoContext, config: DriftConfig, plans: RemediationPlan[]): RemediationPlan {

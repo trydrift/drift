@@ -515,7 +515,10 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
   }
 
   const affected = candidates.filter((c) => severityOf(c) === 'affected');
-  const safe = candidates.filter((c) => severityOf(c) !== 'affected' && severityOf(c) !== 'error');
+  const unchecked = candidates.filter((c) => severityOf(c) === 'unchecked');
+  const safe = candidates.filter(
+    (c) => severityOf(c) === 'clean' || severityOf(c) === 'upstream-only',
+  );
   const failed = candidates.filter((c) => severityOf(c) === 'error');
   // More than one repository actually contributed to this list — not just
   // more than one open, since a scope-narrowed scan should read the same as
@@ -531,6 +534,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
         <span class="card-title">${ICON_PACKAGE}<b>Packages</b></span>
         <span class="tallies">
           ${affected.length ? tally(affected.length, 'affected', 'affected') : ''}
+          ${unchecked.length ? tally(unchecked.length, 'unverified', 'unchecked') : ''}
           ${safe.length ? tally(safe.length, 'safe', 'clean') : ''}
           ${failed.length ? tally(failed.length, 'unknown', 'error') : ''}
         </span>
@@ -549,6 +553,19 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
                   ? `<div class="pkg-group-foot"><button class="primary wide" data-action="fixAll">Fix all ${affected.length} with ${escapeHtml(vm.agentLabel)}</button></div>`
                   : ''
               }
+            </section>`
+          : ''
+      }
+
+      ${
+        // Open by default, and above the safe list. An upgrade nothing could be
+        // read about is the one a developer most needs to see before they reach
+        // for a bulk action — collapsing it would reproduce the failure this
+        // group exists to prevent.
+        unchecked.length
+          ? `<section class="pkg-group">
+              <h4 class="pkg-subhead unchecked">${ICON_ALERT}<span>Could not verify</span><small>${unchecked.length}</small></h4>
+              <div class="pkg-list">${unchecked.map((c) => renderCandidate(c, unchecked.length === 1, showRepo)).join('')}</div>
             </section>`
           : ''
       }
@@ -636,6 +653,7 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
 
     <div class="pkg-body">
       <p class="verdict-long">${escapeHtml(candidate.error ?? candidate.summary)}</p>
+      ${renderGaps(candidate)}
 
       <div class="pkg-target">
         <span class="field-label">Target version</span>
@@ -651,8 +669,12 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
         <button data-action="upgrade" data-id="${escapeAttr(candidate.id)}" data-mode="safe" ${candidate.safeLatest ? '' : 'disabled'} title="${candidate.safeLatest ? `Install ${candidate.safeLatest}, which satisfies the range already in package.json` : 'No newer version fits the range in package.json'}">
           Upgrade
         </button>
-        <button data-action="upgrade" data-id="${escapeAttr(candidate.id)}" data-mode="force" title="Install ${escapeAttr(candidate.latest)} and widen the range in package.json">
-          Upgrade to ${escapeHtml(candidate.latest)}
+        <button data-action="upgrade" data-id="${escapeAttr(candidate.id)}" data-mode="force" class="${crossesMajor(candidate.current, candidate.latest) ? 'risky' : ''}" title="${
+          crossesMajor(candidate.current, candidate.latest)
+            ? `Install ${escapeAttr(candidate.latest)} — a major version ahead of ${escapeAttr(candidate.current)} — and widen the range in package.json`
+            : `Install ${escapeAttr(candidate.latest)} and widen the range in package.json`
+        }">
+          Upgrade to ${escapeHtml(candidate.latest)}${crossesMajor(candidate.current, candidate.latest) ? ' (major)' : ''}
         </button>
         ${
           candidate.impactCount > 0
@@ -666,9 +688,27 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
 
 /** The one-line description of a version, shared by the button and the quick pick. */
 export function versionLabel(candidate: UpgradeCandidate, version: string): string {
-  if (version === candidate.latest) return `${version} — latest`;
+  const major = crossesMajor(candidate.current, version) ? ', major' : '';
+  if (version === candidate.latest) return `${version} — latest${major}`;
   if (version === candidate.safeLatest) return `${version} — within your range`;
-  return version;
+  return `${version}${major ? ' — major' : ''}`;
+}
+
+/**
+ * Whether moving to this version crosses a major boundary.
+ *
+ * Deliberately a string compare rather than a semver import: this module is
+ * dependency-free so the whole panel renders under plain Node in the tests, and
+ * "did the first number change" is the entire question being asked.
+ */
+export function crossesMajor(current: string, target: string): boolean {
+  const major = (version: string): number | null => {
+    const match = /^\D*(\d+)/.exec(version);
+    return match ? Number(match[1]) : null;
+  };
+  const from = major(current);
+  const to = major(target);
+  return from !== null && to !== null && to > from;
 }
 
 function busyLabel(candidate: UpgradeCandidate): string {
@@ -681,11 +721,21 @@ function shortVerdict(candidate: UpgradeCandidate, severity: UpgradeSeverity): s
       return `${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'} here`;
     case 'upstream-only':
       return 'Safe here';
+    case 'unchecked':
+      return 'Not verified';
     case 'clean':
       return 'Safe';
     case 'error':
       return 'Unknown';
   }
+}
+
+/** What Drift could not read, listed under the verdict rather than hidden in a log. */
+function renderGaps(candidate: UpgradeCandidate): string {
+  if (!candidate.gaps?.length) return '';
+  return `<ul class="gaps">${candidate.gaps
+    .map((gap) => `<li>${ICON_ALERT}<span>${escapeHtml(gap)}</span></li>`)
+    .join('')}</ul>`;
 }
 
 function renderCandidateDetail(candidate: UpgradeCandidate, plan: RemediationPlan): string {
@@ -1583,6 +1633,7 @@ button.wide { width: 100%; }
 .tally.affected b { color: var(--vscode-editorWarning-foreground); }
 .tally.clean b { color: var(--vscode-testing-iconPassed); }
 .tally.error b { color: var(--vscode-editorError-foreground); }
+.tally.unchecked b { color: var(--vscode-editorWarning-foreground); }
 .card-head .ctl.icon { margin-left: 4px; flex: 0 0 auto; }
 
 /* Something changed under the results ----------------------------- */
@@ -1618,6 +1669,10 @@ button.wide { width: 100%; }
 .pkg-subhead.affected > svg.i:last-of-type { color: var(--vscode-editorWarning-foreground); }
 .pkg-subhead.clean > svg.i:last-of-type { color: var(--vscode-testing-iconPassed); }
 .pkg-subhead.error > svg.i:last-of-type { color: var(--vscode-editorError-foreground); }
+/* Unverified is not an error and not a pass. It borrows the warning colour but
+   never the alarm styling: the developer has a decision to make, not a failure
+   to clean up. */
+.pkg-subhead.unchecked > svg.i:last-of-type { color: var(--vscode-editorWarning-foreground); }
 .pkg-group-foot { padding: 2px 10px 9px; }
 .pkg { border-top: 1px solid color-mix(in srgb, var(--vscode-panel-border) 55%, transparent); }
 .pkg > summary {
@@ -1635,6 +1690,7 @@ button.wide { width: 100%; }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--vscode-testing-iconPassed); }
 .dot.affected { background: var(--vscode-editorWarning-foreground); }
 .dot.error { background: var(--vscode-editorError-foreground); }
+.dot.unchecked { background: var(--vscode-descriptionForeground); }
 .pkg-name { min-width: 0; display: flex; flex-direction: column; }
 .pkg-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pkg-workspace {
@@ -1661,6 +1717,17 @@ button.wide { width: 100%; }
   border-color: var(--vscode-editorWarning-foreground);
 }
 .verdict.clean, .verdict.upstream-only { color: var(--vscode-testing-iconPassed); border-color: transparent; }
+.verdict.unchecked {
+  color: var(--vscode-editorWarning-foreground);
+  border-color: var(--vscode-editorWarning-foreground);
+}
+/* Why a check came up short, under the verdict it explains. */
+.gaps { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.gaps li { display: flex; gap: 6px; align-items: flex-start; font-size: 11px; color: var(--vscode-descriptionForeground); }
+.gaps svg.i { flex: none; margin-top: 2px; color: var(--vscode-editorWarning-foreground); }
+/* A one-click major is still one click, but it should not look like the safe
+   one sitting next to it. */
+.pkg-actions button.risky { border-color: var(--vscode-editorWarning-foreground); }
 .pkg-body { padding: 2px 10px 10px 25px; }
 .verdict-long { margin: 6px 0 8px; color: var(--vscode-descriptionForeground); }
 .pkg-target { display: flex; gap: 7px; align-items: center; margin-bottom: 8px; }
