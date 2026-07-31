@@ -7,6 +7,7 @@ import {
   saysNoChanges,
   type AgentAvailability,
   type AgentContext,
+  type AgentModel,
   type FixAgent,
   type FixOutcome,
   type FixTask,
@@ -53,13 +54,45 @@ export class CopilotLanguageModelAgent implements FixAgent {
     }
   }
 
+  /**
+   * Whatever this Copilot seat is currently offering.
+   *
+   * Asked live rather than hardcoded: the families on a Copilot subscription
+   * change with the plan and with whatever GitHub has rolled out this month, and
+   * a stale list would offer models the editor will refuse.
+   */
+  async listModels(): Promise<AgentModel[]> {
+    const models = await Promise.resolve(vscode.lm.selectChatModels({ vendor: 'copilot' })).catch(
+      () => [] as vscode.LanguageModelChat[],
+    );
+
+    // Families repeat across versions; the family is what `selectChatModels`
+    // takes back, so it is the identity that matters here.
+    const seen = new Set<string>();
+    const out: AgentModel[] = [];
+    for (const model of models) {
+      if (seen.has(model.family)) continue;
+      seen.add(model.family);
+      out.push({
+        id: model.family,
+        label: model.name || model.family,
+        detail: `${Math.round(model.maxInputTokens / 1000)}k context`,
+        // The Language Model API exposes no reasoning budget, so offering "Max"
+        // would be a control that quietly does nothing.
+        efforts: ['quick', 'balanced', 'thorough'],
+      });
+    }
+    return out;
+  }
+
   async run(task: FixTask, ctx: AgentContext): Promise<FixOutcome> {
-    const selector: vscode.LanguageModelChatSelector = this.family
-      ? { vendor: 'copilot', family: this.family }
+    const family = task.model || this.family;
+    const selector: vscode.LanguageModelChatSelector = family
+      ? { vendor: 'copilot', family }
       : { vendor: 'copilot' };
 
     let models = await vscode.lm.selectChatModels(selector);
-    if (models.length === 0 && this.family) {
+    if (models.length === 0 && family) {
       // A configured family that is no longer offered should degrade rather
       // than fail — the user's intent was "use Copilot", not "use exactly this".
       models = await vscode.lm.selectChatModels({ vendor: 'copilot' });

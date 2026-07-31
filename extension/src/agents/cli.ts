@@ -4,7 +4,16 @@ import { delimiter, dirname, join } from 'node:path';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import * as vscode from 'vscode';
-import { buildFixPrompt, type AgentAvailability, type AgentContext, type FixAgent, type FixOutcome, type FixTask } from './types.js';
+import { reasoningEffort } from '../session.js';
+import {
+  buildFixPrompt,
+  type AgentAvailability,
+  type AgentContext,
+  type AgentModel,
+  type FixAgent,
+  type FixOutcome,
+  type FixTask,
+} from './types.js';
 
 const run = promisify(execFile);
 
@@ -35,6 +44,18 @@ export interface CliAgentSpec {
   buildArgs: (prompt: string) => string[];
   /** Passed on stdin instead of argv when the prompt is large. */
   promptOnStdin?: boolean;
+  /**
+   * The models this subscription offers, best first.
+   *
+   * Deliberately aliases rather than dated ids where the CLI accepts them:
+   * `--model opus` keeps working when Anthropic ships the next Opus, whereas a
+   * pinned id silently becomes "unknown model" months later.
+   */
+  models?: readonly AgentModel[];
+  /** How this CLI takes a model id. */
+  modelArgs?: (model: string) => string[];
+  /** How this CLI takes a reasoning budget, if it takes one at all. */
+  effortArgs?: (effort: 'low' | 'medium' | 'high') => string[];
   versionArgs?: string[];
   /** VS Code chat extensions that can bundle or configure this agent. */
   extensionIds?: string[];
@@ -53,6 +74,17 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
     command: 'claude',
     buildArgs: () => ['-p', '--permission-mode', 'acceptEdits'],
     promptOnStdin: true,
+    models: [
+      { id: 'opus', label: 'Claude Opus', detail: 'Deepest reasoning. Best on large migrations.' },
+      { id: 'sonnet', label: 'Claude Sonnet', detail: 'The balanced default.' },
+      {
+        id: 'haiku',
+        label: 'Claude Haiku',
+        detail: 'Fastest and cheapest. Fine for mechanical renames.',
+        efforts: ['quick', 'balanced', 'thorough'],
+      },
+    ],
+    modelArgs: (model) => ['--model', model],
     versionArgs: ['--version'],
     extensionIds: ['anthropic.claude-code'],
     extensionBinaryPaths: [
@@ -69,6 +101,12 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
     command: 'codex',
     buildArgs: () => ['exec', '--full-auto'],
     promptOnStdin: true,
+    models: [
+      { id: 'gpt-5-codex', label: 'GPT-5 Codex', detail: 'Tuned for editing code.' },
+      { id: 'gpt-5', label: 'GPT-5', detail: 'The general model.' },
+    ],
+    modelArgs: (model) => ['--model', model],
+    effortArgs: (effort) => ['-c', `model_reasoning_effort="${effort}"`],
     versionArgs: ['--version'],
     extensionIds: ['openai.chatgpt'],
     extensionBinaryPaths: [
@@ -89,6 +127,16 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
     buildArgs: () => ['--yolo'],
     promptOnStdin: true,
     versionArgs: ['--version'],
+    models: [
+      { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', detail: 'The reasoning model.' },
+      {
+        id: 'gemini-2.5-flash',
+        label: 'Gemini 2.5 Flash',
+        detail: 'Faster, cheaper, shallower.',
+        efforts: ['quick', 'balanced', 'thorough'],
+      },
+    ],
+    modelArgs: (model) => ['-m', model],
     docsUrl: 'https://github.com/google-gemini/gemini-cli',
   },
   {
@@ -98,6 +146,9 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
     command: 'aider',
     buildArgs: (prompt) => ['--yes', '--no-auto-commits', '--message', prompt],
     versionArgs: ['--version'],
+    // Aider drives whatever model the user configured, and that can be any
+    // provider at all — so there is no list to offer, only a box to type in.
+    modelArgs: (model) => ['--model', model],
     docsUrl: 'https://aider.chat',
   },
   {
@@ -108,6 +159,7 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
     buildArgs: () => ['run'],
     promptOnStdin: true,
     versionArgs: ['--version'],
+    modelArgs: (model) => ['--model', model],
     docsUrl: 'https://opencode.ai',
   },
 ];
@@ -117,6 +169,7 @@ export class CliFixAgent implements FixAgent {
   readonly id: string;
   readonly label: string;
   readonly description: string;
+  readonly acceptsCustomModel: boolean;
   private executable: string | null = null;
 
   constructor(
@@ -126,6 +179,11 @@ export class CliFixAgent implements FixAgent {
     this.id = spec.id;
     this.label = spec.label;
     this.description = spec.description;
+    this.acceptsCustomModel = Boolean(spec.modelArgs);
+  }
+
+  async listModels(): Promise<AgentModel[]> {
+    return [...(this.spec.models ?? [])];
   }
 
   async detect(): Promise<AgentAvailability> {
@@ -164,9 +222,9 @@ export class CliFixAgent implements FixAgent {
   async run(task: FixTask, ctx: AgentContext): Promise<FixOutcome> {
     const prompt = [buildFixPrompt(task), '', '## Your task', '', task.commit.instructions].join('\n');
 
-    const args = this.spec.buildArgs(prompt);
+    const args = [...this.spec.buildArgs(prompt), ...this.selection(task)];
     const command = this.executable ?? (await resolveCommand(this.spec))?.path ?? this.spec.command;
-    ctx.report(`Running ${this.spec.command} in ${task.workspaceRoot}…`);
+    ctx.report(`Running ${this.spec.command}${task.model ? ` with ${task.model}` : ''} in ${task.workspaceRoot}…`);
 
     try {
       const { code, stdout, stderr } = await this.exec(command, args, prompt, task.workspaceRoot, ctx);
@@ -190,6 +248,20 @@ export class CliFixAgent implements FixAgent {
     } catch (err) {
       return { status: 'failed', message: `${this.spec.label} failed: ${(err as Error).message}` };
     }
+  }
+
+  /**
+   * The flags that carry the developer's model and effort choice.
+   *
+   * Only ever added when the spec knows how this CLI spells them. Guessing a
+   * flag is worse than not passing one: an unknown flag makes the agent exit
+   * before it has read the task at all.
+   */
+  private selection(task: FixTask): string[] {
+    const args: string[] = [];
+    if (task.model && this.spec.modelArgs) args.push(...this.spec.modelArgs(task.model));
+    if (task.effort && this.spec.effortArgs) args.push(...this.spec.effortArgs(reasoningEffort(task.effort)));
+    return args;
   }
 
   private exec(

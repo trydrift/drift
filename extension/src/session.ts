@@ -18,8 +18,18 @@ import * as vscode from 'vscode';
 /** What Drift is allowed to do with its findings. Mirrors Copilot's Ask/Agent split. */
 export type SessionMode = 'ask' | 'agent';
 
-/** How hard to look. Real breadth, not a label. */
-export type SessionEffort = 'quick' | 'balanced' | 'thorough';
+/**
+ * How hard to look.
+ *
+ * Real breadth, not a label: each level changes what is actually analysed, and
+ * — where the agent's backend exposes it — how much reasoning the model spends
+ * on each fix. `max` is offered only for models that can actually honour it,
+ * which is why the composer's slider asks the agent which stops it has.
+ */
+export type SessionEffort = 'quick' | 'balanced' | 'thorough' | 'max';
+
+/** The slider's stops, weakest first. Index is the slider's value. */
+export const EFFORT_ORDER: readonly SessionEffort[] = ['quick', 'balanced', 'thorough', 'max'];
 
 /** How much rope the agent gets. Mirrors Claude Code's permission modes. */
 export type SessionPermission = 'ask' | 'auto-edit' | 'full-auto';
@@ -68,6 +78,13 @@ export type ThreadItem =
   | { id: string; kind: 'packages'; headline: string; ids: string[] }
   | {
       id: string;
+      kind: 'tasks';
+      title: string;
+      subtitle: string;
+      groups: TaskGroup[];
+    }
+  | {
+      id: string;
       kind: 'question';
       text: string;
       options: QuestionOption[];
@@ -75,6 +92,50 @@ export type ThreadItem =
       answer?: string;
     }
   | { id: string; kind: 'changes'; title: string };
+
+export type TaskState = 'pending' | 'active' | 'done' | 'unchanged' | 'skipped' | 'failed';
+
+/**
+ * One line of work, named the way the developer would name it.
+ *
+ * A task is always about a specific thing: this breaking change, in this file,
+ * at this line. That specificity is the whole point — "working…" tells a
+ * developer nothing they can check, whereas "`res.send()` no longer accepts a
+ * status code — src/http.ts:42" can be verified by opening the file.
+ */
+export interface Task {
+  id: string;
+  label: string;
+  /** Workspace-relative, for the link. */
+  file?: string;
+  line?: number;
+  /** The excerpt at that site, if there is one. */
+  detail?: string;
+  state: TaskState;
+}
+
+/** One commit unit: a single concern, its own checkbox, its own tasks. */
+export interface TaskGroup {
+  id: string;
+  /** The commit message the planner chose. */
+  title: string;
+  /** The package this group is about, when it is about exactly one. */
+  package?: string;
+  state: TaskState;
+  /** What the agent is doing right now, while this group is active. */
+  note?: string;
+  tasks: Task[];
+}
+
+/** Drives a `tasks` item without the caller having to hold its id. */
+export interface TaskListHandle {
+  id: string;
+  start: (groupId: string) => void;
+  note: (groupId: string, text: string) => void;
+  /** Close a group. Tasks whose file actually changed are ticked. */
+  finish: (groupId: string, state: TaskState, changedFiles?: readonly string[]) => void;
+  finishAll: (state: TaskState) => void;
+}
 
 export interface EffortProfile {
   /** Analyse patch bumps as well as major/minor. */
@@ -94,7 +155,28 @@ export const EFFORT_PROFILES: Record<SessionEffort, EffortProfile> = {
   balanced: { includePatch: false, includeDev: false, maxSites: 40, maxPackages: 0 },
   // Everything, including the ~5% of patch releases that break something.
   thorough: { includePatch: true, includeDev: true, maxSites: 120, maxPackages: 0 },
+  // Thorough, with the caps lifted and the model asked to reason hard. Offered
+  // only where the agent's backend actually has a knob for that.
+  max: { includePatch: true, includeDev: true, maxSites: 400, maxPackages: 0 },
 };
+
+/**
+ * Effort, in the vocabulary the agent backends use.
+ *
+ * Codex takes `model_reasoning_effort`, Claude takes a thinking budget, and the
+ * Copilot LM API takes nothing at all. Mapping once, here, keeps each agent from
+ * inventing its own scale.
+ */
+export function reasoningEffort(effort: SessionEffort): 'low' | 'medium' | 'high' {
+  switch (effort) {
+    case 'quick':
+      return 'low';
+    case 'balanced':
+      return 'medium';
+    default:
+      return 'high';
+  }
+}
 
 export class DriftSession {
   private items: ThreadItem[] = [];
@@ -133,11 +215,70 @@ export class DriftSession {
   }
 
   /* ---------------------------------------------------------------- */
+  /* History                                                           */
+  /* ---------------------------------------------------------------- */
+
+  /**
+   * The transcript, as plain data.
+   *
+   * A live step is written out as finished: a conversation reopened tomorrow
+   * cannot still be scanning, and a spinner restored from disk spins forever.
+   */
+  snapshot(): ThreadItem[] {
+    return JSON.parse(
+      JSON.stringify(
+        this.items.map((item) =>
+          item.kind === 'step' && item.state === 'running' ? { ...item, state: 'done' as const } : item,
+        ),
+      ),
+    ) as ThreadItem[];
+  }
+
+  restore(items: readonly ThreadItem[]): void {
+    this.rejectPending();
+    this.items = JSON.parse(JSON.stringify(items)) as ThreadItem[];
+    // Ids must never collide with the restored ones, or `answer` and `rewind`
+    // would act on the wrong turn.
+    this.counter = this.items.length;
+    for (const item of this.items) {
+      const n = Number(item.id.replace(/^i/, ''));
+      if (Number.isFinite(n) && n > this.counter) this.counter = n;
+    }
+    this.emitter.fire();
+  }
+
+  /** The line shown in the history list. The first thing the developer said. */
+  get title(): string {
+    const first = this.items.find((item) => item.kind === 'user');
+    if (first && first.kind === 'user') return first.text.replace(/\s+/g, ' ').trim().slice(0, 80);
+    const packages = this.items.find((item) => item.kind === 'packages');
+    if (packages && packages.kind === 'packages') return 'Dependency scan';
+    return 'Conversation';
+  }
+
+  /* ---------------------------------------------------------------- */
   /* Items                                                             */
   /* ---------------------------------------------------------------- */
 
-  user(text: string, checkpoint?: string): void {
-    this.push({ id: this.nextId(), kind: 'user', text, attachments: [...this.attachments], checkpoint });
+  /**
+   * Echo what the developer typed, immediately.
+   *
+   * Returns the item's id so slower work — taking a checkpoint, which shells out
+   * to git — can attach itself afterwards. Waiting for that before showing the
+   * message is what used to make the panel feel like it had not registered the
+   * click at all.
+   */
+  user(text: string, checkpoint?: string): string {
+    const id = this.nextId();
+    this.push({ id, kind: 'user', text, attachments: [...this.attachments], checkpoint });
+    return id;
+  }
+
+  setCheckpoint(itemId: string, checkpoint: string): void {
+    const item = this.items.find((entry) => entry.id === itemId);
+    if (!item || item.kind !== 'user') return;
+    item.checkpoint = checkpoint;
+    this.emitter.fire();
   }
 
   /**
@@ -207,6 +348,75 @@ export class DriftSession {
       },
       done: (phase) => update({ state: 'done', phase, detail: '' }),
       fail: (phase) => update({ state: 'failed', phase, detail: '' }),
+    };
+  }
+
+  /**
+   * The plan, as a checklist, before any of it has happened.
+   *
+   * An agent that streams prose while it works is asking the developer to read a
+   * transcript to find out where it is. A checklist answers that at a glance:
+   * what the plan is, which concern is in progress, which files it has already
+   * settled, and which are still ahead. The item is created up front with every
+   * task pending, so the shape of the work is visible before the first edit.
+   */
+  tasks(title: string, subtitle: string, groups: TaskGroup[]): TaskListHandle {
+    const id = this.nextId();
+    this.push({ id, kind: 'tasks', title, subtitle, groups });
+
+    const find = (groupId: string): TaskGroup | undefined => {
+      const item = this.items.find((entry) => entry.id === id);
+      if (!item || item.kind !== 'tasks') return undefined;
+      return item.groups.find((group) => group.id === groupId);
+    };
+
+    return {
+      id,
+      start: (groupId) => {
+        const group = find(groupId);
+        if (!group) return;
+        group.state = 'active';
+        for (const task of group.tasks) if (task.state === 'pending') task.state = 'active';
+        this.emitter.fire();
+      },
+      note: (groupId, text) => {
+        const group = find(groupId);
+        if (!group || group.note === text) return;
+        group.note = text;
+        this.emitter.fire();
+      },
+      finish: (groupId, state, changedFiles) => {
+        const group = find(groupId);
+        if (!group) return;
+        group.state = state;
+        group.note = undefined;
+        const changed = new Set(changedFiles ?? []);
+        for (const task of group.tasks) {
+          if (state === 'failed' || state === 'skipped') {
+            task.state = state;
+            continue;
+          }
+          // A task whose file the agent never touched is not a failure — the
+          // evidence pointed at a site the agent judged already correct. Saying
+          // "unchanged" is honest; ticking it would not be.
+          task.state = !task.file || changed.size === 0 ? state : changed.has(task.file) ? 'done' : 'unchanged';
+        }
+        this.emitter.fire();
+      },
+      finishAll: (state) => {
+        const item = this.items.find((entry) => entry.id === id);
+        if (!item || item.kind !== 'tasks') return;
+        for (const group of item.groups) {
+          if (group.state === 'pending' || group.state === 'active') {
+            group.state = state;
+            group.note = undefined;
+            for (const task of group.tasks) {
+              if (task.state === 'pending' || task.state === 'active') task.state = state;
+            }
+          }
+        }
+        this.emitter.fire();
+      },
     };
   }
 
@@ -332,6 +542,28 @@ export class DriftSession {
 
   get effortProfile(): EffortProfile {
     return EFFORT_PROFILES[this.effort];
+  }
+
+  /**
+   * The model chosen within one subscription.
+   *
+   * Kept per agent, not globally, because "which model" only means anything
+   * inside a provider: a developer who picks Opus under Claude and then switches
+   * to Copilot has not asked for Opus from Copilot, and should find Copilot
+   * exactly as they left it.
+   */
+  model(agentId: string): string | undefined {
+    const models = vscode.workspace.getConfiguration('drift').get<Record<string, string>>('agent.models', {});
+    return models?.[agentId] || undefined;
+  }
+
+  async setModel(agentId: string, model: string | undefined): Promise<void> {
+    const config = vscode.workspace.getConfiguration('drift');
+    const models = { ...(config.get<Record<string, string>>('agent.models', {}) ?? {}) };
+    if (model) models[agentId] = model;
+    else delete models[agentId];
+    await config.update('agent.models', models, vscode.ConfigurationTarget.Global);
+    this.emitter.fire();
   }
 
   async setMode(mode: SessionMode): Promise<void> {

@@ -37,7 +37,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const diagnostics = new DriftDiagnostics(state);
   const statusBar = new DriftStatusBar(state);
   const reviewUi = new DriftReviewUi(review);
-  const home = new DriftHomeView(context.extensionUri, state, session, review, output);
+  const home = new DriftHomeView(
+    context.extensionUri,
+    state,
+    session,
+    review,
+    output,
+    // Conversations are about a repository, so they are kept per workspace.
+    context.workspaceState,
+  );
 
   context.subscriptions.push(diagnostics, statusBar, reviewUi, home);
 
@@ -55,7 +63,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     ),
   );
 
-  registerCommands(context, state, session, review, reviewUi, home);
+  registerCommands(context, state, review, reviewUi, home);
 
   // Sign-in state changes what the agent picker can offer.
   context.subscriptions.push(onDidChangeGitHubAuth(() => invalidateAgentCache()));
@@ -119,7 +127,6 @@ async function initialise(state: DriftState, home: DriftHomeView): Promise<void>
 function registerCommands(
   context: vscode.ExtensionContext,
   state: DriftState,
-  session: DriftSession,
   review: DriftReview,
   reviewUi: DriftReviewUi,
   home: DriftHomeView,
@@ -137,10 +144,9 @@ function registerCommands(
   register('drift.openChangeDiff', ((path: string) => reviewUi.openDiff(path)) as never);
   register('drift.nextChange', () => reviewUi.revealNext());
   register('drift.reviewChanges', () => home.reveal());
-  register('drift.newSession', () => {
-    session.clear();
-    return home.reveal();
-  });
+  register('drift.newSession', () => home.newSession());
+  register('drift.history', () => home.showHistory());
+  register('drift.toggleFullScreen', () => home.toggleFullScreen());
 
   register('drift.analyze', async () => {
     if (state.isBusy) {

@@ -1,4 +1,5 @@
 import type { CommitUnit, RemediationPlan } from '../../../src/types.js';
+import type { SessionEffort } from '../session.js';
 
 /**
  * The fix-agent abstraction.
@@ -27,6 +28,28 @@ export interface AgentAvailability {
   detail?: string;
   /** Local signals such as installed VS Code extensions or signed-in account state. */
   signals?: string[];
+}
+
+/**
+ * One model inside one subscription.
+ *
+ * A subscription is not a model: a developer paying for Claude has Opus, Sonnet
+ * and Haiku, and a Copilot seat carries whatever families GitHub is currently
+ * offering. Collapsing those into a single "Claude" row throws away the choice
+ * that actually changes the result, so every agent that has models lists them.
+ */
+export interface AgentModel {
+  /** Passed to the backend verbatim. */
+  id: string;
+  label: string;
+  detail?: string;
+  /**
+   * Effort stops this model can honour, weakest first.
+   *
+   * The composer's slider is drawn from this, so a model with no reasoning
+   * control never offers a stop that would do nothing.
+   */
+  efforts?: SessionEffort[];
 }
 
 export interface FileSnapshot {
@@ -67,6 +90,10 @@ export interface FixTask {
    * for a convention or a helper, and never widens which files it may edit.
    */
   context?: AttachedContext[];
+  /** The model chosen inside this agent's subscription, if it has any. */
+  model?: string;
+  /** How hard the developer asked this model to think. */
+  effort?: SessionEffort;
 }
 
 export type FixStatus = 'applied' | 'no-changes' | 'failed' | 'delegated';
@@ -106,7 +133,11 @@ export interface FixAgent {
   readonly label: string;
   readonly description: string;
   readonly kind: AgentKind;
+  /** Whether a model id typed by hand is worth offering. */
+  readonly acceptsCustomModel?: boolean;
   detect(): Promise<AgentAvailability>;
+  /** The models available inside this subscription. Absent means "just the one". */
+  listModels?(): Promise<AgentModel[]>;
   run(task: FixTask, ctx: AgentContext): Promise<FixOutcome>;
 }
 
