@@ -142,6 +142,17 @@ function registerCommands(
   register('drift.keepAllChanges', () => review.keepAll());
   register('drift.undoAllChanges', () => review.undoAll());
   register('drift.openChangeDiff', ((path: string) => reviewUi.openDiff(path)) as never);
+  // Whatever the checks printed, verbatim. A summary is enough to decide with;
+  // a failure is not something to paraphrase.
+  register('drift.showCheckOutput', ((order: number) => {
+    const checks = review.checksFor(order) ?? [];
+    if (checks.length === 0) return;
+    output.show(true);
+    for (const check of checks) {
+      output.info(`${check.label} — ${check.status}${check.reason ? ` (${check.reason})` : ''}`);
+      if (check.output) output.info(check.output);
+    }
+  }) as never);
   register('drift.nextChange', () => reviewUi.revealNext());
   register('drift.reviewChanges', () => home.reveal());
   register('drift.newSession', () => home.newSession());

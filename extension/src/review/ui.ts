@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { join } from 'node:path';
-import type { DriftReview } from './store.js';
+import type { DriftReview, ReviewGroup } from './store.js';
 
 /**
  * In-editor review surface.
@@ -161,10 +161,16 @@ class HunkLensProvider implements vscode.CodeLensProvider, vscode.Disposable {
     const found = this.review.fileFor(document.uri);
     if (!found) return [];
 
-    const { file } = found;
+    const { file, group } = found;
     const lenses: vscode.CodeLens[] = [];
     const top = new vscode.Range(0, 0, 0, 0);
     const plural = file.hunks.length === 1 ? 'change' : 'changes';
+
+    // The verification row sits above Keep and Undo because it is what the
+    // decision should be made on. It is a report, not a gate: a red result
+    // still leaves both actions exactly where they were.
+    const verification = verificationLens(group, top);
+    if (verification) lenses.push(verification);
 
     lenses.push(
       new vscode.CodeLens(top, {
@@ -213,6 +219,41 @@ class HunkLensProvider implements vscode.CodeLensProvider, vscode.Disposable {
 
     return lenses;
   }
+}
+
+/**
+ * One row summarising the project's own checks for this group.
+ *
+ * Absent when no checks were run, rather than showing an empty "not verified" —
+ * a permanent grey badge on every file is a thing people learn to stop seeing.
+ */
+function verificationLens(group: ReviewGroup, range: vscode.Range): vscode.CodeLens | null {
+  if (group.checking) {
+    return new vscode.CodeLens(range, {
+      title: '$(sync~spin) Drift · running your checks…',
+      command: '',
+    });
+  }
+
+  const checks = group.checks;
+  if (!checks || checks.length === 0) return null;
+
+  const failed = checks.filter((c) => c.status === 'failed');
+  const passed = checks.filter((c) => c.status === 'passed');
+  const icon = failed.length > 0 ? '$(error)' : '$(pass)';
+  const summary =
+    failed.length > 0
+      ? `${failed.map((c) => c.label).join(', ')} failed`
+      : `${passed.map((c) => c.label).join(', ')} passed`;
+
+  return new vscode.CodeLens(range, {
+    title: `${icon} ${summary}`,
+    tooltip: checks
+      .map((c) => `${c.label}: ${c.status}${c.reason ? ` — ${c.reason}` : ''}`)
+      .join('\n'),
+    command: 'drift.showCheckOutput',
+    arguments: [group.order],
+  });
 }
 
 function hunkHover(path: string, hunkId: string, baselineLines: readonly string[]): vscode.MarkdownString {

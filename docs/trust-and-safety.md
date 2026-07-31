@@ -117,6 +117,13 @@ Two properties make this trustworthy rather than decorative:
   so there is no half-resolved state. Hunks record their line ranges on both sides,
   which is what stops resolving one from corrupting the others.
 
+Before that decision, Drift offers to run the project's own checks — typecheck,
+test, build, in that order, and only the ones that genuinely exist. They run
+locally, reach no network, and their result appears above Keep and Undo rather
+than in place of them. **A failing check never blocks Keep.** It is the
+strongest signal Drift can give a reviewer without asking them to read every
+line, and it is still their call.
+
 A group is committed only when every change in it has been kept, and the commit
 touches only the files the plan named for that group.
 

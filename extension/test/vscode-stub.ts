@@ -140,6 +140,8 @@ export const workspace = {
       type: statSync(uri.fsPath).isDirectory() ? FileType.Directory : FileType.File,
     }),
   },
+  textDocuments: [] as { uri: { fsPath: string }; getText(): string }[],
+  onDidChangeTextDocument: () => ({ dispose: () => undefined }),
   applyEdit: async () => true,
   saveAll: async () => true,
   openTextDocument: async () => {

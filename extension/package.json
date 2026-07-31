@@ -132,6 +132,12 @@
         "icon": "$(diff)"
       },
       {
+        "command": "drift.showCheckOutput",
+        "title": "Show Local Check Output",
+        "category": "Drift",
+        "icon": "$(output)"
+      },
+      {
         "command": "drift.nextChange",
         "title": "Go to Next Change",
         "category": "Drift",
@@ -271,6 +277,10 @@
         },
         {
           "command": "drift.openChangeDiff",
+          "when": "false"
+        },
+        {
+          "command": "drift.showCheckOutput",
           "when": "false"
         },
         {
