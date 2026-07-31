@@ -53,7 +53,6 @@ import {
   type AgentChoice,
   type MenuItem,
   type MenuSection,
-  type ProviderChoice,
   type StaleHint,
   type ViewModel,
 } from './webview.js';
@@ -1186,6 +1185,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private menuSections(): MenuSection[] {
     const sections: MenuSection[] = [
       { id: 'context', anchor: 'context', title: 'Context', items: this.contextItems() },
+      { id: 'model', anchor: 'context', title: 'Model', items: this.subscriptionItems() },
     ];
 
     for (const entry of this.available()) {
@@ -1193,7 +1193,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         id: `model:${entry.agent.id}`,
         anchor: `model:${entry.agent.id}`,
         title: entry.agent.label,
-        items: this.modelItems(entry),
+        items: [
+          {
+            id: 'back',
+            label: 'All subscriptions',
+            icon: 'back',
+            submenu: 'context',
+            keywords: 'back model subscriptions',
+          },
+          ...this.modelItems(entry),
+        ],
       });
     }
 
@@ -1219,29 +1228,54 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   }
 
   /**
-   * One button per subscription, showing the model chosen inside it.
+   * One row per subscription the developer can actually use.
    *
-   * The button shows the model and nothing about context, which is the other
-   * half of the plus button's promise: two controls, two subjects, neither one
-   * quietly doing the other's job.
+   * A subscription is not a model: someone paying for Claude has Opus, Sonnet
+   * and Haiku, and a Copilot seat carries whatever families GitHub is offering
+   * this month. So this list is the first of two steps — pick the thing you pay
+   * for, then pick the model inside it — and each row says which model it is
+   * currently set to, so neither step is a guess.
    */
-  private providerChoices(): ProviderChoice[] {
-    const preferred = vscode.workspace.getConfiguration('drift').get<string>('agent.preferred', 'auto');
+  private subscriptionItems(): MenuItem[] {
     const available = this.available();
+    if (available.length === 0) {
+      return [
+        {
+          id: 'agent:__pick',
+          label: 'Set up an agent…',
+          detail: 'Drift drives an agent you already have and never asks for an API key',
+          icon: 'gear',
+          keywords: 'model agent install sign in setup',
+        },
+      ];
+    }
+
+    const preferred = vscode.workspace.getConfiguration('drift').get<string>('agent.preferred', 'auto');
     const active = preferred === 'auto' ? available[0]?.agent.id : preferred;
 
-    return available.map((entry) => {
-      const chosen = this.session.model(entry.agent.id);
-      const model = this.models.get(entry.agent.id)?.find((candidate) => candidate.id === chosen);
+    return [
+      ...available.map<MenuItem>((entry) => {
+        const chosen = this.session.model(entry.agent.id);
+        const model = this.models.get(entry.agent.id)?.find((candidate) => candidate.id === chosen);
 
-      return {
-        id: entry.agent.id,
-        label: entry.agent.label,
-        short: shortProviderName(entry.agent.label),
-        modelLabel: model?.label ?? chosen,
-        selected: entry.agent.id === active,
-      };
-    });
+        return {
+          id: `agent:${entry.agent.id}`,
+          label: entry.agent.label,
+          detail: model?.label ?? chosen ?? entry.availability.detail,
+          icon: 'agent',
+          checked: entry.agent.id === active,
+          submenu: `model:${entry.agent.id}`,
+          keywords: `model subscription ${entry.agent.id}`,
+        };
+      }),
+      {
+        id: 'agent:__pick',
+        label: 'Set up another agent…',
+        detail: 'Every agent Drift supports, including the ones not ready yet',
+        icon: 'gear',
+        keywords: 'model agent install sign in setup',
+      },
+    ];
   }
 
   /** The models inside one subscription. */
@@ -1959,7 +1993,6 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       agents: this.agents.map(toChoice),
       agentId: vscode.workspace.getConfiguration('drift').get<string>('agent.preferred', 'auto'),
       agentLabel: this.agentLabel(),
-      providers: this.providerChoices(),
       mode: this.session.mode,
       effort: this.session.effort,
       permission: this.session.permission,
@@ -1990,19 +2023,6 @@ function describeSelection(root: string, editor: vscode.TextEditor): Attachment 
 function truncate(text: string, limit: number): string {
   const flat = text.replace(/\s+/g, ' ').trim();
   return flat.length <= limit ? flat : `${flat.slice(0, limit - 1)}…`;
-}
-
-/**
- * "Claude Code" on a button 90 pixels wide is "Claude".
- *
- * The full name stays in the tooltip and in the menu's own heading, where there
- * is room for it. What the button has to carry is which subscription this is,
- * and the first word does that for every agent Drift supports.
- */
-function shortProviderName(label: string): string {
-  const trimmed = label.replace(/\s*\(.*\)\s*$/, '').trim();
-  const first = trimmed.split(/\s+/)[0] ?? trimmed;
-  return first.length >= 4 ? first : trimmed;
 }
 
 function toChoice(entry: DiscoveredAgent): AgentChoice {
