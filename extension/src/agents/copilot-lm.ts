@@ -72,9 +72,6 @@ export class LanguageModelAgent implements FixAgent {
         id: model.family,
         label: model.name || model.family,
         detail: `${Math.round(model.maxInputTokens / 1000)}k context`,
-        // The Language Model API exposes no reasoning budget, so offering "Max"
-        // would be a control that quietly does nothing.
-        efforts: ['quick', 'balanced', 'thorough'],
       });
     }
     return out;

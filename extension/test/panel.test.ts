@@ -47,7 +47,7 @@ function model(over: Partial<ViewModel> = {}): ViewModel {
     agentId: 'auto',
     agentLabel: 'GitHub Copilot',
     mode: 'agent',
-    effort: 'balanced',
+    effortLabel: 'Medium',
     permission: 'auto-edit',
     attachments: [],
     thread: [],
@@ -76,17 +76,24 @@ function model(over: Partial<ViewModel> = {}): ViewModel {
       {
         id: 'effort',
         anchor: 'effort',
-        title: 'Effort',
+        title: 'Claude Code effort',
         items: [],
         slider: {
           id: 'effort',
           value: 1,
           stops: [
-            { value: 'quick', label: 'Quick', detail: 'Runtime dependencies only' },
-            { value: 'balanced', label: 'Balanced', detail: 'Every runtime dependency' },
-            { value: 'thorough', label: 'Thorough', detail: 'Adds dev dependencies' },
+            { value: 'low', label: 'Low', detail: 'Edits directly, without extended thinking' },
+            { value: 'medium', label: 'Medium', detail: 'Thinks through each change before making it' },
+            { value: 'high', label: 'High', detail: 'Thinks harder on each change' },
+            { value: 'xhigh', label: 'Ultracode', detail: 'The deepest reasoning Claude Code offers' },
           ],
         },
+      },
+      {
+        id: 'tools',
+        anchor: 'tools',
+        title: 'Tools',
+        items: [{ id: 'tool:/scan', label: '/scan', detail: 'Check every dependency', icon: 'search' }],
       },
       {
         id: 'permission',
@@ -98,6 +105,7 @@ function model(over: Partial<ViewModel> = {}): ViewModel {
     stale: null,
     draft: '',
     draftToken: 0,
+    conversationId: 'c1',
     ...over,
   };
 }
@@ -167,14 +175,52 @@ test('a slash command is one row, not two', () => {
   assert.match(html, /button\.command\s*\{[^}]*white-space:\s*nowrap/);
 });
 
-test('effort is a dial with the stops the model can honour', () => {
+test('effort is a dial, in the words the agent itself uses', () => {
   const html = renderPanel(model());
 
   assert.match(html, /data-action="openMenu" data-anchor="effort"/);
   assert.match(html, /<input\b[^>]*type="range"[^>]*data-action="slider"/);
-  assert.match(html, /data-values="quick,balanced,thorough"/);
-  // The label under the handle says what a position costs, not just its name.
-  assert.match(html, /class="slider-detail"[^>]*>Every runtime dependency</);
+  assert.match(html, /data-values="low,medium,high,xhigh"/);
+  // Anthropic's name for its top stop, not a house word invented here.
+  assert.match(html, /Ultracode/);
+  // The label under the handle says what a position does to the model.
+  assert.match(html, /class="slider-detail"[^>]*>Thinks through each change before making it</);
+  // And it is about thinking, never about looking at fewer packages.
+  assert.ok(!/dependencies only/.test(html), 'effort must not describe itself as narrowing the scan');
+});
+
+test('an agent with no reasoning budget gets no dial at all', () => {
+  // Drawing a control that does nothing is worse than drawing none: it invites
+  // the developer to change a setting the backend will ignore.
+  const html = renderPanel(model({ effortLabel: null }));
+  assert.ok(!/data-action="openMenu" data-anchor="effort"/.test(html), 'no effort button');
+});
+
+test('Tools is a menu of everything Drift can do', () => {
+  const html = renderPanel(model());
+
+  assert.match(html, /data-action="openMenu" data-anchor="tools"/);
+  assert.match(html, /data-section="tools" data-anchor="tools"/);
+  assert.match(html, /data-id="tool:\/scan"/);
+});
+
+test('an answer is typed out rather than dropped in whole', () => {
+  const html = renderPanel(
+    model({ conversationId: 'c9', thread: [{ id: 'i2', kind: 'assistant', text: 'Two packages moved.' }] }),
+  );
+
+  // The key carries the conversation, so reopening an old thread does not
+  // retype what it already typed.
+  assert.match(html, /data-type="c9:i2"/);
+  assert.match(html, /function typewriter\(\)/);
+});
+
+test('send is a thin arrow, not a filled wedge', () => {
+  const html = renderPanel(model());
+  const send = /<button class="send"[^>]*>(.*?)<\/button>/s.exec(html)?.[1] ?? '';
+
+  assert.match(send, /stroke="currentColor"/);
+  assert.match(send, /fill="none"/);
 });
 
 test('permission is its own button, beside send', () => {
