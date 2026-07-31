@@ -88,6 +88,12 @@
         "icon": "$(repo-push)"
       },
       {
+        "command": "drift.switchRepo",
+        "title": "Switch Repository",
+        "category": "Drift",
+        "icon": "$(repo)"
+      },
+      {
         "command": "drift.showLog",
         "title": "Show Log",
         "category": "Drift",
@@ -474,6 +480,12 @@
           "markdownDescription": "Repository conventions passed to every agent. The highest-leverage setting for output quality.\n\nFor example: *\"This repo uses Vitest, not Jest. Prefer named exports. All HTTP goes through src/lib/http.ts.\"*",
           "order": 21
         },
+        "drift.git.branchPrefix": {
+          "type": "string",
+          "default": "drift",
+          "markdownDescription": "Prefix for branches Drift creates, so a team can keep its own naming convention — `drift` gives `drift/upgrade-react-19.2.0`.\n\nDrift never commits without asking, never force-pushes, never rewrites history, and never commits a file an upgrade did not change.",
+          "order": 30
+        },
         "drift.logLevel": {
           "type": "string",
           "default": "info",
@@ -503,10 +515,10 @@
     "typescript": "^5.7.3"
   },
   "dependencies": {
-    "@octokit/rest": "^21.1.1",
+    "@octokit/rest": "^22.0.1",
     "semver": "^7.6.3",
     "yaml": "^2.7.0",
-    "zod": "^3.24.1"
+    "zod": "^4.4.3"
   },
   "repository": {
     "type": "git",

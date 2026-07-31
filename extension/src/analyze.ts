@@ -65,13 +65,16 @@ const MANIFEST_GLOBS = [
 export async function runAnalysis(options: AnalyzeOptions): Promise<AnalyzeResult> {
   const { state, progress, token } = options;
 
-  const folder = vscode.workspace.workspaceFolders?.[0];
-  if (!folder) {
+  // The active root, when Drift already knows about one — the common case
+  // after activation. Falling back to the first open folder covers the one
+  // caller (extension activation itself) that runs before `state.roots` is
+  // populated.
+  const root = state.activeRoot?.path ?? vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  if (!root) {
     state.set({ kind: 'no-repo' });
     return { plan: null, summary: 'No folder is open.' };
   }
 
-  const root = folder.uri.fsPath;
   const info = await inspectLocalRepo(root);
 
   if (!info) {

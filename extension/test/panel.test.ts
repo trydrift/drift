@@ -51,6 +51,7 @@ function model(over: Partial<ViewModel> = {}): ViewModel {
     mode: 'agent',
     effortLabel: 'Medium',
     permission: 'auto-edit',
+    scopeLabel: null,
     attachments: [],
     thread: [],
     candidates: {},
@@ -198,6 +199,19 @@ test('an agent with no reasoning budget gets no dial at all', () => {
   // the developer to change a setting the backend will ignore.
   const html = renderPanel(model({ effortLabel: null }));
   assert.ok(!/data-action="openMenu" data-anchor="effort"/.test(html), 'no effort button');
+});
+
+test('one open repository gets no scope button', () => {
+  // The same "no control that does nothing" rule the effort dial follows —
+  // with one folder open there is nothing to disambiguate.
+  const html = renderPanel(model({ scopeLabel: null }));
+  assert.ok(!/data-action="openMenu" data-anchor="scope"/.test(html), 'no scope button');
+});
+
+test('more than one open repository gets a labelled scope button', () => {
+  const html = renderPanel(model({ scopeLabel: '2 repositories' }));
+  assert.match(html, /data-action="openMenu" data-anchor="scope"/);
+  assert.match(html, />2 repositories</);
 });
 
 test('Tools is a menu of everything Drift can do', () => {
@@ -850,4 +864,39 @@ test('a single-package repository carries no workspace label', () => {
   );
 
   assert.ok(!/pkg-workspace/.test(html.replace(/<style[\s\S]*?<\/style>/g, '')));
+});
+
+test('a scan spanning more than one repository tags each row with its repository', () => {
+  const fromA = candidate({ id: 'a#lodash', repoRoot: '/repo-a', repoLabel: 'repo-a' });
+  const fromB = candidate({
+    id: 'b#lodash',
+    name: 'zod',
+    repoRoot: '/repo-b',
+    repoLabel: 'repo-b',
+  });
+
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'p1', kind: 'packages', headline: 'Two upgrades.', ids: [fromA.id, fromB.id] }],
+      candidates: { [fromA.id]: fromA, [fromB.id]: fromB },
+    }),
+  );
+
+  assert.match(html, /class="pkg-workspace pkg-repo"[^>]*>repo-a</);
+  assert.match(html, /class="pkg-workspace pkg-repo"[^>]*>repo-b</);
+});
+
+test('a single-repository result carries no repository label even when repoRoot is set', () => {
+  // `repoRoot` is stamped on every candidate once more than one root is *open*,
+  // but the tag itself is about what this *list* spans — a scope narrowed to
+  // one repository should read exactly like a window that only ever had one.
+  const c = candidate({ repoRoot: '/repo-a', repoLabel: 'repo-a' });
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'p1', kind: 'packages', headline: 'One upgrade.', ids: [c.id] }],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  assert.ok(!/pkg-repo/.test(html.replace(/<style[\s\S]*?<\/style>/g, '')));
 });
