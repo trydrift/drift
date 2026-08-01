@@ -152,6 +152,15 @@ export interface FixAgent {
   /** Whether a model id typed by hand is worth offering. */
   readonly acceptsCustomModel?: boolean;
   /**
+   * Whether `listModels` reports what this install can actually reach.
+   *
+   * True only when the list was read from the agent's own record rather than
+   * written down here. It is the difference between "Drift has not heard of
+   * that model" and "this subscription cannot use it", and only the second is
+   * grounds for clearing a choice the developer made.
+   */
+  readonly rosterIsAuthoritative?: boolean;
+  /**
    * This subscription's effort scale, in its own vocabulary.
    *
    * Absent means the backend has no reasoning control at all, and the composer

@@ -27,6 +27,10 @@ import type { DriftConfig } from '../config/schema.js';
 const KIND_ORDER: Record<BreakingChangeKind, number> = {
   'runtime-requirement': 0,
   'config-change': 1,
+  // Ahead of the individual removals it explains: rewriting the import path is
+  // what makes the symbols reachable again, so doing it first can leave the
+  // per-symbol commits with nothing to do.
+  'moved-export': 1,
   'removed-export': 2,
   'renamed-export': 2,
   'removed-endpoint': 3,
@@ -164,6 +168,8 @@ function describeChange(change: BreakingChange): string {
       return symbol && replacement
         ? `migrate \`${symbol}\` to \`${replacement}\``
         : `migrate renamed \`${symbol ?? 'API'}\``;
+    case 'moved-export':
+      return `import ${symbol ? `\`${symbol}\`` : 'the API'} from its new entry point`;
     case 'signature-change':
       return symbol ? `update \`${symbol}\` call sites for the new signature` : 'update call sites for new signatures';
     case 'type-change':

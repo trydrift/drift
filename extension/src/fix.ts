@@ -2,8 +2,17 @@ import * as vscode from 'vscode';
 import { join } from 'node:path';
 import type { CommitUnit, RemediationPlan } from '../../src/types.js';
 import { Git } from './git.js';
+import { diffHunks, statOf, type Hunk } from './diff.js';
 import type { DriftState } from './state.js';
-import { readEffort, type SessionEffort, type SessionPermission } from './session.js';
+import {
+  readEffort,
+  type SessionBranchMode,
+  type SessionCommitMode,
+  type SessionEffort,
+  type SessionPermission,
+  type TaskActivityInput,
+} from './session.js';
+import { activityFromReport } from './agent-activity.js';
 import type { DriftReview } from './review/store.js';
 import { resolveAgent, type RegistryContext } from './agents/registry.js';
 import type { AttachedContext, FixAgent, FixOutcome, FixTask } from './agents/types.js';
@@ -36,12 +45,23 @@ export interface FixOptions {
   review?: DriftReview;
   /** How much the agent may do unsupervised. Defaults to `auto-edit`. */
   permission?: SessionPermission;
+  /**
+   * Whether to branch first. Defaults to `new`.
+   *
+   * `current` is the developer explicitly taking the safety net down, so it is
+   * never inferred — an absent value means branch.
+   */
+  branchMode?: SessionBranchMode;
+  /** Whether Drift may write git history unattended. Defaults to `approve`. */
+  commitMode?: SessionCommitMode;
   /** Puts a question to the developer in the panel thread. */
   ask?: (question: string, options?: string[]) => Promise<string>;
   /** Files, folders or selections the developer attached as reference material. */
   context?: AttachedContext[];
   /** Mirrors agent chatter into the panel thread. */
   onLog?: (message: string) => void;
+  /** Mirrors structured work into the panel's per-commit activity drawer. */
+  onActivity?: (commit: CommitUnit, activity: TaskActivityInput) => void;
   /**
    * Called as each commit unit is picked up and put down.
    *
@@ -72,6 +92,7 @@ export interface FixResult {
 export async function runFix(options: FixOptions): Promise<FixResult> {
   const { state, plan, progress, token, review } = options;
   const permission: SessionPermission = options.permission ?? 'auto-edit';
+  const commitMode: SessionCommitMode = options.commitMode ?? 'approve';
 
   const root = state.workspaceRoot;
   const repo = state.repo;
@@ -113,12 +134,23 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
   if (commits.length === 0) return { ...empty(), message: 'Nothing to fix.' };
 
   const startRef = await git.headSha();
-  const branchResult = await git.createBranch(plan.branchName);
-  progress.report({
-    message: branchResult.created
-      ? `Created branch ${plan.branchName}`
-      : `Switched to existing branch ${plan.branchName}`,
-  });
+
+  // Where the work happens, and the one decision here that is hard to take
+  // back. Branching is the default because it makes everything downstream
+  // cheap to undo; staying put is only ever done because the developer said so.
+  const branchMode: SessionBranchMode = options.branchMode ?? 'new';
+  const workingBranch = branchMode === 'new' ? plan.branchName : await git.currentBranch();
+
+  if (branchMode === 'new') {
+    const branchResult = await git.createBranch(plan.branchName);
+    progress.report({
+      message: branchResult.created
+        ? `Created branch ${plan.branchName}`
+        : `Switched to existing branch ${plan.branchName}`,
+    });
+  } else {
+    progress.report({ message: `Working on ${workingBranch}` });
+  }
 
   const warnings: string[] = [];
   let committed = 0;
@@ -129,7 +161,7 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
 
   for (const commit of commits) {
     if (token.isCancellationRequested) {
-      return { status: 'cancelled', branch: plan.branchName, commits: committed, warnings, message: 'Cancelled.' };
+      return { status: 'cancelled', branch: workingBranch, commits: committed, warnings, message: 'Cancelled.' };
     }
 
     state.set({
@@ -150,7 +182,7 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
       if (/^stop/i.test(answer)) {
         return {
           status: 'cancelled',
-          branch: plan.branchName,
+          branch: workingBranch,
           commits: committed,
           pendingFiles,
           warnings,
@@ -166,8 +198,20 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
     }
 
     options.onCommitStart?.(commit);
+    options.onActivity?.(commit, {
+      kind: 'status',
+      title: 'Scope files',
+      detail: `${commit.files.length} planned file${commit.files.length === 1 ? '' : 's'}`,
+      output: commit.files.join('\n'),
+    });
 
     const before = await readFiles(root, commit.files);
+    options.onActivity?.(commit, {
+      kind: 'status',
+      title: 'Read workspace snapshot',
+      detail: `${before.length} file${before.length === 1 ? '' : 's'} available`,
+      output: before.map((file) => `${file.path} (${file.content.split('\n').length} lines)`).join('\n'),
+    });
     review?.snapshot(
       { order: commit.order, title: commit.message, body: commit.body },
       before,
@@ -183,6 +227,7 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
       files: before,
       ask: options.ask,
       onLog: options.onLog,
+      onActivity: (activity) => options.onActivity?.(commit, activity),
       context: options.context,
       // The composer's two choices, carried through to whatever backend can act
       // on them. An agent that ignores either is no worse off for being told.
@@ -191,12 +236,17 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
     });
 
     if (outcome.warnings?.length) warnings.push(...outcome.warnings);
+    options.onActivity?.(commit, {
+      kind: outcome.status === 'failed' ? 'status' : 'thinking',
+      title: outcome.status === 'failed' ? 'Agent failed' : 'Agent result',
+      detail: outcome.message,
+    });
 
     if (outcome.status === 'failed') {
       options.onCommitEnd?.(commit, 'failed', []);
       return {
         status: 'failed',
-        branch: plan.branchName,
+        branch: workingBranch,
         commits: committed,
         pendingFiles,
         warnings,
@@ -210,13 +260,30 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
       continue;
     }
 
+    const after = await readFiles(root, commit.files);
+    for (const activity of diffActivities(before, after)) {
+      options.onActivity?.(commit, activity);
+    }
+
     // With a review store, edits stay uncommitted until a human keeps them, and
     // the store's commit handler does the commit at that point. Without one —
-    // or in full-auto — commit here, as before.
-    if (review && permission !== 'full-auto') {
+    // or when the developer has asked for auto-commit — commit here.
+    //
+    // `full-auto` still implies auto-commit so an existing setting keeps
+    // behaving the way it did, but the git picker's own switch is what a
+    // developer reaches for now: "the agent may edit unattended" and "Drift may
+    // write my history unattended" are separate permissions, and only ever
+    // having the first meant the second came along silently.
+    const autoCommit = commitMode === 'auto' || permission === 'full-auto';
+    if (review && !autoCommit) {
       const settled = await review.settle(commit.order);
       const files = settled?.files.length ?? 0;
       pendingFiles += files;
+      options.onActivity?.(commit, {
+        kind: 'status',
+        title: 'Ready for review',
+        detail: `${files} changed file${files === 1 ? '' : 's'}`,
+      });
       if (files === 0) {
         warnings.push(`Commit ${commit.order} ("${commit.message}") produced no changes.`);
       }
@@ -232,6 +299,13 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
     const sha = await git.commitPaths(commit.files, commit.message, commit.body);
     if (sha) {
       committed += 1;
+      options.onActivity?.(commit, {
+        kind: 'bash',
+        title: 'Commit',
+        detail: commit.message,
+        input: `git add ${commit.files.join(' ')}\ngit commit -m ${commit.message}`,
+        output: sha,
+      });
       options.onCommitEnd?.(commit, 'done', commit.files);
       progress.report({ increment: step, message: `Committed ${sha.slice(0, 7)}` });
     } else {
@@ -254,25 +328,25 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
   }
 
   if (pendingFiles > 0) {
-    state.set({ kind: 'reviewing', plan, branch: plan.branchName, files: pendingFiles, warnings });
+    state.set({ kind: 'reviewing', plan, branch: workingBranch, files: pendingFiles, warnings });
     return {
       status: 'proposed',
-      branch: plan.branchName,
+      branch: workingBranch,
       commits: committed,
       pendingFiles,
       warnings,
-      message: `${agent.label} changed ${pendingFiles} file${pendingFiles === 1 ? '' : 's'} on ${plan.branchName}. Nothing is committed — keep or undo each change.`,
+      message: `${agent.label} changed ${pendingFiles} file${pendingFiles === 1 ? '' : 's'} on ${workingBranch}. Nothing is committed — keep or undo each change.`,
     };
   }
 
-  state.set({ kind: 'fixed', plan, branch: plan.branchName, commits: committed, warnings });
+  state.set({ kind: 'fixed', plan, branch: workingBranch, commits: committed, warnings });
 
   return {
     status: 'committed',
-    branch: plan.branchName,
+    branch: workingBranch,
     commits: committed,
     warnings,
-    message: `${committed} commit(s) on ${plan.branchName}. Review with: git diff ${startRef.slice(0, 7)}`,
+    message: `${committed} commit(s) on ${workingBranch}. Review with: git diff ${startRef.slice(0, 7)}`,
   };
 }
 
@@ -286,6 +360,7 @@ async function applyOneCommit(args: {
   files: { path: string; content: string }[];
   ask?: (question: string, options?: string[]) => Promise<string>;
   onLog?: (message: string) => void;
+  onActivity?: (activity: TaskActivityInput) => void;
   context?: AttachedContext[];
   model?: string;
   effort?: SessionEffort;
@@ -313,6 +388,7 @@ async function applyOneCommit(args: {
       report: (message) => {
         progress.report({ message: `${commit.order}: ${message}` });
         args.onLog?.(message);
+        args.onActivity?.(activityFromReport(message));
       },
       ask: args.ask,
       signal: controller.signal,
@@ -329,6 +405,51 @@ async function applyOneCommit(args: {
   } finally {
     cancelSub.dispose();
   }
+}
+
+
+function diffActivities(
+  before: readonly { path: string; content: string }[],
+  after: readonly { path: string; content: string }[],
+): TaskActivityInput[] {
+  const beforeByPath = new Map(before.map((file) => [file.path, file.content]));
+  const out: TaskActivityInput[] = [];
+
+  for (const file of after) {
+    const baseline = beforeByPath.get(file.path);
+    if (baseline === undefined || baseline === file.content) continue;
+    const hunks = diffHunks(baseline, file.content);
+    const stat = statOf(hunks);
+    out.push({
+      kind: 'edit',
+      title: 'Edit',
+      file: file.path,
+      detail: `${signed(stat.added)} ${plural(stat.added, 'line')} added, ${signed(-stat.removed)} ${plural(stat.removed, 'line')} removed`,
+      added: stat.added,
+      removed: stat.removed,
+      lines: previewLines(hunks),
+    });
+  }
+
+  return out;
+}
+
+function previewLines(hunks: readonly Hunk[]): { kind: 'add' | 'del' | 'context'; text: string }[] {
+  const lines: { kind: 'add' | 'del' | 'context'; text: string }[] = [];
+  for (const hunk of hunks.slice(0, 4)) {
+    lines.push({ kind: 'context', text: `@@ -${hunk.baselineStart + 1},${hunk.baselineLines.length} +${hunk.start + 1},${hunk.modifiedLines.length} @@` });
+    for (const line of hunk.baselineLines.slice(0, 12)) lines.push({ kind: 'del', text: line });
+    for (const line of hunk.modifiedLines.slice(0, 12)) lines.push({ kind: 'add', text: line });
+  }
+  return lines.slice(0, 80);
+}
+
+function signed(value: number): string {
+  return value > 0 ? `+${value}` : String(value);
+}
+
+function plural(count: number, word: string): string {
+  return `${word}${count === 1 ? '' : 's'}`;
 }
 
 async function readFiles(
