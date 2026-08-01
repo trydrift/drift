@@ -20,6 +20,10 @@
  * request without a traceable reason.
  */
 
+import type { UpgradeRationale } from './rationale/types.js';
+
+export type { UpgradeRationale };
+
 /** Package ecosystems Drift can parse manifests for. */
 export type Ecosystem =
   | 'npm'
@@ -232,6 +236,14 @@ export interface RemediationPlan {
   breakingChanges: BreakingChange[];
   impactSites: ImpactSite[];
   commits: CommitUnit[];
+  /**
+   * Why each upgrade might be worth taking, alongside what it might cost.
+   *
+   * One entry per dependency that moved. Empty when the rationale stage was
+   * switched off or had nothing to run against — never partially populated in a
+   * way that would let a reader mistake an absent entry for a clean one.
+   */
+  rationale?: UpgradeRationale[];
   risk: RiskLevel;
   /** Reasons Drift refused to proceed automatically, if any. */
   blockers: string[];

@@ -8,6 +8,7 @@ import type {
   RemediationPlan,
 } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
+import { renderRationale } from './rationale.js';
 
 /**
  * The Drift Report.
@@ -47,6 +48,7 @@ export function renderPullRequestBody(plan: RemediationPlan, config: DriftConfig
   if (plan.warnings.length > 0) sections.push(renderWarnings(plan));
 
   sections.push(renderBreakingChanges(plan));
+  sections.push(renderRationale(plan));
   sections.push(renderCommitPlan(plan));
   sections.push(renderImpactSites(plan));
   sections.push(renderEvidence(plan));
@@ -71,6 +73,7 @@ export function renderApprovalIssue(plan: RemediationPlan, config: DriftConfig):
   if (plan.blockers.length > 0) sections.push(renderBlockers(plan));
   if (plan.warnings.length > 0) sections.push(renderWarnings(plan));
   sections.push(renderBreakingChanges(plan));
+  sections.push(renderRationale(plan));
   sections.push(renderCommitPlan(plan));
   sections.push(renderEvidence(plan));
 

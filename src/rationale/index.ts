@@ -1,0 +1,279 @@
+import type { BreakingChange, DependencyChange, Evidence, ImpactSite } from '../types.js';
+import type { DriftConfig } from '../config/schema.js';
+import type { Logger } from '../util/logger.js';
+import type { SurfaceAddition, SurfaceUnavailable } from '../evidence/surface/types.js';
+import {
+  fetchRegistryInfo,
+  fetchRepositoryStatus,
+  fetchVersionInfo,
+  type RegistryInfo,
+} from '../evidence/registry.js';
+import { mapWithConcurrency } from '../util/http.js';
+import { assessSecurity, type OsvOptions } from './osv.js';
+import { assessMaintenance } from './maintenance.js';
+import { assessLicense } from './license.js';
+import { describeAdditions, improvementsFrom, summarizeRelease } from './summary.js';
+import { assessUpgrade } from './assess.js';
+import type { UpgradeRationale } from './types.js';
+
+/**
+ * Stage 3b — why this upgrade might be worth taking.
+ *
+ * Runs after evidence and analysis, because it needs both: the breaking changes
+ * to weigh against the benefits, and the impact sites to know whether those
+ * breaking changes are this repository's problem at all.
+ *
+ * Everything is best-effort and nothing throws. A source that cannot be reached
+ * becomes a stated gap, and a stated gap changes the recommendation — which is
+ * the only correct behaviour, because "Drift found nothing wrong" and "Drift
+ * could not look" are different sentences and only one of them is reassuring.
+ */
+
+export interface RationaleContext {
+  config: DriftConfig;
+  logger: Logger;
+  githubToken?: string;
+  /** Test seam for the OSV client. */
+  osv?: OsvOptions;
+  /** Computed API additions, keyed by dependency name. */
+  additions?: Map<string, { additions: SurfaceAddition[]; locator: string }>;
+  /** Surface diffs that could not be produced, keyed by dependency name. */
+  surfaceGaps?: Map<string, SurfaceUnavailable>;
+}
+
+export interface RationaleInput {
+  changes: readonly DependencyChange[];
+  evidence: readonly Evidence[];
+  breakingChanges: readonly BreakingChange[];
+  impactSites: readonly ImpactSite[];
+}
+
+export async function buildRationale(
+  input: RationaleInput,
+  ctx: RationaleContext,
+): Promise<UpgradeRationale[]> {
+  const upgrades = input.changes.filter((change) => change.from && change.to);
+
+  return mapWithConcurrency(upgrades, 4, async (change) => {
+    try {
+      return await rationaleFor(change, input, ctx);
+    } catch (err) {
+      // A crash here is a bug in Drift, not a fact about the dependency — and
+      // it must not cost the developer the analysis of the other thirty.
+      ctx.logger.debug(`Rationale failed for ${change.name}: ${(err as Error).message}`);
+      return degraded(change, `Drift could not assemble an upgrade rationale for ${change.name}.`);
+    }
+  });
+}
+
+async function rationaleFor(
+  change: DependencyChange,
+  input: RationaleInput,
+  ctx: RationaleContext,
+): Promise<UpgradeRationale> {
+  const { config, logger } = ctx;
+  const from = change.from!;
+  const to = change.to!;
+
+  const registry = await fetchRegistryInfo(change.name, change.ecosystem, to);
+
+  const [currentVersion, targetVersion, repository] = await Promise.all([
+    fetchVersionInfo(change.name, change.ecosystem, from).catch(() => null),
+    fetchVersionInfo(change.name, change.ecosystem, to).catch(() => null),
+    registry?.githubRepo
+      ? fetchRepositoryStatus(registry.githubRepo, ctx.githubToken).catch(() => null)
+      : Promise.resolve(null),
+  ]);
+
+  const security = config.rationale.security
+    ? await assessSecurity(change.name, change.ecosystem, from, to, ctx.osv ?? {})
+    : { checked: false, current: [], target: [], resolved: [], introduced: [], carried: [], direction: 'unknown' as const };
+
+  const maintenance = config.rationale.maintenance
+    ? assessMaintenance({
+        name: change.name,
+        ecosystem: change.ecosystem,
+        from,
+        to,
+        registry,
+        repository,
+        currentVersion,
+        targetVersion,
+      })
+    : { facts: [] };
+
+  const license = await assessLicense({
+    name: change.name,
+    ecosystem: change.ecosystem,
+    from,
+    to,
+    currentVersion,
+    targetVersion,
+    repository,
+    policy: config.licenses,
+  });
+
+  const breakingChanges = input.breakingChanges.filter((b) => b.dependency === change.name);
+  const relevantIds = new Set(breakingChanges.map((b) => b.id));
+  const impactSites = input.impactSites.filter((s) => relevantIds.has(s.breakingChangeId));
+
+  const computed = ctx.additions?.get(change.name);
+  const summary = config.rationale.summary
+    ? summarizeRelease({
+        dependency: change.name,
+        evidence: input.evidence,
+        breakingChanges,
+        impactSites,
+        additions: computed?.additions,
+      })
+    : { changes: [], unrelated: 0 };
+
+  const improvements = [...improvementsFrom(summary)];
+  const additive = computed ? describeAdditions(computed.additions, computed.locator) : null;
+  if (additive) improvements.push(additive);
+
+  const gaps = collectGaps(change, {
+    surfaceGap: ctx.surfaceGaps?.get(change.name),
+    security,
+    registry,
+    evidence: input.evidence,
+    licenseUnknown: license.verdict === 'unknown',
+  });
+
+  const assessment = assessUpgrade({
+    dependency: change.name,
+    breakingChanges,
+    impactSites,
+    evidence: input.evidence,
+    security,
+    maintenance,
+    license,
+    gaps,
+    surfaceCompared: computed !== undefined,
+  });
+
+  logger.debug(`${change.name} ${from} → ${to}: ${assessment.recommendation}`);
+
+  return {
+    dependency: change.name,
+    from,
+    to,
+    security,
+    maintenance,
+    improvements,
+    license,
+    summary,
+    assessment,
+    gaps,
+  };
+}
+
+/**
+ * Every reason this analysis came up short, said once.
+ *
+ * The bug this function exists to prevent: the report used to print "The Go
+ * toolchain is not installed" twice, once from the surface provider and once
+ * from the summary line that repeated it. Two sentences saying the same thing
+ * reads as two problems, and it makes a reader stop trusting the count of
+ * anything.
+ *
+ * So gaps are assembled in one place, in one order, and deduplicated on their
+ * meaning rather than their exact text — a stated remedy is appended to its own
+ * reason instead of standing as a second entry.
+ */
+function collectGaps(
+  change: DependencyChange,
+  sources: {
+    surfaceGap?: SurfaceUnavailable;
+    security: UpgradeRationale['security'];
+    registry: RegistryInfo | null;
+    evidence: readonly Evidence[];
+    licenseUnknown: boolean;
+  },
+): string[] {
+  const gaps: string[] = [];
+
+  const prose = sources.evidence.filter(
+    (record) =>
+      record.dependency === change.name &&
+      (record.source === 'github-release' ||
+        record.source === 'changelog' ||
+        record.source === 'migration-guide'),
+  );
+
+  const surfaceGap = sources.surfaceGap;
+
+  // The two most common absences are stated as one sentence rather than two,
+  // because they are one situation: nothing could be compared and nothing was
+  // written down.
+  if (surfaceGap && prose.length === 0) {
+    gaps.push(
+      `${trimPeriod(surfaceGap.detail)}. Drift also found no release notes, changelog, or migration guide for this version, so the upgrade remains unverified.${surfaceGap.remedy ? ` ${surfaceGap.remedy}` : ''}`,
+    );
+  } else if (surfaceGap) {
+    gaps.push(`${trimPeriod(surfaceGap.detail)}.${surfaceGap.remedy ? ` ${surfaceGap.remedy}` : ''}`);
+  } else if (prose.length === 0) {
+    gaps.push(
+      `No release notes, changelog, or migration guide was reachable for ${change.name} ${change.to}${sources.registry?.githubRepo ? '' : ', and no source repository could be resolved for it'}.`,
+    );
+  }
+
+  if (!sources.security.checked) {
+    gaps.push(
+      'The OSV advisory database could not be reached, so this upgrade\'s effect on known vulnerabilities is unknown.',
+    );
+  }
+
+  return dedupe(gaps);
+}
+
+function dedupe(gaps: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const gap of gaps) {
+    const key = gap.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(gap);
+  }
+  return out;
+}
+
+function trimPeriod(text: string): string {
+  return text.replace(/\.\s*$/, '');
+}
+
+function degraded(change: DependencyChange, reason: string): UpgradeRationale {
+  return {
+    dependency: change.name,
+    from: change.from ?? '',
+    to: change.to ?? '',
+    security: {
+      checked: false,
+      current: [],
+      target: [],
+      resolved: [],
+      introduced: [],
+      carried: [],
+      direction: 'unknown',
+    },
+    maintenance: { facts: [] },
+    improvements: [],
+    license: { verdict: 'unknown', statement: 'Not checked.', introduced: [] },
+    summary: { changes: [], unrelated: 0 },
+    assessment: {
+      recommendation: 'insufficient-evidence',
+      reasons: [reason],
+      confidence: 'low',
+      confidenceBasis: reason,
+    },
+    gaps: [reason],
+  };
+}
+
+export * from './types.js';
+export { assessSecurity, mergeAliases, cvssBaseScore } from './osv.js';
+export { assessMaintenance, describeAge, raisesMinimum } from './maintenance.js';
+export { assessLicense, isAllowed } from './license.js';
+export { summarizeRelease, classify, bulletLines, improvementsFrom, describeAdditions } from './summary.js';
+export { assessUpgrade, RECOMMENDATION_LABEL } from './assess.js';

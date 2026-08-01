@@ -71,6 +71,51 @@ export const DriftConfigSchema = z.object({
     })
     .default({}),
 
+  /**
+   * The other half of the question: why an upgrade might be worth taking.
+   *
+   * On by default, because a tool that only ever argues against upgrading is a
+   * tool that teaches people to ignore it. Each source can be switched off
+   * individually for a repository that cannot reach it.
+   */
+  rationale: z
+    .object({
+      /** Check known vulnerabilities for both versions against OSV. */
+      security: z.boolean().default(true),
+      /** Deprecation, archival, retraction, release recency, runtime minimums. */
+      maintenance: z.boolean().default(true),
+      /** Plain-English summary of the upstream changes between the versions. */
+      summary: z.boolean().default(true),
+    })
+    .default({}),
+
+  /**
+   * License policy. Off by default.
+   *
+   * Opt-in because a license check with no configured policy has nothing to
+   * compare against, and a tool that reports "the license is MIT" on every
+   * upgrade is noise. Enabling it without an `allow` or `deny` list still
+   * reports a *change* of license, which is the part that matters on an
+   * upgrade regardless of policy.
+   */
+  licenses: z
+    .object({
+      enabled: z.boolean().default(false),
+      /** SPDX identifiers permitted. Empty means every license not denied. */
+      allow: z.array(z.string()).default([]),
+      /** SPDX identifiers refused. Always wins over `allow`. */
+      deny: z.array(z.string()).default([]),
+      /**
+       * Treat a missing or unreadable license as a violation.
+       *
+       * Off by default: many registries simply do not publish the field, and
+       * failing an upgrade over an empty registry column is the kind of false
+       * alarm that gets a policy check switched off entirely.
+       */
+      requireDeclared: z.boolean().default(false),
+    })
+    .default({}),
+
   /** Guardrails. These are the reason a team can leave `auto` mode on. */
   guardrails: z
     .object({
@@ -133,6 +178,7 @@ export const DriftConfigSchema = z.object({
 });
 
 export type DriftConfig = z.infer<typeof DriftConfigSchema>;
+export type LicensePolicy = DriftConfig['licenses'];
 
 export const DEFAULT_CONFIG: DriftConfig = DriftConfigSchema.parse({});
 

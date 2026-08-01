@@ -7,6 +7,7 @@ import type {
   RemediationPlan,
   RepoContext,
   RiskLevel,
+  UpgradeRationale,
 } from '../types.js';
 import { compareRisk, riskWithinLimit, type DriftConfig } from '../config/schema.js';
 import { meetsConfidence } from '../analyze/index.js';
@@ -35,6 +36,8 @@ export interface BuildPlanInput {
   impactSites: readonly ImpactSite[];
   /** Reasons from triage, surfaced so nothing looks silently dropped. */
   skipped?: readonly { change: DependencyChange; reason: string }[];
+  /** Why each upgrade might be worth taking. Absent when the stage was skipped. */
+  rationale?: readonly UpgradeRationale[];
 }
 
 export function buildPlan(input: BuildPlanInput): RemediationPlan {
@@ -54,6 +57,7 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
     breakingChanges: [...breakingChanges],
     impactSites: [...impactSites],
     commits,
+    ...(input.rationale ? { rationale: [...input.rationale] } : {}),
     risk,
     blockers,
     warnings,
