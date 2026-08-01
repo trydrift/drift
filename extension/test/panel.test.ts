@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { crossesMajor, renderBody, renderPanel, SLASH_COMMANDS, type ViewModel } from '../src/ui/webview.js';
+import type { TaskGroup } from '../src/session.js';
 import { describeSeverity, severityOf } from '../src/severity.js';
 import type { UpgradeCandidate } from '../src/upgrades.js';
 
@@ -51,7 +52,10 @@ function model(over: Partial<ViewModel> = {}): ViewModel {
     agentLabel: 'GitHub Copilot',
     mode: 'agent',
     effortLabel: 'Medium',
+    modelLabel: 'Claude Opus',
     permission: 'auto-edit',
+    branchMode: 'new',
+    commitMode: 'approve',
     scopeLabel: null,
     attachments: [],
     thread: [],
@@ -127,43 +131,78 @@ test('an empty session renders the welcome state and a composer', () => {
   assert.match(html, /id="menu-filter"/);
 });
 
-test('the plus button holds context and model, and models drill in per subscription', () => {
+const modelMenu = [
+  { id: 'context', anchor: 'context', title: 'Context', items: [{ id: 'context:file', label: 'Add a file…' }] },
+  {
+    id: 'model',
+    anchor: 'model',
+    title: 'Model',
+    items: [{ id: 'agent:claude', label: 'Claude Code', detail: 'Opus', submenu: 'model:claude', checked: true }],
+  },
+  {
+    id: 'model:claude',
+    anchor: 'model:claude',
+    title: 'Claude Code',
+    items: [
+      { id: 'back', label: 'All subscriptions', submenu: 'model', icon: 'back' as const },
+      { id: 'model:claude:sonnet', label: 'Claude Sonnet' },
+    ],
+  },
+];
+
+test('the model is its own control, named for what is selected', () => {
+  // It used to live under the plus, whose label named neither context nor
+  // model. The setting that most changes the result was the one a developer
+  // had to already know was hidden.
+  const html = renderPanel(model({ modelLabel: 'GPT-5.5', menu: modelMenu }));
+
+  const bar = html.slice(html.indexOf('composer-bar'));
+  assert.match(bar, /data-anchor="model"[^>]*>[\s\S]*?GPT-5\.5/);
+  // Order in the row: context, then model, then tools.
+  assert.ok(
+    bar.indexOf('data-anchor="context"') < bar.indexOf('data-anchor="model"'),
+    'the model button sits after the plus',
+  );
+  assert.ok(
+    bar.indexOf('data-anchor="model"') < bar.indexOf('data-anchor="tools"'),
+    'the model button sits before Tools',
+  );
+  // The plus no longer claims to hold the model.
+  assert.doesNotMatch(bar, /aria-label="Context and model"/);
+});
+
+test('with no agent installed the model button offers to set one up', () => {
+  const html = renderPanel(model({ modelLabel: null, menu: modelMenu }));
+  assert.match(html.slice(html.indexOf('composer-bar')), /data-anchor="model:setup"[^>]*>[\s\S]*?Choose agent/);
+});
+
+test('a subscription drills in to its own models, and back out again', () => {
   // A subscription is not a model. Someone paying for Claude has Opus, Sonnet
   // and Haiku, so picking a subscription is the first of two steps and opens
   // that subscription's own models — a drill-in inside the same menu, which
   // costs nothing because it never leaves the webview.
-  const html = renderPanel(
-    model({
-      menu: [
-        { id: 'context', anchor: 'context', title: 'Context', items: [{ id: 'context:file', label: 'Add a file…' }] },
-        {
-          id: 'model',
-          anchor: 'context',
-          title: 'Model',
-          items: [{ id: 'agent:claude', label: 'Claude Code', detail: 'Opus', submenu: 'model:claude', checked: true }],
-        },
-        {
-          id: 'model:claude',
-          anchor: 'model:claude',
-          title: 'Claude Code',
-          items: [
-            { id: 'back', label: 'All subscriptions', submenu: 'context', icon: 'back' },
-            { id: 'model:claude:sonnet', label: 'Claude Sonnet' },
-          ],
-        },
-      ],
-    }),
-  );
+  const html = renderPanel(model({ menu: modelMenu }));
 
-  // Both sections open from the one plus button.
   assert.match(html, /data-section="context" data-anchor="context"/);
-  assert.match(html, /data-section="model" data-anchor="context"/);
+  assert.match(html, /data-section="model" data-anchor="model"/);
   // The subscription row opens its own section rather than acting.
   assert.match(html, /data-action="openMenu" data-anchor="model:claude"[^>]*data-search="[^"]*claude/i);
   assert.match(html, /data-section="model:claude" data-anchor="model:claude"/);
   assert.match(html, /data-action="menu" data-id="model:claude:sonnet"/);
   // And a way back out of the drill-in.
-  assert.match(html, /data-action="openMenu" data-anchor="context"[^>]*>[\s\S]*?All subscriptions/);
+  assert.match(html, /data-action="openMenu" data-anchor="model"[^>]*>[\s\S]*?All subscriptions/);
+});
+
+test('the row that goes back does not also point forward', () => {
+  // "All subscriptions" drew a left arrow and a right arrow at once, each
+  // claiming a different destination for the same click.
+  const html = renderPanel(model({ menu: modelMenu }));
+
+  const back = html.slice(html.indexOf('All subscriptions'));
+  const row = back.slice(0, back.indexOf('</button>'));
+  assert.doesNotMatch(row, /menu-more/);
+  // A row that genuinely drills in keeps its chevron.
+  assert.match(html.slice(0, html.indexOf('All subscriptions')), /menu-more/);
 });
 
 test('the control row never wraps and the composer stays at the bottom', () => {
@@ -468,6 +507,34 @@ test('a scan whose results have gone stale says so and offers a rescan', () => {
   assert.match(html, /data-action="rescan"/);
 });
 
+test('one package can be checked again without re-checking every package', () => {
+  // Re-checking a single row cost a full scan, so the cheapest question in the
+  // panel — "is that still true?" — was the one nobody asked.
+  const c = candidate();
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'p1', kind: 'packages', headline: 'One upgrade.', ids: [c.id] }],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  // The id is attribute-escaped on the way out, so match the button and then
+  // that it carries this row's id rather than comparing the raw string.
+  assert.match(html, /data-action="recheck" data-id="lodash@4\.17\.21-&gt;5\.0\.0"/);
+});
+
+test('a package already being checked offers no second re-check', () => {
+  const c = candidate({ status: 'checking' });
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'p1', kind: 'packages', headline: 'One upgrade.', ids: [c.id] }],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  assert.doesNotMatch(html, /data-action="recheck"/);
+});
+
 test('every disclosure carries a key, so re-rendering cannot collapse it', () => {
   // The panel re-renders many times a second during a scan. Without a stable
   // key on each <details>, everything the developer opened slams shut each time
@@ -735,6 +802,24 @@ test('agent work is a checklist, not a blob of text', () => {
               package: 'lodash',
               state: 'active',
               note: 'Editing src/report.ts',
+              activity: [
+                { id: 'a1', kind: 'thinking', title: 'Thinking', detail: 'Inspecting the affected call sites' },
+                { id: 'a2', kind: 'bash', title: 'Bash', input: 'npm test -- src/report.test.ts', output: 'pass' },
+                {
+                  id: 'a3',
+                  kind: 'edit',
+                  title: 'Edit',
+                  file: 'src/report.ts',
+                  detail: '+2 lines added, -1 line removed',
+                  added: 2,
+                  removed: 1,
+                  lines: [
+                    { kind: 'context', text: '@@ -41,1 +41,2 @@' },
+                    { kind: 'del', text: 'const result = _.chain(items)' },
+                    { kind: 'add', text: 'const result = items' },
+                  ],
+                },
+              ],
               tasks: [
                 {
                   id: 'c1-0',
@@ -768,6 +853,13 @@ test('agent work is a checklist, not a blob of text', () => {
   assert.match(html, /class="task-group active"[^>]*open/);
   assert.match(html, /class="task-group pending" data-key="task:c2"\s*>/);
   assert.match(html, /Editing src\/report.ts/);
+  assert.match(html, /Model work/);
+  assert.match(html, /class="activity-item thinking"/);
+  assert.match(html, /class="activity-item bash"/);
+  assert.match(html, /class="activity-item edit"/);
+  assert.match(html, /npm test -- src\/report\.test\.ts/);
+  assert.match(html, /data-action="openFile" data-file="src\/report.ts"/);
+  assert.match(html, /\+ const result = items/);
 });
 
 test('a finished task says whether the file actually changed', () => {
@@ -961,4 +1053,86 @@ test('crossesMajor reads the leading number and nothing else', () => {
   assert.equal(crossesMajor('v5.7.3', '7.0.2'), true);
   assert.equal(crossesMajor('1.0.0', '1.0.0'), false);
   assert.equal(crossesMajor('not-a-version', '4.0.0'), false);
+});
+
+/* ------------------------------------------------------------------ */
+/* Transparency: what the panel says the agent is doing                */
+/* ------------------------------------------------------------------ */
+
+/** A `tasks` item with one group carrying the given activity rows. */
+function withActivity(activity: NonNullable<TaskGroup['activity']>): string {
+  return renderBody(
+    model({
+      thread: [
+        {
+          id: 't1',
+          kind: 'tasks',
+          title: 'Fixing 1 site',
+          subtitle: '1 commit.',
+          groups: [
+            {
+              id: 'c1',
+              title: 'refactor(typescript): new entry point',
+              state: 'active',
+              tasks: [{ id: 'c1-0', label: 'import moved', file: 'src/a.ts', line: 1, state: 'active' }],
+              activity,
+            },
+          ],
+        },
+      ],
+    }),
+  );
+}
+
+test('a source the agent consulted is a link, not a string in a log line', () => {
+  const html = withActivity([
+    {
+      id: 'a1',
+      kind: 'search',
+      title: 'Web search',
+      detail: 'Reading https://example.com/changelog?from=5&to=7',
+      links: ['https://example.com/changelog?from=5&to=7'],
+    },
+  ]);
+
+  // Clickable, and pointing at the whole URL — a query string dropped on the
+  // way into the attribute is a link that opens a different page.
+  assert.match(html, /data-action="openUrl"/);
+  assert.match(html, /data-url="https:\/\/example\.com\/changelog\?from=5&amp;to=7"/);
+  // Not double-encoded: `&amp;amp;` would reach the host as a literal `&amp;`.
+  assert.ok(!html.includes('&amp;amp;'), 'the URL was escaped twice');
+});
+
+test('the activity drawer scrolls instead of growing without limit', () => {
+  const html = renderPanel(model());
+  const list = /\.activity-list\s*\{[^}]*\}/.exec(html)?.[0] ?? '';
+  assert.match(list, /max-height/);
+  assert.match(list, /overflow-y:\s*auto/);
+});
+
+test('agent reasoning is never titled with the stream it arrived on', () => {
+  const html = withActivity([
+    { id: 'a1', kind: 'thinking', title: 'Thinking', detail: 'The factory helper does not take source text' },
+  ]);
+
+  assert.match(html, /Thinking/);
+  assert.ok(!/STDERR/i.test(html), 'a row was titled after a pipe');
+});
+
+test('the composer says where a fix will land and whether it will be committed', () => {
+  const branching = renderPanel(model({ branchMode: 'new', commitMode: 'approve' }));
+  assert.match(branching, /data-anchor="git"/);
+  assert.match(branching, /New branch/);
+  assert.match(branching, /nothing is committed until you keep it/);
+
+  const inPlace = renderPanel(model({ branchMode: 'current', commitMode: 'auto' }));
+  assert.match(inPlace, /This branch/);
+  assert.match(inPlace, /commits automatically/);
+});
+
+test('the composer no longer offers a bare list of agent counts', () => {
+  const html = renderPanel(model());
+  // The number of agents is a question asked in the conversation, where there is
+  // room to say what it buys. A row of naked integers in a menu was not that.
+  assert.ok(!/data-id="fixAgents:/.test(html), 'the agent-count menu is still there');
 });

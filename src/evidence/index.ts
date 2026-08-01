@@ -14,7 +14,13 @@ import {
 import { fetchRegistryInfo } from './registry.js';
 import { fetchReleaseNotes } from './releases.js';
 import { diffSpecs, parseSpec, type OpenApiFinding } from './openapi.js';
-import { diffSurfaces, fetchTypeSurface, type SurfaceChange } from './type-surface.js';
+import {
+  diffSurfaces,
+  entryPointMoved,
+  fetchTypeSurface,
+  VersionUnavailableError,
+  type SurfaceChange,
+} from './type-surface.js';
 import { computeSurfaceDiff, unavailable, type SurfaceUnavailable } from './surface/index.js';
 import type { Exec } from '../util/exec.js';
 
@@ -215,6 +221,28 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
       );
       return null;
     }
+    if (surface.unreachable) {
+      ctx.onUnavailableSurface?.(
+        change,
+        unavailable(
+          'TypeScript declarations',
+          'version-unavailable',
+          `${surface.unreachable} could not be fetched, so nothing was compared. That version may have been unpublished, or the CDN may not carry it.`,
+        ),
+      );
+      return null;
+    }
+    if (surface.definitelyTyped) {
+      ctx.onUnavailableSurface?.(
+        change,
+        unavailable(
+          'TypeScript declarations',
+          'no-public-surface',
+          `${change.name} ships no declarations of its own; its types live in @types/${change.name.replace(/^@/, '').replace('/', '__')}, which versions separately and does not move with this upgrade. Nothing was compared.`,
+        ),
+      );
+      return null;
+    }
     if (surface.changes.length === 0) {
       if (!surface.comparable) {
         ctx.onUnavailableSurface?.(
@@ -222,7 +250,7 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
           unavailable(
             'TypeScript declarations',
             'no-public-surface',
-            `${change.name} re-exports its public API from other packages, so comparing its own declarations proves nothing about this upgrade.`,
+            `${change.name}'s public API is neither in its own declarations nor in any dependency Drift could follow, so comparing its declarations proves nothing about this upgrade.`,
           ),
         );
       }
@@ -278,11 +306,14 @@ function surfaceRecord(
 /**
  * The smallest surface worth calling a comparison.
  *
- * A package whose entry declaration is one re-export of another package —
- * `@octokit/rest` is the canonical example — resolves to a single symbol on
- * both sides and diffs to nothing. Reporting that as "no API changes" claims a
- * comparison that never happened; the honest answer is that this package's
- * surface is not local enough to compare.
+ * A package whose entry declaration is one re-export of another package
+ * resolves to a single symbol on both sides and diffs to nothing. Reporting
+ * that as "no API changes" claims a comparison that never happened.
+ *
+ * Reaching this at all now takes a package whose API is neither in its own
+ * declarations nor in any dependency Drift could follow — `fetchTypeSurface`
+ * resolves the dependencies a wrapper re-exports through, which is what made
+ * `@octokit/rest`, the case this constant was written for, comparable.
  */
 const MIN_COMPARABLE_SYMBOLS = 3;
 
@@ -291,21 +322,55 @@ async function diffTypeSurfaces(
   from: string,
   to: string,
   logger: Logger,
-): Promise<{ changes: SurfaceChange[]; comparable: boolean } | null> {
+): Promise<{
+  changes: SurfaceChange[];
+  comparable: boolean;
+  unreachable?: string;
+  /**
+   * Both sides resolved to DefinitelyTyped.
+   *
+   * `@types/x` is fetched at `latest` because it carries no version of its own
+   * that corresponds to `x@1.2.3`. That makes the two sides of the diff the
+   * same file, which is empty by construction — and an empty diff was being
+   * reported as a clean comparison. Nothing was compared at all.
+   */
+  definitelyTyped?: boolean;
+} | null> {
   try {
     const [before, after] = await Promise.all([
       fetchTypeSurface(packageName, from),
       fetchTypeSurface(packageName, to),
     ]);
     if (!before || !after) return null;
+
+    if (before.viaDependencies.length > 0 || after.viaDependencies.length > 0) {
+      logger.debug(
+        `${packageName} surface includes ${[...new Set([...before.viaDependencies, ...after.viaDependencies])].join(', ')}`,
+      );
+    }
+
+    // Named first, because it explains every removal underneath it. A reader
+    // who sees three hundred "removed" lines with no cause reaches for the
+    // wrong fix; a reader who is told the entry point moved reaches for the
+    // right one.
+    const moved = entryPointMoved(packageName, before, after);
+    const changes = diffSurfaces(before.api, after.api);
+
+    const definitelyTyped =
+      before.entryPath.startsWith('@types:') && after.entryPath.startsWith('@types:');
+
     return {
-      changes: diffSurfaces(before.api, after.api),
+      changes: moved ? [moved, ...changes] : changes,
       comparable:
         before.api.size >= MIN_COMPARABLE_SYMBOLS && after.api.size >= MIN_COMPARABLE_SYMBOLS,
+      ...(definitelyTyped ? { definitelyTyped } : {}),
     };
   } catch (err) {
     // Never let an untyped or oddly-packaged dependency fail the run.
     logger.debug(`Type surface diff failed for ${packageName}: ${(err as Error).message}`);
+    if (err instanceof VersionUnavailableError) {
+      return { changes: [], comparable: false, unreachable: `${err.packageName}@${err.version}` };
+    }
     return null;
   }
 }

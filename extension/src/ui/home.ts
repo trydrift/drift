@@ -6,12 +6,14 @@ import { renderPullRequestBody } from '../../../src/report/markdown.js';
 import { inspectLocalRepo } from '../../../src/repo/local-git.js';
 import { DriftConfigSchema, type DriftConfig } from '../../../src/config/schema.js';
 import { loadWorkspaceConfig, runAnalysis } from '../analyze.js';
-import { runFix } from '../fix.js';
+import { runFix, type FixResult } from '../fix.js';
 import type { DriftState, RepoRoot } from '../state.js';
 import type { NestedProject } from '../../../src/detect/nested.js';
 import {
   DriftSession,
   type Attachment,
+  type SessionBranchMode,
+  type SessionCommitMode,
   type SessionEffort,
   type SessionMode,
   type SessionPermission,
@@ -104,6 +106,7 @@ type Incoming =
   | { type: 'openUrl'; url: string }
   | { type: 'openDiff'; path: string }
   | { type: 'pickVersion'; id: string }
+  | { type: 'recheck'; id: string }
   | { type: 'upgrade'; id: string; mode: 'safe' | 'force' }
   | { type: 'fixPackage'; id: string }
   | { type: 'fixAll' }
@@ -509,6 +512,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         return;
       case 'pickVersion':
         await this.pickVersion(message.id);
+        return;
+      case 'recheck':
+        await this.recheck(message.id);
         return;
       case 'upgrade':
         await this.upgrade([message.id], message.mode);
@@ -1161,13 +1167,35 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     return (await this.contextFor(candidate.repoRoot)) ?? active;
   }
 
-  private async retarget(id: string, version: string): Promise<void> {
+  /**
+   * Check one package again, from the registry down.
+   *
+   * The whole-list rescan was the only way to re-run a check, which made the
+   * cheapest question in the panel — "is that still true?" — cost every other
+   * package in the project. This asks it about one, including whether a newer
+   * version has been published since the scan.
+   */
+  private async recheck(id: string): Promise<void> {
+    const candidate = this.candidates.get(id);
+    if (!candidate) return;
+    await this.retarget(id, candidate.selected, { refreshVersions: true });
+  }
+
+  private async retarget(
+    id: string,
+    version: string,
+    options: { refreshVersions?: boolean } = {},
+  ): Promise<void> {
     const ctx = await this.context();
     const candidate = this.candidates.get(id);
     if (!ctx || !candidate) return;
     const candidateCtx = await this.contextForCandidate(candidate, ctx);
 
-    const step = this.session.step(`Re-checking ${candidate.name} at ${version}`);
+    const step = this.session.step(
+      options.refreshVersions
+        ? `Re-checking ${candidate.name}`
+        : `Re-checking ${candidate.name} at ${version}`,
+    );
 
     await this.run(async () => {
       this.candidates.set(id, { ...candidate, selected: version, status: 'checking' });
@@ -1180,6 +1208,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         repo: candidateCtx.repo,
         config: candidateCtx.config,
         githubToken: await getRateLimitToken(),
+        refreshVersions: options.refreshVersions,
         onProgress: (phase, detail) => step.progress(phase, detail),
       });
 
@@ -1400,6 +1429,91 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
             : `${group.length} packages upgraded.`,
       });
     }
+  }
+
+  /**
+   * Every uncommitted change, side by side with what it was.
+   *
+   * The panel could already open one file's diff, from the review card, which
+   * answers "what happened to this file" and never "what happened". Reviewing a
+   * migration means reading all of it, and doing that a file at a time from a
+   * list is exactly the friction that makes people skim and keep. VS Code's
+   * multi-file diff editor is the same view the SCM sidebar and GitLens use, so
+   * this is the familiar one rather than a fourth way to look at a change.
+   */
+  private async reviewAllChanges(): Promise<void> {
+    const ctx = await this.context();
+    if (!ctx) {
+      this.session.notice('warn', 'Open a git repository to review changes.');
+      return;
+    }
+
+    const { Git } = await import('../git.js');
+    const git = new Git(ctx.root);
+    const dirty = await git.dirtyFiles().catch(() => []);
+
+    if (dirty.length === 0) {
+      this.session.notice('info', 'Nothing is changed in your working tree right now.');
+      return;
+    }
+
+    const resources = dirty.map((path) => vscode.Uri.file(join(ctx.root, path)));
+
+    try {
+      await vscode.commands.executeCommand(
+        'vscode.changes',
+        `Drift: ${dirty.length} changed file${dirty.length === 1 ? '' : 's'}`,
+        // Each row is [label, before, after]. `git:` URIs resolve through the
+        // built-in git extension's content provider, so "before" is HEAD.
+        resources.map((uri) => [uri, uri.with({ scheme: 'git', query: JSON.stringify({ path: uri.fsPath, ref: 'HEAD' }) }), uri]),
+      );
+    } catch {
+      // The multi-diff editor needs the built-in git extension active. Falling
+      // back to the SCM view is worse but still shows every file, which beats
+      // an error message that leaves the developer with nothing to click.
+      await vscode.commands.executeCommand('workbench.view.scm');
+      this.session.notice(
+        'info',
+        `Opened Source Control with ${dirty.length} changed file${dirty.length === 1 ? '' : 's'}.`,
+      );
+    }
+  }
+
+  /**
+   * Commit what is in the tree now, whatever produced it.
+   *
+   * `/commit` is deliberately about dependency files, because that is what an
+   * upgrade leaves behind. After a fix the interesting change is the code, and
+   * a developer looking at edited source with no commit button reasonably
+   * concludes Drift has no intention of committing it.
+   */
+  private async commitNow(): Promise<void> {
+    const ctx = await this.context();
+    if (!ctx) {
+      this.session.notice('warn', 'Open a git repository to commit.');
+      return;
+    }
+
+    const { Git } = await import('../git.js');
+    const git = new Git(ctx.root);
+    const paths = await git.dirtyFiles().catch(() => []);
+
+    if (paths.length === 0) {
+      this.session.notice('info', 'Nothing is changed, so there is nothing to commit.');
+      return;
+    }
+
+    const plan = this.state.plan;
+    await this.ship(ctx.root, {
+      paths,
+      branchName: plan?.branchName ?? `${this.branchPrefix(ctx.config)}/changes-${new Date().toISOString().slice(0, 10)}`,
+      message: {
+        subject: plan?.commits[0]?.message ?? 'chore: apply Drift changes',
+        body: paths.map((path) => `- ${path}`).join('\n'),
+      },
+      prBody: ['Changes made in the Drift panel.', '', ...paths.map((path) => `- \`${path}\``)].join('\n'),
+      summary: `${paths.length} changed file${paths.length === 1 ? '' : 's'} in your working tree.`,
+    });
   }
 
   /**
@@ -1845,26 +1959,93 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       return;
     }
 
+    // Upgrade first, fix second, and never the other way round.
+    //
+    // Every fix prompt tells the agent "the dependency versions have ALREADY
+    // been updated", and the impact sites were computed against the new API. Run
+    // that against a tree still on the old version and the agent is editing
+    // working code to match a package that is not installed: the build breaks on
+    // the spot, and it stays broken until the upgrade lands. Which order this
+    // happens in is not a preference, so it is checked rather than assumed.
+    const notInstalled = candidates.filter((candidate) => candidate.current !== candidate.selected);
+    if (notInstalled.length > 0) {
+      const names = notInstalled.map((c) => `**${c.name}** ${c.current} → ${c.selected}`).join(', ');
+      const answer = await this.session.ask(
+        `${notInstalled.length === 1 ? 'This upgrade has' : 'These upgrades have'} not been installed yet: ${names}. The fixes are written against the new version, so applying them first would break a build that currently works. Install ${notInstalled.length === 1 ? 'it' : 'them'} first?`,
+        [
+          {
+            label: 'Upgrade, then fix',
+            value: 'upgrade',
+            description: 'Install the new versions and come back to the fix',
+          },
+          {
+            label: 'Fix anyway',
+            value: 'anyway',
+            description: 'I have already upgraded another way, or I know what I am doing',
+          },
+          { label: 'Cancel', value: 'cancel', description: 'Change nothing' },
+        ],
+        false,
+      );
+
+      if (answer === 'cancel' || answer === '') {
+        this.session.notice('info', 'Left your code alone.');
+        return;
+      }
+      if (answer === 'upgrade') {
+        await this.upgrade(notInstalled.map((c) => c.id), 'safe');
+        this.session.say('Upgrade done. Say `/fix` and I will make the code changes it needs.');
+        return;
+      }
+    }
+
+    // Asked before anything is analysed further, because it is the question the
+    // developer would ask first if Drift did not: where is this going to land?
+    const branchMode = await this.chooseBranch(ctx.root, plan.branchName);
+    if (branchMode === null) return;
+
+    const requestedAgents = await this.chooseFixAgents(plan.commits.length);
+    if (requestedAgents === null) return;
+
     // The plan goes up before a single file is touched: every concern, the
     // package it belongs to, and the exact sites underneath it. A developer
     // watching this can tell what is about to happen while there is still time
     // to stop it, and afterwards can see which sites the agent actually changed
     // — neither of which is legible in a stream of agent chatter.
     const files = new Set(plan.impactSites.map((site) => site.file)).size;
+    const commitMode = this.session.commitMode;
+    const concurrencyNote =
+      requestedAgents > 1
+        ? ` Requested ${requestedAgents} simultaneous agents; running sequentially today so each commit is isolated in one working tree.`
+        : '';
+    const landing =
+      branchMode === 'new' ? `on a new branch, \`${plan.branchName}\`` : 'on the branch you are on';
+    const committing =
+      commitMode === 'auto'
+        ? 'Each concern is committed as soon as it is finished.'
+        : 'Nothing is committed until you keep it.';
     const tasks = this.session.tasks(
       `${this.agentLabel()} is fixing ${plan.impactSites.length} site${plan.impactSites.length === 1 ? '' : 's'}`,
-      `${plan.commits.length} commit${plan.commits.length === 1 ? '' : 's'}, one per concern, across ${files} file${files === 1 ? '' : 's'}. Nothing is committed until you keep it.`,
+      `${plan.commits.length} commit${plan.commits.length === 1 ? '' : 's'}, one per concern, across ${files} file${files === 1 ? '' : 's'}, ${landing}. ${committing}${concurrencyNote}`,
       buildTaskGroups(plan),
     );
 
     this.state.set({ kind: 'findings', plan, at: Date.now() });
 
+    // Held from inside the run and acted on after it, because everything Drift
+    // offers next — verifying, reviewing, committing — is itself a run, and a
+    // run started from inside one is turned away by the busy guard. That is why
+    // the verification offer after a fix never appeared.
+    let result: FixResult | null = null;
+
     await this.run(async (token) => {
-      const result = await runFix({
+      result = await runFix({
         state: this.state,
         plan,
         review: this.review,
         permission: this.session.permission,
+        branchMode,
+        commitMode,
         ask: (question, options) =>
           this.session.ask(
             question,
@@ -1873,6 +2054,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         context: await this.resolveContext(ctx.root),
         onCommitStart: (commit) => tasks.start(`c${commit.order}`),
         onCommitEnd: (commit, outcome, changed) => tasks.finish(`c${commit.order}`, outcome, changed),
+        onActivity: (commit, activity) => tasks.activity(`c${commit.order}`, activity),
         // Agent chatter belongs against the concern it is about, not in a
         // separate log the developer has to correlate by hand.
         onLog: (message) => tasks.note(activeGroupId(plan, this.state), message.slice(0, 120)),
@@ -1890,15 +2072,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
               result.message,
               '',
               'Changed lines are highlighted in your editor with **Keep** and **Undo** on each one. Keeping a whole group commits it on its own.',
+              '',
+              'To read the whole change at once, open the git picker in the composer and choose **Review all changes** — every file, side by side with what it was.',
             ].join('\n'),
           );
           this.showReview();
-          await this.offerVerification(ctx.root, memberDirsOf(plan));
           return;
         case 'committed':
-          tasks.finishAll('done');
-          this.session.say(result.message);
-          return;
         case 'delegated':
           tasks.finishAll('done');
           this.session.say(result.message);
@@ -1918,6 +2098,86 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           return;
       }
     });
+
+    const outcome = result as FixResult | null;
+    if (!outcome) return;
+
+    if (outcome.status === 'proposed') {
+      await this.offerVerification(ctx.root, memberDirsOf(plan));
+      // The fix is the interesting half of the job and it stops at edited
+      // files. Saying "keep them" and nothing else leaves the developer to work
+      // out on their own that committing is even on offer, which is how a run
+      // ends with changed files, no commit, and no idea why.
+      await this.offerToCommitFix(outcome.branch);
+    } else if (outcome.status === 'committed') {
+      await this.offerVerification(ctx.root, memberDirsOf(plan));
+      await this.offerToShipFix(outcome.branch);
+    }
+  }
+
+  /**
+   * Put committing on the table once a fix has produced changes.
+   *
+   * The keep/undo review is the right default and a poor ending: it resolves
+   * each change but never mentions the thing a developer does next. Asking is
+   * cheap and every answer is a real one — including "leave it", which is what
+   * someone still reading the diff wants and could not previously say.
+   */
+  private async offerToCommitFix(branch: string | undefined, asked = 0): Promise<void> {
+    const answer = await this.session.ask(
+      `The edits are on ${branch ? `\`${branch}\`` : 'your working tree'} and nothing is committed yet. What next?`,
+      [
+        {
+          label: 'Review every change',
+          value: 'review',
+          description: 'Open all of them side by side against what they were',
+        },
+        {
+          label: 'Commit them',
+          value: 'commit',
+          description: 'Commit the changed files, then optionally push and raise a pull request',
+        },
+        { label: 'Leave it for now', value: 'no', description: 'The changes stay in your tree' },
+      ],
+      false,
+    );
+
+    if (answer === 'review') {
+      await this.reviewAllChanges();
+      // Reviewing is not a decision about committing, so the question comes
+      // back rather than the flow ending on an open diff. Once, not in a loop:
+      // a second "review" answer opens the diffs and stops there, because a
+      // question with no way past it is not a question.
+      if (asked === 0) await this.offerToCommitFix(branch, asked + 1);
+      else this.session.notice('info', 'Say `/commit` when you have finished reading.');
+      return;
+    }
+    if (answer === 'commit') {
+      await this.commitNow();
+      return;
+    }
+    this.session.notice('info', 'Left uncommitted. Say `/commit` whenever you are ready.');
+  }
+
+  /** After an auto-commit run: the branch exists, so offer to send it somewhere. */
+  private async offerToShipFix(branch: string | undefined): Promise<void> {
+    if (!branch) return;
+
+    const answer = await this.session.ask(
+      `\`${branch}\` has the fix committed. Push it?`,
+      [
+        { label: 'Push and open a pull request', value: 'pr', description: 'Carries the evidence into the description' },
+        { label: 'Push only', value: 'push', description: 'Send the branch to origin' },
+        { label: 'Review it first', value: 'review', description: 'Open every change side by side' },
+        { label: 'Not now', value: 'no', description: 'It stays local' },
+      ],
+      false,
+    );
+
+    if (answer === 'pr') await this.openPullRequestForBranch();
+    else if (answer === 'push') await this.pushCurrentBranch();
+    else if (answer === 'review') await this.reviewAllChanges();
+    else this.session.notice('info', `\`${branch}\` is local. Say \`/push\` or \`/pr\` whenever you are ready.`);
   }
 
   /* ---------------------------------------------------------------- */
@@ -2087,7 +2347,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private menuSections(): MenuSection[] {
     const sections: MenuSection[] = [
       { id: 'context', anchor: 'context', title: 'Context', items: this.contextItems() },
-      { id: 'model', anchor: 'context', title: 'Model', items: this.subscriptionItems() },
+      // Its own anchor, opened by its own button. Which model does the work is
+      // not a kind of context, and it was the one setting in the composer a
+      // developer had to already know was hidden behind the plus.
+      { id: 'model', anchor: 'model', title: 'Model', items: this.subscriptionItems() },
     ];
 
     for (const entry of this.available()) {
@@ -2100,7 +2363,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
             id: 'back',
             label: 'All subscriptions',
             icon: 'back',
-            submenu: 'context',
+            submenu: 'model',
             keywords: 'back model subscriptions',
           },
           ...this.modelItems(entry),
@@ -2125,6 +2388,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       { id: 'tools', anchor: 'tools', title: 'Tools', items: this.toolItems() },
       { id: 'mode', anchor: 'permission', title: 'Mode', items: this.modeItems() },
       { id: 'permission', anchor: 'permission', title: 'Permission', items: this.permissionItems() },
+      // Its own control, because the two questions underneath it — which branch
+      // gets the work, and whether Drift may write history without being asked
+      // — are the ones a developer wants to check *before* starting a fix, and
+      // neither was reachable from anything in the composer that named them.
+      { id: 'branch-mode', anchor: 'git', title: 'Branch', items: this.branchModeItems() },
+      { id: 'commit-mode', anchor: 'git', title: 'Commits', items: this.commitModeItems() },
+      { id: 'git-actions', anchor: 'git', title: 'Now', items: this.gitActionItems() },
     );
 
     // Only meaningful with more than one root open — the button itself is
@@ -2373,6 +2643,77 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   }
 
   /**
+   * Where the next fix does its work.
+   *
+   * Drift has always branched; what it has never done is *say so* anywhere the
+   * developer would look before starting, which made the safest thing it does
+   * invisible and the alternative unreachable.
+   */
+  private branchModeItems(): MenuItem[] {
+    const current = this.session.branchMode;
+    return [
+      {
+        id: 'branchMode:new',
+        label: 'New branch',
+        detail: 'Branch first, so abandoning the whole fix is one checkout',
+        icon: 'branch',
+        checked: current === 'new',
+        keywords: 'git branch new safe checkout isolate',
+      },
+      {
+        id: 'branchMode:current',
+        label: 'Stay on this branch',
+        detail: 'Edit the branch you are on. Undo is up to you.',
+        icon: 'branch',
+        checked: current === 'current',
+        keywords: 'git branch current here in place',
+      },
+    ];
+  }
+
+  private commitModeItems(): MenuItem[] {
+    const current = this.session.commitMode;
+    return [
+      {
+        id: 'commitMode:approve',
+        label: 'Ask me first',
+        detail: 'Hold every change for keep or undo before anything is committed',
+        icon: 'commit',
+        checked: current === 'approve',
+        keywords: 'git commit approve review keep undo manual',
+      },
+      {
+        id: 'commitMode:auto',
+        label: 'Commit automatically',
+        detail: 'Commit each concern the moment its agent finishes it',
+        icon: 'commit',
+        checked: current === 'auto',
+        keywords: 'git commit auto automatic unattended',
+      },
+    ];
+  }
+
+  /** The git things worth doing right now, rather than settings. */
+  private gitActionItems(): MenuItem[] {
+    return [
+      {
+        id: 'git:review',
+        label: 'Review all changes',
+        detail: 'Open every changed file side by side against what it was',
+        icon: 'diff',
+        keywords: 'git review diff changes compare gitlens',
+      },
+      {
+        id: 'git:commit',
+        label: 'Commit now…',
+        detail: 'Branch and commit what is currently changed',
+        icon: 'commit',
+        keywords: 'git commit now message',
+      },
+    ];
+  }
+
+  /**
    * The effort dial, in the active agent's own vocabulary.
    *
    * Effort is a reasoning budget and nothing else — it never changes which
@@ -2522,6 +2863,28 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         await this.session.setPermission(value as SessionPermission);
         this.session.notice('info', `Permission set to **${describePermission(value as SessionPermission)}**.`);
         return;
+      case 'branchMode':
+        await this.session.setBranchMode(value as SessionBranchMode);
+        this.session.notice(
+          'info',
+          value === 'new'
+            ? 'Fixes will start on a new branch. Leaving one is `git checkout -`.'
+            : 'Fixes will edit the branch you are on. Nothing will be branched for you.',
+        );
+        return;
+      case 'commitMode':
+        await this.session.setCommitMode(value as SessionCommitMode);
+        this.session.notice(
+          'info',
+          value === 'auto'
+            ? 'Drift will commit each concern as soon as its agent finishes. You can still undo a commit with `git reset`.'
+            : 'Nothing will be committed until you keep it.',
+        );
+        return;
+      case 'git':
+        if (value === 'review') await this.reviewAllChanges();
+        else if (value === 'commit') await this.commitNow();
+        return;
       case 'scope':
         if (value === '__all') this.session.resetScope();
         else this.session.toggleRoot(value, this.state.roots.map((root) => root.path));
@@ -2565,6 +2928,107 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     }
 
     await this.refreshAgents();
+  }
+
+  /**
+   * Where this fix is going to land, asked out loud.
+   *
+   * Drift has always branched before letting an agent loose, which is the right
+   * default and was also completely invisible: the first a developer heard about
+   * it was a branch name in a progress line, after the decision was made. That
+   * is the wrong order for the one choice here that is awkward to reverse, and
+   * it left people reasonably unsure whether their own branch was about to be
+   * edited underneath them.
+   *
+   * The answer is remembered, so agreeing with the default costs one click and
+   * the git picker keeps whatever was chosen last.
+   */
+  private async chooseBranch(root: string, branchName: string): Promise<SessionBranchMode | null> {
+    const { Git } = await import('../git.js');
+    const current = await new Git(root).currentBranch().catch(() => null);
+    const preferred = this.session.branchMode;
+
+    // On a detached HEAD there is no branch to stay on, so there is no question
+    // to ask — branching is the only thing that can be meant.
+    if (!current || current === 'HEAD') return 'new';
+
+    const answer = await this.session.ask(
+      `Before ${this.agentLabel()} edits anything: you are on \`${current}\`. Work on a new branch, or here?`,
+      [
+        {
+          label: 'New branch',
+          value: 'new',
+          description: `Create \`${branchName}\` — undoing the whole fix is then \`git checkout ${current}\``,
+        },
+        {
+          label: `Stay on \`${current}\``,
+          value: 'current',
+          description: 'Edit this branch directly. Undo is yours to manage.',
+        },
+        { label: 'Cancel', value: 'cancel', description: 'Change nothing' },
+      ],
+      false,
+    );
+
+    // Walking away from the question is not consent to edit the branch someone
+    // is standing on, so an empty answer takes the safe reading rather than the
+    // remembered one.
+    if (answer === 'cancel') {
+      this.session.notice('info', 'Left your working tree alone.');
+      return null;
+    }
+    if (answer === '') return preferred === 'current' ? 'new' : preferred;
+
+    const chosen: SessionBranchMode = answer === 'current' ? 'current' : 'new';
+    if (chosen !== preferred) await this.session.setBranchMode(chosen);
+    return chosen;
+  }
+
+  private async chooseFixAgents(commitCount: number): Promise<number | null> {
+    const current = fixAgentCount(commitCount);
+    if (commitCount <= 1) return current;
+
+    const max = Math.min(commitCount, 16);
+    const counts = [...new Set([current, 1, Math.min(2, max), Math.min(4, max), Math.min(8, max), max])]
+      .filter((count) => count >= 1 && count <= max)
+      .sort((a, b) => a - b);
+    const options = [
+      ...counts.map((count) => `${count} ${count === 1 ? 'agent' : 'agents'}`),
+      'Cancel',
+    ];
+
+    // Spelled out rather than offered as a row of bare numbers. "8" on its own
+    // says nothing about what it buys or costs, and the honest answer today is
+    // "nothing yet" — worth saying, because a developer who picks 8 and watches
+    // one agent work through the list has been misled by the control.
+    const answer = await this.session.ask(
+      [
+        `This plan has **${commitCount} separate concerns**, and each becomes its own commit.`,
+        `How many agents should work through them? Drift remembers **${current}**, and any number from 1 to ${max} is fine.`,
+        '',
+        'Local fixes still run one at a time whatever you pick — every agent would be editing the same working tree — so this records the target for when each can be isolated in its own worktree.',
+      ].join('\n'),
+      options.map((option) => ({
+        label: option,
+        value: option,
+        description:
+          option === 'Cancel'
+            ? 'Do not fix anything'
+            : option.startsWith('1 ')
+              ? 'One concern at a time, in the planned order'
+              : `Target ${option} once worktree isolation lands`,
+      })),
+    );
+
+    if (/^cancel/i.test(answer)) return null;
+    const parsed = Number((/\d+/.exec(answer)?.[0] ?? '').trim());
+    const selected = Number.isFinite(parsed) && parsed >= 1 ? Math.min(Math.floor(parsed), max) : current;
+
+    await vscode.workspace
+      .getConfiguration('drift')
+      .update('fix.maxAgents', selected, vscode.ConfigurationTarget.Global);
+
+    return selected;
   }
 
   /** For the ids nothing here can know: a fork, a preview, next month's model. */
@@ -2815,11 +3279,39 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       usable.map(async (entry) => {
         if (!entry.agent.listModels) return;
         const models = await entry.agent.listModels().catch(() => []);
-        if (models.length > 0) this.models.set(entry.agent.id, models);
+        if (models.length === 0) return;
+        this.models.set(entry.agent.id, models);
+        await this.forgetRetiredModel(entry, models);
       }),
     );
 
     this.render();
+  }
+
+  /**
+   * Drop a stored choice the subscription has stopped offering.
+   *
+   * A model id outlives the roster it came from. Drift held `gpt-5-codex` after
+   * ChatGPT accounts lost access to it, and every fix run died on a 400 from
+   * the API with the developer having chosen nothing wrong. Left in place the
+   * setting fails the same way forever, because nothing about a saved id
+   * expires on its own.
+   *
+   * Only done where the roster came from the install itself. A list this file
+   * merely believes to be current is not grounds for overruling a developer's
+   * setting; the CLI's own record of what it can reach is.
+   */
+  private async forgetRetiredModel(entry: DiscoveredAgent, models: readonly AgentModel[]): Promise<void> {
+    if (!entry.agent.rosterIsAuthoritative) return;
+
+    const chosen = this.session.model(entry.agent.id);
+    if (!chosen || models.some((model) => model.id === chosen)) return;
+
+    await this.session.setModel(entry.agent.id, undefined);
+    this.session.notice(
+      'warn',
+      `**${entry.agent.label}** no longer offers \`${chosen}\`, so Drift has gone back to letting it choose. Pick another from the model button if you want a specific one.`,
+    );
   }
 
   /**
@@ -2899,12 +3391,24 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     this.cancellable = options.cancellable !== false;
     this.render();
 
+    let failed = false;
     try {
       await work(source.token);
     } catch (err) {
+      failed = true;
       this.session.notice('error', (err as Error).message);
       this.output.error(String(err));
     } finally {
+      // Nothing is running any more, so nothing may still look like it is.
+      // Work that ended properly has already closed its own step or checklist,
+      // which makes this a no-op on the happy path and the only thing standing
+      // between a stopped run and a spinner that turns until the panel is
+      // reloaded.
+      // Unconditional, not just on the error and cancel paths: a step still
+      // shown as running once `run` has returned is wrong however it got there,
+      // and the invariant "no spinner outlives its run" is worth more than
+      // being able to tell which bug left one behind.
+      this.session.settleLive(source.token.isCancellationRequested && !failed ? 'stopped' : 'failed');
       source.dispose();
       this.running = null;
       this.cancellable = true;
@@ -3015,6 +3519,27 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     return this.agents.find((entry) => entry.agent.id === preferred)?.agent.label ?? 'your AI agent';
   }
 
+  /**
+   * What the model button says.
+   *
+   * The model when one is chosen, the subscription when it is choosing for
+   * itself — never both, because the button is one word wide and the useful
+   * word is whichever the developer last decided. The subscription is in the
+   * tooltip either way.
+   *
+   * `null` when nothing is installed, which turns the button into the way in
+   * to setting an agent up rather than a label for a choice nobody has.
+   */
+  private modelLabel(): string | null {
+    const active = this.activeAgent();
+    if (!active) return null;
+
+    const chosen = this.session.model(active.agent.id);
+    if (!chosen) return active.agent.label;
+
+    return this.models.get(active.agent.id)?.find((model) => model.id === chosen)?.label ?? chosen;
+  }
+
   /** `null` hides the scope button — nothing to disambiguate with one root open. */
   private scopeLabel(): string | null {
     const roots = this.state.roots;
@@ -3066,7 +3591,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       agentLabel: this.agentLabel(),
       mode: this.session.mode,
       effortLabel: this.effortLabel(),
+      modelLabel: this.modelLabel(),
       permission: this.session.permission,
+      branchMode: this.session.branchMode,
+      commitMode: this.session.commitMode,
       scopeLabel: this.scopeLabel(),
       attachments: this.session.context,
       thread: this.session.thread,
@@ -3212,6 +3740,12 @@ function activeGroupId(plan: RemediationPlan, state: DriftState): string {
   const status = state.status;
   const order = status.kind === 'fixing' ? status.commitOrder : plan.commits[0]?.order;
   return `c${order ?? 1}`;
+}
+
+function fixAgentCount(commitCount: number): number {
+  const configured = vscode.workspace.getConfiguration('drift').get<number>('fix.maxAgents', 1);
+  const requested = Number.isFinite(configured) ? Math.max(1, Math.floor(configured)) : 1;
+  return Math.min(requested, Math.max(1, commitCount));
 }
 
 /**
