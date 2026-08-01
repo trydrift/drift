@@ -9,8 +9,8 @@ branch, in separated commits, in a pull request you review.
 It never merges anything.
 
 ```
-dependency bump  →  what changed upstream?  →  where does it bite here?  →  fix it
-     detect              evidence                    localize                 dispatch
+dependency bump → what changed upstream? → where does it bite here? → is it worth it? → fix it
+     detect             evidence                  localize              rationale       dispatch
 ```
 
 ---
@@ -25,11 +25,13 @@ The gap is real and measurable: **around 5% of npm packages have been broken by 
 minor or patch release of a dependency**, and the majority of those breakages come
 from changes to the package's public API — changes a version number cannot express.
 
-Drift closes that gap. It answers three questions Dependabot doesn't:
+Drift closes that gap. It answers four questions Dependabot doesn't:
 
 1. **What actually changed upstream?** Not the version number — the API.
 2. **Does any of it affect this repository?** Which file, which line, which function.
-3. **What is the fix?** Written, committed, and explained.
+3. **Is it worth taking anyway?** Which advisories it closes, whether the package
+   is still maintained, what the maintainer says you gain.
+4. **What is the fix?** Written, committed, and explained.
 
 ## What makes it trustworthy
 
@@ -39,7 +41,9 @@ is mostly about that problem:
 | | |
 |---|---|
 | **Evidence, not recall** | Every finding cites a changelog entry, a release note, or a computed API diff you can click. Drift never asks an agent to act on "I think this package changed." |
-| **Computed diffs beat prose** | Drift downloads the old and new TypeScript declarations and diffs the actual exported API. Changelogs omit removals; `.d.ts` files don't. |
+| **Computed diffs beat prose** | Drift downloads both versions and diffs the actual exported API — `.d.ts` for npm, every importable package at three platforms for Go, rustdoc for cargo. Changelogs omit removals; the shipped artefact doesn't. |
+| **Benefits need a citation too** | The upgrade rationale reports which advisories a version closes and what its maintainer says improved, each linked. A benefit Drift can't cite is a benefit Drift doesn't mention. |
+| **Rules, not scores** | The recommendation is a ladder of `if` statements that each record the sentence they fired with. You can disagree with a sentence; you can't disagree with `0.72`. |
 | **Import-graph precision** | A file that never imports `express` cannot be broken by an `express` change. Drift searches importers, not the whole repo. |
 | **Separated commits** | One commit per concern, ordered so build-enabling changes land first. `git revert` and `git bisect` stay meaningful. |
 | **Guardrails that downgrade, never drop** | A tripped guardrail turns an automatic run into an approval request. You still see the work. |
@@ -136,7 +140,7 @@ way instead of guessing.
 
 ## How it works
 
-Seven stages. Each is independently testable, and each can legitimately produce
+Eight stages. Each is independently testable, and each can legitimately produce
 nothing — most dependency bumps genuinely don't break you, and saying so quickly
 is a feature.
 
@@ -152,8 +156,9 @@ speaks to breakage:
 
 | Weight | Source |
 |---|---|
-| 1.00 | **TypeScript `.d.ts` surface diff** — computed |
+| 1.00 | **Computed API surface diff** — npm, Go, cargo, Maven |
 | 1.00 | **OpenAPI spec diff** — computed |
+| 0.90 | Computed Python surface — reconstructed, so capped below the rest |
 | 0.80 | Migration guide |
 | 0.70 | GitHub release notes |
 | 0.65 | CHANGELOG |
@@ -163,11 +168,15 @@ speaks to breakage:
 A semver bump alone scores *below* the dispatch threshold, deliberately. "The major
 number went up" is a reason to look, not a reason to let an agent edit your code.
 
-The two computed sources are the differentiator. Drift fetches both versions'
-declarations from jsDelivr and diffs the exported API with the TypeScript compiler —
-so it catches the removal nobody wrote down. The OpenAPI engine reports only
-consumer-breaking direction: tightening what a server accepts, or loosening what it
-returns.
+The computed sources are the differentiator, because they catch the removal
+nobody wrote down. For npm, Drift fetches both versions' declarations from
+jsDelivr and diffs them with the TypeScript compiler. For Go, it fetches both
+versions into the module cache and extracts every importable package's exported
+API at three platforms, honouring build tags — which is how it finds that
+`golang.org/x/sys` changed `windows.Signal` from `int` to `syscall.Signal`
+between v0.26.0 and v0.47.0, a change no changelog mentions. The OpenAPI engine
+reports only consumer-breaking direction: tightening what a server accepts, or
+loosening what it returns.
 
 ### 3 · Analyze
 Deterministic rules run first and unconditionally. Prose patterns fire **only on
@@ -191,18 +200,37 @@ units, and signatures — then searches only the files that import the changed
 dependency. Word-boundary matching stops `get` matching `getUserById`. Each site
 carries its enclosing function and a per-site confidence.
 
-### 5 · Plan
+### 5 · Rationale
+Answers the question the rest of the pipeline can't: *why would I take this?*
+[OSV](https://osv.dev) is queried for **both** versions, so the report can say
+whether the upgrade improves, preserves, or worsens known exposure rather than
+just listing advisories. Maintenance facts — deprecated, archived, retracted,
+raised runtime minimum — are stated with a link and never scored, because a
+mature package can be stable without being busy. Release notes are classified,
+never generated.
+
+The output is one recommendation from six, derived from rules that each record
+the sentence they fired with:
+
+> **`golang.org/x/net` v0.17.0 → v0.38.0 — Upgrade recommended**
+> Fixes 4 known vulnerabilities (worst: medium). 10 known vulnerabilities affect
+> both versions; this upgrade does not address them. The required Go version
+> changed from >=1.17 to >=1.23.0.
+
+License checking lives here too, and is off by default.
+
+### 6 · Plan
 Groups findings into **one commit per concern**, ordered so runtime and config
 changes land before mechanical renames, which land before semantic rewrites. Scores
 risk. Evaluates guardrails.
 
-### 6 · Dispatch
+### 7 · Dispatch
 Creates the branch pinned to the analysed commit, then hands Copilot a single task
 carrying the whole ordered plan — with evidence quoted inline, exact file:line
 locations, and explicit prohibitions against the predictable agent failure modes
 (weakening tests, fixing unrelated code, inventing replacement APIs).
 
-### 7 · Report
+### 8 · Report
 A pull request body a reviewer can act on: every claim linked to its source, every
 uncertainty stated in place rather than buried, and a checklist tailored to what
 actually changed.
@@ -260,7 +288,7 @@ genuine bugs, [documented in the commit history](../../commits/main).
 
 ## Status
 
-MVP. The pipeline is complete and tested end to end. 132 tests cover every stage,
+MVP. The pipeline is complete and tested end to end. 417 tests cover every stage,
 the diff engine the review UI rests on, and the panel's rendered markup.
 Known limitations are documented in [docs/architecture.md](docs/architecture.md#known-limitations)
 rather than hidden — including the ones we'd rather not advertise.
