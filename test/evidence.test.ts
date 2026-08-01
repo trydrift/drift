@@ -1,9 +1,14 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  diffSurfaces,
+  entryPointMoved,
   expandTypesEntry,
+  externalReferences,
   resolveRelative,
   typesFromExports,
+  type SurfaceApi,
+  type SurfaceEntry,
 } from '../dist/evidence/type-surface.js';
 import { selectReleases } from '../dist/evidence/releases.js';
 import { matchProse } from '../dist/analyze/rules.js';
@@ -67,6 +72,124 @@ describe('locating a package’s declarations', () => {
     );
     assert.equal(typesFromExports(null), null);
     assert.equal(typesFromExports('./index.js'), './index.js');
+  });
+});
+
+describe('a package whose API is declared somewhere else', () => {
+  const surface = (entries: Array<[string, Partial<SurfaceEntry> & { name: string }]>): SurfaceApi =>
+    new Map(
+      entries.map(([key, entry]) => [
+        key,
+        { kind: 'interface', signature: entry.name, members: [], requiredMembers: [], ...entry },
+      ]),
+    ) as SurfaceApi;
+
+  test('follows the bindings an entry declaration pulls out of its dependencies', () => {
+    // @octokit/rest's entry file, verbatim in shape: one import it composes
+    // into its only export, one type re-export, and nothing else. Every API a
+    // developer calls lives in the three packages named here.
+    const content = [
+      'import { Octokit as Core } from "@octokit/core";',
+      'import { type PaginateInterface } from "@octokit/plugin-paginate-rest";',
+      'import { legacyRestEndpointMethods } from "@octokit/plugin-rest-endpoint-methods";',
+      'export type { RestEndpointMethodTypes } from "@octokit/plugin-rest-endpoint-methods";',
+      'export declare const Octokit: typeof Core & Constructor<ReturnType<typeof legacyRestEndpointMethods> & { paginate: PaginateInterface }>;',
+    ].join('\n');
+
+    const api = surface([['Octokit', { name: 'Octokit', kind: 'variable', signature: content }]]);
+    const refs = externalReferences([{ path: 'index.d.ts', content }], api);
+
+    assert.deepEqual(
+      [...refs.get('@octokit/core')!.named],
+      [['Octokit', 'Octokit']],
+      'an import used by an exported declaration is part of the contract',
+    );
+    assert.ok(refs.get('@octokit/plugin-paginate-rest')!.named.has('PaginateInterface'));
+
+    const plugin = refs.get('@octokit/plugin-rest-endpoint-methods')!;
+    assert.ok(plugin.named.has('legacyRestEndpointMethods'));
+    assert.ok(
+      plugin.reExported.has('RestEndpointMethodTypes'),
+      're-exported names are this package’s own exports, not qualified ones',
+    );
+  });
+
+  test('ignores an import no exported declaration mentions', () => {
+    // Following it would attribute an unrelated dependency's churn to this
+    // upgrade — a false positive is worse here than a missing symbol.
+    const content = [
+      'import { Internal } from "helper";',
+      'export declare const value: string;',
+    ].join('\n');
+    const api = surface([['value', { name: 'value', kind: 'variable', signature: 'declare const value: string' }]]);
+
+    assert.equal(externalReferences([{ path: 'index.d.ts', content }], api).get('helper')?.named.size, 0);
+  });
+
+  test('never follows a relative specifier as if it were a package', () => {
+    const content = 'export { a } from "./local";';
+    assert.equal(externalReferences([{ path: 'index.d.ts', content }], new Map()).size, 0);
+  });
+
+  test('says which dependency a finding is really about', () => {
+    const before = surface([['@octokit/core#Octokit', { name: 'Octokit', via: '@octokit/core' }]]);
+    const changes = diffSurfaces(before, new Map());
+    assert.equal(changes[0]?.symbol, 'Octokit');
+    assert.match(changes[0]!.detail, /declared in @octokit\/core/);
+  });
+});
+
+describe('an upgrade that moved the API instead of removing it', () => {
+  const bulk = (count: number, offset = 0): SurfaceApi =>
+    new Map(
+      Array.from({ length: count }, (_, i) => [
+        `symbol${i + offset}`,
+        {
+          name: `symbol${i + offset}`,
+          kind: 'interface' as const,
+          signature: `interface symbol${i + offset}`,
+          members: [],
+          requiredMembers: [],
+        },
+      ]),
+    );
+
+  const asSurface = (api: SurfaceApi, entryPath: string, subpaths: string[] = []) => ({
+    api,
+    entryPath,
+    subpaths,
+    viaDependencies: [],
+    ownSymbols: api.size,
+  });
+
+  test('names the relocation, and the entry points that now carry the API', () => {
+    // typescript 7: the root entry publishes `version` and nothing else, and
+    // the compiler API moved to `typescript/unstable/*`. Reported as 326
+    // separate removals it reads as "replace each symbol", which cannot be
+    // done — there is no replacement, only a different import path.
+    const moved = entryPointMoved(
+      'typescript',
+      asSurface(bulk(326), 'lib/typescript.d.ts'),
+      asSurface(bulk(2, 1000), 'lib/version.d.cts', ['./unstable/ast', './unstable/sync']),
+    );
+
+    assert.ok(moved, 'a wholesale relocation must be reported as one change');
+    assert.equal(moved.kind, 'entry-point-moved');
+    assert.match(moved.detail, /\.\/unstable\/ast/);
+    assert.match(moved.detail, /rather than replacing the symbols individually/);
+  });
+
+  test('stays quiet when the package merely changed a lot', () => {
+    const before = bulk(40);
+    const after = new Map([...bulk(30), ...bulk(20, 500)]);
+    assert.equal(entryPointMoved('pkg', asSurface(before, 'a.d.ts'), asSurface(after, 'a.d.ts')), null);
+  });
+
+  test('stays quiet for a package too small to be sure about', () => {
+    assert.equal(
+      entryPointMoved('pkg', asSurface(bulk(4), 'a.d.ts'), asSurface(bulk(1, 900), 'b.d.ts')),
+      null,
+    );
   });
 });
 

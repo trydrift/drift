@@ -14,7 +14,7 @@ import {
 import { fetchRegistryInfo } from './registry.js';
 import { fetchReleaseNotes } from './releases.js';
 import { diffSpecs, parseSpec, type OpenApiFinding } from './openapi.js';
-import { diffSurfaces, fetchTypeSurface, type SurfaceChange } from './type-surface.js';
+import { diffSurfaces, entryPointMoved, fetchTypeSurface, type SurfaceChange } from './type-surface.js';
 import { computeSurfaceDiff, unavailable, type SurfaceUnavailable } from './surface/index.js';
 import type { Exec } from '../util/exec.js';
 
@@ -278,11 +278,14 @@ function surfaceRecord(
 /**
  * The smallest surface worth calling a comparison.
  *
- * A package whose entry declaration is one re-export of another package —
- * `@octokit/rest` is the canonical example — resolves to a single symbol on
- * both sides and diffs to nothing. Reporting that as "no API changes" claims a
- * comparison that never happened; the honest answer is that this package's
- * surface is not local enough to compare.
+ * A package whose entry declaration is one re-export of another package
+ * resolves to a single symbol on both sides and diffs to nothing. Reporting
+ * that as "no API changes" claims a comparison that never happened.
+ *
+ * Reaching this at all now takes a package whose API is neither in its own
+ * declarations nor in any dependency Drift could follow — `fetchTypeSurface`
+ * resolves the dependencies a wrapper re-exports through, which is what made
+ * `@octokit/rest`, the case this constant was written for, comparable.
  */
 const MIN_COMPARABLE_SYMBOLS = 3;
 
@@ -298,8 +301,22 @@ async function diffTypeSurfaces(
       fetchTypeSurface(packageName, to),
     ]);
     if (!before || !after) return null;
+
+    if (before.viaDependencies.length > 0 || after.viaDependencies.length > 0) {
+      logger.debug(
+        `${packageName} surface includes ${[...new Set([...before.viaDependencies, ...after.viaDependencies])].join(', ')}`,
+      );
+    }
+
+    // Named first, because it explains every removal underneath it. A reader
+    // who sees three hundred "removed" lines with no cause reaches for the
+    // wrong fix; a reader who is told the entry point moved reaches for the
+    // right one.
+    const moved = entryPointMoved(packageName, before, after);
+    const changes = diffSurfaces(before.api, after.api);
+
     return {
-      changes: diffSurfaces(before.api, after.api),
+      changes: moved ? [moved, ...changes] : changes,
       comparable:
         before.api.size >= MIN_COMPARABLE_SYMBOLS && after.api.size >= MIN_COMPARABLE_SYMBOLS,
     };
