@@ -21,8 +21,15 @@ import {
   VersionUnavailableError,
   type SurfaceChange,
 } from './type-surface.js';
-import { computeSurfaceDiff, unavailable, type SurfaceUnavailable } from './surface/index.js';
+import {
+  computeSurfaceDiff,
+  unavailable,
+  type SurfaceDiff,
+  type SurfaceUnavailable,
+} from './surface/index.js';
 import type { Exec } from '../util/exec.js';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 /**
  * Evidence weights.
@@ -55,6 +62,22 @@ export interface EvidenceContext {
   afterSha?: string;
   /** Command runner for the ecosystem diffing tools. Injected by tests. */
   exec?: Exec;
+  /**
+   * Absolute path of a local checkout.
+   *
+   * Lets a surface provider read the repository's own build files directly —
+   * the Go provider names the version in `go.mod` in its remedy, which needs
+   * no ref and no network. Preferred over `readRepoFile` when both exist.
+   */
+  workspaceRoot?: string;
+  /**
+   * Called when a computed surface diff *was* produced.
+   *
+   * The upgrade rationale needs what the new version added, and only the
+   * computed diff knows. Passing it back rather than folding it into Evidence
+   * keeps Evidence what it claims to be: things that justify a breaking change.
+   */
+  onSurfaceComputed?: (change: DependencyChange, diff: SurfaceDiff) => void;
   /**
    * Called when a computed surface diff could not be produced.
    *
@@ -265,12 +288,21 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
     });
   }
 
-  const outcome = await computeSurfaceDiff(change, { logger, exec: ctx.exec });
+  const outcome = await computeSurfaceDiff(change, {
+    logger,
+    exec: ctx.exec,
+    readRepoFile: repoFileReader(ctx),
+  });
   if (!outcome.available) {
     logger.debug(`No computed surface for ${change.name}: ${outcome.detail}`);
     ctx.onUnavailableSurface?.(change, outcome);
     return null;
   }
+
+  // Reported even when nothing broke. "Drift compared 412 packages and found
+  // no removals" is a result; returning early would make it indistinguishable
+  // from never having looked.
+  ctx.onSurfaceComputed?.(change, outcome);
   if (outcome.changes.length === 0) return null;
 
   return surfaceRecord(change, {
@@ -278,6 +310,26 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
     weight: outcome.weight,
     locator: `${outcome.locator} · computed by ${outcome.tool}`,
   });
+}
+
+/**
+ * How a surface provider reads the repository under analysis.
+ *
+ * A local checkout answers without a network round trip and without a ref,
+ * which is what the editor has; the provider's `readFile` at the analysed
+ * commit is what CI has. Absent when neither exists, which providers treat as
+ * an ordinary case rather than an error.
+ */
+function repoFileReader(ctx: EvidenceContext): ((path: string) => Promise<string | null>) | undefined {
+  const { workspaceRoot, readRepoFile, afterSha } = ctx;
+
+  if (workspaceRoot) {
+    return async (path) => readFile(join(workspaceRoot, path), 'utf8').catch(() => null);
+  }
+  if (readRepoFile && afterSha) {
+    return (path) => readRepoFile(path, afterSha).catch(() => null);
+  }
+  return undefined;
 }
 
 function surfaceRecord(

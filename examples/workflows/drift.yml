@@ -72,6 +72,21 @@ jobs:
           # working tree to search for affected code.
           fetch-depth: 2
 
+      # Drift compares the exported API of the old and new version of every Go
+      # module directly, which needs a Go toolchain on the runner. `go-version-file`
+      # takes the version from the repository's own `go.mod`, so this stays correct
+      # when the repository moves.
+      #
+      # Delete this step if the repository has no Go dependencies. Leaving it out
+      # of a repository that does costs the strongest evidence Drift has: it falls
+      # back to release notes and changelogs, and says so in the report.
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        continue-on-error: true
+        with:
+          go-version-file: go.mod
+          cache: true
+
       - name: Run Drift
         id: drift
         uses: drift-sh/drift@v0

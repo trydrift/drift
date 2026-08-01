@@ -5,10 +5,17 @@ import {
   jarUrl,
   parseCargoPublicApi,
   parseCoordinate,
-  parseGoDoc,
+  parseGoApiDump,
+  diffGoApi,
+  goVersionFromModuleFile,
+  goVersionFromWorkflow,
+  requiredGoVersion,
+  goRemedy,
+  DEFAULT_GO_VERSION,
   parseJapicmp,
   parsePythonSurface,
   surfaceProviderFor,
+  resetGoSurfaceCache,
 } from '../dist/evidence/surface/index.js';
 import { diffSurfaces } from '../dist/evidence/type-surface.js';
 import { createLogger } from '../dist/util/logger.js';
@@ -88,62 +95,224 @@ pub fn serde_json::from_str<'a, T>(s: &'a str, strict: bool) -> Result<T, Error>
   });
 });
 
-describe('go doc output', () => {
-  const sample = `package client // import "example.com/client"
+describe('go module API extraction', () => {
+  // The extractor's output, as it arrives on stdout. Written by hand rather
+  // than captured, so a change to the shape it emits fails here loudly.
+  const dump = (over: Record<string, unknown> = {}) =>
+    JSON.stringify({
+      Module: 'example.com/client',
+      Platforms: ['linux/amd64', 'windows/amd64'],
+      Packages: ['example.com/client', 'example.com/client/tls'],
+      Failures: [],
+      Symbols: [
+        {
+          Key: 'example.com/client.Dial',
+          Name: 'Dial',
+          Pkg: 'example.com/client',
+          PkgName: 'client',
+          Kind: 'function',
+          Signatures: ['func Dial(address string) (*Conn, error)'],
+          Members: [],
+          RequiredMembers: [],
+          Platforms: ['linux/amd64', 'windows/amd64'],
+        },
+        {
+          Key: 'example.com/client.Conn',
+          Name: 'Conn',
+          Pkg: 'example.com/client',
+          PkgName: 'client',
+          Kind: 'class',
+          Signatures: ['type Conn struct'],
+          Members: ['Addr', 'Close', 'Timeout'],
+          RequiredMembers: [],
+          Platforms: ['linux/amd64', 'windows/amd64'],
+        },
+        {
+          Key: 'example.com/client.Option',
+          Name: 'Option',
+          Pkg: 'example.com/client',
+          PkgName: 'client',
+          Kind: 'interface',
+          Signatures: ['type Option interface'],
+          Members: ['Apply'],
+          RequiredMembers: ['Apply'],
+          Platforms: ['linux/amd64', 'windows/amd64'],
+        },
+        {
+          Key: 'example.com/client.DefaultTimeout',
+          Name: 'DefaultTimeout',
+          Pkg: 'example.com/client',
+          PkgName: 'client',
+          Kind: 'variable',
+          Signatures: ['const DefaultTimeout = 30'],
+          Members: [],
+          RequiredMembers: [],
+          Platforms: ['linux/amd64', 'windows/amd64'],
+        },
+      ],
+      ...over,
+    });
 
-Package client talks to the service.
+  const parse = (json: string) => {
+    const api = parseGoApiDump(json);
+    assert.ok(api, 'the extractor output should parse');
+    return api!;
+  };
 
-const DefaultTimeout = 30
-
-func Dial(address string) (*Conn, error)
-
-func Version() string
-
-type Conn struct {
-	Addr    string
-	Timeout int
-	// contains filtered or unexported fields
-}
-    Conn is an open connection.
-
-func (c *Conn) Close() error
-
-func (c *Conn) Send(b []byte) (int, error)
-
-type Option interface {
-	Apply(*Conn)
-}
-`;
-
-  test('records exported declarations, and only those', () => {
-    const api = parseGoDoc(sample);
-    assert.deepEqual([...api.keys()].sort(), ['Conn', 'DefaultTimeout', 'Dial', 'Option', 'Version']);
+  test('reads packages, symbols, and the platforms each was seen on', () => {
+    const api = parse(dump());
+    assert.deepEqual(api.packages, ['example.com/client', 'example.com/client/tls']);
+    assert.equal(api.symbols.size, 4);
+    assert.deepEqual(api.symbols.get('example.com/client.Conn')!.members, ['Addr', 'Close', 'Timeout']);
   });
 
-  test('classifies by keyword', () => {
-    const api = parseGoDoc(sample);
-    assert.equal(api.get('Dial')!.kind, 'function');
-    assert.equal(api.get('Conn')!.kind, 'interface');
-    assert.equal(api.get('DefaultTimeout')!.kind, 'variable');
+  test('malformed output is a stated absence, not a thrown error', () => {
+    assert.equal(parseGoApiDump('go: downloading something'), null);
+    assert.equal(parseGoApiDump('{"Module":"x"}'), null);
   });
 
-  test('methods and struct fields are members of their type', () => {
-    const api = parseGoDoc(sample);
-    assert.deepEqual(api.get('Conn')!.members.sort(), ['Addr', 'Close', 'Send', 'Timeout']);
-    assert.deepEqual(api.get('Option')!.members, ['Apply']);
-  });
-
-  test('prose inside a type body is not mistaken for a field', () => {
-    assert.equal(parseGoDoc(sample).get('Conn')!.members.includes('Conn'), false);
-  });
-
-  test('a dropped method reads as a member removal, not a missing export', () => {
-    const after = parseGoDoc(sample.replace('func (c *Conn) Send(b []byte) (int, error)\n', ''));
-    const changes = diffSurfaces(parseGoDoc(sample), after);
+  test('a removed package is reported once, not once per symbol it held', () => {
+    const before = parse(dump());
+    const after = parse(dump({ Packages: ['example.com/client'] }));
+    const { changes } = diffGoApi(before, after);
     assert.deepEqual(
       changes.map((c) => [c.kind, c.symbol]),
-      [['member-removed', 'Conn.Send']],
+      [['package-removed', 'example.com/client/tls']],
     );
+  });
+
+  test('a dropped method reads as a member removal on its type', () => {
+    const before = parse(dump());
+    const after = parse(
+      dump({
+        Symbols: JSON.parse(dump()).Symbols.map((s: Record<string, unknown>) =>
+          s.Key === 'example.com/client.Conn' ? { ...s, Members: ['Addr', 'Timeout'] } : s,
+        ),
+      }),
+    );
+    const { changes } = diffGoApi(before, after);
+    assert.deepEqual(
+      changes.map((c) => [c.kind, c.symbol]),
+      [['member-removed', 'client.Conn.Close']],
+    );
+  });
+
+  test('a method added to an interface is breaking for implementors', () => {
+    const before = parse(dump());
+    const after = parse(
+      dump({
+        Symbols: JSON.parse(dump()).Symbols.map((s: Record<string, unknown>) =>
+          s.Key === 'example.com/client.Option'
+            ? { ...s, Members: ['Apply', 'Name'], RequiredMembers: ['Apply', 'Name'] }
+            : s,
+        ),
+      }),
+    );
+    const { changes } = diffGoApi(before, after);
+    assert.deepEqual(
+      changes.map((c) => [c.kind, c.symbol]),
+      [['member-now-required', 'client.Option.Name']],
+    );
+  });
+
+  test('losing a platform is a removal that names the platform', () => {
+    const before = parse(dump());
+    const after = parse(
+      dump({
+        Symbols: JSON.parse(dump()).Symbols.map((s: Record<string, unknown>) =>
+          s.Key === 'example.com/client.Dial' ? { ...s, Platforms: ['linux/amd64'] } : s,
+        ),
+      }),
+    );
+    const { changes } = diffGoApi(before, after);
+    assert.equal(changes.length, 1);
+    assert.equal(changes[0]!.kind, 'export-removed');
+    assert.match(changes[0]!.detail, /no longer available on windows\/amd64/);
+    assert.match(changes[0]!.detail, /remains on linux\/amd64/);
+  });
+
+  test('additions are collected, and are never reported as changes', () => {
+    const before = parse(dump({ Packages: ['example.com/client'] }));
+    const after = parse(dump());
+    const { changes, additions } = diffGoApi(before, after);
+    assert.deepEqual(changes, []);
+    assert.deepEqual(additions, [{ kind: 'package-added', symbol: 'example.com/client/tls' }]);
+  });
+
+  test('a flood of changed constant values collapses into one counted finding', () => {
+    const constants = Array.from({ length: 40 }, (_, i) => ({
+      Key: `example.com/client.C${i}`,
+      Name: `C${i}`,
+      Pkg: 'example.com/client',
+      PkgName: 'client',
+      Kind: 'variable',
+      Signatures: [`const C${i} = 0x1`],
+      Members: [],
+      RequiredMembers: [],
+      Platforms: ['linux/amd64'],
+    }));
+    const before = parse(dump({ Symbols: constants }));
+    const after = parse(
+      dump({ Symbols: constants.map((c) => ({ ...c, Signatures: [`const ${c.Name} = 0x2`] })) }),
+    );
+
+    const { changes } = diffGoApi(before, after);
+    assert.equal(changes.length, 1);
+    assert.match(changes[0]!.detail, /40 exported constants changed value/);
+  });
+
+  test('a constant whose type changed is a signature change, not a value change', () => {
+    const before = parse(dump());
+    const after = parse(
+      dump({
+        Symbols: JSON.parse(dump()).Symbols.map((s: Record<string, unknown>) =>
+          s.Key === 'example.com/client.DefaultTimeout'
+            ? { ...s, Signatures: ['const DefaultTimeout time.Duration = 30'] }
+            : s,
+        ),
+      }),
+    );
+    const { changes } = diffGoApi(before, after);
+    assert.deepEqual(
+      changes.map((c) => [c.kind, c.symbol]),
+      [['signature-changed', 'client.DefaultTimeout']],
+    );
+  });
+});
+
+describe('go version requirements', () => {
+  test('the toolchain directive wins over the language directive', () => {
+    assert.equal(goVersionFromModuleFile('module x\n\ngo 1.21\n\ntoolchain go1.24.3\n'), '1.24.3');
+    assert.equal(goVersionFromModuleFile('module x\n\ngo 1.23.1\n'), '1.23.1');
+    assert.equal(goVersionFromModuleFile('module x\n'), null);
+  });
+
+  test('a workflow go-version is read, and a matrix expression is not mistaken for one', () => {
+    assert.equal(goVersionFromWorkflow("      - uses: actions/setup-go\n        with:\n          go-version: '1.24'\n"), '1.24');
+    assert.equal(goVersionFromWorkflow('          go-version: 1.22.x\n'), '1.22');
+    assert.equal(goVersionFromWorkflow('          go-version: ${{ matrix.go }}\n'), null);
+  });
+
+  test('go.work is consulted before go.mod', async () => {
+    const files: Record<string, string> = {
+      'go.work': 'go 1.25\n\nuse ./a\n',
+      'go.mod': 'module x\n\ngo 1.19\n',
+    };
+    const found = await requiredGoVersion(async (path) => files[path] ?? null);
+    assert.deepEqual(found, { version: '1.25', source: 'go.work' });
+  });
+
+  test('with nothing to read, the default is returned and labelled as one', async () => {
+    const found = await requiredGoVersion(async () => null);
+    assert.equal(found.version, DEFAULT_GO_VERSION);
+    assert.equal(found.source, 'Drift default');
+  });
+
+  test('the remedy names the version the repository actually asks for', async () => {
+    const requirement = { version: '1.24', source: 'go.mod' };
+    assert.match(goRemedy(requirement, false), /Install Go 1\.24/);
+    assert.match(goRemedy(requirement, true), /actions\/setup-go/);
+    assert.match(goRemedy(requirement, true), /go-version: '1\.24'/);
   });
 });
 
@@ -250,61 +419,139 @@ describe('when a surface cannot be computed', () => {
   });
 });
 
-describe('a computed surface that does run', () => {
-  const goDoc = (symbols: string) => `package client // import "example.com/client"\n\n${symbols}\n`;
-
-  const exec = (docs: Record<string, string>) =>
-    (async (command: string, args: readonly string[], options?: { cwd?: string }) => {
-      if (command === 'go' && args[0] === 'version') return { code: 0, stdout: 'go1.22', stderr: '' };
-      if (command === 'go' && args[0] === 'get') return { code: 0, stdout: '', stderr: '' };
-      if (command === 'go' && args[0] === 'doc') {
-        const version = /probe-(v[\w.]+)/.exec(options?.cwd ?? '')?.[1] ?? '';
-        return { code: 0, stdout: docs[version] ?? '', stderr: '' };
+describe('a computed Go surface that does run', () => {
+  /**
+   * A stand-in for the Go toolchain, speaking the protocol the provider uses:
+   * probe, build the extractor once, download each version, extract each one.
+   */
+  const goToolchain = (dumps: Record<string, string>, over: Record<string, unknown> = {}) =>
+    (async (command: string, args: readonly string[]) => {
+      const ok = (stdout: string) => ({ code: 0, stdout, stderr: '' });
+      if (command !== 'go') return { code: 127, stdout: '', stderr: 'not go', failure: 'not-found' as const };
+      if (args[0] === 'version') return ok('go version go1.24.3 darwin/arm64');
+      if (args[0] === 'env') return ok('/tmp/gomodcache');
+      if (args[0] === 'build') return ok('');
+      if (args[0] === 'mod' && args[1] === 'download') {
+        const version = /@(v[\w.+-]+)$/.exec(args[3] ?? '')?.[1] ?? '';
+        if (over[version] !== undefined) return over[version] as never;
+        return ok(JSON.stringify({ Path: 'example.com/client', Version: version, Dir: `/tmp/gomodcache/client@${version}` }));
       }
-      return { code: 127, stdout: '', stderr: 'unexpected', failure: 'not-found' as const };
+      if (args[0] === 'run') {
+        const version = /client@(v[\w.+-]+)/.exec(args.join(' '))?.[1] ?? '';
+        return ok(dumps[version] ?? '');
+      }
+      return { code: 1, stdout: '', stderr: `unexpected: go ${args.join(' ')}` };
     });
 
+  const api = (symbols: Record<string, unknown>[]) =>
+    JSON.stringify({
+      Module: 'example.com/client',
+      Platforms: ['linux/amd64'],
+      Packages: ['example.com/client'],
+      Failures: [],
+      Symbols: symbols.map((s) => ({
+        Pkg: 'example.com/client',
+        PkgName: 'client',
+        Kind: 'function',
+        Members: [],
+        RequiredMembers: [],
+        Platforms: ['linux/amd64'],
+        ...s,
+      })),
+    });
+
+  const goChange = (over: Record<string, unknown> = {}) =>
+    change({ ecosystem: 'go', name: 'example.com/client', from: 'v1.0.0', to: 'v2.0.0', ...over });
+
   test('produces the same SurfaceChange shape any other source does', async () => {
-    const outcome = await computeSurfaceDiff(
-      change({ ecosystem: 'go', name: 'example.com/client', from: 'v1.0.0', to: 'v2.0.0' }),
-      {
-        logger,
-        exec: exec({
-          'v1.0.0': goDoc('func Dial(address string) (*Conn, error)\n\nfunc Legacy() error'),
-          'v2.0.0': goDoc('func Dial(address string, opts ...Option) (*Conn, error)'),
-        }),
-      },
-    );
+    resetGoSurfaceCache();
+    const outcome = await computeSurfaceDiff(goChange(), {
+      logger,
+      exec: goToolchain({
+        'v1.0.0': api([
+          { Key: 'example.com/client.Dial', Name: 'Dial', Signatures: ['func Dial(address string) (*Conn, error)'] },
+          { Key: 'example.com/client.Legacy', Name: 'Legacy', Signatures: ['func Legacy() error'] },
+        ]),
+        'v2.0.0': api([
+          { Key: 'example.com/client.Dial', Name: 'Dial', Signatures: ['func Dial(address string, opts ...Option) (*Conn, error)'] },
+        ]),
+      }),
+    });
 
     assert.equal(outcome.available, true);
     if (!outcome.available) return;
-    assert.equal(outcome.tool, 'go doc');
     assert.equal(outcome.weight, 1);
     assert.deepEqual(
       outcome.changes.map((c) => [c.kind, c.symbol]).sort(),
       [
-        ['export-removed', 'Legacy'],
-        ['signature-changed', 'Dial'],
+        ['export-removed', 'client.Legacy'],
+        ['signature-changed', 'client.Dial'],
       ].sort(),
     );
   });
 
+  test('the citation names what was actually compared', async () => {
+    resetGoSurfaceCache();
+    const outcome = await computeSurfaceDiff(goChange(), {
+      logger,
+      exec: goToolchain({
+        'v1.0.0': api([{ Key: 'example.com/client.Dial', Name: 'Dial', Signatures: ['func Dial()'] }]),
+        'v2.0.0': api([{ Key: 'example.com/client.Dial', Name: 'Dial', Signatures: ['func Dial()'] }]),
+      }),
+    });
+
+    assert.equal(outcome.available, true);
+    if (!outcome.available) return;
+    assert.match(outcome.locator, /1 package\(s\), 1 exported symbol\(s\)/);
+    assert.match(outcome.locator, /platforms: /);
+  });
+
   test('a version the proxy does not have is distinguished from a build failure', async () => {
-    const outcome = await computeSurfaceDiff(
-      change({ ecosystem: 'go', name: 'example.com/client', from: 'v1.0.0', to: 'v9.9.9' }),
-      {
-        logger,
-        exec: async (command: string, args: readonly string[]) => {
-          if (args[0] === 'version') return { code: 0, stdout: 'go1.22', stderr: '' };
-          if (args[0] === 'get') return { code: 1, stdout: '', stderr: 'unknown revision v9.9.9' };
-          return { code: 0, stdout: '', stderr: '' };
-        },
-      },
-    );
+    resetGoSurfaceCache();
+    const outcome = await computeSurfaceDiff(goChange({ to: 'v9.9.9' }), {
+      logger,
+      exec: goToolchain(
+        { 'v1.0.0': api([{ Key: 'example.com/client.Dial', Name: 'Dial', Signatures: ['func Dial()'] }]) },
+        { 'v9.9.9': { code: 1, stdout: '', stderr: 'go: module example.com/client@v9.9.9: unknown revision v9.9.9' } },
+      ),
+    });
 
     assert.equal(outcome.available, false);
     if (outcome.available) return;
     assert.equal(outcome.reason, 'version-unavailable');
     assert.match(outcome.detail, /private/);
+  });
+
+  test('a missing toolchain says which Go version would fix it', async () => {
+    resetGoSurfaceCache();
+    const outcome = await computeSurfaceDiff(goChange(), {
+      logger,
+      exec: async () => ({ code: 127, stdout: '', stderr: 'not found', failure: 'not-found' as const }),
+      readRepoFile: async (path) => (path === 'go.mod' ? 'module x\n\ngo 1.24\n' : null),
+    });
+
+    assert.equal(outcome.available, false);
+    if (outcome.available) return;
+    assert.equal(outcome.reason, 'tool-missing');
+    assert.match(outcome.remedy ?? '', /Go 1\.24/);
+  });
+
+  test('a module version is extracted once, however often it is asked for', async () => {
+    resetGoSurfaceCache();
+    let extractions = 0;
+    const dumps = {
+      'v1.0.0': api([{ Key: 'example.com/client.Dial', Name: 'Dial', Signatures: ['func Dial()'] }]),
+      'v2.0.0': api([{ Key: 'example.com/client.Dial', Name: 'Dial', Signatures: ['func Dial(o Option)'] }]),
+    };
+    const base = goToolchain(dumps);
+    const counting = (async (command: string, args: readonly string[], options?: unknown) => {
+      if (args[0] === 'run') extractions++;
+      return base(command, args, options as never);
+    }) as typeof base;
+
+    await computeSurfaceDiff(goChange(), { logger, exec: counting });
+    await computeSurfaceDiff(goChange(), { logger, exec: counting });
+
+    assert.equal(extractions, 2, 'the second comparison should be served from the cache');
   });
 });

@@ -30,6 +30,8 @@ export interface ComputeOptions {
   logger: Logger;
   exec?: Exec;
   timeoutMs?: number;
+  /** Reads a file from the repository under analysis, by repo-relative path. */
+  readRepoFile?: (path: string) => Promise<string | null>;
 }
 
 const DEFAULT_TIMEOUT_MS = 180_000;
@@ -72,6 +74,7 @@ export async function computeSurfaceDiff(
       workdir,
       logger: options.logger,
       timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      ...(options.readRepoFile ? { readRepoFile: options.readRepoFile } : {}),
     });
   } catch (err) {
     // A provider throwing is a bug in Drift, not a fact about the dependency —
@@ -85,6 +88,8 @@ export async function computeSurfaceDiff(
 
 export * from './types.js';
 export { parseCargoPublicApi } from './rust.js';
-export { parseGoDoc } from './go.js';
+export { moduleDirectory, resetGoSurfaceCache } from './go.js';
+export * from './go-api.js';
+export * from './go-toolchain.js';
 export { parseJapicmp, jarUrl, parseCoordinate } from './java.js';
 export { parsePythonSurface } from './python.js';
