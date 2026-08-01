@@ -12,7 +12,7 @@ import { compareRisk, riskWithinLimit, type DriftConfig } from '../config/schema
 import { meetsConfidence } from '../analyze/index.js';
 import { isDowngrade } from '../detect/version.js';
 import { matchesAny } from '../util/glob.js';
-import { slugify, stableId } from '../util/id.js';
+import { stableId } from '../util/id.js';
 import { planCommits } from './commits.js';
 
 /**
@@ -64,9 +64,9 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
 /**
  * Branch naming.
  *
- * Encodes the dependency and target version so the branch is self-describing
- * in a branch list, and appends a short commit hash so a re-run against a
- * different commit never collides with an open Drift PR.
+ * Encodes the dependency and version move so the branch is self-describing in
+ * a branch list, and labels the analysed commit so a re-run against a different
+ * commit never collides with an open Drift PR.
  */
 export function branchNameFor(
   config: DriftConfig,
@@ -74,15 +74,26 @@ export function branchNameFor(
   afterSha: string,
 ): string {
   const prefix = config.remediation.branchPrefix;
-  const suffix = afterSha.slice(0, 7);
+  const suffix = `commit-${afterSha.slice(0, 7)}`;
 
   if (changes.length === 1) {
     const change = changes[0]!;
-    const name = slugify(change.name.replace('@', '').replace('/', '-'), 30);
-    return `${prefix}${name}-${slugify(change.to ?? 'update', 12)}-${suffix}`;
+    const name = branchPart(change.name.replace('@', '').replace('/', '-'), 30);
+    const from = branchPart(change.from ?? 'new', 16);
+    const to = branchPart(change.to ?? 'removed', 16);
+    return `${prefix}${name}-${from}-to-${to}-${suffix}`;
   }
 
   return `${prefix}deps-${changes.length}-updates-${suffix}`;
+}
+
+function branchPart(input: string, maxLength: number): string {
+  const part = input
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/[./]+$/g, '')
+    .replace(/^-+|-+$/g, '');
+  return part.slice(0, maxLength).replace(/[.-]+$/g, '') || 'change';
 }
 
 /**

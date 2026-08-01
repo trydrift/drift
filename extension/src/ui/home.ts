@@ -5,7 +5,7 @@ import { digestDiagnostics, renderDigest } from '../diagnostics-digest.js';
 import type { RemediationPlan, RepoContext } from '../../../src/types.js';
 import { buildPlan } from '../../../src/plan/index.js';
 import { renderPullRequestBody } from '../../../src/report/markdown.js';
-import { inspectLocalRepo } from '../../../src/repo/local-git.js';
+import { inspectLocalRepo, WORKING_TREE } from '../../../src/repo/local-git.js';
 import { DriftConfigSchema, type DriftConfig } from '../../../src/config/schema.js';
 import { loadWorkspaceConfig, runAnalysis } from '../analyze.js';
 import { runFix, type FixResult } from '../fix.js';
@@ -131,7 +131,7 @@ const EXCLUDED_FROM_CONTEXT = '**/{node_modules,.git,dist,out,build,coverage,.ne
 
 interface WorkspaceContext {
   root: string;
-  info: NonNullable<Awaited<ReturnType<typeof inspectLocalRepo>>>;
+  info: Awaited<ReturnType<typeof inspectLocalRepo>>;
   repo: RepoContext;
   config: DriftConfig;
 }
@@ -951,7 +951,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       (ctx): ctx is WorkspaceContext => ctx !== null,
     );
     if (contexts.length === 0) {
-      this.session.notice('warn', 'None of the selected repositories are git repositories Drift can read.');
+      this.session.notice('warn', 'None of the selected folders are available for Drift to read.');
       return;
     }
 
@@ -1312,6 +1312,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     const step = this.session.step(`Upgrading ${candidates.length} package${candidates.length === 1 ? '' : 's'}`);
 
     let installed = true;
+    let committedAny = false;
 
     await this.run(async () => {
       for (const candidate of candidates) {
@@ -1338,9 +1339,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         this.candidates.set(current.id, { ...current, status: 'upgrading' });
         this.refreshPackageList();
 
+        const stashed = await this.stashUserChangesForUpgrade(candidateCtx.root);
         try {
           await installUpgrade(candidateCtx.root, current, mode);
         } catch (err) {
+          await this.restoreUserChangesAfterUpgrade(candidateCtx.root, stashed);
           this.candidates.set(current.id, { ...current, status: 'error', error: (err as Error).message });
           this.refreshPackageList();
           step.fail(`Upgrade failed for ${current.name}`);
@@ -1350,6 +1353,25 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
               ? `\`${command}\` failed: ${(err as Error).message}`
               : (err as Error).message,
           );
+          installed = false;
+          return;
+        }
+
+        if (candidateCtx.info) {
+          if (!(await this.commitUpgradeFiles(candidateCtx.root, [current]))) {
+            await this.restoreUserChangesAfterUpgrade(candidateCtx.root, stashed);
+            installed = false;
+            return;
+          }
+          committedAny = true;
+        } else {
+          this.session.notice(
+            'info',
+            `Updated **${current.name}**, but this folder is not using Git, so there is no upgrade commit.`,
+          );
+        }
+
+        if (!(await this.restoreUserChangesAfterUpgrade(candidateCtx.root, stashed))) {
           installed = false;
           return;
         }
@@ -1409,7 +1431,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       // fix first, where committing now would split one change across two
       // commits and leave the branch broken in the middle.
       this.lastUpgraded = candidates.map((c) => this.currentFor(c) ?? c);
-      if (affected.length === 0) await this.offerToCommit(this.lastUpgraded);
+      if (affected.length === 0 && !committedAny) await this.offerToCommit(this.lastUpgraded);
     });
 
     return installed;
@@ -2012,6 +2034,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       this.session.notice('warn', 'Open a git repository to fix code.');
       return;
     }
+    if (!ctx.info) {
+      this.session.notice(
+        'warn',
+        'Fixes need Git so Drift can branch, checkpoint, and keep commits reviewable. Run `git init` first, then try `/fix` again.',
+      );
+      return;
+    }
 
     const candidates = ids
       .map((id) => this.candidates.get(id))
@@ -2054,36 +2083,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     let upgraded = false;
 
     if (notInstalled.length > 0) {
-      const names = notInstalled.map((c) => `**${c.name}** ${c.current} → ${c.selected}`).join(', ');
-      const answer = await this.session.ask(
-        `${notInstalled.length === 1 ? 'This upgrade has' : 'These upgrades have'} not been installed yet: ${names}. The fixes are written against the new version, so applying them first would break a build that currently works.`,
-        [
-          {
-            label: 'Upgrade, check, then fix',
-            value: 'upgrade',
-            description: 'Install, run your typecheck, and hand the real errors to the agent along with the analysis',
-          },
-          {
-            label: 'Fix without upgrading',
-            value: 'anyway',
-            description: 'I have already upgraded another way',
-          },
-          { label: 'Cancel', value: 'cancel', description: 'Change nothing' },
-        ],
-        false,
-      );
-
-      if (answer === 'cancel' || answer === '') {
-        this.session.notice('info', 'Left your code alone.');
-        return;
-      }
-      if (answer === 'upgrade') {
-        // The branch is created here rather than inside `runFix`, so the
-        // manifest, the lockfile and the code changes all land together.
-        if (branch.mode === 'new' && !(await this.startBranch(ctx.root, branch.name))) return;
-        if (!(await this.upgrade(notInstalled.map((c) => c.id), 'safe', { quiet: true }))) return;
-        upgraded = true;
-      }
+      // The branch is created here rather than inside `runFix`, so the
+      // manifest, the lockfile and the code changes all land together.
+      if (branch.mode === 'new' && !(await this.startBranch(ctx.root, branch.name))) return;
+      if (!(await this.upgrade(notInstalled.map((c) => c.id), 'safe', { quiet: true }))) return;
+      upgraded = true;
     }
 
     // The strongest evidence available, and the only kind that is measured
@@ -3254,6 +3258,71 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     }
   }
 
+  /** Commit the manifest and lockfile before any code fix starts. */
+  private async commitUpgradeFiles(root: string, candidates: readonly UpgradeCandidate[]): Promise<boolean> {
+    const { Git } = await import('../git.js');
+    const git = new Git(root);
+    const dirty = await git.dirtyFiles().catch(() => []);
+    const paths = dependencyPaths(candidates, dirty);
+
+    if (paths.length === 0) {
+      this.session.notice('info', 'The upgrade did not leave any dependency files to commit.');
+      return true;
+    }
+
+    const message = upgradeCommitMessage(candidates);
+    try {
+      const sha = await git.commitPaths(paths, message.subject, message.body);
+      if (!sha) {
+        this.session.notice('info', 'The dependency files already match HEAD, so there was no upgrade commit to make.');
+        return true;
+      }
+
+      this.lastUpgraded = [...candidates];
+      this.session.notice(
+        'success',
+        `Committed the upgrade first as **${sha.slice(0, 7)}** — ${message.subject}`,
+      );
+      return true;
+    } catch (err) {
+      this.session.notice('error', `Could not commit the upgrade before fixing code: ${(err as Error).message}`);
+      return false;
+    }
+  }
+
+  private async stashUserChangesForUpgrade(root: string): Promise<boolean> {
+    const { Git } = await import('../git.js');
+    const git = new Git(root);
+    try {
+      const stashed = await git.stash('drift: user changes before dependency upgrade');
+      if (stashed) {
+        this.session.notice(
+          'info',
+          'Temporarily stashed your existing work so the upgrade commit contains only Drift’s package-manager changes.',
+        );
+      }
+      return stashed;
+    } catch {
+      return false;
+    }
+  }
+
+  private async restoreUserChangesAfterUpgrade(root: string, stashed: boolean): Promise<boolean> {
+    if (!stashed) return true;
+    const { Git } = await import('../git.js');
+    try {
+      await new Git(root).stashPop();
+      this.session.notice('info', 'Restored your pre-existing work after the upgrade commit.');
+      return true;
+    } catch (err) {
+      this.session.notice(
+        'error',
+        `The upgrade commit was made, but Git could not restore your stashed work cleanly: ${(err as Error).message}. Resolve the stash conflict before continuing.`,
+      );
+      return false;
+    }
+  }
+
 
   /** For the ids nothing here can know: a fork, a preview, next month's model. */
   private async askForModel(agentId: string): Promise<void> {
@@ -3483,7 +3552,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private async refreshAgents(): Promise<void> {
     const ctx = await this.context();
     this.agents = ctx
-      ? await discoverAgents({ slug: ctx.info.slug, baseBranch: ctx.info.branch }, { force: true })
+      ? await discoverAgents({ slug: ctx.info?.slug ?? null, baseBranch: ctx.info?.branch ?? 'working-tree' }, { force: true })
       : [];
     this.render();
     await this.refreshModels();
@@ -3572,20 +3641,70 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
    * silently reusing whichever root happens to be active right now.
    */
   private async contextFor(root: string): Promise<WorkspaceContext | null> {
-    const info = await inspectLocalRepo(root);
-    if (!info) return null;
+    let info = await inspectLocalRepo(root);
+    if (!info) {
+      const prepared = await this.prepareGitOrContinue(root);
+      if (prepared === undefined) return null;
+      info = prepared;
+    }
 
     const config = await loadWorkspaceConfig(root).catch(() => DriftConfigSchema.parse({}));
     const repo: RepoContext = {
-      owner: info.slug?.split('/')[0] ?? 'local',
-      repo: info.slug?.split('/')[1] ?? 'workspace',
-      baseBranch: info.branch,
-      beforeSha: info.parentSha ?? info.headSha,
-      afterSha: info.headSha,
+      owner: info?.slug?.split('/')[0] ?? 'local',
+      repo: info?.slug?.split('/')[1] ?? basename(root),
+      baseBranch: info?.branch ?? 'working-tree',
+      beforeSha: info ? (info.parentSha ?? info.headSha) : WORKING_TREE,
+      afterSha: info?.headSha ?? WORKING_TREE,
       workspace: root,
     };
 
     return { root, info, repo, config };
+  }
+
+  private async prepareGitOrContinue(root: string): Promise<WorkspaceContext['info'] | undefined> {
+    const answer = await this.session.ask(
+      `\`${basename(root)}\` is not a Git repository. I recommend initializing Git before Drift touches files, so there is a baseline commit to compare, rewind, branch, and review against.`,
+      [
+        {
+          label: 'Initialize Git',
+          value: 'init',
+          description: 'Run git init and make a baseline commit before continuing',
+        },
+        {
+          label: 'Continue without Git',
+          value: 'continue',
+          description: 'Scan and install can run, but there will be no branches, commits, or rewind',
+        },
+        { label: 'Cancel', value: 'cancel', description: 'Do nothing' },
+      ],
+      false,
+    );
+
+    if (answer === 'cancel' || answer === '') return undefined;
+    if (answer === 'continue') return null;
+
+    const { Git } = await import('../git.js');
+    const git = new Git(root);
+    const step = this.session.step('Initializing Git');
+    try {
+      step.progress('Running `git init`', basename(root));
+      await git.init('main');
+      step.progress('Creating baseline commit', 'Current files before Drift changes anything');
+      await git.commitAll('chore: baseline before Drift', '', {
+        allowEmpty: true,
+        identity: { name: 'Drift', email: 'drift@example.invalid' },
+      });
+      const info = await inspectLocalRepo(root);
+      this.state.setRepo(info, root);
+      this.contextCache = null;
+      step.done('Git is ready');
+      this.session.notice('success', 'Initialized Git and made a baseline commit before changing files.');
+      return info;
+    } catch (err) {
+      step.fail('Git initialization failed');
+      this.session.notice('error', `Could not initialize Git: ${(err as Error).message}`);
+      return undefined;
+    }
   }
 
   /* ---------------------------------------------------------------- */

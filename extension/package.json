@@ -492,7 +492,7 @@
         "drift.git.branchPrefix": {
           "type": "string",
           "default": "drift",
-          "markdownDescription": "Prefix for branches Drift creates, so a team can keep its own naming convention \u2014 `drift` gives `drift/upgrade-react-19.2.0`.\n\nDrift never commits without asking, never force-pushes, never rewrites history, and never commits a file an upgrade did not change.",
+          "markdownDescription": "Prefix for branches Drift creates, so a team can keep its own naming convention \u2014 `drift` gives `drift/upgrade-react-18.3.1-to-19.2.0`.\n\nWhen a fix starts by installing an upgrade, Drift commits those dependency files first. It never force-pushes, never rewrites history, and never commits a file an upgrade did not change.",
           "order": 30
         },
         "drift.git.branchMode": {
