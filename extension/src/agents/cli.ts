@@ -79,6 +79,31 @@ export interface CliAgentSpec {
   /** How this CLI takes a reasoning budget on the command line. */
   effortArgs?: (effort: SessionEffort) => string[];
   /**
+   * The flag `effortArgs` produces, when it is new enough that an older install
+   * of the same CLI may not have it.
+   *
+   * Set this and `effortArgs` is used only once the installed binary's own
+   * `--help` has been seen to mention the flag; otherwise `effortPrompt` is
+   * used instead. Passing a flag a CLI does not recognise is not a degraded
+   * result, it is a run that dies before reading the task, so a capability that
+   * arrived in a recent version is checked rather than assumed.
+   */
+  effortArgsFlag?: string;
+  /**
+   * How this CLI is asked to trade tokens for latency.
+   *
+   * Codex calls it fast mode and exposes it as a feature flag; Claude Code has
+   * one too, but only as an interactive `/fast` toggle that persists in its own
+   * settings, with no way to ask for it per run — so Drift inherits whatever
+   * was set there rather than pretending to a control it does not have.
+   *
+   * Absent means no toggle is drawn. A switch that silently does nothing is
+   * worse than no switch.
+   */
+  fastArgs?: () => string[];
+  /** The flag `fastArgs` produces, probed the same way `effortArgsFlag` is. */
+  fastArgsFlag?: string;
+  /**
    * How this CLI takes a reasoning budget in the prompt.
    *
    * Claude Code has no flag for it — the depth of thinking is asked for in
@@ -151,6 +176,13 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
     ],
     modelArgs: (model) => ['--model', model],
     efforts: CLAUDE_EFFORTS,
+    // Claude Code grew a real `--effort` flag, so the reasoning budget can be
+    // set directly instead of asked for in words. The prompt keywords stay as
+    // the fallback: an older install has no such flag, and passing one it does
+    // not know makes it exit before it has read the task at all — which is why
+    // this is probed rather than assumed. See `supportsFlag`.
+    effortArgs: (effort) => ['--effort', effort],
+    effortArgsFlag: '--effort',
     effortPrompt: (effort) => CLAUDE_THINKING[effort],
     versionArgs: ['--version'],
     extensionIds: ['anthropic.claude-code'],
@@ -175,6 +207,11 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
     modelArgs: (model) => ['--model', model],
     efforts: CODEX_EFFORTS,
     effortArgs: (effort) => ['-c', `model_reasoning_effort="${effort}"`],
+    // `--enable <feature>` is Codex's own spelling of `-c features.<name>=true`,
+    // and `fast_mode` is in its feature registry. Same model, more tokens spent
+    // for a faster answer.
+    fastArgs: () => ['--enable', 'fast_mode'],
+    fastArgsFlag: '--enable',
     versionArgs: ['--version'],
     extensionIds: ['openai.chatgpt'],
     extensionBinaryPaths: [
@@ -290,9 +327,11 @@ export class CliFixAgent implements FixAgent {
   }
 
   async run(task: FixTask, ctx: AgentContext): Promise<FixOutcome> {
+    const command = this.executable ?? (await resolveCommand(this.spec))?.path ?? this.spec.command;
+
     // Effort changes how hard this agent thinks about the task — never which
     // parts of it to attempt. Every impact site above is still in scope.
-    const thinking = this.thinking(task);
+    const thinking = await this.thinking(task, command);
     const prompt = [
       buildFixPrompt(task),
       '',
@@ -302,8 +341,7 @@ export class CliFixAgent implements FixAgent {
       ...(thinking ? ['', thinking] : []),
     ].join('\n');
 
-    const args = [...this.spec.buildArgs(prompt), ...this.selection(task)];
-    const command = this.executable ?? (await resolveCommand(this.spec))?.path ?? this.spec.command;
+    const args = [...this.spec.buildArgs(prompt), ...(await this.selection(task, command))];
     ctx.report(`$ ${displayCommand(command, args)}\n# cwd: ${task.workspaceRoot}`);
 
     try {
@@ -337,10 +375,24 @@ export class CliFixAgent implements FixAgent {
    * flag is worse than not passing one: an unknown flag makes the agent exit
    * before it has read the task at all.
    */
-  private selection(task: FixTask): string[] {
+  private async selection(task: FixTask, command: string): Promise<string[]> {
     const args: string[] = [];
     if (task.model && this.spec.modelArgs) args.push(...this.spec.modelArgs(task.model));
-    if (task.effort && this.spec.effortArgs) args.push(...this.spec.effortArgs(task.effort));
+
+    if (task.effort && this.spec.effortArgs) {
+      const gated = this.spec.effortArgsFlag;
+      if (!gated || (await supportsFlag(command, gated))) {
+        args.push(...this.spec.effortArgs(task.effort));
+      }
+    }
+
+    if (task.fast && this.spec.fastArgs) {
+      const gated = this.spec.fastArgsFlag;
+      if (!gated || (await supportsFlag(command, gated))) {
+        args.push(...this.spec.fastArgs());
+      }
+    }
+
     return args;
   }
 
@@ -348,8 +400,16 @@ export class CliFixAgent implements FixAgent {
    * The sentence that carries the reasoning budget, for CLIs that take it in
    * words rather than in flags.
    */
-  private thinking(task: FixTask): string {
-    const keyword = task.effort && this.spec.effortPrompt ? this.spec.effortPrompt(task.effort) : '';
+  private async thinking(task: FixTask, command: string): Promise<string> {
+    if (!task.effort || !this.spec.effortPrompt) return '';
+
+    // Said in words only when it cannot be said in a flag. Doing both asks for
+    // the same budget twice in two vocabularies, and the prompt version costs
+    // tokens in every request.
+    const gated = this.spec.effortArgsFlag;
+    if (this.spec.effortArgs && (!gated || (await supportsFlag(command, gated)))) return '';
+
+    const keyword = this.spec.effortPrompt(task.effort);
     return keyword ? `Before editing anything, ${keyword} about how these changes fit together.` : '';
   }
 
@@ -450,6 +510,63 @@ function isNoise(line: string): boolean {
   // Progress bars and spinner frames redrawn character by character.
   if (/^[\s.·•▪▫◦─━|/\\-]+$/.test(text)) return true;
   return false;
+}
+
+/**
+ * Whether this exact binary advertises a flag, remembered for the session.
+ *
+ * Asked of the installed executable rather than inferred from a version string,
+ * because the same CLI reaches a machine by several routes — npm, Homebrew, a
+ * copy bundled inside a VS Code extension — and they do not move in step. The
+ * answer is cached per path: `--help` on a large agent binary is not free, and
+ * a fix run would otherwise ask once per commit unit.
+ *
+ * Any failure reads as "no". A flag that might not exist is not worth the run
+ * that dies for it, and the prompt-worded fallback still works.
+ */
+const flagSupport = new Map<string, Promise<boolean>>();
+
+/**
+ * Whether this agent has a speed/cost control Drift can set per run.
+ *
+ * Read from the spec table rather than hardcoded at the call site, so adding
+ * the flag for another CLI is a one-line change in one place and the composer
+ * picks the control up on its own.
+ */
+export function agentSupportsFastMode(agentId: string): boolean {
+  return CLI_AGENT_SPECS.some((spec) => spec.id === agentId && Boolean(spec.fastArgs));
+}
+
+export function supportsFlag(command: string, flag: string): Promise<boolean> {
+  const key = `${command}\u0000${flag}`;
+  let cached = flagSupport.get(key);
+  if (!cached) {
+    cached = probeFlag(command, flag);
+    flagSupport.set(key, cached);
+  }
+  return cached;
+}
+
+async function probeFlag(command: string, flag: string): Promise<boolean> {
+  try {
+    const shellEnv = await envWithShellPath();
+    const { stdout, stderr } = await run(command, ['--help'], {
+      env: { ...shellEnv, PATH: withCommandDir(command, shellEnv.PATH ?? '') },
+      timeout: 15_000,
+      maxBuffer: 4 * 1024 * 1024,
+      windowsHide: true,
+    });
+    // Word-boundary matched, so `--effort` is not satisfied by `--effortless`.
+    const pattern = new RegExp(`${flag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`);
+    return pattern.test(`${stdout}\n${stderr}`);
+  } catch {
+    return false;
+  }
+}
+
+/** Forget probe results, for tests and after an agent is reinstalled. */
+export function clearFlagSupportCache(): void {
+  flagSupport.clear();
 }
 
 function displayCommand(command: string, args: readonly string[]): string {

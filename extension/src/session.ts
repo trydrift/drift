@@ -121,6 +121,24 @@ export interface QuestionOption {
   description?: string;
 }
 
+/**
+ * A thing to do next, as a button.
+ *
+ * The panel used to end its messages with "say `/fix`" and "say `/commit`",
+ * which asks the reader to retype an instruction the panel has already decided
+ * on — and only works if they notice it is an instruction rather than prose.
+ * The command still exists and still works; this is the same command with
+ * something to click.
+ */
+export interface MessageAction {
+  label: string;
+  /** The slash command or text submitted as if typed. */
+  command: string;
+  /** Draws the button as the obvious one. At most one per message. */
+  primary?: boolean;
+  hint?: string;
+}
+
 export type ThreadItem =
   | {
       id: string;
@@ -134,7 +152,7 @@ export type ThreadItem =
        */
       checkpoint?: string;
     }
-  | { id: string; kind: 'assistant'; text: string }
+  | { id: string; kind: 'assistant'; text: string; actions?: MessageAction[] }
   | { id: string; kind: 'notice'; tone: 'info' | 'warn' | 'error' | 'success'; text: string }
   | {
       id: string;
@@ -404,8 +422,8 @@ export class DriftSession {
     this.emitter.fire();
   }
 
-  say(text: string): void {
-    this.push({ id: this.nextId(), kind: 'assistant', text });
+  say(text: string, actions?: MessageAction[]): void {
+    this.push({ id: this.nextId(), kind: 'assistant', text, ...(actions?.length ? { actions } : {}) });
   }
 
   notice(tone: 'info' | 'warn' | 'error' | 'success', text: string): void {
@@ -763,6 +781,28 @@ export class DriftSession {
    * about the subscription — "when I use Claude, use Ultracode" — not about the
    * repository that happens to be open.
    */
+  /**
+   * Whether this subscription has been asked for speed over cost.
+   *
+   * Per agent, like the model and the effort, and for the same reason: fast
+   * mode is something one provider sells and another does not, so a developer
+   * who turned it on for Codex has said nothing about Claude.
+   */
+  fast(agentId: string): boolean {
+    return Boolean(
+      vscode.workspace.getConfiguration('drift').get<Record<string, boolean>>('agent.fast', {})?.[agentId],
+    );
+  }
+
+  async setFast(agentId: string, fast: boolean): Promise<void> {
+    const config = vscode.workspace.getConfiguration('drift');
+    const all = { ...(config.get<Record<string, boolean>>('agent.fast', {}) ?? {}) };
+    if (fast) all[agentId] = true;
+    else delete all[agentId];
+    await config.update('agent.fast', all, vscode.ConfigurationTarget.Global);
+    this.emitter.fire();
+  }
+
   async setEffort(agentId: string, effort: SessionEffort): Promise<void> {
     const config = vscode.workspace.getConfiguration('drift');
     const efforts = { ...(config.get<Record<string, string>>('agent.efforts', {}) ?? {}) };

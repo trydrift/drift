@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import { basename, dirname, join, relative } from 'node:path';
+import semver from 'semver';
+import { digestDiagnostics, renderDigest } from '../diagnostics-digest.js';
 import type { RemediationPlan, RepoContext } from '../../../src/types.js';
 import { buildPlan } from '../../../src/plan/index.js';
 import { renderPullRequestBody } from '../../../src/report/markdown.js';
@@ -28,6 +30,7 @@ import {
   type AgentModel,
   type DiscoveredAgent,
 } from '../agents/registry.js';
+import { agentSupportsFastMode } from '../agents/cli.js';
 import type { AttachedContext, EffortStop } from '../agents/types.js';
 import { getGitHubSession, getRateLimitToken } from '../github-auth.js';
 import type { PackageManagerId } from '../../../src/detect/package-manager.js';
@@ -1219,7 +1222,22 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     });
   }
 
-  private async upgrade(ids: readonly string[], mode: 'safe' | 'force'): Promise<void> {
+  /**
+   * Install, and say whether it worked.
+   *
+   * The boolean matters: `/fix` now chains straight from an upgrade into a
+   * typecheck and then the agent, and a chain that carries on after a failed
+   * install would hand the agent a tree still on the old version — the exact
+   * ordering mistake the chain exists to prevent.
+   *
+   * `quiet` suppresses the follow-on offers ("say /fix", the commit prompt) for
+   * callers that are mid-flow and will make those offers themselves at the end.
+   */
+  private async upgrade(
+    ids: readonly string[],
+    mode: 'safe' | 'force',
+    options: { quiet?: boolean } = {},
+  ): Promise<boolean> {
     const ctx = await this.context();
     const candidates = ids
       .map((id) => this.candidates.get(id))
@@ -1227,7 +1245,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     if (!ctx || candidates.length === 0) {
       this.session.notice('warn', 'Nothing selected to upgrade. Run `/scan` first.');
-      return;
+      return false;
     }
 
     // Forcing past the declared range is a real decision with real consequences,
@@ -1244,7 +1262,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       );
       if (answer === 'cancel' || answer === '') {
         this.session.notice('info', 'Left your dependencies alone.');
-        return;
+        return false;
       }
       if (answer === 'safe') mode = 'safe';
     }
@@ -1278,13 +1296,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
       if (answer === 'cancel' || answer === '') {
         this.session.notice('info', 'Left your dependencies alone.');
-        return;
+        return false;
       }
       if (answer === 'skip') {
         const remaining = candidates.filter((c) => severityOf(c) !== 'unchecked');
         if (remaining.length === 0) {
           this.session.notice('info', 'That left nothing to install.');
-          return;
+          return false;
         }
         candidates.length = 0;
         candidates.push(...remaining);
@@ -1292,6 +1310,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     }
 
     const step = this.session.step(`Upgrading ${candidates.length} package${candidates.length === 1 ? '' : 's'}`);
+
+    let installed = true;
 
     await this.run(async () => {
       for (const candidate of candidates) {
@@ -1330,20 +1350,37 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
               ? `\`${command}\` failed: ${(err as Error).message}`
               : (err as Error).message,
           );
+          installed = false;
           return;
         }
 
         this.candidates.set(current.id, { ...current, status: 'ready' });
         this.refreshPackageList();
+        // Checked rather than assumed. "Safe mode" is a request, not a result:
+        // when a package publishes nothing inside the declared range, the
+        // target falls back to the version the developer selected, which can
+        // sit well outside it — and this line used to claim otherwise on the
+        // strength of the mode alone. A tool whose whole job is telling people
+        // what is safe cannot afford a reassurance it has not verified.
+        const withinRange = satisfiesRange(target, current.range);
         this.session.notice(
           'success',
           mode === 'force'
             ? `Forced **${current.name}** to ${target}. Check for peer-dependency conflicts before committing.`
-            : `Updated **${current.name}** to ${target}, within the range already in \`${manifestName(current)}\`.`,
+            : withinRange
+              ? `Updated **${current.name}** to ${target}, within the \`${current.range}\` already in \`${manifestName(current)}\`.`
+              : `Updated **${current.name}** to ${target}. That is **outside** the \`${current.range}\` in \`${manifestName(current)}\`, so the range needs widening or the two will disagree.`,
         );
+
+        await this.confirmInstalled(candidateCtx.root, current, target);
       }
 
       step.done('Dependency files updated');
+
+      // Mid-flow callers run the project's checks themselves, once, and feed
+      // the result to the agent. Running them here as well would be the same
+      // minutes spent twice for the same answer.
+      if (options.quiet) return;
 
       // An upgrade writes a lockfile and a manifest, which is exactly the kind
       // of change a project's own build catches and a diff does not.
@@ -1352,7 +1389,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       const affected = candidates.filter((c) => this.currentFor(c) && severityOf(this.currentFor(c)!) === 'affected');
       if (affected.length > 0) {
         this.session.say(
-          `${affected.length === 1 ? 'That upgrade needs' : 'Those upgrades need'} code changes here. Say \`/fix\` and **${this.agentLabel()}** will make them.`,
+          `${affected.length === 1 ? 'That upgrade needs' : 'Those upgrades need'} code changes here.`,
+          [
+            {
+              label: `Fix them with ${this.agentLabel()}`,
+              command: '/fix',
+              primary: true,
+              hint: 'Runs your typecheck first, then hands the real errors to the agent with the evidence',
+            },
+            { label: 'Review the changes', command: '/review' },
+          ],
         );
       }
 
@@ -1364,11 +1410,40 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       // commits and leave the branch broken in the middle.
       this.lastUpgraded = candidates.map((c) => this.currentFor(c) ?? c);
       if (affected.length === 0) await this.offerToCommit(this.lastUpgraded);
-      else
-        this.session.say(
-          'Once the code is fixed, say `/commit` and I will branch, commit and open a pull request for the whole change.',
-        );
     });
+
+    return installed;
+  }
+
+  /**
+   * Check that the upgrade Drift just reported is the one on disk.
+   *
+   * An install command that exits zero has not necessarily written what it was
+   * asked to write. This repository ended up with `^5.7.3` in its manifest,
+   * `5.9.3` in its lockfile and `7.0.2` in `node_modules` — three answers to
+   * one question, and every subsequent step trusted the wrong one: the panel
+   * said the upgrade was in range, `/fix` was offered against an API that only
+   * existed in the installed copy, and `npm ci` on any other machine would have
+   * silently produced a different build.
+   *
+   * Nothing is repaired here. A manifest is the developer's file and rewriting
+   * it behind an upgrade they were told had already succeeded is how three
+   * answers became four. Saying exactly which three disagree is enough.
+   */
+  private async confirmInstalled(root: string, candidate: UpgradeCandidate, target: string): Promise<void> {
+    const installed = await installedVersion(root, candidate);
+    if (!installed) return;
+
+    if (installed === target) return;
+
+    this.session.notice(
+      'warn',
+      [
+        `**${candidate.name}** was asked to move to ${target}, but \`node_modules\` now holds ${installed}.`,
+        '',
+        `\`${candidate.manifestPath}\` still declares \`${candidate.range}\`. Until those agree, a fresh install on another machine will not reproduce what is here — run the upgrade again, or set the range by hand.`,
+      ].join('\n'),
+    );
   }
 
   /* ---------------------------------------------------------------- */
@@ -1959,6 +2034,14 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       return;
     }
 
+    // Where this lands, asked before anything is installed or edited.
+    //
+    // Deliberately first: the upgrade writes a manifest and a lockfile, and
+    // those belong on the same branch as the code changes that go with them.
+    // Branching afterwards would leave half the change behind.
+    const branch = await this.chooseBranch(ctx.root, plan.branchName);
+    if (branch === null) return;
+
     // Upgrade first, fix second, and never the other way round.
     //
     // Every fix prompt tells the agent "the dependency versions have ALREADY
@@ -1968,20 +2051,22 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // the spot, and it stays broken until the upgrade lands. Which order this
     // happens in is not a preference, so it is checked rather than assumed.
     const notInstalled = candidates.filter((candidate) => candidate.current !== candidate.selected);
+    let upgraded = false;
+
     if (notInstalled.length > 0) {
       const names = notInstalled.map((c) => `**${c.name}** ${c.current} → ${c.selected}`).join(', ');
       const answer = await this.session.ask(
-        `${notInstalled.length === 1 ? 'This upgrade has' : 'These upgrades have'} not been installed yet: ${names}. The fixes are written against the new version, so applying them first would break a build that currently works. Install ${notInstalled.length === 1 ? 'it' : 'them'} first?`,
+        `${notInstalled.length === 1 ? 'This upgrade has' : 'These upgrades have'} not been installed yet: ${names}. The fixes are written against the new version, so applying them first would break a build that currently works.`,
         [
           {
-            label: 'Upgrade, then fix',
+            label: 'Upgrade, check, then fix',
             value: 'upgrade',
-            description: 'Install the new versions and come back to the fix',
+            description: 'Install, run your typecheck, and hand the real errors to the agent along with the analysis',
           },
           {
-            label: 'Fix anyway',
+            label: 'Fix without upgrading',
             value: 'anyway',
-            description: 'I have already upgraded another way, or I know what I am doing',
+            description: 'I have already upgraded another way',
           },
           { label: 'Cancel', value: 'cancel', description: 'Change nothing' },
         ],
@@ -1993,19 +2078,24 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         return;
       }
       if (answer === 'upgrade') {
-        await this.upgrade(notInstalled.map((c) => c.id), 'safe');
-        this.session.say('Upgrade done. Say `/fix` and I will make the code changes it needs.');
-        return;
+        // The branch is created here rather than inside `runFix`, so the
+        // manifest, the lockfile and the code changes all land together.
+        if (branch.mode === 'new' && !(await this.startBranch(ctx.root, branch.name))) return;
+        if (!(await this.upgrade(notInstalled.map((c) => c.id), 'safe', { quiet: true }))) return;
+        upgraded = true;
       }
     }
 
-    // Asked before anything is analysed further, because it is the question the
-    // developer would ask first if Drift did not: where is this going to land?
-    const branchMode = await this.chooseBranch(ctx.root, plan.branchName);
-    if (branchMode === null) return;
+    // The strongest evidence available, and the only kind that is measured
+    // rather than predicted: what the project's own compiler says is broken now
+    // that the versions have moved. Gathered here, grouped, and handed to the
+    // agent alongside Drift's analysis rather than left for a human to read.
+    const diagnostics = upgraded
+      ? await this.gatherDiagnostics(ctx.root, plan)
+      : undefined;
 
-    const requestedAgents = await this.chooseFixAgents(plan.commits.length);
-    if (requestedAgents === null) return;
+    const branchMode: SessionBranchMode = upgraded || branch.mode === 'current' ? 'current' : 'new';
+    if (branchMode === 'new') plan.branchName = branch.name;
 
     // The plan goes up before a single file is touched: every concern, the
     // package it belongs to, and the exact sites underneath it. A developer
@@ -2014,19 +2104,21 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // — neither of which is legible in a stream of agent chatter.
     const files = new Set(plan.impactSites.map((site) => site.file)).size;
     const commitMode = this.session.commitMode;
-    const concurrencyNote =
-      requestedAgents > 1
-        ? ` Requested ${requestedAgents} simultaneous agents; running sequentially today so each commit is isolated in one working tree.`
-        : '';
-    const landing =
-      branchMode === 'new' ? `on a new branch, \`${plan.branchName}\`` : 'on the branch you are on';
+    const landing = upgraded
+      ? `on \`${branch.name}\`, alongside the upgrade itself`
+      : branchMode === 'new'
+        ? `on a new branch, \`${plan.branchName}\``
+        : 'on the branch you are on';
+    const evidence = diagnostics
+      ? ' Your typecheck ran first, and its errors go to the agent with the changelog evidence.'
+      : '';
     const committing =
       commitMode === 'auto'
         ? 'Each concern is committed as soon as it is finished.'
         : 'Nothing is committed until you keep it.';
     const tasks = this.session.tasks(
       `${this.agentLabel()} is fixing ${plan.impactSites.length} site${plan.impactSites.length === 1 ? '' : 's'}`,
-      `${plan.commits.length} commit${plan.commits.length === 1 ? '' : 's'}, one per concern, across ${files} file${files === 1 ? '' : 's'}, ${landing}. ${committing}${concurrencyNote}`,
+      `${plan.commits.length} commit${plan.commits.length === 1 ? '' : 's'}, one per concern, across ${files} file${files === 1 ? '' : 's'}, ${landing}. ${committing}${evidence}`,
       buildTaskGroups(plan),
     );
 
@@ -2046,6 +2138,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         permission: this.session.permission,
         branchMode,
         commitMode,
+        diagnostics,
         ask: (question, options) =>
           this.session.ask(
             question,
@@ -2149,14 +2242,17 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       // a second "review" answer opens the diffs and stops there, because a
       // question with no way past it is not a question.
       if (asked === 0) await this.offerToCommitFix(branch, asked + 1);
-      else this.session.notice('info', 'Say `/commit` when you have finished reading.');
+      else this.session.say('Take your time.', [{ label: 'Commit when ready', command: '/commit' }]);
       return;
     }
     if (answer === 'commit') {
       await this.commitNow();
       return;
     }
-    this.session.notice('info', 'Left uncommitted. Say `/commit` whenever you are ready.');
+    this.session.say('Left uncommitted — the changes are still in your tree.', [
+      { label: 'Commit', command: '/commit' },
+      { label: 'Review the changes', command: '/review' },
+    ]);
   }
 
   /** After an auto-commit run: the branch exists, so offer to send it somewhere. */
@@ -2177,7 +2273,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     if (answer === 'pr') await this.openPullRequestForBranch();
     else if (answer === 'push') await this.pushCurrentBranch();
     else if (answer === 'review') await this.reviewAllChanges();
-    else this.session.notice('info', `\`${branch}\` is local. Say \`/push\` or \`/pr\` whenever you are ready.`);
+    else
+      this.session.say(`\`${branch}\` is local, with the fix committed on it.`, [
+        { label: 'Push', command: '/push' },
+        { label: 'Open a pull request', command: '/pr' },
+      ]);
   }
 
   /* ---------------------------------------------------------------- */
@@ -2382,6 +2482,14 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         slider,
         items: [],
       });
+    }
+
+    // Under the same button as effort, because they are the two dials on the
+    // same axis: how much this run costs and how long it takes. Drawn only for
+    // an agent that actually has the control — see `fastItems`.
+    const fast = this.fastItems();
+    if (fast.length > 0) {
+      sections.push({ id: 'fast', anchor: 'effort', title: 'Speed', items: fast });
     }
 
     sections.push(
@@ -2736,6 +2844,33 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     };
   }
 
+  /**
+   * The speed/cost toggle, for agents that have one.
+   *
+   * Only Codex today, and only because its binary exposes `fast_mode` as a
+   * feature flag Drift can set per run. Claude Code has fast mode too, but as
+   * an interactive `/fast` toggle stored in its own settings — Drift inherits
+   * whatever is set there and does not draw a switch it cannot actually throw.
+   */
+  private fastItems(): MenuItem[] {
+    const agent = this.activeAgent()?.agent;
+    if (!agent || !agentSupportsFastMode(agent.id)) return [];
+
+    const on = this.session.fast(agent.id);
+    return [
+      {
+        id: `fast:${on ? 'off' : 'on'}`,
+        label: 'Fast mode',
+        detail: on
+          ? 'On — same model, faster answers, more tokens spent'
+          : 'Same model, faster answers, more tokens spent',
+        icon: 'speed',
+        checked: on,
+        keywords: 'fast speed latency tokens cost quick',
+      },
+    ];
+  }
+
   /** The subscription whose settings the composer is currently showing. */
   private activeAgent(): DiscoveredAgent | undefined {
     const preferred = vscode.workspace.getConfiguration('drift').get<string>('agent.preferred', 'auto');
@@ -2885,6 +3020,19 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         if (value === 'review') await this.reviewAllChanges();
         else if (value === 'commit') await this.commitNow();
         return;
+      case 'fast': {
+        const agent = this.activeAgent()?.agent;
+        if (!agent) return;
+        const on = value === 'on';
+        await this.session.setFast(agent.id, on);
+        this.session.notice(
+          'info',
+          on
+            ? `Fast mode on for ${agent.label}. Same model, faster answers, more tokens per run.`
+            : `Fast mode off for ${agent.label}.`,
+        );
+        return;
+      }
       case 'scope':
         if (value === '__all') this.session.resetScope();
         else this.session.toggleRoot(value, this.state.roots.map((root) => root.path));
@@ -2943,22 +3091,30 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
    * The answer is remembered, so agreeing with the default costs one click and
    * the git picker keeps whatever was chosen last.
    */
-  private async chooseBranch(root: string, branchName: string): Promise<SessionBranchMode | null> {
+  private async chooseBranch(
+    root: string,
+    proposed: string,
+  ): Promise<{ mode: SessionBranchMode; name: string } | null> {
     const { Git } = await import('../git.js');
     const current = await new Git(root).currentBranch().catch(() => null);
     const preferred = this.session.branchMode;
 
     // On a detached HEAD there is no branch to stay on, so there is no question
     // to ask — branching is the only thing that can be meant.
-    if (!current || current === 'HEAD') return 'new';
+    if (!current || current === 'HEAD') return { mode: 'new', name: proposed };
 
     const answer = await this.session.ask(
-      `Before ${this.agentLabel()} edits anything: you are on \`${current}\`. Work on a new branch, or here?`,
+      `Before ${this.agentLabel()} touches anything: you are on \`${current}\`. Where should this work go?`,
       [
         {
-          label: 'New branch',
+          label: `New branch \`${proposed}\``,
           value: 'new',
-          description: `Create \`${branchName}\` — undoing the whole fix is then \`git checkout ${current}\``,
+          description: `Named from what is being upgraded. Undoing everything is then \`git checkout ${current}\`.`,
+        },
+        {
+          label: 'New branch, different name…',
+          value: 'rename',
+          description: 'Same isolation, your naming convention',
         },
         {
           label: `Stay on \`${current}\``,
@@ -2970,66 +3126,134 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       false,
     );
 
-    // Walking away from the question is not consent to edit the branch someone
-    // is standing on, so an empty answer takes the safe reading rather than the
-    // remembered one.
     if (answer === 'cancel') {
       this.session.notice('info', 'Left your working tree alone.');
       return null;
     }
-    if (answer === '') return preferred === 'current' ? 'new' : preferred;
 
-    const chosen: SessionBranchMode = answer === 'current' ? 'current' : 'new';
-    if (chosen !== preferred) await this.session.setBranchMode(chosen);
-    return chosen;
+    // Walking away from the question is not consent to edit the branch someone
+    // is standing on, so an empty answer takes the safe reading rather than the
+    // remembered one.
+    if (answer === '') {
+      return { mode: preferred === 'current' ? 'new' : preferred, name: proposed };
+    }
+
+    if (answer === 'rename') {
+      const typed = await vscode.window.showInputBox({
+        title: 'Branch for this upgrade',
+        prompt: 'Drift proposed this from the packages being upgraded. Change it to whatever your team uses.',
+        value: proposed,
+        valueSelection: [proposed.lastIndexOf('/') + 1, proposed.length],
+        validateInput: (value) => validateBranchName(value),
+      });
+      if (typed === undefined) {
+        this.session.notice('info', 'Left your working tree alone.');
+        return null;
+      }
+      if (preferred !== 'new') await this.session.setBranchMode('new');
+      return { mode: 'new', name: typed.trim() };
+    }
+
+    const mode: SessionBranchMode = answer === 'current' ? 'current' : 'new';
+    if (mode !== preferred) await this.session.setBranchMode(mode);
+    return { mode, name: proposed };
   }
 
-  private async chooseFixAgents(commitCount: number): Promise<number | null> {
-    const current = fixAgentCount(commitCount);
-    if (commitCount <= 1) return current;
+  /**
+   * Run the project's typecheck and turn the result into something an agent
+   * can act on.
+   *
+   * Only the typecheck, not the tests or the build. It is the fastest of the
+   * three, it needs no working code to produce useful output, and after a major
+   * upgrade it is the one that names the exact API that moved. Tests after a
+   * breaking upgrade mostly fail to compile, which reports the same information
+   * with a worse signal-to-noise ratio and takes minutes to do it.
+   *
+   * A clean typecheck is a real answer and is passed along as one: it tells the
+   * agent that Drift's analysis predicts breakage the compiler cannot see, which
+   * is worth knowing before it starts rewriting working code.
+   */
+  private async gatherDiagnostics(root: string, plan: RemediationPlan): Promise<string | undefined> {
+    const dir = memberDirsOf(plan)[0] ?? '';
+    const checks = (await availableChecks(root, dir)).filter((check) => check.kind === 'typecheck');
+    if (checks.length === 0) return undefined;
 
-    const max = Math.min(commitCount, 16);
-    const counts = [...new Set([current, 1, Math.min(2, max), Math.min(4, max), Math.min(8, max), max])]
-      .filter((count) => count >= 1 && count <= max)
-      .sort((a, b) => a - b);
-    const options = [
-      ...counts.map((count) => `${count} ${count === 1 ? 'agent' : 'agents'}`),
-      'Cancel',
-    ];
+    const check = checks[0]!;
+    const step = this.session.step(`Checking what actually broke`);
+    step.progress(`Running \`${check.label}\``, 'against the upgraded dependencies');
 
-    // Spelled out rather than offered as a row of bare numbers. "8" on its own
-    // says nothing about what it buys or costs, and the honest answer today is
-    // "nothing yet" — worth saying, because a developer who picks 8 and watches
-    // one agent work through the list has been misled by the control.
-    const answer = await this.session.ask(
-      [
-        `This plan has **${commitCount} separate concerns**, and each becomes its own commit.`,
-        `How many agents should work through them? Drift remembers **${current}**, and any number from 1 to ${max} is fine.`,
+    const outcomes = await runChecks({ root, dir, checks: [check] });
+    const outcome = outcomes[0];
+
+    if (!outcome || outcome.status === 'not-run') {
+      step.fail(outcome?.reason ?? 'Could not run it');
+      return undefined;
+    }
+
+    if (outcome.status === 'passed') {
+      step.done(`\`${check.label}\` passes`);
+      return [
+        `\`${check.label}\` passes against the upgraded dependencies — it reports no errors at all.`,
         '',
-        'Local fixes still run one at a time whatever you pick — every agent would be editing the same working tree — so this records the target for when each can be isolated in its own worktree.',
-      ].join('\n'),
-      options.map((option) => ({
-        label: option,
-        value: option,
-        description:
-          option === 'Cancel'
-            ? 'Do not fix anything'
-            : option.startsWith('1 ')
-              ? 'One concern at a time, in the planned order'
-              : `Target ${option} once worktree isolation lands`,
-      })),
+        'Treat that as a strong signal. The analysis above predicts breakage the',
+        'compiler cannot see, which may mean the breakage is real but untyped',
+        '(runtime behaviour, not signatures), or that a predicted site is already',
+        'correct. Change nothing you cannot justify against the evidence.',
+      ].join('\n');
+    }
+
+    const digest = digestDiagnostics(outcome.fullOutput ?? outcome.output, {
+      focusFiles: [...new Set(plan.impactSites.map((site) => site.file))],
+    });
+
+    step.done(
+      digest.unparsed
+        ? `\`${check.label}\` failed`
+        : `\`${check.label}\`: ${digest.total} error${digest.total === 1 ? '' : 's'} in ${
+            digest.groups.length + digest.omittedGroups
+          } distinct problem${digest.groups.length + digest.omittedGroups === 1 ? '' : 's'}`,
     );
 
-    if (/^cancel/i.test(answer)) return null;
-    const parsed = Number((/\d+/.exec(answer)?.[0] ?? '').trim());
-    const selected = Number.isFinite(parsed) && parsed >= 1 ? Math.min(Math.floor(parsed), max) : current;
+    // Said in the panel too, in one line. The developer is about to watch an
+    // agent work from this, and should know what it was handed.
+    if (!digest.unparsed) {
+      this.session.say(
+        [
+          `\`${check.label}\` reports **${digest.total} error${digest.total === 1 ? '' : 's'}** across ${
+            digest.fileCount
+          } file${digest.fileCount === 1 ? '' : 's'}, which are really **${
+            digest.groups.length + digest.omittedGroups
+          } distinct problem${digest.groups.length + digest.omittedGroups === 1 ? '' : 's'}**.`,
+          '',
+          ...digest.groups.slice(0, 5).map((group) => {
+            const where = group.focused ? ' — on a file this upgrade was proved to affect' : '';
+            return `- ${group.code ? `\`${group.code}\` ` : ''}${group.template} · **${group.total}×**${where}`;
+          }),
+          '',
+          `I am handing all of this to ${this.agentLabel()} together with the changelog evidence, grouped so it fixes causes rather than occurrences.`,
+        ].join('\n'),
+      );
+    }
 
-    await vscode.workspace
-      .getConfiguration('drift')
-      .update('fix.maxAgents', selected, vscode.ConfigurationTarget.Global);
-
-    return selected;
+    return renderDigest(digest, { label: check.label, rawTail: outcome.output });
   }
+
+  /** Create and check out the branch the whole change will live on. */
+  private async startBranch(root: string, name: string): Promise<boolean> {
+    const { Git } = await import('../git.js');
+    try {
+      const { created } = await new Git(root).createBranch(name);
+      this.session.notice(
+        'info',
+        created ? `Working on a new branch, \`${name}\`.` : `Switched to the existing \`${name}\`.`,
+      );
+      return true;
+    } catch (err) {
+      this.session.notice('error', `Could not create \`${name}\`: ${(err as Error).message}`);
+      return false;
+    }
+  }
+
 
   /** For the ids nothing here can know: a fork, a preview, next month's model. */
   private async askForModel(agentId: string): Promise<void> {
@@ -3742,11 +3966,6 @@ function activeGroupId(plan: RemediationPlan, state: DriftState): string {
   return `c${order ?? 1}`;
 }
 
-function fixAgentCount(commitCount: number): number {
-  const configured = vscode.workspace.getConfiguration('drift').get<number>('fix.maxAgents', 1);
-  const requested = Number.isFinite(configured) ? Math.max(1, Math.floor(configured)) : 1;
-  return Math.min(requested, Math.max(1, commitCount));
-}
 
 /**
  * Workspace member directories a plan touches, nearest first.
@@ -3758,6 +3977,63 @@ function memberDirsOf(plan: RemediationPlan): string[] {
   const dirs = new Set<string>();
   for (const change of plan.changes) if (change.workspace !== undefined) dirs.add(change.workspace);
   return dirs.size === 0 ? [''] : [...dirs].sort((a, b) => b.length - a.length);
+}
+
+/**
+ * Whether a version really is inside a declared range.
+ *
+ * Tolerant of ranges `semver` cannot parse — a workspace protocol, a git URL, a
+ * catalog reference. Those are not violations, they are questions this cannot
+ * answer, and answering "outside the range" would be a false alarm about
+ * someone's monorepo. Unknown reads as "no complaint".
+ */
+function satisfiesRange(version: string, range: string): boolean {
+  if (!range.trim()) return true;
+  try {
+    return semver.satisfies(version, range, { includePrerelease: true });
+  } catch {
+    return true;
+  }
+}
+
+/** What is actually in `node_modules`, or `null` when that cannot be read. */
+async function installedVersion(root: string, candidate: UpgradeCandidate): Promise<string | null> {
+  // Only npm-family layouts put a readable manifest at a predictable path.
+  if (candidate.ecosystem !== 'npm') return null;
+
+  const dir = candidate.workspace ? join(root, candidate.workspace) : root;
+  for (const base of [dir, root]) {
+    try {
+      const uri = vscode.Uri.file(join(base, 'node_modules', ...candidate.name.split('/'), 'package.json'));
+      const bytes = await vscode.workspace.fs.readFile(uri);
+      const parsed = JSON.parse(Buffer.from(bytes).toString('utf8')) as { version?: string };
+      if (parsed.version) return parsed.version;
+    } catch {
+      // Not installed here, or not readable. The next candidate directory —
+      // and then "cannot tell", which never produces a warning.
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Why a branch name would not work, or nothing.
+ *
+ * Only the rules git itself enforces. A house style is the developer's
+ * business, and a picker that rejects their convention is a picker they will
+ * stop using.
+ */
+function validateBranchName(value: string): string | null {
+  const name = value.trim();
+  if (!name) return 'A branch needs a name.';
+  if (/\s/.test(name)) return 'Branch names cannot contain spaces.';
+  if (/[~^:?*\[\\]/.test(name)) return 'Branch names cannot contain ~ ^ : ? * [ or \\.';
+  if (name.startsWith('/') || name.endsWith('/')) return 'Branch names cannot start or end with /.';
+  if (name.includes('//')) return 'Branch names cannot contain //.';
+  if (name.endsWith('.') || name.includes('..')) return 'Branch names cannot contain .. or end with .';
+  if (name.endsWith('.lock')) return 'Branch names cannot end with .lock.';
+  return null;
 }
 
 /** The manifest file the developer would open, without its directory. */
