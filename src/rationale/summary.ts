@@ -30,7 +30,9 @@ const PATTERNS: { category: ChangeCategory; pattern: RegExp }[] = [
   {
     category: 'breaking',
     pattern:
-      /\b(BREAKING|breaking change|no longer|has been removed|was removed|is removed|removed support|dropped support|drop support|renamed to|has been renamed|is now required|must now|migrate to|migration guide|incompatible)\b/i,
+      // `now requires`, `now returns`, `now takes` — the shape a maintainer
+      // uses for a changed signature far more often than the word "breaking".
+      /\b(BREAKING|breaking change|no longer|has been removed|was removed|is removed|removed support|dropped support|drop support|renamed to|has been renamed|is now required|must now|now (?:requires?|returns?|expects?|accepts?|takes?)|migrate to|migration guide|incompatible)\b/i,
   },
   {
     category: 'performance',
