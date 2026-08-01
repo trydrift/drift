@@ -110,6 +110,21 @@ export interface FixTask {
   model?: string;
   /** How hard the developer asked this model to think. */
   effort?: SessionEffort;
+  /** Trade tokens for latency, where the agent offers that. */
+  fast?: boolean;
+  /**
+   * What the project's own toolchain says is broken, right now, after the
+   * upgrade — already grouped and counted.
+   *
+   * Everything else in this prompt is Drift's prediction: evidence read from a
+   * changelog, impact sites matched against a type surface. This is the one
+   * section that is measured rather than inferred, which makes it the strongest
+   * thing here and worth stating separately from the analysis it confirms — or
+   * contradicts, which is at least as useful.
+   *
+   * Absent when no checks ran or the tree already compiled.
+   */
+  diagnostics?: string;
 }
 
 export type FixStatus = 'applied' | 'no-changes' | 'failed' | 'delegated';
@@ -237,6 +252,31 @@ export function buildFixPrompt(task: FixTask): string {
     }
 
     sections.push(lines.join('\n'));
+  }
+
+  // Placed after the evidence and before the rules, because it is the section
+  // that settles disagreements between them. Drift's impact analysis says what
+  // it expects to break; this says what the compiler actually reports. Where
+  // they differ, the compiler is right.
+  if (task.diagnostics?.trim()) {
+    sections.push(
+      [
+        '## What the project\'s own checks report right now',
+        '',
+        'These ran against the tree you are about to edit, after the dependency',
+        'versions moved. Unlike everything above, this is measured rather than',
+        'predicted — where it disagrees with the analysis, believe this.',
+        '',
+        'Diagnostics are grouped by root cause with a count. A problem reported',
+        'many times is one problem: find what it shares before editing any',
+        'individual site, and do not work through occurrences one by one.',
+        '',
+        'Some of these may have nothing to do with the upgrade. Fixing unrelated',
+        'pre-existing errors is out of scope — leave them alone.',
+        '',
+        task.diagnostics.trim(),
+      ].join('\n'),
+    );
   }
 
   sections.push(

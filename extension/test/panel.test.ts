@@ -1136,3 +1136,27 @@ test('the composer no longer offers a bare list of agent counts', () => {
   // room to say what it buys. A row of naked integers in a menu was not that.
   assert.ok(!/data-id="fixAgents:/.test(html), 'the agent-count menu is still there');
 });
+
+test('next steps are buttons, not instructions to retype a command', () => {
+  const html = renderBody(
+    model({
+      thread: [
+        {
+          id: 'a1',
+          kind: 'assistant',
+          text: 'That upgrade needs code changes here.',
+          actions: [
+            { label: 'Fix them with Codex', command: '/fix', primary: true },
+            { label: 'Review the changes', command: '/review' },
+          ],
+        },
+      ],
+    }),
+  );
+
+  assert.match(html, /class="msg-actions"/);
+  assert.match(html, /data-action="run" data-command="\/fix"/);
+  assert.match(html, /Fix them with Codex/);
+  // The panel no longer asks the reader to notice that prose was an instruction.
+  assert.ok(!/[Ss]ay `\/fix`/.test(html), 'the panel still tells people to type a command');
+});

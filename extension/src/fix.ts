@@ -54,6 +54,14 @@ export interface FixOptions {
   branchMode?: SessionBranchMode;
   /** Whether Drift may write git history unattended. Defaults to `approve`. */
   commitMode?: SessionCommitMode;
+  /**
+   * The project's own check output, grouped and counted, for the agent.
+   *
+   * Measured evidence rather than predicted, so it is passed straight through
+   * to every commit unit — a compiler error in one file is often explained by
+   * the change another unit is about.
+   */
+  diagnostics?: string;
   /** Puts a question to the developer in the panel thread. */
   ask?: (question: string, options?: string[]) => Promise<string>;
   /** Files, folders or selections the developer attached as reference material. */
@@ -233,6 +241,8 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
       // on them. An agent that ignores either is no worse off for being told.
       model: driftConfig().get<Record<string, string>>('agent.models', {})?.[agent.id],
       effort: readEffort(agent.id),
+      fast: Boolean(driftConfig().get<Record<string, boolean>>('agent.fast', {})?.[agent.id]),
+      diagnostics: options.diagnostics,
     });
 
     if (outcome.warnings?.length) warnings.push(...outcome.warnings);
@@ -364,6 +374,8 @@ async function applyOneCommit(args: {
   context?: AttachedContext[];
   model?: string;
   effort?: SessionEffort;
+  fast?: boolean;
+  diagnostics?: string;
 }): Promise<FixOutcome> {
   const { agent, plan, commit, root, token, progress, files } = args;
 
@@ -381,6 +393,8 @@ async function applyOneCommit(args: {
     context: args.context,
     model: args.model,
     effort: args.effort,
+    fast: args.fast,
+    diagnostics: args.diagnostics,
   };
 
   try {
