@@ -29,7 +29,13 @@ import {
 import type { AttachedContext, EffortStop } from '../agents/types.js';
 import { getGitHubSession, getRateLimitToken } from '../github-auth.js';
 import type { PackageManagerId } from '../../../src/detect/package-manager.js';
-import { availableChecks, describeOutcomes, runChecks } from '../verify.js';
+import {
+  availableChecks,
+  describeOutcomes,
+  runChecks,
+  unrunReasons,
+  type CheckOutcome,
+} from '../verify.js';
 import {
   ambiguityKey,
   describeSeverity,
@@ -819,7 +825,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         checks,
         token,
         onProgress: (check, index, total) =>
-          step.progress(check.label, `${index + 1} of ${total}`, index, total),
+          step.progress(`Running \`${check.label}\``, `${index + 1} of ${total}`, index, total),
+        onResult: (outcome, index, total) =>
+          step.progress(describeOutcome(outcome), `${index + 1} of ${total}`, index + 1, total),
       });
 
       // The checks validate the working tree, not one group in isolation, so
@@ -828,13 +836,20 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       for (const order of orders) this.review.setChecks(order, outcomes);
 
       const failed = outcomes.filter((o) => o.status === 'failed');
-      step.done(describeOutcomes(outcomes));
+      const reasons = unrunReasons(outcomes);
+      if (failed.length > 0) step.fail(describeOutcomes(outcomes));
+      else step.done(describeOutcomes(outcomes));
 
       this.session.notice(
-        failed.length > 0 ? 'warn' : 'success',
-        failed.length > 0
-          ? `${describeOutcomes(outcomes)}. The result is shown above each changed file — keep or undo as you see fit.`
-          : `${describeOutcomes(outcomes)}. That is your own toolchain, not Drift's opinion.`,
+        failed.length > 0 || reasons.length > 0 ? 'warn' : 'success',
+        [
+          failed.length > 0
+            ? `${describeOutcomes(outcomes)}. The result is shown above each changed file — keep or undo as you see fit.`
+            : reasons.length > 0
+              ? `${describeOutcomes(outcomes)}. Nothing here has been checked against your toolchain.`
+              : `${describeOutcomes(outcomes)}. That is your own toolchain, not Drift's opinion.`,
+          ...(reasons.length > 0 ? ['', ...reasons.map((reason) => `- ${reason}`)] : []),
+        ].join('\n'),
       );
     });
   }
@@ -870,20 +885,30 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       dir,
       checks,
       onProgress: (check, index, total) =>
-        step.progress(check.label, `${index + 1} of ${total}`, index, total),
+        step.progress(`Running \`${check.label}\``, `${index + 1} of ${total}`, index, total),
+      onResult: (outcome, index, total) =>
+        step.progress(describeOutcome(outcome), `${index + 1} of ${total}`, index + 1, total),
     });
 
-    step.done(describeOutcomes(outcomes));
     const failed = outcomes.filter((o) => o.status === 'failed');
+    const reasons = unrunReasons(outcomes);
+    const summary = `${describeOutcomes(outcomes)} after the upgrade.`;
+
+    if (failed.length > 0) step.fail(describeOutcomes(outcomes));
+    else step.done(describeOutcomes(outcomes));
+
     this.session.notice(
-      failed.length > 0 ? 'warn' : 'success',
-      failed.length > 0
-        ? [
-            `${describeOutcomes(outcomes)} after the upgrade.`,
-            '',
-            ...failed.map((o) => [`\`${o.label}\``, '```', o.output, '```'].join('\n')),
-          ].join('\n')
-        : `${describeOutcomes(outcomes)} after the upgrade.`,
+      failed.length > 0 || reasons.length > 0 ? 'warn' : 'success',
+      [
+        summary,
+        // A check that never ran proved nothing about the upgrade, and saying
+        // only "not run" leaves the developer to guess whether it is still
+        // going. The reason is the whole message.
+        ...(reasons.length > 0 ? ['', ...reasons.map((reason) => `- ${reason}`)] : []),
+        ...(failed.length > 0
+          ? ['', ...failed.map((o) => [`\`${o.label}\``, '```', o.output, '```'].join('\n'))]
+          : []),
+      ].join('\n'),
     );
   }
 
@@ -3205,6 +3230,27 @@ function memberDirsOf(plan: RemediationPlan): string[] {
 function manifestName(candidate: UpgradeCandidate): string {
   const path = candidate.manifestPath;
   return path.includes('/') ? path.slice(path.lastIndexOf('/') + 1) : path;
+}
+
+/**
+ * One finished check, as a line in the step's log.
+ *
+ * The log is the answer to "is it still going?" — every check that has settled
+ * is named with its verdict, so the row above it showing a spinner and a
+ * running command is unambiguously the one still working.
+ */
+function describeOutcome(outcome: CheckOutcome): string {
+  const seconds = (outcome.durationMs / 1000).toFixed(1);
+  switch (outcome.status) {
+    case 'passed':
+      return `\`${outcome.label}\` passed in ${seconds}s`;
+    case 'failed':
+      return `\`${outcome.label}\` failed in ${seconds}s`;
+    case 'cancelled':
+      return `\`${outcome.label}\` cancelled`;
+    case 'not-run':
+      return `\`${outcome.label}\` could not run`;
+  }
 }
 
 function bySeverity(a: UpgradeCandidate, b: UpgradeCandidate): number {

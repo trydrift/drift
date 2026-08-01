@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync, chmodSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { availableChecks, describeOutcomes, runChecks } from '../src/verify.js';
+import { availableChecks, describeOutcomes, runChecks, unrunReasons } from '../src/verify.js';
 import type { CheckOutcome, LocalCheck } from '../src/verify.js';
 import { DriftReview } from '../src/review/store.js';
 
@@ -82,7 +82,27 @@ describe('running them', () => {
     });
 
     assert.equal(outcomes[0]!.status, 'not-run');
-    assert.match(outcomes[0]!.reason ?? '', /not on your PATH/);
+    // The reason has to name the fix. "not run" on its own reads as a progress
+    // state, and the developer is left guessing whether it is still going.
+    assert.match(outcomes[0]!.reason ?? '', /was not found/);
+    assert.match(outcomes[0]!.reason ?? '', /command -v/);
+  });
+
+  test('each check is reported as it settles, not only at the end', async () => {
+    const seen: string[] = [];
+    await runChecks({
+      root,
+      checks: [script('first.sh', 'exit 0'), script('second.sh', 'exit 1')],
+      onProgress: (check) => seen.push(`start ${check.label}`),
+      onResult: (outcome) => seen.push(`${outcome.status} ${outcome.label}`),
+    });
+
+    assert.deepEqual(seen, [
+      'start first.sh',
+      'passed first.sh',
+      'start second.sh',
+      'failed second.sh',
+    ]);
   });
 
   test('cancellation records the checks that did not run rather than dropping them', async () => {
@@ -106,8 +126,8 @@ describe('running them', () => {
 });
 
 describe('the one-line verdict', () => {
-  const outcome = (label: string, status: string) =>
-    ({ kind: 'test', label, status, durationMs: 1, output: '' }) as never;
+  const outcome = (label: string, status: string, reason?: string) =>
+    ({ kind: 'test', label, status, durationMs: 1, output: '', reason }) as never;
 
   test('names what failed and counts what did not', () => {
     assert.equal(
@@ -117,7 +137,36 @@ describe('the one-line verdict', () => {
     assert.equal(describeOutcomes([]), 'No local checks to run.');
     assert.equal(
       describeOutcomes([outcome('npm test', 'passed'), outcome('mypy .', 'not-run')]),
-      '1 passed · 1 not run',
+      '1 passed · 1 could not run',
+    );
+  });
+
+  test('nothing running at all is a sentence, not a tally', () => {
+    // "3 not run" was read as "step 3 is running". A result that is entirely
+    // absent has to say so in words.
+    assert.equal(
+      describeOutcomes([
+        outcome('npm run typecheck', 'not-run'),
+        outcome('npm test', 'not-run'),
+        outcome('npm run build', 'not-run'),
+      ]),
+      'none of your 3 checks could run',
+    );
+    assert.equal(
+      describeOutcomes([outcome('npm test', 'cancelled')]),
+      'none of your 1 check could run (cancelled)',
+    );
+  });
+
+  test('the reasons survive to the message under the summary', () => {
+    assert.deepEqual(
+      unrunReasons([
+        outcome('npm test', 'not-run', '`npm` was not found.'),
+        outcome('npm run build', 'not-run', '`npm` was not found.'),
+        outcome('npm run typecheck', 'passed'),
+      ]),
+      ['`npm` was not found.'],
+      'one cause stated once, however many checks it stopped',
     );
   });
 });
