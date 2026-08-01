@@ -241,6 +241,59 @@ describe('type surface diffing', () => {
     assert.equal(diffSurfaces(before, after).length, 0, 'additions are not breaking');
   });
 
+  /**
+   * The zod 3 → 4 shape, reduced to its bones.
+   *
+   * zod 3 declares its public API as unexported locals and publishes it in one
+   * renaming export statement; zod 4 declares the same names outright. Missing
+   * the rename meant the old surface had no `object` at all, so the diff saw
+   * the entire user-facing API as an addition — and Drift called a major
+   * upgrade that broke this repository's own config schema safe.
+   */
+  test('reads renaming export statements as part of the surface', () => {
+    const before = extractExports(
+      `declare const objectType: <T extends Shape>(shape: T) => ZodObject<T, "strip">;
+export { objectType as object };`,
+      'a.d.ts',
+    );
+
+    assert.ok(before.has('object'), 'the published name is what a caller depends on');
+    assert.ok(
+      !before.get('object')!.signature.includes('objectType'),
+      'the private local name is not part of the published signature',
+    );
+
+    const after = extractExports(
+      'export declare function object<T extends Shape>(shape?: T, params?: Params): ZodObject<T, Config>;',
+      'a.d.ts',
+    );
+
+    const changes = diffSurfaces(before, after);
+    assert.ok(
+      changes.some((c) => c.kind === 'signature-changed' && c.symbol === 'object'),
+      'a rename on one side and a declaration on the other still compare as one symbol',
+    );
+    assert.ok(
+      !changes.some((c) => c.kind === 'kind-changed'),
+      'const-arrow to function is a source style, not a change a caller can break on',
+    );
+  });
+
+  test('a rename pointing at another file is deferred, not guessed at', () => {
+    const api = new Map();
+    const aliases: { exported: string; local: string }[] = [];
+    extractExports('export { stringType as string } from "./types.js";', 'index.d.ts', api, aliases);
+    extractExports('export declare const stringType: () => ZodString;', 'types.d.ts', api, aliases);
+
+    assert.ok(!api.has('string'), 'unresolved until every source has been read');
+    assert.deepEqual(aliases, [{ exported: 'string', local: 'stringType' }]);
+  });
+
+  test('an export that renames something published elsewhere is not invented', () => {
+    const api = extractExports('export { missing as gone } from "./nowhere.js";', 'index.d.ts');
+    assert.equal(api.size, 0, 'an unresolvable alias is absent, never a fabricated symbol');
+  });
+
   test('parses overloads and multi-line signatures', () => {
     const api = extractExports(
       `export function fetch(url: string): Promise<Response>;

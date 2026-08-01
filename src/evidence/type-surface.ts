@@ -67,7 +67,12 @@ export async function fetchTypeSurface(
   if (sources.length === 0) return null;
 
   const api: SurfaceApi = new Map();
-  for (const source of sources) extractExports(source.content, source.path, api);
+  // `export { a as b } from './other'` names something declared in a file this
+  // one does not contain, so aliases are resolved after every source has been
+  // parsed rather than as each is read.
+  const aliases: ExportAlias[] = [];
+  for (const source of sources) extractExports(source.content, source.path, api, aliases);
+  resolveAliases(api, aliases);
 
   return api.size > 0 ? { api, entryPath } : null;
 }
@@ -284,33 +289,45 @@ async function exists(packageName: string, version: string, path: string): Promi
  * and multi-line signatures are exactly the constructs that break naive
  * matching, and they are also the ones most likely to have changed.
  */
-export function extractExports(content: string, fileName: string, into: SurfaceApi = new Map()): SurfaceApi {
+export function extractExports(
+  content: string,
+  fileName: string,
+  into: SurfaceApi = new Map(),
+  aliases: ExportAlias[] = [],
+): SurfaceApi {
   const source = ts.createSourceFile(fileName, content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
 
+  // Every declaration in the file, exported or not, keyed by its declared name.
+  // An `export { objectType as object }` statement names a local that is
+  // itself unexported, so the local declarations have to be on hand before the
+  // export statements can be understood.
+  const locals = new Map<string, SurfaceEntry>();
+
+  const add = (target: SurfaceApi, entry: SurfaceEntry): void => {
+    const existing = target.get(entry.name);
+    // Function overloads appear as sibling declarations; concatenating their
+    // signatures means losing one is detected as a change.
+    if (existing && existing.kind === entry.kind) {
+      existing.signature = `${existing.signature} | ${entry.signature}`;
+      existing.members = [...new Set([...existing.members, ...entry.members])];
+      existing.requiredMembers = [...new Set([...existing.requiredMembers, ...entry.requiredMembers])];
+    } else if (!existing) {
+      target.set(entry.name, entry);
+    }
+  };
+
   const visit = (node: ts.Node): void => {
-    if (!isExported(node)) {
-      // Descend into ambient module/namespace bodies, whose contents are
-      // exported even when the inner declarations lack a modifier.
-      if (ts.isModuleDeclaration(node) && node.body && ts.isModuleBlock(node.body)) {
-        node.body.statements.forEach(visit);
-      }
-      return;
-    }
-
     const entry = toSurfaceEntry(node, source);
-    if (entry) {
-      const existing = into.get(entry.name);
-      // Function overloads appear as sibling declarations; concatenating their
-      // signatures means losing one is detected as a change.
-      if (existing && existing.kind === entry.kind) {
-        existing.signature = `${existing.signature} | ${entry.signature}`;
-        existing.members = [...new Set([...existing.members, ...entry.members])];
-        existing.requiredMembers = [...new Set([...existing.requiredMembers, ...entry.requiredMembers])];
-      } else if (!existing) {
-        into.set(entry.name, entry);
-      }
+    if (entry) add(locals, entry);
+
+    if (isExported(node)) {
+      if (entry) add(into, entry);
+    } else if (ts.isExportDeclaration(node)) {
+      collectExportSpecifiers(node, locals, into, aliases);
     }
 
+    // Descend into ambient module/namespace bodies, whose contents are
+    // exported even when the inner declarations lack a modifier.
     if (ts.isModuleDeclaration(node) && node.body && ts.isModuleBlock(node.body)) {
       node.body.statements.forEach(visit);
     }
@@ -318,6 +335,79 @@ export function extractExports(content: string, fileName: string, into: SurfaceA
 
   source.statements.forEach(visit);
   return into;
+}
+
+/** One `export { local as exported }` binding whose local is declared elsewhere. */
+export interface ExportAlias {
+  exported: string;
+  local: string;
+}
+
+/**
+ * `export { a, b as c }` — the half of a package's surface a declaration-only
+ * walk used to miss entirely.
+ *
+ * This is not a rare style. zod 3 declares its whole ergonomic API as private
+ * locals (`declare const objectType`) and publishes it in one renaming export
+ * statement (`export { objectType as object, stringType as string, … }`), so
+ * `z.object` and `z.string` were absent from the *old* side of every zod diff
+ * while zod 4's plain `export declare function object` was present on the new
+ * side. The comparison therefore saw the entire user-facing API as newly added
+ * — additions are non-breaking by construction — and reported that a 3 → 4
+ * major upgrade touched nothing this repository uses.
+ */
+function collectExportSpecifiers(
+  node: ts.ExportDeclaration,
+  locals: SurfaceApi,
+  into: SurfaceApi,
+  aliases: ExportAlias[],
+): void {
+  const bindings = node.exportClause;
+  if (!bindings || !ts.isNamedExports(bindings)) return;
+
+  for (const specifier of bindings.elements) {
+    const exported = specifier.name.text;
+    const local = specifier.propertyName?.text ?? exported;
+    if (into.has(exported)) continue;
+
+    const entry = locals.get(local);
+    if (entry) into.set(exported, renameEntry(entry, exported));
+    else aliases.push({ exported, local });
+  }
+}
+
+/**
+ * Resolve aliases that pointed at another file, once every file is parsed.
+ *
+ * Left unresolved these are simply absent, which is the pre-existing behaviour
+ * and never invents a symbol that is not there.
+ */
+function resolveAliases(api: SurfaceApi, aliases: readonly ExportAlias[]): void {
+  for (const alias of aliases) {
+    if (api.has(alias.exported)) continue;
+    const entry = api.get(alias.local);
+    if (entry) api.set(alias.exported, renameEntry(entry, alias.exported));
+  }
+}
+
+/**
+ * The same declaration under its published name.
+ *
+ * The local name is substituted inside the signature text too, because the
+ * signature is compared verbatim: leaving `declare const objectType` on one
+ * side and `declare function object` on the other would report a change every
+ * time a package renamed a private local, which says nothing about its API.
+ */
+function renameEntry(entry: SurfaceEntry, name: string): SurfaceEntry {
+  return {
+    ...entry,
+    name,
+    signature: entry.signature.replace(new RegExp(`\\b${escapeRegExp(entry.name)}\\b`, 'g'), name),
+  };
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function isExported(node: ts.Node): boolean {
@@ -444,6 +534,20 @@ function collapse(text: string): string {
  * construction and reporting them would flood the plan with noise that a
  * reviewer then has to filter — which is how trust in a tool like this dies.
  */
+/**
+ * Kinds that describe the same thing to a caller.
+ *
+ * `declare const f: (x: A) => B` and `declare function f(x: A): B` are one API
+ * to everyone who calls `f`, and packages move between the two forms for
+ * internal reasons. Reporting that as "changed from a variable to a function"
+ * would be a finding about the package's source style. Whether the *signature*
+ * changed is still compared, which is the part a caller can break on.
+ */
+function interchangeable(a: SurfaceKind, b: SurfaceKind): boolean {
+  const callable = (kind: SurfaceKind): boolean => kind === 'variable' || kind === 'function';
+  return callable(a) && callable(b);
+}
+
 export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChange[] {
   const changes: SurfaceChange[] = [];
 
@@ -460,7 +564,7 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
       continue;
     }
 
-    if (oldEntry.kind !== newEntry.kind) {
+    if (oldEntry.kind !== newEntry.kind && !interchangeable(oldEntry.kind, newEntry.kind)) {
       changes.push({
         kind: 'kind-changed',
         symbol: name,
