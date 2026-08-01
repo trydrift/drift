@@ -12,7 +12,8 @@ const run = promisify(execFile);
  *
  * On macOS and Linux, apps launched from the Dock or Finder inherit the
  * login environment, not the interactive shell environment — so PATH
- * entries added by nvm, volta, fnm, or asdf (almost always sourced from
+ * entries added by nvm, volta, fnm, asdf, rustup, or language installers
+ * (almost always sourced from
  * `.zshrc`/`.bashrc`, which only run for interactive shells) are invisible
  * to `child_process.execFile`. This is why `npm`, found by hand in any
  * terminal, comes back `spawn npm ENOENT` from inside the extension host.
@@ -26,10 +27,10 @@ const run = promisify(execFile);
  *   starting cleanly non-interactively — a slow prompt framework, a plugin
  *   that errors on a non-tty, or a shell (fish, in particular) whose flag
  *   parsing does not match this invocation can silently fail it.
- * - Probing the well-known install directories for nvm, volta, fnm, and
- *   asdf costs nothing, depends on no shell behaviour at all, and covers
- *   the version manager that put npm on the machine in the first place even
- *   when the shell probe above comes back empty.
+ * - Probing the well-known install directories for common toolchains costs
+ *   nothing, depends on no shell behaviour at all, and covers the version
+ *   manager that put npm, go, cargo, uv, etc. on the machine in the first
+ *   place even when the shell probe above comes back empty.
  *
  * Resolved once per session and cached, since neither signal is free.
  */
@@ -49,8 +50,8 @@ async function computeShellPath(): Promise<string> {
   const base = process.env.PATH ?? '';
   if (process.platform === 'win32') return base;
 
-  const [shellPath, versionManagerDirs] = await Promise.all([shellDerivedPath(), versionManagerBinDirs()]);
-  return mergePaths(shellPath ?? '', versionManagerDirs.join(delimiter), base);
+  const [shellPath, toolDirs] = await Promise.all([shellDerivedPath(), toolInstallBinDirs()]);
+  return mergePaths(shellPath ?? '', toolDirs.join(delimiter), base);
 }
 
 async function shellDerivedPath(): Promise<string | null> {
@@ -75,9 +76,11 @@ async function shellDerivedPath(): Promise<string | null> {
 }
 
 /**
- * Node version managers each keep their binaries somewhere `$SHELL -ilc`
+ * Toolchain managers each keep their binaries somewhere `$SHELL -ilc`
  * should — but does not always — surface: nvm and fnm install one directory
- * per Node version with no fixed path, volta and asdf use a stable one.
+ * per Node version with no fixed path, volta/asdf/rustup use stable shims,
+ * Homebrew uses stable prefixes, and some language installers use their own
+ * stable per-tool roots.
  *
  * nvm and fnm don't get their *active* version resolved here — that would
  * mean parsing nvm's alias chain or fnm's own state, either of which can
@@ -86,30 +89,61 @@ async function shellDerivedPath(): Promise<string | null> {
  * at all, not to match whichever Node version the user's shell prompt says
  * is active.
  */
-async function versionManagerBinDirs(): Promise<string[]> {
+const probeExecutables = [
+  'npm',
+  'pnpm',
+  'yarn',
+  'bun',
+  'go',
+  'cargo',
+  'rustc',
+  'python',
+  'python3',
+  'pip',
+  'pip3',
+  'poetry',
+  'uv',
+  'bundle',
+  'mvn',
+  'gradle',
+];
+
+async function toolInstallBinDirs(): Promise<string[]> {
   const home = process.env.HOME;
   if (!home) return [];
 
   const dirs = await Promise.all([
+    existingBinDir('/opt/homebrew/bin'),
+    existingBinDir('/usr/local/bin'),
+    existingBinDir('/usr/local/go/bin'),
+    existingBinDir('/opt/homebrew/opt/go/libexec/bin'),
     existingBinDir(join(home, '.volta', 'bin')),
+    existingBinDir(join(home, '.asdf', 'shims')),
+    existingBinDir(join(home, '.cargo', 'bin')),
+    existingBinDir(join(home, '.local', 'bin')),
     latestVersionBinDir(join(home, '.nvm', 'versions', 'node'), 'bin'),
     latestVersionBinDir(join(home, '.local', 'share', 'fnm', 'node-versions'), join('installation', 'bin')),
     latestVersionBinDir(join(home, '.asdf', 'installs', 'nodejs'), 'bin'),
+    latestVersionBinDir(join(home, '.asdf', 'installs', 'golang'), join('go', 'bin')),
+    latestVersionBinDir(join(home, '.asdf', 'installs', 'golang'), 'bin'),
   ]);
 
   return dirs.filter((dir): dir is string => dir !== null);
 }
 
 async function existingBinDir(dir: string): Promise<string | null> {
-  try {
-    await access(join(dir, 'npm'), constants.F_OK);
-    return dir;
-  } catch {
-    return null;
+  for (const executable of probeExecutables) {
+    try {
+      await access(join(dir, executable), constants.F_OK);
+      return dir;
+    } catch {
+      // Keep probing the rest of the known tool names in this directory.
+    }
   }
+  return null;
 }
 
-/** The highest semver-named subdirectory of `base`, with `binSuffix` appended, if it holds `npm`. */
+/** The highest semver-named subdirectory of `base`, with `binSuffix` appended, if it holds a known tool. */
 async function latestVersionBinDir(base: string, binSuffix: string): Promise<string | null> {
   let entries;
   try {

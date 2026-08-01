@@ -7,8 +7,8 @@ import { resolveShellPath, resetShellPathCache } from '../src/shell-path.js';
 
 /**
  * `spawn npm ENOENT` from inside the extension host is almost always a
- * version manager problem: npm was installed by nvm/volta/fnm/asdf, and the
- * GUI-launched process never sourced the shell profile that put it on PATH.
+ * version manager problem: a tool was installed by nvm/volta/fnm/asdf/rustup,
+ * and the GUI-launched process never sourced the shell profile that put it on PATH.
  * These directories are probed directly — with no dependency on shell
  * startup behaviour succeeding — as the fix for that case.
  */
@@ -37,10 +37,14 @@ beforeEach(() => {
 });
 
 function fakeNpm(binDir: string): void {
+  fakeExecutable(binDir, 'npm');
+}
+
+function fakeExecutable(binDir: string, name: string): void {
   mkdirSync(binDir, { recursive: true });
-  const npmPath = join(binDir, 'npm');
-  writeFileSync(npmPath, '#!/bin/sh\necho fake npm\n');
-  chmodSync(npmPath, 0o755);
+  const executablePath = join(binDir, name);
+  writeFileSync(executablePath, `#!/bin/sh\necho fake ${name}\n`);
+  chmodSync(executablePath, 0o755);
 }
 
 describe('version manager install directories', () => {
@@ -69,6 +73,20 @@ describe('version manager install directories', () => {
     assert.ok(
       path.split(delimiter).includes(join(home, '.local', 'share', 'fnm', 'node-versions', 'v22.1.0', 'installation', 'bin')),
     );
+  });
+
+  test('finds go installed through asdf even when npm is not there', async () => {
+    fakeExecutable(join(home, '.asdf', 'installs', 'golang', '1.24.3', 'go', 'bin'), 'go');
+
+    const path = await resolveShellPath();
+    assert.ok(path.split(delimiter).includes(join(home, '.asdf', 'installs', 'golang', '1.24.3', 'go', 'bin')));
+  });
+
+  test('finds asdf shims for non-node tools', async () => {
+    fakeExecutable(join(home, '.asdf', 'shims'), 'go');
+
+    const path = await resolveShellPath();
+    assert.ok(path.split(delimiter).includes(join(home, '.asdf', 'shims')));
   });
 
   test('an empty HOME with no version manager installed resolves without throwing', async () => {

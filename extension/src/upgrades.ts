@@ -585,8 +585,8 @@ export async function installUpgrade(
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
       throw new Error(
-        `${command.command} was not found. Drift asked your login shell for its PATH and checked nvm, volta, fnm, ` +
-          `and asdf's install directories directly, and still came up empty. This usually means ${command.command} ` +
+        `${command.command} was not found. Drift asked your login shell for its PATH and checked common toolchain ` +
+          `manager directories directly, and still came up empty. This usually means ${command.command} ` +
           `is installed under a different $HOME than VS Code sees (common with sudo/root installs, or a devcontainer ` +
           `mismatch), or genuinely isn't installed for this user. Run \`command -v ${command.command}\` in a plain ` +
           `terminal — if that also comes back empty, install ${command.command}; if it finds one, restart VS Code from ` +
