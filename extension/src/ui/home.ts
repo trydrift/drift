@@ -1872,13 +1872,15 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       return;
     }
 
+    const requestedAgents = await this.chooseFixAgents(plan.commits.length);
+    if (requestedAgents === null) return;
+
     // The plan goes up before a single file is touched: every concern, the
     // package it belongs to, and the exact sites underneath it. A developer
     // watching this can tell what is about to happen while there is still time
     // to stop it, and afterwards can see which sites the agent actually changed
     // — neither of which is legible in a stream of agent chatter.
     const files = new Set(plan.impactSites.map((site) => site.file)).size;
-    const requestedAgents = fixAgentCount(plan.commits.length);
     const concurrencyNote =
       requestedAgents > 1
         ? ` Requested ${requestedAgents} simultaneous agents; running sequentially today so each commit is isolated in one working tree.`
@@ -2628,6 +2630,35 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     }
 
     await this.refreshAgents();
+  }
+
+  private async chooseFixAgents(commitCount: number): Promise<number | null> {
+    const current = fixAgentCount(commitCount);
+    if (commitCount <= 1) return current;
+
+    const max = Math.min(commitCount, 16);
+    const counts = [...new Set([current, 1, Math.min(2, max), Math.min(4, max), Math.min(8, max), max])]
+      .filter((count) => count >= 1 && count <= max)
+      .sort((a, b) => a - b);
+    const options = [
+      ...counts.map((count) => `${count} ${count === 1 ? 'agent' : 'agents'}`),
+      'Cancel',
+    ];
+
+    const answer = await this.session.ask(
+      `How many AI agents should Drift use for this fix? The remembered default is **${current}**. You can type any number from 1 to ${max}.`,
+      options.map((option) => ({ label: option, value: option })),
+    );
+
+    if (/^cancel/i.test(answer)) return null;
+    const parsed = Number((/\d+/.exec(answer)?.[0] ?? '').trim());
+    const selected = Number.isFinite(parsed) && parsed >= 1 ? Math.min(Math.floor(parsed), max) : current;
+
+    await vscode.workspace
+      .getConfiguration('drift')
+      .update('fix.maxAgents', selected, vscode.ConfigurationTarget.Global);
+
+    return selected;
   }
 
   /** For the ids nothing here can know: a fork, a preview, next month's model. */
