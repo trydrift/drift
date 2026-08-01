@@ -406,3 +406,43 @@ describe('analysis', () => {
     assert.equal(result.length, 0, 'a version number alone is not a breaking change');
   });
 });
+
+describe('search symbols derived from a computed finding', () => {
+  const symbolsFor = async (symbol: string): Promise<string[]> => {
+    const changes = await analyze(
+      [{ name: 'dep', ecosystem: 'go', from: '1', to: '2', kind: 'runtime', bump: 'minor', manifestPath: 'go.mod' } as never],
+      [
+        {
+          id: 'ev1',
+          source: 'type-surface-diff',
+          dependency: 'dep',
+          title: 't',
+          content: 'c',
+          weight: 1,
+          findings: [{ code: 'member-removed', symbol, detail: 'd' }],
+        } as never,
+      ],
+      { config: DEFAULT_CONFIG, logger: createLogger('silent') },
+    );
+    return changes[0]!.symbols.sort();
+  };
+
+  test('a two-part member yields the qualified name, the owner, and the member', async () => {
+    assert.deepEqual(await symbolsFor('Client.request'), ['Client', 'Client.request', 'request']);
+  });
+
+  test('a package qualifier is never searched on its own', async () => {
+    // `unix` matches the import line of every file that uses the module, which
+    // reported a repository whose only call was `unix.Getpid()` as affected by
+    // a change to a netlink struct it never touches.
+    const symbols = await symbolsFor('unix.NexthopGrp.Resvd1');
+    assert.equal(symbols.includes('unix'), false);
+    assert.deepEqual(symbols, ['NexthopGrp.Resvd1', 'Resvd1', 'unix.NexthopGrp.Resvd1']);
+  });
+
+  test('a counted aggregate is not split into an identifier', async () => {
+    // "golang.org/x/sys constants" is a label, not a symbol; splitting it on
+    // its dots produced `golang`, which matched every import of the module.
+    assert.deepEqual(await symbolsFor('golang.org/x/sys constants'), ['golang.org/x/sys constants']);
+  });
+});

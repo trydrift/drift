@@ -110,16 +110,35 @@ function fromComputedEvidence(record: Evidence): BreakingChange[] {
  * For a member change like `Client.request`, both the qualified and bare names
  * are useful: the qualified form is precise, the bare form catches destructured
  * and aliased usage that the qualified form would miss.
+ *
+ * Three or more parts means the leading one is a namespace, not an owner —
+ * `unix.NexthopGrp.Resvd1` is a field of `NexthopGrp` in package `unix`. Adding
+ * the namespace as a search symbol matched every line that used the package at
+ * all, so a repository whose only Go call was `unix.Getpid()` was reported as
+ * having three sites affected by a change to a netlink struct it never touches.
+ * The owner is the second-to-last part; the leading namespace is never a symbol.
  */
 function symbolsFromFinding(finding: StructuredFinding): string[] {
   const symbols = new Set<string>([finding.symbol]);
 
-  if (finding.symbol.includes('.')) {
+  // A symbol containing whitespace is a label, not an identifier — the counted
+  // aggregate a provider emits when a hundred constants move at once. Splitting
+  // `golang.org/x/sys constants` on its dots yielded `golang`, which matched the
+  // import line of every file that used the module.
+  if (finding.symbol.includes('.') && !/\s/.test(finding.symbol)) {
     const parts = finding.symbol.split('.');
     const last = parts[parts.length - 1];
-    const first = parts[0];
     if (last) symbols.add(last);
-    if (first) symbols.add(first);
+
+    if (parts.length === 2) {
+      const owner = parts[0];
+      if (owner) symbols.add(owner);
+    } else {
+      // `unix.NexthopGrp.Resvd1` → also search `NexthopGrp.Resvd1`, which is how
+      // the field is written wherever the package is imported under an alias.
+      const owner = parts[parts.length - 2];
+      if (owner) symbols.add(`${owner}.${last}`);
+    }
   }
 
   // OpenAPI locations arrive as `GET /users/{id}`; the path alone is what
