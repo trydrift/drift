@@ -104,6 +104,7 @@ type Incoming =
   | { type: 'openUrl'; url: string }
   | { type: 'openDiff'; path: string }
   | { type: 'pickVersion'; id: string }
+  | { type: 'recheck'; id: string }
   | { type: 'upgrade'; id: string; mode: 'safe' | 'force' }
   | { type: 'fixPackage'; id: string }
   | { type: 'fixAll' }
@@ -509,6 +510,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         return;
       case 'pickVersion':
         await this.pickVersion(message.id);
+        return;
+      case 'recheck':
+        await this.recheck(message.id);
         return;
       case 'upgrade':
         await this.upgrade([message.id], message.mode);
@@ -1161,13 +1165,35 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     return (await this.contextFor(candidate.repoRoot)) ?? active;
   }
 
-  private async retarget(id: string, version: string): Promise<void> {
+  /**
+   * Check one package again, from the registry down.
+   *
+   * The whole-list rescan was the only way to re-run a check, which made the
+   * cheapest question in the panel — "is that still true?" — cost every other
+   * package in the project. This asks it about one, including whether a newer
+   * version has been published since the scan.
+   */
+  private async recheck(id: string): Promise<void> {
+    const candidate = this.candidates.get(id);
+    if (!candidate) return;
+    await this.retarget(id, candidate.selected, { refreshVersions: true });
+  }
+
+  private async retarget(
+    id: string,
+    version: string,
+    options: { refreshVersions?: boolean } = {},
+  ): Promise<void> {
     const ctx = await this.context();
     const candidate = this.candidates.get(id);
     if (!ctx || !candidate) return;
     const candidateCtx = await this.contextForCandidate(candidate, ctx);
 
-    const step = this.session.step(`Re-checking ${candidate.name} at ${version}`);
+    const step = this.session.step(
+      options.refreshVersions
+        ? `Re-checking ${candidate.name}`
+        : `Re-checking ${candidate.name} at ${version}`,
+    );
 
     await this.run(async () => {
       this.candidates.set(id, { ...candidate, selected: version, status: 'checking' });
@@ -1180,6 +1206,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         repo: candidateCtx.repo,
         config: candidateCtx.config,
         githubToken: await getRateLimitToken(),
+        refreshVersions: options.refreshVersions,
         onProgress: (phase, detail) => step.progress(phase, detail),
       });
 
@@ -2087,7 +2114,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private menuSections(): MenuSection[] {
     const sections: MenuSection[] = [
       { id: 'context', anchor: 'context', title: 'Context', items: this.contextItems() },
-      { id: 'model', anchor: 'context', title: 'Model', items: this.subscriptionItems() },
+      // Its own anchor, opened by its own button. Which model does the work is
+      // not a kind of context, and it was the one setting in the composer a
+      // developer had to already know was hidden behind the plus.
+      { id: 'model', anchor: 'model', title: 'Model', items: this.subscriptionItems() },
     ];
 
     for (const entry of this.available()) {
@@ -2100,7 +2130,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
             id: 'back',
             label: 'All subscriptions',
             icon: 'back',
-            submenu: 'context',
+            submenu: 'model',
             keywords: 'back model subscriptions',
           },
           ...this.modelItems(entry),
@@ -3043,6 +3073,27 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     return this.agents.find((entry) => entry.agent.id === preferred)?.agent.label ?? 'your AI agent';
   }
 
+  /**
+   * What the model button says.
+   *
+   * The model when one is chosen, the subscription when it is choosing for
+   * itself — never both, because the button is one word wide and the useful
+   * word is whichever the developer last decided. The subscription is in the
+   * tooltip either way.
+   *
+   * `null` when nothing is installed, which turns the button into the way in
+   * to setting an agent up rather than a label for a choice nobody has.
+   */
+  private modelLabel(): string | null {
+    const active = this.activeAgent();
+    if (!active) return null;
+
+    const chosen = this.session.model(active.agent.id);
+    if (!chosen) return active.agent.label;
+
+    return this.models.get(active.agent.id)?.find((model) => model.id === chosen)?.label ?? chosen;
+  }
+
   /** `null` hides the scope button — nothing to disambiguate with one root open. */
   private scopeLabel(): string | null {
     const roots = this.state.roots;
@@ -3094,6 +3145,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       agentLabel: this.agentLabel(),
       mode: this.session.mode,
       effortLabel: this.effortLabel(),
+      modelLabel: this.modelLabel(),
       permission: this.session.permission,
       scopeLabel: this.scopeLabel(),
       attachments: this.session.context,

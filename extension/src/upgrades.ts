@@ -443,29 +443,59 @@ export async function reanalyzeUpgrade(args: {
   repo: RepoContext;
   config: DriftConfig;
   githubToken?: string;
+  /**
+   * Ask the registry again before checking.
+   *
+   * Off when the developer picked a different version from the list they are
+   * already looking at — the list is a second old. On for an explicit re-check
+   * of one package, where "has anything changed since the scan" is the whole
+   * question being asked, and the answer includes a release published since.
+   */
+  refreshVersions?: boolean;
   onProgress?: (phase: string, detail: string) => void;
 }): Promise<UpgradeCandidate> {
   const logger = createLogger(vscode.workspace.getConfiguration('drift').get('logLevel', 'info'));
-  args.onProgress?.('Indexing your code', `Re-checking ${args.candidate.name}@${args.version}`);
+
+  const dep: ScanDependency = {
+    name: args.candidate.name,
+    kind: args.candidate.kind,
+    current: args.candidate.current,
+    range: args.candidate.range,
+    target: targetForCandidate(args.candidate),
+  };
+
+  let { versions, latest, safeLatest } = args.candidate;
+  let version = args.version;
+
+  if (args.refreshVersions) {
+    args.onProgress?.('Checking the registry', `${dep.name} (installed ${dep.current})`);
+    // A failed refresh keeps the list from the scan rather than emptying it: a
+    // registry hiccup must not turn a re-check into "no versions available".
+    const available = await availableVersions(dep, dep.current, dep.range).catch(() => null);
+    if (available && available.versions.length > 0) {
+      versions = available.versions;
+      latest = available.latest;
+      safeLatest = available.safeLatest;
+      // Keep the developer's own choice if it is still published; otherwise the
+      // selection has to move, and the in-range version is the safe landing.
+      if (!versions.includes(version)) version = available.safeLatest ?? available.latest;
+    }
+  }
+
+  args.onProgress?.('Indexing your code', `Re-checking ${args.candidate.name}@${version}`);
   const files = await walkSourceFiles(args.root);
   const index = buildIndex(files);
 
   return analyzeUpgrade({
-    dep: {
-      name: args.candidate.name,
-      kind: args.candidate.kind,
-      current: args.candidate.current,
-      range: args.candidate.range,
-      target: targetForCandidate(args.candidate),
-    },
-    selected: args.version,
+    dep,
+    selected: version,
     member: args.candidate.workspace,
     memberName: args.candidate.workspaceName,
     repoRoot: args.candidate.repoRoot,
     repoLabel: args.candidate.repoLabel,
-    versions: args.candidate.versions,
-    latest: args.candidate.latest,
-    safeLatest: args.candidate.safeLatest,
+    versions,
+    latest,
+    safeLatest,
     repo: args.repo,
     config: args.config,
     githubToken: args.githubToken,

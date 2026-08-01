@@ -124,6 +124,14 @@ export interface ViewModel {
    * budget at all, and the control is then left out rather than drawn dead.
    */
   effortLabel: string | null;
+  /**
+   * The model button's label: the chosen model's name, or the subscription's
+   * when it is choosing for itself.
+   *
+   * `null` only when no agent is usable at all, where the button becomes the
+   * invitation to set one up.
+   */
+  modelLabel: string | null;
   permission: SessionPermission;
   /**
    * The scope button's label — `null` hides the button entirely, the same
@@ -661,6 +669,14 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
           <span>${escapeHtml(target)}</span>${ICON_CHEVRON}
         </button>
         <span class="kind">${escapeHtml(candidate.kind)}</span>
+        ${
+          // Re-checking one package was only possible by re-checking every
+          // package, which is a minute of waiting to answer a question about
+          // one row — so the question went unasked.
+          busy
+            ? ''
+            : `<button class="ctl icon pkg-recheck" data-action="recheck" data-id="${escapeAttr(candidate.id)}" title="Check ${escapeAttr(candidate.name)} again, including any version published since the scan" aria-label="Re-check ${escapeAttr(candidate.name)}">${ICON_REFRESH}</button>`
+        }
       </div>
 
       ${candidate.plan ? renderCandidateDetail(candidate, candidate.plan) : ''}
@@ -954,7 +970,21 @@ function renderComposer(vm: ViewModel): string {
     ${renderMenu(vm)}
 
     <div class="composer-bar">
-      <button class="ctl icon" data-action="openMenu" data-anchor="context" title="Add context, or choose which model does the work" aria-label="Context and model">${ICON_PLUS}</button>
+      <button class="ctl icon" data-action="openMenu" data-anchor="context" title="Attach a file, a folder, or the current selection" aria-label="Add context">${ICON_PLUS}</button>
+
+      ${
+        // Its own control, between context and tools, labelled with whatever is
+        // actually selected. Which model does the work is the setting that most
+        // changes the result, and it was reachable only by knowing it lived
+        // under the plus — a button whose label named neither.
+        `<button class="ctl" data-action="openMenu" data-anchor="${vm.modelLabel ? 'model' : 'model:setup'}" title="${escapeAttr(
+          vm.modelLabel
+            ? `${vm.agentLabel} · ${vm.modelLabel}. Choose the subscription and model that does the work.`
+            : 'No AI agent found yet. Choose one to set up.',
+        )}">
+          ${ICON_MODEL}<span>${escapeHtml(vm.modelLabel ?? 'Choose agent')}</span>
+        </button>`
+      }
 
       <button class="ctl" data-action="openMenu" data-anchor="tools" title="Everything Drift can do: scan, check the last dependency change, upgrade, fix, review">
         ${ICON_TOOLS}<span>Tools</span>
@@ -1114,7 +1144,13 @@ function renderMenuItem(item: MenuItem): string {
       ${item.detail ? `<small>${escapeHtml(item.detail)}</small>` : ''}
     </span>
     ${item.hint ? `<span class="menu-hint">${escapeHtml(item.hint)}</span>` : ''}
-    ${item.submenu ? `<span class="menu-more">${ICON_CHEVRON_RIGHT}</span>` : ''}
+    ${
+      // A trailing chevron means "there is more this way". On a row that goes
+      // back it points the wrong way at nothing: "All subscriptions" drew a
+      // left arrow and a right arrow at once, each claiming a different
+      // destination for the same click.
+      item.submenu && item.icon !== 'back' ? `<span class="menu-more">${ICON_CHEVRON_RIGHT}</span>` : ''
+    }
   </button>`;
 }
 
@@ -1306,6 +1342,11 @@ const ICON_REPO = svg(
 const ICON_DASH = svg('<path d="M3.5 7.25h9v1.5h-9z"/>', 11);
 const ICON_BACK = svg('<path d="M6.8 3.4 7.7 4.3 5 7h9v1.5H5l2.7 2.7-.9.9L2.6 7.75 6.8 3.4z"/>', 12);
 const ICON_SPEED = svg('<path d="M8 2.5A6.5 6.5 0 0 0 2.2 12h11.6A6.5 6.5 0 0 0 8 2.5zm2.9 3.1L8.9 9a1.1 1.1 0 1 1-1-1l3-2.4z"/>', 13);
+/** A chip, for the model doing the work. */
+const ICON_MODEL = svg(
+  '<path d="M6 1.5h4v1.2h1.3A1.5 1.5 0 0 1 12.8 4.2v1.3H14v1.2h-1.2v2.6H14v1.2h-1.2v1.3a1.5 1.5 0 0 1-1.5 1.5H10V14.5H8.8v-1.2H7.2v1.2H6v-1.2H4.7a1.5 1.5 0 0 1-1.5-1.5v-1.3H2V9.3h1.2V6.7H2V5.5h1.2V4.2a1.5 1.5 0 0 1 1.5-1.5H6V1.5zm-.5 4v5h5v-5h-5z"/>',
+  13,
+);
 const ICON_TOOLS = svg('<path d="M10.7 1.5a4 4 0 0 0-3.6 5.7L1.8 12.5l1.7 1.7 5.3-5.3a4 4 0 0 0 5-5.2L11.6 5.5 10 3.9l2.8-2.2a4 4 0 0 0-2.1-.2z"/>', 13);
 const ICON_HISTORY_SMALL = svg('<path d="M8 1.5A6.5 6.5 0 1 0 14.5 8H13A5 5 0 1 1 8 3v2.5L11.5 3.2 8 1V1.5zM7.25 5v4l3.2 1.9.75-1.25L8.75 8.3V5h-1.5z"/>', 13);
 
@@ -1734,6 +1775,9 @@ button.wide { width: 100%; }
 .pkg-target .field-label { font-size: 11px; color: var(--vscode-descriptionForeground); white-space: nowrap; }
 .pkg-target .ctl { flex: 0 1 auto; max-width: 190px; }
 .pkg-target .kind { margin-left: auto; font-size: 10px; color: var(--vscode-descriptionForeground); }
+/* After the kind, at the far end of the row: an affordance, not a call to action. */
+.pkg-target .pkg-recheck { flex: 0 0 auto; margin-left: 0; opacity: 0.75; }
+.pkg-target .pkg-recheck:hover { opacity: 1; }
 .pkg-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .pkg-actions button { flex: 1 1 auto; white-space: nowrap; }
 .detail { display: flex; flex-direction: column; gap: 6px; margin-bottom: 9px; }
