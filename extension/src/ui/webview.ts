@@ -1,5 +1,6 @@
 import type {
   Attachment,
+  MessageAction,
   SessionBranchMode,
   SessionCommitMode,
   SessionMode,
@@ -327,6 +328,7 @@ function renderItem(item: ThreadItem, vm: ViewModel): string {
       return `<div class="turn assistant">
         <div class="who">${LOGO_SMALL}<span>Drift</span></div>
         <div class="body markdown" data-type="${escapeAttr(`${vm.conversationId}:${item.id}`)}">${renderMarkdown(item.text)}</div>
+        ${renderActions(item.actions)}
       </div>`;
 
     case 'notice':
@@ -357,6 +359,26 @@ function renderItem(item: ThreadItem, vm: ViewModel): string {
  * indistinguishable from a hang, and a developer watching one has no way to tell
  * whether to wait or to give up.
  */
+/**
+ * What to do next, as buttons.
+ *
+ * The panel knew the next step and wrote it as prose — "say `/fix`", "say
+ * `/commit`" — which is an instruction disguised as a sentence, and one that
+ * only works for a reader who spots the difference. The commands still exist
+ * for anyone who prefers typing; these run the same ones.
+ */
+function renderActions(actions: readonly MessageAction[] | undefined): string {
+  if (!actions?.length) return '';
+  return `<div class="msg-actions">${actions
+    .map(
+      (action) =>
+        `<button class="${action.primary ? 'primary' : ''}" data-action="run" data-command="${escapeAttr(
+          action.command,
+        )}"${action.hint ? ` title="${escapeAttr(action.hint)}"` : ''}>${escapeHtml(action.label)}</button>`,
+    )
+    .join('')}</div>`;
+}
+
 function renderStep(item: Extract<ThreadItem, { kind: 'step' }>): string {
   const pct = item.total > 0 ? Math.round((item.done / item.total) * 100) : 0;
   const icon =
@@ -2396,6 +2418,36 @@ li.task.unchanged .task-label, li.task.skipped .task-label { color: var(--vscode
 .activity > summary::-webkit-details-marker { display: none; }
 .activity > summary:hover { color: var(--vscode-foreground); }
 .activity > summary span { font-weight: 500; }
+/* Next steps, under the message that proposed them. Sized and spaced like the
+   question options above them, because they are the same kind of thing: a
+   decision the panel is offering rather than a control that lives in the
+   chrome. */
+.msg-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 2px 0;
+}
+.msg-actions button {
+  padding: 4px 11px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 5px;
+  background: var(--vscode-editorWidget-background);
+  color: var(--vscode-foreground);
+  font-size: 11px;
+  cursor: pointer;
+}
+.msg-actions button:hover {
+  background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+  border-color: var(--vscode-focusBorder);
+}
+.msg-actions button.primary {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border-color: transparent;
+}
+.msg-actions button.primary:hover { background: var(--vscode-button-hoverBackground); }
+
 /* The agent's running commentary.
    Capped and scrolled rather than left to grow. A long migration produces
    dozens of these, and an unbounded drawer pushes the commit it belongs to —

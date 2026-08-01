@@ -29,6 +29,15 @@ export interface CheckOutcome {
   durationMs: number;
   /** Tail of combined output, kept short enough to render inline. */
   output: string;
+  /**
+   * Everything the command printed.
+   *
+   * The panel shows `output`, because a reviewer wants the end of a failure and
+   * not a thousand lines above it. An agent about to fix that failure wants the
+   * opposite — the whole thing, so it can be grouped into what really went
+   * wrong rather than whatever happened to be printed last.
+   */
+  fullOutput?: string;
   /** Why it could not run, when it did not. */
   reason?: string;
 }
@@ -141,6 +150,7 @@ export async function runChecks(options: RunChecksOptions): Promise<CheckOutcome
         // The end of the output is where the failure is. A hundred lines of
         // passing test names above it is exactly what a reviewer scrolls past.
         output: tail(`${result.stdout}\n${result.stderr}`),
+        fullOutput: `${result.stdout}\n${result.stderr}`,
         ...(result.failure === 'timeout' ? { reason: 'Timed out.' } : {}),
       }),
     );
