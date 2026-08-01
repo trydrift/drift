@@ -29,6 +29,8 @@ export function surfaceProviderFor(ecosystem: Ecosystem): SurfaceProvider | unde
 export interface ComputeOptions {
   logger: Logger;
   exec?: Exec;
+  /** Environment to use for local toolchain commands. */
+  env?: NodeJS.ProcessEnv;
   timeoutMs?: number;
   /** Reads a file from the repository under analysis, by repo-relative path. */
   readRepoFile?: (path: string) => Promise<string | null>;
@@ -73,6 +75,7 @@ export async function computeSurfaceDiff(
       exec: options.exec ?? execCommand,
       workdir,
       logger: options.logger,
+      ...(options.env ? { env: options.env } : {}),
       timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
       ...(options.readRepoFile ? { readRepoFile: options.readRepoFile } : {}),
     });

@@ -89,6 +89,8 @@ export interface SurfaceRequest {
   /** A scratch directory the provider owns and may fill. */
   workdir: string;
   logger: Logger;
+  /** Environment to use for local toolchain commands. */
+  env?: NodeJS.ProcessEnv;
   /** Wall-clock budget for the whole computation. */
   timeoutMs: number;
   /**

@@ -49,7 +49,7 @@ export const goSurface: SurfaceProvider = {
 
   async compute(request: SurfaceRequest): Promise<SurfaceOutcome> {
     const requirement = await requiredGoVersion(request.readRepoFile);
-    const toolchain = await probeGoToolchain(request.exec);
+    const toolchain = await probeGoToolchain(request.exec, request.env);
 
     if (!toolchain.available) {
       return unavailable(
@@ -60,7 +60,7 @@ export const goSurface: SurfaceProvider = {
       );
     }
 
-    const workdir = await scratchModule(request.exec, request.logger);
+    const workdir = await scratchModule(request.exec, request.logger, request.env);
     if (!workdir) {
       return unavailable(
         TOOL,
@@ -146,7 +146,7 @@ async function apiOf(
   const downloaded = await request.exec(
     'go',
     ['mod', 'download', '-json', `${request.name}@${tag}`],
-    { cwd: workdir, timeoutMs: request.timeoutMs, env: goEnv() },
+    { cwd: workdir, timeoutMs: request.timeoutMs, env: goEnv(request.env) },
   );
 
   const dir = moduleDirectory(downloaded.stdout);
@@ -170,7 +170,7 @@ async function apiOf(
   const extracted = await request.exec(
     'go',
     ['run', 'apidump.go', '-dir', dir, '-module', request.name, '-platforms', platforms.join(',')],
-    { cwd: workdir, timeoutMs: request.timeoutMs, env: goEnv() },
+    { cwd: workdir, timeoutMs: request.timeoutMs, env: goEnv(request.env) },
   );
 
   if (extracted.code !== 0) {
@@ -238,10 +238,12 @@ export function moduleDirectory(stdout: string): string | null {
  * package in the scan. The module declares no requirements, so preparing it
  * needs no network.
  */
-let scratch: Promise<string | null> | null = null;
+const scratch = new Map<string, Promise<string | null>>();
 
-function scratchModule(exec: Exec, logger: Logger): Promise<string | null> {
-  scratch ??= (async () => {
+function scratchModule(exec: Exec, logger: Logger, env?: NodeJS.ProcessEnv): Promise<string | null> {
+  const key = env?.PATH ?? process.env.PATH ?? '';
+  let pending = scratch.get(key);
+  pending ??= (async () => {
     try {
       const dir = await mkdtemp(join(tmpdir(), 'drift-go-apidump-'));
       await mkdir(dir, { recursive: true });
@@ -255,7 +257,7 @@ function scratchModule(exec: Exec, logger: Logger): Promise<string | null> {
       const built = await exec('go', ['build', '-o', join(dir, 'apidump-check'), '.'], {
         cwd: dir,
         timeoutMs: 120_000,
-        env: goEnv(),
+        env: goEnv(env),
       });
       if (built.code !== 0) {
         logger.debug(`Drift's Go API extractor failed to build: ${firstLine(built.stderr)}`);
@@ -268,7 +270,8 @@ function scratchModule(exec: Exec, logger: Logger): Promise<string | null> {
     }
   })();
 
-  return scratch;
+  scratch.set(key, pending);
+  return pending;
 }
 
 /**
@@ -278,8 +281,8 @@ function scratchModule(exec: Exec, logger: Logger): Promise<string | null> {
  * module's empty requirement list. `GOTOOLCHAIN` is deliberately left alone, so
  * a repository that pins a newer toolchain still gets one.
  */
-function goEnv(): NodeJS.ProcessEnv {
-  return { ...process.env, GOFLAGS: '-mod=mod' };
+function goEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  return { ...env, GOFLAGS: '-mod=mod' };
 }
 
 function firstLine(text: string): string {
@@ -289,5 +292,5 @@ function firstLine(text: string): string {
 /** Test seam: forget the memoised module APIs and the scratch module. */
 export function resetGoSurfaceCache(): void {
   apiCache.clear();
-  scratch = null;
+  scratch.clear();
 }
