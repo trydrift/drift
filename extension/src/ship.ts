@@ -75,10 +75,10 @@ export function dependencyFilesIn(dirty: readonly string[]): string[] {
 /**
  * A branch name that says what is on it.
  *
- * `drift/upgrade-react-18.3.1-to-19.2.0` reads as itself in a branch list six
- * weeks from now, which `drift/fix-1722384000` does not. Batches get a date
- * instead of an unreadable list of names, and the date is what keeps two
- * batches in the same repository from colliding on one ref.
+ * `drift/upgrade-react-18.3.1-to-19.2.0-2026-07-31` reads as itself in a
+ * branch list six weeks from now, which `drift/fix-1722384000` does not. The
+ * date also gives same-package repeat runs a human-readable collision point
+ * that can grow to `-1`, `-2`, and so on when the branch already exists.
  */
 export function upgradeBranchName(
   candidates: readonly UpgradeCandidate[],
@@ -87,12 +87,12 @@ export function upgradeBranchName(
   const prefix = (options.prefix ?? 'drift').replace(/\/+$/, '');
   const first = candidates[0];
   if (!first) return `${prefix}/upgrade`;
+  const day = (options.now ?? new Date()).toISOString().slice(0, 10);
 
   if (candidates.length === 1) {
-    return `${prefix}/upgrade-${slug(first.name)}-${slug(first.current)}-to-${slug(targetVersion(first))}`;
+    return `${prefix}/upgrade-${slug(first.name)}-${slug(first.current)}-to-${slug(targetVersion(first))}-${day}`;
   }
 
-  const day = (options.now ?? new Date()).toISOString().slice(0, 10);
   return `${prefix}/upgrade-${candidates.length}-packages-${day}`;
 }
 

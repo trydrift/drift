@@ -65,8 +65,8 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
  * Branch naming.
  *
  * Encodes the dependency and version move so the branch is self-describing in
- * a branch list, and labels the analysed commit so a re-run against a different
- * commit never collides with an open Drift PR.
+ * a branch list, and uses the run date rather than a commit hash so repeat
+ * upgrades are readable before a human opens the PR.
  */
 export function branchNameFor(
   config: DriftConfig,
@@ -74,7 +74,8 @@ export function branchNameFor(
   afterSha: string,
 ): string {
   const prefix = config.remediation.branchPrefix;
-  const suffix = `commit-${afterSha.slice(0, 7)}`;
+  const suffix = new Date().toISOString().slice(0, 10);
+  void afterSha;
 
   if (changes.length === 1) {
     const change = changes[0]!;

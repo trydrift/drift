@@ -338,7 +338,7 @@ describe('determinism', () => {
     assert.equal(a.branchName, b.branchName);
   });
 
-  test('the branch names the package, original version, target version, and analysed commit', () => {
+  test('the branch names the package, original version, target version, and date', () => {
     const plan = buildPlan({
       repo: { ...repo, afterSha: '77d0485'.padEnd(40, '0') },
       config: DEFAULT_CONFIG,
@@ -348,7 +348,8 @@ describe('determinism', () => {
       impactSites: [site('src/a.ts')],
     });
 
-    assert.equal(plan.branchName, 'drift/typescript-5.9.3-to-7.0.2-commit-77d0485');
+    const today = new Date().toISOString().slice(0, 10);
+    assert.equal(plan.branchName, `drift/typescript-5.9.3-to-7.0.2-${today}`);
   });
 });
 

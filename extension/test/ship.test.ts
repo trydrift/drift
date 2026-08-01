@@ -97,13 +97,18 @@ describe('choosing what goes into the commit', () => {
 
 describe('naming the branch', () => {
   test('names a single upgrade after the package and the version', () => {
-    assert.equal(upgradeBranchName([candidate()]), 'drift/upgrade-react-18.3.1-to-19.2.0');
+    assert.equal(
+      upgradeBranchName([candidate()], { now: new Date('2026-07-31T10:00:00Z') }),
+      'drift/upgrade-react-18.3.1-to-19.2.0-2026-07-31',
+    );
   });
 
   test('makes a scoped package a legal ref component', () => {
     assert.equal(
-      upgradeBranchName([candidate({ name: '@types/node', selected: '22.10.5' })]),
-      'drift/upgrade-types-node-18.3.1-to-22.10.5',
+      upgradeBranchName([candidate({ name: '@types/node', selected: '22.10.5' })], {
+        now: new Date('2026-07-31T10:00:00Z'),
+      }),
+      'drift/upgrade-types-node-18.3.1-to-22.10.5-2026-07-31',
     );
   });
 
@@ -116,8 +121,8 @@ describe('naming the branch', () => {
 
   test("honours a team's own prefix, trailing slash or not", () => {
     assert.equal(
-      upgradeBranchName([candidate()], { prefix: 'deps/' }),
-      'deps/upgrade-react-18.3.1-to-19.2.0',
+      upgradeBranchName([candidate()], { prefix: 'deps/', now: new Date('2026-07-31T10:00:00Z') }),
+      'deps/upgrade-react-18.3.1-to-19.2.0-2026-07-31',
     );
   });
 });
