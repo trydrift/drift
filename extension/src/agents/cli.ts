@@ -1,4 +1,4 @@
-import { access } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { delimiter, dirname, join } from 'node:path';
 import { execFile, spawn } from 'node:child_process';
@@ -52,8 +52,21 @@ export interface CliAgentSpec {
    * Deliberately aliases rather than dated ids where the CLI accepts them:
    * `--model opus` keeps working when Anthropic ships the next Opus, whereas a
    * pinned id silently becomes "unknown model" months later.
+   *
+   * A fallback only, where `discoverModels` exists: a list written here is a
+   * snapshot of what was true the day it was written.
    */
   models?: readonly AgentModel[];
+  /**
+   * Ask the installed CLI which models it currently offers.
+   *
+   * Nothing in this file can know what a subscription includes this month.
+   * Drift offered `gpt-5-codex` long after ChatGPT accounts stopped being able
+   * to use it, and picking it produced a fix run that died on a 400 from the
+   * API — the developer's read of that was that Drift is broken, and they were
+   * right. Where a CLI records its own model list, that is the list.
+   */
+  discoverModels?: () => Promise<AgentModel[]>;
   /** How this CLI takes a model id. */
   modelArgs?: (model: string) => string[];
   /**
@@ -121,9 +134,13 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
     command: 'claude',
     buildArgs: () => ['-p', '--permission-mode', 'acceptEdits'],
     promptOnStdin: true,
+    // Aliases, not dated ids: `--model opus` still means the current Opus a
+    // year from now. Claude Code publishes no roster file to read, so this list
+    // is the interface Anthropic documents rather than a snapshot of a catalogue.
     models: [
       { id: 'opus', label: 'Claude Opus', detail: 'Deepest reasoning. Best on large migrations.' },
       { id: 'sonnet', label: 'Claude Sonnet', detail: 'The balanced default.' },
+      { id: 'fable', label: 'Claude Fable', detail: 'Tuned for speed on well-specified work.' },
       {
         id: 'haiku',
         label: 'Claude Haiku',
@@ -149,12 +166,12 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
     label: 'Codex',
     description: "OpenAI's coding agent.",
     command: 'codex',
-    buildArgs: () => ['exec', '--full-auto'],
+    // `--full-auto` is deprecated and prints a warning that then masks the real
+    // failure in every error message Drift shows. `--sandbox workspace-write`
+    // is the same permission, spelled the way current Codex spells it.
+    buildArgs: () => ['exec', '--sandbox', 'workspace-write'],
     promptOnStdin: true,
-    models: [
-      { id: 'gpt-5-codex', label: 'GPT-5 Codex', detail: 'Tuned for editing code.' },
-      { id: 'gpt-5', label: 'GPT-5', detail: 'The general model.' },
-    ],
+    discoverModels: discoverCodexModels,
     modelArgs: (model) => ['--model', model],
     efforts: CODEX_EFFORTS,
     effortArgs: (effort) => ['-c', `model_reasoning_effort="${effort}"`],
@@ -217,6 +234,8 @@ export class CliFixAgent implements FixAgent {
   readonly description: string;
   readonly acceptsCustomModel: boolean;
   readonly efforts: readonly EffortStop[] | undefined;
+  /** Set once `listModels` has answered from the install rather than from the spec. */
+  rosterIsAuthoritative = false;
   private executable: string | null = null;
 
   constructor(
@@ -231,7 +250,10 @@ export class CliFixAgent implements FixAgent {
   }
 
   async listModels(): Promise<AgentModel[]> {
-    return [...(this.spec.models ?? [])];
+    // What the install says it has beats what this file was written believing.
+    const discovered = this.spec.discoverModels ? await this.spec.discoverModels().catch(() => []) : [];
+    this.rosterIsAuthoritative = discovered.length > 0;
+    return discovered.length > 0 ? discovered : [...(this.spec.models ?? [])];
   }
 
   async detect(): Promise<AgentAvailability> {
@@ -292,7 +314,7 @@ export class CliFixAgent implements FixAgent {
       if (code !== 0) {
         return {
           status: 'failed',
-          message: `${this.spec.label} exited with code ${code}. ${firstLine(stderr || stdout)}`,
+          message: `${this.spec.label} exited with code ${code}. ${failureReason(stderr, stdout)}`,
         };
       }
 
@@ -513,6 +535,78 @@ async function detectClaudeAuth(command: string): Promise<string | null> {
   }
 }
 
+/**
+ * The models this Codex install can actually reach.
+ *
+ * Codex caches the roster it was served — slug, display name, and the reasoning
+ * levels each model supports — in `$CODEX_HOME/models_cache.json`. Reading it
+ * is the only way for Drift to offer what the developer's own subscription
+ * offers, and it is the same file the Codex extension's picker reads, so the
+ * two agree by construction rather than by luck.
+ *
+ * Returning an empty list is meaningful: the composer then offers "Default"
+ * alone, and Codex picks the model its own config names. That is a better
+ * failure than naming a model the account cannot use.
+ */
+export async function discoverCodexModels(): Promise<AgentModel[]> {
+  const home = process.env.CODEX_HOME ?? (process.env.HOME ? join(process.env.HOME, '.codex') : null);
+  if (!home) return [];
+
+  try {
+    const raw = await readFile(join(home, 'models_cache.json'), 'utf8');
+    return parseCodexModels(raw);
+  } catch {
+    return [];
+  }
+}
+
+interface CodexCachedModel {
+  slug?: string;
+  display_name?: string;
+  description?: string;
+  visibility?: string;
+  priority?: number;
+  supported_reasoning_levels?: Array<{ effort?: string; description?: string }>;
+}
+
+/** Split out from the file read so the parsing has a test that needs no disk. */
+export function parseCodexModels(raw: string): AgentModel[] {
+  const parsed = JSON.parse(raw) as { models?: CodexCachedModel[] };
+  const models = parsed.models ?? [];
+
+  return models
+    // `visibility` is how Codex marks a model as offerable rather than merely
+    // known; hidden entries are aliases and retired slugs.
+    .filter((model) => model.slug && (model.visibility ?? 'list') === 'list')
+    // Codex's own ordering field: lower is more prominent, not more capable.
+    .sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999))
+    .map((model) => {
+      const efforts = codexEfforts(model.supported_reasoning_levels);
+      return {
+        id: model.slug!,
+        label: model.display_name ?? model.slug!,
+        detail: model.description,
+        ...(efforts.length > 0 ? { efforts } : {}),
+      };
+    });
+}
+
+/** A model's own reasoning dial, in the words Codex ships with it. */
+function codexEfforts(
+  levels: CodexCachedModel['supported_reasoning_levels'],
+): EffortStop[] {
+  const known = new Map(CODEX_EFFORTS.map((stop) => [stop.value, stop]));
+  const out: EffortStop[] = [];
+
+  for (const level of levels ?? []) {
+    const stop = known.get(level.effort as SessionEffort);
+    if (!stop) continue;
+    out.push(level.description ? { ...stop, detail: level.description } : stop);
+  }
+
+  return out;
+}
+
 async function detectCodexAuth(command: string): Promise<string | null> {
   try {
     const { stdout } = await run(command, ['doctor', '--json', '--summary'], {
@@ -565,6 +659,45 @@ function extractAgentWarnings(stdout: string): string[] {
     .slice(0, 10);
 }
 
-function firstLine(text: string): string {
-  return text.trim().split('\n')[0]?.slice(0, 200) ?? '';
+/**
+ * Why the agent actually failed, rather than whatever it printed first.
+ *
+ * Taking line one reported `warning: --full-auto is deprecated` as the cause of
+ * a run that died two hundred lines later on "this model is not supported when
+ * using Codex with a ChatGPT account". A developer given the deprecation
+ * warning has no way to reach the real problem, and a wrong explanation is
+ * worse than a vague one: it sends them somewhere there is nothing to fix.
+ *
+ * So the last line that reads like an error wins, deprecation and progress
+ * chatter are skipped, and only if nothing looks like an error does the first
+ * line stand in.
+ */
+export function failureReason(stderr: string, stdout: string): string {
+  const lines = `${stderr}\n${stdout}`
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const noise = /^(warning|note|info|deprecated)\b|is deprecated\b/i;
+  const errorish = /\b(error|fatal|panic|not supported|unauthorized|forbidden|invalid|failed)\b/i;
+
+  const meaningful = lines.filter((line) => !noise.test(line));
+  const reason = [...meaningful].reverse().find((line) => errorish.test(line)) ?? meaningful[0];
+
+  return summarizeError(reason ?? lines[0] ?? 'No output.');
+}
+
+/** Pull the human sentence out of a line that is really a JSON error envelope. */
+function summarizeError(line: string): string {
+  const start = line.indexOf('{');
+  if (start !== -1) {
+    try {
+      const body = JSON.parse(line.slice(start)) as { error?: { message?: string }; message?: string };
+      const message = body.error?.message ?? body.message;
+      if (message) return message.slice(0, 300);
+    } catch {
+      // Not JSON after all; the raw line is still the best answer.
+    }
+  }
+  return line.slice(0, 300);
 }
