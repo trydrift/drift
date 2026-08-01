@@ -51,6 +51,7 @@ function model(over: Partial<ViewModel> = {}): ViewModel {
     agentLabel: 'GitHub Copilot',
     mode: 'agent',
     effortLabel: 'Medium',
+    modelLabel: 'Claude Opus',
     permission: 'auto-edit',
     scopeLabel: null,
     attachments: [],
@@ -127,43 +128,78 @@ test('an empty session renders the welcome state and a composer', () => {
   assert.match(html, /id="menu-filter"/);
 });
 
-test('the plus button holds context and model, and models drill in per subscription', () => {
+const modelMenu = [
+  { id: 'context', anchor: 'context', title: 'Context', items: [{ id: 'context:file', label: 'Add a file…' }] },
+  {
+    id: 'model',
+    anchor: 'model',
+    title: 'Model',
+    items: [{ id: 'agent:claude', label: 'Claude Code', detail: 'Opus', submenu: 'model:claude', checked: true }],
+  },
+  {
+    id: 'model:claude',
+    anchor: 'model:claude',
+    title: 'Claude Code',
+    items: [
+      { id: 'back', label: 'All subscriptions', submenu: 'model', icon: 'back' as const },
+      { id: 'model:claude:sonnet', label: 'Claude Sonnet' },
+    ],
+  },
+];
+
+test('the model is its own control, named for what is selected', () => {
+  // It used to live under the plus, whose label named neither context nor
+  // model. The setting that most changes the result was the one a developer
+  // had to already know was hidden.
+  const html = renderPanel(model({ modelLabel: 'GPT-5.5', menu: modelMenu }));
+
+  const bar = html.slice(html.indexOf('composer-bar'));
+  assert.match(bar, /data-anchor="model"[^>]*>[\s\S]*?GPT-5\.5/);
+  // Order in the row: context, then model, then tools.
+  assert.ok(
+    bar.indexOf('data-anchor="context"') < bar.indexOf('data-anchor="model"'),
+    'the model button sits after the plus',
+  );
+  assert.ok(
+    bar.indexOf('data-anchor="model"') < bar.indexOf('data-anchor="tools"'),
+    'the model button sits before Tools',
+  );
+  // The plus no longer claims to hold the model.
+  assert.doesNotMatch(bar, /aria-label="Context and model"/);
+});
+
+test('with no agent installed the model button offers to set one up', () => {
+  const html = renderPanel(model({ modelLabel: null, menu: modelMenu }));
+  assert.match(html.slice(html.indexOf('composer-bar')), /data-anchor="model:setup"[^>]*>[\s\S]*?Choose agent/);
+});
+
+test('a subscription drills in to its own models, and back out again', () => {
   // A subscription is not a model. Someone paying for Claude has Opus, Sonnet
   // and Haiku, so picking a subscription is the first of two steps and opens
   // that subscription's own models — a drill-in inside the same menu, which
   // costs nothing because it never leaves the webview.
-  const html = renderPanel(
-    model({
-      menu: [
-        { id: 'context', anchor: 'context', title: 'Context', items: [{ id: 'context:file', label: 'Add a file…' }] },
-        {
-          id: 'model',
-          anchor: 'context',
-          title: 'Model',
-          items: [{ id: 'agent:claude', label: 'Claude Code', detail: 'Opus', submenu: 'model:claude', checked: true }],
-        },
-        {
-          id: 'model:claude',
-          anchor: 'model:claude',
-          title: 'Claude Code',
-          items: [
-            { id: 'back', label: 'All subscriptions', submenu: 'context', icon: 'back' },
-            { id: 'model:claude:sonnet', label: 'Claude Sonnet' },
-          ],
-        },
-      ],
-    }),
-  );
+  const html = renderPanel(model({ menu: modelMenu }));
 
-  // Both sections open from the one plus button.
   assert.match(html, /data-section="context" data-anchor="context"/);
-  assert.match(html, /data-section="model" data-anchor="context"/);
+  assert.match(html, /data-section="model" data-anchor="model"/);
   // The subscription row opens its own section rather than acting.
   assert.match(html, /data-action="openMenu" data-anchor="model:claude"[^>]*data-search="[^"]*claude/i);
   assert.match(html, /data-section="model:claude" data-anchor="model:claude"/);
   assert.match(html, /data-action="menu" data-id="model:claude:sonnet"/);
   // And a way back out of the drill-in.
-  assert.match(html, /data-action="openMenu" data-anchor="context"[^>]*>[\s\S]*?All subscriptions/);
+  assert.match(html, /data-action="openMenu" data-anchor="model"[^>]*>[\s\S]*?All subscriptions/);
+});
+
+test('the row that goes back does not also point forward', () => {
+  // "All subscriptions" drew a left arrow and a right arrow at once, each
+  // claiming a different destination for the same click.
+  const html = renderPanel(model({ menu: modelMenu }));
+
+  const back = html.slice(html.indexOf('All subscriptions'));
+  const row = back.slice(0, back.indexOf('</button>'));
+  assert.doesNotMatch(row, /menu-more/);
+  // A row that genuinely drills in keeps its chevron.
+  assert.match(html.slice(0, html.indexOf('All subscriptions')), /menu-more/);
 });
 
 test('the control row never wraps and the composer stays at the bottom', () => {
@@ -466,6 +502,34 @@ test('a scan whose results have gone stale says so and offers a rescan', () => {
 
   assert.match(html, /package.json changed since this scan/);
   assert.match(html, /data-action="rescan"/);
+});
+
+test('one package can be checked again without re-checking every package', () => {
+  // Re-checking a single row cost a full scan, so the cheapest question in the
+  // panel — "is that still true?" — was the one nobody asked.
+  const c = candidate();
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'p1', kind: 'packages', headline: 'One upgrade.', ids: [c.id] }],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  // The id is attribute-escaped on the way out, so match the button and then
+  // that it carries this row's id rather than comparing the raw string.
+  assert.match(html, /data-action="recheck" data-id="lodash@4\.17\.21-&gt;5\.0\.0"/);
+});
+
+test('a package already being checked offers no second re-check', () => {
+  const c = candidate({ status: 'checking' });
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'p1', kind: 'packages', headline: 'One upgrade.', ids: [c.id] }],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  assert.doesNotMatch(html, /data-action="recheck"/);
 });
 
 test('every disclosure carries a key, so re-rendering cannot collapse it', () => {
