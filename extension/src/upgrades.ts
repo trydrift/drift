@@ -665,6 +665,7 @@ async function analyzeUpgrade(args: {
 
   try {
     report('Reading release notes and changelog', label);
+    const toolEnv = await envWithShellPath();
 
     // Every reason this check came up short. `gatherEvidence` has always known
     // when it could not compute an API surface; until now nothing asked, so a
@@ -677,6 +678,7 @@ async function analyzeUpgrade(args: {
       config: args.config,
       logger: args.logger,
       githubToken: args.githubToken,
+      env: toolEnv,
       // Lets the Go provider read this repository's own go.mod, so a missing
       // toolchain is reported with the version this repository actually needs.
       workspaceRoot: args.root,

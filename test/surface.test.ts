@@ -536,6 +536,29 @@ describe('a computed Go surface that does run', () => {
     assert.match(outcome.remedy ?? '', /Go 1\.24/);
   });
 
+  test('uses the supplied environment for every go command', async () => {
+    resetGoSurfaceCache();
+    const env = { ...process.env, PATH: '/drift/go/bin' };
+    const seen: string[] = [];
+    const dumps = {
+      'v1.0.0': api([{ Key: 'example.com/client.Dial', Name: 'Dial', Signatures: ['func Dial()'] }]),
+      'v2.0.0': api([{ Key: 'example.com/client.Dial', Name: 'Dial', Signatures: ['func Dial()'] }]),
+    };
+    const base = goToolchain(dumps);
+    const checking = (async (command: string, args: readonly string[], options?: { env?: NodeJS.ProcessEnv }) => {
+      if (command === 'go') {
+        seen.push(args[0] ?? '');
+        assert.equal(options?.env?.PATH, '/drift/go/bin');
+      }
+      return base(command, args);
+    }) as typeof base;
+
+    const outcome = await computeSurfaceDiff(goChange(), { logger, exec: checking, env });
+
+    assert.equal(outcome.available, true);
+    assert.deepEqual(seen, ['version', 'env', 'build', 'mod', 'run', 'mod', 'run']);
+  });
+
   test('a module version is extracted once, however often it is asked for', async () => {
     resetGoSurfaceCache();
     let extractions = 0;

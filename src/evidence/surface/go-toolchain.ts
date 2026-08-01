@@ -1,4 +1,4 @@
-import { isAvailable, type Exec } from '../../util/exec.js';
+import type { Exec } from '../../util/exec.js';
 
 /**
  * Finding, and describing, the Go toolchain.
@@ -95,13 +95,12 @@ export interface GoToolchain {
  * toolchain and reporting it as one produces a confusing failure two steps
  * later.
  */
-export async function probeGoToolchain(exec: Exec): Promise<GoToolchain> {
-  if (!(await isAvailable(exec, 'go', ['version']))) return { available: false };
-
-  const version = await exec('go', ['version'], { timeoutMs: 20_000 });
+export async function probeGoToolchain(exec: Exec, env?: NodeJS.ProcessEnv): Promise<GoToolchain> {
+  const version = await exec('go', ['version'], { timeoutMs: 20_000, ...(env ? { env } : {}) });
+  if (version.failure === 'not-found' || version.code !== 0) return { available: false };
   const parsed = /go(\d+\.\d+(?:\.\d+)?)/.exec(version.stdout)?.[1];
 
-  const cache = await exec('go', ['env', 'GOMODCACHE'], { timeoutMs: 20_000 });
+  const cache = await exec('go', ['env', 'GOMODCACHE'], { timeoutMs: 20_000, ...(env ? { env } : {}) });
   const moduleCache = cache.code === 0 ? cache.stdout.trim() : '';
 
   return {

@@ -62,6 +62,8 @@ export interface EvidenceContext {
   afterSha?: string;
   /** Command runner for the ecosystem diffing tools. Injected by tests. */
   exec?: Exec;
+  /** Environment to use for local ecosystem diffing tools. */
+  env?: NodeJS.ProcessEnv;
   /**
    * Absolute path of a local checkout.
    *
@@ -291,6 +293,7 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
   const outcome = await computeSurfaceDiff(change, {
     logger,
     exec: ctx.exec,
+    env: ctx.env,
     readRepoFile: repoFileReader(ctx),
   });
   if (!outcome.available) {
