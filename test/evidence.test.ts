@@ -10,8 +10,11 @@ import {
   type SurfaceApi,
   type SurfaceEntry,
 } from '../dist/evidence/type-surface.js';
+import { gatherEvidence } from '../dist/evidence/index.js';
 import { selectReleases } from '../dist/evidence/releases.js';
 import { matchProse } from '../dist/analyze/rules.js';
+import { DEFAULT_CONFIG } from '../dist/config/schema.js';
+import { createLogger } from '../dist/util/logger.js';
 
 /**
  * Regression tests for a scan that lied.
@@ -136,6 +139,40 @@ describe('a package whose API is declared somewhere else', () => {
     const changes = diffSurfaces(before, new Map());
     assert.equal(changes[0]?.symbol, 'Octokit');
     assert.match(changes[0]!.detail, /declared in @octokit\/core/);
+  });
+});
+
+describe('an empty diff that was never a comparison', () => {
+  test('a DefinitelyTyped fallback is the same file on both sides', async () => {
+    // `@types/semver` carries no version corresponding to `semver@7.7.1`, so
+    // both sides of the diff are fetched at `latest` — the same file twice.
+    // The empty result was being reported as a clean comparison, which is the
+    // exact shape of "no breaking changes found" that this repository trusted
+    // and should not have.
+    const gaps: string[] = [];
+    await gatherEvidence(
+      [
+        {
+          name: 'semver',
+          ecosystem: 'npm',
+          from: '7.7.1',
+          to: '7.7.4',
+          kind: 'runtime',
+          bump: 'patch',
+          manifestPath: 'package.json',
+        },
+      ],
+      {
+        config: DEFAULT_CONFIG,
+        logger: createLogger('error'),
+        onUnavailableSurface: (_change, reason) => gaps.push(reason.detail),
+      },
+    );
+
+    assert.ok(
+      gaps.some((gap) => gap.includes('@types/semver') && gap.includes('Nothing was compared')),
+      `an unfetchable comparison must be reported as one; got ${JSON.stringify(gaps)}`,
+    );
   });
 });
 

@@ -88,6 +88,12 @@ export async function fetchTypeSurface(
   options: { followDependencies?: boolean } = {},
 ): Promise<TypeSurface | null> {
   const manifest = await fetchManifest(packageName, version);
+  // No manifest at all is a fact about the fetch, not about the package: a
+  // yanked version, a private registry, a CDN that has not mirrored this
+  // release. Saying "publishes no declarations" there would be Drift reporting
+  // its own reach as the package's shortcoming.
+  if (!manifest) throw new VersionUnavailableError(packageName, version);
+
   const entryPath = await resolveTypesEntry(packageName, version, manifest);
   if (!entryPath) return null;
 
@@ -111,6 +117,17 @@ export async function fetchTypeSurface(
   return api.size > 0
     ? { api, entryPath, viaDependencies, ownSymbols, subpaths: subpathsOf(manifest?.exports) }
     : null;
+}
+
+/** Raised when a published version could not be read at all. */
+export class VersionUnavailableError extends Error {
+  constructor(
+    readonly packageName: string,
+    readonly version: string,
+  ) {
+    super(`${packageName}@${version} could not be fetched`);
+    this.name = 'VersionUnavailableError';
+  }
 }
 
 interface Manifest {
@@ -177,7 +194,11 @@ async function mergeDependencySurfaces(
     // One level only. The dependency's own dependencies are its business; a
     // second hop multiplies requests without changing what this package
     // exposes, and a cycle would otherwise be reachable.
-    const surface = await fetchTypeSurface(specifier, resolved, { followDependencies: false });
+    // A dependency Drift cannot reach costs its symbols, never the comparison:
+    // the rest of this package's surface is still worth diffing.
+    const surface = await fetchTypeSurface(specifier, resolved, { followDependencies: false }).catch(
+      () => null,
+    );
     if (!surface) continue;
 
     let merged = 0;
