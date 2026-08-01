@@ -1002,6 +1002,60 @@ test('a single-repository result carries no repository label even when repoRoot 
  * changes found". Both were installed; both broke the build. Nothing about the
  * panel may ever again turn an absence of evidence into a green row.
  */
+test('a compared API with no changelog is checked, not unverified', () => {
+  // The gap is real — there is no changelog — but the exported API was compared
+  // symbol by symbol and found unchanged. Counting the gap alone would bury a
+  // genuine result under a missing one.
+  const c = candidate({
+    name: 'golang.org/x/sys',
+    current: 'v0.26.0',
+    selected: 'v0.47.0',
+    latest: 'v0.47.0',
+    breakingCount: 0,
+    impactCount: 0,
+    impactFiles: 0,
+    gaps: ['No release notes, changelog, or migration guide was reachable.'],
+    recommendation: 'safe-to-upgrade',
+  });
+
+  assert.equal(severityOf(c), 'clean');
+  assert.match(describeSeverity(c), /Safe for your code/);
+});
+
+test('an upgrade that closes an advisory is worth taking, not merely safe', () => {
+  const c = candidate({
+    name: 'lodash',
+    current: '4.17.15',
+    selected: '4.17.21',
+    latest: '4.17.21',
+    breakingCount: 0,
+    impactCount: 0,
+    impactFiles: 0,
+    gaps: [],
+    recommendation: 'upgrade-recommended',
+  });
+
+  assert.equal(severityOf(c), 'clean');
+  assert.match(describeSeverity(c), /Worth taking/);
+});
+
+test('a rationale that reached "insufficient evidence" is still unverified', () => {
+  const c = candidate({
+    name: 'zod',
+    current: '3.24.1',
+    selected: '4.4.3',
+    latest: '4.4.3',
+    breakingCount: 0,
+    impactCount: 0,
+    impactFiles: 0,
+    gaps: ['Nothing was reachable for this version.'],
+    recommendation: 'insufficient-evidence',
+  });
+
+  assert.equal(severityOf(c), 'unchecked');
+  assert.ok(!/Safe/.test(describeSeverity(c)));
+});
+
 test('an unverified upgrade is never rendered as safe', () => {
   const c = candidate({
     name: 'zod',

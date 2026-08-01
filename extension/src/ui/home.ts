@@ -835,8 +835,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         token,
         onProgress: (check, index, total) =>
           step.progress(`Running \`${check.label}\``, `${index + 1} of ${total}`, index, total),
-        onResult: (outcome, index, total) =>
-          step.progress(describeOutcome(outcome), `${index + 1} of ${total}`, index + 1, total),
+        onResult: (outcome, index, total) => {
+          step.progress(describeOutcome(outcome), `${index + 1} of ${total}`, index + 1, total);
+          this.reportCheckOutput(outcome);
+        },
       });
 
       // The checks validate the working tree, not one group in isolation, so
@@ -895,8 +897,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       checks,
       onProgress: (check, index, total) =>
         step.progress(`Running \`${check.label}\``, `${index + 1} of ${total}`, index, total),
-      onResult: (outcome, index, total) =>
-        step.progress(describeOutcome(outcome), `${index + 1} of ${total}`, index + 1, total),
+      onResult: (outcome, index, total) => {
+        step.progress(describeOutcome(outcome), `${index + 1} of ${total}`, index + 1, total);
+        this.reportCheckOutput(outcome);
+      },
     });
 
     const failed = outcomes.filter((o) => o.status === 'failed');
@@ -914,11 +918,30 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         // only "not run" leaves the developer to guess whether it is still
         // going. The reason is the whole message.
         ...(reasons.length > 0 ? ['', ...reasons.map((reason) => `- ${reason}`)] : []),
-        ...(failed.length > 0
-          ? ['', ...failed.map((o) => [`\`${o.label}\``, '```', o.output, '```'].join('\n'))]
-          : []),
       ].join('\n'),
     );
+  }
+
+  /**
+   * Show the command output in the transcript, not only the progress row.
+   *
+   * The step tells you where Drift is in the sequence. The command output tells
+   * you what the tool actually said, which is the part a developer needs when a
+   * check is slow, noisy, or red.
+   */
+  private reportCheckOutput(outcome: CheckOutcome): void {
+    const tone =
+      outcome.status === 'passed' ? 'success' : outcome.status === 'failed' ? 'error' : 'warn';
+    const lines = [
+      `\`${outcome.label}\` ${checkStatusText(outcome)}.`,
+      ...(outcome.reason ? ['', outcome.reason] : []),
+      '',
+      '```',
+      cleanFence(outcome.output.trim() || '(no output)'),
+      '```',
+    ];
+
+    this.session.notice(tone, lines.join('\n'));
   }
 
   /** Every open root, filtered to what the scope picker has selected — all of them, absent a choice. */
@@ -1309,14 +1332,51 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       }
     }
 
+    const upgradeBranches = new Map<string, { mode: SessionBranchMode; name: string }>();
+    if (!options.quiet) {
+      const byRoot = new Map<string, UpgradeCandidate[]>();
+      const contexts = new Map<string, WorkspaceContext>();
+      for (const candidate of candidates) {
+        const candidateCtx = await this.contextForCandidate(candidate, ctx);
+        if (!candidateCtx.info) continue;
+        contexts.set(candidateCtx.root, candidateCtx);
+        byRoot.set(candidateCtx.root, [...(byRoot.get(candidateCtx.root) ?? []), candidate]);
+      }
+
+      for (const [root, group] of byRoot) {
+        const proposed = await this.availableBranchName(
+          root,
+          upgradeBranchName(group, { prefix: this.branchPrefix(contexts.get(root)?.config ?? ctx.config) }),
+        );
+        const branch = await this.chooseBranch(root, proposed, {
+          reason:
+            group.length === 1
+              ? `installing **${group[0]!.name}**`
+              : `installing ${group.length} upgrades in \`${basename(root)}\``,
+        });
+        if (branch === null) return false;
+        upgradeBranches.set(root, branch);
+      }
+    }
+
     const step = this.session.step(`Upgrading ${candidates.length} package${candidates.length === 1 ? '' : 's'}`);
 
     let installed = true;
     let committedAny = false;
+    const branched = new Set<string>();
 
     await this.run(async () => {
       for (const candidate of candidates) {
         const candidateCtx = await this.contextForCandidate(candidate, ctx);
+        const branch = upgradeBranches.get(candidateCtx.root);
+        if (branch?.mode === 'new' && !branched.has(candidateCtx.root)) {
+          if (!(await this.startBranch(candidateCtx.root, branch.name))) {
+            installed = false;
+            return;
+          }
+          branched.add(candidateCtx.root);
+        }
+
         const target = mode === 'force' ? candidate.latest : (candidate.safeLatest ?? candidate.selected);
         let current = candidate;
 
@@ -3099,6 +3159,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private async chooseBranch(
     root: string,
     proposed: string,
+    options: { reason?: string } = {},
   ): Promise<{ mode: SessionBranchMode; name: string } | null> {
     const { Git } = await import('../git.js');
     const current = await new Git(root).currentBranch().catch(() => null);
@@ -3109,7 +3170,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     if (!current || current === 'HEAD') return { mode: 'new', name: proposed };
 
     const answer = await this.session.ask(
-      `Before ${this.agentLabel()} touches anything: you are on \`${current}\`. Where should this work go?`,
+      `Before ${options.reason ?? `${this.agentLabel()} touches anything`}: you are on \`${current}\`. Where should this work go?`,
       [
         {
           label: `New branch \`${proposed}\``,
@@ -4194,6 +4255,24 @@ function describeOutcome(outcome: CheckOutcome): string {
     case 'not-run':
       return `\`${outcome.label}\` could not run`;
   }
+}
+
+function checkStatusText(outcome: CheckOutcome): string {
+  const seconds = (outcome.durationMs / 1000).toFixed(1);
+  switch (outcome.status) {
+    case 'passed':
+      return `passed in ${seconds}s`;
+    case 'failed':
+      return `failed in ${seconds}s`;
+    case 'cancelled':
+      return 'was cancelled';
+    case 'not-run':
+      return 'could not run';
+  }
+}
+
+function cleanFence(output: string): string {
+  return output.replace(/```/g, '` ` `');
 }
 
 function bySeverity(a: UpgradeCandidate, b: UpgradeCandidate): number {

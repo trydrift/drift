@@ -28,6 +28,10 @@ import {
 } from '../../src/detect/workspace.js';
 import { discoverNestedProjects, type NestedProject } from '../../src/detect/nested.js';
 import { gatherEvidence } from '../../src/evidence/index.js';
+import { buildRationale } from '../../src/rationale/index.js';
+import { RECOMMENDATION_LABEL } from '../../src/rationale/assess.js';
+import type { UpgradeRationale } from '../../src/rationale/types.js';
+import type { SurfaceAddition, SurfaceUnavailable } from '../../src/evidence/surface/types.js';
 import { analyze } from '../../src/analyze/index.js';
 import { walkSourceFiles } from '../../src/index/walk.js';
 import { buildIndex } from '../../src/index/metarag.js';
@@ -79,6 +83,23 @@ export interface UpgradeCandidate {
    * see `severityOf`.
    */
   gaps: string[];
+  /**
+   * Why this upgrade might be worth taking, weighed against what it costs.
+   *
+   * Absent only when the analysis threw. A candidate with findings and no
+   * rationale would let "two breaking changes" stand as the whole story, when
+   * the fuller one may be "two breaking changes, and it fixes a high-severity
+   * advisory you are exposed to today".
+   */
+  rationale?: UpgradeRationale;
+  /**
+   * The rationale's conclusion, flattened onto the row.
+   *
+   * `severity.ts` is deliberately dependency-free so the render layer and the
+   * tests can use it in plain Node, so it reads this string rather than
+   * reaching into the rationale object.
+   */
+  recommendation?: string;
   plan?: RemediationPlan;
   error?: string;
 }
@@ -649,26 +670,20 @@ async function analyzeUpgrade(args: {
     // when it could not compute an API surface; until now nothing asked, so a
     // dependency Drift was unable to read looked exactly like one it had read
     // and cleared.
-    const gaps: string[] = [];
+    const additions = new Map<string, { additions: SurfaceAddition[]; locator: string }>();
+    const surfaceGaps = new Map<string, SurfaceUnavailable>();
+
     const evidence = await gatherEvidence([change], {
       config: args.config,
       logger: args.logger,
       githubToken: args.githubToken,
-      onUnavailableSurface: (_change, reason) => gaps.push(reason.detail),
+      // Lets the Go provider read this repository's own go.mod, so a missing
+      // toolchain is reported with the version this repository actually needs.
+      workspaceRoot: args.root,
+      onSurfaceComputed: (_change, diff) =>
+        additions.set(change.name, { additions: diff.additions ?? [], locator: diff.locator }),
+      onUnavailableSurface: (_change, reason) => surfaceGaps.set(change.name, reason),
     });
-
-    // Evidence that can never produce a finding is not evidence of safety. The
-    // semver heuristic exists for every upgrade by construction, and deprecation
-    // metadata says nothing about the API, so a package with only those two was
-    // not checked against anything at all.
-    const substantive = evidence.filter(
-      (record) => record.source !== 'semver-heuristic' && record.source !== 'registry-metadata',
-    );
-    if (substantive.length === 0) {
-      gaps.push(
-        `No changelog, release notes or published type declarations were reachable for ${args.dep.name}@${args.selected}, so there was nothing to check this version against.`,
-      );
-    }
 
     report(
       'Comparing the public API surface',
@@ -690,6 +705,18 @@ async function analyzeUpgrade(args: {
       maxSitesPerChange: args.maxSites ?? 40,
       member: args.member,
     });
+    report('Weighing what this upgrade is worth', label);
+    const [rationale] = await buildRationale(
+      { changes: [change], evidence, breakingChanges, impactSites },
+      {
+        config: args.config,
+        logger: args.logger,
+        githubToken: args.githubToken,
+        additions,
+        surfaceGaps,
+      },
+    );
+
     const plan = buildPlan({
       repo: args.repo,
       config: args.config,
@@ -697,6 +724,7 @@ async function analyzeUpgrade(args: {
       evidence,
       breakingChanges,
       impactSites,
+      ...(rationale ? { rationale: [rationale] } : {}),
     });
 
     return {
@@ -707,11 +735,14 @@ async function analyzeUpgrade(args: {
       impactCount: impactSites.length,
       impactFiles: new Set(impactSites.map((site) => site.file)).size,
       risk: plan.risk,
-      summary: summarize(breakingChanges.length, impactSites.length, args.dep.name, gaps, change.bump),
+      summary: summarize(breakingChanges.length, impactSites.length, args.dep.name, rationale),
       // Kept even when there are findings: "two breaking changes, and the type
       // surface could not be read" is a different claim from "two breaking
       // changes", and the weaker one is the true one.
-      gaps,
+      gaps: rationale?.gaps ?? [],
+      ...(rationale
+        ? { rationale, recommendation: rationale.assessment.recommendation }
+        : {}),
       plan,
     };
   } catch (err) {
@@ -736,32 +767,71 @@ async function analyzeUpgrade(args: {
  * Written from the developer's point of view, not the registry's: what this
  * upgrade means for *this* repository comes first, and the upstream count is
  * context rather than a headline.
+ *
+ * It now leads with the recommendation, because "Upgrade recommended — fixes a
+ * high-severity advisory" and "Safe to upgrade" are different answers to the
+ * question actually being asked, and the old line could only ever say what
+ * might break.
+ *
+ * The failure case is the reason this function is careful. It used to
+ * concatenate every gap onto a fixed preamble, which printed the same missing
+ * toolchain twice — once as "Drift could not verify this upgrade" and once as
+ * the gap that explained it. Gaps arrive deduplicated from the rationale, and
+ * the preamble no longer restates them.
  */
 function summarize(
   breakingCount: number,
   impactCount: number,
   name: string,
-  gaps: readonly string[],
-  bump: DependencyChange['bump'],
+  rationale: UpgradeRationale | undefined,
 ): string {
-  if (breakingCount === 0 && gaps.length > 0) {
-    // The honest sentence is about Drift, not about the package. Saying "no
-    // breaking changes found" here would let a major bump with no reachable
-    // evidence read as a clean bill of health, which is exactly how zod 4 and
-    // typescript 7 got installed into this repository.
-    return [
-      `Drift could not verify this upgrade${bump === 'major' ? ', and it crosses a major version' : ''}.`,
-      ...gaps,
-      'Read the release notes yourself before installing it.',
-    ].join(' ');
+  if (!rationale) {
+    return breakingCount > 0
+      ? `${breakingCount} breaking change${breakingCount === 1 ? '' : 's'} found in ${name}.`
+      : `No breaking changes found for this version of ${name}.`;
   }
-  if (breakingCount === 0) {
-    return `No breaking changes found for this version of ${name}.`;
+
+  const { assessment, security } = rationale;
+  const headline = RECOMMENDATION_LABEL[assessment.recommendation];
+
+  const detail: string[] = [];
+
+  if (impactCount > 0) {
+    detail.push(
+      `${impactCount} place${impactCount === 1 ? '' : 's'} in this repository use${impactCount === 1 ? 's' : ''} an API that ${name} changed`,
+    );
+  } else if (breakingCount > 0) {
+    detail.push(
+      `${breakingCount} upstream breaking change${breakingCount === 1 ? '' : 's'}, none of which this repository uses`,
+    );
   }
-  if (impactCount === 0) {
-    return `${breakingCount} breaking change${breakingCount === 1 ? '' : 's'} in ${name}, but this repository does not use any of the affected APIs. Safe to upgrade.`;
+
+  if (security.checked && security.resolved.length > 0) {
+    detail.push(
+      `fixes ${security.resolved.length} known ${security.resolved.length === 1 ? 'vulnerability' : 'vulnerabilities'}`,
+    );
   }
-  return `${impactCount} place${impactCount === 1 ? '' : 's'} in this repository use${impactCount === 1 ? 's' : ''} an API that ${name} changed.`;
+  if (security.checked && security.introduced.length > 0) {
+    detail.push(
+      `introduces ${security.introduced.length} known ${security.introduced.length === 1 ? 'vulnerability' : 'vulnerabilities'}`,
+    );
+  }
+
+  // Said once, at the end, and only when nothing above already carried the
+  // news. Repeating a stated gap is the bug this shape exists to prevent.
+  if (detail.length === 0 && rationale.gaps.length > 0) {
+    return `${headline}. ${rationale.gaps.join(' ')}`;
+  }
+
+  if (detail.length === 0) {
+    return `${headline}. No breaking changes found for this version of ${name}.`;
+  }
+
+  return `${headline}. ${capitalizeFirst(detail.join('; '))}.`;
+}
+
+function capitalizeFirst(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 /** One direct dependency, and the manifest and manager it came from. */

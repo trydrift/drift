@@ -23,6 +23,16 @@ export interface SeverityInput {
    * diff, no changelog, no release in the range.
    */
   gaps?: readonly string[];
+  /**
+   * The rationale's conclusion, when one was reached.
+   *
+   * Takes precedence over counting gaps, because it knows something counting
+   * cannot: whether any source actually *answered*. A package whose exported
+   * API was compared symbol by symbol and found unchanged has been checked,
+   * even though it has no changelog and therefore still carries a gap. Reading
+   * that as "not verified" would bury a real result under a missing one.
+   */
+  recommendation?: string;
 }
 
 /**
@@ -40,6 +50,13 @@ export function severityOf(candidate: SeverityInput): UpgradeSeverity {
   if (candidate.status === 'error') return 'error';
   if (candidate.impactCount > 0) return 'affected';
   if (candidate.breakingCount > 0) return 'upstream-only';
+
+  // The assessment ran and concluded that nothing could be read. That is the
+  // authoritative form of this verdict, and it is reached only when no source
+  // answered at all.
+  if (candidate.recommendation === 'insufficient-evidence') return 'unchecked';
+  if (candidate.recommendation) return 'clean';
+
   if (candidate.gaps && candidate.gaps.length > 0) return 'unchecked';
   return 'clean';
 }
@@ -64,7 +81,11 @@ export function describeSeverity(candidate: SeverityInput): string {
     case 'unchecked':
       return 'Not verified · Drift found nothing it could check this version against';
     case 'clean':
-      return 'Safe for your code · no breaking changes found';
+      // "Safe for your code" and "you should take this" are different things,
+      // and an upgrade that closes a known advisory deserves the stronger word.
+      return candidate.recommendation === 'upgrade-recommended'
+        ? 'Worth taking · no breaking changes, and it improves on what you have'
+        : 'Safe for your code · no breaking changes found';
   }
 }
 
