@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { detectChecks, type CheckKind, type LocalCheck } from '../../src/detect/checks.js';
 import { detectPackageManagers } from '../../src/detect/package-manager.js';
 import { execCommand } from '../../src/util/exec.js';
+import { envWithShellPath } from './shell-path.js';
 
 /**
  * Local verification, after an agent has edited the tree.
@@ -67,6 +68,8 @@ export interface RunChecksOptions {
   checks: readonly LocalCheck[];
   token?: vscode.CancellationToken;
   onProgress?: (check: LocalCheck, index: number, total: number) => void;
+  /** Called as each check finishes, so a caller can report it while the rest run. */
+  onResult?: (outcome: CheckOutcome, index: number, total: number) => void;
   timeoutMs?: number;
 }
 
@@ -81,57 +84,84 @@ export interface RunChecksOptions {
 export async function runChecks(options: RunChecksOptions): Promise<CheckOutcome[]> {
   const cwd = options.dir ? join(options.root, options.dir) : options.root;
   const outcomes: CheckOutcome[] = [];
+  const total = options.checks.length;
+
+  // The same PATH the upgrade itself runs with. A GUI-launched VS Code inherits
+  // the login environment, not the interactive shell's, so `npm` installed by
+  // nvm, volta, fnm, or asdf is invisible to a bare `execFile` — which turned
+  // every check into "not run" immediately after an upgrade that had just used
+  // that very same npm successfully.
+  const env = await envWithShellPath();
 
   for (const [index, check] of options.checks.entries()) {
     if (options.token?.isCancellationRequested) {
-      outcomes.push({
-        kind: check.kind,
-        label: check.label,
-        status: 'cancelled',
-        durationMs: 0,
-        output: '',
-        reason: 'Cancelled before this check ran.',
-      });
+      outcomes.push(
+        record(options, index, {
+          kind: check.kind,
+          label: check.label,
+          status: 'cancelled',
+          durationMs: 0,
+          output: '',
+          reason: 'Cancelled before this check ran.',
+        }),
+      );
       continue;
     }
 
-    options.onProgress?.(check, index, options.checks.length);
+    options.onProgress?.(check, index, total);
 
     const started = Date.now();
     const result = await execCommand(check.command.command, check.command.args, {
       cwd,
+      env,
       timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
     });
     const durationMs = Date.now() - started;
 
     if (result.failure === 'not-found') {
-      outcomes.push({
-        kind: check.kind,
-        label: check.label,
-        status: 'not-run',
-        durationMs,
-        output: '',
-        reason: `\`${check.command.command}\` is not on your PATH.`,
-      });
+      outcomes.push(
+        record(options, index, {
+          kind: check.kind,
+          label: check.label,
+          status: 'not-run',
+          durationMs,
+          output: '',
+          reason: `\`${check.command.command}\` was not found. Drift asked your login shell for its PATH and looked in nvm, volta, fnm and asdf's install directories, and still could not find it. Run \`command -v ${check.command.command}\` in a terminal — if that finds one, restart VS Code from that terminal so it inherits the same PATH.`,
+        }),
+      );
       continue;
     }
 
-    outcomes.push({
-      kind: check.kind,
-      label: check.label,
-      status: result.code === 0 ? 'passed' : 'failed',
-      durationMs,
-      // The end of the output is where the failure is. A hundred lines of
-      // passing test names above it is exactly what a reviewer scrolls past.
-      output: tail(`${result.stdout}\n${result.stderr}`),
-      ...(result.failure === 'timeout' ? { reason: 'Timed out.' } : {}),
-    });
+    outcomes.push(
+      record(options, index, {
+        kind: check.kind,
+        label: check.label,
+        status: result.code === 0 ? 'passed' : 'failed',
+        durationMs,
+        // The end of the output is where the failure is. A hundred lines of
+        // passing test names above it is exactly what a reviewer scrolls past.
+        output: tail(`${result.stdout}\n${result.stderr}`),
+        ...(result.failure === 'timeout' ? { reason: 'Timed out.' } : {}),
+      }),
+    );
   }
 
   return outcomes;
 }
 
-/** One line, for a status area or a notification. */
+function record(options: RunChecksOptions, index: number, outcome: CheckOutcome): CheckOutcome {
+  options.onResult?.(outcome, index, options.checks.length);
+  return outcome;
+}
+
+/**
+ * One line, for a status area or a notification.
+ *
+ * "3 not run" on its own is the least useful sentence this could produce: it
+ * reads as a progress state rather than a result, and it hides the one thing
+ * the developer needs, which is *why*. Anything that did not run says so in the
+ * words of the reason it carries.
+ */
 export function describeOutcomes(outcomes: readonly CheckOutcome[]): string {
   if (outcomes.length === 0) return 'No local checks to run.';
 
@@ -142,9 +172,30 @@ export function describeOutcomes(outcomes: readonly CheckOutcome[]): string {
   const parts: string[] = [];
   if (passed.length > 0) parts.push(`${passed.length} passed`);
   if (failed.length > 0) parts.push(`${failed.map((o) => o.label).join(', ')} failed`);
-  if (skipped.length > 0) parts.push(`${skipped.length} not run`);
+  if (skipped.length > 0) {
+    const cancelled = skipped.every((o) => o.status === 'cancelled');
+    parts.push(
+      `${skipped.length === outcomes.length ? `none of your ${outcomes.length} check${outcomes.length === 1 ? '' : 's'} could run` : `${skipped.length} could not run`}${
+        cancelled ? ' (cancelled)' : ''
+      }`,
+    );
+  }
 
   return parts.join(' · ');
+}
+
+/**
+ * The distinct reasons checks did not run, for the message under the summary.
+ *
+ * Kept separate from `describeOutcomes` because a status line has room for a
+ * count and a notification has room for the explanation.
+ */
+export function unrunReasons(outcomes: readonly CheckOutcome[]): string[] {
+  const reasons = outcomes
+    .filter((o) => o.status === 'not-run')
+    .map((o) => o.reason)
+    .filter((reason): reason is string => Boolean(reason));
+  return [...new Set(reasons)];
 }
 
 function tail(output: string): string {
