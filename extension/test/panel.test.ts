@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { crossesMajor, renderBody, renderPanel, SLASH_COMMANDS, type ViewModel } from '../src/ui/webview.js';
+import type { TaskGroup } from '../src/session.js';
 import { describeSeverity, severityOf } from '../src/severity.js';
 import type { UpgradeCandidate } from '../src/upgrades.js';
 
@@ -53,6 +54,8 @@ function model(over: Partial<ViewModel> = {}): ViewModel {
     effortLabel: 'Medium',
     modelLabel: 'Claude Opus',
     permission: 'auto-edit',
+    branchMode: 'new',
+    commitMode: 'approve',
     scopeLabel: null,
     attachments: [],
     thread: [],
@@ -1050,4 +1053,86 @@ test('crossesMajor reads the leading number and nothing else', () => {
   assert.equal(crossesMajor('v5.7.3', '7.0.2'), true);
   assert.equal(crossesMajor('1.0.0', '1.0.0'), false);
   assert.equal(crossesMajor('not-a-version', '4.0.0'), false);
+});
+
+/* ------------------------------------------------------------------ */
+/* Transparency: what the panel says the agent is doing                */
+/* ------------------------------------------------------------------ */
+
+/** A `tasks` item with one group carrying the given activity rows. */
+function withActivity(activity: NonNullable<TaskGroup['activity']>): string {
+  return renderBody(
+    model({
+      thread: [
+        {
+          id: 't1',
+          kind: 'tasks',
+          title: 'Fixing 1 site',
+          subtitle: '1 commit.',
+          groups: [
+            {
+              id: 'c1',
+              title: 'refactor(typescript): new entry point',
+              state: 'active',
+              tasks: [{ id: 'c1-0', label: 'import moved', file: 'src/a.ts', line: 1, state: 'active' }],
+              activity,
+            },
+          ],
+        },
+      ],
+    }),
+  );
+}
+
+test('a source the agent consulted is a link, not a string in a log line', () => {
+  const html = withActivity([
+    {
+      id: 'a1',
+      kind: 'search',
+      title: 'Web search',
+      detail: 'Reading https://example.com/changelog?from=5&to=7',
+      links: ['https://example.com/changelog?from=5&to=7'],
+    },
+  ]);
+
+  // Clickable, and pointing at the whole URL — a query string dropped on the
+  // way into the attribute is a link that opens a different page.
+  assert.match(html, /data-action="openUrl"/);
+  assert.match(html, /data-url="https:\/\/example\.com\/changelog\?from=5&amp;to=7"/);
+  // Not double-encoded: `&amp;amp;` would reach the host as a literal `&amp;`.
+  assert.ok(!html.includes('&amp;amp;'), 'the URL was escaped twice');
+});
+
+test('the activity drawer scrolls instead of growing without limit', () => {
+  const html = renderPanel(model());
+  const list = /\.activity-list\s*\{[^}]*\}/.exec(html)?.[0] ?? '';
+  assert.match(list, /max-height/);
+  assert.match(list, /overflow-y:\s*auto/);
+});
+
+test('agent reasoning is never titled with the stream it arrived on', () => {
+  const html = withActivity([
+    { id: 'a1', kind: 'thinking', title: 'Thinking', detail: 'The factory helper does not take source text' },
+  ]);
+
+  assert.match(html, /Thinking/);
+  assert.ok(!/STDERR/i.test(html), 'a row was titled after a pipe');
+});
+
+test('the composer says where a fix will land and whether it will be committed', () => {
+  const branching = renderPanel(model({ branchMode: 'new', commitMode: 'approve' }));
+  assert.match(branching, /data-anchor="git"/);
+  assert.match(branching, /New branch/);
+  assert.match(branching, /nothing is committed until you keep it/);
+
+  const inPlace = renderPanel(model({ branchMode: 'current', commitMode: 'auto' }));
+  assert.match(inPlace, /This branch/);
+  assert.match(inPlace, /commits automatically/);
+});
+
+test('the composer no longer offers a bare list of agent counts', () => {
+  const html = renderPanel(model());
+  // The number of agents is a question asked in the conversation, where there is
+  // room to say what it buys. A row of naked integers in a menu was not that.
+  assert.ok(!/data-id="fixAgents:/.test(html), 'the agent-count menu is still there');
 });

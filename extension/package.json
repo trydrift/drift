@@ -494,6 +494,34 @@
           "markdownDescription": "Prefix for branches Drift creates, so a team can keep its own naming convention — `drift` gives `drift/upgrade-react-19.2.0`.\n\nDrift never commits without asking, never force-pushes, never rewrites history, and never commits a file an upgrade did not change.",
           "order": 30
         },
+        "drift.git.branchMode": {
+          "type": "string",
+          "default": "new",
+          "enum": [
+            "new",
+            "current"
+          ],
+          "enumDescriptions": [
+            "Put every fix on a new branch, so leaving is a checkout",
+            "Edit the branch you are already on"
+          ],
+          "markdownDescription": "Set from the git picker in the Drift panel. Where a fix does its work.\n\nThe default, **New branch**, is what makes a fix cheap to abandon: nothing an agent did can touch the branch you were on, and undoing the whole run is `git checkout -`.",
+          "order": 31
+        },
+        "drift.git.commitMode": {
+          "type": "string",
+          "default": "approve",
+          "enum": [
+            "approve",
+            "auto"
+          ],
+          "enumDescriptions": [
+            "Hold every change for you to keep or undo before it is committed",
+            "Commit each group as soon as the agent finishes it"
+          ],
+          "markdownDescription": "Set from the git picker in the Drift panel. Whether Drift commits on its own.\n\nOn the default, **Ask me first**, nothing enters git history until you keep it.",
+          "order": 32
+        },
         "drift.logLevel": {
           "type": "string",
           "default": "info",

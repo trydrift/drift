@@ -1,5 +1,7 @@
 import type {
   Attachment,
+  SessionBranchMode,
+  SessionCommitMode,
   SessionMode,
   SessionPermission,
   TaskActivity,
@@ -134,6 +136,9 @@ export interface ViewModel {
    */
   modelLabel: string | null;
   permission: SessionPermission;
+  /** Where a fix works and whether Drift commits it. The git button's state. */
+  branchMode: SessionBranchMode;
+  commitMode: SessionCommitMode;
   /**
    * The scope button's label — `null` hides the button entirely, the same
    * rule the effort dial follows for an agent with no reasoning budget: a
@@ -448,7 +453,7 @@ function renderActivity(group: TaskGroup): string {
       <span>Model work</span>
       <small>${activity.length} event${activity.length === 1 ? '' : 's'}</small>
     </summary>
-    <div class="activity-list">
+    <div class="activity-list" data-scroll="activity:${escapeAttr(group.id)}">
       ${activity.slice(-40).map(renderActivityItem).join('')}
     </div>
   </details>`;
@@ -472,12 +477,71 @@ function renderActivityItem(item: TaskActivity): string {
         ${file}
         ${stat}
       </div>
-      ${item.detail ? `<div class="activity-detail">${escapeHtml(item.detail)}</div>` : ''}
+      ${item.detail ? `<div class="activity-detail">${linkify(item.detail)}</div>` : ''}
+      ${renderActivityLinks(item.links)}
       ${item.input ? renderIo('IN', item.input) : ''}
       ${item.output ? renderIo('OUT', item.output) : ''}
       ${item.lines?.length ? renderDiffPreview(item.lines) : ''}
     </div>
   </div>`;
+}
+
+/**
+ * The pages the agent said it was reading, as things you can actually open.
+ *
+ * A migration fix is only as good as the source it was based on, and the one
+ * question a reviewer has about "consulted the changelog" is *which* changelog.
+ * Listing them separately from the prose means they stay clickable even when
+ * the surrounding line is truncated.
+ */
+function renderActivityLinks(links: readonly string[] | undefined): string {
+  if (!links?.length) return '';
+  return `<div class="activity-links">${links
+    .map(
+      (url) =>
+        `<a class="activity-link" data-action="openUrl" data-url="${escapeAttr(url)}" title="${escapeAttr(url)}">${ICON_LINK}<span>${escapeHtml(
+          linkLabel(url),
+        )}</span></a>`,
+    )
+    .join('')}</div>`;
+}
+
+/** Host and enough path to tell two pages on one site apart. */
+function linkLabel(url: string): string {
+  const match = /^https?:\/\/([^/]+)(\/[^?#]*)?/.exec(url);
+  if (!match) return url;
+  const host = match[1]!.replace(/^www\./, '');
+  const path = (match[2] ?? '').replace(/\/$/, '');
+  const label = `${host}${path}`;
+  return label.length > 64 ? `${label.slice(0, 61)}…` : label;
+}
+
+/**
+ * Turn bare URLs in a line of agent chatter into links.
+ *
+ * Matches against the raw text and escapes each piece on the way out. Escaping
+ * first would be the obvious order and is wrong: `&` becomes `&amp;` before the
+ * URL pattern ever runs, so every query string would be captured in its
+ * entity-encoded form and then encoded a second time on the way into the
+ * attribute — a link that looks right and opens the wrong page.
+ */
+export function linkify(text: string): string {
+  const pattern = /https?:\/\/[^\s<>"'`)\]}]+/g;
+  let out = '';
+  let at = 0;
+
+  for (const match of text.matchAll(pattern)) {
+    const raw = match[0];
+    const start = match.index;
+    const trailing = /[.,;:!?]+$/.exec(raw)?.[0] ?? '';
+    const url = raw.slice(0, raw.length - trailing.length);
+
+    out += escapeHtml(text.slice(at, start));
+    out += `<a data-action="openUrl" data-url="${escapeAttr(url)}">${escapeHtml(url)}</a>${escapeHtml(trailing)}`;
+    at = start + raw.length;
+  }
+
+  return out + escapeHtml(text.slice(at));
 }
 
 function renderIo(label: string, text: string): string {
@@ -496,6 +560,8 @@ function activityLabel(kind: TaskActivity['kind']): string {
       return 'Bash';
     case 'edit':
       return 'Edit';
+    case 'search':
+      return 'Search';
     case 'status':
       return 'Step';
     default:
@@ -1088,6 +1154,20 @@ function renderComposer(vm: ViewModel): string {
 
       <span class="spacer"></span>
 
+      ${
+        // Where the work lands and whether it gets committed. Drift branched
+        // and held changes for review long before this button existed; what it
+        // did not do was say so anywhere near the place you start a fix, so the
+        // safest behaviour it has was also the least visible.
+        `<button class="ctl" data-action="openMenu" data-anchor="git" title="${escapeAttr(
+          `${vm.branchMode === 'new' ? 'Fixes start on a new branch' : 'Fixes edit the branch you are on'} · ${
+            vm.commitMode === 'auto' ? 'commits automatically' : 'nothing is committed until you keep it'
+          }. Also: review every change, or commit now.`,
+        )}" aria-label="Git">
+          ${ICON_BRANCH}<span>${escapeHtml(vm.branchMode === 'new' ? 'New branch' : 'This branch')}</span>${ICON_CHEVRON}
+        </button>`
+      }
+
       <button class="ctl" data-action="openMenu" data-anchor="permission" title="${escapeAttr(
         `${describeMode(vm.mode)} · ${describePermission(vm.permission)}`,
       )}" aria-label="Permissions">
@@ -1415,6 +1495,9 @@ const ICON_REPO = svg(
 const ICON_DASH = svg('<path d="M3.5 7.25h9v1.5h-9z"/>', 11);
 const ICON_BACK = svg('<path d="M6.8 3.4 7.7 4.3 5 7h9v1.5H5l2.7 2.7-.9.9L2.6 7.75 6.8 3.4z"/>', 12);
 const ICON_SPEED = svg('<path d="M8 2.5A6.5 6.5 0 0 0 2.2 12h11.6A6.5 6.5 0 0 0 8 2.5zm2.9 3.1L8.9 9a1.1 1.1 0 1 1-1-1l3-2.4z"/>', 13);
+const ICON_LINK = svg('<path d="M6.6 9.4a2.6 2.6 0 0 1 0-3.7l2-2a2.6 2.6 0 0 1 3.7 3.7l-.9.9-1-1 .9-.9a1.2 1.2 0 0 0-1.7-1.7l-2 2a1.2 1.2 0 0 0 0 1.7l-1 1zm2.8-2.8a2.6 2.6 0 0 1 0 3.7l-2 2a2.6 2.6 0 0 1-3.7-3.7l.9-.9 1 1-.9.9a1.2 1.2 0 0 0 1.7 1.7l2-2a1.2 1.2 0 0 0 0-1.7l1-1z"/>', 11);
+/** The git control: a branch. */
+const ICON_BRANCH = svg('<path d="M5 2.5a2 2 0 0 1 .75 3.85v3.3A2 2 0 1 1 4.25 9.65v-3.3A2 2 0 0 1 5 2.5zm6 0a2 2 0 0 1 .6 3.91C11.4 8.6 9.9 9.6 8 9.9v-1.5c1.5-.3 2.4-1 2.6-2A2 2 0 0 1 11 2.5z"/>', 13);
 /** A chip, for the model doing the work. */
 const ICON_MODEL = svg(
   '<path d="M6 1.5h4v1.2h1.3A1.5 1.5 0 0 1 12.8 4.2v1.3H14v1.2h-1.2v2.6H14v1.2h-1.2v1.3a1.5 1.5 0 0 1-1.5 1.5H10V14.5H8.8v-1.2H7.2v1.2H6v-1.2H4.7a1.5 1.5 0 0 1-1.5-1.5v-1.3H2V9.3h1.2V6.7H2V5.5h1.2V4.2a1.5 1.5 0 0 1 1.5-1.5H6V1.5zm-.5 4v5h5v-5h-5z"/>',
@@ -1440,6 +1523,8 @@ const MENU_ICONS = {
   back: ICON_BACK,
   history: ICON_HISTORY_SMALL,
   diff: ICON_DIFF,
+  branch: ICON_BRANCH,
+  commit: ICON_COMMIT,
   plus: ICON_PLUS,
   info: ICON_INFO,
   repo: ICON_REPO,
@@ -2311,7 +2396,28 @@ li.task.unchanged .task-label, li.task.skipped .task-label { color: var(--vscode
 .activity > summary::-webkit-details-marker { display: none; }
 .activity > summary:hover { color: var(--vscode-foreground); }
 .activity > summary span { font-weight: 500; }
-.activity-list { display: grid; gap: 9px; padding: 4px 0 2px 0; }
+/* The agent's running commentary.
+   Capped and scrolled rather than left to grow. A long migration produces
+   dozens of these, and an unbounded drawer pushes the commit it belongs to —
+   and every commit after it — off the bottom of the panel, so the checklist
+   that is the point of this view stops being readable exactly when there is
+   most to read. Contained overscroll keeps a scroll that reaches the end of
+   the drawer from continuing into the transcript underneath. */
+.activity-list {
+  display: grid;
+  gap: 9px;
+  padding: 4px 6px 2px 0;
+  max-height: 280px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.activity-list::-webkit-scrollbar { width: 8px; }
+.activity-list::-webkit-scrollbar-thumb {
+  background: var(--vscode-scrollbarSlider-background);
+  border-radius: 4px;
+}
+.activity-list::-webkit-scrollbar-thumb:hover { background: var(--vscode-scrollbarSlider-hoverBackground); }
 .activity-item {
   position: relative;
   display: grid;
@@ -2345,11 +2451,41 @@ li.task.unchanged .task-label, li.task.skipped .task-label { color: var(--vscode
 }
 .activity-head a { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .activity-stat { margin-left: auto; font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* One line of reasoning. Capped at roughly six lines and scrolled, so a model
+   that thinks in paragraphs cannot push the rest of its own work off screen. */
 .activity-detail {
   font-size: 11px;
   color: var(--vscode-descriptionForeground);
   overflow-wrap: anywhere;
+  max-height: 96px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
+.activity-item.search .activity-dot { background: var(--vscode-charts-purple, #b180d7); }
+.activity-links { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.activity-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 1px 6px 1px 4px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 10px;
+  font-size: 10px;
+  cursor: pointer;
+}
+.activity-link span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.activity-link:hover {
+  background: var(--vscode-toolbar-hoverBackground, var(--vscode-list-hoverBackground));
+  text-decoration: none;
+}
+.activity-link svg.i { flex: 0 0 auto; opacity: .8; }
 .activity-io,
 .activity-diff {
   margin: 0;
@@ -2412,6 +2548,8 @@ const ui = {
   scrollTop: 0,
   atBottom: true,
   disclosures: {},
+  /* Per-drawer scroll, keyed by \`data-scroll\`. */
+  scrolls: {},
   menu: { open: false, anchor: 'context', query: '' },
   /* How much of each answer has been typed out, keyed by conversation and item.
      Persisted so a re-render — of which there are many per second during a scan
@@ -2420,6 +2558,8 @@ const ui = {
 };
 
 Object.assign(ui, vscode.getState() || {});
+/* A state saved before this key existed would otherwise leave it undefined. */
+if (!ui.scrolls) ui.scrolls = {};
 
 let input = null;
 let commands = null;
@@ -2436,6 +2576,7 @@ function save() {
     scrollTop: ui.scrollTop,
     atBottom: ui.atBottom,
     disclosures: ui.disclosures,
+    scrolls: ui.scrolls,
     menu: ui.menu,
     typed: ui.typed,
   });
@@ -2568,6 +2709,25 @@ function mount() {
     if (remembered !== undefined) element.open = remembered;
     element.addEventListener('toggle', () => {
       ui.disclosures[key] = element.open;
+      save();
+    });
+  }
+
+  /* The activity drawers scroll on their own now that they are capped, so they
+     need the transcript's rule applied individually: follow the newest line
+     while the reader is at the bottom, and hold still the moment they scroll
+     up to read something — otherwise every re-render during a live fix would
+     yank them back down mid-sentence. */
+  for (const list of document.querySelectorAll('[data-scroll]')) {
+    const key = list.dataset.scroll;
+    const remembered = ui.scrolls[key];
+    if (!remembered || remembered.atBottom) list.scrollTop = list.scrollHeight;
+    else list.scrollTop = remembered.top;
+    list.addEventListener('scroll', () => {
+      ui.scrolls[key] = {
+        top: list.scrollTop,
+        atBottom: list.scrollHeight - list.scrollTop - list.clientHeight < 16,
+      };
       save();
     });
   }

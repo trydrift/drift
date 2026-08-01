@@ -4,7 +4,15 @@ import type { CommitUnit, RemediationPlan } from '../../src/types.js';
 import { Git } from './git.js';
 import { diffHunks, statOf, type Hunk } from './diff.js';
 import type { DriftState } from './state.js';
-import { readEffort, type SessionEffort, type SessionPermission, type TaskActivityInput } from './session.js';
+import {
+  readEffort,
+  type SessionBranchMode,
+  type SessionCommitMode,
+  type SessionEffort,
+  type SessionPermission,
+  type TaskActivityInput,
+} from './session.js';
+import { activityFromReport } from './agent-activity.js';
 import type { DriftReview } from './review/store.js';
 import { resolveAgent, type RegistryContext } from './agents/registry.js';
 import type { AttachedContext, FixAgent, FixOutcome, FixTask } from './agents/types.js';
@@ -37,6 +45,15 @@ export interface FixOptions {
   review?: DriftReview;
   /** How much the agent may do unsupervised. Defaults to `auto-edit`. */
   permission?: SessionPermission;
+  /**
+   * Whether to branch first. Defaults to `new`.
+   *
+   * `current` is the developer explicitly taking the safety net down, so it is
+   * never inferred — an absent value means branch.
+   */
+  branchMode?: SessionBranchMode;
+  /** Whether Drift may write git history unattended. Defaults to `approve`. */
+  commitMode?: SessionCommitMode;
   /** Puts a question to the developer in the panel thread. */
   ask?: (question: string, options?: string[]) => Promise<string>;
   /** Files, folders or selections the developer attached as reference material. */
@@ -75,6 +92,7 @@ export interface FixResult {
 export async function runFix(options: FixOptions): Promise<FixResult> {
   const { state, plan, progress, token, review } = options;
   const permission: SessionPermission = options.permission ?? 'auto-edit';
+  const commitMode: SessionCommitMode = options.commitMode ?? 'approve';
 
   const root = state.workspaceRoot;
   const repo = state.repo;
@@ -116,12 +134,23 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
   if (commits.length === 0) return { ...empty(), message: 'Nothing to fix.' };
 
   const startRef = await git.headSha();
-  const branchResult = await git.createBranch(plan.branchName);
-  progress.report({
-    message: branchResult.created
-      ? `Created branch ${plan.branchName}`
-      : `Switched to existing branch ${plan.branchName}`,
-  });
+
+  // Where the work happens, and the one decision here that is hard to take
+  // back. Branching is the default because it makes everything downstream
+  // cheap to undo; staying put is only ever done because the developer said so.
+  const branchMode: SessionBranchMode = options.branchMode ?? 'new';
+  const workingBranch = branchMode === 'new' ? plan.branchName : await git.currentBranch();
+
+  if (branchMode === 'new') {
+    const branchResult = await git.createBranch(plan.branchName);
+    progress.report({
+      message: branchResult.created
+        ? `Created branch ${plan.branchName}`
+        : `Switched to existing branch ${plan.branchName}`,
+    });
+  } else {
+    progress.report({ message: `Working on ${workingBranch}` });
+  }
 
   const warnings: string[] = [];
   let committed = 0;
@@ -132,7 +161,7 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
 
   for (const commit of commits) {
     if (token.isCancellationRequested) {
-      return { status: 'cancelled', branch: plan.branchName, commits: committed, warnings, message: 'Cancelled.' };
+      return { status: 'cancelled', branch: workingBranch, commits: committed, warnings, message: 'Cancelled.' };
     }
 
     state.set({
@@ -153,7 +182,7 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
       if (/^stop/i.test(answer)) {
         return {
           status: 'cancelled',
-          branch: plan.branchName,
+          branch: workingBranch,
           commits: committed,
           pendingFiles,
           warnings,
@@ -217,7 +246,7 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
       options.onCommitEnd?.(commit, 'failed', []);
       return {
         status: 'failed',
-        branch: plan.branchName,
+        branch: workingBranch,
         commits: committed,
         pendingFiles,
         warnings,
@@ -238,8 +267,15 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
 
     // With a review store, edits stay uncommitted until a human keeps them, and
     // the store's commit handler does the commit at that point. Without one —
-    // or in full-auto — commit here, as before.
-    if (review && permission !== 'full-auto') {
+    // or when the developer has asked for auto-commit — commit here.
+    //
+    // `full-auto` still implies auto-commit so an existing setting keeps
+    // behaving the way it did, but the git picker's own switch is what a
+    // developer reaches for now: "the agent may edit unattended" and "Drift may
+    // write my history unattended" are separate permissions, and only ever
+    // having the first meant the second came along silently.
+    const autoCommit = commitMode === 'auto' || permission === 'full-auto';
+    if (review && !autoCommit) {
       const settled = await review.settle(commit.order);
       const files = settled?.files.length ?? 0;
       pendingFiles += files;
@@ -292,25 +328,25 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
   }
 
   if (pendingFiles > 0) {
-    state.set({ kind: 'reviewing', plan, branch: plan.branchName, files: pendingFiles, warnings });
+    state.set({ kind: 'reviewing', plan, branch: workingBranch, files: pendingFiles, warnings });
     return {
       status: 'proposed',
-      branch: plan.branchName,
+      branch: workingBranch,
       commits: committed,
       pendingFiles,
       warnings,
-      message: `${agent.label} changed ${pendingFiles} file${pendingFiles === 1 ? '' : 's'} on ${plan.branchName}. Nothing is committed — keep or undo each change.`,
+      message: `${agent.label} changed ${pendingFiles} file${pendingFiles === 1 ? '' : 's'} on ${workingBranch}. Nothing is committed — keep or undo each change.`,
     };
   }
 
-  state.set({ kind: 'fixed', plan, branch: plan.branchName, commits: committed, warnings });
+  state.set({ kind: 'fixed', plan, branch: workingBranch, commits: committed, warnings });
 
   return {
     status: 'committed',
-    branch: plan.branchName,
+    branch: workingBranch,
     commits: committed,
     warnings,
-    message: `${committed} commit(s) on ${plan.branchName}. Review with: git diff ${startRef.slice(0, 7)}`,
+    message: `${committed} commit(s) on ${workingBranch}. Review with: git diff ${startRef.slice(0, 7)}`,
   };
 }
 
@@ -371,48 +407,6 @@ async function applyOneCommit(args: {
   }
 }
 
-function activityFromReport(message: string): TaskActivityInput {
-  const text = message.trim();
-  const command = commandFromReport(text);
-  if (command) {
-    return { kind: 'bash', title: 'Bash', detail: command.detail, input: command.input };
-  }
-
-  const output = /^(stdout|stderr):\s*([\s\S]+)$/i.exec(text);
-  if (output) {
-    return { kind: 'status', title: output[1]!.toUpperCase(), detail: output[2] };
-  }
-
-  if (/^(receiving|asking|waiting|reading|writing|applying|checking|running)\b/i.test(text)) {
-    return { kind: 'status', title: statusTitle(text), detail: text };
-  }
-
-  return { kind: 'thinking', title: 'Thinking', detail: text };
-}
-
-function commandFromReport(text: string): { detail?: string; input: string } | null {
-  if (text.startsWith('$ ')) return { input: text };
-
-  const running = /^Running\s+(\S+)(?:\s+with\s+(.+?))?\s+in\s+(.+?)…?$/i.exec(text);
-  if (running) {
-    const [, command, model, cwd] = running;
-    return {
-      detail: model ? `${command} with ${model}` : command,
-      input: `cd ${cwd}\n${command}`,
-    };
-  }
-
-  if (/^(npm|pnpm|yarn|bun|git|cargo|go|python|pytest|node|npx|deno|mvn|gradle)\b/.test(text)) {
-    return { input: text };
-  }
-
-  return null;
-}
-
-function statusTitle(text: string): string {
-  const word = text.split(/\s+/, 1)[0] ?? 'Working';
-  return word.replace(/^[a-z]/, (c) => c.toUpperCase()).replace(/…$/, '');
-}
 
 function diffActivities(
   before: readonly { path: string; content: string }[],
