@@ -2,6 +2,7 @@ import type {
   Attachment,
   SessionMode,
   SessionPermission,
+  TaskActivity,
   Task,
   TaskGroup,
   TaskState,
@@ -433,7 +434,79 @@ function renderTaskGroup(group: TaskGroup, order: number, listActive: boolean): 
     <ul class="task-list">
       ${group.tasks.map(renderTask).join('')}
     </ul>
+    ${renderActivity(group)}
   </details>`;
+}
+
+function renderActivity(group: TaskGroup): string {
+  const activity = group.activity ?? [];
+  if (activity.length === 0) return '';
+
+  const open = group.state === 'active';
+  return `<details class="activity" data-key="activity:${escapeAttr(group.id)}" ${open ? 'open' : ''}>
+    <summary>
+      <span>Model work</span>
+      <small>${activity.length} event${activity.length === 1 ? '' : 's'}</small>
+    </summary>
+    <div class="activity-list">
+      ${activity.slice(-40).map(renderActivityItem).join('')}
+    </div>
+  </details>`;
+}
+
+function renderActivityItem(item: TaskActivity): string {
+  const file = item.file
+    ? `<a data-action="openFile" data-file="${escapeAttr(item.file)}" data-line="1"><code>${escapeHtml(item.file)}</code></a>`
+    : '';
+  const stat =
+    item.kind === 'edit' && (item.added || item.removed)
+      ? `<span class="activity-stat"><span class="add">+${item.added ?? 0}</span> <span class="del">-${item.removed ?? 0}</span></span>`
+      : '';
+
+  return `<div class="activity-item ${item.kind}">
+    <div class="activity-dot"></div>
+    <div class="activity-body">
+      <div class="activity-head">
+        <b>${escapeHtml(activityLabel(item.kind))}</b>
+        <span>${escapeHtml(item.title)}</span>
+        ${file}
+        ${stat}
+      </div>
+      ${item.detail ? `<div class="activity-detail">${escapeHtml(item.detail)}</div>` : ''}
+      ${item.input ? renderIo('IN', item.input) : ''}
+      ${item.output ? renderIo('OUT', item.output) : ''}
+      ${item.lines?.length ? renderDiffPreview(item.lines) : ''}
+    </div>
+  </div>`;
+}
+
+function renderIo(label: string, text: string): string {
+  return `<pre class="activity-io"><span>${escapeHtml(label)}</span><code>${escapeHtml(text)}</code></pre>`;
+}
+
+function renderDiffPreview(lines: Readonly<NonNullable<TaskActivity['lines']>>): string {
+  return `<pre class="activity-diff">${lines
+    .map((line) => `<span class="${line.kind}">${escapeHtml(diffPrefix(line.kind))}${escapeHtml(line.text)}</span>`)
+    .join('')}</pre>`;
+}
+
+function activityLabel(kind: TaskActivity['kind']): string {
+  switch (kind) {
+    case 'bash':
+      return 'Bash';
+    case 'edit':
+      return 'Edit';
+    case 'status':
+      return 'Step';
+    default:
+      return 'Thinking';
+  }
+}
+
+function diffPrefix(kind: 'add' | 'del' | 'context'): string {
+  if (kind === 'add') return '+ ';
+  if (kind === 'del') return '- ';
+  return '  ';
 }
 
 function renderTask(task: Task): string {
@@ -2220,6 +2293,96 @@ li.task.unchanged .task-label, li.task.skipped .task-label { color: var(--vscode
 .task-body { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
 .task-label { overflow-wrap: anywhere; }
 .task-detail { color: var(--vscode-descriptionForeground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.activity {
+  margin: 0 10px 10px 28px;
+  border-left: 1px solid color-mix(in srgb, var(--vscode-panel-border) 70%, transparent);
+}
+.activity > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: -1px;
+  padding: 3px 0 3px 9px;
+  list-style: none;
+  cursor: pointer;
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+}
+.activity > summary::-webkit-details-marker { display: none; }
+.activity > summary:hover { color: var(--vscode-foreground); }
+.activity > summary span { font-weight: 500; }
+.activity-list { display: grid; gap: 9px; padding: 4px 0 2px 0; }
+.activity-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr);
+  gap: 7px;
+}
+.activity-dot {
+  width: 7px;
+  height: 7px;
+  margin: 7px 0 0 -4px;
+  border-radius: 50%;
+  background: var(--vscode-descriptionForeground);
+  box-shadow: 0 0 0 2px var(--vscode-editorWidget-background);
+}
+.activity-item.edit .activity-dot { background: var(--vscode-testing-iconPassed); }
+.activity-item.bash .activity-dot { background: var(--vscode-charts-blue); }
+.activity-body { min-width: 0; display: grid; gap: 4px; }
+.activity-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  font-size: 11px;
+}
+.activity-head b { font-weight: 600; }
+.activity-head > span:not(.activity-stat) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.activity-head a { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.activity-stat { margin-left: auto; font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.activity-detail {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+  overflow-wrap: anywhere;
+}
+.activity-io,
+.activity-diff {
+  margin: 0;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 5px;
+  max-height: 190px;
+  font-size: 11px;
+}
+.activity-io {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  padding: 0;
+}
+.activity-io span {
+  padding: 5px 7px;
+  color: var(--vscode-descriptionForeground);
+  border-right: 1px solid var(--vscode-panel-border);
+}
+.activity-io code {
+  display: block;
+  padding: 5px 7px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.activity-diff { display: grid; padding: 5px 0; }
+.activity-diff span {
+  display: block;
+  padding: 0 7px;
+  white-space: pre;
+}
+.activity-diff .add { background: color-mix(in srgb, var(--vscode-gitDecoration-addedResourceForeground, #2ea043) 24%, transparent); }
+.activity-diff .del { background: color-mix(in srgb, var(--vscode-gitDecoration-deletedResourceForeground, #f85149) 20%, transparent); }
+.activity-diff .context { color: var(--vscode-descriptionForeground); }
 `;
 
 /* ------------------------------------------------------------------ */

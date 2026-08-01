@@ -1878,9 +1878,14 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // to stop it, and afterwards can see which sites the agent actually changed
     // — neither of which is legible in a stream of agent chatter.
     const files = new Set(plan.impactSites.map((site) => site.file)).size;
+    const requestedAgents = fixAgentCount(plan.commits.length);
+    const concurrencyNote =
+      requestedAgents > 1
+        ? ` Requested ${requestedAgents} simultaneous agents; running sequentially today so each commit is isolated in one working tree.`
+        : '';
     const tasks = this.session.tasks(
       `${this.agentLabel()} is fixing ${plan.impactSites.length} site${plan.impactSites.length === 1 ? '' : 's'}`,
-      `${plan.commits.length} commit${plan.commits.length === 1 ? '' : 's'}, one per concern, across ${files} file${files === 1 ? '' : 's'}. Nothing is committed until you keep it.`,
+      `${plan.commits.length} commit${plan.commits.length === 1 ? '' : 's'}, one per concern, across ${files} file${files === 1 ? '' : 's'}. Nothing is committed until you keep it.${concurrencyNote}`,
       buildTaskGroups(plan),
     );
 
@@ -1900,6 +1905,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         context: await this.resolveContext(ctx.root),
         onCommitStart: (commit) => tasks.start(`c${commit.order}`),
         onCommitEnd: (commit, outcome, changed) => tasks.finish(`c${commit.order}`, outcome, changed),
+        onActivity: (commit, activity) => tasks.activity(`c${commit.order}`, activity),
         // Agent chatter belongs against the concern it is about, not in a
         // separate log the developer has to correlate by hand.
         onLog: (message) => tasks.note(activeGroupId(plan, this.state), message.slice(0, 120)),
@@ -2155,6 +2161,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       { id: 'tools', anchor: 'tools', title: 'Tools', items: this.toolItems() },
       { id: 'mode', anchor: 'permission', title: 'Mode', items: this.modeItems() },
       { id: 'permission', anchor: 'permission', title: 'Permission', items: this.permissionItems() },
+      { id: 'fix-agents', anchor: 'permission', title: 'Fix agents', items: this.fixAgentItems() },
     );
 
     // Only meaningful with more than one root open — the button itself is
@@ -2402,6 +2409,21 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     }));
   }
 
+  private fixAgentItems(): MenuItem[] {
+    const current = vscode.workspace.getConfiguration('drift').get<number>('fix.maxAgents', 1);
+    return [1, 2, 3, 4, 8, 16].map<MenuItem>((count) => ({
+      id: `fixAgents:${count}`,
+      label: `${count} ${count === 1 ? 'agent' : 'agents'}`,
+      detail:
+        count === 1
+          ? 'Sequential fixes, one isolated commit at a time'
+          : 'Desired parallelism. Drift keeps local fixes sequential until worktree isolation lands.',
+      icon: 'agent',
+      checked: current === count,
+      keywords: 'fix parallel simultaneous concurrency agents',
+    }));
+  }
+
   /**
    * The effort dial, in the active agent's own vocabulary.
    *
@@ -2551,6 +2573,17 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       case 'permission':
         await this.session.setPermission(value as SessionPermission);
         this.session.notice('info', `Permission set to **${describePermission(value as SessionPermission)}**.`);
+        return;
+      case 'fixAgents':
+        await vscode.workspace
+          .getConfiguration('drift')
+          .update('fix.maxAgents', Number(value) || 1, vscode.ConfigurationTarget.Global);
+        this.session.notice(
+          'info',
+          Number(value) > 1
+            ? `Fix agent target set to **${value}**. Local fixes still run sequentially until Drift can isolate each agent in its own worktree.`
+            : 'Fix agent target set to **1**.',
+        );
         return;
       case 'scope':
         if (value === '__all') this.session.resetScope();
@@ -3292,6 +3325,12 @@ function activeGroupId(plan: RemediationPlan, state: DriftState): string {
   const status = state.status;
   const order = status.kind === 'fixing' ? status.commitOrder : plan.commits[0]?.order;
   return `c${order ?? 1}`;
+}
+
+function fixAgentCount(commitCount: number): number {
+  const configured = vscode.workspace.getConfiguration('drift').get<number>('fix.maxAgents', 1);
+  const requested = Number.isFinite(configured) ? Math.max(1, Math.floor(configured)) : 1;
+  return Math.min(requested, Math.max(1, commitCount));
 }
 
 /**
