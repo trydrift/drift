@@ -2815,11 +2815,39 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       usable.map(async (entry) => {
         if (!entry.agent.listModels) return;
         const models = await entry.agent.listModels().catch(() => []);
-        if (models.length > 0) this.models.set(entry.agent.id, models);
+        if (models.length === 0) return;
+        this.models.set(entry.agent.id, models);
+        await this.forgetRetiredModel(entry, models);
       }),
     );
 
     this.render();
+  }
+
+  /**
+   * Drop a stored choice the subscription has stopped offering.
+   *
+   * A model id outlives the roster it came from. Drift held `gpt-5-codex` after
+   * ChatGPT accounts lost access to it, and every fix run died on a 400 from
+   * the API with the developer having chosen nothing wrong. Left in place the
+   * setting fails the same way forever, because nothing about a saved id
+   * expires on its own.
+   *
+   * Only done where the roster came from the install itself. A list this file
+   * merely believes to be current is not grounds for overruling a developer's
+   * setting; the CLI's own record of what it can reach is.
+   */
+  private async forgetRetiredModel(entry: DiscoveredAgent, models: readonly AgentModel[]): Promise<void> {
+    if (!entry.agent.rosterIsAuthoritative) return;
+
+    const chosen = this.session.model(entry.agent.id);
+    if (!chosen || models.some((model) => model.id === chosen)) return;
+
+    await this.session.setModel(entry.agent.id, undefined);
+    this.session.notice(
+      'warn',
+      `**${entry.agent.label}** no longer offers \`${chosen}\`, so Drift has gone back to letting it choose. Pick another from the model button if you want a specific one.`,
+    );
   }
 
   /**
