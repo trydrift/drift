@@ -130,6 +130,8 @@ export interface Evidence {
 export type BreakingChangeKind =
   | 'removed-export'
   | 'renamed-export'
+  /** The API still exists, but not where it used to be imported from. */
+  | 'moved-export'
   | 'signature-change'
   | 'type-change'
   | 'behaviour-change'

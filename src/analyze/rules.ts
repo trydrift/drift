@@ -23,6 +23,8 @@ export function kindForFindingCode(code: string): BreakingChangeKind {
       return 'type-change';
     case 'member-now-required':
       return 'required-field-added';
+    case 'entry-point-moved':
+      return 'moved-export';
 
     case 'path-removed':
     case 'operation-removed':
@@ -60,6 +62,11 @@ export function remediationForFinding(finding: StructuredFinding, dependency: st
       return `The signature of \`${symbol}\` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: ${finding.before ?? '(unknown)'}\n  after:  ${finding.after ?? '(unknown)'}`;
     case 'kind-changed':
       return `\`${symbol}\` changed form (for example class to function, or interface to type alias). Update declarations, \`new\` expressions, and type positions accordingly.`;
+    case 'entry-point-moved':
+      // Deliberately forbids the per-symbol fix. An agent told only that a
+      // hundred symbols vanished will replace them one at a time with things it
+      // invented; the actual change is one line at the top of each file.
+      return `The import path changed, not the API. ${finding.detail} Update the import specifier in every file that imports from \`${dependency}\`, and do not replace, stub, or re-implement the individual symbols — they still exist under the new entry point. If you cannot determine which entry point carries a symbol this repository uses, leave that import alone with a \`TODO(drift):\` comment naming the symbol.`;
     case 'member-now-required':
       return `\`${symbol}\` is now required. Supply an explicit value at every construction site. Choose the value that preserves the previous default behaviour; if the previous default is not documented, leave a TODO and flag it in the PR description rather than guessing.`;
 
