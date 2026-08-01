@@ -51,7 +51,15 @@ export type SurfaceChangeKind =
   | 'kind-changed'
   | 'member-removed'
   | 'member-now-required'
-  | 'entry-point-moved';
+  | 'entry-point-moved'
+  /**
+   * A whole importable unit is gone.
+   *
+   * Sibling of `entry-point-moved` and reported for the same reason: the fix is
+   * one line per importing file, and a reader shown the hundreds of symbol
+   * removals underneath it instead will reach for hundreds of wrong ones.
+   */
+  | 'package-removed';
 
 export interface SurfaceChange {
   kind: SurfaceChangeKind;

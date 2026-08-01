@@ -24,6 +24,7 @@ export function kindForFindingCode(code: string): BreakingChangeKind {
     case 'member-now-required':
       return 'required-field-added';
     case 'entry-point-moved':
+    case 'package-removed':
       return 'moved-export';
 
     case 'path-removed':
@@ -67,6 +68,10 @@ export function remediationForFinding(finding: StructuredFinding, dependency: st
       // hundred symbols vanished will replace them one at a time with things it
       // invented; the actual change is one line at the top of each file.
       return `The import path changed, not the API. ${finding.detail} Update the import specifier in every file that imports from \`${dependency}\`, and do not replace, stub, or re-implement the individual symbols — they still exist under the new entry point. If you cannot determine which entry point carries a symbol this repository uses, leave that import alone with a \`TODO(drift):\` comment naming the symbol.`;
+    case 'package-removed':
+      // Same prohibition as `entry-point-moved`, for the same reason: the
+      // symbols did not individually disappear, their home did.
+      return `The package \`${symbol}\` no longer exists in \`${dependency}\`. Update the import path in every file that imports it to whichever package now provides the same API. Do not re-implement or stub the symbols it exported — if you cannot determine the replacement package, leave the import in place with a \`TODO(drift):\` comment naming it rather than guessing.`;
     case 'member-now-required':
       return `\`${symbol}\` is now required. Supply an explicit value at every construction site. Choose the value that preserves the previous default behaviour; if the previous default is not documented, leave a TODO and flag it in the PR description rather than guessing.`;
 

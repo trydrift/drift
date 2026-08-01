@@ -43,9 +43,24 @@ export interface SurfaceUnavailable {
   tool: string;
 }
 
+/**
+ * Something the target version gained.
+ *
+ * Never breaking, and never a reason to edit code — which is exactly why it is
+ * kept apart from `changes` rather than mixed in. It exists so the upgrade
+ * rationale can say what a developer *gets*, from the same computed source
+ * that says what they risk.
+ */
+export interface SurfaceAddition {
+  kind: 'package-added' | 'export-added';
+  symbol: string;
+}
+
 export interface SurfaceDiff {
   available: true;
   changes: SurfaceChange[];
+  /** Additive API, when the provider can distinguish it. Never breaking. */
+  additions?: SurfaceAddition[];
   /** Named in the citation, because "computed" without saying by what is a claim. */
   tool: string;
   /**
@@ -76,6 +91,16 @@ export interface SurfaceRequest {
   logger: Logger;
   /** Wall-clock budget for the whole computation. */
   timeoutMs: number;
+  /**
+   * Reads a file from the repository under analysis, by repo-relative path.
+   *
+   * Some toolchains are a fact about the *consumer*, not the dependency: which
+   * Go version to advise installing is written in the repository's `go.mod`,
+   * and a remedy that names it is an instruction rather than advice. Absent
+   * when no checkout or provider is reachable, which every provider treats as
+   * an ordinary case.
+   */
+  readRepoFile?: (path: string) => Promise<string | null>;
 }
 
 export interface SurfaceProvider {
