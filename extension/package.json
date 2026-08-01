@@ -1,6 +1,6 @@
 {
   "name": "drift",
-  "displayName": "Drift \u2014 Dependency Breaking Changes",
+  "displayName": "Drift — Dependency Breaking Changes",
   "description": "Finds which dependency updates break your code, proves it with evidence, and fixes them with the AI agent you already use.",
   "version": "0.1.0",
   "publisher": "drift",
@@ -328,7 +328,7 @@
         "drift.agent.preferred": {
           "type": "string",
           "default": "auto",
-          "markdownDescription": "Which AI agent fixes your code. Drift drives an agent **you already have** and never asks for an API key.\n\nSet from the Drift panel: **+ \u2192 Model**. `auto` uses the best available.\n\nKnown ids: `copilot-lm`, `copilot-cloud`, `claude`, `codex`, `gemini`, `aider`, `opencode`, `ollama`, and `lm:<vendor>` for any other chat-model provider registered in your editor \u2014 Drift discovers those, so the list is not fixed.",
+          "markdownDescription": "Which AI agent fixes your code. Drift drives an agent **you already have** and never asks for an API key.\n\nSet from the Drift panel: **+ → Model**. `auto` uses the best available.\n\nKnown ids: `copilot-lm`, `copilot-cloud`, `claude`, `codex`, `gemini`, `aider`, `opencode`, `ollama`, and `lm:<vendor>` for any other chat-model provider registered in your editor — Drift discovers those, so the list is not fixed.",
           "order": 1
         },
         "drift.agent.models": {
@@ -337,7 +337,7 @@
           "additionalProperties": {
             "type": "string"
           },
-          "markdownDescription": "The model chosen inside each subscription, keyed by agent id \u2014 for example `{ \"claude\": \"opus\" }`.\n\nSet from the subscription buttons in the Drift panel. A subscription with no entry uses whatever model it picks by default.",
+          "markdownDescription": "The model chosen inside each subscription, keyed by agent id — for example `{ \"claude\": \"opus\" }`.\n\nSet from the subscription buttons in the Drift panel. A subscription with no entry uses whatever model it picks by default.",
           "order": 2
         },
         "drift.session.mode": {
@@ -366,7 +366,7 @@
               "xhigh"
             ]
           },
-          "markdownDescription": "How hard each subscription's model is asked to think, keyed by agent id \u2014 for example `{ \"claude\": \"xhigh\" }`.\n\nSet from the effort dial in the Drift panel, where each level carries the name its own vendor uses: Claude runs `low`\u2013`high` and `xhigh` (**Ultracode**), Codex runs `low`\u2013`high` and `xhigh` (**Extra High**). Agents whose API has no reasoning budget \u2014 the in-editor Copilot models, Ollama \u2014 have no dial.\n\nThis only changes the reasoning spent on each fix. It never changes which dependencies Drift checks or which fixes it attempts \u2014 see `#drift.analysis.includeDev#` and `#drift.analysis.includePatch#` for that.",
+          "markdownDescription": "How hard each subscription's model is asked to think, keyed by agent id — for example `{ \"claude\": \"xhigh\" }`.\n\nSet from the effort dial in the Drift panel, where each level carries the name its own vendor uses: Claude runs `low`–`high` and `xhigh` (**Ultracode**), Codex runs `low`–`high` and `xhigh` (**Extra High**). Agents whose API has no reasoning budget — the in-editor Copilot models, Ollama — have no dial.\n\nThis only changes the reasoning spent on each fix. It never changes which dependencies Drift checks or which fixes it attempts — see `#drift.analysis.includeDev#` and `#drift.analysis.includePatch#` for that.",
           "order": 7
         },
         "drift.session.effort": {
@@ -381,7 +381,7 @@
             "high",
             "xhigh"
           ],
-          "markdownDeprecationMessage": "Replaced by `#drift.agent.efforts#`, which is set per subscription and carries each vendor's own names for its stops.\n\nEffort no longer changes what Drift analyses \u2014 it never should have. Use `#drift.analysis.includeDev#` and `#drift.analysis.includePatch#` for that. An existing value here is still honoured as the starting position of every agent's dial.",
+          "markdownDeprecationMessage": "Replaced by `#drift.agent.efforts#`, which is set per subscription and carries each vendor's own names for its stops.\n\nEffort no longer changes what Drift analyses — it never should have. Use `#drift.analysis.includeDev#` and `#drift.analysis.includePatch#` for that. An existing value here is still honoured as the starting position of every agent's dial.",
           "markdownDescription": "Deprecated. Use `#drift.agent.efforts#`.",
           "order": 7
         },
@@ -435,7 +435,7 @@
         "drift.analysis.includePatch": {
           "type": "boolean",
           "default": false,
-          "markdownDescription": "Analyse patch bumps too. Breakage there is usually accidental, but it does happen \u2014 around 5% of npm packages have been broken by a minor or patch release.",
+          "markdownDescription": "Analyse patch bumps too. Breakage there is usually accidental, but it does happen — around 5% of npm packages have been broken by a minor or patch release.",
           "order": 11
         },
         "drift.analysis.includeDev": {
@@ -449,7 +449,7 @@
           "default": 8,
           "minimum": 1,
           "maximum": 16,
-          "markdownDescription": "How many packages to check at once. Checking one is almost entirely waiting on the network, so raising this shortens a scan roughly in proportion \u2014 up to the point where the GitHub API starts rate-limiting, which turns evidence into 'could not check'.",
+          "markdownDescription": "How many packages to check at once. Checking one is almost entirely waiting on the network, so raising this shortens a scan roughly in proportion — up to the point where the GitHub API starts rate-limiting, which turns evidence into 'could not check'.",
           "order": 13
         },
         "drift.analysis.includeTransitive": {
@@ -492,7 +492,7 @@
         "drift.git.branchPrefix": {
           "type": "string",
           "default": "drift",
-          "markdownDescription": "Prefix for branches Drift creates, so a team can keep its own naming convention \u2014 `drift` gives `drift/upgrade-react-18.3.1-to-19.2.0`.\n\nWhen a fix starts by installing an upgrade, Drift commits those dependency files first. It never force-pushes, never rewrites history, and never commits a file an upgrade did not change.",
+          "markdownDescription": "Prefix for branches Drift creates, so a team can keep its own naming convention — `drift` gives `drift/upgrade-react-18.3.1-to-19.2.0`.\n\nWhen a fix starts by installing an upgrade, Drift commits those dependency files first. It never force-pushes, never rewrites history, and never commits a file an upgrade did not change.",
           "order": 30
         },
         "drift.git.branchMode": {
@@ -541,7 +541,7 @@
           "additionalProperties": {
             "type": "boolean"
           },
-          "markdownDescription": "Set from the composer in the Drift panel. Which agents should trade tokens for a faster answer.\n\nKeyed by agent id, because fast mode is a property of one subscription: Codex exposes it as a feature flag Drift can set per run, while Claude Code's `/fast` is an interactive toggle stored in its own settings \u2014 Drift inherits that one rather than overriding it.\n\nSame model either way; only the latency and the cost change.",
+          "markdownDescription": "Set from the composer in the Drift panel. Which agents should trade tokens for a faster answer.\n\nKeyed by agent id, because fast mode is a property of one subscription: Codex exposes it as a feature flag Drift can set per run, while Claude Code's `/fast` is an interactive toggle stored in its own settings — Drift inherits that one rather than overriding it.\n\nSame model either way; only the latency and the cost change.",
           "order": 6
         }
       }
@@ -561,7 +561,7 @@
     "typescript": "^5.7.3"
   },
   "dependencies": {
-    "@octokit/rest": "^21.1.1",
+    "@octokit/rest": "^22.0.1",
     "semver": "^7.6.3",
     "yaml": "^2.7.0",
     "zod": "^3.24.1"
