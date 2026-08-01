@@ -31,7 +31,7 @@
     "build:all": "npm run build && npm run build:action"
   },
   "dependencies": {
-    "@octokit/rest": "^21.1.1",
+    "@octokit/rest": "^22.0.1",
     "@octokit/webhooks": "^14.2.0",
     "semver": "^7.6.3",
     "typescript": "^7.0.2",
