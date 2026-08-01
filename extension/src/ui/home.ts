@@ -2068,7 +2068,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // Deliberately first: the upgrade writes a manifest and a lockfile, and
     // those belong on the same branch as the code changes that go with them.
     // Branching afterwards would leave half the change behind.
-    const branch = await this.chooseBranch(ctx.root, plan.branchName);
+    const proposedBranch = await this.availableBranchName(ctx.root, plan.branchName);
+    const branch = await this.chooseBranch(ctx.root, proposedBranch);
     if (branch === null) return;
 
     // Upgrade first, fix second, and never the other way round.
@@ -3161,6 +3162,19 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     const mode: SessionBranchMode = answer === 'current' ? 'current' : 'new';
     if (mode !== preferred) await this.session.setBranchMode(mode);
     return { mode, name: proposed };
+  }
+
+  private async availableBranchName(root: string, proposed: string): Promise<string> {
+    const { Git } = await import('../git.js');
+    const git = new Git(root);
+    if (!(await git.branchExists(proposed).catch(() => false))) return proposed;
+
+    for (let i = 1; i <= 99; i++) {
+      const candidate = `${proposed}-${i}`;
+      if (!(await git.branchExists(candidate).catch(() => false))) return candidate;
+    }
+
+    return `${proposed}-${Date.now().toString(36)}`;
   }
 
   /**
