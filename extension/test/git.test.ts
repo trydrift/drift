@@ -71,6 +71,27 @@ describe('reading a checkout', () => {
   });
 });
 
+describe('initializing a checkout', () => {
+  test('creates a repository with a baseline commit on main', async () => {
+    const fresh = mkdtempSync(join(tmpdir(), 'drift-git-init-'));
+    try {
+      writeFileSync(join(fresh, 'package.json'), '{"dependencies":{}}\n');
+      const initialized = new Git(fresh);
+      await initialized.init('main');
+      const sha = await initialized.commitAll('chore: baseline before Drift', '', {
+        allowEmpty: true,
+        identity: { name: 'Drift', email: 'drift@example.invalid' },
+      });
+
+      assert.ok(sha);
+      assert.equal(await initialized.currentBranch(), 'main');
+      assert.equal(await initialized.isClean(), true);
+    } finally {
+      rmSync(fresh, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('committing an upgrade', () => {
   test('commits the files it was given and leaves the rest of the tree alone', async () => {
     write('package.json', '{"dependencies":{"react":"19.2.0"}}\n');
@@ -109,18 +130,18 @@ describe('committing an upgrade', () => {
 
 describe('branching', () => {
   test('creates a branch and carries the working tree onto it', async () => {
-    const created = await git.createBranch('drift/upgrade-react-19.2.0');
+    const created = await git.createBranch('drift/upgrade-react-18.3.1-to-19.2.0');
     assert.deepEqual(created, { created: true });
-    assert.equal(await git.currentBranch(), 'drift/upgrade-react-19.2.0');
+    assert.equal(await git.currentBranch(), 'drift/upgrade-react-18.3.1-to-19.2.0');
     // Uncommitted work follows the checkout rather than being left behind.
     assert.deepEqual(await git.dirtyFiles(), ['src/app.ts']);
   });
 
   test('switches to an existing branch rather than failing or clobbering it', async () => {
     await git.checkout('main');
-    const again = await git.createBranch('drift/upgrade-react-19.2.0');
+    const again = await git.createBranch('drift/upgrade-react-18.3.1-to-19.2.0');
     assert.deepEqual(again, { created: false });
-    assert.equal(await git.currentBranch(), 'drift/upgrade-react-19.2.0');
+    assert.equal(await git.currentBranch(), 'drift/upgrade-react-18.3.1-to-19.2.0');
   });
 });
 

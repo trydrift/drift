@@ -337,6 +337,19 @@ describe('determinism', () => {
     assert.equal(a.id, b.id, 'content-derived ids make the approval flow stateless');
     assert.equal(a.branchName, b.branchName);
   });
+
+  test('the branch names the package, original version, target version, and analysed commit', () => {
+    const plan = buildPlan({
+      repo: { ...repo, afterSha: '77d0485'.padEnd(40, '0') },
+      config: DEFAULT_CONFIG,
+      changes: [{ ...dependencyChange, name: 'typescript', from: '5.9.3', to: '7.0.2' }],
+      evidence,
+      breakingChanges: [breaking({ dependency: 'typescript' })],
+      impactSites: [site('src/a.ts')],
+    });
+
+    assert.equal(plan.branchName, 'drift/typescript-5.9.3-to-7.0.2-commit-77d0485');
+  });
 });
 
 describe('rendered output', () => {

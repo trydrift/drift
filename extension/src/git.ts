@@ -75,6 +75,15 @@ export class Git {
     return (await this.exec(['rev-parse', 'HEAD'])).trim();
   }
 
+  async init(defaultBranch = 'main'): Promise<void> {
+    try {
+      await this.exec(['init', '--initial-branch', defaultBranch]);
+    } catch {
+      await this.exec(['init']);
+      await this.exec(['symbolic-ref', 'HEAD', `refs/heads/${defaultBranch}`]);
+    }
+  }
+
   /** Paths with uncommitted modifications, staged or not. */
   async dirtyFiles(): Promise<string[]> {
     const out = await this.exec(['status', '--porcelain']);
@@ -185,6 +194,32 @@ export class Git {
 
     const message = body.trim() ? `${subject}\n\n${body.trim()}` : subject;
     await this.exec(['commit', '-m', message]);
+
+    return this.headSha();
+  }
+
+  async commitAll(
+    subject: string,
+    body = '',
+    options: { allowEmpty?: boolean; identity?: { name: string; email: string } } = {},
+  ): Promise<string | null> {
+    await this.exec(['add', '-A']);
+
+    const staged = await this.exec(['diff', '--cached', '--name-only']);
+    if (!staged.trim() && !options.allowEmpty) return null;
+
+    const message = body.trim() ? `${subject}\n\n${body.trim()}` : subject;
+    await this.exec(
+      ['commit', ...(options.allowEmpty ? ['--allow-empty'] : []), '-m', message],
+      options.identity
+        ? {
+            GIT_AUTHOR_NAME: options.identity.name,
+            GIT_AUTHOR_EMAIL: options.identity.email,
+            GIT_COMMITTER_NAME: options.identity.name,
+            GIT_COMMITTER_EMAIL: options.identity.email,
+          }
+        : undefined,
+    );
 
     return this.headSha();
   }

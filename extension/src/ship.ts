@@ -75,10 +75,10 @@ export function dependencyFilesIn(dirty: readonly string[]): string[] {
 /**
  * A branch name that says what is on it.
  *
- * `drift/upgrade-react-19.2.0` reads as itself in a branch list six weeks from
- * now, which `drift/fix-1722384000` does not. Batches get a date instead of an
- * unreadable list of names, and the date is what keeps two batches in the same
- * repository from colliding on one ref.
+ * `drift/upgrade-react-18.3.1-to-19.2.0` reads as itself in a branch list six
+ * weeks from now, which `drift/fix-1722384000` does not. Batches get a date
+ * instead of an unreadable list of names, and the date is what keeps two
+ * batches in the same repository from colliding on one ref.
  */
 export function upgradeBranchName(
   candidates: readonly UpgradeCandidate[],
@@ -89,7 +89,7 @@ export function upgradeBranchName(
   if (!first) return `${prefix}/upgrade`;
 
   if (candidates.length === 1) {
-    return `${prefix}/upgrade-${slug(first.name)}-${slug(targetVersion(first))}`;
+    return `${prefix}/upgrade-${slug(first.name)}-${slug(first.current)}-to-${slug(targetVersion(first))}`;
   }
 
   const day = (options.now ?? new Date()).toISOString().slice(0, 10);
@@ -299,8 +299,9 @@ function githubHeaders(token: string): Record<string, string> {
  * GitHub's error, in the developer's terms.
  *
  * The API puts the useful part in `errors[].message` ("No commits between main
- * and drift/upgrade-react-19.2.0") and the useless part in the status line, so
- * surfacing the status alone would hide the one sentence that says what to do.
+ * and drift/upgrade-react-18.3.1-to-19.2.0") and the useless part in the status
+ * line, so surfacing the status alone would hide the one sentence that says
+ * what to do.
  */
 async function describeGitHubError(response: Response): Promise<string> {
   const detail = (await response.json().catch(() => null)) as {

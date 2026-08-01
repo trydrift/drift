@@ -97,13 +97,13 @@ describe('choosing what goes into the commit', () => {
 
 describe('naming the branch', () => {
   test('names a single upgrade after the package and the version', () => {
-    assert.equal(upgradeBranchName([candidate()]), 'drift/upgrade-react-19.2.0');
+    assert.equal(upgradeBranchName([candidate()]), 'drift/upgrade-react-18.3.1-to-19.2.0');
   });
 
   test('makes a scoped package a legal ref component', () => {
     assert.equal(
       upgradeBranchName([candidate({ name: '@types/node', selected: '22.10.5' })]),
-      'drift/upgrade-types-node-22.10.5',
+      'drift/upgrade-types-node-18.3.1-to-22.10.5',
     );
   });
 
@@ -117,7 +117,7 @@ describe('naming the branch', () => {
   test("honours a team's own prefix, trailing slash or not", () => {
     assert.equal(
       upgradeBranchName([candidate()], { prefix: 'deps/' }),
-      'deps/upgrade-react-19.2.0',
+      'deps/upgrade-react-18.3.1-to-19.2.0',
     );
   });
 });
@@ -183,8 +183,8 @@ describe('finding GitHub', () => {
 
   test('falls back to a compare link that opens the real branches', () => {
     assert.equal(
-      compareUrl('git@github.com:acme/app.git', 'main', 'drift/upgrade-react-19.2.0'),
-      'https://github.com/acme/app/compare/main...drift%2Fupgrade-react-19.2.0?expand=1',
+      compareUrl('git@github.com:acme/app.git', 'main', 'drift/upgrade-react-18.3.1-to-19.2.0'),
+      'https://github.com/acme/app/compare/main...drift%2Fupgrade-react-18.3.1-to-19.2.0?expand=1',
     );
   });
 
