@@ -1,4 +1,3 @@
-import ts from 'typescript';
 import { languageOf, type Language, type SourceFile } from './walk.js';
 
 /**
@@ -138,98 +137,82 @@ function extractImports(file: SourceFile): ImportRecord[] {
 
 function extractJsImports(content: string): ImportRecord[] {
   const out: ImportRecord[] = [];
-  const source = ts.createSourceFile('f.ts', content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const lineStarts = lineStartOffsets(content);
+  const lineOf = (offset: number): number => lineOfOffset(lineStarts, offset);
+  const staticImport =
+    /\bimport\s+(?!\()(?:(?:type\s+)?([\w$]+)\s*,\s*)?(?:type\s+)?(?:\{([^}]+)\}|\*\s+as\s+([\w$]+)|([\w$]+))?\s+from\s+['"]([^'"]+)['"]|\bimport\s+['"]([^'"]+)['"]/g;
 
-  const lineOf = (pos: number) => source.getLineAndCharacterOfPosition(pos).line + 1;
-
-  const visit = (node: ts.Node): void => {
-    if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
-      const specifier = node.moduleSpecifier.text;
-      if (!isRelative(specifier)) {
-        out.push({
-          specifier,
-          packageName: packageNameFromSpecifier(specifier),
-          bindings: bindingsOfImportClause(node.importClause),
-          line: lineOf(node.getStart(source)),
-        });
-      }
-    }
-
-    // `require('x')` and dynamic `import('x')`.
-    if (ts.isCallExpression(node)) {
-      const isRequire = ts.isIdentifier(node.expression) && node.expression.text === 'require';
-      const isDynamicImport = node.expression.kind === ts.SyntaxKind.ImportKeyword;
-      const arg = node.arguments[0];
-      if ((isRequire || isDynamicImport) && arg && ts.isStringLiteral(arg) && !isRelative(arg.text)) {
-        out.push({
-          specifier: arg.text,
-          packageName: packageNameFromSpecifier(arg.text),
-          bindings: bindingsOfRequire(node),
-          line: lineOf(node.getStart(source)),
-        });
-      }
-    }
-
-    ts.forEachChild(node, visit);
-  };
-
-  visit(source);
-  return out;
-}
-
-function bindingsOfImportClause(clause: ts.ImportClause | undefined): string[] {
-  if (!clause) return [];
-  const names: string[] = [];
-
-  if (clause.name) names.push(clause.name.text);
-
-  const bindings = clause.namedBindings;
-  if (bindings) {
-    if (ts.isNamespaceImport(bindings)) {
-      names.push('*', bindings.name.text);
-    } else {
-      for (const element of bindings.elements) {
-        // `import { a as b }` binds `b` locally but concerns upstream `a`.
-        names.push(element.name.text);
-        if (element.propertyName) names.push(element.propertyName.text);
-      }
-    }
-  }
-
-  return names;
-}
-
-/** Recover destructured names from `const { a, b } = require('x')`. */
-function bindingsOfRequire(call: ts.CallExpression): string[] {
-  const declaration = findAncestor(call, ts.isVariableDeclaration);
-  if (!declaration) return [];
-
-  if (ts.isIdentifier(declaration.name)) return [declaration.name.text];
-
-  if (ts.isObjectBindingPattern(declaration.name)) {
-    return declaration.name.elements.flatMap((element) => {
-      const names: string[] = [];
-      if (ts.isIdentifier(element.name)) names.push(element.name.text);
-      if (element.propertyName && ts.isIdentifier(element.propertyName)) {
-        names.push(element.propertyName.text);
-      }
-      return names;
+  for (const match of content.matchAll(staticImport)) {
+    const specifier = match[5] ?? match[6];
+    if (!specifier || isRelative(specifier)) continue;
+    const bindings = importBindings(match[1], match[2], match[3], match[4]);
+    out.push({
+      specifier,
+      packageName: packageNameFromSpecifier(specifier),
+      bindings,
+      line: lineOf(match.index ?? 0),
     });
   }
 
-  return [];
+  const requireImport =
+    /\b(?:const|let|var)\s+(\{[^}]+\}|[\w$]+)\s*=\s*require\(\s*['"]([^'"]+)['"]\s*\)/g;
+  for (const match of content.matchAll(requireImport)) {
+    const specifier = match[2]!;
+    if (isRelative(specifier)) continue;
+    out.push({
+      specifier,
+      packageName: packageNameFromSpecifier(specifier),
+      bindings: requireBindings(match[1]!),
+      line: lineOf(match.index ?? 0),
+    });
+  }
+
+  const dynamicImport = /\bimport\(\s*['"]([^'"]+)['"]\s*\)/g;
+  for (const match of content.matchAll(dynamicImport)) {
+    const specifier = match[1]!;
+    if (isRelative(specifier)) continue;
+    out.push({
+      specifier,
+      packageName: packageNameFromSpecifier(specifier),
+      bindings: [],
+      line: lineOf(match.index ?? 0),
+    });
+  }
+
+  return out.sort((a, b) => a.line - b.line || a.specifier.localeCompare(b.specifier));
 }
 
-function findAncestor<T extends ts.Node>(
-  node: ts.Node,
-  predicate: (n: ts.Node) => n is T,
-): T | undefined {
-  let current: ts.Node | undefined = node.parent;
-  while (current) {
-    if (predicate(current)) return current;
-    current = current.parent;
+function importBindings(
+  defaultBinding: string | undefined,
+  named: string | undefined,
+  namespace: string | undefined,
+  bareDefault: string | undefined,
+): string[] {
+  const names: string[] = [];
+  if (defaultBinding) names.push(defaultBinding);
+  if (bareDefault) names.push(bareDefault);
+  if (namespace) names.push('*', namespace);
+  if (named) {
+    for (const part of named.split(',')) {
+      const cleaned = part.replace(/\btype\s+/g, '').trim();
+      if (!cleaned) continue;
+      const [imported, local] = cleaned.split(/\s+as\s+/).map((piece) => piece.trim());
+      if (imported) names.push(local || imported, imported);
+    }
   }
-  return undefined;
+  return [...new Set(names)];
+}
+
+function requireBindings(binding: string): string[] {
+  const trimmed = binding.trim();
+  if (!trimmed.startsWith('{')) return [trimmed];
+  return trimmed
+    .replace(/[{}]/g, '')
+    .split(',')
+    .flatMap((part) => {
+      const [property, local] = part.split(/\s*:\s*/).map((piece) => piece.trim());
+      return [property, local].filter((name): name is string => Boolean(name));
+    });
 }
 
 function extractPythonImports(content: string): ImportRecord[] {
@@ -426,102 +409,176 @@ function extractUnits(file: SourceFile): CodeUnit[] {
  * every file to understand.
  */
 function extractJsUnits(content: string, path: string): CodeUnit[] {
-  const source = ts.createSourceFile(path, content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
   const units: CodeUnit[] = [];
+  const lines = content.split('\n');
+  const depths = braceDepthsByLine(lines);
 
-  const lineOf = (pos: number) => source.getLineAndCharacterOfPosition(pos).line + 1;
-
-  const push = (
-    name: string,
-    kind: CodeUnit['kind'],
-    node: ts.Node,
-    signature: string,
-    exported: boolean,
-  ): void => {
+  const push = (name: string, kind: CodeUnit['kind'], startLine: number, endLine: number, signature: string, exported: boolean): void => {
     units.push({
       name,
       kind,
-      startLine: lineOf(node.getStart(source)),
-      endLine: lineOf(node.getEnd()),
+      startLine,
+      endLine,
       summary: collapse(signature),
       exported,
     });
   };
 
-  const visit = (node: ts.Node, className?: string): void => {
-    const exported = hasExportModifier(node);
+  for (let i = 0; i < lines.length; i++) {
+    if (depths[i] !== 0) continue;
 
-    if (ts.isFunctionDeclaration(node) && node.name) {
-      push(node.name.text, 'function', node, signatureText(node, source), exported);
-    } else if (ts.isClassDeclaration(node) && node.name) {
-      const name = node.name.text;
-      push(name, 'class', node, `class ${name}`, exported);
-      for (const member of node.members) visit(member, name);
-      return;
-    } else if (ts.isInterfaceDeclaration(node)) {
-      push(node.name.text, 'interface', node, `interface ${node.name.text}`, exported);
-    } else if (ts.isTypeAliasDeclaration(node)) {
-      push(node.name.text, 'type', node, `type ${node.name.text}`, exported);
-    } else if (ts.isMethodDeclaration(node) && node.name) {
-      const name = node.name.getText(source);
-      push(
-        className ? `${className}.${name}` : name,
-        'method',
-        node,
-        signatureText(node, source),
-        exported,
-      );
-    } else if (ts.isVariableStatement(node)) {
-      // Only module-level bindings are indexed. A `const` inside a function
-      // body is a one-line unit that would win the innermost-match lookup and
-      // report a call site as being "in `client`" rather than "in `fetchUser`",
-      // which is worse than useless in a review.
-      const atModuleLevel =
-        node.parent !== undefined &&
-        (ts.isSourceFile(node.parent) || ts.isModuleBlock(node.parent));
-      if (!atModuleLevel) {
-        ts.forEachChild(node, (child) => visit(child, className));
-        return;
-      }
+    const line = lines[i]!;
+    const trimmed = line.trim();
+    const exported = isExportLine(trimmed);
 
-      for (const declaration of node.declarationList.declarations) {
-        if (!ts.isIdentifier(declaration.name)) continue;
-        // An arrow function assigned to a const is a function in every sense
-        // that matters for this index.
-        const isFunctionLike =
-          declaration.initializer !== undefined &&
-          (ts.isArrowFunction(declaration.initializer) ||
-            ts.isFunctionExpression(declaration.initializer));
-        push(
-          declaration.name.text,
-          isFunctionLike ? 'function' : 'variable',
-          node,
-          `${isFunctionLike ? 'const fn' : 'const'} ${declaration.name.text}`,
-          exported,
-        );
-      }
+    const fn = /^(?:export\s+)?(?:async\s+)?function\s+([\w$]+)\s*\(([^)]*)\)\s*([^{};]*)/.exec(trimmed);
+    if (fn) {
+      const end = blockEndLine(lines, i);
+      push(fn[1]!, 'function', i + 1, end + 1, `${fn[1]}(${fn[2] ?? ''})${fn[3] ?? ''}`, exported);
+      i = Math.max(i, end);
+      continue;
     }
 
-    ts.forEachChild(node, (child) => visit(child, className));
-  };
+    const cls = /^(?:export\s+)?(?:abstract\s+)?class\s+([\w$]+)/.exec(trimmed);
+    if (cls) {
+      const end = blockEndLine(lines, i);
+      const className = cls[1]!;
+      push(className, 'class', i + 1, end + 1, `class ${className}`, exported);
+      collectClassMethods(lines, i + 1, end, className, push);
+      i = Math.max(i, end);
+      continue;
+    }
 
-  source.statements.forEach((statement) => visit(statement));
+    const iface = /^(?:export\s+)?interface\s+([\w$]+)/.exec(trimmed);
+    if (iface) {
+      push(iface[1]!, 'interface', i + 1, blockEndLine(lines, i) + 1, `interface ${iface[1]}`, exported);
+      continue;
+    }
+
+    const typeAlias = /^(?:export\s+)?type\s+([\w$]+)/.exec(trimmed);
+    if (typeAlias) {
+      push(typeAlias[1]!, 'type', i + 1, declarationEndLine(lines, i) + 1, `type ${typeAlias[1]}`, exported);
+      continue;
+    }
+
+    const variable = /^(?:export\s+)?(?:const|let|var)\s+([\w$]+)/.exec(trimmed);
+    if (variable) {
+      const initializer = line.slice(line.indexOf(variable[1]!) + variable[1]!.length);
+      const isFunctionLike = /^\s*=\s*(?:async\s*)?(?:\([^)]*\)|[\w$]+)\s*=>|^\s*=\s*(?:async\s*)?function\b/.test(initializer);
+      push(
+        variable[1]!,
+        isFunctionLike ? 'function' : 'variable',
+        i + 1,
+        declarationEndLine(lines, i) + 1,
+        `${isFunctionLike ? 'const fn' : 'const'} ${variable[1]}`,
+        exported,
+      );
+      continue;
+    }
+
+    const mod = /^(?:export\s+)?(?:declare\s+)?(?:namespace|module)\s+([\w$]+)/.exec(trimmed);
+    if (mod) {
+      push(mod[1]!, 'module', i + 1, blockEndLine(lines, i) + 1, `module ${mod[1]}`, exported);
+    }
+  }
+
   return units;
 }
 
-function hasExportModifier(node: ts.Node): boolean {
-  const modifiers = ts.canHaveModifiers(node) ? ts.getModifiers(node) : undefined;
-  return modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword) ?? false;
+function collectClassMethods(
+  lines: readonly string[],
+  start: number,
+  end: number,
+  className: string,
+  push: (name: string, kind: CodeUnit['kind'], startLine: number, endLine: number, signature: string, exported: boolean) => void,
+): void {
+  let depth = 0;
+  for (let i = start; i < end; i++) {
+    const trimmed = lines[i]!.trim();
+    if (depth === 0) {
+      const method = /^(?:public\s+|protected\s+|private\s+|static\s+|async\s+|override\s+|readonly\s+)*([\w$]+)\s*\(([^)]*)\)\s*([^{};]*)/.exec(trimmed);
+      if (method && method[1] !== 'constructor') {
+        const methodEnd = blockEndLine(lines, i);
+        push(
+          `${className}.${method[1]!}`,
+          'method',
+          i + 1,
+          Math.min(methodEnd, end) + 1,
+          `${method[1]}(${method[2] ?? ''})${method[3] ?? ''}`,
+          isExportLine(trimmed),
+        );
+      }
+    }
+    depth += braceDelta(lines[i]!);
+  }
 }
 
-function signatureText(
-  node: ts.FunctionDeclaration | ts.MethodDeclaration,
-  source: ts.SourceFile,
-): string {
-  const name = node.name?.getText(source) ?? '(anonymous)';
-  const params = node.parameters.map((p) => p.getText(source)).join(', ');
-  const returnType = node.type ? `: ${node.type.getText(source)}` : '';
-  return `${name}(${params})${returnType}`;
+function lineStartOffsets(content: string): number[] {
+  const starts = [0];
+  for (let i = 0; i < content.length; i++) {
+    if (content[i] === '\n') starts.push(i + 1);
+  }
+  return starts;
+}
+
+function lineOfOffset(starts: readonly number[], offset: number): number {
+  let low = 0;
+  let high = starts.length - 1;
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    if (starts[mid]! <= offset) low = mid + 1;
+    else high = mid - 1;
+  }
+  return high + 1;
+}
+
+function braceDepthsByLine(lines: readonly string[]): number[] {
+  const depths: number[] = [];
+  let depth = 0;
+  for (const line of lines) {
+    depths.push(depth);
+    depth += braceDelta(line);
+    if (depth < 0) depth = 0;
+  }
+  return depths;
+}
+
+function braceDelta(line: string): number {
+  let delta = 0;
+  for (const char of line) {
+    if (char === '{') delta += 1;
+    else if (char === '}') delta -= 1;
+  }
+  return delta;
+}
+
+function blockEndLine(lines: readonly string[], start: number): number {
+  let seenOpen = false;
+  let depth = 0;
+  for (let i = start; i < lines.length; i++) {
+    for (const char of lines[i]!) {
+      if (char === '{') {
+        seenOpen = true;
+        depth += 1;
+      } else if (char === '}') {
+        depth -= 1;
+        if (seenOpen && depth <= 0) return i;
+      }
+    }
+    if (!seenOpen && lines[i]!.includes(';')) return i;
+  }
+  return start;
+}
+
+function declarationEndLine(lines: readonly string[], start: number): number {
+  for (let i = start; i < lines.length; i++) {
+    if (lines[i]!.includes(';') || lines[i]!.includes('{')) return blockEndLine(lines, i);
+  }
+  return start;
+}
+
+function isExportLine(trimmed: string): boolean {
+  return /^(?:declare\s+)?export\b|^export\s+/.test(trimmed);
 }
 
 /**

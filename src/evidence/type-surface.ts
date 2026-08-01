@@ -1,4 +1,3 @@
-import ts from 'typescript';
 import { fetchJson, fetchText } from '../util/http.js';
 
 /**
@@ -580,25 +579,13 @@ async function exists(packageName: string, version: string, path: string): Promi
   return content !== null;
 }
 
-/**
- * Extract exported declarations using the TypeScript compiler's own parser.
- *
- * Using the real parser rather than regexes matters here: overloads, generics,
- * and multi-line signatures are exactly the constructs that break naive
- * matching, and they are also the ones most likely to have changed.
- */
+/** Extract the declaration shapes Drift compares from a `.d.ts` source file. */
 export function extractExports(
   content: string,
   fileName: string,
   into: SurfaceApi = new Map(),
   aliases: ExportAlias[] = [],
 ): SurfaceApi {
-  const source = ts.createSourceFile(fileName, content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-
-  // Every declaration in the file, exported or not, keyed by its declared name.
-  // An `export { objectType as object }` statement names a local that is
-  // itself unexported, so the local declarations have to be on hand before the
-  // export statements can be understood.
   const locals = new Map<string, SurfaceEntry>();
 
   const add = (target: SurfaceApi, entry: SurfaceEntry): void => {
@@ -614,24 +601,13 @@ export function extractExports(
     }
   };
 
-  const visit = (node: ts.Node): void => {
-    const entry = toSurfaceEntry(node, source);
-    if (entry) add(locals, entry);
+  void fileName;
+  for (const parsed of declarationEntries(content)) {
+    add(locals, parsed.entry);
+    if (parsed.exported) add(into, parsed.entry);
+  }
 
-    if (isExported(node)) {
-      if (entry) add(into, entry);
-    } else if (ts.isExportDeclaration(node)) {
-      collectExportSpecifiers(node, locals, into, aliases);
-    }
-
-    // Descend into ambient module/namespace bodies, whose contents are
-    // exported even when the inner declarations lack a modifier.
-    if (ts.isModuleDeclaration(node) && node.body && ts.isModuleBlock(node.body)) {
-      node.body.statements.forEach(visit);
-    }
-  };
-
-  source.statements.forEach(visit);
+  collectExportSpecifiers(content, locals, into, aliases);
   return into;
 }
 
@@ -655,22 +631,20 @@ export interface ExportAlias {
  * major upgrade touched nothing this repository uses.
  */
 function collectExportSpecifiers(
-  node: ts.ExportDeclaration,
+  content: string,
   locals: SurfaceApi,
   into: SurfaceApi,
   aliases: ExportAlias[],
 ): void {
-  const bindings = node.exportClause;
-  if (!bindings || !ts.isNamedExports(bindings)) return;
+  const pattern = /\bexport\s+(?:type\s+)?\{([^}]+)\}(?:\s+from\s+['"][^'"]+['"])?\s*;/g;
+  for (const match of content.matchAll(pattern)) {
+    for (const { exported, local } of exportBindings(match[1] ?? '')) {
+      if (into.has(exported)) continue;
 
-  for (const specifier of bindings.elements) {
-    const exported = specifier.name.text;
-    const local = specifier.propertyName?.text ?? exported;
-    if (into.has(exported)) continue;
-
-    const entry = locals.get(local);
-    if (entry) into.set(exported, renameEntry(entry, exported));
-    else aliases.push({ exported, local });
+      const entry = locals.get(local);
+      if (entry) into.set(exported, renameEntry(entry, exported));
+      else aliases.push({ exported, local });
+    }
   }
 }
 
@@ -708,121 +682,186 @@ function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function isExported(node: ts.Node): boolean {
-  const modifiers = ts.canHaveModifiers(node) ? ts.getModifiers(node) : undefined;
-  return modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword) ?? false;
-}
-
-function toSurfaceEntry(node: ts.Node, source: ts.SourceFile): SurfaceEntry | null {
-  if (ts.isFunctionDeclaration(node) && node.name) {
-    return {
-      name: node.name.text,
-      kind: 'function',
-      // The body is irrelevant to the contract; only the signature is.
-      signature: collapse(node.getText(source).replace(/\{[\s\S]*$/, '')),
-      members: [],
-      requiredMembers: [],
-    };
-  }
-
-  if (ts.isClassDeclaration(node) && node.name) {
-    const members = node.members
-      .filter((m) => !hasPrivateModifier(m))
-      .map((m) => m.name?.getText(source))
-      .filter((n): n is string => Boolean(n));
-    return {
-      name: node.name.text,
-      kind: 'class',
-      signature: collapse(signatureOfClassLike(node, source)),
-      members,
-      requiredMembers: node.members
-        .filter((m) => ts.isPropertyDeclaration(m) && !m.questionToken && !hasPrivateModifier(m))
-        .map((m) => m.name?.getText(source))
-        .filter((n): n is string => Boolean(n)),
-    };
-  }
-
-  if (ts.isInterfaceDeclaration(node)) {
-    const members = node.members.map((m) => m.name?.getText(source)).filter((n): n is string => Boolean(n));
-    const requiredMembers = node.members
-      .filter((m) => (ts.isPropertySignature(m) || ts.isMethodSignature(m)) && !m.questionToken)
-      .map((m) => m.name?.getText(source))
-      .filter((n): n is string => Boolean(n));
-    return {
-      name: node.name.text,
-      kind: 'interface',
-      signature: collapse(node.getText(source)),
-      members,
-      requiredMembers,
-    };
-  }
-
-  if (ts.isTypeAliasDeclaration(node)) {
-    return {
-      name: node.name.text,
-      kind: 'type',
-      signature: collapse(node.getText(source)),
-      members: [],
-      requiredMembers: [],
-    };
-  }
-
-  if (ts.isEnumDeclaration(node)) {
-    return {
-      name: node.name.text,
-      kind: 'enum',
-      signature: collapse(node.getText(source)),
-      members: node.members.map((m) => m.name.getText(source)),
-      requiredMembers: [],
-    };
-  }
-
-  if (ts.isVariableStatement(node)) {
-    const declaration = node.declarationList.declarations[0];
-    if (declaration && ts.isIdentifier(declaration.name)) {
-      return {
-        name: declaration.name.text,
-        kind: 'variable',
-        signature: collapse(node.getText(source)),
-        members: [],
-        requiredMembers: [],
-      };
-    }
-  }
-
-  if (ts.isModuleDeclaration(node) && ts.isIdentifier(node.name)) {
-    return {
-      name: node.name.text,
-      kind: 'namespace',
-      signature: `namespace ${node.name.text}`,
-      members: [],
-      requiredMembers: [],
-    };
-  }
-
-  return null;
-}
-
-/** Class signature without the body — heritage and type params are the contract. */
-function signatureOfClassLike(node: ts.ClassDeclaration, source: ts.SourceFile): string {
-  const name = node.name?.text ?? '';
-  const typeParams = node.typeParameters?.map((p) => p.getText(source)).join(', ') ?? '';
-  const heritage = node.heritageClauses?.map((h) => h.getText(source)).join(' ') ?? '';
-  return `class ${name}${typeParams ? `<${typeParams}>` : ''} ${heritage}`.trim();
-}
-
-function hasPrivateModifier(member: ts.ClassElement): boolean {
-  const modifiers = ts.canHaveModifiers(member) ? ts.getModifiers(member) : undefined;
-  if (modifiers?.some((m) => m.kind === ts.SyntaxKind.PrivateKeyword)) return true;
-  return member.name?.getText().startsWith('#') ?? false;
-}
-
 function collapse(text: string): string {
   return text
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/\/\/[^\n]*/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+interface ParsedDeclaration {
+  entry: SurfaceEntry;
+  exported: boolean;
+}
+
+function declarationEntries(content: string): ParsedDeclaration[] {
+  const entries: ParsedDeclaration[] = [];
+
+  collectSimpleDeclarations(
+    content,
+    /\b(export\s+)?(?:declare\s+)?function\s+([A-Za-z_$][\w$]*)(?:<[^>{}]*>)?\s*\(/g,
+    'function',
+    entries,
+  );
+  collectSimpleDeclarations(
+    content,
+    /\b(export\s+)?(?:declare\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\b/g,
+    'variable',
+    entries,
+  );
+  collectSimpleDeclarations(
+    content,
+    /\b(export\s+)?(?:declare\s+)?type\s+([A-Za-z_$][\w$]*)\b/g,
+    'type',
+    entries,
+  );
+
+  collectBlockDeclarations(
+    content,
+    /\b(export\s+)?(?:declare\s+)?class\s+([A-Za-z_$][\w$]*)[^{;]*\{/g,
+    'class',
+    entries,
+  );
+  collectBlockDeclarations(
+    content,
+    /\b(export\s+)?(?:declare\s+)?interface\s+([A-Za-z_$][\w$]*)[^{;]*\{/g,
+    'interface',
+    entries,
+  );
+  collectBlockDeclarations(
+    content,
+    /\b(export\s+)?(?:declare\s+)?enum\s+([A-Za-z_$][\w$]*)[^{;]*\{/g,
+    'enum',
+    entries,
+  );
+
+  const namespacePattern = /\b(export\s+)?(?:declare\s+)?(?:namespace|module)\s+([A-Za-z_$][\w$]*)/g;
+  for (const match of content.matchAll(namespacePattern)) {
+    entries.push({
+      exported: Boolean(match[1]),
+      entry: {
+        name: match[2]!,
+        kind: 'namespace',
+        signature: `namespace ${match[2]!}`,
+        members: [],
+        requiredMembers: [],
+      },
+    });
+  }
+
+  return entries;
+}
+
+function collectSimpleDeclarations(
+  content: string,
+  pattern: RegExp,
+  kind: Extract<SurfaceKind, 'function' | 'variable' | 'type'>,
+  entries: ParsedDeclaration[],
+): void {
+  for (const match of content.matchAll(pattern)) {
+    const start = match.index ?? 0;
+    const end = declarationEndOffset(content, start);
+    entries.push({
+      exported: Boolean(match[1]),
+      entry: {
+        name: match[2]!,
+        kind,
+        signature: collapse(content.slice(start, end)),
+        members: [],
+        requiredMembers: [],
+      },
+    });
+  }
+}
+
+function collectBlockDeclarations(
+  content: string,
+  pattern: RegExp,
+  kind: Extract<SurfaceKind, 'class' | 'interface' | 'enum'>,
+  entries: ParsedDeclaration[],
+): void {
+  for (const match of content.matchAll(pattern)) {
+    const start = match.index ?? 0;
+    const open = content.indexOf('{', start);
+    const close = matchingBraceOffset(content, open);
+    const end = close >= 0 ? close + 1 : declarationEndOffset(content, start);
+    const body = open >= 0 && close > open ? content.slice(open + 1, close) : '';
+    const members = kind === 'enum' ? enumMembers(body) : typeMembers(body, kind === 'class');
+
+    entries.push({
+      exported: Boolean(match[1]),
+      entry: {
+        name: match[2]!,
+        kind,
+        signature: collapse(content.slice(start, open >= 0 ? open : end)),
+        members: members.map((member) => member.name),
+        requiredMembers: members.filter((member) => member.required).map((member) => member.name),
+      },
+    });
+  }
+}
+
+function declarationEndOffset(content: string, start: number): number {
+  const semicolon = content.indexOf(';', start);
+  const brace = content.indexOf('{', start);
+  if (brace >= 0 && (semicolon < 0 || brace < semicolon)) {
+    const close = matchingBraceOffset(content, brace);
+    return close >= 0 ? close + 1 : content.length;
+  }
+  return semicolon >= 0 ? semicolon + 1 : content.length;
+}
+
+function matchingBraceOffset(content: string, open: number): number {
+  if (open < 0) return -1;
+  let depth = 0;
+  for (let i = open; i < content.length; i++) {
+    const char = content[i];
+    if (char === '{') depth += 1;
+    else if (char === '}') {
+      depth -= 1;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+function enumMembers(body: string): Array<{ name: string; required: boolean }> {
+  return body
+    .split(',')
+    .map((part) => /^[\s\n]*([A-Za-z_$][\w$]*)/.exec(part)?.[1])
+    .filter((name): name is string => Boolean(name))
+    .map((name) => ({ name, required: false }));
+}
+
+function typeMembers(body: string, classBody: boolean): Array<{ name: string; required: boolean }> {
+  const members: Array<{ name: string; required: boolean }> = [];
+  const pattern =
+    /(?:^|[;\n])\s*((?:public|protected|private|readonly|static|abstract|declare|override)\s+)*(#?[A-Za-z_$][\w$]*)(\?)?\s*(\(|:)/g;
+
+  for (const match of body.matchAll(pattern)) {
+    const modifiers = match[1] ?? '';
+    const name = match[2]!;
+    if (name === 'constructor' || modifiers.includes('private') || name.startsWith('#')) continue;
+    members.push({
+      name,
+      required: classBody ? match[4] === ':' && !match[3] : !match[3],
+    });
+  }
+
+  return members;
+}
+
+function exportBindings(list: string): Array<{ exported: string; local: string }> {
+  const bindings: Array<{ exported: string; local: string }> = [];
+  for (const part of list.split(',')) {
+    const cleaned = part.replace(/\btype\s+/g, '').trim();
+    if (!cleaned) continue;
+    const [local, exported] = cleaned.split(/\s+as\s+/).map((piece) => piece.trim());
+    if (!local) continue;
+    bindings.push({ local, exported: exported || local });
+  }
+  return bindings;
 }
 
 /**
