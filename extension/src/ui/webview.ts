@@ -822,6 +822,7 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
 
     <div class="pkg-body">
       <p class="verdict-long">${escapeHtml(candidate.error ?? candidate.summary)}</p>
+      ${renderRationale(candidate)}
       ${renderGaps(candidate)}
 
       <div class="pkg-target">
@@ -908,6 +909,85 @@ function shortVerdict(candidate: UpgradeCandidate, severity: UpgradeSeverity): s
 }
 
 /** What Drift could not read, listed under the verdict rather than hidden in a log. */
+/**
+ * Why this upgrade might be worth taking.
+ *
+ * Sits directly under the verdict, above the gaps, because it is the half of
+ * the answer the panel never used to give: a row that says only "no breaking
+ * changes" cannot tell you that the version you are on has a high-severity
+ * advisory against it.
+ *
+ * Only sections with something to say are rendered. A maintenance block reading
+ * "the repository is active" on every row is how a panel teaches people to stop
+ * looking at it.
+ */
+function renderRationale(candidate: UpgradeCandidate): string {
+  const rationale = candidate.rationale;
+  if (!rationale) return '';
+
+  const blocks: string[] = [];
+
+  const { security } = rationale;
+  if (security.checked && security.resolved.length > 0) {
+    blocks.push(
+      renderFacts(
+        'good',
+        `Fixes ${security.resolved.length} known ${security.resolved.length === 1 ? 'vulnerability' : 'vulnerabilities'}`,
+        security.resolved.map(
+          (vuln) =>
+            `${vuln.id}${vuln.severity === 'unknown' ? '' : ` — ${vuln.severity}`}${vuln.fixedIn ? `, first fixed in ${vuln.fixedIn}` : ''}`,
+        ),
+      ),
+    );
+  }
+  if (security.checked && security.introduced.length > 0) {
+    blocks.push(
+      renderFacts(
+        'bad',
+        `The target version is affected by ${security.introduced.length} ${security.introduced.length === 1 ? 'advisory' : 'advisories'} the installed version is not`,
+        security.introduced.map((vuln) => `${vuln.id}${vuln.severity === 'unknown' ? '' : ` — ${vuln.severity}`}`),
+      ),
+    );
+  }
+
+  const concerning = rationale.maintenance.facts.filter((fact) => fact.concerning);
+  if (concerning.length > 0) {
+    blocks.push(renderFacts('bad', 'Maintenance', concerning.map((fact) => fact.statement)));
+  }
+
+  if (rationale.license.verdict === 'policy-violation' || rationale.license.verdict === 'changed') {
+    blocks.push(
+      renderFacts(
+        rationale.license.verdict === 'policy-violation' ? 'bad' : 'neutral',
+        rationale.license.verdict === 'policy-violation' ? 'License review required' : 'License',
+        [rationale.license.statement],
+      ),
+    );
+  }
+
+  if (rationale.improvements.length > 0) {
+    blocks.push(
+      renderFacts('neutral', 'Other improvements', rationale.improvements.map((i) => i.statement)),
+    );
+  }
+
+  return blocks.join('');
+}
+
+function renderFacts(tone: 'good' | 'bad' | 'neutral', heading: string, items: readonly string[]): string {
+  if (items.length === 0) return '';
+  const MAX = 5;
+  const shown = items.slice(0, MAX);
+  const rest = items.length - shown.length;
+
+  return `<div class="rationale ${tone}">
+    <span class="rationale-heading">${escapeHtml(heading)}</span>
+    <ul>${shown.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}${
+      rest > 0 ? `<li class="hint">…and ${rest} more</li>` : ''
+    }</ul>
+  </div>`;
+}
+
 function renderGaps(candidate: UpgradeCandidate): string {
   if (!candidate.gaps?.length) return '';
   return `<ul class="gaps">${candidate.gaps
@@ -1943,6 +2023,16 @@ button.wide { width: 100%; }
   border-color: var(--vscode-editorWarning-foreground);
 }
 /* Why a check came up short, under the verdict it explains. */
+/* The upgrade rationale. Tinted by tone, and only where there is a tone to
+   carry: "neutral" borrows the panel's ordinary border rather than a colour, so
+   colour keeps meaning something. */
+.rationale { margin: 0 0 8px; padding: 6px 8px; border-left: 2px solid var(--vscode-panel-border); border-radius: 2px; background: var(--vscode-textBlockQuote-background); }
+.rationale.good { border-left-color: var(--vscode-testing-iconPassed, var(--vscode-charts-green)); }
+.rationale.bad { border-left-color: var(--vscode-editorWarning-foreground); }
+.rationale-heading { display: block; font-size: 11px; font-weight: 600; margin-bottom: 3px; }
+.rationale ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.rationale li { font-size: 11px; color: var(--vscode-descriptionForeground); }
+
 .gaps { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .gaps li { display: flex; gap: 6px; align-items: flex-start; font-size: 11px; color: var(--vscode-descriptionForeground); }
 .gaps svg.i { flex: none; margin-top: 2px; color: var(--vscode-editorWarning-foreground); }

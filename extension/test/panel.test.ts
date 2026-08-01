@@ -1002,6 +1002,57 @@ test('a single-repository result carries no repository label even when repoRoot 
  * changes found". Both were installed; both broke the build. Nothing about the
  * panel may ever again turn an absence of evidence into a green row.
  */
+test('the panel shows what an upgrade buys, not only what it costs', () => {
+  const c = candidate({
+    name: 'lodash',
+    current: '4.17.15',
+    selected: '4.17.21',
+    latest: '4.17.21',
+    breakingCount: 0,
+    impactCount: 0,
+    impactFiles: 0,
+    gaps: [],
+    recommendation: 'upgrade-recommended',
+    rationale: {
+      dependency: 'lodash',
+      from: '4.17.15',
+      to: '4.17.21',
+      security: {
+        checked: true,
+        current: [],
+        target: [],
+        resolved: [
+          { id: 'GHSA-35jh-r3h4-6jhm', aliases: ['CVE-2021-23337'], summary: 'Command injection.', severity: 'high', url: 'https://example.test', fixedIn: '4.17.21' },
+        ],
+        introduced: [],
+        carried: [],
+        direction: 'improves',
+      },
+      maintenance: { facts: [{ statement: 'The repository is archived.', concerning: true }] },
+      improvements: [],
+      license: { verdict: 'ok', statement: '', introduced: [] },
+      summary: { changes: [], unrelated: 0 },
+      assessment: { recommendation: 'upgrade-recommended', reasons: [], confidence: 'high', confidenceBasis: '' },
+      gaps: [],
+    },
+  });
+
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'i1', kind: 'packages', headline: 'One upgrade available.', ids: [c.id] }],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  assert.match(html, /Fixes 1 known vulnerability/);
+  assert.match(html, /GHSA-35jh-r3h4-6jhm — high, first fixed in 4\.17\.21/);
+  assert.match(html, /class="rationale good"/);
+  // A concerning maintenance fact is shown; the neutral ones are not, so the
+  // block stays worth reading.
+  assert.match(html, /The repository is archived\./);
+  assert.match(html, /class="rationale bad"/);
+});
+
 test('a compared API with no changelog is checked, not unverified', () => {
   // The gap is real — there is no changelog — but the exported API was compared
   // symbol by symbol and found unchanged. Counting the gap alone would bury a
