@@ -480,6 +480,14 @@
           "markdownDescription": "Repository conventions passed to every agent. The highest-leverage setting for output quality.\n\nFor example: *\"This repo uses Vitest, not Jest. Prefer named exports. All HTTP goes through src/lib/http.ts.\"*",
           "order": 21
         },
+        "drift.fix.maxAgents": {
+          "type": "number",
+          "default": 1,
+          "minimum": 1,
+          "maximum": 16,
+          "markdownDescription": "Desired number of simultaneous fix agents, capped by the number of commit groups in a plan.\n\nLocal fixes currently run sequentially even when this is above `1`, because every local agent edits the same working tree and branch. Drift records the setting now, but will only parallelize once each agent can work in an isolated worktree and merge back without crossing commit scopes.",
+          "order": 22
+        },
         "drift.git.branchPrefix": {
           "type": "string",
           "default": "drift",

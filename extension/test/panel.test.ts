@@ -799,6 +799,24 @@ test('agent work is a checklist, not a blob of text', () => {
               package: 'lodash',
               state: 'active',
               note: 'Editing src/report.ts',
+              activity: [
+                { id: 'a1', kind: 'thinking', title: 'Thinking', detail: 'Inspecting the affected call sites' },
+                { id: 'a2', kind: 'bash', title: 'Bash', input: 'npm test -- src/report.test.ts', output: 'pass' },
+                {
+                  id: 'a3',
+                  kind: 'edit',
+                  title: 'Edit',
+                  file: 'src/report.ts',
+                  detail: '+2 lines added, -1 line removed',
+                  added: 2,
+                  removed: 1,
+                  lines: [
+                    { kind: 'context', text: '@@ -41,1 +41,2 @@' },
+                    { kind: 'del', text: 'const result = _.chain(items)' },
+                    { kind: 'add', text: 'const result = items' },
+                  ],
+                },
+              ],
               tasks: [
                 {
                   id: 'c1-0',
@@ -832,6 +850,13 @@ test('agent work is a checklist, not a blob of text', () => {
   assert.match(html, /class="task-group active"[^>]*open/);
   assert.match(html, /class="task-group pending" data-key="task:c2"\s*>/);
   assert.match(html, /Editing src\/report.ts/);
+  assert.match(html, /Model work/);
+  assert.match(html, /class="activity-item thinking"/);
+  assert.match(html, /class="activity-item bash"/);
+  assert.match(html, /class="activity-item edit"/);
+  assert.match(html, /npm test -- src\/report\.test\.ts/);
+  assert.match(html, /data-action="openFile" data-file="src\/report.ts"/);
+  assert.match(html, /\+ const result = items/);
 });
 
 test('a finished task says whether the file actually changed', () => {

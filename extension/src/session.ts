@@ -165,6 +165,21 @@ export interface Task {
   state: TaskState;
 }
 
+export interface TaskActivity {
+  id: string;
+  kind: 'thinking' | 'bash' | 'edit' | 'status';
+  title: string;
+  detail?: string;
+  input?: string;
+  output?: string;
+  file?: string;
+  added?: number;
+  removed?: number;
+  lines?: { kind: 'add' | 'del' | 'context'; text: string }[];
+}
+
+export type TaskActivityInput = Omit<TaskActivity, 'id'>;
+
 /** One commit unit: a single concern, its own checkbox, its own tasks. */
 export interface TaskGroup {
   id: string;
@@ -175,6 +190,15 @@ export interface TaskGroup {
   state: TaskState;
   /** What the agent is doing right now, while this group is active. */
   note?: string;
+  /**
+   * The inspectable work log for this commit unit.
+   *
+   * Kept on the group, not as loose transcript messages, because the useful
+   * question is "what happened for this concern?" A developer should be able
+   * to collapse one fix and inspect another without correlating timestamps by
+   * hand.
+   */
+  activity?: TaskActivity[];
   tasks: Task[];
 }
 
@@ -183,6 +207,7 @@ export interface TaskListHandle {
   id: string;
   start: (groupId: string) => void;
   note: (groupId: string, text: string) => void;
+  activity: (groupId: string, activity: TaskActivityInput) => void;
   /** Close a group. Tasks whose file actually changed are ticked. */
   finish: (groupId: string, state: TaskState, changedFiles?: readonly string[]) => void;
   finishAll: (state: TaskState) => void;
@@ -435,6 +460,25 @@ export class DriftSession {
         const group = find(groupId);
         if (!group || group.note === text) return;
         group.note = text;
+        this.emitter.fire();
+      },
+      activity: (groupId, activity) => {
+        const group = find(groupId);
+        if (!group) return;
+        const entries = group.activity ?? (group.activity = []);
+        const previous = entries[entries.length - 1];
+        if (
+          previous &&
+          previous.kind === activity.kind &&
+          previous.title === activity.title &&
+          previous.detail === activity.detail &&
+          previous.input === activity.input &&
+          previous.output === activity.output
+        ) {
+          return;
+        }
+        entries.push({ ...activity, id: `${groupId}-a${entries.length + 1}` });
+        if (entries.length > 80) entries.shift();
         this.emitter.fire();
       },
       finish: (groupId, state, changedFiles) => {
