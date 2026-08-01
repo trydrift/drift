@@ -10,9 +10,11 @@ import { buildIndex } from './index/metarag.js';
 import { walkSourceFiles } from './index/walk.js';
 import { localize } from './localize/index.js';
 import { buildPlan } from './plan/index.js';
+import { buildRationale } from './rationale/index.js';
+import type { SurfaceAddition, SurfaceUnavailable } from './evidence/surface/types.js';
 
 /**
- * Stages 1–6: everything up to, but not including, acting.
+ * Stages 1–7: everything up to, but not including, acting.
  *
  * Split out from the full pipeline so the analysis can run anywhere — a CI
  * runner, a webhook server, or an editor with no credentials at all. Nothing
@@ -42,6 +44,7 @@ export type AnalysisStage =
   | 'evidence'
   | 'analyze'
   | 'localize'
+  | 'rationale'
   | 'plan'
   | 'done';
 
@@ -97,6 +100,13 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
 
   /* Stage 3 — evidence */
   progress('evidence', `Gathering evidence for ${actionable.map((c) => c.name).join(', ')}`);
+
+  // Kept alongside the evidence rather than inside it: what a computed diff
+  // *added*, and why one could not be produced, are both facts about the run
+  // that the rationale stage needs and that no BreakingChange should carry.
+  const additions = new Map<string, { additions: SurfaceAddition[]; locator: string }>();
+  const surfaceGaps = new Map<string, SurfaceUnavailable>();
+
   const evidence = await gatherEvidence(actionable, {
     config,
     logger,
@@ -104,6 +114,10 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     readRepoFile: (path, ref) => provider.readFile(path, ref),
     beforeSha: repo.beforeSha,
     afterSha: repo.afterSha,
+    ...(workspace ? { workspaceRoot: workspace } : {}),
+    onSurfaceComputed: (change, diff) =>
+      additions.set(change.name, { additions: diff.additions ?? [], locator: diff.locator }),
+    onUnavailableSurface: (change, reason) => surfaceGaps.set(change.name, reason),
   });
   logger.info(`Gathered ${evidence.length} evidence record(s)`);
 
@@ -136,7 +150,14 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     logger.warn('No local checkout available; affected code cannot be located.');
   }
 
-  /* Stage 6 — plan */
+  /* Stage 6 — rationale */
+  progress('rationale', 'Weighing what each upgrade is worth');
+  const rationale = await buildRationale(
+    { changes: actionable, evidence, breakingChanges, impactSites },
+    { config, logger, githubToken, additions, surfaceGaps },
+  );
+
+  /* Stage 7 — plan */
   progress('plan', 'Building the remediation plan');
   const plan = buildPlan({
     repo,
@@ -145,6 +166,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     evidence,
     breakingChanges,
     impactSites,
+    rationale,
     skipped,
   });
 
