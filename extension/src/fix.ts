@@ -378,6 +378,11 @@ function activityFromReport(message: string): TaskActivityInput {
     return { kind: 'bash', title: 'Bash', detail: command.detail, input: command.input };
   }
 
+  const output = /^(stdout|stderr):\s*([\s\S]+)$/i.exec(text);
+  if (output) {
+    return { kind: 'status', title: output[1]!.toUpperCase(), detail: output[2] };
+  }
+
   if (/^(receiving|asking|waiting|reading|writing|applying|checking|running)\b/i.test(text)) {
     return { kind: 'status', title: statusTitle(text), detail: text };
   }
@@ -386,6 +391,8 @@ function activityFromReport(message: string): TaskActivityInput {
 }
 
 function commandFromReport(text: string): { detail?: string; input: string } | null {
+  if (text.startsWith('$ ')) return { input: text };
+
   const running = /^Running\s+(\S+)(?:\s+with\s+(.+?))?\s+in\s+(.+?)…?$/i.exec(text);
   if (running) {
     const [, command, model, cwd] = running;

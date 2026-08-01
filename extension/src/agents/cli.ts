@@ -304,7 +304,7 @@ export class CliFixAgent implements FixAgent {
 
     const args = [...this.spec.buildArgs(prompt), ...this.selection(task)];
     const command = this.executable ?? (await resolveCommand(this.spec))?.path ?? this.spec.command;
-    ctx.report(`Running ${this.spec.command}${task.model ? ` with ${task.model}` : ''} in ${task.workspaceRoot}…`);
+    ctx.report(`$ ${displayCommand(command, args)}\n# cwd: ${task.workspaceRoot}`);
 
     try {
       const { code, stdout, stderr } = await this.exec(command, args, prompt, task.workspaceRoot, ctx);
@@ -371,11 +371,23 @@ export class CliFixAgent implements FixAgent {
 
       let stdout = '';
       let stderr = '';
+      const started = Date.now();
+      let lastOutput = Date.now();
 
       const timer = setTimeout(() => {
         child.kill('SIGTERM');
         reject(new Error(`timed out after ${Math.round(this.timeoutMs / 1000)}s`));
       }, this.timeoutMs);
+      const heartbeat = setInterval(() => {
+        const elapsed = Math.round((Date.now() - started) / 1000);
+        const quiet = Math.round((Date.now() - lastOutput) / 1000);
+        if (quiet < 15) return;
+        ctx.report(
+          `Still waiting for ${this.spec.label}… ${elapsed}s elapsed; ${
+            stdout || stderr ? `no new output for ${quiet}s` : 'no output yet'
+          }.`,
+        );
+      }, 15_000);
 
       const onAbort = () => child.kill('SIGTERM');
       ctx.signal.addEventListener('abort', onAbort, { once: true });
@@ -383,23 +395,32 @@ export class CliFixAgent implements FixAgent {
       child.stdout.on('data', (chunk: Buffer) => {
         const text = chunk.toString();
         stdout += text;
+        lastOutput = Date.now();
         // Surface the agent's own progress rather than an opaque spinner.
         const line = text.trim().split('\n').filter(Boolean).pop();
-        if (line) ctx.report(line.slice(0, 160));
+        if (line) ctx.report(`stdout: ${line.slice(0, 220)}`);
       });
 
       child.stderr.on('data', (chunk: Buffer) => {
-        stderr += chunk.toString();
+        const text = chunk.toString();
+        stderr += text;
+        lastOutput = Date.now();
+        const line = text.trim().split('\n').filter(Boolean).pop();
+        if (line && !/^warning:\s*`?--full-auto`?\s+is deprecated/i.test(line)) {
+          ctx.report(`stderr: ${line.slice(0, 220)}`);
+        }
       });
 
       child.on('error', (err) => {
         clearTimeout(timer);
+        clearInterval(heartbeat);
         ctx.signal.removeEventListener('abort', onAbort);
         reject(err);
       });
 
       child.on('close', (code) => {
         clearTimeout(timer);
+        clearInterval(heartbeat);
         ctx.signal.removeEventListener('abort', onAbort);
         resolve({ code: code ?? 0, stdout, stderr });
       });
@@ -412,6 +433,28 @@ export class CliFixAgent implements FixAgent {
       }
     });
   }
+}
+
+function displayCommand(command: string, args: readonly string[]): string {
+  const shown: string[] = [shellQuote(command)];
+  let redactNext = false;
+
+  for (const arg of args) {
+    if (redactNext) {
+      shown.push('<prompt omitted>');
+      redactNext = false;
+      continue;
+    }
+    shown.push(shellQuote(arg.length > 180 ? '<long argument omitted>' : arg));
+    if (arg === '--message') redactNext = true;
+  }
+
+  return shown.join(' ');
+}
+
+function shellQuote(value: string): string {
+  if (/^[A-Za-z0-9_./:=@+-]+$/.test(value)) return value;
+  return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 
 /** Resolve a command on PATH, cross-platform. */
