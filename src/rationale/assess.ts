@@ -87,7 +87,7 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
 
   if (affected > 0) {
     reasons.push(
-      `${affected} ${plural(affected, 'place', 'places')} in ${files} ${plural(files, 'file', 'files')} use an API this upgrade changes.`,
+      `${affected} ${plural(affected, 'place', 'places')} in ${files} ${plural(files, 'file', 'files')} ${plural(affected, 'uses', 'use')} an API this upgrade changes.`,
     );
     if (mechanical > 0) {
       reasons.push(`${mechanical} of the changes can be applied mechanically.`);
