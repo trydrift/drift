@@ -40,6 +40,9 @@ src/
 │   ├── openapi.ts        Consumer-breaking spec diff engine
 │   ├── type-surface.ts   TypeScript .d.ts API diff via the compiler API
 │   └── surface/          Computed API diffs for cargo, go, maven, pypi
+│       ├── go.ts         Module-cache fetch + per-package extraction
+│       ├── go-apidump.ts The Go extractor, as embedded source
+│       └── go-toolchain.ts  Toolchain probing and required-version lookup
 ├── analyze/              Stage 3 — evidence → breaking changes
 │   ├── rules.ts          Deterministic mapping + prose patterns
 │   └── llm.ts            Optional recall assist (off by default)
@@ -47,9 +50,15 @@ src/
 │   ├── walk.ts           Source discovery
 │   └── metarag.ts        Imports, code units, structural summaries
 ├── localize/             Stage 4b — impact sites
-├── plan/                 Stage 5 — commits, risk, guardrails
-├── dispatch/             Stage 6 — Copilot + approval flow
-├── report/               Stage 7 — the Drift Report
+├── rationale/            Stage 5 — why an upgrade is worth taking
+│   ├── osv.ts            Known vulnerabilities, both versions compared
+│   ├── maintenance.ts    Deprecation, archival, release recency, runtimes
+│   ├── license.ts        License changes and policy, off by default
+│   ├── summary.ts        Plain-English classification of upstream changes
+│   └── assess.ts         The recommendation, as transparent rules
+├── plan/                 Stage 6 — commits, risk, guardrails
+├── dispatch/             Stage 7 — Copilot + approval flow
+├── report/               Stage 8 — the Drift Report
 ├── github/               Octokit wrapper
 ├── repo/                 RepoProvider seam — GitHub API or local git
 └── runners/              Action, webhook server, entry points
@@ -192,7 +201,7 @@ so nothing downstream learns which produced it:
 |---|---|---|---|
 | npm | TypeScript compiler API | 1.00 | published `.d.ts` |
 | cargo | `cargo public-api` | 1.00 | rustdoc JSON |
-| go | `go doc -all` in a scratch module | 1.00 | exported symbols |
+| go | `go/build` + `go/parser`, run from a scratch module | 1.00 | every importable package, per platform |
 | maven | `japicmp` | 1.00 | classfiles of both jars |
 | pypi | `ast` in a Python subprocess | 0.90 | sources or `.pyi` stubs |
 | rubygems | — | — | prose only |
@@ -213,6 +222,39 @@ backend, and Drift does not run a third party's code to find out what is in it.
 Ruby is deliberately absent. There is no reliable static public surface for a
 gem, and forcing a low-confidence signal into the highest-weight slot is a lie
 told by a number.
+
+**How the Go diff works, and why it is not `go doc`.** Drift writes a small
+standard-library Go program into a scratch module and runs it against the module
+cache. The program walks every importable package of the module — skipping
+`internal`, `vendor`, and `testdata`, none of which a consumer can reach — and
+records exported functions, methods, types, interfaces, struct fields, constants
+and variables with their full signatures, type parameters included.
+
+Three decisions are load-bearing:
+
+- **`go mod download`, not `go get`.** The module is fetched by path and version
+  with no build list, without resolving its own dependencies, and without
+  touching the user's `go.mod`. The second look at a version Go already has is a
+  cache hit and no network at all, and a module whose dependencies no longer
+  resolve is still analysable because Drift reads its source rather than
+  building it.
+- **Parsing, not type-checking.** The predecessor ran `go doc -all` against the
+  module root, which prints nothing for a module whose API lives in subpackages.
+  That is the shape of `golang.org/x/sys`, `golang.org/x/net`, and most of the
+  ecosystem, so the check reported "no public surface" precisely where it was
+  most needed.
+- **Three platforms, not one.** Go's build constraints make the exported API a
+  function of GOOS and GOARCH. `golang.org/x/sys/windows` does not exist on
+  Linux and half of `unix` does not exist on Windows, so a single-platform
+  comparison would find both sides empty — invisible rather than wrong, which is
+  worse. A symbol that loses a platform is reported as a removal that names the
+  platform.
+
+What it deliberately does *not* report matters as much. A removed package is one
+finding, not the four hundred symbol removals underneath it. A method that
+vanished with its type intact is reported once, through the type. Bulk constant
+churn from a regenerated platform header collapses into a single counted line.
+One unparseable package is recorded and skipped, never fatal.
 
 **OpenAPI diff** — reports only consumer-breaking direction. Tightening what a
 server accepts (new required field, narrowed request enum) or loosening what it
@@ -266,7 +308,67 @@ established.
 Package name ≠ import name often enough to matter (`beautifulsoup4` → `bs4`), so
 there's an explicit alias table.
 
-### 5 · Plan
+### 5 · Rationale
+
+The other half of the question. Every stage above answers *what might this
+break?*, which is the harder half and the more useful one — but on its own it is
+a machine that only ever argues against upgrading, and a tool that never finds a
+reason to move is a tool people stop opening.
+
+Four sources, each attached to a specific upgrade rather than collected into a
+dashboard. Drift is not becoming a scanner:
+
+| Source | Answers | Off switch |
+|---|---|---|
+| OSV | Does taking this improve, preserve, or worsen known exposure? | `rationale.security` |
+| Registry + GitHub | Deprecated, archived, retracted, yanked, raised runtime minimum | `rationale.maintenance` |
+| Release notes | What the maintainer said changed, classified | `rationale.summary` |
+| Registry license fields | Did the license change, and does it violate a configured policy? | `licenses.enabled` (off by default) |
+
+**OSV is queried for both versions**, because the answer lives in the
+difference. A target that fixes three advisories and introduces one is a
+trade-off worth showing, and asking only about the installed version hides it.
+Advisories are merged across their aliases — the single HTTP/2 flaw OSV returns
+as `GO-2024-2687`, `GHSA-4v7x-pqxf-cx7m`, and `CVE-2023-45288` is one finding —
+and matched between the two queries on identifier sets rather than primary ids,
+because which record OSV leads with varies per query.
+
+**Maintenance states facts and refuses to score.** There is no health metric,
+deliberately. A mature library can go eighteen months without a commit because it
+is finished, and a score that reads that as decay talks teams out of dependencies
+that were never a problem — while a package that ships weekly and was archived
+yesterday scores beautifully right up until it stops. Exactly three things are
+marked concerning: the maintainer said stop, the repository is archived, or the
+proposed version is itself withdrawn.
+
+**Summaries are classified, never generated.** Every line is a sentence a
+maintainer published, trimmed and sorted. A line the classifier cannot place
+becomes an "improvement" — the weakest label available — and it never promotes a
+line to breaking or security without the maintainer having used those words.
+Performance claims appear only where someone made one; "newer is probably
+faster" is a guess, and a guess printed beside a computed API diff borrows
+credibility it has not earned.
+
+**The recommendation is a ladder of rules, not a score.** Six outcomes — safe to
+upgrade, upgrade recommended, upgrade after review, manual migration required,
+insufficient evidence, do not upgrade yet — decided in an order that encodes a
+priority: *don't make things worse* beats *fix your code* beats *take the
+security fix* beats *this is fine*. Every rule that fires records the sentence it
+fired with, and those sentences are the output. A developer who disagrees with
+`0.72` has nothing to push back on; one who disagrees with "one change requires a
+decision about behaviour" can point at it and say why.
+
+`insufficient-evidence` is checked *last* among the negative outcomes, so a real
+finding — which proves something was readable — always outranks the absence of
+others. A surface diff that ran and found nothing counts as having looked;
+"Drift checked and this is clean" and "Drift could not check" are different
+sentences and only one of them is reassuring.
+
+**Gaps are assembled in one place and deduplicated.** This is what stops the
+report printing the same missing toolchain twice, once as the failure and once
+as the summary that restates it.
+
+### 6 · Plan
 
 One commit per concern, ordered in three tiers:
 
@@ -291,14 +393,14 @@ way, so neither the type checker nor a smoke test catches a wrong fix.
 **A guardrail blocker downgrades the run to approval-required — it never discards
 the plan.**
 
-### 6 · Dispatch
+### 7 · Dispatch
 
 See [copilot-integration.md](copilot-integration.md).
 
 Drift creates the branch itself, pinned to the analysed commit; if the branch
 moved underneath us the impact sites would no longer be trustworthy.
 
-### 7 · Report
+### 8 · Report
 
 Two rules: every claim carries a link to its evidence, and uncertainty is stated
 in the same place as the confident findings. Burying caveats at the bottom is how
@@ -344,10 +446,6 @@ line are always exact; the symbol is a convenience.
 installed tool. Cargo, Go, Maven, and PyPI diffs degrade to prose evidence, with
 the reason stated, when their tool is missing. RubyGems has no computed signal
 at all.
-
-**Go surfaces read the module root only.** `go doc -all` is run against the
-module path, so an API that lives entirely in subpackages is not compared.
-Grouped `const (...)` blocks are also not read.
 
 **Behaviour changes are the weak spot.** A changelog saying "retries are now
 exponential" has no symbol to search for and no compile error to catch. Drift

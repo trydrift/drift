@@ -129,6 +129,90 @@ Cap on release notes fetched per dependency.
 
 ---
 
+## Upgrade rationale
+
+Why an upgrade might be worth taking, alongside what it might cost. On by
+default, because a tool that only ever argues against upgrading is a tool people
+stop opening.
+
+### `rationale.security`
+`boolean` — default **`true`**
+
+Query [OSV](https://osv.dev) for both the installed and the target version, and
+report which advisories the upgrade resolves, carries, and introduces. The
+question asked is not "does this package have vulnerabilities" — that is a
+scanner's question — but whether *taking this upgrade* improves, preserves, or
+worsens known exposure.
+
+Covers npm, PyPI, Go, crates.io, Maven, and RubyGems. Unreachable OSV degrades
+the assessment to "not checked", never to an all-clear.
+
+### `rationale.maintenance`
+`boolean` — default **`true`**
+
+Deprecation notices, archived repositories, Go `retract` directives, PyPI and
+crates.io yanks, release dates, the latest stable version, and raised runtime
+minimums.
+
+Deliberately produces no health score. A mature library can go eighteen months
+without a commit because it is finished; scoring that as decay is how a
+dashboard talks a team out of a dependency that was never a problem.
+
+### `rationale.summary`
+`boolean` — default **`true`**
+
+A plain-English summary of what changed upstream, separated into breaking
+changes, security fixes, improvements, and fixes, each citing its source.
+
+Nothing is generated: every line is a sentence a maintainer published. A line
+that cannot be classified becomes an "improvement", the weakest label available.
+
+## Licenses (optional)
+
+Off by default. A license check with no configured policy has nothing to compare
+against, and reporting "the license is MIT" on every upgrade is noise.
+
+Drift reports what the metadata says and how it compares to the policy in this
+file. **It does not give legal advice.**
+
+### `licenses.enabled`
+`boolean` — default **`false`**
+
+Turn on license checking. Note that a *change* of declared license between the
+two versions is reported whether or not this is enabled — MIT becoming AGPL
+inside a version bump is a decision being made silently, and that is worth
+surfacing regardless of policy.
+
+### `licenses.allow` · `licenses.deny`
+`string[]` — default **`[]`**
+
+SPDX identifiers. `deny` always wins over `allow`. An empty `allow` list permits
+everything not denied.
+
+```yaml
+licenses:
+  enabled: true
+  allow: [MIT, BSD-2-Clause, BSD-3-Clause, Apache-2.0, ISC]
+  deny: [AGPL-3.0, SSPL-1.0]
+```
+
+A disjunction such as `MIT OR Apache-2.0` is satisfied by any permitted branch,
+because the consumer chooses; a conjunction such as `MIT AND AGPL-3.0` binds the
+consumer to both, so both must be permitted.
+
+The check also looks at dependencies the target version newly introduces. This
+covers the upgraded package's own declared dependencies — resolving the full
+transitive graph would mean running the package manager, which analysis never
+does — and the report says so rather than implying whole-graph coverage.
+
+### `licenses.requireDeclared`
+`boolean` — default **`false`**
+
+Treat a missing or unreadable license as a violation. Off by default: many
+registries simply do not publish the field — Go publishes none at all — and
+failing an upgrade over an empty registry column is the kind of false alarm that
+gets a policy check switched off entirely.
+
 ## Guardrails
 
 ### `guardrails.protectedPaths`
