@@ -85,6 +85,28 @@ export function readEffort(agentId: string): SessionEffort {
 /** How much rope the agent gets. Mirrors Claude Code's permission modes. */
 export type SessionPermission = 'ask' | 'auto-edit' | 'full-auto';
 
+/**
+ * Where a fix does its work.
+ *
+ * `new` is the default and the safe one: an agent that only ever edits a branch
+ * it created cannot damage the branch the developer was on, and abandoning the
+ * whole run costs one checkout. `current` exists because it is sometimes what
+ * someone actually wants — already on a scratch branch, already mid-migration —
+ * and a tool that refuses is a tool they work around.
+ */
+export type SessionBranchMode = 'new' | 'current';
+
+/**
+ * Whether Drift commits on its own.
+ *
+ * `approve` holds every edit for keep/undo; `auto` commits each group the
+ * moment its agent finishes. Kept separate from the permission dial because
+ * they answer different questions — permission is how much the *agent* may do,
+ * this is how much *git history* Drift may write — and collapsing them is how
+ * "let it edit without asking" quietly came to mean "let it commit too".
+ */
+export type SessionCommitMode = 'approve' | 'auto';
+
 export interface Attachment {
   kind: 'file' | 'folder' | 'package' | 'selection';
   /** Shown on the chip. */
@@ -167,7 +189,7 @@ export interface Task {
 
 export interface TaskActivity {
   id: string;
-  kind: 'thinking' | 'bash' | 'edit' | 'status';
+  kind: 'thinking' | 'bash' | 'edit' | 'status' | 'search';
   title: string;
   detail?: string;
   input?: string;
@@ -176,6 +198,15 @@ export interface TaskActivity {
   added?: number;
   removed?: number;
   lines?: { kind: 'add' | 'del' | 'context'; text: string }[];
+  /**
+   * Pages the agent said it was consulting.
+   *
+   * Rendered as real links. An agent that reports "searching the changelog at
+   * <url>" is telling the developer exactly which source its fix is about to be
+   * based on, and the only useful response to that is to read it — which means
+   * the URL has to be clickable rather than a string in a log line.
+   */
+  links?: string[];
 }
 
 export type TaskActivityInput = Omit<TaskActivity, 'id'>;
@@ -516,6 +547,49 @@ export class DriftSession {
     };
   }
 
+  /**
+   * Put down anything still shown as working.
+   *
+   * A spinner means "this is happening right now", so one left turning after
+   * the run behind it has stopped is a straightforward lie — and the most
+   * expensive kind, because the honest reading of it is "still working, wait",
+   * which is advice to wait forever. Pressing stop, or an error thrown past the
+   * handle that would have closed a step, both used to leave exactly that.
+   *
+   * Whatever finished cleanly settled itself already, so on a normal run this
+   * finds nothing and does nothing.
+   */
+  settleLive(reason: 'stopped' | 'failed'): void {
+    const phase = reason === 'stopped' ? 'Stopped' : 'Did not finish';
+    const taskState: TaskState = reason === 'stopped' ? 'skipped' : 'failed';
+    let changed = false;
+
+    for (const item of this.items) {
+      if (item.kind === 'step' && item.state === 'running') {
+        item.state = 'failed';
+        item.phase = phase;
+        item.detail = '';
+        changed = true;
+        continue;
+      }
+
+      if (item.kind !== 'tasks') continue;
+      for (const group of item.groups) {
+        if (group.state !== 'active' && group.state !== 'pending') continue;
+        // A group that never started is not a casualty of the stop; it simply
+        // never happened, and "skipped" says that whichever way the run ended.
+        group.state = group.state === 'active' ? taskState : 'skipped';
+        group.note = undefined;
+        changed = true;
+        for (const task of group.tasks) {
+          if (task.state === 'active' || task.state === 'pending') task.state = group.state;
+        }
+      }
+    }
+
+    if (changed) this.emitter.fire();
+  }
+
   packages(headline: string, ids: readonly string[]): void {
     // Only ever one package list in the thread; a second scan replaces the
     // first rather than leaving two contradictory lists on screen.
@@ -630,6 +704,24 @@ export class DriftSession {
 
   get permission(): SessionPermission {
     return read<SessionPermission>('session.permission', 'auto-edit');
+  }
+
+  get branchMode(): SessionBranchMode {
+    return read<SessionBranchMode>('git.branchMode', 'new');
+  }
+
+  get commitMode(): SessionCommitMode {
+    return read<SessionCommitMode>('git.commitMode', 'approve');
+  }
+
+  async setBranchMode(mode: SessionBranchMode): Promise<void> {
+    await write('git.branchMode', mode);
+    this.emitter.fire();
+  }
+
+  async setCommitMode(mode: SessionCommitMode): Promise<void> {
+    await write('git.commitMode', mode);
+    this.emitter.fire();
   }
 
   /** How hard the given subscription has been asked to think. */

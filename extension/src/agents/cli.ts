@@ -392,24 +392,24 @@ export class CliFixAgent implements FixAgent {
       const onAbort = () => child.kill('SIGTERM');
       ctx.signal.addEventListener('abort', onAbort, { once: true });
 
-      child.stdout.on('data', (chunk: Buffer) => {
+      // Which pipe a line arrived on says nothing about what it means. Every
+      // one of these CLIs writes its reasoning to stderr and keeps stdout for
+      // the final answer, so labelling the panel's steps by stream produced a
+      // column of rows all called STDERR — the agent's actual thinking, filed
+      // under the least informative word available. Both pipes are reported
+      // the same way, and the reader classifies by content.
+      const surface = (chunk: Buffer, into: 'out' | 'err') => {
         const text = chunk.toString();
-        stdout += text;
+        if (into === 'out') stdout += text;
+        else stderr += text;
         lastOutput = Date.now();
-        // Surface the agent's own progress rather than an opaque spinner.
-        const line = text.trim().split('\n').filter(Boolean).pop();
-        if (line) ctx.report(`stdout: ${line.slice(0, 220)}`);
-      });
 
-      child.stderr.on('data', (chunk: Buffer) => {
-        const text = chunk.toString();
-        stderr += text;
-        lastOutput = Date.now();
         const line = text.trim().split('\n').filter(Boolean).pop();
-        if (line && !/^warning:\s*`?--full-auto`?\s+is deprecated/i.test(line)) {
-          ctx.report(`stderr: ${line.slice(0, 220)}`);
-        }
-      });
+        if (line && !isNoise(line)) ctx.report(line.slice(0, 400));
+      };
+
+      child.stdout.on('data', (chunk: Buffer) => surface(chunk, 'out'));
+      child.stderr.on('data', (chunk: Buffer) => surface(chunk, 'err'));
 
       child.on('error', (err) => {
         clearTimeout(timer);
@@ -433,6 +433,23 @@ export class CliFixAgent implements FixAgent {
       }
     });
   }
+}
+
+/**
+ * Lines that are about the CLI rather than about the work.
+ *
+ * Deprecation warnings and ANSI cursor housekeeping are noise in a panel whose
+ * job is to show what the agent is doing. Anything else gets through — a line
+ * this cannot classify is still the agent's own account of its work, and
+ * dropping it would put the spinner back.
+ */
+function isNoise(line: string): boolean {
+  const text = line.replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/g, '').trim();
+  if (!text) return true;
+  if (/^warning:\s*`?--full-auto`?\s+is deprecated/i.test(text)) return true;
+  // Progress bars and spinner frames redrawn character by character.
+  if (/^[\s.·•▪▫◦─━|/\\-]+$/.test(text)) return true;
+  return false;
 }
 
 function displayCommand(command: string, args: readonly string[]): string {
