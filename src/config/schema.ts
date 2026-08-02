@@ -241,6 +241,23 @@ export const DriftConfigSchema = z.object({
     .default({}),
 
   /**
+   * Privacy-preserving product telemetry.
+   *
+   * Off by default. Event construction is allow-listed and rejects source code,
+   * raw paths, repository names, prompts, model responses, command output, and
+   * likely secrets before anything can be sent.
+   */
+  telemetry: z
+    .object({
+      enabled: z.boolean().default(false),
+      endpoint: z.string().url().optional(),
+      installationId: z.string().optional(),
+      rotationSalt: z.string().optional(),
+      retentionDays: z.number().int().min(1).max(730).default(180),
+    })
+    .default({}),
+
+  /**
    * How the pull request gets opened.
    *
    * The default finishes the job: once there is a branch with a reviewed

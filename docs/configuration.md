@@ -161,6 +161,12 @@ No observed difference is **not** proof of behavioural compatibility. It only
 raises verification confidence for the tested contract and generated input
 domain, and the report records the limitations.
 
+## Telemetry
+
+Telemetry is off by default. See [telemetry.md](telemetry.md) for the allow-list,
+kill switches, retention target, deletion approach, and the `drift telemetry
+print` command that shows the exact event shape before collection is enabled.
+
 ---
 
 ## Upgrade rationale
@@ -513,6 +519,8 @@ mid-session.
 |---|---|
 | `GITHUB_TOKEN` | Repository reads, branch creation, issues |
 | `DRIFT_COPILOT_TOKEN` | **User-scoped** token for the Copilot agent API |
+| `DRIFT_TELEMETRY_DISABLED` | `1` or `true` disables telemetry even when opted in |
+| `DO_NOT_TRACK` | `1` disables telemetry |
 | `ANTHROPIC_API_KEY` | Only when `llm.enabled: true` |
 | `GITHUB_WEBHOOK_SECRET` | Webhook runner only |
 | `DRIFT_LOG_LEVEL` | `debug` \| `info` \| `warn` \| `error` |

@@ -11,6 +11,7 @@ import { resolveBaseBranch, titleFor } from './plan/pull-request.js';
 import { renderPullRequestBody } from './report/markdown.js';
 import { runAction } from './runners/action.js';
 import { main as serveWebhook } from './runners/webhook.js';
+import { sampleTelemetryEvent } from './telemetry.js';
 import { createLogger, type LogLevel } from './util/logger.js';
 
 const run = promisify(execFile);
@@ -33,6 +34,7 @@ Usage:
   drift pr [options]          Push the current branch and open a pull request
   drift action                Run as a GitHub Action (reads INPUT_* env vars)
   drift serve                 Run the self-hosted webhook server
+  drift telemetry print       Print the exact telemetry event shape
   drift --version             Print the version
 
 Options for \`analyze\`:
@@ -61,6 +63,8 @@ never force-pushes, and never touches the base branch.
 Environment:
   GITHUB_TOKEN                Token used for repository reads
   DRIFT_COPILOT_TOKEN         User-scoped token for the Copilot agent API
+  DRIFT_TELEMETRY_DISABLED    1/true disables telemetry even if configured
+  DO_NOT_TRACK                1 disables telemetry
   ANTHROPIC_API_KEY           Only if llm.enabled is true in drift.yml
 `.trim();
 
@@ -79,6 +83,8 @@ export async function main(argv: string[]): Promise<number> {
       // Awaited: the queue is opened asynchronously, and a failure there must
       // surface as an exit code rather than an unhandled rejection.
       return await serveWebhook();
+    case 'telemetry':
+      return telemetryCommand(rest);
     case '--version':
     case '-v':
       console.log(await packageVersion());
@@ -93,6 +99,17 @@ export async function main(argv: string[]): Promise<number> {
       console.log(USAGE);
       return 1;
   }
+}
+
+async function telemetryCommand(args: readonly string[]): Promise<number> {
+  const [subcommand] = args;
+  if (subcommand !== 'print') {
+    console.error('Usage: drift telemetry print');
+    return 1;
+  }
+
+  console.log(JSON.stringify(sampleTelemetryEvent(), null, 2));
+  return 0;
 }
 
 interface Flags {
