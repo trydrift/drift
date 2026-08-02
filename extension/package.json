@@ -76,6 +76,12 @@
         "icon": "$(gear)"
       },
       {
+        "command": "drift.disableEditorSignals",
+        "title": "Hide Editor Flags",
+        "category": "Drift",
+        "icon": "$(eye-closed)"
+      },
+      {
         "command": "drift.signInToGitHub",
         "title": "Sign in to GitHub",
         "category": "Drift",
@@ -288,9 +294,14 @@
           "group": "2_config@2"
         },
         {
-          "command": "drift.signInToGitHub",
+          "command": "drift.disableEditorSignals",
           "when": "view == drift.changes",
           "group": "2_config@3"
+        },
+        {
+          "command": "drift.signInToGitHub",
+          "when": "view == drift.changes",
+          "group": "2_config@4"
         },
         {
           "command": "drift.showLog",
@@ -533,15 +544,21 @@
         "drift.ui.showInlineDiagnostics": {
           "type": "boolean",
           "default": true,
-          "markdownDescription": "Flag affected lines in the editor and the Problems panel. Severity follows Drift's confidence: high is an error, low is information.",
+          "markdownDescription": "Flag affected lines in the editor and the Problems panel. Already-installed breakage can be an error; findings for an upgrade you have not installed yet are warnings.",
           "order": 20
+        },
+        "drift.ui.showManifestCodeLens": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Show Drift CodeLens prompts above dependency manifests. Turn this off when the dependency tree and report are enough.",
+          "order": 21
         },
         "drift.fix.customInstructions": {
           "type": "string",
           "editPresentation": "multilineText",
           "default": "",
           "markdownDescription": "Repository conventions passed to every agent. The highest-leverage setting for output quality.\n\nFor example: *\"This repo uses Vitest, not Jest. Prefer named exports. All HTTP goes through src/lib/http.ts.\"*",
-          "order": 21
+          "order": 22
         },
         "drift.fix.maxAgents": {
           "type": "number",
@@ -549,7 +566,7 @@
           "minimum": 1,
           "maximum": 16,
           "markdownDescription": "How many agents may work at once. **1** runs one commit group at a time.\n\nAbove 1, each agent gets its own `git worktree` — a private checkout of the same commit — so two agents can never overwrite each other's edits. Only groups with no file in common run together; the rest still run in order. Results are applied to your working tree in plan order, not in the order agents finish, so the review queue looks the same either way.\n\nStays at 1 regardless when the agent permission is **Ask before editing** (approval prompts arriving at once is not approval), for cloud agents, and where git cannot create a worktree.",
-          "order": 22
+          "order": 23
         },
         "drift.pullRequest.enabled": {
           "type": "boolean",

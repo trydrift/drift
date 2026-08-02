@@ -3,6 +3,7 @@ import { basename, join } from 'node:path';
 import type { UpgradeCandidate } from '../upgrades.js';
 import type { DriftState } from '../state.js';
 import { describeSeverity, severityOf, type UpgradeSeverity } from '../severity.js';
+import { DriftReportPanel } from './report.js';
 
 const MANIFESTS = new Set(['package.json', 'go.mod', 'Cargo.toml', 'pom.xml', 'requirements.txt', 'Gemfile']);
 const ORDER: UpgradeSeverity[] = ['affected', 'unchecked', 'clean', 'error'];
@@ -93,6 +94,9 @@ export class ManifestLensProvider implements vscode.CodeLensProvider, vscode.Dis
   }
 
   provideCodeLenses(document: vscode.TextDocument): vscode.CodeLens[] {
+    if (!vscode.workspace.getConfiguration('drift').get<boolean>('ui.showManifestCodeLens', true)) {
+      return [];
+    }
     if (!isManifest(document.uri.fsPath)) return [];
     const line = dependencyBlockLine(document);
     const range = new vscode.Range(line, 0, line, 0);
@@ -157,9 +161,8 @@ export async function openDependency(state: DriftState, id: string): Promise<voi
   const candidate = state.candidates.find((entry) => entry.id === id);
   if (!candidate) return;
 
-  const focus = candidate.plan?.breakingChanges[0]?.id;
-  if (focus && severityOf(candidate) === 'affected') {
-    await vscode.commands.executeCommand('drift.explainChange', focus);
+  if (candidate.plan) {
+    DriftReportPanel.show(state, { dependency: candidate.name });
     return;
   }
 

@@ -18,12 +18,13 @@ export class DriftReportPanel {
   private readonly panel: vscode.WebviewPanel;
   private readonly disposables: vscode.Disposable[] = [];
 
-  static show(state: DriftState, focusChangeId?: string): void {
+  static show(state: DriftState, focus?: string | FocusTarget): void {
     const column = vscode.window.activeTextEditor?.viewColumn ?? vscode.ViewColumn.One;
+    const target = typeof focus === 'string' ? { changeId: focus } : focus;
 
     if (DriftReportPanel.current) {
       DriftReportPanel.current.panel.reveal(column, true);
-      DriftReportPanel.current.render(focusChangeId);
+      DriftReportPanel.current.render(target);
       return;
     }
 
@@ -35,7 +36,7 @@ export class DriftReportPanel {
     );
 
     DriftReportPanel.current = new DriftReportPanel(panel, state);
-    DriftReportPanel.current.render(focusChangeId);
+    DriftReportPanel.current.render(target);
   }
 
   static refresh(): void {
@@ -74,11 +75,17 @@ export class DriftReportPanel {
       case 'command':
         await vscode.commands.executeCommand(message.command, ...(message.args ?? []));
         return;
+      case 'setting':
+        await vscode.workspace
+          .getConfiguration('drift')
+          .update(message.key, message.value, vscode.ConfigurationTarget.Workspace);
+        this.render();
+        return;
     }
   }
 
-  private render(focusChangeId?: string): void {
-    this.panel.webview.html = renderHtml(this.state, this.panel.webview, focusChangeId);
+  private render(focus?: FocusTarget): void {
+    this.panel.webview.html = renderHtml(this.state, this.panel.webview, focus);
   }
 
   private dispose(): void {
@@ -91,19 +98,25 @@ export class DriftReportPanel {
 type IncomingMessage =
   | { type: 'openFile'; file: string; line: number }
   | { type: 'openUrl'; url: string }
-  | { type: 'command'; command: string; args?: unknown[] };
+  | { type: 'command'; command: string; args?: unknown[] }
+  | { type: 'setting'; key: string; value: unknown };
+
+interface FocusTarget {
+  changeId?: string;
+  dependency?: string;
+}
 
 /* ------------------------------------------------------------------ */
 /* Rendering                                                           */
 /* ------------------------------------------------------------------ */
 
-function renderHtml(state: DriftState, webview: vscode.Webview, focusChangeId?: string): string {
+function renderHtml(state: DriftState, webview: vscode.Webview, focus?: FocusTarget): string {
   const nonce = makeNonce();
   const plan = state.plan;
 
   const body = plan
     ? plan.breakingChanges.length > 0
-      ? renderPlan(plan, state, focusChangeId)
+      ? renderPlan(plan, state, focus)
       : renderCleanPlan(plan, state)
     : renderEmpty(state);
 
@@ -163,9 +176,10 @@ function renderEmpty(state: DriftState): string {
     </div>`);
 }
 
-function renderPlan(plan: RemediationPlan, state: DriftState, focusChangeId?: string): string {
+function renderPlan(plan: RemediationPlan, state: DriftState, focus?: FocusTarget): string {
   const files = new Set(plan.impactSites.map((s) => s.file)).size;
   const status = state.status;
+  const pendingUpgrade = isPendingUpgradePlan(plan, state);
 
   const banner =
     status.kind === 'fixed'
@@ -207,7 +221,9 @@ ${
   // do", and an alarm that turns out to be nothing gets ignored next time.
   plan.impactSites.length === 0
     ? `<p class="verdict-clear">None of these changes touch code in this repository. Safe to upgrade.</p>`
-    : `<p class="verdict-hit">${files} file${files === 1 ? '' : 's'} here use an API that changed.</p>`
+    : pendingUpgrade
+      ? `<p class="verdict-hit">${files} file${files === 1 ? '' : 's'} here would use an API that changes in the selected upgrade.</p>`
+      : `<p class="verdict-hit">${files} file${files === 1 ? '' : 's'} here use an API that changed.</p>`
 }
 
 <div class="stats">
@@ -221,12 +237,13 @@ ${
 <div class="actions">
   <button class="primary" data-command="drift.fixAll">Fix with my AI agent</button>
   <button data-command="drift.selectAgent">Change agent</button>
+  <button data-command="drift.disableEditorSignals">Hide editor flags</button>
   <button data-command="drift.analyze">Re-analyse</button>
 </div>
 
 ${plan.blockers.length ? renderBlockers(plan) : ''}
 ${warnings}
-${renderBreakingChanges(plan, focusChangeId)}
+${renderBreakingChanges(plan, focus, pendingUpgrade)}
 ${renderCommits(plan)}
 ${renderEvidence(plan)}
 `;
@@ -300,7 +317,11 @@ function renderBlockers(plan: RemediationPlan): string {
     </ul>`);
 }
 
-function renderBreakingChanges(plan: RemediationPlan, focusChangeId?: string): string {
+function renderBreakingChanges(
+  plan: RemediationPlan,
+  focus: FocusTarget | undefined,
+  pendingUpgrade: boolean,
+): string {
   if (plan.breakingChanges.length === 0) return '';
 
   const found = plan.breakingChanges.filter((change) =>
@@ -311,9 +332,9 @@ function renderBreakingChanges(plan: RemediationPlan, focusChangeId?: string): s
   );
 
   return `<section>
-    <h2>What broke</h2>
-    ${renderChangeGroup('Found in this repo', found, plan, focusChangeId, true)}
-    ${renderChangeGroup('Not found in this repo', notFound, plan, focusChangeId, false)}
+    <h2>${pendingUpgrade ? 'What would break' : 'What broke'}</h2>
+    ${renderChangeGroup('Found in this repo', found, plan, focus, true, pendingUpgrade)}
+    ${renderChangeGroup('Not found in this repo', notFound, plan, focus, false, pendingUpgrade)}
   </section>`;
 }
 
@@ -321,13 +342,15 @@ function renderChangeGroup(
   title: string,
   changes: readonly BreakingChange[],
   plan: RemediationPlan,
-  focusChangeId: string | undefined,
+  focus: FocusTarget | undefined,
   open: boolean,
+  pendingUpgrade: boolean,
 ): string {
   if (changes.length === 0) return '';
-  return `<details class="change-group" ${open ? 'open' : ''}>
+  const hasFocus = changes.some((change) => isFocusedChange(change, focus));
+  return `<details class="change-group" ${open || hasFocus ? 'open' : ''}>
     <summary><span>${escapeHtml(title)}</span><small>${changes.length} breaking change${changes.length === 1 ? '' : 's'}</small></summary>
-    ${changes.map((change) => renderChangeCard(change, plan, change.id === focusChangeId)).join('')}
+    ${changes.map((change) => renderChangeCard(change, plan, isFocusedChange(change, focus), pendingUpgrade)).join('')}
   </details>`;
 }
 
@@ -335,6 +358,7 @@ function renderChangeCard(
   change: BreakingChange,
   plan: RemediationPlan,
   focused: boolean,
+  pendingUpgrade: boolean,
 ): string {
   const sites = plan.impactSites.filter((s) => s.breakingChangeId === change.id);
   const evidence = plan.evidence.filter((e) => change.citations.includes(e.id));
@@ -362,13 +386,13 @@ function renderChangeCard(
       : `<p class="fix"><b>Required fix:</b> ${escapeHtml(change.remediation)}</p>`;
 
   return `
-<article class="card ${focused ? 'focused' : ''}" id="${escapeAttr(change.id)}">
+<article class="card ${focused ? 'focused' : ''}" id="${escapeAttr(change.id)}" ${focused ? 'data-focus="true"' : ''}>
   <div class="card-head">
     <span class="badge ${change.confidence}">${change.confidence}</span>
     <span class="kind">${escapeHtml(change.kind)}</span>
     <code class="dep">${escapeHtml(change.dependency)}</code>
   </div>
-  <h3>${escapeHtml(change.summary)}</h3>
+  <h3>${escapeHtml(displaySummary(change, plan, pendingUpgrade))}</h3>
   ${remediation}
   ${
     evidence.length
@@ -388,11 +412,26 @@ function renderChangeCard(
 
 function renderCommits(plan: RemediationPlan): string {
   if (plan.commits.length === 0) return '';
+  const branchMode = vscode.workspace.getConfiguration('drift').get<string>('git.branchMode', 'new');
+  const commitMode = vscode.workspace.getConfiguration('drift').get<string>('git.commitMode', 'approve');
 
   return `
 <section>
   <h2>Planned commits</h2>
   <p class="muted">One commit per concern, so you can review, approve, or revert each independently.</p>
+  <div class="commit-actions">
+    <button class="primary" data-command="drift.fixAll">Fix all planned commits</button>
+    <div class="choice">
+      <span>Branch</span>
+      <button class="small ${branchMode === 'new' ? 'selected' : ''}" data-setting="git.branchMode" data-value="new">New branch</button>
+      <button class="small ${branchMode === 'current' ? 'selected' : ''}" data-setting="git.branchMode" data-value="current">Current branch</button>
+    </div>
+    <div class="choice">
+      <span>Commit</span>
+      <button class="small ${commitMode === 'approve' ? 'selected' : ''}" data-setting="git.commitMode" data-value="approve">Review first</button>
+      <button class="small ${commitMode === 'auto' ? 'selected' : ''}" data-setting="git.commitMode" data-value="auto">Auto commit</button>
+    </div>
+  </div>
   <ol class="commits">
     ${plan.commits
       .map(
@@ -422,7 +461,7 @@ function renderEvidence(plan: RemediationPlan): string {
 
 function renderEvidenceItem(evidence: Evidence): string {
   return `
-<details class="evidence-item">
+<details class="evidence-item" id="evidence-${escapeAttr(evidence.id)}">
   <summary>
     <span class="source">${escapeHtml(evidence.source)}</span>
     ${
@@ -452,6 +491,38 @@ function notice(kind: 'ok' | 'info' | 'warn', title: string, detail: string): st
 
 function riskClass(risk: string): string {
   return `risk-${risk}`;
+}
+
+function displaySummary(change: BreakingChange, plan: RemediationPlan, pendingUpgrade: boolean): string {
+  if (!pendingUpgrade) return change.summary;
+  const target = plan.changes.find((entry) => entry.name === change.dependency)?.to;
+  const version = target ? `${change.dependency}@${target}` : change.dependency;
+  return `This breaks in ${version}: ${lowerFirst(change.summary)}`;
+}
+
+function lowerFirst(text: string): string {
+  return text ? `${text[0]!.toLocaleLowerCase()}${text.slice(1)}` : text;
+}
+
+function isFocusedChange(change: BreakingChange, focus: FocusTarget | undefined): boolean {
+  return Boolean(
+    (focus?.changeId && change.id === focus.changeId) ||
+      (focus?.dependency && change.dependency === focus.dependency),
+  );
+}
+
+function isPendingUpgradePlan(plan: RemediationPlan, state: DriftState): boolean {
+  if (state.status.kind !== 'findings') return false;
+  return state.candidates.some((candidate) => {
+    if (candidate.current === candidate.selected) return false;
+    if (candidate.plan?.id === plan.id) return true;
+    return plan.changes.some(
+      (change) =>
+        change.name === candidate.name &&
+        change.from === candidate.current &&
+        change.to === candidate.selected,
+    );
+  });
 }
 
 function renderMarkdown(text: string): string {
@@ -576,6 +647,7 @@ button:hover { background: var(--vscode-button-secondaryHoverBackground); }
 button.primary { background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
 button.primary:hover { background: var(--vscode-button-hoverBackground); }
 button.small { padding: 3px 10px; font-size: 0.82em; }
+button.selected { border-color: var(--vscode-focusBorder); box-shadow: inset 0 0 0 1px var(--vscode-focusBorder); }
 
 .card { border: 1px solid var(--vscode-panel-border); border-left-width: 3px;
         border-radius: 6px; padding: 12px 14px; margin-bottom: 12px;
@@ -623,6 +695,9 @@ a:hover { text-decoration: underline; color: var(--vscode-textLink-activeForegro
 
 .commits { padding-left: 20px; }
 .commits li { margin-bottom: 10px; }
+.commit-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0 12px; }
+.choice { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.choice span { color: var(--vscode-descriptionForeground); font-size: 0.82em; margin-right: 2px; }
 .commit-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .commit-msg { flex: 1 1 auto; }
 .commit-files { margin-top: 4px; font-size: 0.82em; opacity: .75; }
@@ -703,8 +778,21 @@ document.addEventListener('click', (event) => {
       command: button.dataset.command,
       args: arg === undefined ? [] : [Number(arg)],
     });
+    return;
+  }
+  const setting = event.target.closest('[data-setting]');
+  if (setting) {
+    vscode.postMessage({
+      type: 'setting',
+      key: setting.dataset.setting,
+      value: setting.dataset.value,
+    });
   }
 });
+const focused = document.querySelector('[data-focus="true"]');
+if (focused) {
+  requestAnimationFrame(() => focused.scrollIntoView({ block: 'center' }));
+}
 `;
 
 /**

@@ -204,7 +204,11 @@ describe('an empty diff that was never a comparison', () => {
     );
 
     assert.ok(
-      gaps.some((gap) => gap.includes('@types/semver') && gap.includes('Nothing was compared')),
+      gaps.some(
+        (gap) =>
+          (gap.includes('@types/semver') || /semver@7\.7\.[14]/.test(gap)) &&
+          /[Nn]othing was compared/.test(gap),
+      ),
       `an unfetchable comparison must be reported as one; got ${JSON.stringify(gaps)}`,
     );
   });

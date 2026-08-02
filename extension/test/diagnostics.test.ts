@@ -57,6 +57,7 @@ describe('DriftCodeActionProvider', () => {
     assert.deepEqual(actions.map((a) => (a.command as { command: string }).command), [
       'drift.fixCommit',
       'drift.explainChange',
+      'drift.disableEditorSignals',
       'drift.fixAll',
     ]);
     diagnostics.dispose();

@@ -332,8 +332,10 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
     return surfaceRecord(change, {
       changes: surface.changes,
       weight: WEIGHTS['type-surface-diff'],
-      locator: `${change.name}@${from} → @${to} (.d.ts)`,
-      url: `https://www.npmjs.com/package/${change.name}/v/${to}`,
+      locator: `${change.name}@${from}:${surface.beforeEntryPath} → ${change.name}@${to}:${surface.afterEntryPath}`,
+      url: jsdelivrDeclarationUrl(change.name, to, surface.afterEntryPath),
+      beforeUrl: jsdelivrDeclarationUrl(change.name, from, surface.beforeEntryPath),
+      afterUrl: jsdelivrDeclarationUrl(change.name, to, surface.afterEntryPath),
     });
   }
 
@@ -384,8 +386,27 @@ function repoFileReader(ctx: EvidenceContext): ((path: string) => Promise<string
 
 function surfaceRecord(
   change: DependencyChange,
-  args: { changes: SurfaceChange[]; weight: number; locator: string; url?: string },
+  args: {
+    changes: SurfaceChange[];
+    weight: number;
+    locator: string;
+    url?: string;
+    beforeUrl?: string;
+    afterUrl?: string;
+  },
 ): Evidence {
+  const sources =
+    args.beforeUrl || args.afterUrl
+      ? [
+          'Declaration sources:',
+          args.beforeUrl ? `- before: ${args.beforeUrl}` : '',
+          args.afterUrl ? `- after: ${args.afterUrl}` : '',
+          '',
+        ]
+          .filter(Boolean)
+          .join('\n')
+      : '';
+
   return {
     id: stableId('ev', change.name, 'surface', change.from ?? '', change.to ?? ''),
     source: 'type-surface-diff',
@@ -393,7 +414,7 @@ function surfaceRecord(
     url: args.url,
     locator: args.locator,
     title: `${args.changes.length} API surface change(s) in ${change.name}`,
-    content: formatSurfaceChanges(args.changes),
+    content: `${sources}${formatSurfaceChanges(args.changes)}`,
     findings: args.changes.map((c) => ({
       code: c.kind,
       symbol: c.symbol,
@@ -427,6 +448,8 @@ async function diffTypeSurfaces(
 ): Promise<{
   changes: SurfaceChange[];
   comparable: boolean;
+  beforeEntryPath: string;
+  afterEntryPath: string;
   unreachable?: string;
   /**
    * Both sides resolved to DefinitelyTyped.
@@ -465,16 +488,29 @@ async function diffTypeSurfaces(
       changes: moved ? [moved, ...changes] : changes,
       comparable:
         before.api.size >= MIN_COMPARABLE_SYMBOLS && after.api.size >= MIN_COMPARABLE_SYMBOLS,
+      beforeEntryPath: before.entryPath,
+      afterEntryPath: after.entryPath,
       ...(definitelyTyped ? { definitelyTyped } : {}),
     };
   } catch (err) {
     // Never let an untyped or oddly-packaged dependency fail the run.
     logger.debug(`Type surface diff failed for ${packageName}: ${(err as Error).message}`);
     if (err instanceof VersionUnavailableError) {
-      return { changes: [], comparable: false, unreachable: `${err.packageName}@${err.version}` };
+      return {
+        changes: [],
+        comparable: false,
+        beforeEntryPath: '',
+        afterEntryPath: '',
+        unreachable: `${err.packageName}@${err.version}`,
+      };
     }
     return null;
   }
+}
+
+function jsdelivrDeclarationUrl(packageName: string, version: string, entryPath: string): string | undefined {
+  if (!entryPath || entryPath.startsWith('@types:')) return undefined;
+  return `https://cdn.jsdelivr.net/npm/${packageName}@${version}/${entryPath}`;
 }
 
 function formatSurfaceChanges(changes: readonly SurfaceChange[]): string {

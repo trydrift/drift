@@ -91,7 +91,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.languages.registerHoverProvider({ scheme: 'file' }, new ManifestHoverProvider(state)),
   );
 
-  registerCommands(context, state, review, reviewUi, home);
+  registerCommands(context, state, diagnostics, review, reviewUi, home);
 
   // Sign-in state changes what the agent picker can offer.
   context.subscriptions.push(onDidChangeGitHubAuth(() => invalidateAgentCache()));
@@ -189,6 +189,7 @@ async function initialise(state: DriftState, home: DriftHomeView): Promise<void>
 function registerCommands(
   context: vscode.ExtensionContext,
   state: DriftState,
+  diagnostics: DriftDiagnostics,
   review: DriftReview,
   reviewUi: DriftReviewUi,
   home: DriftHomeView,
@@ -252,6 +253,14 @@ function registerCommands(
 
   register('drift.showReport', () => DriftReportPanel.show(state));
   register('drift.openDependency', ((id: string) => openDependency(state, id)) as never);
+  register('drift.disableEditorSignals', async () => {
+    const config = vscode.workspace.getConfiguration('drift');
+    await config.update('ui.showInlineDiagnostics', false, vscode.ConfigurationTarget.Workspace);
+    await config.update('ui.showManifestCodeLens', false, vscode.ConfigurationTarget.Workspace);
+    diagnostics.clear();
+    DriftReportPanel.refresh();
+    void vscode.window.showInformationMessage('Drift: editor flags hidden for this workspace.');
+  });
 
   register('drift.explainChange', ((changeId: string) => {
     DriftReportPanel.show(state, changeId);
