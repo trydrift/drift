@@ -44,9 +44,9 @@ export const DEFAULT_EFFORT: SessionEffort = 'medium';
 /**
  * Read a stored effort, tolerating the vocabulary Drift used to use.
  *
- * Older workspaces hold `quick`/`balanced`/`thorough`/`max`, which described how
- * widely Drift looked rather than how hard the model thought. They map onto the
- * new scale by position so nobody's setting silently resets.
+ * Older entries that were already moved into `drift.agent.efforts` may still
+ * hold `quick`/`balanced`/`thorough`/`max`. They map onto the new scale by
+ * position so nobody's setting silently resets.
  */
 export function normalizeEffort(value: string | undefined): SessionEffort {
   switch (value) {
@@ -75,12 +75,7 @@ export function readEffort(agentId: string): SessionEffort {
   const config = vscode.workspace.getConfiguration('drift');
   const stored = config.get<Record<string, string>>('agent.efforts', {})?.[agentId];
   if (stored) return normalizeEffort(stored);
-
-  // Nothing set for this subscription yet, so honour the single dial Drift used
-  // to have. Someone who asked for `thorough` last week asked for the top of the
-  // scale, and quietly resetting them to the default would be the wrong way to
-  // rename a setting.
-  return normalizeEffort(config.get<string>('session.effort'));
+  return DEFAULT_EFFORT;
 }
 
 /** How much rope the agent gets. Mirrors Claude Code's permission modes. */

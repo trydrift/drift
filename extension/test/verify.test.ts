@@ -53,6 +53,18 @@ describe('finding the checks a project has', () => {
   test('a directory with no manifest offers nothing', async () => {
     assert.deepEqual(await availableChecks(root, 'nowhere'), []);
   });
+
+  test('Gradle gets typecheck, test and build checks like the other supported ecosystems', async () => {
+    mkdirSync(join(root, 'java'), { recursive: true });
+    writeFileSync(join(root, 'java', 'build.gradle'), 'plugins { id "java" }\n');
+
+    const checks = await availableChecks(root, 'java');
+    assert.deepEqual(checks.map((c) => c.label), [
+      'gradle compileTestJava',
+      'gradle test',
+      'gradle build -x test',
+    ]);
+  });
 });
 
 describe('running them', () => {

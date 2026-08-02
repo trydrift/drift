@@ -161,6 +161,7 @@ interface Surface {
 
 export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposable {
   private view: vscode.WebviewView | undefined;
+  private badge: vscode.ViewBadge | undefined;
   private surfaces: Surface[] = [];
   private candidates = new Map<string, UpgradeCandidate>();
   private agents: DiscoveredAgent[] = [];
@@ -258,6 +259,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     this.surfaces = this.surfaces.filter((surface) => surface.webview !== this.view?.webview);
 
     this.view = view;
+    view.badge = this.badge;
     view.webview.options = { enableScripts: true, localResourceRoots: [this.extensionUri] };
     this.disposables.push(view.onDidDispose(() => this.detach(view.webview)));
     this.attach(view.webview);
@@ -284,6 +286,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     if (this.renderTimer) clearTimeout(this.renderTimer);
     if (this.saveTimer) clearTimeout(this.saveTimer);
     for (const d of this.disposables) d.dispose();
+  }
+
+  setBadge(badge: vscode.ViewBadge | undefined): void {
+    this.badge = badge;
+    if (this.view) this.view.badge = badge;
+  }
+
+  async scanDependencies(): Promise<void> {
+    await this.reveal();
+    await this.scan();
   }
 
   /** Bring the panel forward, e.g. from a notification action. */
@@ -1021,6 +1033,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     this.scanned = true;
     this.clearStale();
+    this.state.setCandidates([]);
     const step = this.session.step(
       multiRoot ? `Checking your dependencies across ${contexts.length} repositories` : 'Checking your dependencies',
     );
@@ -1072,6 +1085,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
                 headline(found, checked),
                 [...found].sort(bySeverity).map((c) => c.id),
               );
+              this.state.setCandidates([...found].sort(bySeverity));
             },
           });
 
@@ -1106,6 +1120,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       }
 
       if (ranked.length === 0) {
+        this.state.setCandidates([]);
         this.session.updatePackages(
           `Every one of your ${checked} direct dependenc${checked === 1 ? 'y is' : 'ies are'} already at the newest version.`,
           [],
@@ -1115,6 +1130,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       }
 
       this.session.updatePackages(headline(ranked, checked), ranked.map((c) => c.id));
+      this.state.setCandidates(ranked);
       // Named now rather than from the `/scan` that started it: every scan is
       // started the same way, and only the result tells two of them apart in
       // the history list.
@@ -1314,6 +1330,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     await this.run(async () => {
       this.candidates.set(id, { ...candidate, selected: version, status: 'checking' });
+      this.state.setCandidates([...this.candidates.values()]);
       this.refreshPackageList();
 
       const updated = await reanalyzeUpgrade({
@@ -1329,6 +1346,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
       this.candidates.delete(id);
       this.candidates.set(updated.id, updated);
+      this.state.setCandidates([...this.candidates.values()]);
       this.refreshPackageList();
       step.done(describeSeverity(updated));
     });

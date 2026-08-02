@@ -95,13 +95,13 @@ export async function fetchTypeSurface(
   options: { followDependencies?: boolean } = {},
 ): Promise<TypeSurface | null> {
   const manifest = await fetchManifest(packageName, version);
-  // No manifest at all is a fact about the fetch, not about the package: a
-  // yanked version, a private registry, a CDN that has not mirrored this
-  // release. Saying "publishes no declarations" there would be Drift reporting
-  // its own reach as the package's shortcoming.
-  if (!manifest) throw new VersionUnavailableError(packageName, version);
-
   const entryPath = await resolveTypesEntry(packageName, version, manifest);
+  // No manifest and no declaration fallback is a fact about the fetch, not
+  // about the package: a yanked version, a private registry, a CDN that has not
+  // mirrored this release. Saying "publishes no declarations" there would be
+  // Drift reporting its own reach as the package's shortcoming. But if
+  // DefinitelyTyped can still answer, take that evidence instead of stopping.
+  if (!manifest && !entryPath) throw new VersionUnavailableError(packageName, version);
   if (!entryPath) return null;
 
   const sources = await collectDeclarationSources(packageName, version, entryPath);
@@ -117,7 +117,7 @@ export async function fetchTypeSurface(
 
   const ownSymbols = api.size;
   const viaDependencies =
-    options.followDependencies === false
+    !manifest || options.followDependencies === false
       ? []
       : await mergeDependencySurfaces(manifest, sources, api);
 

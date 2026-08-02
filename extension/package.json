@@ -191,9 +191,60 @@
           "type": "webview",
           "icon": "media/activity-icon.svg",
           "contextualTitle": "Drift"
+        },
+        {
+          "id": "drift.dependencies",
+          "name": "Dependencies",
+          "icon": "media/activity-icon.svg",
+          "contextualTitle": "Drift Dependencies",
+          "when": "drift.hasDependencyScan"
         }
       ]
     },
+    "walkthroughs": [
+      {
+        "id": "drift.getStarted",
+        "title": "Ship a Safe Dependency Upgrade",
+        "description": "Follow Drift from dependency scan to evidence, fix, review, and release.",
+        "steps": [
+          {
+            "id": "drift.getStarted.scan",
+            "title": "Scan Dependencies",
+            "description": "Run Drift on the current repository and keep the dependency result available in the activity bar.",
+            "completionEvents": ["onCommand:drift.analyze"],
+            "media": { "markdown": "media/walkthrough-scan.md" }
+          },
+          {
+            "id": "drift.getStarted.evidence",
+            "title": "Read the Evidence",
+            "description": "Open the report to see which upstream changes matter to this codebase.",
+            "completionEvents": ["onCommand:drift.showReport"],
+            "media": { "markdown": "media/walkthrough-evidence.md" }
+          },
+          {
+            "id": "drift.getStarted.fix",
+            "title": "Ask Your Agent to Fix It",
+            "description": "Let Drift hand affected commits to the AI agent you already use.",
+            "completionEvents": ["onCommand:drift.fixAll"],
+            "media": { "markdown": "media/walkthrough-fix.md" }
+          },
+          {
+            "id": "drift.getStarted.review",
+            "title": "Review Keep or Undo",
+            "description": "Use editor CodeLens actions and lightbulbs to keep or undo each proposed hunk.",
+            "completionEvents": ["onCommand:drift.reviewChanges", "onCommand:drift.keepAllChanges", "onCommand:drift.undoAllChanges"],
+            "media": { "markdown": "media/walkthrough-review.md" }
+          },
+          {
+            "id": "drift.getStarted.ship",
+            "title": "Ship the Branch",
+            "description": "Push the reviewed fix branch and open the pull request when you are ready.",
+            "completionEvents": ["onCommand:drift.pushBranch"],
+            "media": { "markdown": "media/walkthrough-ship.md" }
+          }
+        ]
+      }
+    ],
     "menus": {
       "view/title": [
         {
@@ -317,6 +368,34 @@
     },
     "keybindings": [
       {
+        "command": "drift.analyze",
+        "key": "ctrl+alt+d ctrl+s",
+        "mac": "cmd+alt+d cmd+s"
+      },
+      {
+        "command": "drift.fixAll",
+        "key": "ctrl+alt+d ctrl+f",
+        "mac": "cmd+alt+d cmd+f",
+        "when": "drift.hasImpact"
+      },
+      {
+        "command": "drift.reviewChanges",
+        "key": "ctrl+alt+d ctrl+r",
+        "mac": "cmd+alt+d cmd+r"
+      },
+      {
+        "command": "drift.keepAllChanges",
+        "key": "ctrl+alt+d ctrl+k",
+        "mac": "cmd+alt+d cmd+k",
+        "when": "drift.reviewing"
+      },
+      {
+        "command": "drift.undoAllChanges",
+        "key": "ctrl+alt+d ctrl+u",
+        "mac": "cmd+alt+d cmd+u",
+        "when": "drift.reviewing"
+      },
+      {
         "command": "drift.nextChange",
         "key": "alt+d",
         "when": "drift.reviewing"
@@ -367,22 +446,6 @@
             ]
           },
           "markdownDescription": "How hard each subscription's model is asked to think, keyed by agent id — for example `{ \"claude\": \"xhigh\" }`.\n\nSet from the effort dial in the Drift panel, where each level carries the name its own vendor uses: Claude runs `low`–`high` and `xhigh` (**Ultracode**), Codex runs `low`–`high` and `xhigh` (**Extra High**). Agents whose API has no reasoning budget — the in-editor Copilot models, Ollama — have no dial.\n\nThis only changes the reasoning spent on each fix. It never changes which dependencies Drift checks or which fixes it attempts — see `#drift.analysis.includeDev#` and `#drift.analysis.includePatch#` for that.",
-          "order": 7
-        },
-        "drift.session.effort": {
-          "type": "string",
-          "enum": [
-            "quick",
-            "balanced",
-            "thorough",
-            "max",
-            "low",
-            "medium",
-            "high",
-            "xhigh"
-          ],
-          "markdownDeprecationMessage": "Replaced by `#drift.agent.efforts#`, which is set per subscription and carries each vendor's own names for its stops.\n\nEffort no longer changes what Drift analyses — it never should have. Use `#drift.analysis.includeDev#` and `#drift.analysis.includePatch#` for that. An existing value here is still honoured as the starting position of every agent's dial.",
-          "markdownDescription": "Deprecated. Use `#drift.agent.efforts#`.",
           "order": 7
         },
         "drift.session.permission": {
