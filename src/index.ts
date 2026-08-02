@@ -113,6 +113,21 @@ export type {
   WorkerResult,
 } from './verification/behavioural.js';
 export {
+  TELEMETRY_SCHEMA_VERSION,
+  assertTelemetrySafe,
+  buildUpgradeOutcomeEvent,
+  hashInstallationId,
+  sampleTelemetryEvent,
+  sendTelemetryEvent,
+  telemetryEnabled,
+} from './telemetry.js';
+export type {
+  TelemetryConfig,
+  TelemetryFeatureFlags,
+  UpgradeOutcomeTelemetryEvent,
+  UpgradeOutcomeTelemetryInput,
+} from './telemetry.js';
+export {
   renderGaps,
   renderCheckedSurfaces,
   renderConfidenceTable,
