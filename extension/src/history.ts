@@ -74,6 +74,77 @@ export class DriftHistory {
   }
 }
 
+/**
+ * What to call a conversation nobody named.
+ *
+ * The old answer was "whatever the developer typed first", which is correct
+ * exactly once — the first time someone types a sentence. Everything in this
+ * panel is started from a button that submits a slash command, so the history
+ * list filled up with forty entries all called `/scan`, and picking the right
+ * one meant reopening several. A title has one job in that list, which is to
+ * tell two entries apart.
+ *
+ * So a bare command becomes the thing the command *did*, and its argument —
+ * the package name, which is the part that differs between two runs — is kept.
+ * The panel sets a better title still, once it knows what the scan found;
+ * this is what a conversation gets before then, and after a restore of one
+ * saved by an older version.
+ */
+export function deriveTitle(items: readonly ThreadItem[]): string {
+  const first = items.find((item) => item.kind === 'user');
+  if (first?.kind === 'user') {
+    const text = first.text.replace(/\s+/g, ' ').trim();
+    const named = expandCommand(text);
+    if (named) return named.slice(0, 80);
+  }
+
+  // No user turn at all means the conversation was opened by something other
+  // than typing — a code action, a lens, the report. The work itself is then
+  // the only description available.
+  const tasks = items.find((item) => item.kind === 'tasks');
+  if (tasks?.kind === 'tasks') return tasks.title.slice(0, 80);
+  if (items.some((item) => item.kind === 'packages')) return 'Dependency scan';
+
+  return 'Conversation';
+}
+
+/** What each slash command amounts to, for someone reading a list of them. */
+const COMMAND_NAMES: Record<string, string> = {
+  scan: 'Dependency scan',
+  recent: 'Recent dependency changes',
+  fix: 'Fix breaking changes',
+  upgrade: 'Upgrade',
+  review: 'Review changes',
+  ship: 'Ship',
+  commit: 'Commit',
+  verify: 'Verify',
+  doctor: 'Doctor',
+  agent: 'Agent',
+  settings: 'Settings',
+  help: 'Help',
+};
+
+/**
+ * A command, said as a title. Anything else is already prose and is left alone.
+ *
+ * Returns null for an empty message so the caller can fall through rather than
+ * writing down a title of "".
+ */
+function expandCommand(text: string): string | null {
+  if (!text) return null;
+
+  const match = /^\/(\w[\w-]*)\s*(.*)$/.exec(text);
+  if (!match) return text;
+
+  const name = COMMAND_NAMES[match[1]!.toLowerCase()];
+  const argument = match[2]!.trim();
+
+  if (!name) return argument ? `${match[1]} ${argument}` : match[1]!;
+  // The argument is the whole reason two runs of one command differ, so it
+  // survives even when the command itself has a fixed name.
+  return argument ? `${name === 'Fix breaking changes' ? 'Fix' : name} ${argument}` : name;
+}
+
 /** Ids are only ever compared, never parsed. */
 export function newConversationId(): string {
   return `c${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;

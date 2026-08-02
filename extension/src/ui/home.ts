@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import { basename, dirname, join, relative } from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import semver from 'semver';
 import { digestDiagnostics, renderDigest } from '../diagnostics-digest.js';
 import type { RemediationPlan, RepoContext } from '../../../src/types.js';
@@ -8,6 +10,7 @@ import { renderPullRequestBody } from '../../../src/report/markdown.js';
 import { inspectLocalRepo, WORKING_TREE } from '../../../src/repo/local-git.js';
 import { DriftConfigSchema, type DriftConfig } from '../../../src/config/schema.js';
 import { loadWorkspaceConfig, runAnalysis } from '../analyze.js';
+import { envWithShellPath } from '../shell-path.js';
 import { runFix, type FixResult } from '../fix.js';
 import type { DriftState, RepoRoot } from '../state.js';
 import type { NestedProject } from '../../../src/detect/nested.js';
@@ -53,6 +56,7 @@ import {
   type ManagerPreferences,
   type UpgradeCandidate,
 } from '../upgrades.js';
+import { scanTitle } from '../severity.js';
 import {
   compareUrl,
   dependencyFilesIn,
@@ -111,12 +115,15 @@ type Incoming =
   | { type: 'pickVersion'; id: string }
   | { type: 'selectVersion'; id: string; version: string }
   | { type: 'recheck'; id: string }
+  | { type: 'installTool'; id: string; value: string }
   | { type: 'upgrade'; id: string; mode: 'safe' | 'force' }
   | { type: 'fixPackage'; id: string }
   | { type: 'fixAll' }
   | { type: 'keepFile' | 'undoFile'; path: string }
   | { type: 'keepGroup' | 'undoGroup'; order: number }
   | { type: 'keepAll' | 'undoAll' };
+
+const runCommand = promisify(execFile);
 
 /**
  * Directories the context picker never offers.
@@ -382,7 +389,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     if (!entry) return;
 
     this.conversationId = entry.id;
-    this.session.restore(entry.items);
+    this.session.restore(entry.items, entry.title);
     this.setDraft('');
     await this.reveal();
   }
@@ -526,6 +533,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         return;
       case 'recheck':
         await this.recheck(message.id);
+        return;
+      case 'installTool':
+        await this.installTool(message.id, message.value);
         return;
       case 'upgrade':
         await this.upgrade([message.id], message.mode);
@@ -1083,10 +1093,15 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           `Every one of your ${checked} direct dependenc${checked === 1 ? 'y is' : 'ies are'} already at the newest version.`,
           [],
         );
+        this.session.setTitle(scanTitle([], checked));
         return;
       }
 
       this.session.updatePackages(headline(ranked, checked), ranked.map((c) => c.id));
+      // Named now rather than from the `/scan` that started it: every scan is
+      // started the same way, and only the result tells two of them apart in
+      // the history list.
+      this.session.setTitle(scanTitle(ranked, checked));
 
       const affected = ranked.filter((c) => severityOf(c) === 'affected');
       if (affected.length > 0 && !options.quiet) {
@@ -1116,11 +1131,19 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       if (!plan || plan.breakingChanges.length === 0) {
         step.done('Nothing breaking found');
         this.session.say(result.summary);
+        this.session.setTitle('Recent changes — nothing breaking');
         return;
       }
 
       const files = new Set(plan.impactSites.map((site) => site.file)).size;
       step.done(`${plan.changes.length} dependency change${plan.changes.length === 1 ? '' : 's'} analysed`);
+
+      // The packages that moved are what a developer looks this conversation
+      // up by later, so they are the title — not "/recent", which every one of
+      // these threads would otherwise be called.
+      this.session.setTitle(
+        `Recent — ${namesOf(plan.changes.map((change) => change.name))}${files > 0 ? `, ${files} file${files === 1 ? '' : 's'} affected` : ''}`,
+      );
 
       // The distinction that matters, stated first.
       if (files === 0) {
@@ -1213,6 +1236,47 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     const candidate = this.candidates.get(id);
     if (!candidate) return;
     await this.retarget(id, candidate.selected, { refreshVersions: true });
+  }
+
+  private async installTool(id: string, requestId: string): Promise<void> {
+    const candidate = this.candidates.get(id);
+    const request = candidate?.toolRequests.find((entry) => entry.id === requestId);
+    if (!candidate || !request) return;
+
+    const commandLine = [request.command, ...request.args].join(' ');
+    const choice = await vscode.window.showWarningMessage(
+      `Drift can install ${request.label.replace(/^Install\s+/i, '')} and then check ${candidate.name} again. Run \`${commandLine}\`?`,
+      request.label,
+      'Cancel',
+    );
+    if (choice !== request.label) return;
+
+    const step = this.session.step(request.label);
+    let installed = false;
+    await this.run(async () => {
+      this.output.info(`Running ${commandLine}`);
+      try {
+        const { stdout, stderr } = await runCommand(request.command, request.args, {
+          cwd: candidate.repoRoot ?? this.state.workspaceRoot ?? undefined,
+          env: await envWithShellPath(),
+          windowsHide: true,
+          timeout: 10 * 60_000,
+          maxBuffer: 32 * 1024 * 1024,
+        });
+        if (stdout.trim()) this.output.info(stdout);
+        if (stderr.trim()) this.output.info(stderr);
+      } catch (err) {
+        const failed = err as Error & { stdout?: string; stderr?: string };
+        if (failed.stdout?.trim()) this.output.info(failed.stdout);
+        if (failed.stderr?.trim()) this.output.error(failed.stderr);
+        throw new Error(`${request.label} failed: ${failed.message}`);
+      }
+
+      step.done(`${request.label.replace(/^Install\s+/i, '')} installed`);
+      installed = true;
+    });
+
+    if (installed) await this.recheck(id);
   }
 
   private async retarget(
@@ -2193,6 +2257,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       `${this.agentLabel()} is fixing ${plan.impactSites.length} site${plan.impactSites.length === 1 ? '' : 's'}`,
       `${plan.commits.length} commit${plan.commits.length === 1 ? '' : 's'}, one per concern, across ${files} file${files === 1 ? '' : 's'}, ${landing}. ${committing}${evidence}`,
       buildTaskGroups(plan),
+    );
+
+    // A fix is the most specific thing this panel does, so it takes the title
+    // over whatever a scan earlier in the same thread called it.
+    this.session.setTitle(
+      `Fix — ${namesOf(plan.changes.map((change) => change.name))}, ${files} file${files === 1 ? '' : 's'}`,
+      true,
     );
 
     this.state.set({ kind: 'findings', plan, at: Date.now() });
@@ -4299,6 +4370,20 @@ function bySeverity(a: UpgradeCandidate, b: UpgradeCandidate): number {
  * changes is not mentioned here at all — it is available on each package, where
  * it has the context that makes it meaningful.
  */
+/**
+ * A few package names, for a title that has to fit on one line.
+ *
+ * Two names and a count beats five truncated ones: the point is to recognise
+ * the conversation, and the first packages are the ones a developer went in
+ * for.
+ */
+function namesOf(names: readonly string[]): string {
+  const unique = [...new Set(names)];
+  if (unique.length === 0) return 'dependencies';
+  if (unique.length <= 2) return unique.join(', ');
+  return `${unique.slice(0, 2).join(', ')} +${unique.length - 2}`;
+}
+
 function headline(candidates: readonly UpgradeCandidate[], checked: number): string {
   const affected = candidates.filter((c) => severityOf(c) === 'affected').length;
   const unchecked = candidates.filter((c) => severityOf(c) === 'unchecked').length;
