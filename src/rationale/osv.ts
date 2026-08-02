@@ -34,6 +34,17 @@ const OSV_ECOSYSTEM: Record<Ecosystem, string | null> = {
   cargo: 'crates.io',
   maven: 'Maven',
   rubygems: 'RubyGems',
+  nuget: 'NuGet',
+  packagist: 'Packagist',
+  hex: 'Hex',
+  pub: 'Pub',
+  // OSV identifies Swift packages by their repository URL, which is exactly
+  // what SwiftPM calls them — so the name Drift already carries is the query.
+  swift: 'SwiftURL',
+  // Genuinely absent from OSV. `null` makes the security stage report "not
+  // checked here" rather than "no advisories", which are not the same claim.
+  cocoapods: null,
+  opam: null,
 };
 
 interface OsvSeverity {

@@ -24,14 +24,37 @@ import type { UpgradeRationale } from './rationale/types.js';
 
 export type { UpgradeRationale };
 
-/** Package ecosystems Drift can parse manifests for. */
+/**
+ * Package ecosystems Drift can parse manifests for.
+ *
+ * An entry here is a claim about *detection* only. What Drift can actually do
+ * with each one — retrieve evidence, compute an API surface, run the native
+ * checks, produce a fix — differs per ecosystem and is stated, per stage, in
+ * `detect/capabilities.ts`. Adding a name here without adding a row there is a
+ * compile error, which is deliberate: an ecosystem that appears in a dropdown
+ * but silently does half as much is exactly the kind of quiet over-claim this
+ * tool exists not to make.
+ *
+ * Scala is absent on purpose, and is not an omission: sbt coordinates resolve
+ * to Maven Central artifacts, so `build.sbt` is parsed into `maven` and gets
+ * that ecosystem's registry, japicmp surface diff, and OSV coverage for free.
+ * React Native is likewise absent — its JavaScript half is `npm` and its iOS
+ * half is `cocoapods`.
+ */
 export type Ecosystem =
   | 'npm'
   | 'pypi'
   | 'go'
   | 'cargo'
   | 'maven'
-  | 'rubygems';
+  | 'rubygems'
+  | 'nuget'
+  | 'packagist'
+  | 'hex'
+  | 'pub'
+  | 'swift'
+  | 'cocoapods'
+  | 'opam';
 
 /** Semantic classification of a version move. */
 export type BumpKind =

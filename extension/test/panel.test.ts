@@ -37,6 +37,7 @@ function candidate(over: Partial<UpgradeCandidate> = {}): UpgradeCandidate {
     impactFiles: 0,
     risk: 'none',
     gaps: [],
+    toolRequests: [],
     summary: '7 breaking changes in lodash, but this repository does not use any of the affected APIs.',
     ...over,
   };
@@ -1141,6 +1142,38 @@ test('an unverified upgrade is never rendered as safe', () => {
   assert.match(html, /no TypeScript declarations Drift could compare/);
   // And it is not filed under the collapsed "Safe to upgrade" group.
   assert.ok(!/pkg-subhead clean/.test(html) || !/grp:safe/.test(html.split('Could not verify')[0]!));
+});
+
+test('a missing Drift helper is offered as an approval action', () => {
+  const c = candidate({
+    name: 'serde',
+    ecosystem: 'cargo',
+    packageManager: 'cargo',
+    gaps: ['Rust and Cargo are installed, but Drift\'s Rust API helper is missing.'],
+    breakingCount: 0,
+    impactCount: 0,
+    impactFiles: 0,
+    recommendation: 'insufficient-evidence',
+    toolRequests: [
+      {
+        id: 'cargo-public-api',
+        label: 'Install cargo-public-api',
+        command: 'cargo',
+        args: ['install', 'cargo-public-api'],
+      },
+    ],
+  });
+
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'i1', kind: 'packages', headline: 'One upgrade available.', ids: [c.id] }],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  assert.match(html, /data-action="installTool"/);
+  assert.match(html, /data-value="cargo-public-api"/);
+  assert.match(html, /Install cargo-public-api/);
 });
 
 const panelFor = (c: UpgradeCandidate): string =>

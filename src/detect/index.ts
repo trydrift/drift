@@ -3,20 +3,43 @@ import type { DriftConfig } from '../config/schema.js';
 import { matchesAny } from '../util/glob.js';
 import { classifyBump, isDowngrade, isZeroVerBreaking, normalizeVersion } from './version.js';
 import { cargoParser } from './ecosystems/cargo.js';
+import { cocoapodsParser } from './ecosystems/cocoapods.js';
+import { composerParser } from './ecosystems/composer.js';
 import { goParser } from './ecosystems/go.js';
+import { hexParser } from './ecosystems/hex.js';
 import { mavenParser } from './ecosystems/maven.js';
 import { npmParser } from './ecosystems/npm.js';
+import { nugetParser } from './ecosystems/nuget.js';
+import { opamParser } from './ecosystems/opam.js';
+import { pubParser } from './ecosystems/pub.js';
 import { pythonParser } from './ecosystems/python.js';
 import { rubygemsParser } from './ecosystems/rubygems.js';
+import { sbtParser } from './ecosystems/sbt.js';
+import { swiftParser } from './ecosystems/swift.js';
 import type { ManifestParser } from './ecosystems/types.js';
 
+/**
+ * Order matters: `parserFor` takes the first parser that claims a path, so any
+ * two parsers whose `handles` could both match must be ordered deliberately.
+ * The live case is Maven and sbt — `sbtParser` claims `*.sbt` and
+ * `project/*.scala`, which `mavenParser` never looks at, but keeping sbt ahead
+ * of Maven makes that independence explicit rather than incidental.
+ */
 export const PARSERS: readonly ManifestParser[] = [
   npmParser,
   pythonParser,
   goParser,
   cargoParser,
+  sbtParser,
   mavenParser,
   rubygemsParser,
+  nugetParser,
+  composerParser,
+  hexParser,
+  pubParser,
+  swiftParser,
+  cocoapodsParser,
+  opamParser,
 ];
 
 /** A manifest file as it looked on each side of the diff. */

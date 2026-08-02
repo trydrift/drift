@@ -40,9 +40,213 @@ export async function fetchRegistryInfo(
       return fetchMaven(name);
     case 'rubygems':
       return fetchRubyGems(name);
+    case 'nuget':
+      return fetchNuGet(name);
+    case 'packagist':
+      return fetchPackagist(name);
+    case 'hex':
+      return fetchHex(name);
+    case 'pub':
+      return fetchPub(name);
+    case 'swift':
+      return swiftRegistryInfo(name);
+    case 'cocoapods':
+      return fetchCocoaPods(name);
+    // opam publishes no JSON metadata API. Returning `null` means the evidence
+    // stage reports "no registry data" rather than an empty version list, which
+    // would read as "this package has no releases".
+    case 'opam':
+      return null;
     default:
       return null;
   }
+}
+
+async function fetchNuGet(name: string): Promise<RegistryInfo | null> {
+  // NuGet's flat container is case-sensitive and wants the lowercase id.
+  const id = name.toLowerCase();
+
+  const [versions, registration] = await Promise.all([
+    fetchJson<{ versions?: string[] }>(
+      `https://api.nuget.org/v3-flatcontainer/${encodeURIComponent(id)}/index.json`,
+    ),
+    fetchJson<{
+      items?: { items?: { catalogEntry?: NuGetCatalogEntry }[] }[];
+    }>(`https://api.nuget.org/v3/registration5-gz-semver2/${encodeURIComponent(id)}/index.json`),
+  ]);
+  if (!versions && !registration) return null;
+
+  // The newest catalog entry carries the project URL and deprecation state.
+  const entries = (registration?.items ?? []).flatMap((page) => page.items ?? []);
+  const latest = entries[entries.length - 1]?.catalogEntry;
+
+  return {
+    name,
+    ecosystem: 'nuget',
+    githubRepo:
+      parseGitHubRepo(latest?.repository?.url ?? null) ?? parseGitHubRepo(latest?.projectUrl ?? null),
+    homepage: latest?.projectUrl ?? `https://www.nuget.org/packages/${name}`,
+    versions: versions?.versions ?? [],
+    deprecated: latest?.deprecation?.message ?? null,
+    description: latest?.description ?? null,
+  };
+}
+
+interface NuGetCatalogEntry {
+  projectUrl?: string;
+  description?: string;
+  repository?: { url?: string };
+  deprecation?: { message?: string };
+}
+
+async function fetchPackagist(name: string): Promise<RegistryInfo | null> {
+  const data = await fetchJson<{
+    packages?: Record<string, PackagistVersion[]>;
+  }>(`https://repo.packagist.org/p2/${name}.json`);
+
+  const releases = data?.packages?.[name];
+  if (!releases || releases.length === 0) return null;
+
+  // p2 returns newest first.
+  const latest = releases[0]!;
+
+  // Packagist spells deprecation as `abandoned`, whose value is either `true`
+  // or the name of the package that replaced it — and the replacement is the
+  // single most useful thing to tell someone, so it is not flattened away.
+  const abandoned = latest.abandoned;
+  const deprecated =
+    abandoned === undefined || abandoned === false
+      ? null
+      : typeof abandoned === 'string'
+        ? `This package is abandoned; the author suggests using ${abandoned} instead.`
+        : 'This package is abandoned and is no longer maintained.';
+
+  return {
+    name,
+    ecosystem: 'packagist',
+    githubRepo: parseGitHubRepo(latest.source?.url ?? null) ?? parseGitHubRepo(latest.homepage ?? null),
+    homepage: latest.homepage ?? `https://packagist.org/packages/${name}`,
+    versions: releases.map((release) => release.version).filter((v): v is string => Boolean(v)),
+    deprecated,
+    description: latest.description ?? null,
+  };
+}
+
+interface PackagistVersion {
+  version?: string;
+  description?: string;
+  homepage?: string;
+  source?: { url?: string };
+  abandoned?: boolean | string;
+}
+
+async function fetchHex(name: string): Promise<RegistryInfo | null> {
+  const data = await fetchJson<{
+    meta?: { description?: string; links?: Record<string, string> };
+    html_url?: string;
+    releases?: { version?: string }[];
+    retirements?: Record<string, { message?: string; reason?: string }>;
+  }>(`https://hex.pm/api/packages/${encodeURIComponent(name)}`);
+  if (!data) return null;
+
+  const links = data.meta?.links ?? {};
+  // Hex link keys are author-chosen and inconsistently capitalised.
+  const linkValues = Object.entries(links).map(([key, value]) => ({ key: key.toLowerCase(), value }));
+  const github =
+    linkValues.find((l) => l.key === 'github')?.value ?? linkValues.find((l) => l.key === 'source')?.value;
+
+  // A retired release is Hex's deprecation. Any retirement is worth surfacing,
+  // so the most recent one is reported rather than only an exact-version match.
+  const retirement = Object.values(data.retirements ?? {})[0];
+
+  return {
+    name,
+    ecosystem: 'hex',
+    githubRepo:
+      parseGitHubRepo(github ?? null) ??
+      linkValues.map((l) => parseGitHubRepo(l.value)).find(Boolean) ??
+      null,
+    homepage: data.html_url ?? `https://hex.pm/packages/${name}`,
+    versions: (data.releases ?? []).map((r) => r.version).filter((v): v is string => Boolean(v)),
+    deprecated: retirement ? (retirement.message ?? retirement.reason ?? 'This release is retired.') : null,
+    description: data.meta?.description ?? null,
+  };
+}
+
+async function fetchPub(name: string): Promise<RegistryInfo | null> {
+  const data = await fetchJson<{
+    latest?: { pubspec?: PubSpec; retracted?: boolean };
+    versions?: { version?: string; retracted?: boolean }[];
+  }>(`https://pub.dev/api/packages/${encodeURIComponent(name)}`);
+  if (!data) return null;
+
+  const pubspec = data.latest?.pubspec;
+  const repository = pubspec?.repository ?? pubspec?.homepage ?? pubspec?.issue_tracker;
+
+  return {
+    name,
+    ecosystem: 'pub',
+    githubRepo: parseGitHubRepo(repository ?? null),
+    homepage: pubspec?.homepage ?? `https://pub.dev/packages/${name}`,
+    versions: (data.versions ?? []).map((v) => v.version).filter((v): v is string => Boolean(v)),
+    deprecated: data.latest?.retracted ? 'The latest version of this package has been retracted.' : null,
+    description: pubspec?.description ?? null,
+  };
+}
+
+interface PubSpec {
+  description?: string;
+  homepage?: string;
+  repository?: string;
+  issue_tracker?: string;
+}
+
+/**
+ * Swift packages, which have no registry to fetch from.
+ *
+ * SwiftPM identifies a package by its git URL, and the parser already reduced
+ * that to `owner/repo` — so the "lookup" is a rearrangement of what we know,
+ * not a network call. `versions` is empty because git tags are the version
+ * list and the releases stage reads them directly; an empty list here would be
+ * a lie only if something downstream read it as "no releases exist", which is
+ * why the capability matrix marks Swift's evidence stage partial.
+ */
+function swiftRegistryInfo(name: string): RegistryInfo | null {
+  const isSlug = /^[\w.-]+\/[\w.-]+$/.test(name);
+  if (!isSlug) return null;
+
+  return {
+    name,
+    ecosystem: 'swift',
+    githubRepo: name,
+    homepage: `https://github.com/${name}`,
+    versions: [],
+    deprecated: null,
+    description: null,
+  };
+}
+
+async function fetchCocoaPods(name: string): Promise<RegistryInfo | null> {
+  // Trunk answers with the owner and the published versions, but nothing about
+  // the source repository — that lives in the podspec, which is served from the
+  // CDN as JSON at a path keyed by a hash of the name. Following that would
+  // cost two more round trips for a link, so Drift takes the versions and lets
+  // the changelog stage find the repository from the GitHub search it already
+  // does for every ecosystem.
+  const data = await fetchJson<{ versions?: { name?: string }[] }>(
+    `https://trunk.cocoapods.org/api/v1/pods/${encodeURIComponent(name)}`,
+  );
+  if (!data) return null;
+
+  return {
+    name,
+    ecosystem: 'cocoapods',
+    githubRepo: null,
+    homepage: `https://cocoapods.org/pods/${name}`,
+    versions: (data.versions ?? []).map((v) => v.name).filter((v): v is string => Boolean(v)),
+    deprecated: null,
+    description: null,
+  };
 }
 
 /**

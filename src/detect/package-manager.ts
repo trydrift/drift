@@ -25,7 +25,17 @@ export type PackageManagerId =
   | 'cargo'
   | 'bundler'
   | 'maven'
-  | 'gradle';
+  | 'gradle'
+  | 'sbt'
+  | 'dotnet'
+  | 'composer'
+  | 'mix'
+  | 'rebar'
+  | 'dart'
+  | 'flutter'
+  | 'swiftpm'
+  | 'cocoapods'
+  | 'opam';
 
 /** A command line, kept as argv so nothing is ever passed through a shell. */
 export interface Command {
@@ -46,6 +56,15 @@ export interface PackageManager {
   label: string;
   /** Manifest that records direct dependencies, relative to the member dir. */
   manifests: readonly string[];
+  /**
+   * Manifests whose names a project chooses, not the ecosystem.
+   *
+   * `.csproj` and `.opam` files are named after the project, so they cannot be
+   * listed literally. Matched against each directory entry. Kept separate from
+   * `manifests` because that list is also what the UI shows a user as "the
+   * files that identify this manager", and a regex is not that.
+   */
+  manifestPattern?: RegExp;
   /** Lockfiles that record resolved versions, most authoritative first. */
   lockfiles: readonly string[];
   /**
@@ -257,6 +276,121 @@ const MANAGERS: readonly PackageManager[] = [
     // is better than running something that silently changes nothing.
     upgrade: () => null,
   },
+  {
+    id: 'sbt',
+    ecosystem: 'maven',
+    label: 'sbt',
+    manifests: ['build.sbt'],
+    lockfiles: [],
+    outdated: { command: 'sbt', args: ['dependencyUpdates'] },
+    // Like Gradle, sbt has no command that pins a dependency version: the
+    // coordinate lives in build.sbt as source. Drift edits the build file.
+    upgrade: () => null,
+  },
+  {
+    id: 'dotnet',
+    ecosystem: 'nuget',
+    label: 'NuGet',
+    manifests: ['Directory.Packages.props'],
+    manifestPattern: /\.(cs|fs|vb)proj$/i,
+    lockfiles: ['packages.lock.json'],
+    outdated: { command: 'dotnet', args: ['list', 'package', '--outdated'] },
+    upgrade: ({ name, version }) => ({
+      command: 'dotnet',
+      args: ['add', 'package', name, '--version', version],
+    }),
+  },
+  {
+    id: 'composer',
+    ecosystem: 'packagist',
+    label: 'Composer',
+    manifests: ['composer.json'],
+    lockfiles: ['composer.lock'],
+    outdated: { command: 'composer', args: ['outdated', '--format=json'] },
+    upgrade: ({ name, version, kind }) => ({
+      command: 'composer',
+      args: ['require', `${name}:${version}`, ...(kind === 'dev' ? ['--dev'] : [])],
+    }),
+  },
+  {
+    id: 'mix',
+    ecosystem: 'hex',
+    label: 'Mix',
+    manifests: ['mix.exs'],
+    lockfiles: ['mix.lock'],
+    outdated: { command: 'mix', args: ['hex.outdated'] },
+    // `mix deps.update` resolves against the constraint in mix.exs rather than
+    // taking a version, so the manifest edit has to come first.
+    upgrade: ({ name }) => ({ command: 'mix', args: ['deps.update', name] }),
+  },
+  {
+    id: 'rebar',
+    ecosystem: 'hex',
+    label: 'Rebar3',
+    manifests: ['rebar.config'],
+    lockfiles: ['rebar.lock'],
+    outdated: null,
+    upgrade: ({ name }) => ({ command: 'rebar3', args: ['upgrade', name] }),
+  },
+  {
+    id: 'flutter',
+    ecosystem: 'pub',
+    label: 'Flutter',
+    manifests: ['pubspec.yaml'],
+    lockfiles: ['pubspec.lock'],
+    outdated: { command: 'flutter', args: ['pub', 'outdated'] },
+    upgrade: ({ name, version }) => ({
+      command: 'flutter',
+      args: ['pub', 'add', `${name}:${version}`],
+    }),
+  },
+  {
+    id: 'dart',
+    ecosystem: 'pub',
+    label: 'Dart pub',
+    manifests: ['pubspec.yaml'],
+    lockfiles: ['pubspec.lock'],
+    outdated: { command: 'dart', args: ['pub', 'outdated'] },
+    upgrade: ({ name, version, kind }) => ({
+      command: 'dart',
+      args: ['pub', 'add', ...(kind === 'dev' ? ['dev:'] : []), `${name}:${version}`],
+    }),
+  },
+  {
+    id: 'swiftpm',
+    ecosystem: 'swift',
+    label: 'Swift Package Manager',
+    manifests: ['Package.swift'],
+    lockfiles: ['Package.resolved'],
+    outdated: null,
+    // SwiftPM resolves against the requirement written in Package.swift; there
+    // is no command that pins a version without editing the manifest first.
+    upgrade: () => null,
+  },
+  {
+    id: 'cocoapods',
+    ecosystem: 'cocoapods',
+    label: 'CocoaPods',
+    manifests: ['Podfile'],
+    lockfiles: ['Podfile.lock'],
+    outdated: { command: 'pod', args: ['outdated'] },
+    // `pod update` honours the Podfile's constraint, so the constraint is what
+    // Drift edits; this then re-resolves the lockfile against it.
+    upgrade: ({ name }) => ({ command: 'pod', args: ['update', name] }),
+  },
+  {
+    id: 'opam',
+    ecosystem: 'opam',
+    label: 'opam',
+    manifests: ['dune-project'],
+    manifestPattern: /\.opam$/,
+    lockfiles: [],
+    outdated: null,
+    upgrade: ({ name, version }) => ({
+      command: 'opam',
+      args: ['install', `${name}.${version}`, '--yes'],
+    }),
+  },
 ];
 
 export function packageManagerById(id: PackageManagerId): PackageManager | undefined {
@@ -279,10 +413,15 @@ export function detectPackageManagers(listing: DirectoryListing): DetectedPackag
 
   for (const manager of MANAGERS) {
     const lockEvidence = manager.lockfiles.filter((f) => present.has(f));
-    const manifestEvidence = manager.manifests.filter((f) => present.has(f));
+    const manifestEvidence = [
+      ...manager.manifests.filter((f) => present.has(f)),
+      ...(manager.manifestPattern
+        ? listing.entries.filter((entry) => manager.manifestPattern!.test(entry))
+        : []),
+    ];
     if (lockEvidence.length === 0 && manifestEvidence.length === 0) continue;
 
-    if (!yarnFlavourMatches(manager, listing, present)) continue;
+    if (!flavourMatches(manager, listing, present)) continue;
 
     found.push({
       manager,
@@ -296,24 +435,40 @@ export function detectPackageManagers(listing: DirectoryListing): DetectedPackag
 }
 
 /**
- * Yarn's two incompatible generations share a lockfile name.
+ * Two managers that share a manifest but are not really alternatives.
  *
- * `.yarnrc.yml` only exists under berry, and berry lockfiles carry a
- * `__metadata` block. Either signal is enough; without one we assume classic,
- * which is what a bare `yarn.lock` from a v1 project looks like.
+ * This is distinct from the ambiguity below. An ambiguity is a genuine question
+ * for the user ("you have both a pnpm and an npm lockfile — which is real?").
+ * These are cases where the files themselves already answer it, and asking
+ * would be noise: a Flutter app is not a Dart project that *might* want
+ * `flutter pub`, and a berry lockfile is not a v1 lockfile.
  */
-function yarnFlavourMatches(
+function flavourMatches(
   manager: PackageManager,
   listing: DirectoryListing,
   present: Set<string>,
 ): boolean {
-  if (manager.id !== 'yarn' && manager.id !== 'yarn-berry') return true;
+  // Yarn's two incompatible generations share a lockfile name. `.yarnrc.yml`
+  // only exists under berry, and berry lockfiles carry a `__metadata` block.
+  // Either signal is enough; without one we assume classic, which is what a
+  // bare `yarn.lock` from a v1 project looks like.
+  if (manager.id === 'yarn' || manager.id === 'yarn-berry') {
+    const berry =
+      present.has('.yarnrc.yml') || (listing.read?.('yarn.lock') ?? '').includes('__metadata');
+    return manager.id === 'yarn-berry' ? berry : !berry;
+  }
 
-  const berry =
-    present.has('.yarnrc.yml') ||
-    (listing.read?.('yarn.lock') ?? '').includes('__metadata');
+  // Every Flutter project is a pub project, so both would always match. The
+  // pubspec says which: a Flutter app depends on the `flutter` SDK, and
+  // running `dart pub` in one is wrong in ways that are not obvious until a
+  // build fails much later.
+  if (manager.id === 'dart' || manager.id === 'flutter') {
+    const pubspec = listing.read?.('pubspec.yaml') ?? '';
+    const isFlutter = /^\s*(flutter|flutter_test)\s*:/m.test(pubspec) || /sdk:\s*flutter/.test(pubspec);
+    return manager.id === 'flutter' ? isFlutter : !isFlutter;
+  }
 
-  return manager.id === 'yarn-berry' ? berry : !berry;
+  return true;
 }
 
 /**

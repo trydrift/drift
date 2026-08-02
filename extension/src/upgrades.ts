@@ -31,7 +31,7 @@ import { gatherEvidence } from '../../src/evidence/index.js';
 import { buildRationale } from '../../src/rationale/index.js';
 import { RECOMMENDATION_LABEL } from '../../src/rationale/assess.js';
 import type { UpgradeRationale } from '../../src/rationale/types.js';
-import type { SurfaceAddition, SurfaceUnavailable } from '../../src/evidence/surface/types.js';
+import type { SurfaceAddition, SurfaceUnavailable, ToolInstallRequest } from '../../src/evidence/surface/types.js';
 import type { ProseSource } from '../../src/evidence/index.js';
 import { analyze } from '../../src/analyze/index.js';
 import { walkSourceFiles } from '../../src/index/walk.js';
@@ -90,6 +90,8 @@ export interface UpgradeCandidate {
    * see `severityOf`.
    */
   gaps: string[];
+  /** Helper analyzers Drift can install after explicit approval. */
+  toolRequests: ToolInstallRequest[];
   /**
    * Why this upgrade might be worth taking, weighed against what it costs.
    *
@@ -769,6 +771,7 @@ async function analyzeUpgrade(args: {
       // surface could not be read" is a different claim from "two breaking
       // changes", and the weaker one is the true one.
       gaps: rationale?.gaps ?? [],
+      toolRequests: installRequests(surfaceGaps),
       ...(rationale
         ? { rationale, recommendation: rationale.assessment.recommendation }
         : {}),
@@ -785,9 +788,21 @@ async function analyzeUpgrade(args: {
       risk: 'unknown',
       summary: 'Could not inspect this upgrade',
       gaps: [],
+      toolRequests: [],
       error: (err as Error).message,
     };
   }
+}
+
+function installRequests(gaps: ReadonlyMap<string, SurfaceUnavailable>): ToolInstallRequest[] {
+  const seen = new Set<string>();
+  const out: ToolInstallRequest[] = [];
+  for (const gap of gaps.values()) {
+    if (!gap.install || seen.has(gap.install.id)) continue;
+    seen.add(gap.install.id);
+    out.push(gap.install);
+  }
+  return out;
 }
 
 /**
@@ -1038,6 +1053,24 @@ function registryLabel(ecosystem: Ecosystem): string {
       return 'Maven Central';
     case 'rubygems':
       return 'RubyGems';
+    case 'nuget':
+      return 'NuGet';
+    case 'packagist':
+      return 'Packagist';
+    case 'hex':
+      return 'Hex';
+    case 'pub':
+      return 'pub.dev';
+    case 'cocoapods':
+      return 'CocoaPods Trunk';
+    // Neither has a registry to name. SwiftPM resolves packages straight from
+    // their git host, and opam's index is a git repository of package
+    // definitions rather than a queryable service — so the honest label is the
+    // source, not a registry that does not exist.
+    case 'swift':
+      return 'the package’s git repository';
+    case 'opam':
+      return 'the opam repository';
   }
 }
 

@@ -405,8 +405,14 @@ describe('when a surface cannot be computed', () => {
     assert.equal(outcome.available, false);
     if (outcome.available) return;
     assert.equal(outcome.reason, 'tool-missing');
-    assert.match(outcome.detail, /Rust and Cargo are installed/);
-    assert.match(outcome.remedy ?? '', /cargo install cargo-public-api/);
+    assert.match(outcome.detail, /Rust API helper is missing/);
+    assert.match(outcome.remedy ?? '', /Drift can install/);
+    assert.deepEqual(outcome.install, {
+      id: 'cargo-public-api',
+      label: 'Install cargo-public-api',
+      command: 'cargo',
+      args: ['install', 'cargo-public-api'],
+    });
   });
 
   test('uses the supplied environment for every cargo command', async () => {
