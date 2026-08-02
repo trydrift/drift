@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { join } from 'node:path';
+import { rm } from 'node:fs/promises';
 import type { CommitUnit, RemediationPlan } from '../../src/types.js';
 import { Git } from './git.js';
 import { diffHunks, statOf, type Hunk } from './diff.js';
@@ -167,44 +168,16 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
 
   if (review) review.begin(root);
 
-  for (const commit of commits) {
-    if (token.isCancellationRequested) {
-      return { status: 'cancelled', branch: workingBranch, commits: committed, warnings, message: 'Cancelled.' };
-    }
+  const selection = {
+    // The composer's two choices, carried through to whatever backend can act
+    // on them. An agent that ignores either is no worse off for being told.
+    model: driftConfig().get<Record<string, string>>('agent.models', {})?.[agent.id],
+    effort: readEffort(agent.id),
+    fast: Boolean(driftConfig().get<Record<string, boolean>>('agent.fast', {})?.[agent.id]),
+  };
 
-    state.set({
-      kind: 'fixing',
-      plan,
-      commitOrder: commit.order,
-      detail: commit.message,
-    });
-    progress.report({ message: `(${commit.order}/${plan.commits.length}) ${commit.message}` });
-
-    // Asking before touching anything is the point of `ask` mode: at this
-    // moment nothing has been written, so declining costs nothing.
-    if (permission === 'ask' && options.ask) {
-      const answer = await options.ask(
-        `Let ${agent.label} edit ${commit.files.length} file${commit.files.length === 1 ? '' : 's'} for "${commit.message}"?`,
-        ['Yes, go ahead', 'Skip this one', 'Stop'],
-      );
-      if (/^stop/i.test(answer)) {
-        return {
-          status: 'cancelled',
-          branch: workingBranch,
-          commits: committed,
-          pendingFiles,
-          warnings,
-          message: 'Stopped before editing anything else.',
-        };
-      }
-      if (/^skip/i.test(answer)) {
-        warnings.push(`Skipped commit ${commit.order} ("${commit.message}") at your request.`);
-        options.onCommitEnd?.(commit, 'skipped', []);
-        progress.report({ increment: step });
-        continue;
-      }
-    }
-
+  /** Everything that happens before an agent is handed a commit unit. */
+  const openCommit = async (commit: CommitUnit): Promise<{ path: string; content: string }[]> => {
     options.onCommitStart?.(commit);
     options.onActivity?.(commit, {
       kind: 'status',
@@ -215,36 +188,30 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
 
     const before = await readFiles(root, commit.files);
     options.onActivity?.(commit, {
-      kind: 'status',
+      kind: 'read',
       title: 'Read workspace snapshot',
       detail: `${before.length} file${before.length === 1 ? '' : 's'} available`,
       output: before.map((file) => `${file.path} (${file.content.split('\n').length} lines)`).join('\n'),
     });
-    review?.snapshot(
-      { order: commit.order, title: commit.message, body: commit.body },
-      before,
-    );
+    review?.snapshot({ order: commit.order, title: commit.message, body: commit.body }, before);
 
-    const outcome = await applyOneCommit({
-      agent,
-      plan,
-      commit,
-      root,
-      token,
-      progress,
-      files: before,
-      ask: options.ask,
-      onLog: options.onLog,
-      onActivity: (activity) => options.onActivity?.(commit, activity),
-      context: options.context,
-      // The composer's two choices, carried through to whatever backend can act
-      // on them. An agent that ignores either is no worse off for being told.
-      model: driftConfig().get<Record<string, string>>('agent.models', {})?.[agent.id],
-      effort: readEffort(agent.id),
-      fast: Boolean(driftConfig().get<Record<string, boolean>>('agent.fast', {})?.[agent.id]),
-      diagnostics: options.diagnostics,
-    });
+    return before;
+  };
 
+  /**
+   * Everything that happens once an agent has finished with a commit unit and
+   * its edits are in the real working tree.
+   *
+   * Returns a `FixResult` only when the run must stop; `null` means carry on.
+   * Identical for a sequential run and a parallel one — which is the point of
+   * pulling it out, because "what happens to a fix after the agent" is exactly
+   * the logic that must not fork into two versions that drift apart.
+   */
+  const closeCommit = async (
+    commit: CommitUnit,
+    outcome: FixOutcome,
+    before: readonly { path: string; content: string }[],
+  ): Promise<FixResult | null> => {
     if (outcome.warnings?.length) warnings.push(...outcome.warnings);
     options.onActivity?.(commit, {
       kind: outcome.status === 'failed' ? 'status' : 'thinking',
@@ -267,7 +234,7 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
     if (outcome.status !== 'applied') {
       options.onCommitEnd?.(commit, 'unchanged', []);
       progress.report({ increment: step });
-      continue;
+      return null;
     }
 
     const after = await readFiles(root, commit.files);
@@ -303,7 +270,7 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
         settled?.files.map((file) => file.path) ?? [],
       );
       progress.report({ increment: step, message: `${files} file(s) ready for review` });
-      continue;
+      return null;
     }
 
     const sha = await git.commitPaths(commit.files, commit.message, commit.body);
@@ -323,6 +290,117 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
       warnings.push(`Commit ${commit.order} ("${commit.message}") produced no changes.`);
       options.onCommitEnd?.(commit, 'unchanged', []);
       progress.report({ increment: step });
+    }
+
+    return null;
+  };
+
+  // How many agents this run may put to work at once, and how the plan splits
+  // to allow it. One is the default and the sequential path below is exactly
+  // what it always was.
+  const concurrency = await resolveConcurrency({ git, agent, permission, commits, ask: options.ask });
+  const batches = batchCommits(commits, concurrency);
+
+  if (concurrency > 1) {
+    const parallel = batches.filter((batch) => batch.length > 1).length;
+    if (parallel > 0) {
+      progress.report({
+        message: `Running up to ${concurrency} agents at once, each in its own worktree`,
+      });
+    }
+  }
+
+  for (const batch of batches) {
+    if (token.isCancellationRequested) {
+      return { status: 'cancelled', branch: workingBranch, commits: committed, warnings, message: 'Cancelled.' };
+    }
+
+    /* ---- One commit unit, in the working tree itself ---------------- */
+    if (batch.length === 1) {
+      const commit = batch[0]!;
+
+      state.set({ kind: 'fixing', plan, commitOrder: commit.order, detail: commit.message });
+      progress.report({ message: `(${commit.order}/${plan.commits.length}) ${commit.message}` });
+
+      // Asking before touching anything is the point of `ask` mode: at this
+      // moment nothing has been written, so declining costs nothing.
+      if (permission === 'ask' && options.ask) {
+        const answer = await options.ask(
+          `Let ${agent.label} edit ${commit.files.length} file${commit.files.length === 1 ? '' : 's'} for "${commit.message}"?`,
+          ['Yes, go ahead', 'Skip this one', 'Stop'],
+        );
+        if (/^stop/i.test(answer)) {
+          return {
+            status: 'cancelled',
+            branch: workingBranch,
+            commits: committed,
+            pendingFiles,
+            warnings,
+            message: 'Stopped before editing anything else.',
+          };
+        }
+        if (/^skip/i.test(answer)) {
+          warnings.push(`Skipped commit ${commit.order} ("${commit.message}") at your request.`);
+          options.onCommitEnd?.(commit, 'skipped', []);
+          progress.report({ increment: step });
+          continue;
+        }
+      }
+
+      const before = await openCommit(commit);
+      const { outcome } = await applyOneCommit({
+        agent,
+        plan,
+        commit,
+        root,
+        token,
+        progress,
+        files: before,
+        ask: options.ask,
+        onLog: options.onLog,
+        onActivity: (activity) => options.onActivity?.(commit, activity),
+        context: options.context,
+        ...selection,
+        diagnostics: options.diagnostics,
+      });
+
+      const stop = await closeCommit(commit, outcome, before);
+      if (stop) return stop;
+      continue;
+    }
+
+    /* ---- Several commit units at once, one worktree each ------------- */
+    state.set({ kind: 'fixing', plan, commitOrder: batch[0]!.order, detail: batch[0]!.message });
+    progress.report({
+      message: `${batch.length} concerns at once: ${batch.map((c) => c.order).join(', ')} of ${plan.commits.length}`,
+    });
+
+    const outcomes = await runBatchInWorktrees({
+      git,
+      agent,
+      plan,
+      batch,
+      root,
+      token,
+      progress,
+      openCommit,
+      onLog: options.onLog,
+      onActivity: options.onActivity,
+      context: options.context,
+      selection,
+      diagnostics: options.diagnostics,
+    });
+
+    // Reconciled in plan order, never in the order the agents happened to
+    // finish. A fix's commits are ordered because their concerns are, and a
+    // review queue that reordered itself by which model was quickest would be
+    // both arbitrary and different on every run.
+    for (const entry of outcomes) {
+      if (entry.edits.length > 0) {
+        await applyEdits(root, entry.edits, entry.commit.files);
+      }
+      const stop = await closeCommit(entry.commit, entry.outcome, entry.before);
+      if (stop) return stop;
     }
   }
 
@@ -360,6 +438,212 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
   };
 }
 
+/* ------------------------------------------------------------------ */
+/* Running several agents at once                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Split a plan into groups that may run at the same time.
+ *
+ * Two rules, and neither is a heuristic — together they are what makes the
+ * result identical to a sequential run:
+ *
+ *   Disjoint files.  Two agents that never touch the same file cannot disagree
+ *                    about that file, so reconciling their output afterwards is
+ *                    a merge with no conflicts by construction.
+ *   `dependsOn`.     The planner already says which commits must land before
+ *                    which. A commit whose prerequisite is still in flight has
+ *                    to wait, whatever its file scope looks like.
+ *
+ * Order is preserved. A commit that conflicts with anything already in the
+ * current batch closes it and starts the next rather than being skipped over:
+ * the plan orders its commits because their concerns are ordered, and quietly
+ * running commit 4 before commit 2 would change what the later agents see.
+ *
+ * Exported because the batching rule is the whole safety argument for this
+ * feature, and an argument that cannot be tested directly is not one.
+ */
+export function batchCommits(commits: readonly CommitUnit[], limit: number): CommitUnit[][] {
+  if (limit <= 1) return commits.map((commit) => [commit]);
+
+  const batches: CommitUnit[][] = [];
+  let current: CommitUnit[] = [];
+  let claimed = new Set<string>();
+  let inFlight = new Set<number>();
+
+  for (const commit of commits) {
+    const conflicts =
+      commit.files.some((file) => claimed.has(file)) ||
+      (commit.dependsOn ?? []).some((order) => inFlight.has(order));
+
+    if (current.length > 0 && (conflicts || current.length >= limit)) {
+      batches.push(current);
+      current = [];
+      claimed = new Set();
+      inFlight = new Set();
+    }
+
+    current.push(commit);
+    inFlight.add(commit.order);
+    for (const file of commit.files) claimed.add(file);
+  }
+
+  if (current.length > 0) batches.push(current);
+  return batches;
+}
+
+/**
+ * How many agents this run may actually put to work at once.
+ *
+ * The setting is a ceiling, not an instruction. Everything below is a reason
+ * the ceiling cannot be reached, and each of them is a case where running in
+ * parallel would take away something the developer is relying on rather than
+ * merely being slower:
+ *
+ *   `ask` permission   The developer approves each unit before it runs. Three
+ *                      approval prompts arriving at once is not that.
+ *   cloud agents       The work is not happening locally; there is no tree to
+ *                      give it.
+ *   no worktree support  Ancient git, or a repository state that will not take
+ *                      a second working tree.
+ */
+async function resolveConcurrency(args: {
+  git: Git;
+  agent: FixAgent;
+  permission: SessionPermission;
+  commits: readonly CommitUnit[];
+  ask?: (question: string, options?: string[]) => Promise<string>;
+}): Promise<number> {
+  const configured = driftConfig().get<number>('fix.maxAgents', 1) ?? 1;
+  const wanted = Math.max(1, Math.min(16, Math.floor(configured)));
+
+  if (wanted === 1 || args.commits.length < 2) return 1;
+  if (args.permission === 'ask') return 1;
+  if (args.agent.kind === 'cloud') return 1;
+  if (!(await args.git.supportsWorktrees())) return 1;
+
+  return Math.min(wanted, args.commits.length);
+}
+
+interface BatchOutcome {
+  commit: CommitUnit;
+  outcome: FixOutcome;
+  before: { path: string; content: string }[];
+  /** What to write into the real working tree. Empty when nothing changed. */
+  edits: { path: string; content: string }[];
+}
+
+/**
+ * Run a batch of commit units side by side, each in its own worktree.
+ *
+ * Nothing here writes to the developer's working tree. Each agent gets a
+ * private checkout at the same commit, does whatever it does there, and the
+ * result comes back as a list of file contents for the caller to apply through
+ * the workspace API in plan order — so parallel fixes land in VS Code's undo
+ * stack exactly like sequential ones, and the review store sees the same shape
+ * of change either way.
+ *
+ * Worktrees are torn down on every path out, including cancellation and a
+ * throwing agent. Leaving one behind would leave a stale entry in
+ * `git worktree list` and a directory inside `.git` that nothing cleans up.
+ */
+async function runBatchInWorktrees(args: {
+  git: Git;
+  agent: FixAgent;
+  plan: RemediationPlan;
+  batch: readonly CommitUnit[];
+  root: string;
+  token: vscode.CancellationToken;
+  progress: vscode.Progress<{ message?: string }>;
+  openCommit: (commit: CommitUnit) => Promise<{ path: string; content: string }[]>;
+  onLog?: (message: string) => void;
+  onActivity?: (commit: CommitUnit, activity: TaskActivityInput) => void;
+  context?: AttachedContext[];
+  selection: { model?: string; effort?: SessionEffort; fast?: boolean };
+  diagnostics?: string;
+}): Promise<BatchOutcome[]> {
+  const { git, batch, root } = args;
+
+  // Every worktree starts from the same commit — the one the working tree is
+  // on right now, including any dependency-upgrade commit this run already
+  // made. An agent must see the upgraded manifest it is fixing code against.
+  const base = await git.headSha();
+  const home = join(await git.gitDir(), 'drift-worktrees');
+  await git.pruneWorktrees();
+
+  const trees: { commit: CommitUnit; path: string; before: { path: string; content: string }[] }[] = [];
+
+  try {
+    for (const commit of batch) {
+      const before = await args.openCommit(commit);
+      const path = join(home, `commit-${commit.order}`);
+
+      // A directory left by a killed run would make `worktree add` refuse.
+      await rm(path, { recursive: true, force: true }).catch(() => undefined);
+      await git.addWorktree(path, base);
+
+      args.onActivity?.(commit, {
+        kind: 'bash',
+        title: 'Isolate',
+        detail: `Working alongside ${batch.length - 1} other agent${batch.length === 2 ? '' : 's'}`,
+        input: `git worktree add --detach ${path} ${base.slice(0, 7)}`,
+      });
+
+      trees.push({ commit, path, before });
+    }
+
+    const results = await Promise.all(
+      trees.map(async ({ commit, path, before }): Promise<BatchOutcome> => {
+        const { outcome } = await applyOneCommit({
+          agent: args.agent,
+          plan: args.plan,
+          commit,
+          root: path,
+          token: args.token,
+          progress: args.progress,
+          // Read from the worktree, not the workspace: identical content today,
+          // but the agent is going to be told these are the files at `path`,
+          // and handing it contents from somewhere else would be a lie waiting
+          // to become a bug.
+          files: await readFiles(path, commit.files),
+          // No `ask` in parallel. The panel has one question slot, and two
+          // agents reaching for it at once would strand both. Agents are
+          // documented to treat a missing `ask` as "make the safe choice and
+          // flag it", which is the right behaviour unattended anyway.
+          onLog: args.onLog,
+          onActivity: (activity) => args.onActivity?.(commit, activity),
+          context: args.context,
+          ...args.selection,
+          diagnostics: args.diagnostics,
+          // Edits are collected rather than written: the working tree they
+          // belong in is not the one the agent was given.
+          deferEdits: true,
+        });
+
+        if (outcome.status !== 'applied') return { commit, outcome, before, edits: [] };
+
+        // A CLI agent edited the worktree in place and returned no edit list,
+        // so the worktree itself is the answer. Reading it back and comparing
+        // against the snapshot is also what filters out files the agent opened
+        // and left alone.
+        const after = await readFiles(path, commit.files);
+        const baseline = new Map(before.map((file) => [file.path, file.content]));
+        const changed = after.filter((file) => baseline.get(file.path) !== file.content);
+
+        return { commit, outcome, before, edits: changed };
+      }),
+    );
+
+    return results;
+  } finally {
+    for (const { path } of trees) {
+      await git.removeWorktree(path).catch(() => undefined);
+      await rm(path, { recursive: true, force: true }).catch(() => undefined);
+    }
+    await git.pruneWorktrees().catch(() => undefined);
+  }
+}
+
 async function applyOneCommit(args: {
   agent: FixAgent;
   plan: RemediationPlan;
@@ -376,7 +660,15 @@ async function applyOneCommit(args: {
   effort?: SessionEffort;
   fast?: boolean;
   diagnostics?: string;
-}): Promise<FixOutcome> {
+  /**
+   * Hand the edits back instead of writing them.
+   *
+   * Set when the agent is working in a worktree: `root` is then not the
+   * developer's working tree, and applying there would put the fix somewhere
+   * that is about to be deleted.
+   */
+  deferEdits?: boolean;
+}): Promise<{ outcome: FixOutcome; edits: { path: string; content: string }[] }> {
   const { agent, plan, commit, root, token, progress, files } = args;
 
   const controller = new AbortController();
@@ -408,14 +700,17 @@ async function applyOneCommit(args: {
       signal: controller.signal,
     });
 
+    const edits = outcome.status === 'applied' ? (outcome.edits ?? []) : [];
+
     // In-editor agents hand back text; Drift writes it via the workspace API so
     // every change is a normal, undoable editor edit rather than a surprise
     // mutation behind the user's back.
-    if (outcome.status === 'applied' && outcome.edits?.length) {
-      await applyEdits(root, outcome.edits, commit.files);
+    if (!args.deferEdits && edits.length > 0) {
+      await applyEdits(root, edits, commit.files);
+      return { outcome, edits: [] };
     }
 
-    return outcome;
+    return { outcome, edits: [...edits] };
   } finally {
     cancelSub.dispose();
   }
@@ -514,11 +809,16 @@ async function applyEdits(
     }
 
     const uri = vscode.Uri.file(join(root, normalized));
-    let document: vscode.TextDocument;
+    let document: vscode.TextDocument | null = null;
     try {
       document = await vscode.workspace.openTextDocument(uri);
     } catch {
-      rejected.push(normalized);
+      // Not on disk. A planned file the agent was asked to create is a
+      // legitimate edit, and refusing it would silently drop the fix — the
+      // scope check above has already confirmed the plan named this path.
+      // This matters most for a worktree run, where a created file has no way
+      // into the working tree other than through here.
+      edit.createFile(uri, { ignoreIfExists: true, contents: Buffer.from(content, 'utf8') });
       continue;
     }
 

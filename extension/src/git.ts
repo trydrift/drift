@@ -270,6 +270,49 @@ export class Git {
   }
 
   /* ------------------------------------------------------------------ */
+  /* Worktrees — the machinery behind running agents side by side        */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * A second working tree, checked out at `ref`, sharing this repository.
+   *
+   * The whole reason parallel fixes are possible at all. Two agents pointed at
+   * one directory overwrite each other's edits and each other's commit scopes;
+   * two agents in two worktrees cannot see each other, and Drift reconciles
+   * their output afterwards, in plan order, through the workspace API.
+   *
+   * Always `--detach`. A worktree that checked out a branch would take that
+   * branch hostage — git refuses to have one branch checked out in two places,
+   * so the developer's own branch would become unusable while a fix ran, and a
+   * crashed run would leave it that way.
+   */
+  async addWorktree(path: string, ref: string): Promise<void> {
+    await this.exec(['worktree', 'add', '--detach', '--quiet', path, ref]);
+  }
+
+  /**
+   * Take a worktree back down.
+   *
+   * `--force` because the point of the worktree is that an agent edited it: a
+   * clean removal would refuse precisely when the run succeeded. Nothing is
+   * lost — the caller has already read the file contents it cares about back
+   * into the real working tree by the time this runs.
+   */
+  async removeWorktree(path: string): Promise<void> {
+    await this.exec(['worktree', 'remove', '--force', path]);
+  }
+
+  /** Forget worktrees whose directories are gone, after a crash or a manual delete. */
+  async pruneWorktrees(): Promise<void> {
+    await this.tryExec(['worktree', 'prune']);
+  }
+
+  /** Whether this git can do worktrees at all. Added in 2.5; older ones exist in the wild. */
+  async supportsWorktrees(): Promise<boolean> {
+    return (await this.tryExec(['worktree', 'list', '--porcelain'])) !== null;
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Snapshots — the machinery behind rewind                             */
   /* ------------------------------------------------------------------ */
 
