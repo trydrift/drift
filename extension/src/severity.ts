@@ -100,3 +100,33 @@ export function compareSeverity(a: SeverityInput, b: SeverityInput): number {
   const rank = { affected: 0, error: 1, 'upstream-only': 2, unchecked: 3, clean: 4 } as const;
   return rank[severityOf(a)] - rank[severityOf(b)];
 }
+
+/**
+ * The name a conversation about this scan should carry in the history list.
+ *
+ * Not the same job as `describeSeverity`, which describes one package to
+ * someone already looking at it. This describes a whole run to someone
+ * scanning forty saved conversations for the one they want, where the only
+ * question is *which of these is which*. Every one of them was started by
+ * pressing the same button, so the command tells them nothing and the tallies
+ * tell them everything.
+ *
+ * Leads with the affected count when there is one, because that is what a
+ * developer remembers a scan by — "the one where three things broke".
+ */
+export function scanTitle(candidates: readonly SeverityInput[], checked = 0): string {
+  if (candidates.length === 0) {
+    return checked > 0 ? `Scan — ${checked} up to date` : 'Scan — nothing to upgrade';
+  }
+
+  const affected = candidates.filter((c) => severityOf(c) === 'affected').length;
+  const unchecked = candidates.filter((c) => severityOf(c) === 'unchecked').length;
+  const total = candidates.length;
+
+  if (affected > 0) return `Scan — ${affected} of ${total} affect this repo`;
+  // Kept distinct from "all safe" for the same reason the verdict is: a run
+  // that could not check something did not find it safe, and a title that
+  // says otherwise is the claim Drift exists to stop making.
+  if (unchecked > 0) return `Scan — ${total} upgrade${total === 1 ? '' : 's'}, ${unchecked} unverified`;
+  return `Scan — ${total} upgrade${total === 1 ? '' : 's'}, all safe`;
+}

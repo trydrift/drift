@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { deriveTitle } from './history.js';
 
 /**
  * The conversation.
@@ -275,6 +276,8 @@ export class DriftSession {
   private attachments: Attachment[] = [];
   private counter = 0;
   private pending: { id: string; resolve: (answer: string) => void } | null = null;
+  /** Set once the panel knows what this conversation turned out to be about. */
+  private explicitTitle: string | null = null;
   /**
    * Which open roots the next scan acts on. Empty means "all of them" — the
    * common case, and the reason this is a set of exclusions-from-nothing
@@ -317,6 +320,7 @@ export class DriftSession {
   clear(): void {
     this.rejectPending();
     this.items = [];
+    this.explicitTitle = null;
     this.emitter.fire();
   }
 
@@ -368,8 +372,16 @@ export class DriftSession {
     ) as ThreadItem[];
   }
 
-  restore(items: readonly ThreadItem[]): void {
+  /**
+   * Reopen a saved conversation.
+   *
+   * The saved title comes back with it. Recomputing one from the transcript
+   * would rename an entry the moment it is opened, so the row the developer
+   * clicked and the thread they land in would disagree.
+   */
+  restore(items: readonly ThreadItem[], title?: string): void {
     this.rejectPending();
+    this.explicitTitle = title?.trim() ? title.trim().slice(0, 80) : null;
     this.items = JSON.parse(JSON.stringify(items)) as ThreadItem[];
     // Ids must never collide with the restored ones, or `answer` and `rewind`
     // would act on the wrong turn.
@@ -381,13 +393,32 @@ export class DriftSession {
     this.emitter.fire();
   }
 
-  /** The line shown in the history list. The first thing the developer said. */
+  /**
+   * The line shown in the history list.
+   *
+   * Prefers a title the panel set once it knew what the run actually found —
+   * "3 of 12 upgrades affect this repo" tells two entries apart, and the
+   * `/scan` that produced both does not. Falls back to reading the transcript,
+   * which is all a conversation saved by an older version has.
+   */
   get title(): string {
-    const first = this.items.find((item) => item.kind === 'user');
-    if (first && first.kind === 'user') return first.text.replace(/\s+/g, ' ').trim().slice(0, 80);
-    const packages = this.items.find((item) => item.kind === 'packages');
-    if (packages && packages.kind === 'packages') return 'Dependency scan';
-    return 'Conversation';
+    return this.explicitTitle ?? deriveTitle(this.items);
+  }
+
+  /**
+   * Name this conversation after what happened in it.
+   *
+   * Called by the panel at the moments where it learns something a title can
+   * be built from — a scan's tallies, the packages a fix is about. Ignored
+   * once set for this conversation unless `replace` is passed: the first
+   * concrete fact is usually the one the developer is looking for later, and a
+   * title that keeps changing under a live thread is one they cannot search.
+   */
+  setTitle(title: string, replace = false): void {
+    const trimmed = title.replace(/\s+/g, ' ').trim();
+    if (!trimmed) return;
+    if (this.explicitTitle && !replace) return;
+    this.explicitTitle = trimmed.slice(0, 80);
   }
 
   /* ---------------------------------------------------------------- */
