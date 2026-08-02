@@ -199,6 +199,70 @@ export const DriftConfigSchema = z.object({
     })
     .default({}),
 
+  /**
+   * How the pull request gets opened.
+   *
+   * The default finishes the job: once there is a branch with a reviewed
+   * commit on it, leaving the developer to open the pull request by hand is
+   * asking them to do the one step the tool was supposed to automate. What
+   * stays manual is the *merge* — Drift's output is always something a human
+   * opens, never something that has already landed.
+   */
+  pullRequest: z
+    .object({
+      /** Open a pull request once the branch is pushed. */
+      enabled: z.boolean().default(true),
+
+      /**
+       * Whether to confirm the branch name and title first.
+       *
+       * `ask` in interactive surfaces (the CLI and the panel), because a
+       * proposed name a developer can edit is better than a good one they
+       * cannot. The GitHub Action ignores this and always proceeds: there is
+       * nobody there to ask, and a workflow that stops to prompt is a workflow
+       * that hangs.
+       */
+      confirm: z.enum(['ask', 'never']).default('ask'),
+
+      /**
+       * Which branch to merge into.
+       *
+       * `branched-from` targets whatever the work was started from, which is
+       * the right answer on any team that does not develop directly on its
+       * default branch. See `resolveBaseBranch` for why the difference matters.
+       */
+      base: z.enum(['branched-from', 'default-branch']).default('branched-from'),
+
+      /** Open as a draft for a human to promote. */
+      draft: z.boolean().default(false),
+
+      /** Labels applied to the pull request, when the token can set them. */
+      labels: z.array(z.string()).default([]),
+
+      /** GitHub usernames or team slugs to request review from. */
+      reviewers: z.array(z.string()).default([]),
+
+      /**
+       * Branch and title templates.
+       *
+       * Placeholders: `{prefix}`, `{summary}`, `{name}`, `{from}`, `{to}`,
+       * `{count}`, `{date}`. An unrecognised placeholder is left verbatim, so a
+       * typo produces an obviously wrong name rather than a plausible one that
+       * silently collides with the next run.
+       */
+      branchTemplate: z.string().default('{prefix}upgrade-{summary}-{date}'),
+      titleTemplate: z.string().default('chore(deps): upgrade {summary}'),
+
+      /**
+       * Credit Drift as a co-author on the commits it makes.
+       *
+       * The human stays the author — they chose the upgrade and reviewed the
+       * diff. Off is offered because some repositories lint commit trailers.
+       */
+      coAuthor: z.boolean().default(true),
+    })
+    .default({}),
+
   /** Optional LLM-assisted evidence interpretation. */
   llm: z
     .object({

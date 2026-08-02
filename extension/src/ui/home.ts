@@ -6,6 +6,7 @@ import semver from 'semver';
 import { digestDiagnostics, renderDigest } from '../diagnostics-digest.js';
 import type { RemediationPlan, RepoContext } from '../../../src/types.js';
 import { buildPlan } from '../../../src/plan/index.js';
+import { resolveBaseBranch } from '../../../src/plan/pull-request.js';
 import { renderPullRequestBody } from '../../../src/report/markdown.js';
 import { inspectLocalRepo, WORKING_TREE } from '../../../src/repo/local-git.js';
 import { DriftConfigSchema, type DriftConfig } from '../../../src/config/schema.js';
@@ -1915,11 +1916,24 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     const remote = await git.remoteUrl();
     const slug = remoteSlug(remote);
-    const base = await git.defaultBranch();
+
+    // Target the branch this work was started from, not the repository's
+    // default. On a team that develops on `develop`, targeting `main` proposes
+    // merging into the wrong place — and a pull request pointed at the wrong
+    // base shows a diff full of other people's commits.
+    const prConfig = (await this.context())?.config.pullRequest;
+    const resolved = resolveBaseBranch({
+      policy: prConfig?.base ?? 'branched-from',
+      branchedFrom: await git.branchedFrom(branch),
+      defaultBranch: await git.defaultBranch(),
+      currentBranch: branch,
+    });
+    const base = resolved?.branch ?? null;
+
     // A pull request needs somewhere to merge *into*. Committing straight onto
     // the default branch is a legitimate choice, but it leaves no PR to open,
     // and saying so beats offering a button that returns a 422.
-    const canOpenPr = Boolean(slug) && Boolean(base) && base !== branch;
+    const canOpenPr = Boolean(slug) && Boolean(base) && (prConfig?.enabled ?? true);
 
     const answer = await this.session.ask(
       canOpenPr
@@ -1966,7 +1980,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       return;
     }
 
-    await this.createPullRequest({ slug, remote, base, branch, plan });
+    await this.createPullRequest({
+      slug,
+      remote,
+      base,
+      branch,
+      plan,
+      ...(resolved?.reason ? { baseReason: resolved.reason } : {}),
+      confirm: (prConfig?.confirm ?? 'ask') === 'ask',
+      ...(prConfig?.draft ? { draft: true } : {}),
+    });
   }
 
   /**
@@ -1977,14 +2000,51 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
    * still has a pushed branch and one link away from the same outcome. Failing
    * to open a PR is never allowed to look like failing to do the work.
    */
+  /**
+   * Plain text for a native VS Code prompt.
+   *
+   * The base-branch reason is written once, in markdown, for the chat panel.
+   * An input box renders backticks literally, so they are stripped rather than
+   * a second copy of the sentence being maintained.
+   */
+  private static plainText(markdown: string): string {
+    return markdown.replace(/[`*_]/g, '');
+  }
+
   private async createPullRequest(args: {
     slug: string;
     remote: string | null;
     base: string;
     branch: string;
     plan: { message: CommitMessage; prBody: string };
+    /** How the base was chosen, so the target is never a mystery. */
+    baseReason?: string;
+    /** Confirm the title before opening. Skipped when configured to `never`. */
+    confirm?: boolean;
+    draft?: boolean;
   }): Promise<void> {
     const fallback = compareUrl(args.remote, args.base, args.branch);
+
+    // A proposed title the developer can edit beats a good one they cannot.
+    // The name is Drift's suggestion, not its decision.
+    let title = args.plan.message.subject;
+    if (args.confirm !== false) {
+      const edited = await vscode.window.showInputBox({
+        title: 'Open a pull request',
+        prompt: `${args.branch} → ${args.base}${args.baseReason ? ` — ${DriftHomeView.plainText(args.baseReason)}` : ''}`,
+        value: title,
+        valueSelection: [0, title.length],
+        ignoreFocusOut: true,
+      });
+      if (edited === undefined) {
+        this.session.say(
+          `\`${args.branch}\` is pushed and I have not opened a pull request. Say \`/pr\` when you want one.`,
+        );
+        return;
+      }
+      title = edited.trim() || title;
+    }
+
     const session = await getGitHubSession({ createIfNone: true });
 
     if (!session) {
@@ -2003,15 +2063,18 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         slug: args.slug,
         head: args.branch,
         base: args.base,
-        title: args.plan.message.subject,
+        title,
         body: args.plan.prBody,
+        ...(args.draft ? { draft: true } : {}),
       });
 
       step.done(pr.existing ? `Pull request #${pr.number} already open` : `Opened #${pr.number}`);
       this.session.say(
         pr.existing
           ? `A pull request for \`${args.branch}\` was already open: [#${pr.number}](${pr.url}). The new commit is on it.`
-          : `Opened [#${pr.number}](${pr.url}) — \`${args.branch}\` into \`${args.base}\`. The description carries the evidence: what changed upstream, and what it touches here.`,
+          : `Opened [#${pr.number}](${pr.url}) — \`${args.branch}\` into \`${args.base}\`${
+              args.baseReason ? ` (${args.baseReason})` : ''
+            }. The description carries the evidence: what changed upstream, and what it touches here.`,
       );
       await vscode.env.openExternal(vscode.Uri.parse(pr.url));
     } catch (err) {
@@ -2103,7 +2166,6 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     const branch = await git.currentBranch().catch(() => 'HEAD');
     const remote = await git.remoteUrl();
     const slug = remoteSlug(remote);
-    const base = await git.defaultBranch();
 
     if (branch === 'HEAD') {
       this.session.notice('warn', 'You are on a detached HEAD. Say `/commit` to put this work on a branch first.');
@@ -2113,13 +2175,26 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       this.session.notice('warn', 'This repository has no GitHub `origin` remote, so there is no pull request to open.');
       return;
     }
-    if (!base || base === branch) {
+
+    // The branch this work was started from, not the repository's default. On
+    // a team that develops on `develop`, targeting `main` proposes merging into
+    // the wrong place and shows a diff full of other people's commits.
+    const prConfig = (await this.context())?.config.pullRequest;
+    const resolved = resolveBaseBranch({
+      policy: prConfig?.base ?? 'branched-from',
+      branchedFrom: await git.branchedFrom(branch),
+      defaultBranch: await git.defaultBranch(),
+      currentBranch: branch,
+    });
+
+    if (!resolved) {
       this.session.notice(
         'warn',
         `\`${branch}\` is the branch a pull request would merge into. Say \`/commit\` and I will put the work on its own branch first.`,
       );
       return;
     }
+    const base = resolved.branch;
 
     if (!(await git.hasUpstream(branch))) {
       const step = this.session.step(`Pushing ${branch}`);
@@ -2141,7 +2216,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
             prBody: `Opened from the Drift panel for \`${branch}\`.`,
           };
 
-    await this.createPullRequest({ slug, remote, base, branch, plan });
+    await this.createPullRequest({
+      slug,
+      remote,
+      base,
+      branch,
+      plan,
+      baseReason: resolved.reason,
+      confirm: (prConfig?.confirm ?? 'ask') === 'ask',
+      ...(prConfig?.draft ? { draft: true } : {}),
+    });
   }
 
   /* ---------------------------------------------------------------- */
@@ -3848,7 +3932,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       step.progress('Creating baseline commit', 'Current files before Drift changes anything');
       await git.commitAll('chore: baseline before Drift', '', {
         allowEmpty: true,
-        identity: { name: 'Drift', email: 'drift@example.invalid' },
+        identity: { name: 'Drift', email: 'drift@users.noreply.github.com' },
+        // No co-author trailer here. This commit captures the user's *existing*
+        // files before Drift has changed anything, so crediting Drift as a
+        // co-author of it would claim authorship of work it did not touch.
+        coAuthors: false,
       });
       const info = await inspectLocalRepo(root);
       this.state.setRepo(info, root);

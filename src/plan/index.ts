@@ -10,6 +10,7 @@ import type {
   UpgradeRationale,
 } from '../types.js';
 import { compareRisk, riskWithinLimit, type DriftConfig } from '../config/schema.js';
+import { branchNameFor as branchName } from './pull-request.js';
 import { meetsConfidence } from '../analyze/index.js';
 import { isDowngrade } from '../detect/version.js';
 import { matchesAny } from '../util/glob.js';
@@ -71,34 +72,25 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
  * Encodes the dependency and version move so the branch is self-describing in
  * a branch list, and uses the run date rather than a commit hash so repeat
  * upgrades are readable before a human opens the PR.
+ *
+ * Delegates to `plan/pull-request.ts`, which the extension and the CLI use
+ * too — so the same upgrade produces the same branch name wherever it was
+ * started from. A team that has learned to recognise `drift/upgrade-…` should
+ * not have to learn a second shape because someone clicked instead of pushing.
  */
 export function branchNameFor(
   config: DriftConfig,
   changes: readonly DependencyChange[],
   afterSha: string,
 ): string {
-  const prefix = config.remediation.branchPrefix;
-  const suffix = new Date().toISOString().slice(0, 10);
   void afterSha;
-
-  if (changes.length === 1) {
-    const change = changes[0]!;
-    const name = branchPart(change.name.replace('@', '').replace('/', '-'), 30);
-    const from = branchPart(change.from ?? 'new', 16);
-    const to = branchPart(change.to ?? 'removed', 16);
-    return `${prefix}${name}-${from}-to-${to}-${suffix}`;
-  }
-
-  return `${prefix}deps-${changes.length}-updates-${suffix}`;
-}
-
-function branchPart(input: string, maxLength: number): string {
-  const part = input
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]+/g, '-')
-    .replace(/[./]+$/g, '')
-    .replace(/^-+|-+$/g, '');
-  return part.slice(0, maxLength).replace(/[.-]+$/g, '') || 'change';
+  return branchName(
+    { changes },
+    {
+      branch: config.pullRequest.branchTemplate,
+      prefix: config.remediation.branchPrefix,
+    },
+  );
 }
 
 /**

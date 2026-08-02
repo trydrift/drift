@@ -203,6 +203,96 @@ export class GitHubClient {
     }
   }
 
+  /**
+   * Open a pull request, or return the one that already exists for this branch.
+   *
+   * Re-running an upgrade on a branch that already has a pull request is an
+   * ordinary thing to do, and GitHub answers it with a 422 rather than a
+   * pointer to the existing one. Turning that into "here is your pull request"
+   * is the difference between a retry that works and an error a workflow log
+   * shows in red for a run that actually succeeded.
+   */
+  async createPullRequest(
+    repo: RepoContext,
+    params: {
+      head: string;
+      base: string;
+      title: string;
+      body: string;
+      draft?: boolean;
+      labels?: readonly string[];
+      reviewers?: readonly string[];
+    },
+  ): Promise<{ number: number; url: string; existing: boolean } | null> {
+    try {
+      const response = await this.octokit.pulls.create({
+        owner: repo.owner,
+        repo: repo.repo,
+        head: params.head,
+        base: params.base,
+        title: params.title,
+        body: params.body,
+        draft: params.draft ?? false,
+      });
+
+      const number = response.data.number;
+      await this.decoratePullRequest(repo, number, params);
+      this.logger.info(`Opened pull request #${number}: ${params.head} → ${params.base}`);
+      return { number, url: response.data.html_url, existing: false };
+    } catch (err) {
+      const existing = await this.findPullRequestForBranch(repo, params.head);
+      if (existing) {
+        this.logger.info(`Pull request #${existing.number} already open for ${params.head}`);
+        return { ...existing, existing: true };
+      }
+      this.logger.error(`Could not open a pull request: ${(err as Error).message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Labels and reviewers, applied after the fact.
+   *
+   * Separate calls because they need permissions the pull request itself does
+   * not, and because failing to add a label must never lose the pull request
+   * that was just opened successfully.
+   */
+  private async decoratePullRequest(
+    repo: RepoContext,
+    number: number,
+    params: { labels?: readonly string[]; reviewers?: readonly string[] },
+  ): Promise<void> {
+    if (params.labels?.length) {
+      try {
+        await this.octokit.issues.addLabels({
+          owner: repo.owner,
+          repo: repo.repo,
+          issue_number: number,
+          labels: [...params.labels],
+        });
+      } catch (err) {
+        this.logger.warn(`Could not label #${number}: ${(err as Error).message}`);
+      }
+    }
+
+    if (params.reviewers?.length) {
+      try {
+        // A team slug carries a `/`; GitHub takes the two in different fields.
+        const teams = params.reviewers.filter((r) => r.includes('/')).map((r) => r.split('/').pop()!);
+        const users = params.reviewers.filter((r) => !r.includes('/'));
+        await this.octokit.pulls.requestReviewers({
+          owner: repo.owner,
+          repo: repo.repo,
+          pull_number: number,
+          reviewers: users,
+          team_reviewers: teams,
+        });
+      } catch (err) {
+        this.logger.warn(`Could not request reviewers on #${number}: ${(err as Error).message}`);
+      }
+    }
+  }
+
   async updatePullRequestBody(repo: RepoContext, number: number, body: string): Promise<void> {
     try {
       await this.octokit.pulls.update({
