@@ -21,10 +21,22 @@ import type { TaskActivityInput } from './session.js';
  *
  * A line this cannot place is still the agent thinking out loud, so it lands
  * under `Thinking` rather than being labelled with a stream name or dropped.
+ *
+ * `Thinking` was where almost everything used to land, which made the drawer
+ * useless for the question it exists to answer — *what did the agent actually
+ * do to my repository?* Reading a file and rewriting one are not the same
+ * event, and a reader skimming forty rows should be able to see the difference
+ * without opening any of them. The two recognisers below are what buys that:
+ * the tool-call form these CLIs print when they invoke a tool, and the plain
+ * verb-and-path prose they print when they narrate one.
  */
 export function activityFromReport(message: string): TaskActivityInput {
   const text = stripAnsi(message).trim();
   const links = linksIn(text);
+
+  // The strongest signal available: the agent naming the tool it is running.
+  const tool = toolCall(text);
+  if (tool) return { ...tool, links };
 
   const command = commandFromReport(text);
   if (command) {
@@ -37,16 +49,164 @@ export function activityFromReport(message: string): TaskActivityInput {
     return { kind: 'search', title: searchTitle(text), detail: text, links };
   }
 
-  const file = /^(read|reading|write|writing|edit|editing|creat\w+|open\w*|search\w*|grep\w*|glob\w*|list\w*)\b/i.exec(text);
-  if (file) {
-    return { kind: 'status', title: statusTitle(text), detail: text, links };
-  }
+  const narrated = fileVerb(text);
+  if (narrated) return { ...narrated, links };
 
   if (/^(receiving|asking|waiting|applying|checking|running|thinking|planning|analyz\w+|analys\w+)\b/i.test(text)) {
     return { kind: 'status', title: statusTitle(text), detail: text, links };
   }
 
   return { kind: 'thinking', title: 'Thinking', detail: text, links };
+}
+
+/**
+ * What each tool an agent can call amounts to, in the reader's terms.
+ *
+ * Keyed by the tool's own name lowercased, because that is what the CLIs
+ * print. The distinction that matters most here is `Write` versus `Edit`:
+ * every one of these agents uses `Write`/`WriteFile` for "put this file
+ * there, existing or not" and a separate verb for "change these lines", and
+ * collapsing the two would hide the one case a reviewer most wants to catch —
+ * a file appearing that they never had.
+ */
+const TOOLS: Record<string, { kind: TaskActivityInput['kind']; title: string }> = {
+  read: { kind: 'read', title: 'Read' },
+  readfile: { kind: 'read', title: 'Read' },
+  readmanyfiles: { kind: 'read', title: 'Read' },
+  notebookread: { kind: 'read', title: 'Read' },
+  view: { kind: 'read', title: 'Read' },
+  cat: { kind: 'read', title: 'Read' },
+  open: { kind: 'read', title: 'Read' },
+  ls: { kind: 'read', title: 'List' },
+  list: { kind: 'read', title: 'List' },
+  listdirectory: { kind: 'read', title: 'List' },
+
+  write: { kind: 'create', title: 'Create' },
+  writefile: { kind: 'create', title: 'Create' },
+  create: { kind: 'create', title: 'Create' },
+  createfile: { kind: 'create', title: 'Create' },
+
+  edit: { kind: 'edit', title: 'Edit' },
+  multiedit: { kind: 'edit', title: 'Edit' },
+  update: { kind: 'edit', title: 'Edit' },
+  replace: { kind: 'edit', title: 'Edit' },
+  strreplace: { kind: 'edit', title: 'Edit' },
+  str_replace: { kind: 'edit', title: 'Edit' },
+  applypatch: { kind: 'edit', title: 'Edit' },
+  apply_patch: { kind: 'edit', title: 'Edit' },
+  notebookedit: { kind: 'edit', title: 'Edit' },
+
+  bash: { kind: 'bash', title: 'Bash' },
+  shell: { kind: 'bash', title: 'Bash' },
+  exec: { kind: 'bash', title: 'Bash' },
+  run: { kind: 'bash', title: 'Bash' },
+  runcommand: { kind: 'bash', title: 'Bash' },
+  terminal: { kind: 'bash', title: 'Bash' },
+
+  grep: { kind: 'search', title: 'Grep' },
+  ripgrep: { kind: 'search', title: 'Grep' },
+  searchtext: { kind: 'search', title: 'Grep' },
+  glob: { kind: 'search', title: 'Glob' },
+  findfiles: { kind: 'search', title: 'Glob' },
+  search: { kind: 'search', title: 'Search' },
+  websearch: { kind: 'search', title: 'Web search' },
+  webfetch: { kind: 'search', title: 'Fetch' },
+  fetch: { kind: 'search', title: 'Fetch' },
+
+  task: { kind: 'status', title: 'Subtask' },
+  todowrite: { kind: 'status', title: 'Plan' },
+  think: { kind: 'thinking', title: 'Thinking' },
+};
+
+/**
+ * A tool invocation, in the `Name(arguments)` form these CLIs print.
+ *
+ * Leading bullets and status glyphs are theirs, not content — Claude Code
+ * prefixes with `⏺`, others use `●`, `>` or a dash — so they are stripped
+ * before matching rather than being allowed to defeat it.
+ */
+function toolCall(text: string): TaskActivityInput | null {
+  const match = /^[\s⏺●○◆◇•*>\-]*([A-Za-z][A-Za-z_]{1,24})\s*\(([\s\S]*)\)\s*$/.exec(text);
+  if (!match) return null;
+
+  const entry = TOOLS[match[1]!.toLowerCase().replace(/_/g, '')] ?? TOOLS[match[1]!.toLowerCase()];
+  if (!entry) return null;
+
+  const argument = match[2]!.trim();
+  const path = pathIn(argument);
+
+  // A shell tool's argument *is* the command, and belongs in the row's `IN`
+  // block where it can be read in full rather than truncated into a subtitle.
+  if (entry.kind === 'bash') {
+    return { kind: entry.kind, title: entry.title, input: argument || undefined };
+  }
+
+  return {
+    kind: entry.kind,
+    title: entry.title,
+    ...(path ? { file: path } : {}),
+    ...(argument && argument !== path ? { detail: argument.slice(0, 400) } : {}),
+  };
+}
+
+/**
+ * The same events, narrated in prose rather than printed as a call.
+ *
+ * Only claimed when the verb is unambiguous about what happened to a file.
+ * "Applying" and "checking" are deliberately absent: they describe an agent
+ * mid-stride rather than a file changing, and promoting them to `Edit` would
+ * put a row in the drawer implying a write that may never have happened.
+ */
+function fileVerb(text: string): TaskActivityInput | null {
+  const match = /^(read|reading|reads|open(?:ing|ed)?|view(?:ing|ed)?|list(?:ing|ed)?|writ(?:e|ing)|wrote|creat(?:e|ing|ed)|add(?:ing|ed)|edit(?:ing|ed)?|updat(?:e|ing|ed)|modif(?:y|ying|ied)|replac(?:e|ing|ed)|delet(?:e|ing|ed)|remov(?:e|ing|ed)|search(?:ing|ed)?|grep\w*|glob\w*)\b(.*)$/i.exec(
+    text,
+  );
+  if (!match) return null;
+
+  const verb = match[1]!.toLowerCase();
+  const rest = match[2] ?? '';
+  const path = pathIn(rest);
+
+  const entry: { kind: TaskActivityInput['kind']; title: string } = /^(read|open|view)/.test(verb)
+    ? { kind: 'read', title: 'Read' }
+    : /^list/.test(verb)
+      ? { kind: 'read', title: 'List' }
+      : /^(creat|add|writ|wrote)/.test(verb)
+        ? { kind: 'create', title: 'Create' }
+        : /^(delet|remov)/.test(verb)
+          ? { kind: 'edit', title: 'Delete' }
+          : /^(search|grep|glob)/.test(verb)
+            ? { kind: 'search', title: searchTitle(text) }
+            : { kind: 'edit', title: 'Edit' };
+
+  // "Writing" with nothing that looks like a path is an agent describing its
+  // intent, not a file landing on disk. Left as a status line so the drawer
+  // does not claim a write it cannot point at.
+  if (!path && entry.kind !== 'search') {
+    return { kind: 'status', title: statusTitle(text), detail: text };
+  }
+
+  return { kind: entry.kind, title: entry.title, ...(path ? { file: path } : {}), detail: text };
+}
+
+/**
+ * The first thing in a string that looks like a path this repository holds.
+ *
+ * Requires either a separator or a file extension, so a bare English word in a
+ * sentence is never mistaken for a file and linked to nothing.
+ */
+function pathIn(text: string): string | undefined {
+  const cleaned = text.replace(/^["'`]|["'`]$/g, '');
+  const match =
+    /(?:^|[\s"'`(=])((?:\.{0,2}\/)?[\w.@-]+(?:\/[\w.@-]+)+(?:\.[A-Za-z0-9]+)?|[\w.@-]+\.[A-Za-z][A-Za-z0-9]{0,5})(?=$|[\s"'`,);:])/.exec(
+      cleaned,
+    );
+  if (!match) return undefined;
+
+  const path = match[1]!.replace(/^\.\//, '');
+  // A version range or a bare package spec is not somewhere to click through to.
+  if (/^\d+\.\d/.test(path)) return undefined;
+  return path;
 }
 
 /**

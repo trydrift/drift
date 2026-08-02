@@ -390,7 +390,42 @@ describe('when a surface cannot be computed', () => {
     if (outcome.available) return;
     assert.equal(outcome.reason, 'tool-missing');
     assert.equal(outcome.tool, 'cargo public-api');
+    assert.match(outcome.detail, /Cargo toolchain/);
+    assert.match(outcome.remedy ?? '', /rustup|cargo/);
+  });
+
+  test('installed Cargo is distinguished from the missing public-api subcommand', async () => {
+    const exec = async (_command: string, args: readonly string[]) => {
+      if (args[0] === '--version') return { code: 0, stdout: 'cargo 1.91.1', stderr: '' };
+      return { code: 101, stdout: '', stderr: 'error: no such command: `public-api`' };
+    };
+
+    const outcome = await computeSurfaceDiff(change(), { logger, exec });
+
+    assert.equal(outcome.available, false);
+    if (outcome.available) return;
+    assert.equal(outcome.reason, 'tool-missing');
+    assert.match(outcome.detail, /Rust and Cargo are installed/);
     assert.match(outcome.remedy ?? '', /cargo install cargo-public-api/);
+  });
+
+  test('uses the supplied environment for every cargo command', async () => {
+    const env = { ...process.env, PATH: '/drift/cargo/bin' };
+    const seen: string[] = [];
+    const exec = async (_command: string, args: readonly string[], options?: { env?: NodeJS.ProcessEnv }) => {
+      assert.equal(options?.env?.PATH, '/drift/cargo/bin');
+      seen.push(args.join(' '));
+      if (args[0] === '--version') return { code: 0, stdout: 'cargo 1.91.1', stderr: '' };
+      if (args[0] === 'public-api' && args[1] === '--version') {
+        return { code: 0, stdout: 'cargo-public-api 0.50.0', stderr: '' };
+      }
+      return { code: 0, stdout: 'pub fn base64::encode<T: AsRef<[u8]>>(input: T) -> String\n', stderr: '' };
+    };
+
+    const outcome = await computeSurfaceDiff(change(), { logger, exec, env });
+
+    assert.equal(outcome.available, true);
+    assert.deepEqual(seen, ['--version', 'public-api --version', 'public-api --simplified --package serde', 'public-api --simplified --package serde']);
   });
 
   test('ecosystems with no computed surface say so plainly', async () => {

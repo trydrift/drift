@@ -1045,7 +1045,11 @@ test('the panel shows what an upgrade buys, not only what it costs', () => {
   );
 
   assert.match(html, /Fixes 1 known vulnerability/);
-  assert.match(html, /GHSA-35jh-r3h4-6jhm — high, first fixed in 4\.17\.21/);
+  assert.match(html, /GHSA-35jh-r3h4-6jhm<\/a> — high, first fixed in 4\.17\.21/);
+  // Naming an advisory without linking it asks the reader to go and search for
+  // a page Drift already holds the URL of.
+  assert.match(html, /data-action="openUrl" data-url="https:\/\/example\.test"/);
+  assert.match(html, /CVE-2021-23337/);
   assert.match(html, /class="rationale good"/);
   // A concerning maintenance fact is shown; the neutral ones are not, so the
   // block stays worth reading.
@@ -1139,17 +1143,63 @@ test('an unverified upgrade is never rendered as safe', () => {
   assert.ok(!/pkg-subhead clean/.test(html) || !/grp:safe/.test(html.split('Could not verify')[0]!));
 });
 
-test('a one-click major upgrade says that it is a major', () => {
-  const c = candidate({ current: '3.24.1', selected: '3.25.76', latest: '4.4.3', safeLatest: '3.25.76' });
-  const html = renderPanel(
+const panelFor = (c: UpgradeCandidate): string =>
+  renderPanel(
     model({
       thread: [{ id: 'i1', kind: 'packages', headline: 'One upgrade available.', ids: [c.id] }],
       candidates: { [c.id]: c },
     }),
   );
 
+test('the button that installs names the version it installs', () => {
+  const c = candidate({ current: '3.24.1', selected: '3.25.76', latest: '4.4.3', safeLatest: '3.25.76' });
+  const html = panelFor(c);
+
+  // The primary button follows the selection. It used to be hard-wired to
+  // `latest`, so picking a target version changed the heading and nothing else.
+  assert.match(html, /Upgrade to 3\.25\.76/);
+  assert.ok(!/Upgrade to 4\.4\.3/.test(html), 'must not offer to install a version that is not selected');
+
+  // The major is still reachable — as a destination to check, not to install blind.
+  assert.match(html, /Latest \(4\.4\.3\) — major/);
+  assert.match(html, /data-action="selectVersion" data-id="[^"]*" data-version="4\.4\.3"/);
+});
+
+test('a major upgrade says that it is a major once it is the selection', () => {
+  const html = panelFor(candidate({ current: '3.24.1', selected: '4.4.3', latest: '4.4.3' }));
+
   assert.match(html, /Upgrade to 4\.4\.3 \(major\)/);
   assert.match(html, /class="risky"/);
+});
+
+test('the upgrade button is never disabled just because the range excludes it', () => {
+  // The old button was enabled only when a version fitted the declared range,
+  // so a pinned dependency — or any 0.x module whose next release moves the
+  // minor — rendered a permanently dead control that read as a broken panel.
+  const html = panelFor(
+    candidate({ current: '0.13.0', selected: '0.47.0', latest: '0.47.0', safeLatest: undefined }),
+  );
+
+  const actions = html.split('class="pkg-actions"')[1]!.split('</div>')[0]!;
+
+  assert.match(actions, /Upgrade to 0\.47\.0/);
+  assert.ok(!/disabled/.test(actions), 'no upgrade action should be disabled');
+  // Out of range means widen the range, not refuse.
+  assert.match(actions, /data-mode="force"/);
+});
+
+test('staying on the current major is offered when it is a real destination', () => {
+  const withMinor = panelFor(
+    candidate({ current: '3.24.1', selected: '4.4.3', latest: '4.4.3', latestMinor: '3.25.76' }),
+  );
+  assert.match(withMinor, /Stay on 3\.x \(3\.25\.76\)/);
+  assert.match(withMinor, /data-action="selectVersion" data-id="[^"]*" data-version="3\.25\.76"/);
+
+  // Not offered when it would land where the primary button already lands.
+  const same = panelFor(
+    candidate({ current: '3.24.1', selected: '3.25.76', latest: '3.25.76', latestMinor: '3.25.76' }),
+  );
+  assert.ok(!/Stay on 3\.x/.test(same));
 });
 
 test('crossesMajor reads the leading number and nothing else', () => {

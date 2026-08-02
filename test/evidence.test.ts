@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import {
   diffSurfaces,
   entryPointMoved,
+  conventionalTypeEntries,
   expandTypesEntry,
+  extractExports,
   externalReferences,
   resolveRelative,
   typesFromExports,
@@ -11,6 +13,7 @@ import {
   type SurfaceEntry,
 } from '../dist/evidence/type-surface.js';
 import { gatherEvidence } from '../dist/evidence/index.js';
+import { changelogIndexLinks, parseChangelogSections } from '../dist/evidence/changelog.js';
 import { selectReleases } from '../dist/evidence/releases.js';
 import { matchProse } from '../dist/analyze/rules.js';
 import { DEFAULT_CONFIG } from '../dist/config/schema.js';
@@ -75,6 +78,37 @@ describe('locating a package’s declarations', () => {
     );
     assert.equal(typesFromExports(null), null);
     assert.equal(typesFromExports('./index.js'), './index.js');
+  });
+
+  test('tries the package-named declarations under types', () => {
+    assert.ok(conventionalTypeEntries('phaser').includes('types/phaser.d.ts'));
+    assert.ok(conventionalTypeEntries('@scope/client').includes('types/client.d.ts'));
+  });
+
+  test('treats export-assigned namespaces as module API', () => {
+    const api = new Map();
+    extractExports(
+      [
+        'declare namespace Phaser {',
+        '  namespace Actions {',
+        '    function AddEffectBloom(items: unknown): unknown;',
+        '  }',
+        '  class Game {',
+        '    destroy(): void;',
+        '  }',
+        '}',
+        'declare module "phaser" {',
+        '  export = Phaser;',
+        '}',
+      ].join('\n'),
+      'types/phaser.d.ts',
+      api,
+    );
+
+    assert.equal(api.get('Phaser')?.kind, 'namespace');
+    assert.equal(api.get('Phaser.Actions')?.kind, 'namespace');
+    assert.equal(api.get('Phaser.Actions.AddEffectBloom')?.kind, 'function');
+    assert.deepEqual(api.get('Phaser.Game')?.members, ['destroy']);
   });
 });
 
@@ -296,5 +330,55 @@ describe('reading what a maintainer actually wrote', () => {
   test('does not invent a finding out of ordinary prose', () => {
     assert.deepEqual(matchProse('We rewrote the internals for speed.'), []);
     assert.deepEqual(matchProse('Thanks to everyone who contributed to this release.'), []);
+  });
+});
+
+describe('a changelog that is an index of other changelogs', () => {
+  // Verbatim in shape from Phaser's root CHANGELOG.md, which is the case that
+  // exposed this: a table of links, and not one heading that names a version.
+  const index = `# Phaser Change Logs
+
+## Phaser 4
+
+| Document | Description |
+| -------- | ----------- |
+| [4.2.0 Changelog](changelog/v4/4.2/CHANGELOG-v4.2.0.md) | Full changelog for Phaser 4.2.0 |
+| [Migration Guide](changelog/v4/4.0/MIGRATION-GUIDE.md) | Guide for upgrading from Phaser 3 to Phaser 4 |
+
+## Phaser 3
+
+| Version | Name |
+| ------- | ---- |
+| [3.90](changelog/v3/3.90/CHANGELOG-v3.90.md) | Tsugumi |
+| [3.60](changelog/v3/3.60/CHANGELOG-v3.60.md) | Miku |
+`;
+
+  test('parses no version sections from it, which is why it must be followed', () => {
+    // The bug in one line: this is what Drift used to report as "no changelog".
+    assert.deepEqual(parseChangelogSections(index), []);
+  });
+
+  test('finds the per-version documents it links to', () => {
+    const links = changelogIndexLinks(index);
+    const paths = links.map((l) => l.path);
+
+    assert.ok(paths.includes('changelog/v3/3.90/CHANGELOG-v3.90.md'));
+    assert.ok(paths.includes('changelog/v4/4.2/CHANGELOG-v4.2.0.md'));
+    assert.equal(links.find((l) => l.path.includes('3.90'))?.version, '3.90.0');
+  });
+
+  test('reads the version out of the path when the link text has none', () => {
+    const links = changelogIndexLinks('[Full changelog](changelog/v3/3.85.2/CHANGELOG-v3.85.2.md)');
+    assert.equal(links.length, 1);
+    assert.equal(links[0]?.version, '3.85.2');
+  });
+
+  test('ignores links that are not same-repository markdown', () => {
+    const links = changelogIndexLinks(`
+      [3.90 on the site](https://phaser.io/changelog/3.90.md)
+      [3.90 bundle](dist/phaser-3.90.0.js)
+      [3.90 anchor](#3900)
+    `);
+    assert.deepEqual(links, []);
   });
 });

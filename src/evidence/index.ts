@@ -6,8 +6,8 @@ import { stableId } from '../util/id.js';
 import { isDowngrade, isZeroVerBreaking } from '../detect/version.js';
 import {
   extractBreakingPassages,
-  fetchChangelog,
-  fetchMigrationGuide,
+  fetchChangelogDocuments,
+  fetchMigrationGuides,
   parseChangelogSections,
   sectionsBetween,
 } from './changelog.js';
@@ -88,6 +88,27 @@ export interface EvidenceContext {
    * yanked" lead a developer to different actions.
    */
   onUnavailableSurface?: (change: DependencyChange, reason: SurfaceUnavailable) => void;
+  /**
+   * Called with every prose document Drift actually read, whether or not it
+   * said anything about breakage.
+   *
+   * Evidence records only exist for passages that mention breaking changes, so
+   * a changelog that was read and was simply calm produced no record — and the
+   * report then told the developer no changelog was reachable. That is a
+   * different and much more alarming claim than the truth, which is that the
+   * changelog was read and nothing in it looked breaking.
+   */
+  onProseConsulted?: (change: DependencyChange, source: ProseSource) => void;
+}
+
+/** One prose document Drift reached, for reporting what was actually read. */
+export interface ProseSource {
+  kind: 'github-release' | 'changelog' | 'migration-guide';
+  /** Human label, e.g. `CHANGELOG-v3.90.md` or `v4.2.0 release notes`. */
+  label: string;
+  url: string;
+  /** Whether anything in it matched a breakage marker. */
+  breaking: boolean;
 }
 
 /** Gather all available evidence for a batch of dependency changes. */
@@ -116,6 +137,11 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
       id: stableId('ev', change.name, 'semver', change.from, change.to),
       source: 'semver-heuristic',
       dependency: change.name,
+      // Drift cites a clause of the specification by number, so the clause has
+      // to be openable. A reader told that "semver §4 permits this" and given
+      // no way to check it is being asked to take Drift's word for the rule it
+      // is reasoning from.
+      url: semverClauseUrl(change),
       title: `${change.name} ${change.from} → ${change.to} (${change.bump})`,
       content: semverNote,
       weight: WEIGHTS['semver-heuristic'],
@@ -160,6 +186,12 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
 
     for (const release of releases) {
       const passages = extractBreakingPassages(release.body);
+      ctx.onProseConsulted?.(change, {
+        kind: 'github-release',
+        label: `${release.name ?? release.tag} release notes`,
+        url: release.url,
+        breaking: passages.length > 0,
+      });
       if (passages.length === 0) continue;
       out.push({
         id: stableId('ev', change.name, 'release', release.tag),
@@ -174,14 +206,25 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
   }
 
   if (config.evidence.changelog) {
-    const changelog = await fetchChangelog(githubRepo);
-    if (changelog) {
+    // Plural: a project large enough to split its changelog by version has one
+    // document per release, and the index that lists them is not itself prose.
+    const documents = await fetchChangelogDocuments(githubRepo, change.from, change.to);
+
+    for (const changelog of documents) {
       const sections = sectionsBetween(parseChangelogSections(changelog.content), change.from, change.to);
+      const breaking = sections.some((section) => extractBreakingPassages(section.body).length > 0);
+      ctx.onProseConsulted?.(change, {
+        kind: 'changelog',
+        label: changelog.path,
+        url: changelog.url,
+        breaking,
+      });
+
       for (const section of sections) {
         const passages = extractBreakingPassages(section.body);
         if (passages.length === 0) continue;
         out.push({
-          id: stableId('ev', change.name, 'changelog', section.version),
+          id: stableId('ev', change.name, 'changelog', changelog.path, section.version),
           source: 'changelog',
           dependency: change.name,
           url: `${changelog.url}#L${section.line}`,
@@ -196,21 +239,25 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
     // Migration guides are the artefact LADU relies on exclusively. Drift
     // treats one as strong corroboration rather than the sole input, so a
     // package without a guide is still analysable.
-    const guide = await fetchMigrationGuide(githubRepo);
-    if (guide) {
+    for (const guide of await fetchMigrationGuides(githubRepo)) {
       const passages = extractBreakingPassages(guide.content);
-      if (passages.length > 0) {
-        out.push({
-          id: stableId('ev', change.name, 'migration', guide.path),
-          source: 'migration-guide',
-          dependency: change.name,
-          url: guide.url,
-          locator: guide.path,
-          title: `${change.name} migration guide (${guide.path})`,
-          content: passages.slice(0, 200).join('\n'),
-          weight: WEIGHTS['migration-guide'],
-        });
-      }
+      ctx.onProseConsulted?.(change, {
+        kind: 'migration-guide',
+        label: guide.path,
+        url: guide.url,
+        breaking: passages.length > 0,
+      });
+      if (passages.length === 0) continue;
+      out.push({
+        id: stableId('ev', change.name, 'migration', guide.path),
+        source: 'migration-guide',
+        dependency: change.name,
+        url: guide.url,
+        locator: guide.path,
+        title: `${change.name} migration guide (${guide.path})`,
+        content: passages.slice(0, 200).join('\n'),
+        weight: WEIGHTS['migration-guide'],
+      });
     }
   }
 
@@ -495,6 +542,20 @@ async function gatherSpecEvidence(ctx: EvidenceContext): Promise<Evidence[]> {
 
 function formatOpenApiFindings(findings: readonly OpenApiFinding[]): string {
   return findings.map((f) => `- [${f.kind}] ${f.location} — ${f.detail}`).join('\n');
+}
+
+/**
+ * The clause of the semver specification this reasoning rests on.
+ *
+ * The numbering is the specification's own: §4 is the "major version zero"
+ * clause, §8 is the one that permits arbitrary breakage across a major bump.
+ */
+function semverClauseUrl(change: DependencyChange): string {
+  if (change.from && change.to && isZeroVerBreaking(change.from, change.to)) {
+    return 'https://semver.org/#spec-item-4';
+  }
+  if (change.bump === 'major') return 'https://semver.org/#spec-item-8';
+  return 'https://semver.org/';
 }
 
 function describeSemver(change: DependencyChange): string | null {

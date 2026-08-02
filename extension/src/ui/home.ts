@@ -109,6 +109,7 @@ type Incoming =
   | { type: 'openUrl'; url: string }
   | { type: 'openDiff'; path: string }
   | { type: 'pickVersion'; id: string }
+  | { type: 'selectVersion'; id: string; version: string }
   | { type: 'recheck'; id: string }
   | { type: 'upgrade'; id: string; mode: 'safe' | 'force' }
   | { type: 'fixPackage'; id: string }
@@ -512,6 +513,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         return;
       case 'openDiff':
         await vscode.commands.executeCommand('drift.openChangeDiff', message.path);
+        return;
+      case 'selectVersion':
+        // Retarget rather than install: the whole point of the shortcut is to
+        // see what that version costs before committing to it.
+        if (this.candidates.get(message.id)?.selected !== message.version) {
+          await this.retarget(message.id, message.version);
+        }
         return;
       case 'pickVersion':
         await this.pickVersion(message.id);
@@ -1377,7 +1385,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           branched.add(candidateCtx.root);
         }
 
-        const target = mode === 'force' ? candidate.latest : (candidate.safeLatest ?? candidate.selected);
+        const target = candidate.selected;
         let current = candidate;
 
         if (target !== candidate.selected) {
@@ -3430,7 +3438,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
             ? 'latest published'
             : version === candidate.safeLatest
               ? `within your ${manifestName(candidate)} range`
-              : undefined,
+              : version === candidate.latestMinor
+                ? 'newest without a major bump'
+                : undefined,
         version,
       })),
       {

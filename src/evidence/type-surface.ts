@@ -409,7 +409,7 @@ async function resolveTypesEntry(
     }
   }
 
-  for (const candidate of ['index.d.ts', 'dist/index.d.ts', 'lib/index.d.ts', 'types/index.d.ts']) {
+  for (const candidate of conventionalTypeEntries(packageName)) {
     if (await exists(packageName, version, candidate)) return candidate;
   }
 
@@ -421,6 +421,25 @@ async function resolveTypesEntry(
   if (await exists(dtName, 'latest', 'index.d.ts')) return `@types:${dtName}`;
 
   return null;
+}
+
+/**
+ * Last-chance declaration entry points packages commonly publish.
+ *
+ * Phaser is the concrete regression: its manifest does declare
+ * `"types": "./types/phaser.d.ts"`, but keeping the package-named fallback here
+ * protects the same layout when a package omits the field or an older manifest
+ * parser misses it.
+ */
+export function conventionalTypeEntries(packageName: string): string[] {
+  const base = packageName.split('/').pop()?.replace(/^@/, '') || packageName;
+  return [
+    'index.d.ts',
+    'dist/index.d.ts',
+    'lib/index.d.ts',
+    'types/index.d.ts',
+    `types/${base}.d.ts`,
+  ];
 }
 
 /**
@@ -616,6 +635,7 @@ export function extractExports(
   }
 
   collectExportSpecifiers(content, locals, into, aliases);
+  collectExportAssignments(content, locals, into);
   return into;
 }
 
@@ -667,6 +687,25 @@ function resolveAliases(api: SurfaceApi, aliases: readonly ExportAlias[]): void 
     if (api.has(alias.exported)) continue;
     const entry = api.get(alias.local);
     if (entry) api.set(alias.exported, renameEntry(entry, alias.exported));
+  }
+}
+
+/**
+ * `declare module "pkg" { export = Phaser; }`
+ *
+ * Older and global-first declaration files often publish a namespace this way.
+ * Phaser's generated declarations are exactly this shape: almost all of the
+ * API lives under `declare namespace Phaser`, then the module exports that
+ * namespace by assignment. Treating only `export declare` as public made Drift
+ * fetch Phaser's `.d.ts` successfully and still report "no declarations".
+ */
+function collectExportAssignments(content: string, locals: SurfaceApi, into: SurfaceApi): void {
+  for (const match of content.matchAll(/\bexport\s*=\s*([A-Za-z_$][\w$]*)\s*;/g)) {
+    const local = match[1]!;
+    for (const entry of locals.values()) {
+      if (entry.name !== local && !entry.name.startsWith(`${local}.`)) continue;
+      if (!into.has(entry.name)) into.set(entry.name, entry);
+    }
   }
 }
 
@@ -744,21 +783,167 @@ function declarationEntries(content: string): ParsedDeclaration[] {
     entries,
   );
 
-  const namespacePattern = /\b(export\s+)?(?:declare\s+)?(?:namespace|module)\s+([A-Za-z_$][\w$]*)/g;
-  for (const match of content.matchAll(namespacePattern)) {
+  collectNamespaces(content, '', false, entries);
+
+  return entries;
+}
+
+function collectNamespaces(
+  content: string,
+  prefix: string,
+  exportedParent: boolean,
+  entries: ParsedDeclaration[],
+): void {
+  const pattern =
+    /\b(export\s+)?(?:declare\s+)?(?:namespace|module)\s+([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s*\{/g;
+
+  for (let match = pattern.exec(content); match; match = pattern.exec(content)) {
+    const open = content.indexOf('{', match.index);
+    const close = matchingBraceOffset(content, open);
+    if (open < 0 || close < 0) continue;
+
+    const exported = exportedParent || Boolean(match[1]);
+    const name = prefix ? `${prefix}.${match[2]!}` : match[2]!;
+    const body = content.slice(open + 1, close);
+
     entries.push({
-      exported: Boolean(match[1]),
+      exported,
       entry: {
-        name: match[2]!,
+        name,
         kind: 'namespace',
-        signature: `namespace ${match[2]!}`,
-        members: [],
+        signature: `namespace ${name}`,
+        members: namespaceMemberNames(body),
         requiredMembers: [],
       },
     });
+
+    collectNamespaceDeclarations(body, name, exported, entries);
+    collectNamespaces(body, name, exported, entries);
+    pattern.lastIndex = close + 1;
+  }
+}
+
+function collectNamespaceDeclarations(
+  body: string,
+  prefix: string,
+  exported: boolean,
+  entries: ParsedDeclaration[],
+): void {
+  const direct = withoutNestedNamespaces(body);
+  const add = (
+    name: string,
+    kind: SurfaceKind,
+    signature: string,
+    members: string[] = [],
+    requiredMembers: string[] = [],
+  ) => {
+    entries.push({
+      exported,
+      entry: {
+        name: `${prefix}.${name}`,
+        kind,
+        signature: collapse(signature.replace(new RegExp(`\\b${escapeRegExp(name)}\\b`), `${prefix}.${name}`)),
+        members,
+        requiredMembers,
+      },
+    });
+  };
+
+  for (const match of direct.matchAll(/\b(?:declare\s+)?function\s+([A-Za-z_$][\w$]*)(?:<[^>{}]*>)?\s*\(/g)) {
+    const start = match.index ?? 0;
+    add(match[1]!, 'function', direct.slice(start, declarationEndOffset(direct, start)));
   }
 
-  return entries;
+  for (const match of direct.matchAll(/\b(?:declare\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\b/g)) {
+    const start = match.index ?? 0;
+    add(match[1]!, 'variable', direct.slice(start, declarationEndOffset(direct, start)));
+  }
+
+  for (const match of direct.matchAll(/\b(?:declare\s+)?type\s+([A-Za-z_$][\w$]*)\b/g)) {
+    const start = match.index ?? 0;
+    add(match[1]!, 'type', direct.slice(start, declarationEndOffset(direct, start)));
+  }
+
+  for (const match of direct.matchAll(/\b(?:declare\s+)?class\s+([A-Za-z_$][\w$]*)[^{;]*\{/g)) {
+    const start = match.index ?? 0;
+    const open = direct.indexOf('{', start);
+    const close = matchingBraceOffset(direct, open);
+    const bodyText = open >= 0 && close > open ? direct.slice(open + 1, close) : '';
+    const members = typeMembers(bodyText, true);
+    add(
+      match[1]!,
+      'class',
+      direct.slice(start, open >= 0 ? open : declarationEndOffset(direct, start)),
+      members.map((member) => member.name),
+      members.filter((member) => member.required).map((member) => member.name),
+    );
+  }
+
+  for (const match of direct.matchAll(/\b(?:declare\s+)?interface\s+([A-Za-z_$][\w$]*)[^{;]*\{/g)) {
+    const start = match.index ?? 0;
+    const open = direct.indexOf('{', start);
+    const close = matchingBraceOffset(direct, open);
+    const bodyText = open >= 0 && close > open ? direct.slice(open + 1, close) : '';
+    const members = typeMembers(bodyText, false);
+    add(
+      match[1]!,
+      'interface',
+      direct.slice(start, open >= 0 ? open : declarationEndOffset(direct, start)),
+      members.map((member) => member.name),
+      members.filter((member) => member.required).map((member) => member.name),
+    );
+  }
+
+  for (const match of direct.matchAll(/\b(?:declare\s+)?enum\s+([A-Za-z_$][\w$]*)[^{;]*\{/g)) {
+    const start = match.index ?? 0;
+    const open = direct.indexOf('{', start);
+    const close = matchingBraceOffset(direct, open);
+    const bodyText = open >= 0 && close > open ? direct.slice(open + 1, close) : '';
+    add(
+      match[1]!,
+      'enum',
+      direct.slice(start, open >= 0 ? open : declarationEndOffset(direct, start)),
+      enumMembers(bodyText).map((member) => member.name),
+    );
+  }
+}
+
+function withoutNestedNamespaces(content: string): string {
+  const ranges: Array<[number, number]> = [];
+  const pattern =
+    /\b(?:export\s+)?(?:declare\s+)?(?:namespace|module)\s+[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*\s*\{/g;
+
+  for (const match of content.matchAll(pattern)) {
+    const open = content.indexOf('{', match.index);
+    const close = matchingBraceOffset(content, open);
+    if (open >= 0 && close >= 0) ranges.push([match.index ?? 0, close + 1]);
+  }
+
+  if (ranges.length === 0) return content;
+  const chars = [...content];
+  for (const [start, end] of ranges) {
+    for (let i = start; i < end; i++) {
+      if (chars[i] !== '\n') chars[i] = ' ';
+    }
+  }
+  return chars.join('');
+}
+
+function namespaceMemberNames(body: string): string[] {
+  const direct = withoutNestedNamespaces(body);
+  const names = new Set<string>();
+
+  for (const match of body.matchAll(/\b(?:export\s+)?(?:declare\s+)?(?:namespace|module)\s+([A-Za-z_$][\w$]*)/g)) {
+    names.add(match[1]!);
+  }
+  for (const match of direct.matchAll(/\b(?:declare\s+)?(?:function|class|interface|enum|type)\s+([A-Za-z_$][\w$]*)\b/g)) {
+    names.add(match[1]!);
+  }
+  for (const match of direct.matchAll(/\b(?:declare\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\b/g)) {
+    names.add(match[1]!);
+  }
+
+  return [...names];
 }
 
 function collectSimpleDeclarations(
