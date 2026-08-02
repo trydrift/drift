@@ -25,12 +25,34 @@ goes into the canonical form and every outstanding approval starts failing —
 with a message saying *the plan changed*, which would be false and actively
 misleading. The version turns that into a truthful, actionable answer:
 
-> This issue records plan schema v1, which this version of Drift cannot verify
-> (it supports v2). Re-run Drift to generate a current plan.
+> This issue records plan schema v2, which this version of Drift cannot verify
+> (it supports v3). Re-run Drift to generate a current plan.
 
 ---
 
 ## Version history
+
+### v3 — true remediation DAG
+
+Added by `feat(planner): replace linear commit chain with dependency DAG`.
+
+| Field | Where | Meaning |
+|---|---|---|
+| `id` | `CommitUnit` | Stable unit identity used by graph edges |
+| `allowedFiles` | `CommitUnit` | Authoritative edit scope; `files` remains a compatibility view |
+| `allowedSymbols` | `CommitUnit` | Symbol-level scope when localization can name it |
+| `dependsOn` | `CommitUnit` | Prerequisite commit unit ids, not display order numbers |
+| `dependencyReasons` | `CommitUnit` | Incoming `PlanEdge` records for local consumers |
+| `executionLayer` | `CommitUnit` | Deterministic topological layer |
+| `expectedChecks` | `CommitUnit` | Verification expected before accepting the unit |
+| `invalidationTriggers` | `CommitUnit` | File, symbol, and dependency changes that force replanning |
+| `planEdges` | `RemediationPlan` | Full remediation DAG |
+| `upgradeCohorts` | `RemediationPlan` | Dependency groups that should move together |
+
+The digest includes the graph, layers, edit scopes, expected checks, and cohorts.
+Approving a plan now approves the exact execution graph, not just a displayed
+list of commits. `CommitUnit.order` is retained only as a deterministic display
+order; consumers that enforce execution must use ids and edges.
 
 ### v2 — taxonomy and calibrated confidence
 
@@ -63,13 +85,13 @@ Plan identity, introduced by
 
 ## Migration
 
-**There is no automatic upgrade of a v1 approval issue, by design.** A v1 issue
-records a digest computed under v1 rules; recomputing it under v2 produces a
+**There is no automatic upgrade of an older approval issue, by design.** An old issue
+records a digest computed under old rules; recomputing it under v3 produces a
 different value no matter what the plan contains, so accepting the issue and
 comparing digests could only ever fail. Drift detects the version first and says
 so plainly.
 
-**What a user does:** re-run Drift. A fresh plan is filed with a v2 footer and
+**What a user does:** re-run Drift. A fresh plan is filed with a v3 footer and
 approving that works normally. Nothing is lost — the analysis is deterministic,
 so a re-run on the same commit produces the same findings.
 
@@ -88,6 +110,9 @@ live in GitHub issues, and stale ones are superseded rather than upgraded.
 - `RemediationPlan.gaps` and `.checkedSurfaces` are required, because every plan
   comes from `buildPlan`, which always populates them. Nothing persists plans
   across sessions, so there is no stored plan that could lack them.
+- `CommitUnit.order` and `.files` remain present for display and older UI
+  affordances. The authoritative execution identity is `id`, and the
+  authoritative file scope is `allowedFiles`.
 
 ---
 

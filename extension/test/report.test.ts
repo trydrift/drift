@@ -6,7 +6,7 @@ import type { RemediationPlan } from '../../src/types.js';
 
 function plan(over: Partial<RemediationPlan> = {}): RemediationPlan {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     gaps: [],
     checkedSurfaces: [],
     id: 'p1',
@@ -20,6 +20,8 @@ function plan(over: Partial<RemediationPlan> = {}): RemediationPlan {
     breakingChanges: [{ id: 'b1', dependency: 'react', kind: 'signature-change', summary: '<script>alert(1)</script>', remediation: 'Update the call.', symbols: ['render'], confidence: 'high', citations: ['e1'] }],
     impactSites: [{ breakingChangeId: 'b1', file: 'src/app.ts', line: 1, excerpt: 'render()', matchedSymbol: 'render', confidence: 'high' }],
     commits: [],
+    planEdges: [],
+    upgradeCohorts: [],
     risk: 'high',
     blockers: [],
     warnings: [],

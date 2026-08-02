@@ -210,6 +210,92 @@ describe('commit planning', () => {
 
     assert.deepEqual(plan.commits[0]!.files, ['src/a.ts']);
     assert.deepEqual(plan.commits[1]!.files, ['src/b.ts']);
+    assert.deepEqual(plan.commits[0]!.allowedFiles, ['src/a.ts']);
+    assert.match(plan.commits[0]!.id, /^unit_/);
+  });
+
+  test('independent commits share an execution layer', () => {
+    const changes = [
+      breaking({ id: 'bc_1', symbols: ['a'] }),
+      breaking({ id: 'bc_2', symbols: ['b'], summary: '`b` was removed.' }),
+    ];
+    const sites = [site('src/a.ts', 1, 'bc_1'), site('src/b.ts', 1, 'bc_2')];
+
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: changes,
+      impactSites: sites,
+    });
+
+    assert.deepEqual(
+      plan.commits.map((commit) => commit.executionLayer),
+      [0, 0],
+    );
+    assert.deepEqual(plan.commits.flatMap((commit) => commit.dependsOn), []);
+    assert.deepEqual(plan.planEdges, []);
+  });
+
+  test('conflicting file scopes are serialized with an explicit edge', () => {
+    const changes = [
+      breaking({ id: 'bc_1', symbols: ['a'] }),
+      breaking({ id: 'bc_2', symbols: ['b'], summary: '`b` was removed.' }),
+    ];
+    const sites = [site('src/shared.ts', 1, 'bc_1'), site('src/shared.ts', 2, 'bc_2')];
+
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: changes,
+      impactSites: sites,
+    });
+
+    assert.equal(plan.planEdges.length, 1);
+    assert.equal(plan.planEdges[0]!.reason, 'same-file-conflict');
+    assert.deepEqual(
+      plan.commits.map((commit) => commit.executionLayer),
+      [0, 1],
+    );
+    assert.deepEqual(plan.commits[1]!.dependsOn, [plan.commits[0]!.id]);
+  });
+
+  test('runtime prerequisite units precede source fixes without a linear chain', () => {
+    const changes = [
+      breaking({ id: 'bc_runtime', kind: 'runtime-requirement', symbols: ['node'] }),
+      breaking({ id: 'bc_removed', kind: 'removed-export', symbols: ['createClient'] }),
+      breaking({ id: 'bc_other', kind: 'removed-export', dependency: 'other-sdk', symbols: ['makeOther'] }),
+    ];
+    const sites = [
+      site('package.json', 1, 'bc_runtime'),
+      site('src/a.ts', 1, 'bc_removed'),
+      site('src/other.ts', 1, 'bc_other'),
+    ];
+
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: changes,
+      impactSites: sites,
+    });
+
+    const runtime = plan.commits.find((commit) => commit.breakingChangeIds.includes('bc_runtime'))!;
+    const removed = plan.commits.find((commit) => commit.breakingChangeIds.includes('bc_removed'))!;
+    const other = plan.commits.find((commit) => commit.breakingChangeIds.includes('bc_other'))!;
+
+    assert.equal(runtime.executionLayer, 0);
+    assert.equal(removed.executionLayer, 1);
+    assert.equal(other.executionLayer, 1);
+    assert.ok(removed.dependsOn.includes(runtime.id));
+    assert.ok(other.dependsOn.includes(runtime.id));
+    assert.ok(
+      plan.planEdges.some((edge) => edge.from === runtime.id && edge.to === removed.id && edge.reason === 'runtime-prerequisite'),
+    );
   });
 
   test('honours single-commit granularity', () => {

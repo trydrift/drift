@@ -15,7 +15,7 @@ import { meetsConfidence } from '../analyze/index.js';
 import { isDowngrade } from '../detect/version.js';
 import { matchesAny } from '../util/glob.js';
 import { stableId } from '../util/id.js';
-import { planCommits } from './commits.js';
+import { planCommitGraph } from './commits.js';
 import {
   CAPABILITY_STAGES,
   STAGE_LABEL,
@@ -82,7 +82,8 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
   // not exist until localization has run and cannot be known inside `analyze`.
   const breakingChanges = assessAll(input);
 
-  const commits = planCommits({ breakingChanges, impactSites, config });
+  const graph = planCommitGraph({ breakingChanges, impactSites, config, changes });
+  const commits = graph.commits;
   const risk = assessRisk(changes, breakingChanges, impactSites);
   const gaps = collectGaps(input, breakingChanges, commits);
   const { blockers, warnings } = evaluateGuardrails(input, breakingChanges, commits, risk, gaps);
@@ -98,11 +99,13 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
     breakingChanges,
     impactSites: [...impactSites],
     commits,
+    planEdges: graph.edges,
+    upgradeCohorts: graph.cohorts,
     ...(input.rationale ? { rationale: [...input.rationale] } : {}),
     risk,
     gaps,
     checkedSurfaces: [...(input.checkedSurfaces ?? [])],
-    blockers,
+    blockers: [...graph.blockers, ...blockers],
     warnings,
     createdAt: new Date().toISOString(),
   };

@@ -1,5 +1,16 @@
-import type { BreakingChange, BreakingChangeKind, CommitUnit, ImpactSite } from '../types.js';
+import type {
+  BreakingChange,
+  BreakingChangeKind,
+  CommitUnit,
+  DependencyChange,
+  ImpactSite,
+  PlanEdge,
+  PlanEdgeReason,
+  UpgradeCohort,
+  VerificationRequirement,
+} from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
+import { stableId, slugify } from '../util/id.js';
 
 /**
  * Commit planning.
@@ -61,31 +72,61 @@ export interface PlanCommitsInput {
   breakingChanges: readonly BreakingChange[];
   impactSites: readonly ImpactSite[];
   config: DriftConfig;
+  changes?: readonly DependencyChange[];
 }
 
-export function planCommits({
+export interface PlanCommitGraph {
+  commits: CommitUnit[];
+  edges: PlanEdge[];
+  cohorts: UpgradeCohort[];
+  blockers: string[];
+}
+
+export function planCommitGraph({
   breakingChanges,
   impactSites,
   config,
-}: PlanCommitsInput): CommitUnit[] {
+  changes = [],
+}: PlanCommitsInput): PlanCommitGraph {
   const sitesByChange = groupSites(impactSites);
 
   // A breaking change with no impact site needs no commit. Reporting it is
   // still valuable — it tells the reviewer Drift looked and found nothing —
   // but asking an agent to "fix" untouched code invites gratuitous edits.
   const actionable = breakingChanges.filter((c) => (sitesByChange.get(c.id)?.length ?? 0) > 0);
-  if (actionable.length === 0) return [];
+  if (actionable.length === 0) return { commits: [], edges: [], cohorts: detectUpgradeCohorts(changes), blockers: [] };
 
   const groups =
     config.remediation.commitGranularity === 'single'
       ? [actionable]
       : config.remediation.commitGranularity === 'per-dependency'
         ? groupByDependency(actionable)
-        : actionable.map((change) => [change]);
+      : actionable.map((change) => [change]);
 
   const sorted = [...groups].sort(compareGroups);
+  const cohorts = detectUpgradeCohorts(changes);
+  const cohortByDependency = new Map<string, UpgradeCohort>();
+  for (const cohort of cohorts) {
+    for (const dependency of cohort.dependencies) cohortByDependency.set(dependency, cohort);
+  }
 
-  return sorted.map((group, index) => toCommitUnit(group, index + 1, sitesByChange, sorted.length));
+  const commits = sorted.map((group, index) =>
+    toCommitUnit(group, index + 1, sitesByChange, sorted.length),
+  );
+  const edges = deriveEdges(commits, breakingChanges, impactSites, cohortByDependency);
+  const layered = assignExecutionLayers(commits, edges);
+  const cycle = layered.cycle.length > 0 ? explainCycle(layered.cycle, edges) : undefined;
+
+  return {
+    commits: layered.commits,
+    edges,
+    cohorts,
+    blockers: cycle ? [cycle] : [],
+  };
+}
+
+export function planCommits(input: PlanCommitsInput): CommitUnit[] {
+  return planCommitGraph(input).commits;
 }
 
 function groupSites(sites: readonly ImpactSite[]): Map<string, ImpactSite[]> {
@@ -129,17 +170,347 @@ function toCommitUnit(
   const primary = group[0]!;
 
   return {
+    id: stableId(
+      'unit',
+      group.map((c) => c.id).sort().join(','),
+      files.join(','),
+      primary.dependency,
+      primary.kind,
+    ),
     order,
     message: subjectLine(group, files.length),
     body: commitBody(group, sites),
     breakingChangeIds: group.map((c) => c.id),
     files,
+    allowedFiles: files,
+    allowedSymbols: [...new Set(group.flatMap((c) => c.symbols))].sort(),
     instructions: instructionsFor(group, sites, order, totalCommits),
-    // Every commit depends on the one before it: they land sequentially on a
-    // single branch, and a later fix is frequently only verifiable once the
-    // earlier one compiles.
-    dependsOn: order > 1 ? [order - 1] : [],
+    dependsOn: [],
+    dependencyReasons: [],
+    executionLayer: 0,
+    expectedChecks: expectedChecksFor(group, files),
+    invalidationTriggers: invalidationTriggersFor(group, files),
   };
+}
+
+function deriveEdges(
+  commits: readonly CommitUnit[],
+  changes: readonly BreakingChange[],
+  impactSites: readonly ImpactSite[],
+  cohortByDependency: ReadonlyMap<string, UpgradeCohort>,
+): PlanEdge[] {
+  const edges = new Map<string, PlanEdge>();
+  const changeById = new Map(changes.map((change) => [change.id, change]));
+  const sitesByFile = new Map<string, ImpactSite[]>();
+  for (const site of impactSites) {
+    const bucket = sitesByFile.get(site.file);
+    if (bucket) bucket.push(site);
+    else sitesByFile.set(site.file, [site]);
+  }
+
+  const add = (from: CommitUnit, to: CommitUnit, reason: PlanEdgeReason, evidence: string[]) => {
+    if (from.id === to.id) return;
+    const key = `${from.id}\0${to.id}\0${reason}`;
+    if (!edges.has(key)) edges.set(key, { from: from.id, to: to.id, reason, evidence: [...new Set(evidence)].sort() });
+  };
+
+  for (let i = 0; i < commits.length; i += 1) {
+    const a = commits[i]!;
+    const aChanges = changesFor(a, changeById);
+    const aDeps = new Set(aChanges.map((change) => change.dependency));
+    const aFiles = new Set(a.allowedFiles);
+
+    for (let j = i + 1; j < commits.length; j += 1) {
+      const b = commits[j]!;
+      const bChanges = changesFor(b, changeById);
+      const bDeps = new Set(bChanges.map((change) => change.dependency));
+      const overlap = b.allowedFiles.filter((file) => aFiles.has(file));
+
+      if (overlap.length > 0) {
+        add(a, b, 'same-file-conflict', overlap);
+      }
+
+      if (aChanges.some((change) => change.kind === 'runtime-requirement')) {
+        add(a, b, 'runtime-prerequisite', aChanges.map((change) => change.summary));
+      }
+
+      if (
+        aChanges.some((change) => change.kind === 'config-change') &&
+        bChanges.some((change) => aDeps.has(change.dependency))
+      ) {
+        add(a, b, 'configuration-prerequisite', aChanges.map((change) => change.summary));
+      }
+
+      if (aChanges.some((change) => change.kind === 'moved-export') && relatedByImportMigration(aChanges, bChanges)) {
+        add(a, b, 'import-prerequisite', aChanges.flatMap((change) => change.symbols));
+      }
+
+      if (a.allowedFiles.some(isGeneratedPath) && !b.allowedFiles.every(isGeneratedPath) && shareDependency(aDeps, bDeps)) {
+        add(a, b, 'generated-output', a.allowedFiles.filter(isGeneratedPath));
+      }
+
+      const sharedCohorts = [...aDeps]
+        .map((dependency) => cohortByDependency.get(dependency))
+        .filter((cohort): cohort is UpgradeCohort => Boolean(cohort))
+        .filter((cohort) => bChanges.some((change) => cohort.dependencies.includes(change.dependency)));
+      for (const cohort of sharedCohorts) {
+        add(a, b, 'package-cohort', [`${cohort.id}: ${cohort.reason}`]);
+      }
+
+      const symbolEvidence = symbolDependencyEvidence(a, b, sitesByFile);
+      if (symbolEvidence.length > 0) add(a, b, 'symbol-dependency', symbolEvidence);
+    }
+  }
+
+  return [...edges.values()].sort(compareEdges);
+}
+
+function changesFor(unit: CommitUnit, byId: ReadonlyMap<string, BreakingChange>): BreakingChange[] {
+  return unit.breakingChangeIds.map((id) => byId.get(id)).filter((change): change is BreakingChange => Boolean(change));
+}
+
+function shareDependency(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
+  for (const dependency of a) {
+    if (b.has(dependency)) return true;
+  }
+  return false;
+}
+
+function relatedByImportMigration(a: readonly BreakingChange[], b: readonly BreakingChange[]): boolean {
+  const moved = a.filter((change) => change.kind === 'moved-export');
+  if (moved.length === 0) return false;
+
+  for (const change of moved) {
+    const symbols = new Set([...change.symbols, ...(change.replacementSymbols ?? [])]);
+    if (b.some((other) => other.dependency === change.dependency && other.symbols.some((symbol) => symbols.has(symbol)))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function isGeneratedPath(path: string): boolean {
+  return /(^|\/)(__generated__|generated|gen)\//i.test(path) || /\.(generated|gen)\./i.test(path);
+}
+
+function symbolDependencyEvidence(
+  from: CommitUnit,
+  to: CommitUnit,
+  sitesByFile: ReadonlyMap<string, readonly ImpactSite[]>,
+): string[] {
+  const fromSymbols = new Set(from.allowedSymbols ?? []);
+  if (fromSymbols.size === 0) return [];
+
+  const evidence: string[] = [];
+  for (const file of to.allowedFiles) {
+    for (const site of sitesByFile.get(file) ?? []) {
+      if (site.enclosingSymbol && fromSymbols.has(site.enclosingSymbol)) {
+        evidence.push(`${file}:${site.line} is inside ${site.enclosingSymbol}`);
+      }
+    }
+  }
+  return evidence;
+}
+
+function compareEdges(a: PlanEdge, b: PlanEdge): number {
+  return (
+    a.from.localeCompare(b.from) ||
+    a.to.localeCompare(b.to) ||
+    a.reason.localeCompare(b.reason) ||
+    a.evidence.join('\0').localeCompare(b.evidence.join('\0'))
+  );
+}
+
+function assignExecutionLayers(
+  commits: readonly CommitUnit[],
+  edges: readonly PlanEdge[],
+): { commits: CommitUnit[]; cycle: string[] } {
+  const byId = new Map(commits.map((commit) => [commit.id, commit]));
+  const incoming = new Map<string, Set<string>>();
+
+  for (const commit of commits) {
+    incoming.set(commit.id, new Set());
+  }
+
+  for (const edge of edges) {
+    if (!byId.has(edge.from) || !byId.has(edge.to)) continue;
+    incoming.get(edge.to)!.add(edge.from);
+  }
+
+  const remaining = new Set(commits.map((commit) => commit.id));
+  const layers = new Map<string, number>();
+  let layer = 0;
+
+  while (remaining.size > 0) {
+    const ready = [...remaining]
+      .filter((id) => [...(incoming.get(id) ?? [])].every((dependency) => !remaining.has(dependency)))
+      .map((id) => byId.get(id)!)
+      .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
+
+    if (ready.length === 0) return { commits: attachGraph(commits, edges, layers), cycle: [...remaining].sort() };
+
+    for (const commit of ready) {
+      layers.set(commit.id, layer);
+      remaining.delete(commit.id);
+    }
+    layer += 1;
+  }
+
+  return { commits: attachGraph(commits, edges, layers), cycle: [] };
+}
+
+function attachGraph(
+  commits: readonly CommitUnit[],
+  edges: readonly PlanEdge[],
+  layers: ReadonlyMap<string, number>,
+): CommitUnit[] {
+  const incoming = new Map<string, PlanEdge[]>();
+  for (const edge of edges) {
+    const bucket = incoming.get(edge.to);
+    if (bucket) bucket.push(edge);
+    else incoming.set(edge.to, [edge]);
+  }
+
+  return commits
+    .map((commit) => {
+      const dependencyReasons = [...(incoming.get(commit.id) ?? [])].sort(compareEdges);
+      return {
+        ...commit,
+        dependsOn: dependencyReasons.map((edge) => edge.from).sort(),
+        dependencyReasons,
+        executionLayer: layers.get(commit.id) ?? 0,
+      };
+    })
+    .sort((a, b) => a.executionLayer - b.executionLayer || a.order - b.order || a.id.localeCompare(b.id))
+    .map((commit, index) => ({
+      ...commit,
+      order: index + 1,
+    }));
+}
+
+function explainCycle(ids: readonly string[], edges: readonly PlanEdge[]): string {
+  const details = edges
+    .filter((edge) => ids.includes(edge.from) && ids.includes(edge.to))
+    .slice(0, 5)
+    .map((edge) => `${edge.from} -> ${edge.to} (${edge.reason})`)
+    .join('; ');
+  return `The remediation graph contains a dependency cycle across ${ids.length} commit unit(s): ${details}. Drift cannot automatically execute this plan until the inseparable work is combined or reviewed manually.`;
+}
+
+function expectedChecksFor(
+  group: readonly BreakingChange[],
+  files: readonly string[],
+): VerificationRequirement[] {
+  const requirements: VerificationRequirement[] = [];
+  if (group.some((change) => change.kind === 'signature-change' || change.kind === 'type-change' || change.kind === 'removed-export' || change.kind === 'renamed-export' || change.kind === 'moved-export')) {
+    requirements.push({
+      id: stableId('check', 'typecheck', group.map((change) => change.id).sort().join(',')),
+      kind: 'typecheck',
+      reason: 'API-shape and type-contract migrations should be checked by the repository type checker when available.',
+    });
+  }
+  if (group.some((change) => change.kind === 'behaviour-change' || change.kind === 'default-change')) {
+    requirements.push({
+      id: stableId('check', 'test', group.map((change) => change.id).sort().join(',')),
+      kind: 'test',
+      reason: 'Behavioural and default changes need tests because compilation can still succeed with wrong behaviour.',
+    });
+  }
+  if (files.some((file) => /(^|\/)(package\.json|tsconfig\.json|vite\.config|webpack\.config|rollup\.config)/.test(file))) {
+    requirements.push({
+      id: stableId('check', 'build', files.join(',')),
+      kind: 'build',
+      reason: 'Configuration and package-entry changes can alter the build graph.',
+    });
+  }
+  return requirements;
+}
+
+function invalidationTriggersFor(group: readonly BreakingChange[], files: readonly string[]): string[] {
+  const triggers = [
+    ...files.map((file) => `file:${file}`),
+    ...group.flatMap((change) => change.symbols.map((symbol) => `symbol:${symbol}`)),
+    ...group.map((change) => `dependency:${change.dependency}`),
+  ];
+  return [...new Set(triggers)].sort();
+}
+
+function detectUpgradeCohorts(changes: readonly DependencyChange[]): UpgradeCohort[] {
+  const cohorts: UpgradeCohort[] = [];
+  const byEcosystem = new Map<string, DependencyChange[]>();
+
+  for (const change of changes) {
+    const bucket = byEcosystem.get(change.ecosystem);
+    if (bucket) bucket.push(change);
+    else byEcosystem.set(change.ecosystem, [change]);
+  }
+
+  for (const [ecosystem, entries] of byEcosystem) {
+    for (const group of groupFrameworkFamilies(entries)) {
+      if (group.length < 2) continue;
+      const names = group.map((change) => change.name).sort();
+      cohorts.push({
+        id: stableId('cohort', ecosystem, names.join(',')),
+        ecosystem: group[0]!.ecosystem,
+        dependencies: names,
+        constraints: group.map((change) => ({
+          dependency: change.name,
+          ecosystem: change.ecosystem,
+          range: change.rawTo ?? change.to ?? '*',
+          source: 'workspace-family',
+        })),
+        candidatePaths: [...new Set(group.map((change) => change.manifestPath))].sort(),
+        reason: `These ${ecosystem} packages appear to be part of the same ${familyName(group[0]!.name)} upgrade family and should be reviewed together.`,
+      });
+    }
+  }
+
+  return cohorts.sort((a, b) => a.id.localeCompare(b.id));
+}
+
+function groupFrameworkFamilies(entries: readonly DependencyChange[]): DependencyChange[][] {
+  const groups = new Map<string, DependencyChange[]>();
+  for (const change of entries) {
+    const key = familyKey(change.name);
+    if (!key) continue;
+    const bucket = groups.get(key);
+    if (bucket) bucket.push(change);
+    else groups.set(key, [change]);
+  }
+  return [...groups.values()];
+}
+
+function familyKey(name: string): string | null {
+  const known = [
+    /^(@angular)\//,
+    /^(@babel)\//,
+    /^(@nestjs)\//,
+    /^(@types)\//,
+    /^(@vue)\//,
+    /^(react)(?:$|-)/,
+    /^(next)(?:$|-)/,
+    /^(eslint)(?:$|-)/,
+    /^(jest)(?:$|-)/,
+    /^(webpack)(?:$|-)/,
+    /^(vite)(?:$|-)/,
+  ];
+
+  for (const pattern of known) {
+    const match = pattern.exec(name);
+    if (match?.[1]) return match[1];
+  }
+
+  if (name.startsWith('@')) {
+    const scope = name.split('/')[0];
+    return scope && scope !== name ? scope : null;
+  }
+
+  return null;
+}
+
+function familyName(name: string): string {
+  return slugify(familyKey(name) ?? name, 32);
 }
 
 function subjectLine(group: readonly BreakingChange[], fileCount: number): string {

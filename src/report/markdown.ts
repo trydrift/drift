@@ -246,15 +246,32 @@ function renderCommitPlan(plan: RemediationPlan): string {
   const lines: string[] = [
     '## Commit plan',
     '',
-    'Each commit addresses one concern, so you can review, approve, or revert them',
-    'independently rather than judging one large diff.',
+    'Each commit addresses one concern. The graph below records only necessary',
+    'dependencies; commits in the same execution layer have disjoint file scope and',
+    'may run in parallel.',
     '',
   ];
 
   for (const commit of plan.commits) {
     lines.push(`**${commit.order}. \`${commit.message}\`**`);
     lines.push('');
-    lines.push(`Files: ${commit.files.map((f) => `\`${f}\``).join(', ')}`);
+    lines.push(`Unit: \`${commit.id}\``);
+    lines.push(`Layer: ${commit.executionLayer}`);
+    if (commit.dependsOn.length > 0) {
+      lines.push(`Depends on: ${commit.dependsOn.map((id) => `\`${id}\``).join(', ')}`);
+      lines.push(
+        `Why: ${commit.dependencyReasons
+          .map((edge) => `${edge.reason}${edge.evidence.length ? ` (${edge.evidence.slice(0, 3).join('; ')})` : ''}`)
+          .join('; ')}`,
+      );
+    }
+    lines.push(`Files: ${commit.allowedFiles.map((f) => `\`${f}\``).join(', ')}`);
+    if ((commit.allowedSymbols ?? []).length > 0) {
+      lines.push(`Symbols: ${commit.allowedSymbols!.map((s) => `\`${s}\``).join(', ')}`);
+    }
+    if (commit.expectedChecks.length > 0) {
+      lines.push(`Expected checks: ${commit.expectedChecks.map((check) => check.kind).join(', ')}`);
+    }
     lines.push('');
   }
 

@@ -255,6 +255,49 @@ export interface ImpactSite {
   confidence: Confidence;
 }
 
+export type PlanEdgeReason =
+  | 'same-file-conflict'
+  | 'runtime-prerequisite'
+  | 'configuration-prerequisite'
+  | 'import-prerequisite'
+  | 'generated-output'
+  | 'symbol-dependency'
+  | 'package-cohort'
+  | 'verification-discovered'
+  | 'repository-policy';
+
+export interface PlanEdge {
+  /** Prerequisite commit unit id. */
+  from: string;
+  /** Dependent commit unit id. */
+  to: string;
+  reason: PlanEdgeReason;
+  evidence: string[];
+}
+
+export interface VerificationRequirement {
+  id: string;
+  kind: 'build' | 'typecheck' | 'test' | 'lint' | 'integration' | 'custom';
+  command?: string;
+  reason: string;
+}
+
+export interface VersionConstraint {
+  dependency: string;
+  ecosystem: Ecosystem;
+  range: string;
+  source: 'peer-dependency' | 'solver' | 'workspace-family' | 'bom' | 'framework' | 'lockstep-metadata' | 'user-config';
+}
+
+export interface UpgradeCohort {
+  id: string;
+  ecosystem: Ecosystem;
+  dependencies: string[];
+  constraints: VersionConstraint[];
+  candidatePaths: string[];
+  reason: string;
+}
+
 /**
  * One commit's worth of work.
  *
@@ -263,7 +306,9 @@ export interface ImpactSite {
  * revert it in isolation — and so that `git bisect` stays meaningful.
  */
 export interface CommitUnit {
-  /** Execution order, starting at 1. */
+  /** Stable content-derived id. */
+  id: string;
+  /** Display order, starting at 1. Derived from deterministic graph order. */
   order: number;
   /** Conventional-commit subject line. */
   message: string;
@@ -271,12 +316,24 @@ export interface CommitUnit {
   body: string;
   /** BreakingChange IDs addressed by this commit. */
   breakingChangeIds: string[];
-  /** Files this commit is allowed to touch. */
+  /** Compatibility view of `allowedFiles`. */
   files: string[];
+  /** Files this commit is allowed to touch. */
+  allowedFiles: string[];
+  /** Symbols this unit is expected to update, when localization can name them. */
+  allowedSymbols?: string[];
   /** Imperative instructions handed to the coding agent. */
   instructions: string;
-  /** Commits that must land before this one. */
-  dependsOn: number[];
+  /** Commit unit ids that must land before this one. */
+  dependsOn: string[];
+  /** Incoming edge reasons, repeated here for consumers that only read units. */
+  dependencyReasons: PlanEdge[];
+  /** Topological layer. Units in the same layer may run concurrently. */
+  executionLayer: number;
+  /** Checks expected after this unit or layer. */
+  expectedChecks: VerificationRequirement[];
+  /** Changes that invalidate this unit and require replanning. */
+  invalidationTriggers: string[];
 }
 
 /** Aggregate risk, used to gate automatic execution. */
@@ -310,6 +367,10 @@ export interface RemediationPlan {
   breakingChanges: BreakingChange[];
   impactSites: ImpactSite[];
   commits: CommitUnit[];
+  /** Real dependency graph over commit units. */
+  planEdges: PlanEdge[];
+  /** Dependency upgrades that should be reasoned about together. */
+  upgradeCohorts: UpgradeCohort[];
   /**
    * Why each upgrade might be worth taking, alongside what it might cost.
    *
