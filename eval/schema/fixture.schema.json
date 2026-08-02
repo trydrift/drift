@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://drift.local/eval/fixture.schema.json",
+  "type": "object",
+  "required": [
+    "id",
+    "ecosystem",
+    "dependency",
+    "fromVersion",
+    "toVersion",
+    "source",
+    "taxonomy",
+    "exposure",
+    "expected",
+    "oracles",
+    "complexity",
+    "network",
+    "provenance"
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "ecosystem": { "type": "string" },
+    "dependency": { "type": "string" },
+    "fromVersion": { "type": "string" },
+    "toVersion": { "type": "string" },
+    "source": {
+      "type": "object",
+      "required": ["repository", "licence"],
+      "properties": {
+        "repository": { "type": "string" },
+        "licence": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "taxonomy": {
+      "type": "object",
+      "required": ["nature", "detectability", "scope", "visibility"],
+      "properties": {
+        "nature": { "type": "string" },
+        "detectability": { "type": "array", "items": { "type": "string" } },
+        "scope": { "type": "string" },
+        "visibility": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "exposure": { "enum": ["direct", "transitive"] },
+    "expected": {
+      "type": "object",
+      "required": ["upstreamFindings", "impactSites", "gaps", "planNodes", "edges", "goldPatch"],
+      "properties": {
+        "upstreamFindings": { "type": "array", "items": { "type": "string" } },
+        "impactSites": { "type": "array", "items": { "type": "string" } },
+        "gaps": { "type": "array", "items": { "type": "string" } },
+        "planNodes": { "type": "array", "items": { "type": "string" } },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["from", "to", "reason"],
+            "properties": {
+              "from": { "type": "string" },
+              "to": { "type": "string" },
+              "reason": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "goldPatch": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "oracles": {
+      "type": "object",
+      "required": ["negative", "positive"],
+      "properties": {
+        "negative": { "type": "string" },
+        "positive": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "complexity": { "enum": ["small", "medium", "large"] },
+    "network": { "enum": ["disabled", "fixture-local", "allowed"] },
+    "provenance": {
+      "type": "object",
+      "required": ["reviewStatus"],
+      "properties": {
+        "notes": { "type": "string" },
+        "reviewStatus": { "enum": ["draft", "reviewed", "archived"] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

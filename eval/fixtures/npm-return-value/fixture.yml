@@ -1,0 +1,35 @@
+id: npm-return-value
+ecosystem: npm
+dependency: fixture-lib
+fromVersion: 1.0.0
+toVersion: 2.0.0
+source:
+  repository: fixture-local
+  licence: MIT
+taxonomy:
+  nature: behaviour
+  detectability:
+    - test-time
+  scope: symbol
+  visibility:
+    - direct
+exposure: direct
+expected:
+  upstreamFindings:
+    - fixture-lib:formatUser:return-value
+  impactSites:
+    - consumer/src/app.ts:formatUser
+  gaps:
+    - behavioural probing disabled
+  planNodes:
+    - update-format-user-call
+  edges: []
+  goldPatch: expected/gold.patch
+oracles:
+  negative: npm test
+  positive: npm test
+complexity: small
+network: disabled
+provenance:
+  reviewStatus: reviewed
+  notes: Synthetic local fixture; no external code or licence obligations.
