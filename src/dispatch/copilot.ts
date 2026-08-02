@@ -264,9 +264,10 @@ function renderPromptCommitPlan(plan: RemediationPlan): string {
   const lines: string[] = [
     '## Commit plan — follow this exactly',
     '',
-    'Make these commits in order. Each one addresses a single concern so a human can',
-    'review, approve, or revert it independently. **Do not squash them, do not reorder',
-    'them, and do not combine unrelated edits into one commit.**',
+    'Make these commits by execution layer. Commits in the same layer are independent;',
+    'a later layer must wait for every dependency listed on its units. Each one addresses',
+    'a single concern so a human can review, approve, or revert it independently.',
+    '**Do not squash them, do not reorder dependency edges, and do not combine unrelated edits into one commit.**',
     '',
   ];
 
@@ -275,13 +276,27 @@ function renderPromptCommitPlan(plan: RemediationPlan): string {
     lines.push('');
     lines.push(`### Commit ${commit.order}: \`${commit.message}\``);
     lines.push('');
+    lines.push(`- Unit id: \`${commit.id}\``);
+    lines.push(`- Execution layer: ${commit.executionLayer}`);
+    if (commit.dependsOn.length > 0) {
+      lines.push(`- Depends on: ${commit.dependsOn.map((id) => `\`${id}\``).join(', ')}`);
+      lines.push(
+        `- Dependency reasons: ${commit.dependencyReasons
+          .map((edge) => `${edge.reason} (${edge.evidence.slice(0, 3).join('; ')})`)
+          .join('; ')}`,
+      );
+    }
+    if (commit.expectedChecks.length > 0) {
+      lines.push(`- Expected checks: ${commit.expectedChecks.map((check) => check.kind).join(', ')}`);
+    }
+    lines.push('');
     lines.push('Commit message body:');
     lines.push('');
     lines.push('```');
     lines.push(commit.body);
     lines.push('```');
     lines.push('');
-    lines.push(`Files this commit may touch: ${commit.files.map((f) => `\`${f}\``).join(', ')}`);
+    lines.push(`Files this commit may touch: ${commit.allowedFiles.map((f) => `\`${f}\``).join(', ')}`);
     lines.push('');
     lines.push(commit.instructions);
     lines.push('');

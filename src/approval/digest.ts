@@ -35,7 +35,7 @@ import { taxonomyOf, type ChangeTaxonomy } from '../confidence/taxonomy.js';
  * across incompatible serializations — which would silently reject every
  * outstanding approval at deploy time with a misleading "plan changed" message.
  */
-export const PLAN_SCHEMA_VERSION = 2;
+export const PLAN_SCHEMA_VERSION = 3;
 
 /**
  * Schema versions this build can verify.
@@ -172,14 +172,60 @@ export function canonicalPlan(plan: RemediationPlan): Record<string, unknown> {
       confidence: s.confidence,
     })),
     commits: plan.commits.map((c) => ({
+      id: c.id,
       order: c.order,
       message: c.message,
       body: c.body,
       breakingChangeIds: [...c.breakingChangeIds].sort(),
       files: [...c.files].sort(),
+      allowedFiles: [...c.allowedFiles].sort(),
+      allowedSymbols: [...(c.allowedSymbols ?? [])].sort(),
       instructions: c.instructions,
       dependsOn: [...c.dependsOn].sort(),
+      dependencyReasons: [...c.dependencyReasons]
+        .map((edge) => ({
+          from: edge.from,
+          to: edge.to,
+          reason: edge.reason,
+          evidence: [...edge.evidence].sort(),
+        }))
+        .sort((a, b) => canonicalJson(a).localeCompare(canonicalJson(b))),
+      executionLayer: c.executionLayer,
+      expectedChecks: [...c.expectedChecks]
+        .map((check) => ({
+          id: check.id,
+          kind: check.kind,
+          command: check.command ?? null,
+          reason: check.reason,
+        }))
+        .sort((a, b) => canonicalJson(a).localeCompare(canonicalJson(b))),
+      invalidationTriggers: [...c.invalidationTriggers].sort(),
     })),
+    planEdges: [...plan.planEdges]
+      .map((edge) => ({
+        from: edge.from,
+        to: edge.to,
+        reason: edge.reason,
+        evidence: [...edge.evidence].sort(),
+      }))
+      .sort((a, b) => canonicalJson(a).localeCompare(canonicalJson(b))),
+    upgradeCohorts: [...plan.upgradeCohorts]
+      .map((cohort) => ({
+        id: cohort.id,
+        ecosystem: cohort.ecosystem,
+        dependencies: [...cohort.dependencies].sort(),
+        constraints: [...cohort.constraints]
+          .map((constraint) => ({
+            dependency: constraint.dependency,
+            ecosystem: constraint.ecosystem,
+            range: constraint.range,
+            source: constraint.source,
+          }))
+          .sort((a, b) => canonicalJson(a).localeCompare(canonicalJson(b))),
+        candidatePaths: [...cohort.candidatePaths].sort(),
+        reason: cohort.reason,
+      }))
+      .sort((a, b) => a.id.localeCompare(b.id)),
     evidence: plan.evidence.map(canonicalEvidence),
     // Gaps are load-bearing: approving a plan is partly approving what it says
     // it could not check, so a plan that quietly lost a gap between filing and

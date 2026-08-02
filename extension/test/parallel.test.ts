@@ -23,14 +23,21 @@ import type { CommitUnit } from '../../src/types.js';
  * developer's real branch, in a way no diff makes obvious.
  */
 
-const unit = (order: number, files: string[], dependsOn: number[] = []): CommitUnit => ({
+const unit = (order: number, files: string[], executionLayer = 0, dependsOn: string[] = []): CommitUnit => ({
+  id: `unit-${order}`,
   order,
   message: `commit ${order}`,
   body: '',
   files,
+  allowedFiles: files,
+  allowedSymbols: [],
   breakingChangeIds: [],
   instructions: '',
   dependsOn,
+  dependencyReasons: [],
+  executionLayer,
+  expectedChecks: [],
+  invalidationTriggers: [],
 });
 
 describe('deciding what may run at the same time', () => {
@@ -49,24 +56,23 @@ describe('deciding what may run at the same time', () => {
     assert.deepEqual(batches[1]!.map((c) => c.order), [2]);
   });
 
-  test('plan order is never rearranged to fill a batch', () => {
-    // Commit 3 does not overlap commit 1, but it does not get promoted past
-    // commit 2 to join it: the plan orders concerns deliberately, and a later
-    // agent seeing an earlier fix already applied is part of that order.
-    const batches = batchCommits([unit(1, ['a.ts']), unit(2, ['a.ts']), unit(3, ['z.ts'])], 4);
+  test('layer order is never rearranged to fill a batch', () => {
+    // Commit 3 does not overlap commit 1, but it stays in its graph layer. The
+    // planner, not the batcher, decides which concerns can see each other.
+    const batches = batchCommits([unit(1, ['a.ts'], 0), unit(2, ['a.ts'], 1), unit(3, ['z.ts'], 1)], 4);
     assert.deepEqual(
       batches.map((batch) => batch.map((c) => c.order)),
       [[1], [2, 3]],
     );
   });
 
-  test('a commit waits for the commit the plan says it depends on', () => {
+  test('a commit waits for the layer the plan says it depends on', () => {
     // Disjoint files are not enough on their own. The planner knows about
     // orderings that file scopes do not express — an import path that has to
     // move before the call sites using it can be rewritten — and running the
     // dependent concern alongside its prerequisite would have the second agent
     // reading a tree the first has not finished changing.
-    const batches = batchCommits([unit(1, ['a.ts']), unit(2, ['b.ts'], [1])], 4);
+    const batches = batchCommits([unit(1, ['a.ts'], 0), unit(2, ['b.ts'], 1, ['unit-1'])], 4);
     assert.deepEqual(
       batches.map((batch) => batch.map((c) => c.order)),
       [[1], [2]],
@@ -78,7 +84,7 @@ describe('deciding what may run at the same time', () => {
     // and 3 depending on it is not a reason to serialise them against each
     // other.
     const batches = batchCommits(
-      [unit(1, ['a.ts']), unit(2, ['b.ts'], [1]), unit(3, ['c.ts'], [1])],
+      [unit(1, ['a.ts'], 0), unit(2, ['b.ts'], 1, ['unit-1']), unit(3, ['c.ts'], 1, ['unit-1'])],
       4,
     );
     assert.deepEqual(

@@ -17,17 +17,24 @@ import type { CommitUnit, RemediationPlan } from '../../src/types.js';
  */
 
 const commit = (): CommitUnit => ({
+  id: 'unit-1',
   order: 1,
   message: 'fix(zod): move to the v4 error API',
   body: 'The `errors` array became `issues`.',
   breakingChangeIds: ['bc1'],
   files: ['src/validate.ts'],
+  allowedFiles: ['src/validate.ts'],
+  allowedSymbols: ['errors', 'issues'],
   instructions: 'Rename `error.errors` to `error.issues`.',
   dependsOn: [],
+  dependencyReasons: [],
+  executionLayer: 0,
+  expectedChecks: [],
+  invalidationTriggers: [],
 });
 
 const plan = (): RemediationPlan => ({
-  schemaVersion: 2,
+  schemaVersion: 3,
   gaps: [],
   checkedSurfaces: [],
   id: 'plan1',
@@ -49,6 +56,8 @@ const plan = (): RemediationPlan => ({
   breakingChanges: [],
   impactSites: [],
   commits: [commit()],
+  planEdges: [],
+  upgradeCohorts: [],
   risk: 'medium',
   blockers: [],
   warnings: [],

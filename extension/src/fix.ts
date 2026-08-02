@@ -482,28 +482,34 @@ export function batchCommits(commits: readonly CommitUnit[], limit: number): Com
   if (limit <= 1) return commits.map((commit) => [commit]);
 
   const batches: CommitUnit[][] = [];
-  let current: CommitUnit[] = [];
-  let claimed = new Set<string>();
-  let inFlight = new Set<number>();
-
+  const byLayer = new Map<number, CommitUnit[]>();
   for (const commit of commits) {
-    const conflicts =
-      commit.files.some((file) => claimed.has(file)) ||
-      (commit.dependsOn ?? []).some((order) => inFlight.has(order));
-
-    if (current.length > 0 && (conflicts || current.length >= limit)) {
-      batches.push(current);
-      current = [];
-      claimed = new Set();
-      inFlight = new Set();
-    }
-
-    current.push(commit);
-    inFlight.add(commit.order);
-    for (const file of commit.files) claimed.add(file);
+    const bucket = byLayer.get(commit.executionLayer);
+    if (bucket) bucket.push(commit);
+    else byLayer.set(commit.executionLayer, [commit]);
   }
 
-  if (current.length > 0) batches.push(current);
+  for (const [, layer] of [...byLayer.entries()].sort(([a], [b]) => a - b)) {
+    let current: CommitUnit[] = [];
+    let claimed = new Set<string>();
+
+    for (const commit of [...layer].sort((a, b) => a.order - b.order || a.id.localeCompare(b.id))) {
+      const files = commit.allowedFiles ?? commit.files;
+      const conflicts = files.some((file) => claimed.has(file));
+
+      if (current.length > 0 && (conflicts || current.length >= limit)) {
+        batches.push(current);
+        current = [];
+        claimed = new Set();
+      }
+
+      current.push(commit);
+      for (const file of files) claimed.add(file);
+    }
+
+    if (current.length > 0) batches.push(current);
+  }
+
   return batches;
 }
 
