@@ -40,6 +40,11 @@ on:
   workflow_dispatch:
 
   # Enables the `/drift apply` approval flow on issues Drift files.
+  #
+  # Drift re-checks everything about an approval itself: that the commenter has
+  # write access, that the issue is one Drift filed, and that the plan it is
+  # about to run is the plan recorded on the issue. The filter below is only a
+  # cheap prefilter to avoid starting a runner for every comment in the repo.
   issue_comment:
     types: [created]
 
@@ -70,6 +75,11 @@ jobs:
         with:
           # Drift needs the previous commit to diff manifests against, and the
           # working tree to search for affected code.
+          #
+          # On an `issue_comment` run this checks out the default branch, not
+          # the commit being approved. Drift verifies the two match before using
+          # the working tree, and skips localization (saying so in the report)
+          # rather than reporting impact sites from the wrong tree.
           fetch-depth: 2
 
       # Drift compares the exported API of the old and new version of every Go

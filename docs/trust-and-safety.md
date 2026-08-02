@@ -170,6 +170,43 @@ edits within the allowed files. The review requirement is what makes this
 tolerable rather than eliminated. Treat it as a genuine open problem, not a
 solved one.
 
+### An unauthorized user comments `/drift apply`
+
+**This was a real vulnerability, fixed in the approval-authorization work.** It
+is documented here rather than quietly patched, because anyone who deployed an
+earlier build should understand what was exposed.
+
+The old behaviour: both runners accepted any comment matching `/drift apply`,
+from anyone, on any issue whose body contained a `drift-commit:` marker — a
+string the commenter could type themselves. On a public repository that let an
+arbitrary user open an issue, paste a marker naming any commit, comment the
+command, and have Drift create a branch and dispatch a coding agent against a
+commit of their choosing. The Action was worse still: it derived the commit from
+`GITHUB_SHA`, which on an `issue_comment` event is the current default-branch
+tip, so an approval was applied to whatever was on the branch at the time rather
+than to the reviewed commit.
+
+An approval is now honoured only when the comment is newly created on a
+`drift`-labelled issue, the footer parses strictly, the commenter holds `write`,
+`maintain`, or `admin`, the reviewed commit still exists, the base branch has not
+moved, and the recomputed plan digest matches the one recorded on the issue.
+Every check fails closed — an unavailable permissions API is a refusal, not an
+assumption. The full list is in [architecture](architecture.md#approving-a-plan).
+
+Two properties are worth naming:
+
+- **Provenance comes from the label, not the body.** Anyone can paste a footer;
+  applying a label requires triage permission. Forging provenance therefore
+  costs at least as much access as approving does, which is what makes the
+  check meaningful rather than decorative.
+- **The digest, not the plan ID, is what gets approved.** Plan IDs are derived
+  from `owner/repo/commit`, so two different analyses of one commit share an ID.
+  Approving an ID would approve whichever plan happened to be computed later.
+
+Residual risk: a user who already has write access can approve a plan, which is
+by design — they can push code directly anyway. Drift grants no capability they
+lack.
+
 ### A malicious `drift.yml`
 
 Someone with write access could set `mode: auto` and widen `protectedPaths`. But

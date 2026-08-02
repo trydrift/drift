@@ -119,19 +119,53 @@ server).
 
 The "App that watches your repos" experience, self-hosted and single-tenant.
 
+Requires **Node 22.5 or newer** — the delivery queue uses `node:sqlite` from the
+standard library. Drift says so at startup rather than failing later.
+
 ```bash
 export GITHUB_WEBHOOK_SECRET=...   # required — Drift refuses to run without it
 export GITHUB_TOKEN=...
 export DRIFT_COPILOT_TOKEN=...     # user-scoped
 export PORT=3000
+export DRIFT_QUEUE_PATH=/data/queue.db   # default: .drift/queue.db
 
 npm run build && npm run serve
 ```
 
 Point a GitHub App or repository webhook at `POST /webhook` for **push** and
-**issue_comment** events. `GET /health` is available for liveness checks.
+**issue_comment** events. `GET /health` reports liveness and queue depth.
 
-### Two honest limitations
+### The delivery queue
+
+Every verified delivery is written to disk **before** Drift answers `202`. That
+ordering is the whole point: GitHub treats a `202` as final and will not resend,
+so acknowledging work that exists only in memory means losing it on the next
+restart — silently, with the delivery marked successful in GitHub's UI.
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `DRIFT_QUEUE` | `sqlite` | `sqlite` (durable) or `memory` (not durable) |
+| `DRIFT_QUEUE_PATH` | `.drift/queue.db` | Database file. Put it on a persistent volume. |
+
+Deliveries are keyed by GitHub's `X-GitHub-Delivery` header under a uniqueness
+constraint, so a redelivery is acknowledged without being processed twice. A job
+interrupted by a restart is returned to the queue at startup, and failures are
+retried with bounded exponential backoff before being marked terminal.
+
+`DRIFT_QUEUE=memory` is available for smoke tests. It logs a warning on every
+start, because a runner that quietly drops work on restart is the failure the
+queue exists to remove.
+
+`GET /health` returns counts only — queue depth, in-flight, and permanently
+failed — never payloads, repository names, or delivery IDs:
+
+```json
+{ "status": "ok", "queue": { "queued": 0, "running": 1, "failed": 0, "oldestPendingAgeMs": 812 } }
+```
+
+`status` becomes `degraded` when any delivery has failed permanently.
+
+### Three honest limitations
 
 **No checkout, so no localization.** The server sees webhooks, not a working
 tree. It detects changes and gathers evidence, but cannot search for affected
@@ -142,22 +176,34 @@ impact sites.
 users would mean storing one token each — the credential database this MVP is
 designed not to need.
 
-Both are properties of the deployment model, not bugs. The Action has neither.
+**Single-node.** The queue is durable across restarts of one process, not shared
+between replicas. Two runners against one database file is not supported.
+
+All three are properties of the deployment model, not bugs. The Action has none
+of them.
 
 ### Deploying it
 
 ```dockerfile
-FROM node:20-alpine
+FROM node:22-alpine
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci --omit=dev
 COPY dist ./dist
+ENV DRIFT_QUEUE_PATH=/data/queue.db
+VOLUME ["/data"]
 EXPOSE 3000
 CMD ["node", "dist/runners/webhook.js"]
 ```
 
-Runs anywhere that speaks HTTP — Fly, Railway, Cloud Run, a VM. It holds no
-state, so scale horizontally freely and redeploy without migrations.
+Runs anywhere that speaks HTTP — Fly, Railway, Cloud Run, a VM — with two
+requirements that follow from the queue: give it a **persistent volume** for the
+database, and run **one instance**. A platform that restarts the container on
+deploy is fine; one that runs several replicas behind a load balancer is not.
+
+Drift drains the delivery in flight on `SIGTERM` before exiting, so an ordinary
+deploy costs nothing. A hard kill is safe too — the job is recovered and retried
+on the next start.
 
 ---
 

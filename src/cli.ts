@@ -32,7 +32,7 @@ Usage:
   drift analyze [options]     Analyse a local repository and print the report
   drift pr [options]          Push the current branch and open a pull request
   drift action                Run as a GitHub Action (reads INPUT_* env vars)
-  drift serve                 Run the stateless webhook server
+  drift serve                 Run the self-hosted webhook server
   drift --version             Print the version
 
 Options for \`analyze\`:
@@ -76,8 +76,9 @@ export async function main(argv: string[]): Promise<number> {
     case 'action':
       return runAction();
     case 'serve':
-      serveWebhook();
-      return 0;
+      // Awaited: the queue is opened asynchronously, and a failure there must
+      // surface as an exit code rather than an unhandled rejection.
+      return await serveWebhook();
     case '--version':
     case '-v':
       console.log(await packageVersion());

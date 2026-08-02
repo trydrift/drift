@@ -52,9 +52,14 @@ The token is created by the user, stored by GitHub, injected by the Actions
 runner, and sent to `api.github.com`. Drift's infrastructure is not in the path
 at any point, because Drift has no infrastructure in this deployment.
 
-This is why the MVP needs **no database and no authentication system**. Not
-because we cut a corner — because we chose the deployment model where the
-question doesn't arise.
+This is why the Action deployment needs **no database and no authentication
+system**. Not because we cut a corner — because we chose the deployment model
+where the question doesn't arise.
+
+(The self-hosted webhook runner does keep one local file: a queue of accepted
+deliveries, so a restart cannot lose work GitHub has already been told was
+accepted. It holds no credentials. See
+[deployment](deployment.md#the-delivery-queue).)
 
 It also happens to be the honest answer to the question every security reviewer
 asks. "Where do you store my token?" — "We don't. It's in your repo secrets, and
