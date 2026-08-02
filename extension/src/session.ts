@@ -207,7 +207,15 @@ export interface Task {
 
 export interface TaskActivity {
   id: string;
-  kind: 'thinking' | 'bash' | 'edit' | 'status' | 'search';
+  /**
+   * What the agent did, not which pipe said so.
+   *
+   * `read` and `create` are split out from `edit` because they are the two
+   * things a reviewer scanning the drawer most wants to tell apart at a
+   * glance: a file the agent merely looked at, and a file that did not exist
+   * before it ran.
+   */
+  kind: 'thinking' | 'bash' | 'edit' | 'create' | 'read' | 'status' | 'search';
   title: string;
   detail?: string;
   input?: string;

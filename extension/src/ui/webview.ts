@@ -16,6 +16,7 @@ import type { UpgradeCandidate } from '../upgrades.js';
 import { describeSeverity, severityOf, type UpgradeSeverity } from '../severity.js';
 import type { ReviewGroup, ReviewTotals } from '../review/store.js';
 import type { BreakingChange, Evidence, RemediationPlan } from '../../../src/types.js';
+import type { Vulnerability } from '../../../src/rationale/types.js';
 
 /**
  * The panel's markup.
@@ -490,12 +491,18 @@ function renderActivityItem(item: TaskActivity): string {
       ? `<span class="activity-stat"><span class="add">+${item.added ?? 0}</span> <span class="del">-${item.removed ?? 0}</span></span>`
       : '';
 
+  // The kind and the title agree far more often now that both are precise, and
+  // printing "Read Read" on every row would spend the drawer's narrowest column
+  // saying one thing twice.
+  const label = activityLabel(item.kind);
+  const subtitle = item.title === label ? '' : `<span>${escapeHtml(item.title)}</span>`;
+
   return `<div class="activity-item ${item.kind}">
     <div class="activity-dot"></div>
     <div class="activity-body">
       <div class="activity-head">
-        <b>${escapeHtml(activityLabel(item.kind))}</b>
-        <span>${escapeHtml(item.title)}</span>
+        <b>${escapeHtml(label)}</b>
+        ${subtitle}
         ${file}
         ${stat}
       </div>
@@ -582,6 +589,10 @@ function activityLabel(kind: TaskActivity['kind']): string {
       return 'Bash';
     case 'edit':
       return 'Edit';
+    case 'create':
+      return 'Create';
+    case 'read':
+      return 'Read';
     case 'search':
       return 'Search';
     case 'status':
@@ -844,16 +855,7 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
       ${candidate.plan ? renderCandidateDetail(candidate, candidate.plan) : ''}
 
       <div class="pkg-actions">
-        <button data-action="upgrade" data-id="${escapeAttr(candidate.id)}" data-mode="safe" ${candidate.safeLatest ? '' : 'disabled'} title="${candidate.safeLatest ? `Install ${candidate.safeLatest}, which satisfies the range already in package.json` : 'No newer version fits the range in package.json'}">
-          Upgrade
-        </button>
-        <button data-action="upgrade" data-id="${escapeAttr(candidate.id)}" data-mode="force" class="${crossesMajor(candidate.current, candidate.latest) ? 'risky' : ''}" title="${
-          crossesMajor(candidate.current, candidate.latest)
-            ? `Install ${escapeAttr(candidate.latest)} — a major version ahead of ${escapeAttr(candidate.current)} — and widen the range in package.json`
-            : `Install ${escapeAttr(candidate.latest)} and widen the range in package.json`
-        }">
-          Upgrade to ${escapeHtml(candidate.latest)}${crossesMajor(candidate.current, candidate.latest) ? ' (major)' : ''}
-        </button>
+        ${renderUpgradeActions(candidate)}
         ${
           candidate.impactCount > 0
             ? `<button class="primary" data-action="fixPackage" data-id="${escapeAttr(candidate.id)}">Fix ${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'}</button>`
@@ -862,6 +864,62 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
       </div>
     </div>
   </details>`;
+}
+
+/**
+ * The buttons that install something.
+ *
+ * The rule this replaces a bug with: **every button names the version it will
+ * install, and installs the version it names.** The old pair did neither. The
+ * first was disabled unless a version fitted the range already in the
+ * manifest — so for a pinned dependency, or any 0.x module whose next release
+ * moves the minor, it was disabled permanently and looked broken rather than
+ * inapplicable. The second was hard-wired to `latest`, so choosing a target
+ * version in the picker changed the summary line and nothing else.
+ *
+ * Now the primary button follows the selection, and the alternatives appear
+ * only when they are genuinely different destinations.
+ */
+function renderUpgradeActions(candidate: UpgradeCandidate): string {
+  const { selected, current, latest, latestMinor } = candidate;
+
+  const major = crossesMajor(current, selected);
+  const inRange = selected === candidate.safeLatest;
+
+  const primary = `<button data-action="upgrade" data-id="${escapeAttr(candidate.id)}" data-mode="${inRange ? 'safe' : 'force'}" class="${major ? 'risky' : ''}" title="${
+    inRange
+      ? `Install ${escapeAttr(selected)}, which satisfies the range already declared in ${escapeAttr(candidate.manifestPath)}`
+      : `Install ${escapeAttr(selected)} and widen the range in ${escapeAttr(candidate.manifestPath)}`
+  }">
+      Upgrade to ${escapeHtml(selected)}${major ? ' (major)' : ''}
+    </button>`;
+
+  // Shortcuts, not duplicates: each is rendered only when it would land
+  // somewhere the primary button would not.
+  const alternatives: string[] = [];
+
+  if (latestMinor && latestMinor !== selected) {
+    alternatives.push(
+      `<button class="ctl bordered" data-action="selectVersion" data-id="${escapeAttr(candidate.id)}" data-version="${escapeAttr(latestMinor)}" title="Check ${escapeAttr(latestMinor)} — the newest release that stays on ${escapeAttr(majorOf(current))}.x, so no major boundary is crossed">
+        Stay on ${escapeHtml(majorOf(current))}.x (${escapeHtml(latestMinor)})
+      </button>`,
+    );
+  }
+
+  if (latest !== selected) {
+    alternatives.push(
+      `<button class="ctl bordered" data-action="selectVersion" data-id="${escapeAttr(candidate.id)}" data-version="${escapeAttr(latest)}" title="Check ${escapeAttr(latest)}, the newest published release${crossesMajor(current, latest) ? ' — a major version ahead' : ''}">
+        Latest (${escapeHtml(latest)})${crossesMajor(current, latest) ? ' — major' : ''}
+      </button>`,
+    );
+  }
+
+  return primary + alternatives.join('');
+}
+
+/** The major component of a version, for labelling the "stay on this line" button. */
+function majorOf(version: string): string {
+  return /^\D*(\d+)/.exec(version)?.[1] ?? version;
 }
 
 /** The one-line description of a version, shared by the button and the quick pick. */
@@ -933,9 +991,8 @@ function renderRationale(candidate: UpgradeCandidate): string {
       renderFacts(
         'good',
         `Fixes ${security.resolved.length} known ${security.resolved.length === 1 ? 'vulnerability' : 'vulnerabilities'}`,
-        security.resolved.map(
-          (vuln) =>
-            `${vuln.id}${vuln.severity === 'unknown' ? '' : ` — ${vuln.severity}`}${vuln.fixedIn ? `, first fixed in ${vuln.fixedIn}` : ''}`,
+        security.resolved.map((vuln) =>
+          advisoryLine(vuln, vuln.fixedIn ? `, first fixed in ${vuln.fixedIn}` : ''),
         ),
       ),
     );
@@ -945,7 +1002,7 @@ function renderRationale(candidate: UpgradeCandidate): string {
       renderFacts(
         'bad',
         `The target version is affected by ${security.introduced.length} ${security.introduced.length === 1 ? 'advisory' : 'advisories'} the installed version is not`,
-        security.introduced.map((vuln) => `${vuln.id}${vuln.severity === 'unknown' ? '' : ` — ${vuln.severity}`}`),
+        security.introduced.map((vuln) => advisoryLine(vuln, '')),
       ),
     );
   }
@@ -974,7 +1031,32 @@ function renderRationale(candidate: UpgradeCandidate): string {
   return blocks.join('');
 }
 
-function renderFacts(tone: 'good' | 'bad' | 'neutral', heading: string, items: readonly string[]): string {
+/**
+ * One advisory, with the identifier as a link to the advisory itself.
+ *
+ * Drift names `GO-2026-5024` and states a severity, and the developer's next
+ * question is always "says who, and what does it actually let an attacker do".
+ * OSV gives every record a URL and the assessment has carried it all along;
+ * printing the identifier as dead text made the reader go and search for a
+ * string Drift already had a link to.
+ */
+function advisoryLine(vuln: Vulnerability, suffix: string): { html: string } {
+  const severity = vuln.severity === 'unknown' ? '' : ` — ${escapeHtml(vuln.severity)}`;
+  const aliases = vuln.aliases.length > 0 ? ` <span class="hint">(${escapeHtml(vuln.aliases.slice(0, 2).join(', '))})</span>` : '';
+
+  return {
+    html:
+      `<a data-action="openUrl" data-url="${escapeAttr(vuln.url)}" title="${escapeAttr(vuln.summary)}">${escapeHtml(vuln.id)}</a>` +
+      `${severity}${escapeHtml(suffix)}${aliases}`,
+  };
+}
+
+/** A fact list. Items are escaped unless they arrive pre-rendered as `{ html }`. */
+function renderFacts(
+  tone: 'good' | 'bad' | 'neutral',
+  heading: string,
+  items: readonly (string | { html: string })[],
+): string {
   if (items.length === 0) return '';
   const MAX = 5;
   const shown = items.slice(0, MAX);
@@ -982,9 +1064,9 @@ function renderFacts(tone: 'good' | 'bad' | 'neutral', heading: string, items: r
 
   return `<div class="rationale ${tone}">
     <span class="rationale-heading">${escapeHtml(heading)}</span>
-    <ul>${shown.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}${
-      rest > 0 ? `<li class="hint">…and ${rest} more</li>` : ''
-    }</ul>
+    <ul>${shown
+      .map((item) => `<li>${typeof item === 'string' ? escapeHtml(item) : item.html}</li>`)
+      .join('')}${rest > 0 ? `<li class="hint">…and ${rest} more</li>` : ''}</ul>
   </div>`;
 }
 
@@ -992,7 +1074,18 @@ function renderGaps(candidate: UpgradeCandidate): string {
   if (!candidate.gaps?.length) return '';
   return `<ul class="gaps">${candidate.gaps
     .map((gap) => `<li>${ICON_ALERT}<span>${escapeHtml(gap)}</span></li>`)
-    .join('')}</ul>`;
+    .join('')}</ul>${renderToolRequests(candidate)}`;
+}
+
+function renderToolRequests(candidate: UpgradeCandidate): string {
+  const requests = candidate.toolRequests ?? [];
+  if (requests.length === 0) return '';
+  return `<div class="tool-requests">${requests
+    .map(
+      (request) =>
+        `<button class="ctl bordered" data-action="installTool" data-id="${escapeAttr(candidate.id)}" data-value="${escapeAttr(request.id)}" title="Ask Drift to run ${escapeAttr([request.command, ...request.args].join(' '))}">${escapeHtml(request.label)}</button>`,
+    )
+    .join('')}</div>`;
 }
 
 function renderCandidateDetail(candidate: UpgradeCandidate, plan: RemediationPlan): string {
@@ -2036,6 +2129,7 @@ button.wide { width: 100%; }
 .gaps { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .gaps li { display: flex; gap: 6px; align-items: flex-start; font-size: 11px; color: var(--vscode-descriptionForeground); }
 .gaps svg.i { flex: none; margin-top: 2px; color: var(--vscode-editorWarning-foreground); }
+.tool-requests { display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 8px 20px; }
 /* A one-click major is still one click, but it should not look like the safe
    one sitting next to it. */
 .pkg-actions button.risky { border-color: var(--vscode-editorWarning-foreground); }
@@ -2049,7 +2143,14 @@ button.wide { width: 100%; }
 .pkg-target .pkg-recheck { flex: 0 0 auto; margin-left: 0; opacity: 0.75; }
 .pkg-target .pkg-recheck:hover { opacity: 1; }
 .pkg-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-.pkg-actions button { flex: 1 1 auto; white-space: nowrap; }
+.pkg-actions button {
+  flex: 1 1 auto;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
 .detail { display: flex; flex-direction: column; gap: 6px; margin-bottom: 9px; }
 .break, .sub {
   border: 1px solid var(--vscode-panel-border);
@@ -2576,6 +2677,10 @@ li.task.unchanged .task-label, li.task.skipped .task-label { color: var(--vscode
 }
 .activity-item.edit .activity-dot { background: var(--vscode-testing-iconPassed); }
 .activity-item.bash .activity-dot { background: var(--vscode-charts-blue); }
+/* A file that did not exist before this run is the one row worth spotting from
+   across the drawer, so it gets the added-resource colour git itself uses. */
+.activity-item.create .activity-dot { background: var(--vscode-gitDecoration-addedResourceForeground, #2ea043); }
+.activity-item.read .activity-dot { background: var(--vscode-charts-yellow, #cca700); }
 .activity-body { min-width: 0; display: grid; gap: 4px; }
 .activity-head {
   display: flex;
@@ -3217,6 +3322,7 @@ document.addEventListener('click', (event) => {
     file: target.dataset.file,
     line: target.dataset.line ? Number(target.dataset.line) : undefined,
     url: target.dataset.url,
+    version: target.dataset.version,
   });
 });
 

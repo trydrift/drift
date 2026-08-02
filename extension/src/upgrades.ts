@@ -32,6 +32,7 @@ import { buildRationale } from '../../src/rationale/index.js';
 import { RECOMMENDATION_LABEL } from '../../src/rationale/assess.js';
 import type { UpgradeRationale } from '../../src/rationale/types.js';
 import type { SurfaceAddition, SurfaceUnavailable } from '../../src/evidence/surface/types.js';
+import type { ProseSource } from '../../src/evidence/index.js';
 import { analyze } from '../../src/analyze/index.js';
 import { walkSourceFiles } from '../../src/index/walk.js';
 import { buildIndex } from '../../src/index/metarag.js';
@@ -64,6 +65,12 @@ export interface UpgradeCandidate {
   current: string;
   range: string;
   safeLatest?: string;
+  /**
+   * The newest version that stays on the current major.
+   *
+   * Absent when the only upgrade available crosses a major boundary.
+   */
+  latestMinor?: string;
   selected: string;
   latest: string;
   versions: string[];
@@ -387,6 +394,7 @@ export async function scanUpgrades(args: {
       versions: available.versions,
       latest: available.latest,
       safeLatest: available.safeLatest,
+      latestMinor: available.latestMinor,
       repo,
       config,
       githubToken,
@@ -485,7 +493,7 @@ export async function reanalyzeUpgrade(args: {
     target: targetForCandidate(args.candidate),
   };
 
-  let { versions, latest, safeLatest } = args.candidate;
+  let { versions, latest, safeLatest, latestMinor } = args.candidate;
   let version = args.version;
 
   if (args.refreshVersions) {
@@ -497,6 +505,7 @@ export async function reanalyzeUpgrade(args: {
       versions = available.versions;
       latest = available.latest;
       safeLatest = available.safeLatest;
+      latestMinor = available.latestMinor;
       // Keep the developer's own choice if it is still published; otherwise the
       // selection has to move, and the in-range version is the safe landing.
       if (!versions.includes(version)) version = available.safeLatest ?? available.latest;
@@ -517,6 +526,7 @@ export async function reanalyzeUpgrade(args: {
     versions,
     latest,
     safeLatest,
+    latestMinor,
     repo: args.repo,
     config: args.config,
     githubToken: args.githubToken,
@@ -546,11 +556,21 @@ export function upgradeCommandFor(
   return command ? describeCommand(command) : null;
 }
 
+/**
+ * The command that installs this candidate's selected version.
+ *
+ * `mode` used to choose the *version* as well as the flags — `force` meant
+ * "install `latest`" — which made the version picker a lie: a developer who
+ * chose 4.2.0 and pressed the button that said "Upgrade to 5.0.0" got 5.0.0,
+ * and a developer who chose 5.0.0 had no button that would install it. The
+ * selected version is now the only version any button installs, and `mode`
+ * decides one thing: whether the declared range may be overridden.
+ */
 function plannedUpgrade(candidate: UpgradeCandidate, mode: 'safe' | 'force'): Command | null {
   const manager = packageManagerById(candidate.packageManager);
   const command = manager?.upgrade({
     name: candidate.name,
-    version: mode === 'force' ? candidate.latest : candidate.selected,
+    version: candidate.selected,
     kind: candidate.kind,
   });
   if (!command) return null;
@@ -604,6 +624,8 @@ async function analyzeUpgrade(args: {
   latest: string;
   /** The newest version satisfying the manifest's range, computed over every published version. */
   safeLatest?: string;
+  /** The newest version on the current major, whether or not the range allows it. */
+  latestMinor?: string;
   repo: RepoContext;
   config: DriftConfig;
   githubToken?: string;
@@ -658,6 +680,7 @@ async function analyzeUpgrade(args: {
     // reported "nothing fits your range" for any package with more recent
     // releases than the cap.
     safeLatest: args.safeLatest,
+    latestMinor: args.latestMinor,
     selected: args.selected,
     latest: args.latest,
     versions: args.versions,
@@ -673,6 +696,7 @@ async function analyzeUpgrade(args: {
     // and cleared.
     const additions = new Map<string, { additions: SurfaceAddition[]; locator: string }>();
     const surfaceGaps = new Map<string, SurfaceUnavailable>();
+    const prose = new Map<string, ProseSource[]>();
 
     const evidence = await gatherEvidence([change], {
       config: args.config,
@@ -685,6 +709,8 @@ async function analyzeUpgrade(args: {
       onSurfaceComputed: (_change, diff) =>
         additions.set(change.name, { additions: diff.additions ?? [], locator: diff.locator }),
       onUnavailableSurface: (_change, reason) => surfaceGaps.set(change.name, reason),
+      onProseConsulted: (_change, source) =>
+        prose.set(change.name, [...(prose.get(change.name) ?? []), source]),
     });
 
     report(
@@ -716,6 +742,7 @@ async function analyzeUpgrade(args: {
         githubToken: args.githubToken,
         additions,
         surfaceGaps,
+        prose,
       },
     );
 
@@ -901,7 +928,7 @@ async function availableVersions(
   dep: ScanDependency,
   current: string,
   range: string,
-): Promise<{ latest: string; safeLatest?: string; versions: string[] } | null> {
+): Promise<{ latest: string; safeLatest?: string; latestMinor?: string; versions: string[] } | null> {
   const published =
     dep.target.manager.ecosystem === 'npm'
       ? await npmVersions(dep.name)
@@ -930,11 +957,37 @@ async function availableVersions(
   const onPrerelease = Boolean(semver.prerelease(current));
   const stable = newer.filter((version) => onPrerelease || !semver.prerelease(version));
 
-  const versions = [...new Set([latest, ...(safe ? [safe] : []), ...stable.slice(0, 18)])]
+  const withinMajor = latestWithinMajor(stable, current);
+
+  const versions = [...new Set([latest, ...(safe ? [safe] : []), ...(withinMajor ? [withinMajor] : []), ...stable.slice(0, 18)])]
     .filter((version) => semver.gt(version, current))
     .sort(semver.rcompare);
 
-  return { latest, safeLatest: safe, versions };
+  return { latest, safeLatest: safe, latestMinor: withinMajor, versions };
+}
+
+/**
+ * The newest release that does not cross a major boundary.
+ *
+ * Distinct from `safeLatest`, which is bounded by the range the manifest
+ * declares: a caret range on `4.2.0` stops at the 4.x line *and* at whatever
+ * the developer pinned, so a repository pinned to `4.2.0` exactly has no safe
+ * upgrade at all while 4.9.0 sits published and compatible. This is the target
+ * a developer means by "update it, but don't put me on the next major".
+ *
+ * Returns undefined when the only thing ahead is a major bump — in which case
+ * offering the button would be offering a choice that does not exist.
+ */
+function latestWithinMajor(versions: readonly string[], current: string): string | undefined {
+  const parsed = semver.parse(current);
+  if (!parsed) return undefined;
+
+  return versions
+    .filter((version) => {
+      const next = semver.parse(version);
+      return next !== null && next.major === parsed.major && semver.gt(version, current);
+    })
+    .sort(semver.rcompare)[0];
 }
 
 async function npmVersions(name: string): Promise<{ latest: string | null; versions: string[] } | null> {

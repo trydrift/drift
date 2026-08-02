@@ -19,7 +19,18 @@ const CHANGELOG_FILENAMES = [
   'HISTORY.md',
   'NEWS.md',
   'RELEASES.md',
+  // Hyphenated and underscored variants are not stylistic near-misses: they are
+  // the only changelog several widely-depended-on crates publish. `base64` ships
+  // `RELEASE-NOTES.md` and nothing else, and probing only the `CHANGELOG*` forms
+  // reported one of the most-depended-on crates in the ecosystem as having no
+  // release prose at all.
+  'RELEASE-NOTES.md',
+  'RELEASE_NOTES.md',
+  'CHANGELOG.rst',
+  'CHANGES.rst',
+  'CHANGELOG.txt',
   'docs/CHANGELOG.md',
+  'docs/changelog.md',
   'changelog.md',
 ];
 
@@ -39,6 +50,8 @@ export interface FetchedDocument {
   path: string;
   url: string;
   content: string;
+  /** Branch the document was found on, so linked documents resolve against it. */
+  branch: string;
 }
 
 /**
@@ -77,11 +90,168 @@ async function probe(
           path: filename,
           url: `https://github.com/${githubRepo}/blob/${branch}/${filename}`,
           content,
+          branch,
         };
       }
     }
   }
   return null;
+}
+
+/**
+ * A link out of an index-style changelog to the document that holds the prose.
+ */
+export interface ChangelogLink {
+  /** Repository-relative path of the linked document. */
+  path: string;
+  /** Version the link is labelled with, normalised. */
+  version: string;
+}
+
+/**
+ * Links to per-version changelog files, from a changelog that is an index.
+ *
+ * A large project eventually stops appending to one file. Phaser's root
+ * `CHANGELOG.md` is a table of contents — a table of `[3.90](changelog/v3/3.90/
+ * CHANGELOG-v3.90.md)` rows and nothing else — and every heading in it is a
+ * product name rather than a version, so section parsing returns *nothing*.
+ * Drift fetched the file, parsed zero sections, and reported that no changelog
+ * existed for a project that maintains one of the most thorough changelogs in
+ * the JavaScript ecosystem.
+ *
+ * Links are matched on the version in their text or their path, so both
+ * `[3.90](…)` and `[Full changelog](changelog/v3/3.90/…)` resolve.
+ */
+export function changelogIndexLinks(content: string): ChangelogLink[] {
+  const links: ChangelogLink[] = [];
+  const seen = new Set<string>();
+
+  for (const match of content.matchAll(/\[([^\]]+)\]\(([^)\s]+)\)/g)) {
+    const text = match[1]!;
+    const href = match[2]!;
+
+    // Only same-repository markdown documents. An absolute URL is somebody
+    // else's page, and a non-markdown target is not prose to read.
+    if (/^[a-z]+:/i.test(href) || href.startsWith('#')) continue;
+    if (!/\.(md|markdown|rst|txt)$/i.test(href)) continue;
+
+    const version = extractVersion(text) ?? extractVersion(href.replace(/[/\\]/g, ' '));
+    if (!version) continue;
+
+    const path = href.replace(/^\.?\//, '').split('#')[0]!;
+    if (seen.has(path)) continue;
+    seen.add(path);
+    links.push({ path, version });
+  }
+
+  return links;
+}
+
+/**
+ * The changelog prose for `(from, to]`, following an index when it finds one.
+ *
+ * A document that already contains version sections is returned as-is; the
+ * common case does not pay for a second round of fetches. Only when the file
+ * yields no section covering the range does Drift treat it as an index and
+ * fetch the documents it points at — which is exactly the situation where the
+ * alternative was reporting that no changelog exists.
+ */
+export async function fetchChangelogDocuments(
+  githubRepo: string,
+  from: string,
+  to: string,
+  options: { branches?: readonly string[]; maxDocuments?: number } = {},
+): Promise<FetchedDocument[]> {
+  const { branches = ['main', 'master'], maxDocuments = 12 } = options;
+
+  const root = await fetchChangelog(githubRepo, branches);
+  if (!root) return [];
+
+  if (sectionsBetween(parseChangelogSections(root.content), from, to).length > 0) return [root];
+
+  const wanted = changelogIndexLinks(root.content).filter((link) =>
+    withinRange(link.version, from, to),
+  );
+  if (wanted.length === 0) return [root];
+
+  const documents = await Promise.all(
+    // Newest first, so the cap keeps the releases nearest the target version.
+    [...wanted]
+      .sort((a, b) => semver.rcompare(a.version, b.version))
+      .slice(0, maxDocuments)
+      .map(async (link): Promise<FetchedDocument | null> => {
+        const content = await fetchText(
+          `https://raw.githubusercontent.com/${githubRepo}/${root.branch}/${link.path}`,
+          { retries: 0 },
+        );
+        if (!content || !content.trim()) return null;
+        return {
+          path: link.path,
+          url: `https://github.com/${githubRepo}/blob/${root.branch}/${link.path}`,
+          content,
+          branch: root.branch,
+        };
+      }),
+  );
+
+  const found = documents.filter((doc): doc is FetchedDocument => doc !== null);
+  return found.length > 0 ? found : [root];
+}
+
+/**
+ * Migration guides, including any the changelog index links to.
+ *
+ * The fixed-filename probe finds a guide at the root of the repository, which
+ * is where most projects put one. Phaser's Phaser 3 → 4 guide lives at
+ * `changelog/v4/4.0/MIGRATION-GUIDE.md`, reachable only by reading the index —
+ * and it is the single most useful document for the upgrade it describes.
+ */
+export async function fetchMigrationGuides(
+  githubRepo: string,
+  branches: readonly string[] = ['main', 'master'],
+): Promise<FetchedDocument[]> {
+  const [direct, index] = await Promise.all([
+    fetchMigrationGuide(githubRepo, branches),
+    fetchChangelog(githubRepo, branches),
+  ]);
+
+  const guides = direct ? [direct] : [];
+  if (!index) return guides;
+
+  const linked = [...index.content.matchAll(/\[([^\]]+)\]\(([^)\s]+)\)/g)]
+    .filter(([, text, href]) => MIGRATION_LINK.test(text!) || MIGRATION_LINK.test(href!))
+    .map(([, , href]) => href!.replace(/^\.?\//, '').split('#')[0]!)
+    .filter((path) => /\.(md|markdown|rst|txt)$/i.test(path) && !/^[a-z]+:/i.test(path));
+
+  for (const path of [...new Set(linked)].slice(0, 4)) {
+    if (guides.some((guide) => guide.path === path)) continue;
+    const content = await fetchText(
+      `https://raw.githubusercontent.com/${githubRepo}/${index.branch}/${path}`,
+      { retries: 0 },
+    );
+    if (!content || !content.trim()) continue;
+    guides.push({
+      path,
+      url: `https://github.com/${githubRepo}/blob/${index.branch}/${path}`,
+      content,
+      branch: index.branch,
+    });
+  }
+
+  return guides;
+}
+
+const MIGRATION_LINK = /migrat|upgrad/i;
+
+/** Is `version` inside `(from, to]`, in whichever direction the move goes? */
+function withinRange(version: string, from: string, to: string): boolean {
+  const lower = normalizeVersion(from);
+  const upper = normalizeVersion(to);
+  const target = normalizeVersion(version);
+  if (!lower || !upper || !target) return false;
+
+  const [lo, hi] = semver.gt(upper, lower) ? [lower, upper] : [upper, lower];
+  return semver.gt(target, lo) && semver.lte(target, hi);
 }
 
 /**

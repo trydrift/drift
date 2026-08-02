@@ -13,6 +13,7 @@ import { createLogger } from '../../src/util/logger.js';
 import type { RemediationPlan } from '../../src/types.js';
 import { getRateLimitToken } from './github-auth.js';
 import type { DriftState } from './state.js';
+import { envWithShellPath } from './shell-path.js';
 
 /**
  * Running an analysis from the editor.
@@ -115,6 +116,7 @@ export async function runAnalysis(options: AnalyzeOptions): Promise<AnalyzeResul
       logger,
       provider: new LocalGitProvider(root, range),
       workspace: root,
+      env: await envWithShellPath(),
       // Signed out is fine — this only raises the public rate limit.
       githubToken: await getRateLimitToken(),
       onProgress: (_stage, detail) => {

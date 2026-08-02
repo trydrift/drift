@@ -34,6 +34,8 @@ export interface AnalysisOptions {
   workspace?: string;
   /** Optional token, used only to raise public GitHub API rate limits. */
   githubToken?: string;
+  /** Environment to use for local ecosystem diffing tools. */
+  env?: NodeJS.ProcessEnv;
   /** Reports coarse progress, for editor UI. */
   onProgress?: (stage: AnalysisStage, detail: string) => void;
 }
@@ -111,6 +113,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     config,
     logger,
     githubToken,
+    ...(options.env ? { env: options.env } : {}),
     readRepoFile: (path, ref) => provider.readFile(path, ref),
     beforeSha: repo.beforeSha,
     afterSha: repo.afterSha,

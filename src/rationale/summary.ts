@@ -32,12 +32,12 @@ const PATTERNS: { category: ChangeCategory; pattern: RegExp }[] = [
     pattern:
       // `now requires`, `now returns`, `now takes` — the shape a maintainer
       // uses for a changed signature far more often than the word "breaking".
-      /\b(BREAKING|breaking change|no longer|has been removed|was removed|is removed|removed support|dropped support|drop support|renamed to|has been renamed|is now required|must now|now (?:requires?|returns?|expects?|accepts?|takes?)|migrate to|migration guide|incompatible)\b/i,
+      /\b(BREAKING|breaking change|no longer|has been removed|was removed|is removed|removed entirely|removed support|dropped support|drop support|renamed to|has been renamed|is now required|must now|now (?:requires?|returns?|expects?|accepts?|takes?)|migrate to|migration guide|incompatible)\b/i,
   },
   {
     category: 'performance',
     pattern:
-      /\b(performance|faster|speed ?up|sped up|reduces? (?:the )?(?:allocation|memory|latency)|allocation|throughput|optimi[sz])\b/i,
+      /\b(faster|speed ?up|sped up|reduces? (?:the )?(?:allocation|memory|latency)|allocation|throughput|optimi[sz]|performance (?:improvement|gain|boost|work|regression)|improv(?:e|es|ed|ing) performance)\b/i,
   },
   { category: 'fix', pattern: /^\s*(?:fix(?:e[sd])?|bugfix|resolve[sd]?|correct(?:s|ed)?)\b/i },
 ];
@@ -198,17 +198,29 @@ function order(changes: readonly SummarizedChange[]): SummarizedChange[] {
  */
 export function bulletLines(content: string): string[] {
   const out: string[] = [];
+  let context: string | null = null;
 
   for (const raw of content.split('\n')) {
     const line = raw.trim();
-    if (!line || line.startsWith('#') || /^[-=]{3,}$/.test(line)) continue;
+    if (!line || /^[-=]{3,}$/.test(line)) continue;
+    if (line.startsWith('#')) {
+      context = null;
+      continue;
+    }
 
+    const bullet = /^[-*+]\s+/.test(line) || /^\d+\.\s+/.test(line);
     const text = line.replace(/^[-*+]\s+/, '').replace(/^\d+\.\s+/, '').trim();
     if (text.length < 12) continue;
     // A bare commit trailer or a contributor credit is not a change.
     if (/^(?:by\s+@|thanks|co-authored-by|https?:\/\/\S+$)/i.test(text)) continue;
 
-    out.push(truncate(text, 240));
+    if (!bullet && /:\s*$/.test(text) && classify(text) === 'breaking') {
+      context = text;
+      continue;
+    }
+
+    out.push(truncate(context && bullet ? `${context} ${text}` : text, 240));
+    if (!bullet && !/:\s*$/.test(text)) context = null;
   }
 
   return out;

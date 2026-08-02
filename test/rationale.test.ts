@@ -358,6 +358,26 @@ describe('release summaries', () => {
     assert.deepEqual(lines, ['`Client.Do` now requires a context argument', 'Fix a leak in the pool']);
   });
 
+  test('nested removal lists keep the parent context', () => {
+    const lines = bulletLines(
+      [
+        'The following have been removed entirely:',
+        '',
+        '- The following polyfills: Array.forEach, performance.now and requestAnimationFrame.',
+      ].join('\n'),
+    );
+
+    assert.deepEqual(lines, [
+      'The following have been removed entirely: The following polyfills: Array.forEach, performance.now and requestAnimationFrame.',
+    ]);
+    assert.equal(classify(lines[0]!), 'breaking');
+  });
+
+  test('a dotted API name is not a performance claim by itself', () => {
+    assert.equal(classify('The following polyfills: performance.now and requestAnimationFrame.'), 'improvement');
+    assert.equal(classify('Improve performance during response decoding'), 'performance');
+  });
+
   test('a computed breaking change carries its impact count', () => {
     const summary = summarizeRelease({
       dependency: 'pkg',
@@ -608,8 +628,43 @@ describe('assembling the rationale', () => {
     assert.equal(toolchainMentions.length, 1, 'the same failure must not be stated twice');
 
     // The two absences are one situation and are said as one sentence.
-    assert.match(toolchainMentions[0]!, /no release notes, changelog, or migration guide/);
+    assert.match(toolchainMentions[0]!, /release notes, changelog, or migration guide/i);
     assert.match(toolchainMentions[0]!, /Install Go 1\.24/);
+  });
+
+  test('prose that was read and was calm is not reported as prose that is missing', async () => {
+    const prose = new Map([
+      [
+        'pkg',
+        [
+          {
+            kind: 'changelog' as const,
+            label: 'CHANGELOG-v2.0.0.md',
+            url: 'https://github.com/o/pkg/blob/main/CHANGELOG-v2.0.0.md',
+            breaking: false,
+          },
+          {
+            kind: 'migration-guide' as const,
+            label: 'MIGRATION-GUIDE.md',
+            url: 'https://github.com/o/pkg/blob/main/MIGRATION-GUIDE.md',
+            breaking: false,
+          },
+        ],
+      ],
+    ]);
+
+    const [rationale] = await buildRationale(
+      { changes: [change], evidence: [], breakingChanges: [], impactSites: [] },
+      { config, logger, osv: noNetwork, prose },
+    );
+
+    const stated = rationale!.gaps.find((g) => /changelog/i.test(g))!;
+
+    // The claim Drift must never make is that nothing was published, when it
+    // read what was published and simply found nothing alarming in it.
+    assert.doesNotMatch(stated, /No release notes, changelog, or migration guide was reachable/);
+    assert.match(stated, /Drift read/);
+    assert.match(stated, /the changelog and the migration guide/);
   });
 
   test('an unreadable dependency is insufficient evidence, and says so', async () => {

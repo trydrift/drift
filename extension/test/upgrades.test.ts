@@ -134,14 +134,22 @@ describe('the command an upgrade will run', () => {
     );
   });
 
-  test('forcing targets the newest published version', () => {
-    assert.equal(upgradeCommandFor(candidate(), 'force'), 'npm install left-pad@2.0.0 --force');
+  test('forcing widens the range, it does not change the version', () => {
+    // `force` used to mean "install `latest`", which quietly overrode the
+    // version the developer picked: choosing 1.3.0 and pressing the button
+    // installed 2.0.0. The selected version is the only version any mode
+    // installs; forcing only decides whether the declared range may be widened.
+    assert.equal(upgradeCommandFor(candidate(), 'force'), 'npm install left-pad@1.3.0 --force');
+    assert.equal(
+      upgradeCommandFor(candidate({ selected: '2.0.0' }), 'force'),
+      'npm install left-pad@2.0.0 --force',
+    );
   });
 
   test('--force is npm-specific and is not invented elsewhere', () => {
     assert.equal(
       upgradeCommandFor(candidate({ packageManager: 'pnpm' }), 'force'),
-      'pnpm add left-pad@2.0.0',
+      'pnpm add left-pad@1.3.0',
     );
   });
 

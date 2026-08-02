@@ -69,3 +69,77 @@ describe('naming agent activity', () => {
     assert.equal(activity.detail, '~~~ some agent-specific banner ~~~');
   });
 });
+
+/**
+ * Telling the agent's actions apart.
+ *
+ * The drawer exists to answer "what did this do to my repository?", and it
+ * could not: nearly every row read `Thinking`, so reading a file and rewriting
+ * one were indistinguishable without opening both. These tests pin the
+ * distinctions a reviewer actually acts on — read versus edit versus create —
+ * against the shapes the CLIs really print.
+ */
+describe('classifying what an agent did', () => {
+  test('a tool call is named after the tool, not after thinking', () => {
+    for (const [line, kind, title] of [
+      ['Read(src/http.ts)', 'read', 'Read'],
+      ['⏺ Edit(src/http.ts)', 'edit', 'Edit'],
+      ['● Write(src/http/client.ts)', 'create', 'Create'],
+      ['Update(package.json)', 'edit', 'Edit'],
+      ['Grep(sendStatus)', 'search', 'Grep'],
+      ['Glob(**/*.ts)', 'search', 'Glob'],
+      ['- Bash(npm run typecheck)', 'bash', 'Bash'],
+      ['apply_patch(src/a.ts)', 'edit', 'Edit'],
+    ] as const) {
+      const activity = activityFromReport(line);
+      assert.equal(activity.kind, kind, `${line} → kind ${activity.kind}`);
+      assert.equal(activity.title, title, `${line} → title ${activity.title}`);
+    }
+  });
+
+  test('the file a tool touched is carried through, so the row links somewhere', () => {
+    assert.equal(activityFromReport('Read(src/http.ts)').file, 'src/http.ts');
+    assert.equal(activityFromReport('⏺ Edit(src/deep/nested/mod.rs)').file, 'src/deep/nested/mod.rs');
+  });
+
+  test('a shell tool puts its command where it can be read in full', () => {
+    const activity = activityFromReport('Bash(npm test -- --run)');
+    assert.equal(activity.kind, 'bash');
+    assert.equal(activity.input, 'npm test -- --run');
+  });
+
+  test('creating a file is never filed as an edit', () => {
+    // The one case a reviewer most needs to catch: a file appearing that they
+    // never had. Folding it into "edit" would bury it among the rewrites.
+    for (const line of ['Write(src/new.ts)', 'Created src/new.ts', 'Wrote src/new.ts']) {
+      assert.equal(activityFromReport(line).kind, 'create', line);
+    }
+  });
+
+  test('narrated work counts too, since not every agent prints tool calls', () => {
+    assert.equal(activityFromReport('Reading src/http.ts to find the call sites').kind, 'read');
+    assert.equal(activityFromReport('Editing src/http.ts').kind, 'edit');
+    assert.equal(activityFromReport('Updated src/routes/index.ts').kind, 'edit');
+  });
+
+  test('an intention without a file is not reported as a file changing', () => {
+    // "Writing the migration now" is an agent mid-stride. Promoting it to
+    // Create would put a row in the drawer claiming a write that never landed.
+    const activity = activityFromReport('Writing the replacement now');
+    assert.equal(activity.kind, 'status');
+  });
+
+  test('an English word in a sentence is not mistaken for a file path', () => {
+    assert.equal(activityFromReport('Reading through the changelog carefully').file, undefined);
+  });
+
+  test('a version number is not a file to click through to', () => {
+    assert.equal(activityFromReport('Updated to 5.1.0').file, undefined);
+  });
+
+  test('an unknown tool name is not forced into a category', () => {
+    // Better a plain Thinking row than a confident wrong label on a tool this
+    // does not know: the drawer's value is that its labels can be trusted.
+    assert.equal(activityFromReport('Frobnicate(whatever)').kind, 'thinking');
+  });
+});

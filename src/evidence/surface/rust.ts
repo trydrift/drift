@@ -1,6 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { isAvailable } from '../../util/exec.js';
+import type { Exec } from '../../util/exec.js';
 import { diffSurfaces, type SurfaceApi, type SurfaceEntry, type SurfaceKind } from '../type-surface.js';
 import { unavailable, type SurfaceProvider, type SurfaceRequest, type SurfaceOutcome } from './types.js';
 
@@ -18,7 +18,8 @@ import { unavailable, type SurfaceProvider, type SurfaceRequest, type SurfaceOut
  */
 
 const TOOL = 'cargo public-api';
-const REMEDY = 'Install it with `cargo install cargo-public-api` (it needs a nightly toolchain for rustdoc JSON).';
+const CARGO_REMEDY = 'Install Rust and Cargo with rustup, or make sure `cargo` is on PATH.';
+const PUBLIC_API_REMEDY = 'Install the missing Cargo subcommand with `cargo install cargo-public-api` (it needs a nightly toolchain for rustdoc JSON).';
 
 export const rustSurface: SurfaceProvider = {
   ecosystem: 'cargo',
@@ -26,12 +27,21 @@ export const rustSurface: SurfaceProvider = {
   weight: 1.0,
 
   async compute(request: SurfaceRequest): Promise<SurfaceOutcome> {
-    if (!(await isAvailable(request.exec, 'cargo', ['public-api', '--version']))) {
+    if (!(await commandWorks(request.exec, 'cargo', ['--version'], request.env))) {
       return unavailable(
         TOOL,
         'tool-missing',
-        `\`cargo public-api\` is not installed, so ${request.name}'s public API could not be compared directly.`,
-        REMEDY,
+        `The Rust Cargo toolchain is not installed or is not on PATH, so ${request.name}'s public API could not be compared directly.`,
+        CARGO_REMEDY,
+      );
+    }
+
+    if (!(await commandWorks(request.exec, 'cargo', ['public-api', '--version'], request.env))) {
+      return unavailable(
+        TOOL,
+        'tool-missing',
+        `Rust and Cargo are installed, but the \`cargo-public-api\` subcommand is not. ${request.name}'s public API could not be compared directly.`,
+        PUBLIC_API_REMEDY,
       );
     }
 
@@ -69,7 +79,7 @@ async function surfaceOf(request: SurfaceRequest, version: string): Promise<Surf
   const result = await request.exec(
     'cargo',
     ['public-api', '--simplified', '--package', request.name],
-    { cwd: dir, timeoutMs: request.timeoutMs },
+    { cwd: dir, timeoutMs: request.timeoutMs, env: request.env },
   );
 
   if (result.code !== 0) {
@@ -202,4 +212,14 @@ function escapeToml(value: string): string {
 
 function firstLine(text: string): string {
   return text.split('\n').find((line) => line.trim().length > 0)?.trim() ?? 'no output';
+}
+
+async function commandWorks(
+  exec: Exec,
+  command: string,
+  args: readonly string[],
+  env?: NodeJS.ProcessEnv,
+): Promise<boolean> {
+  const result = await exec(command, args, { timeoutMs: 20_000, env });
+  return result.failure !== 'not-found' && result.code === 0;
 }

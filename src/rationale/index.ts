@@ -2,6 +2,7 @@ import type { BreakingChange, DependencyChange, Evidence, ImpactSite } from '../
 import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
 import type { SurfaceAddition, SurfaceUnavailable } from '../evidence/surface/types.js';
+import type { ProseSource } from '../evidence/index.js';
 import {
   fetchRegistryInfo,
   fetchRepositoryStatus,
@@ -39,6 +40,8 @@ export interface RationaleContext {
   additions?: Map<string, { additions: SurfaceAddition[]; locator: string }>;
   /** Surface diffs that could not be produced, keyed by dependency name. */
   surfaceGaps?: Map<string, SurfaceUnavailable>;
+  /** Prose documents that were actually read, keyed by dependency name. */
+  prose?: Map<string, ProseSource[]>;
 }
 
 export interface RationaleInput {
@@ -137,6 +140,7 @@ async function rationaleFor(
     security,
     registry,
     evidence: input.evidence,
+    prose: ctx.prose?.get(change.name) ?? [],
     licenseUnknown: license.verdict === 'unknown',
   });
 
@@ -188,12 +192,13 @@ function collectGaps(
     security: UpgradeRationale['security'];
     registry: RegistryInfo | null;
     evidence: readonly Evidence[];
+    prose: readonly ProseSource[];
     licenseUnknown: boolean;
   },
 ): string[] {
   const gaps: string[] = [];
 
-  const prose = sources.evidence.filter(
+  const cited = sources.evidence.filter(
     (record) =>
       record.dependency === change.name &&
       (record.source === 'github-release' ||
@@ -203,19 +208,35 @@ function collectGaps(
 
   const surfaceGap = sources.surfaceGap;
 
+  /**
+   * What the prose actually showed — which is three states, not two.
+   *
+   * Drift used to collapse "no changelog exists" into "no *breaking* passage
+   * was found in the changelog", and report both as the former. For a project
+   * like Phaser, which publishes a meticulous per-version changelog and a
+   * migration guide, that told the developer their dependency documents
+   * nothing — the opposite of the truth, and a claim they could disprove in
+   * one click. A tool that is caught being wrong about what it read loses the
+   * benefit of the doubt on everything else it says.
+   */
+  const proseNote =
+    cited.length > 0
+      ? null
+      : sources.prose.length > 0
+        ? `Drift read ${describeSources(sources.prose)} for ${change.name} ${change.to} and found nothing in ${sources.prose.length === 1 ? 'it' : 'them'} that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.`
+        : `No release notes, changelog, or migration guide was reachable for ${change.name} ${change.to}${sources.registry?.githubRepo ? '' : ', and no source repository could be resolved for it'}.`;
+
   // The two most common absences are stated as one sentence rather than two,
   // because they are one situation: nothing could be compared and nothing was
   // written down.
-  if (surfaceGap && prose.length === 0) {
+  if (surfaceGap && proseNote) {
     gaps.push(
-      `${trimPeriod(surfaceGap.detail)}. Drift also found no release notes, changelog, or migration guide for this version, so the upgrade remains unverified.${surfaceGap.remedy ? ` ${surfaceGap.remedy}` : ''}`,
+      `${trimPeriod(surfaceGap.detail)}. ${proseNote}${surfaceGap.remedy ? ` ${surfaceGap.remedy}` : ''}`,
     );
   } else if (surfaceGap) {
     gaps.push(`${trimPeriod(surfaceGap.detail)}.${surfaceGap.remedy ? ` ${surfaceGap.remedy}` : ''}`);
-  } else if (prose.length === 0) {
-    gaps.push(
-      `No release notes, changelog, or migration guide was reachable for ${change.name} ${change.to}${sources.registry?.githubRepo ? '' : ', and no source repository could be resolved for it'}.`,
-    );
+  } else if (proseNote) {
+    gaps.push(proseNote);
   }
 
   if (!sources.security.checked) {
@@ -225,6 +246,30 @@ function collectGaps(
   }
 
   return dedupe(gaps);
+}
+
+/**
+ * Name what was read, in the developer's terms.
+ *
+ * Counts rather than a list of filenames: "9 release notes and a changelog" is
+ * the fact that changes the reader's confidence, and the documents themselves
+ * are one expand away under "Evidence Drift read".
+ */
+function describeSources(prose: readonly ProseSource[]): string {
+  const count = (kind: ProseSource['kind']): number => prose.filter((p) => p.kind === kind).length;
+
+  const parts: string[] = [];
+  const releases = count('github-release');
+  const changelogs = count('changelog');
+  const guides = count('migration-guide');
+
+  if (releases > 0) parts.push(releases === 1 ? 'the release notes' : `${releases} sets of release notes`);
+  if (changelogs > 0) parts.push(changelogs === 1 ? 'the changelog' : `${changelogs} changelog files`);
+  if (guides > 0) parts.push(guides === 1 ? 'the migration guide' : `${guides} migration guides`);
+
+  if (parts.length === 0) return 'the published release prose';
+  if (parts.length === 1) return parts[0]!;
+  return `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}`;
 }
 
 function dedupe(gaps: readonly string[]): string[] {
