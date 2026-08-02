@@ -983,3 +983,31 @@ describe('detection end to end, per ecosystem', () => {
     }
   });
 });
+
+describe('the support doc cannot outlive the code', () => {
+  test('docs/support.md matches what the capability data renders', async () => {
+    // A support table maintained by hand is a claim that decays silently, and
+    // the decay always runs in the flattering direction — nobody ever forgets
+    // to delete a capability they lost. So the file is generated, and this
+    // asserts the checked-in copy is current. Run `npm run docs:support`.
+    const { renderSupportMatrix } = await import('../dist/report/support.js');
+    const { readFile } = await import('node:fs/promises');
+
+    const onDisk = await readFile(new URL('../docs/support.md', import.meta.url), 'utf8');
+    assert.equal(
+      onDisk,
+      renderSupportMatrix(),
+      'docs/support.md is stale — run `npm run docs:support`',
+    );
+  });
+
+  test('the matrix names every ecosystem Drift can detect', async () => {
+    const onDisk = await (await import('node:fs/promises')).readFile(
+      new URL('../docs/support.md', import.meta.url),
+      'utf8',
+    );
+    for (const capability of ECOSYSTEM_CAPABILITIES) {
+      assert.ok(onDisk.includes(capability.label), `${capability.label} is missing from the docs`);
+    }
+  });
+});
