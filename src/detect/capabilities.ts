@@ -118,7 +118,14 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
   npm: {
     ecosystem: 'npm',
     label: 'JavaScript / TypeScript',
-    files: ['package.json', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock', 'bun.lock'],
+    files: [
+      'package.json',
+      'package-lock.json',
+      'pnpm-lock.yaml',
+      'yarn.lock',
+      'bun.lock',
+      'npm-shrinkwrap.json',
+    ],
     managers: ['npm', 'pnpm', 'Yarn (classic)', 'Yarn (berry)', 'Bun'],
     support: {
       detect: full(),
@@ -346,7 +353,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
   opam: {
     ecosystem: 'opam',
     label: 'OCaml',
-    files: ['*.opam', 'dune-project', 'opam.locked'],
+    files: ['*.opam', 'dune-project', '*.opam.locked'],
     managers: ['opam'],
     support: {
       detect: full(),

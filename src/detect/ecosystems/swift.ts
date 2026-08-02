@@ -70,23 +70,31 @@ function parsePackageSwift(content: string): DependencyMap {
   return out;
 }
 
-/** The version constraint a `.package(...)` argument list expresses. */
+/**
+ * The version constraint a `.package(...)` argument list expresses.
+ *
+ * Rendered with the operator the rest of Drift already understands rather than
+ * with SwiftPM's own spelling. `from: "1.2.3"` means "1.2.3 up to the next
+ * major", which is `^1.2.3` — and writing it as `from: 1.2.3` would leave
+ * `normalizeVersion` holding the word "from" and reporting no version at all.
+ */
 function requirementOf(args: string): string | null {
   const exact = /\bexact\s*:\s*"([^"]+)"/.exec(args)?.[1];
   if (exact) return exact;
 
   const from = /\bfrom\s*:\s*"([^"]+)"/.exec(args)?.[1];
-  if (from) return `from: ${from}`;
+  if (from) return `^${from}`;
 
   const upToNextMajor = /\.upToNextMajor\s*\(\s*from\s*:\s*"([^"]+)"/.exec(args)?.[1];
-  if (upToNextMajor) return `from: ${upToNextMajor}`;
+  if (upToNextMajor) return `^${upToNextMajor}`;
 
   const upToNextMinor = /\.upToNextMinor\s*\(\s*from\s*:\s*"([^"]+)"/.exec(args)?.[1];
-  if (upToNextMinor) return `~> ${upToNextMinor}`;
+  if (upToNextMinor) return `~${upToNextMinor}`;
 
-  // `"1.0.0"..<"2.0.0"` and `"1.0.0"..."1.5.0"`.
+  // `"1.0.0"..<"2.0.0"` and `"1.0.0"..."1.5.0"` — the lower bound is what the
+  // manifest was authored against, which is the convention everywhere else.
   const range = /"([^"]+)"\s*\.\.[.<]\s*"([^"]+)"/.exec(args);
-  if (range) return `${range[1]} ..< ${range[2]}`;
+  if (range) return `>=${range[1]} <${range[2]}`;
 
   // A branch or revision pin is not a version; say nothing rather than guess.
   return null;
