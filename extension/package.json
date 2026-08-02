@@ -485,8 +485,7 @@
           "default": 1,
           "minimum": 1,
           "maximum": 16,
-          "markdownDeprecationMessage": "Not implemented, and setting it changes nothing.\n\nEvery local agent edits the same working tree on the same branch, so running two at once would have them overwriting each other's edits and each other's commit scopes. Fixes run one commit group at a time, always. This will come back when each agent can work in its own git worktree.",
-          "markdownDescription": "Has no effect. Fixes run one commit group at a time.",
+          "markdownDescription": "How many agents may work at once. **1** runs one commit group at a time.\n\nAbove 1, each agent gets its own `git worktree` — a private checkout of the same commit — so two agents can never overwrite each other's edits. Only groups with no file in common run together; the rest still run in order. Results are applied to your working tree in plan order, not in the order agents finish, so the review queue looks the same either way.\n\nStays at 1 regardless when the agent permission is **Ask before editing** (approval prompts arriving at once is not approval), for cloud agents, and where git cannot create a worktree.",
           "order": 22
         },
         "drift.git.branchPrefix": {
