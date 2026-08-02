@@ -17,7 +17,20 @@ interface PackageLock {
 }
 
 const MANIFESTS = new Set(['package.json']);
-const LOCKFILES = new Set(['package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock', 'pnpm-lock.yaml']);
+/**
+ * `bun.lockb` is deliberately absent: it is a binary format with no version
+ * information Drift can read as text. Bun 1.2 replaced it with `bun.lock`,
+ * which is JSONC and is parsed below. A project still on `bun.lockb` is
+ * detected as a Bun project by `package-manager.ts` and analysed through its
+ * `package.json`, which is where the author's intent lives anyway.
+ */
+const LOCKFILES = new Set([
+  'package-lock.json',
+  'npm-shrinkwrap.json',
+  'yarn.lock',
+  'pnpm-lock.yaml',
+  'bun.lock',
+]);
 
 export const npmParser: ManifestParser = {
   ecosystem: 'npm',
@@ -38,9 +51,84 @@ export const npmParser: ManifestParser = {
     if (base === 'package.json') return parsePackageJson(content);
     if (base === 'yarn.lock') return parseYarnLock(content);
     if (base === 'pnpm-lock.yaml') return parsePnpmLock(content);
+    if (base === 'bun.lock') return parseBunLock(content);
     return parsePackageLock(content);
   },
 };
+
+/**
+ * Bun's text lockfile, which is JSONC rather than JSON.
+ *
+ * Entries look like `"foo": ["foo@1.2.3", "", { … }, "sha512-…"]`, where the
+ * first element carries the resolved version. A scoped package keeps its `@`,
+ * so the version is split from the *last* `@` rather than the first.
+ */
+function parseBunLock(content: string): DependencyMap {
+  const out: DependencyMap = new Map();
+  const doc = tryJson<{ packages?: Record<string, unknown> }>(stripJsonComments(content));
+  if (!doc?.packages) return out;
+
+  for (const entry of Object.values(doc.packages)) {
+    const descriptor = Array.isArray(entry) ? entry[0] : entry;
+    if (typeof descriptor !== 'string') continue;
+
+    const at = descriptor.lastIndexOf('@');
+    if (at <= 0) continue;
+
+    const name = descriptor.slice(0, at);
+    const version = descriptor.slice(at + 1);
+    // A workspace or git descriptor has no version to compare.
+    if (!/^\d/.test(version)) continue;
+
+    out.set(name, { version, kind: 'transitive' });
+  }
+
+  return out;
+}
+
+/**
+ * Strip `//` and trailing commas so `JSON.parse` can read a JSONC lockfile.
+ *
+ * Quote- and escape-aware, because a `//` inside a URL string is not a comment
+ * and stripping it would corrupt every registry field in the file.
+ */
+function stripJsonComments(content: string): string {
+  let out = '';
+  let inString = false;
+
+  for (let i = 0; i < content.length; i++) {
+    const ch = content[i]!;
+
+    if (inString) {
+      out += ch;
+      if (ch === '\\') {
+        out += content[++i] ?? '';
+      } else if (ch === '"') inString = false;
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = true;
+      out += ch;
+      continue;
+    }
+    if (ch === '/' && content[i + 1] === '/') {
+      while (i < content.length && content[i] !== '\n') i++;
+      out += '\n';
+      continue;
+    }
+    if (ch === '/' && content[i + 1] === '*') {
+      i += 2;
+      while (i < content.length && !(content[i] === '*' && content[i + 1] === '/')) i++;
+      i += 1;
+      continue;
+    }
+    out += ch;
+  }
+
+  // Trailing commas before a closing brace or bracket.
+  return out.replace(/,(\s*[}\]])/g, '$1');
+}
 
 function parsePackageJson(content: string): DependencyMap {
   const out: DependencyMap = new Map();
