@@ -8,7 +8,12 @@ import {
   renderDispatchMarker,
   findPriorDispatch,
 } from '../dist/approval/metadata.js';
-import { canonicalJson, planDigest, PLAN_SCHEMA_VERSION } from '../dist/approval/digest.js';
+import {
+  canonicalJson,
+  planDigest,
+  PLAN_SCHEMA_VERSION,
+  SUPPORTED_PLAN_SCHEMA_VERSIONS,
+} from '../dist/approval/digest.js';
 import { analyzeRepository } from '../dist/analysis.js';
 import { DriftConfigSchema } from '../dist/config/schema.js';
 import { createLogger } from '../dist/util/logger.js';
@@ -246,6 +251,25 @@ describe('approval metadata parsing', () => {
     const parsed = parseApprovalMetadata(footer({ 'drift-schema': '99' }));
     assert.equal(parsed.ok, false);
     assert.match(parsed.ok ? '' : parsed.reason, /schema v99/);
+  });
+
+  test('an issue from the previous schema names the version, not a phantom change', () => {
+    // A v1 issue records a digest computed under v1 rules, so recomputing it
+    // under the current rules could only ever mismatch. Reporting that as "the
+    // plan changed" would be false and would send someone hunting for a change
+    // that never happened.
+    const parsed = parseApprovalMetadata(footer({ 'drift-schema': '1' }));
+    assert.equal(parsed.ok, false);
+    assert.match(parsed.ok ? '' : parsed.reason, /schema v1/);
+    assert.match(parsed.ok ? '' : parsed.reason, /re-run drift/i);
+    assert.ok(
+      !/does not match|plan changed/i.test(parsed.ok ? '' : parsed.reason),
+      'a schema mismatch must not be reported as a changed plan',
+    );
+  });
+
+  test('the current schema version is the one Drift writes', () => {
+    assert.deepEqual(SUPPORTED_PLAN_SCHEMA_VERSIONS, [PLAN_SCHEMA_VERSION]);
   });
 
   test('an invalid branch name is rejected', () => {

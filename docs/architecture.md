@@ -408,6 +408,80 @@ you teach people to stop reading your output.
 
 ---
 
+## Confidence in three dimensions
+
+A single confidence field had to answer two unrelated questions at once: *did
+this change happen upstream?* and *does it break this repository?* Those have
+different evidence and routinely different answers. A machine-computed `.d.ts`
+diff settles the first about as well as anything can while saying nothing at all
+about the second.
+
+Collapsing them produced one specific over-claim — a `high` earned entirely on
+upstream grounds, read by a human as "safe to apply", attached to a local claim
+nothing had verified. So they are now scored separately, by one calculation in
+`confidence/calibrate.ts`.
+
+| Dimension | Question | Evidence |
+|---|---|---|
+| `upstream` | Did this change really happen? | Retrieved release evidence, weighted by origin class |
+| `localImpact` | Does it reach code here? | Import edges, symbol binding, reachability qualifiers |
+| `verification` | Did anything run to confirm it? | Which checks ran, whether they passed, what they cover |
+
+Each carries a 0–1 score, a display band, the contributions and penalties that
+produced it, and the calibration version — so a report can show its working
+instead of asserting a band.
+
+**Corroboration counts independent origins, not records.** A GitHub release body
+and a CHANGELOG entry are routinely the same text published twice; counting them
+as two agreeing sources took a single unverified maintainer sentence to `high`.
+Evidence is grouped into origin classes — computed artifact, migration guide,
+maintainer narrative, registry, heuristic — and byte-identical content collapses
+regardless of declared source.
+
+`automaticExecutionEligible` is derived and is false whenever any dimension is
+unestablished. Absence of evidence is never eligibility.
+
+### The taxonomy
+
+`BreakingChangeKind` stays what it always was: the remediation-strategy field.
+Alongside it, `ChangeTaxonomy` answers four questions that field could not:
+
+- **nature** — what sort of contract broke
+- **detectability** — what would have to run to notice
+- **scope** — how much surface it covers
+- **visibility** — how a consumer reaches it
+
+`detectability` is the one that earns its keep. A removed export and a changed
+default are both "breaking", but one stops the build and the other ships quietly
+and misbehaves in production. Reporting them at the same severity is how a tool
+teaches people its warnings are interchangeable noise.
+
+Classification is deterministic — a lookup on the finding code where a computed
+differ produced one, falling back to a `kind` mapping. An LLM may *propose* a
+taxonomy but never define one: anything outside the closed vocabulary is dropped
+in favour of the deterministic mapping rather than coerced to the nearest label.
+
+### Gaps: unchecked is not clean
+
+Everything Drift could not establish is a first-class record on the plan, not
+prose in `warnings`. Each says what went unchecked, how much it matters, and
+what it means for acting automatically.
+
+This is the rule the whole model serves: **"searched and found nothing" and
+"could not search" produce the same empty list and mean opposite things.** They
+get different sentences everywhere they surface — the Markdown report, the
+Action summary, the extension panel.
+
+Reports avoid the word "safe". A finding is described as one of:
+
+- no incompatible change detected in the checked surfaces
+- incompatible change detected upstream, but not locally reachable
+- this repository is affected
+- insufficient evidence to say
+- verification incomplete
+
+---
+
 ## State
 
 Almost all durable state lives in GitHub:

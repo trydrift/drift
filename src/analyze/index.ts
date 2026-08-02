@@ -16,6 +16,9 @@ import {
   type ProseMatch,
 } from './rules.js';
 import { extractWithLlm } from './llm.js';
+import { assessUpstream } from '../confidence/calibrate.js';
+import { classify, taxonomyOf, type ChangeTaxonomy } from '../confidence/taxonomy.js';
+import type { ConfidenceBand } from '../confidence/types.js';
 
 /**
  * Turn evidence into breaking-change records.
@@ -57,7 +60,9 @@ export async function analyze(
     results.push(...llmResults);
   }
 
-  return dedupe(results);
+  // Confidence is decided once, at the end, on the merged set — so a finding
+  // several sources describe is scored with all of its citations in hand.
+  return scoreUpstream(dedupe(results), evidence);
 }
 
 /** Bucket evidence by the dependency it describes. */
@@ -85,7 +90,7 @@ function analyzeDependency(dependency: string, evidence: readonly Evidence[]): B
     out.push(...fromProseEvidence(record, dependency));
   }
 
-  return corroborate(out, evidence);
+  return out;
 }
 
 /** Computed findings map one-to-one onto breaking changes; no inference needed. */
@@ -97,9 +102,13 @@ function fromComputedEvidence(record: Evidence): BreakingChange[] {
     summary: finding.detail,
     remediation: remediationForFinding(finding, record.dependency),
     symbols: symbolsFromFinding(finding),
-    // A computed diff is ground truth about the upstream artefact. It is the
-    // only source that earns `high` without corroboration.
+    // Provisional; `scoreUpstream` decides the real value once citations are
+    // merged. A computed diff is ground truth about the upstream artefact and
+    // is the only class that reaches `high` uncorroborated.
     confidence: 'high' as Confidence,
+    // The finding code names exactly what the differ observed, so this is the
+    // one place a precise classification is available without inference.
+    taxonomy: classify(kindForFindingCode(finding.code), finding.code),
     citations: [record.id],
   }));
 }
@@ -178,10 +187,9 @@ function fromProseEvidence(record: Evidence, dependency: string): BreakingChange
         remediation: remediationForProse(match, dependency),
         symbols,
         replacementSymbols: match.replacementSymbols.length ? match.replacementSymbols : undefined,
-        // Prose starts at `medium`: a maintainer stating "X was removed" is a
-        // strong signal, but changelogs are written by humans in a hurry and
-        // routinely describe changes that shipped differently.
+        // Provisional; `scoreUpstream` decides the real value.
         confidence: confidenceForSource(record),
+        taxonomy: classify(match.kind),
         citations: [record.id],
       });
     }
@@ -197,37 +205,34 @@ function confidenceForSource(record: Evidence): Confidence {
 }
 
 /**
- * Raise confidence for changes that more than one independent source agrees on.
+ * Score every finding against its own citations.
  *
- * If the changelog says `foo` was removed *and* the .d.ts diff shows `foo`
- * gone, that is far stronger than either alone — and it is exactly the case
- * where an automatic fix is safe.
+ * Runs after `dedupe`, so a finding that several sources describe is scored
+ * once with all of its citations rather than scored separately and merged.
+ *
+ * This replaces a `corroborate` pass that had two defects. It pooled sources
+ * across every finding sharing any symbol, so one well-corroborated finding
+ * promoted unrelated ones that happened to mention the same identifier. And it
+ * counted `EvidenceSource` values as independent, which they are not: a GitHub
+ * release body and a CHANGELOG entry are routinely the same text published
+ * twice, and counting them as two agreeing sources took a single unverified
+ * maintainer sentence to `high`.
+ *
+ * `assessUpstream` groups by origin class and collapses byte-identical content,
+ * so corroboration now requires genuinely independent observation.
  */
-function corroborate(changes: BreakingChange[], evidence: readonly Evidence[]): BreakingChange[] {
-  const bySymbol = new Map<string, Set<string>>();
-
-  for (const change of changes) {
-    for (const symbol of change.symbols) {
-      const sources = bySymbol.get(symbol) ?? new Set<string>();
-      for (const citation of change.citations) {
-        const record = evidence.find((e) => e.id === citation);
-        if (record) sources.add(record.source);
-      }
-      bySymbol.set(symbol, sources);
-    }
-  }
-
+function scoreUpstream(
+  changes: readonly BreakingChange[],
+  evidence: readonly Evidence[],
+): BreakingChange[] {
   return changes.map((change) => {
-    const sources = new Set<string>();
-    for (const symbol of change.symbols) {
-      for (const source of bySymbol.get(symbol) ?? []) sources.add(source);
-    }
-
-    if (sources.size >= 2 && change.confidence !== 'high') {
-      return { ...change, confidence: 'high' as Confidence };
-    }
-    return change;
+    const upstream = assessUpstream({ change, evidence });
+    return { ...change, confidence: bandToLegacy(upstream.band) };
   });
+}
+
+function bandToLegacy(band: ConfidenceBand): Confidence {
+  return band === 'high' ? 'high' : band === 'medium' ? 'medium' : 'low';
 }
 
 /**
@@ -261,6 +266,9 @@ function dedupe(changes: readonly BreakingChange[]): BreakingChange[] {
         ? [...new Set([...(existing.replacementSymbols ?? []), ...(change.replacementSymbols ?? [])])]
         : undefined,
       confidence: maxConfidence(existing.confidence, change.confidence),
+      // The more precisely-derived classification wins. A computed differ knows
+      // exactly what it saw; a prose rule inferred it from a sentence.
+      taxonomy: preferSpecificTaxonomy(taxonomyOf(existing), taxonomyOf(change)),
       citations: [...new Set([...existing.citations, ...change.citations])],
     });
   }
@@ -269,6 +277,17 @@ function dedupe(changes: readonly BreakingChange[]): BreakingChange[] {
   return [...merged.values()].sort(
     (a, b) => order[a.confidence] - order[b.confidence] || a.dependency.localeCompare(b.dependency),
   );
+}
+
+/** `computed` beats `rule` beats `llm-normalized` beats `default`. */
+function preferSpecificTaxonomy(a: ChangeTaxonomy, b: ChangeTaxonomy): ChangeTaxonomy {
+  const rank: Record<ChangeTaxonomy['origin'], number> = {
+    computed: 3,
+    rule: 2,
+    'llm-normalized': 1,
+    default: 0,
+  };
+  return rank[a.origin] >= rank[b.origin] ? a : b;
 }
 
 function maxConfidence(a: Confidence, b: Confidence): Confidence {

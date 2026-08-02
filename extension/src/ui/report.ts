@@ -378,7 +378,12 @@ function renderChangeCard(
           )
           .join('')}
        </ul>`
-    : `<p class="muted">Drift found this upstream breaking change, but did not find the affected symbols in this repository. No local edit is planned.</p>`;
+    : notSearched(change)
+      // "Searched and found nothing" and "could not search" produce the same
+      // empty list and mean opposite things. The panel must not render them
+      // with the same sentence.
+      ? `<p class="muted">Drift did not search this repository for the affected symbols, so this is <b>not</b> evidence the change is unused.</p>`
+      : `<p class="muted">Drift searched the files importing this dependency and did not find the affected symbols. No local edit is planned.</p>`;
 
   const remediation =
     change.remediation.length > 180 || /\n|[-*]\s/.test(change.remediation)
@@ -392,6 +397,7 @@ function renderChangeCard(
     <span class="kind">${escapeHtml(change.kind)}</span>
     <code class="dep">${escapeHtml(change.dependency)}</code>
   </div>
+  ${renderConfidenceDetail(change)}
   <h3>${escapeHtml(displaySummary(change, plan, pendingUpgrade))}</h3>
   ${remediation}
   ${
@@ -491,6 +497,45 @@ function notice(kind: 'ok' | 'info' | 'warn', title: string, detail: string): st
 
 function riskClass(risk: string): string {
   return `risk-${risk}`;
+}
+
+/**
+ * The three dimensions, shown separately.
+ *
+ * The single badge above is upstream confidence and always was; showing it
+ * alone let a machine-verified upstream diff read as a high-confidence reason
+ * to edit local code nothing had shown to be affected.
+ */
+function renderConfidenceDetail(change: BreakingChange): string {
+  const assessment = change.assessment;
+  if (!assessment) return '';
+
+  const taxonomy = change.taxonomy;
+  const dimension = (label: string, score: { band: string; score: number }) =>
+    `<span class="dim"><span class="dim-label">${label}</span><span class="badge ${score.band}">${score.band}</span></span>`;
+
+  const classification = taxonomy
+    ? `<p class="taxonomy">${escapeHtml(taxonomy.nature)} · ${escapeHtml(taxonomy.scope)} · detectable at ${escapeHtml(
+        taxonomy.detectability.join(', '),
+      )}</p>`
+    : '';
+
+  const eligibility = assessment.automaticExecutionEligible
+    ? ''
+    : `<p class="muted small">Not eligible for automatic execution.</p>`;
+
+  return `<div class="dimensions">
+    ${dimension('upstream', assessment.upstream)}
+    ${dimension('local impact', assessment.localImpact)}
+    ${dimension('verified', assessment.verification)}
+  </div>${classification}${eligibility}`;
+}
+
+/** True when localization never ran, as opposed to running and finding nothing. */
+function notSearched(change: BreakingChange): boolean {
+  return Boolean(
+    change.assessment?.localImpact.penalties.some((p) => p.code === 'localization-unavailable'),
+  );
 }
 
 function displaySummary(change: BreakingChange, plan: RemediationPlan, pendingUpgrade: boolean): string {

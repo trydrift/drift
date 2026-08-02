@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { Evidence, RemediationPlan } from '../types.js';
+import { taxonomyOf, type ChangeTaxonomy } from '../confidence/taxonomy.js';
 
 /**
  * Plan identity: what exactly was approved.
@@ -34,9 +35,17 @@ import type { Evidence, RemediationPlan } from '../types.js';
  * across incompatible serializations — which would silently reject every
  * outstanding approval at deploy time with a misleading "plan changed" message.
  */
-export const PLAN_SCHEMA_VERSION = 1;
+export const PLAN_SCHEMA_VERSION = 2;
 
-/** Schema versions this build can verify. */
+/**
+ * Schema versions this build can verify.
+ *
+ * Only the current one. An older approval issue records a digest computed under
+ * different serialization rules, so comparing against it would fail anyway —
+ * and would fail with a misleading "the plan changed" rather than the truthful
+ * "this issue predates a schema change". v1 issues are refused explicitly and
+ * told to re-run. See `docs/schema-migration.md`.
+ */
 export const SUPPORTED_PLAN_SCHEMA_VERSIONS: readonly number[] = [PLAN_SCHEMA_VERSION];
 
 /**
@@ -89,6 +98,16 @@ function canonicalEvidence(evidence: Evidence): Record<string, unknown> {
   };
 }
 
+function canonicalTaxonomy(taxonomy: ChangeTaxonomy): Record<string, unknown> {
+  return {
+    nature: taxonomy.nature,
+    detectability: [...taxonomy.detectability].sort(),
+    scope: taxonomy.scope,
+    visibility: [...taxonomy.visibility].sort(),
+    origin: taxonomy.origin,
+  };
+}
+
 /**
  * The plan reduced to exactly the fields that define it.
  *
@@ -127,6 +146,21 @@ export function canonicalPlan(plan: RemediationPlan): Record<string, unknown> {
       symbols: [...b.symbols].sort(),
       replacementSymbols: [...(b.replacementSymbols ?? [])].sort(),
       confidence: b.confidence,
+      // Classification is part of what a reviewer approved: the same removal
+      // reclassified from compile-time to runtime-only is a materially
+      // different thing to accept.
+      taxonomy: canonicalTaxonomy(taxonomyOf(b)),
+      // Scores and bands, not the prose that explains them — wording changes
+      // must not invalidate an approval, but a changed score must.
+      assessment: b.assessment
+        ? {
+            upstream: b.assessment.upstream.score,
+            localImpact: b.assessment.localImpact.score,
+            verification: b.assessment.verification.score,
+            automaticExecutionEligible: b.assessment.automaticExecutionEligible,
+            calibration: b.assessment.upstream.calibration,
+          }
+        : null,
       citations: [...b.citations].sort(),
     })),
     impactSites: plan.impactSites.map((s) => ({
@@ -147,6 +181,19 @@ export function canonicalPlan(plan: RemediationPlan): Record<string, unknown> {
       dependsOn: [...c.dependsOn].sort(),
     })),
     evidence: plan.evidence.map(canonicalEvidence),
+    // Gaps are load-bearing: approving a plan is partly approving what it says
+    // it could not check, so a plan that quietly lost a gap between filing and
+    // execution is not the plan that was read.
+    gaps: [...plan.gaps]
+      .map((gap) => ({
+        stage: gap.stage,
+        dependency: gap.dependency ?? null,
+        ecosystem: gap.ecosystem ?? null,
+        surface: gap.surface,
+        severity: gap.severity,
+        automaticExecution: gap.automaticExecution,
+      }))
+      .sort((a, b) => canonicalJson(a).localeCompare(canonicalJson(b))),
   };
 }
 

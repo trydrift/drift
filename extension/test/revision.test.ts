@@ -27,6 +27,9 @@ const commit = (): CommitUnit => ({
 });
 
 const plan = (): RemediationPlan => ({
+  schemaVersion: 2,
+  gaps: [],
+  checkedSurfaces: [],
   id: 'plan1',
   branchName: 'drift/upgrade-zod',
   baseBranch: 'main',

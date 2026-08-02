@@ -12,6 +12,7 @@ import { localize } from './localize/index.js';
 import { buildPlan } from './plan/index.js';
 import { buildRationale } from './rationale/index.js';
 import type { SurfaceAddition, SurfaceUnavailable } from './evidence/surface/types.js';
+import type { CheckedSurface } from './confidence/types.js';
 
 /**
  * Stages 1–7: everything up to, but not including, acting.
@@ -131,6 +132,10 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
 
   /* Stage 5 — localize */
   const impactSites: RemediationPlan['impactSites'] = [];
+  // Whether the search actually happened, which is a different fact from
+  // whether it found anything. Without this the plan cannot tell a reader that
+  // zero impact sites meant "not searched".
+  const localizationRan = Boolean(workspace);
 
   if (breakingChanges.length > 0 && workspace) {
     progress('localize', 'Searching for affected code');
@@ -153,6 +158,48 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     logger.warn('No local checkout available; affected code cannot be located.');
   }
 
+  // What was looked at, and how it went. Recorded so the report can say which
+  // surfaces were genuinely checked rather than leaving a reader to assume
+  // that everything not mentioned was fine.
+  const checkedSurfaces: CheckedSurface[] = [];
+
+  for (const change of actionable) {
+    const records = evidence.filter((e) => e.dependency === change.name);
+    const gap = surfaceGaps.get(change.name);
+
+    checkedSurfaces.push({
+      surface: 'api-surface',
+      dependency: change.name,
+      ecosystem: change.ecosystem,
+      status: gap ? 'unavailable' : records.some((e) => e.findings?.length) ? 'checked' : 'unavailable',
+      detail: gap
+        ? gap.reason
+        : records.some((e) => e.findings?.length)
+          ? 'A computed diff of the published API surface was produced.'
+          : 'No computed API diff was available for this ecosystem or version pair.',
+    });
+
+    const prose = records.filter((e) => e.source === 'changelog' || e.source === 'github-release');
+    checkedSurfaces.push({
+      surface: 'release-notes',
+      dependency: change.name,
+      ecosystem: change.ecosystem,
+      status: prose.length > 0 ? 'checked' : 'unavailable',
+      detail:
+        prose.length > 0
+          ? `${prose.length} release note or changelog section(s) retrieved.`
+          : 'No changelog or release notes could be retrieved.',
+    });
+  }
+
+  checkedSurfaces.push({
+    surface: 'localization',
+    status: localizationRan ? 'checked' : 'skipped',
+    detail: localizationRan
+      ? `Searched the files importing each changed dependency; ${impactSites.length} affected location(s).`
+      : 'No checkout was available, so this repository was not searched.',
+  });
+
   /* Stage 6 — rationale */
   progress('rationale', 'Weighing what each upgrade is worth');
   const rationale = await buildRationale(
@@ -171,6 +218,8 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     impactSites,
     rationale,
     skipped,
+    localizationRan,
+    checkedSurfaces,
   });
 
   progress('done', 'Analysis complete');

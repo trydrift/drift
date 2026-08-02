@@ -253,7 +253,33 @@ leaving this on** — it's the difference between Drift and guessing.
 ### `guardrails.minConfidence`
 `low` | `medium` | `high` — default **`medium`**
 
-Findings below this are reported but not acted on unattended.
+A finding below this threshold that Drift planned a commit for **blocks
+automatic dispatch**. The plan is still filed in full for review, and one
+`/drift apply` from someone with write access proceeds.
+
+Confidence here is the calibrated value, which combines how sure Drift is that
+the change happened upstream with how sure it is that this repository is
+affected — a finding is only as trustworthy as its weaker half. See
+[the confidence model](architecture.md#confidence-in-three-dimensions).
+
+Findings below the threshold that Drift did *not* plan a commit for are listed
+as warnings and do not block. Nothing is about to be edited on their account,
+and blocking on them would train people to raise the threshold until it stopped
+meaning anything.
+
+> **This changed.** It used to warn only, which made the setting a lie: a
+> repository configured for `high` would still dispatch an agent against a
+> low-confidence guess, having noted its own doubt in a paragraph nobody had to
+> read.
+
+### `guardrails.experimentalDispatchBelowMinConfidence`
+`boolean` — default **`false`**
+
+Dispatch automatically even when findings are below `minConfidence`. Named for
+what it is. This exists for teams deliberately exploring what an agent does with
+weak evidence on a throwaway branch, and it is the only way to get the previous
+behaviour back. Leaving it off is correct for every repository whose branches
+matter.
 
 ### `guardrails.forbidTestWeakening`
 `boolean` — default **`true`**

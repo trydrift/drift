@@ -1083,7 +1083,20 @@ describe('an absence must never read as an all-clear', () => {
           manifestPath: 'package.json',
         },
       ],
-      evidence: [],
+      // Real evidence, so nothing about this upgrade went unchecked. An empty
+      // evidence list is itself a gap now — "we retrieved nothing for this
+      // package" is exactly the kind of absence the section exists to report —
+      // so a fixture for the clean case has to actually be clean.
+      evidence: [
+        {
+          id: 'ev_1',
+          source: 'changelog',
+          dependency: 'zod',
+          title: 'CHANGELOG',
+          content: 'Nothing breaking in this release.',
+          weight: 0.65,
+        },
+      ],
       breakingChanges: [],
       impactSites: [],
     });

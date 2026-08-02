@@ -65,6 +65,51 @@ export { renderPullRequestBody, renderApprovalIssue, renderSummaryLine } from '.
 export { GitHubClient } from './github/client.js';
 export type { GitHubClientOptions } from './github/client.js';
 
+export {
+  classify,
+  normalizeProposedTaxonomy,
+  isLocallyUnprovable,
+  taxonomyOf,
+  TAXONOMY_VALUES,
+} from './confidence/taxonomy.js';
+export type {
+  ChangeTaxonomy,
+  ChangeNature,
+  ChangeDetectability,
+  ChangeScope,
+  ChangeVisibility,
+} from './confidence/taxonomy.js';
+export {
+  assess,
+  assessUpstream,
+  assessLocalImpact,
+  assessVerification,
+  deriveLegacyConfidence,
+  CALIBRATION_VERSION,
+} from './confidence/calibrate.js';
+export { bandFor, BANDS } from './confidence/types.js';
+export type {
+  AnalysisGap,
+  CheckedSurface,
+  ConfidenceAssessment,
+  ConfidenceBand,
+  ConfidenceReason,
+  ConfidenceScore,
+  GapSeverity,
+  GapStage,
+  VerificationOutcome,
+} from './confidence/types.js';
+export {
+  renderGaps,
+  renderCheckedSurfaces,
+  renderConfidenceTable,
+  renderTaxonomy,
+  renderEligibility,
+  verdictFor,
+  VERDICT_TEXT,
+} from './report/confidence.js';
+export type { FindingVerdict } from './report/confidence.js';
+
 export { authorizeApproval, canApprove } from './approval/authorize.js';
 export type { AuthorizeResult, ApprovalRequest, RepoPermission } from './approval/authorize.js';
 export { applyApproval } from './approval/apply.js';
