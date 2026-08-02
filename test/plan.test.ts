@@ -348,8 +348,28 @@ describe('determinism', () => {
       impactSites: [site('src/a.ts')],
     });
 
+    // The `upgrade-` segment is what the extension has always produced. The
+    // Action used to name the same upgrade differently, so a team saw two
+    // branch shapes depending on where the run started; both now go through
+    // `plan/pull-request.ts` and agree.
     const today = new Date().toISOString().slice(0, 10);
-    assert.equal(plan.branchName, `drift/typescript-5.9.3-to-7.0.2-${today}`);
+    assert.equal(plan.branchName, `drift/upgrade-typescript-5.9.3-to-7.0.2-${today}`);
+  });
+
+  test('the branch template is configurable, and the default is the shared one', () => {
+    const plan = buildPlan({
+      repo,
+      config: {
+        ...DEFAULT_CONFIG,
+        pullRequest: { ...DEFAULT_CONFIG.pullRequest, branchTemplate: '{prefix}bump/{name}-{to}' },
+      },
+      changes: [{ ...dependencyChange, name: 'typescript', from: '5.9.3', to: '7.0.2' }],
+      evidence,
+      breakingChanges: [breaking({ dependency: 'typescript' })],
+      impactSites: [site('src/a.ts')],
+    });
+
+    assert.equal(plan.branchName, 'drift/bump-typescript-7.0.2');
   });
 });
 

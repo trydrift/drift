@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process';
 import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
+import { attributedMessage, type Author } from '../../src/repo/attribution.js';
 
 const run = promisify(execFile);
 
@@ -22,6 +23,32 @@ export class GitError extends Error {
     super(message);
     this.name = 'GitError';
   }
+}
+
+export interface CommitOptions {
+  /**
+   * Credit Drift, and any agent that helped, as co-authors. Defaults to on.
+   *
+   * Off is a real setting rather than a hypothetical: repositories with commit
+   * linting or a signed-commit policy sometimes reject trailers they did not
+   * expect, and a tool that cannot be told to stop adding one is a tool that
+   * gets uninstalled.
+   */
+  coAuthors?: readonly Author[] | false;
+}
+
+/**
+ * The final commit message, with attribution.
+ *
+ * Centralised so that every commit Drift makes is credited the same way. The
+ * human stays the author — they chose the upgrade and reviewed the diff — and
+ * Drift is added as a co-author alongside them.
+ */
+function message(subject: string, body: string, options: CommitOptions): string {
+  if (options.coAuthors === false) return attributedMessage(subject, body, { enabled: false });
+  return attributedMessage(subject, body, {
+    ...(options.coAuthors ? { coAuthors: options.coAuthors } : {}),
+  });
 }
 
 export class Git {
@@ -149,6 +176,51 @@ export class Git {
   }
 
   /**
+   * The branch this one was created from.
+   *
+   * Git records it: creating a branch writes `branch: Created from <ref>` as
+   * the first entry of that branch's reflog. That is a *fact* about what
+   * happened, unlike every other way of answering this question — merge-base
+   * arithmetic against every branch guesses, and guesses wrong as soon as two
+   * branches share history, which is always.
+   *
+   * `null` when the reflog has been pruned, the branch predates the reflog, or
+   * it was created from a bare SHA. Callers fall back to the default branch and
+   * say that they did, rather than presenting a guess as a finding.
+   */
+  async branchedFrom(branch: string): Promise<string | null> {
+    const reflog = await this.tryExec(['reflog', 'show', '--date=unix', branch]);
+    if (!reflog) return null;
+
+    // The creation entry is the oldest, so read from the bottom.
+    const lines = reflog.split('\n').filter((line) => line.trim());
+    for (const line of lines.reverse()) {
+      const created = /\bbranch: Created from (.+)$/.exec(line.trim());
+      if (!created) continue;
+
+      const ref = created[1]!.trim();
+      // `Created from HEAD` names no branch — it is what `git checkout -b`
+      // writes when the starting point was the current commit. The commit is
+      // known but which branch it belonged to is not recorded, so there is
+      // nothing honest to return.
+      if (!ref || ref === 'HEAD') return null;
+
+      const name = ref.replace(/^refs\/(heads|remotes)\//, '').replace(/^origin\//, '');
+      if (name === branch) return null;
+
+      // Only report a branch that still exists; a base that has been deleted
+      // would fail at the API with a message about the wrong thing.
+      const exists =
+        (await this.tryExec(['rev-parse', '--verify', `refs/heads/${name}`])) ??
+        (await this.tryExec(['rev-parse', '--verify', `refs/remotes/origin/${name}`]));
+
+      return exists ? name : null;
+    }
+
+    return null;
+  }
+
+  /**
    * The branch a pull request should target.
    *
    * `origin/HEAD` is the remote's own answer and the only authoritative one, but
@@ -183,6 +255,7 @@ export class Git {
     paths: readonly string[],
     subject: string,
     body: string,
+    options: CommitOptions = {},
   ): Promise<string | null> {
     if (paths.length === 0) return null;
 
@@ -192,8 +265,7 @@ export class Git {
     const staged = await this.exec(['diff', '--cached', '--name-only']);
     if (!staged.trim()) return null;
 
-    const message = body.trim() ? `${subject}\n\n${body.trim()}` : subject;
-    await this.exec(['commit', '-m', message]);
+    await this.exec(['commit', '-m', message(subject, body, options)]);
 
     return this.headSha();
   }
@@ -201,16 +273,19 @@ export class Git {
   async commitAll(
     subject: string,
     body = '',
-    options: { allowEmpty?: boolean; identity?: { name: string; email: string } } = {},
+    options: CommitOptions & {
+      allowEmpty?: boolean;
+      identity?: { name: string; email: string };
+    } = {},
   ): Promise<string | null> {
     await this.exec(['add', '-A']);
 
     const staged = await this.exec(['diff', '--cached', '--name-only']);
     if (!staged.trim() && !options.allowEmpty) return null;
 
-    const message = body.trim() ? `${subject}\n\n${body.trim()}` : subject;
+    const message_ = message(subject, body, options);
     await this.exec(
-      ['commit', ...(options.allowEmpty ? ['--allow-empty'] : []), '-m', message],
+      ['commit', ...(options.allowEmpty ? ['--allow-empty'] : []), '-m', message_],
       options.identity
         ? {
             GIT_AUTHOR_NAME: options.identity.name,

@@ -4,6 +4,7 @@ import type { Logger } from '../util/logger.js';
 import type { GitHubClient } from '../github/client.js';
 import { isAutoDispatchable } from '../plan/index.js';
 import { renderApprovalIssue, renderPullRequestBody, renderSummaryLine } from '../report/markdown.js';
+import { titleFor } from '../plan/pull-request.js';
 import { dispatchToCopilot } from './copilot.js';
 
 /**
@@ -123,15 +124,75 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
   const task = result.task;
   logger.info(`Dispatched to Copilot: task ${task?.id ?? 'unknown'} on ${plan.branchName}`);
 
+  const pr = await ensurePullRequest(options, task?.pullRequestNumber, task?.pullRequestUrl);
+
   return {
     status: 'dispatched',
     planId: plan.id,
     branchName: plan.branchName,
     taskId: task?.id,
-    pullRequestNumber: task?.pullRequestNumber,
-    pullRequestUrl: task?.pullRequestUrl,
-    message: `Copilot is working on ${plan.commits.length} commit(s) on \`${plan.branchName}\`. A pull request into \`${plan.baseBranch}\` will follow.`,
+    pullRequestNumber: pr?.number ?? task?.pullRequestNumber,
+    pullRequestUrl: pr?.url ?? task?.pullRequestUrl,
+    message: pr
+      ? `Copilot is working on ${plan.commits.length} commit(s) on \`${plan.branchName}\`, tracked in pull request #${pr.number} into \`${plan.baseBranch}\`.`
+      : `Copilot is working on ${plan.commits.length} commit(s) on \`${plan.branchName}\`. A pull request into \`${plan.baseBranch}\` will follow.`,
   };
+}
+
+/**
+ * Make sure there is a pull request for this branch.
+ *
+ * The Action is the one surface with nobody to ask, so it finishes the job.
+ * Leaving a workflow run at "there is a branch somewhere, go find it" is asking
+ * a human to do the single step the automation existed to remove — and a branch
+ * with no pull request is invisible to every review process a team already has.
+ *
+ * Copilot sometimes opens the pull request itself, which is why the task's own
+ * number is honoured first: opening a second one for the same branch would be
+ * worse than opening none.
+ *
+ * A failure here is deliberately not fatal. The branch exists and the work is
+ * on it; reporting the run as failed because a label could not be applied would
+ * misrepresent what happened.
+ */
+async function ensurePullRequest(
+  options: DispatchOptions,
+  existingNumber: number | undefined,
+  existingUrl: string | undefined,
+): Promise<{ number: number; url: string } | null> {
+  const { repo, plan, config, github, logger } = options;
+
+  if (existingNumber && existingUrl) return { number: existingNumber, url: existingUrl };
+  if (!config.pullRequest.enabled) {
+    logger.info('pullRequest.enabled is false; leaving the branch without a pull request.');
+    return null;
+  }
+
+  // The base is the branch the dependency change landed on — which is, by
+  // construction, the branch this work was started from. `plan.baseBranch`
+  // already carries it, and the config toggle exists for teams that always want
+  // the repository default instead.
+  const base =
+    config.pullRequest.base === 'default-branch'
+      ? ((await github.getDefaultBranch(repo.owner, repo.repo)) ?? plan.baseBranch)
+      : plan.baseBranch;
+
+  if (base === plan.branchName) return null;
+
+  const created = await github.createPullRequest(repo, {
+    head: plan.branchName,
+    base,
+    title: titleFor(
+      { changes: plan.changes },
+      { title: config.pullRequest.titleTemplate, prefix: config.remediation.branchPrefix },
+    ),
+    body: renderPullRequestBody(plan, config),
+    draft: config.pullRequest.draft || config.remediation.draftPr,
+    labels: [DRIFT_LABEL, ...config.pullRequest.labels],
+    reviewers: config.pullRequest.reviewers,
+  });
+
+  return created ? { number: created.number, url: created.url } : null;
 }
 
 /**
