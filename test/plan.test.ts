@@ -62,6 +62,9 @@ describe('config', () => {
     assert.equal(DEFAULT_CONFIG.mode, 'approve');
     assert.equal(DEFAULT_CONFIG.guardrails.requireEvidence, true);
     assert.equal(DEFAULT_CONFIG.triggerOn.patch, false);
+    assert.equal(DEFAULT_CONFIG.verification.behavioural.enabled, false);
+    assert.equal(DEFAULT_CONFIG.verification.behavioural.sandbox, 'required');
+    assert.equal(DEFAULT_CONFIG.verification.behavioural.network, false);
   });
 
   test('falls back to safe defaults on malformed YAML', () => {

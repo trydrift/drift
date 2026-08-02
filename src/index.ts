@@ -100,6 +100,19 @@ export type {
   VerificationOutcome,
 } from './confidence/types.js';
 export {
+  runBehaviouralDifferential,
+  selectBehaviouralCandidates,
+} from './verification/behavioural.js';
+export type {
+  BehaviouralEnvironment,
+  BehaviouralObservation,
+  BehaviouralProbe,
+  BehaviouralRunResult,
+  ContractKind,
+  ProbeCase,
+  WorkerResult,
+} from './verification/behavioural.js';
+export {
   renderGaps,
   renderCheckedSurfaces,
   renderConfidenceTable,

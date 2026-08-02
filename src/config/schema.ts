@@ -221,6 +221,25 @@ export const DriftConfigSchema = z.object({
     })
     .default({}),
 
+  /** Experimental verification that compares old and new dependency behaviour. */
+  verification: z
+    .object({
+      behavioural: z
+        .object({
+          enabled: z.boolean().default(false),
+          sandbox: z.literal('required').default('required'),
+          maxSymbols: z.number().int().min(1).max(100).default(10),
+          maxCasesPerSymbol: z.number().int().min(1).max(100).default(20),
+          timeoutSeconds: z.number().int().min(1).max(1800).default(120),
+          network: z.boolean().default(false),
+          memoryMb: z.number().int().min(128).max(16384).default(1024),
+          cpuLimit: z.number().min(0.1).max(32).default(1),
+          retainArtifacts: z.boolean().default(false),
+        })
+        .default({}),
+    })
+    .default({}),
+
   /**
    * How the pull request gets opened.
    *
