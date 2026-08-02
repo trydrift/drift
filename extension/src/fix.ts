@@ -4,6 +4,7 @@ import { rm } from 'node:fs/promises';
 import type { CommitUnit, RemediationPlan } from '../../src/types.js';
 import { Git } from './git.js';
 import { diffHunks, statOf, type Hunk } from './diff.js';
+import { validateAgentWorktree, type ChangedPath } from './scope.js';
 import type { DriftState } from './state.js';
 import {
   readEffort,
@@ -146,6 +147,10 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
     return runCloudAgent(agent, plan, state, progress, token);
   }
 
+  if (!(await git.supportsWorktrees())) {
+    return fail('This git installation cannot create disposable worktrees, so Drift will not run a local agent.');
+  }
+
   const guard = await ensureCleanTree(git, options.ask);
   if (!guard.ok) return fail(guard.message);
 
@@ -191,15 +196,16 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
 
   /** Everything that happens before an agent is handed a commit unit. */
   const openCommit = async (commit: CommitUnit): Promise<{ path: string; content: string }[]> => {
+    const files = scopeFiles(commit);
     options.onCommitStart?.(commit);
     options.onActivity?.(commit, {
       kind: 'status',
       title: 'Scope files',
-      detail: `${commit.files.length} planned file${commit.files.length === 1 ? '' : 's'}`,
-      output: commit.files.join('\n'),
+      detail: `${files.length} planned file${files.length === 1 ? '' : 's'}`,
+      output: files.join('\n'),
     });
 
-    const before = await readFiles(root, commit.files);
+    const before = await readFiles(root, files);
     options.onActivity?.(commit, {
       kind: 'read',
       title: 'Read workspace snapshot',
@@ -328,7 +334,7 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
       return { status: 'cancelled', branch: workingBranch, commits: committed, warnings, message: 'Cancelled.' };
     }
 
-    /* ---- One commit unit, in the working tree itself ---------------- */
+    /* ---- One commit unit, isolated in a disposable worktree ---------- */
     if (batch.length === 1) {
       const commit = batch[0]!;
 
@@ -360,25 +366,29 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
         }
       }
 
-      const before = await openCommit(commit);
-      const { outcome } = await applyOneCommit({
+      const [entry] = await runBatchInWorktrees({
+        git,
         agent,
         plan,
-        commit,
+        batch,
         root,
         token,
         progress,
-        files: before,
-        ask: options.ask,
+        openCommit,
         onLog: options.onLog,
-        onActivity: (activity) => options.onActivity?.(commit, activity),
+        onActivity: options.onActivity,
         context: options.context,
-        ...selection,
+        selection,
         diagnostics: options.diagnostics,
+        ask: options.ask,
         ...(options.revision ? { revision: options.revision } : {}),
       });
 
-      const stop = await closeCommit(commit, outcome, before);
+      if (!entry) continue;
+      if (entry.edits.length > 0) {
+        await applyEdits(root, entry.edits, scopeFiles(entry.commit));
+      }
+      const stop = await closeCommit(entry.commit, entry.outcome, entry.before);
       if (stop) return stop;
       continue;
     }
@@ -412,7 +422,7 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
     // both arbitrary and different on every run.
     for (const entry of outcomes) {
       if (entry.edits.length > 0) {
-        await applyEdits(root, entry.edits, entry.commit.files);
+        await applyEdits(root, entry.edits, scopeFiles(entry.commit));
       }
       const stop = await closeCommit(entry.commit, entry.outcome, entry.before);
       if (stop) return stop;
@@ -551,7 +561,7 @@ interface BatchOutcome {
   outcome: FixOutcome;
   before: { path: string; content: string }[];
   /** What to write into the real working tree. Empty when nothing changed. */
-  edits: { path: string; content: string }[];
+  edits: { path: string; content: string | null }[];
 }
 
 /**
@@ -582,6 +592,7 @@ async function runBatchInWorktrees(args: {
   context?: AttachedContext[];
   selection: { model?: string; effort?: SessionEffort; fast?: boolean };
   diagnostics?: string;
+  ask?: (question: string, options?: string[]) => Promise<string>;
   revision?: RevisionRequest;
 }): Promise<BatchOutcome[]> {
   const { git, batch, root } = args;
@@ -627,33 +638,50 @@ async function runBatchInWorktrees(args: {
           // but the agent is going to be told these are the files at `path`,
           // and handing it contents from somewhere else would be a lie waiting
           // to become a bug.
-          files: await readFiles(path, commit.files),
+          files: await readFiles(path, scopeFiles(commit)),
           // No `ask` in parallel. The panel has one question slot, and two
           // agents reaching for it at once would strand both. Agents are
           // documented to treat a missing `ask` as "make the safe choice and
           // flag it", which is the right behaviour unattended anyway.
+          ask: args.ask,
           onLog: args.onLog,
           onActivity: (activity) => args.onActivity?.(commit, activity),
           context: args.context,
           ...args.selection,
           diagnostics: args.diagnostics,
           ...(args.revision ? { revision: args.revision } : {}),
-          // Edits are collected rather than written: the working tree they
-          // belong in is not the one the agent was given.
-          deferEdits: true,
         });
 
         if (outcome.status !== 'applied') return { commit, outcome, before, edits: [] };
 
-        // A CLI agent edited the worktree in place and returned no edit list,
-        // so the worktree itself is the answer. Reading it back and comparing
-        // against the snapshot is also what filters out files the agent opened
-        // and left alone.
-        const after = await readFiles(path, commit.files);
-        const baseline = new Map(before.map((file) => [file.path, file.content]));
-        const changed = after.filter((file) => baseline.get(file.path) !== file.content);
+        const validation = await validateAgentWorktree({
+          root: path,
+          baselineRef: base,
+          commit,
+          forbidTestWeakening: true,
+        });
+        for (const warning of validation.warnings) {
+          args.onActivity?.(commit, { kind: 'status', title: 'Review warning', detail: warning });
+        }
+        if (!validation.ok) {
+          return {
+            commit,
+            before,
+            edits: [],
+            outcome: {
+              status: 'failed',
+              message: `Agent output was rejected by scope validation: ${validation.reasons.join(' ')}`,
+              warnings: validation.warnings,
+            },
+          };
+        }
 
-        return { commit, outcome, before, edits: changed };
+        return {
+          commit,
+          outcome: { ...outcome, warnings: [...(outcome.warnings ?? []), ...validation.warnings] },
+          before,
+          edits: await editsFromWorktree(path, validation.changed),
+        };
       }),
     );
 
@@ -731,7 +759,7 @@ async function applyOneCommit(args: {
     // every change is a normal, undoable editor edit rather than a surprise
     // mutation behind the user's back.
     if (!args.deferEdits && edits.length > 0) {
-      await applyEdits(root, edits, commit.files);
+      await applyEdits(root, edits, scopeFiles(commit));
       return { outcome, edits: [] };
     }
 
@@ -818,7 +846,7 @@ async function readFiles(
  */
 async function applyEdits(
   root: string,
-  edits: readonly { path: string; content: string }[],
+  edits: readonly { path: string; content: string | null }[],
   allowedPaths: readonly string[],
 ): Promise<void> {
   const allowed = new Set(allowedPaths);
@@ -834,6 +862,11 @@ async function applyEdits(
     }
 
     const uri = vscode.Uri.file(join(root, normalized));
+    if (content === null) {
+      edit.deleteFile(uri, { ignoreIfNotExists: true });
+      continue;
+    }
+
     let document: vscode.TextDocument | null = null;
     try {
       document = await vscode.workspace.openTextDocument(uri);
@@ -864,6 +897,36 @@ async function applyEdits(
       `Drift ignored edits to ${rejected.length} file(s) outside this commit's scope: ${rejected.slice(0, 3).join(', ')}`,
     );
   }
+}
+
+function scopeFiles(commit: CommitUnit): string[] {
+  return [...new Set((commit.allowedFiles?.length ? commit.allowedFiles : commit.files).map((file) => file.replace(/^\.\//, '').replace(/\\/g, '/')))];
+}
+
+async function editsFromWorktree(
+  root: string,
+  changed: readonly ChangedPath[],
+): Promise<{ path: string; content: string | null }[]> {
+  const edits: { path: string; content: string | null }[] = [];
+  const seen = new Set<string>();
+
+  for (const entry of changed) {
+    if (entry.oldPath && entry.oldPath !== entry.path && !seen.has(entry.oldPath)) {
+      edits.push({ path: entry.oldPath, content: null });
+      seen.add(entry.oldPath);
+    }
+    if (entry.status === 'deleted') {
+      if (!seen.has(entry.path)) edits.push({ path: entry.path, content: null });
+      seen.add(entry.path);
+      continue;
+    }
+    if (seen.has(entry.path)) continue;
+    const bytes = await vscode.workspace.fs.readFile(vscode.Uri.file(join(root, entry.path)));
+    edits.push({ path: entry.path, content: Buffer.from(bytes).toString('utf8') });
+    seen.add(entry.path);
+  }
+
+  return edits;
 }
 
 async function runCloudAgent(
