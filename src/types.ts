@@ -21,6 +21,8 @@
  */
 
 import type { UpgradeRationale } from './rationale/types.js';
+import type { ChangeTaxonomy } from './confidence/taxonomy.js';
+import type { AnalysisGap, CheckedSurface, ConfidenceAssessment } from './confidence/types.js';
 
 export type { UpgradeRationale };
 
@@ -170,7 +172,20 @@ export type BreakingChangeKind =
   | 'runtime-requirement'
   | 'unknown';
 
-/** How sure Drift is that this is real and actionable. */
+/**
+ * How sure Drift is that this is real and actionable.
+ *
+ * Retained as a compatibility view. It is now derived from
+ * `ConfidenceAssessment` rather than computed independently — see
+ * `confidence/calibrate.ts`, which holds the one calculation.
+ *
+ * On a `BreakingChange` this specifically means **upstream** confidence: how
+ * sure Drift is that the change happened at all. It says nothing about whether
+ * this repository is affected, which is a separate question with separate
+ * evidence and is carried on `assessment.localImpact`. Conflating the two is
+ * what let a machine-verified upstream diff present as a high-confidence reason
+ * to edit local code nothing had shown to be affected.
+ */
 export type Confidence = 'high' | 'medium' | 'low';
 
 /**
@@ -191,7 +206,35 @@ export interface BreakingChange {
   symbols: string[];
   /** Replacement identifiers when the change is a rename/move. */
   replacementSymbols?: string[];
+  /**
+   * Upstream confidence — did this change really happen?
+   *
+   * Derived from `assessment.upstream`. See the type's own documentation for
+   * why this is not "how safe is it to fix this".
+   */
   confidence: Confidence;
+  /**
+   * What kind of break this is, along four axes.
+   *
+   * Separate from `kind`, which stays the remediation-strategy field. The axis
+   * that earns its keep is `detectability`: a removed export and a changed
+   * default are both breaking, but one stops the build and the other ships
+   * quietly, and no single field could say so.
+   *
+   * Optional on the interface so that findings constructed by hand — by a test,
+   * or by an external consumer of the library — stay valid. `analyze` always
+   * populates it, and `buildPlan` fills any that are missing from `kind`, so
+   * every finding on a plan has one. Read it through `taxonomyOf`.
+   */
+  taxonomy?: ChangeTaxonomy;
+  /**
+   * The full three-dimensional assessment.
+   *
+   * Attached by `buildPlan`, because local impact cannot be assessed until
+   * localization has run. Absent on the output of `analyze()` alone, where only
+   * the upstream dimension is knowable.
+   */
+  assessment?: ConfidenceAssessment;
   /** IDs of the Evidence records that justify this. Never empty. */
   citations: string[];
 }
@@ -241,6 +284,14 @@ export type RiskLevel = 'none' | 'low' | 'medium' | 'high';
 
 /** The full remediation proposal for one dependency-change batch. */
 export interface RemediationPlan {
+  /**
+   * Version of the serialized plan shape.
+   *
+   * Present so a consumer reading a stored plan — an approval issue, a cached
+   * report, a benchmark fixture — can tell whether it understands the format
+   * rather than misreading a newer one. See `docs/schema-migration.md`.
+   */
+  schemaVersion: number;
   id: string;
   /** Branch Drift will create and Copilot will work on. */
   branchName: string;
@@ -268,6 +319,23 @@ export interface RemediationPlan {
    */
   rationale?: UpgradeRationale[];
   risk: RiskLevel;
+  /**
+   * Everything Drift could not establish.
+   *
+   * First-class records rather than prose buried in `warnings`, because these
+   * decide whether the rest of the plan can be trusted. An empty list means
+   * every surface Drift knows how to check was checked — never that the ones it
+   * skipped were clean.
+   */
+  gaps: AnalysisGap[];
+  /**
+   * What was looked at, and whether looking succeeded.
+   *
+   * The record that lets a report distinguish "searched and found nothing" from
+   * "could not search" — the two produce identical output otherwise and mean
+   * opposite things.
+   */
+  checkedSurfaces: CheckedSurface[];
   /** Reasons Drift refused to proceed automatically, if any. */
   blockers: string[];
   /** Non-fatal caveats surfaced to the reviewer. */

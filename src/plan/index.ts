@@ -16,6 +16,16 @@ import { isDowngrade } from '../detect/version.js';
 import { matchesAny } from '../util/glob.js';
 import { stableId } from '../util/id.js';
 import { planCommits } from './commits.js';
+import {
+  CAPABILITY_STAGES,
+  STAGE_LABEL,
+  capabilitiesFor,
+  type CapabilityStage,
+} from '../detect/capabilities.js';
+import { assess, deriveLegacyConfidence } from '../confidence/calibrate.js';
+import { isLocallyUnprovable, taxonomyOf } from '../confidence/taxonomy.js';
+import type { AnalysisGap, CheckedSurface, VerificationOutcome } from '../confidence/types.js';
+import { PLAN_SCHEMA_VERSION } from '../approval/digest.js';
 
 /**
  * Plan assembly: turn findings into a proposal, and decide whether Drift is
@@ -39,31 +49,228 @@ export interface BuildPlanInput {
   skipped?: readonly { change: DependencyChange; reason: string }[];
   /** Why each upgrade might be worth taking. Absent when the stage was skipped. */
   rationale?: readonly UpgradeRationale[];
+  /**
+   * Whether localization actually ran.
+   *
+   * Defaults to true, because every caller with a workspace runs it. Passing
+   * `false` is what turns "no impact sites" from a finding into a stated gap —
+   * the distinction between searched-and-clean and never-searched.
+   */
+  localizationRan?: boolean;
+  /** Checks that ran against this plan. Empty means nothing was verified. */
+  verification?: readonly VerificationOutcome[];
+  /** Surfaces the earlier stages looked at, and how that went. */
+  checkedSurfaces?: readonly CheckedSurface[];
+}
+
+/**
+ * The confidence a guardrail should judge a finding by.
+ *
+ * Prefers the calibrated assessment, which accounts for local impact, and falls
+ * back to the legacy upstream-only field for callers that build a plan from
+ * hand-made findings. Without the fallback, a finding assembled in a test or by
+ * an external consumer would read as `low` purely for lacking an assessment.
+ */
+function effectiveConfidence(change: BreakingChange): Confidence {
+  return change.assessment ? deriveLegacyConfidence(change.assessment) : change.confidence;
 }
 
 export function buildPlan(input: BuildPlanInput): RemediationPlan {
-  const { repo, config, changes, evidence, breakingChanges, impactSites } = input;
+  const { repo, config, changes, evidence, impactSites } = input;
+
+  // Assessments first: the guardrails below decide on local impact, which does
+  // not exist until localization has run and cannot be known inside `analyze`.
+  const breakingChanges = assessAll(input);
 
   const commits = planCommits({ breakingChanges, impactSites, config });
   const risk = assessRisk(changes, breakingChanges, impactSites);
-  const { blockers, warnings } = evaluateGuardrails(input, commits, risk);
+  const gaps = collectGaps(input, breakingChanges, commits);
+  const { blockers, warnings } = evaluateGuardrails(input, breakingChanges, commits, risk, gaps);
 
   return {
+    schemaVersion: PLAN_SCHEMA_VERSION,
     id: stableId('plan', repo.owner, repo.repo, repo.afterSha),
     branchName: branchNameFor(config, changes, repo.afterSha),
     baseBranch: repo.baseBranch,
     headSha: repo.afterSha,
     changes: [...changes],
     evidence: [...evidence],
-    breakingChanges: [...breakingChanges],
+    breakingChanges,
     impactSites: [...impactSites],
     commits,
     ...(input.rationale ? { rationale: [...input.rationale] } : {}),
     risk,
+    gaps,
+    checkedSurfaces: [...(input.checkedSurfaces ?? [])],
     blockers,
     warnings,
     createdAt: new Date().toISOString(),
   };
+}
+
+/**
+ * Attach the full three-dimensional assessment to every finding.
+ *
+ * `analyze` could only score the upstream dimension — it has no repository to
+ * look at. This is where local impact and verification join it, and where the
+ * legacy `confidence` field stops being the only thing a caller can consult.
+ */
+function assessAll(input: BuildPlanInput): BreakingChange[] {
+  const { evidence, breakingChanges, impactSites } = input;
+  const localizationRan = input.localizationRan ?? true;
+
+  return breakingChanges.map((change) => {
+    const sites = impactSites.filter((site) => site.breakingChangeId === change.id);
+    // Normalised here so every finding on a plan carries one, whatever the
+    // caller supplied.
+    const taxonomy = taxonomyOf(change);
+    const assessment = assess({
+      change,
+      taxonomy,
+      evidence,
+      sites,
+      localizationRan,
+      outcomes: input.verification ?? [],
+      checkedSurfaces: input.checkedSurfaces ?? [],
+      gaps: [],
+    });
+
+    return { ...change, taxonomy, assessment };
+  });
+}
+
+/**
+ * Everything Drift could not establish, as records rather than prose.
+ *
+ * The rule this encodes: an unchecked surface is never reported as a clean one.
+ * Each entry says what was not established, how much it matters, and what it
+ * means for acting automatically — so nobody has to infer severity from tone.
+ */
+function collectGaps(
+  input: BuildPlanInput,
+  breakingChanges: readonly BreakingChange[],
+  commits: readonly { breakingChangeIds: string[] }[],
+): AnalysisGap[] {
+  const { changes, evidence, impactSites, config } = input;
+  const gaps: AnalysisGap[] = [];
+  const localizationRan = input.localizationRan ?? true;
+
+  if (!localizationRan && breakingChanges.length > 0) {
+    gaps.push({
+      stage: 'localize',
+      surface: 'repository source',
+      reason:
+        'No checkout was available, so Drift could not search this repository for affected code. Zero impact sites here means "not searched", not "not affected".',
+      severity: 'blocking',
+      automaticExecution: 'blocks',
+      remediation:
+        'Run Drift as a GitHub Action or from the CLI in a checkout. The webhook runner cannot localize — see docs/deployment.md.',
+    });
+  }
+
+  // Dependencies for which nothing but a version number could be retrieved.
+  for (const change of changes) {
+    const records = evidence.filter((e) => e.dependency === change.name);
+    const substantive = records.filter(
+      (e) => e.source !== 'semver-heuristic' && e.source !== 'registry-metadata',
+    );
+    if (substantive.length === 0) {
+      gaps.push({
+        stage: 'evidence',
+        ecosystem: change.ecosystem,
+        dependency: change.name,
+        surface: 'upstream release evidence',
+        reason:
+          `No changelog, release notes, migration guide, or API diff could be retrieved for ${change.name}. ` +
+          'Drift will not dispatch a fix based on a version number alone.',
+        severity: 'significant',
+        // `requireEvidence` is what decides whether this stops a run. The gap is
+        // recorded either way, because the surface was unchecked either way.
+        automaticExecution:
+          config.guardrails.requireEvidence && breakingChanges.length > 0 ? 'blocks' : 'degrades',
+        remediation:
+          'Check the package publishes release notes Drift can reach, or review this upgrade by hand.',
+      });
+    }
+  }
+
+  // Findings that are real upstream but that nothing local could confirm.
+  for (const change of breakingChanges) {
+    const sites = impactSites.filter((s) => s.breakingChangeId === change.id);
+    if (sites.length > 0) continue;
+    if (!isLocallyUnprovable(taxonomyOf(change))) continue;
+
+    gaps.push({
+      stage: 'localize',
+      dependency: change.dependency,
+      surface: `reachability of ${change.symbols.slice(0, 3).join(', ') || change.dependency}`,
+      reason: `${change.summary} is only observable at runtime, so searching the source cannot establish whether this repository is affected.`,
+      severity: 'significant',
+      automaticExecution: 'degrades',
+      remediation: 'Confirm by exercising the affected paths, or review the upstream notes directly.',
+    });
+  }
+
+  // Nothing ran. True for every core-pipeline run today, and stated rather than
+  // left for a reader to assume otherwise.
+  if ((input.verification ?? []).length === 0 && commits.length > 0) {
+    gaps.push({
+      stage: 'verify',
+      surface: 'build, typecheck, and test',
+      reason:
+        'No checks were run against this plan, so nothing confirms the findings were understood correctly or that a fix would compile.',
+      severity: 'significant',
+      automaticExecution: 'degrades',
+      remediation:
+        'Configure the repository checks Drift should run, or review the resulting pull request against CI before merging.',
+    });
+  }
+
+  // Ecosystem capability gaps. A stage that cannot run at all for an ecosystem
+  // is the same kind of fact as a changelog that could not be fetched — it is a
+  // surface that went unchecked — so it lives in the same model rather than in
+  // a separate section a reader has to correlate by hand.
+  for (const ecosystem of [...new Set(changes.map((c) => c.ecosystem))].sort()) {
+    const capability = capabilitiesFor(ecosystem);
+
+    for (const stage of CAPABILITY_STAGES) {
+      // `partial` is the norm; saying so every time would bury the real gaps.
+      if (capability.support[stage].level !== 'none') continue;
+
+      gaps.push({
+        stage: mapCapabilityStage(stage),
+        ecosystem,
+        surface: STAGE_LABEL[stage],
+        reason: capability.support[stage].note ?? `${STAGE_LABEL[stage]} does not run for ${ecosystem}.`,
+        severity: 'significant',
+        // A limit of the tool, not a finding about the upgrade. It lowers what
+        // the report can claim without stopping a run that is otherwise sound.
+        automaticExecution: 'degrades',
+        remediation: `Drift cannot run this stage for ${ecosystem}; review this surface by hand.`,
+      });
+    }
+  }
+
+  return gaps;
+}
+
+/** Capability stages and gap stages name the same pipeline at different grain. */
+function mapCapabilityStage(stage: CapabilityStage): AnalysisGap['stage'] {
+  switch (stage) {
+    case 'detect':
+      return 'detect';
+    case 'evidence':
+    case 'surface':
+      return 'evidence';
+    case 'static-analysis':
+      return 'localize';
+    case 'verify':
+      return 'verify';
+    // `fix` and `pull-request` are downstream of analysis; a gap there is a
+    // limit on acting, which the plan expresses through blockers instead.
+    default:
+      return 'plan';
+  }
 }
 
 /**
@@ -144,10 +351,12 @@ interface GuardrailResult {
 
 function evaluateGuardrails(
   input: BuildPlanInput,
-  commits: readonly { files: string[] }[],
+  breakingChanges: readonly BreakingChange[],
+  commits: readonly { files: string[]; breakingChangeIds: string[] }[],
   risk: RiskLevel,
+  gaps: readonly AnalysisGap[],
 ): GuardrailResult {
-  const { config, changes, evidence, breakingChanges, impactSites, skipped = [] } = input;
+  const { config, changes, impactSites, skipped = [] } = input;
   const guardrails = config.guardrails;
 
   const blockers: string[] = [];
@@ -181,29 +390,62 @@ function evaluateGuardrails(
     );
   }
 
-  if (guardrails.requireEvidence) {
-    const withoutRealEvidence = changes.filter((change) => {
-      const records = evidence.filter((e) => e.dependency === change.name);
-      return records.every((e) => e.source === 'semver-heuristic' || e.source === 'registry-metadata');
-    });
+  // `requireEvidence` is enforced through the gap records — see `collectGaps`,
+  // which is the single place that decides what counts as an unchecked surface.
 
-    if (withoutRealEvidence.length > 0 && breakingChanges.length > 0) {
+  /*
+   * `minConfidence`, as a blocker.
+   *
+   * This was a warning, which made the setting a lie: a repository configured
+   * for `high` would still dispatch an agent against a low-confidence guess,
+   * having recorded its own doubt in a paragraph nobody had to read.
+   *
+   * Only *actionable* findings count — ones Drift planned a commit for. A
+   * low-confidence finding with no planned edit is information, and blocking on
+   * it would train people to raise the threshold until it stopped mattering.
+   *
+   * Blocking does not discard the plan. It falls back to approval: the full
+   * plan is filed, and one comment from someone with write access proceeds.
+   */
+  const plannedChangeIds = new Set(commits.flatMap((c) => c.breakingChangeIds));
+  const actionableBelowConfidence = breakingChanges.filter(
+    (c) => plannedChangeIds.has(c.id) && !meetsConfidence(effectiveConfidence(c), guardrails.minConfidence),
+  );
+
+  if (actionableBelowConfidence.length > 0) {
+    const detail = actionableBelowConfidence
+      .slice(0, 3)
+      .map((c) => `\`${c.dependency}\`: ${c.summary}`)
+      .join('; ');
+
+    if (guardrails.experimentalDispatchBelowMinConfidence) {
+      warnings.push(
+        `${actionableBelowConfidence.length} finding(s) are below the \`minConfidence\` threshold of ` +
+          `\`${guardrails.minConfidence}\` but \`experimentalDispatchBelowMinConfidence\` is on, so Drift will ` +
+          `dispatch anyway. ${detail}.`,
+      );
+    } else {
       blockers.push(
-        `No changelog, release notes, or API diff could be retrieved for ${withoutRealEvidence.map((c) => c.name).join(', ')}. Drift will not dispatch a fix based on a version number alone.`,
+        `${actionableBelowConfidence.length} finding(s) Drift planned commits for are below the ` +
+          `\`minConfidence\` threshold of \`${guardrails.minConfidence}\`: ${detail}. ` +
+          'The plan is filed for review rather than dispatched.',
       );
     }
   }
 
-  const belowConfidence = breakingChanges.filter(
-    (c) => !meetsConfidence(c.confidence, guardrails.minConfidence),
+  // Below the threshold but nothing planned — worth stating, not worth blocking.
+  const belowConfidenceUnplanned = breakingChanges.filter(
+    (c) => !plannedChangeIds.has(c.id) && !meetsConfidence(effectiveConfidence(c), guardrails.minConfidence),
   );
-  if (belowConfidence.length > 0) {
-    // A warning, not a blocker: the plan still contains higher-confidence
-    // changes worth acting on, and the low-confidence ones are labelled as
-    // such in the report so a reviewer can weigh them.
+  if (belowConfidenceUnplanned.length > 0) {
     warnings.push(
-      `${belowConfidence.length} finding(s) are below the \`minConfidence\` threshold of \`${guardrails.minConfidence}\` and are flagged for human judgement rather than treated as established.`,
+      `${belowConfidenceUnplanned.length} finding(s) are below the \`minConfidence\` threshold and no commit was planned for them. They are listed for awareness.`,
     );
+  }
+
+  const blockingGaps = gaps.filter((gap) => gap.automaticExecution === 'blocks');
+  for (const gap of blockingGaps) {
+    blockers.push(`${gap.reason} ${gap.remediation}`);
   }
 
   if (!riskWithinLimit(risk, config.maxAutoRisk)) {

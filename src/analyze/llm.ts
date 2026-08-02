@@ -2,6 +2,7 @@ import type { BreakingChange, Confidence, DependencyChange, Evidence } from '../
 import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
 import { stableId } from '../util/id.js';
+import { classify, normalizeProposedTaxonomy } from '../confidence/taxonomy.js';
 
 /**
  * Optional LLM-assisted extraction.
@@ -37,6 +38,8 @@ interface ExtractedChange {
   symbols: string[];
   kind: string;
   evidenceId: string;
+  /** Optional proposal. Validated and normalized before it is trusted. */
+  taxonomy?: unknown;
 }
 
 const RESPONSE_SCHEMA = {
@@ -81,6 +84,66 @@ const RESPONSE_SCHEMA = {
           evidenceId: {
             type: 'string',
             description: 'The id of the evidence excerpt this was extracted from.',
+          },
+          // Proposed, never authoritative: `normalizeProposedTaxonomy` drops
+          // anything outside these vocabularies and falls back to the
+          // deterministic classification.
+          taxonomy: {
+            type: 'object',
+            properties: {
+              nature: {
+                type: 'string',
+                enum: [
+                  'api-shape',
+                  'type-contract',
+                  'behaviour',
+                  'data-schema',
+                  'configuration',
+                  'runtime-environment',
+                  'protocol',
+                  'packaging',
+                ],
+              },
+              detectability: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  enum: [
+                    'manifest',
+                    'link-or-import',
+                    'compile-time',
+                    'static-semantic',
+                    'test-time',
+                    'runtime-only',
+                    'external-observation',
+                  ],
+                },
+                description:
+                  'What would have to run to notice this. Be honest: a change that only shows up at runtime must not be listed as compile-time.',
+              },
+              scope: {
+                type: 'string',
+                enum: ['symbol', 'type', 'module', 'package', 'dependency-cohort', 'runtime', 'ecosystem'],
+              },
+              visibility: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                  enum: [
+                    'direct',
+                    'transitive',
+                    'wrapper-mediated',
+                    're-exported',
+                    'reflection-or-dynamic',
+                    'generated',
+                    'unknown',
+                  ],
+                },
+                description: 'Use `unknown` when the evidence does not say. Do not guess `direct`.',
+              },
+            },
+            required: ['nature', 'detectability', 'scope', 'visibility'],
+            additionalProperties: false,
           },
         },
         required: ['summary', 'remediation', 'symbols', 'kind', 'evidenceId'],
@@ -254,6 +317,15 @@ function toBreakingChanges(
       symbols: (c.symbols ?? []).filter(isPlausibleSymbol),
       // Capped at medium by construction — see the module comment.
       confidence: 'medium' as Confidence,
+      // A model may *propose* a classification; it may never define one.
+      // Anything outside the closed vocabulary is discarded in favour of the
+      // deterministic mapping rather than coerced to the nearest label — a
+      // plausible-looking wrong classification is worse than an absent one,
+      // because the field's whole value is being trustable at a glance.
+      taxonomy: normalizeProposedTaxonomy(
+        (c as { taxonomy?: unknown }).taxonomy,
+        classify(normalizeKind(c.kind)),
+      ),
       citations: [c.evidenceId],
     }));
 }

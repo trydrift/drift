@@ -12,6 +12,9 @@ import type { RemediationPlan } from '../../src/types.js';
 
 function plan(): RemediationPlan {
   return {
+    schemaVersion: 2,
+    gaps: [],
+    checkedSurfaces: [],
     id: 'p1',
     branchName: 'drift/upgrade-react',
     baseBranch: 'main',

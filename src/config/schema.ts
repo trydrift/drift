@@ -175,8 +175,30 @@ export const DriftConfigSchema = z.object({
       maxDependenciesPerRun: z.number().int().min(1).default(10),
       /** Refuse to dispatch when no evidence beyond a semver guess exists. */
       requireEvidence: z.boolean().default(true),
-      /** Lowest per-change confidence eligible for automatic dispatch. */
+      /**
+       * Lowest per-change confidence eligible for automatic dispatch.
+       *
+       * This is a **blocker**, not a warning. A finding below the threshold
+       * that Drift planned a commit for falls back to approval, and the plan is
+       * still filed in full so a human can read it and proceed with one comment.
+       *
+       * It used to be warning-only, which made the setting a lie: a repository
+       * configured for `high` would still dispatch an agent against a
+       * low-confidence guess, having noted its own doubt in a paragraph nobody
+       * had to read. A finding with no planned commit is unaffected — nothing
+       * is about to be edited on its account.
+       */
       minConfidence: z.enum(['low', 'medium', 'high']).default('medium'),
+
+      /**
+       * Dispatch automatically even when findings are below `minConfidence`.
+       *
+       * Named for what it is. This exists for teams deliberately exploring what
+       * an agent does with weak evidence on a throwaway branch, and it is the
+       * only way to get the pre-fix behaviour back. Leaving it off is correct
+       * for every repository whose branches matter.
+       */
+      experimentalDispatchBelowMinConfidence: z.boolean().default(false),
       /** Instruct the agent to leave tests semantically unchanged. */
       forbidTestWeakening: z.boolean().default(true),
     })

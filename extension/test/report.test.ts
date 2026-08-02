@@ -6,6 +6,9 @@ import type { RemediationPlan } from '../../src/types.js';
 
 function plan(over: Partial<RemediationPlan> = {}): RemediationPlan {
   return {
+    schemaVersion: 2,
+    gaps: [],
+    checkedSurfaces: [],
     id: 'p1',
     branchName: 'drift/upgrade-react',
     baseBranch: 'main',

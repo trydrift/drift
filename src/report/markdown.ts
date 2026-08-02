@@ -1,5 +1,4 @@
 import { describeMember } from '../detect/workspace.js';
-import { CAPABILITY_STAGES, STAGE_LABEL, capabilitiesFor } from '../detect/capabilities.js';
 import type {
   BreakingChange,
   Confidence,
@@ -10,6 +9,15 @@ import type {
 } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import { renderRationale } from './rationale.js';
+import {
+  renderCheckedSurfaces,
+  renderConfidenceTable,
+  renderEligibility,
+  renderGaps,
+  renderTaxonomy,
+  verdictFor,
+  VERDICT_TEXT,
+} from './confidence.js';
 import { PLAN_SCHEMA_VERSION, planDigest } from '../approval/digest.js';
 import { renderApprovalMetadata } from '../approval/metadata.js';
 
@@ -54,54 +62,13 @@ export function renderPullRequestBody(plan: RemediationPlan, config: DriftConfig
   sections.push(renderRationale(plan));
   sections.push(renderCommitPlan(plan));
   sections.push(renderImpactSites(plan));
+  sections.push(renderGaps(plan.gaps));
+  sections.push(renderCheckedSurfaces(plan));
   sections.push(renderEvidence(plan));
-  sections.push(renderCoverage(plan));
   sections.push(renderReviewChecklist(plan, config));
   sections.push(renderFooter(plan));
 
   return sections.filter(Boolean).join('\n\n');
-}
-
-/**
- * What Drift could not check, and why.
- *
- * The most dangerous thing this report could do is let an absence read as an
- * all-clear. A Ruby upgrade with no findings and a TypeScript upgrade with no
- * findings look identical on the page, and they are not the same claim at all:
- * one means the API surface was compared and nothing broke, the other means
- * there is no API surface to compare and the whole verdict rests on prose.
- *
- * So every stage that cannot run for an ecosystem in this plan is named, with
- * the reason, next to the evidence rather than in a footnote. Omitted entirely
- * when everything ran — a section that says "nothing to report" on every clean
- * upgrade is a section people stop reading.
- */
-function renderCoverage(plan: RemediationPlan): string {
-  const ecosystems = [...new Set(plan.changes.map((change) => change.ecosystem))].sort();
-
-  const gaps: string[] = [];
-  for (const ecosystem of ecosystems) {
-    const capability = capabilitiesFor(ecosystem);
-
-    for (const stage of CAPABILITY_STAGES) {
-      // `partial` is the norm and saying so every time would bury the real
-      // gaps. Only a stage that produces nothing at all is worth a line here.
-      if (capability.support[stage].level !== 'none') continue;
-      gaps.push(`- **${STAGE_LABEL[stage]}** — ${capability.support[stage].note}`);
-    }
-  }
-
-  if (gaps.length === 0) return '';
-
-  return [
-    '## What Drift could not check',
-    '',
-    'These stages do not run for the ecosystems in this change. That is a limit',
-    'of the tool, not a finding about the upgrade — an absence here is not',
-    'evidence that nothing is wrong.',
-    '',
-    ...gaps,
-  ].join('\n');
 }
 
 /** Body for the approval issue posted in `approve` mode. */
@@ -121,6 +88,8 @@ export function renderApprovalIssue(plan: RemediationPlan, config: DriftConfig):
   sections.push(renderBreakingChanges(plan));
   sections.push(renderRationale(plan));
   sections.push(renderCommitPlan(plan));
+  sections.push(renderGaps(plan.gaps));
+  sections.push(renderCheckedSurfaces(plan));
   sections.push(renderEvidence(plan));
 
   sections.push(
@@ -213,11 +182,28 @@ function renderBreakingChanges(plan: RemediationPlan): string {
 
   for (const change of plan.breakingChanges) {
     const siteCount = plan.impactSites.filter((s) => s.breakingChangeId === change.id).length;
+    const verdict = verdictFor(change);
 
     lines.push(`### ${CONFIDENCE_BADGE[change.confidence]} · \`${change.dependency}\` · ${change.kind}`);
     lines.push('');
     lines.push(change.summary);
     lines.push('');
+
+    // The verdict leads, because it is the sentence a reader acts on — and
+    // because it is the one place the difference between "checked and clean"
+    // and "not checked" is stated in words rather than implied by a count.
+    lines.push(`**Verdict:** ${VERDICT_TEXT[verdict]}.`);
+    lines.push('');
+
+    lines.push(renderTaxonomy(change));
+    lines.push('');
+
+    if (change.assessment) {
+      lines.push(renderConfidenceTable(change.assessment));
+      lines.push('');
+      lines.push(renderEligibility(change.assessment));
+      lines.push('');
+    }
 
     if (change.symbols.length > 0) {
       lines.push(`**Symbols:** ${change.symbols.map((s) => `\`${s}\``).join(', ')}`);
@@ -227,7 +213,9 @@ function renderBreakingChanges(plan: RemediationPlan): string {
     lines.push(
       siteCount > 0
         ? `**Found in this repo:** ${siteCount} location(s)`
-        : '**Found in this repo:** no usages found — no fix planned',
+        : change.assessment?.localImpact.penalties.some((p) => p.code === 'localization-unavailable')
+          ? '**Found in this repo:** not searched — no checkout was available. This is not evidence the change is unused.'
+          : '**Found in this repo:** no usages found in the files that import this dependency — no fix planned',
     );
     lines.push('');
 
