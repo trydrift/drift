@@ -107,6 +107,7 @@ export type EvidenceSource =
   | 'migration-guide'
   | 'openapi-diff'
   | 'type-surface-diff'
+  | 'behavioural-diff'
   | 'semver-heuristic';
 
 /**

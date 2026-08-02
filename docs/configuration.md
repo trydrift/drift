@@ -131,6 +131,38 @@ Cap on release notes fetched per dependency.
 
 ---
 
+## Verification
+
+### `verification.behavioural`
+
+Experimental, npm/TypeScript only, and off by default.
+
+```yaml
+verification:
+  behavioural:
+    enabled: false
+    sandbox: required
+    maxSymbols: 10
+    maxCasesPerSymbol: 20
+    timeoutSeconds: 120
+    network: false
+    memoryMb: 1024
+    cpuLimit: 1
+    retainArtifacts: false
+```
+
+When enabled, Drift can run bounded old-vs-new probes for changed APIs that are
+supported by upstream evidence and locally reachable. The runner uses separate
+old and new package environments, disables network by default, restricts file
+access, bounds output and wall time, and records differential observations as
+evidence.
+
+No observed difference is **not** proof of behavioural compatibility. It only
+raises verification confidence for the tested contract and generated input
+domain, and the report records the limitations.
+
+---
+
 ## Upgrade rationale
 
 Why an upgrade might be worth taking, alongside what it might cost. On by

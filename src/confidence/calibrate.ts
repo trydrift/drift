@@ -53,6 +53,7 @@ const ORIGIN_CLASS: Record<EvidenceSource, string> = {
   'github-release': 'maintainer-narrative',
   // A deliberate, separately written document — independent of the narrative.
   'migration-guide': 'maintainer-guide',
+  'behavioural-diff': 'dynamic-observation',
   'registry-metadata': 'registry',
   'semver-heuristic': 'heuristic',
 };
@@ -62,6 +63,7 @@ const ORIGIN_WEIGHT: Record<string, number> = {
   'computed-artifact': 0.9,
   'maintainer-guide': 0.7,
   'maintainer-narrative': 0.6,
+  'dynamic-observation': 0.5,
   registry: 0.4,
   // A version number is not evidence that anything specific broke.
   heuristic: 0.2,
