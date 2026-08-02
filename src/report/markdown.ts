@@ -1,4 +1,5 @@
 import { describeMember } from '../detect/workspace.js';
+import { CAPABILITY_STAGES, STAGE_LABEL, capabilitiesFor } from '../detect/capabilities.js';
 import type {
   BreakingChange,
   Confidence,
@@ -52,10 +53,53 @@ export function renderPullRequestBody(plan: RemediationPlan, config: DriftConfig
   sections.push(renderCommitPlan(plan));
   sections.push(renderImpactSites(plan));
   sections.push(renderEvidence(plan));
+  sections.push(renderCoverage(plan));
   sections.push(renderReviewChecklist(plan, config));
   sections.push(renderFooter(plan));
 
   return sections.filter(Boolean).join('\n\n');
+}
+
+/**
+ * What Drift could not check, and why.
+ *
+ * The most dangerous thing this report could do is let an absence read as an
+ * all-clear. A Ruby upgrade with no findings and a TypeScript upgrade with no
+ * findings look identical on the page, and they are not the same claim at all:
+ * one means the API surface was compared and nothing broke, the other means
+ * there is no API surface to compare and the whole verdict rests on prose.
+ *
+ * So every stage that cannot run for an ecosystem in this plan is named, with
+ * the reason, next to the evidence rather than in a footnote. Omitted entirely
+ * when everything ran — a section that says "nothing to report" on every clean
+ * upgrade is a section people stop reading.
+ */
+function renderCoverage(plan: RemediationPlan): string {
+  const ecosystems = [...new Set(plan.changes.map((change) => change.ecosystem))].sort();
+
+  const gaps: string[] = [];
+  for (const ecosystem of ecosystems) {
+    const capability = capabilitiesFor(ecosystem);
+
+    for (const stage of CAPABILITY_STAGES) {
+      // `partial` is the norm and saying so every time would bury the real
+      // gaps. Only a stage that produces nothing at all is worth a line here.
+      if (capability.support[stage].level !== 'none') continue;
+      gaps.push(`- **${STAGE_LABEL[stage]}** — ${capability.support[stage].note}`);
+    }
+  }
+
+  if (gaps.length === 0) return '';
+
+  return [
+    '## What Drift could not check',
+    '',
+    'These stages do not run for the ecosystems in this change. That is a limit',
+    'of the tool, not a finding about the upgrade — an absence here is not',
+    'evidence that nothing is wrong.',
+    '',
+    ...gaps,
+  ].join('\n');
 }
 
 /** Body for the approval issue posted in `approve` mode. */
