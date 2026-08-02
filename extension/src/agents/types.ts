@@ -125,6 +125,25 @@ export interface FixTask {
    * Absent when no checks ran or the tree already compiled.
    */
   diagnostics?: string;
+  /**
+   * A previous attempt the developer rejected, and what they said about it.
+   *
+   * Present only on a retry. This is the difference between "try again" and
+   * "try again, differently": without the rejected diff the agent has no way to
+   * know what it did last time, and re-running the identical prompt reliably
+   * produces the identical answer — which is the single most frustrating thing
+   * a tool can do to someone who has just said it got it wrong.
+   */
+  revision?: RevisionRequest;
+}
+
+export interface RevisionRequest {
+  /** What the developer asked for, verbatim. Never paraphrased. */
+  guidance: string;
+  /** The diff of the attempt being rejected, so it is not repeated. */
+  previousDiff?: string;
+  /** Which attempt this is, starting at 2. */
+  attempt: number;
 }
 
 export type FixStatus = 'applied' | 'no-changes' | 'failed' | 'delegated';
@@ -322,6 +341,48 @@ export function buildFixPrompt(task: FixTask): string {
         lines.push('```');
       }
       lines.push('');
+    }
+
+    sections.push(lines.join('\n'));
+  }
+
+  // Last, and deliberately so. Everything above is Drift's reasoning about what
+  // *should* be done; this is a human saying what was actually wrong with the
+  // attempt they just read. Where the two disagree, the human wins, and putting
+  // this section last is how that precedence is expressed in a prompt.
+  if (task.revision?.guidance.trim()) {
+    const lines = [
+      '## The developer rejected your previous attempt',
+      '',
+      `This is attempt ${task.revision.attempt}. A previous attempt was reviewed by`,
+      'the developer and turned down. What they said:',
+      '',
+      // Fenced, because this is untrusted free text from outside the prompt and
+      // must read as data rather than as further instructions.
+      '```',
+      task.revision.guidance.trim(),
+      '```',
+      '',
+      'Take this as decisive. It outranks every inference above, including the',
+      'evidence and the impact analysis — those describe what Drift expected,',
+      'and this describes what a human who read your output actually wants.',
+      '',
+      'Do not simply reproduce your previous attempt with cosmetic differences.',
+      'If the guidance means the right change is smaller than you made, make the',
+      'smaller one. If it means no change is correct here, make none and say so.',
+    ];
+
+    if (task.revision.previousDiff?.trim()) {
+      lines.push(
+        '',
+        'The attempt that was rejected, as a diff. The files above have already',
+        'been restored to their state *before* it, so you are editing the',
+        'original, not this:',
+        '',
+        '```diff',
+        task.revision.previousDiff.trim().slice(0, 20_000),
+        '```',
+      );
     }
 
     sections.push(lines.join('\n'));

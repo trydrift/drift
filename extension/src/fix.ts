@@ -16,7 +16,13 @@ import {
 import { activityFromReport } from './agent-activity.js';
 import type { DriftReview } from './review/store.js';
 import { resolveAgent, type RegistryContext } from './agents/registry.js';
-import type { AttachedContext, FixAgent, FixOutcome, FixTask } from './agents/types.js';
+import type {
+  AttachedContext,
+  FixAgent,
+  FixOutcome,
+  FixTask,
+  RevisionRequest,
+} from './agents/types.js';
 
 /**
  * The fix flow.
@@ -67,6 +73,13 @@ export interface FixOptions {
   ask?: (question: string, options?: string[]) => Promise<string>;
   /** Files, folders or selections the developer attached as reference material. */
   context?: AttachedContext[];
+  /**
+   * A rejected previous attempt and what the developer said about it.
+   *
+   * Turns "run it again" into "run it again, differently" — without this the
+   * agent sees the identical prompt and reliably produces the identical answer.
+   */
+  revision?: RevisionRequest;
   /** Mirrors agent chatter into the panel thread. */
   onLog?: (message: string) => void;
   /** Mirrors structured work into the panel's per-commit activity drawer. */
@@ -362,6 +375,7 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
         context: options.context,
         ...selection,
         diagnostics: options.diagnostics,
+        ...(options.revision ? { revision: options.revision } : {}),
       });
 
       const stop = await closeCommit(commit, outcome, before);
@@ -389,6 +403,7 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
       context: options.context,
       selection,
       diagnostics: options.diagnostics,
+      ...(options.revision ? { revision: options.revision } : {}),
     });
 
     // Reconciled in plan order, never in the order the agents happened to
@@ -561,6 +576,7 @@ async function runBatchInWorktrees(args: {
   context?: AttachedContext[];
   selection: { model?: string; effort?: SessionEffort; fast?: boolean };
   diagnostics?: string;
+  revision?: RevisionRequest;
 }): Promise<BatchOutcome[]> {
   const { git, batch, root } = args;
 
@@ -615,6 +631,7 @@ async function runBatchInWorktrees(args: {
           context: args.context,
           ...args.selection,
           diagnostics: args.diagnostics,
+          ...(args.revision ? { revision: args.revision } : {}),
           // Edits are collected rather than written: the working tree they
           // belong in is not the one the agent was given.
           deferEdits: true,
@@ -660,6 +677,7 @@ async function applyOneCommit(args: {
   effort?: SessionEffort;
   fast?: boolean;
   diagnostics?: string;
+  revision?: RevisionRequest;
   /**
    * Hand the edits back instead of writing them.
    *
@@ -687,6 +705,7 @@ async function applyOneCommit(args: {
     effort: args.effort,
     fast: args.fast,
     diagnostics: args.diagnostics,
+    ...(args.revision ? { revision: args.revision } : {}),
   };
 
   try {

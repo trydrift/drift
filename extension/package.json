@@ -488,6 +488,58 @@
           "markdownDescription": "How many agents may work at once. **1** runs one commit group at a time.\n\nAbove 1, each agent gets its own `git worktree` — a private checkout of the same commit — so two agents can never overwrite each other's edits. Only groups with no file in common run together; the rest still run in order. Results are applied to your working tree in plan order, not in the order agents finish, so the review queue looks the same either way.\n\nStays at 1 regardless when the agent permission is **Ask before editing** (approval prompts arriving at once is not approval), for cloud agents, and where git cannot create a worktree.",
           "order": 22
         },
+        "drift.pullRequest.enabled": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Offer to open a pull request once a branch is pushed.\n\nDrift never merges. Its output is always something a human opens, never something that has already landed.",
+          "order": 33
+        },
+        "drift.pullRequest.confirm": {
+          "type": "string",
+          "default": "ask",
+          "enum": [
+            "ask",
+            "never"
+          ],
+          "enumDescriptions": [
+            "Propose a title you can edit before the pull request is opened",
+            "Use the proposed title as-is"
+          ],
+          "markdownDescription": "Whether to confirm the pull request title first.\n\nA proposed name you can change beats a good one you cannot — but once you trust the shape of them, **never** removes a keystroke from every upgrade.",
+          "order": 34
+        },
+        "drift.pullRequest.base": {
+          "type": "string",
+          "default": "branched-from",
+          "enum": [
+            "branched-from",
+            "default-branch"
+          ],
+          "enumDescriptions": [
+            "The branch this work was started from, per git's reflog",
+            "Always the repository's default branch"
+          ],
+          "markdownDescription": "Which branch a pull request merges into.\n\n**branched-from** reads git's own record of where the branch came from. On a team that develops on `develop` and releases from `main`, targeting the default branch proposes merging into the wrong place and shows a diff full of other people's commits.\n\nWhen git cannot answer — a pruned reflog, a branch created before Drift ran — Drift falls back to the default branch and says so rather than guessing silently.",
+          "order": 35
+        },
+        "drift.pullRequest.draft": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Open pull requests as drafts, for a human to promote.",
+          "order": 36
+        },
+        "drift.pullRequest.titleTemplate": {
+          "type": "string",
+          "default": "chore(deps): upgrade {summary}",
+          "markdownDescription": "Title for pull requests Drift opens.\n\nPlaceholders: `{summary}`, `{name}`, `{from}`, `{to}`, `{count}`, `{date}`. An unrecognised placeholder is left visible rather than blanked — an obviously wrong title gets fixed, a plausible empty one does not.",
+          "order": 37
+        },
+        "drift.git.coAuthor": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Add `Co-authored-by: Drift` to commits Drift makes.\n\nYou stay the author: you chose the upgrade and reviewed the diff. Turn this off if your repository lints commit trailers.",
+          "order": 38
+        },
         "drift.git.branchPrefix": {
           "type": "string",
           "default": "drift",

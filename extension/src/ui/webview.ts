@@ -205,6 +205,16 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
   },
   { name: '/review', title: 'Review changes', description: 'Show changes waiting to be kept or undone' },
   {
+    name: '/redo',
+    title: 'Try the fix again, differently',
+    description: 'Say what is wrong and the agent starts over from the original files',
+  },
+  {
+    name: '/discard',
+    title: 'Throw away the agent’s edits',
+    description: 'Restore every file the agent changed to how it was',
+  },
+  {
     name: '/commit',
     title: 'Commit the dependency changes',
     description: 'Branch and commit the manifests and lockfiles an upgrade changed',
