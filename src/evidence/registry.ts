@@ -329,7 +329,9 @@ async function pypiVersionInfo(name: string, version: string): Promise<VersionIn
   const data = await fetchJson<{
     info?: { license?: string; requires_python?: string; requires_dist?: string[]; yanked?: boolean; yanked_reason?: string };
     urls?: { upload_time_iso_8601?: string }[];
-  }>(`https://pypi.org/pypi/${encodeURIComponent(name)}/${encodeURIComponent(version)}/json`);
+  }>(`https://pypi.org/pypi/${encodeURIComponent(name)}/${encodeURIComponent(version)}/json`, {
+    immutable: true,
+  });
   if (!data?.info) return null;
 
   const requiresPython = data.info.requires_python;
@@ -356,8 +358,8 @@ async function goVersionInfo(name: string, version: string): Promise<VersionInfo
   const base = `https://proxy.golang.org/${encodeURI(name.toLowerCase())}/@v/${encodeURIComponent(tag)}`;
 
   const [mod, info] = await Promise.all([
-    fetchText(`${base}.mod`),
-    fetchJson<{ Time?: string }>(`${base}.info`),
+    fetchText(`${base}.mod`, { immutable: true }),
+    fetchJson<{ Time?: string }>(`${base}.info`, { immutable: true }),
   ]);
   if (!mod && !info) return null;
 
@@ -431,7 +433,9 @@ function compareLoose(a: string, b: string): number {
 async function cargoVersionInfo(name: string, version: string): Promise<VersionInfo | null> {
   const data = await fetchJson<{
     version?: { license?: string; created_at?: string; yanked?: boolean; rust_version?: string };
-  }>(`https://crates.io/api/v1/crates/${encodeURIComponent(name)}/${encodeURIComponent(version)}`);
+  }>(`https://crates.io/api/v1/crates/${encodeURIComponent(name)}/${encodeURIComponent(version)}`, {
+    immutable: true,
+  });
   if (!data?.version) return null;
 
   const rust = data.version.rust_version;

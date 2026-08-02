@@ -51,7 +51,11 @@ describe('toolchains that supply their own checks', () => {
       'mvn -q test',
       'mvn -q package -DskipTests',
     ]);
-    assert.deepEqual(labels('gradle', null), ['gradle test', 'gradle build -x test']);
+    assert.deepEqual(labels('gradle', null), [
+      'gradle compileTestJava',
+      'gradle test',
+      'gradle build -x test',
+    ]);
   });
 });
 

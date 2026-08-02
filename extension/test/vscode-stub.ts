@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 
 /**
  * Minimal `vscode` stand-in for headless testing.
@@ -71,6 +71,19 @@ export class Range {
   }
 }
 
+export class Position {
+  constructor(
+    readonly line: number,
+    readonly character: number,
+  ) {}
+}
+
+export class Selection extends Range {
+  constructor(anchor: { line: number; character: number }, active: { line: number; character: number }) {
+    super(anchor.line, anchor.character, active.line, active.character);
+  }
+}
+
 export class Diagnostic {
   source?: string;
   code?: unknown;
@@ -110,6 +123,24 @@ export class CodeAction {
 
 export const CodeActionKind = { QuickFix: 'quickfix' } as const;
 
+export class CodeLens {
+  constructor(
+    readonly range: Range,
+    readonly command?: unknown,
+  ) {}
+}
+
+export class Hover {
+  constructor(readonly contents: unknown) {}
+}
+
+export class WorkspaceEdit {
+  readonly edits: { uri: { fsPath: string }; text: string }[] = [];
+  replace(uri: { fsPath: string }, _range: Range, text: string): void {
+    this.edits.push({ uri, text });
+  }
+}
+
 export const Uri = {
   file: (path: string) => ({ fsPath: path, path, scheme: 'file', toString: () => `file://${path}` }),
   parse: (value: string) => ({ toString: () => value, fsPath: value, path: value }),
@@ -142,10 +173,24 @@ export const workspace = {
   },
   textDocuments: [] as { uri: { fsPath: string }; getText(): string }[],
   onDidChangeTextDocument: () => ({ dispose: () => undefined }),
-  applyEdit: async () => true,
+  applyEdit: async (edit: WorkspaceEdit) => {
+    for (const entry of edit.edits) writeFileSync(entry.uri.fsPath, entry.text);
+    return true;
+  },
   saveAll: async () => true,
-  openTextDocument: async () => {
-    throw new Error('not implemented');
+  openTextDocument: async (uri: { fsPath: string }) => {
+    const text = readFileSync(uri.fsPath, 'utf8');
+    return {
+      uri,
+      getText: () => text,
+      positionAt: (offset: number) => {
+        const before = text.slice(0, offset).split('\n');
+        return new Position(before.length - 1, before.at(-1)?.length ?? 0);
+      },
+      save: async () => true,
+      lineCount: text.split('\n').length,
+      lineAt: (line: number) => ({ text: text.split('\n')[line] ?? '' }),
+    };
   },
 };
 
@@ -172,6 +217,11 @@ export const window = {
     dispose: () => undefined,
   }),
   createTreeView: () => ({ dispose: () => undefined }),
+  showTextDocument: async (document: unknown) => ({
+    document,
+    selection: undefined as unknown,
+    revealRange: () => undefined,
+  }),
   createWebviewPanel: () => {
     throw new Error('not implemented in the stub');
   },
@@ -197,6 +247,8 @@ export const languages = {
     };
   },
   registerCodeActionsProvider: () => ({ dispose: () => undefined }),
+  registerCodeLensProvider: () => ({ dispose: () => undefined }),
+  registerHoverProvider: () => ({ dispose: () => undefined }),
 };
 
 export const authentication = {
@@ -233,6 +285,7 @@ export class CancellationTokenSource {
 }
 
 export const ViewColumn = { One: 1, Two: 2 } as const;
+export const TextEditorRevealType = { InCenterIfOutsideViewport: 2 } as const;
 export const ProgressLocation = { Notification: 15, Window: 10 } as const;
 export const ConfigurationTarget = { Global: 1, Workspace: 2 } as const;
 export const env = { openExternal: async () => true };

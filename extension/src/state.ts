@@ -3,6 +3,7 @@ import { basename } from 'node:path';
 import type { RemediationPlan } from '../../src/types.js';
 import type { LocalRepoInfo } from '../../src/repo/local-git.js';
 import type { NestedProject } from '../../src/detect/nested.js';
+import type { UpgradeCandidate } from './upgrades.js';
 
 /**
  * Extension state.
@@ -48,6 +49,7 @@ export class DriftState {
   private _status: DriftStatus = { kind: 'idle' };
   private _roots: RepoRoot[] = [];
   private _activeRootPath: string | null = null;
+  private _candidates: UpgradeCandidate[] = [];
 
   private readonly emitter = new vscode.EventEmitter<DriftStatus>();
   readonly onDidChange = this.emitter.event;
@@ -83,6 +85,17 @@ export class DriftState {
 
   get isBusy(): boolean {
     return this._status.kind === 'analysing' || this._status.kind === 'fixing';
+  }
+
+  /** The last dependency scan result, kept outside the chat transcript. */
+  get candidates(): readonly UpgradeCandidate[] {
+    return this._candidates;
+  }
+
+  setCandidates(candidates: readonly UpgradeCandidate[]): void {
+    this._candidates = [...candidates];
+    this.emitter.fire(this._status);
+    void vscode.commands.executeCommand('setContext', 'drift.hasDependencyScan', this._candidates.length > 0);
   }
 
   setRoots(roots: readonly RepoRoot[]): void {
@@ -143,6 +156,7 @@ export class DriftState {
       'plan' in status ? Boolean(status.plan?.impactSites.length) : false,
     );
     void vscode.commands.executeCommand('setContext', 'drift.reviewing', status.kind === 'reviewing');
+    void vscode.commands.executeCommand('setContext', 'drift.hasDependencyScan', this._candidates.length > 0);
   }
 
   dispose(): void {

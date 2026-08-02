@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { join } from 'node:path';
 import type { BreakingChange, ImpactSite, RemediationPlan } from '../../../src/types.js';
 import type { DriftState } from '../state.js';
+import type { DriftReview } from '../review/store.js';
 
 /**
  * Inline flagging.
@@ -162,6 +163,7 @@ export class DriftCodeActionProvider implements vscode.CodeActionProvider {
   constructor(
     private readonly state: DriftState,
     private readonly diagnostics: DriftDiagnostics,
+    private readonly review?: DriftReview,
   ) {}
 
   provideCodeActions(
@@ -170,12 +172,13 @@ export class DriftCodeActionProvider implements vscode.CodeActionProvider {
     context: vscode.CodeActionContext,
   ): vscode.CodeAction[] {
     const plan = this.state.plan;
-    if (!plan) return [];
+    const reviewActions = this.reviewActions(document, _range);
+    if (!plan) return reviewActions;
 
     const driftDiagnostics = context.diagnostics.filter((d) => d.source === SOURCE);
-    if (driftDiagnostics.length === 0) return [];
+    if (driftDiagnostics.length === 0) return reviewActions;
 
-    const actions: vscode.CodeAction[] = [];
+    const actions: vscode.CodeAction[] = [...reviewActions];
     const seenCommits = new Set<number>();
 
     for (const diagnostic of driftDiagnostics) {
@@ -222,8 +225,54 @@ export class DriftCodeActionProvider implements vscode.CodeActionProvider {
 
     return actions;
   }
+
+  private reviewActions(
+    document: vscode.TextDocument,
+    range: vscode.Range | vscode.Selection,
+  ): vscode.CodeAction[] {
+    const found = this.review?.fileFor(document.uri);
+    if (!found) return [];
+
+    const actions: vscode.CodeAction[] = [];
+    const touched = found.file.hunks.filter((hunk) => rangeTouchesHunk(range, hunk.start, hunk.end));
+    const hunks = touched.length > 0 ? touched : found.file.hunks;
+
+    for (const hunk of hunks) {
+      const keep = new vscode.CodeAction('Drift: keep this change', vscode.CodeActionKind.QuickFix);
+      keep.command = {
+        command: 'drift.keepHunk',
+        title: 'Keep change',
+        arguments: [found.file.path, hunk.id],
+      };
+      keep.isPreferred = true;
+      actions.push(keep);
+
+      const undo = new vscode.CodeAction('Drift: undo this change', vscode.CodeActionKind.QuickFix);
+      undo.command = {
+        command: 'drift.undoHunk',
+        title: 'Undo change',
+        arguments: [found.file.path, hunk.id],
+      };
+      actions.push(undo);
+    }
+
+    const keepFile = new vscode.CodeAction('Drift: keep file', vscode.CodeActionKind.QuickFix);
+    keepFile.command = { command: 'drift.keepFile', title: 'Keep file', arguments: [found.file.path] };
+    actions.push(keepFile);
+
+    const undoFile = new vscode.CodeAction('Drift: undo file', vscode.CodeActionKind.QuickFix);
+    undoFile.command = { command: 'drift.undoFile', title: 'Undo file', arguments: [found.file.path] };
+    actions.push(undoFile);
+
+    return actions;
+  }
 }
 
 function truncate(text: string, max: number): string {
   return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
+}
+
+function rangeTouchesHunk(range: vscode.Range | vscode.Selection, start: number, end: number): boolean {
+  const last = Math.max(start, end - 1);
+  return range.end.line >= start && range.start.line <= last;
 }

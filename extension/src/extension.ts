@@ -8,8 +8,15 @@ import { DriftReview } from './review/store.js';
 import { DriftReviewUi } from './review/ui.js';
 import { DriftHomeView } from './ui/home.js';
 import { DriftCodeActionProvider, DriftDiagnostics } from './ui/diagnostics.js';
+import {
+  DriftDependencyTreeProvider,
+  ManifestHoverProvider,
+  ManifestLensProvider,
+  openDependency,
+} from './ui/dependencies.js';
 import { DriftReportPanel } from './ui/report.js';
 import { DriftStatusBar } from './ui/statusbar.js';
+import { configureHttpDiskCache } from '../../src/util/http.js';
 import { discoverAgents, invalidateAgentCache } from './agents/registry.js';
 import { isSignedIn, onDidChangeGitHubAuth } from './github-auth.js';
 import { inspectLocalRepo } from '../../src/repo/local-git.js';
@@ -42,6 +49,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const diagnostics = new DriftDiagnostics(state);
   const statusBar = new DriftStatusBar(state);
   const reviewUi = new DriftReviewUi(review);
+  configureHttpDiskCache(vscode.Uri.joinPath(context.globalStorageUri, 'evidence-cache').fsPath);
   const home = new DriftHomeView(
     context.extensionUri,
     state,
@@ -54,6 +62,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   context.subscriptions.push(diagnostics, statusBar, reviewUi, home);
 
+  const dependencies = new DriftDependencyTreeProvider(state);
+  const dependencyTree = vscode.window.createTreeView('drift.dependencies', { treeDataProvider: dependencies });
+  context.subscriptions.push(dependencies, dependencyTree);
+
+  const updateBadges = () => {
+    const files = state.plan ? new Set(state.plan.impactSites.map((site) => site.file)).size : 0;
+    const badge = files > 0 ? { value: files, tooltip: `${files} affected file${files === 1 ? '' : 's'}` } : undefined;
+    dependencyTree.badge = badge;
+    home.setBadge(badge);
+  };
+  context.subscriptions.push(state.onDidChange(updateBadges));
+  updateBadges();
+
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider('drift.changes', home, {
       webviewOptions: { retainContextWhenHidden: true },
@@ -63,9 +84,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(
     vscode.languages.registerCodeActionsProvider(
       { scheme: 'file' },
-      new DriftCodeActionProvider(state, diagnostics),
+      new DriftCodeActionProvider(state, diagnostics, review),
       { providedCodeActionKinds: DriftCodeActionProvider.providedCodeActionKinds },
     ),
+    vscode.languages.registerCodeLensProvider({ scheme: 'file' }, new ManifestLensProvider(state)),
+    vscode.languages.registerHoverProvider({ scheme: 'file' }, new ManifestHoverProvider(state)),
   );
 
   registerCommands(context, state, review, reviewUi, home);
@@ -194,6 +217,7 @@ function registerCommands(
   }) as never);
   register('drift.nextChange', () => reviewUi.revealNext());
   register('drift.reviewChanges', () => home.reveal());
+  register('drift.scanDependencies', () => home.scanDependencies());
   register('drift.newSession', () => home.newSession());
   register('drift.history', () => home.showHistory());
   register('drift.clearHistory', () => home.clearHistory());
@@ -227,6 +251,7 @@ function registerCommands(
   register('drift.fixCommit', ((order: number) => startFix(state, review, home, order)) as never);
 
   register('drift.showReport', () => DriftReportPanel.show(state));
+  register('drift.openDependency', ((id: string) => openDependency(state, id)) as never);
 
   register('drift.explainChange', ((changeId: string) => {
     DriftReportPanel.show(state, changeId);

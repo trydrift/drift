@@ -92,6 +92,7 @@ function checksFor(manager: PackageManagerId, manifest: string | null): LocalChe
       ];
     case 'gradle':
       return [
+        check('typecheck', { command: 'gradle', args: ['compileTestJava'] }, 'Gradle'),
         check('test', { command: 'gradle', args: ['test'] }, 'Gradle'),
         check('build', { command: 'gradle', args: ['build', '-x', 'test'] }, 'Gradle'),
       ];
