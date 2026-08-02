@@ -145,10 +145,33 @@ nothing — most dependency bumps genuinely don't break you, and saying so quick
 is a feature.
 
 ### 1 · Detect
-Diffs manifests and lockfiles across **npm/yarn/pnpm, pip/poetry/uv, Go modules,
-Cargo, Maven/Gradle, and Bundler**. Handles `${property}` references in POMs,
-`// indirect` in `go.mod`, PEP 508 markers, and Ruby's `~> 4.1`. Parsers never
-throw — a half-rebased lockfile degrades the run, it doesn't fail it.
+Diffs manifests and lockfiles across thirteen ecosystems: **npm/pnpm/yarn/bun,
+pip/poetry/uv, Go modules, Cargo, Maven/Gradle/sbt, Bundler, NuGet, Composer,
+Mix, pub (Dart & Flutter), Swift Package Manager, CocoaPods, and opam**.
+
+The work is in the cases a regex gets wrong. .NET Central Package Management
+means a `.csproj` carries no versions at all. `"org" %% "artifact"` in sbt
+depends on `artifact_2.13`, not `artifact`. A pubspec entry sourced from an SDK,
+a git ref, or a path pins nothing, and Composer's `require` mixes real packages
+with platform constraints like `php` and `ext-mbstring`. Each of those yields
+*no version* rather than a wrong one — a missing version reports no upgrade, a
+wrong one sends the fix stage editing a dependency that was never there.
+
+Parsers never throw: a half-rebased lockfile degrades the run, it doesn't fail
+it.
+
+Scala and React Native are supported without being separate ecosystems. sbt
+coordinates resolve to Maven Central, so `build.sbt` is parsed into `maven` and
+inherits its registry, surface diff, and advisories. React Native's JavaScript
+half is npm and its native half is CocoaPods — which matters, because a React
+Native upgrade routinely moves native pods underneath the JavaScript package,
+and a tool that reads only `package.json` reports half the change as all of it.
+
+**What each ecosystem can and cannot do is stated per stage in
+[docs/support.md](docs/support.md)**, which is generated from the same data the
+pipeline reads at runtime. `Detect` is not `Verify` is not `API surface`, and
+collapsing them into one "supported" column is how a tool ends up claiming
+things you can disprove in thirty seconds.
 
 ### 2 · Evidence
 Gathers citable ground truth from six sources, weighted by how directly each

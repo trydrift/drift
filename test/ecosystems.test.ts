@@ -1011,3 +1011,83 @@ describe('the support doc cannot outlive the code', () => {
     }
   });
 });
+
+describe('an absence must never read as an all-clear', () => {
+  test('the report names what could not be checked, and why', async () => {
+    // A Ruby upgrade with no findings and a TypeScript upgrade with no findings
+    // look identical on the page, and they are not the same claim: one means
+    // the API surface was compared and nothing broke, the other means there is
+    // no API surface to compare and the verdict rests entirely on prose.
+    const { renderPullRequestBody } = await import('../dist/report/markdown.js');
+    const { buildPlan } = await import('../dist/plan/index.js');
+    const { DEFAULT_CONFIG } = await import('../dist/config/schema.js');
+
+    const plan = buildPlan({
+      repo: {
+        owner: 'o',
+        repo: 'r',
+        baseBranch: 'main',
+        beforeSha: 'a'.repeat(40),
+        afterSha: 'b'.repeat(40),
+      },
+      config: DEFAULT_CONFIG,
+      changes: [
+        {
+          name: 'rails',
+          ecosystem: 'rubygems',
+          from: '7.0.0',
+          to: '7.1.0',
+          kind: 'runtime',
+          bump: 'minor',
+          manifestPath: 'Gemfile',
+        },
+      ],
+      evidence: [],
+      breakingChanges: [],
+      impactSites: [],
+    });
+
+    const body = renderPullRequestBody(plan, DEFAULT_CONFIG);
+
+    assert.match(body, /What Drift could not check/);
+    assert.match(body, /no static public API surface/);
+    // And it must not let the reader mistake the limit for a result.
+    assert.match(body, /not\s+evidence that nothing is wrong/);
+  });
+
+  test('says nothing when every stage actually ran', async () => {
+    // A section that reports "nothing to report" on every clean upgrade is a
+    // section people stop reading, which costs it its power on the one that
+    // matters.
+    const { renderPullRequestBody } = await import('../dist/report/markdown.js');
+    const { buildPlan } = await import('../dist/plan/index.js');
+    const { DEFAULT_CONFIG } = await import('../dist/config/schema.js');
+
+    const plan = buildPlan({
+      repo: {
+        owner: 'o',
+        repo: 'r',
+        baseBranch: 'main',
+        beforeSha: 'a'.repeat(40),
+        afterSha: 'b'.repeat(40),
+      },
+      config: DEFAULT_CONFIG,
+      changes: [
+        {
+          name: 'zod',
+          ecosystem: 'npm',
+          from: '3.24.1',
+          to: '4.0.0',
+          kind: 'runtime',
+          bump: 'major',
+          manifestPath: 'package.json',
+        },
+      ],
+      evidence: [],
+      breakingChanges: [],
+      impactSites: [],
+    });
+
+    assert.ok(!renderPullRequestBody(plan, DEFAULT_CONFIG).includes('What Drift could not check'));
+  });
+});
