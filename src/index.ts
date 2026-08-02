@@ -65,6 +65,24 @@ export { renderPullRequestBody, renderApprovalIssue, renderSummaryLine } from '.
 export { GitHubClient } from './github/client.js';
 export type { GitHubClientOptions } from './github/client.js';
 
+export { authorizeApproval, canApprove } from './approval/authorize.js';
+export type { AuthorizeResult, ApprovalRequest, RepoPermission } from './approval/authorize.js';
+export { applyApproval } from './approval/apply.js';
+export type { ApprovalOutcome, ApplyApprovalOptions } from './approval/apply.js';
+export { canonicalJson, canonicalPlan, planDigest, PLAN_SCHEMA_VERSION } from './approval/digest.js';
+export {
+  parseApprovalMetadata,
+  renderApprovalMetadata,
+  renderDispatchMarker,
+  findPriorDispatch,
+} from './approval/metadata.js';
+export type { ApprovalMetadata } from './approval/metadata.js';
+
+export { MemoryJobQueue } from './queue/memory.js';
+export { SqliteJobQueue } from './queue/sqlite.js';
+export { QueueWorker } from './queue/worker.js';
+export type { Job, JobQueue, JobStatus, QueueStats } from './queue/types.js';
+
 export { runPipeline } from './pipeline.js';
 export type { PipelineOptions, PipelineResult } from './pipeline.js';
 

@@ -1,4 +1,4 @@
-import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { RepoContext } from '../types.js';
 import { loadConfig } from '../config/load.js';
@@ -6,17 +6,22 @@ import { GitHubClient } from '../github/client.js';
 import { runPipeline } from '../pipeline.js';
 import { createLogger, type Logger, type LogLevel } from '../util/logger.js';
 import { matchesAny } from '../util/glob.js';
+import { applyApproval } from '../approval/apply.js';
+import type { JobQueue } from '../queue/types.js';
+import { QueueWorker } from '../queue/worker.js';
+import { MemoryJobQueue } from '../queue/memory.js';
+import { SqliteJobQueue } from '../queue/sqlite.js';
 
 /**
- * Stateless GitHub App webhook runner — the secondary deployment.
+ * Self-hosted GitHub App webhook runner — the secondary deployment.
  *
- * This is the "GitHub App that listens to your repos" experience, and it is
- * genuinely stateless: no database, no session store, no queue. Every piece of
- * durable state Drift needs already lives in GitHub — plans are filed as
- * issues, approvals are comments on those issues, and plan IDs are derived
- * from content so a re-run finds its own prior work.
+ * This is the "GitHub App that listens to your repos" experience. Most of the
+ * state Drift needs still lives in GitHub — plans are filed as issues and
+ * approvals are comments on them — but *accepted work* cannot, which is what
+ * the job queue is for. See `queue/types.ts` for why answering 202 and starting
+ * an untracked promise was not a viable design.
  *
- * ## Two honest limitations
+ * ## Three honest limitations
  *
  * 1. **No checkout, so no localization.** This server sees webhooks, not a
  *    working tree. It can detect changes and gather evidence, but it cannot
@@ -29,8 +34,12 @@ import { matchesAny } from '../util/glob.js';
  *    to need. So this runner is single-tenant: self-host it, set one token,
  *    point it at your own repos.
  *
- * Both limitations are properties of the deployment model, not bugs. The
- * Action has neither.
+ * 3. **Single node.** The queue is durable across restarts of one process, not
+ *    shared between replicas. Two runners on one database file is not a
+ *    supported configuration.
+ *
+ * All three are properties of the deployment model, not bugs. The Action has
+ * none of them.
  */
 
 export interface WebhookServerOptions {
@@ -43,17 +52,49 @@ export interface WebhookServerOptions {
   copilotToken?: string;
   logger?: Logger;
   dryRun?: boolean;
+  /**
+   * Where accepted deliveries are recorded before being acknowledged.
+   *
+   * Required, because the alternative is losing work on restart. `main()`
+   * builds the durable one; tests pass `MemoryJobQueue`.
+   */
+  queue: JobQueue;
 }
 
-export function createWebhookServer(options: WebhookServerOptions) {
+export interface WebhookServer {
+  server: Server;
+  worker: QueueWorker;
+  /** Stop accepting connections, then let the running job finish. */
+  shutdown: () => Promise<void>;
+}
+
+export function createWebhookServer(options: WebhookServerOptions): WebhookServer {
   const logger = options.logger ?? createLogger((process.env.DRIFT_LOG_LEVEL as LogLevel) ?? 'info');
 
-  return createServer((req, res) => {
-    void handleRequest(req, res, options, logger).catch((err) => {
+  const worker = new QueueWorker({
+    queue: options.queue,
+    logger,
+    handler: async (job) => {
+      const payload = JSON.parse(job.payload) as Record<string, unknown>;
+      await processEvent(job.event, payload, options, logger);
+    },
+  });
+
+  const server = createServer((req, res) => {
+    void handleRequest(req, res, options, logger, worker).catch((err) => {
       logger.error(`Unhandled error: ${(err as Error).message}`);
       if (!res.headersSent) respond(res, 500, { error: 'internal error' });
     });
   });
+
+  const shutdown = async (): Promise<void> => {
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    await worker.stop();
+    await options.queue.close();
+    logger.info('Drift webhook server stopped cleanly');
+  };
+
+  return { server, worker, shutdown };
 }
 
 async function handleRequest(
@@ -61,9 +102,22 @@ async function handleRequest(
   res: ServerResponse,
   options: WebhookServerOptions,
   logger: Logger,
+  worker: QueueWorker,
 ): Promise<void> {
   if (req.method === 'GET' && req.url === '/health') {
-    respond(res, 200, { status: 'ok', stateless: true });
+    // Counts only. Nothing here names a repository, an event payload, or an
+    // error string — the endpoint is frequently public, and queue depth is
+    // operational information while delivery contents are customer data.
+    const stats = await options.queue.stats();
+    respond(res, 200, {
+      status: stats.failed > 0 ? 'degraded' : 'ok',
+      queue: {
+        queued: stats.queued,
+        running: stats.running,
+        failed: stats.failed,
+        oldestPendingAgeMs: stats.oldestPendingAgeMs,
+      },
+    });
     return;
   }
 
@@ -82,21 +136,50 @@ async function handleRequest(
   }
 
   const eventName = String(req.headers['x-github-event'] ?? '');
-  let payload: Record<string, unknown>;
+
+  // Only read after the signature check: an unverified delivery id is
+  // attacker-controlled, and it is about to become a uniqueness key.
+  const deliveryId = String(req.headers['x-github-delivery'] ?? '');
+  if (!deliveryId) {
+    // Every genuine GitHub delivery carries one, and without it replay
+    // protection is impossible.
+    respond(res, 400, { error: 'missing X-GitHub-Delivery' });
+    return;
+  }
+
   try {
-    payload = JSON.parse(raw.toString('utf8')) as Record<string, unknown>;
+    JSON.parse(raw.toString('utf8'));
   } catch {
     respond(res, 400, { error: 'invalid JSON' });
     return;
   }
 
-  // GitHub expects a fast acknowledgement; the pipeline makes many network
-  // calls and would blow the delivery timeout if awaited here.
-  respond(res, 202, { accepted: true, event: eventName });
+  // Record before acknowledging. The 202 below is a promise that this delivery
+  // will be processed, and it is only honest once the row is committed to disk.
+  let result: Awaited<ReturnType<JobQueue['enqueue']>>;
+  try {
+    result = await options.queue.enqueue({
+      deliveryId,
+      event: eventName,
+      payload: raw.toString('utf8'),
+    });
+  } catch (err) {
+    // 500 rather than 202: GitHub retries a 5xx, and a delivery Drift failed to
+    // record is exactly one it should be sent again.
+    logger.error(`Could not record delivery ${deliveryId}: ${(err as Error).message}`);
+    respond(res, 500, { error: 'could not record delivery' });
+    return;
+  }
 
-  void processEvent(eventName, payload, options, logger).catch((err) => {
-    logger.error(`Processing ${eventName} failed: ${(err as Error).message}`);
-  });
+  if (result.status === 'duplicate') {
+    logger.debug(`Delivery ${deliveryId} already recorded; acknowledging without re-queueing`);
+    respond(res, 202, { accepted: true, event: eventName, duplicate: true });
+    return;
+  }
+
+  respond(res, 202, { accepted: true, event: eventName });
+  // The worker polls anyway; this just skips the poll interval.
+  worker.notify();
 }
 
 async function processEvent(
@@ -162,63 +245,36 @@ async function handlePush(
 /**
  * `/drift apply` on an approval issue.
  *
- * This is the whole approval mechanism. The issue body holds the plan, the
- * comment is the approval, and GitHub stores both — so re-analysing from the
- * recorded commit reproduces the identical plan (IDs are content-derived) and
- * dispatches it.
+ * Every check lives in `approval/apply.ts`, shared with the Action so the two
+ * runners cannot disagree about who may approve what. This function only
+ * supplies the repository coordinates.
+ *
+ * What was here before accepted any comment matching the command, from anyone,
+ * on any issue whose body contained a `drift-commit:` marker — a string the
+ * commenter could type themselves. On a public repository that let an arbitrary
+ * user dispatch a coding agent against a commit of their choosing.
  */
 async function handleIssueComment(
   payload: Record<string, unknown>,
   options: WebhookServerOptions,
   logger: Logger,
 ): Promise<void> {
-  const action = payload.action as string | undefined;
-  if (action !== 'created') return;
-
-  const comment = payload.comment as { body?: string } | undefined;
-  const issue = payload.issue as { number?: number; body?: string; pull_request?: unknown } | undefined;
-  const repository = payload.repository as
-    | { full_name?: string; default_branch?: string }
-    | undefined;
-
-  if (!comment?.body || !issue?.number || !repository?.full_name) return;
-  if (issue.pull_request) return; // Comments on PRs are not approvals.
-  if (!/^\s*\/drift\s+apply\b/im.test(comment.body)) return;
-
-  const [owner, repoName] = repository.full_name.split('/');
+  const repository = payload.repository as { full_name?: string } | undefined;
+  const [owner, repoName] = (repository?.full_name ?? '').split('/');
   if (!owner || !repoName) return;
 
-  const sha = extractAnalysedSha(issue.body ?? '');
-  if (!sha) {
-    logger.warn(`Issue #${issue.number} has no recorded commit; cannot reproduce the plan.`);
-    return;
-  }
+  const github = new GitHubClient({ repoToken: options.repoToken, logger });
 
-  const repo: RepoContext = {
+  await applyApproval({
+    payload,
     owner,
     repo: repoName,
-    baseBranch: repository.default_branch ?? 'main',
-    beforeSha: `${sha}^`,
-    afterSha: sha,
-  };
-
-  const github = new GitHubClient({ repoToken: options.repoToken, logger });
-  const { config } = await loadConfig((path) => github.readFile(repo, path, sha));
-
-  logger.info(`Applying approved plan from #${issue.number} in ${repository.full_name}`);
-
-  const result = await runPipeline({
-    repo,
-    config,
-    logger,
     github,
-    copilotToken: options.copilotToken,
-    dryRun: options.dryRun,
-    approved: true,
-    workspace: undefined,
+    logger,
+    ...(options.copilotToken ? { copilotToken: options.copilotToken } : {}),
+    ...(options.dryRun ? { dryRun: true } : {}),
+    // No checkout on this deployment, so no localization. The pipeline warns.
   });
-
-  await github.commentOnIssue(repo, issue.number, result.summary);
 }
 
 function repoContextFromPush(payload: Record<string, unknown>): RepoContext | null {
@@ -244,11 +300,6 @@ function repoContextFromPush(payload: Record<string, unknown>): RepoContext | nu
     beforeSha: before && !/^0+$/.test(before) ? before : `${afterSha}^`,
     afterSha,
   };
-}
-
-/** Recover the analysed commit from a Drift issue body's footer. */
-function extractAnalysedSha(body: string): string | null {
-  return /drift-commit:\s*([0-9a-f]{7,40})/i.exec(body)?.[1] ?? null;
 }
 
 /**
@@ -306,8 +357,42 @@ function respond(res: ServerResponse, status: number, body: unknown): void {
   res.end(payload);
 }
 
-/** Entry point for `npm run serve`. */
-export function main(): void {
+/**
+ * Build the queue named by `DRIFT_QUEUE`.
+ *
+ * Durable by default. `memory` stays available because it is genuinely useful
+ * for a smoke test, but it is announced loudly — a runner that quietly drops
+ * work on restart is the failure this whole module exists to remove.
+ */
+export async function createQueueFromEnv(logger: Logger): Promise<JobQueue> {
+  const kind = (process.env.DRIFT_QUEUE ?? 'sqlite').toLowerCase();
+
+  if (kind === 'memory') {
+    logger.warn(
+      'DRIFT_QUEUE=memory: deliveries are held in memory only and will be lost on restart. Do not use this in production.',
+    );
+    return new MemoryJobQueue();
+  }
+
+  if (kind !== 'sqlite') {
+    throw new Error(`Unknown DRIFT_QUEUE \`${kind}\`. Supported values: \`sqlite\` (default), \`memory\`.`);
+  }
+
+  const path = process.env.DRIFT_QUEUE_PATH ?? '.drift/queue.db';
+  const queue = await SqliteJobQueue.open(path);
+  logger.info(`Delivery queue: sqlite at ${path}`);
+  return queue;
+}
+
+/**
+ * Entry point for `npm run serve` and `drift serve`.
+ *
+ * Resolves once the server is listening, not when it stops — the caller keeps
+ * the process alive through the open handle. Startup failures are returned as
+ * an exit code rather than thrown, so a bad queue path produces one clear line
+ * instead of an unhandled rejection.
+ */
+export async function main(): Promise<number> {
   const logger = createLogger((process.env.DRIFT_LOG_LEVEL as LogLevel) ?? 'info');
 
   const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET ?? '';
@@ -317,19 +402,35 @@ export function main(): void {
     logger.error(
       'GITHUB_WEBHOOK_SECRET and GITHUB_TOKEN must both be set. Drift refuses to run a webhook server that cannot verify signatures.',
     );
-    process.exitCode = 1;
-    return;
+    return 1;
+  }
+
+  let queue: JobQueue;
+  try {
+    queue = await createQueueFromEnv(logger);
+  } catch (err) {
+    logger.error((err as Error).message);
+    return 1;
+  }
+
+  // Anything left `running` belongs to a process that is no longer alive.
+  const recovered = await queue.recover();
+  if (recovered > 0) {
+    logger.info(`Recovered ${recovered} delivery/deliveries left in flight by a previous run`);
   }
 
   const port = Number(process.env.PORT ?? 3000);
-  const server = createWebhookServer({
+  const { server, worker, shutdown } = createWebhookServer({
     port,
     webhookSecret,
     repoToken,
     copilotToken: process.env.DRIFT_COPILOT_TOKEN,
     logger,
     dryRun: process.env.DRIFT_DRY_RUN === 'true',
+    queue,
   });
+
+  worker.start();
 
   server.listen(port, () => {
     logger.info(`Drift webhook server listening on :${port}`);
@@ -339,7 +440,31 @@ export function main(): void {
       );
     }
   });
+
+  // A deploy sends SIGTERM. Draining the job in flight is what keeps a restart
+  // from turning into a duplicate analysis on the next startup.
+  let shuttingDown = false;
+  for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+    process.on(signal, () => {
+      if (shuttingDown) return;
+      shuttingDown = true;
+      logger.info(`${signal} received; finishing the delivery in flight before exiting`);
+      void shutdown().then(
+        () => process.exit(0),
+        (err: Error) => {
+          logger.error(`Shutdown failed: ${err.message}`);
+          process.exit(1);
+        },
+      );
+    });
+  }
+
+  return 0;
 }
 
 // Run when invoked directly rather than imported.
-if (process.argv[1]?.endsWith('webhook.js')) main();
+if (process.argv[1]?.endsWith('webhook.js')) {
+  void main().then((code) => {
+    if (code !== 0) process.exitCode = code;
+  });
+}

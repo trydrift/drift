@@ -21,7 +21,9 @@ A copy-paste starting point: [`examples/drift.yml`](../examples/drift.yml).
 `auto` | `approve` — default **`approve`**
 
 - **`approve`** — Drift analyses, files an issue with the full plan, and waits
-  for a `/drift apply` comment.
+  for a `/drift apply` comment from someone with `write`, `maintain`, or `admin`
+  permission on the repository. The command must be on a line of its own, so
+  quoting it while discussing it does not approve anything.
 - **`auto`** — Drift dispatches as soon as it detects a breaking change, subject
   to every guardrail below.
 

@@ -408,23 +408,57 @@ you teach people to stop reading your output.
 
 ---
 
-## Statelessness
+## State
 
-Drift stores nothing. All durable state lives in GitHub:
+Almost all durable state lives in GitHub:
 
 | State | Where |
 |---|---|
 | Pending approvals | Issues labelled `drift` |
 | The approval itself | A `/drift apply` comment |
-| Which commit was analysed | An HTML comment in the issue body |
+| Which plan was approved | A machine-readable footer in the issue body |
+| Whether it already ran | A dispatch marker in a Drift-authored comment |
 | Fix in progress | The branch and the Copilot task |
 | Configuration | `.github/drift.yml` |
 | Credentials | Repository secrets |
 
-The keystone is that **plan IDs are content-derived**. Re-running the same
-analysis on the same commit produces a byte-identical plan with the same ID, so
-Drift can ask GitHub "have I already filed this?" instead of consulting a
-database it doesn't have.
+Re-running the same analysis on the same commit reproduces the same plan, so
+Drift asks GitHub "have I already filed this?" instead of consulting a database.
+
+The Action and the CLI store nothing at all. The self-hosted webhook runner is
+the one exception: it keeps a local queue of accepted deliveries, because a
+`202` to GitHub is a promise it cannot otherwise honour across a restart. See
+[deployment](deployment.md#the-delivery-queue).
+
+### Approving a plan
+
+`/drift apply` is the one comment that causes code to be written, so it is
+treated as a privileged operation. An approval is honoured only when **all** of
+the following hold:
+
+| Check | Why |
+|---|---|
+| The comment is newly created, on an issue, not a PR | An edit to an old comment is not a new decision |
+| The issue carries the `drift` label | Provenance. Anyone can paste a footer into an issue they opened; applying a label needs triage permission, so forging provenance costs at least as much access as approving does |
+| The footer parses strictly | Every key present exactly once, full 40-character SHAs, a known schema version |
+| The commenter has `write`, `maintain`, or `admin` | Not issue author, not org member, not read access |
+| The reviewed commit still exists, and the base branch has not moved | The impact analysis describes one commit |
+| The recomputed plan digest matches the recorded one | The plan being executed is the plan that was read |
+| No dispatch marker for this digest already exists | A repeated approval is a no-op, not a second branch |
+
+Every one of these fails closed. An unavailable permissions API is a refusal,
+never an assumption.
+
+**Why a digest, not just the plan ID.** Plan IDs are derived from
+`owner/repo/commit`, so two genuinely different analyses of one commit share an
+ID. Approving an ID would approve whichever plan happened to be computed at
+execution time. The digest is a SHA-256 over a canonical serialization of the
+whole plan — findings, impact sites, commit units, and the quoted evidence —
+with volatile fields such as `createdAt` excluded so it is stable across runs.
+
+A digest mismatch is not a bug: it means the evidence changed after the plan was
+filed, so what a human approved is no longer what would run. Drift says exactly
+that and asks for a fresh plan.
 
 ---
 

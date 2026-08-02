@@ -88,6 +88,11 @@ is a default, so skipping this is fine.
 Next time a dependency changes, Drift opens an issue with the plan. Comment
 `/drift apply` to let it proceed, or set `mode: auto` once you've read a few.
 
+Applying a plan writes a branch and dispatches a coding agent, so it requires
+`write`, `maintain`, or `admin` permission — and Drift re-verifies that the plan
+it is about to run is byte-for-byte the one recorded on the issue before it acts.
+See [trust and safety](docs/trust-and-safety.md#an-unauthorized-user-comments-drift-apply).
+
 ---
 
 ## Try it with zero permissions

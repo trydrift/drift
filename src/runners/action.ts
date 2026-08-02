@@ -7,6 +7,7 @@ import { runPipeline } from '../pipeline.js';
 import { renderPullRequestBody } from '../report/markdown.js';
 import { createLogger, type LogLevel } from '../util/logger.js';
 import { matchesAny } from '../util/glob.js';
+import { applyApproval } from '../approval/apply.js';
 
 /**
  * GitHub Action entrypoint — Drift's primary runner.
@@ -43,6 +44,19 @@ export async function runAction(): Promise<number> {
   }
 
   const event = await readEventPayload();
+  const eventName = process.env.GITHUB_EVENT_NAME ?? '';
+
+  const github = new GitHubClient({ repoToken: inputs.repoToken, logger });
+
+  // An approval runs against the commit recorded on the issue, which is not the
+  // commit this workflow is checked out at. `issue_comment` sets GITHUB_SHA to
+  // the default branch tip, so deriving the range from the event here would
+  // analyse — and then modify — whatever happens to be on the branch now rather
+  // than the plan a human actually read. It is handled entirely separately.
+  if (eventName === 'issue_comment') {
+    return runApproval(event, inputs, github, logger);
+  }
+
   const repo = resolveRepoContext(event, inputs.workspace);
 
   if (!repo) {
@@ -51,8 +65,6 @@ export async function runAction(): Promise<number> {
     );
     return 1;
   }
-
-  const github = new GitHubClient({ repoToken: inputs.repoToken, logger });
 
   const { config, path, problems } = await loadConfig(async (candidate) =>
     readWorkspaceFile(inputs.workspace, inputs.configPath ?? candidate),
@@ -71,9 +83,6 @@ export async function runAction(): Promise<number> {
     return 0;
   }
 
-  const approved = isApprovalComment(event);
-  if (approved) logger.info('Running with human approval from a `/drift apply` comment.');
-
   if (effectiveConfig.mode === 'auto' && !inputs.copilotToken && !inputs.dryRun) {
     logger.warn(
       'mode is `auto` but no copilot-token input was supplied. Drift will analyse and file an approval issue instead of dispatching. See docs/copilot-integration.md.',
@@ -88,7 +97,9 @@ export async function runAction(): Promise<number> {
       github,
       copilotToken: inputs.copilotToken,
       dryRun: inputs.dryRun,
-      approved,
+      // Never approved on this path. Approval arrives only through
+      // `issue_comment`, and only after `applyApproval` has verified it.
+      approved: false,
       workspace: inputs.workspace,
     });
 
@@ -171,11 +182,67 @@ function resolveRepoContext(
   return { owner, repo, baseBranch, beforeSha, afterSha, workspace };
 }
 
-/** True when this run was triggered by a `/drift apply` comment. */
-function isApprovalComment(event: Record<string, unknown>): boolean {
-  const comment = event.comment as { body?: string } | undefined;
-  if (!comment?.body) return false;
-  return /^\s*\/drift\s+apply\b/im.test(comment.body);
+/**
+ * Handle an `issue_comment` event.
+ *
+ * Every check that decides whether this is a real approval lives in
+ * `approval/apply.ts`, shared with the webhook runner so the two cannot drift
+ * apart on a security boundary. This function's only job is to supply the
+ * repository coordinates and turn the outcome into an exit code.
+ *
+ * A refused approval exits 0. The workflow did what it should have — it
+ * declined — and failing the run would put a red mark on a correct refusal,
+ * which teaches people to stop reading them.
+ */
+async function runApproval(
+  event: Record<string, unknown>,
+  inputs: ActionInputs,
+  github: GitHubClient,
+  logger: ReturnType<typeof createLogger>,
+): Promise<number> {
+  const repository = event.repository as { full_name?: string } | undefined;
+  const fullName = repository?.full_name ?? process.env.GITHUB_REPOSITORY;
+  const [owner, repo] = (fullName ?? '').split('/');
+
+  if (!owner || !repo) {
+    logger.error('Could not determine the repository from the `issue_comment` event payload.');
+    return 1;
+  }
+
+  const outcome = await applyApproval({
+    payload: event,
+    owner,
+    repo,
+    github,
+    logger,
+    ...(inputs.copilotToken ? { copilotToken: inputs.copilotToken } : {}),
+    ...(inputs.dryRun ? { dryRun: true } : {}),
+    // The Action has a checkout, so an approval gets real localization — the
+    // one capability the webhook runner cannot offer.
+    workspace: inputs.workspace,
+    ...(inputs.mode ? { configOverride: { mode: inputs.mode } } : {}),
+  });
+
+  switch (outcome.status) {
+    case 'ignored':
+      logger.debug(`Not an approval: ${outcome.reason}`);
+      return 0;
+
+    case 'rejected':
+      logger.warn(`Approval refused on #${outcome.issueNumber}: ${outcome.reason}`);
+      await writeJobSummary(`### Drift did not apply this plan\n\n${outcome.reason}`);
+      return 0;
+
+    case 'already-applied':
+      logger.info(outcome.message);
+      await writeJobSummary(`### Drift\n\n${outcome.message}`);
+      return 0;
+
+    case 'applied':
+      await writeOutputs(outcome.dispatch, outcome.dispatch.message);
+      await writeJobSummary(outcome.dispatch.message);
+      return outcome.dispatch.status === 'failed' ? 1 : 0;
+  }
 }
 
 async function readWorkspaceFile(workspace: string, path: string): Promise<string | null> {
