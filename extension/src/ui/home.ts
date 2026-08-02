@@ -7,6 +7,7 @@ import { digestDiagnostics, renderDigest } from '../diagnostics-digest.js';
 import type { RemediationPlan, RepoContext } from '../../../src/types.js';
 import { buildPlan } from '../../../src/plan/index.js';
 import { resolveBaseBranch } from '../../../src/plan/pull-request.js';
+import type { RevisionRequest } from '../agents/types.js';
 import { renderPullRequestBody } from '../../../src/report/markdown.js';
 import { inspectLocalRepo, WORKING_TREE } from '../../../src/repo/local-git.js';
 import { DriftConfigSchema, type DriftConfig } from '../../../src/config/schema.js';
@@ -195,6 +196,15 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly disposables: vscode.Disposable[] = [];
+
+  /**
+   * How many times each plan has been sent back to the agent.
+   *
+   * Counted per plan rather than globally so the number in "attempt 3" means
+   * what a developer thinks it means — three tries at *this* upgrade, not three
+   * tries at anything today.
+   */
+  private readonly revisionAttempts = new Map<string, number>();
 
   constructor(
     private readonly extensionUri: vscode.Uri,
@@ -633,6 +643,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         return;
       case '/review':
         this.showReview();
+        return;
+      case '/redo':
+        await this.redoFix();
+        return;
+      case '/discard':
+        await this.discardFix();
         return;
       case '/agent':
         this.openMenu('model:setup');
@@ -1622,6 +1638,55 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   }
 
   /**
+   * Whether to credit Drift as a co-author on commits.
+   *
+   * You stay the author — you chose the upgrade and reviewed the diff. Off is
+   * offered because some repositories lint commit trailers, and a tool that
+   * cannot be told to stop adding one gets uninstalled.
+   */
+  private coAuthorOption(config?: DriftConfig): { coAuthors?: false } {
+    const inspected = vscode.workspace.getConfiguration('drift').inspect<boolean>('git.coAuthor');
+    const explicit =
+      inspected?.workspaceFolderValue ?? inspected?.workspaceValue ?? inspected?.globalValue;
+    const enabled = explicit ?? config?.pullRequest.coAuthor ?? true;
+    return enabled ? {} : { coAuthors: false };
+  }
+
+  /**
+   * How this workspace wants pull requests opened.
+   *
+   * Same precedence as `branchPrefix`: an explicit editor setting is the more
+   * specific statement of intent and wins, and otherwise the repository's own
+   * `.github/drift.yml` decides — so a pull request raised from the panel looks
+   * like one raised by the Action against the same repository.
+   */
+  private pullRequestSettings(config?: DriftConfig): {
+    enabled: boolean;
+    confirm: boolean;
+    base: 'branched-from' | 'default-branch';
+    draft: boolean;
+  } {
+    const settings = vscode.workspace.getConfiguration('drift');
+    const explicit = <T>(key: string): T | undefined => {
+      const inspected = settings.inspect<T>(key);
+      return inspected?.workspaceFolderValue ?? inspected?.workspaceValue ?? inspected?.globalValue;
+    };
+
+    const fromConfig = config?.pullRequest;
+
+    return {
+      enabled: explicit<boolean>('pullRequest.enabled') ?? fromConfig?.enabled ?? true,
+      confirm:
+        (explicit<string>('pullRequest.confirm') ?? fromConfig?.confirm ?? 'ask') === 'ask',
+      base:
+        explicit<'branched-from' | 'default-branch'>('pullRequest.base') ??
+        fromConfig?.base ??
+        'branched-from',
+      draft: explicit<boolean>('pullRequest.draft') ?? fromConfig?.draft ?? false,
+    };
+  }
+
+  /**
    * Offer to turn an upgrade into a commit, and then into a pull request.
    *
    * Candidates are grouped by the repository they came from: with more than one
@@ -1877,7 +1942,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     let sha: string | null = null;
     try {
-      sha = await git.commitPaths(plan.paths, plan.message.subject, plan.message.body);
+      sha = await git.commitPaths(
+        plan.paths,
+        plan.message.subject,
+        plan.message.body,
+        this.coAuthorOption(),
+      );
     } catch (err) {
       this.session.notice('error', `Commit failed: ${(err as Error).message}`);
       return;
@@ -1921,9 +1991,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // default. On a team that develops on `develop`, targeting `main` proposes
     // merging into the wrong place — and a pull request pointed at the wrong
     // base shows a diff full of other people's commits.
-    const prConfig = (await this.context())?.config.pullRequest;
+    const prSettings = this.pullRequestSettings((await this.context())?.config);
     const resolved = resolveBaseBranch({
-      policy: prConfig?.base ?? 'branched-from',
+      policy: prSettings.base,
       branchedFrom: await git.branchedFrom(branch),
       defaultBranch: await git.defaultBranch(),
       currentBranch: branch,
@@ -1933,7 +2003,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // A pull request needs somewhere to merge *into*. Committing straight onto
     // the default branch is a legitimate choice, but it leaves no PR to open,
     // and saying so beats offering a button that returns a 422.
-    const canOpenPr = Boolean(slug) && Boolean(base) && (prConfig?.enabled ?? true);
+    const canOpenPr = Boolean(slug) && Boolean(base) && prSettings.enabled;
 
     const answer = await this.session.ask(
       canOpenPr
@@ -1987,8 +2057,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       branch,
       plan,
       ...(resolved?.reason ? { baseReason: resolved.reason } : {}),
-      confirm: (prConfig?.confirm ?? 'ask') === 'ask',
-      ...(prConfig?.draft ? { draft: true } : {}),
+      confirm: prSettings.confirm,
+      ...(prSettings.draft ? { draft: true } : {}),
     });
   }
 
@@ -2179,9 +2249,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // The branch this work was started from, not the repository's default. On
     // a team that develops on `develop`, targeting `main` proposes merging into
     // the wrong place and shows a diff full of other people's commits.
-    const prConfig = (await this.context())?.config.pullRequest;
+    const prSettings = this.pullRequestSettings((await this.context())?.config);
     const resolved = resolveBaseBranch({
-      policy: prConfig?.base ?? 'branched-from',
+      policy: prSettings.base,
       branchedFrom: await git.branchedFrom(branch),
       defaultBranch: await git.defaultBranch(),
       currentBranch: branch,
@@ -2223,8 +2293,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       branch,
       plan,
       baseReason: resolved.reason,
-      confirm: (prConfig?.confirm ?? 'ask') === 'ask',
-      ...(prConfig?.draft ? { draft: true } : {}),
+      confirm: prSettings.confirm,
+      ...(prSettings.draft ? { draft: true } : {}),
     });
   }
 
@@ -2232,7 +2302,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   /* Fixing                                                            */
   /* ---------------------------------------------------------------- */
 
-  private async fix(ids: readonly string[]): Promise<void> {
+  private async fix(
+    ids: readonly string[],
+    options: { revision?: RevisionRequest } = {},
+  ): Promise<void> {
     if (this.busy) {
       this.session.notice('info', this.busyMessage());
       return;
@@ -2381,6 +2454,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         onLog: (message) => tasks.note(activeGroupId(plan, this.state), message.slice(0, 120)),
         progress: { report: () => undefined },
         token,
+        ...(options.revision ? { revision: options.revision } : {}),
       });
 
       for (const warning of result.warnings) this.session.notice('warn', warning);
@@ -2458,6 +2532,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           value: 'commit',
           description: 'Commit the changed files, then optionally push and raise a pull request',
         },
+        {
+          label: 'Not what I wanted — try again',
+          value: 'redo',
+          description: 'Say what is wrong; the agent starts over from the original files',
+        },
+        {
+          label: 'Throw these edits away',
+          value: 'discard',
+          description: 'Restore the files to how they were before the fix',
+        },
         { label: 'Leave it for now', value: 'no', description: 'The changes stay in your tree' },
       ],
       false,
@@ -2477,10 +2561,172 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       await this.commitNow();
       return;
     }
+    if (answer === 'redo') {
+      await this.redoFix();
+      return;
+    }
+    if (answer === 'discard') {
+      await this.discardFix();
+      return;
+    }
     this.session.say('Left uncommitted — the changes are still in your tree.', [
       { label: 'Commit', command: '/commit' },
       { label: 'Review the changes', command: '/review' },
+      { label: 'Try again differently', command: '/redo' },
     ]);
+  }
+
+  /**
+   * Run the fix again, with the developer saying what was wrong.
+   *
+   * The state a fix flow spends most of its life in is "the agent produced
+   * something and the human is not happy with it", and until now the only
+   * answers on offer were keep it, keep part of it, or walk away. None of those
+   * is what someone actually wants, which is to say *what* is wrong and have
+   * another go.
+   *
+   * Two details make this a retry rather than a re-roll:
+   *
+   *   - The previous attempt is thrown away first, so the agent edits the
+   *     original files rather than layering a correction onto a rejection.
+   *   - The rejected diff and the guidance both go into the prompt. Re-running
+   *     the identical prompt reliably produces the identical answer, which is
+   *     the most frustrating thing a tool can do to someone who just said it
+   *     got it wrong.
+   */
+  private async redoFix(): Promise<void> {
+    const ctx = await this.context();
+    const plan = this.state.plan;
+    if (!ctx || !plan) {
+      this.session.notice('warn', 'There is no fix to redo. Run a scan first.');
+      return;
+    }
+
+    const guidance = await vscode.window.showInputBox({
+      title: 'What should the agent do differently?',
+      prompt: 'Said plainly. This outranks the evidence and the impact analysis.',
+      placeHolder: 'e.g. keep the existing error handling, just change the import',
+      ignoreFocusOut: true,
+    });
+    if (!guidance?.trim()) {
+      this.session.notice('info', 'Nothing changed — the edits are still in your tree.');
+      return;
+    }
+
+    const { Git } = await import('../git.js');
+    const git = new Git(ctx.root);
+
+    // Capture what is being rejected *before* discarding it, so the agent can
+    // be told what not to do again.
+    const previousDiff = await git.diffAgainstHead().catch(() => '');
+
+    const attempt = (this.revisionAttempts.get(plan.id) ?? 1) + 1;
+    this.revisionAttempts.set(plan.id, attempt);
+
+    // An already-committed fix cannot be undone by discarding the working
+    // tree, and quietly running the agent on top of it would stack a second
+    // attempt onto the first — which is precisely what "start over" is not.
+    const dirty = await git.dirtyFiles().catch(() => [] as string[]);
+    let undoCommit = false;
+
+    if (dirty.length === 0) {
+      const committed = await git.headSha().catch(() => null);
+      if (!committed) {
+        this.session.notice('warn', 'There is nothing to redo — no edits and no commit to start from.');
+        return;
+      }
+
+      const choice = await vscode.window.showWarningMessage(
+        'The previous attempt is already committed. Undo that commit and start over?',
+        {
+          modal: true,
+          detail:
+            'Drift will reset the branch by one commit, restoring the files to how they were before the fix. Nothing is pushed, so this only affects your local branch.',
+        },
+        'Undo the commit and retry',
+        'Retry on top of it',
+      );
+      if (!choice) return;
+      undoCommit = choice === 'Undo the commit and retry';
+    }
+
+    const step = this.session.step(
+      undoCommit ? 'Undoing the previous attempt' : 'Restoring the original files',
+    );
+    try {
+      this.review.begin(ctx.root);
+      if (undoCommit) await git.resetHard('HEAD~1');
+      else await git.discardAll();
+      step.done(
+        undoCommit
+          ? 'Undone — the agent will start from the original files'
+          : 'Restored — the agent will start from the original files',
+      );
+    } catch (err) {
+      step.fail('Could not restore the files');
+      this.session.notice(
+        'error',
+        `Could not undo the previous attempt: ${(err as Error).message}. Your work is untouched; resolve this by hand before retrying.`,
+      );
+      return;
+    }
+
+    this.session.say(
+      `Starting again from the original files, attempt ${attempt}. Your note goes to the agent ahead of everything Drift inferred:\n\n> ${guidance.trim()}`,
+    );
+
+    await this.fix([], {
+      revision: {
+        guidance: guidance.trim(),
+        ...(previousDiff.trim() ? { previousDiff } : {}),
+        attempt,
+      },
+    });
+  }
+
+  /**
+   * Throw away everything the agent did.
+   *
+   * Modal, and it names the number of files, because this is destructive and
+   * irreversible in the one way that matters: the edits were never committed,
+   * so there is nothing to recover them from.
+   */
+  private async discardFix(): Promise<void> {
+    const ctx = await this.context();
+    if (!ctx) return;
+
+    const { Git } = await import('../git.js');
+    const git = new Git(ctx.root);
+
+    const changed = await git.dirtyFiles().catch(() => [] as string[]);
+    if (changed.length === 0) {
+      this.session.notice('info', 'There is nothing to discard — your tree is already clean.');
+      return;
+    }
+
+    const confirmed = await vscode.window.showWarningMessage(
+      `Throw away Drift's edits to ${changed.length} file${changed.length === 1 ? '' : 's'}?`,
+      {
+        modal: true,
+        detail: `${changed.slice(0, 10).join('\n')}${
+          changed.length > 10 ? `\n…and ${changed.length - 10} more` : ''
+        }\n\nNothing was committed, so this cannot be undone.`,
+      },
+      'Discard',
+    );
+    if (confirmed !== 'Discard') return;
+
+    try {
+      this.review.begin(ctx.root);
+      await git.discardAll();
+      this.session.notice('success', `Discarded the edits to ${changed.length} file(s).`);
+      this.session.say('Back to where you started.', [
+        { label: 'Try again differently', command: '/redo' },
+        { label: 'Scan again', command: '/scan' },
+      ]);
+    } catch (err) {
+      this.session.notice('error', `Could not discard the edits: ${(err as Error).message}`);
+    }
   }
 
   /** After an auto-commit run: the branch exists, so offer to send it somewhere. */
@@ -2493,6 +2739,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         { label: 'Push and open a pull request', value: 'pr', description: 'Carries the evidence into the description' },
         { label: 'Push only', value: 'push', description: 'Send the branch to origin' },
         { label: 'Review it first', value: 'review', description: 'Open every change side by side' },
+        {
+          label: 'Not what I wanted — try again',
+          value: 'redo',
+          description: 'Say what is wrong; the agent starts over from the original files',
+        },
         { label: 'Not now', value: 'no', description: 'It stays local' },
       ],
       false,
@@ -2501,6 +2752,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     if (answer === 'pr') await this.openPullRequestForBranch();
     else if (answer === 'push') await this.pushCurrentBranch();
     else if (answer === 'review') await this.reviewAllChanges();
+    else if (answer === 'redo') await this.redoFix();
     else
       this.session.say(`\`${branch}\` is local, with the fix committed on it.`, [
         { label: 'Push', command: '/push' },
@@ -2627,7 +2879,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     const git = new Git(root);
 
     try {
-      const sha = await git.commitPaths(group.paths, group.title, group.body ?? '');
+      const sha = await git.commitPaths(
+        group.paths,
+        group.title,
+        group.body ?? '',
+        this.coAuthorOption(),
+      );
       if (!sha) {
         this.session.notice('info', `Nothing left to commit for "${group.title}".`);
         return null;
@@ -2795,6 +3052,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       '/upgrade-all': 'package',
       '/fix': 'agent',
       '/review': 'diff',
+      '/redo': 'agent',
+      '/discard': 'history',
       '/agent': 'gear',
       '/clear': 'plus',
       '/help': 'info',
@@ -3510,7 +3769,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     const message = upgradeCommitMessage(candidates);
     try {
-      const sha = await git.commitPaths(paths, message.subject, message.body);
+      const sha = await git.commitPaths(paths, message.subject, message.body, this.coAuthorOption());
       if (!sha) {
         this.session.notice('info', 'The dependency files already match HEAD, so there was no upgrade commit to make.');
         return true;

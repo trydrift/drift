@@ -19,6 +19,13 @@ export class GitError extends Error {
   constructor(
     message: string,
     readonly stderr?: string,
+    /**
+     * Whatever the command managed to print before failing.
+     *
+     * Carried because `git diff` exits non-zero to mean "these differ" — its
+     * stdout on that path is the diff, not debris.
+     */
+    readonly stdout?: string,
   ) {
     super(message);
     this.name = 'GitError';
@@ -64,8 +71,8 @@ export class Git {
       });
       return stdout;
     } catch (err) {
-      const e = err as { stderr?: string; message: string };
-      throw new GitError(`git ${args[0]} failed: ${e.message}`, e.stderr);
+      const e = err as { stderr?: string; stdout?: string; message: string };
+      throw new GitError(`git ${args[0]} failed: ${e.message}`, e.stderr, e.stdout);
     }
   }
 
@@ -74,6 +81,21 @@ export class Git {
       return await this.exec(args);
     } catch {
       return null;
+    }
+  }
+
+  /**
+   * Run git and keep stdout even when it exits non-zero.
+   *
+   * `git diff` is the reason this exists: it signals "these differ" with exit
+   * code 1, so the ordinary error path would throw away the diff in exactly
+   * the case the diff was wanted.
+   */
+  private async execAllowingFailure(args: string[]): Promise<string> {
+    try {
+      return await this.exec(args);
+    } catch (err) {
+      return err instanceof GitError ? (err.stdout ?? '') : '';
     }
   }
 
@@ -124,6 +146,45 @@ export class Git {
 
   async isClean(): Promise<boolean> {
     return (await this.dirtyFiles()).length === 0;
+  }
+
+  /**
+   * The uncommitted work as a diff, including files git does not track yet.
+   *
+   * Used to show an agent the attempt a developer just rejected. `--no-index`
+   * against `/dev/null` is how an untracked file gets into a diff at all, and
+   * without it a fix that created a new file would be invisible in exactly the
+   * retry that needs to see it.
+   */
+  async diffAgainstHead(): Promise<string> {
+    const tracked = await this.execAllowingFailure(['diff', 'HEAD']);
+
+    const untracked = (await this.tryExec(['ls-files', '--others', '--exclude-standard'])) ?? '';
+    const paths = untracked.split('\n').map((p) => p.trim()).filter(Boolean);
+
+    const additions: string[] = [];
+    for (const path of paths.slice(0, 50)) {
+      // `git diff --no-index` exits non-zero when the files differ, which is
+      // always here — so its output comes back through the failure path.
+      const patch = await this.execAllowingFailure(['diff', '--no-index', '--', '/dev/null', path]);
+      if (patch.trim()) additions.push(patch);
+    }
+
+    return [tracked, ...additions].filter((part) => part.trim()).join('\n');
+  }
+
+  /**
+   * Move this branch back to `ref`, discarding the commits and files after it.
+   *
+   * The one history-rewriting operation in this file, and it is deliberately
+   * narrow: it only ever runs on an explicit, modal confirmation, only on a
+   * branch Drift created, and only before anything is pushed. `git reflog`
+   * still holds the discarded commit, which is what makes this recoverable by
+   * someone who knows to look — but the caller says "cannot be undone" rather
+   * than relying on that, because most people do not.
+   */
+  async resetHard(ref: string): Promise<void> {
+    await this.exec(['reset', '--hard', ref]);
   }
 
   async branchExists(name: string): Promise<boolean> {
