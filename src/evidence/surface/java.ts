@@ -14,7 +14,13 @@ import { unavailable, type SurfaceProvider, type SurfaceRequest, type SurfaceOut
  */
 
 const TOOL = 'japicmp';
-const REMEDY = 'Install japicmp and put it on PATH (`japicmp` wrapper or `japicmp-cli`).';
+const INSTALL = {
+  id: 'japicmp',
+  label: 'Install japicmp',
+  command: 'brew',
+  args: ['install', 'japicmp'],
+} as const;
+const REMEDY = 'Drift can install the missing `japicmp` helper for you after approval.';
 const CENTRAL = 'https://repo1.maven.org/maven2';
 
 export const javaSurface: SurfaceProvider = {
@@ -36,8 +42,9 @@ export const javaSurface: SurfaceProvider = {
       return unavailable(
         TOOL,
         'tool-missing',
-        `japicmp is not installed, so ${request.name}'s classfile API could not be compared directly.`,
+        `Drift's Java API helper is missing, so ${request.name}'s classfile API could not be compared directly.`,
         REMEDY,
+        INSTALL,
       );
     }
 

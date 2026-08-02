@@ -19,7 +19,13 @@ import { unavailable, type SurfaceProvider, type SurfaceRequest, type SurfaceOut
 
 const TOOL = 'cargo public-api';
 const CARGO_REMEDY = 'Install Rust and Cargo with rustup, or make sure `cargo` is on PATH.';
-const PUBLIC_API_REMEDY = 'Install the missing Cargo subcommand with `cargo install cargo-public-api` (it needs a nightly toolchain for rustdoc JSON).';
+const PUBLIC_API_INSTALL = {
+  id: 'cargo-public-api',
+  label: 'Install cargo-public-api',
+  command: 'cargo',
+  args: ['install', 'cargo-public-api'],
+} as const;
+const PUBLIC_API_REMEDY = 'Drift can install the missing `cargo-public-api` helper for you after approval.';
 
 export const rustSurface: SurfaceProvider = {
   ecosystem: 'cargo',
@@ -40,8 +46,9 @@ export const rustSurface: SurfaceProvider = {
       return unavailable(
         TOOL,
         'tool-missing',
-        `Rust and Cargo are installed, but the \`cargo-public-api\` subcommand is not. ${request.name}'s public API could not be compared directly.`,
+        `Rust and Cargo are installed, but Drift's Rust API helper is missing. ${request.name}'s public API could not be compared directly.`,
         PUBLIC_API_REMEDY,
+        PUBLIC_API_INSTALL,
       );
     }
 

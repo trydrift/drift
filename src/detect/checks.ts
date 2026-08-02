@@ -95,7 +95,108 @@ function checksFor(manager: PackageManagerId, manifest: string | null): LocalChe
         check('test', { command: 'gradle', args: ['test'] }, 'Gradle'),
         check('build', { command: 'gradle', args: ['build', '-x', 'test'] }, 'Gradle'),
       ];
+    case 'sbt':
+      return [
+        // `sbt Test/compile` typechecks production and test sources together,
+        // which is the closest thing sbt has to a typecheck-only pass.
+        check('typecheck', { command: 'sbt', args: ['Test/compile'] }, 'sbt'),
+        check('test', { command: 'sbt', args: ['test'] }, 'sbt'),
+        check('build', { command: 'sbt', args: ['package'] }, 'sbt'),
+      ];
+    case 'dotnet':
+      return [
+        check('typecheck', { command: 'dotnet', args: ['build', '--nologo'] }, 'the .NET SDK'),
+        check('test', { command: 'dotnet', args: ['test', '--nologo'] }, 'the .NET SDK'),
+        check('build', { command: 'dotnet', args: ['publish', '--nologo'] }, 'the .NET SDK'),
+      ];
+    case 'composer':
+      return composerChecks(manifest);
+    case 'mix':
+      return [
+        // Elixir has no separate typechecker in the base toolchain, but
+        // `--warnings-as-errors` turns the compiler's undefined-function and
+        // arity warnings into failures — which is exactly the class of breakage
+        // a dependency upgrade causes.
+        check('typecheck', { command: 'mix', args: ['compile', '--warnings-as-errors'] }, 'Mix'),
+        check('test', { command: 'mix', args: ['test'] }, 'Mix'),
+        check('build', { command: 'mix', args: ['compile'] }, 'Mix'),
+      ];
+    case 'rebar':
+      return [
+        check('typecheck', { command: 'rebar3', args: ['compile'] }, 'Rebar3'),
+        check('test', { command: 'rebar3', args: ['eunit'] }, 'Rebar3'),
+      ];
+    case 'dart':
+      return [
+        check('typecheck', { command: 'dart', args: ['analyze'] }, 'the Dart SDK'),
+        check('test', { command: 'dart', args: ['test'] }, 'the Dart SDK'),
+      ];
+    case 'flutter':
+      return [
+        check('typecheck', { command: 'flutter', args: ['analyze'] }, 'the Flutter SDK'),
+        check('test', { command: 'flutter', args: ['test'] }, 'the Flutter SDK'),
+      ];
+    case 'swiftpm':
+      return [
+        check('typecheck', { command: 'swift', args: ['build'] }, 'the Swift toolchain'),
+        check('test', { command: 'swift', args: ['test'] }, 'the Swift toolchain'),
+      ];
+    case 'cocoapods':
+      // Deliberately empty. Building an iOS target needs Xcode, a scheme, and a
+      // destination Drift cannot infer from a Podfile — and a check that fails
+      // for setup reasons rather than code reasons teaches people to ignore
+      // every check. The capability matrix says so out loud.
+      return [];
+    case 'opam':
+      return [
+        check('typecheck', { command: 'dune', args: ['build', '@check'] }, 'dune'),
+        check('test', { command: 'dune', args: ['runtest'] }, 'dune'),
+        check('build', { command: 'dune', args: ['build'] }, 'dune'),
+      ];
   }
+}
+
+/**
+ * PHP declares its test runner in `composer.json`'s `require-dev`, and its
+ * scripts block often wraps it. Prefer the declared script, because a project
+ * that wrote one usually needed to.
+ */
+function composerChecks(manifest: string | null): LocalCheck[] {
+  const doc = tryJson<{
+    scripts?: Record<string, unknown>;
+    'require-dev'?: Record<string, string>;
+  }>(manifest ?? '');
+  const out: LocalCheck[] = [];
+
+  if (doc?.scripts && 'test' in doc.scripts) {
+    out.push(check('test', { command: 'composer', args: ['run', 'test'] }, '`scripts.test` in composer.json'));
+    return out;
+  }
+
+  const dev = doc?.['require-dev'] ?? {};
+  if ('phpunit/phpunit' in dev) {
+    out.push(
+      check('test', { command: 'vendor/bin/phpunit', args: [] }, 'phpunit, declared in composer.json'),
+    );
+  } else if ('pestphp/pest' in dev) {
+    out.push(check('test', { command: 'vendor/bin/pest', args: [] }, 'pest, declared in composer.json'));
+  }
+
+  if ('phpstan/phpstan' in dev) {
+    out.push(
+      check(
+        'typecheck',
+        { command: 'vendor/bin/phpstan', args: ['analyse'] },
+        'phpstan, declared in composer.json',
+      ),
+    );
+  } else if ('vimeo/psalm' in dev) {
+    out.push(
+      check('typecheck', { command: 'vendor/bin/psalm', args: [] }, 'psalm, declared in composer.json'),
+    );
+  }
+
+  return out;
 }
 
 /**

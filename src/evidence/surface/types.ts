@@ -39,8 +39,27 @@ export interface SurfaceUnavailable {
   detail: string;
   /** What the developer could install or do to get this evidence next time. */
   remedy?: string;
+  /**
+   * A Drift-owned helper that can be installed after explicit approval.
+   *
+   * Runtime toolchains such as Go, Cargo, Python, or Java are facts about the
+   * project and stay as prose remedies. Helper analyzers are different: Drift
+   * knows the exact command and can ask to run it instead of sending the user
+   * off to copy/paste setup instructions.
+   */
+  install?: ToolInstallRequest;
   /** The tool that was tried, or would have been. */
   tool: string;
+}
+
+export interface ToolInstallRequest {
+  /** Stable id understood by the extension host. */
+  id: 'cargo-public-api' | 'japicmp';
+  /** Short button label. */
+  label: string;
+  /** Command line to run after approval. Always argv, never shell text. */
+  command: string;
+  args: readonly string[];
 }
 
 /**
@@ -118,8 +137,9 @@ export function unavailable(
   reason: SurfaceUnavailableReason,
   detail: string,
   remedy?: string,
+  install?: ToolInstallRequest,
 ): SurfaceUnavailable {
-  return { available: false, reason, detail, remedy, tool };
+  return { available: false, reason, detail, ...(remedy ? { remedy } : {}), ...(install ? { install } : {}), tool };
 }
 
 export type { SurfaceChange };

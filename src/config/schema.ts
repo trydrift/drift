@@ -1,5 +1,38 @@
 import { z } from 'zod';
-import type { RiskLevel } from '../types.js';
+import type { Ecosystem, RiskLevel } from '../types.js';
+
+/**
+ * The ecosystem names, as a schema.
+ *
+ * Declared with an explicit `Ecosystem` annotation on each member so that
+ * adding an ecosystem to the domain union without adding it here is a compile
+ * error. A config schema that silently rejects a supported ecosystem would
+ * make it unusable while every other layer claimed to support it.
+ */
+const ECOSYSTEM_NAMES = z.enum([
+  'npm',
+  'pypi',
+  'go',
+  'cargo',
+  'maven',
+  'rubygems',
+  'nuget',
+  'packagist',
+  'hex',
+  'pub',
+  'swift',
+  'cocoapods',
+  'opam',
+] as const satisfies readonly Ecosystem[]);
+
+/**
+ * `satisfies` above proves every name listed is a real ecosystem. This proves
+ * the converse — that every real ecosystem is listed — by failing to compile
+ * when the difference is anything but empty.
+ */
+type UnlistedEcosystem = Exclude<Ecosystem, (typeof ECOSYSTEM_NAMES.options)[number]>;
+const _everyEcosystemIsConfigurable: UnlistedEcosystem extends never ? true : never = true;
+void _everyEcosystemIsConfigurable;
 
 /**
  * `.github/drift.yml` — the entire user-facing control surface.
@@ -26,10 +59,17 @@ export const DriftConfigSchema = z.object({
   /** Branches whose dependency changes Drift watches. Glob patterns. */
   watchBranches: z.array(z.string()).default(['main', 'master', 'develop']),
 
-  /** Package ecosystems to analyse. */
+  /**
+   * Package ecosystems to analyse.
+   *
+   * Every ecosystem Drift can detect is on by default. Leaving one off would
+   * mean a project gets silently partial results with nothing saying so, which
+   * is the failure this tool is built to avoid — what each ecosystem can and
+   * cannot do is stated per stage in `detect/capabilities.ts` instead.
+   */
   ecosystems: z
-    .array(z.enum(['npm', 'pypi', 'go', 'cargo', 'maven', 'rubygems']))
-    .default(['npm', 'pypi', 'go', 'cargo', 'maven', 'rubygems']),
+    .array(ECOSYSTEM_NAMES)
+    .default([...ECOSYSTEM_NAMES.options]),
 
   /** Dependency name globs to ignore entirely. */
   ignore: z.array(z.string()).default([]),
