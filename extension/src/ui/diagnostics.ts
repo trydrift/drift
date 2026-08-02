@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import type { BreakingChange, ImpactSite, RemediationPlan } from '../../../src/types.js';
 import type { DriftState } from '../state.js';
 import type { DriftReview } from '../review/store.js';
@@ -56,7 +57,7 @@ export class DriftDiagnostics implements vscode.Disposable {
         const change = changeById.get(site.breakingChangeId);
         if (!change) continue;
 
-        diagnostics.push(this.toDiagnostic(site, change, plan, uri));
+        diagnostics.push(this.toDiagnostic(site, change, plan, uri, isPendingUpgradePlan(plan, this.state)));
       }
 
       this.collection.set(uri, diagnostics);
@@ -68,19 +69,15 @@ export class DriftDiagnostics implements vscode.Disposable {
     change: BreakingChange,
     plan: RemediationPlan,
     uri: vscode.Uri,
+    pendingUpgrade: boolean,
   ): vscode.Diagnostic {
-    const line = Math.max(0, site.line - 1);
+    const range = rangeForSite(uri, site);
 
-    // Highlight the matched symbol where it can be found on the line, rather
-    // than underlining the whole line — a precise marker reads as considered,
-    // a whole-line one reads as guessing.
-    const column = site.excerpt.indexOf(site.matchedSymbol);
-    const range =
-      column >= 0
-        ? new vscode.Range(line, column, line, column + site.matchedSymbol.length)
-        : new vscode.Range(line, 0, line, Number.MAX_SAFE_INTEGER);
-
-    const diagnostic = new vscode.Diagnostic(range, change.summary, severityFor(change));
+    const diagnostic = new vscode.Diagnostic(
+      range,
+      diagnosticMessage(change, plan, pendingUpgrade),
+      severityFor(change, pendingUpgrade),
+    );
     diagnostic.source = SOURCE;
     diagnostic.code = {
       value: `${change.dependency} ${change.kind}`,
@@ -127,7 +124,11 @@ export class DriftDiagnostics implements vscode.Disposable {
  * this code is broken. `low` is Information because Drift is genuinely unsure,
  * and dressing a guess up as an error trains people to ignore the markers.
  */
-function severityFor(change: BreakingChange): vscode.DiagnosticSeverity {
+function severityFor(change: BreakingChange, pendingUpgrade: boolean): vscode.DiagnosticSeverity {
+  if (pendingUpgrade && change.confidence === 'high') {
+    return vscode.DiagnosticSeverity.Warning;
+  }
+
   switch (change.confidence) {
     case 'high':
       return vscode.DiagnosticSeverity.Error;
@@ -138,12 +139,74 @@ function severityFor(change: BreakingChange): vscode.DiagnosticSeverity {
   }
 }
 
+function diagnosticMessage(
+  change: BreakingChange,
+  plan: RemediationPlan,
+  pendingUpgrade: boolean,
+): string {
+  if (!pendingUpgrade) return change.summary;
+
+  const target = plan.changes.find((entry) => entry.name === change.dependency)?.to;
+  const version = target ? `${change.dependency}@${target}` : change.dependency;
+  return `This breaks in ${version}: ${lowerFirst(change.summary)}`;
+}
+
+function lowerFirst(text: string): string {
+  return text ? `${text[0]!.toLocaleLowerCase()}${text.slice(1)}` : text;
+}
+
 function evidenceUrl(change: BreakingChange, plan: RemediationPlan): string | undefined {
   for (const id of change.citations) {
     const evidence = plan.evidence.find((e) => e.id === id);
     if (evidence?.url) return evidence.url;
   }
   return undefined;
+}
+
+function rangeForSite(uri: vscode.Uri, site: ImpactSite): vscode.Range {
+  const line = Math.max(0, site.line - 1);
+  const sourceLine = sourceLineAt(uri, line) ?? site.excerpt;
+  const symbolColumn = sourceLine.indexOf(site.matchedSymbol);
+
+  if (symbolColumn >= 0) {
+    return new vscode.Range(line, symbolColumn, line, symbolColumn + site.matchedSymbol.length);
+  }
+
+  const excerpt = site.excerpt.trim();
+  const excerptColumn = excerpt ? sourceLine.indexOf(excerpt) : -1;
+  if (excerptColumn >= 0) {
+    return new vscode.Range(line, excerptColumn, line, excerptColumn + excerpt.length);
+  }
+
+  const start = sourceLine.search(/\S/);
+  const from = start >= 0 ? start : 0;
+  const to = Math.max(from + 1, sourceLine.length);
+  return new vscode.Range(line, from, line, to);
+}
+
+function sourceLineAt(uri: vscode.Uri, line: number): string | undefined {
+  const open = vscode.workspace.textDocuments.find((document) => document.uri.toString() === uri.toString());
+  if (open && line < open.lineCount) return open.lineAt(line).text;
+
+  try {
+    return readFileSync(uri.fsPath, 'utf8').split(/\r?\n/)[line];
+  } catch {
+    return undefined;
+  }
+}
+
+function isPendingUpgradePlan(plan: RemediationPlan, state: DriftState): boolean {
+  if (state.status.kind !== 'findings') return false;
+  return state.candidates.some((candidate) => {
+    if (candidate.current === candidate.selected) return false;
+    if (candidate.plan?.id === plan.id) return true;
+    return plan.changes.some(
+      (change) =>
+        change.name === candidate.name &&
+        change.from === candidate.current &&
+        change.to === candidate.selected,
+    );
+  });
 }
 
 function keyFor(uri: vscode.Uri, range: vscode.Range, changeId: string): string {
@@ -215,6 +278,17 @@ export class DriftCodeActionProvider implements vscode.CodeActionProvider {
       };
       explain.diagnostics = [diagnostic];
       actions.push(explain);
+
+      const mute = new vscode.CodeAction(
+        'Drift: hide editor flags',
+        vscode.CodeActionKind.QuickFix,
+      );
+      mute.command = {
+        command: 'drift.disableEditorSignals',
+        title: 'Hide Drift editor flags',
+      };
+      mute.diagnostics = [diagnostic];
+      actions.push(mute);
     }
 
     if (actions.length > 0) {
