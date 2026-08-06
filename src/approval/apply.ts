@@ -6,6 +6,7 @@ import { loadConfig } from '../config/load.js';
 import { execCommand } from '../util/exec.js';
 import { analyzeRepository } from '../analysis.js';
 import { dispatch, DRIFT_LABEL } from '../dispatch/index.js';
+import { reportTelemetry } from '../pipeline.js';
 import { authorizeApproval, type ApprovalRequest } from './authorize.js';
 import { planDigest } from './digest.js';
 import { findPriorDispatch, renderDispatchMarker } from './metadata.js';
@@ -34,7 +35,7 @@ export type ApprovalOutcome =
   | { status: 'rejected'; reason: string; issueNumber: number }
   /** This exact plan was already applied; the earlier result is reported again. */
   | { status: 'already-applied'; issueNumber: number; message: string }
-  | { status: 'applied'; issueNumber: number; plan: RemediationPlan; dispatch: DispatchResult };
+  | { status: 'applied'; issueNumber: number; plan: RemediationPlan; dispatch: DispatchResult; config: DriftConfig };
 
 export interface ApplyApprovalOptions {
   /** The raw `issue_comment` event payload. */
@@ -49,6 +50,15 @@ export interface ApplyApprovalOptions {
   workspace?: string;
   /** Overrides the committed config, as the Action's `mode` input does. */
   configOverride?: Partial<DriftConfig>;
+  /**
+   * Told about a successful dispatch, so a caller with somewhere durable to
+   * put it (the webhook runner's queue) can reconcile the task's outcome
+   * later. `dispatch()` on the ordinary push path already has this wired
+   * through the caller directly; `/drift apply` did not, which meant an
+   * approved plan's Copilot task was dispatched and then never checked on
+   * again.
+   */
+  onDispatched?: (result: DispatchResult, repo: RepoContext) => Promise<void> | void;
 }
 
 /**
@@ -62,6 +72,7 @@ const KNOWN_SELF_LOGINS = ['github-actions[bot]', 'drift[bot]'];
 
 export async function applyApproval(options: ApplyApprovalOptions): Promise<ApprovalOutcome> {
   const { payload, owner, repo: repoName, github, logger } = options;
+  const started = Date.now();
 
   // A context good enough for issue and permission calls. The commit range is
   // filled in from the plan footer once it has been verified — deriving it any
@@ -268,6 +279,8 @@ export async function applyApproval(options: ApplyApprovalOptions): Promise<Appr
   });
 
   if (result.status === 'dispatched' && !options.dryRun) {
+    await options.onDispatched?.(result, repo);
+
     // The marker is what makes a repeated `/drift apply` a no-op, so it is
     // written even though the summary comment below would read similarly to a
     // human: prose is not a protocol.
@@ -286,7 +299,17 @@ export async function applyApproval(options: ApplyApprovalOptions): Promise<Appr
     await github.commentOnIssue(apiContext, decision.issueNumber, `**Drift**: ${result.message}`);
   }
 
-  return { status: 'applied', issueNumber: decision.issueNumber, plan, dispatch: result };
+  await reportTelemetry({
+    config,
+    plan,
+    result,
+    dryRun: options.dryRun,
+    approved: true,
+    latencyMs: Date.now() - started,
+    logger,
+  });
+
+  return { status: 'applied', issueNumber: decision.issueNumber, plan, dispatch: result, config };
 }
 
 /**

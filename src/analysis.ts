@@ -225,6 +225,19 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       });
       logger.info(`Behavioural probing added ${verification.evidence.length} observation(s) of evidence`);
 
+      // `citationsByChangeId` maps change -> evidence ids it cites; inverted
+      // here to evidence -> the change(s) it actually bears on, so an outcome
+      // can be scoped to the exact finding rather than every finding that
+      // happens to share its dependency and workspace.
+      const changeIdsByEvidenceId = new Map<string, string[]>();
+      for (const [changeId, evidenceIds] of verification.citationsByChangeId) {
+        for (const evidenceId of evidenceIds) {
+          const list = changeIdsByEvidenceId.get(evidenceId);
+          if (list) list.push(changeId);
+          else changeIdsByEvidenceId.set(evidenceId, [changeId]);
+        }
+      }
+
       for (const record of verification.evidence) {
         const detail = record.findings?.[0]?.detail ?? '';
         const kind = behaviouralFindingKind(detail);
@@ -237,10 +250,14 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
           status: kind === 'probe-unavailable' ? 'unavailable' : 'passed',
           detail,
           // Scoped to the dependency (and workspace) this probe actually
-          // exercised, so it cannot raise verification confidence for an
-          // unrelated finding — see `assessAll` in `plan/index.ts`.
+          // exercised — kept as a fallback for callers that only check that —
+          // and, when known, to the exact breaking change(s) it cited, so a
+          // probe of one symbol cannot raise verification confidence for a
+          // different finding on the same dependency. See `assessAll` in
+          // `plan/index.ts`.
           dependency: record.dependency,
           workspace: record.workspace,
+          breakingChangeIds: changeIdsByEvidenceId.get(record.id) ?? [],
         });
       }
     }

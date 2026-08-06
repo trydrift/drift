@@ -171,6 +171,40 @@ export function isTerminalState(state: string): boolean {
 }
 
 /**
+ * Poll a task until it reaches a terminal state, or give up at `timeoutMs`.
+ *
+ * Built for a one-shot caller — the Action — that has no other opportunity to
+ * learn how the task it just dispatched turned out. It is deliberately not
+ * used by the shared `dispatch()` path: the webhook runner processes
+ * deliveries one at a time (see `queue/worker.ts`), and blocking that loop for
+ * however long an agent session takes would stall every other repository it
+ * watches. Returns the last known task state, or `null` if the very first
+ * lookup failed.
+ */
+export async function awaitTerminalState(options: {
+  copilotToken: string;
+  repo: RepoContext;
+  taskId: string;
+  timeoutMs: number;
+  pollIntervalMs?: number;
+  baseUrl?: string;
+  sleep?: (ms: number) => Promise<void>;
+}): Promise<CopilotTask | null> {
+  const pollIntervalMs = options.pollIntervalMs ?? 30_000;
+  const sleep = options.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+  const deadline = Date.now() + options.timeoutMs;
+
+  let task = await getTaskStatus(options);
+
+  while ((!task || !isTerminalState(task.state)) && Date.now() < deadline) {
+    await sleep(Math.min(pollIntervalMs, Math.max(0, deadline - Date.now())));
+    task = await getTaskStatus(options);
+  }
+
+  return task;
+}
+
+/**
  * Build the agent prompt.
  *
  * The structure matters as much as the content. The agent is given:

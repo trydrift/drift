@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import type { RepoContext } from '../types.js';
+import type { DispatchResult, RepoContext } from '../types.js';
 import { loadConfig } from '../config/load.js';
 import { GitHubClient } from '../github/client.js';
 import { runPipeline } from '../pipeline.js';
@@ -246,17 +246,29 @@ async function handlePush(
   // learns whether that turned out true unless something asks GitHub later.
   // Recording the task here is what lets `reconcilePendingCopilotTasks` find
   // it after this delivery has long since been acknowledged.
-  if (result.dispatch.status === 'dispatched' && result.dispatch.taskId) {
-    await options.queue.recordPendingCopilotTask({
-      owner: repo.owner,
-      repo: repo.repo,
-      taskId: result.dispatch.taskId,
-      headSha: repo.afterSha,
-      branchName: result.dispatch.branchName ?? '',
-      prNumber: result.dispatch.pullRequestNumber ?? null,
-      prUrl: result.dispatch.pullRequestUrl ?? null,
-    });
-  }
+  await recordDispatchedTask(options.queue, repo, result.dispatch);
+}
+
+/**
+ * Record a successful dispatch so `reconcilePendingCopilotTasks` can find it
+ * later. Shared by the push path above and `/drift apply` below — both
+ * dispatch through the same `dispatch()` call and need the same follow-up.
+ */
+async function recordDispatchedTask(
+  queue: JobQueue,
+  repo: RepoContext,
+  result: DispatchResult,
+): Promise<void> {
+  if (result.status !== 'dispatched' || !result.taskId) return;
+  await queue.recordPendingCopilotTask({
+    owner: repo.owner,
+    repo: repo.repo,
+    taskId: result.taskId,
+    headSha: repo.afterSha,
+    branchName: result.branchName ?? '',
+    prNumber: result.pullRequestNumber ?? null,
+    prUrl: result.pullRequestUrl ?? null,
+  });
 }
 
 /**
@@ -356,6 +368,11 @@ async function handleIssueComment(
     ...(options.copilotToken ? { copilotToken: options.copilotToken } : {}),
     ...(options.dryRun ? { dryRun: true } : {}),
     // No checkout on this deployment, so no localization. The pipeline warns.
+    // `/drift apply` dispatches a Copilot task the same way the push path
+    // does, and needs the same follow-up — without this, an approved plan's
+    // task was recorded nowhere and `reconcilePendingCopilotTasks` never saw
+    // it.
+    onDispatched: (result, dispatchRepo) => recordDispatchedTask(options.queue, dispatchRepo, result),
   });
 }
 

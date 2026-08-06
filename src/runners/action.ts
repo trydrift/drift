@@ -1,13 +1,15 @@
 import { readFile } from 'node:fs/promises';
 import { appendFile } from 'node:fs/promises';
-import type { RepoContext } from '../types.js';
+import type { DispatchResult, RepoContext } from '../types.js';
+import type { DriftConfig } from '../config/schema.js';
 import { loadConfig } from '../config/load.js';
 import { GitHubClient } from '../github/client.js';
 import { runPipeline } from '../pipeline.js';
 import { renderPullRequestBody } from '../report/markdown.js';
-import { createLogger, type LogLevel } from '../util/logger.js';
+import { createLogger, type Logger, type LogLevel } from '../util/logger.js';
 import { matchesAny } from '../util/glob.js';
 import { applyApproval } from '../approval/apply.js';
+import { awaitTerminalState, isTerminalState } from '../dispatch/copilot.js';
 
 /**
  * GitHub Action entrypoint — Drift's primary runner.
@@ -105,6 +107,17 @@ export async function runAction(): Promise<number> {
 
     await writeOutputs(result.dispatch, result.summary);
     if (result.plan) await writeJobSummary(renderPullRequestBody(result.plan, effectiveConfig));
+
+    if (result.dispatch.status === 'dispatched') {
+      await maybeAwaitCopilotCompletion({
+        config: effectiveConfig,
+        repo,
+        dispatchResult: result.dispatch,
+        github,
+        copilotToken: inputs.copilotToken,
+        logger,
+      });
+    }
 
     // A blocked plan is a successful run: Drift did its job and correctly
     // asked a human. Failing the workflow here would train people to ignore it.
@@ -241,6 +254,18 @@ async function runApproval(
     case 'applied':
       await writeOutputs(outcome.dispatch, outcome.dispatch.message);
       await writeJobSummary(outcome.dispatch.message);
+
+      if (outcome.dispatch.status === 'dispatched') {
+        await maybeAwaitCopilotCompletion({
+          config: outcome.config,
+          repo: { owner, repo, baseBranch: '', beforeSha: '', afterSha: outcome.plan.headSha },
+          dispatchResult: outcome.dispatch,
+          github,
+          copilotToken: inputs.copilotToken,
+          logger,
+        });
+      }
+
       return outcome.dispatch.status === 'failed' ? 1 : 0;
   }
 }
@@ -251,6 +276,68 @@ async function readWorkspaceFile(workspace: string, path: string): Promise<strin
   } catch {
     return null;
   }
+}
+
+/**
+ * If `remediation.awaitCompletion` is on, block this run until the just-
+ * dispatched Copilot task finishes, fails, or times out, then post a final
+ * check run reflecting that.
+ *
+ * The Action is otherwise a fire-and-forget dispatch: it submits the task and
+ * exits, and nothing else in this deployment ever asks GitHub how it went.
+ * This is the opt-in way to close that loop without the durable queue and
+ * background reconciler the self-hosted webhook runner uses instead (see
+ * `reconcilePendingCopilotTasks` in `runners/webhook.ts`) — a one-shot Action
+ * run has no "later" to reconcile in, only "now, before it exits".
+ */
+async function maybeAwaitCopilotCompletion(args: {
+  config: DriftConfig;
+  repo: RepoContext;
+  dispatchResult: DispatchResult;
+  github: GitHubClient;
+  copilotToken?: string;
+  logger: Logger;
+}): Promise<void> {
+  const { config, repo, dispatchResult, github, copilotToken, logger } = args;
+  const settings = config.remediation.awaitCompletion;
+  if (!settings.enabled || !copilotToken || !dispatchResult.taskId) return;
+
+  logger.info(
+    `Waiting up to ${settings.timeoutMinutes}m for Copilot task ${dispatchResult.taskId} to finish (remediation.awaitCompletion is on)`,
+  );
+
+  const task = await awaitTerminalState({
+    copilotToken,
+    repo,
+    taskId: dispatchResult.taskId,
+    timeoutMs: settings.timeoutMinutes * 60_000,
+    pollIntervalMs: settings.pollIntervalSeconds * 1000,
+  });
+
+  if (!task || !isTerminalState(task.state)) {
+    logger.warn(
+      `Copilot task ${dispatchResult.taskId} had not reached a terminal state after ${settings.timeoutMinutes}m; giving up without a final check run.`,
+    );
+    return;
+  }
+
+  const succeeded = task.state === 'completed';
+  const where = dispatchResult.pullRequestUrl ?? task.pullRequestUrl;
+
+  await github.createCheckRun(repo, {
+    name: 'Drift',
+    conclusion: succeeded ? 'success' : 'failure',
+    title: succeeded ? 'Copilot finished' : `Copilot did not finish (${task.state})`,
+    summary: succeeded
+      ? where
+        ? `See ${where} for the result.`
+        : 'The agent task completed.'
+      : `The Copilot agent task ended in state \`${task.state}\` without finishing the fix. ${
+          where ? `See ${where} for what it left behind.` : 'A human needs to look at this.'
+        }`,
+  });
+
+  logger.info(`Copilot task ${dispatchResult.taskId} reached terminal state ${task.state}`);
 }
 
 async function writeOutputs(

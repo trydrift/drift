@@ -96,7 +96,16 @@ export async function runPipeline(options: PipelineOptions): Promise<PipelineRes
  * error, since there is nothing wrong with wanting the event *shape* (see
  * `drift telemetry print`) without shipping any yet.
  */
-async function reportTelemetry(args: {
+/**
+ * Exported so `/drift apply` can report the same event this module sends for
+ * every other dispatch — that path calls `analyzeRepository`/`dispatch`
+ * directly rather than through `runPipeline`, because approval has its own
+ * verification steps (digest, commit range, idempotency) that don't belong in
+ * the ordinary pipeline. Without this it dispatched real Copilot tasks with
+ * no telemetry at all, and `userAction: 'approved'` — the one user action
+ * Drift's own process ever directly witnesses — was consequently unreachable.
+ */
+export async function reportTelemetry(args: {
   config: DriftConfig;
   plan: RemediationPlan;
   result: DispatchResult;
@@ -112,9 +121,12 @@ async function reportTelemetry(args: {
     const event = buildUpgradeOutcomeEvent({
       plan,
       result,
-      // Every dispatch on this path goes through the Copilot Agent Tasks API;
-      // `dryRun` is the only case where nothing was executed at all.
-      agentType: dryRun ? 'none' : 'cloud',
+      // Only `dispatched` actually put the Copilot Agent Tasks API to work.
+      // `skipped`, `blocked`, and `failed` all mean no agent ever ran — a
+      // plan that was filed for approval or fell back to one is not a cloud
+      // agent run, and reporting it as one would overstate how often Drift
+      // actually executes unattended.
+      agentType: !dryRun && result.status === 'dispatched' ? 'cloud' : 'none',
       // This run's own wall-clock time — analysis plus dispatch. Not the
       // agent's own execution time, which Drift is never told, but a real
       // measurement rather than the `0` every event reported before.

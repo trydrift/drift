@@ -218,6 +218,31 @@ export const DriftConfigSchema = z.object({
       model: z.string().optional(),
       /** Extra repo-specific guidance appended to every agent task. */
       customInstructions: z.string().default(''),
+      /**
+       * Wait, within the same run, for the dispatched Copilot task to reach a
+       * terminal state before finishing.
+       *
+       * Only meaningful for the Action: a one-shot process has no other
+       * chance to learn whether the task it just submitted actually
+       * succeeded, so without this the check run posted at dispatch time
+       * ("Copilot is fixing…") is also the last thing anyone ever sees, even
+       * if the agent later fails or times out. The self-hosted webhook
+       * runner does not consult this — it reconciles pending tasks on its
+       * own background schedule instead, without blocking the delivery that
+       * dispatched them.
+       *
+       * Off by default because it changes what has always been a
+       * fire-and-forget dispatch into a job that runs for as long as the
+       * agent takes, which costs Action minutes and is a behaviour change a
+       * team should opt into, not one that arrives silently.
+       */
+      awaitCompletion: z
+        .object({
+          enabled: z.boolean().default(false),
+          timeoutMinutes: z.number().int().min(1).max(360).default(20),
+          pollIntervalSeconds: z.number().int().min(5).max(300).default(30),
+        })
+        .default({}),
     })
     .default({}),
 

@@ -143,6 +143,16 @@ export interface VerificationOutcome {
    */
   dependency?: string;
   workspace?: string;
+  /**
+   * The exact `BreakingChange.id`(s) this outcome bears on, when that is
+   * known. Takes precedence over `dependency`/`workspace` scoping: a
+   * dependency can have several distinct findings (e.g. `formatUser` and
+   * `parseUser` both changing), and a behavioural probe of one symbol says
+   * nothing about the other, even though both belong to the same dependency
+   * and workspace. Leave unset only for a check with no per-finding
+   * granularity to report (e.g. a whole-repo `typecheck` or `build`).
+   */
+  breakingChangeIds?: string[];
   detail?: string;
 }
 

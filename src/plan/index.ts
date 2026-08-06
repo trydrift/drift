@@ -128,15 +128,20 @@ function assessAll(input: BuildPlanInput): BreakingChange[] {
     // caller supplied.
     const taxonomy = taxonomyOf(change);
     // An outcome with no `dependency` is a repo-wide check (typecheck, build)
-    // and applies to every finding; one that names a dependency only applies
-    // to the change for that same dependency and workspace — otherwise a
-    // behavioural probe of dependency A would raise verification confidence
-    // for dependency B's unrelated finding.
-    const outcomes = (input.verification ?? []).filter(
-      (outcome) =>
-        outcome.dependency === undefined ||
-        (outcome.dependency === change.dependency && outcome.workspace === change.workspace),
-    );
+    // and applies to every finding. One that names `breakingChangeIds` is
+    // scoped to those exact findings — the precise case, since a dependency
+    // can have several distinct breaking changes and a probe of one symbol
+    // says nothing about another. Falling back to dependency/workspace
+    // matching only covers the coarser case (e.g. an outcome that never
+    // learned which change it cited); either way, a behavioural probe of
+    // dependency A must never raise verification confidence for dependency
+    // B's unrelated finding, and a probe of one finding must never raise it
+    // for a sibling finding on the same dependency.
+    const outcomes = (input.verification ?? []).filter((outcome) => {
+      if (outcome.dependency === undefined) return true;
+      if (outcome.dependency !== change.dependency || outcome.workspace !== change.workspace) return false;
+      return outcome.breakingChangeIds === undefined || outcome.breakingChangeIds.includes(change.id);
+    });
     const assessment = assess({
       change,
       taxonomy,
