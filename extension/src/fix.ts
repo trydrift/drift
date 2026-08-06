@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { join } from 'node:path';
 import { rm } from 'node:fs/promises';
 import type { CommitUnit, RemediationPlan } from '../../src/types.js';
+import { applyCodemodTransform } from '../../src/codemod/index.js';
 import { Git } from './git.js';
 import { diffHunks, statOf, type Hunk } from './diff.js';
 import { validateAgentWorktree, type ChangedPath } from './scope.js';
@@ -774,6 +775,50 @@ async function runBatchInWorktrees(args: {
   }
 }
 
+/**
+ * Apply a commit's precomputed codemod transforms against the files as they
+ * actually exist right now — not the content Drift last saw at analysis
+ * time. Re-deriving the edit is what makes this correct after other commits
+ * have already landed on the same run, or after any amount of time has
+ * passed since the plan was built; see `applyCodemodTransform`'s own doc
+ * comment for why replaying a stored snapshot instead would be unsafe.
+ */
+export function applyCommitCodemod(
+  commit: CommitUnit,
+  files: readonly { path: string; content: string }[],
+): FixOutcome {
+  const byPath = new Map(files.map((file) => [file.path, file.content]));
+
+  for (const transform of commit.codemod ?? []) {
+    for (const file of transform.files) {
+      const content = byPath.get(file);
+      if (content === undefined) continue;
+      byPath.set(file, applyCodemodTransform(content, transform));
+    }
+  }
+
+  const edits: { path: string; content: string }[] = [];
+  for (const file of files) {
+    const updated = byPath.get(file.path);
+    if (updated !== undefined && updated !== file.content) edits.push({ path: file.path, content: updated });
+  }
+
+  if (edits.length === 0) {
+    return {
+      status: 'no-changes',
+      message: 'The deterministic fix produced no changes here — likely already applied by an earlier commit.',
+    };
+  }
+
+  const fileCount = new Set(edits.map((edit) => edit.path)).size;
+  const ruleCount = commit.codemod?.length ?? 0;
+  return {
+    status: 'applied',
+    edits,
+    message: `Applied ${ruleCount} deterministic rename${ruleCount === 1 ? '' : 's'} across ${fileCount} file${fileCount === 1 ? '' : 's'} — no agent call was made.`,
+  };
+}
+
 async function applyOneCommit(args: {
   agent: FixAgent;
   plan: RemediationPlan;
@@ -801,6 +846,25 @@ async function applyOneCommit(args: {
   deferEdits?: boolean;
 }): Promise<{ outcome: FixOutcome; edits: { path: string; content: string }[] }> {
   const { agent, plan, commit, root, token, progress, files } = args;
+
+  // The planner already proved this commit needs no agent at all — every
+  // breaking change in it was resolved by Drift's own codemod engine. Skip
+  // the model call entirely; the edits below still go through the same
+  // scope validation, review, and verification an agent's output would.
+  if (commit.codemod) {
+    const outcome = applyCommitCodemod(commit, files);
+    args.onActivity?.({
+      kind: outcome.status === 'applied' ? 'edit' : 'status',
+      title: 'Deterministic fix',
+      detail: outcome.message,
+    });
+    const edits = outcome.status === 'applied' ? (outcome.edits ?? []) : [];
+    if (!args.deferEdits && edits.length > 0) {
+      await applyEdits(root, edits, scopeFiles(commit));
+      return { outcome, edits: [] };
+    }
+    return { outcome, edits: [...edits] };
+  }
 
   const controller = new AbortController();
   const cancelSub = token.onCancellationRequested(() => controller.abort());

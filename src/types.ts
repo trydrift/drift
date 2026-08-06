@@ -350,6 +350,19 @@ export interface CommitUnit {
   expectedChecks: VerificationRequirement[];
   /** Changes that invalidate this unit and require replanning. */
   invalidationTriggers: string[];
+  /**
+   * A deterministic fix for every breaking change in this unit, when Drift's
+   * own codemod engine (see `codemod/index.ts`) could resolve all of them
+   * without a model. Present only when coverage is complete for this unit.
+   *
+   * Carries the rule and its parameters, not precomputed file contents — a
+   * consumer re-applies the transform (`applyCodemodTransform`) against
+   * whatever each file actually contains when it runs, then puts the result
+   * through the same scope validation and verification an agent's output
+   * would go through, and skips dispatching an agent entirely. Absent, as
+   * before, means "ask an agent."
+   */
+  codemod?: { ruleId: string; from: string; to: string; files: string[] }[];
 }
 
 /** Aggregate risk, used to gate automatic execution. */

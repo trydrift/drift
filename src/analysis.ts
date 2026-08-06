@@ -9,6 +9,7 @@ import { analyze } from './analyze/index.js';
 import { buildIndex } from './index/metarag.js';
 import { walkSourceFiles } from './index/walk.js';
 import { localize } from './localize/index.js';
+import { attemptCodemod, type CodemodResult } from './codemod/index.js';
 import { buildPlan } from './plan/index.js';
 import { buildRationale } from './rationale/index.js';
 import type { SurfaceAddition, SurfaceUnavailable } from './evidence/surface/types.js';
@@ -153,6 +154,13 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   // zero impact sites meant "not searched".
   const localizationRan = Boolean(workspace);
 
+  // Populated in the same pass as localization, since it needs the same
+  // in-memory file contents localization already read — reading the
+  // repository a second time just for this would be redundant I/O for no
+  // benefit. Keyed by `BreakingChange.id` so `buildPlan` can attach a fix to
+  // exactly the commit unit(s) that finding ends up in.
+  const codemods = new Map<string, CodemodResult>();
+
   if (breakingChanges.length > 0 && workspace) {
     progress('localize', 'Searching for affected code');
     const members = memberDirectories(layouts);
@@ -173,6 +181,20 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     }
 
     logger.info(`Found ${impactSites.length} impact site(s)`);
+
+    /* Stage 5.5 — codemod: deterministic fixes where they can be proven safe */
+    if (impactSites.length > 0) {
+      const contentByPath = new Map(files.map((file) => [file.path, file.content]));
+      for (const change of breakingChanges) {
+        const sitesForChange = impactSites.filter((site) => site.breakingChangeId === change.id);
+        if (sitesForChange.length === 0) continue;
+        const result = attemptCodemod(change, sitesForChange, contentByPath);
+        if (result) codemods.set(change.id, result);
+      }
+      if (codemods.size > 0) {
+        logger.info(`Resolved ${codemods.size} finding(s) deterministically, without a model call`);
+      }
+    }
   } else if (breakingChanges.length > 0) {
     logger.warn('No local checkout available; affected code cannot be located.');
   }
@@ -346,6 +368,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     localizationRan,
     verification: verificationOutcomes,
     checkedSurfaces,
+    codemods,
   });
 
   progress('done', 'Analysis complete');

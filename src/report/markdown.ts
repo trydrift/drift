@@ -272,6 +272,12 @@ function renderCommitPlan(plan: RemediationPlan): string {
     if (commit.expectedChecks.length > 0) {
       lines.push(`Expected checks: ${commit.expectedChecks.map((check) => check.kind).join(', ')}`);
     }
+    if (commit.codemod?.length) {
+      const renames = commit.codemod.map((t) => `\`${t.from}\` → \`${t.to}\``).join(', ');
+      lines.push(
+        `**Resolved deterministically** by Drift's codemod engine (${renames}) — no model call was needed for this commit.`,
+      );
+    }
     lines.push('');
   }
 

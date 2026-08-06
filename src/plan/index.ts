@@ -10,6 +10,7 @@ import type {
   UpgradeRationale,
 } from '../types.js';
 import { compareRisk, riskWithinLimit, type DriftConfig } from '../config/schema.js';
+import type { CodemodResult } from '../codemod/index.js';
 import { branchNameFor as branchName } from './pull-request.js';
 import { meetsConfidence } from '../analyze/index.js';
 import { isDowngrade } from '../detect/version.js';
@@ -61,6 +62,8 @@ export interface BuildPlanInput {
   verification?: readonly VerificationOutcome[];
   /** Surfaces the earlier stages looked at, and how that went. */
   checkedSurfaces?: readonly CheckedSurface[];
+  /** Deterministic fixes already computed for individual findings, by `BreakingChange.id`. */
+  codemods?: ReadonlyMap<string, CodemodResult>;
 }
 
 /**
@@ -82,7 +85,7 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
   // not exist until localization has run and cannot be known inside `analyze`.
   const breakingChanges = assessAll(input);
 
-  const graph = planCommitGraph({ breakingChanges, impactSites, config, changes });
+  const graph = planCommitGraph({ breakingChanges, impactSites, config, changes, codemods: input.codemods });
   const commits = graph.commits;
   const risk = assessRisk(changes, breakingChanges, impactSites);
   const gaps = collectGaps(input, breakingChanges, commits);

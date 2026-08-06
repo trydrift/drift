@@ -319,6 +319,132 @@ describe('commit planning', () => {
   });
 });
 
+describe('deterministic codemods on the plan', () => {
+  const renameChange = (overrides: Record<string, unknown> = {}) => ({
+    id: 'bc_1',
+    dependency: 'acme-sdk',
+    kind: 'renamed-export' as const,
+    summary: '`oldName` was renamed to `newName`.',
+    remediation: 'Replace every usage of `oldName` with `newName`.',
+    symbols: ['oldName'],
+    replacementSymbols: ['newName'],
+    confidence: 'high' as const,
+    citations: ['ev_1'],
+    ...overrides,
+  });
+
+  test('a commit fully covered by a codemod carries it, and says so in the commit body', () => {
+    const changeSites = [site('src/a.ts', 1, 'bc_1')];
+    const codemods = new Map([
+      [
+        'bc_1',
+        {
+          transform: { ruleId: 'rename-identifier' as const, from: 'oldName', to: 'newName' },
+          sitesResolved: 1,
+          edits: [{ file: 'src/a.ts', before: 'oldName();\n', after: 'newName();\n' }],
+        },
+      ],
+    ]);
+
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: [renameChange()],
+      impactSites: changeSites,
+      codemods,
+    });
+
+    assert.equal(plan.commits.length, 1);
+    assert.deepEqual(plan.commits[0]!.codemod, [
+      { ruleId: 'rename-identifier', from: 'oldName', to: 'newName', files: ['src/a.ts'] },
+    ]);
+    assert.match(plan.commits[0]!.body, /Resolved deterministically/);
+  });
+
+  test('a commit only partially covered by a codemod falls back to the agent for the whole unit', () => {
+    const changeSites = [site('src/a.ts', 1, 'bc_1'), site('src/b.ts', 2, 'bc_1')];
+    // Only one of the two sites was actually resolved.
+    const codemods = new Map([
+      [
+        'bc_1',
+        {
+          transform: { ruleId: 'rename-identifier' as const, from: 'oldName', to: 'newName' },
+          sitesResolved: 1,
+          edits: [{ file: 'src/a.ts', before: 'oldName();\n', after: 'newName();\n' }],
+        },
+      ],
+    ]);
+
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: [renameChange()],
+      impactSites: changeSites,
+      codemods,
+    });
+
+    assert.equal(plan.commits[0]!.codemod, undefined);
+    assert.doesNotMatch(plan.commits[0]!.body, /Resolved deterministically/);
+  });
+
+  test('two changes in one commit that touch the same file fall back to the agent entirely', () => {
+    const config = DriftConfigSchema.parse({ remediation: { commitGranularity: 'single' } });
+    const changes = [
+      renameChange({ id: 'bc_1', symbols: ['oldA'], replacementSymbols: ['newA'] }),
+      renameChange({ id: 'bc_2', symbols: ['oldB'], replacementSymbols: ['newB'] }),
+    ];
+    const sites = [site('src/a.ts', 1, 'bc_1'), site('src/a.ts', 2, 'bc_2')];
+    const codemods = new Map([
+      [
+        'bc_1',
+        {
+          transform: { ruleId: 'rename-identifier' as const, from: 'oldA', to: 'newA' },
+          sitesResolved: 1,
+          edits: [{ file: 'src/a.ts', before: 'x', after: 'y' }],
+        },
+      ],
+      [
+        'bc_2',
+        {
+          transform: { ruleId: 'rename-identifier' as const, from: 'oldB', to: 'newB' },
+          sitesResolved: 1,
+          edits: [{ file: 'src/a.ts', before: 'x', after: 'z' }],
+        },
+      ],
+    ]);
+
+    const plan = buildPlan({
+      repo,
+      config,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: changes,
+      impactSites: sites,
+      codemods,
+    });
+
+    assert.equal(plan.commits.length, 1);
+    assert.equal(plan.commits[0]!.codemod, undefined);
+  });
+
+  test('no codemods supplied leaves commits exactly as before', () => {
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: [renameChange()],
+      impactSites: [site('src/a.ts', 1, 'bc_1')],
+    });
+
+    assert.equal(plan.commits[0]!.codemod, undefined);
+  });
+});
+
 describe('guardrails', () => {
   const planWith = (config = DEFAULT_CONFIG, sites = [site('src/a.ts')]) =>
     buildPlan({
@@ -482,6 +608,44 @@ describe('rendered output', () => {
   test('the report embeds the commit marker the approval flow reads back', () => {
     const body = renderPullRequestBody(plan, DEFAULT_CONFIG);
     assert.ok(body.includes(`drift-commit: ${repo.afterSha}`));
+  });
+
+  test('the report surfaces which commits were resolved without a model call', () => {
+    const codemods = new Map([
+      [
+        'bc_1',
+        {
+          transform: { ruleId: 'rename-identifier' as const, from: 'oldName', to: 'newName' },
+          sitesResolved: 1,
+          edits: [{ file: 'src/a.ts', before: 'oldName();\n', after: 'newName();\n' }],
+        },
+      ],
+    ]);
+    const codemodPlan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: [
+        {
+          id: 'bc_1',
+          dependency: 'acme-sdk',
+          kind: 'renamed-export' as const,
+          summary: '`oldName` was renamed to `newName`.',
+          remediation: 'Replace every usage of `oldName` with `newName`.',
+          symbols: ['oldName'],
+          replacementSymbols: ['newName'],
+          confidence: 'high' as const,
+          citations: ['ev_1'],
+        },
+      ],
+      impactSites: [site('src/a.ts', 1, 'bc_1')],
+      codemods,
+    });
+
+    const body = renderPullRequestBody(codemodPlan, DEFAULT_CONFIG);
+    assert.match(body, /Resolved deterministically/);
+    assert.match(body, /no model call was needed/);
   });
 
   test('the agent prompt forbids the predictable failure modes', () => {

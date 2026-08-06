@@ -10,6 +10,7 @@ import type {
   VerificationRequirement,
 } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
+import type { CodemodResult } from '../codemod/index.js';
 import { stableId, slugify } from '../util/id.js';
 
 /**
@@ -73,6 +74,8 @@ export interface PlanCommitsInput {
   impactSites: readonly ImpactSite[];
   config: DriftConfig;
   changes?: readonly DependencyChange[];
+  /** Deterministic fixes already computed for individual findings, by `BreakingChange.id`. */
+  codemods?: ReadonlyMap<string, CodemodResult>;
 }
 
 export interface PlanCommitGraph {
@@ -87,6 +90,7 @@ export function planCommitGraph({
   impactSites,
   config,
   changes = [],
+  codemods,
 }: PlanCommitsInput): PlanCommitGraph {
   const sitesByChange = groupSites(impactSites);
 
@@ -111,7 +115,7 @@ export function planCommitGraph({
   }
 
   const commits = sorted.map((group, index) =>
-    toCommitUnit(group, index + 1, sitesByChange, sorted.length),
+    toCommitUnit(group, index + 1, sitesByChange, sorted.length, codemods),
   );
   const edges = deriveEdges(commits, breakingChanges, impactSites, cohortByDependency);
   const layered = assignExecutionLayers(commits, edges);
@@ -164,10 +168,12 @@ function toCommitUnit(
   order: number,
   sitesByChange: Map<string, ImpactSite[]>,
   totalCommits: number,
+  codemods?: ReadonlyMap<string, CodemodResult>,
 ): CommitUnit {
   const sites = group.flatMap((c) => sitesByChange.get(c.id) ?? []);
   const files = [...new Set(sites.map((s) => s.file))].sort();
   const primary = group[0]!;
+  const codemod = codemods ? resolveCodemod(group, sitesByChange, codemods) : undefined;
 
   return {
     id: stableId(
@@ -179,7 +185,7 @@ function toCommitUnit(
     ),
     order,
     message: subjectLine(group, files.length),
-    body: commitBody(group, sites),
+    body: commitBody(group, sites, codemod),
     breakingChangeIds: group.map((c) => c.id),
     files,
     allowedFiles: files,
@@ -190,7 +196,46 @@ function toCommitUnit(
     executionLayer: 0,
     expectedChecks: expectedChecksFor(group, files),
     invalidationTriggers: invalidationTriggersFor(group, files),
+    ...(codemod ? { codemod } : {}),
   };
+}
+
+/**
+ * Decide whether every breaking change in a commit group was fully resolved
+ * by a deterministic codemod, and if so, merge their edits into one list.
+ *
+ * "Fully resolved" means the codemod touched every impact site the change
+ * has, not merely some of them — a partial deterministic fix left mixed with
+ * agent-driven edits inside the same commit would blur exactly the boundary
+ * commit-scoping exists to keep sharp. Anything short of full coverage falls
+ * back to the agent for the whole unit, unchanged from today's behaviour.
+ *
+ * Two changes in the same group editing the same file also fall back: each
+ * codemod ran independently against the original file content, so their
+ * `after` versions cannot both be applied without one silently discarding
+ * the other's edit.
+ */
+function resolveCodemod(
+  group: readonly BreakingChange[],
+  sitesByChange: ReadonlyMap<string, ImpactSite[]>,
+  codemods: ReadonlyMap<string, CodemodResult>,
+): CommitUnit['codemod'] {
+  const claimedFiles = new Set<string>();
+  const transforms: NonNullable<CommitUnit['codemod']> = [];
+
+  for (const change of group) {
+    const sites = sitesByChange.get(change.id) ?? [];
+    const result = codemods.get(change.id);
+    if (!result || result.sitesResolved < sites.length) return undefined;
+
+    const files = [...new Set(result.edits.map((edit) => edit.file))];
+    if (files.some((file) => claimedFiles.has(file))) return undefined;
+    for (const file of files) claimedFiles.add(file);
+
+    transforms.push({ ...result.transform, files });
+  }
+
+  return transforms.length > 0 ? transforms : undefined;
 }
 
 function deriveEdges(
@@ -586,7 +631,11 @@ function truncateSubject(subject: string): string {
   return subject.length <= 72 ? subject : `${subject.slice(0, 69)}...`;
 }
 
-function commitBody(group: readonly BreakingChange[], sites: readonly ImpactSite[]): string {
+function commitBody(
+  group: readonly BreakingChange[],
+  sites: readonly ImpactSite[],
+  codemod?: CommitUnit['codemod'],
+): string {
   const lines: string[] = [];
 
   for (const change of group) {
@@ -599,8 +648,18 @@ function commitBody(group: readonly BreakingChange[], sites: readonly ImpactSite
   const files = [...new Set(sites.map((s) => s.file))];
   lines.push(`Affects ${sites.length} location(s) across ${files.length} file(s).`);
   lines.push('');
-  lines.push('Identified by Drift from upstream evidence; see the pull request');
-  lines.push('description for the citations behind this change.');
+
+  if (codemod) {
+    const fileCount = new Set(codemod.flatMap((t) => t.files)).size;
+    lines.push(
+      `Resolved deterministically by Drift's codemod engine across ${fileCount} file(s) — no model call was made for this commit.`,
+    );
+  } else {
+    lines.push(
+      'Identified by Drift from upstream evidence; see the pull request',
+    );
+    lines.push('description for the citations behind this change.');
+  }
 
   return lines.join('\n').trim();
 }
