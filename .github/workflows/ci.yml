@@ -72,6 +72,19 @@ jobs:
           grep -q "drift:error" /tmp/out.txt \
             || { echo "::error::bundle did not reach Drift's own code"; exit 1; }
 
+      # `llm.enabled: true` in the Action has no `npm install` to fall back on,
+      # so the SDK must be *in* the bundle, not resolved from node_modules at
+      # runtime. This is a regression guard for exactly that: a dynamic
+      # `import()` built from a variable specifier defeats esbuild's static
+      # bundling and passed every check above while silently degrading to
+      # "SDK not installed" in every real Action run.
+      - name: Verify the Anthropic SDK is bundled into the action, not just referenced
+        run: |
+          if ! grep -q "AnthropicError" action/index.cjs; then
+            echo "::error::@anthropic-ai/sdk is not bundled into action/index.cjs — llm.enabled: true would silently fall back in the Action, which has no node_modules to resolve it from."
+            exit 1
+          fi
+
       - name: Verify the CLI runs
         run: node dist/cli.js --version
 

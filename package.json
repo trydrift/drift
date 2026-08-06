@@ -27,7 +27,7 @@
     "test": "npm run build && node --test --experimental-strip-types \"test/*.test.ts\"",
     "serve": "node dist/runners/webhook.js",
     "prepublishOnly": "npm run build",
-    "build:action": "esbuild src/runners/action-entry.ts --bundle --platform=node --target=node20 --format=cjs --external:@anthropic-ai/sdk --minify --outfile=action/index.cjs",
+    "build:action": "esbuild src/runners/action-entry.ts --bundle --platform=node --target=node20 --format=cjs --minify --outfile=action/index.cjs",
     "build:all": "npm run build && npm run build:action",
     "docs:support": "npm run build && node scripts/generate-support-doc.mjs",
     "eval:deterministic": "npm run build && node --experimental-strip-types eval/src/run.ts --ci"
