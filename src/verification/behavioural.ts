@@ -124,9 +124,8 @@ export function selectBehaviouralCandidates(
       const cases: ProbeCase[] = [{ id: 'default', args: [], contracts }];
 
       const seen = new Set<string>();
-      const MAX_CASES = 4;
       for (const site of sites) {
-        if (cases.length >= MAX_CASES) break;
+        if (cases.length >= settings.maxCasesPerSymbol) break;
         if (site.matchedSymbol !== symbol) continue;
         const args = literalArgsFromExcerpt(site.excerpt, symbol);
         if (!args) continue;
@@ -300,6 +299,21 @@ async function runWorker(
         },
       });
 
+      // Node has no cross-platform CPU-time quota for a child process — this
+      // is a best-effort scheduling hint, not a hard cap. The real bound on
+      // CPU consumption is the wall-clock timeout below: the worker cannot
+      // spawn its own children or threads (no `--allow-child-process` or
+      // `--allow-worker` was granted above), so a single-threaded runaway can
+      // burn at most one core for `timeoutSeconds`, regardless of `cpuLimit`.
+      if (child.pid && config.cpuLimit < 1) {
+        try {
+          setPriority(child.pid, Math.round(10 * (1 - config.cpuLimit)));
+        } catch {
+          // Priority hints are unavailable on some platforms/permission
+          // levels; the wall-clock timeout still bounds the worker.
+        }
+      }
+
       let stdout = '';
       let stderr = '';
       const outputLimit = 64 * 1024;
@@ -358,7 +372,18 @@ function normalizedComparable(result: WorkerResult): Record<string, unknown> {
   };
 }
 
+/** Statuses that mean the harness could not observe the call at all — not a result about the dependency. */
+const UNAVAILABLE_STATUSES = new Set(['worker-failed', 'timed-out']);
+
 function diffResult(oldResult: WorkerResult, newResult: WorkerResult): string {
+  if (UNAVAILABLE_STATUSES.has(oldResult.status) && UNAVAILABLE_STATUSES.has(newResult.status)) {
+    // Both sides failing identically — most often because the environment
+    // resolver only fetched the entry file and the export needed a sibling
+    // module — is not evidence the versions behave the same. Conflating it
+    // with a genuine "no observed difference" would let a probe that never
+    // actually ran read as reassuring.
+    return `probe unavailable: neither version could be observed (${oldResult.status})`;
+  }
   if (sameResult(oldResult, newResult)) {
     return 'no observed difference for this contract and generated input domain';
   }
@@ -373,7 +398,7 @@ function limitations(config: DriftConfig['verification']['behavioural'], contrac
   const out = [
     `Harness ${HARNESS_VERSION}; bounded to ${contracts.join(', ') || 'return-shape'} contracts.`,
     `No observed difference is not proof of behavioural compatibility outside these generated inputs.`,
-    `CPU limit requested: ${config.cpuLimit}; Node subprocess enforces wall-clock, memory, output, filesystem, and network policy.`,
+    `CPU limit requested: ${config.cpuLimit} (best-effort process priority; no OS-level quota). Node subprocess enforces wall-clock, memory, output, filesystem, and network policy, and cannot spawn its own children or threads — the wall-clock timeout is the actual hard bound on CPU consumption.`,
   ];
   if (!config.network) out.push('Network APIs were disabled for the probe.');
   return out;
@@ -403,7 +428,11 @@ function observationEvidence(observation: BehaviouralObservation): Evidence {
     locator: `${observation.symbol}:${observation.caseId}`,
     title: `Behavioural differential probe for ${observation.symbol}`,
     content,
-    weight: observation.observedDifference.startsWith('no observed difference') ? 0.25 : 0.8,
+    weight: observation.observedDifference.startsWith('probe unavailable')
+      ? 0
+      : observation.observedDifference.startsWith('no observed difference')
+        ? 0.25
+        : 0.8,
     findings: [
       {
         code: 'behavioural-observation',
@@ -520,6 +549,7 @@ export async function runBehaviouralVerification(options: {
 
 /** A short, stable label for what kind of difference a probe observed. */
 export function behaviouralFindingKind(observedDifference: string): string {
+  if (observedDifference.startsWith('probe unavailable')) return 'probe-unavailable';
   if (observedDifference.startsWith('no observed difference')) return 'no-difference';
   if (observedDifference.includes('returned value changed')) return 'return-value';
   if (observedDifference.startsWith('status changed')) return 'thrown-error';

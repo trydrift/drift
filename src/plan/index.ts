@@ -214,9 +214,14 @@ function collectGaps(
     });
   }
 
-  // Nothing ran. True for every core-pipeline run today, and stated rather than
-  // left for a reader to assume otherwise.
-  if ((input.verification ?? []).length === 0 && commits.length > 0) {
+  // Nothing ran that could confirm the fix compiles or behaves.
+  //
+  // Behavioural probes are excluded from this check even though they populate
+  // `input.verification` too: they confirm something about the *dependency*,
+  // not about a fix Drift would write, so their presence must not silence the
+  // one gap that specifically warns "nothing confirms a fix would compile".
+  const structuralOutcomes = (input.verification ?? []).filter((o) => !o.name.startsWith('behavioural:'));
+  if (structuralOutcomes.length === 0 && commits.length > 0) {
     gaps.push({
       stage: 'verify',
       surface: 'build, typecheck, and test',

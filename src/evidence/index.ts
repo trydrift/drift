@@ -331,6 +331,18 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
             `${change.name}'s public API is neither in its own declarations nor in any dependency Drift could follow, so comparing its declarations proves nothing about this upgrade.`,
           ),
         );
+      } else {
+        // A real, successful comparison that happened to find nothing — reported
+        // the same way the non-npm surface path already reports a clean diff
+        // (below), so this is recorded as *checked*, not folded into the same
+        // "unavailable" bucket as a comparison that could not run at all.
+        ctx.onSurfaceComputed?.(change, {
+          available: true,
+          changes: [],
+          tool: 'jsdelivr-dts-diff',
+          weight: WEIGHTS['type-surface-diff'],
+          locator: `${change.name}@${from}:${surface.beforeEntryPath} → ${change.name}@${to}:${surface.afterEntryPath}`,
+        });
       }
       return null;
     }

@@ -12,9 +12,10 @@ import { localize } from './localize/index.js';
 import { buildPlan } from './plan/index.js';
 import { buildRationale } from './rationale/index.js';
 import type { SurfaceAddition, SurfaceUnavailable } from './evidence/surface/types.js';
-import type { AnalysisGap, CheckedSurface } from './confidence/types.js';
-import { runBehaviouralVerification } from './verification/behavioural.js';
+import type { AnalysisGap, CheckedSurface, VerificationOutcome } from './confidence/types.js';
+import { behaviouralFindingKind, runBehaviouralVerification } from './verification/behavioural.js';
 import { fetchedPackageEnvironment } from './verification/environment.js';
+import { dependencyKey } from './util/id.js';
 
 /**
  * Stages 1–7: everything up to, but not including, acting.
@@ -110,8 +111,17 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   // Kept alongside the evidence rather than inside it: what a computed diff
   // *added*, and why one could not be produced, are both facts about the run
   // that the rationale stage needs and that no BreakingChange should carry.
+  //
+  // Keyed by `dependencyKey`, not `change.name` — in a monorepo, two workspace
+  // members can depend on the same package at different versions, and a
+  // name-only key would let one member's computed diff silently stand in for
+  // the other's.
   const additions = new Map<string, { additions: SurfaceAddition[]; locator: string }>();
   const surfaceGaps = new Map<string, SurfaceUnavailable>();
+  // Whether a surface diff was successfully computed at all, independent of
+  // whether it found anything — `additions` alone cannot answer that, because
+  // a clean diff and "never computed" both leave it without an entry.
+  const surfaceComputed = new Set<string>();
 
   let evidence = await gatherEvidence(actionable, {
     config,
@@ -122,9 +132,12 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     beforeSha: repo.beforeSha,
     afterSha: repo.afterSha,
     ...(workspace ? { workspaceRoot: workspace } : {}),
-    onSurfaceComputed: (change, diff) =>
-      additions.set(change.name, { additions: diff.additions ?? [], locator: diff.locator }),
-    onUnavailableSurface: (change, reason) => surfaceGaps.set(change.name, reason),
+    onSurfaceComputed: (change, diff) => {
+      const key = dependencyKey(change);
+      surfaceComputed.add(key);
+      additions.set(key, { additions: diff.additions ?? [], locator: diff.locator });
+    },
+    onUnavailableSurface: (change, reason) => surfaceGaps.set(dependencyKey(change), reason),
   });
   logger.info(`Gathered ${evidence.length} evidence record(s)`);
 
@@ -151,7 +164,10 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
 
     for (const [member, changesHere] of groupByMember(actionable)) {
       const ids = new Set(changesHere.map((c) => c.name));
-      const relevant = breakingChanges.filter((b) => ids.has(b.dependency));
+      // `b.workspace === member` matters as much as the name: two members can
+      // depend on the same package, and without it this member's search would
+      // also pick up — and search for — the other member's findings.
+      const relevant = breakingChanges.filter((b) => ids.has(b.dependency) && b.workspace === member);
       if (relevant.length === 0) continue;
       impactSites.push(...localize(relevant, changesHere, index, files, { logger, member }));
     }
@@ -163,6 +179,12 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
 
   /* Stage 6 — verify (behavioural, experimental and off by default) */
   const behaviouralGaps: AnalysisGap[] = [];
+  // Fed into `buildPlan` as `VerificationOutcome[]` so a behavioural probe
+  // that actually ran moves the verification-confidence dimension the same
+  // way a build or test outcome would — without this, `assessVerification`
+  // never sees the probing happened at all and stays at `band: 'none'`
+  // regardless of how much behavioural evidence was gathered.
+  const verificationOutcomes: VerificationOutcome[] = [];
   let behaviouralRan = false;
 
   if (config.verification.behavioural.enabled && breakingChanges.length > 0 && impactSites.length > 0) {
@@ -202,6 +224,20 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
         return extra?.length ? { ...change, citations: [...change.citations, ...extra] } : change;
       });
       logger.info(`Behavioural probing added ${verification.evidence.length} observation(s) of evidence`);
+
+      for (const record of verification.evidence) {
+        const detail = record.findings?.[0]?.detail ?? '';
+        const kind = behaviouralFindingKind(detail);
+        verificationOutcomes.push({
+          name: `behavioural:${record.dependency}`,
+          command: 'drift verify --behavioural (bounded differential probe)',
+          // `probe-unavailable` is a harness limitation, not a check that ran —
+          // recorded as `unavailable` so it costs nothing rather than reading
+          // as a check that silently confirmed nothing.
+          status: kind === 'probe-unavailable' ? 'unavailable' : 'passed',
+          detail,
+        });
+      }
     }
   }
 
@@ -221,17 +257,27 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   }
 
   for (const change of actionable) {
-    const records = evidence.filter((e) => e.dependency === change.name);
-    const gap = surfaceGaps.get(change.name);
+    const key = dependencyKey(change);
+    // `e.dependency` alone repeats the monorepo collision this key exists to
+    // avoid; require the workspace to match too, falling back to name-only
+    // when neither evidence nor the change carries a workspace (the common,
+    // single-package case, where the two conditions are equivalent).
+    const records = evidence.filter((e) => e.dependency === change.name && e.workspace === change.workspace);
+    const gap = surfaceGaps.get(key);
 
+    // A diff that ran and found nothing is `checked`, same as one that found
+    // findings — `surfaceComputed` is what distinguishes "computed and clean"
+    // from "never computed", which `records.some(findings)` alone could not:
+    // both look identical (no findings) from that side.
+    const computed = surfaceComputed.has(key) || records.some((e) => e.findings?.length);
     checkedSurfaces.push({
       surface: 'api-surface',
       dependency: change.name,
       ecosystem: change.ecosystem,
-      status: gap ? 'unavailable' : records.some((e) => e.findings?.length) ? 'checked' : 'unavailable',
+      status: gap ? 'unavailable' : computed ? 'checked' : 'unavailable',
       detail: gap
         ? gap.reason
-        : records.some((e) => e.findings?.length)
+        : computed
           ? 'A computed diff of the published API surface was produced.'
           : 'No computed API diff was available for this ecosystem or version pair.',
     });
@@ -276,6 +322,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     rationale,
     skipped,
     localizationRan,
+    verification: verificationOutcomes,
     checkedSurfaces,
   });
 
