@@ -236,6 +236,11 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
           // as a check that silently confirmed nothing.
           status: kind === 'probe-unavailable' ? 'unavailable' : 'passed',
           detail,
+          // Scoped to the dependency (and workspace) this probe actually
+          // exercised, so it cannot raise verification confidence for an
+          // unrelated finding — see `assessAll` in `plan/index.ts`.
+          dependency: record.dependency,
+          workspace: record.workspace,
         });
       }
     }

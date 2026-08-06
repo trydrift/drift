@@ -42,6 +42,7 @@ export interface PipelineResult {
 
 export async function runPipeline(options: PipelineOptions): Promise<PipelineResult> {
   const { repo, config, logger, github, copilotToken, dryRun, approved } = options;
+  const started = Date.now();
 
   const { plan, summary } = await logger.group('Drift: analysing', () =>
     analyzeRepository({
@@ -72,7 +73,15 @@ export async function runPipeline(options: PipelineOptions): Promise<PipelineRes
 
   logger.info(result.message);
 
-  await reportTelemetry({ config, plan, result, dryRun, logger });
+  await reportTelemetry({
+    config,
+    plan,
+    result,
+    dryRun,
+    approved,
+    latencyMs: Date.now() - started,
+    logger,
+  });
 
   return { plan, dispatch: result, summary: result.message };
 }
@@ -92,9 +101,11 @@ async function reportTelemetry(args: {
   plan: RemediationPlan;
   result: DispatchResult;
   dryRun?: boolean;
+  approved?: boolean;
+  latencyMs: number;
   logger: Logger;
 }): Promise<void> {
-  const { config, plan, result, dryRun, logger } = args;
+  const { config, plan, result, dryRun, approved, latencyMs, logger } = args;
   if (!telemetryEnabled(config.telemetry)) return;
 
   try {
@@ -104,6 +115,21 @@ async function reportTelemetry(args: {
       // Every dispatch on this path goes through the Copilot Agent Tasks API;
       // `dryRun` is the only case where nothing was executed at all.
       agentType: dryRun ? 'none' : 'cloud',
+      // This run's own wall-clock time — analysis plus dispatch. Not the
+      // agent's own execution time, which Drift is never told, but a real
+      // measurement rather than the `0` every event reported before.
+      latencyMs,
+      // `approved` is only ever true when this run was triggered by a human
+      // commenting `/drift apply` — the one user action this call site
+      // actually witnesses. Everything else (dismissed, merged, opened,
+      // ignored) happens outside this process and is not fabricated here.
+      ...(approved ? { userAction: 'approved' as const } : {}),
+      featureFlags: {
+        behaviouralVerification: config.verification.behavioural.enabled,
+        automaticDispatch: config.mode === 'auto',
+        approvalRequired: config.mode === 'approve',
+        planDag: true,
+      },
       ...(config.telemetry.installationId ? { installationId: config.telemetry.installationId } : {}),
       ...(config.telemetry.rotationSalt ? { rotationSalt: config.telemetry.rotationSalt } : {}),
       ...(config.telemetry.retentionDays !== undefined

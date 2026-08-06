@@ -132,6 +132,17 @@ export interface VerificationOutcome {
   status: 'passed' | 'failed' | 'skipped' | 'timed-out' | 'unavailable';
   /** Files the check is known to cover, when that can be established. */
   covers?: string[];
+  /**
+   * The dependency (and workspace, mirroring `DependencyChange.workspace`)
+   * this outcome speaks to, when it is specific to one. A repo-wide check
+   * (`typecheck`, `build`) that says nothing about any one dependency in
+   * particular should leave this unset; a per-dependency probe (e.g. a
+   * behavioural differential run) must set it, or its result will otherwise
+   * be applied to every finding on the plan, not just the one it actually
+   * probed.
+   */
+  dependency?: string;
+  workspace?: string;
   detail?: string;
 }
 

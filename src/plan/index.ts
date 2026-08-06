@@ -127,13 +127,23 @@ function assessAll(input: BuildPlanInput): BreakingChange[] {
     // Normalised here so every finding on a plan carries one, whatever the
     // caller supplied.
     const taxonomy = taxonomyOf(change);
+    // An outcome with no `dependency` is a repo-wide check (typecheck, build)
+    // and applies to every finding; one that names a dependency only applies
+    // to the change for that same dependency and workspace — otherwise a
+    // behavioural probe of dependency A would raise verification confidence
+    // for dependency B's unrelated finding.
+    const outcomes = (input.verification ?? []).filter(
+      (outcome) =>
+        outcome.dependency === undefined ||
+        (outcome.dependency === change.dependency && outcome.workspace === change.workspace),
+    );
     const assessment = assess({
       change,
       taxonomy,
       evidence,
       sites,
       localizationRan,
-      outcomes: input.verification ?? [],
+      outcomes,
       checkedSurfaces: input.checkedSurfaces ?? [],
       gaps: [],
     });

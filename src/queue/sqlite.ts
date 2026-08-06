@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
-import type { EnqueueRequest, EnqueueResult, Job, JobQueue, QueueStats } from './types.js';
+import type { EnqueueRequest, EnqueueResult, Job, JobQueue, PendingCopilotTask, QueueStats } from './types.js';
 
 /**
  * SQLite-backed durable queue.
@@ -41,10 +41,22 @@ CREATE TABLE IF NOT EXISTS schema_meta (
   key   TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS pending_copilot_tasks (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  owner       TEXT    NOT NULL,
+  repo        TEXT    NOT NULL,
+  task_id     TEXT    NOT NULL,
+  head_sha    TEXT    NOT NULL,
+  branch_name TEXT    NOT NULL,
+  pr_number   INTEGER,
+  pr_url      TEXT,
+  created_at  TEXT    NOT NULL
+);
 `;
 
 /** Bump alongside any migration to `SCHEMA`. */
-export const QUEUE_SCHEMA_VERSION = 1;
+export const QUEUE_SCHEMA_VERSION = 2;
 
 interface JobRow {
   id: number;
@@ -229,4 +241,59 @@ export class SqliteJobQueue implements JobQueue {
   async close(): Promise<void> {
     this.db.close();
   }
+
+  async recordPendingCopilotTask(task: Omit<PendingCopilotTask, 'id' | 'createdAt'>): Promise<void> {
+    this.db
+      .prepare(
+        `INSERT INTO pending_copilot_tasks (owner, repo, task_id, head_sha, branch_name, pr_number, pr_url, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        task.owner,
+        task.repo,
+        task.taskId,
+        task.headSha,
+        task.branchName,
+        task.prNumber,
+        task.prUrl,
+        new Date().toISOString(),
+      );
+  }
+
+  async listPendingCopilotTasks(): Promise<PendingCopilotTask[]> {
+    const rows = this.db
+      .prepare('SELECT * FROM pending_copilot_tasks ORDER BY id')
+      .all() as unknown as PendingCopilotTaskRow[];
+    return rows.map(toPendingCopilotTask);
+  }
+
+  async resolvePendingCopilotTask(id: number): Promise<void> {
+    this.db.prepare('DELETE FROM pending_copilot_tasks WHERE id = ?').run(id);
+  }
+}
+
+interface PendingCopilotTaskRow {
+  id: number;
+  owner: string;
+  repo: string;
+  task_id: string;
+  head_sha: string;
+  branch_name: string;
+  pr_number: number | null;
+  pr_url: string | null;
+  created_at: string;
+}
+
+function toPendingCopilotTask(row: PendingCopilotTaskRow): PendingCopilotTask {
+  return {
+    id: row.id,
+    owner: row.owner,
+    repo: row.repo,
+    taskId: row.task_id,
+    headSha: row.head_sha,
+    branchName: row.branch_name,
+    prNumber: row.pr_number,
+    prUrl: row.pr_url,
+    createdAt: row.created_at,
+  };
 }

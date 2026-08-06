@@ -11,6 +11,7 @@ import type { JobQueue } from '../queue/types.js';
 import { QueueWorker } from '../queue/worker.js';
 import { MemoryJobQueue } from '../queue/memory.js';
 import { SqliteJobQueue } from '../queue/sqlite.js';
+import { getTaskStatus, isTerminalState } from '../dispatch/copilot.js';
 
 /**
  * Self-hosted GitHub App webhook runner — the secondary deployment.
@@ -240,6 +241,87 @@ async function handlePush(
   });
 
   logger.info(`${repo.owner}/${repo.repo}: ${result.summary}`);
+
+  // The check run posted during dispatch says "Copilot is fixing…" — it never
+  // learns whether that turned out true unless something asks GitHub later.
+  // Recording the task here is what lets `reconcilePendingCopilotTasks` find
+  // it after this delivery has long since been acknowledged.
+  if (result.dispatch.status === 'dispatched' && result.dispatch.taskId) {
+    await options.queue.recordPendingCopilotTask({
+      owner: repo.owner,
+      repo: repo.repo,
+      taskId: result.dispatch.taskId,
+      headSha: repo.afterSha,
+      branchName: result.dispatch.branchName ?? '',
+      prNumber: result.dispatch.pullRequestNumber ?? null,
+      prUrl: result.dispatch.pullRequestUrl ?? null,
+    });
+  }
+}
+
+/**
+ * Ask GitHub how each still-open Copilot task turned out, and post a final
+ * check run when one reaches a terminal state.
+ *
+ * Dispatch posts a `neutral` check run the moment the task is created,
+ * because nothing about completion, failure, or timeout is known yet. This is
+ * the other half of that promise: without it, "Copilot is fixing…" is the
+ * last word the check run ever has, whatever actually happened.
+ */
+export async function reconcilePendingCopilotTasks(
+  options: Pick<WebhookServerOptions, 'copilotToken' | 'repoToken' | 'queue'>,
+  logger: Logger,
+): Promise<void> {
+  if (!options.copilotToken) return;
+
+  const pending = await options.queue.listPendingCopilotTasks();
+  if (pending.length === 0) return;
+
+  const github = new GitHubClient({ repoToken: options.repoToken, logger });
+
+  for (const pendingTask of pending) {
+    const repo: RepoContext = {
+      owner: pendingTask.owner,
+      repo: pendingTask.repo,
+      baseBranch: '',
+      beforeSha: '',
+      afterSha: pendingTask.headSha,
+    };
+
+    const task = await getTaskStatus({
+      copilotToken: options.copilotToken,
+      repo,
+      taskId: pendingTask.taskId,
+    });
+
+    // `null` means the lookup itself failed (network, rate limit) — leave the
+    // task pending and try again on the next tick, rather than treating an
+    // unreachable API as a terminal state.
+    if (!task || !isTerminalState(task.state)) continue;
+
+    const succeeded = task.state === 'completed';
+    await github.createCheckRun(repo, {
+      name: 'Drift',
+      conclusion: succeeded ? 'success' : 'failure',
+      title: succeeded
+        ? 'Copilot finished'
+        : `Copilot did not finish (${task.state})`,
+      summary: succeeded
+        ? (pendingTask.prUrl ?? task.pullRequestUrl
+            ? `See ${pendingTask.prUrl ?? task.pullRequestUrl} for the result.`
+            : 'The agent task completed.')
+        : `The Copilot agent task ended in state \`${task.state}\` without finishing the fix. ${
+            pendingTask.prUrl ?? task.pullRequestUrl
+              ? `See ${pendingTask.prUrl ?? task.pullRequestUrl} for what it left behind.`
+              : 'A human needs to look at this.'
+          }`,
+    });
+
+    logger.info(
+      `Copilot task ${pendingTask.taskId} on ${pendingTask.owner}/${pendingTask.repo} reached terminal state ${task.state}`,
+    );
+    await options.queue.resolvePendingCopilotTask(pendingTask.id);
+  }
 }
 
 /**
@@ -451,6 +533,17 @@ export async function main(): Promise<number> {
     runPrune();
     setInterval(runPrune, 24 * 60 * 60 * 1000).unref();
   }
+
+  // Copilot tasks routinely outlive the delivery that dispatched them, so
+  // nothing about their outcome is known until something checks back in.
+  const runReconcile = (): void => {
+    void reconcilePendingCopilotTasks(
+      { copilotToken: process.env.DRIFT_COPILOT_TOKEN, repoToken, queue },
+      logger,
+    ).catch((err: Error) => logger.warn(`Copilot task reconciliation failed: ${err.message}`));
+  };
+  runReconcile();
+  setInterval(runReconcile, 60_000).unref();
 
   server.listen(port, () => {
     logger.info(`Drift webhook server listening on :${port}`);

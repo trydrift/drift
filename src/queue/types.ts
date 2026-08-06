@@ -65,6 +65,30 @@ export interface QueueStats {
   oldestPendingAgeMs: number | null;
 }
 
+/**
+ * A Copilot agent task dispatched by this runner, still awaiting a terminal
+ * state.
+ *
+ * Dispatch happens inside one HTTP delivery, but a Copilot task routinely
+ * outlives it — the agent session runs for minutes, long after the webhook
+ * handler has already responded. Without recording the task id somewhere
+ * durable, nothing ever asks GitHub how it turned out, and the check run
+ * Drift posted at dispatch time (`neutral`, "Copilot is fixing…") is the last
+ * thing anyone ever sees, even after the agent finishes, fails, or times out.
+ */
+export interface PendingCopilotTask {
+  id: number;
+  owner: string;
+  repo: string;
+  taskId: string;
+  /** The commit the check run should be posted against. */
+  headSha: string;
+  branchName: string;
+  prNumber: number | null;
+  prUrl: string | null;
+  createdAt: string;
+}
+
 export interface JobQueue {
   enqueue(request: EnqueueRequest): Promise<EnqueueResult>;
 
@@ -96,6 +120,15 @@ export interface JobQueue {
   stats(): Promise<QueueStats>;
 
   close(): Promise<void>;
+
+  /** Record a freshly-dispatched Copilot task so its outcome is reconciled later. */
+  recordPendingCopilotTask(task: Omit<PendingCopilotTask, 'id' | 'createdAt'>): Promise<void>;
+
+  /** Every dispatched task not yet resolved to a terminal state. */
+  listPendingCopilotTasks(): Promise<PendingCopilotTask[]>;
+
+  /** Stop tracking a task once it has reached a terminal state (or been resolved another way). */
+  resolvePendingCopilotTask(id: number): Promise<void>;
 }
 
 /**

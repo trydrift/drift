@@ -43,6 +43,8 @@ export interface BehaviouralEnvironment {
 
 export interface BehaviouralObservation {
   dependency: string;
+  /** The workspace member this probe's finding belongs to, mirroring `BehaviouralProbe.workspace`. */
+  workspace?: string;
   symbol: string;
   caseId: string;
   generatedInput: unknown[];
@@ -226,6 +228,7 @@ export async function runBehaviouralDifferential(options: {
 
       observations.push({
         dependency: probe.dependency,
+        workspace: probe.workspace,
         symbol: probe.symbol,
         caseId: probeCase.id,
         generatedInput: probeCase.args,
@@ -422,9 +425,10 @@ function observationEvidence(observation: BehaviouralObservation): Evidence {
   );
 
   return {
-    id: `ev_behaviour_${digest(`${observation.dependency}:${observation.symbol}:${observation.caseId}`).slice(0, 12)}`,
+    id: `ev_behaviour_${digest(`${observation.workspace ?? ''}:${observation.dependency}:${observation.symbol}:${observation.caseId}`).slice(0, 12)}`,
     source: 'behavioural-diff',
     dependency: observation.dependency,
+    ...(observation.workspace !== undefined ? { workspace: observation.workspace } : {}),
     locator: `${observation.symbol}:${observation.caseId}`,
     title: `Behavioural differential probe for ${observation.symbol}`,
     content,

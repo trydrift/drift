@@ -54,6 +54,7 @@ const EVAL_CONFIG = DriftConfigSchema.parse({
  * separately maintained ground truth it is scored against.
  */
 export async function driftPrediction(fixture: EvalFixture): Promise<EvalPrediction> {
+  const started = Date.now();
   const fixtureDir = join(process.cwd(), 'eval', 'fixtures', fixture.id);
   const consumerDir = join(fixtureDir, 'consumer');
   const oldDir = join(fixtureDir, 'upstream', 'old');
@@ -164,7 +165,11 @@ export async function driftPrediction(fixture: EvalFixture): Promise<EvalPredict
     abstained: false,
     falseSafe: false,
     costUsd: 0,
-    latencyMs: 0,
+    // The one real measurement this harness can make: how long its own
+    // deterministic pipeline (localization + behavioural probing + plan
+    // assembly) took for this fixture. Not comparable to a cloud agent's
+    // latency, which this harness never invokes — see `repair` below.
+    latencyMs: Date.now() - started,
   };
 }
 

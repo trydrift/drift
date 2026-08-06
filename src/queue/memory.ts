@@ -1,4 +1,4 @@
-import type { EnqueueRequest, EnqueueResult, Job, JobQueue, QueueStats } from './types.js';
+import type { EnqueueRequest, EnqueueResult, Job, JobQueue, PendingCopilotTask, QueueStats } from './types.js';
 
 /**
  * In-memory queue.
@@ -16,6 +16,8 @@ export class MemoryJobQueue implements JobQueue {
   private readonly jobs = new Map<number, Job>();
   private readonly byDelivery = new Map<string, number>();
   private nextId = 1;
+  private readonly pendingCopilotTasks = new Map<number, PendingCopilotTask>();
+  private nextCopilotTaskId = 1;
 
   async enqueue(request: EnqueueRequest): Promise<EnqueueResult> {
     const existing = this.byDelivery.get(request.deliveryId);
@@ -105,5 +107,18 @@ export class MemoryJobQueue implements JobQueue {
   async close(): Promise<void> {
     this.jobs.clear();
     this.byDelivery.clear();
+  }
+
+  async recordPendingCopilotTask(task: Omit<PendingCopilotTask, 'id' | 'createdAt'>): Promise<void> {
+    const id = this.nextCopilotTaskId++;
+    this.pendingCopilotTasks.set(id, { ...task, id, createdAt: new Date().toISOString() });
+  }
+
+  async listPendingCopilotTasks(): Promise<PendingCopilotTask[]> {
+    return [...this.pendingCopilotTasks.values()];
+  }
+
+  async resolvePendingCopilotTask(id: number): Promise<void> {
+    this.pendingCopilotTasks.delete(id);
   }
 }
