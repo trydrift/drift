@@ -5,7 +5,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.5.0"
   },
   "bin": {
     "drift": "./dist/cli.js"

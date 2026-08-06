@@ -432,6 +432,26 @@ export async function main(): Promise<number> {
 
   worker.start();
 
+  // Completed deliveries otherwise accumulate forever — `prune` exists on the
+  // SQLite queue (`MemoryJobQueue` has nothing to prune; it holds no state
+  // across a restart) but nothing called it in production. A day is a
+  // reasonable default: `stats()` and `/health` are the tools for "did Drift
+  // see this delivery recently", and completed rows older than that are the
+  // ones least likely anyone still needs.
+  if ('prune' in queue && typeof queue.prune === 'function') {
+    const retentionMs = Number(process.env.DRIFT_QUEUE_RETENTION_DAYS ?? 7) * 24 * 60 * 60 * 1000;
+    const runPrune = (): void => {
+      void (queue as JobQueue & { prune: (olderThanMs: number) => Promise<number> })
+        .prune(retentionMs)
+        .then((count) => {
+          if (count > 0) logger.debug(`Pruned ${count} completed deliveries older than the retention window`);
+        })
+        .catch((err: Error) => logger.warn(`Queue prune failed: ${err.message}`));
+    };
+    runPrune();
+    setInterval(runPrune, 24 * 60 * 60 * 1000).unref();
+  }
+
   server.listen(port, () => {
     logger.info(`Drift webhook server listening on :${port}`);
     if (!process.env.DRIFT_COPILOT_TOKEN) {
