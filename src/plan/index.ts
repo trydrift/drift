@@ -173,7 +173,7 @@ function collectGaps(
 
   // Dependencies for which nothing but a version number could be retrieved.
   for (const change of changes) {
-    const records = evidence.filter((e) => e.dependency === change.name);
+    const records = evidence.filter((e) => e.dependency === change.name && e.workspace === change.workspace);
     const substantive = records.filter(
       (e) => e.source !== 'semver-heuristic' && e.source !== 'registry-metadata',
     );

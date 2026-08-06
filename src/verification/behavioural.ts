@@ -1,12 +1,13 @@
 import { createHash } from 'node:crypto';
 import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { tmpdir, setPriority } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import type { DriftConfig } from '../config/schema.js';
 import type { BreakingChange, DependencyChange, Evidence, ImpactSite } from '../types.js';
 import { taxonomyOf } from '../confidence/taxonomy.js';
+import { dependencyKey } from '../util/id.js';
 
 export type ContractKind =
   | 'return-shape'
@@ -26,6 +27,8 @@ export interface ProbeCase {
 
 export interface BehaviouralProbe {
   dependency: string;
+  /** The workspace member this probe's finding belongs to, when there is more than one. */
+  workspace?: string;
   symbol: string;
   modulePath: string;
   exportName: string;
@@ -133,7 +136,14 @@ export function selectBehaviouralCandidates(
         cases.push({ id: `site-${cases.length}`, args, contracts });
       }
 
-      probes.push({ dependency: change.dependency, symbol, modulePath: '', exportName: symbol, cases });
+      probes.push({
+        dependency: change.dependency,
+        workspace: change.workspace,
+        symbol,
+        modulePath: '',
+        exportName: symbol,
+        cases,
+      });
       if (probes.length >= settings.maxSymbols) return probes;
     }
   }
@@ -448,15 +458,22 @@ export async function runBehaviouralVerification(options: {
   );
   if (probes.length === 0) return { evidence, citationsByChangeId, gaps };
 
-  const byDependency = new Map<string, BehaviouralProbe[]>();
+  // Keyed by `dependencyKey` (workspace + name), not `probe.dependency` alone
+  // — otherwise two workspace members with the same dependency name would be
+  // probed together and matched against whichever member's `from`/`to`
+  // `.find()` happened to return first below.
+  const byDependency = new Map<string, { dependency: string; workspace?: string; probes: BehaviouralProbe[] }>();
   for (const probe of probes) {
-    const list = byDependency.get(probe.dependency);
-    if (list) list.push(probe);
-    else byDependency.set(probe.dependency, [probe]);
+    const key = dependencyKey({ name: probe.dependency, workspace: probe.workspace });
+    const group = byDependency.get(key);
+    if (group) group.probes.push(probe);
+    else byDependency.set(key, { dependency: probe.dependency, workspace: probe.workspace, probes: [probe] });
   }
 
-  for (const [dependency, dependencyProbes] of byDependency) {
-    const change = options.dependencyChanges.find((c) => c.name === dependency && c.ecosystem === 'npm');
+  for (const { dependency, workspace, probes: dependencyProbes } of byDependency.values()) {
+    const change = options.dependencyChanges.find(
+      (c) => c.name === dependency && c.workspace === workspace && c.ecosystem === 'npm',
+    );
     if (!change?.from || !change.to) {
       gaps.push(`${dependency}: behavioural probing needs both a resolved old and new version; skipped.`);
       continue;
@@ -484,7 +501,13 @@ export async function runBehaviouralVerification(options: {
       evidence.push(record);
 
       for (const affected of options.breakingChanges) {
-        if (affected.dependency !== dependency || !affected.symbols.includes(observation.symbol)) continue;
+        if (
+          affected.dependency !== dependency ||
+          affected.workspace !== workspace ||
+          !affected.symbols.includes(observation.symbol)
+        ) {
+          continue;
+        }
         const list = citationsByChangeId.get(affected.id);
         if (list) list.push(record.id);
         else citationsByChangeId.set(affected.id, [record.id]);

@@ -10,6 +10,7 @@ import {
   type RegistryInfo,
 } from '../evidence/registry.js';
 import { mapWithConcurrency } from '../util/http.js';
+import { dependencyKey } from '../util/id.js';
 import { assessSecurity, type OsvOptions } from './osv.js';
 import { assessMaintenance } from './maintenance.js';
 import { assessLicense } from './license.js';
@@ -36,9 +37,9 @@ export interface RationaleContext {
   githubToken?: string;
   /** Test seam for the OSV client. */
   osv?: OsvOptions;
-  /** Computed API additions, keyed by dependency name. */
+  /** Computed API additions, keyed by `dependencyKey` (workspace + name). */
   additions?: Map<string, { additions: SurfaceAddition[]; locator: string }>;
-  /** Surface diffs that could not be produced, keyed by dependency name. */
+  /** Surface diffs that could not be produced, keyed by `dependencyKey` (workspace + name). */
   surfaceGaps?: Map<string, SurfaceUnavailable>;
   /** Prose documents that were actually read, keyed by dependency name. */
   prose?: Map<string, ProseSource[]>;
@@ -116,11 +117,13 @@ async function rationaleFor(
     policy: config.licenses,
   });
 
-  const breakingChanges = input.breakingChanges.filter((b) => b.dependency === change.name);
+  const breakingChanges = input.breakingChanges.filter(
+    (b) => b.dependency === change.name && b.workspace === change.workspace,
+  );
   const relevantIds = new Set(breakingChanges.map((b) => b.id));
   const impactSites = input.impactSites.filter((s) => relevantIds.has(s.breakingChangeId));
 
-  const computed = ctx.additions?.get(change.name);
+  const computed = ctx.additions?.get(dependencyKey(change));
   const summary = config.rationale.summary
     ? summarizeRelease({
         dependency: change.name,
@@ -136,7 +139,7 @@ async function rationaleFor(
   if (additive) improvements.push(additive);
 
   const gaps = collectGaps(change, {
-    surfaceGap: ctx.surfaceGaps?.get(change.name),
+    surfaceGap: ctx.surfaceGaps?.get(dependencyKey(change)),
     security,
     registry,
     evidence: input.evidence,
@@ -146,6 +149,7 @@ async function rationaleFor(
 
   const assessment = assessUpgrade({
     dependency: change.name,
+    workspace: change.workspace,
     breakingChanges,
     impactSites,
     evidence: input.evidence,
@@ -201,6 +205,7 @@ function collectGaps(
   const cited = sources.evidence.filter(
     (record) =>
       record.dependency === change.name &&
+      record.workspace === change.workspace &&
       (record.source === 'github-release' ||
         record.source === 'changelog' ||
         record.source === 'migration-guide'),

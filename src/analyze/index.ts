@@ -7,7 +7,7 @@ import type {
 } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
-import { stableId } from '../util/id.js';
+import { dependencyKey, stableId } from '../util/id.js';
 import {
   kindForFindingCode,
   matchProse,
@@ -44,8 +44,8 @@ export async function analyze(
   const results: BreakingChange[] = [];
 
   for (const change of changes) {
-    const relevant = byDependency.get(change.name) ?? [];
-    results.push(...analyzeDependency(change.name, relevant));
+    const relevant = byDependency.get(dependencyKey(change)) ?? [];
+    results.push(...analyzeDependency(change.name, change.workspace, relevant));
   }
 
   // Spec-derived evidence is keyed by file path rather than a package name, so
@@ -65,18 +65,29 @@ export async function analyze(
   return scoreUpstream(dedupe(results), evidence);
 }
 
-/** Bucket evidence by the dependency it describes. */
+/**
+ * Bucket evidence by the dependency it describes.
+ *
+ * Keyed by `dependencyKey` (workspace + name), not `record.dependency` alone —
+ * otherwise two workspace members upgrading the same package to different
+ * versions would each be handed the other's evidence too.
+ */
 function groupEvidence(evidence: readonly Evidence[]): Map<string, Evidence[]> {
   const byDependency = new Map<string, Evidence[]>();
   for (const record of evidence) {
-    const bucket = byDependency.get(record.dependency);
+    const key = dependencyKey({ name: record.dependency, workspace: record.workspace });
+    const bucket = byDependency.get(key);
     if (bucket) bucket.push(record);
-    else byDependency.set(record.dependency, [record]);
+    else byDependency.set(key, [record]);
   }
   return byDependency;
 }
 
-function analyzeDependency(dependency: string, evidence: readonly Evidence[]): BreakingChange[] {
+function analyzeDependency(
+  dependency: string,
+  workspace: string | undefined,
+  evidence: readonly Evidence[],
+): BreakingChange[] {
   const out: BreakingChange[] = [];
 
   for (const record of evidence) {
@@ -87,7 +98,7 @@ function analyzeDependency(dependency: string, evidence: readonly Evidence[]): B
     if (record.source === 'semver-heuristic' || record.source === 'registry-metadata') {
       continue; // Context, not a specific breaking change.
     }
-    out.push(...fromProseEvidence(record, dependency));
+    out.push(...fromProseEvidence(record, dependency, workspace));
   }
 
   return out;
@@ -96,8 +107,9 @@ function analyzeDependency(dependency: string, evidence: readonly Evidence[]): B
 /** Computed findings map one-to-one onto breaking changes; no inference needed. */
 function fromComputedEvidence(record: Evidence): BreakingChange[] {
   return (record.findings ?? []).map((finding) => ({
-    id: stableId('bc', record.dependency, finding.code, finding.symbol),
+    id: stableId('bc', record.dependency, record.workspace, finding.code, finding.symbol),
     dependency: record.dependency,
+    workspace: record.workspace,
     kind: kindForFindingCode(finding.code),
     summary: finding.detail,
     remediation: remediationForFinding(finding, record.dependency),
@@ -164,7 +176,7 @@ function symbolsFromFinding(finding: StructuredFinding): string[] {
   return [...symbols];
 }
 
-function fromProseEvidence(record: Evidence, dependency: string): BreakingChange[] {
+function fromProseEvidence(record: Evidence, dependency: string, workspace: string | undefined): BreakingChange[] {
   const out: BreakingChange[] = [];
   const seen = new Set<string>();
 
@@ -180,8 +192,9 @@ function fromProseEvidence(record: Evidence, dependency: string): BreakingChange
       const symbols = match.symbols.length > 0 ? match.symbols : [dependency];
 
       out.push({
-        id: stableId('bc', dependency, match.ruleId, match.symbols.join(',')),
+        id: stableId('bc', dependency, workspace, match.ruleId, match.symbols.join(',')),
         dependency,
+        workspace,
         kind: match.kind,
         summary: match.summary,
         remediation: remediationForProse(match, dependency),
@@ -246,7 +259,7 @@ function dedupe(changes: readonly BreakingChange[]): BreakingChange[] {
   const merged = new Map<string, BreakingChange>();
 
   for (const change of changes) {
-    const key = `${change.dependency}|${change.kind}|${[...change.symbols].sort().join(',')}`;
+    const key = `${dependencyKey({ name: change.dependency, workspace: change.workspace })}|${change.kind}|${[...change.symbols].sort().join(',')}`;
     const existing = merged.get(key);
 
     if (!existing) {

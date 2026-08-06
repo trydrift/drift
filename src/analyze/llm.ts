@@ -200,12 +200,12 @@ export async function extractWithLlm(
   const results: BreakingChange[] = [];
 
   for (const change of changes) {
-    const relevant = prose.filter((e) => e.dependency === change.name);
+    const relevant = prose.filter((e) => e.dependency === change.name && e.workspace === change.workspace);
     if (relevant.length === 0) continue;
 
     try {
       const extracted = await callModel(client, config, change, relevant, alreadyFound);
-      results.push(...toBreakingChanges(extracted, change.name, relevant));
+      results.push(...toBreakingChanges(extracted, change.name, change.workspace, relevant));
     } catch (err) {
       // A model outage must never fail a run; the rules already produced output.
       logger.warn(`LLM extraction failed for ${change.name}: ${(err as Error).message}`);
@@ -223,11 +223,19 @@ export async function extractWithLlm(
  * rather than a crash.
  */
 async function loadClient(apiKey: string, logger: Logger): Promise<AnthropicLike | null> {
-  // The specifier is held in a variable so TypeScript resolves it at runtime
-  // rather than at build time — the package legitimately may not be installed.
-  const specifier = '@anthropic-ai/sdk';
+  // A literal specifier, not a variable — deliberately, so a bundler resolves
+  // it statically. `npm run build` (plain `tsc`) is unaffected either way: it
+  // never bundles, so this stays a normal optional runtime `import()` there,
+  // caught below when the package is not installed. But `build:action`
+  // *does* bundle, into a single file GitHub runs without ever touching
+  // `npm install` — a variable specifier defeated that bundling and made
+  // `llm.enabled: true` silently fall back to "SDK not installed" in every
+  // Action run, regardless of the SDK being a real, intentional dependency.
   try {
-    const mod = (await import(specifier)) as {
+    // `unknown` first: a literal specifier lets TS resolve the SDK's own
+    // (much wider) types, which legitimately don't structurally match the
+    // narrow `AnthropicLike` shape this module actually uses.
+    const mod = (await import('@anthropic-ai/sdk')) as unknown as {
       default: new (opts: { apiKey: string }) => AnthropicLike;
     };
     return new mod.default({ apiKey });
@@ -247,7 +255,7 @@ async function callModel(
   alreadyFound: readonly BreakingChange[],
 ): Promise<ExtractedChange[]> {
   const known = alreadyFound
-    .filter((c) => c.dependency === change.name)
+    .filter((c) => c.dependency === change.name && c.workspace === change.workspace)
     .map((c) => `- ${c.summary}`)
     .join('\n');
 
@@ -298,6 +306,7 @@ async function callModel(
 function toBreakingChanges(
   extracted: readonly ExtractedChange[],
   dependency: string,
+  workspace: string | undefined,
   evidence: readonly Evidence[],
 ): BreakingChange[] {
   const validIds = new Set(evidence.map((e) => e.id));
@@ -309,8 +318,9 @@ function toBreakingChanges(
     .filter((c) => validIds.has(c.evidenceId))
     .filter((c) => c.summary?.trim())
     .map((c) => ({
-      id: stableId('bc', dependency, 'llm', c.summary),
+      id: stableId('bc', dependency, workspace, 'llm', c.summary),
       dependency,
+      workspace,
       kind: normalizeKind(c.kind),
       summary: c.summary.trim(),
       remediation: c.remediation?.trim() || `Review usages of ${dependency} and update them.`,

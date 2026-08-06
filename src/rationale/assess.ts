@@ -26,6 +26,7 @@ import { worstSeverity } from './types.js';
 
 export interface AssessmentInput {
   dependency: string;
+  workspace?: string;
   breakingChanges: readonly BreakingChange[];
   impactSites: readonly ImpactSite[];
   evidence: readonly Evidence[];
@@ -184,6 +185,7 @@ function judgeConfidence(input: AssessmentInput): { level: EvidenceConfidence; b
   const prose = input.evidence.filter(
     (record) =>
       record.dependency === input.dependency &&
+      record.workspace === input.workspace &&
       (record.source === 'github-release' ||
         record.source === 'changelog' ||
         record.source === 'migration-guide'),

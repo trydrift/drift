@@ -128,6 +128,12 @@ export async function gatherEvidence(
 async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): Promise<Evidence[]> {
   const { config, logger } = ctx;
   const out: Evidence[] = [];
+  // Every push below sets `dependency: change.name` but not `workspace` — set
+  // once here instead of at each of the ~6 call sites below and in
+  // `surfaceEvidence`, so a monorepo member never has to be threaded through
+  // by hand at every evidence source.
+  const tag = (evidence: Evidence[]): Evidence[] =>
+    change.workspace === undefined ? evidence : evidence.map((e) => ({ ...e, workspace: change.workspace }));
 
   // The semver signal always exists and costs nothing, so it is recorded first
   // and acts as the floor: no dependency is ever analysed with zero evidence.
@@ -148,7 +154,7 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
     });
   }
 
-  if (!change.from || !change.to) return out;
+  if (!change.from || !change.to) return tag(out);
 
   const registry = await fetchRegistryInfo(change.name, change.ecosystem, change.to);
 
@@ -175,7 +181,7 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
   const githubRepo = registry?.githubRepo;
   if (!githubRepo) {
     logger.debug(`No source repository resolved for ${change.name}; prose evidence unavailable`);
-    return out;
+    return tag(out);
   }
 
   if (config.evidence.githubReleases) {
@@ -261,7 +267,7 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
     }
   }
 
-  return out;
+  return tag(out);
 }
 
 /**

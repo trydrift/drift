@@ -139,6 +139,14 @@ export interface Evidence {
   id: string;
   source: EvidenceSource;
   dependency: string;
+  /**
+   * The workspace member this evidence was gathered for, mirroring
+   * `DependencyChange.workspace`. Absent in a single-package repository.
+   * Two members can depend on the same package at different versions, so
+   * `dependency` alone is not a safe key for matching evidence back to a
+   * specific change in a monorepo — see `dependencyKey` in `util/id.ts`.
+   */
+  workspace?: string;
   /** Human-openable citation. Absent only for locally-computed diffs. */
   url?: string;
   /** Local citation when there is no URL, e.g. "node_modules/foo/index.d.ts". */
@@ -198,6 +206,13 @@ export type Confidence = 'high' | 'medium' | 'low';
 export interface BreakingChange {
   id: string;
   dependency: string;
+  /**
+   * The workspace member this finding belongs to, mirroring
+   * `DependencyChange.workspace`. Absent in a single-package repository.
+   * Two members can depend on the same package at different versions, so this
+   * — not `dependency` alone — is what keeps their findings from merging.
+   */
+  workspace?: string;
   kind: BreakingChangeKind;
   /** One-line statement of what broke. */
   summary: string;
