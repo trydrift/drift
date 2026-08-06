@@ -88,6 +88,14 @@ jobs:
       - name: Verify the CLI runs
         run: node dist/cli.js --version
 
+      # A fixture-based regression check for the deterministic pipeline —
+      # small today (one fixture), but it existed with nothing stopping it
+      # from regressing silently. Wiring it in now means the next fixture
+      # someone adds is enforced from day one instead of needing a second PR
+      # to remember CI.
+      - name: Run the deterministic evaluation harness
+        run: npm run eval:deterministic
+
       - name: Verify the example config parses
         run: |
           node -e "
