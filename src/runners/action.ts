@@ -316,8 +316,17 @@ async function maybeAwaitCopilotCompletion(args: {
 
   if (!task || !isTerminalState(task.state)) {
     logger.warn(
-      `Copilot task ${dispatchResult.taskId} had not reached a terminal state after ${settings.timeoutMinutes}m; giving up without a final check run.`,
+      `Copilot task ${dispatchResult.taskId} had not reached a terminal state after ${settings.timeoutMinutes}m; posting a final check run and giving up.`,
     );
+    const where = dispatchResult.pullRequestUrl;
+    await github.createCheckRun(repo, {
+      name: 'Drift',
+      conclusion: 'action_required',
+      title: 'Copilot status tracking timed out',
+      summary: `Drift waited ${settings.timeoutMinutes}m for Copilot task ${dispatchResult.taskId} to reach a terminal state but it did not. ${
+        where ? `See ${where} for its current state.` : 'A human needs to check the task manually.'
+      }`,
+    });
     return;
   }
 

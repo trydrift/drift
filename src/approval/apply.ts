@@ -279,11 +279,11 @@ export async function applyApproval(options: ApplyApprovalOptions): Promise<Appr
   });
 
   if (result.status === 'dispatched' && !options.dryRun) {
-    await options.onDispatched?.(result, repo);
-
     // The marker is what makes a repeated `/drift apply` a no-op, so it is
-    // written even though the summary comment below would read similarly to a
-    // human: prose is not a protocol.
+    // posted first, before any other post-dispatch bookkeeping: a crash or
+    // failure after this point still leaves a retry able to find it via
+    // `findPriorDispatch` and treat the approval as a no-op instead of
+    // dispatching the task a second time.
     const marker = renderDispatchMarker({
       planDigest: digest,
       branchName: result.branchName ?? plan.branchName,
@@ -295,6 +295,16 @@ export async function applyApproval(options: ApplyApprovalOptions): Promise<Appr
       decision.issueNumber,
       `**Drift**: applied by @${actor}.\n\n${result.message}\n\n${marker}`,
     );
+
+    // Best-effort: the task was already dispatched and the idempotency marker
+    // already posted above, so a failure here must not surface as an error
+    // that makes the caller (e.g. a webhook delivery) retry this whole
+    // approval as though nothing had happened yet.
+    try {
+      await options.onDispatched?.(result, repo);
+    } catch (err) {
+      logger.error(`Failed to record dispatched task ${result.taskId ?? '(no id)'}: ${(err as Error).message}`);
+    }
   } else {
     await github.commentOnIssue(apiContext, decision.issueNumber, `**Drift**: ${result.message}`);
   }

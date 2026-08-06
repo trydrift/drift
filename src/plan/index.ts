@@ -138,9 +138,9 @@ function assessAll(input: BuildPlanInput): BreakingChange[] {
     // B's unrelated finding, and a probe of one finding must never raise it
     // for a sibling finding on the same dependency.
     const outcomes = (input.verification ?? []).filter((outcome) => {
+      if (outcome.breakingChangeIds !== undefined) return outcome.breakingChangeIds.includes(change.id);
       if (outcome.dependency === undefined) return true;
-      if (outcome.dependency !== change.dependency || outcome.workspace !== change.workspace) return false;
-      return outcome.breakingChangeIds === undefined || outcome.breakingChangeIds.includes(change.id);
+      return outcome.dependency === change.dependency && outcome.workspace === change.workspace;
     });
     const assessment = assess({
       change,
