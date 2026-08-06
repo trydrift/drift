@@ -43,7 +43,13 @@ export interface DispatchOptions {
 export async function dispatch(options: DispatchOptions): Promise<DispatchResult> {
   const { repo, plan, config, github, logger, copilotToken, dryRun = false, approved = false } = options;
 
-  if (plan.commits.length === 0) {
+  // Zero commits only means "not affected" when the plan has no blocking gap.
+  // A blocker at this point — most often localization never having run, as on
+  // the webhook path, which has no checkout to search — means impact was never
+  // established, not ruled out. That case falls through to the same
+  // canDispatch/requestApproval logic below, which already treats blockers as
+  // reason to ask a human rather than to report success.
+  if (plan.commits.length === 0 && plan.blockers.length === 0) {
     logger.info('No affected code found; nothing to dispatch.');
     await postCheckRun(options, 'success', 'No action needed');
     return {
