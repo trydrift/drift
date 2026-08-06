@@ -111,8 +111,15 @@ export class DriftState {
 
   setActiveRoot(path: string): void {
     if (!this._roots.some((r) => r.path === path)) return;
+    if (path === this._activeRootPath) return;
     this._activeRootPath = path;
-    this.emitter.fire(this._status);
+
+    // Status (which carries the plan) and the dependency-scan candidates were
+    // produced for the *previous* root. Nothing here is per-root, so leaving
+    // them in place would let a later "Fix All" apply one repository's plan —
+    // file scopes, commit units, everything — inside a different one.
+    this._candidates = [];
+    this.set({ kind: 'idle' });
   }
 
   /**

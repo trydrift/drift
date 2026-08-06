@@ -1,7 +1,7 @@
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { Git } from '../src/git.js';
@@ -152,5 +152,58 @@ describe('pushing', () => {
 
     assert.equal(await git.hasUpstream('main'), true);
     assert.equal(await git.defaultBranch(), 'main');
+  });
+});
+
+/**
+ * The mechanism `advanceBase` (extension/src/fix.ts) relies on: a fresh
+ * worktree's base needs to be a real commit, and `snapshotTree` +
+ * `commitTree` is how a floating one gets built from whatever is on disk
+ * right now — including edits nothing has committed to the branch yet. A
+ * later batch's worktree is only correct if checking it out actually
+ * contains the previous batch's output, which is what this proves against
+ * real git rather than against the call sequence alone.
+ */
+describe('snapshots chaining into successive worktree bases', () => {
+  test('a worktree built from a snapshot taken after an edit contains that edit', async () => {
+    const isolated = mkdtempSync(join(tmpdir(), 'drift-git-chain-'));
+    try {
+      execFileSync('git', ['init', '--initial-branch=main'], { cwd: isolated });
+      execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: isolated });
+      execFileSync('git', ['config', 'user.name', 'Drift Test'], { cwd: isolated });
+      writeFileSync(join(isolated, 'a.ts'), 'export const a = 1;\n');
+      execFileSync('git', ['add', '.'], { cwd: isolated });
+      execFileSync('git', ['commit', '-m', 'initial'], { cwd: isolated });
+
+      const chainGit = new Git(isolated);
+      const startRef = await chainGit.headSha();
+
+      // "Batch 1" edits a file without committing it to the branch — exactly
+      // what happens when a review is pending rather than auto-committing.
+      writeFileSync(join(isolated, 'a.ts'), 'export const a = 2;\n');
+      const baseAfterBatch1 = await chainGit.commitTree(
+        await chainGit.snapshotTree(),
+        startRef,
+        'drift: snapshot after batch 1',
+      );
+
+      const worktreePath = join(isolated, '.git', 'drift-worktrees', 'commit-2');
+      await chainGit.addWorktree(worktreePath, baseAfterBatch1);
+      try {
+        // Batch 2's worktree must see batch 1's edit, not the state the whole
+        // run started from — this is exactly what a stale, once-computed base
+        // would fail to provide.
+        assert.equal(readFileSync(join(worktreePath, 'a.ts'), 'utf8'), 'export const a = 2;\n');
+      } finally {
+        await chainGit.removeWorktree(worktreePath);
+      }
+
+      // The real branch never moved — the snapshot commit is unreferenced,
+      // exactly as `commitTree`'s contract promises.
+      assert.equal(await chainGit.headSha(), startRef);
+      assert.equal((await chainGit.dirtyFiles())[0], 'a.ts');
+    } finally {
+      rmSync(isolated, { recursive: true, force: true });
+    }
   });
 });

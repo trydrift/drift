@@ -1229,15 +1229,20 @@ function renderChangeGroup(group: ReviewGroup): string {
     </div>`;
   }
 
-  return `<div class="change-group">
+  return `<div class="change-group${group.commitError ? ' commit-error' : ''}">
     <div class="group-head">
       ${ICON_DIFF}
       <div><b>${escapeHtml(group.title)}</b><small>${group.files.length} file${group.files.length === 1 ? '' : 's'}</small></div>
       <div class="group-actions">
-        <button data-action="undoGroup" data-order="${group.order}">Undo</button>
-        <button data-action="keepGroup" data-order="${group.order}">Keep &amp; commit</button>
+        ${
+          group.commitError
+            ? `<button class="primary" data-action="retryCommit" data-order="${group.order}">Retry commit</button>`
+            : `<button data-action="undoGroup" data-order="${group.order}">Undo</button>
+        <button data-action="keepGroup" data-order="${group.order}">Keep &amp; commit</button>`
+        }
       </div>
     </div>
+    ${group.commitError ? `<p class="hint error">Commit failed: ${escapeHtml(group.commitError)}. Your accepted changes are still here.</p>` : ''}
     ${group.files
       .map(
         (file) => `<div class="change-file">
@@ -2223,6 +2228,8 @@ ul.sites span { font-size: 11px; color: var(--vscode-descriptionForeground); }
 .del { color: var(--vscode-gitDecoration-deletedResourceForeground, var(--vscode-editorError-foreground)); }
 .change-group { border-top: 1px solid var(--vscode-panel-border); padding-top: 8px; margin-top: 8px; }
 .change-group.committed { opacity: .7; }
+.change-group.commit-error { border-top-color: var(--vscode-editorError-foreground); }
+.hint.error { color: var(--vscode-editorError-foreground); }
 .group-head { display: flex; gap: 7px; align-items: center; }
 .group-head > div:not(.group-actions) { min-width: 0; flex: 1; }
 .group-head b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }

@@ -57,6 +57,15 @@ export interface ReviewGroup {
   /** Set once this group has been committed. */
   committed?: { sha: string; branch: string };
   /**
+   * Set when every hunk was resolved but the commit itself failed.
+   *
+   * The group is deliberately kept out of `committed` and its accepted edits
+   * are left in place rather than dropped, so `retryCommit` has something to
+   * act on and the developer does not have to redo the keep/undo decisions
+   * that already resolved it.
+   */
+  commitError?: string;
+  /**
    * Results of the project's own checks, run after the agent edited this group.
    *
    * Never gates anything. A reviewer deciding whether to keep an edit is better
@@ -331,21 +340,72 @@ export class DriftReview implements vscode.Disposable {
    * A group with nothing left to review is settled. If every hunk in it was
    * kept rather than undone, the files on disk differ from the baseline Drift
    * started from, and that is exactly what deserves a commit.
+   *
+   * The resolved files are only cleared from the group once the commit
+   * attempt is known to have succeeded, or once we know there was genuinely
+   * nothing to commit (the handler returns `null` without throwing — a fully
+   * undone group, say). If the handler throws, `group.files` is left exactly
+   * as it was: still non-empty, so `groups()` keeps returning the group, and
+   * still holding the accepted content, so `retryCommit` can try again
+   * without the developer re-doing any keep/undo decisions.
    */
   private async afterChange(group: ReviewGroup): Promise<void> {
     const before = group.files.length;
-    group.files = group.files.filter((file) => file.hunks.length > 0);
-    const resolved = group.files.length === 0 && before > 0;
+    const filtered = group.files.filter((file) => file.hunks.length > 0);
+    const resolved = filtered.length === 0 && before > 0;
 
-    this.emitter.fire();
+    if (!resolved || group.committed) {
+      group.files = filtered;
+      this.emitter.fire();
+      return;
+    }
 
-    if (resolved && !group.committed && this.commitHandler) {
-      const committed = await this.commitHandler(group).catch(() => null);
+    if (!this.commitHandler) {
+      group.files = filtered;
+      this.emitter.fire();
+      return;
+    }
+
+    await this.attemptCommit(group, filtered);
+  }
+
+  /**
+   * Try the commit handler and record the outcome on the group.
+   *
+   * Shared by `afterChange` (the first attempt, right after the last hunk is
+   * resolved) and `retryCommit` (any attempt after a failure), so the two
+   * paths cannot drift apart on what "succeeded" or "failed" means.
+   */
+  private async attemptCommit(group: ReviewGroup, onSuccess: ReviewFile[]): Promise<void> {
+    delete group.commitError;
+    try {
+      const committed = await this.commitHandler!(group);
       if (committed) {
         group.committed = committed;
-        this.emitter.fire();
+        group.files = onSuccess;
+      } else {
+        // The handler decided there was nothing to commit — a legitimate
+        // outcome (for example every hunk in the group was undone rather than
+        // kept), not a failure to retry.
+        group.files = onSuccess;
       }
+    } catch (err) {
+      group.commitError = err instanceof Error ? err.message : String(err);
     }
+    this.emitter.fire();
+  }
+
+  /**
+   * Re-attempt the commit for a group whose last attempt failed.
+   *
+   * A no-op for a group that is not in that state, so a stray call (a stale
+   * button in a webview that has not re-rendered yet) cannot double-commit or
+   * clobber a group that resolved through some other path in the meantime.
+   */
+  async retryCommit(order: number): Promise<void> {
+    const group = this.entries.get(order);
+    if (!group || group.committed || !group.commitError || !this.commitHandler) return;
+    await this.attemptCommit(group, group.files.filter((file) => file.hunks.length > 0));
   }
 
   private locate(path: string): { group: ReviewGroup; file: ReviewFile } | null {

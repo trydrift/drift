@@ -125,6 +125,18 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
 
   const git = new Git(root);
 
+  // The plan names the commit it was analysed against. If the active
+  // repository has moved on since — most concretely, a multi-root switch
+  // that leaves an old plan attached to state (see `DriftState.setActiveRoot`)
+  // — applying it here would edit the wrong repository's files under a scope
+  // computed for a different tree.
+  const currentHead = await git.headSha().catch(() => null);
+  if (plan.headSha && currentHead && plan.headSha !== currentHead) {
+    return fail(
+      'This plan was analysed against a different commit than what is currently checked out. Re-run analysis before fixing.',
+    );
+  }
+
   const registryContext: RegistryContext = { slug: repo.slug, baseBranch: repo.branch };
   const resolved = await resolveAgent(registryContext);
 
@@ -230,6 +242,15 @@ async function runFixOnBranch(args: {
   const step = 100 / commits.length;
 
   if (review) review.begin(root);
+
+  // Advances after every batch so a later batch's worktrees are built from
+  // what the previous batch actually produced — committed changes and, when a
+  // review is pending, edits already applied to the working tree but not yet
+  // committed. Without this, two sequential units that depend on each other
+  // (or two that happen to touch the same file across batches) would each
+  // start an agent from the state the whole run began in, and the later one
+  // could silently overwrite the earlier one's work.
+  let base = worktreeBase;
 
   const selection = {
     // The composer's two choices, carried through to whatever backend can act
@@ -417,7 +438,7 @@ async function runFixOnBranch(args: {
         plan,
         batch,
         root,
-        base: worktreeBase,
+        base,
         token,
         progress,
         openCommit,
@@ -436,6 +457,7 @@ async function runFixOnBranch(args: {
       }
       const stop = await closeCommit(entry.commit, entry.outcome, entry.before);
       if (stop) return stop;
+      base = await advanceBase(git, base);
       continue;
     }
 
@@ -451,7 +473,7 @@ async function runFixOnBranch(args: {
       plan,
       batch,
       root,
-      base: worktreeBase,
+      base,
       token,
       progress,
       openCommit,
@@ -474,6 +496,7 @@ async function runFixOnBranch(args: {
       const stop = await closeCommit(entry.commit, entry.outcome, entry.before);
       if (stop) return stop;
     }
+    base = await advanceBase(git, base);
   }
 
   if (committed === 0 && pendingFiles === 0) {
@@ -634,11 +657,14 @@ async function runBatchInWorktrees(args: {
   /**
    * The commit every worktree in this batch is built from.
    *
-   * Callers pass `worktreeBase` from {@link runFix}, which is a real commit —
-   * either `HEAD`, or, when the tree had uncommitted changes at the start of
-   * the fix, a floating commit built from a snapshot of them. Either way an
-   * agent sees the dependency upgrade it is fixing code against, whether or
-   * not that upgrade had been committed yet.
+   * The first batch gets `worktreeBase` from {@link runFix} — either `HEAD`,
+   * or, when the tree had uncommitted changes at the start of the fix, a
+   * floating commit built from a snapshot of them, so an agent sees the
+   * dependency upgrade it is fixing code against even if that upgrade was
+   * never committed. Every batch after the first gets a fresh snapshot taken
+   * once that batch's edits landed in the real working tree (see
+   * `advanceBase`), so later batches see earlier ones' output instead of
+   * starting over from the run's original state.
    */
   base: string;
   token: vscode.CancellationToken;
@@ -954,6 +980,22 @@ async function applyEdits(
 
 function scopeFiles(commit: CommitUnit): string[] {
   return [...new Set((commit.allowedFiles?.length ? commit.allowedFiles : commit.files).map((file) => file.replace(/^\.\//, '').replace(/\\/g, '/')))];
+}
+
+/**
+ * A floating commit of the working tree as it stands right now, parented on
+ * `previous`.
+ *
+ * Called after every batch. `applyEdits` already wrote that batch's result
+ * into the real working tree — committed to the branch when auto-commit is
+ * on, merely on disk and pending review otherwise — so a plain snapshot picks
+ * up both cases without the caller needing to know which one happened.
+ * Reachable only by the SHA this returns, exactly like the run's initial
+ * snapshot, so it never pollutes `git log` or the branch the developer sees.
+ */
+async function advanceBase(git: Git, previous: string): Promise<string> {
+  const tree = await git.snapshotTree();
+  return git.commitTree(tree, previous, 'drift: snapshot after a fix batch');
 }
 
 async function editsFromWorktree(

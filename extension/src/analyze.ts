@@ -232,15 +232,20 @@ export async function loadWorkspaceConfig(root: string): Promise<DriftConfig> {
 function mergeSettings(base: DriftConfig): DriftConfig {
   const settings = vscode.workspace.getConfiguration('drift');
 
+  // `.get()` always returns a value — the package.json default when the
+  // developer never touched the setting — so it cannot tell "explicitly set
+  // to false" apart from "unset". `.inspect()` reports only what was actually
+  // configured, which is what "settings win" requires: an untouched setting
+  // must leave the committed config's own value alone.
   const triggerOn = {
     ...base.triggerOn,
-    ...(settings.get<boolean>('analysis.includePatch') !== undefined
+    ...(explicitlySet(settings, 'analysis.includePatch')
       ? { patch: settings.get<boolean>('analysis.includePatch', base.triggerOn.patch) }
       : {}),
-    ...(settings.get<boolean>('analysis.includeDev') !== undefined
+    ...(explicitlySet(settings, 'analysis.includeDev')
       ? { dev: settings.get<boolean>('analysis.includeDev', base.triggerOn.dev) }
       : {}),
-    ...(settings.get<boolean>('analysis.includeTransitive') !== undefined
+    ...(explicitlySet(settings, 'analysis.includeTransitive')
       ? {
           transitive: settings.get<boolean>('analysis.includeTransitive', base.triggerOn.transitive),
         }
@@ -259,6 +264,16 @@ function mergeSettings(base: DriftConfig): DriftConfig {
         settings.get<string>('fix.customInstructions', '') || base.remediation.customInstructions,
     },
   };
+}
+
+/** Whether a developer or workspace actually set this key, as opposed to it resolving to its declared default. */
+function explicitlySet(settings: vscode.WorkspaceConfiguration, key: string): boolean {
+  const info = settings.inspect<boolean>(key);
+  return (
+    info?.globalValue !== undefined ||
+    info?.workspaceValue !== undefined ||
+    info?.workspaceFolderValue !== undefined
+  );
 }
 
 export { PARSERS };

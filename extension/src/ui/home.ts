@@ -122,7 +122,7 @@ type Incoming =
   | { type: 'fixPackage'; id: string }
   | { type: 'fixAll' }
   | { type: 'keepFile' | 'undoFile'; path: string }
-  | { type: 'keepGroup' | 'undoGroup'; order: number }
+  | { type: 'keepGroup' | 'undoGroup' | 'retryCommit'; order: number }
   | { type: 'keepAll' | 'undoAll' };
 
 const runCommand = promisify(execFile);
@@ -248,8 +248,21 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     );
 
     // Keeping a whole group is the developer saying "this is right" — which is
-    // exactly when the commit the planner described should exist.
-    review.setCommitHandler(async (group) => this.commitGroup(group));
+    // exactly when the commit the planner described should exist. Notice the
+    // failure here, where the group and the git error are both in scope, then
+    // rethrow so the store can keep the group around for `retryCommit` instead
+    // of treating a real failure the same as "nothing to commit".
+    review.setCommitHandler(async (group) => {
+      try {
+        return await this.commitGroup(group);
+      } catch (err) {
+        this.session.notice(
+          'error',
+          `Commit failed for "${group.title}": ${(err as Error).message}. Your changes are still here — retry from the review panel.`,
+        );
+        throw err;
+      }
+    });
   }
 
   resolveWebviewView(view: vscode.WebviewView): void {
@@ -581,6 +594,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       case 'undoGroup':
         await this.review.undoGroup(message.order);
         this.session.notice('info', 'Reverted those files to how they were.');
+        return;
+      case 'retryCommit':
+        await this.review.retryCommit(message.order);
         return;
       case 'keepAll':
         await this.review.keepAll();
@@ -2889,40 +2905,37 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
    * wandered somewhere else does not get swept in — the atomic-commit promise has
    * to hold at the moment of committing, not just at planning time.
    */
+  /**
+   * Throws on a real commit failure rather than swallowing it into `null`.
+   * `DriftReview` needs that distinction: `null` means "nothing to commit",
+   * a legitimate outcome the store clears the group for; a thrown error means
+   * the accepted edits are still sitting there uncommitted, and the store
+   * keeps the group around so `retryCommit` has something to act on.
+   */
   private async commitGroup(group: ReviewGroup): Promise<{ sha: string; branch: string } | null> {
     const root = this.review.workspaceRoot ?? this.state.workspaceRoot;
-    if (!root) return null;
+    if (!root) throw new Error('No workspace root is open.');
 
     const { Git } = await import('../git.js');
     const git = new Git(root);
 
-    try {
-      const sha = await git.commitPaths(
-        group.paths,
-        group.title,
-        group.body ?? '',
-        this.coAuthorOption(),
-      );
-      if (!sha) {
-        this.session.notice('info', `Nothing left to commit for "${group.title}".`);
-        return null;
-      }
-      const branch = await git.currentBranch().catch(() => 'HEAD');
-      this.session.notice('success', `Committed **${sha.slice(0, 7)}** — ${group.title}`);
-      if (this.review.isEmpty) {
-        this.session.say(
-          `That is everything. The work is on \`${branch}\`, one commit per concern, and nothing has been pushed.`,
-        );
-        // Scheduled rather than awaited: this runs inside the Keep handler, and
-        // the button should stop looking pressed before the next question
-        // appears underneath it.
-        setTimeout(() => void this.offerToPushFix(root, branch), 0);
-      }
-      return { sha, branch };
-    } catch (err) {
-      this.session.notice('error', `Commit failed: ${(err as Error).message}`);
+    const sha = await git.commitPaths(group.paths, group.title, group.body ?? '', this.coAuthorOption());
+    if (!sha) {
+      this.session.notice('info', `Nothing left to commit for "${group.title}".`);
       return null;
     }
+    const branch = await git.currentBranch().catch(() => 'HEAD');
+    this.session.notice('success', `Committed **${sha.slice(0, 7)}** — ${group.title}`);
+    if (this.review.isEmpty) {
+      this.session.say(
+        `That is everything. The work is on \`${branch}\`, one commit per concern, and nothing has been pushed.`,
+      );
+      // Scheduled rather than awaited: this runs inside the Keep handler, and
+      // the button should stop looking pressed before the next question
+      // appears underneath it.
+      setTimeout(() => void this.offerToPushFix(root, branch), 0);
+    }
+    return { sha, branch };
   }
 
   /* ---------------------------------------------------------------- */
