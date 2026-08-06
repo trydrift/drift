@@ -5,6 +5,7 @@ import type { GitHubClient } from './github/client.js';
 import { analyzeRepository } from './analysis.js';
 import { dispatch } from './dispatch/index.js';
 import { renderSummaryLine } from './report/markdown.js';
+import { buildUpgradeOutcomeEvent, sendTelemetryEvent, telemetryEnabled } from './telemetry.js';
 
 /**
  * The full Drift pipeline: analyse, then act.
@@ -71,7 +72,52 @@ export async function runPipeline(options: PipelineOptions): Promise<PipelineRes
 
   logger.info(result.message);
 
+  await reportTelemetry({ config, plan, result, dryRun, logger });
+
   return { plan, dispatch: result, summary: result.message };
+}
+
+/**
+ * Best-effort product telemetry for the outcome of this run.
+ *
+ * Never affects the return value or throws into the caller: a telemetry
+ * endpoint being unreachable is not a reason to report a plan as failed. Off
+ * unless a team has both enabled it and given it somewhere to send events —
+ * enabling it with no endpoint configured is silently a no-op rather than an
+ * error, since there is nothing wrong with wanting the event *shape* (see
+ * `drift telemetry print`) without shipping any yet.
+ */
+async function reportTelemetry(args: {
+  config: DriftConfig;
+  plan: RemediationPlan;
+  result: DispatchResult;
+  dryRun?: boolean;
+  logger: Logger;
+}): Promise<void> {
+  const { config, plan, result, dryRun, logger } = args;
+  if (!telemetryEnabled(config.telemetry)) return;
+
+  try {
+    const event = buildUpgradeOutcomeEvent({
+      plan,
+      result,
+      // Every dispatch on this path goes through the Copilot Agent Tasks API;
+      // `dryRun` is the only case where nothing was executed at all.
+      agentType: dryRun ? 'none' : 'cloud',
+      ...(config.telemetry.installationId ? { installationId: config.telemetry.installationId } : {}),
+      ...(config.telemetry.rotationSalt ? { rotationSalt: config.telemetry.rotationSalt } : {}),
+    });
+
+    if (!config.telemetry.endpoint) {
+      logger.debug('Telemetry is enabled but no endpoint is configured; the event was built but not sent.');
+      return;
+    }
+
+    const outcome = await sendTelemetryEvent(event, { endpoint: config.telemetry.endpoint });
+    if (!outcome.sent) logger.debug(`Telemetry event not sent: ${outcome.reason ?? outcome.status}`);
+  } catch (err) {
+    logger.debug(`Telemetry event not sent: ${(err as Error).message}`);
+  }
 }
 
 export { analyzeRepository } from './analysis.js';
