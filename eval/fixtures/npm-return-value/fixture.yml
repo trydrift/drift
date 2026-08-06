@@ -10,19 +10,21 @@ taxonomy:
   nature: behaviour
   detectability:
     - test-time
+    - runtime-only
   scope: symbol
   visibility:
-    - direct
+    - unknown
 exposure: direct
 expected:
   upstreamFindings:
     - fixture-lib:formatUser:return-value
   impactSites:
-    - consumer/src/app.ts:formatUser
+    - src/app.js:formatUser
+    - src/app.ts:formatUser
   gaps:
-    - behavioural probing disabled
+    - No checks were run against this plan, so nothing confirms the findings were understood correctly or that a fix would compile.
   planNodes:
-    - update-format-user-call
+    - unit_b31ac9b2f1
   edges: []
   goldPatch: expected/gold.patch
 oracles:
@@ -32,4 +34,10 @@ complexity: small
 network: disabled
 provenance:
   reviewStatus: reviewed
-  notes: Synthetic local fixture; no external code or licence obligations.
+  notes: >
+    Synthetic local fixture; no external code or licence obligations.
+    `expected` is the verified output of eval/src/run.ts's deterministic
+    adapter, which runs Drift's real detection, localization, and bounded
+    behavioural-probing pipeline against upstream/old and upstream/new — it is
+    not hand-authored. Regenerate it by running the harness and copying the
+    prediction if the pipeline's output for this fixture legitimately changes.
