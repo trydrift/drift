@@ -1,7 +1,15 @@
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
-import type { EnqueueRequest, EnqueueResult, Job, JobQueue, PendingCopilotTask, QueueStats } from './types.js';
+import type {
+  DispatchRecord,
+  EnqueueRequest,
+  EnqueueResult,
+  Job,
+  JobQueue,
+  PendingCopilotTask,
+  QueueStats,
+} from './types.js';
 
 /**
  * SQLite-backed durable queue.
@@ -53,10 +61,25 @@ CREATE TABLE IF NOT EXISTS pending_copilot_tasks (
   pr_url      TEXT,
   created_at  TEXT    NOT NULL
 );
+
+-- Permanent, unlike pending_copilot_tasks (which is deleted once a task
+-- resolves): this is the idempotency source that still answers "was this plan
+-- already dispatched?" after the task it recorded has long since finished.
+CREATE TABLE IF NOT EXISTS dispatched_plans (
+  owner        TEXT    NOT NULL,
+  repo         TEXT    NOT NULL,
+  plan_digest  TEXT    NOT NULL,
+  task_id      TEXT,
+  branch_name  TEXT,
+  pr_number    INTEGER,
+  pr_url       TEXT,
+  created_at   TEXT    NOT NULL,
+  PRIMARY KEY (owner, repo, plan_digest)
+);
 `;
 
 /** Bump alongside any migration to `SCHEMA`. */
-export const QUEUE_SCHEMA_VERSION = 2;
+export const QUEUE_SCHEMA_VERSION = 3;
 
 interface JobRow {
   id: number;
@@ -270,6 +293,40 @@ export class SqliteJobQueue implements JobQueue {
   async resolvePendingCopilotTask(id: number): Promise<void> {
     this.db.prepare('DELETE FROM pending_copilot_tasks WHERE id = ?').run(id);
   }
+
+  async recordDispatchedPlan(record: {
+    owner: string;
+    repo: string;
+    planDigest: string;
+    taskId?: string;
+    branchName?: string;
+    prNumber?: number | null;
+    prUrl?: string | null;
+  }): Promise<void> {
+    this.db
+      .prepare(
+        `INSERT INTO dispatched_plans (owner, repo, plan_digest, task_id, branch_name, pr_number, pr_url, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT (owner, repo, plan_digest) DO NOTHING`,
+      )
+      .run(
+        record.owner,
+        record.repo,
+        record.planDigest,
+        record.taskId ?? null,
+        record.branchName ?? null,
+        record.prNumber ?? null,
+        record.prUrl ?? null,
+        new Date().toISOString(),
+      );
+  }
+
+  async findDispatchedPlan(owner: string, repo: string, planDigest: string): Promise<DispatchRecord | null> {
+    const row = this.db
+      .prepare('SELECT * FROM dispatched_plans WHERE owner = ? AND repo = ? AND plan_digest = ?')
+      .get(owner, repo, planDigest) as DispatchedPlanRow | undefined;
+    return row ? toDispatchRecord(row) : null;
+  }
 }
 
 interface PendingCopilotTaskRow {
@@ -291,6 +348,30 @@ function toPendingCopilotTask(row: PendingCopilotTaskRow): PendingCopilotTask {
     repo: row.repo,
     taskId: row.task_id,
     headSha: row.head_sha,
+    branchName: row.branch_name,
+    prNumber: row.pr_number,
+    prUrl: row.pr_url,
+    createdAt: row.created_at,
+  };
+}
+
+interface DispatchedPlanRow {
+  owner: string;
+  repo: string;
+  plan_digest: string;
+  task_id: string | null;
+  branch_name: string | null;
+  pr_number: number | null;
+  pr_url: string | null;
+  created_at: string;
+}
+
+function toDispatchRecord(row: DispatchedPlanRow): DispatchRecord {
+  return {
+    owner: row.owner,
+    repo: row.repo,
+    planDigest: row.plan_digest,
+    taskId: row.task_id,
     branchName: row.branch_name,
     prNumber: row.pr_number,
     prUrl: row.pr_url,

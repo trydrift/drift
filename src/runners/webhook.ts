@@ -246,7 +246,28 @@ async function handlePush(
   // learns whether that turned out true unless something asks GitHub later.
   // Recording the task here is what lets `reconcilePendingCopilotTasks` find
   // it after this delivery has long since been acknowledged.
-  await recordDispatchedTask(options.queue, repo, result.dispatch);
+  //
+  // Caught rather than left to propagate: the task is already dispatched, so
+  // letting this failure fail the job would have the worker retry the whole
+  // delivery — re-running the pipeline and dispatching a second task for the
+  // same push. Losing the reconciliation record instead of duplicating the
+  // dispatch is the safer failure, but it must not be a silent one.
+  try {
+    await recordDispatchedTask(options.queue, repo, result.dispatch);
+  } catch (err) {
+    logger.error(`Failed to record dispatched task for reconciliation: ${(err as Error).message}`);
+    if (result.dispatch.status === 'dispatched') {
+      await github.createCheckRun(repo, {
+        name: 'Drift',
+        conclusion: 'action_required',
+        title: 'Copilot task dispatched, but not tracked',
+        summary:
+          `Copilot task ${result.dispatch.taskId ?? '(unknown id)'} was dispatched for this push, but Drift ` +
+          `could not record it for status tracking (${(err as Error).message}). It will not automatically ` +
+          `receive a pass/fail update when it finishes — check ${result.dispatch.pullRequestUrl ?? 'the branch'} manually.`,
+      });
+    }
+  }
 }
 
 /**
@@ -373,6 +394,33 @@ async function handleIssueComment(
     // task was recorded nowhere and `reconcilePendingCopilotTasks` never saw
     // it.
     onDispatched: (result, dispatchRepo) => recordDispatchedTask(options.queue, dispatchRepo, result),
+    // Durable idempotency, independent of the GitHub comment marker
+    // `applyApproval` also posts. That comment is a plain API call which can
+    // fail without `commentOnIssue` telling its caller — this is the second,
+    // reliable source that a repeated `/drift apply` checks and writes to, so
+    // a lost comment cannot lead to dispatching the same plan twice.
+    dispatchStore: {
+      find: (owner, dispatchRepoName, planDigest) =>
+        options.queue.findDispatchedPlan(owner, dispatchRepoName, planDigest).then((record) =>
+          record
+            ? {
+                ...(record.taskId ? { taskId: record.taskId } : {}),
+                ...(record.branchName ? { branchName: record.branchName } : {}),
+                ...(record.prNumber !== null ? { pullRequestNumber: record.prNumber } : {}),
+              }
+            : null,
+        ),
+      record: (dispatchOwner, dispatchRepoName, planDigest, result) =>
+        options.queue.recordDispatchedPlan({
+          owner: dispatchOwner,
+          repo: dispatchRepoName,
+          planDigest,
+          ...(result.taskId ? { taskId: result.taskId } : {}),
+          ...(result.branchName ? { branchName: result.branchName } : {}),
+          prNumber: result.pullRequestNumber ?? null,
+          prUrl: result.pullRequestUrl ?? null,
+        }),
+    },
   });
 }
 

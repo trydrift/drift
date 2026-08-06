@@ -286,7 +286,17 @@ export class GitHubClient {
     }
   }
 
-  async commentOnIssue(repo: RepoContext, issueNumber: number, body: string): Promise<void> {
+  /**
+   * Returns whether the comment was actually posted.
+   *
+   * Some callers post a comment purely for visibility and can treat a failure
+   * as best-effort. Others — the dispatch idempotency marker in
+   * `approval/apply.ts` chief among them — depend on the comment existing to
+   * make a later retry a no-op, and cannot tell that apart from success unless
+   * this returns it. A `Promise<void>` here was exactly what let that class of
+   * bug through: the marker read is entirely happy, but never happened.
+   */
+  async commentOnIssue(repo: RepoContext, issueNumber: number, body: string): Promise<boolean> {
     try {
       await this.octokit.issues.createComment({
         owner: repo.owner,
@@ -294,8 +304,10 @@ export class GitHubClient {
         issue_number: issueNumber,
         body,
       });
+      return true;
     } catch (err) {
       this.logger.warn(`Could not comment on #${issueNumber}: ${(err as Error).message}`);
+      return false;
     }
   }
 

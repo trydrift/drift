@@ -89,6 +89,32 @@ export interface PendingCopilotTask {
   createdAt: string;
 }
 
+/**
+ * A permanent record that a plan was dispatched, keyed by the repository and
+ * the exact plan digest.
+ *
+ * This is deliberately separate from `PendingCopilotTask`: that table is
+ * pruned the moment a task reaches a terminal state (see
+ * `resolvePendingCopilotTask`), so it cannot answer "was this plan already
+ * dispatched?" once the task it recorded has finished — exactly the case a
+ * retry arriving after completion needs answered. It also exists independently
+ * of the GitHub comment marker (`renderDispatchMarker` /
+ * `findPriorDispatch` in `approval/metadata.ts`): that marker is a
+ * best-effort comment which can fail to post without the caller finding out
+ * before this fix, so a second, durable source of the same fact is what makes
+ * a retry after that kind of failure a no-op instead of a duplicate dispatch.
+ */
+export interface DispatchRecord {
+  owner: string;
+  repo: string;
+  planDigest: string;
+  taskId: string | null;
+  branchName: string | null;
+  prNumber: number | null;
+  prUrl: string | null;
+  createdAt: string;
+}
+
 export interface JobQueue {
   enqueue(request: EnqueueRequest): Promise<EnqueueResult>;
 
@@ -129,6 +155,25 @@ export interface JobQueue {
 
   /** Stop tracking a task once it has reached a terminal state (or been resolved another way). */
   resolvePendingCopilotTask(id: number): Promise<void>;
+
+  /**
+   * Record a dispatch, permanently. First write for a given
+   * (owner, repo, planDigest) wins — a duplicate call for the same key (a
+   * retry racing the original request) must not overwrite what actually
+   * dispatched.
+   */
+  recordDispatchedPlan(record: {
+    owner: string;
+    repo: string;
+    planDigest: string;
+    taskId?: string;
+    branchName?: string;
+    prNumber?: number | null;
+    prUrl?: string | null;
+  }): Promise<void>;
+
+  /** Look up a prior dispatch of this exact plan, or `null` if there is none. */
+  findDispatchedPlan(owner: string, repo: string, planDigest: string): Promise<DispatchRecord | null>;
 }
 
 /**

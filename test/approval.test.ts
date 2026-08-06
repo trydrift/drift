@@ -516,7 +516,11 @@ function fakeGitHub(overrides: Record<string, unknown> = {}) {
   return { client, calls };
 }
 
-async function run(overrides: Record<string, unknown> = {}, payloadOverrides: Record<string, unknown> = {}) {
+async function run(
+  overrides: Record<string, unknown> = {},
+  payloadOverrides: Record<string, unknown> = {},
+  applyOverrides: Record<string, unknown> = {},
+) {
   const { client, calls } = fakeGitHub(overrides);
   const outcome = await applyApproval({
     payload: {
@@ -532,8 +536,35 @@ async function run(overrides: Record<string, unknown> = {}, payloadOverrides: Re
     // used from; the pipeline underneath is entirely real.
     github: client as never,
     logger,
+    ...applyOverrides,
   });
   return { outcome, calls };
+}
+
+/** An in-memory stand-in for the durable `dispatchStore`. */
+function fakeDispatchStore() {
+  const records = new Map<string, { taskId?: string; branchName?: string; pullRequestNumber?: number }>();
+  return {
+    store: {
+      find: async (owner: string, repo: string, planDigest: string) =>
+        records.get(`${owner}/${repo}/${planDigest}`) ?? null,
+      record: async (
+        owner: string,
+        repo: string,
+        planDigest: string,
+        result: { taskId?: string; branchName?: string; pullRequestNumber?: number },
+      ) => {
+        const key = `${owner}/${repo}/${planDigest}`;
+        if (records.has(key)) return;
+        records.set(key, {
+          ...(result.taskId ? { taskId: result.taskId } : {}),
+          ...(result.branchName ? { branchName: result.branchName } : {}),
+          ...(result.pullRequestNumber !== undefined ? { pullRequestNumber: result.pullRequestNumber } : {}),
+        });
+      },
+    },
+    records,
+  };
 }
 
 describe('applying an approval, end to end', () => {
@@ -605,6 +636,36 @@ describe('applying an approval, end to end', () => {
     assert.equal(outcome.status, 'already-applied');
     assert.match(outcome.status === 'already-applied' ? outcome.message : '', /#42/);
     assert.equal(calls.branches.length, 0, 'a duplicate approval must not create a second branch');
+  });
+
+  test('a durable dispatch record short-circuits before the comment scan', async () => {
+    const digest = await expectedDigest();
+    const { store, records } = fakeDispatchStore();
+    records.set(`acme/app/${digest}`, { branchName: 'drift/x', pullRequestNumber: 9 });
+
+    let commentsListed = false;
+    const { outcome, calls } = await run(
+      {
+        getIssue: async () => ({
+          number: 7,
+          body: `Drift found breaking changes.\n\n${footer({ 'drift-plan-digest': digest })}`,
+          state: 'open',
+          labels: ['drift'],
+          pullRequest: false,
+        }),
+        listIssueComments: async () => {
+          commentsListed = true;
+          return [];
+        },
+      },
+      {},
+      { dispatchStore: store },
+    );
+
+    assert.equal(outcome.status, 'already-applied');
+    assert.match(outcome.status === 'already-applied' ? outcome.message : '', /#9/);
+    assert.equal(calls.branches.length, 0);
+    assert.equal(commentsListed, false, 'the durable store answers before the comment scan runs');
   });
 
   test('an unreadable comment list refuses rather than risking a duplicate dispatch', async () => {

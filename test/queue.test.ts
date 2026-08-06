@@ -173,6 +173,55 @@ function contractTests(name: string, create: () => Promise<JobQueue>) {
       assert.equal(job?.payload, payload);
       await queue.close();
     });
+
+    test('a dispatched plan is found by owner, repo, and digest', async () => {
+      const queue = await create();
+      assert.equal(await queue.findDispatchedPlan('acme', 'app', 'digest-1'), null);
+
+      await queue.recordDispatchedPlan({
+        owner: 'acme',
+        repo: 'app',
+        planDigest: 'digest-1',
+        taskId: 'task_1',
+        branchName: 'drift/x',
+        prNumber: 42,
+        prUrl: 'https://example.invalid/42',
+      });
+
+      const found = await queue.findDispatchedPlan('acme', 'app', 'digest-1');
+      assert.equal(found?.taskId, 'task_1');
+      assert.equal(found?.branchName, 'drift/x');
+      assert.equal(found?.prNumber, 42);
+      assert.equal(found?.prUrl, 'https://example.invalid/42');
+
+      // A different repository, or a different digest for the same one, is a
+      // different plan and must not collide.
+      assert.equal(await queue.findDispatchedPlan('acme', 'other', 'digest-1'), null);
+      assert.equal(await queue.findDispatchedPlan('acme', 'app', 'digest-2'), null);
+      await queue.close();
+    });
+
+    test('recording a dispatched plan twice keeps the first write', async () => {
+      // The first dispatch is the one that actually happened; a retry racing
+      // it must not overwrite what the original recorded.
+      const queue = await create();
+      await queue.recordDispatchedPlan({
+        owner: 'acme',
+        repo: 'app',
+        planDigest: 'digest-1',
+        taskId: 'task_1',
+      });
+      await queue.recordDispatchedPlan({
+        owner: 'acme',
+        repo: 'app',
+        planDigest: 'digest-1',
+        taskId: 'task_2',
+      });
+
+      const found = await queue.findDispatchedPlan('acme', 'app', 'digest-1');
+      assert.equal(found?.taskId, 'task_1');
+      await queue.close();
+    });
   });
 }
 

@@ -1,4 +1,12 @@
-import type { EnqueueRequest, EnqueueResult, Job, JobQueue, PendingCopilotTask, QueueStats } from './types.js';
+import type {
+  DispatchRecord,
+  EnqueueRequest,
+  EnqueueResult,
+  Job,
+  JobQueue,
+  PendingCopilotTask,
+  QueueStats,
+} from './types.js';
 
 /**
  * In-memory queue.
@@ -18,6 +26,7 @@ export class MemoryJobQueue implements JobQueue {
   private nextId = 1;
   private readonly pendingCopilotTasks = new Map<number, PendingCopilotTask>();
   private nextCopilotTaskId = 1;
+  private readonly dispatchedPlans = new Map<string, DispatchRecord>();
 
   async enqueue(request: EnqueueRequest): Promise<EnqueueResult> {
     const existing = this.byDelivery.get(request.deliveryId);
@@ -121,4 +130,35 @@ export class MemoryJobQueue implements JobQueue {
   async resolvePendingCopilotTask(id: number): Promise<void> {
     this.pendingCopilotTasks.delete(id);
   }
+
+  async recordDispatchedPlan(record: {
+    owner: string;
+    repo: string;
+    planDigest: string;
+    taskId?: string;
+    branchName?: string;
+    prNumber?: number | null;
+    prUrl?: string | null;
+  }): Promise<void> {
+    const key = dispatchKey(record.owner, record.repo, record.planDigest);
+    if (this.dispatchedPlans.has(key)) return;
+    this.dispatchedPlans.set(key, {
+      owner: record.owner,
+      repo: record.repo,
+      planDigest: record.planDigest,
+      taskId: record.taskId ?? null,
+      branchName: record.branchName ?? null,
+      prNumber: record.prNumber ?? null,
+      prUrl: record.prUrl ?? null,
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  async findDispatchedPlan(owner: string, repo: string, planDigest: string): Promise<DispatchRecord | null> {
+    return this.dispatchedPlans.get(dispatchKey(owner, repo, planDigest)) ?? null;
+  }
+}
+
+function dispatchKey(owner: string, repo: string, planDigest: string): string {
+  return `${owner}/${repo}/${planDigest}`;
 }

@@ -57,8 +57,35 @@ export interface ApplyApprovalOptions {
    * through the caller directly; `/drift apply` did not, which meant an
    * approved plan's Copilot task was dispatched and then never checked on
    * again.
+   *
+   * If this fails, the task was still dispatched but nothing will reconcile
+   * its outcome — `applyApproval` posts an `action_required` check run
+   * naming the task id rather than only logging the gap, so it is not a
+   * silent one.
    */
   onDispatched?: (result: DispatchResult, repo: RepoContext) => Promise<void> | void;
+  /**
+   * A durable, permanent record of dispatches, independent of the GitHub
+   * comment marker (`renderDispatchMarker` / `findPriorDispatch` below).
+   *
+   * The marker is what normally makes a repeated `/drift apply` a no-op, but
+   * posting it is a plain GitHub API call that can fail — and
+   * `GitHubClient.commentOnIssue` failing does not throw, so a caller that
+   * only relies on the marker cannot tell a lost comment from a posted one.
+   * When this is supplied, it is consulted before dispatching (in addition to
+   * the comment scan) and written immediately after a successful dispatch, so
+   * idempotency does not depend on that one comment having actually reached
+   * GitHub. The Action runner has no durable store to pass here and relies on
+   * the comment marker alone, same as before.
+   */
+  dispatchStore?: {
+    find(
+      owner: string,
+      repo: string,
+      planDigest: string,
+    ): Promise<{ taskId?: string; branchName?: string; pullRequestNumber?: number } | null>;
+    record(owner: string, repo: string, planDigest: string, result: DispatchResult): Promise<void>;
+  };
 }
 
 /**
@@ -229,6 +256,25 @@ export async function applyApproval(options: ApplyApprovalOptions): Promise<Appr
 
   // Deliberately after digest verification: an unverified plan should never
   // reach the point of consulting, let alone writing, dispatch state.
+
+  // Checked first, and independent of the comment scan below: the durable
+  // store cannot have silently failed to record a dispatch the way the
+  // GitHub comment marker can silently fail to post.
+  if (options.dispatchStore) {
+    const durable = await options.dispatchStore.find(owner, repoName, digest);
+    if (durable) {
+      const where = durable.pullRequestNumber
+        ? `pull request #${durable.pullRequestNumber}`
+        : durable.branchName
+          ? `branch \`${durable.branchName}\``
+          : 'an earlier run';
+      const message = `This plan was already applied — see ${where}. Nothing further to do.`;
+      logger.info(`Plan ${metadata.planId} already dispatched (durable record); treating the approval as a no-op.`);
+      await github.commentOnIssue(apiContext, decision.issueNumber, `**Drift**: ${message}`);
+      return { status: 'already-applied', issueNumber: decision.issueNumber, message };
+    }
+  }
+
   let priorComments: { body: string | null; authorLogin: string | null }[];
   try {
     priorComments = await github.listIssueComments(apiContext, decision.issueNumber);
@@ -279,31 +325,65 @@ export async function applyApproval(options: ApplyApprovalOptions): Promise<Appr
   });
 
   if (result.status === 'dispatched' && !options.dryRun) {
-    // The marker is what makes a repeated `/drift apply` a no-op, so it is
-    // posted first, before any other post-dispatch bookkeeping: a crash or
-    // failure after this point still leaves a retry able to find it via
-    // `findPriorDispatch` and treat the approval as a no-op instead of
-    // dispatching the task a second time.
+    // Written before anything else post-dispatch: this is the idempotency
+    // source that cannot silently fail to record the way the comment marker
+    // below can, so a retry racing a crash between here and the end of this
+    // function still has something reliable to find.
+    if (options.dispatchStore) {
+      try {
+        await options.dispatchStore.record(owner, repoName, digest, result);
+      } catch (err) {
+        logger.error(
+          `Failed to durably record dispatch for plan ${metadata.planId}: ${(err as Error).message}`,
+        );
+      }
+    }
+
+    // The marker is what makes a repeated `/drift apply` a no-op when there is
+    // no durable store (the Action runner has none), so it is posted next,
+    // before any other post-dispatch bookkeeping: a crash or failure after
+    // this point still leaves a retry able to find it via `findPriorDispatch`
+    // and treat the approval as a no-op instead of dispatching the task a
+    // second time.
     const marker = renderDispatchMarker({
       planDigest: digest,
       branchName: result.branchName ?? plan.branchName,
       ...(result.taskId ? { taskId: result.taskId } : {}),
       ...(result.pullRequestNumber !== undefined ? { pullRequestNumber: result.pullRequestNumber } : {}),
     });
-    await github.commentOnIssue(
+    const markerPosted = await github.commentOnIssue(
       apiContext,
       decision.issueNumber,
       `**Drift**: applied by @${actor}.\n\n${result.message}\n\n${marker}`,
     );
+    if (!markerPosted) {
+      logger.warn(
+        `Dispatch marker comment failed to post for plan ${metadata.planId}.` +
+          (options.dispatchStore
+            ? ' The durable dispatch record still protects against a duplicate dispatch on retry.'
+            : ' No durable dispatch store is configured, so a retry cannot be told this plan was already applied.'),
+      );
+    }
 
-    // Best-effort: the task was already dispatched and the idempotency marker
-    // already posted above, so a failure here must not surface as an error
-    // that makes the caller (e.g. a webhook delivery) retry this whole
-    // approval as though nothing had happened yet.
+    // Best-effort: the task was already dispatched and idempotency is already
+    // covered above, so a failure here must not surface as an error that makes
+    // the caller (e.g. a webhook delivery) retry this whole approval as though
+    // nothing had happened yet. But losing this silently means the "Copilot is
+    // fixing…" check run never gets a terminal update, so it is surfaced on
+    // the check run itself instead of only in a log line.
     try {
       await options.onDispatched?.(result, repo);
     } catch (err) {
       logger.error(`Failed to record dispatched task ${result.taskId ?? '(no id)'}: ${(err as Error).message}`);
+      await github.createCheckRun(repo, {
+        name: 'Drift',
+        conclusion: 'action_required',
+        title: 'Copilot task dispatched, but not tracked',
+        summary:
+          `Copilot task ${result.taskId ?? '(unknown id)'} was dispatched for this plan, but Drift could not ` +
+          `record it for status tracking (${(err as Error).message}). It will not automatically receive a ` +
+          `pass/fail update when it finishes — check ${result.pullRequestUrl ?? 'the branch'} manually.`,
+      });
     }
   } else {
     await github.commentOnIssue(apiContext, decision.issueNumber, `**Drift**: ${result.message}`);
