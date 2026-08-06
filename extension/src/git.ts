@@ -484,6 +484,21 @@ export class Git {
     }
   }
 
+  /**
+   * Turn a tree object into a real commit, without moving any ref.
+   *
+   * The commit is reachable only by the SHA this returns — nothing points at
+   * it, so it never shows up in `git log`, never becomes a branch tip, and is
+   * ordinary garbage the next `git gc` is free to collect once nothing (like a
+   * worktree) still references it. That is exactly the property a disposable
+   * agent worktree needs: a real commit to check out at, built from whatever
+   * is in the working tree right now — including edits nothing has committed
+   * yet — without disturbing the branch the developer is actually on.
+   */
+  async commitTree(tree: string, parent: string, message: string): Promise<string> {
+    return (await this.exec(['commit-tree', tree, '-p', parent, '-m', message])).trim();
+  }
+
   /** Paths that differ between a snapshot tree and the working tree right now. */
   async changedAgainstTree(tree: string): Promise<string[]> {
     const tracked = (await this.tryExec(['diff', '--name-only', tree])) ?? '';

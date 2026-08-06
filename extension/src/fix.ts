@@ -158,9 +158,54 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
     ? plan.commits.filter((c) => c.order === options.onlyCommit)
     : plan.commits;
 
-  if (commits.length === 0) return { ...empty(), message: 'Nothing to fix.' };
+  if (commits.length === 0) {
+    if (guard.stashed) await git.stashPop().catch(() => undefined);
+    return { ...empty(), message: 'Nothing to fix.' };
+  }
 
   const startRef = await git.headSha();
+
+  // What agent worktrees are built from. When the tree was dirty, this is a
+  // floating commit of the working tree as it was — including the
+  // dependency-upgrade edit an agent needs to see — not `startRef` itself,
+  // which is one commit behind that edit whenever it was still uncommitted.
+  const worktreeBase = guard.snapshotTree
+    ? await git.commitTree(guard.snapshotTree, startRef, 'drift: uncommitted changes at the start of this fix')
+    : startRef;
+
+  try {
+    return await runFixOnBranch({ options, state, plan, progress, token, review, permission, commitMode, root, repo, git, agent, commits, startRef, worktreeBase });
+  } finally {
+    if (guard.stashed) {
+      try {
+        await git.stashPop();
+      } catch {
+        void vscode.window.showWarningMessage(
+          "Drift couldn't restore your stashed changes automatically — they're still in the stash (git stash list) and popping them by hand may need a conflict resolved first.",
+        );
+      }
+    }
+  }
+}
+
+async function runFixOnBranch(args: {
+  options: FixOptions;
+  state: DriftState;
+  plan: RemediationPlan;
+  progress: vscode.Progress<{ message?: string; increment?: number }>;
+  token: vscode.CancellationToken;
+  review?: DriftReview;
+  permission: SessionPermission;
+  commitMode: SessionCommitMode;
+  root: string;
+  repo: NonNullable<DriftState['repo']>;
+  git: Git;
+  agent: FixAgent;
+  commits: readonly CommitUnit[];
+  startRef: string;
+  worktreeBase: string;
+}): Promise<FixResult> {
+  const { options, state, plan, progress, token, review, permission, commitMode, root, repo, git, agent, commits, startRef, worktreeBase } = args;
 
   // Where the work happens, and the one decision here that is hard to take
   // back. Branching is the default because it makes everything downstream
@@ -372,6 +417,7 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
         plan,
         batch,
         root,
+        base: worktreeBase,
         token,
         progress,
         openCommit,
@@ -405,6 +451,7 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
       plan,
       batch,
       root,
+      base: worktreeBase,
       token,
       progress,
       openCommit,
@@ -584,6 +631,16 @@ async function runBatchInWorktrees(args: {
   plan: RemediationPlan;
   batch: readonly CommitUnit[];
   root: string;
+  /**
+   * The commit every worktree in this batch is built from.
+   *
+   * Callers pass `worktreeBase` from {@link runFix}, which is a real commit —
+   * either `HEAD`, or, when the tree had uncommitted changes at the start of
+   * the fix, a floating commit built from a snapshot of them. Either way an
+   * agent sees the dependency upgrade it is fixing code against, whether or
+   * not that upgrade had been committed yet.
+   */
+  base: string;
   token: vscode.CancellationToken;
   progress: vscode.Progress<{ message?: string }>;
   openCommit: (commit: CommitUnit) => Promise<{ path: string; content: string }[]>;
@@ -595,12 +652,8 @@ async function runBatchInWorktrees(args: {
   ask?: (question: string, options?: string[]) => Promise<string>;
   revision?: RevisionRequest;
 }): Promise<BatchOutcome[]> {
-  const { git, batch, root } = args;
+  const { git, batch, root, base } = args;
 
-  // Every worktree starts from the same commit — the one the working tree is
-  // on right now, including any dependency-upgrade commit this run already
-  // made. An agent must see the upgraded manifest it is fixing code against.
-  const base = await git.headSha();
   const home = join(await git.gitDir(), 'drift-worktrees');
   await git.pruneWorktrees();
 
@@ -977,12 +1030,33 @@ async function runCloudAgent(
  * review and hard to undo. Asking costs one click; getting this wrong costs
  * someone their afternoon.
  */
+interface CleanTreeGuard {
+  ok: true;
+  /**
+   * The working tree as it was when this ran, captured before any stash.
+   *
+   * Undefined when the tree was already clean — there is nothing an agent
+   * worktree could be missing in that case, so `headSha()` alone is enough.
+   * When set, it is what an uncommitted dependency upgrade lives in, and the
+   * caller turns it into a real commit so agent worktrees are built from it
+   * instead of from a `HEAD` that predates the very change being fixed.
+   */
+  snapshotTree?: string;
+  /** Whether the developer's uncommitted work was moved into a stash. */
+  stashed: boolean;
+}
+
 async function ensureCleanTree(
   git: Git,
   ask?: (question: string, options?: string[]) => Promise<string>,
-): Promise<{ ok: true } | { ok: false; message: string }> {
+): Promise<CleanTreeGuard | { ok: false; message: string }> {
   const dirty = await git.dirtyFiles();
-  if (dirty.length === 0) return { ok: true };
+  if (dirty.length === 0) return { ok: true, stashed: false };
+
+  // Captured before the developer's choice takes effect: "stash mine and
+  // continue" is about to remove these edits from the working tree, and this
+  // is the only chance to record them before that happens.
+  const snapshotTree = await git.snapshotTree();
 
   // In the panel, asking in the thread beats a modal: the developer can see the
   // file list Drift is worried about while they decide.
@@ -993,9 +1067,9 @@ async function ensureCleanTree(
     );
     if (/^stash/i.test(answer)) {
       await git.stash('drift: work in progress before fix');
-      return { ok: true };
+      return { ok: true, snapshotTree, stashed: true };
     }
-    if (/^continue/i.test(answer)) return { ok: true };
+    if (/^continue/i.test(answer)) return { ok: true, snapshotTree, stashed: false };
     return { ok: false, message: 'Cancelled — your working tree was left untouched.' };
   }
 
@@ -1008,9 +1082,9 @@ async function ensureCleanTree(
 
   if (choice === 'Stash my changes and continue') {
     await git.stash('drift: work in progress before fix');
-    return { ok: true };
+    return { ok: true, snapshotTree, stashed: true };
   }
-  if (choice === 'Continue anyway') return { ok: true };
+  if (choice === 'Continue anyway') return { ok: true, snapshotTree, stashed: false };
 
   return { ok: false, message: 'Cancelled — your working tree was left untouched.' };
 }
