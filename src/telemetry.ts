@@ -56,6 +56,16 @@ export interface UpgradeOutcomeTelemetryInput {
   featureFlags?: TelemetryFeatureFlags;
   installationId?: string;
   rotationSalt?: string;
+  /**
+   * How long the sender wants this event kept, carried in the event itself.
+   *
+   * This module only ever sends events — there is no collector in this
+   * repository for it to instruct directly. Putting the preference in the
+   * payload is the one lever a sender actually has: whatever receives
+   * `sendTelemetryEvent`'s POST can honour it, whereas a config field that
+   * stays local to the sender cannot be enforced by anything.
+   */
+  retentionDays?: number;
   now?: Date;
 }
 
@@ -106,6 +116,8 @@ export interface UpgradeOutcomeTelemetryEvent {
   featureFlags: Record<string, string>;
   latencyMs: number;
   costUsd: number;
+  /** The sender's requested retention window, when configured. See `UpgradeOutcomeTelemetryInput.retentionDays`. */
+  retentionDays?: number;
 }
 
 export function telemetryEnabled(config: TelemetryConfig, env: NodeJS.ProcessEnv = process.env): boolean {
@@ -153,6 +165,7 @@ export function buildUpgradeOutcomeEvent(input: UpgradeOutcomeTelemetryInput): U
     featureFlags: anonymizeFlags(input.featureFlags ?? {}),
     latencyMs: input.latencyMs ?? 0,
     costUsd: input.costUsd ?? 0,
+    ...(input.retentionDays !== undefined ? { retentionDays: input.retentionDays } : {}),
   };
 
   assertTelemetrySafe(event);

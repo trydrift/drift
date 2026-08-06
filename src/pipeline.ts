@@ -106,6 +106,9 @@ async function reportTelemetry(args: {
       agentType: dryRun ? 'none' : 'cloud',
       ...(config.telemetry.installationId ? { installationId: config.telemetry.installationId } : {}),
       ...(config.telemetry.rotationSalt ? { rotationSalt: config.telemetry.rotationSalt } : {}),
+      ...(config.telemetry.retentionDays !== undefined
+        ? { retentionDays: config.telemetry.retentionDays }
+        : {}),
     });
 
     if (!config.telemetry.endpoint) {
