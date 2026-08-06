@@ -79,7 +79,13 @@ export async function dispatchToCopilot(
     // Copilot works on the branch Drift already created, so its commits land
     // where the plan expects and the eventual PR targets the right base.
     base_ref: plan.branchName,
-    create_pull_request: true,
+    // Always false: Drift is the sole PR creator (see `ensurePullRequest` in
+    // dispatch/index.ts), which is what lets `pullRequest.enabled` and the
+    // rest of the `pullRequest` config (draft, title, labels, reviewers)
+    // actually govern whether a PR appears and what it looks like. Letting
+    // Copilot open its own PR here would race Drift's, ignore that config
+    // entirely, and — when `pullRequest.enabled` is false — open a PR anyway.
+    create_pull_request: false,
   };
   if (config.remediation.model) body.model = config.remediation.model;
 
