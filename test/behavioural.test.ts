@@ -5,7 +5,13 @@ import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { DriftConfigSchema } from '../dist/config/schema.js';
-import { runBehaviouralDifferential } from '../dist/verification/behavioural.js';
+import {
+  literalArgsFromExcerpt,
+  runBehaviouralDifferential,
+  runBehaviouralVerification,
+  selectBehaviouralCandidates,
+} from '../dist/verification/behavioural.js';
+import { localPackageEnvironment } from '../dist/verification/environment.js';
 
 const config = DriftConfigSchema.parse({
   verification: {
@@ -152,5 +158,169 @@ describe('bounded behavioural differential probes', () => {
     );
 
     assert.equal(observation.newResult.status, 'blocked');
+  });
+});
+
+describe('literal argument extraction from a matched call site', () => {
+  test('parses a simple object literal without evaluating anything', () => {
+    assert.deepEqual(literalArgsFromExcerpt("formatUser({ name: 'Ada' })", 'formatUser'), [{ name: 'Ada' }]);
+  });
+
+  test('parses multiple literal arguments', () => {
+    assert.deepEqual(literalArgsFromExcerpt('subject(1, "two", true)', 'subject'), [1, 'two', true]);
+  });
+
+  test('yields null for a call whose arguments are not literals', () => {
+    assert.equal(literalArgsFromExcerpt('formatUser(someVariable)', 'formatUser'), null);
+  });
+
+  test('yields null when the symbol is not called on this line', () => {
+    assert.equal(literalArgsFromExcerpt('const x = formatUser;', 'formatUser'), null);
+  });
+});
+
+describe('selecting behavioural candidates', () => {
+  const config = DriftConfigSchema.parse({ verification: { behavioural: { enabled: true } } });
+
+  const change = {
+    id: 'bc_1',
+    dependency: 'fixture-lib',
+    kind: 'behaviour-change',
+    summary: 'formatUser may have changed.',
+    remediation: 'Check call sites.',
+    symbols: ['formatUser'],
+    confidence: 'low',
+    citations: [],
+  };
+
+  test('reuses a real call site argument, alongside the no-argument case', () => {
+    const impactSites = [
+      {
+        breakingChangeId: 'bc_1',
+        file: 'src/app.ts',
+        line: 3,
+        excerpt: "formatUser({ name: 'Ada' })",
+        matchedSymbol: 'formatUser',
+        confidence: 'high',
+      },
+    ];
+
+    const probes = selectBehaviouralCandidates({ breakingChanges: [change], impactSites }, config);
+
+    assert.equal(probes.length, 1);
+    assert.deepEqual(
+      probes[0].cases.map((c) => c.args),
+      [[], [{ name: 'Ada' }]],
+    );
+  });
+
+  test('produces nothing when a change has no impact site at all', () => {
+    const probes = selectBehaviouralCandidates({ breakingChanges: [change], impactSites: [] }, config);
+    assert.deepEqual(probes, []);
+  });
+
+  test('produces nothing when probing is disabled', () => {
+    const disabled = DriftConfigSchema.parse({});
+    const impactSites = [
+      { breakingChangeId: 'bc_1', file: 'src/app.ts', line: 3, excerpt: 'formatUser()', matchedSymbol: 'formatUser', confidence: 'high' },
+    ];
+    assert.deepEqual(selectBehaviouralCandidates({ breakingChanges: [change], impactSites }, disabled), []);
+  });
+});
+
+describe('running behavioural verification end to end', () => {
+  test('cites new evidence on the breaking change it observed a difference for', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'drift-behavioural-verify-'));
+    try {
+      const oldRoot = join(root, 'old');
+      const newRoot = join(root, 'new');
+      mkdirSync(oldRoot);
+      mkdirSync(newRoot);
+      writeFileSync(join(oldRoot, 'index.js'), 'export function formatUser(u) { return u.name.toUpperCase(); }');
+      writeFileSync(join(oldRoot, 'package.json'), JSON.stringify({ main: 'index.js' }));
+      writeFileSync(join(newRoot, 'index.js'), 'export function formatUser(u) { return { label: u.name.toUpperCase() }; }');
+      writeFileSync(join(newRoot, 'package.json'), JSON.stringify({ main: 'index.js' }));
+
+      const config = DriftConfigSchema.parse({ verification: { behavioural: { enabled: true, network: false } } });
+      const change = {
+        id: 'bc_1',
+        dependency: 'fixture-lib',
+        kind: 'behaviour-change',
+        summary: 'formatUser may have changed.',
+        remediation: 'Check call sites.',
+        symbols: ['formatUser'],
+        confidence: 'low',
+        citations: [],
+      };
+      const dependencyChange = {
+        name: 'fixture-lib',
+        ecosystem: 'npm',
+        from: '1.0.0',
+        to: '2.0.0',
+        kind: 'runtime',
+        bump: 'major',
+        manifestPath: 'package.json',
+      };
+      const impactSites = [
+        { breakingChangeId: 'bc_1', file: 'src/app.ts', line: 1, excerpt: "formatUser({ name: 'Ada' })", matchedSymbol: 'formatUser', confidence: 'high' },
+      ];
+
+      const result = await runBehaviouralVerification({
+        config,
+        breakingChanges: [change],
+        dependencyChanges: [dependencyChange],
+        impactSites,
+        resolveEnvironments: async () => {
+          const oldEnvironment = await localPackageEnvironment('old', oldRoot);
+          const newEnvironment = await localPackageEnvironment('new', newRoot);
+          return oldEnvironment && newEnvironment ? { oldEnvironment, newEnvironment } : null;
+        },
+      });
+
+      assert.ok(result.evidence.length > 0);
+      assert.ok(result.evidence.every((e) => e.source === 'behavioural-diff'));
+      assert.deepEqual(result.citationsByChangeId.get('bc_1'), result.evidence.map((e) => e.id));
+      assert.deepEqual(result.gaps, []);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  test('reports a gap instead of throwing when a version cannot be resolved', async () => {
+    const config = DriftConfigSchema.parse({ verification: { behavioural: { enabled: true } } });
+    const change = {
+      id: 'bc_1',
+      dependency: 'fixture-lib',
+      kind: 'behaviour-change',
+      summary: 's',
+      remediation: 'r',
+      symbols: ['formatUser'],
+      confidence: 'low',
+      citations: [],
+    };
+    const dependencyChange = {
+      name: 'fixture-lib',
+      ecosystem: 'npm',
+      from: '1.0.0',
+      to: '2.0.0',
+      kind: 'runtime',
+      bump: 'major',
+      manifestPath: 'package.json',
+    };
+    const impactSites = [
+      { breakingChangeId: 'bc_1', file: 'src/app.ts', line: 1, excerpt: 'formatUser()', matchedSymbol: 'formatUser', confidence: 'high' },
+    ];
+
+    const result = await runBehaviouralVerification({
+      config,
+      breakingChanges: [change],
+      dependencyChanges: [dependencyChange],
+      impactSites,
+      resolveEnvironments: async () => null,
+    });
+
+    assert.deepEqual(result.evidence, []);
+    assert.equal(result.gaps.length, 1);
+    assert.match(result.gaps[0], /could not resolve/);
   });
 });

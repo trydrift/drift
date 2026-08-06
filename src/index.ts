@@ -100,18 +100,29 @@ export type {
   VerificationOutcome,
 } from './confidence/types.js';
 export {
+  behaviouralFindingKind,
+  literalArgsFromExcerpt,
   runBehaviouralDifferential,
+  runBehaviouralVerification,
   selectBehaviouralCandidates,
 } from './verification/behavioural.js';
 export type {
+  BehaviouralCandidateInput,
   BehaviouralEnvironment,
+  BehaviouralEnvironmentPair,
   BehaviouralObservation,
   BehaviouralProbe,
   BehaviouralRunResult,
+  BehaviouralVerificationResult,
   ContractKind,
   ProbeCase,
   WorkerResult,
 } from './verification/behavioural.js';
+export {
+  fetchedPackageEnvironment,
+  localPackageEnvironment,
+  resolveJsEntry,
+} from './verification/environment.js';
 export {
   TELEMETRY_SCHEMA_VERSION,
   assertTelemetrySafe,

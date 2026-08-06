@@ -12,7 +12,9 @@ import { localize } from './localize/index.js';
 import { buildPlan } from './plan/index.js';
 import { buildRationale } from './rationale/index.js';
 import type { SurfaceAddition, SurfaceUnavailable } from './evidence/surface/types.js';
-import type { CheckedSurface } from './confidence/types.js';
+import type { AnalysisGap, CheckedSurface } from './confidence/types.js';
+import { runBehaviouralVerification } from './verification/behavioural.js';
+import { fetchedPackageEnvironment } from './verification/environment.js';
 
 /**
  * Stages 1–7: everything up to, but not including, acting.
@@ -47,6 +49,7 @@ export type AnalysisStage =
   | 'evidence'
   | 'analyze'
   | 'localize'
+  | 'verify'
   | 'rationale'
   | 'plan'
   | 'done';
@@ -110,7 +113,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   const additions = new Map<string, { additions: SurfaceAddition[]; locator: string }>();
   const surfaceGaps = new Map<string, SurfaceUnavailable>();
 
-  const evidence = await gatherEvidence(actionable, {
+  let evidence = await gatherEvidence(actionable, {
     config,
     logger,
     githubToken,
@@ -127,7 +130,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
 
   /* Stage 4 — analyze */
   progress('analyze', 'Identifying breaking changes');
-  const breakingChanges = await analyze(actionable, evidence, { config, logger });
+  let breakingChanges = await analyze(actionable, evidence, { config, logger });
   logger.info(`Identified ${breakingChanges.length} breaking change(s)`);
 
   /* Stage 5 — localize */
@@ -158,10 +161,64 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     logger.warn('No local checkout available; affected code cannot be located.');
   }
 
+  /* Stage 6 — verify (behavioural, experimental and off by default) */
+  const behaviouralGaps: AnalysisGap[] = [];
+  let behaviouralRan = false;
+
+  if (config.verification.behavioural.enabled && breakingChanges.length > 0 && impactSites.length > 0) {
+    progress('verify', 'Probing dependency behaviour for reachable findings');
+    behaviouralRan = true;
+
+    const verification = await runBehaviouralVerification({
+      config,
+      breakingChanges,
+      dependencyChanges: actionable,
+      impactSites,
+      resolveEnvironments: async (change) => {
+        if (!change.from || !change.to) return null;
+        const [oldEnvironment, newEnvironment] = await Promise.all([
+          fetchedPackageEnvironment('old', change.name, change.from),
+          fetchedPackageEnvironment('new', change.name, change.to),
+        ]);
+        return oldEnvironment && newEnvironment ? { oldEnvironment, newEnvironment } : null;
+      },
+    });
+
+    for (const reason of verification.gaps) {
+      behaviouralGaps.push({
+        stage: 'verify',
+        surface: 'behavioural-diff',
+        reason,
+        severity: 'minor',
+        automaticExecution: 'none',
+        remediation: 'Behavioural probing is experimental; see `verification.behavioural` in drift.yml.',
+      });
+    }
+
+    if (verification.evidence.length > 0) {
+      evidence = [...evidence, ...verification.evidence];
+      breakingChanges = breakingChanges.map((change) => {
+        const extra = verification.citationsByChangeId.get(change.id);
+        return extra?.length ? { ...change, citations: [...change.citations, ...extra] } : change;
+      });
+      logger.info(`Behavioural probing added ${verification.evidence.length} observation(s) of evidence`);
+    }
+  }
+
   // What was looked at, and how it went. Recorded so the report can say which
   // surfaces were genuinely checked rather than leaving a reader to assume
   // that everything not mentioned was fine.
   const checkedSurfaces: CheckedSurface[] = [];
+
+  if (config.verification.behavioural.enabled) {
+    checkedSurfaces.push({
+      surface: 'behavioural-diff',
+      status: behaviouralRan ? 'checked' : 'skipped',
+      detail: behaviouralRan
+        ? 'Old and new dependency code were run against generated and observed inputs and compared.'
+        : 'No breaking change had a local impact site to probe, so behavioural probing did not run.',
+    });
+  }
 
   for (const change of actionable) {
     const records = evidence.filter((e) => e.dependency === change.name);
@@ -200,14 +257,14 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       : 'No checkout was available, so this repository was not searched.',
   });
 
-  /* Stage 6 — rationale */
+  /* Stage 7 — rationale */
   progress('rationale', 'Weighing what each upgrade is worth');
   const rationale = await buildRationale(
     { changes: actionable, evidence, breakingChanges, impactSites },
     { config, logger, githubToken, additions, surfaceGaps },
   );
 
-  /* Stage 7 — plan */
+  /* Stage 8 — plan */
   progress('plan', 'Building the remediation plan');
   const plan = buildPlan({
     repo,
@@ -224,8 +281,14 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
 
   progress('done', 'Analysis complete');
 
+  // Appended after `buildPlan` rather than threaded through it: these gaps
+  // describe the probing run itself (disabled, unresolvable version, sandbox
+  // unavailable), not a property `collectGaps` could derive from its own
+  // inputs, and they never block automatic execution on their own.
+  const finalPlan = behaviouralGaps.length > 0 ? { ...plan, gaps: [...plan.gaps, ...behaviouralGaps] } : plan;
+
   return {
-    plan,
+    plan: finalPlan,
     summary:
       plan.commits.length > 0
         ? `${plan.breakingChanges.length} breaking change(s), ${new Set(plan.impactSites.map((s) => s.file)).size} file(s) affected`
