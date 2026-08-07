@@ -11,6 +11,7 @@ import type {
 } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { CodemodResult } from '../codemod/index.js';
+import type { CommunityRecipeCandidate } from '../remediation/types.js';
 import { stableId, slugify } from '../util/id.js';
 
 /**
@@ -76,6 +77,8 @@ export interface PlanCommitsInput {
   changes?: readonly DependencyChange[];
   /** Deterministic fixes already computed for individual findings, by `BreakingChange.id`. */
   codemods?: ReadonlyMap<string, CodemodResult>;
+  /** Community recipe candidates matched for individual findings, by `BreakingChange.id`. */
+  recipes?: ReadonlyMap<string, CommunityRecipeCandidate>;
 }
 
 export interface PlanCommitGraph {
@@ -91,6 +94,7 @@ export function planCommitGraph({
   config,
   changes = [],
   codemods,
+  recipes,
 }: PlanCommitsInput): PlanCommitGraph {
   const sitesByChange = groupSites(impactSites);
 
@@ -115,7 +119,7 @@ export function planCommitGraph({
   }
 
   const commits = sorted.map((group, index) =>
-    toCommitUnit(group, index + 1, sitesByChange, sorted.length, codemods),
+    toCommitUnit(group, index + 1, sitesByChange, sorted.length, codemods, recipes),
   );
   const edges = deriveEdges(commits, breakingChanges, impactSites, cohortByDependency);
   const layered = assignExecutionLayers(commits, edges);
@@ -169,11 +173,15 @@ function toCommitUnit(
   sitesByChange: Map<string, ImpactSite[]>,
   totalCommits: number,
   codemods?: ReadonlyMap<string, CodemodResult>,
+  recipes?: ReadonlyMap<string, CommunityRecipeCandidate>,
 ): CommitUnit {
   const sites = group.flatMap((c) => sitesByChange.get(c.id) ?? []);
   const files = [...new Set(sites.map((s) => s.file))].sort();
   const primary = group[0]!;
   const codemod = codemods ? resolveCodemod(group, sitesByChange, codemods) : undefined;
+  // Only worth offering a recipe for a commit the built-in engine could not
+  // resolve — `codemod` always wins, mirroring `remediationKindFor`.
+  const recipe = !codemod && recipes ? resolveRecipe(group, recipes) : undefined;
 
   return {
     id: stableId(
@@ -197,7 +205,30 @@ function toCommitUnit(
     expectedChecks: expectedChecksFor(group, files),
     invalidationTriggers: invalidationTriggersFor(group, files),
     ...(codemod ? { codemod } : {}),
+    ...(recipe ? { recipe } : {}),
   };
+}
+
+/**
+ * Decide whether every breaking change in a commit group has a matching
+ * community recipe, and if so, collect them.
+ *
+ * Mirrors `resolveCodemod`'s "full coverage or nothing" rule: offering a
+ * recipe for only some of a commit's findings would leave a reviewer unsure
+ * whether accepting it resolves the whole commit or leaves part of it
+ * needing an agent regardless.
+ */
+function resolveRecipe(
+  group: readonly BreakingChange[],
+  recipes: ReadonlyMap<string, CommunityRecipeCandidate>,
+): CommunityRecipeCandidate[] | undefined {
+  const candidates: CommunityRecipeCandidate[] = [];
+  for (const change of group) {
+    const candidate = recipes.get(change.id);
+    if (!candidate) return undefined;
+    candidates.push(candidate);
+  }
+  return candidates.length > 0 ? candidates : undefined;
 }
 
 /**

@@ -1,11 +1,22 @@
 {
-  "name": "drift",
+  "name": "@drift-sh/cli",
   "version": "0.1.0",
-  "description": "Drift detects dependency API changes, proves which ones break your code, and drives GitHub Copilot to fix them in a reviewable, atomically-committed pull request.",
+  "description": "Drift detects dependency API changes, proves which ones break your code, and fixes them deterministically, via a community recipe, or with an AI agent, in a reviewable, atomically-committed pull request.",
   "license": "SEE LICENSE IN LICENSE",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/drift-sh/drift.git"
+  },
+  "homepage": "https://github.com/drift-sh/drift#readme",
+  "bugs": {
+    "url": "https://github.com/drift-sh/drift/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
-    "node": ">=22.5.0"
+    "node": ">=22.6.0"
   },
   "bin": {
     "drift": "./dist/cli.js"

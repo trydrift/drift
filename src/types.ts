@@ -23,6 +23,7 @@
 import type { UpgradeRationale } from './rationale/types.js';
 import type { ChangeTaxonomy } from './confidence/taxonomy.js';
 import type { AnalysisGap, CheckedSurface, ConfidenceAssessment } from './confidence/types.js';
+import type { CommunityRecipeCandidate } from './remediation/types.js';
 
 export type { UpgradeRationale };
 
@@ -369,6 +370,19 @@ export interface CommitUnit {
     files: string[];
     anchors: { file: string; line: string }[];
   }[];
+  /**
+   * Community recipe candidates that claim to resolve every breaking change
+   * in this unit, when no built-in codemod could and the curated registry
+   * (`src/remediation/registry.ts`) has a matching, version-pinned recipe for
+   * each one. Metadata only, exactly like `codemod` is a rule plus
+   * parameters rather than precomputed content — a consumer decides whether
+   * to run it (never automatically; see `src/remediation/partition.ts`),
+   * executes it in an isolated worktree, and puts the result through the
+   * same scope validation and verification an agent's output would.
+   *
+   * `codemod`, when present, always takes priority over this field.
+   */
+  recipe?: CommunityRecipeCandidate[];
 }
 
 /** Aggregate risk, used to gate automatic execution. */

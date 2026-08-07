@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { rm } from 'node:fs/promises';
 import type { CommitUnit, RemediationPlan } from '../../src/types.js';
 import { applyCodemodTransform } from '../../src/codemod/index.js';
+import { executeCommunityRecipe } from '../../src/remediation/execute-recipe.js';
 import { WORKING_TREE } from '../../src/repo/local-git.js';
 import { Git } from './git.js';
 import { diffHunks, statOf, type Hunk } from './diff.js';
@@ -225,7 +226,15 @@ async function runFixOnBranch(args: {
   startRef: string;
   worktreeBase: string;
 }): Promise<FixResult> {
-  const { options, state, plan, progress, token, review, permission, commitMode, root, repo, git, agent, commits, startRef, worktreeBase } = args;
+  const { options, state, plan, progress, token, review, permission, commitMode, root, repo, git, agent, commits: rawCommits, startRef, worktreeBase } = args;
+
+  // A community recipe is only ever run after an explicit choice in this
+  // session — the ask-gate below is the only place that choice can happen.
+  // Any permission mode that skips asking (`auto-edit`, `full-auto`) must
+  // never reach a recipe at all, so it is stripped here rather than trusted
+  // to stay unused deeper in the pipeline. `codemod` is unaffected: Drift's
+  // own fix remains trusted and available without permission, as before.
+  const commits = permission === 'ask' ? rawCommits : rawCommits.map((c) => (c.recipe ? { ...c, recipe: undefined } : c));
 
   // Where the work happens, and the one decision here that is hard to take
   // back. Branching is the default because it makes everything downstream
@@ -418,6 +427,7 @@ async function runFixOnBranch(args: {
       // Asking before touching anything is the point of `ask` mode: at this
       // moment nothing has been written, so declining costs nothing.
       if (permission === 'ask' && options.ask) {
+        const recipe = !commit.codemod ? commit.recipe?.[0] : undefined;
         const answer = commit.codemod
           ? await options.ask(
               `Drift found a deterministic fix for "${commit.message}" (${renameSummary(commit.codemod)}, ` +
@@ -425,10 +435,16 @@ async function runFixOnBranch(args: {
                 `${agent.label} instead?`,
               ['Apply deterministic fix', `Use ${agent.label} instead`, 'Skip this one', 'Stop'],
             )
-          : await options.ask(
-              `Let ${agent.label} edit ${commit.files.length} file${commit.files.length === 1 ? '' : 's'} for "${commit.message}"?`,
-              ['Yes, go ahead', 'Skip this one', 'Stop'],
-            );
+          : recipe
+            ? await options.ask(
+                `A community-maintained recipe is available for "${commit.message}": ` +
+                  `${recipeSummary(commit.recipe!)} from ${recipe.publisher}. Use community recipe, or continue with ${agent.label}?`,
+                ['Use community recipe', `Continue with ${agent.label}`, 'Skip this one', 'Stop'],
+              )
+            : await options.ask(
+                `Let ${agent.label} edit ${commit.files.length} file${commit.files.length === 1 ? '' : 's'} for "${commit.message}"?`,
+                ['Yes, go ahead', 'Skip this one', 'Stop'],
+              );
         if (/^stop/i.test(answer)) {
           return {
             status: 'cancelled',
@@ -445,11 +461,13 @@ async function runFixOnBranch(args: {
           progress.report({ increment: step });
           continue;
         }
-        // The user chose the agent over an available deterministic fix — drop
-        // `codemod` so downstream code takes the ordinary agent path instead
-        // of silently re-applying the fix it was just declined.
-        if (/^use/i.test(answer)) {
-          commit = { ...commit, codemod: undefined };
+        // The user chose the agent over an available deterministic fix or
+        // community recipe — drop `codemod`/`recipe` so downstream code takes
+        // the ordinary agent path instead of silently re-applying the fix or
+        // recipe it was just declined. "Use community recipe" is the one
+        // answer that keeps the offer as-is.
+        if (answer === `Use ${agent.label} instead` || answer === `Continue with ${agent.label}`) {
+          commit = { ...commit, codemod: undefined, recipe: undefined };
         }
       }
 
@@ -800,6 +818,59 @@ function renameSummary(codemod: NonNullable<CommitUnit['codemod']>): string {
   return codemod.map((t) => `\`${t.from}\` → \`${t.to}\``).join(', ');
 }
 
+/** A short, human-readable list of the recipe(s) offered for a commit, for the confirm prompt. */
+function recipeSummary(recipe: NonNullable<CommitUnit['recipe']>): string {
+  const seen = new Set<string>();
+  const names: string[] = [];
+  for (const candidate of recipe) {
+    const key = `${candidate.name}@${candidate.version}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    names.push(`\`${key}\``);
+  }
+  return names.join(', ');
+}
+
+/**
+ * Run a commit's matched community recipe(s) directly against the worktree
+ * at `root`. Unlike `applyCommitCodemod`, this writes to disk itself (the
+ * recipe tool edits files in place) rather than returning in-memory content
+ * — the caller's post-run worktree diff (`editsFromWorktree`, driven by
+ * `validateAgentWorktree`) is what turns those writes into reviewable edits,
+ * the same path an agent's or a codemod's output already goes through.
+ */
+export async function applyCommitRecipe(
+  commit: CommitUnit,
+  root: string,
+  run: typeof executeCommunityRecipe = executeCommunityRecipe,
+): Promise<FixOutcome> {
+  const candidates = commit.recipe ?? [];
+  if (candidates.length === 0) {
+    return { status: 'no-changes', message: 'No community recipe was available for this commit.' };
+  }
+
+  const seen = new Set<string>();
+  const messages: string[] = [];
+  let applied = false;
+
+  for (const candidate of candidates) {
+    const key = `${candidate.provider}:${candidate.name}@${candidate.version}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const result = await run(candidate, root);
+    if (result.status === 'failed') return { status: 'failed', message: result.message };
+    if (result.status === 'applied') {
+      applied = true;
+      messages.push(result.message);
+    }
+  }
+
+  return applied
+    ? { status: 'applied', message: messages.join(' ') }
+    : { status: 'no-changes', message: 'The community recipe produced no changes here.' };
+}
+
 /**
  * Apply a commit's precomputed codemod transforms against the files as they
  * actually exist right now — not the content Drift last saw at analysis
@@ -889,6 +960,21 @@ async function applyOneCommit(args: {
       return { outcome, edits: [] };
     }
     return { outcome, edits: [...edits] };
+  }
+
+  // Same idea as the codemod branch above, one tier down: a community
+  // recipe present here already passed the ask-gate (or was never offered,
+  // for a permission mode that skips asking — see `runFixOnBranch`), so it
+  // is safe to run without a model call. The recipe writes directly to
+  // `root`; nothing to hand to `applyEdits` here.
+  if (commit.recipe) {
+    const outcome = await applyCommitRecipe(commit, root);
+    args.onActivity?.({
+      kind: outcome.status === 'applied' ? 'edit' : 'status',
+      title: 'Community recipe',
+      detail: outcome.message,
+    });
+    return { outcome, edits: [] };
   }
 
   const controller = new AbortController();

@@ -130,6 +130,14 @@ remediation:
   #   This repo uses Vitest, not Jest. Run `pnpm test` to verify.
   #   Prefer named exports. Do not add barrel files.
 
+  # Off by default. When true, a matching, version-pinned recipe from the
+  # curated community registry (Codemod.com, OpenRewrite) may be used ahead
+  # of an AI agent, once Drift's own codemod engine cannot resolve a commit.
+  # On the Action this is the only thing that can select a recipe, since it
+  # cannot prompt; the CLI and VS Code extension still ask before using one
+  # either way.
+  communityRecipes: false
+
 # ---------------------------------------------------------------------------
 # Optional LLM assistance
 # ---------------------------------------------------------------------------

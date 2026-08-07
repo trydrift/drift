@@ -243,6 +243,21 @@ export const DriftConfigSchema = z.object({
           pollIntervalSeconds: z.number().int().min(5).max(300).default(30),
         })
         .default({}),
+      /**
+       * Allow a matching community recipe (Codemod.com, OpenRewrite — see
+       * `src/remediation/registry.ts`) to be used ahead of an AI agent, when
+       * Drift's own built-in codemod engine cannot resolve the commit.
+       *
+       * Off by default. A community recipe is third-party code executed as
+       * part of an automated commit pipeline; unlike Drift's own codemods,
+       * it was not proven correct by construction, so running it — even
+       * pinned and audited — is an explicit opt-in, not a default. On the
+       * CLI and in the extension this only changes what is *offered*: a
+       * recipe is never applied without an explicit choice in that run,
+       * regardless of this setting. On the Action, which cannot prompt,
+       * this is what actually gates whether an eligible recipe is used.
+       */
+      communityRecipes: z.boolean().default(false),
     })
     .default({}),
 

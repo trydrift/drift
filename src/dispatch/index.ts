@@ -2,10 +2,13 @@ import type { DispatchResult, RemediationPlan, RepoContext } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
 import type { GitHubClient } from '../github/client.js';
+import type { Exec } from '../util/exec.js';
 import { isAutoDispatchable } from '../plan/index.js';
 import { renderApprovalIssue, renderPullRequestBody, renderSummaryLine } from '../report/markdown.js';
 import { titleFor } from '../plan/pull-request.js';
 import { dispatchToCopilot } from './copilot.js';
+import { applyDeterministicRemediation } from '../github/local-commit.js';
+import { planForCommits } from '../remediation/partition.js';
 
 /**
  * Dispatch: decide what to do with a plan, and do it.
@@ -38,6 +41,8 @@ export interface DispatchOptions {
    * approved via `/drift apply`. Guardrail blockers are still enforced.
    */
   approved?: boolean;
+  /** Injectable for tests; defaults to actually running commands. */
+  exec?: Exec;
 }
 
 export async function dispatch(options: DispatchOptions): Promise<DispatchResult> {
@@ -65,38 +70,17 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
     return requestApproval(options);
   }
 
-  if (!copilotToken) {
-    logger.warn(
-      'Drift is in auto mode with an actionable plan, but no Copilot token is available. Falling back to approval.',
-    );
-    return requestApproval({
-      ...options,
-      plan: {
-        ...plan,
-        blockers: [
-          ...plan.blockers,
-          'No Copilot token was available. Set the `DRIFT_COPILOT_TOKEN` secret to a user-scoped token with `actions`, `contents`, `issues`, and `pull_requests` write access. The Copilot agent API does not accept GitHub App installation tokens.',
-        ],
-      },
-    });
-  }
-
   if (dryRun) {
     logger.info(`Dry run: would dispatch ${plan.commits.length} commit(s) on ${plan.branchName}`);
-    const preview = await dispatchToCopilot({
-      copilotToken,
-      repo,
-      plan,
-      config,
-      logger,
-      dryRun: true,
-    });
-    logger.debug('Copilot prompt preview', { length: preview.prompt.length });
+    const preview = copilotToken
+      ? await dispatchToCopilot({ copilotToken, repo, plan, config, logger, dryRun: true })
+      : undefined;
+    if (preview) logger.debug('Copilot prompt preview', { length: preview.prompt.length });
     return {
       status: 'skipped',
       planId: plan.id,
       branchName: plan.branchName,
-      message: `Dry run — no changes made. Would create branch \`${plan.branchName}\` and dispatch ${plan.commits.length} commit(s).`,
+      message: `Dry run — no changes made. Would create branch \`${plan.branchName}\` and resolve ${plan.commits.length} commit(s) (deterministically where possible, otherwise via agent).`,
     };
   }
 
@@ -112,12 +96,68 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
     };
   }
 
-  const result = await dispatchToCopilot({ copilotToken, repo, plan, config, logger });
+  // Resolve everything Drift can prove correct itself — its own codemods
+  // always, a matching community recipe only when `remediation.communityRecipes`
+  // is enabled — directly on the branch, before ever considering an agent.
+  // A commit successfully committed this way is never handed to Copilot.
+  const { committedIds } = await applyDeterministicRemediation({
+    repo,
+    plan,
+    config,
+    github,
+    logger,
+    exec: options.exec,
+  });
+  const remaining = plan.commits.filter((commit) => !committedIds.has(commit.id));
+
+  if (remaining.length === 0) {
+    logger.info(`Resolved all ${plan.commits.length} commit(s) deterministically; no agent was dispatched.`);
+    await postCheckRun(
+      options,
+      'success',
+      `Resolved ${plan.commits.length} breaking change commit(s) without an agent`,
+    );
+    const pr = await ensurePullRequest(options, undefined, undefined);
+    return {
+      status: 'dispatched',
+      planId: plan.id,
+      branchName: plan.branchName,
+      pullRequestNumber: pr?.number,
+      pullRequestUrl: pr?.url,
+      message: pr
+        ? `Resolved ${plan.commits.length} commit(s) on \`${plan.branchName}\` deterministically — no agent call was made. Tracked in pull request #${pr.number} into \`${plan.baseBranch}\`.`
+        : `Resolved ${plan.commits.length} commit(s) on \`${plan.branchName}\` deterministically — no agent call was made. A pull request into \`${plan.baseBranch}\` will follow.`,
+    };
+  }
+
+  if (committedIds.size > 0) {
+    logger.info(`Resolved ${committedIds.size} commit(s) deterministically; dispatching the remaining ${remaining.length} to Copilot.`);
+  }
+
+  if (!copilotToken) {
+    logger.warn(
+      'Drift is in auto mode with commit(s) that need an agent, but no Copilot token is available. Falling back to approval.',
+    );
+    return requestApproval({
+      ...options,
+      plan: {
+        ...plan,
+        blockers: [
+          ...plan.blockers,
+          'No Copilot token was available. Set the `DRIFT_COPILOT_TOKEN` secret to a user-scoped token with `actions`, `contents`, `issues`, and `pull_requests` write access. The Copilot agent API does not accept GitHub App installation tokens.',
+        ],
+      },
+    });
+  }
+
+  const agentPlan = planForCommits(plan, remaining);
+  const result = await dispatchToCopilot({ copilotToken, repo, plan: agentPlan, config, logger });
 
   if (!result.ok) {
     logger.error(`Copilot dispatch failed: ${result.error}`);
     // A dispatch failure falls back to approval rather than silently dropping
-    // the analysis — the work is still valuable to a human.
+    // the analysis — the work is still valuable to a human. Anything already
+    // resolved deterministically stays committed on the branch either way.
     const fallback = await requestApproval({
       ...options,
       plan: { ...plan, blockers: [...plan.blockers, result.error ?? 'Copilot dispatch failed.'] },
@@ -125,12 +165,14 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
     return { ...fallback, status: 'failed', message: result.error ?? 'Copilot dispatch failed.' };
   }
 
-  await postCheckRun(options, 'neutral', `Copilot is fixing ${plan.breakingChanges.length} breaking change(s)`);
+  await postCheckRun(options, 'neutral', `Copilot is fixing ${agentPlan.breakingChanges.length} breaking change(s)`);
 
   const task = result.task;
   logger.info(`Dispatched to Copilot: task ${task?.id ?? 'unknown'} on ${plan.branchName}`);
 
   const pr = await ensurePullRequest(options, task?.pullRequestNumber, task?.pullRequestUrl);
+
+  const resolvedNote = committedIds.size > 0 ? `${committedIds.size} commit(s) resolved deterministically; ` : '';
 
   return {
     status: 'dispatched',
@@ -140,8 +182,8 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
     pullRequestNumber: pr?.number ?? task?.pullRequestNumber,
     pullRequestUrl: pr?.url ?? task?.pullRequestUrl,
     message: pr
-      ? `Copilot is working on ${plan.commits.length} commit(s) on \`${plan.branchName}\`, tracked in pull request #${pr.number} into \`${plan.baseBranch}\`.`
-      : `Copilot is working on ${plan.commits.length} commit(s) on \`${plan.branchName}\`. A pull request into \`${plan.baseBranch}\` will follow.`,
+      ? `${resolvedNote}Copilot is working on ${remaining.length} commit(s) on \`${plan.branchName}\`, tracked in pull request #${pr.number} into \`${plan.baseBranch}\`.`
+      : `${resolvedNote}Copilot is working on ${remaining.length} commit(s) on \`${plan.branchName}\`. A pull request into \`${plan.baseBranch}\` will follow.`,
   };
 }
 

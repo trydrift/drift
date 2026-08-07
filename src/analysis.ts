@@ -10,6 +10,8 @@ import { buildIndex } from './index/metarag.js';
 import { walkSourceFiles } from './index/walk.js';
 import { localize } from './localize/index.js';
 import { attemptCodemod, type CodemodResult } from './codemod/index.js';
+import { findCommunityRecipe } from './remediation/registry.js';
+import type { CommunityRecipeCandidate } from './remediation/types.js';
 import { buildPlan } from './plan/index.js';
 import { buildRationale } from './rationale/index.js';
 import type { SurfaceAddition, SurfaceUnavailable } from './evidence/surface/types.js';
@@ -160,6 +162,11 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   // benefit. Keyed by `BreakingChange.id` so `buildPlan` can attach a fix to
   // exactly the commit unit(s) that finding ends up in.
   const codemods = new Map<string, CodemodResult>();
+  // Community recipe candidates are matched (never executed) in the same
+  // pass, for every finding a codemod could not resolve — see
+  // `src/remediation/registry.ts`. Keyed the same way as `codemods` so
+  // `buildPlan` can attach them to the same commit unit(s).
+  const recipes = new Map<string, CommunityRecipeCandidate>();
 
   if (breakingChanges.length > 0 && workspace) {
     progress('localize', 'Searching for affected code');
@@ -198,12 +205,25 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     }
 
     const fileContents = new Map(files.map((f) => [f.path, f.content]));
+    const dependencyChangeByKey = new Map(
+      actionable.map((c) => [`${c.workspace ?? ''}::${c.name}`, c] as const),
+    );
     for (const change of breakingChanges) {
       const sitesHere = sitesByChange.get(change.id);
       if (!sitesHere || sitesHere.length === 0) continue;
 
       const result = attemptCodemod(change, sitesHere, fileContents);
-      if (result) codemods.set(change.id, result);
+      if (result) {
+        codemods.set(change.id, result);
+        continue;
+      }
+
+      // Only consult the community registry for findings the built-in
+      // codemod engine declined — the built-in fix always wins when both
+      // could apply.
+      const dependencyChange = dependencyChangeByKey.get(`${change.workspace ?? ''}::${change.dependency}`);
+      const recipe = findCommunityRecipe(change, dependencyChange);
+      if (recipe) recipes.set(change.id, recipe);
     }
   } else if (breakingChanges.length > 0) {
     logger.warn('No local checkout available; affected code cannot be located.');
@@ -379,6 +399,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     verification: verificationOutcomes,
     checkedSurfaces,
     codemods,
+    recipes,
   });
 
   progress('done', 'Analysis complete');

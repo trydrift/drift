@@ -11,7 +11,10 @@ jobs:
 
     strategy:
       matrix:
-        node: [20, 22]
+        # `npm test` runs test/*.test.ts directly via `node --experimental-strip-types`,
+        # a flag Node did not have before 22.6 — this is the actual floor, not a
+        # preference. See `engines.node` in package.json.
+        node: [22]
 
     steps:
       - uses: actions/checkout@v4

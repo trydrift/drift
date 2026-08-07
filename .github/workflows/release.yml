@@ -1,0 +1,78 @@
+name: Release
+
+# Triggered by pushing a `v*` tag (e.g. `v0.1.0`). Runs the full verification
+# CI already does, then publishes the CLI to npm and the extension to the VS
+# Code Marketplace, creates a GitHub Release, and moves the floating `v0` tag
+# so `uses: drift-sh/drift@v0` resolves to the newest `v0.x.y`.
+#
+# Requires two repository secrets this workflow does not and cannot create:
+#   NPM_TOKEN   — an npm automation token with publish rights on @drift-sh/cli
+#   VSCE_PAT    — a VS Code Marketplace personal access token for the
+#                 `drift-sh` publisher
+# Nothing here fabricates or assumes those exist; the publish steps simply
+# fail (and the workflow run goes red) if they are missing.
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build:action
+      - name: Verify the committed action bundle is up to date
+        run: git diff --quiet -- action/ || (echo "action/index.cjs is stale — run npm run build:action and commit it" && exit 1)
+
+      - name: Publish CLI to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Extension typecheck, tests, and VSIX package
+        working-directory: extension
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+          npm run package
+
+      - name: Publish extension to the VS Code Marketplace
+        working-directory: extension
+        run: npx --yes @vscode/vsce publish --no-dependencies --packagePath drift.vsix
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            --generate-notes \
+            extension/drift.vsix
+
+      - name: Move the floating v0 tag
+        run: |
+          MAJOR="$(echo "${{ github.ref_name }}" | sed -E 's/^v([0-9]+)\..*/v\1/')"
+          if [ "$MAJOR" = "v0" ]; then
+            git tag -f v0 "${{ github.ref_name }}"
+            git push -f origin v0
+          fi

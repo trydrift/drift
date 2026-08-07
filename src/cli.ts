@@ -13,6 +13,7 @@ import { runAction } from './runners/action.js';
 import { main as serveWebhook } from './runners/webhook.js';
 import { sampleTelemetryEvent } from './telemetry.js';
 import { createLogger, type LogLevel } from './util/logger.js';
+import { dispatchRemainingToCopilot, runFix } from './remediation/cli-runner.js';
 
 const run = promisify(execFile);
 
@@ -31,6 +32,7 @@ drift — dependency changes, proven and fixed
 
 Usage:
   drift analyze [options]     Analyse a local repository and print the report
+  drift fix [options]         Analyse, then apply the fixes and push a branch
   drift pr [options]          Push the current branch and open a pull request
   drift action                Run as a GitHub Action (reads INPUT_* env vars)
   drift serve                 Run the self-hosted webhook server
@@ -47,6 +49,17 @@ Options for \`analyze\`:
   --json                      Emit the plan as JSON instead of markdown
   --log-level <level>         debug | info | warn | error. Default: info
 
+Options for \`fix\` (accepts every \`analyze\` option too):
+  --community-recipes         Use a matching community recipe when Drift's own
+                              codemod can't resolve a commit, without asking
+  --no-community-recipes      Never use a community recipe; go straight to AI
+  --non-interactive           Never prompt; decide from --community-recipes /
+                              drift.yml's \`remediation.communityRecipes\`
+                              (this is the default when not run in a TTY)
+  --copilot-token <token>     User-scoped token for commits that need an
+                              agent. Default: $DRIFT_COPILOT_TOKEN
+  --draft                     Open the pull request as a draft
+
 Options for \`pr\`:
   --dir <path>                Repository to act on.     Default: cwd
   --base <branch>             Merge into this branch.   Default: what this
@@ -57,6 +70,12 @@ Options for \`pr\`:
   --token <token>             GitHub token. Default: $GITHUB_TOKEN
 
 \`analyze\` never writes anything: no branches, no issues, no agent tasks.
+\`fix\` applies the plan in an isolated git worktree — your working tree is
+never touched — using, per commit, Drift's own deterministic fix, then (if
+enabled) a community recipe, then an AI agent, in that order; it pushes a
+branch and opens a pull request. It never merges, never force-pushes, and
+never touches the base branch. A community recipe is never used without an
+explicit choice, in this run or in \`remediation.communityRecipes\`.
 \`pr\` pushes the current branch and opens a pull request. It never merges,
 never force-pushes, and never touches the base branch.
 
@@ -75,6 +94,8 @@ export async function main(argv: string[]): Promise<number> {
     case 'analyze':
     case 'analyse':
       return analyzeCommand(parseFlags(rest));
+    case 'fix':
+      return fixCommand(parseFlags(rest));
     case 'pr':
       return prCommand(parseFlags(rest));
     case 'action':
@@ -212,6 +233,155 @@ async function analyzeCommand(flags: Flags): Promise<number> {
   }
 
   return 0;
+}
+
+/**
+ * Analyse, then apply the resulting plan: Drift's own codemod first, a
+ * community recipe second (only when enabled), an AI agent last — the same
+ * priority every surface shares (`src/remediation/partition.ts`).
+ *
+ * Runs entirely in an isolated git worktree via `runFix`, so nothing here
+ * ever touches the caller's working tree, and pushes only a branch it built
+ * itself. Like \`pr\`, this never merges and never force-pushes.
+ */
+async function fixCommand(flags: Flags): Promise<number> {
+  const logLevel = (typeof flags['log-level'] === 'string' ? flags['log-level'] : 'info') as LogLevel;
+  const logger = createLogger(logLevel);
+
+  const workspace = resolve(typeof flags.dir === 'string' ? flags.dir : process.cwd());
+  const token = (typeof flags.token === 'string' ? flags.token : process.env.GITHUB_TOKEN) ?? '';
+
+  if (!token) {
+    logger.error('A GitHub token is required. Set GITHUB_TOKEN or pass --token.');
+    return 1;
+  }
+
+  const slug = typeof flags.repo === 'string' ? flags.repo : await detectRepoSlug(workspace);
+  if (!slug) {
+    logger.error('Could not determine the repository. Pass --repo owner/name.');
+    return 1;
+  }
+  const [owner, repoName] = slug.split('/');
+  if (!owner || !repoName) {
+    logger.error(`Invalid repository "${slug}". Expected owner/name.`);
+    return 1;
+  }
+
+  const after = (typeof flags.after === 'string' ? flags.after : await gitRev(workspace, 'HEAD')) ?? 'HEAD';
+  const before =
+    (typeof flags.before === 'string' ? flags.before : await gitRev(workspace, 'HEAD^')) ?? `${after}^`;
+  const branch = (await gitRev(workspace, '--abbrev-ref HEAD')) ?? 'main';
+
+  const repo: RepoContext = { owner, repo: repoName, baseBranch: branch, beforeSha: before, afterSha: after, workspace };
+
+  const github = new GitHubClient({ repoToken: token, logger });
+
+  const { config, path, problems } = await loadConfig(async (candidate) => {
+    const target = typeof flags.config === 'string' ? flags.config : candidate;
+    try {
+      return await readFile(resolve(workspace, target), 'utf8');
+    } catch {
+      return null;
+    }
+  });
+  for (const problem of problems) logger.warn(problem);
+  if (path) logger.info(`Using config from ${path}`);
+
+  logger.info(`Analysing ${owner}/${repoName} ${before.slice(0, 7)}..${after.slice(0, 7)}`);
+
+  const result = await runPipeline({ repo, config, logger, github, dryRun: true, workspace });
+  if (!result.plan || result.plan.commits.length === 0) {
+    console.log(`\n${result.summary}\n`);
+    return 0;
+  }
+
+  const plan = result.plan;
+  const allowCommunityRecipes = flags['community-recipes']
+    ? true
+    : flags['no-community-recipes']
+      ? false
+      : undefined;
+
+  logger.info(`Fixing ${plan.commits.length} commit(s) on \`${plan.branchName}\` in an isolated worktree`);
+
+  const fix = await runFix({
+    repo,
+    plan,
+    config,
+    logger,
+    workspace,
+    allowCommunityRecipes,
+    nonInteractive: Boolean(flags['non-interactive']),
+  });
+
+  try {
+    if (fix.pushed) {
+      await run('git', ['push', '-u', 'origin', `HEAD:refs/heads/${fix.branch}`], { cwd: fix.worktree });
+      logger.info(
+        `Resolved ${fix.builtinResolved} commit(s) deterministically` +
+          (fix.recipeResolved > 0 ? ` and ${fix.recipeResolved} via community recipe` : '') +
+          ` on \`${fix.branch}\`.`,
+      );
+    }
+
+    if (fix.needsAgent.length > 0) {
+      const copilotToken =
+        (typeof flags['copilot-token'] === 'string' ? flags['copilot-token'] : undefined) ??
+        process.env.DRIFT_COPILOT_TOKEN;
+
+      if (!copilotToken) {
+        logger.warn(
+          `${fix.needsAgent.length} commit(s) need an AI agent, but no Copilot token is available. ` +
+            'Set DRIFT_COPILOT_TOKEN or pass --copilot-token. Skipping them for now.',
+        );
+      } else {
+        if (!fix.pushed) {
+          // Copilot works from the remote branch, which nothing has created
+          // yet if every commit needed an agent — same branch creation the
+          // Action performs before dispatch.
+          await github.createBranch(repo, fix.branch, repo.afterSha);
+        }
+        const dispatched = await dispatchRemainingToCopilot({
+          copilotToken,
+          repo,
+          plan,
+          commits: fix.needsAgent,
+          config,
+          logger,
+        });
+        if (!dispatched.ok) {
+          logger.error(`Copilot dispatch failed: ${dispatched.error}`);
+        } else {
+          logger.info(`Dispatched ${fix.needsAgent.length} commit(s) needing an agent to Copilot.`);
+        }
+      }
+    }
+
+    if (!fix.pushed && fix.needsAgent.length === 0) {
+      logger.info('Nothing to fix.');
+      return 0;
+    }
+
+    const pr = await github.createPullRequest(repo, {
+      head: fix.branch,
+      base: plan.baseBranch,
+      title: titleFor({ changes: plan.changes }, { title: config.pullRequest.titleTemplate, prefix: config.remediation.branchPrefix }),
+      body: renderPullRequestBody(plan, config),
+      draft: Boolean(flags.draft) || config.pullRequest.draft || config.remediation.draftPr,
+      labels: config.pullRequest.labels,
+      reviewers: config.pullRequest.reviewers,
+    });
+
+    if (pr) {
+      console.log(pr.existing ? `Already open: ${pr.url}` : `Opened ${pr.url}`);
+    } else if (fix.pushed) {
+      console.log(`Pushed \`${fix.branch}\`, but could not open a pull request.`);
+    }
+
+    return 0;
+  } finally {
+    await fix.teardown();
+  }
 }
 
 /**

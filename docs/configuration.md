@@ -361,6 +361,29 @@ remediation:
     All HTTP calls go through src/lib/http.ts — never call fetch directly.
 ```
 
+### `remediation.communityRecipes`
+`boolean` — default **`false`**
+
+Every surface resolves a commit's fix the same way: Drift's own deterministic
+codemod first, then — only when this is `true` — a matching, version-pinned
+recipe from the curated community registry (`src/remediation/registry.ts`,
+Codemod.com and OpenRewrite), then an AI agent.
+
+On the **GitHub Action**, which cannot prompt, this is what actually gates
+whether an eligible recipe is used instead of falling straight to Copilot:
+
+```yaml
+remediation:
+  communityRecipes: true
+```
+
+On the **CLI** and in the **VS Code extension**, a matching recipe is always
+shown when one exists — this setting only changes the default answer for a
+non-interactive `drift fix` run; both surfaces still require an explicit
+choice (a prompt, or `--community-recipes`) before ever running one. A
+recipe is never executed silently on any surface, and Drift's own codemod
+always takes priority over a recipe when both could resolve a commit.
+
 ---
 
 ## LLM (optional)

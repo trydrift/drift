@@ -3,8 +3,10 @@
 **Your dependency updated. Something broke. Drift finds out what, proves it, and fixes it.**
 
 Drift watches dependency changes in your repositories, works out which upstream
-changes actually break *your* code, and drives GitHub Copilot to fix them — in a
-branch, in separated commits, in a pull request you review.
+changes actually break *your* code, and fixes them — deterministically when it
+can prove the fix correct, via a community recipe when one applies and you've
+enabled it, and with GitHub Copilot otherwise — in a branch, in separated
+commits, in a pull request you review.
 
 It never merges anything.
 
@@ -58,8 +60,11 @@ Drift's intended failure mode is asking you too often. Not editing code it shoul
 
 ### 1. Add the workflow
 
-> **Not on the Marketplace yet** — `uses: drift-sh/drift@v0` will not resolve.
-> Reference your own fork, or see [testing on a real repo](docs/testing-on-a-real-repo.md).
+> **Not released yet** — `uses: drift-sh/drift@v0` will not resolve until a
+> `v0.1.0` tag is pushed and the `v0` tag is moved to it (see
+> [`.github/workflows/release.yml`](.github/workflows/release.yml)).
+> Until then, reference your own fork, or see
+> [testing on a real repo](docs/testing-on-a-real-repo.md).
 
 Copy [`examples/workflows/drift.yml`](examples/workflows/drift.yml) to
 `.github/workflows/drift.yml`.
@@ -97,8 +102,13 @@ See [trust and safety](docs/trust-and-safety.md#an-unauthorized-user-comments-dr
 
 ## Try it with zero permissions
 
+> **Not published to npm yet.** `npm install -g @drift-sh/cli` will work once
+> [`release.yml`](.github/workflows/release.yml) has run against a tag. Until
+> then, clone this repo, run `npm install && npm run build`, and use
+> `node dist/cli.js` in place of `drift` below.
+
 ```bash
-npm install -g drift
+npm install -g @drift-sh/cli
 export GITHUB_TOKEN=ghp_...   # public read access is enough for public repos
 drift analyze
 ```
@@ -106,6 +116,32 @@ drift analyze
 Runs the full pipeline against your working tree and prints the report. Creates no
 branches, no issues, no agent tasks — there is no code path in `analyze` that
 writes anything.
+
+Once you're ready to act on the plan:
+
+```bash
+drift fix   # deterministic fix, then a community recipe (if enabled), then AI — never silently
+drift pr    # push the branch `fix` built and open a pull request
+```
+
+`fix` runs entirely in an isolated git worktree, so your working tree is
+never touched, and it never merges or force-pushes. See `drift fix --help`
+(via `drift --help`) for flags, including `--community-recipes` /
+`--no-community-recipes` for non-interactive/CI use.
+
+---
+
+## VS Code, CLI, or Action — which one?
+
+All three share the same analysis pipeline and the same remediation priority
+(Drift's own deterministic fix, then a community recipe if one applies and is
+enabled, then an AI agent) — they differ in where that runs and who's driving:
+
+| | Best for | Needs |
+|---|---|---|
+| **VS Code extension** | Working a dependency bump interactively, reviewing every edit before it lands | Nothing — no token, no account, for analysis. A Copilot/Claude/etc. session only if a commit needs an agent |
+| **CLI (`drift fix`)** | Scripting a fix locally or in a bespoke CI job, outside GitHub Actions | A GitHub token for reads; a Copilot token only if some commit needs an agent |
+| **GitHub Action** | Unattended, on every dependency bump, with review via a PR or an approval issue | `DRIFT_COPILOT_TOKEN` repo secret (only required once a commit actually needs an agent) |
 
 ---
 
@@ -253,10 +289,16 @@ changes land before mechanical renames, which land before semantic rewrites. Sco
 risk. Evaluates guardrails.
 
 ### 7 · Dispatch
-Creates the branch pinned to the analysed commit, then hands Copilot a single task
-carrying the whole ordered plan — with evidence quoted inline, exact file:line
-locations, and explicit prohibitions against the predictable agent failure modes
-(weakening tests, fixing unrelated code, inventing replacement APIs).
+Creates the branch pinned to the analysed commit, then resolves each commit in
+priority order: Drift's own deterministic codemod first (anchored to the exact
+impact sites localization found, never a whole-file rewrite), a matching
+community recipe second — only when `remediation.communityRecipes` is enabled,
+and never without an explicit choice on the CLI or in the extension — and
+GitHub Copilot last, given a single task carrying the whole remaining plan,
+with evidence quoted inline, exact file:line locations, and explicit
+prohibitions against the predictable agent failure modes (weakening tests,
+fixing unrelated code, inventing replacement APIs). A commit Drift resolved
+itself is never handed to Copilot.
 
 ### 8 · Report
 A pull request body a reviewer can act on: every claim linked to its source, every

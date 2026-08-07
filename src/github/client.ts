@@ -107,6 +107,90 @@ export class GitHubClient {
     }
   }
 
+  /**
+   * Commit a set of file edits directly to a branch via the Git Data API.
+   *
+   * Used only for remediation Drift can prove correct without a model — its
+   * own codemods, and (only when explicitly enabled) a pinned community
+   * recipe's output — so committing without a review step is acceptable the
+   * same way it is in the VS Code extension: the fix, not the act of
+   * committing it, is what carries the trust.
+   *
+   * Blob → tree → commit → ref update, rather than a local `git push`: the
+   * Action's checkout may not have push-capable remote credentials wired up,
+   * while `repoToken` already has API access. Fails closed — any error at any
+   * step aborts without moving the branch ref, so a partial failure can never
+   * leave the branch pointing at a half-written tree.
+   */
+  async commitFiles(
+    repo: RepoContext,
+    branch: string,
+    files: readonly { path: string; content: string }[],
+    message: string,
+  ): Promise<{ sha: string } | null> {
+    if (files.length === 0) return null;
+
+    try {
+      const ref = await this.octokit.git.getRef({
+        owner: repo.owner,
+        repo: repo.repo,
+        ref: `heads/${branch}`,
+      });
+      const parentSha = ref.data.object.sha;
+
+      const parentCommit = await this.octokit.git.getCommit({
+        owner: repo.owner,
+        repo: repo.repo,
+        commit_sha: parentSha,
+      });
+
+      const tree = await Promise.all(
+        files.map(async (file) => {
+          const blob = await this.octokit.git.createBlob({
+            owner: repo.owner,
+            repo: repo.repo,
+            content: Buffer.from(file.content, 'utf8').toString('base64'),
+            encoding: 'base64',
+          });
+          return {
+            path: file.path,
+            mode: '100644' as const,
+            type: 'blob' as const,
+            sha: blob.data.sha,
+          };
+        }),
+      );
+
+      const newTree = await this.octokit.git.createTree({
+        owner: repo.owner,
+        repo: repo.repo,
+        base_tree: parentCommit.data.tree.sha,
+        tree,
+      });
+
+      const commit = await this.octokit.git.createCommit({
+        owner: repo.owner,
+        repo: repo.repo,
+        message,
+        tree: newTree.data.sha,
+        parents: [parentSha],
+      });
+
+      await this.octokit.git.updateRef({
+        owner: repo.owner,
+        repo: repo.repo,
+        ref: `heads/${branch}`,
+        sha: commit.data.sha,
+      });
+
+      this.logger.info(`Committed ${files.length} file(s) to ${branch}: ${commit.data.sha.slice(0, 7)}`);
+      return { sha: commit.data.sha };
+    } catch (err) {
+      this.logger.error(`Could not commit to ${branch}: ${(err as Error).message}`);
+      return null;
+    }
+  }
+
   async createIssue(
     repo: RepoContext,
     params: { title: string; body: string; labels?: string[] },
