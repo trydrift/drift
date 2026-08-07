@@ -382,6 +382,13 @@ describe('buildPlan: community recipe attachment', () => {
     assert.equal(plan.commits.length, 1);
     assert.deepEqual(plan.commits[0]!.recipe, [RECIPE]);
     assert.equal(plan.commits[0]!.codemod, undefined);
+
+    // The commit body is what ends up in the git commit message and the PR
+    // description — provider, recipe name, and exact pinned version must be
+    // visible there, not just in the in-memory candidate.
+    assert.match(plan.commits[0]!.body, /@acme\/upgrade-sdk@1\.2\.3/);
+    assert.match(plan.commits[0]!.body, /codemod\.com/);
+    assert.match(plan.commits[0]!.body, /Codemod\.com/);
   });
 
   test('a built-in codemod on the same commit takes priority — no recipe is attached', () => {

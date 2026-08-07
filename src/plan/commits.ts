@@ -193,7 +193,7 @@ function toCommitUnit(
     ),
     order,
     message: subjectLine(group, files.length),
-    body: commitBody(group, sites, codemod),
+    body: commitBody(group, sites, codemod, recipe),
     breakingChangeIds: group.map((c) => c.id),
     files,
     allowedFiles: files,
@@ -666,6 +666,7 @@ function commitBody(
   group: readonly BreakingChange[],
   sites: readonly ImpactSite[],
   codemod?: CommitUnit['codemod'],
+  recipe?: CommitUnit['recipe'],
 ): string {
   const lines: string[] = [];
 
@@ -685,6 +686,10 @@ function commitBody(
     lines.push(
       `Resolved deterministically by Drift's codemod engine across ${fileCount} file(s) — no model call was made for this commit.`,
     );
+  } else if (recipe && recipe.length > 0) {
+    const unique = [...new Map(recipe.map((r) => [`${r.provider}:${r.name}@${r.version}`, r])).values()];
+    const list = unique.map((r) => `${r.name}@${r.version} (${r.provider}, published by ${r.publisher})`).join(', ');
+    lines.push(`Community recipe available: ${list}. Not applied without an explicit choice — see ${unique[0]!.source}.`);
   } else {
     lines.push(
       'Identified by Drift from upstream evidence; see the pull request',

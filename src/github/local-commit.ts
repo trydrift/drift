@@ -58,7 +58,7 @@ export async function applyDeterministicRemediation(options: {
         repo,
         plan.branchName,
         resolved.edits,
-        `${commit.message}\n\n${commit.body}`,
+        `${commit.message}\n\n${commit.body}\n\n${resolved.message}`,
       );
 
       if (committed) {

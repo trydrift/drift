@@ -277,6 +277,12 @@ function renderCommitPlan(plan: RemediationPlan): string {
       lines.push(
         `**Resolved deterministically** by Drift's codemod engine (${renames}) — no model call was needed for this commit.`,
       );
+    } else if (commit.recipe?.length) {
+      const recipes = [...new Map(commit.recipe.map((r) => [`${r.provider}:${r.name}@${r.version}`, r])).values()];
+      const list = recipes
+        .map((r) => `[\`${r.name}@${r.version}\`](${r.source}) from ${r.publisher} (${r.provider})`)
+        .join(', ');
+      lines.push(`**Community recipe available**: ${list} — ${recipes[0]!.migration}`);
     }
     lines.push('');
   }

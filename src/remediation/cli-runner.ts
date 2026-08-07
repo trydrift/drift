@@ -196,11 +196,13 @@ async function applyRecipeCommit(
 ): Promise<boolean> {
   const allowed = new Set([...commit.allowedFiles, ...commit.files]);
   const touched = new Set<string>();
+  const messages: string[] = [];
 
   for (const recipe of commit.recipe ?? []) {
     const result = await executeCommunityRecipe(recipe, worktree, { exec, logger });
     if (result.status === 'failed') return false;
     for (const file of result.changedFiles) touched.add(file);
+    if (result.status === 'applied') messages.push(result.message);
   }
 
   if (touched.size === 0) return false;
@@ -212,7 +214,12 @@ async function applyRecipeCommit(
     return false;
   }
 
-  return commitFiles(worktree, [...touched], `${commit.message}\n\n${commit.body}`, exec);
+  return commitFiles(
+    worktree,
+    [...touched],
+    `${commit.message}\n\n${commit.body}\n\n${messages.join(' ')}`,
+    exec,
+  );
 }
 
 async function commitFiles(worktree: string, files: readonly string[], message: string, exec: Exec): Promise<boolean> {
