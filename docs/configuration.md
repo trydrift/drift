@@ -161,6 +161,13 @@ No observed difference is **not** proof of behavioural compatibility. It only
 raises verification confidence for the tested contract and generated input
 domain, and the report records the limitations.
 
+**Known limitation (v0.1):** the worker process this spawns is located via
+`import.meta.url`, which esbuild's CJS output leaves empty. That resolution
+works in the published CLI (its `dist/` build keeps ES modules), but breaks
+if `enabled: true` is set for the GitHub Action or the VS Code extension,
+both of which ship as single-file bundles. Leave this disabled outside the
+CLI until that is fixed.
+
 ## Telemetry
 
 Telemetry is off by default. See [telemetry.md](telemetry.md) for the allow-list,

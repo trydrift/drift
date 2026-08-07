@@ -171,7 +171,7 @@ The composer writes to `drift.session.mode` and `drift.session.permission` (per 
 
 How much Drift analyses is a settings question, never an effort question: `drift.analysis.includeDev` and `drift.analysis.includePatch` decide what a scan covers, and they mean the same thing at every effort level.
 
-If your repo has a `.github/drift.yml` (used by the [Drift GitHub Action](https://github.com/RodolpheKouyoumdjian/Drift)), the extension reads it too. Your VS Code settings layer on top — the file is the team's policy, settings are your local preference.
+If your repo has a `.github/drift.yml` (used by the [Drift GitHub Action](https://github.com/drift-sh/drift)), the extension reads it too. Your VS Code settings layer on top — the file is the team's policy, settings are your local preference.
 
 ## Supported ecosystems
 
@@ -181,7 +181,7 @@ Computed API diffing is npm-only today; the others rely on changelog and release
 
 ## Also available as a GitHub Action
 
-Same engine, running in CI on every dependency bump, filing a PR. See the [repository](https://github.com/RodolpheKouyoumdjian/Drift).
+Same engine, running in CI on every dependency bump, filing a PR. See the [repository](https://github.com/drift-sh/drift).
 
 ## Known limitations
 
