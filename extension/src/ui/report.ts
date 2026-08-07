@@ -17,6 +17,15 @@ export class DriftReportPanel {
 
   private readonly panel: vscode.WebviewPanel;
   private readonly disposables: vscode.Disposable[] = [];
+  /**
+   * Which candidate's plan (if any) this panel is focused on.
+   *
+   * Set only by an explicit `show()` call, never by the `state.onDidChange`
+   * re-render — a state change (a re-analysis finishing, a fresh scan) is not
+   * a reason to snap the panel back to the global plan out from under someone
+   * looking at a specific package's report.
+   */
+  private focus: FocusTarget | undefined;
 
   static show(state: DriftState, focus?: string | FocusTarget): void {
     const column = vscode.window.activeTextEditor?.viewColumn ?? vscode.ViewColumn.One;
@@ -24,7 +33,7 @@ export class DriftReportPanel {
 
     if (DriftReportPanel.current) {
       DriftReportPanel.current.panel.reveal(column, true);
-      DriftReportPanel.current.render(target);
+      DriftReportPanel.current.setFocus(target);
       return;
     }
 
@@ -36,11 +45,17 @@ export class DriftReportPanel {
     );
 
     DriftReportPanel.current = new DriftReportPanel(panel, state);
-    DriftReportPanel.current.render(target);
+    DriftReportPanel.current.setFocus(target);
   }
 
   static refresh(): void {
     DriftReportPanel.current?.render();
+  }
+
+  /** Test-only: drop the singleton so tests don't leak a panel into one another. */
+  static __resetForTest(): void {
+    DriftReportPanel.current?.dispose();
+    DriftReportPanel.current = undefined;
   }
 
   private constructor(
@@ -54,6 +69,11 @@ export class DriftReportPanel {
       state.onDidChange(() => this.render()),
       panel.webview.onDidReceiveMessage((message: IncomingMessage) => this.handle(message)),
     );
+  }
+
+  private setFocus(focus: FocusTarget | undefined): void {
+    this.focus = focus;
+    this.render();
   }
 
   private async handle(message: IncomingMessage): Promise<void> {
@@ -84,8 +104,8 @@ export class DriftReportPanel {
     }
   }
 
-  private render(focus?: FocusTarget): void {
-    this.panel.webview.html = renderHtml(this.state, this.panel.webview, focus);
+  private render(): void {
+    this.panel.webview.html = renderHtml(this.state, this.panel.webview, this.focus);
   }
 
   private dispose(): void {
@@ -104,6 +124,16 @@ type IncomingMessage =
 interface FocusTarget {
   changeId?: string;
   dependency?: string;
+  /**
+   * The dependency-scan candidate this report was opened from, when any.
+   *
+   * `UpgradeCandidate.id` is unique per repo root and workspace member, unlike
+   * `dependency` — two candidates can share a package name across workspace
+   * members or multiple open repos, and only the id tells them apart. This is
+   * what selects *which* plan the panel shows; `dependency` is only used to
+   * scroll to and highlight a specific breaking-change card within it.
+   */
+  candidateId?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -112,7 +142,7 @@ interface FocusTarget {
 
 function renderHtml(state: DriftState, webview: vscode.Webview, focus?: FocusTarget): string {
   const nonce = makeNonce();
-  const plan = state.plan;
+  const plan = resolvePlan(state, focus);
 
   const body = plan
     ? plan.breakingChanges.length > 0
@@ -135,6 +165,25 @@ ${body}
 <script nonce="${nonce}">${SCRIPT}</script>
 </body>
 </html>`;
+}
+
+/**
+ * Which plan the panel shows.
+ *
+ * A candidate opened from the dependency tree carries its own `plan` — the
+ * report for that specific package — which can disagree with `state.plan`,
+ * the last global analysis. Selecting by `candidateId` rather than by
+ * dependency name is what keeps two candidates with the same package name
+ * (different workspace members, different open repos) from colliding.
+ * Falling back to `state.plan` is what keeps `drift.showReport`'s ordinary,
+ * no-argument invocation showing the global analysis it always has.
+ */
+function resolvePlan(state: DriftState, focus?: FocusTarget): RemediationPlan | null {
+  if (focus?.candidateId) {
+    const candidate = state.candidates.find((c) => c.id === focus.candidateId);
+    if (candidate?.plan) return candidate.plan;
+  }
+  return state.plan;
 }
 
 function renderEmpty(state: DriftState): string {
@@ -847,7 +896,8 @@ if (focused) {
  * webview panel, so the report's markup and styling are covered by tests
  * rather than only by eye.
  */
-export function __renderForTest(state: DriftState): string {
+export function __renderForTest(state: DriftState, focus?: string | { changeId?: string; dependency?: string; candidateId?: string }): string {
   const fakeWebview = { cspSource: 'vscode-webview://test' } as unknown as vscode.Webview;
-  return renderHtml(state, fakeWebview);
+  const target = typeof focus === 'string' ? { changeId: focus } : focus;
+  return renderHtml(state, fakeWebview, target);
 }

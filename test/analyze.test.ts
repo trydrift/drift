@@ -341,6 +341,34 @@ describe('analysis', () => {
     assert.ok(result[0]?.symbols.includes('createClient'));
   });
 
+  test('a constant-value-changed finding gets constant-specific remediation, not signature wording', async () => {
+    const evidence = [
+      {
+        id: 'ev_const',
+        source: 'type-surface-diff' as const,
+        dependency: 'acme-sdk',
+        title: 'surface diff',
+        content: 'the constant changed',
+        weight: 1,
+        findings: [
+          {
+            code: 'constant-value-changed',
+            symbol: 'linux.WebviewGpuPolicyAlways',
+            detail: 'The constant `linux.WebviewGpuPolicyAlways` changed value.',
+            before: 'const WebviewGpuPolicyAlways WebviewGpuPolicy = 0',
+            after: 'const WebviewGpuPolicyAlways WebviewGpuPolicy = 1',
+          },
+        ],
+      },
+    ];
+
+    const result = await analyze([change], evidence, { config: DEFAULT_CONFIG, logger });
+    assert.equal(result.length, 1);
+    assert.equal(result[0]?.kind, 'signature-change');
+    assert.doesNotMatch(result[0]!.remediation, /argument order|argument count|positional arguments/);
+    assert.match(result[0]!.remediation, /concrete value|hard-coded|persisted|zero/i);
+  });
+
   test('every breaking change carries at least one citation', async () => {
     const evidence = [
       {
@@ -427,8 +455,34 @@ describe('search symbols derived from a computed finding', () => {
     return changes[0]!.symbols.sort();
   };
 
-  test('a two-part member yields the qualified name, the owner, and the member', async () => {
-    assert.deepEqual(await symbolsFor('Client.request'), ['Client', 'Client.request', 'request']);
+  test('a two-part member yields the qualified name and the bare member, never the bare owner', async () => {
+    // The owner half of a two-part symbol is indistinguishable from a bare
+    // package/namespace qualifier (`linux.WebviewGpuPolicyAlways` has the same
+    // shape as `Client.request`), so it must never become a search symbol on
+    // its own — see the `linux` case below.
+    assert.deepEqual(await symbolsFor('Client.request'), ['Client.request', 'request']);
+  });
+
+  test('a two-part Go constant does not match a bare package-qualified line', async () => {
+    const symbols = await symbolsFor('linux.WebviewGpuPolicyAlways');
+    assert.equal(symbols.includes('linux'), false);
+    assert.deepEqual(symbols, ['WebviewGpuPolicyAlways', 'linux.WebviewGpuPolicyAlways']);
+  });
+
+  test('importing the linux package alone is not usage of one of its constants', async () => {
+    const symbols = await symbolsFor('linux.WebviewGpuPolicyAlways');
+    const importLine = '"github.com/wailsapp/wails/v2/pkg/options/linux"';
+    const structLine = 'Linux: &linux.Options{';
+    for (const symbol of symbols) {
+      assert.equal(importLine.includes(symbol), false, `"${symbol}" should not match the bare import line`);
+      assert.equal(structLine.includes(symbol), false, `"${symbol}" should not match unrelated use of the package`);
+    }
+  });
+
+  test('an actual use of the two-part constant is still localized', async () => {
+    const symbols = await symbolsFor('linux.WebviewGpuPolicyAlways');
+    const usageLine = 'GpuPolicy: linux.WebviewGpuPolicyAlways,';
+    assert.ok(symbols.some((symbol) => usageLine.includes(symbol)));
   });
 
   test('a package qualifier is never searched on its own', async () => {

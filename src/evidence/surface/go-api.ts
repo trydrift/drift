@@ -135,6 +135,7 @@ const PRIORITY: Record<string, number> = {
   'member-removed': 3,
   'member-now-required': 4,
   'signature-changed': 5,
+  'constant-value-changed': 6,
 };
 
 export interface GoApiDiff {
@@ -265,7 +266,7 @@ export function diffGoApi(before: GoApi, after: GoApi): GoApiDiff {
     for (const entry of constValueChanges) {
       const [label, detail] = splitOnce(entry, ': ');
       changes.push({
-        kind: 'signature-changed',
+        kind: 'constant-value-changed',
         symbol: label,
         detail: `The constant \`${label}\` changed value.`,
         before: splitOnce(detail, ' → ')[0],
@@ -274,7 +275,7 @@ export function diffGoApi(before: GoApi, after: GoApi): GoApiDiff {
     }
   } else if (constValueChanges.length > CONST_VALUE_FLOOD) {
     changes.push({
-      kind: 'signature-changed',
+      kind: 'constant-value-changed',
       symbol: `${before.module} constants`,
       detail: `${constValueChanges.length} exported constants changed value. This is usually a regenerated platform header rather than a deliberate API change, but code that compares against a literal copy of one of these values will now disagree.`,
       after: constValueChanges.slice(0, 10).join('; '),

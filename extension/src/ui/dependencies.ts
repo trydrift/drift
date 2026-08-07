@@ -162,7 +162,7 @@ export async function openDependency(state: DriftState, id: string): Promise<voi
   if (!candidate) return;
 
   if (candidate.plan) {
-    DriftReportPanel.show(state, { dependency: candidate.name });
+    DriftReportPanel.show(state, { candidateId: candidate.id, dependency: candidate.name });
     return;
   }
 

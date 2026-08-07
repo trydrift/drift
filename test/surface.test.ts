@@ -239,6 +239,25 @@ describe('go module API extraction', () => {
     assert.deepEqual(additions, [{ kind: 'package-added', symbol: 'example.com/client/tls' }]);
   });
 
+  test('a single changed constant value is its own finding kind, not a signature change', () => {
+    const before = parse(dump());
+    const after = parse(
+      dump({
+        Symbols: JSON.parse(dump()).Symbols.map((s: Record<string, unknown>) =>
+          s.Key === 'example.com/client.DefaultTimeout'
+            ? { ...s, Signatures: ['const DefaultTimeout = 60'] }
+            : s,
+        ),
+      }),
+    );
+    const { changes } = diffGoApi(before, after);
+    assert.deepEqual(
+      changes.map((c) => [c.kind, c.symbol]),
+      [['constant-value-changed', 'client.DefaultTimeout']],
+    );
+    assert.match(changes[0]!.detail, /changed value/);
+  });
+
   test('a flood of changed constant values collapses into one counted finding', () => {
     const constants = Array.from({ length: 40 }, (_, i) => ({
       Key: `example.com/client.C${i}`,
@@ -258,6 +277,7 @@ describe('go module API extraction', () => {
 
     const { changes } = diffGoApi(before, after);
     assert.equal(changes.length, 1);
+    assert.equal(changes[0]!.kind, 'constant-value-changed');
     assert.match(changes[0]!.detail, /40 exported constants changed value/);
   });
 

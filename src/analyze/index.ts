@@ -128,9 +128,15 @@ function fromComputedEvidence(record: Evidence): BreakingChange[] {
 /**
  * Derive searchable symbols from a finding.
  *
- * For a member change like `Client.request`, both the qualified and bare names
- * are useful: the qualified form is precise, the bare form catches destructured
- * and aliased usage that the qualified form would miss.
+ * For a member change like `Client.request`, the bare member name (`request`)
+ * is useful alongside the qualified form: it catches destructured and aliased
+ * usage the qualified form would miss. The leading component never becomes a
+ * search symbol on its own, because a two-part symbol's first part cannot be
+ * told apart from a bare namespace/package — `linux.WebviewGpuPolicyAlways`
+ * has the identical shape as `Client.request`, and `linux` alone matched every
+ * line that merely imported the package, so a repository whose only use of the
+ * package was unrelated (`&linux.Options{}`, say) was reported as having two
+ * sites affected by a constant it never referenced.
  *
  * Three or more parts means the leading one is a namespace, not an owner —
  * `unix.NexthopGrp.Resvd1` is a field of `NexthopGrp` in package `unix`. Adding
@@ -151,10 +157,7 @@ function symbolsFromFinding(finding: StructuredFinding): string[] {
     const last = parts[parts.length - 1];
     if (last) symbols.add(last);
 
-    if (parts.length === 2) {
-      const owner = parts[0];
-      if (owner) symbols.add(owner);
-    } else {
+    if (parts.length > 2) {
       // `unix.NexthopGrp.Resvd1` → also search `NexthopGrp.Resvd1`, which is how
       // the field is written wherever the package is imported under an alias.
       const owner = parts[parts.length - 2];

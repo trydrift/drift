@@ -1,8 +1,11 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
+import * as vscode from 'vscode';
 import { DriftState } from '../src/state.js';
-import { __renderForTest } from '../src/ui/report.js';
+import { DriftReportPanel, __renderForTest } from '../src/ui/report.js';
+import { openDependency } from '../src/ui/dependencies.js';
 import type { RemediationPlan } from '../../src/types.js';
+import type { UpgradeCandidate } from '../src/upgrades.js';
 
 function plan(over: Partial<RemediationPlan> = {}): RemediationPlan {
   return {
@@ -30,6 +33,42 @@ function plan(over: Partial<RemediationPlan> = {}): RemediationPlan {
   };
 }
 
+/** A clean plan: some dependency changes were checked, none are breaking. */
+function cleanPlan(over: Partial<RemediationPlan> = {}): RemediationPlan {
+  return plan({
+    breakingChanges: [],
+    impactSites: [],
+    risk: 'none',
+    ...over,
+  });
+}
+
+function candidate(over: Partial<UpgradeCandidate> = {}): UpgradeCandidate {
+  return {
+    id: `${over.name ?? 'wails'}@2.12.0->2.13.0`,
+    name: 'wails',
+    kind: 'runtime',
+    ecosystem: 'go',
+    packageManager: 'go',
+    manifestPath: 'go.mod',
+    current: '2.12.0',
+    range: '2.12.0',
+    selected: '2.13.0',
+    latest: '2.13.0',
+    versions: ['2.13.0'],
+    status: 'ready',
+    evidenceCount: 1,
+    breakingCount: 1,
+    impactCount: 1,
+    impactFiles: 1,
+    risk: 'high',
+    summary: 'Breaking change found.',
+    gaps: [],
+    toolRequests: [],
+    ...over,
+  };
+}
+
 describe('report rendering', () => {
   test('renders the affected-file count from DriftState.plan', () => {
     const state = new DriftState();
@@ -45,5 +84,98 @@ describe('report rendering', () => {
     const html = __renderForTest(state);
     assert.doesNotMatch(html, /<script>alert/);
     assert.match(html, /&lt;script&gt;alert/);
+  });
+
+  test('a candidateId focus renders that candidate\'s plan, not the global one', () => {
+    const state = new DriftState();
+    state.set({ kind: 'clean', summary: 'nothing breaking', at: Date.now(), plan: cleanPlan() });
+    state.setCandidates([candidate({ plan: plan() })]);
+
+    const html = __renderForTest(state, { candidateId: 'wails@2.12.0->2.13.0' });
+    assert.doesNotMatch(html, /No breaking changes found/);
+    assert.match(html, /1[\s\S]*file affected here/);
+  });
+
+  test('without a candidateId focus, the global plan is used', () => {
+    const state = new DriftState();
+    state.set({ kind: 'clean', summary: 'nothing breaking', at: Date.now(), plan: cleanPlan() });
+    state.setCandidates([candidate({ plan: plan() })]);
+
+    const html = __renderForTest(state);
+    assert.match(html, /No breaking changes found/);
+  });
+
+  test('two candidates sharing a dependency name stay distinguishable by id', () => {
+    const state = new DriftState();
+    state.set({ kind: 'clean', summary: 'nothing breaking', at: Date.now(), plan: cleanPlan() });
+    state.setCandidates([
+      candidate({
+        id: 'wails@repo-a',
+        repoRoot: '/repo-a',
+        plan: plan({ id: 'plan-a', changes: [{ name: 'wails', ecosystem: 'go', from: '2.12.0', to: '2.13.0', kind: 'runtime', bump: 'minor', manifestPath: 'go.mod' }] }),
+      }),
+      candidate({
+        id: 'wails@repo-b',
+        repoRoot: '/repo-b',
+        plan: cleanPlan({ id: 'plan-b', changes: [{ name: 'wails', ecosystem: 'go', from: '2.12.0', to: '2.13.0', kind: 'runtime', bump: 'minor', manifestPath: 'go.mod' }] }),
+      }),
+    ]);
+
+    const affected = __renderForTest(state, { candidateId: 'wails@repo-a' });
+    assert.doesNotMatch(affected, /No breaking changes found/);
+
+    const clean = __renderForTest(state, { candidateId: 'wails@repo-b' });
+    assert.match(clean, /No breaking changes found/);
+  });
+});
+
+describe('report panel focus (end-to-end through openDependency)', () => {
+  test('clicking a candidate opens its own plan, not the global one', async () => {
+    DriftReportPanel.__resetForTest();
+    const state = new DriftState();
+    state.set({ kind: 'clean', summary: 'nothing breaking', at: Date.now(), plan: cleanPlan() });
+    const c = candidate({ plan: plan() });
+    state.setCandidates([c]);
+
+    await openDependency(state, c.id);
+
+    const html = (vscode.window as unknown as { __lastWebviewPanel?: { webview: { html: string } } })
+      .__lastWebviewPanel!.webview.html;
+    assert.doesNotMatch(html, /No breaking changes found/);
+    assert.match(html, /1[\s\S]*file affected here/);
+    DriftReportPanel.__resetForTest();
+  });
+
+  test('the selected candidate survives a state.onDidChange re-render', async () => {
+    DriftReportPanel.__resetForTest();
+    const state = new DriftState();
+    state.set({ kind: 'clean', summary: 'nothing breaking', at: Date.now(), plan: cleanPlan() });
+    const c = candidate({ plan: plan() });
+    state.setCandidates([c]);
+
+    await openDependency(state, c.id);
+
+    // Something unrelated changes state (a fresh scan finishing, say) and
+    // fires onDidChange. The panel must stay on the candidate it was opened for.
+    state.set({ kind: 'clean', summary: 'rescanned', at: Date.now(), plan: cleanPlan() });
+
+    const html = (vscode.window as unknown as { __lastWebviewPanel?: { webview: { html: string } } })
+      .__lastWebviewPanel!.webview.html;
+    assert.doesNotMatch(html, /No breaking changes found/);
+    assert.match(html, /1[\s\S]*file affected here/);
+    DriftReportPanel.__resetForTest();
+  });
+
+  test('drift.showReport with no candidate still shows the global plan', async () => {
+    DriftReportPanel.__resetForTest();
+    const state = new DriftState();
+    state.set({ kind: 'findings', plan: plan(), at: Date.now() });
+
+    DriftReportPanel.show(state);
+
+    const html = (vscode.window as unknown as { __lastWebviewPanel?: { webview: { html: string } } })
+      .__lastWebviewPanel!.webview.html;
+    assert.match(html, /1[\s\S]*file affected here/);
+    DriftReportPanel.__resetForTest();
   });
 });

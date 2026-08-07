@@ -196,6 +196,8 @@ export const workspace = {
 
 export const window = {
   activeTextEditor: undefined as unknown,
+  /** Test-only: set by `createWebviewPanel` so tests can read what it produced. */
+  __lastWebviewPanel: undefined as { webview: { html: string } } | undefined,
   showInformationMessage: async () => undefined,
   showWarningMessage: async () => undefined,
   showErrorMessage: async () => undefined,
@@ -222,8 +224,34 @@ export const window = {
     selection: undefined as unknown,
     revealRange: () => undefined,
   }),
-  createWebviewPanel: () => {
-    throw new Error('not implemented in the stub');
+  createWebviewPanel: (_viewType: string, _title: string, _showOptions: unknown, _options: unknown) => {
+    let disposeListener: (() => void) | undefined;
+    const messageListeners: ((message: unknown) => void)[] = [];
+    const panel = {
+      webview: {
+        cspSource: 'vscode-webview://test',
+        html: '',
+        onDidReceiveMessage: (listener: (message: unknown) => void) => {
+          messageListeners.push(listener);
+          return { dispose: () => (messageListeners.length = 0) };
+        },
+        postMessage: async () => true,
+        /** Test-only: simulate a message the webview's own script sent back. */
+        __receive: (message: unknown) => {
+          for (const l of messageListeners) l(message);
+        },
+      },
+      reveal: () => undefined,
+      onDidDispose: (listener: () => void) => {
+        disposeListener = listener;
+        return { dispose: () => (disposeListener = undefined) };
+      },
+      dispose: () => disposeListener?.(),
+    };
+    // Test-only: the extension keeps no external handle on the panel it creates,
+    // so tests that need to inspect rendered output read it from here.
+    window.__lastWebviewPanel = panel;
+    return panel;
   },
   withProgress: async <T>(_options: unknown, task: (p: unknown, t: unknown) => Promise<T>) =>
     task({ report: () => undefined }, { isCancellationRequested: false, onCancellationRequested: () => ({ dispose: () => undefined }) }),

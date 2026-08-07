@@ -191,6 +191,15 @@ const BY_FINDING_CODE: Record<string, Omit<ChangeTaxonomy, 'origin'>> = {
     scope: 'package',
     visibility: ['direct'],
   },
+  // Compiles either way — the name and type are untouched, only the value
+  // underneath moved — so it belongs with the other behaviour-only class
+  // rather than with the compile-time type-contract findings above.
+  'constant-value-changed': {
+    nature: 'behaviour',
+    detectability: ['static-semantic', 'runtime-only'],
+    scope: 'symbol',
+    visibility: ['direct'],
+  },
 
   /* --- OpenAPI ----------------------------------------------------------- */
   // Endpoints have no import edge and no compile step, so nothing local proves

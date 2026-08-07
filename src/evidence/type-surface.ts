@@ -59,7 +59,17 @@ export type SurfaceChangeKind =
    * one line per importing file, and a reader shown the hundreds of symbol
    * removals underneath it instead will reach for hundreds of wrong ones.
    */
-  | 'package-removed';
+  | 'package-removed'
+  /**
+   * A constant's assigned value changed; its declared type did not.
+   *
+   * Distinct from `signature-changed` on purpose: "update argument order and
+   * count" is nonsense remediation for a value that takes no arguments, and a
+   * named constant changing value does not by itself mean call sites need
+   * editing — only code that depends on the concrete number, zero value, or
+   * serialised form does.
+   */
+  | 'constant-value-changed';
 
 export interface SurfaceChange {
   kind: SurfaceChangeKind;

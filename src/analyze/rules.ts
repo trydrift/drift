@@ -19,6 +19,11 @@ export function kindForFindingCode(code: string): BreakingChangeKind {
       return 'removed-export';
     case 'signature-changed':
       return 'signature-change';
+    // A constant's value changing is not a callable's contract changing —
+    // grouped with signature-change for scoring and commit planning, but see
+    // `remediationForFinding` for why it gets its own remediation text.
+    case 'constant-value-changed':
+      return 'signature-change';
     case 'kind-changed':
       return 'type-change';
     case 'member-now-required':
@@ -61,6 +66,13 @@ export function remediationForFinding(finding: StructuredFinding, dependency: st
       return `The member \`${symbol}\` no longer exists in \`${dependency}\`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.`;
     case 'signature-changed':
       return `The signature of \`${symbol}\` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: ${finding.before ?? '(unknown)'}\n  after:  ${finding.after ?? '(unknown)'}`;
+    case 'constant-value-changed':
+      // Not a call site to rewrite: the constant's name and type are
+      // unchanged, so code that only ever refers to it by name keeps
+      // compiling and behaving correctly. What can break silently is code
+      // that depends on the concrete number underneath — a hard-coded copy of
+      // the old value, a serialized/persisted form, or a check against zero.
+      return `\`${symbol}\` changed underlying value.\n  before: ${finding.before ?? '(unknown)'}\n  after:  ${finding.after ?? '(unknown)'}\nThis does not necessarily require a source change — most code that only refers to \`${symbol}\` by name keeps working. Review code in this repository that depends on the concrete value: a hard-coded copy of the old number, a value persisted or sent over the wire, or a comparison against zero or another literal.`;
     case 'kind-changed':
       return `\`${symbol}\` changed form (for example class to function, or interface to type alias). Update declarations, \`new\` expressions, and type positions accordingly.`;
     case 'entry-point-moved':

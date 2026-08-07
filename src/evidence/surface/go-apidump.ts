@@ -212,12 +212,33 @@ func (c *collector) collect(fset *token.FileSet, file *ast.File, importPath, pkg
 		case *ast.FuncDecl:
 			c.collectFunc(fset, d, importPath, pkgName, plat)
 		case *ast.GenDecl:
-			for _, spec := range d.Specs {
+			// A ConstSpec that writes neither a type nor a value inherits both
+			// from the most recent spec that did — the mechanism iota blocks
+			// rely on. Tracking that inheritance here is what lets
+			//   const ( A Foo = iota; B; C )
+			// and the fully spelled-out
+			//   const ( A Foo = iota; B Foo = iota; C Foo = iota )
+			// render identical signatures: they declare the same API. Without
+			// it, B and C read as bare untyped declarations and a harmless
+			// rewrite between the two styles looks like a signature change.
+			var inheritedType ast.Expr
+			var inheritedValues []ast.Expr
+			for i, spec := range d.Specs {
 				switch s := spec.(type) {
 				case *ast.TypeSpec:
 					c.collectType(fset, s, importPath, pkgName, plat)
 				case *ast.ValueSpec:
-					c.collectValue(fset, d.Tok.String(), s, importPath, pkgName, plat)
+					if d.Tok == token.CONST {
+						if s.Type != nil {
+							inheritedType = s.Type
+						}
+						if len(s.Values) > 0 {
+							inheritedValues = s.Values
+						}
+						c.collectValue(fset, d.Tok.String(), s, importPath, pkgName, plat, inheritedType, inheritedValues, i)
+					} else {
+						c.collectValue(fset, d.Tok.String(), s, importPath, pkgName, plat, nil, nil, i)
+					}
 				}
 			}
 		}
@@ -337,7 +358,24 @@ func (c *collector) collectFields(
 	}
 }
 
-func (c *collector) collectValue(fset *token.FileSet, keyword string, spec *ast.ValueSpec, importPath, pkgName, plat string) {
+func (c *collector) collectValue(
+	fset *token.FileSet,
+	keyword string,
+	spec *ast.ValueSpec,
+	importPath, pkgName, plat string,
+	inheritedType ast.Expr,
+	inheritedValues []ast.Expr,
+	iotaPos int,
+) {
+	declType := spec.Type
+	if declType == nil {
+		declType = inheritedType
+	}
+	values := spec.Values
+	if len(values) == 0 {
+		values = inheritedValues
+	}
+
 	for i, ident := range spec.Names {
 		if !ast.IsExported(ident.Name) {
 			continue
@@ -345,23 +383,81 @@ func (c *collector) collectValue(fset *token.FileSet, keyword string, spec *ast.
 		s := c.entry(importPath+"."+ident.Name, ident.Name, importPath, pkgName, "variable", plat)
 
 		parts := []string{keyword, ident.Name}
-		if spec.Type != nil {
+		if declType != nil {
 			// var X86 struct { ... } is a common shape for feature flags, and
 			// printing the body whole made every added flag read as a change to
 			// the variable's type. The fields are recorded as members instead,
 			// where an addition is an addition and a removal is a removal.
-			parts = append(parts, shape(fset, spec.Type))
-			if str, ok := spec.Type.(*ast.StructType); ok {
-				c.collectFields(fset, str.Fields, importPath, pkgName, plat, ident.Name, s, false)
+			parts = append(parts, shape(fset, declType))
+			// Field collection is keyed to the spec that actually wrote the
+			// type, not one that inherited it — a struct-typed const group
+			// does not exist in Go, but nothing enforces that here.
+			if spec.Type != nil {
+				if str, ok := declType.(*ast.StructType); ok {
+					c.collectFields(fset, str.Fields, importPath, pkgName, plat, ident.Name, s, false)
+				}
 			}
 		}
 		// A constant's value is part of its contract in a way a variable's
 		// initialiser is not, so only constants carry theirs into the signature.
-		if keyword == "const" && i < len(spec.Values) {
-			parts = append(parts, "=", render(fset, spec.Values[i]))
+		if keyword == "const" && i < len(values) {
+			parts = append(parts, "=", renderConstValue(fset, values[i], iotaPos))
 		}
 		s.Signatures = addUnique(s.Signatures, strings.Join(parts, " "))
 	}
+}
+
+// renderConstValue prints a constant's value expression, substituting the
+// bare identifier iota with the numeric position of this ConstSpec within
+// its group.
+//
+// iota's printed text is identical at every position in a block — it is the
+// same expression node, textually, whether spelled out or inherited — so
+// leaving it as iota would make an actual reordering (which changes every
+// affected constant's real value) invisible to the diff. Substituting the
+// position makes a real reordering produce a real text change while a purely
+// stylistic rewrite between explicit and implicit repetition — same position,
+// same expression — still renders identically.
+func renderConstValue(fset *token.FileSet, expr ast.Expr, iotaPos int) string {
+	return replaceIdentifier(render(fset, expr), "iota", fmt.Sprintf("%d", iotaPos))
+}
+
+// replaceIdentifier substitutes a bare identifier, never a substring that
+// merely contains it — a package could plausibly declare its own iotaFoo.
+//
+// Not implemented with the regexp package's word-boundary escape: this file
+// is written out as a Go source string from inside a JS template literal,
+// where a backslash escape is interpreted twice — once by the JS template
+// literal and once by the Go string it produces — and getting that
+// double-escaping right is a trap for the next edit, not just this one.
+func replaceIdentifier(text, name, value string) string {
+	var out strings.Builder
+	for {
+		idx := strings.Index(text, name)
+		if idx < 0 {
+			out.WriteString(text)
+			return out.String()
+		}
+		before := byte(0)
+		if idx > 0 {
+			before = text[idx-1]
+		}
+		after := byte(0)
+		if idx+len(name) < len(text) {
+			after = text[idx+len(name)]
+		}
+		out.WriteString(text[:idx])
+		if isIdentByte(before) || isIdentByte(after) {
+			out.WriteString(name)
+		} else {
+			out.WriteString(value)
+		}
+		text = text[idx+len(name):]
+	}
+}
+
+func isIdentByte(b byte) bool {
+	return b == '_' || (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9')
 }
 
 // shape renders a type declaration's right-hand side.
