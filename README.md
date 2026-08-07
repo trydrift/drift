@@ -102,13 +102,13 @@ See [trust and safety](docs/trust-and-safety.md#an-unauthorized-user-comments-dr
 
 ## Try it with zero permissions
 
-> **Not published to npm yet.** `npm install -g @drift-sh/cli` will work once
+> **Not published to npm yet.** `npm install -g @usedrift/cli` will work once
 > [`release.yml`](.github/workflows/release.yml) has run against a tag. Until
 > then, clone this repo, run `npm install && npm run build`, and use
 > `node dist/cli.js` in place of `drift` below.
 
 ```bash
-npm install -g @drift-sh/cli
+npm install -g @usedrift/cli
 export GITHUB_TOKEN=ghp_...   # public read access is enough for public repos
 drift analyze
 ```

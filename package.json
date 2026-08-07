@@ -1,5 +1,5 @@
 {
-  "name": "@drift-sh/cli",
+  "name": "@usedrift/cli",
   "version": "0.1.0",
   "description": "Drift detects dependency API changes, proves which ones break your code, and fixes them deterministically, via a community recipe, or with an AI agent, in a reviewable, atomically-committed pull request.",
   "license": "SEE LICENSE IN LICENSE",

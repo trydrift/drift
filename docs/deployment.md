@@ -99,7 +99,7 @@ per-package configs.
 > `drift` below.
 
 ```bash
-npm install -g @drift-sh/cli
+npm install -g @usedrift/cli
 export GITHUB_TOKEN=ghp_...
 drift analyze
 ```

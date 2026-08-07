@@ -7,7 +7,7 @@ name: Release
 # resolves to the newest `v0.x.y`.
 #
 # Requires two repository secrets this workflow does not and cannot create:
-#   NPM_TOKEN   — an npm automation token with publish rights on @drift-sh/cli
+#   NPM_TOKEN   — an npm automation token with publish rights on @usedrift/cli
 #   VSCE_PAT    — a VS Code Marketplace personal access token for the
 #                 `drift-sh` publisher
 # Nothing here fabricates or assumes those exist; the publish steps simply
