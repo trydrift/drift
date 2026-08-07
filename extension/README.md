@@ -195,4 +195,4 @@ Stated plainly, because a tool that hides these hasn't earned trust:
 
 ## License
 
-MIT
+PolyForm Shield 1.0.0

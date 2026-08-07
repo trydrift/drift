@@ -388,4 +388,4 @@ rather than hidden — including the ones we'd rather not advertise.
 
 ## License
 
-MIT
+PolyForm Shield 1.0.0
