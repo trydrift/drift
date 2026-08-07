@@ -190,7 +190,7 @@ export function pullRequestBody(candidates: readonly UpgradeCandidate[]): string
     'Evidence comes from the packages’ own changelogs, release notes, registry metadata and published type surfaces. ' +
       'Impact is the result of searching this repository for the APIs that actually changed — nothing here is inferred from version numbers alone.',
     '',
-    '— opened by [Drift](https://github.com/drift-sh/drift)',
+    '— opened by [Drift](https://github.com/trydrift/drift)',
   );
 
   return lines.join('\n');

@@ -24,7 +24,7 @@ export interface FetchOptions {
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_DISK_TTL_MS = 24 * 60 * 60 * 1000;
-const USER_AGENT = 'drift-bot/0.1 (+https://github.com/drift-sh/drift)';
+const USER_AGENT = 'drift-bot/0.1 (+https://github.com/trydrift/drift)';
 
 /** Process-lifetime response cache. Runs are short; a Map is the right size. */
 const cache = new Map<string, unknown>();

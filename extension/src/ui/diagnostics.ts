@@ -83,7 +83,7 @@ export class DriftDiagnostics implements vscode.Disposable {
       value: `${change.dependency} ${change.kind}`,
       // Links the marker to its evidence, so "why do you think that?" is one
       // click away from the squiggle itself.
-      target: vscode.Uri.parse(evidenceUrl(change, plan) ?? 'https://github.com/drift-sh/drift'),
+      target: vscode.Uri.parse(evidenceUrl(change, plan) ?? 'https://github.com/trydrift/drift'),
     };
 
     const evidence = plan.evidence.filter((e) => change.citations.includes(e.id));

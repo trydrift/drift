@@ -703,10 +703,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/drift-sh/drift.git"
+    "url": "https://github.com/trydrift/drift.git"
   },
-  "homepage": "https://github.com/drift-sh/drift#readme",
+  "homepage": "https://github.com/trydrift/drift#readme",
   "bugs": {
-    "url": "https://github.com/drift-sh/drift/issues"
+    "url": "https://github.com/trydrift/drift/issues"
   }
 }

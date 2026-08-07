@@ -399,7 +399,7 @@ const defaultFetch: OsvFetch = async (url, body) => {
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'drift-bot/0.1 (+https://github.com/drift-sh/drift)',
+        'User-Agent': 'drift-bot/0.1 (+https://github.com/trydrift/drift)',
       },
       body: JSON.stringify(body),
     });
