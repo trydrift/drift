@@ -3,7 +3,7 @@
   "displayName": "Drift — Dependency Breaking Changes",
   "description": "Finds which dependency updates break your code, proves it with evidence, and fixes them deterministically, via a community recipe, or with the AI agent you already use.",
   "version": "0.1.0",
-  "publisher": "drift-sh",
+  "publisher": "drift",
   "license": "SEE LICENSE IN LICENSE",
   "engines": {
     "vscode": "^1.95.0"
