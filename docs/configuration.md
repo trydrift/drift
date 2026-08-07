@@ -366,21 +366,31 @@ remediation:
 
 Every surface resolves a commit's fix the same way: Drift's own deterministic
 codemod first, then — only when this is `true` — a matching, version-pinned
-recipe from the curated community registry (`src/remediation/registry.ts`,
-Codemod.com and OpenRewrite), then an AI agent.
+recipe discovered live from Codemod.com's registry or Maven Central (for
+OpenRewrite, restricted to its own `org.openrewrite.recipe` group — see
+`src/remediation/live-search.ts`), then an AI agent.
 
-On the **GitHub Action**, which cannot prompt, this is what actually gates
-whether an eligible recipe is used instead of falling straight to Copilot:
+This is what gates the network query itself, on every surface, not just
+whether a found recipe may run: with this `false` (the default), Drift never
+queries either registry, so a plain `drift analyze` makes no third-party
+network calls for this. Set it to `true` to let Drift ask Codemod.com and
+Maven Central whether a recipe exists for a finding its own codemod engine
+couldn't resolve — the result is still only ever a proposal, never applied
+automatically.
+
+On the **GitHub Action**, which cannot prompt, this is also what gates
+whether a found recipe is actually used instead of falling straight to
+Copilot:
 
 ```yaml
 remediation:
   communityRecipes: true
 ```
 
-On the **CLI** and in the **VS Code extension**, a matching recipe is always
-shown when one exists — this setting only changes the default answer for a
-non-interactive `drift fix` run; both surfaces still require an explicit
-choice (a prompt, or `--community-recipes`) before ever running one. A
+On the **CLI** and in the **VS Code extension**, enabling this surfaces a
+matching recipe as an explicit choice (a prompt, or `--community-recipes`
+for non-interactive `drift fix` runs) — it is still never run without that
+choice, in this run or on this exact pinned version. A
 recipe is never executed silently on any surface, and Drift's own codemod
 always takes priority over a recipe when both could resolve a commit.
 

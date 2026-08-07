@@ -372,9 +372,10 @@ export interface CommitUnit {
   }[];
   /**
    * Community recipe candidates that claim to resolve every breaking change
-   * in this unit, when no built-in codemod could and the curated registry
-   * (`src/remediation/registry.ts`) has a matching, version-pinned recipe for
-   * each one. Metadata only, exactly like `codemod` is a rule plus
+   * in this unit, when no built-in codemod could and a live registry lookup
+   * (`src/remediation/live-search.ts`, only run when
+   * `remediation.communityRecipes` is enabled) found a matching,
+   * version-pinned recipe for each one. Metadata only, exactly like `codemod` is a rule plus
    * parameters rather than precomputed content — a consumer decides whether
    * to run it (never automatically; see `src/remediation/partition.ts`),
    * executes it in an isolated worktree, and puts the result through the
