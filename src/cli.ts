@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 import { readFile } from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 import type { RepoContext } from './types.js';
 import { loadConfig } from './config/load.js';
 import { GitHubClient } from './github/client.js';
@@ -633,7 +635,21 @@ async function packageVersion(): Promise<string> {
 }
 
 // Only self-execute when run as a binary, so tests can import `main` freely.
-if (process.argv[1]?.endsWith('cli.js')) {
+// Compared by realpath, not by `argv[1]`'s literal text: npm installs `drift`
+// as a symlink at node_modules/.bin/drift, so a packed, globally-installed
+// CLI is invoked with `argv[1]` ending in `.bin/drift`, not `cli.js` — a
+// suffix check silently never runs `main()` for every real install.
+function invokedAsScript(): boolean {
+  const invoked = process.argv[1];
+  if (!invoked) return false;
+  try {
+    return realpathSync(invoked) === fileURLToPath(import.meta.url);
+  } catch {
+    return false;
+  }
+}
+
+if (invokedAsScript()) {
   main(process.argv.slice(2)).then(
     (code) => {
       process.exitCode = code;
