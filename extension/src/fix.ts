@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { rm } from 'node:fs/promises';
 import type { CommitUnit, RemediationPlan } from '../../src/types.js';
 import { applyCodemodTransform } from '../../src/codemod/index.js';
+import { WORKING_TREE } from '../../src/repo/local-git.js';
 import { Git } from './git.js';
 import { diffHunks, statOf, type Hunk } from './diff.js';
 import { validateAgentWorktree, type ChangedPath } from './scope.js';
@@ -131,8 +132,14 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
   // that leaves an old plan attached to state (see `DriftState.setActiveRoot`)
   // — applying it here would edit the wrong repository's files under a scope
   // computed for a different tree.
+  //
+  // `headSha` is only ever a real commit for plans built from a committed
+  // range. Plans analysed against uncommitted manifest edits are built
+  // against `WORKING_TREE` (see `chooseRange` in analyze.ts) — there is no
+  // commit for that state to compare against, so skip the guard rather than
+  // rejecting the normal "edit, analyse, fix" flow outright.
   const currentHead = await git.headSha().catch(() => null);
-  if (plan.headSha && currentHead && plan.headSha !== currentHead) {
+  if (plan.headSha && plan.headSha !== WORKING_TREE && currentHead && plan.headSha !== currentHead) {
     return fail(
       'This plan was analysed against a different commit than what is currently checked out. Re-run analysis before fixing.',
     );

@@ -44,6 +44,13 @@ jobs:
         working-directory: extension
         run: npm run build
 
+      # Catches anything `vsce` itself would reject (bad manifest fields,
+      # missing files, an over-broad .vscodeignore) before it blocks a release —
+      # this is the actual artifact `publish:pre` would ship, built the same way.
+      - name: Package the extension VSIX
+        working-directory: extension
+        run: npm run package
+
       # The bundled action is committed, because GitHub Actions does not run
       # npm install for node20 actions. A stale bundle is the classic silent
       # failure for this pattern: source is fixed, shipped action is not.

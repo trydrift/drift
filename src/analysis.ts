@@ -9,7 +9,7 @@ import { analyze } from './analyze/index.js';
 import { buildIndex } from './index/metarag.js';
 import { walkSourceFiles } from './index/walk.js';
 import { localize } from './localize/index.js';
-import { attemptCodemod, type CodemodResult } from './codemod/index.js';
+import type { CodemodResult } from './codemod/index.js';
 import { buildPlan } from './plan/index.js';
 import { buildRationale } from './rationale/index.js';
 import type { SurfaceAddition, SurfaceUnavailable } from './evidence/surface/types.js';
@@ -182,19 +182,16 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
 
     logger.info(`Found ${impactSites.length} impact site(s)`);
 
-    /* Stage 5.5 — codemod: deterministic fixes where they can be proven safe */
-    if (impactSites.length > 0) {
-      const contentByPath = new Map(files.map((file) => [file.path, file.content]));
-      for (const change of breakingChanges) {
-        const sitesForChange = impactSites.filter((site) => site.breakingChangeId === change.id);
-        if (sitesForChange.length === 0) continue;
-        const result = attemptCodemod(change, sitesForChange, contentByPath);
-        if (result) codemods.set(change.id, result);
-      }
-      if (codemods.size > 0) {
-        logger.info(`Resolved ${codemods.size} finding(s) deterministically, without a model call`);
-      }
-    }
+    /* Stage 5.5 — codemod: deterministic fixes where they can be proven safe
+     *
+     * Disabled for now: `renameIdentifier` does a whole-word replace across an
+     * entire file, not just the impact sites Drift localized, so it can rewrite
+     * unrelated string literals, object keys, comments, and same-named locals
+     * or APIs that have nothing to do with the finding. That is not "proved
+     * correct" and must not run under automatic-commit settings. Re-enable
+     * once it is token-aware or scoped to exact, revalidated source ranges.
+     * `codemods` stays empty; every finding falls through to the agent.
+     */
   } else if (breakingChanges.length > 0) {
     logger.warn('No local checkout available; affected code cannot be located.');
   }
