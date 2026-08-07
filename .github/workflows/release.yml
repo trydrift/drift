@@ -1,9 +1,10 @@
 name: Release
 
-# Triggered by pushing a `v*` tag (e.g. `v0.1.0`). Runs the full verification
-# CI already does, then publishes the CLI to npm and the extension to the VS
-# Code Marketplace, creates a GitHub Release, and moves the floating `v0` tag
-# so `uses: drift-sh/drift@v0` resolves to the newest `v0.x.y`.
+# Triggered by pushing a `v*` tag (e.g. `v0.1.0`). Validates every artifact —
+# CLI, Action bundle, and VSIX — before publishing anything, then publishes
+# the CLI to npm, the extension to the VS Code Marketplace, creates a GitHub
+# Release, and moves the floating `v0` tag so `uses: drift-sh/drift@v0`
+# resolves to the newest `v0.x.y`.
 #
 # Requires two repository secrets this workflow does not and cannot create:
 #   NPM_TOKEN   — an npm automation token with publish rights on @drift-sh/cli
@@ -11,6 +12,11 @@ name: Release
 #                 `drift-sh` publisher
 # Nothing here fabricates or assumes those exist; the publish steps simply
 # fail (and the workflow run goes red) if they are missing.
+#
+# Ordering is deliberate: every validation step below runs to completion
+# before the first irreversible action (an npm publish). A failure in
+# extension packaging or CLI packaging must never happen after a public
+# artifact has already been published, if it could have been caught first.
 
 on:
   push:
@@ -34,25 +40,47 @@ jobs:
           cache: npm
           registry-url: https://registry.npmjs.org
 
+      # ---- Validation phase: nothing here publishes anything. ----
+
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - run: npm run build:action
-      - name: Verify the committed action bundle is up to date
-        run: git diff --quiet -- action/ || (echo "action/index.cjs is stale — run npm run build:action and commit it" && exit 1)
+      - run: npm run eval:deterministic
 
-      - name: Publish CLI to npm
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # Rebuilds action/index.cjs, fails if the committed bundle is stale,
+      # runs it with node_modules removed, and confirms the optional
+      # Anthropic SDK is statically bundled — the same check ci.yml runs on
+      # every PR, invoked here through the same script so the two cannot
+      # drift apart.
+      - name: Verify the Action bundle (rebuild, staleness, self-containment, bundled SDK)
+        run: npm run verify:action-bundle
 
-      - name: Extension typecheck, tests, and VSIX package
+      - name: Extension — install, typecheck, test, build, package
         working-directory: extension
         run: |
           npm ci
           npm run typecheck
           npm test
+          npm run build
           npm run package
+
+      # Packs the real npm tarball, installs it into a clean temp directory,
+      # and runs `drift --version`, `--help`, and the offline `analyze`/`fix`/
+      # `pr` error paths against it — the actual artifact a user installs,
+      # not source-tree imports. Uses its own throwaway `npm pack`; the
+      # publish step below packs again for the real publish.
+      - name: Smoke-test the packed CLI artifact
+        run: npm run smoke:packed-cli
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      # ---- Everything above must pass before anything below runs. ----
+      # ---- Publish phase: each step here is a public, irreversible action. ----
+
+      - name: Publish CLI to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish extension to the VS Code Marketplace
         working-directory: extension
