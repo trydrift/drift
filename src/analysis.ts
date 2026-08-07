@@ -1,4 +1,4 @@
-import type { DependencyChange, RemediationPlan, RepoContext } from './types.js';
+import type { DependencyChange, ImpactSite, RemediationPlan, RepoContext } from './types.js';
 import type { DriftConfig } from './config/schema.js';
 import type { Logger } from './util/logger.js';
 import type { RepoProvider } from './repo/provider.js';
@@ -9,7 +9,7 @@ import { analyze } from './analyze/index.js';
 import { buildIndex } from './index/metarag.js';
 import { walkSourceFiles } from './index/walk.js';
 import { localize } from './localize/index.js';
-import type { CodemodResult } from './codemod/index.js';
+import { attemptCodemod, type CodemodResult } from './codemod/index.js';
 import { buildPlan } from './plan/index.js';
 import { buildRationale } from './rationale/index.js';
 import type { SurfaceAddition, SurfaceUnavailable } from './evidence/surface/types.js';
@@ -184,14 +184,27 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
 
     /* Stage 5.5 — codemod: deterministic fixes where they can be proven safe
      *
-     * Disabled for now: `renameIdentifier` does a whole-word replace across an
-     * entire file, not just the impact sites Drift localized, so it can rewrite
-     * unrelated string literals, object keys, comments, and same-named locals
-     * or APIs that have nothing to do with the finding. That is not "proved
-     * correct" and must not run under automatic-commit settings. Re-enable
-     * once it is token-aware or scoped to exact, revalidated source ranges.
-     * `codemods` stays empty; every finding falls through to the agent.
+     * Every edit a codemod makes is anchored to one of the impact sites just
+     * localized above — never to "everywhere this word appears in the file" —
+     * so a codemod's result set is a subset of what localization already
+     * proved was relevant to this exact finding. Reuses the same in-memory
+     * file contents `localize` just read; no extra I/O.
      */
+    const sitesByChange = new Map<string, ImpactSite[]>();
+    for (const site of impactSites) {
+      const existing = sitesByChange.get(site.breakingChangeId);
+      if (existing) existing.push(site);
+      else sitesByChange.set(site.breakingChangeId, [site]);
+    }
+
+    const fileContents = new Map(files.map((f) => [f.path, f.content]));
+    for (const change of breakingChanges) {
+      const sitesHere = sitesByChange.get(change.id);
+      if (!sitesHere || sitesHere.length === 0) continue;
+
+      const result = attemptCodemod(change, sitesHere, fileContents);
+      if (result) codemods.set(change.id, result);
+    }
   } else if (breakingChanges.length > 0) {
     logger.warn('No local checkout available; affected code cannot be located.');
   }

@@ -17,6 +17,17 @@ import type { BreakingChange, ImpactSite } from '../types.js';
  * and a codemod that only ran for TypeScript would undercut the point of
  * putting it in the shared pipeline at all.
  *
+ * Every edit is anchored to one of `localize`'s own impact sites — never to
+ * "everywhere this word appears in the file." A rename that reused the
+ * `renameIdentifier` word-boundary matcher across an entire file could
+ * silently rewrite an unrelated string, object key, comment, or same-named
+ * local that has nothing to do with this finding; anchoring to exact,
+ * already-localized lines is what makes this "proved correct," not just
+ * "usually correct." Quoted-string spans on an anchored line are masked
+ * before matching for the same reason: a real impact-site line can still
+ * contain the old name a second time inside a string literal that isn't the
+ * identifier being renamed.
+ *
  * This is why a codemod's edits are never trusted blindly: they still go
  * through the same scope validation and verification as an agent's output.
  * The lower cost comes from skipping the *generation* step for the cases this
@@ -28,6 +39,25 @@ export interface CodemodTransform {
   ruleId: 'rename-identifier';
   from: string;
   to: string;
+  /** Exact original lines this transform is allowed to touch. See `CodemodAnchor`. */
+  anchors: CodemodAnchor[];
+}
+
+/**
+ * One exact source line, as it read when Drift localized the site that
+ * justified rewriting it.
+ *
+ * Re-application (`applyCodemodTransform`) matches against this verbatim
+ * rather than against a stored line *number* — a plan can be applied well
+ * after analysis, and after earlier commit units in the same run have already
+ * added or removed lines above this one, which would silently invalidate a
+ * number but not this line's own text. A line that no longer reads exactly
+ * this way is left untouched rather than guessed at, the same "decline
+ * rather than assume" rule `attemptCodemod` itself follows.
+ */
+export interface CodemodAnchor {
+  file: string;
+  line: string;
 }
 
 export interface CodemodEdit {
@@ -59,9 +89,10 @@ const PLAIN_IDENTIFIER = /^[A-Za-z_$][\w$]*$/;
  * had in hand.
  *
  * Returns `null` when the change is not a plain rename, when either symbol
- * is not a plain identifier, or when nothing in the named files actually
- * matched. "Declined to act" is a first-class outcome here, not an error —
- * the caller's fallback is simply to hand the finding to an agent as before.
+ * is not a plain identifier, or when nothing at the named impact sites
+ * actually matched. "Declined to act" is a first-class outcome here, not an
+ * error — the caller's fallback is simply to hand the finding to an agent as
+ * before.
  */
 export function attemptCodemod(
   change: BreakingChange,
@@ -77,63 +108,153 @@ export function attemptCodemod(
   if (!PLAIN_IDENTIFIER.test(from) || !PLAIN_IDENTIFIER.test(to)) return null;
   if (from === to) return null;
 
-  const transform: CodemodTransform = { ruleId: 'rename-identifier', from, to };
-  const files = [...new Set(sites.map((site) => site.file))];
+  const sitesByFile = new Map<string, ImpactSite[]>();
+  for (const site of sites) {
+    if (site.matchedSymbol !== from) continue;
+    const existing = sitesByFile.get(site.file);
+    if (existing) existing.push(site);
+    else sitesByFile.set(site.file, [site]);
+  }
+
+  const matcher = new RegExp(`\\b${escapeRegExp(from)}\\b`, 'g');
   const edits: CodemodEdit[] = [];
+  const anchors: CodemodAnchor[] = [];
   let sitesResolved = 0;
 
-  for (const file of files) {
+  for (const [file, fileSites] of sitesByFile) {
     const before = fileContents.get(file);
     if (before === undefined) continue;
 
-    const after = applyCodemodTransform(before, transform);
-    if (after === before) continue;
+    const lines = before.split('\n');
+    const resolvedLines = new Set<number>();
 
-    edits.push({ file, before, after });
-    sitesResolved += sites.filter((site) => site.file === file).length;
+    for (const site of fileSites) {
+      const index = site.line - 1;
+      const line = lines[index];
+      if (line === undefined || resolvedLines.has(index)) continue;
+      if (isCommentOnly(line)) continue;
+
+      const rewritten = renameOnLine(line, matcher, to);
+      if (rewritten === line) continue;
+
+      lines[index] = rewritten;
+      resolvedLines.add(index);
+      anchors.push({ file, line });
+    }
+
+    if (resolvedLines.size === 0) continue;
+
+    edits.push({ file, before, after: lines.join('\n') });
+    sitesResolved += fileSites.filter((site) => resolvedLines.has(site.line - 1)).length;
   }
 
   if (edits.length === 0) return null;
 
+  const transform: CodemodTransform = { ruleId: 'rename-identifier', from, to, anchors };
   return { transform, edits, sitesResolved };
 }
 
 /**
- * Apply a codemod transform to file content, fresh.
+ * Apply a codemod transform to one file's content, fresh.
  *
- * Deliberately re-derived from the rule and its parameters rather than
- * replayed from a stored `before`/`after` snapshot: a plan can be applied
- * well after analysis, and after earlier commit units have already changed
- * the tree. Re-applying the rule against whatever the file actually contains
- * right now is what makes the second, third, and Nth application correct,
- * not just the first — the same reason `advanceBase` in the extension's fix
- * flow gives every batch a fresh snapshot instead of reusing the run's
- * original one.
+ * Deliberately re-derived from the rule and its anchors rather than replayed
+ * from a stored `before`/`after` snapshot: a plan can be applied well after
+ * analysis, and after earlier commit units have already changed the tree.
+ * Re-applying the rule against whatever the file actually contains right now
+ * — matching each anchor by its exact original text, not by line number — is
+ * what makes the second, third, and Nth application correct, not just the
+ * first, the same reason `advanceBase` in the extension's fix flow gives
+ * every batch a fresh snapshot instead of reusing the run's original one.
  */
 export function applyCodemodTransform(
   content: string,
-  transform: { ruleId: string; from: string; to: string },
+  transform: { ruleId: string; from: string; to: string; anchors: readonly CodemodAnchor[] },
+  file: string,
 ): string {
   switch (transform.ruleId) {
     case 'rename-identifier':
-      return renameIdentifier(content, transform.from, transform.to);
+      return renameAtAnchors(content, transform.from, transform.to, transform.anchors, file);
     default:
       return content;
   }
 }
 
-/**
- * Replace every whole-word occurrence of `from` with `to`, line by line,
- * skipping comment-only lines exactly as `localize` skips them when deciding
- * whether a line counts as an impact site — a line this module would not have
- * reported as a match is not one it should be editing either.
- */
-function renameIdentifier(source: string, from: string, to: string): string {
+function renameAtAnchors(
+  source: string,
+  from: string,
+  to: string,
+  anchors: readonly CodemodAnchor[],
+  file: string,
+): string {
+  const anchorLines = new Set(anchors.filter((a) => a.file === file).map((a) => a.line));
+  if (anchorLines.size === 0) return source;
+
   const matcher = new RegExp(`\\b${escapeRegExp(from)}\\b`, 'g');
   return source
     .split('\n')
-    .map((line) => (isCommentOnly(line) ? line : line.replace(matcher, to)))
+    .map((line) => (anchorLines.has(line) ? renameOnLine(line, matcher, to) : line))
     .join('\n');
+}
+
+/**
+ * Replace every whole-word occurrence of `matcher` with `to` on a single
+ * line, except where the occurrence falls inside a quoted string. A real
+ * impact-site line can still legitimately contain the old name a second time
+ * inside a string literal — a log message, an error string, a fixture — that
+ * has nothing to do with the identifier being renamed.
+ */
+function renameOnLine(line: string, matcher: RegExp, to: string): string {
+  const masked = maskQuotedSpans(line);
+  matcher.lastIndex = 0;
+
+  let result = '';
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+  while ((match = matcher.exec(masked))) {
+    const start = match.index;
+    const end = start + match[0].length;
+    result += line.slice(cursor, start) + to;
+    cursor = end;
+  }
+  result += line.slice(cursor);
+  return result;
+}
+
+/**
+ * Replace the contents of every quoted string on a line with placeholder
+ * characters of the same length, so indices still line up with the original
+ * line for the caller's substitution. Handles single, double, and backtick
+ * quotes with backslash-escaped delimiters — the common case across every
+ * ecosystem Drift indexes, not a full per-language string grammar (template
+ * literal interpolations, for instance, are masked along with everything
+ * else between the backticks, which only makes this stricter, never looser).
+ */
+function maskQuotedSpans(line: string): string {
+  let result = '';
+  let quote: string | null = null;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]!;
+
+    if (quote) {
+      result += ch === quote ? ch : ' ';
+      if (ch === '\\' && i + 1 < line.length) {
+        result += ' ';
+        i += 1;
+      } else if (ch === quote) {
+        quote = null;
+      }
+      continue;
+    }
+
+    if (ch === '"' || ch === "'" || ch === '`') {
+      quote = ch;
+      result += ch;
+      continue;
+    }
+
+    result += ch;
+  }
+  return result;
 }
 
 function isCommentOnly(line: string): boolean {

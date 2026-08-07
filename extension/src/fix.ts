@@ -410,7 +410,7 @@ async function runFixOnBranch(args: {
 
     /* ---- One commit unit, isolated in a disposable worktree ---------- */
     if (batch.length === 1) {
-      const commit = batch[0]!;
+      let commit = batch[0]!;
 
       state.set({ kind: 'fixing', plan, commitOrder: commit.order, detail: commit.message });
       progress.report({ message: `(${commit.order}/${plan.commits.length}) ${commit.message}` });
@@ -418,10 +418,17 @@ async function runFixOnBranch(args: {
       // Asking before touching anything is the point of `ask` mode: at this
       // moment nothing has been written, so declining costs nothing.
       if (permission === 'ask' && options.ask) {
-        const answer = await options.ask(
-          `Let ${agent.label} edit ${commit.files.length} file${commit.files.length === 1 ? '' : 's'} for "${commit.message}"?`,
-          ['Yes, go ahead', 'Skip this one', 'Stop'],
-        );
+        const answer = commit.codemod
+          ? await options.ask(
+              `Drift found a deterministic fix for "${commit.message}" (${renameSummary(commit.codemod)}, ` +
+                `${commit.files.length} file${commit.files.length === 1 ? '' : 's'}). Apply it directly, or use ` +
+                `${agent.label} instead?`,
+              ['Apply deterministic fix', `Use ${agent.label} instead`, 'Skip this one', 'Stop'],
+            )
+          : await options.ask(
+              `Let ${agent.label} edit ${commit.files.length} file${commit.files.length === 1 ? '' : 's'} for "${commit.message}"?`,
+              ['Yes, go ahead', 'Skip this one', 'Stop'],
+            );
         if (/^stop/i.test(answer)) {
           return {
             status: 'cancelled',
@@ -438,13 +445,19 @@ async function runFixOnBranch(args: {
           progress.report({ increment: step });
           continue;
         }
+        // The user chose the agent over an available deterministic fix — drop
+        // `codemod` so downstream code takes the ordinary agent path instead
+        // of silently re-applying the fix it was just declined.
+        if (/^use/i.test(answer)) {
+          commit = { ...commit, codemod: undefined };
+        }
       }
 
       const [entry] = await runBatchInWorktrees({
         git,
         agent,
         plan,
-        batch,
+        batch: [commit],
         root,
         base,
         token,
@@ -782,6 +795,11 @@ async function runBatchInWorktrees(args: {
   }
 }
 
+/** A short, human-readable list of the renames a codemod would apply, for the confirm prompt. */
+function renameSummary(codemod: NonNullable<CommitUnit['codemod']>): string {
+  return codemod.map((t) => `\`${t.from}\` → \`${t.to}\``).join(', ');
+}
+
 /**
  * Apply a commit's precomputed codemod transforms against the files as they
  * actually exist right now — not the content Drift last saw at analysis
@@ -800,7 +818,7 @@ export function applyCommitCodemod(
     for (const file of transform.files) {
       const content = byPath.get(file);
       if (content === undefined) continue;
-      byPath.set(file, applyCodemodTransform(content, transform));
+      byPath.set(file, applyCodemodTransform(content, transform, file));
     }
   }
 

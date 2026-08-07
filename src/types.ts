@@ -362,7 +362,13 @@ export interface CommitUnit {
    * would go through, and skips dispatching an agent entirely. Absent, as
    * before, means "ask an agent."
    */
-  codemod?: { ruleId: string; from: string; to: string; files: string[] }[];
+  codemod?: {
+    ruleId: string;
+    from: string;
+    to: string;
+    files: string[];
+    anchors: { file: string; line: string }[];
+  }[];
 }
 
 /** Aggregate risk, used to gate automatic execution. */

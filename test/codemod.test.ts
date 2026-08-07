@@ -25,12 +25,12 @@ const site = (file: string, line = 1) => ({
 });
 
 describe('attemptCodemod: a clean rename', () => {
-  test('renames every whole-word occurrence across the affected files', () => {
+  test('renames only the lines named by impact sites', () => {
     const files = new Map([
       ['src/app.ts', "import { oldName } from 'acme-sdk';\n\noldName();\n"],
     ]);
 
-    const result = attemptCodemod(breaking(), [site('src/app.ts')], files);
+    const result = attemptCodemod(breaking(), [site('src/app.ts', 1), site('src/app.ts', 3)], files);
 
     assert.ok(result);
     assert.equal(result!.transform.ruleId, 'rename-identifier');
@@ -41,13 +41,17 @@ describe('attemptCodemod: a clean rename', () => {
       result!.edits[0]!.after,
       "import { newName } from 'acme-sdk';\n\nnewName();\n",
     );
-    assert.equal(result!.sitesResolved, 1);
+    assert.equal(result!.sitesResolved, 2);
+    assert.deepEqual(result!.transform.anchors, [
+      { file: 'src/app.ts', line: "import { oldName } from 'acme-sdk';" },
+      { file: 'src/app.ts', line: 'oldName();' },
+    ]);
   });
 
   test('does not touch a substring match — word boundaries hold', () => {
     const files = new Map([['src/app.ts', 'const oldNameWithSuffix = 1;\noldName();\n']]);
 
-    const result = attemptCodemod(breaking(), [site('src/app.ts')], files);
+    const result = attemptCodemod(breaking(), [site('src/app.ts', 2)], files);
 
     assert.ok(result);
     assert.equal(
@@ -56,13 +60,42 @@ describe('attemptCodemod: a clean rename', () => {
     );
   });
 
-  test('skips comment-only lines, matching what localize would have reported as a site', () => {
+  test('leaves an occurrence on a line that is not a declared impact site untouched', () => {
+    // The exact flaw that got the previous whole-file implementation disabled:
+    // a same-named identifier elsewhere in the file, with nothing to do with
+    // this finding, must not be rewritten just because the word appears.
+    const files = new Map([
+      ['src/app.ts', 'oldName();\n// unrelated: someone else also called their local oldName\nconst oldName = 2;\n'],
+    ]);
+
+    const result = attemptCodemod(breaking(), [site('src/app.ts', 1)], files);
+
+    assert.ok(result);
+    assert.equal(result!.edits.length, 1);
+    assert.equal(
+      result!.edits[0]!.after,
+      'newName();\n// unrelated: someone else also called their local oldName\nconst oldName = 2;\n',
+    );
+    assert.equal(result!.sitesResolved, 1);
+  });
+
+  test('does not rewrite an occurrence that only exists inside a string literal on the site line', () => {
+    const files = new Map([['src/app.ts', "oldName(); // logs 'oldName' for debugging\n"]]);
+
+    const result = attemptCodemod(breaking(), [site('src/app.ts', 1)], files);
+
+    assert.ok(result);
+    assert.equal(result!.edits[0]!.after, "newName(); // logs 'oldName' for debugging\n");
+  });
+
+  test('skips a comment-only site line, matching what localize would have reported', () => {
     const files = new Map([['src/app.ts', '// oldName is deprecated\noldName();\n']]);
 
-    const result = attemptCodemod(breaking(), [site('src/app.ts')], files);
+    const result = attemptCodemod(breaking(), [site('src/app.ts', 1), site('src/app.ts', 2)], files);
 
     assert.ok(result);
     assert.equal(result!.edits[0]!.after, '// oldName is deprecated\nnewName();\n');
+    assert.equal(result!.sitesResolved, 1);
   });
 
   test('spans multiple files named by the impact sites', () => {
@@ -71,7 +104,7 @@ describe('attemptCodemod: a clean rename', () => {
       ['src/b.ts', 'oldName();\n'],
     ]);
 
-    const result = attemptCodemod(breaking(), [site('src/a.ts'), site('src/b.ts', 2)], files);
+    const result = attemptCodemod(breaking(), [site('src/a.ts'), site('src/b.ts', 1)], files);
 
     assert.ok(result);
     assert.equal(result!.edits.length, 2);
@@ -127,7 +160,7 @@ describe('attemptCodemod: declines outside its proven-safe scope', () => {
     assert.equal(result, null);
   });
 
-  test('declines when nothing in the file actually matches', () => {
+  test('declines when nothing at the named site actually matches', () => {
     const files = new Map([['src/app.ts', 'somethingElse();\n']]);
     const result = attemptCodemod(breaking(), [site('src/app.ts')], files);
     assert.equal(result, null);

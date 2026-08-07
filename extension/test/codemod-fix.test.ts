@@ -10,6 +10,9 @@ import type { CommitUnit } from '../../src/types.js';
  * makes it safe is re-deriving the edit from the rule against whatever the
  * file actually contains right now, rather than replaying a stored snapshot
  * from analysis time, which could silently clobber or miss intervening edits.
+ * It also only ever touches lines matching one of the transform's `anchors` —
+ * the exact original line text `attemptCodemod` resolved a site against —
+ * never every occurrence of `from` in the file.
  */
 
 function commit(codemod: CommitUnit['codemod']): CommitUnit {
@@ -34,7 +37,15 @@ function commit(codemod: CommitUnit['codemod']): CommitUnit {
 describe('applyCommitCodemod', () => {
   test('applies the transform fresh against the given content', () => {
     const outcome = applyCommitCodemod(
-      commit([{ ruleId: 'rename-identifier', from: 'oldName', to: 'newName', files: ['src/app.ts'] }]),
+      commit([
+        {
+          ruleId: 'rename-identifier',
+          from: 'oldName',
+          to: 'newName',
+          files: ['src/app.ts'],
+          anchors: [{ file: 'src/app.ts', line: 'oldName();' }],
+        },
+      ]),
       [{ path: 'src/app.ts', content: 'oldName();\n' }],
     );
 
@@ -48,7 +59,15 @@ describe('applyCommitCodemod', () => {
     // would have no idea an earlier commit already touched this file, and
     // either overwrite that edit or fail to find its own match at all.
     const outcome = applyCommitCodemod(
-      commit([{ ruleId: 'rename-identifier', from: 'oldName', to: 'newName', files: ['src/app.ts'] }]),
+      commit([
+        {
+          ruleId: 'rename-identifier',
+          from: 'oldName',
+          to: 'newName',
+          files: ['src/app.ts'],
+          anchors: [{ file: 'src/app.ts', line: 'oldName();' }],
+        },
+      ]),
       [{ path: 'src/app.ts', content: '// already migrated elsewhere\noldName();\nconst kept = 1;\n' }],
     );
 
@@ -61,7 +80,15 @@ describe('applyCommitCodemod', () => {
 
   test('reports no-changes rather than a false "applied" when the rename already landed', () => {
     const outcome = applyCommitCodemod(
-      commit([{ ruleId: 'rename-identifier', from: 'oldName', to: 'newName', files: ['src/app.ts'] }]),
+      commit([
+        {
+          ruleId: 'rename-identifier',
+          from: 'oldName',
+          to: 'newName',
+          files: ['src/app.ts'],
+          anchors: [{ file: 'src/app.ts', line: 'oldName();' }],
+        },
+      ]),
       [{ path: 'src/app.ts', content: 'newName();\n' }],
     );
 
@@ -71,7 +98,15 @@ describe('applyCommitCodemod', () => {
 
   test('only edits the files the transform names, leaving the rest of the commit scope untouched', () => {
     const outcome = applyCommitCodemod(
-      commit([{ ruleId: 'rename-identifier', from: 'oldName', to: 'newName', files: ['src/app.ts'] }]),
+      commit([
+        {
+          ruleId: 'rename-identifier',
+          from: 'oldName',
+          to: 'newName',
+          files: ['src/app.ts'],
+          anchors: [{ file: 'src/app.ts', line: 'oldName();' }],
+        },
+      ]),
       [
         { path: 'src/app.ts', content: 'oldName();\n' },
         { path: 'src/other.ts', content: 'oldName();\n' },
@@ -85,8 +120,20 @@ describe('applyCommitCodemod', () => {
   test('applies every transform on the commit, across their own files', () => {
     const outcome = applyCommitCodemod(
       commit([
-        { ruleId: 'rename-identifier', from: 'oldA', to: 'newA', files: ['src/a.ts'] },
-        { ruleId: 'rename-identifier', from: 'oldB', to: 'newB', files: ['src/b.ts'] },
+        {
+          ruleId: 'rename-identifier',
+          from: 'oldA',
+          to: 'newA',
+          files: ['src/a.ts'],
+          anchors: [{ file: 'src/a.ts', line: 'oldA();' }],
+        },
+        {
+          ruleId: 'rename-identifier',
+          from: 'oldB',
+          to: 'newB',
+          files: ['src/b.ts'],
+          anchors: [{ file: 'src/b.ts', line: 'oldB();' }],
+        },
       ]),
       [
         { path: 'src/a.ts', content: 'oldA();\n' },
@@ -96,5 +143,25 @@ describe('applyCommitCodemod', () => {
 
     assert.equal(outcome.status, 'applied');
     assert.equal(outcome.edits!.length, 2);
+  });
+
+  test('leaves a line untouched when it no longer matches its anchor exactly', () => {
+    // The file changed since analysis in a way that altered the anchored
+    // line itself — re-applying blindly here would be guessing, not
+    // re-deriving, so the codemod declines rather than risk a wrong edit.
+    const outcome = applyCommitCodemod(
+      commit([
+        {
+          ruleId: 'rename-identifier',
+          from: 'oldName',
+          to: 'newName',
+          files: ['src/app.ts'],
+          anchors: [{ file: 'src/app.ts', line: 'oldName();' }],
+        },
+      ]),
+      [{ path: 'src/app.ts', content: 'oldName(); // moved\n' }],
+    );
+
+    assert.equal(outcome.status, 'no-changes');
   });
 });
