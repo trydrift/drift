@@ -3,13 +3,13 @@ name: Release
 # Triggered by pushing a `v*` tag (e.g. `v0.1.0`). Validates every artifact —
 # CLI, Action bundle, and VSIX — before publishing anything, then publishes
 # the CLI to npm, the extension to the VS Code Marketplace, creates a GitHub
-# Release, and moves the floating `v0` tag so `uses: drift-sh/drift@v0`
+# Release, and moves the floating `v0` tag so `uses: trydrift/drift@v0`
 # resolves to the newest `v0.x.y`.
 #
 # Requires two repository secrets this workflow does not and cannot create:
 #   NPM_TOKEN   — an npm automation token with publish rights on @usedrift/cli
 #   VSCE_PAT    — a VS Code Marketplace personal access token for the
-#                 `drift-sh` publisher
+#                 `drift` publisher
 # Nothing here fabricates or assumes those exist; the publish steps simply
 # fail (and the workflow run goes red) if they are missing.
 #

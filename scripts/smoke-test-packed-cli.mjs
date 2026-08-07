@@ -108,7 +108,7 @@ try {
     log('drift analyze (real token, real repo) — full pipeline from the packed artifact');
     const realAnalyze = run(
       bin,
-      ['analyze', '--dir', repoRoot, '--repo', 'drift-sh/drift', '--before', 'HEAD~1', '--after', 'HEAD'],
+      ['analyze', '--dir', repoRoot, '--repo', 'trydrift/drift', '--before', 'HEAD~1', '--after', 'HEAD'],
       { cwd: repoRoot, env: process.env },
     );
     assert(
