@@ -49,7 +49,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2   # Drift diffs against the previous commit
-      - uses: drift-sh/drift@v0
+      - uses: trydrift/drift@v0
         with:
           copilot-token: ${{ secrets.DRIFT_COPILOT_TOKEN }}
 ```
@@ -81,17 +81,25 @@ would train people to ignore it.
 
 ### Monorepos
 
-Drift analyses all manifests together. To scope it per package, run a matrix and
-point `config-path` at per-package configs. Note the limitation in
-[architecture.md](architecture.md#known-limitations): Drift doesn't model
-workspace boundaries.
+Drift localizes findings per workspace member already — a bump in
+`packages/api/package.json` is scoped to `packages/api`, read from
+`workspaces`/`pnpm-workspace.yaml`, Cargo `[workspace]`, `go.work`, Maven
+`<modules>`, or Gradle `settings.gradle[.kts]`. What isn't supported is
+non-literal member globs (brace expansion, mid-segment wildcards); see
+[architecture.md](architecture.md#known-limitations). To run Drift as fully
+separate jobs per package anyway, run a matrix and point `config-path` at
+per-package configs.
 
 ---
 
 ## 2 · CLI
 
+> **Not published to npm yet.** Until a release runs, clone the repo, run
+> `npm install && npm run build`, and use `node dist/cli.js` in place of
+> `drift` below.
+
 ```bash
-npm install -g drift
+npm install -g @drift-sh/cli
 export GITHUB_TOKEN=ghp_...
 drift analyze
 ```

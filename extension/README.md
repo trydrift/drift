@@ -1,6 +1,6 @@
 # Drift — Dependency Breaking Changes
 
-**Which upgrades actually break your code? Drift finds out, proves it, and fixes them with the AI agent you already use.**
+**Which upgrades actually break your code? Drift finds out, proves it, and fixes them — deterministically when it can, with a community recipe when one applies, or with the AI agent you already use otherwise.**
 
 No API keys. No tokens to paste. No account.
 
@@ -14,7 +14,7 @@ Open the Drift panel and it starts checking your dependencies, naming each step 
 
 That distinction is the product. A package can have seven breaking changes and still be a five-second upgrade for you, because your code never calls the parts that changed. Drift says so plainly, in neutral colour, with the upstream detail one click away — because a warning that turns out to be nothing is how a tool teaches you to ignore it.
 
-For the upgrades that *do* affect you, Drift shows the exact file and line, hands the work to your AI agent, and holds every edit for review before anything is committed.
+For the upgrades that *do* affect you, Drift shows the exact file and line, then resolves each fix in order: its own deterministic transform first, a community recipe if one applies and you've enabled it, and your AI agent for whatever's left — holding every edit for review before anything is committed.
 
 ## The panel
 
@@ -28,7 +28,7 @@ Type `/` for commands:
 | `/recent` | Analyse the dependency change already in your git history |
 | `/upgrade <package>` | Upgrade one package and check the impact |
 | `/upgrade-all` | Install every upgrade that does not affect your code |
-| `/fix [package]` | Let your AI agent fix the affected code |
+| `/fix [package]` | Fix the affected code — deterministically, via a recipe, or with your AI agent |
 | `/review` | Show changes waiting to be kept or undone |
 | `/agent` | Choose which AI agent does the work |
 | `/clear` | Start a new conversation |
@@ -88,7 +88,7 @@ In the editor:
 
 In the panel, the change list groups files by planned commit, shows `+`/`−` per file, and opens the real diff editor on click. **Keep & commit** on a group commits exactly the files the plan named for it — one commit per concern, so `git revert` and `git bisect` stay meaningful. **Undo** restores the file through the workspace API, so it lands in your normal undo stack too.
 
-Drift commits. It never pushes and never merges.
+Drift commits automatically once you keep a group. Pushing the branch is a separate, explicit step — **Push branch**, or **Drift: Push Branch** — and Drift never merges.
 
 ## Zero configuration
 
@@ -99,7 +99,7 @@ Open a repository. That's the setup. Drift works **signed out**, because nothing
 | Detect the change | your local git |
 | Gather evidence | public registries — npm, PyPI, crates.io, GitHub releases |
 | Find affected code | your local files |
-| Fix it | your AI agent |
+| Fix it | Drift's own codemod, then a community recipe if enabled, then your AI agent |
 | Commit | your local git |
 
 Sign-in is asked for once, and only if you choose GitHub's cloud agent or want Drift to push a branch. It is VS Code's own one-click OAuth — no token to create or store.
@@ -171,17 +171,17 @@ The composer writes to `drift.session.mode` and `drift.session.permission` (per 
 
 How much Drift analyses is a settings question, never an effort question: `drift.analysis.includeDev` and `drift.analysis.includePatch` decide what a scan covers, and they mean the same thing at every effort level.
 
-If your repo has a `.github/drift.yml` (used by the [Drift GitHub Action](https://github.com/drift-sh/drift)), the extension reads it too. Your VS Code settings layer on top — the file is the team's policy, settings are your local preference.
+If your repo has a `.github/drift.yml` (used by the [Drift GitHub Action](https://github.com/trydrift/drift)), the extension reads it too. Your VS Code settings layer on top — the file is the team's policy, settings are your local preference.
 
 ## Supported ecosystems
 
-npm/yarn/pnpm · pip/poetry/uv · Go modules · Cargo · Maven/Gradle · Bundler
+npm/yarn/pnpm/bun · pip/poetry/uv · Go modules · Cargo · Maven/Gradle/sbt · Bundler · NuGet · Composer · Mix · pub · Swift Package Manager · CocoaPods · opam — the same set the CLI and Action detect, scoped by `drift.analysis.ecosystems`.
 
-Computed API diffing is npm-only today; the others rely on changelog and release-note evidence. The upgrade scanner (`/scan`) is npm-only; `/recent` works across all of them.
+Computed API-surface diffing (not just changelog evidence) is available for npm, Go, Cargo, Maven, and Python; the rest rely on changelog and release-note evidence. See [docs/support.md](https://github.com/trydrift/drift/blob/main/docs/support.md) for exactly what's checked per ecosystem.
 
 ## Also available as a GitHub Action
 
-Same engine, running in CI on every dependency bump, filing a PR. See the [repository](https://github.com/drift-sh/drift).
+Same engine, running in CI on every dependency bump, filing a PR. See the [repository](https://github.com/trydrift/drift).
 
 ## Known limitations
 

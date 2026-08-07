@@ -1,20 +1,29 @@
 # Architecture
 
-Drift is a pipeline of seven transforms over a small domain model. Each stage has
-one job, produces a typed artifact, and can be used on its own.
+Drift is a pipeline of transforms over a small domain model, orchestrated by
+`analyzeRepository` (`src/analysis.ts`) and then `dispatch` (`src/dispatch/`).
+Each stage has one job, produces a typed artifact, and can be used on its own.
 
 ```
 DependencyChange[]   detect      what versions moved
+       ↓
+DependencyChange[]   triage      which of those are actionable, and why the rest aren't
        ↓
 Evidence[]           evidence    what changed upstream, with citations
        ↓
 BreakingChange[]     analyze     which upstream changes break consumers
        ↓
-ImpactSite[]         localize    where in *this* repo they bite
+ImpactSite[]         localize    where in *this* repo they bite, plus a codemod/
+                                  recipe lookup for each site
+       ↓
+VerificationResult   verify      optional behavioural probe, off by default
+       ↓
+Rationale            rationale   is the upgrade worth taking
        ↓
 RemediationPlan      plan        ordered, separated commit units + risk + guardrails
        ↓
-DispatchResult       dispatch    branch + Copilot task + PR, or an approval issue
+DispatchResult       dispatch    branch + codemod/recipe/Copilot task + PR, or an
+                                  approval issue
 ```
 
 The ordering is the discipline: establish what changed and where it lands
@@ -28,11 +37,12 @@ src/
 ├── types.ts              Domain model — every stage speaks this
 ├── pipeline.ts           Orchestrator
 ├── config/               drift.yml schema and loading
-├── detect/               Stage 1 — manifest diffing
+├── detect/               Stage 1 — manifest diffing, then triage against drift.yml
 │   ├── version.ts        Semver normalisation across ecosystems
 │   ├── package-manager.ts  Which tool owns a directory, and what it runs
 │   ├── workspace.ts      Monorepo members, and where each package ends
-│   └── ecosystems/       npm, python, go, cargo, maven, rubygems, toml
+│   └── ecosystems/       npm, pypi, go, cargo, maven (+ sbt), rubygems, nuget,
+│                         composer, cocoapods, hex, opam, pub, swift
 ├── evidence/             Stage 2 — citable ground truth
 │   ├── registry.ts       npm, PyPI, crates.io, Go proxy, Maven, RubyGems
 │   ├── changelog.ts      CHANGELOG + migration guide retrieval and slicing
@@ -49,7 +59,9 @@ src/
 ├── index/                Stage 4a — Meta-RAG
 │   ├── walk.ts           Source discovery
 │   └── metarag.ts        Imports, code units, structural summaries
-├── localize/             Stage 4b — impact sites
+├── localize/             Stage 4b — impact sites, plus a per-site codemod/
+│                         community-recipe lookup
+├── verification/         Stage 4c — optional behavioural probe, off by default
 ├── rationale/            Stage 5 — why an upgrade is worth taking
 │   ├── osv.ts            Known vulnerabilities, both versions compared
 │   ├── maintenance.ts    Deprecation, archival, release recency, runtimes
@@ -57,16 +69,24 @@ src/
 │   ├── summary.ts        Plain-English classification of upstream changes
 │   └── assess.ts         The recommendation, as transparent rules
 ├── plan/                 Stage 6 — commits, risk, guardrails
-├── dispatch/             Stage 7 — Copilot + approval flow
+├── codemod/              Drift's own deterministic transform (rename-identifier)
+├── remediation/          Community-recipe discovery + execution, and the
+│                         codemod → recipe → Copilot priority order
+├── dispatch/             Stage 7 — resolves each commit (codemod, recipe, or
+│                         Copilot) + approval flow
 ├── report/               Stage 8 — the Drift Report
 ├── github/               Octokit wrapper
 ├── repo/                 RepoProvider seam — GitHub API or local git
 └── runners/              Action, webhook server, entry points
 ```
 
-The VS Code extension is a second front end over the same stages 1–6. It adds no
-analysis of its own; everything below either drives the shared pipeline or renders
-its output.
+The VS Code extension is a second front end over the same analysis and
+remediation-priority code (`analyzeRepository`, `src/codemod/`,
+`src/remediation/`). It adds no analysis of its own; everything below either
+drives the shared pipeline or renders its output. Its `fix.ts` applies the
+same codemod → community-recipe → agent tiering as the CLI's `cli-runner.ts`,
+per commit unit, before falling back to whichever coding agent the developer
+has selected.
 
 ```
 extension/src/
@@ -308,6 +328,22 @@ established.
 Package name ≠ import name often enough to matter (`beautifulsoup4` → `bs4`), so
 there's an explicit alias table.
 
+Localization also looks up, per impact site, whether Drift's own deterministic
+codemod applies (`src/codemod/`) and — separately — whether a matching
+community recipe exists via a live query to Codemod.com or Maven Central
+(`src/remediation/live-search.ts`). Discovery always runs; whether a found
+recipe is ever *executed* is gated behind `remediation.communityRecipes`
+(default `false`) and, outside the Action, an explicit choice in the CLI or
+extension.
+
+### 4a · Verify (optional)
+
+An off-by-default behavioural probe (`src/verification/behavioural.ts`) that
+runs old and new dependency code side by side in a sandboxed worker to catch
+breakage a symbol diff can't show. Enabled via
+`verification.behavioural.enabled`; skipped entirely otherwise, since it means
+executing real code from both versions of the dependency.
+
 ### 5 · Rationale
 
 The other half of the question. Every stage above answers *what might this
@@ -399,6 +435,26 @@ See [copilot-integration.md](copilot-integration.md).
 
 Drift creates the branch itself, pinned to the analysed commit; if the branch
 moved underneath us the impact sites would no longer be trustworthy.
+
+Each commit is then resolved in a fixed priority order, coded in
+`src/remediation/partition.ts` and mirrored by `cli-runner.ts` (CLI/Action)
+and `extension/src/fix.ts` (VS Code):
+
+1. **Drift's own deterministic codemod**, if localization matched one — a
+   single, proven-by-construction transform (`rename-identifier` today),
+   anchored to the exact impact sites, never a whole-file rewrite.
+2. **A community recipe**, only when one was found *and*
+   `remediation.communityRecipes` is enabled — on the Action that flag alone
+   decides it, since it can't prompt; the CLI and extension still ask before
+   using one either way.
+3. **GitHub Copilot's coding-agent API**, for everything neither of the above
+   resolved, given a single task carrying the whole remaining plan with
+   evidence quoted inline and exact file:line locations.
+
+A commit Drift resolved itself is never handed to Copilot. The optional
+`ANTHROPIC_API_KEY` / `llm.enabled` setting (`src/analyze/llm.ts`) is
+unrelated to this list — it only assists breaking-change *detection* during
+stage 3, capped at `medium` confidence, and never touches remediation.
 
 ### 8 · Report
 

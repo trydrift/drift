@@ -50,7 +50,9 @@ Glob patterns. Pushes to other branches are ignored.
 ## Selection
 
 ### `ecosystems`
-default **all six** — `npm`, `pypi`, `go`, `cargo`, `maven`, `rubygems`
+default **all** — every ecosystem Drift can detect: `npm`, `pypi`, `go`, `cargo`,
+`maven`, `rubygems`, `nuget`, `composer`, `cocoapods`, `hex`, `opam`, `pub`,
+`swift` (see [support.md](support.md) for what each can do)
 
 ### `triggerOn`
 

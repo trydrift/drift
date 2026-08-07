@@ -3,7 +3,7 @@
 Four ways to try it, in ascending order of commitment. Start at 1.
 
 > **Note:** Drift is not published to the GitHub Marketplace yet, so
-> `uses: drift-sh/drift@v0` will not resolve. Until it is, reference the action
+> `uses: trydrift/drift@v0` will not resolve. Until it is, reference the action
 > from your own fork or a local path — both covered below.
 
 ---

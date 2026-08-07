@@ -60,7 +60,7 @@ Drift's intended failure mode is asking you too often. Not editing code it shoul
 
 ### 1. Add the workflow
 
-> **Not released yet** — `uses: drift-sh/drift@v0` will not resolve until a
+> **Not released yet** — `uses: trydrift/drift@v0` will not resolve until a
 > `v0.1.0` tag is pushed and the `v0` tag is moved to it (see
 > [`.github/workflows/release.yml`](.github/workflows/release.yml)).
 > Until then, reference your own fork, or see
@@ -143,6 +143,19 @@ enabled, then an AI agent) — they differ in where that runs and who's driving:
 | **CLI (`drift fix`)** | Scripting a fix locally or in a bespoke CI job, outside GitHub Actions | A GitHub token for reads; a Copilot token only if some commit needs an agent |
 | **GitHub Action** | Unattended, on every dependency bump, with review via a PR or an approval issue | `DRIFT_COPILOT_TOKEN` repo secret (only required once a commit actually needs an agent) |
 
+They don't behave identically. What each surface actually does:
+
+| Capability | VS Code | CLI | GitHub Action |
+|---|---|---|---|
+| Scan upgrades | Yes | Yes (`drift analyze`) | Yes |
+| Evidence / localization | Yes | Yes | Yes |
+| Deterministic remediation | Yes | Yes (`drift fix`) | Yes |
+| External recipes | Yes — asks before using one | Yes — opt-in flag or interactive prompt | Yes, but only if `remediation.communityRecipes: true` in `drift.yml` — it cannot prompt |
+| AI remediation | Yes — Copilot, Claude Code, Codex, Gemini, Aider, OpenCode, or local Ollama | Yes — GitHub Copilot coding agent only | Yes — GitHub Copilot coding agent only |
+| Interactive hunk-level review | Yes — Keep/Undo per hunk before committing | No — reviewed as a PR after the fact | No — reviewed as a PR or approval issue |
+| Create branch / commit | Yes | Yes | Yes |
+| Create PR | Yes (`drift.pullRequest`) | Yes (`drift pr`) | Yes |
+
 ---
 
 ## Or use it in your editor
@@ -181,9 +194,9 @@ way instead of guessing.
 
 ## How it works
 
-Eight stages. Each is independently testable, and each can legitimately produce
-nothing — most dependency bumps genuinely don't break you, and saying so quickly
-is a feature.
+A pipeline of independently testable stages, one directory per stage in `src/`.
+Each can legitimately produce nothing — most dependency bumps genuinely don't
+break you, and saying so quickly is a feature.
 
 ### 1 · Detect
 Diffs manifests and lockfiles across thirteen ecosystems: **npm/pnpm/yarn/bun,
@@ -213,6 +226,10 @@ and a tool that reads only `package.json` reports half the change as all of it.
 pipeline reads at runtime. `Detect` is not `Verify` is not `API surface`, and
 collapsing them into one "supported" column is how a tool ends up claiming
 things you can disprove in thirty seconds.
+
+Every detected change is then triaged against `drift.yml` — major/minor/patch,
+dev-only, transitive-only, ignore lists — and Drift records a reason for
+everything it skips rather than dropping it silently.
 
 ### 2 · Evidence
 Gathers citable ground truth from six sources, weighted by how directly each
@@ -263,6 +280,11 @@ Builds a **Meta-RAG** index — an AST-aligned map of every file's imports, code
 units, and signatures — then searches only the files that import the changed
 dependency. Word-boundary matching stops `get` matching `getUserById`. Each site
 carries its enclosing function and a per-site confidence.
+
+### 4a · Verify (optional)
+An off-by-default behavioural probe that runs old and new dependency code
+side by side to catch breakage no symbol diff would show. It stays off unless
+`verification.behavioural.enabled` is set, because it executes real code.
 
 ### 5 · Rationale
 Answers the question the rest of the pipeline can't: *why would I take this?*
@@ -354,12 +376,13 @@ bumping `@szmarczak/http-timer` 4.0.6 → 5.0.1, Drift:
   `.github/workflows/main.yml`, a protected path.
 
 The first run of that experiment found nothing at all. Fixing it surfaced four
-genuine bugs, [documented in the commit history](../../commits/main).
+genuine bugs, [documented in the commit history](https://github.com/trydrift/drift/commits/main).
 
 ## Status
 
-MVP. The pipeline is complete and tested end to end. 417 tests cover every stage,
-the diff engine the review UI rests on, and the panel's rendered markup.
+MVP. The pipeline is complete and tested end to end, covered by the test suite
+across every stage, the diff engine the review UI rests on, and the panel's
+rendered markup.
 Known limitations are documented in [docs/architecture.md](docs/architecture.md#known-limitations)
 rather than hidden — including the ones we'd rather not advertise.
 

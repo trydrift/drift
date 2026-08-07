@@ -126,12 +126,14 @@ because the expensive part (inference) is already paid for by someone else.
 
 ## Status
 
-Working MVP. Seven-stage pipeline complete, six package ecosystems, two front
-ends, 132 tests, verified end to end against a real upgrade in a real repository.
+Working MVP. Pipeline complete end to end, covered by the test suite, across
+thirteen package ecosystems and two front ends (VS Code extension, GitHub
+Action) plus a CLI, verified against a real upgrade in a real repository.
 
 Known limitations are documented rather than hidden — including single-hop
-localization, npm-only computed diffs, and prompt injection via
-attacker-influenced changelogs as mitigated rather than solved.
+localization, computed API diffs that need a local toolchain outside npm, and
+prompt injection via attacker-influenced changelogs as mitigated rather than
+solved.
 [docs/architecture.md § Known limitations](architecture.md#known-limitations)
 
 ## Technical differentiators
@@ -161,10 +163,12 @@ its reasoning is recorded in [docs/research.md](research.md).
 
 ## Try it
 
+Not published to npm yet — clone the repo, `npm install && npm run build`,
+then:
+
 ```bash
-npm install -g drift
 export GITHUB_TOKEN=ghp_...
-drift analyze
+node dist/cli.js analyze
 ```
 
 Full pipeline, real report, nothing written.

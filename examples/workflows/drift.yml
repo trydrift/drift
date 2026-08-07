@@ -99,7 +99,7 @@ jobs:
 
       - name: Run Drift
         id: drift
-        uses: drift-sh/drift@v0
+        uses: trydrift/drift@v0
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           copilot-token: ${{ secrets.DRIFT_COPILOT_TOKEN }}
