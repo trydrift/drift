@@ -20,6 +20,7 @@ const RECIPE = {
   publisher: 'Codemod.com',
   source: 'https://codemod.com/registry/@acme/upgrade-sdk',
   migration: 'Migrates `gone` usages to the v2 API.',
+  official: true,
 };
 
 function commit(recipe: CommitUnit['recipe']): CommitUnit {

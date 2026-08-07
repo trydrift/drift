@@ -1,5 +1,3 @@
-import type { BreakingChange, DependencyChange } from '../types.js';
-
 /**
  * Shared remediation types.
  *
@@ -23,9 +21,9 @@ export type CommunityRecipeProvider = 'codemod.com' | 'openrewrite';
  */
 export interface CommunityRecipeCandidate {
   provider: CommunityRecipeProvider;
-  /** Recipe identifier as the provider names it, e.g. `@scope/recipe-name` or an OpenRewrite class FQN. */
+  /** Recipe identifier as the provider names it, e.g. `@scope/recipe-name` or an OpenRewrite recipe id. */
   name: string;
-  /** Exact, pinned version. Never a range — a recipe is never resolved against "latest". */
+  /** Exact, pinned version, resolved at discovery time. Never a range or "latest". */
   version: string;
   /** Publisher, for display next to the recipe name (e.g. `Codemod.com`, `OpenRewrite`, an org name). */
   publisher: string;
@@ -33,13 +31,14 @@ export interface CommunityRecipeCandidate {
   source: string;
   /** One-line statement of the migration this recipe claims to handle. */
   migration: string;
-}
-
-/** A matcher entry in the curated community recipe registry. */
-export interface CommunityRecipeSource {
-  candidate: CommunityRecipeCandidate;
-  /** Whether this recipe applies to a given breaking change. */
-  matches(change: BreakingChange, dependencyChange: DependencyChange | undefined): boolean;
+  /**
+   * Published by the registry's own vendor/maintainer org, not a third party.
+   * Every OpenRewrite match is official (the group id is OpenRewrite's own);
+   * a Codemod.com match is official only when the registry itself marks the
+   * entry verified/first-party. Used to prefer official recipes when more
+   * than one candidate matches the same breaking change.
+   */
+  official: boolean;
 }
 
 /** Outcome of actually running a community recipe against a worktree. */

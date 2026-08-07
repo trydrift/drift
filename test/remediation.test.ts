@@ -6,11 +6,13 @@ import {
   planForCommits,
 } from '../dist/remediation/partition.js';
 import { findCommunityRecipe } from '../dist/remediation/registry.js';
+import { queryCodemodRegistry, queryOpenRewriteRegistry } from '../dist/remediation/live-search.js';
 import { applyBuiltinCodemod } from '../dist/remediation/apply.js';
 import { executeCommunityRecipe } from '../dist/remediation/execute-recipe.js';
 import { attemptCodemod } from '../dist/codemod/index.js';
 import { buildPlan } from '../dist/plan/index.js';
 import { DriftConfigSchema } from '../dist/config/schema.js';
+import { clearHttpCache } from '../dist/util/http.js';
 
 const repo = {
   owner: 'acme',
@@ -54,6 +56,16 @@ const site = (breakingChangeId: string, file: string, line = 1, symbol = 'oldNam
   confidence: 'high' as const,
 });
 
+const dependencyChange = (name: string, ecosystem: 'npm' | 'maven' = 'npm') => ({
+  name,
+  ecosystem,
+  from: '1.0.0',
+  to: '2.0.0',
+  kind: 'runtime' as const,
+  bump: 'major' as const,
+  manifestPath: ecosystem === 'maven' ? 'pom.xml' : 'package.json',
+});
+
 const RECIPE = {
   provider: 'codemod.com' as const,
   name: '@acme/upgrade-sdk',
@@ -61,6 +73,7 @@ const RECIPE = {
   publisher: 'Codemod.com',
   source: 'https://codemod.com/registry/@acme/upgrade-sdk',
   migration: 'Migrates `gone` usages to the v2 API.',
+  official: true,
 };
 
 function commitUnit(overrides: Record<string, unknown> = {}) {
@@ -131,22 +144,198 @@ describe('remediationKindFor / partitionCommits', () => {
   });
 });
 
-describe('findCommunityRecipe', () => {
-  test('the shipped registry is empty by default — no recipe is ever offered without a maintainer curating one', () => {
-    assert.equal(findCommunityRecipe(removedBreaking() as never, undefined), null);
+describe('findCommunityRecipe: live discovery orchestration', () => {
+  test('no registry queried is no candidate found — never a crash', async () => {
+    assert.equal(await findCommunityRecipe(removedBreaking() as never, undefined, []), null);
   });
 
-  test('an injected source can match, so the resolution machinery is testable without a populated registry', () => {
-    const source = {
-      candidate: RECIPE,
-      matches: (change: { dependency: string }) => change.dependency === 'acme-sdk',
+  test('an injected query can match, so this is testable without a real network call', async () => {
+    const query = async (change: { dependency: string }) => (change.dependency === 'acme-sdk' ? RECIPE : null);
+    assert.deepEqual(await findCommunityRecipe(removedBreaking() as never, undefined, [query as never]), RECIPE);
+  });
+
+  test('a non-matching query contributes no candidate', async () => {
+    const query = async () => null;
+    assert.equal(await findCommunityRecipe(removedBreaking() as never, undefined, [query as never]), null);
+  });
+
+  test('a query that throws is treated the same as a query that finds nothing — never fails the run', async () => {
+    const query = async () => {
+      throw new Error('registry unreachable');
     };
-    assert.deepEqual(findCommunityRecipe(removedBreaking() as never, undefined, [source as never]), RECIPE);
+    assert.equal(await findCommunityRecipe(removedBreaking() as never, undefined, [query as never]), null);
   });
 
-  test('a non-matching source yields no candidate', () => {
-    const source = { candidate: RECIPE, matches: () => false };
-    assert.equal(findCommunityRecipe(removedBreaking() as never, undefined, [source as never]), null);
+  test('an official match is preferred over an unofficial one, regardless of query order', async () => {
+    const unofficial = { ...RECIPE, name: '@randomer/recipe', official: false };
+    const official = { ...RECIPE, name: '@acme/official-recipe', official: true };
+
+    const queries = [async () => unofficial, async () => official];
+    const found = await findCommunityRecipe(removedBreaking() as never, undefined, queries as never);
+    assert.equal(found!.name, '@acme/official-recipe');
+
+    const reversed = [async () => official, async () => unofficial];
+    const foundReversed = await findCommunityRecipe(removedBreaking() as never, undefined, reversed as never);
+    assert.equal(foundReversed!.name, '@acme/official-recipe');
+  });
+});
+
+describe('live-search: trust boundary and defensive parsing', () => {
+  const originalFetch = globalThis.fetch;
+
+  function mockFetch(handler: (url: string) => { status: number; body: string } | null) {
+    globalThis.fetch = (async (input: unknown) => {
+      const url = String(input);
+      const result = handler(url);
+      if (!result) return new Response('not found', { status: 404 });
+      return new Response(result.body, { status: result.status, headers: { 'content-type': 'application/json' } });
+    }) as typeof fetch;
+  }
+
+  test('only the two hardcoded registry hosts are ever requested', async () => {
+    const requested: string[] = [];
+    mockFetch((url) => {
+      requested.push(new URL(url).host);
+      return { status: 200, body: JSON.stringify({ entries: [] }) };
+    });
+    clearHttpCache();
+
+    await queryCodemodRegistry(removedBreaking() as never, dependencyChange('acme-sdk', 'maven'));
+    await queryOpenRewriteRegistry(removedBreaking() as never, dependencyChange('acme-sdk', 'maven'));
+
+    for (const host of requested) {
+      assert.ok(
+        host === 'api.codemod.com' || host === 'search.maven.org',
+        `unexpected registry host queried: ${host}`,
+      );
+    }
+    globalThis.fetch = originalFetch;
+  });
+
+  test('queryCodemodRegistry matches on the dependency name and pins the returned version', async () => {
+    mockFetch((url) => {
+      if (!url.includes('api.codemod.com')) return null;
+      return {
+        status: 200,
+        body: JSON.stringify({
+          entries: [
+            {
+              slug: '@acme/upgrade-sdk',
+              version: '1.2.3',
+              description: 'Migrates acme-sdk usages to the v2 API.',
+              verified: true,
+              owner: { name: 'Codemod.com' },
+            },
+            { slug: 'totally-unrelated', version: '9.9.9', description: 'Nothing to do with this.' },
+          ],
+        }),
+      };
+    });
+    clearHttpCache();
+
+    const found = await queryCodemodRegistry(removedBreaking() as never, dependencyChange('acme-sdk', 'npm'));
+    assert.ok(found);
+    assert.equal(found!.name, '@acme/upgrade-sdk');
+    assert.equal(found!.version, '1.2.3');
+    assert.equal(found!.official, true);
+    globalThis.fetch = originalFetch;
+  });
+
+  test('queryCodemodRegistry never matches an unrelated entry', async () => {
+    mockFetch(() => ({
+      status: 200,
+      body: JSON.stringify({ entries: [{ slug: 'totally-unrelated', version: '1.0.0', description: 'other' }] }),
+    }));
+    clearHttpCache();
+
+    assert.equal(await queryCodemodRegistry(removedBreaking() as never, dependencyChange('acme-sdk', 'npm')), null);
+    globalThis.fetch = originalFetch;
+  });
+
+  test('queryCodemodRegistry degrades to no candidate on a malformed response, never throwing', async () => {
+    mockFetch(() => ({ status: 200, body: 'not json at all' }));
+    clearHttpCache();
+
+    const found = await queryCodemodRegistry(removedBreaking() as never, dependencyChange('acme-sdk', 'npm'));
+    assert.equal(found, null);
+    globalThis.fetch = originalFetch;
+  });
+
+  test('queryCodemodRegistry degrades to no candidate when the registry is unreachable', async () => {
+    globalThis.fetch = (async () => {
+      throw new Error('ENOTFOUND api.codemod.com');
+    }) as typeof fetch;
+    clearHttpCache();
+
+    const found = await queryCodemodRegistry(removedBreaking() as never, dependencyChange('acme-sdk', 'npm'));
+    assert.equal(found, null);
+    globalThis.fetch = originalFetch;
+  });
+
+  test('queryOpenRewriteRegistry only ever proposes org.openrewrite.recipe coordinates, and only with a named recipe id', async () => {
+    mockFetch((url) => {
+      if (url.includes('solrsearch')) {
+        return {
+          status: 200,
+          body: JSON.stringify({
+            response: { docs: [{ g: 'org.openrewrite.recipe', a: 'rewrite-acme-sdk', latestVersion: '4.5.6' }] },
+          }),
+        };
+      }
+      if (url.includes('remotecontent')) {
+        return {
+          status: 200,
+          body: '<project><description>Runs org.openrewrite.acme.UpgradeAcmeSdk to migrate.</description></project>',
+        };
+      }
+      return null;
+    });
+    clearHttpCache();
+
+    const found = await queryOpenRewriteRegistry(removedBreaking() as never, dependencyChange('acme-sdk', 'maven'));
+    assert.ok(found);
+    assert.equal(found!.name, 'org.openrewrite.acme.UpgradeAcmeSdk');
+    assert.equal(found!.version, '4.5.6');
+    assert.equal(found!.official, true);
+    globalThis.fetch = originalFetch;
+  });
+
+  test('queryOpenRewriteRegistry declines rather than guess when no recipe id is named in the POM', async () => {
+    mockFetch((url) => {
+      if (url.includes('solrsearch')) {
+        return {
+          status: 200,
+          body: JSON.stringify({
+            response: { docs: [{ g: 'org.openrewrite.recipe', a: 'rewrite-acme-sdk', latestVersion: '4.5.6' }] },
+          }),
+        };
+      }
+      if (url.includes('remotecontent')) {
+        return { status: 200, body: '<project><description>A generic module with no id mentioned.</description></project>' };
+      }
+      return null;
+    });
+    clearHttpCache();
+
+    assert.equal(
+      await queryOpenRewriteRegistry(removedBreaking() as never, dependencyChange('acme-sdk', 'maven')),
+      null,
+    );
+    globalThis.fetch = originalFetch;
+  });
+
+  test('queryOpenRewriteRegistry never queries non-maven ecosystems', async () => {
+    let called = false;
+    mockFetch(() => {
+      called = true;
+      return { status: 200, body: '{}' };
+    });
+    clearHttpCache();
+
+    const found = await queryOpenRewriteRegistry(removedBreaking() as never, dependencyChange('acme-sdk', 'npm'));
+    assert.equal(found, null);
+    assert.equal(called, false);
+    globalThis.fetch = originalFetch;
   });
 });
 

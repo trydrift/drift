@@ -19,6 +19,7 @@ import type { AnalysisGap, CheckedSurface, VerificationOutcome } from './confide
 import { behaviouralFindingKind, runBehaviouralVerification } from './verification/behavioural.js';
 import { fetchedPackageEnvironment } from './verification/environment.js';
 import { dependencyKey } from './util/id.js';
+import { mapWithConcurrency } from './util/http.js';
 
 /**
  * Stages 1–7: everything up to, but not including, acting.
@@ -208,22 +209,34 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     const dependencyChangeByKey = new Map(
       actionable.map((c) => [`${c.workspace ?? ''}::${c.name}`, c] as const),
     );
+
+    // Findings the built-in codemod engine declined, in case community
+    // recipes are enabled — the built-in fix always wins when both could
+    // apply, so there is no reason to query a registry for one it already
+    // resolved.
+    const needsRecipeLookup: typeof breakingChanges = [];
     for (const change of breakingChanges) {
       const sitesHere = sitesByChange.get(change.id);
       if (!sitesHere || sitesHere.length === 0) continue;
 
       const result = attemptCodemod(change, sitesHere, fileContents);
-      if (result) {
-        codemods.set(change.id, result);
-        continue;
-      }
+      if (result) codemods.set(change.id, result);
+      else needsRecipeLookup.push(change);
+    }
 
-      // Only consult the community registry for findings the built-in
-      // codemod engine declined — the built-in fix always wins when both
-      // could apply.
-      const dependencyChange = dependencyChangeByKey.get(`${change.workspace ?? ''}::${change.dependency}`);
-      const recipe = findCommunityRecipe(change, dependencyChange);
-      if (recipe) recipes.set(change.id, recipe);
+    // A community recipe requires a real network call to a third-party
+    // registry, unlike the built-in codemod check above — so, unlike that
+    // check, this only runs when the operator has explicitly opted in.
+    // Bounded concurrency keeps a slow registry from serializing an
+    // otherwise-fast analysis; `findCommunityRecipe` itself never throws.
+    if (config.remediation.communityRecipes && needsRecipeLookup.length > 0) {
+      const found = await mapWithConcurrency(needsRecipeLookup, 4, async (change) => {
+        const dependencyChange = dependencyChangeByKey.get(`${change.workspace ?? ''}::${change.dependency}`);
+        return [change.id, await findCommunityRecipe(change, dependencyChange)] as const;
+      });
+      for (const [changeId, recipe] of found) {
+        if (recipe) recipes.set(changeId, recipe);
+      }
     }
   } else if (breakingChanges.length > 0) {
     logger.warn('No local checkout available; affected code cannot be located.');
