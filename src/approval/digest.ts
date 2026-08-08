@@ -121,7 +121,12 @@ export function canonicalPlan(plan: RemediationPlan): Record<string, unknown> {
   return {
     schemaVersion: PLAN_SCHEMA_VERSION,
     id: plan.id,
-    branchName: plan.branchName,
+    // Excluded like `createdAt`: the default branch template includes
+    // `{date}`, resolved from wall-clock time at plan-build time, so it is
+    // volatile across a UTC-midnight boundary even when nothing about the
+    // plan itself changed. It carries no decision-bearing content beyond
+    // `changes`, which is already digested below — a reviewer approves the
+    // upgrade, not the branch name it happens to land on.
     baseBranch: plan.baseBranch,
     headSha: plan.headSha,
     risk: plan.risk,

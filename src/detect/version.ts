@@ -8,14 +8,21 @@ import type { BumpKind } from '../types.js';
  * analysis needs points. We take the lower bound, which is the version the range
  * was authored against and the one release notes are written relative to.
  */
-export function normalizeVersion(raw: string | null | undefined): string | null {
+function cleanRangeOperators(raw: string | null | undefined): string | null {
   if (!raw) return null;
 
   let v = raw.trim();
   if (!v) return null;
 
-  // Non-versions we can't reason about: git URLs, file paths, tags, wildcards.
-  if (/^(git|github|file|link|workspace|npm|https?):/i.test(v)) return null;
+  // npm aliases (`npm:foo@1.2.3`, `npm:@scope/foo@1.2.3`) point at a real published
+  // version — unwrap them instead of discarding the version they carry.
+  const aliasMatch = /^npm:(?:@[^/]+\/)?[^@]+@(.+)$/i.exec(v);
+  if (aliasMatch) {
+    v = aliasMatch[1]!.trim();
+  } else if (/^(git|github|file|link|workspace|npm|https?):/i.test(v)) {
+    // Non-versions we can't reason about: git URLs, file paths, tags, wildcards.
+    return null;
+  }
   if (v === '*' || v === 'latest' || v === '') return null;
 
   // Take the first component of a compound range: ">=2.0.0 <3.0.0" -> ">=2.0.0".
@@ -34,10 +41,26 @@ export function normalizeVersion(raw: string | null | undefined): string | null 
   // Go pseudo-versions and `+incompatible` suffixes.
   v = v.replace(/\+incompatible$/, '');
 
-  if (!v) return null;
+  return v || null;
+}
 
+export function normalizeVersion(raw: string | null | undefined): string | null {
+  const v = cleanRangeOperators(raw);
+  if (!v) return null;
   const coerced = semver.valid(v) ?? semver.valid(semver.coerce(v) ?? '');
   return coerced ?? null;
+}
+
+/**
+ * Like `normalizeVersion`, but refuses to coerce non-SemVer strings (Maven's
+ * `1.0.0.Final`, `1.0.0.SP1`, ...). Coercion can map genuinely different
+ * versions onto the same SemVer point, which is fine for bump classification
+ * but wrong for "did this actually change?" comparisons — it would make a
+ * real qualifier-only upgrade look like unchanged churn.
+ */
+export function normalizeVersionExact(raw: string | null | undefined): string | null {
+  const v = cleanRangeOperators(raw);
+  return v ? (semver.valid(v) ?? null) : null;
 }
 
 /**

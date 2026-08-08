@@ -608,7 +608,7 @@ describe('assembling the rationale', () => {
   test('a failure is stated once, with its remedy attached rather than repeated', async () => {
     const surfaceGaps = new Map([
       [
-        'pkg',
+        'npm pkg',
         {
           available: false as const,
           reason: 'tool-missing' as const,

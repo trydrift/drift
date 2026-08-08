@@ -445,15 +445,32 @@ async function usableWorkspace(
   }
 
   const localHead = result.stdout.trim();
-  if (localHead !== headSha) {
-    logger.warn(
-      `The checkout is at ${localHead.slice(0, 7)} but this plan describes ${headSha.slice(0, 7)}. ` +
-        'Skipping localization rather than reporting impact sites from the wrong tree.',
-    );
-    return undefined;
+  if (localHead === headSha) return workspace;
+
+  // The common case on an `issue_comment` event: `actions/checkout` takes the
+  // default branch regardless of which branch the plan was generated on, so
+  // the checkout is almost always on some *other* commit here, not a corrupt
+  // one. Try to bring the exact reviewed commit into this checkout before
+  // giving up on localization for it — the remote and its credentials are
+  // already configured by whatever checked this workspace out.
+  const fetched = await execCommand('git', ['fetch', '--depth', '1', 'origin', headSha], {
+    cwd: workspace,
+    timeoutMs: 30_000,
+  });
+  if (fetched.code === 0) {
+    const checkedOut = await execCommand('git', ['checkout', '--detach', headSha], {
+      cwd: workspace,
+      timeoutMs: 10_000,
+    });
+    if (checkedOut.code === 0) return workspace;
   }
 
-  return workspace;
+  logger.warn(
+    `The checkout is at ${localHead.slice(0, 7)} but this plan describes ${headSha.slice(0, 7)}, ` +
+      'and Drift could not fetch and check out that commit. ' +
+      'Skipping localization rather than reporting impact sites from the wrong tree.',
+  );
+  return undefined;
 }
 
 /**

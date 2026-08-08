@@ -84,11 +84,58 @@ export class GitHubClient {
         repo: repo.repo,
         basehead: `${repo.beforeSha}...${repo.afterSha}`,
       });
-      return (response.data.files ?? []).map((f) => f.filename);
+      const files = response.data.files ?? [];
+
+      // GitHub caps the compare endpoint's `files` array at 300 entries, with
+      // no `truncated` flag — 300 exactly is the only signal. Below that cap,
+      // or with fewer commits than exist between the two SHAs (paginated at
+      // 250), a manifest past the cutoff would silently vanish from analysis.
+      const commits = response.data.commits ?? [];
+      const truncated = files.length >= 300 || commits.length < response.data.total_commits;
+      if (!truncated) return files.map((f) => f.filename);
+
+      this.logger.warn(
+        `Comparison ${repo.beforeSha}...${repo.afterSha} exceeds GitHub's per-request limits ` +
+          `(${response.data.total_commits} commits); falling back to per-commit file listing.`,
+      );
+      return await this.changedFilesByCommit(repo);
     } catch (err) {
       this.logger.warn(`Could not compare ${repo.beforeSha}...${repo.afterSha}: ${(err as Error).message}`);
       throw err;
     }
+  }
+
+  /**
+   * Fallback for `changedFiles` when the comparison is too large for a single
+   * request: walk every commit between the two SHAs (paginated) and union
+   * each commit's own file list (also paginated per-commit, since a single
+   * commit can itself touch more than 300 files).
+   */
+  private async changedFilesByCommit(repo: RepoContext): Promise<string[]> {
+    const shas = new Set<string>();
+    for await (const page of this.octokit.paginate.iterator(this.octokit.repos.compareCommitsWithBasehead, {
+      owner: repo.owner,
+      repo: repo.repo,
+      basehead: `${repo.beforeSha}...${repo.afterSha}`,
+      per_page: 250,
+    })) {
+      const data = page.data as { commits?: { sha: string }[] };
+      for (const commit of data.commits ?? []) shas.add(commit.sha);
+    }
+
+    const filenames = new Set<string>();
+    for (const sha of shas) {
+      for await (const page of this.octokit.paginate.iterator(this.octokit.repos.getCommit, {
+        owner: repo.owner,
+        repo: repo.repo,
+        ref: sha,
+        per_page: 300,
+      })) {
+        const data = page.data as { files?: { filename: string }[] };
+        for (const file of data.files ?? []) filenames.add(file.filename);
+      }
+    }
+    return [...filenames];
   }
 
   /**
@@ -123,10 +170,25 @@ export class GitHubClient {
           return true;
         }
         if (head && (await this.isAncestor(repo, sha, head))) {
-          this.logger.info(
-            `Branch ${branchName} already exists ahead of ${sha.slice(0, 7)}; reusing it`,
+          // Being ahead of `sha` only says the branch has *some* extra
+          // commits — it says nothing about who made them. A later
+          // `commitFiles` call rebuilds its tree from the branch's current
+          // tip and overlays whole-file blobs for the paths it touches, so
+          // reusing a branch that a human pushed manual edits to would
+          // silently overwrite those edits with content derived from the
+          // stale `sha` checkout. Only reuse when every commit ahead of
+          // `sha` is Drift's own.
+          if (await this.commitsAreAllBots(repo, sha, head)) {
+            this.logger.info(
+              `Branch ${branchName} already exists ahead of ${sha.slice(0, 7)}; reusing it`,
+            );
+            return true;
+          }
+          this.logger.error(
+            `Branch ${branchName} already exists ahead of ${sha.slice(0, 7)} with commit(s) not made by ` +
+              `Drift; refusing to reuse a branch that may carry manual changes`,
           );
-          return true;
+          return false;
         }
         this.logger.error(
           `Branch ${branchName} already exists but is not based on ${sha.slice(0, 7)} ` +
@@ -152,6 +214,31 @@ export class GitHubClient {
       // commits; `identical` means they are the same commit.
       return response.data.status === 'ahead' || response.data.status === 'identical';
     } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Whether every commit strictly after `base` up to and including `head` was
+   * authored by a bot identity (login ending in `[bot]` — how GitHub renders
+   * both Actions' own token and any GitHub App installation, which is
+   * everything Drift itself ever commits as). A human-authored commit
+   * anywhere in that range means the branch carries changes Drift did not
+   * make and must not silently build on top of.
+   */
+  private async commitsAreAllBots(repo: RepoContext, base: string, head: string): Promise<boolean> {
+    try {
+      const response = await this.octokit.repos.compareCommitsWithBasehead({
+        owner: repo.owner,
+        repo: repo.repo,
+        basehead: `${base}...${head}`,
+      });
+      const commits = response.data.commits ?? [];
+      if (commits.length === 0) return true;
+      return commits.every((c) => (c.author?.login ?? c.committer?.login ?? '').endsWith('[bot]'));
+    } catch {
+      // Unable to prove it — the ancestor check already established the
+      // branch isn't behind `base`, so fail closed and decline the reuse.
       return false;
     }
   }

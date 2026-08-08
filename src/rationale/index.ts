@@ -10,7 +10,7 @@ import {
   type RegistryInfo,
 } from '../evidence/registry.js';
 import { mapWithConcurrency } from '../util/http.js';
-import { dependencyKey } from '../util/id.js';
+import { dependencyEcosystemKey } from '../util/id.js';
 import { assessSecurity, type OsvOptions } from './osv.js';
 import { assessMaintenance } from './maintenance.js';
 import { assessLicense } from './license.js';
@@ -37,9 +37,9 @@ export interface RationaleContext {
   githubToken?: string;
   /** Test seam for the OSV client. */
   osv?: OsvOptions;
-  /** Computed API additions, keyed by `dependencyKey` (workspace + name). */
+  /** Computed API additions, keyed by `dependencyEcosystemKey` (ecosystem + workspace + name). */
   additions?: Map<string, { additions: SurfaceAddition[]; locator: string }>;
-  /** Surface diffs that could not be produced, keyed by `dependencyKey` (workspace + name). */
+  /** Surface diffs that could not be produced, keyed by `dependencyEcosystemKey` (ecosystem + workspace + name). */
   surfaceGaps?: Map<string, SurfaceUnavailable>;
   /** Prose documents that were actually read, keyed by dependency name. */
   prose?: Map<string, ProseSource[]>;
@@ -123,7 +123,7 @@ async function rationaleFor(
   const relevantIds = new Set(breakingChanges.map((b) => b.id));
   const impactSites = input.impactSites.filter((s) => relevantIds.has(s.breakingChangeId));
 
-  const computed = ctx.additions?.get(dependencyKey(change));
+  const computed = ctx.additions?.get(dependencyEcosystemKey(change));
   const summary = config.rationale.summary
     ? summarizeRelease({
         dependency: change.name,
@@ -139,7 +139,7 @@ async function rationaleFor(
   if (additive) improvements.push(additive);
 
   const gaps = collectGaps(change, {
-    surfaceGap: ctx.surfaceGaps?.get(dependencyKey(change)),
+    surfaceGap: ctx.surfaceGaps?.get(dependencyEcosystemKey(change)),
     security,
     registry,
     evidence: input.evidence,

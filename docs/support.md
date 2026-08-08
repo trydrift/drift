@@ -36,12 +36,12 @@ reassuring.** Drift never renders the first as the second.
 | Java / Kotlin / Scala | Partial | Yes | Partial | Partial | Partial | Partial | Yes |
 | Ruby | Yes | Yes | No | Partial | Partial | Yes | Yes |
 | .NET | Yes | Partial | No | Partial | Partial | Yes | Yes |
-| PHP | Yes | Partial | No | Partial | Partial | Yes | Yes |
-| Elixir / Erlang | Yes | Partial | No | Partial | Partial | Yes | Yes |
+| PHP | Yes | Partial | No | No | Partial | Yes | Yes |
+| Elixir / Erlang | Yes | Partial | No | No | Partial | Yes | Yes |
 | Dart / Flutter | Yes | Partial | No | Partial | Partial | Yes | Yes |
-| Swift | Partial | Partial | No | Partial | Partial | Yes | Yes |
-| CocoaPods | Yes | Partial | No | Partial | No | Yes | Yes |
-| OCaml | Yes | Partial | No | Partial | Partial | Yes | Yes |
+| Swift | Partial | Partial | No | No | Partial | Yes | Yes |
+| CocoaPods | Yes | Partial | No | No | No | Yes | Yes |
+| OCaml | Yes | Partial | No | No | Partial | Yes | Yes |
 
 ## JavaScript / TypeScript
 
@@ -124,7 +124,7 @@ reassuring.** Drift never renders the first as the second.
 
 - **Evidence — Partial.** Registry metadata, published versions, abandonment notices, and OSV advisories. Release notes depend on the package declaring a source repository.
 - **API surface — No.** PHP publishes no machine-comparable API artefact; upgrades rest on release notes, changelogs, and advisories.
-- **Static analysis — Partial.** Matches imports and references to symbols named in the evidence; cannot see through reflection, dynamic dispatch, or generated code.
+- **Static analysis — No.** PHP namespaces do not map deterministically to a Composer package name (a PSR-4 root can belong to any vendor); Drift does not localize usages in this ecosystem yet.
 - **Verify — Partial.** Runs PHPUnit when composer.json declares it. *Requires Composer.*
 
 ## Elixir / Erlang
@@ -135,7 +135,7 @@ reassuring.** Drift never renders the first as the second.
 
 - **Evidence — Partial.** Registry metadata, published versions, retirement notices, and OSV advisories.
 - **API surface — No.** Hex publishes no machine-comparable API artefact; upgrades rest on release notes, changelogs, and advisories.
-- **Static analysis — Partial.** Matches imports and references to symbols named in the evidence; cannot see through reflection, dynamic dispatch, or generated code.
+- **Static analysis — No.** Elixir and Erlang code can call a module without any import statement naming its package; Drift does not localize usages in this ecosystem yet.
 - **Verify — Partial.** Runs `mix compile --warnings-as-errors` and `mix test`. *Requires Elixir and Mix.*
 
 ## Dart / Flutter
@@ -158,7 +158,7 @@ reassuring.** Drift never renders the first as the second.
 - **Detect — Partial.** Reads literal `.package(...)` declarations and Package.resolved. Versions computed by Swift code at manifest-evaluation time are not visible without running SwiftPM.
 - **Evidence — Partial.** Source repository, releases, and changelogs, because SwiftPM identifies packages by git URL. There is no central registry to query for deprecation.
 - **API surface — No.** Comparing two Swift module interfaces needs a local toolchain and a built artefact Drift does not produce; upgrades rest on prose evidence.
-- **Static analysis — Partial.** Matches imports and references to symbols named in the evidence; cannot see through reflection, dynamic dispatch, or generated code.
+- **Static analysis — No.** A Swift package can vend module names unrelated to the package name in Package.swift; Drift does not localize usages in this ecosystem yet.
 - **Verify — Partial.** Runs `swift build` and `swift test`. *Requires the Swift toolchain.*
 
 ## CocoaPods
@@ -169,7 +169,7 @@ reassuring.** Drift never renders the first as the second.
 
 - **Evidence — Partial.** Release notes and changelogs when the pod declares a GitHub source. CocoaPods publishes no queryable metadata API, so there is no deprecation or advisory signal.
 - **API surface — No.** Drift does not compare compiled iOS frameworks; upgrades rest on prose evidence.
-- **Static analysis — Partial.** Matches imports and references to symbols named in the evidence; cannot see through reflection, dynamic dispatch, or generated code.
+- **Static analysis — No.** A pod's Swift or Objective-C module name is not derivable from its podspec name; Drift does not localize usages in this ecosystem yet.
 - **Verify — No.** Building an iOS target needs Xcode and a scheme Drift cannot infer; verification stays with the developer.
 
 ## OCaml
@@ -180,7 +180,7 @@ reassuring.** Drift never renders the first as the second.
 
 - **Evidence — Partial.** Release notes and changelogs when the package declares a GitHub source. opam has no JSON metadata API, so there is no registry deprecation signal.
 - **API surface — No.** Comparing two OCaml module interfaces needs a built switch Drift does not create; upgrades rest on prose evidence.
-- **Static analysis — Partial.** Matches imports and references to symbols named in the evidence; cannot see through reflection, dynamic dispatch, or generated code.
+- **Static analysis — No.** An OCaml library's top-level module name is not derivable from its opam package name without reading its dune build rules; Drift does not localize usages in this ecosystem yet.
 - **Verify — Partial.** Runs `dune build` and `dune runtest`. *Requires opam and dune.*
 
 ## Ecosystems that are not on this list

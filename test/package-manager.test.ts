@@ -94,7 +94,7 @@ describe('upgrade commands', () => {
     assert.equal(describeCommand(upgrade('poetry')!), 'poetry add left-pad==2.0.0');
     assert.equal(describeCommand(upgrade('uv')!), 'uv add left-pad==2.0.0');
     assert.equal(describeCommand(upgrade('pip')!), 'pip install --upgrade left-pad==2.0.0');
-    assert.equal(describeCommand(upgrade('cargo')!), 'cargo add left-pad@2.0.0');
+    assert.equal(describeCommand(upgrade('cargo')!), 'cargo add left-pad@=2.0.0');
     assert.equal(describeCommand(upgrade('bundler')!), 'bundle update left-pad --conservative');
   });
 
@@ -125,8 +125,8 @@ describe('upgrade commands', () => {
 
 describe('manifest rewriting', () => {
   const target = { name: 'left-pad', version: '2.0.0', kind: 'runtime' as const };
-  const rewrite = (id: string, content: string) =>
-    packageManagerById(id as never)!.rewriteManifest!(content, target);
+  const rewrite = (id: string, content: string, manifestPath = 'requirements.txt') =>
+    packageManagerById(id as never)!.rewriteManifest!(content, target, manifestPath);
 
   test('pins requirements.txt to an exact version, whatever specifier was there', () => {
     assert.equal(rewrite('pip', 'left-pad==1.0.0\n'), 'left-pad==2.0.0\n');
@@ -135,6 +135,24 @@ describe('manifest rewriting', () => {
     assert.equal(rewrite('pip', 'left_pad==1.0.0\n'), 'left_pad==2.0.0\n');
     assert.equal(rewrite('pip', 'left-pad[extra]==1.0.0\n'), 'left-pad[extra]==2.0.0\n');
     assert.equal(rewrite('pip', 'other-pkg==1.0.0\n'), 'other-pkg==1.0.0\n');
+  });
+
+  test('pins a pyproject.toml PEP 621 dependency entry to an exact version', () => {
+    assert.equal(
+      rewrite('pip', 'dependencies = [\n  "left-pad>=1.0,<2.0",\n]\n', 'pyproject.toml'),
+      'dependencies = [\n  "left-pad==2.0.0",\n]\n',
+    );
+    assert.equal(
+      rewrite('pip', "dependencies = [\n  'left-pad',\n]\n", 'pyproject.toml'),
+      "dependencies = [\n  'left-pad==2.0.0',\n]\n",
+    );
+  });
+
+  test('pins a setup.py install_requires entry to an exact version', () => {
+    assert.equal(
+      rewrite('pip', "install_requires=[\n    'left-pad==1.0.0',\n]\n", 'setup.py'),
+      "install_requires=[\n    'left-pad==2.0.0',\n]\n",
+    );
   });
 
   test('rewrites a Gemfile constraint, or adds one to a bare gem', () => {

@@ -262,7 +262,9 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       surface: none(
         'PHP publishes no machine-comparable API artefact; upgrades rest on release notes, changelogs, and advisories.',
       ),
-      'static-analysis': partial(LOCALIZE_NOTE),
+      'static-analysis': none(
+        'PHP namespaces do not map deterministically to a Composer package name (a PSR-4 root can belong to any vendor); Drift does not localize usages in this ecosystem yet.',
+      ),
       verify: partial('Runs PHPUnit when composer.json declares it.', 'Composer'),
       fix: full(),
       'pull-request': full(),
@@ -281,7 +283,9 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       surface: none(
         'Hex publishes no machine-comparable API artefact; upgrades rest on release notes, changelogs, and advisories.',
       ),
-      'static-analysis': partial(LOCALIZE_NOTE),
+      'static-analysis': none(
+        'Elixir and Erlang code can call a module without any import statement naming its package; Drift does not localize usages in this ecosystem yet.',
+      ),
       verify: partial('Runs `mix compile --warnings-as-errors` and `mix test`.', 'Elixir and Mix'),
       fix: full(),
       'pull-request': full(),
@@ -325,7 +329,9 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       surface: none(
         'Comparing two Swift module interfaces needs a local toolchain and a built artefact Drift does not produce; upgrades rest on prose evidence.',
       ),
-      'static-analysis': partial(LOCALIZE_NOTE),
+      'static-analysis': none(
+        'A Swift package can vend module names unrelated to the package name in Package.swift; Drift does not localize usages in this ecosystem yet.',
+      ),
       verify: partial('Runs `swift build` and `swift test`.', 'the Swift toolchain'),
       fix: full(),
       'pull-request': full(),
@@ -342,7 +348,9 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
         'Release notes and changelogs when the pod declares a GitHub source. CocoaPods publishes no queryable metadata API, so there is no deprecation or advisory signal.',
       ),
       surface: none('Drift does not compare compiled iOS frameworks; upgrades rest on prose evidence.'),
-      'static-analysis': partial(LOCALIZE_NOTE),
+      'static-analysis': none(
+        'A pod\'s Swift or Objective-C module name is not derivable from its podspec name; Drift does not localize usages in this ecosystem yet.',
+      ),
       verify: none(
         'Building an iOS target needs Xcode and a scheme Drift cannot infer; verification stays with the developer.',
       ),
@@ -363,7 +371,9 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       surface: none(
         'Comparing two OCaml module interfaces needs a built switch Drift does not create; upgrades rest on prose evidence.',
       ),
-      'static-analysis': partial(LOCALIZE_NOTE),
+      'static-analysis': none(
+        'An OCaml library\'s top-level module name is not derivable from its opam package name without reading its dune build rules; Drift does not localize usages in this ecosystem yet.',
+      ),
       verify: partial('Runs `dune build` and `dune runtest`.', 'opam and dune'),
       fix: full(),
       'pull-request': full(),

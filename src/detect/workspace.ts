@@ -32,7 +32,9 @@ export type WorkspaceKind =
   | 'cargo-workspace'
   | 'go-work'
   | 'maven-modules'
-  | 'gradle-settings';
+  | 'gradle-settings'
+  /** A sibling manifest found by walking the tree, not declared by any workspace protocol. */
+  | 'undeclared-nested';
 
 export interface WorkspaceMember {
   /** Directory relative to the repository root. `''` is the root itself. */

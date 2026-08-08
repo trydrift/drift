@@ -3,7 +3,14 @@ import type { DriftConfig } from './config/schema.js';
 import type { Logger } from './util/logger.js';
 import type { RepoProvider } from './repo/provider.js';
 import { detectChanges, isManifestPath, triage, type ManifestSnapshot } from './detect/index.js';
-import { detectWorkspaces, labelWorkspaces, memberDirectories, nodeWorkspaceFs } from './detect/workspace.js';
+import {
+  detectWorkspaces,
+  labelWorkspaces,
+  memberDirectories,
+  nodeWorkspaceFs,
+  type WorkspaceLayout,
+} from './detect/workspace.js';
+import { discoverNestedProjects } from './detect/nested.js';
 import { gatherEvidence } from './evidence/index.js';
 import { analyze } from './analyze/index.js';
 import { buildIndex } from './index/metarag.js';
@@ -18,7 +25,7 @@ import type { SurfaceAddition, SurfaceUnavailable } from './evidence/surface/typ
 import type { AnalysisGap, CheckedSurface, VerificationOutcome } from './confidence/types.js';
 import { behaviouralFindingKind, runBehaviouralVerification } from './verification/behavioural.js';
 import { fetchedPackageEnvironment } from './verification/environment.js';
-import { dependencyKey } from './util/id.js';
+import { dependencyEcosystemKey } from './util/id.js';
 import { mapWithConcurrency } from './util/http.js';
 
 /**
@@ -84,7 +91,23 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
 
   // Workspace layout, before triage, so every downstream stage knows which
   // package a change belongs to rather than treating the checkout as one thing.
-  const layouts = workspace ? await detectWorkspaces(workspace, nodeWorkspaceFs()) : [];
+  const declaredLayouts = workspace ? await detectWorkspaces(workspace, nodeWorkspaceFs()) : [];
+
+  // Plenty of repositories are multi-project without ever declaring it through
+  // a workspace protocol — a root package plus a sibling `extension/` or `cli/`
+  // with its own manifest. Left unaccounted for, a bump in one is localized as
+  // though the whole checkout were a single package, the same cross-package
+  // false positive workspace detection above exists to prevent.
+  const nestedLayouts: WorkspaceLayout[] = workspace
+    ? (await discoverNestedProjects(workspace, nodeWorkspaceFs(), memberDirectories(declaredLayouts))).map((p) => ({
+        kind: 'undeclared-nested' as const,
+        ecosystem: p.ecosystem,
+        declaredIn: p.manifestPath,
+        members: [{ dir: p.dir, name: null, ecosystem: p.ecosystem }],
+      }))
+    : [];
+  const layouts = [...declaredLayouts, ...nestedLayouts];
+
   if (layouts.length > 0) {
     logger.info(
       `Workspace: ${layouts.map((l) => `${l.kind} (${l.members.length} member(s))`).join(', ')}`,
@@ -116,10 +139,11 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   // *added*, and why one could not be produced, are both facts about the run
   // that the rationale stage needs and that no BreakingChange should carry.
   //
-  // Keyed by `dependencyKey`, not `change.name` — in a monorepo, two workspace
-  // members can depend on the same package at different versions, and a
-  // name-only key would let one member's computed diff silently stand in for
-  // the other's.
+  // Keyed by `dependencyEcosystemKey`, not `change.name` — in a monorepo, two
+  // workspace members can depend on the same package at different versions,
+  // and (rarer, but real) a workspace can carry the same name in two
+  // ecosystems at once. A name-only key would let one silently stand in for
+  // the other's computed diff.
   const additions = new Map<string, { additions: SurfaceAddition[]; locator: string }>();
   const surfaceGaps = new Map<string, SurfaceUnavailable>();
   // Whether a surface diff was successfully computed at all, independent of
@@ -137,11 +161,11 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     afterSha: repo.afterSha,
     ...(workspace ? { workspaceRoot: workspace } : {}),
     onSurfaceComputed: (change, diff) => {
-      const key = dependencyKey(change);
+      const key = dependencyEcosystemKey(change);
       surfaceComputed.add(key);
       additions.set(key, { additions: diff.additions ?? [], locator: diff.locator });
     },
-    onUnavailableSurface: (change, reason) => surfaceGaps.set(dependencyKey(change), reason),
+    onUnavailableSurface: (change, reason) => surfaceGaps.set(dependencyEcosystemKey(change), reason),
   });
   logger.info(`Gathered ${evidence.length} evidence record(s)`);
 
@@ -344,7 +368,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   }
 
   for (const change of actionable) {
-    const key = dependencyKey(change);
+    const key = dependencyEcosystemKey(change);
     // `e.dependency` alone repeats the monorepo collision this key exists to
     // avoid; require the workspace to match too, falling back to name-only
     // when neither evidence nor the change carries a workspace (the common,

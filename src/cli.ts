@@ -398,6 +398,14 @@ async function fixCommand(flags: Flags): Promise<number> {
       return 1;
     }
 
+    // `drift fix` promises push-and-open-PR; a push with no PR is a failure
+    // of that promise even when every commit resolved cleanly, not a clean
+    // success that merely skipped a nice-to-have step.
+    if (!pr) {
+      logger.warn('Exiting non-zero: the branch was pushed but no pull request was opened.');
+      return 1;
+    }
+
     return 0;
   } finally {
     await fix.teardown();

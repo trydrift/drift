@@ -141,7 +141,13 @@ type MatchConfidence = 'exact' | 'base-name' | 'text' | 'none';
 function entryMatchesDependency(entry: CodemodRegistryEntry, fullName: string, baseName: string): MatchConfidence {
   const packages = entry.applicability?.flatMap((a) => a.packages ?? []) ?? [];
   if (packages.some((p) => p.toLowerCase() === fullName)) return 'exact';
-  if (packages.some((p) => normalizePackageName(p) === baseName)) return 'base-name';
+  // Only a package the entry declares *without* a scope of its own qualifies
+  // here — that is the "registry never recorded the scope" case this tier
+  // exists for. Stripping scope off both sides before comparing would also
+  // match a differently-scoped package (`@foo/core` matching an entry
+  // declaring `@bar/core`), which is a different, unrelated package, not a
+  // scope-recording gap.
+  if (packages.some((p) => !p.includes('/') && p.toLowerCase() === baseName)) return 'base-name';
 
   const haystack = `${entry.slug ?? ''} ${entry.name ?? ''} ${entry.description ?? ''} ${entry.summary ?? ''}`.toLowerCase();
   const boundary = new RegExp(`(?:^|[^a-z0-9])${escapeRegExp(baseName)}(?:$|[^a-z0-9])`);

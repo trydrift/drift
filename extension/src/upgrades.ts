@@ -601,11 +601,11 @@ export async function installUpgrade(
   if (manager?.rewriteManifest) {
     const manifestFile = join(root, candidate.manifestPath);
     const original = await readFile(manifestFile, 'utf8');
-    const rewritten = manager.rewriteManifest(original, {
-      name: candidate.name,
-      version: candidate.selected,
-      kind: candidate.kind,
-    });
+    const rewritten = manager.rewriteManifest(
+      original,
+      { name: candidate.name, version: candidate.selected, kind: candidate.kind },
+      candidate.manifestPath,
+    );
     if (rewritten !== original) await writeFile(manifestFile, rewritten, 'utf8');
   }
 
@@ -980,7 +980,7 @@ async function availableVersions(
   // picker shows: `maxSatisfying` of the twenty newest releases of a busy
   // package is `null` for anything still on the previous major, which left
   // `safeLatest` undefined precisely where it mattered most.
-  const safe = safeLatest(newer, current, range);
+  const safe = safeLatest(newer, current, range, dep.target.manager.ecosystem);
 
   // Prereleases are noise unless the developer is already on one. Twenty
   // versions of zod came back as one release and nine canaries, with no 3.x in
@@ -1091,12 +1091,23 @@ function registryLabel(ecosystem: Ecosystem): string {
   }
 }
 
-function safeLatest(versions: readonly string[], current: string, range: string): string | undefined {
+function safeLatest(versions: readonly string[], current: string, range: string, ecosystem: Ecosystem): string | undefined {
   const candidates = versions.filter((version) => semver.gt(version, current));
-  const validRange = semver.validRange(range);
-  if (validRange) {
-    const matched = semver.maxSatisfying(candidates, validRange);
+
+  // Ruby's `~>` pessimistic operator has no npm-semver equivalent: `semver`
+  // still parses it (as `~`, which narrows differently) rather than failing,
+  // so relying on `validRange`'s success/failure to decide when to use it
+  // would silently misinterpret the range instead of falling back.
+  const rubyBound = ecosystem === 'rubygems' ? rubyPessimisticUpperBound(range) : null;
+  if (rubyBound) {
+    const matched = candidates.filter((version) => semver.lt(version, rubyBound)).sort(semver.rcompare)[0];
     if (matched) return matched;
+  } else {
+    const validRange = semver.validRange(range);
+    if (validRange) {
+      const matched = semver.maxSatisfying(candidates, validRange);
+      if (matched) return matched;
+    }
   }
 
   const parsed = semver.parse(current);
@@ -1112,6 +1123,21 @@ function safeLatest(versions: readonly string[], current: string, range: string)
   });
 
   return semver.maxSatisfying(sameCompatibilityBand, '*') ?? undefined;
+}
+
+/**
+ * Ruby's `~> a.b` allows anything up to (excluding) `(a+1).0`; `~> a.b.c`
+ * allows anything up to (excluding) `a.(b+1).0` — the constraint locks
+ * everything left of the rightmost declared component. Returns `null` for
+ * anything that isn't a bare pessimistic constraint (compound ranges with
+ * `,`/`&&`, or a non-`~>` operator), which falls back to the generic path.
+ */
+function rubyPessimisticUpperBound(range: string): string | null {
+  const match = /^~>\s*(\d+)\.(\d+)(?:\.(\d+))?\s*$/.exec(range.trim());
+  if (!match) return null;
+  const [, major, minor, patch] = match;
+  // `~> 2.2.0` (patch declared) -> `< 2.3.0`; `~> 2.2` (patch omitted) -> `< 3.0.0`.
+  return patch !== undefined ? `${major}.${Number(minor) + 1}.0` : `${Number(major) + 1}.0.0`;
 }
 
 async function readText(path: string): Promise<string | null> {

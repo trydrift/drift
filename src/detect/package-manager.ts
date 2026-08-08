@@ -1,3 +1,4 @@
+import { basename } from 'node:path';
 import type { DependencyKind, Ecosystem } from '../types.js';
 
 /**
@@ -96,7 +97,7 @@ export interface PackageManager {
    * `upgrade`'s command. Absent where `upgrade` already takes the version
    * directly (npm, cargo add, ...) or where there is no command at all.
    */
-  rewriteManifest?: (content: string, target: UpgradeTarget) => string;
+  rewriteManifest?: (content: string, target: UpgradeTarget, manifestPath: string) => string;
 }
 
 /** A package manager found in a directory, with the files that proved it. */
@@ -226,7 +227,10 @@ const MANAGERS: readonly PackageManager[] = [
       command: 'pip',
       args: ['install', '--upgrade', `${name}==${version}`],
     }),
-    rewriteManifest: (content, { name, version }) => rewriteRequirementsTxt(content, name, version),
+    rewriteManifest: (content, { name, version }, manifestPath) =>
+      basename(manifestPath).toLowerCase().endsWith('.txt')
+        ? rewriteRequirementsTxt(content, name, version)
+        : rewritePythonQuotedRequirement(content, name, version),
   },
   {
     id: 'go',
@@ -252,10 +256,12 @@ const MANAGERS: readonly PackageManager[] = [
     // that requirement fails (or a looser requirement silently stays looser
     // than what was actually asked for). `cargo add` is the one cargo command
     // that writes the requirement into Cargo.toml itself, the same way `npm
-    // install name@version` writes package.json.
+    // install name@version` writes package.json. A bare `name@1.2.3` writes a
+    // caret requirement, which lets the resolver pick a newer compatible
+    // release later — `=1.2.3` pins the exact version Drift selected.
     upgrade: ({ name, version }) => ({
       command: 'cargo',
-      args: ['add', `${name}@${version}`],
+      args: ['add', `${name}@=${version}`],
     }),
   },
   {
@@ -441,6 +447,23 @@ function rewriteRequirementsTxt(content: string, name: string, version: string):
   );
   if (!pattern.test(content)) return content;
   return content.replace(pattern, (_match, base: string, extra: string | undefined) => `${base}${extra ?? ''}==${version}`);
+}
+
+/**
+ * `"name==1.2.3"` (or `>=`, a bare `"name"`, ...) inside a quoted-string
+ * dependency list — PEP 621's `dependencies = [...]` in `pyproject.toml`, or
+ * `install_requires = [...]` in `setup.py`. Both declare requirements the
+ * same way pip's own requirement specifiers do, just quoted as list entries
+ * rather than one per line.
+ */
+function rewritePythonQuotedRequirement(content: string, name: string, version: string): string {
+  const namePattern = escapeRegExp(name).replace(/[-_.]/g, '[-_.]');
+  const pattern = new RegExp(
+    `(["'])${namePattern}(\\[[^\\]]*\\])?(?:\\s*[=<>!~]=?\\s*[^"',;]+(?:\\s*,\\s*[=<>!~]=?\\s*[^"',;]+)*)?\\1`,
+    'i',
+  );
+  if (!pattern.test(content)) return content;
+  return content.replace(pattern, (_match, quote: string, extra: string | undefined) => `${quote}${name}${extra ?? ''}==${version}${quote}`);
 }
 
 /** `gem "name", "~> 1.2"` (or a bare `gem "name"`) in a Gemfile. */

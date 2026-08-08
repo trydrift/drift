@@ -130,6 +130,10 @@ function extractImports(file: SourceFile): ImportRecord[] {
       return extractJavaImports(file.content);
     case 'ruby':
       return extractRubyImports(file.content);
+    case 'dotnet':
+      return extractDotnetImports(file.content);
+    case 'dart':
+      return extractDartImports(file.content);
     default:
       return [];
   }
@@ -417,6 +421,68 @@ function extractRubyImports(content: string): ImportRecord[] {
     out.push({
       specifier: path,
       packageName: path.split('/')[0]!,
+      bindings: [],
+      line: i + 1,
+    });
+  }
+
+  return out;
+}
+
+/**
+ * `using Namespace.Sub;` (and `using static X;`, `global using X;`) in C#/F#/VB.
+ *
+ * A namespace is not a NuGet package id — `Newtonsoft.Json` the namespace and
+ * `Newtonsoft.Json` the package happen to match, but there is no rule that
+ * they must. The first two segments are the best available proxy (mirroring
+ * `extractJavaImports`'s own segment-count proxy for Maven coordinates), good
+ * enough to catch a well-known package's own namespace but not guaranteed for
+ * one that publishes under an unrelated root namespace.
+ */
+function extractDotnetImports(content: string): ImportRecord[] {
+  const out: ImportRecord[] = [];
+  const lines = content.split('\n');
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!.trim();
+    // Excludes `using (...)` resource-disposal statements and `using var x = ...`,
+    // neither of which names an external namespace.
+    const match = /^(?:global\s+)?using\s+(?:static\s+)?([\w.]+)\s*;/.exec(line);
+    if (!match?.[1]) continue;
+    if (/^using\s*\(/.test(line) || /^using\s+var\b/.test(line)) continue;
+
+    const fqn = match[1];
+    const segments = fqn.split('.');
+
+    out.push({
+      specifier: fqn,
+      packageName: segments.slice(0, 2).join('.'),
+      bindings: [segments[segments.length - 1]!],
+      line: i + 1,
+    });
+  }
+
+  return out;
+}
+
+/**
+ * `import 'package:name/path.dart';` (and `export 'package:...'`) in Dart.
+ *
+ * Unlike most ecosystems here, the package name is not a proxy — pub encodes
+ * it directly in the URI, so this is an exact match, not a heuristic.
+ */
+function extractDartImports(content: string): ImportRecord[] {
+  const out: ImportRecord[] = [];
+  const lines = content.split('\n');
+
+  for (let i = 0; i < lines.length; i++) {
+    const match = /^\s*(?:import|export)\s+['"]package:([^/'"]+)(\/[^'"]*)?['"]/.exec(lines[i]!);
+    if (!match?.[1]) continue;
+
+    const packageName = match[1];
+    out.push({
+      specifier: `package:${packageName}${match[2] ?? ''}`,
+      packageName,
       bindings: [],
       line: i + 1,
     });

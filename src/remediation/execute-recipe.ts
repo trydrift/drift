@@ -29,6 +29,11 @@ export async function executeCommunityRecipe(
   if (before.failure) {
     return { status: 'failed', changedFiles: [], message: 'Could not inspect the worktree before running the recipe.' };
   }
+  const beforeStatus = parseGitStatus(before.stdout || '');
+  // A file that was already dirty before the recipe ran keeps the same status
+  // code even if the recipe edits it further (still `M`, still `??`) — status
+  // alone can't see that. Content hashes of the already-dirty files catch it.
+  const beforeHashes = await hashFiles(worktreeDir, [...beforeStatus.keys()], exec);
 
   const command = commandFor(candidate);
   if (!command) {
@@ -44,25 +49,19 @@ export async function executeCommunityRecipe(
 
   if (result.failure || result.code !== 0) {
     const reason = result.failure === 'not-found' ? `${command.bin} is not installed` : result.stderr.trim() || result.stdout.trim();
+    // A recipe that fails partway can still have written files before it
+    // exited non-zero — report the true touched set so a caller can clean up
+    // exactly what changed, rather than being left with an empty list and no
+    // way to know what to revert.
+    const changedFiles = await touchedFiles(worktreeDir, beforeStatus, beforeHashes, exec);
     return {
       status: 'failed',
-      changedFiles: [],
+      changedFiles,
       message: `Recipe ${candidate.name}@${candidate.version} failed: ${reason || `exit code ${result.code}`}`.trim(),
     };
   }
 
-  const after = await exec('git', ['status', '--porcelain'], { cwd: worktreeDir });
-
-  // `before` reflects whatever was already dirty/untracked in the worktree
-  // ahead of running the recipe. Only files whose status is new or changed
-  // between the two snapshots were actually touched by the recipe — a
-  // pre-existing dirty file that the recipe left alone must not be reported
-  // as the recipe's output.
-  const beforeStatus = parseGitStatus(before.stdout || '');
-  const afterStatus = parseGitStatus(after.stdout || '');
-  const changedFiles = [...afterStatus.entries()]
-    .filter(([path, status]) => beforeStatus.get(path) !== status)
-    .map(([path]) => path);
+  const changedFiles = await touchedFiles(worktreeDir, beforeStatus, beforeHashes, exec);
 
   if (changedFiles.length === 0) {
     return {
@@ -101,6 +100,49 @@ function parseGitStatus(porcelain: string): Map<string, string> {
     if (path) entries.set(path, status);
   }
   return entries;
+}
+
+/** `git hash-object`'s blob hash for each path that currently exists, keyed by path. */
+async function hashFiles(worktreeDir: string, paths: readonly string[], exec: Exec): Promise<Map<string, string>> {
+  const hashes = new Map<string, string>();
+  for (const path of paths) {
+    const result = await exec('git', ['hash-object', '--', path], { cwd: worktreeDir });
+    if (!result.failure && result.code === 0) hashes.set(path, result.stdout.trim());
+  }
+  return hashes;
+}
+
+/**
+ * Which files actually changed since `beforeStatus`/`beforeHashes` were
+ * captured. A status-code diff alone misses a file that was already dirty
+ * and got edited further by the recipe (status stays the same); a content
+ * hash comparison on those files catches it.
+ */
+async function touchedFiles(
+  worktreeDir: string,
+  beforeStatus: ReadonlyMap<string, string>,
+  beforeHashes: ReadonlyMap<string, string>,
+  exec: Exec,
+): Promise<string[]> {
+  const after = await exec('git', ['status', '--porcelain'], { cwd: worktreeDir });
+  const afterStatus = parseGitStatus(after.stdout || '');
+
+  const changed = new Set<string>();
+  const alreadyDirtySamePath: string[] = [];
+  for (const [path, status] of afterStatus) {
+    if (beforeStatus.get(path) !== status) {
+      changed.add(path);
+    } else {
+      alreadyDirtySamePath.push(path);
+    }
+  }
+
+  const afterHashes = await hashFiles(worktreeDir, alreadyDirtySamePath, exec);
+  for (const path of alreadyDirtySamePath) {
+    if (beforeHashes.get(path) !== afterHashes.get(path)) changed.add(path);
+  }
+
+  return [...changed];
 }
 
 function commandFor(candidate: CommunityRecipeCandidate): { bin: string; args: string[] } | null {

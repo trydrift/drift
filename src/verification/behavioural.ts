@@ -306,7 +306,12 @@ async function runWorker(
   ];
 
   const args = [
-    '--permission',
+    // Node's permission-model flag was `--experimental-permission` through
+    // Node 20–23 (the Action's declared `node20` runtime, and the CLI's own
+    // `>=22.6.0` engines range, both land here) and was only renamed to
+    // `--permission` in Node 24. An unrecognised flag makes the worker fail
+    // to even start, so this has to match the interpreter actually running it.
+    Number(process.versions.node.split('.')[0]) >= 24 ? '--permission' : '--experimental-permission',
     ...[...new Set(readablePaths)].map((path) => `--allow-fs-read=${path}`),
     `--max-old-space-size=${config.memoryMb}`,
     workerPath,

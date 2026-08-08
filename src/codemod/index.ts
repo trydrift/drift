@@ -127,7 +127,11 @@ export function attemptCodemod(
     else sitesByFile.set(site.file, [site]);
   }
 
-  const matcher = new RegExp(`\\b${escapeRegExp(from)}\\b`, 'g');
+  // A negative lookbehind for `.` excludes property/method access
+  // (`obj.${from}`) — that reads a member that merely happens to share the
+  // imported symbol's name, not a use of the import itself, so renaming it
+  // would touch an unrelated binding.
+  const matcher = new RegExp(`(?<!\\.)\\b${escapeRegExp(from)}\\b`, 'g');
   const edits: CodemodEdit[] = [];
   const anchors: CodemodAnchor[] = [];
   let sitesResolved = 0;
@@ -228,7 +232,11 @@ function renameAtAnchors(
 
   if (targetLines.size === 0) return source;
 
-  const matcher = new RegExp(`\\b${escapeRegExp(from)}\\b`, 'g');
+  // A negative lookbehind for `.` excludes property/method access
+  // (`obj.${from}`) — that reads a member that merely happens to share the
+  // imported symbol's name, not a use of the import itself, so renaming it
+  // would touch an unrelated binding.
+  const matcher = new RegExp(`(?<!\\.)\\b${escapeRegExp(from)}\\b`, 'g');
   return lines.map((line, index) => (targetLines.has(index) ? renameOnLine(line, matcher, to) : line)).join('\n');
 }
 

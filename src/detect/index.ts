@@ -1,7 +1,7 @@
 import type { DependencyChange, Ecosystem } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import { matchesAny } from '../util/glob.js';
-import { classifyBump, isDowngrade, isZeroVerBreaking, normalizeVersion } from './version.js';
+import { classifyBump, isDowngrade, isZeroVerBreaking, normalizeVersion, normalizeVersionExact } from './version.js';
 import { cargoParser } from './ecosystems/cargo.js';
 import { cocoapodsParser } from './ecosystems/cocoapods.js';
 import { composerParser } from './ecosystems/composer.js';
@@ -97,8 +97,12 @@ export function detectChanges(snapshots: readonly ManifestSnapshot[]): Dependenc
       const toVersion = normalizeVersion(rawTo);
 
       // A range widening that resolves to the same version (`^1.2.0` -> `>=1.2.0`)
-      // is churn, not a dependency change.
-      if (fromVersion && toVersion && fromVersion === toVersion) continue;
+      // is churn, not a dependency change. Use the non-coercing comparison so a
+      // real qualifier-only move (Maven's `1.0.0.Final` -> `1.0.0.SP1`) isn't
+      // mistaken for churn just because both coerce to the same SemVer point.
+      const fromExact = normalizeVersionExact(rawFrom);
+      const toExact = normalizeVersionExact(rawTo);
+      if (fromExact && toExact && fromExact === toExact) continue;
 
       const declaredKind = next?.kind ?? prev?.kind ?? 'runtime';
       const kind = fromLockfile && declaredKind === 'runtime' ? 'transitive' : declaredKind;
