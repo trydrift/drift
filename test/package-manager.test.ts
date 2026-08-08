@@ -94,7 +94,7 @@ describe('upgrade commands', () => {
     assert.equal(describeCommand(upgrade('poetry')!), 'poetry add left-pad==2.0.0');
     assert.equal(describeCommand(upgrade('uv')!), 'uv add left-pad==2.0.0');
     assert.equal(describeCommand(upgrade('pip')!), 'pip install --upgrade left-pad==2.0.0');
-    assert.equal(describeCommand(upgrade('cargo')!), 'cargo update -p left-pad --precise 2.0.0');
+    assert.equal(describeCommand(upgrade('cargo')!), 'cargo add left-pad@2.0.0');
     assert.equal(describeCommand(upgrade('bundler')!), 'bundle update left-pad --conservative');
   });
 
@@ -120,5 +120,44 @@ describe('upgrade commands', () => {
 
   test('gradle admits it cannot pin a version from the command line', () => {
     assert.equal(upgrade('gradle'), null);
+  });
+});
+
+describe('manifest rewriting', () => {
+  const target = { name: 'left-pad', version: '2.0.0', kind: 'runtime' as const };
+  const rewrite = (id: string, content: string) =>
+    packageManagerById(id as never)!.rewriteManifest!(content, target);
+
+  test('pins requirements.txt to an exact version, whatever specifier was there', () => {
+    assert.equal(rewrite('pip', 'left-pad==1.0.0\n'), 'left-pad==2.0.0\n');
+    assert.equal(rewrite('pip', 'left-pad>=1.0,<2.0\n'), 'left-pad==2.0.0\n');
+    assert.equal(rewrite('pip', 'left-pad\n'), 'left-pad==2.0.0\n');
+    assert.equal(rewrite('pip', 'left_pad==1.0.0\n'), 'left_pad==2.0.0\n');
+    assert.equal(rewrite('pip', 'left-pad[extra]==1.0.0\n'), 'left-pad[extra]==2.0.0\n');
+    assert.equal(rewrite('pip', 'other-pkg==1.0.0\n'), 'other-pkg==1.0.0\n');
+  });
+
+  test('rewrites a Gemfile constraint, or adds one to a bare gem', () => {
+    assert.equal(rewrite('bundler', "gem 'left-pad', '~> 1.0'\n"), "gem 'left-pad', '2.0.0'\n");
+    assert.equal(rewrite('bundler', "gem 'left-pad'\n"), "gem 'left-pad', '2.0.0'\n");
+  });
+
+  test('rewrites a mix.exs dependency tuple to an exact pin', () => {
+    assert.equal(
+      rewrite('mix', 'defp deps do\n  [{:left-pad, "~> 1.0"}]\nend\n'),
+      'defp deps do\n  [{:left-pad, "== 2.0.0"}]\nend\n',
+    );
+  });
+
+  test('rewrites a rebar.config dependency tuple to an exact pin', () => {
+    assert.equal(
+      rewrite('rebar', '{deps, [{left-pad, "1.0.0"}]}.\n'),
+      '{deps, [{left-pad, "2.0.0"}]}.\n',
+    );
+  });
+
+  test('rewrites a Podfile constraint, or adds one to a bare pod', () => {
+    assert.equal(rewrite('cocoapods', "pod 'left-pad', '~> 1.0'\n"), "pod 'left-pad', '2.0.0'\n");
+    assert.equal(rewrite('cocoapods', "pod 'left-pad'\n"), "pod 'left-pad', '2.0.0'\n");
   });
 });

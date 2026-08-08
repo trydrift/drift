@@ -83,6 +83,20 @@ export interface PackageManager {
    * build file rather than pretending an upgrade ran.
    */
   upgrade(target: UpgradeTarget): Command | null;
+  /**
+   * Rewrite a manifest's text so it declares `target`'s exact version.
+   *
+   * Present only where `upgrade`'s command resolves against whatever
+   * constraint is already on disk rather than accepting a version on the
+   * command line — Bundler, Mix, Rebar3, CocoaPods, and pip's
+   * `requirements.txt` convention are all in this position, and their
+   * `upgrade` command does nothing useful until this has run first. Pure text
+   * in, text out, like everything else here: no filesystem access, so a
+   * caller reads the manifest, calls this, writes the result back, then runs
+   * `upgrade`'s command. Absent where `upgrade` already takes the version
+   * directly (npm, cargo add, ...) or where there is no command at all.
+   */
+  rewriteManifest?: (content: string, target: UpgradeTarget) => string;
 }
 
 /** A package manager found in a directory, with the files that proved it. */
@@ -206,12 +220,13 @@ const MANAGERS: readonly PackageManager[] = [
     lockfiles: [],
     outdated: { command: 'pip', args: ['list', '--outdated', '--format=json'] },
     // pip installs into the environment; it does not rewrite requirements.txt.
-    // Callers surface that, rather than reporting a manifest edit that did not
-    // happen.
+    // `rewriteManifest` is how that gap gets closed — a caller applies it to
+    // the manifest text before (or after) running this command.
     upgrade: ({ name, version }) => ({
       command: 'pip',
       args: ['install', '--upgrade', `${name}==${version}`],
     }),
+    rewriteManifest: (content, { name, version }) => rewriteRequirementsTxt(content, name, version),
   },
   {
     id: 'go',
@@ -232,9 +247,15 @@ const MANAGERS: readonly PackageManager[] = [
     manifests: ['Cargo.toml'],
     lockfiles: ['Cargo.lock'],
     outdated: { command: 'cargo', args: ['update', '--dry-run'] },
+    // `cargo update --precise` only rewrites Cargo.lock's resolved version; it
+    // leaves Cargo.toml's declared requirement untouched, so a target outside
+    // that requirement fails (or a looser requirement silently stays looser
+    // than what was actually asked for). `cargo add` is the one cargo command
+    // that writes the requirement into Cargo.toml itself, the same way `npm
+    // install name@version` writes package.json.
     upgrade: ({ name, version }) => ({
       command: 'cargo',
-      args: ['update', '-p', name, '--precise', version],
+      args: ['add', `${name}@${version}`],
     }),
   },
   {
@@ -245,8 +266,10 @@ const MANAGERS: readonly PackageManager[] = [
     lockfiles: ['Gemfile.lock'],
     outdated: { command: 'bundle', args: ['outdated'] },
     // Bundler resolves against the Gemfile's constraint; it has no flag that
-    // pins a version without editing the Gemfile first.
+    // pins a version without editing the Gemfile first, so `rewriteManifest`
+    // does that and this then re-resolves the lockfile against it.
     upgrade: ({ name }) => ({ command: 'bundle', args: ['update', name, '--conservative'] }),
+    rewriteManifest: (content, { name, version }) => rewriteGemfile(content, name, version),
   },
   {
     id: 'maven',
@@ -320,8 +343,9 @@ const MANAGERS: readonly PackageManager[] = [
     lockfiles: ['mix.lock'],
     outdated: { command: 'mix', args: ['hex.outdated'] },
     // `mix deps.update` resolves against the constraint in mix.exs rather than
-    // taking a version, so the manifest edit has to come first.
+    // taking a version, so `rewriteManifest` edits that constraint first.
     upgrade: ({ name }) => ({ command: 'mix', args: ['deps.update', name] }),
+    rewriteManifest: (content, { name, version }) => rewriteMixExs(content, name, version),
   },
   {
     id: 'rebar',
@@ -330,7 +354,10 @@ const MANAGERS: readonly PackageManager[] = [
     manifests: ['rebar.config'],
     lockfiles: ['rebar.lock'],
     outdated: null,
+    // Like Mix, `rebar3 upgrade` resolves against rebar.config's own
+    // requirement rather than taking one on the command line.
     upgrade: ({ name }) => ({ command: 'rebar3', args: ['upgrade', name] }),
+    rewriteManifest: (content, { name, version }) => rewriteRebarConfig(content, name, version),
   },
   {
     id: 'flutter',
@@ -375,8 +402,9 @@ const MANAGERS: readonly PackageManager[] = [
     lockfiles: ['Podfile.lock'],
     outdated: { command: 'pod', args: ['outdated'] },
     // `pod update` honours the Podfile's constraint, so the constraint is what
-    // Drift edits; this then re-resolves the lockfile against it.
+    // `rewriteManifest` edits; this then re-resolves the lockfile against it.
     upgrade: ({ name }) => ({ command: 'pod', args: ['update', name] }),
+    rewriteManifest: (content, { name, version }) => rewritePodfile(content, name, version),
   },
   {
     id: 'opam',
@@ -392,6 +420,62 @@ const MANAGERS: readonly PackageManager[] = [
     }),
   },
 ];
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * `name==1.2.3` (or `>=`, `~=`, a bare `name`, ...) in `requirements.txt`.
+ *
+ * PEP 503 treats `-`, `_`, and `.` as equivalent in a package name, so the
+ * match tolerates any of them where the declaration used one. Extras
+ * (`name[extra]==1.2.3`) are preserved; everything after the name up to the
+ * end of the specifier list is replaced with an exact pin.
+ */
+function rewriteRequirementsTxt(content: string, name: string, version: string): string {
+  const namePattern = escapeRegExp(name).replace(/[-_.]/g, '[-_.]');
+  const pattern = new RegExp(
+    `^([ \\t]*${namePattern})(\\[[^\\]]*\\])?[ \\t]*(?:[=<>!~]=?\\s*[^\\s;#,]+(?:\\s*,\\s*[=<>!~]=?\\s*[^\\s;#,]+)*)?`,
+    'im',
+  );
+  if (!pattern.test(content)) return content;
+  return content.replace(pattern, (_match, base: string, extra: string | undefined) => `${base}${extra ?? ''}==${version}`);
+}
+
+/** `gem "name", "~> 1.2"` (or a bare `gem "name"`) in a Gemfile. */
+function rewriteGemfile(content: string, name: string, version: string): string {
+  const escaped = escapeRegExp(name);
+  const withConstraint = new RegExp(`(gem\\s+["']${escaped}["'])\\s*,\\s*["'][^"']*["']`);
+  if (withConstraint.test(content)) return content.replace(withConstraint, `$1, '${version}'`);
+  const bare = new RegExp(`(gem\\s+["']${escaped}["'])(?!\\s*,\\s*["'])`);
+  return content.replace(bare, `$1, '${version}'`);
+}
+
+/** `{:name, "~> 1.7"}` dependency tuples in `mix.exs`. */
+function rewriteMixExs(content: string, name: string, version: string): string {
+  const escaped = escapeRegExp(name);
+  const pattern = new RegExp(`(\\{\\s*:${escaped}\\s*,\\s*)"[^"]*"`);
+  if (!pattern.test(content)) return content;
+  return content.replace(pattern, `$1"== ${version}"`);
+}
+
+/** `{name, "1.2.3"}` dependency tuples in `rebar.config`. */
+function rewriteRebarConfig(content: string, name: string, version: string): string {
+  const escaped = escapeRegExp(name);
+  const pattern = new RegExp(`(\\{\\s*${escaped}\\s*,\\s*)"[^"]*"`);
+  if (!pattern.test(content)) return content;
+  return content.replace(pattern, `$1"${version}"`);
+}
+
+/** `pod "Name", "~> 1.2"` (or a bare `pod "Name"`) in a Podfile. */
+function rewritePodfile(content: string, name: string, version: string): string {
+  const escaped = escapeRegExp(name);
+  const withConstraint = new RegExp(`(pod\\s+["']${escaped}["'])\\s*,\\s*["'][^"']*["']`);
+  if (withConstraint.test(content)) return content.replace(withConstraint, `$1, '${version}'`);
+  const bare = new RegExp(`(pod\\s+["']${escaped}["'])(?!\\s*,\\s*["'])`);
+  return content.replace(bare, `$1, '${version}'`);
+}
 
 export function packageManagerById(id: PackageManagerId): PackageManager | undefined {
   return MANAGERS.find((m) => m.id === id);
