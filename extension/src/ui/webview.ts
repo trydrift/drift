@@ -1985,7 +1985,7 @@ button.wide { width: 100%; }
 .step .log summary { cursor: pointer; color: var(--vscode-descriptionForeground); }
 .step .log ol {
   margin: 5px 0 0;
-  padding-left: 18px;
+  padding-left: 28px;
   max-height: 170px;
   overflow: auto;
   color: var(--vscode-descriptionForeground);

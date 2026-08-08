@@ -415,6 +415,29 @@ test('a running step shows the specific phase, detail and progress', () => {
   assert.ok(!/data-action="submit"/.test(html));
 });
 
+test('step logs leave room for double digit markers', () => {
+  const html = renderPanel(
+    model({
+      thread: [
+        {
+          id: 'i1',
+          kind: 'step',
+          title: 'Checking your dependencies',
+          phase: 'Reading',
+          detail: '',
+          done: 10,
+          total: 12,
+          state: 'running',
+          log: Array.from({ length: 12 }, (_, i) => `Package ${i + 1}`),
+        },
+      ],
+    }),
+  );
+
+  assert.match(html, /\.step \.log ol \{[\s\S]*?padding-left:\s*28px/);
+  assert.match(html, /<li>Package 10<\/li>/);
+});
+
 test('a dependency check offers no way to stop it', () => {
   // A scan stopped half way has not checked the packages it never reached, but
   // the tallies, the safe list and the headline would all read as though it had.
