@@ -89,6 +89,15 @@ export interface DependencyChange {
   rawFrom?: string | null;
   rawTo?: string | null;
   /**
+   * Whether this change was observed in a manifest or a lockfile.
+   *
+   * Independent of `kind`: a lockfile entry can be reclassified to `dev` or
+   * `transitive`, but it never becomes a human's decision. Detection uses this
+   * — not `kind` — to decide whether a manifest-derived change should win over
+   * a lockfile-derived one for the same package.
+   */
+  source?: 'manifest' | 'lockfile';
+  /**
    * The workspace member directory whose manifest declared this.
    *
    * Absent in a single-package repository, where the question does not arise.

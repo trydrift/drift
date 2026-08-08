@@ -53,7 +53,19 @@ export function localize(
 
   const contentByPath = new Map(files.map((f) => [f.path, f.content]));
   const indexByPath = new Map(index.files.map((f) => [f.path, f]));
-  const ecosystems = new Map(dependencyChanges.map((c) => [c.name, c.ecosystem]));
+  // Keyed by name alone, but the *value* is every ecosystem seen for that
+  // name — an npm package and a PyPI package sharing a name are two distinct
+  // identities, and neither should silently overwrite the other the way a
+  // `Map<name, ecosystem>` would.
+  const ecosystemsByName = new Map<string, Ecosystem[]>();
+  for (const c of dependencyChanges) {
+    const list = ecosystemsByName.get(c.name);
+    if (list) {
+      if (!list.includes(c.ecosystem)) list.push(c.ecosystem);
+    } else {
+      ecosystemsByName.set(c.name, [c.ecosystem]);
+    }
+  }
 
   const sites: ImpactSite[] = [];
 
@@ -66,7 +78,12 @@ export function localize(
       continue;
     }
 
-    const candidates = candidateFiles(change, index, ecosystems.get(change.dependency)).filter(
+    const { files: candidateFileList, names } = candidateFiles(
+      change,
+      index,
+      ecosystemsByName.get(change.dependency) ?? [],
+    );
+    const candidates = candidateFileList.filter(
       (file) => member === undefined || withinMember(file.path, member),
     );
 
@@ -75,7 +92,7 @@ export function localize(
       continue;
     }
 
-    const found = searchFiles(change, candidates, contentByPath, indexByPath, maxSitesPerChange);
+    const found = searchFiles(change, candidates, contentByPath, indexByPath, maxSitesPerChange, names);
     sites.push(...found);
 
     if (found.length >= maxSitesPerChange) {
@@ -164,13 +181,16 @@ const DECLARATION_MATCHERS: Record<string, RegExp> = {
 function candidateFiles(
   change: BreakingChange,
   index: RepoIndex,
-  ecosystem: Ecosystem | undefined,
-): FileIndex[] {
+  ecosystemsForName: readonly Ecosystem[],
+): { files: FileIndex[]; names: string[] } {
   const isEndpointChange =
     change.kind === 'removed-endpoint' || change.kind === 'changed-endpoint';
-  if (isEndpointChange) return index.files;
+  if (isEndpointChange) return { files: index.files, names: [] };
 
-  const names = importKeysFor(change.dependency, ecosystem);
+  const names =
+    ecosystemsForName.length > 0
+      ? [...new Set(ecosystemsForName.flatMap((eco) => importKeysFor(change.dependency, eco)))]
+      : importKeysFor(change.dependency, undefined);
   const paths = new Set<string>();
 
   for (const name of names) {
@@ -187,7 +207,12 @@ function candidateFiles(
     }
   }
 
-  return index.files.filter((f) => paths.has(f.path));
+  return { files: index.files.filter((f) => paths.has(f.path)), names };
+}
+
+/** Does an import's package name identify one of the given candidate names? */
+function matchesImportName(packageName: string, names: readonly string[]): boolean {
+  return names.some((name) => packageName === name || packageName.startsWith(name) || name.startsWith(packageName));
 }
 
 /**
@@ -252,6 +277,7 @@ function searchFiles(
   contentByPath: Map<string, string>,
   indexByPath: Map<string, FileIndex>,
   limit: number,
+  names: readonly string[],
 ): ImpactSite[] {
   const sites: ImpactSite[] = [];
 
@@ -262,10 +288,25 @@ function searchFiles(
     if (!content) continue;
 
     const fileIndex = indexByPath.get(candidate.path);
-    const importedNames = new Set(candidate.imports.flatMap((i) => i.bindings));
-    const importsDependency = candidate.imports.length > 0;
+    // Only bindings from imports of *this* dependency count as evidence —
+    // an unrelated import in the same file must not inflate confidence.
+    const relevantImports =
+      names.length === 0
+        ? candidate.imports
+        : candidate.imports.filter((i) => matchesImportName(i.packageName, names));
+    const importedNames = new Set(relevantImports.flatMap((i) => i.bindings));
+    const importsDependency = relevantImports.length > 0;
 
     const lines = content.split('\n');
+    // Block comments are stripped up front, tracking state across lines, so a
+    // `/* ... */` continuation that doesn't itself start with `*` is not
+    // mistaken for real code. String and template literal contents are left
+    // in place for matching — a URL-path symbol like `/api/v1/users` or a
+    // scoped package name legitimately lives inside a string literal
+    // (`fetch('/api/v1/users')`, `from '@scope/pkg'`) — but quotes are still
+    // tracked while scanning so a `/*`-looking sequence inside a string never
+    // opens a (nonexistent) block comment.
+    const commentMasked = maskBlockComments(lines);
 
     for (const symbol of change.symbols) {
       const matcher = matcherFor(symbol);
@@ -273,8 +314,10 @@ function searchFiles(
 
       for (let i = 0; i < lines.length && sites.length < limit; i++) {
         const line = lines[i]!;
-        if (!matcher.test(line)) continue;
         if (isCommentOnly(line)) continue;
+
+        const searchable = commentMasked[i]!;
+        if (!matcher.test(searchable)) continue;
 
         const unit = fileIndex ? unitAtLine(fileIndex, i + 1) : undefined;
 
@@ -363,4 +406,80 @@ function isCommentOnly(line: string): boolean {
     trimmed.startsWith('*') ||
     trimmed.startsWith('/*')
   );
+}
+
+/**
+ * Strip `/* ... *\/` block comments from every line, tracking whether a
+ * comment opened on an earlier line is still open — a continuation line like
+ * `still explaining the old option` inside a block comment has no `*` prefix
+ * and would otherwise read as real code.
+ *
+ * Quotes are tracked (without being stripped) purely so a `/*`-looking
+ * sequence inside a string or template literal is never mistaken for the
+ * start of a real block comment — string contents themselves are left intact,
+ * since a URL-path symbol or a scoped package name legitimately lives inside
+ * one (`fetch('/api/v1/users')`, `from '@scope/pkg'`) and stripping it there
+ * would defeat the match this function exists to enable.
+ */
+function maskBlockComments(lines: readonly string[]): string[] {
+  const masked: string[] = [];
+  let inBlockComment = false;
+
+  for (const rawLine of lines) {
+    let result = '';
+    let i = 0;
+    let quote: string | null = null;
+
+    while (i < rawLine.length) {
+      const ch = rawLine[i]!;
+
+      if (inBlockComment) {
+        const end = rawLine.indexOf('*/', i);
+        if (end === -1) {
+          i = rawLine.length;
+          break;
+        }
+        i = end + 2;
+        inBlockComment = false;
+        continue;
+      }
+
+      if (quote) {
+        result += ch;
+        if (ch === '\\') {
+          result += rawLine[i + 1] ?? '';
+          i += 2;
+          continue;
+        }
+        if (ch === quote) quote = null;
+        i += 1;
+        continue;
+      }
+
+      if (ch === '"' || ch === "'" || ch === '`') {
+        quote = ch;
+        result += ch;
+        i += 1;
+        continue;
+      }
+
+      if (ch === '/' && rawLine[i + 1] === '*') {
+        const end = rawLine.indexOf('*/', i + 2);
+        if (end === -1) {
+          inBlockComment = true;
+          i = rawLine.length;
+          break;
+        }
+        i = end + 2;
+        continue;
+      }
+
+      result += ch;
+      i += 1;
+    }
+
+    masked.push(result);
+  }
+
+  return masked;
 }

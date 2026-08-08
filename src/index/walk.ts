@@ -52,6 +52,13 @@ export type Language =
   | 'rust'
   | 'java'
   | 'ruby'
+  | 'dotnet'
+  | 'php'
+  | 'elixir'
+  | 'erlang'
+  | 'dart'
+  | 'swift'
+  | 'ocaml'
   /** Runtime-version declarations: CI workflows, engine fields, images. */
   | 'config'
   | 'other';
@@ -106,6 +113,17 @@ const EXTENSION_LANGUAGES: Record<string, Language> = {
   '.scala': 'java',
   '.rb': 'ruby',
   '.rake': 'ruby',
+  '.cs': 'dotnet',
+  '.fs': 'dotnet',
+  '.vb': 'dotnet',
+  '.php': 'php',
+  '.ex': 'elixir',
+  '.exs': 'elixir',
+  '.erl': 'erlang',
+  '.dart': 'dart',
+  '.swift': 'swift',
+  '.ml': 'ocaml',
+  '.mli': 'ocaml',
 };
 
 export function languageOf(path: string): Language {

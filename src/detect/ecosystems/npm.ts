@@ -159,11 +159,21 @@ function parsePackageLock(content: string): DependencyMap {
   if (!lock) return out;
 
   if (lock.packages) {
+    // Nested installs can resolve the same package name to several versions
+    // (`node_modules/a/node_modules/lodash` vs `node_modules/lodash`); the
+    // shallowest install is the one closest to the root dependency graph and
+    // the most meaningful single version to report, so a deeper install never
+    // overwrites a shallower one already recorded.
+    const depths = new Map<string, number>();
     for (const [installPath, entry] of Object.entries(lock.packages)) {
       // The empty key is the root project itself, not a dependency.
       if (!installPath) continue;
       const name = installPathToName(installPath);
       if (!name || !entry?.version) continue;
+      const depth = installPathDepth(installPath);
+      const existingDepth = depths.get(name);
+      if (existingDepth !== undefined && existingDepth <= depth) continue;
+      depths.set(name, depth);
       out.set(name, { version: entry.version, kind: entry.dev ? 'dev' : 'transitive' });
     }
     return out;
@@ -187,6 +197,31 @@ function installPathToName(installPath: string): string | null {
   return name || null;
 }
 
+/** Number of `node_modules/` segments in an install path — nesting depth. */
+function installPathDepth(installPath: string): number {
+  return installPath.split('node_modules/').length - 1;
+}
+
+/**
+ * Coarse version compare for picking one resolved version among several.
+ *
+ * Not a full semver comparator — pre-release precedence and build metadata
+ * are not modelled — but good enough for a tie-break where any deterministic,
+ * "most likely relevant" choice beats last-write-wins.
+ */
+function isHigherVersion(candidate: string, existing: string): boolean {
+  const toParts = (v: string) => v.split(/[.+-]/).map((n) => Number.parseInt(n, 10));
+  const a = toParts(candidate);
+  const b = toParts(existing);
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const x = a[i] ?? 0;
+    const y = b[i] ?? 0;
+    if (Number.isNaN(x) || Number.isNaN(y)) continue;
+    if (x !== y) return x > y;
+  }
+  return false;
+}
+
 /**
  * yarn.lock is a bespoke format, but the only two lines we need are the entry
  * header (which carries the name) and its `version` field.
@@ -208,7 +243,13 @@ function parseYarnLock(content: string): DependencyMap {
 
     const version = /^\s+version:?\s+"?([^"\s]+)"?/.exec(line)?.[1];
     if (version && pending) {
-      out.set(pending, { version, kind: 'transitive' });
+      // Distinct version ranges for the same package (`lodash@^3` and
+      // `lodash@^4`) resolve to different blocks in the same lockfile; keep
+      // the higher one rather than whichever happened to parse last.
+      const existing = out.get(pending);
+      if (!existing || isHigherVersion(version, existing.version ?? '')) {
+        out.set(pending, { version, kind: 'transitive' });
+      }
       pending = null;
     }
   }
@@ -231,7 +272,14 @@ function parsePnpmLock(content: string): DependencyMap {
     const spec = key.startsWith('/') ? key.slice(1) : key;
     const name = specToName(spec);
     const version = specToVersion(spec);
-    if (name && version) out.set(name, { version, kind: 'transitive' });
+    if (!name || !version) continue;
+    // As with yarn.lock, multiple resolved versions of the same package are
+    // legitimate (peer-dep duplication); keep the higher one deterministically
+    // rather than whichever key iterates last.
+    const existing = out.get(name);
+    if (!existing || isHigherVersion(version, existing.version ?? '')) {
+      out.set(name, { version, kind: 'transitive' });
+    }
   }
   return out;
 }

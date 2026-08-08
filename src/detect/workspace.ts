@@ -334,9 +334,20 @@ async function resolveMembers(
   rootIsVirtual = false,
 ): Promise<WorkspaceMember[]> {
   const dirs = new Set<string>();
+  const excluded = new Set<string>();
   for (const pattern of patterns) {
-    for (const dir of await expandPattern(root, fs, pattern)) dirs.add(dir);
+    const clean = pattern.trim();
+    // Negative patterns exclude, regardless of where in the list they appear
+    // — the same semantics npm/pnpm/yarn workspace globs use. Expanding the
+    // pattern with its `!` stripped finds what it names; expanding it with
+    // the `!` intact (via `expandPattern` itself) would just yield nothing.
+    if (clean.startsWith('!')) {
+      for (const dir of await expandPattern(root, fs, clean.slice(1), manifest)) excluded.add(dir);
+    } else {
+      for (const dir of await expandPattern(root, fs, clean, manifest)) dirs.add(dir);
+    }
   }
+  for (const dir of excluded) dirs.delete(dir);
 
   const members: WorkspaceMember[] = [];
 
@@ -362,11 +373,20 @@ async function resolveMembers(
  * and a trailing `*` or `**`. Anything more elaborate is rare enough that
  * guessing at it would be more likely to produce a wrong member list than a
  * missing one — and a missing member is visible, while a wrong one is not.
+ *
+ * When `manifest` is given, a directory matched by a `*`/`**` segment is only
+ * included if it actually contains that manifest file — a glob like
+ * `packages/*` otherwise sweeps up every directory under `packages/`,
+ * including ones that are not packages at all (fixtures, docs, a stray
+ * `node_modules`-adjacent folder). The literal-path form is left unfiltered:
+ * a workspace declaration that names a directory outright is trusted the way
+ * npm/yarn/pnpm trust it.
  */
 export async function expandPattern(
   root: string,
   fs: WorkspaceFs,
   pattern: string,
+  manifest?: string,
 ): Promise<string[]> {
   const clean = pattern.replace(/^\.\//, '').replace(/\/+$/, '');
   if (clean.startsWith('!')) return [];
@@ -387,7 +407,9 @@ export async function expandPattern(
       if (!(await fs.isDirectory(join(root, child)))) continue;
 
       const candidate = suffix ? `${child}/${suffix}` : child;
-      found.push(candidate);
+      if (!manifest || (await fs.readFile(join(root, candidate, manifest))) !== null) {
+        found.push(candidate);
+      }
       if (deep) await visit(child, depth + 1);
     }
   };
