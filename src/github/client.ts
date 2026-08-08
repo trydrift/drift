@@ -44,7 +44,12 @@ export class GitHubClient {
     this.logger = options.logger;
   }
 
-  /** Read a file at a ref. Returns `null` for missing files rather than throwing. */
+  /**
+   * Read a file at a ref. Returns `null` for a confirmed 404 (the file does not
+   * exist there); any other failure (rate limit, network, auth) throws rather
+   * than being reported as a missing file, since callers treat `null` as a fact
+   * about the repository's contents, not as "the API call did not work."
+   */
   async readFile(repo: RepoContext, path: string, ref: string): Promise<string | null> {
     try {
       const response = await this.octokit.repos.getContent({
@@ -61,11 +66,17 @@ export class GitHubClient {
     } catch (err) {
       if (isNotFound(err)) return null;
       this.logger.debug(`Failed to read ${path}@${ref}: ${(err as Error).message}`);
-      return null;
+      throw err;
     }
   }
 
-  /** Files changed between two commits, for locating manifest edits. */
+  /**
+   * Files changed between two commits, for locating manifest edits.
+   *
+   * Returns `[]` only for a genuinely empty diff. A failed comparison (rate
+   * limit, network, auth, 5xx) throws instead, since an empty list here reads
+   * as "nothing changed" to every caller.
+   */
   async changedFiles(repo: RepoContext): Promise<string[]> {
     try {
       const response = await this.octokit.repos.compareCommitsWithBasehead({
@@ -76,7 +87,7 @@ export class GitHubClient {
       return (response.data.files ?? []).map((f) => f.filename);
     } catch (err) {
       this.logger.warn(`Could not compare ${repo.beforeSha}...${repo.afterSha}: ${(err as Error).message}`);
-      return [];
+      throw err;
     }
   }
 

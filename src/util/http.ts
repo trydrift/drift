@@ -24,11 +24,57 @@ export interface FetchOptions {
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_DISK_TTL_MS = 24 * 60 * 60 * 1000;
+/**
+ * How long a failed fetch (`null`) stays cached. Short and distinct from the
+ * success TTL: a rate limit or network blip must not read as "confirmed
+ * absent" for the rest of the process's life, the way an indefinite cache
+ * entry would make it.
+ */
+const FAILURE_CACHE_TTL_MS = 60_000;
 const USER_AGENT = 'drift-bot/0.1 (+https://github.com/trydrift/drift)';
 
+interface CacheEntry {
+  value: unknown;
+  /** `Infinity` for a successful response, which is good for the process's life. */
+  expiresAt: number;
+}
+
 /** Process-lifetime response cache. Runs are short; a Map is the right size. */
-const cache = new Map<string, unknown>();
+const cache = new Map<string, CacheEntry>();
 let diskCacheDir: string | null = null;
+
+function cacheGet<T>(key: string): { hit: true; value: T } | { hit: false } {
+  const entry = cache.get(key);
+  if (!entry) return { hit: false };
+  if (Date.now() >= entry.expiresAt) {
+    cache.delete(key);
+    return { hit: false };
+  }
+  return { hit: true, value: entry.value as T };
+}
+
+function cacheSet(key: string, value: unknown): void {
+  // `null` is always a failure/absence result in this module; every successful
+  // parse or fetch caches a non-null value.
+  const expiresAt = value === null ? Date.now() + FAILURE_CACHE_TTL_MS : Infinity;
+  cache.set(key, { value, expiresAt });
+}
+
+/**
+ * Fold the caller's auth into the cache key so two callers hitting the same
+ * URL with different credentials (or none) never share a cached response —
+ * e.g. an unauthenticated rate-limited 403 must not be served back to a call
+ * that supplies a token, or vice versa.
+ */
+function authFingerprint(headers?: Record<string, string>): string {
+  if (!headers) return 'noauth';
+  const authHeaders = Object.entries(headers)
+    .filter(([key]) => /auth|token/i.test(key))
+    .sort(([a], [b]) => a.localeCompare(b));
+  if (authHeaders.length === 0) return 'noauth';
+  const raw = authHeaders.map(([key, value]) => `${key.toLowerCase()}=${value}`).join('&');
+  return createHash('sha256').update(raw).digest('hex').slice(0, 16);
+}
 
 interface DiskEntry {
   url: string;
@@ -47,38 +93,40 @@ export function clearHttpCache(): void {
 }
 
 export async function fetchJson<T>(url: string, options: FetchOptions = {}): Promise<T | null> {
-  const cacheKey = `json:${url}`;
-  if (cache.has(cacheKey)) return cache.get(cacheKey) as T | null;
+  const cacheKey = `json:${authFingerprint(options.headers)}:${url}`;
+  const cached = cacheGet<T | null>(cacheKey);
+  if (cached.hit) return cached.value;
 
   const text = await fetchText(url, {
     ...options,
     headers: { Accept: 'application/json', ...options.headers },
   });
   if (text === null) {
-    cache.set(cacheKey, null);
+    cacheSet(cacheKey, null);
     return null;
   }
 
   try {
     const parsed = JSON.parse(text) as T;
-    cache.set(cacheKey, parsed);
+    cacheSet(cacheKey, parsed);
     return parsed;
   } catch {
-    cache.set(cacheKey, null);
+    cacheSet(cacheKey, null);
     return null;
   }
 }
 
 export async function fetchText(url: string, options: FetchOptions = {}): Promise<string | null> {
-  const cacheKey = `text:${url}`;
-  if (cache.has(cacheKey)) return cache.get(cacheKey) as string | null;
+  const cacheKey = `text:${authFingerprint(options.headers)}:${url}`;
+  const cached = cacheGet<string | null>(cacheKey);
+  if (cached.hit) return cached.value;
 
   const { timeoutMs = DEFAULT_TIMEOUT_MS, headers = {}, retries = 2 } = options;
   const disk = await readDiskEntry(url);
   const ttl = options.cacheTtlMs ?? DEFAULT_DISK_TTL_MS;
   const now = Date.now();
   if (disk && disk.body !== null && (disk.immutable || options.immutable || now - disk.fetchedAt < ttl)) {
-    cache.set(cacheKey, disk.body);
+    cacheSet(cacheKey, disk.body);
     return disk.body;
   }
   const conditionalHeaders: Record<string, string> = disk?.etag ? { 'If-None-Match': disk.etag } : {};
@@ -95,13 +143,13 @@ export async function fetchText(url: string, options: FetchOptions = {}): Promis
 
       if (response.status === 304 && disk) {
         await writeDiskEntry(url, { ...disk, fetchedAt: now, immutable: disk.immutable || options.immutable });
-        cache.set(cacheKey, disk.body);
+        cacheSet(cacheKey, disk.body);
         return disk.body;
       }
 
       if (response.ok) {
         const body = await response.text();
-        cache.set(cacheKey, body);
+        cacheSet(cacheKey, body);
         await writeDiskEntry(url, {
           url,
           body,
@@ -127,9 +175,9 @@ export async function fetchText(url: string, options: FetchOptions = {}): Promis
     }
   }
 
-  cache.set(cacheKey, null);
+  cacheSet(cacheKey, null);
   if (disk?.body !== undefined) {
-    cache.set(cacheKey, disk.body);
+    cacheSet(cacheKey, disk.body);
     return disk.body;
   }
   return null;
