@@ -1,5 +1,6 @@
 import { dirname, join } from 'node:path';
 import { readFileSync } from 'node:fs';
+import { readFile, writeFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import * as vscode from 'vscode';
@@ -595,6 +596,18 @@ export async function installUpgrade(
 ): Promise<void> {
   const command = plannedUpgrade(candidate, mode);
   if (!command) throw new NoUpgradeCommandError(candidate);
+
+  const manager = packageManagerById(candidate.packageManager);
+  if (manager?.rewriteManifest) {
+    const manifestFile = join(root, candidate.manifestPath);
+    const original = await readFile(manifestFile, 'utf8');
+    const rewritten = manager.rewriteManifest(original, {
+      name: candidate.name,
+      version: candidate.selected,
+      kind: candidate.kind,
+    });
+    if (rewritten !== original) await writeFile(manifestFile, rewritten, 'utf8');
+  }
 
   const cwd = dirname(join(root, candidate.manifestPath));
   const env = await envWithShellPath();
