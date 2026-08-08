@@ -181,7 +181,10 @@ export async function walkSourceFiles(
       if (entry.isDirectory()) {
         if (ignored.has(entry.name)) continue;
         // Hidden directories other than the ones we explicitly want are noise.
-        if (entry.name.startsWith('.') && entry.name !== '.github') continue;
+        // `.gitlab-ci.yml` lives at the repo root as a plain file, so it needs
+        // no exception here, but `.circleci/config.yml` is nested inside a
+        // hidden directory the walker must be allowed to enter.
+        if (entry.name.startsWith('.') && entry.name !== '.github' && entry.name !== '.circleci') continue;
         await visit(full);
         continue;
       }

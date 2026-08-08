@@ -225,7 +225,11 @@ export async function discoverTargets(
     }
 
     for (const entry of chooseManagers(detected, dir, preferences)) {
-      const manifest = entry.manager.manifests.find((f) => entries.includes(f));
+      const manifest =
+        entry.manager.manifests.find((f) => entries.includes(f)) ??
+        (entry.manager.manifestPattern
+          ? entries.find((f) => entry.manager.manifestPattern!.test(f))
+          : undefined);
       if (!manifest) continue;
       const lockfile = entry.manager.lockfiles.find((f) => entries.includes(f)) ?? null;
       targets.push({
