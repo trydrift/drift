@@ -179,6 +179,51 @@ function extractJsImports(content: string): ImportRecord[] {
     });
   }
 
+  // `export { x, y as z } from 'pkg'` — a re-export barrel. The file never
+  // binds `x`/`z` locally, but it does depend on `pkg`, and downstream code
+  // treats an import edge as evidence of usage regardless of whether the name
+  // is bound or merely forwarded.
+  const namedReExport = /\bexport\s+(?:type\s+)?\{([^}]*)\}\s+from\s+['"]([^'"]+)['"]/g;
+  for (const match of content.matchAll(namedReExport)) {
+    const specifier = match[2]!;
+    if (isRelative(specifier)) continue;
+    out.push({
+      specifier,
+      packageName: packageNameFromSpecifier(specifier),
+      bindings: importBindings(undefined, match[1], undefined, undefined),
+      line: lineOf(match.index ?? 0),
+    });
+  }
+
+  // `export * as ns from 'pkg'`
+  const namespaceReExport = /\bexport\s+\*\s+as\s+([\w$]+)\s+from\s+['"]([^'"]+)['"]/g;
+  for (const match of content.matchAll(namespaceReExport)) {
+    const specifier = match[2]!;
+    if (isRelative(specifier)) continue;
+    out.push({
+      specifier,
+      packageName: packageNameFromSpecifier(specifier),
+      bindings: ['*', match[1]!],
+      line: lineOf(match.index ?? 0),
+    });
+  }
+
+  // `export * from 'pkg'` — deliberately after the `as` variant so `export *
+  // as ns from` (which also starts with `export * `) is never double-counted:
+  // the `\s+from` right after `*` only matches when there is no `as ns` in
+  // between.
+  const starReExport = /\bexport\s+\*\s+from\s+['"]([^'"]+)['"]/g;
+  for (const match of content.matchAll(starReExport)) {
+    const specifier = match[1]!;
+    if (isRelative(specifier)) continue;
+    out.push({
+      specifier,
+      packageName: packageNameFromSpecifier(specifier),
+      bindings: ['*'],
+      line: lineOf(match.index ?? 0),
+    });
+  }
+
   return out.sort((a, b) => a.line - b.line || a.specifier.localeCompare(b.specifier));
 }
 

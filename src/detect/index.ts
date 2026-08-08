@@ -63,9 +63,14 @@ export function parserFor(path: string): ManifestParser | undefined {
 /**
  * Diff a set of manifest snapshots into concrete dependency moves.
  *
- * Results are deduplicated across files: a bump that shows up in both
- * `package.json` and `package-lock.json` is one change, reported against the
- * manifest (which carries the author's intent) rather than the lockfile.
+ * Results are deduplicated per manifest *directory*: a bump that shows up in
+ * both `package.json` and `package-lock.json` in the same directory is one
+ * change, reported against the manifest (which carries the author's intent)
+ * rather than the lockfile. A change to the same package declared in two
+ * different directories — two workspace members bumping the same dependency —
+ * is not a duplicate; each member gets its own entry. Workspace labelling
+ * happens later (`labelWorkspaces`), so the directory itself is the only
+ * scoping signal available here.
  */
 export function detectChanges(snapshots: readonly ManifestSnapshot[]): DependencyChange[] {
   const byKey = new Map<string, DependencyChange>();
@@ -108,9 +113,10 @@ export function detectChanges(snapshots: readonly ManifestSnapshot[]): Dependenc
         manifestPath: snapshot.path,
         rawFrom,
         rawTo,
+        source: fromLockfile ? 'lockfile' : 'manifest',
       };
 
-      const key = `${parser.ecosystem}:${name}`;
+      const key = `${parser.ecosystem}:${manifestDir(snapshot.path)}:${name}`;
       const existing = byKey.get(key);
       if (!existing || shouldPreferNew(existing, change, fromLockfile)) {
         byKey.set(key, change);
@@ -123,6 +129,12 @@ export function detectChanges(snapshots: readonly ManifestSnapshot[]): Dependenc
   );
 }
 
+/** The directory a manifest path lives in; `''` for a root-level manifest. */
+function manifestDir(path: string): string {
+  const slash = path.lastIndexOf('/');
+  return slash === -1 ? '' : path.slice(0, slash);
+}
+
 /**
  * When the same package moves in two files, prefer the manifest over the
  * lockfile — the manifest records what a human decided, and its `kind` is
@@ -133,7 +145,11 @@ function shouldPreferNew(
   candidate: DependencyChange,
   candidateIsLock: boolean,
 ): boolean {
-  const existingIsLock = existing.kind === 'transitive';
+  // A lockfile-derived entry can be reclassified as `transitive` (see above)
+  // or keep its declared `dev` kind — either way it did not come from a human
+  // decision, so `existing.source` (set below) is the reliable signal, not
+  // `kind` alone.
+  const existingIsLock = existing.source === 'lockfile';
   if (existingIsLock && !candidateIsLock) return true;
   if (!existingIsLock && candidateIsLock) return false;
   // Otherwise keep the one with the more complete version information.
