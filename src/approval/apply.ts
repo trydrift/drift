@@ -344,25 +344,42 @@ export async function applyApproval(options: ApplyApprovalOptions): Promise<Appr
     // before any other post-dispatch bookkeeping: a crash or failure after
     // this point still leaves a retry able to find it via `findPriorDispatch`
     // and treat the approval as a no-op instead of dispatching the task a
-    // second time.
+    // second time. Posting it is retried with backoff (`postMarkerWithRetry`)
+    // precisely because the Action has no durable store to fall back on —
+    // a single lost API call there is otherwise indistinguishable from "go
+    // ahead and dispatch this again".
     const marker = renderDispatchMarker({
       planDigest: digest,
       branchName: result.branchName ?? plan.branchName,
       ...(result.taskId ? { taskId: result.taskId } : {}),
       ...(result.pullRequestNumber !== undefined ? { pullRequestNumber: result.pullRequestNumber } : {}),
     });
-    const markerPosted = await github.commentOnIssue(
+    const markerPosted = await postMarkerWithRetry(
+      github,
       apiContext,
       decision.issueNumber,
       `**Drift**: applied by @${actor}.\n\n${result.message}\n\n${marker}`,
+      logger,
     );
     if (!markerPosted) {
-      logger.warn(
-        `Dispatch marker comment failed to post for plan ${metadata.planId}.` +
-          (options.dispatchStore
-            ? ' The durable dispatch record still protects against a duplicate dispatch on retry.'
-            : ' No durable dispatch store is configured, so a retry cannot be told this plan was already applied.'),
-      );
+      if (options.dispatchStore) {
+        logger.warn(
+          `Dispatch marker comment failed to post for plan ${metadata.planId} after retrying. ` +
+            'The durable dispatch record still protects against a duplicate dispatch on retry.',
+        );
+      } else {
+        // No durable store (the Action runner has none) and the marker — the
+        // only thing that makes a repeated `/drift apply` a no-op — did not
+        // make it to GitHub even after retrying. A silent warning here is how
+        // a duplicate dispatch happens unnoticed, so this is loud on purpose.
+        logger.error(
+          `Dispatch marker comment failed to post for plan ${metadata.planId} on #${decision.issueNumber} ` +
+            'after retrying, and no durable dispatch store is configured. A repeated `/drift apply` on this ' +
+            `issue will not be recognised as already applied and may dispatch task ${result.taskId ?? '(no id)'} ` +
+            `again${result.branchName ? ` on branch \`${result.branchName}\`` : ''}. A human should check the ` +
+            'issue manually before approving it again.',
+        );
+      }
     }
 
     // Best-effort: the task was already dispatched and idempotency is already
@@ -458,4 +475,42 @@ async function reject(
     issueNumber,
     `**Drift did not apply this plan.**\n\n${reason}`,
   );
+}
+
+/**
+ * Post the dispatch marker comment, retrying a transient failure before
+ * giving up.
+ *
+ * `GitHubClient.commentOnIssue` swallows its own errors and reports failure as
+ * `false` rather than throwing, precisely so a caller can decide what a lost
+ * comment means here: for the marker, it means a retried `/drift apply` may
+ * not recognise this plan as already applied. That is tolerable when a
+ * durable store is also in play, but on the Action — which has none — this is
+ * the only idempotency signal there is, so it is worth a few attempts with
+ * backoff before the caller has to treat it as gone for good and say so
+ * loudly.
+ */
+async function postMarkerWithRetry(
+  github: GitHubClient,
+  apiContext: RepoContext,
+  issueNumber: number,
+  body: string,
+  logger: Logger,
+  attempts = 3,
+  backoffMs = 1000,
+): Promise<boolean> {
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    if (await github.commentOnIssue(apiContext, issueNumber, body)) return true;
+    if (attempt < attempts) {
+      logger.warn(
+        `Dispatch marker comment failed to post on #${issueNumber} (attempt ${attempt}/${attempts}); retrying.`,
+      );
+      await sleep(backoffMs * attempt);
+    }
+  }
+  return false;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

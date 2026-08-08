@@ -248,6 +248,29 @@ export async function runBehaviouralDifferential(options: {
   };
 }
 
+/**
+ * Find `behavioural-worker.js` next to wherever this module actually lives.
+ *
+ * `import.meta.url`-relative resolution only works when this file ends up on
+ * disk as `dist/verification/behavioural.js`, i.e. the unbundled CLI build.
+ * The Action and the VS Code extension both bundle this module into one CJS
+ * file (`action/index.cjs`, `extension/dist/extension.js`), at which point
+ * `import.meta.url` is esbuild's shim for CJS output — an empty object, not a
+ * real URL — and resolving a relative URL against `undefined` throws before
+ * the worker is ever spawned. Those bundles ship `behavioural-worker.js`
+ * copied next to the bundle output (see `scripts/build-action.mjs` and
+ * `extension/esbuild.mjs`), so resolving relative to `__dirname` finds it
+ * there. `__dirname` only exists in a CJS module — a plain `typeof` check is
+ * enough to tell which situation this is, and evaluates safely in an ESM
+ * module without throwing (unlike referencing the identifier directly).
+ */
+async function resolveWorkerPath(): Promise<string> {
+  if (typeof __dirname !== 'undefined') {
+    return join(__dirname, 'behavioural-worker.js');
+  }
+  return fileURLToPath(new URL('./behavioural-worker.js', import.meta.url));
+}
+
 async function runWorker(
   config: DriftConfig['verification']['behavioural'],
   environment: BehaviouralEnvironment,
@@ -257,7 +280,7 @@ async function runWorker(
   const dir = await mkdtemp(join(tmpdir(), 'drift-behavioural-'));
   const realDir = await realpath(dir);
   const casePath = join(dir, 'case.json');
-  const workerPath = await realpath(fileURLToPath(new URL('./behavioural-worker.js', import.meta.url)));
+  const workerPath = await realpath(await resolveWorkerPath());
   const modulePath = resolve(environment.modulePath || probe.modulePath);
   const realModulePath = await realpath(modulePath);
   const packageRoot = resolve(environment.packageRoot);

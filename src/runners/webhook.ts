@@ -495,6 +495,31 @@ function readBody(req: IncomingMessage): Promise<Buffer> {
   });
 }
 
+/**
+ * Bind the server and resolve once it is actually listening.
+ *
+ * The `error` listener is attached before `listen()` is called — attaching it
+ * after would race a synchronous-ish bind failure (e.g. an already-in-use
+ * port on some platforms) that fires before the handler is registered, which
+ * is exactly the kind of gap that let a bad port surface as an unhandled
+ * error instead of a clean non-zero exit.
+ */
+function listen(server: Server, port: number): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const onError = (err: Error): void => {
+      server.removeListener('listening', onListening);
+      reject(err);
+    };
+    const onListening = (): void => {
+      server.removeListener('error', onError);
+      resolve();
+    };
+    server.once('error', onError);
+    server.once('listening', onListening);
+    server.listen(port);
+  });
+}
+
 function respond(res: ServerResponse, status: number, body: unknown): void {
   const payload = JSON.stringify(body);
   res.writeHead(status, {
@@ -610,14 +635,25 @@ export async function main(): Promise<number> {
   runReconcile();
   setInterval(runReconcile, 60_000).unref();
 
-  server.listen(port, () => {
-    logger.info(`Drift webhook server listening on :${port}`);
-    if (!process.env.DRIFT_COPILOT_TOKEN) {
-      logger.warn(
-        'DRIFT_COPILOT_TOKEN is not set. Drift will analyse and file approval issues, but cannot dispatch fixes.',
-      );
-    }
-  });
+  try {
+    await listen(server, port);
+  } catch (err) {
+    // `server.listen` is asynchronous; without waiting on its outcome here,
+    // a bind failure (EADDRINUSE, EACCES, …) would surface later as an
+    // unhandled error, after this function had already returned 0 and told
+    // the caller startup succeeded. The `error` listener is attached inside
+    // `listen` before `listen()` is called, so a synchronous-ish failure
+    // cannot fire it before anything is watching.
+    logger.error(`Drift webhook server failed to start on :${port}: ${(err as Error).message}`);
+    return 1;
+  }
+
+  logger.info(`Drift webhook server listening on :${port}`);
+  if (!process.env.DRIFT_COPILOT_TOKEN) {
+    logger.warn(
+      'DRIFT_COPILOT_TOKEN is not set. Drift will analyse and file approval issues, but cannot dispatch fixes.',
+    );
+  }
 
   // A deploy sends SIGTERM. Draining the job in flight is what keeps a restart
   // from turning into a duplicate analysis on the next startup.
