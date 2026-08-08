@@ -52,12 +52,17 @@ export async function executeCommunityRecipe(
   }
 
   const after = await exec('git', ['status', '--porcelain'], { cwd: worktreeDir });
-  const changedFiles = (after.stdout || '')
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => line.replace(/^[AMDRC?!\s]+/, '').trim())
-    .filter(Boolean);
+
+  // `before` reflects whatever was already dirty/untracked in the worktree
+  // ahead of running the recipe. Only files whose status is new or changed
+  // between the two snapshots were actually touched by the recipe — a
+  // pre-existing dirty file that the recipe left alone must not be reported
+  // as the recipe's output.
+  const beforeStatus = parseGitStatus(before.stdout || '');
+  const afterStatus = parseGitStatus(after.stdout || '');
+  const changedFiles = [...afterStatus.entries()]
+    .filter(([path, status]) => beforeStatus.get(path) !== status)
+    .map(([path]) => path);
 
   if (changedFiles.length === 0) {
     return {
@@ -72,6 +77,30 @@ export async function executeCommunityRecipe(
     changedFiles,
     message: `Applied community recipe ${candidate.name}@${candidate.version} from ${candidate.publisher} — no agent call was made.`,
   };
+}
+
+/**
+ * Parse `git status --porcelain` into a path → status-code map.
+ *
+ * A rename line (`R  old -> new`) is keyed by the new path, since that is
+ * the file that exists in the worktree afterwards; the status code is kept
+ * as-is so a genuine status change (e.g. untracked becoming modified) is
+ * still detected as a change between two snapshots.
+ */
+function parseGitStatus(porcelain: string): Map<string, string> {
+  const entries = new Map<string, string>();
+  for (const raw of porcelain.split('\n')) {
+    const line = raw.trimEnd();
+    if (!line.trim()) continue;
+    const status = line.slice(0, 2);
+    let path = line.slice(2).trim();
+    const arrow = path.indexOf(' -> ');
+    if (arrow !== -1) path = path.slice(arrow + 4).trim();
+    // Porcelain quotes paths containing unusual characters in double quotes.
+    if (path.startsWith('"') && path.endsWith('"')) path = path.slice(1, -1);
+    if (path) entries.set(path, status);
+  }
+  return entries;
 }
 
 function commandFor(candidate: CommunityRecipeCandidate): { bin: string; args: string[] } | null {

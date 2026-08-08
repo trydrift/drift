@@ -68,14 +68,23 @@ export async function runFix(options: FixOptions): Promise<FixRunResult & { tear
 
   for (const commit of plan.commits) {
     if (commit.codemod) {
-      const applied = await applyBuiltinCommit(worktree, commit, exec);
-      if (applied) {
+      const outcome = await applyBuiltinCommit(worktree, commit, exec);
+      if (outcome === 'applied') {
         builtinResolved += 1;
         committedAny = true;
         continue;
       }
-      // Nothing to apply (already applied by an earlier commit, or the file
-      // moved out from under it) — nothing more this commit needs.
+      if (outcome === 'no-changes') {
+        // Genuinely nothing to apply (already applied by an earlier commit,
+        // or the file moved out from under it) — nothing more this commit
+        // needs, and it must not be reported as unresolved work.
+        continue;
+      }
+      // The codemod produced edits but they could not be committed to disk
+      // (e.g. `git add`/`git commit` failed) — this commit is not resolved
+      // and must not be silently dropped; it needs an agent's attention the
+      // same way the GitHub Action path (`local-commit.ts`) falls back.
+      needsAgent.push(commit);
       continue;
     }
 
@@ -168,7 +177,11 @@ async function defaultAsk(question: string, options: string[]): Promise<string> 
   }
 }
 
-async function applyBuiltinCommit(worktree: string, commit: CommitUnit, exec: Exec): Promise<boolean> {
+async function applyBuiltinCommit(
+  worktree: string,
+  commit: CommitUnit,
+  exec: Exec,
+): Promise<'applied' | 'no-changes' | 'failed'> {
   const contents = new Map<string, string>();
   for (const file of commit.files) {
     try {
@@ -179,13 +192,14 @@ async function applyBuiltinCommit(worktree: string, commit: CommitUnit, exec: Ex
   }
 
   const result = applyBuiltinCodemod(commit, contents);
-  if (result.status !== 'applied') return false;
+  if (result.status !== 'applied') return 'no-changes';
 
   for (const edit of result.edits) {
     await writeFile(join(worktree, edit.path), edit.content, 'utf8');
   }
 
-  return commitFiles(worktree, result.edits.map((e) => e.path), `${commit.message}\n\n${commit.body}`, exec);
+  const committed = await commitFiles(worktree, result.edits.map((e) => e.path), `${commit.message}\n\n${commit.body}`, exec);
+  return committed ? 'applied' : 'failed';
 }
 
 async function applyRecipeCommit(

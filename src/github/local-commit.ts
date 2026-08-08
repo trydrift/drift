@@ -44,13 +44,45 @@ export async function applyDeterministicRemediation(options: {
     if (kind === 'ai') continue;
 
     try {
-      const resolved =
-        kind === 'builtin'
-          ? await applyBuiltinCommit(repo.workspace, commit)
-          : await applyRecipeCommit(repo.workspace, commit, exec, logger);
+      if (kind === 'builtin') {
+        // A built-in codemod never writes to disk unless it fully applied
+        // (see `applyBuiltinCommit`), so `commit.files` is always the right
+        // set to revert on failure — nothing else could have changed.
+        const resolved = await applyBuiltinCommit(repo.workspace, commit);
+        if (!resolved) {
+          await revertWorkspaceFiles(repo.workspace, commit.files, exec);
+          continue;
+        }
 
-      if (!resolved) {
-        await revertWorkspaceFiles(repo.workspace, commit.files, exec);
+        const committed = await github.commitFiles(
+          repo,
+          plan.branchName,
+          resolved.edits,
+          `${commit.message}\n\n${commit.body}\n\n${resolved.message}`,
+        );
+
+        if (committed) {
+          committedIds.add(commit.id);
+          logger.info(`Resolved commit ${commit.order} directly (builtin): ${resolved.message}`);
+        } else {
+          await revertWorkspaceFiles(repo.workspace, commit.files, exec);
+        }
+        continue;
+      }
+
+      // A community recipe is not proven to stay inside `commit.files` — it
+      // may have written to additional paths before failing a scope check or
+      // before the commit-to-GitHub step fails. Reverting only the declared
+      // `commit.files` in that case would leave the recipe's actual delta
+      // sitting uncommitted in the workspace, corrupting the next commit's
+      // starting state. `applyRecipeCommit` reports the true `touched` set
+      // for exactly this reason; fall back to `commit.files` only if it
+      // could not determine anything was touched.
+      const resolved = await applyRecipeCommit(repo.workspace, commit, exec, logger);
+      const revertTarget = resolved.touched.length > 0 ? resolved.touched : commit.files;
+
+      if (!resolved.edits) {
+        await revertWorkspaceFiles(repo.workspace, revertTarget, exec);
         continue;
       }
 
@@ -63,9 +95,9 @@ export async function applyDeterministicRemediation(options: {
 
       if (committed) {
         committedIds.add(commit.id);
-        logger.info(`Resolved commit ${commit.order} directly (${kind}): ${resolved.message}`);
+        logger.info(`Resolved commit ${commit.order} directly (recipe): ${resolved.message}`);
       } else {
-        await revertWorkspaceFiles(repo.workspace, commit.files, exec);
+        await revertWorkspaceFiles(repo.workspace, revertTarget, exec);
       }
     } catch (err) {
       logger.warn(
@@ -101,14 +133,21 @@ async function applyBuiltinCommit(
   return { edits: result.edits, message: result.message };
 }
 
+/**
+ * `touched` is always the true set of paths the recipe(s) wrote to on disk,
+ * regardless of whether the commit ultimately succeeds — the caller needs it
+ * to revert the recipe's actual delta, not just the commit's declared
+ * `files`, on any failure path (out-of-scope edits, a deleted-file readback,
+ * or a failed `commitFiles` call).
+ */
 async function applyRecipeCommit(
   workspace: string,
   commit: CommitUnit,
   exec: Exec,
   logger: Logger,
-): Promise<{ edits: { path: string; content: string }[]; message: string } | null> {
+): Promise<{ edits: { path: string; content: string }[] | null; message: string; touched: string[] }> {
   const recipes = dedupeRecipes(commit.recipe ?? []);
-  if (recipes.length === 0) return null;
+  if (recipes.length === 0) return { edits: null, message: '', touched: [] };
 
   const allowed = new Set([...commit.allowedFiles, ...commit.files]);
   const touched = new Set<string>();
@@ -116,15 +155,15 @@ async function applyRecipeCommit(
 
   for (const recipe of recipes) {
     const result = await executeCommunityRecipe(recipe, workspace, { exec, logger });
+    for (const file of result.changedFiles) touched.add(file);
     if (result.status === 'failed') {
       logger.warn(`Community recipe ${recipe.name}@${recipe.version} failed: ${result.message}`);
-      return null;
+      return { edits: null, message: '', touched: [...touched] };
     }
-    for (const file of result.changedFiles) touched.add(file);
     if (result.status === 'applied') messages.push(result.message);
   }
 
-  if (touched.size === 0) return null;
+  if (touched.size === 0) return { edits: null, message: '', touched: [] };
 
   // Scope enforcement: a recipe is never trusted to stay inside the commit's
   // declared files the way a built-in codemod is proven to. Any edit outside
@@ -134,7 +173,7 @@ async function applyRecipeCommit(
     logger.warn(
       `Community recipe for commit ${commit.order} touched file(s) outside its scope (${outOfScope.join(', ')}); discarding and falling back to an agent.`,
     );
-    return null;
+    return { edits: null, message: '', touched: [...touched] };
   }
 
   const edits: { path: string; content: string }[] = [];
@@ -146,9 +185,9 @@ async function applyRecipeCommit(
     }
   }
 
-  if (edits.length === 0) return null;
+  if (edits.length === 0) return { edits: null, message: '', touched: [...touched] };
 
-  return { edits, message: messages.join(' ') || 'Applied community recipe(s).' };
+  return { edits, message: messages.join(' ') || 'Applied community recipe(s).', touched: [...touched] };
 }
 
 function dedupeRecipes(recipes: readonly CommunityRecipeCandidate[]): CommunityRecipeCandidate[] {

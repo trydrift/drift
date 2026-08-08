@@ -326,6 +326,12 @@ export function branchNameFor(
   changes: readonly DependencyChange[],
   afterSha: string,
 ): string {
+  // `afterSha` deliberately does not appear in the name: the branch name is
+  // stable across retries of the same analysed commit (see `createBranch`'s
+  // idempotency contract in `github/client.ts`), which keeps branch names
+  // readable instead of a hash. Staleness across a moved base branch is
+  // guarded in `createBranch`, which verifies the existing branch is still
+  // built on `afterSha` before treating "ref already exists" as success.
   void afterSha;
   return branchName(
     { changes },
