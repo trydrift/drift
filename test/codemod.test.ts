@@ -43,8 +43,8 @@ describe('attemptCodemod: a clean rename', () => {
     );
     assert.equal(result!.sitesResolved, 2);
     assert.deepEqual(result!.transform.anchors, [
-      { file: 'src/app.ts', line: "import { oldName } from 'acme-sdk';" },
-      { file: 'src/app.ts', line: 'oldName();' },
+      { file: 'src/app.ts', line: "import { oldName } from 'acme-sdk';", lineNumber: 1 },
+      { file: 'src/app.ts', line: 'oldName();', lineNumber: 3 },
     ]);
   });
 

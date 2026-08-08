@@ -368,7 +368,7 @@ export interface CommitUnit {
     from: string;
     to: string;
     files: string[];
-    anchors: { file: string; line: string }[];
+    anchors: { file: string; line: string; lineNumber: number }[];
   }[];
   /**
    * Community recipe candidates that claim to resolve every breaking change

@@ -74,8 +74,9 @@ export async function queryCodemodRegistry(
 ): Promise<CommunityRecipeCandidate | null> {
   if (!dependencyChange) return null;
 
-  const query = normalizePackageName(dependencyChange.name);
-  const url = `${CODEMOD_REGISTRY_HOST}/registry?search=${encodeURIComponent(query)}`;
+  const baseName = normalizePackageName(dependencyChange.name);
+  const fullName = dependencyChange.name.toLowerCase();
+  const url = `${CODEMOD_REGISTRY_HOST}/registry?search=${encodeURIComponent(baseName)}`;
 
   const response = await fetchJson<CodemodRegistryResponse | CodemodRegistryEntry[]>(url, {
     timeoutMs: REGISTRY_TIMEOUT_MS,
@@ -86,13 +87,23 @@ export async function queryCodemodRegistry(
   const entries = Array.isArray(response) ? response : (response.entries ?? response.results ?? response.data ?? []);
   if (!Array.isArray(entries)) return null;
 
-  const matches = entries.filter((entry) => entryMatchesDependency(entry, query));
-  if (matches.length === 0) return null;
+  const scored = entries
+    .map((entry) => ({ entry, confidence: entryMatchesDependency(entry, fullName, baseName) }))
+    .filter((r): r is { entry: CodemodRegistryEntry; confidence: Exclude<MatchConfidence, 'none'> } => r.confidence !== 'none');
+  if (scored.length === 0) return null;
 
-  // Prefer a verified/official entry over an arbitrary community publisher —
-  // still shown to the user either way, never auto-selected into execution.
-  matches.sort((a, b) => Number(isOfficialCodemodEntry(b)) - Number(isOfficialCodemodEntry(a)));
-  const best = matches[0]!;
+  // A full scoped-name match against the entry's own declared applicability
+  // is the only certain match: two unrelated packages that merely share a
+  // base name (`@foo/core` vs `@bar/core`) must not be treated as the same
+  // candidate. Base-name and loose text matches are kept only as a fallback
+  // when nothing declares the exact scoped name, and are always ranked below
+  // an exact match; a verified/official publisher only breaks ties within
+  // the same confidence tier.
+  const rank: Record<Exclude<MatchConfidence, 'none'>, number> = { exact: 2, 'base-name': 1, text: 0 };
+  scored.sort(
+    (a, b) => rank[b.confidence] - rank[a.confidence] || Number(isOfficialCodemodEntry(b.entry)) - Number(isOfficialCodemodEntry(a.entry)),
+  );
+  const best = scored[0]!.entry;
 
   const name = best.slug ?? best.name;
   const version = best.version ?? best.latestVersion;
@@ -109,12 +120,38 @@ export async function queryCodemodRegistry(
   };
 }
 
-function entryMatchesDependency(entry: CodemodRegistryEntry, normalizedQuery: string): boolean {
-  if (entry.applicability?.some((a) => a.packages?.some((p) => normalizePackageName(p) === normalizedQuery))) {
-    return true;
-  }
+type MatchConfidence = 'exact' | 'base-name' | 'text' | 'none';
+
+/**
+ * Whether — and how confidently — an entry's declared applicability (or, as
+ * a last resort, its own name/slug) refers to the dependency being upgraded.
+ *
+ * `'exact'` compares the full scoped package name as declared, so `@foo/core`
+ * cannot be confused with `@bar/core` just because both strip to `core`.
+ * `'base-name'` is the scope-stripped fallback for entries that only ever
+ * declare an unscoped name (npm's unscoped ecosystem, or a registry that
+ * never recorded the scope) — a real possibility, but strictly lower
+ * confidence than an exact match. `'text'` is a last-resort, word-bounded
+ * substring check across the entry's slug, name, and free-text
+ * description/summary — looser than the other two tiers (and so always
+ * ranked below them), but still anchored to a word boundary rather than a
+ * bare substring so `acme-sdk` cannot match inside an unrelated
+ * `acme-sdk-legacy-tools`-style token.
+ */
+function entryMatchesDependency(entry: CodemodRegistryEntry, fullName: string, baseName: string): MatchConfidence {
+  const packages = entry.applicability?.flatMap((a) => a.packages ?? []) ?? [];
+  if (packages.some((p) => p.toLowerCase() === fullName)) return 'exact';
+  if (packages.some((p) => normalizePackageName(p) === baseName)) return 'base-name';
+
   const haystack = `${entry.slug ?? ''} ${entry.name ?? ''} ${entry.description ?? ''} ${entry.summary ?? ''}`.toLowerCase();
-  return haystack.includes(normalizedQuery);
+  const boundary = new RegExp(`(?:^|[^a-z0-9])${escapeRegExp(baseName)}(?:$|[^a-z0-9])`);
+  if (baseName && boundary.test(haystack)) return 'text';
+
+  return 'none';
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function isOfficialCodemodEntry(entry: CodemodRegistryEntry): boolean {

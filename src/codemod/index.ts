@@ -58,6 +58,17 @@ export interface CodemodTransform {
 export interface CodemodAnchor {
   file: string;
   line: string;
+  /**
+   * 1-indexed line number when this anchor was captured. Used only to
+   * disambiguate two identical lines elsewhere in the same file — matching
+   * on text alone would rewrite every line that happens to read the same,
+   * including ones that were never localized as an impact site for this
+   * change. If the file has shifted enough that this number no longer points
+   * at `line`'s text, re-application falls back to a text match only when
+   * that text is unique in the file; otherwise it declines rather than guess
+   * which occurrence was the one actually localized.
+   */
+  lineNumber: number;
 }
 
 export interface CodemodEdit {
@@ -139,7 +150,7 @@ export function attemptCodemod(
 
       lines[index] = rewritten;
       resolvedLines.add(index);
-      anchors.push({ file, line });
+      anchors.push({ file, line, lineNumber: index + 1 });
     }
 
     if (resolvedLines.size === 0) continue;
@@ -186,14 +197,39 @@ function renameAtAnchors(
   anchors: readonly CodemodAnchor[],
   file: string,
 ): string {
-  const anchorLines = new Set(anchors.filter((a) => a.file === file).map((a) => a.line));
-  if (anchorLines.size === 0) return source;
+  const fileAnchors = anchors.filter((a) => a.file === file);
+  if (fileAnchors.length === 0) return source;
+
+  const lines = source.split('\n');
+
+  // How many lines in the file currently read exactly this text — needed
+  // below to tell "the file shifted but this line is still uniquely
+  // identifiable" apart from "this text is ambiguous, decline rather than
+  // guess which occurrence was actually localized."
+  const textCounts = new Map<string, number>();
+  for (const line of lines) textCounts.set(line, (textCounts.get(line) ?? 0) + 1);
+
+  const targetLines = new Set<number>();
+  for (const anchor of fileAnchors) {
+    const recordedIndex = anchor.lineNumber - 1;
+    if (lines[recordedIndex] === anchor.line) {
+      targetLines.add(recordedIndex);
+      continue;
+    }
+    // The recorded line number no longer holds this exact text (earlier
+    // edits shifted the file). Only fall back to a text match when it is
+    // unambiguous — otherwise this anchor is left unresolved rather than
+    // risking a line that was never localized for this change.
+    if ((textCounts.get(anchor.line) ?? 0) === 1) {
+      const fallbackIndex = lines.indexOf(anchor.line);
+      if (fallbackIndex !== -1) targetLines.add(fallbackIndex);
+    }
+  }
+
+  if (targetLines.size === 0) return source;
 
   const matcher = new RegExp(`\\b${escapeRegExp(from)}\\b`, 'g');
-  return source
-    .split('\n')
-    .map((line) => (anchorLines.has(line) ? renameOnLine(line, matcher, to) : line))
-    .join('\n');
+  return lines.map((line, index) => (targetLines.has(index) ? renameOnLine(line, matcher, to) : line)).join('\n');
 }
 
 /**

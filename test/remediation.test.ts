@@ -357,11 +357,36 @@ describe('applyBuiltinCodemod', () => {
 
   test('reports no-changes rather than an error when the anchor no longer matches', () => {
     const commit = commitUnit({
-      codemod: [{ ruleId: 'rename-identifier', from: 'oldName', to: 'newName', files: ['src/app.ts'], anchors: [{ file: 'src/app.ts', line: 'oldName();' }] }],
+      codemod: [{ ruleId: 'rename-identifier', from: 'oldName', to: 'newName', files: ['src/app.ts'], anchors: [{ file: 'src/app.ts', line: 'oldName();', lineNumber: 1 }] }],
     });
     const applied = applyBuiltinCodemod(commit as never, new Map([['src/app.ts', 'newName(); // already fixed\n']]));
     assert.equal(applied.status, 'no-changes');
     assert.deepEqual(applied.edits, []);
+  });
+
+  test('does not rewrite an identical line elsewhere in the file that was never localized', () => {
+    // Two lines read exactly `oldName();` — only line 1 was ever an anchored
+    // impact site. Matching by text alone would rewrite both.
+    const commit = commitUnit({
+      codemod: [
+        {
+          ruleId: 'rename-identifier',
+          from: 'oldName',
+          to: 'newName',
+          files: ['src/app.ts'],
+          anchors: [{ file: 'src/app.ts', line: 'oldName();', lineNumber: 1 }],
+        },
+      ],
+    });
+    const applied = applyBuiltinCodemod(
+      commit as never,
+      new Map([['src/app.ts', 'oldName();\n// unrelated block below, identical text\noldName();\n']]),
+    );
+
+    assert.equal(applied.status, 'applied');
+    assert.deepEqual(applied.edits, [
+      { path: 'src/app.ts', content: 'newName();\n// unrelated block below, identical text\noldName();\n' },
+    ]);
   });
 });
 

@@ -99,10 +99,48 @@ export class GitHubClient {
       return true;
     } catch (err) {
       if (isAlreadyExists(err)) {
-        this.logger.info(`Branch ${branchName} already exists; reusing it`);
-        return true;
+        // The branch name is stable across retries of the same analysed
+        // commit, so finding it already there is the common case. But a
+        // same-day retry after the base branch has moved must not silently
+        // reuse a branch built on a different tree — exact-line-anchored
+        // fixes would then apply to the wrong commit. Only reuse the branch
+        // when `sha` is the tip it already has, or is an ancestor of it (the
+        // branch already carries remediation commits on top of `sha`).
+        const head = await this.getBranchHead(repo, branchName);
+        if (head === sha) {
+          this.logger.info(`Branch ${branchName} already exists at ${sha.slice(0, 7)}; reusing it`);
+          return true;
+        }
+        if (head && (await this.isAncestor(repo, sha, head))) {
+          this.logger.info(
+            `Branch ${branchName} already exists ahead of ${sha.slice(0, 7)}; reusing it`,
+          );
+          return true;
+        }
+        this.logger.error(
+          `Branch ${branchName} already exists but is not based on ${sha.slice(0, 7)} ` +
+            `(current head: ${head ?? 'unknown'}); refusing to reuse a stale branch`,
+        );
+        return false;
       }
       this.logger.error(`Could not create branch ${branchName}: ${(err as Error).message}`);
+      return false;
+    }
+  }
+
+  /** Whether `ancestor` is `descendant` itself or an ancestor of it. */
+  private async isAncestor(repo: RepoContext, ancestor: string, descendant: string): Promise<boolean> {
+    if (ancestor === descendant) return true;
+    try {
+      const response = await this.octokit.repos.compareCommitsWithBasehead({
+        owner: repo.owner,
+        repo: repo.repo,
+        basehead: `${ancestor}...${descendant}`,
+      });
+      // `ahead` means `descendant` has `ancestor` in its history plus more
+      // commits; `identical` means they are the same commit.
+      return response.data.status === 'ahead' || response.data.status === 'identical';
+    } catch {
       return false;
     }
   }

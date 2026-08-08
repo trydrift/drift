@@ -316,6 +316,13 @@ async function fixCommand(flags: Flags): Promise<number> {
     nonInteractive: Boolean(flags['non-interactive']),
   });
 
+  // Tracks whether any commit that needed an agent is left unresolved —
+  // missing Copilot token, a failed dispatch, or (after the agent-fallback
+  // fix in `cli-runner.ts`) a codemod that failed to commit. When true, the
+  // run must not report a clean success even if a pull request gets opened:
+  // the PR would be missing fixes the run itself knows are outstanding.
+  let unresolvedAgentWork = false;
+
   try {
     if (fix.pushed) {
       await run('git', ['push', '-u', 'origin', `HEAD:refs/heads/${fix.branch}`], { cwd: fix.worktree });
@@ -336,6 +343,7 @@ async function fixCommand(flags: Flags): Promise<number> {
           `${fix.needsAgent.length} commit(s) need an AI agent, but no Copilot token is available. ` +
             'Set DRIFT_COPILOT_TOKEN or pass --copilot-token. Skipping them for now.',
         );
+        unresolvedAgentWork = true;
       } else {
         if (!fix.pushed) {
           // Copilot works from the remote branch, which nothing has created
@@ -353,6 +361,7 @@ async function fixCommand(flags: Flags): Promise<number> {
         });
         if (!dispatched.ok) {
           logger.error(`Copilot dispatch failed: ${dispatched.error}`);
+          unresolvedAgentWork = true;
         } else {
           logger.info(`Dispatched ${fix.needsAgent.length} commit(s) needing an agent to Copilot.`);
         }
@@ -364,11 +373,15 @@ async function fixCommand(flags: Flags): Promise<number> {
       return 0;
     }
 
+    const body = unresolvedAgentWork
+      ? `> **Incomplete:** ${fix.needsAgent.length} commit(s) still need an AI agent and could not be dispatched. This pull request does not yet contain a fix for them.\n\n${renderPullRequestBody(plan, config)}`
+      : renderPullRequestBody(plan, config);
+
     const pr = await github.createPullRequest(repo, {
       head: fix.branch,
       base: plan.baseBranch,
       title: titleFor({ changes: plan.changes }, { title: config.pullRequest.titleTemplate, prefix: config.remediation.branchPrefix }),
-      body: renderPullRequestBody(plan, config),
+      body,
       draft: Boolean(flags.draft) || config.pullRequest.draft || config.remediation.draftPr,
       labels: config.pullRequest.labels,
       reviewers: config.pullRequest.reviewers,
@@ -378,6 +391,11 @@ async function fixCommand(flags: Flags): Promise<number> {
       console.log(pr.existing ? `Already open: ${pr.url}` : `Opened ${pr.url}`);
     } else if (fix.pushed) {
       console.log(`Pushed \`${fix.branch}\`, but could not open a pull request.`);
+    }
+
+    if (unresolvedAgentWork) {
+      logger.warn('Exiting non-zero: unresolved agent work remains (see above).');
+      return 1;
     }
 
     return 0;
