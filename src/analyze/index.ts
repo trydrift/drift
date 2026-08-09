@@ -209,16 +209,28 @@ function isGenericLeaf(name: string): boolean {
 }
 
 const GENERIC_LEAF_NAMES = new Set([
+  // Verbs that are method names in every library ever written.
   'add', 'all', 'any', 'append', 'apply', 'build', 'call', 'check', 'clear',
-  'clone', 'close', 'connect', 'copy', 'count', 'create', 'data', 'define',
-  'delete', 'each', 'emit', 'end', 'error', 'execute', 'exists', 'extend',
-  'fetch', 'filter', 'find', 'first', 'flush', 'format', 'get', 'handle',
-  'has', 'id', 'index', 'init', 'insert', 'is', 'items', 'iter', 'join',
-  'keys', 'last', 'length', 'list', 'load', 'log', 'main', 'map', 'match',
-  'name', 'new', 'next', 'open', 'options', 'parse', 'pop', 'push', 'put',
-  'query', 'read', 'remove', 'render', 'reset', 'resolve', 'result', 'run',
-  'save', 'send', 'set', 'size', 'sort', 'split', 'start', 'status', 'stop',
-  'type', 'update', 'value', 'values', 'wait', 'write',
+  'clone', 'close', 'connect', 'copy', 'count', 'create', 'define', 'delete',
+  'each', 'emit', 'end', 'execute', 'exists', 'extend', 'fetch', 'filter',
+  'find', 'first', 'flush', 'format', 'get', 'handle', 'has', 'index', 'init',
+  'insert', 'is', 'items', 'iter', 'join', 'keys', 'last', 'length', 'list',
+  'load', 'log', 'main', 'map', 'match', 'new', 'next', 'open', 'parse', 'pop',
+  'push', 'put', 'query', 'read', 'remove', 'render', 'reset', 'resolve', 'run',
+  'save', 'send', 'set', 'size', 'sort', 'split', 'start', 'stop', 'update',
+  'wait', 'write',
+  // Nouns every codebase already has a local variable for. `root` came from
+  // `maildir.AbstractMaildirDomain.root` and matched `root = Root()` in a
+  // benchmark script with no maildir anywhere in it.
+  //
+  // Kept deliberately narrower than it could be. `request`, `response`,
+  // `client` and `session` are just as common as locals, but they are also
+  // plausible names for the actual thing a library exports, and dropping a
+  // real API's only searchable short form costs a finding that matters. These
+  // are the ones no library would name a distinctive export.
+  'args', 'body', 'config', 'content', 'context', 'data', 'error', 'file',
+  'header', 'headers', 'host', 'id', 'key', 'name', 'options', 'params', 'path',
+  'port', 'result', 'root', 'status', 'text', 'type', 'url', 'value', 'values',
 ]);
 
 function fromProseEvidence(record: Evidence, dependency: string, workspace: string | undefined): BreakingChange[] {
