@@ -6,6 +6,17 @@ import { createLogger } from '../dist/util/logger.js';
 
 const logger = createLogger('error');
 
+/** A minimal DependencyChange, for tests that only need name + ecosystem. */
+const dep = (name: string, ecosystem: string) => ({
+  name,
+  ecosystem: ecosystem as never,
+  from: '1.0.0',
+  to: '2.0.0',
+  kind: 'runtime' as const,
+  bump: 'major' as const,
+  manifestPath: 'package.json',
+});
+
 const file = (path: string, language: string, content: string) => ({
   path,
   language: language as never,
@@ -339,5 +350,172 @@ const c = createClient({} as Options);`,
     const line2 = sites.filter((s) => s.line === 2);
 
     assert.equal(line2.length, 1, 'one line is one site');
+  });
+});
+
+/**
+ * Precision: a match has to be evidence, not a coincidence.
+ *
+ * Both of these came from a real run of Drift against Scrapy, whose Twisted
+ * dependency reported a handful of genuine removals as 229 affected sites. The
+ * sites were things like `def __init__(self):` in files that had never heard of
+ * the class that changed, and sentences inside docstrings that happened to
+ * contain the word `define`. A report like that is worse than no report: it
+ * costs a developer an afternoon and teaches them the tool guesses.
+ */
+describe('symbols too generic to be evidence', () => {
+  test("a dotted symbol's leaf is dropped when every class in the language has one", () => {
+    const change = {
+      id: 'bc1',
+      dependency: 'twisted',
+      kind: 'removed-export' as const,
+      summary: '`_synctest.Todo.__init__` was removed.',
+      remediation: 'Use the replacement.',
+      // What `symbolsFromFinding` now produces: the qualified forms, never the
+      // bare `__init__`.
+      symbols: ['_synctest.Todo.__init__', 'Todo.__init__'],
+      confidence: 'high' as const,
+      citations: ['e1'],
+    };
+
+    const files = [
+      file(
+        'extras/bench.py',
+        'python',
+        `import twisted
+
+class Server:
+    def __init__(self):
+        Resource.__init__(self)`,
+      ),
+    ];
+
+    const sites = localize(change ? [change] : [], [dep('twisted', 'pypi')], buildIndex(files), files, {
+      logger,
+    });
+
+    assert.equal(sites.length, 0, 'a constructor in an unrelated class is not a use of Todo');
+  });
+
+  test('a qualified reference to the same symbol is still found', () => {
+    const change = {
+      id: 'bc1',
+      dependency: 'twisted',
+      kind: 'removed-export' as const,
+      summary: '`_synctest.Todo.__init__` was removed.',
+      remediation: 'Use the replacement.',
+      symbols: ['_synctest.Todo.__init__', 'Todo.__init__'],
+      confidence: 'high' as const,
+      citations: ['e1'],
+    };
+
+    const files = [
+      file('t.py', 'python', `import twisted\n\nTodo.__init__(self, reason)`),
+    ];
+
+    const sites = localize([change], [dep('twisted', 'pypi')], buildIndex(files), files, { logger });
+    assert.equal(sites.length, 1);
+    assert.equal(sites[0]!.matchedSymbol, 'Todo.__init__');
+  });
+});
+
+describe('prose is not code', () => {
+  const change = (symbols: string[]) => ({
+    id: 'bc1',
+    dependency: 'twisted',
+    kind: 'removed-export' as const,
+    summary: '`define` is no longer exported.',
+    remediation: 'Use the replacement.',
+    symbols,
+    confidence: 'high' as const,
+    citations: ['e1'],
+  });
+
+  test('an identifier inside a docstring is not an impact site', () => {
+    const files = [
+      file(
+        'scrapy/commands/__init__.py',
+        'python',
+        `import twisted
+
+
+def process_options(self):
+    """Long help text.
+
+    To define format set a colon at the end of the option.
+    """
+    return None`,
+      ),
+    ];
+
+    const sites = localize([change(['define'])], [dep('twisted', 'pypi')], buildIndex(files), files, {
+      logger,
+    });
+    assert.equal(sites.length, 0);
+  });
+
+  test('an identifier inside an ordinary string is not an impact site either', () => {
+    const files = [
+      file('a.js', 'javascript', `const twisted = require('twisted');\nconst msg = "please define a handler";`),
+    ];
+
+    const sites = localize([change(['define'])], [dep('twisted', 'npm')], buildIndex(files), files, {
+      logger,
+    });
+    assert.equal(sites.length, 0);
+  });
+
+  test('the same identifier used as code is still found', () => {
+    const files = [
+      file('a.js', 'javascript', `const twisted = require('twisted');\ntwisted.define({ a: 1 });`),
+    ];
+
+    const sites = localize([change(['define'])], [dep('twisted', 'npm')], buildIndex(files), files, {
+      logger,
+    });
+    assert.equal(sites.length, 1);
+    assert.equal(sites[0]!.line, 2);
+  });
+
+  test('a URL path symbol is still matched inside the string it must live in', () => {
+    // The reason string contents cannot simply be discarded for every symbol:
+    // an endpoint only ever appears inside a literal.
+    const files = [
+      file('a.js', 'javascript', `const api = require('api-client');\nfetch('/api/v1/users');`),
+    ];
+
+    const endpoint = {
+      id: 'bc2',
+      dependency: 'api-client',
+      kind: 'removed-endpoint' as const,
+      summary: '`GET /api/v1/users` was removed.',
+      remediation: 'Use /api/v2/users.',
+      symbols: ['/api/v1/users'],
+      confidence: 'high' as const,
+      citations: ['e1'],
+    };
+
+    const sites = localize([endpoint], [dep('api-client', 'npm')], buildIndex(files), files, {
+      logger,
+    });
+    assert.equal(sites.length, 1);
+  });
+
+  test('a scoped package name is still matched inside its import string', () => {
+    const files = [file('a.ts', 'typescript', `import x from '@scope/pkg';\nconsole.log(x);`)];
+
+    const moved = {
+      id: 'bc3',
+      dependency: '@scope/pkg',
+      kind: 'moved-export' as const,
+      summary: '`@scope/pkg` moved.',
+      remediation: 'Import from @scope/other.',
+      symbols: ['@scope/pkg'],
+      confidence: 'high' as const,
+      citations: ['e1'],
+    };
+
+    const sites = localize([moved], [dep('@scope/pkg', 'npm')], buildIndex(files), files, { logger });
+    assert.equal(sites.length, 1);
   });
 });
