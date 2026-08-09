@@ -107,7 +107,13 @@ npm run typecheck
 `.github/workflows/pages.yml` builds and publishes on a push to `main` that
 touched `site/`, and on manual dispatch.
 
-One-time setup, in **Settings → Pages**, set **Source** to **GitHub Actions**.
+**One-time setup, and it cannot be done from here:** in **Settings → Pages →
+Build and deployment**, set **Source** to **GitHub Actions**. Until that is
+done every run fails at the *Configure Pages* step with `Get Pages site failed`.
+Enabling it from the workflow was tried (`enablement: true` on
+`actions/configure-pages`) and cannot work — creating a Pages site needs a
+permission the workflow's `GITHUB_TOKEN` does not have.
+
 Nothing else is required — `actions/configure-pages` reports the correct base
 path for this repository, including when a custom domain removes it, and the
 build reads it from `NEXT_PUBLIC_BASE_PATH`. Hardcoding it is the classic way to
