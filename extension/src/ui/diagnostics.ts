@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import type { BreakingChange, ImpactSite, RemediationPlan } from '../../../src/types.js';
 import type { DriftState } from '../state.js';
 import type { DriftReview } from '../review/store.js';
+import type { LatentFinding } from '../../../src/audit/types.js';
 
 /**
  * Inline flagging.
@@ -32,36 +33,90 @@ export class DriftDiagnostics implements vscode.Disposable {
     this.collection.clear();
     this.index.clear();
 
-    const plan = this.state.plan;
     const root = this.state.workspaceRoot;
-    if (!plan || !root) return;
+    if (!root) return;
 
     if (!vscode.workspace.getConfiguration('drift').get<boolean>('ui.showInlineDiagnostics', true)) {
       return;
     }
 
-    const changeById = new Map(plan.breakingChanges.map((c) => [c.id, c]));
-    const byFile = new Map<string, ImpactSite[]>();
+    // Both kinds of marker are collected per file before anything is published:
+    // `DiagnosticCollection.set` replaces a file's markers outright, so writing
+    // the plan's and then the audit's would silently drop whichever went first
+    // in any file that has both — and a file with both is exactly the file a
+    // developer most needs to see completely.
+    const byFile = new Map<string, vscode.Diagnostic[]>();
+    const push = (file: string, diagnostic: vscode.Diagnostic) => {
+      const bucket = byFile.get(file);
+      if (bucket) bucket.push(diagnostic);
+      else byFile.set(file, [diagnostic]);
+    };
 
-    for (const site of plan.impactSites) {
-      const bucket = byFile.get(site.file);
-      if (bucket) bucket.push(site);
-      else byFile.set(site.file, [site]);
-    }
+    const plan = this.state.plan;
+    if (plan) {
+      const changeById = new Map(plan.breakingChanges.map((c) => [c.id, c]));
+      const pending = isPendingUpgradePlan(plan, this.state);
 
-    for (const [file, sites] of byFile) {
-      const uri = vscode.Uri.file(join(root, file));
-      const diagnostics: vscode.Diagnostic[] = [];
-
-      for (const site of sites) {
+      for (const site of plan.impactSites) {
         const change = changeById.get(site.breakingChangeId);
         if (!change) continue;
-
-        diagnostics.push(this.toDiagnostic(site, change, plan, uri, isPendingUpgradePlan(plan, this.state)));
+        const uri = vscode.Uri.file(join(root, site.file));
+        push(site.file, this.toDiagnostic(site, change, plan, uri, pending));
       }
-
-      this.collection.set(uri, diagnostics);
     }
+
+    for (const finding of this.state.audit?.findings ?? []) {
+      for (const site of finding.sites) {
+        const uri = vscode.Uri.file(join(root, site.file));
+        push(site.file, this.toLatentDiagnostic(site, finding, uri));
+      }
+    }
+
+    for (const [file, diagnostics] of byFile) {
+      this.collection.set(vscode.Uri.file(join(root, file)), diagnostics);
+    }
+  }
+
+  /**
+   * A marker for code that is already wrong.
+   *
+   * Worded in the present tense and never softened by the pending-upgrade
+   * rule that applies to plan markers, because there is nothing pending: the
+   * version named here is the one in `node_modules` right now. A developer who
+   * reads "this breaks in v5" files it under later; "v4.9.0 is installed and
+   * this call does not exist in it" is a bug they can reproduce before lunch.
+   */
+  private toLatentDiagnostic(
+    site: ImpactSite,
+    finding: LatentFinding,
+    uri: vscode.Uri,
+  ): vscode.Diagnostic {
+    const range = rangeForSite(uri, site);
+    const change = finding.breakingChange;
+
+    const diagnostic = new vscode.Diagnostic(
+      range,
+      `${finding.dependency} ${finding.installedVersion} is installed: ${lowerFirst(change?.summary ?? finding.summary)}`,
+      // Deliberately capped at Warning even for a high-confidence site. These
+      // findings pre-date the edit in front of the developer, and turning a
+      // file red for code that has been shipping for months — the moment they
+      // install the extension — is how an editor integration gets uninstalled.
+      site.confidence === 'low' ? vscode.DiagnosticSeverity.Information : vscode.DiagnosticSeverity.Warning,
+    );
+    diagnostic.source = SOURCE;
+    diagnostic.code = {
+      value: `${finding.dependency} installed ${finding.installedVersion}`,
+      target: vscode.Uri.parse('https://github.com/trydrift/drift#audit'),
+    };
+    diagnostic.relatedInformation = [
+      new vscode.DiagnosticRelatedInformation(
+        new vscode.Location(uri, range),
+        `Declared as ${finding.declaredRange} in ${finding.manifestPath}, so ${finding.rangeFloor} or newer was permitted; ${finding.installedVersion} resolved.`,
+      ),
+    ];
+
+    if (change) this.index.set(keyFor(uri, range, change.id), change);
+    return diagnostic;
   }
 
   private toDiagnostic(

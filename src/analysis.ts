@@ -27,6 +27,9 @@ import { behaviouralFindingKind, runBehaviouralVerification } from './verificati
 import { fetchedPackageEnvironment } from './verification/environment.js';
 import { dependencyEcosystemKey } from './util/id.js';
 import { mapWithConcurrency } from './util/http.js';
+import { auditCurrentUsage, type AuditResult } from './audit/index.js';
+import type { SourceFile } from './index/walk.js';
+import type { RepoIndex } from './index/metarag.js';
 
 /**
  * Stages 1–7: everything up to, but not including, acting.
@@ -62,6 +65,7 @@ export type AnalysisStage =
   | 'analyze'
   | 'localize'
   | 'verify'
+  | 'audit'
   | 'rationale'
   | 'plan'
   | 'done';
@@ -70,6 +74,20 @@ export interface AnalysisResult {
   /** `null` when no dependency change was found worth analysing. */
   plan: RemediationPlan | null;
   summary: string;
+  /**
+   * What is already broken against the versions installed today.
+   *
+   * Independent of `plan`, and deliberately not folded into it: a plan is a
+   * proposal about a version move, and these findings are not about a move at
+   * all. They are also present whether or not any manifest changed, which is
+   * why `plan` can be `null` while this is populated — a repository where
+   * nothing was bumped this week can still be a repository whose code stopped
+   * matching its lockfile months ago.
+   *
+   * Absent when no checkout was available to search, or when the audit was
+   * switched off in `drift.yml`.
+   */
+  audit?: AuditResult;
 }
 
 export async function analyzeRepository(options: AnalysisOptions): Promise<AnalysisResult> {
@@ -81,12 +99,53 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     onProgress?.(stage, detail);
   };
 
+  /**
+   * The present-tense audit, which is independent of everything below it.
+   *
+   * Every early return in this function means "nothing moved, so there is
+   * nothing to plan" — and none of them mean "so this repository is fine".
+   * Running the audit through the same helper on every exit path is what keeps
+   * a repository whose manifests were untouched this week from being told it is
+   * clean when its code stopped matching its own lockfile long ago.
+   *
+   * `shared` is the file walk and index localization has already paid for, when
+   * it got that far. Re-walking the repository is the single most expensive
+   * thing either stage does, and doing it twice in one run buys nothing.
+   */
+  const runAudit = async (shared?: {
+    files: readonly SourceFile[];
+    index: RepoIndex;
+  }): Promise<AuditResult | undefined> => {
+    if (!config.audit.enabled || !workspace) return undefined;
+
+    progress('audit', 'Checking this code against the versions installed today');
+    try {
+      return await auditCurrentUsage({
+        root: workspace,
+        repo,
+        config,
+        logger,
+        ...(githubToken ? { githubToken } : {}),
+        ...(options.env ? { env: options.env } : {}),
+        includeDev: config.audit.includeDev,
+        maxSites: config.audit.maxSites,
+        maxPackages: config.audit.maxPackages,
+        ...(shared ?? {}),
+      });
+    } catch (err) {
+      // The audit answers a different question from the plan, so it must never
+      // be able to take the plan down with it.
+      logger.warn(`Audit of installed versions failed: ${(err as Error).message}`);
+      return undefined;
+    }
+  };
+
   /* Stage 1 — detect */
   progress('detect', 'Reading manifest changes');
   const snapshots = await collectManifestSnapshots(provider, repo, logger);
 
   if (snapshots.length === 0) {
-    return empty('No dependency manifest changed in this range.');
+    return empty('No dependency manifest changed in this range.', await runAudit());
   }
 
   // Workspace layout, before triage, so every downstream stage knows which
@@ -117,7 +176,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   const changes = labelWorkspaces(detectChanges(snapshots), layouts);
 
   if (changes.length === 0) {
-    return empty('Manifests changed, but no dependency versions moved.');
+    return empty('Manifests changed, but no dependency versions moved.', await runAudit());
   }
 
   logger.info(`Detected ${changes.length} dependency change(s)`);
@@ -131,6 +190,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       changes.length === 1
         ? `The 1 dependency change found doesn't match the analysis criteria in drift.yml (see reason above).`
         : `None of the ${changes.length} dependency changes found match the analysis criteria in drift.yml (see reasons above).`,
+      await runAudit(),
     );
   }
   progress('triage', `${actionable.length} change(s) to analyse`);
@@ -196,6 +256,10 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   // `buildPlan` can attach them to the same commit unit(s).
   const recipes = new Map<string, CommunityRecipeCandidate>();
 
+  // Hoisted so the audit can reuse the walk and the index rather than paying
+  // for the repository's largest read a second time in the same run.
+  let indexed: { files: readonly SourceFile[]; index: RepoIndex } | undefined;
+
   if (breakingChanges.length > 0 && workspace) {
     progress('localize', 'Searching for affected code');
     const members = memberDirectories(layouts);
@@ -204,6 +268,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     // manifest moved.
     const files = await walkSourceFiles(workspace, { members });
     const index = buildIndex(files);
+    indexed = { files, index };
 
     for (const [member, changesHere] of groupByMember(actionable)) {
       const ids = new Set(changesHere.map((c) => c.name));
@@ -417,6 +482,9 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       : 'No checkout was available, so this repository was not searched.',
   });
 
+  /* Stage 6.5 — audit: what is already wrong, regardless of what moved */
+  const audit = await runAudit(indexed);
+
   /* Stage 7 — rationale */
   progress('rationale', 'Weighing what each upgrade is worth');
   const rationale = await buildRationale(
@@ -456,6 +524,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       plan.commits.length > 0
         ? `${plan.breakingChanges.length} breaking change(s), ${new Set(plan.impactSites.map((s) => s.file)).size} file(s) affected`
         : 'No code in this repository is affected by these dependency changes.',
+    ...(audit ? { audit } : {}),
   };
 }
 
@@ -502,6 +571,6 @@ async function collectManifestSnapshots(
   return snapshots.filter((s) => s.before !== null || s.after !== null);
 }
 
-function empty(summary: string): AnalysisResult {
-  return { plan: null, summary };
+function empty(summary: string, audit?: AuditResult): AnalysisResult {
+  return { plan: null, summary, ...(audit ? { audit } : {}) };
 }

@@ -1188,7 +1188,18 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
       }
     }
 
-    if (oldEntry.signature !== newEntry.signature && oldEntry.kind !== 'interface' && oldEntry.kind !== 'class') {
+    if (
+      oldEntry.signature !== newEntry.signature &&
+      oldEntry.kind !== 'interface' &&
+      oldEntry.kind !== 'class' &&
+      // Renaming a type parameter changes the text of a declaration without
+      // changing a single thing about how it can be called. `zod` renamed `T`
+      // to `Inner` across its 3.x line and, read as text, every generic export
+      // it has "changed signature" — dozens of findings, each pointing at
+      // working code, none of them true. Two declarations that differ only in
+      // what their type parameters are spelled are the same declaration.
+      !alphaEquivalent(oldEntry.signature, newEntry.signature)
+    ) {
       changes.push({
         kind: 'signature-changed',
         symbol: name,
@@ -1200,4 +1211,104 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
   }
 
   return changes;
+}
+
+/**
+ * Do two declarations differ only in what their type parameters are called?
+ *
+ * A type parameter is a bound name; renaming one is invisible to every caller,
+ * exactly as renaming a function's local variable is. Comparing signatures as
+ * raw text cannot see that, and the cost is not theoretical — a single
+ * library-wide rename turns every generic export it has into a reported
+ * breaking change, which is the kind of confident wrongness that gets a tool
+ * switched off.
+ *
+ * Each declaration's own parameters are renamed to positional placeholders and
+ * the results compared. Only the lists that actually declare parameters are
+ * collected — a `<...>` group immediately followed by `(` — so a *use* like
+ * `Promise<T>` is never mistaken for a declaration.
+ *
+ * The failure mode is one-sided by construction: a type parameter that happens
+ * to share a name with a real type in the same signature can only ever cause a
+ * rename-only difference to be missed, never a real change to be hidden, since
+ * any other textual difference survives the substitution.
+ */
+export function alphaEquivalent(a: string, b: string): boolean {
+  if (a === b) return true;
+  const left = normalizeTypeParameters(a);
+  return left === normalizeTypeParameters(b) && left !== null;
+}
+
+function normalizeTypeParameters(signature: string): string | null {
+  const declared = declaredTypeParameters(signature);
+  if (declared.length === 0) return null;
+
+  let normalized = signature;
+  declared.forEach((name, position) => {
+    normalized = normalized.replace(new RegExp(`\\b${escapeRegExp(name)}\\b`, 'g'), `\u0000T${position}`);
+  });
+  return normalized;
+}
+
+/** Names bound by every `<...>` group that introduces type parameters. */
+function declaredTypeParameters(signature: string): string[] {
+  const names: string[] = [];
+
+  for (let i = 0; i < signature.length; i++) {
+    if (signature[i] !== '<') continue;
+
+    const end = matchingAngle(signature, i);
+    if (end === -1) continue;
+
+    // A declaration list is followed by the thing it parameterises. Anything
+    // else — `Promise<T>`, `Record<string, T>` — is a use, not a binding.
+    const next = signature.slice(end + 1).trimStart()[0];
+    if (next !== '(') {
+      i = end;
+      continue;
+    }
+
+    for (const entry of splitTopLevel(signature.slice(i + 1, end))) {
+      const identifier = /^\s*(?:const\s+)?([A-Za-z_$][\w$]*)/.exec(entry);
+      if (identifier && !names.includes(identifier[1]!)) names.push(identifier[1]!);
+    }
+    i = end;
+  }
+
+  return names;
+}
+
+/** Index of the `>` closing the `<` at `start`, or -1. */
+function matchingAngle(text: string, start: number): number {
+  let depth = 0;
+  for (let i = start; i < text.length; i++) {
+    if (text[i] === '<') depth += 1;
+    else if (text[i] === '>') {
+      depth -= 1;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+/** Split on commas that are not nested inside brackets of any kind. */
+function splitTopLevel(text: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let current = '';
+
+  for (const character of text) {
+    if ('<([{'.includes(character)) depth += 1;
+    else if ('>)]}'.includes(character)) depth -= 1;
+
+    if (character === ',' && depth === 0) {
+      parts.push(current);
+      current = '';
+      continue;
+    }
+    current += character;
+  }
+
+  if (current.trim()) parts.push(current);
+  return parts;
 }

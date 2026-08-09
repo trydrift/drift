@@ -884,7 +884,7 @@ function capitalizeFirst(text: string): string {
 }
 
 /** One direct dependency, and the manifest and manager it came from. */
-interface ScanDependency {
+export interface ScanDependency {
   name: string;
   kind: DependencyKind;
   current: string;
@@ -900,8 +900,12 @@ interface ScanDependency {
  * supported there is supported here by construction. The lockfile is consulted
  * only to sharpen the *installed* version — a range in the manifest says what
  * is permitted, not what is on disk.
+ *
+ * Exported for the audit (`src/audit/index.ts`), which needs the same three
+ * facts this produces — declared range, installed version, owning manifest —
+ * to ask its own question about the gap between the first two.
  */
-async function directDependencies(
+export async function directDependencies(
   root: string,
   target: EcosystemTarget,
   includeDev: boolean,

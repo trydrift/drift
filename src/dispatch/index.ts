@@ -1,4 +1,5 @@
 import type { DispatchResult, RemediationPlan, RepoContext } from '../types.js';
+import type { AuditResult } from '../audit/types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
 import type { GitHubClient } from '../github/client.js';
@@ -41,6 +42,15 @@ export interface DispatchOptions {
    * approved via `/drift apply`. Guardrail blockers are still enforced.
    */
   approved?: boolean;
+  /**
+   * Present-tense findings from the audit, when the caller ran one.
+   *
+   * Rendered into the pull request, the approval issue, and the check run —
+   * every artefact a human reads — but never consulted by any decision made
+   * here. Nothing in the audit is a proposal, so it cannot block, gate, or
+   * enlarge a dispatch; it is context for the person reviewing one.
+   */
+  audit?: AuditResult;
   /** Injectable for tests; defaults to actually running commands. */
   exec?: Exec;
 }
@@ -208,7 +218,7 @@ async function ensurePullRequest(
   existingNumber: number | undefined,
   existingUrl: string | undefined,
 ): Promise<{ number: number; url: string } | null> {
-  const { repo, plan, config, github, logger } = options;
+  const { repo, plan, config, github, logger, audit } = options;
 
   if (existingNumber && existingUrl) return { number: existingNumber, url: existingUrl };
   if (!config.pullRequest.enabled) {
@@ -234,7 +244,7 @@ async function ensurePullRequest(
       { changes: plan.changes },
       { title: config.pullRequest.titleTemplate, prefix: config.remediation.branchPrefix },
     ),
-    body: renderPullRequestBody(plan, config),
+    body: renderPullRequestBody(plan, config, audit),
     draft: config.pullRequest.draft || config.remediation.draftPr,
     labels: [DRIFT_LABEL, ...config.pullRequest.labels],
     reviewers: config.pullRequest.reviewers,
@@ -251,7 +261,7 @@ async function ensurePullRequest(
  * which is how the approval flow works without a database.
  */
 async function requestApproval(options: DispatchOptions): Promise<DispatchResult> {
-  const { repo, plan, config, github, logger, dryRun = false } = options;
+  const { repo, plan, config, github, logger, dryRun = false, audit } = options;
 
   const reason =
     plan.blockers.length > 0
@@ -282,7 +292,7 @@ async function requestApproval(options: DispatchOptions): Promise<DispatchResult
 
   const issue = await github.createIssue(repo, {
     title: approvalTitle(plan),
-    body: renderApprovalIssue(plan, config),
+    body: renderApprovalIssue(plan, config, audit),
     labels: [DRIFT_LABEL, `drift:risk-${plan.risk}`],
   });
 
@@ -315,7 +325,7 @@ async function postCheckRun(
   conclusion: 'success' | 'neutral' | 'action_required' | 'failure',
   title: string,
 ): Promise<void> {
-  const { repo, plan, config, github, dryRun } = options;
+  const { repo, plan, config, github, dryRun, audit } = options;
   if (dryRun) return;
 
   await github.createCheckRun(repo, {
@@ -323,7 +333,7 @@ async function postCheckRun(
     conclusion,
     title,
     summary: renderSummaryLine(plan),
-    text: renderPullRequestBody(plan, config),
+    text: renderPullRequestBody(plan, config, audit),
   });
 }
 

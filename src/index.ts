@@ -61,6 +61,16 @@ export { dispatch, dispatchToCopilot, buildTaskPrompt, getTaskStatus, isTerminal
 export type { DispatchOptions, CopilotDispatchResult, CopilotTask } from './dispatch/index.js';
 
 export { renderPullRequestBody, renderApprovalIssue, renderSummaryLine } from './report/markdown.js';
+export { renderAudit, auditHeadline } from './report/audit.js';
+export {
+  auditCurrentUsage,
+  summarizeAudit,
+  rangeFloor,
+  satisfiesRange,
+  affectedFiles,
+  emptyAudit,
+} from './audit/index.js';
+export type { AuditResult, AuditOptions, LatentFinding, LatentKind } from './audit/index.js';
 
 export { GitHubClient } from './github/client.js';
 export type { GitHubClientOptions } from './github/client.js';
