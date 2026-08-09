@@ -96,11 +96,35 @@ describe('inline markers for already-installed breakage', () => {
     diagnostics.dispose();
   });
 
-  test('a high-confidence latent site is a warning, never an error', () => {
-    // Errors are reserved for breakage introduced by the change under review.
-    // Painting months-old code red the moment the extension is installed is
-    // how the markers get switched off wholesale.
+  test('a high-confidence latent site is an error, because the code is broken now', () => {
+    // Severity tracks certainty, not age. A high-confidence latent finding
+    // means this file binds the symbol from that dependency's import and the
+    // symbol is not in the version on disk. That it has been true for months
+    // is not evidence it is harmless — it usually means nobody has run that
+    // path lately.
     const diagnostics = new DriftDiagnostics(stateWith({ audit: auditOf([finding()]) }));
+    diagnostics.render();
+
+    const [entry] = [...collectionStore(diagnostics).values()].flat();
+    assert.equal(entry!.severity, vscode.DiagnosticSeverity.Error);
+    diagnostics.dispose();
+  });
+
+  test('a medium-confidence latent site is a warning', () => {
+    const unsure = finding({
+      sites: [
+        {
+          breakingChangeId: 'bc_1',
+          file: 'src/audio.ts',
+          line: 7,
+          excerpt: 'setMute(true);',
+          matchedSymbol: 'setMute',
+          confidence: 'medium',
+        },
+      ],
+    });
+
+    const diagnostics = new DriftDiagnostics(stateWith({ audit: auditOf([unsure]) }));
     diagnostics.render();
 
     const [entry] = [...collectionStore(diagnostics).values()].flat();

@@ -145,7 +145,9 @@ declared range, because a clean install elsewhere would not reproduce your tree.
 `drift analyze` runs the same audit and includes it in its report, above the
 plan. The VS Code extension runs it after "Scan Dependencies" and flags each
 site inline in the Problems panel — worded so an already-broken call never
-reads like a hypothetical one. The Action writes it into the job summary and
+reads like a hypothetical one, and at the same severity a plan finding would
+get, because severity tracks how sure Drift is rather than how long the
+problem has been there. The Action writes it into the job summary and
 the pull request body, even on runs where no manifest changed.
 
 Configure it under `audit:` in `drift.yml` (`enabled`, `includeDev`,
