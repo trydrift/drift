@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import type { RepoContext } from './types.js';
 import { loadConfig } from './config/load.js';
 import { GitHubClient } from './github/client.js';
+import { LocalGitProvider } from './repo/local-git.js';
 import { runPipeline } from './pipeline.js';
 import { resolveBaseBranch, titleFor } from './plan/pull-request.js';
 import { renderPullRequestBody } from './report/markdown.js';
@@ -18,6 +19,28 @@ import { createLogger, type LogLevel } from './util/logger.js';
 import { dispatchRemainingToCopilot, runFix } from './remediation/cli-runner.js';
 
 const run = promisify(execFile);
+
+/** Where to create a token with the scope Drift's write commands need. */
+const CREATE_TOKEN_URL = 'https://github.com/settings/tokens/new?scopes=repo&description=drift-cli';
+
+/**
+ * A token for reads/writes against the GitHub API, in priority order:
+ * `--token`, `GITHUB_TOKEN`, then whatever the GitHub CLI already has signed
+ * in. That last fallback is what makes `fix`/`pr` feel like the rest of the
+ * `gh`-based toolchain — most people who need this already ran `gh auth
+ * login` for something else and should not have to mint and paste a second
+ * credential to get the same access here.
+ */
+async function resolveGitHubToken(flags: Flags): Promise<string> {
+  if (typeof flags.token === 'string') return flags.token;
+  if (process.env.GITHUB_TOKEN) return process.env.GITHUB_TOKEN;
+  try {
+    const { stdout } = await run('gh', ['auth', 'token']);
+    return stdout.trim();
+  } catch {
+    return '';
+  }
+}
 
 /**
  * Drift CLI.
@@ -46,7 +69,9 @@ Options for \`analyze\`:
   --before <sha>              Commit before the change. Default: HEAD^
   --after <sha>               Commit after the change.  Default: HEAD
   --dir <path>                Local checkout to index.  Default: cwd
-  --token <token>             GitHub token for reads. Default: $GITHUB_TOKEN
+  --token <token>             GitHub token, only to raise the public API rate
+                              limit for release notes/changelogs. Optional —
+                              default: $GITHUB_TOKEN, then \`gh auth token\`
   --config <path>             Config file. Default: .github/drift.yml
   --json                      Emit the plan as JSON instead of markdown
   --log-level <level>         debug | info | warn | error. Default: info
@@ -69,9 +94,13 @@ Options for \`pr\`:
   --title <text>              Pull request title.       Default: proposed
   --draft                     Open as a draft
   --yes                       Do not ask; use the proposed title as-is
-  --token <token>             GitHub token. Default: $GITHUB_TOKEN
+  --token <token>             GitHub token, required to push a branch/open a
+                              pull request. Default: $GITHUB_TOKEN, then
+                              \`gh auth token\`
 
-\`analyze\` never writes anything: no branches, no issues, no agent tasks.
+\`analyze\` never writes anything: no branches, no issues, no agent tasks — and
+reads the local checkout directly, like the VS Code extension, so it never
+needs a token.
 \`fix\` applies the plan in an isolated git worktree — your working tree is
 never touched — using, per commit, Drift's own deterministic fix, then (if
 enabled) a community recipe, then an AI agent, in that order; it pushes a
@@ -82,7 +111,11 @@ explicit choice, in this run or in \`remediation.communityRecipes\`.
 never force-pushes, and never touches the base branch.
 
 Environment:
-  GITHUB_TOKEN                Token used for repository reads
+  GITHUB_TOKEN                Token for repository reads/writes. \`fix\` and
+                              \`pr\` need one; \`analyze\` does not. If unset,
+                              falls back to \`gh auth token\` when the GitHub
+                              CLI is installed and signed in. Create one at
+                              ${CREATE_TOKEN_URL}
   DRIFT_COPILOT_TOKEN         User-scoped token for the Copilot agent API
   DRIFT_TELEMETRY_DISABLED    1/true disables telemetry even if configured
   DO_NOT_TRACK                1 disables telemetry
@@ -162,25 +195,22 @@ async function analyzeCommand(flags: Flags): Promise<number> {
   const logger = createLogger(logLevel);
 
   const workspace = resolve(typeof flags.dir === 'string' ? flags.dir : process.cwd());
-  const token = (typeof flags.token === 'string' ? flags.token : process.env.GITHUB_TOKEN) ?? '';
 
-  if (!token) {
-    logger.error(
-      'A GitHub token is required to read commit history. Set GITHUB_TOKEN or pass --token. A token with public read access is enough for public repositories.',
-    );
-    return 1;
-  }
+  // `analyze` reads the checkout that's already on disk — `git diff` locally,
+  // the same way the VS Code extension does — so it never needs a token.
+  // A token here only raises the public rate limit for evidence gathering
+  // (release notes, changelogs); read that off `gh` if it's around, but never
+  // block on it.
+  const token = await resolveGitHubToken(flags);
 
   const slug = typeof flags.repo === 'string' ? flags.repo : await detectRepoSlug(workspace);
-  if (!slug) {
-    logger.error('Could not determine the repository. Pass --repo owner/name.');
-    return 1;
-  }
-
-  const [owner, repoName] = slug.split('/');
-  if (!owner || !repoName) {
+  const [owner, repoName] = slug ? slug.split('/') : ['local', 'workspace'];
+  if (slug && (!owner || !repoName)) {
     logger.error(`Invalid repository "${slug}". Expected owner/name.`);
     return 1;
+  }
+  if (!slug) {
+    logger.info('No GitHub remote found; analysing the local checkout only. Pass --repo owner/name to name one.');
   }
 
   const after = (typeof flags.after === 'string' ? flags.after : await gitRev(workspace, 'HEAD')) ?? 'HEAD';
@@ -189,8 +219,8 @@ async function analyzeCommand(flags: Flags): Promise<number> {
   const branch = (await gitRev(workspace, '--abbrev-ref HEAD')) ?? 'main';
 
   const repo: RepoContext = {
-    owner,
-    repo: repoName,
+    owner: owner!,
+    repo: repoName!,
     baseBranch: branch,
     beforeSha: before,
     afterSha: after,
@@ -199,6 +229,8 @@ async function analyzeCommand(flags: Flags): Promise<number> {
 
   logger.info(`Analysing ${owner}/${repoName} ${before.slice(0, 7)}..${after.slice(0, 7)}`);
 
+  // Never used for a network call in this command (dryRun forced below), but
+  // still required to construct the pipeline's dispatch stage.
   const github = new GitHubClient({ repoToken: token, logger });
 
   const { config, path, problems } = await loadConfig(async (candidate) => {
@@ -217,6 +249,8 @@ async function analyzeCommand(flags: Flags): Promise<number> {
     config,
     logger,
     github,
+    provider: new LocalGitProvider(workspace, { before, after }),
+    githubToken: token || undefined,
     // `analyze` is read-only by construction: no token is passed through and
     // dryRun is forced, so there is no code path here that mutates anything.
     dryRun: true,
@@ -251,10 +285,14 @@ async function fixCommand(flags: Flags): Promise<number> {
   const logger = createLogger(logLevel);
 
   const workspace = resolve(typeof flags.dir === 'string' ? flags.dir : process.cwd());
-  const token = (typeof flags.token === 'string' ? flags.token : process.env.GITHUB_TOKEN) ?? '';
+  const token = await resolveGitHubToken(flags);
 
   if (!token) {
-    logger.error('A GitHub token is required. Set GITHUB_TOKEN or pass --token.');
+    logger.error(
+      `A GitHub token is required to push a branch and open a pull request. Set GITHUB_TOKEN, pass --token, ` +
+        `or run \`gh auth login\` if you have the GitHub CLI installed. Create one at ${CREATE_TOKEN_URL} ` +
+        '(the "repo" scope is enough).',
+    );
     return 1;
   }
 
@@ -291,7 +329,15 @@ async function fixCommand(flags: Flags): Promise<number> {
 
   logger.info(`Analysing ${owner}/${repoName} ${before.slice(0, 7)}..${after.slice(0, 7)}`);
 
-  const result = await runPipeline({ repo, config, logger, github, dryRun: true, workspace });
+  const result = await runPipeline({
+    repo,
+    config,
+    logger,
+    github,
+    provider: new LocalGitProvider(workspace, { before, after }),
+    dryRun: true,
+    workspace,
+  });
   if (!result.plan || result.plan.commits.length === 0) {
     console.log(`\n${result.summary}\n`);
     return 0;
@@ -428,9 +474,13 @@ async function prCommand(flags: Flags): Promise<number> {
   );
   const workspace = resolve(typeof flags.dir === 'string' ? flags.dir : process.cwd());
 
-  const token = (typeof flags.token === 'string' ? flags.token : process.env.GITHUB_TOKEN) ?? '';
+  const token = await resolveGitHubToken(flags);
   if (!token) {
-    logger.error('A GitHub token is required to open a pull request. Set GITHUB_TOKEN or pass --token.');
+    logger.error(
+      `A GitHub token is required to open a pull request. Set GITHUB_TOKEN, pass --token, or run ` +
+        `\`gh auth login\` if you have the GitHub CLI installed. Create one at ${CREATE_TOKEN_URL} ` +
+        '(the "repo" scope is enough).',
+    );
     return 1;
   }
 

@@ -2,6 +2,7 @@ import type { DispatchResult, RemediationPlan, RepoContext } from './types.js';
 import type { DriftConfig } from './config/schema.js';
 import type { Logger } from './util/logger.js';
 import type { GitHubClient } from './github/client.js';
+import type { RepoProvider } from './repo/provider.js';
 import { analyzeRepository } from './analysis.js';
 import { dispatch } from './dispatch/index.js';
 import { renderSummaryLine } from './report/markdown.js';
@@ -26,6 +27,19 @@ export interface PipelineOptions {
   github: GitHubClient;
   /** User-scoped token for the Copilot agent API. */
   copilotToken?: string;
+  /**
+   * Optional, used only to raise the public GitHub API rate limit for
+   * evidence gathering (release notes, changelogs). Reading is never blocked
+   * on this being set.
+   */
+  githubToken?: string;
+  /**
+   * Where to read changed files and file contents from. Defaults to the
+   * GitHub API via `github`. Pass a `LocalGitProvider` to read a local
+   * checkout directly instead — no network, no credentials — the same seam
+   * that lets the VS Code extension analyse without a token.
+   */
+  provider?: RepoProvider;
   /** Analyse and report without creating branches, issues, or tasks. */
   dryRun?: boolean;
   /** A human approved this plan via `/drift apply`. */
@@ -41,7 +55,7 @@ export interface PipelineResult {
 }
 
 export async function runPipeline(options: PipelineOptions): Promise<PipelineResult> {
-  const { repo, config, logger, github, copilotToken, dryRun, approved } = options;
+  const { repo, config, logger, github, copilotToken, githubToken, dryRun, approved } = options;
   const started = Date.now();
 
   const { plan, summary } = await logger.group('Drift: analysing', () =>
@@ -49,8 +63,9 @@ export async function runPipeline(options: PipelineOptions): Promise<PipelineRes
       repo,
       config,
       logger,
-      provider: github.asRepoProvider(repo),
+      provider: options.provider ?? github.asRepoProvider(repo),
       workspace: options.workspace ?? repo.workspace,
+      githubToken,
       onProgress: (stage, detail) => logger.info(`[${stage}] ${detail}`),
     }),
   );
