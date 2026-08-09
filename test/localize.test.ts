@@ -519,3 +519,27 @@ def process_options(self):
     assert.equal(sites.length, 1);
   });
 });
+
+describe('generic nouns as derived leaves', () => {
+  test('a bare noun leaf does not match an unrelated local of the same name', () => {
+    // `maildir.AbstractMaildirDomain.root` used to contribute `root`, which
+    // matched `root = Root()` in a benchmark script with no maildir in it.
+    const change = {
+      id: 'bc1',
+      dependency: 'twisted',
+      kind: 'removed-export' as const,
+      summary: '`maildir.AbstractMaildirDomain.root` was removed.',
+      remediation: 'Use the replacement.',
+      symbols: ['maildir.AbstractMaildirDomain.root', 'AbstractMaildirDomain.root'],
+      confidence: 'high' as const,
+      citations: ['e1'],
+    };
+
+    const files = [
+      file('extras/bench.py', 'python', `import twisted\n\nroot = Root()\nfactory = Site(root)`),
+    ];
+
+    const sites = localize([change], [dep('twisted', 'pypi')], buildIndex(files), files, { logger });
+    assert.equal(sites.length, 0);
+  });
+});
