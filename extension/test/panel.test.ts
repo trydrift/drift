@@ -4,6 +4,7 @@ import { crossesMajor, renderBody, renderPanel, SLASH_COMMANDS, type ViewModel }
 import type { TaskGroup } from '../src/session.js';
 import { describeSeverity, severityOf } from '../src/severity.js';
 import type { UpgradeCandidate } from '../src/upgrades.js';
+import type { RemediationPlan } from '../../src/types.js';
 
 /**
  * The panel is the product, and it is a large amount of generated markup. It is
@@ -39,6 +40,32 @@ function candidate(over: Partial<UpgradeCandidate> = {}): UpgradeCandidate {
     gaps: [],
     toolRequests: [],
     summary: '7 breaking changes in lodash, but this repository does not use any of the affected APIs.',
+    ...over,
+  };
+}
+
+function plan(over: Partial<RemediationPlan> = {}): RemediationPlan {
+  return {
+    schemaVersion: 3,
+    gaps: [],
+    checkedSurfaces: [],
+    id: 'p1',
+    branchName: 'drift/upgrade-phaser',
+    baseBranch: 'main',
+    headSha: 'abc',
+    changes: [
+      { name: 'phaser', ecosystem: 'npm', from: '3.90.0', to: '4.0.0', kind: 'runtime', bump: 'major', manifestPath: 'package.json' },
+    ],
+    evidence: [],
+    breakingChanges: [],
+    impactSites: [],
+    commits: [],
+    planEdges: [],
+    upgradeCohorts: [],
+    risk: 'none',
+    blockers: [],
+    warnings: [],
+    createdAt: '2026-08-02T00:00:00Z',
     ...over,
   };
 }
@@ -1197,6 +1224,58 @@ test('a missing Drift helper is offered as an approval action', () => {
   assert.match(html, /data-action="installTool"/);
   assert.match(html, /data-value="cargo-public-api"/);
   assert.match(html, /Install cargo-public-api/);
+  assert.match(html, /compare Rust public APIs/);
+});
+
+test('evidence markdown renders relative links and keeps the full excerpt', () => {
+  const content = `See [MatterCollisionData](./MatterCollisionData.md) before changing callbacks.\n\n${'migration detail '.repeat(140)}tail-still-visible`;
+  const c = candidate({
+    name: 'phaser',
+    current: '3.90.0',
+    selected: '4.0.0',
+    latest: '4.0.0',
+    evidenceCount: 1,
+    plan: plan({
+      evidence: [
+        {
+          id: 'e1',
+          source: 'migration-guide',
+          dependency: 'phaser',
+          title: 'Phaser migration guide',
+          content,
+          weight: 0.75,
+          url: 'https://raw.githubusercontent.com/phaserjs/phaser/v4.0.0/docs/migration.md',
+        },
+      ],
+    }),
+  });
+
+  const html = panelFor(c);
+
+  assert.doesNotMatch(html, /\[MatterCollisionData\]\(\.\/MatterCollisionData\.md\)/);
+  assert.match(html, /data-action="openUrl" data-url="https:\/\/raw\.githubusercontent\.com\/phaserjs\/phaser\/v4\.0\.0\/docs\/MatterCollisionData\.md"/);
+  assert.match(html, /tail-still-visible/);
+});
+
+test('evidence rendering does not silently drop later sources', () => {
+  const c = candidate({
+    evidenceCount: 7,
+    plan: plan({
+      evidence: Array.from({ length: 7 }, (_, i) => ({
+        id: `e${i + 1}`,
+        source: 'changelog',
+        dependency: 'phaser',
+        title: `Source ${i + 1}`,
+        content: `content ${i + 1}`,
+        weight: 0.5,
+      })),
+    }),
+  });
+
+  const html = panelFor(c);
+
+  assert.match(html, /Source 7/);
+  assert.match(html, /content 7/);
 });
 
 const panelFor = (c: UpgradeCandidate): string =>

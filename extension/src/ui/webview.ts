@@ -1093,9 +1093,19 @@ function renderToolRequests(candidate: UpgradeCandidate): string {
   return `<div class="tool-requests">${requests
     .map(
       (request) =>
-        `<button class="ctl bordered" data-action="installTool" data-id="${escapeAttr(candidate.id)}" data-value="${escapeAttr(request.id)}" title="Ask Drift to run ${escapeAttr([request.command, ...request.args].join(' '))}">${escapeHtml(request.label)}</button>`,
+        `<span>${escapeHtml(toolRequestReason(request.id))}</span><button class="ctl bordered" data-action="installTool" data-id="${escapeAttr(candidate.id)}" data-value="${escapeAttr(request.id)}" title="Ask Drift to run ${escapeAttr([request.command, ...request.args].join(' '))}">${escapeHtml(request.label)}</button>`,
     )
     .join('')}</div>`;
+}
+
+function toolRequestReason(id: string): string {
+  if (id === 'cargo-public-api') {
+    return 'Optional helper: lets Drift compare Rust public APIs instead of relying on changelog and semver evidence alone.';
+  }
+  if (id === 'japicmp') {
+    return 'Optional helper: lets Drift compare published JVM APIs instead of relying on changelog and semver evidence alone.';
+  }
+  return 'Optional helper: lets Drift gather stronger evidence for this upgrade.';
 }
 
 function renderCandidateDetail(candidate: UpgradeCandidate, plan: RemediationPlan): string {
@@ -1161,7 +1171,6 @@ function renderBreak(change: BreakingChange, plan: RemediationPlan, expanded: bo
 function renderEvidence(evidence: readonly Evidence[]): string {
   return `<div class="evidence">
     ${evidence
-      .slice(0, 6)
       .map(
         (entry) => `<details data-key="ev:${escapeAttr(entry.id)}">
           <summary>
@@ -1172,7 +1181,7 @@ function renderEvidence(evidence: readonly Evidence[]): string {
                 : `<span>${escapeHtml(entry.title)}</span>`
             }
           </summary>
-          <div class="markdown quote">${renderMarkdown(entry.content.slice(0, 1600))}</div>
+          <div class="markdown quote">${renderMarkdown(entry.content, { baseUrl: entry.url })}</div>
         </details>`,
       )
       .join('')}
@@ -1547,8 +1556,11 @@ function noticeIcon(tone: string): string {
 /* Markdown + escaping                                                 */
 /* ------------------------------------------------------------------ */
 
-export function renderMarkdown(text: string): string {
-  const escaped = escapeHtml(text);
+interface MarkdownOptions {
+  baseUrl?: string;
+}
+
+export function renderMarkdown(text: string, options: MarkdownOptions = {}): string {
   const out: string[] = [];
   let inList = false;
   let inCode = false;
@@ -1560,12 +1572,12 @@ export function renderMarkdown(text: string): string {
     return '</ul>';
   };
 
-  for (const raw of escaped.split(/\r?\n/)) {
+  for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim();
 
     if (line.startsWith('```')) {
       if (inCode) {
-        out.push(`<pre><code>${code.join('\n')}</code></pre>`);
+        out.push(`<pre><code>${escapeHtml(code.join('\n'))}</code></pre>`);
         code = [];
         inCode = false;
       } else {
@@ -1587,7 +1599,7 @@ export function renderMarkdown(text: string): string {
 
     const heading = /^(#{1,4})\s+(.+)$/.exec(line);
     if (heading) {
-      out.push(closeList(), `<h4>${inlineMarkdown(heading[2]!)}</h4>`);
+      out.push(closeList(), `<h4>${inlineMarkdown(heading[2]!, options)}</h4>`);
       continue;
     }
 
@@ -1597,27 +1609,54 @@ export function renderMarkdown(text: string): string {
         out.push('<ul>');
         inList = true;
       }
-      out.push(`<li>${inlineMarkdown(bullet[1]!)}</li>`);
+      out.push(`<li>${inlineMarkdown(bullet[1]!, options)}</li>`);
       continue;
     }
 
-    out.push(closeList(), `<p>${inlineMarkdown(line)}</p>`);
+    out.push(closeList(), `<p>${inlineMarkdown(line, options)}</p>`);
   }
 
-  if (inCode && code.length) out.push(`<pre><code>${code.join('\n')}</code></pre>`);
+  if (inCode && code.length) out.push(`<pre><code>${escapeHtml(code.join('\n'))}</code></pre>`);
   out.push(closeList());
   return out.filter(Boolean).join('');
 }
 
-function inlineMarkdown(text: string): string {
-  return text
+function inlineMarkdown(text: string, options: MarkdownOptions): string {
+  const out: string[] = [];
+  const links = /\[([^\]\n]+)\]\(([^)\s]+)\)/g;
+  let last = 0;
+  for (const match of text.matchAll(links)) {
+    const start = match.index ?? 0;
+    out.push(inlineText(text.slice(last, start)));
+    const label = match[1]!;
+    const href = resolveMarkdownHref(match[2]!, options.baseUrl);
+    out.push(
+      href
+        ? `<a data-action="openUrl" data-url="${escapeAttr(href)}">${inlineText(label)}</a>`
+        : inlineText(match[0]!),
+    );
+    last = start + match[0]!.length;
+  }
+  out.push(inlineText(text.slice(last)));
+  return out.join('');
+}
+
+function inlineText(text: string): string {
+  return escapeHtml(text)
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/(^|\s)_([^_]+)_(?=\s|$)/g, '$1<em>$2</em>')
-    .replace(
-      /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,
-      (_match, label: string, url: string) => `<a data-action="openUrl" data-url="${escapeAttr(url)}">${label}</a>`,
-    );
+    .replace(/(^|\s)_([^_]+)_(?=\s|$)/g, '$1<em>$2</em>');
+}
+
+function resolveMarkdownHref(href: string, baseUrl: string | undefined): string | null {
+  const target = href.trim().replace(/^<(.+)>$/, '$1');
+  if (/^https?:\/\//i.test(target)) return target;
+  if (!baseUrl || /^[a-z][a-z0-9+.-]*:/i.test(target)) return null;
+  try {
+    return new URL(target, baseUrl).toString();
+  } catch {
+    return null;
+  }
 }
 
 export function escapeHtml(text: string): string {
@@ -2144,7 +2183,8 @@ button.wide { width: 100%; }
 .gaps { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .gaps li { display: flex; gap: 6px; align-items: flex-start; font-size: 11px; color: var(--vscode-descriptionForeground); }
 .gaps svg.i { flex: none; margin-top: 2px; color: var(--vscode-editorWarning-foreground); }
-.tool-requests { display: flex; flex-wrap: wrap; gap: 6px; margin: -2px 0 8px 20px; }
+.tool-requests { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: -2px 0 8px 20px; }
+.tool-requests span { flex: 1 1 190px; min-width: 0; font-size: 11px; color: var(--vscode-descriptionForeground); }
 /* A one-click major is still one click, but it should not look like the safe
    one sitting next to it. */
 .pkg-actions button.risky { border-color: var(--vscode-editorWarning-foreground); }

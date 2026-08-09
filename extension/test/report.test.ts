@@ -86,6 +86,34 @@ describe('report rendering', () => {
     assert.match(html, /&lt;script&gt;alert/);
   });
 
+  test('renders full evidence markdown with relative links', () => {
+    const state = new DriftState();
+    const content = `Read [the migration notes](./migration-notes.md).\n\n${'detail '.repeat(700)}report-tail-visible`;
+    state.set({
+      kind: 'findings',
+      plan: plan({
+        evidence: [
+          {
+            id: 'e1',
+            source: 'migration-guide',
+            dependency: 'react',
+            title: 'React migration',
+            content,
+            weight: 1,
+            url: 'https://raw.githubusercontent.com/acme/react/main/docs/migration.md',
+          },
+        ],
+      }),
+      at: Date.now(),
+    });
+
+    const html = __renderForTest(state);
+
+    assert.doesNotMatch(html, /\[the migration notes\]\(\.\/migration-notes\.md\)/);
+    assert.match(html, /data-url="https:\/\/raw\.githubusercontent\.com\/acme\/react\/main\/docs\/migration-notes\.md"/);
+    assert.match(html, /report-tail-visible/);
+  });
+
   test('a candidateId focus renders that candidate\'s plan, not the global one', () => {
     const state = new DriftState();
     state.set({ kind: 'clean', summary: 'nothing breaking', at: Date.now(), plan: cleanPlan() });
