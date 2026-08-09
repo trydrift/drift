@@ -53,13 +53,16 @@ jobs:
       - name: Configure Pages
         id: pages
         uses: actions/configure-pages@v5
-        with:
-          # Turn Pages on for this repository if it is not already, rather than
-          # failing with "Get Pages site failed" until somebody visits Settings.
-          # The workflow already holds `pages: write`, which is the permission
-          # this needs, so the setup is a property of the repository's code
-          # instead of a step in someone's memory.
-          enablement: true
+        # `enablement: true` was tried here and cannot work: creating a Pages
+        # site needs a permission the workflow's GITHUB_TOKEN does not have
+        # ("Resource not accessible by integration"), and asking for it turned
+        # a clear "Pages is not enabled" message into a confusing one about
+        # permissions. Enabling Pages is a repository setting and stays one:
+        #
+        #   Settings -> Pages -> Build and deployment -> Source: GitHub Actions
+        #
+        # Done once. Everything after it — including the base path this step
+        # reports — is handled here.
 
       - name: Build
         run: npm run build
