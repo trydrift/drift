@@ -1,0 +1,1107 @@
+{
+  "id": "gitlab",
+  "label": "gitlab",
+  "ecosystem": "rubygems",
+  "language": "Ruby",
+  "repo": "https://github.com/gitlabhq/gitlabhq",
+  "blurb": "GitLab's Rails monolith — one of the largest Ruby codebases in the open.",
+  "capturedAt": "2026-08-09T19:16:47.336Z",
+  "commit": "5cdb1efa2a4dd791026131e7e7ad46d76b404fe7",
+  "durationMs": 155950,
+  "packagesChecked": 14,
+  "packagesCapped": 14,
+  "manifests": [
+    "package.json",
+    "Gemfile",
+    "cells-mailroom/Gemfile",
+    "gems/action_dispatch-draw_all/Gemfile",
+    "gems/activerecord-gitlab/Gemfile",
+    "gems/auto_freeze/Gemfile",
+    "gems/bundler-checksum/Gemfile",
+    "gems/bundler-checksum/test/project_with_checksum_lock/Gemfile",
+    "gems/csv_builder/Gemfile",
+    "gems/gitlab-active-context/Gemfile",
+    "gems/gitlab-ai-principles-distiller/Gemfile",
+    "gems/gitlab-backup-cli/Gemfile",
+    "gems/gitlab-backup-cli/spec/fixtures/gitlab_fake/Gemfile",
+    "gems/gitlab-bitbucket/Gemfile",
+    "gems/gitlab-bitbucket-server/Gemfile",
+    "gems/gitlab-cd-driver-orchestration/Gemfile",
+    "gems/gitlab-configs/Gemfile",
+    "gems/gitlab-database-data_isolation/Gemfile",
+    "gems/gitlab-database-load_balancing/Gemfile",
+    "gems/gitlab-database-lock_retries/Gemfile",
+    "gems/gitlab-email_handler/Gemfile",
+    "gems/gitlab-housekeeper/Gemfile",
+    "gems/gitlab-http/Gemfile",
+    "gems/gitlab-policy-store/Gemfile",
+    "gems/gitlab-rspec/Gemfile",
+    "gems/gitlab-rspec_flaky/Gemfile",
+    "gems/gitlab-safe_request_store/Gemfile",
+    "gems/gitlab-schema-validation/Gemfile",
+    "gems/gitlab-utils/Gemfile",
+    "gems/ipynbdiff/Gemfile",
+    "gems/mail-smtp_pool/Gemfile",
+    "gems/safe_zip/Gemfile",
+    "qa/Gemfile",
+    "qa/gems/gitlab-orchestrator/Gemfile",
+    "rubocop/docs-hugo/go.mod",
+    "spec/contracts/consumer/internal/package.json",
+    "spec/fixtures/api/schemas/evidences/package.json",
+    "spec/fixtures/api/schemas/public_api/v4/packages/package.json",
+    "spec/fixtures/api/schemas/public_api/v4/packages/composer/package.json",
+    "spec/fixtures/packages/composer/package.json",
+    "storybook/package.json",
+    "workhorse/go.mod"
+  ],
+  "events": [
+    {
+      "at": 110337,
+      "phase": "Looking for manifests",
+      "detail": "gitlabhq/gitlabhq",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115719,
+      "phase": "Reading the workspace",
+      "detail": "41 packages · undeclared",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115768,
+      "phase": "Reading manifest",
+      "detail": "package.json",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115796,
+      "phase": "Reading manifest",
+      "detail": "Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115812,
+      "phase": "Reading manifest",
+      "detail": "cells-mailroom/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115814,
+      "phase": "Reading manifest",
+      "detail": "gems/action_dispatch-draw_all/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115815,
+      "phase": "Reading manifest",
+      "detail": "gems/activerecord-gitlab/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115816,
+      "phase": "Reading manifest",
+      "detail": "gems/auto_freeze/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115817,
+      "phase": "Reading manifest",
+      "detail": "gems/bundler-checksum/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115818,
+      "phase": "Reading manifest",
+      "detail": "gems/bundler-checksum/test/project_with_checksum_lock/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115819,
+      "phase": "Reading manifest",
+      "detail": "gems/csv_builder/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115820,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-active-context/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115822,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-ai-principles-distiller/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115823,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-backup-cli/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115824,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-backup-cli/spec/fixtures/gitlab_fake/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115825,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-bitbucket/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115827,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-bitbucket-server/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115828,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-cd-driver-orchestration/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115829,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-configs/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115829,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-database-data_isolation/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115830,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-database-load_balancing/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115831,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-database-lock_retries/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115834,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-email_handler/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115835,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-housekeeper/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115836,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-http/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115838,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-policy-store/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115838,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-rspec/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115840,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-rspec_flaky/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115841,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-safe_request_store/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115841,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-schema-validation/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115842,
+      "phase": "Reading manifest",
+      "detail": "gems/gitlab-utils/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115843,
+      "phase": "Reading manifest",
+      "detail": "gems/ipynbdiff/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115844,
+      "phase": "Reading manifest",
+      "detail": "gems/mail-smtp_pool/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115845,
+      "phase": "Reading manifest",
+      "detail": "gems/safe_zip/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115845,
+      "phase": "Reading manifest",
+      "detail": "qa/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115847,
+      "phase": "Reading manifest",
+      "detail": "qa/gems/gitlab-orchestrator/Gemfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115848,
+      "phase": "Reading manifest",
+      "detail": "rubocop/docs-hugo/go.mod",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115849,
+      "phase": "Reading manifest",
+      "detail": "spec/contracts/consumer/internal/package.json",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115854,
+      "phase": "Reading manifest",
+      "detail": "spec/fixtures/api/schemas/evidences/package.json",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115854,
+      "phase": "Reading manifest",
+      "detail": "spec/fixtures/api/schemas/public_api/v4/packages/package.json",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115861,
+      "phase": "Reading manifest",
+      "detail": "spec/fixtures/api/schemas/public_api/v4/packages/composer/package.json",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115862,
+      "phase": "Reading manifest",
+      "detail": "spec/fixtures/packages/composer/package.json",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115869,
+      "phase": "Reading manifest",
+      "detail": "storybook/package.json",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115885,
+      "phase": "Reading manifest",
+      "detail": "workhorse/go.mod",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 115897,
+      "phase": "Indexing your code",
+      "detail": "Walking source files",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 121561,
+      "phase": "Indexing your code",
+      "detail": "5000 files indexed · 14 direct dependencies to check",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 121561,
+      "phase": "Checking the npm registry",
+      "detail": "@apollo/client (installed 3.5.10)",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 121564,
+      "phase": "Checking the npm registry",
+      "detail": "@babel/core (installed 7.27.1)",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 121566,
+      "phase": "Checking the npm registry",
+      "detail": "@babel/preset-env (installed 7.23.7)",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 121567,
+      "phase": "Checking the npm registry",
+      "detail": "@csstools/postcss-global-data (installed 2.1.1)",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 121875,
+      "phase": "Reading release notes and changelog",
+      "detail": "@babel/core 7.27.1 → 7.29.7",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 121939,
+      "phase": "Reading release notes and changelog",
+      "detail": "@babel/preset-env 7.23.7 → 7.29.7",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 121967,
+      "phase": "Reading release notes and changelog",
+      "detail": "@csstools/postcss-global-data 2.1.1 → 4.0.0",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 122104,
+      "phase": "Reading release notes and changelog",
+      "detail": "@apollo/client 3.5.10 → 3.14.1",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 124826,
+      "phase": "Comparing the public API surface",
+      "detail": "@babel/preset-env 7.23.7 → 7.29.7 · 1 evidence source",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 124826,
+      "phase": "No breaking changes to look for",
+      "detail": "@babel/preset-env 7.23.7 → 7.29.7",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 124831,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "@babel/preset-env 7.23.7 → 7.29.7",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 124832,
+      "phase": "Comparing the public API surface",
+      "detail": "@babel/core 7.27.1 → 7.29.7 · 1 evidence source",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 124832,
+      "phase": "No breaking changes to look for",
+      "detail": "@babel/core 7.27.1 → 7.29.7",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 124834,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "@babel/core 7.27.1 → 7.29.7",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 125237,
+      "phase": "Checked",
+      "detail": "@babel/core 7.27.1 → 7.29.7 · worth taking · no breaking changes, and it improves on what you have",
+      "done": 1,
+      "total": 14
+    },
+    {
+      "at": 125237,
+      "phase": "Checking the npm registry",
+      "detail": "@cubejs-client/core (installed 1.0.0)",
+      "done": 1,
+      "total": 14
+    },
+    {
+      "at": 125281,
+      "phase": "Checked",
+      "detail": "@babel/preset-env 7.23.7 → 7.29.7 · safe for your code · no breaking changes found",
+      "done": 2,
+      "total": 14
+    },
+    {
+      "at": 125281,
+      "phase": "Checking the npm registry",
+      "detail": "@floating-ui/dom (installed 1.8.0)",
+      "done": 2,
+      "total": 14
+    },
+    {
+      "at": 125454,
+      "phase": "Up to date",
+      "detail": "@floating-ui/dom@1.8.0",
+      "done": 3,
+      "total": 14
+    },
+    {
+      "at": 125454,
+      "phase": "Checking the npm registry",
+      "detail": "@gitlab/at.js (installed 1.5.9)",
+      "done": 3,
+      "total": 14
+    },
+    {
+      "at": 125571,
+      "phase": "Reading release notes and changelog",
+      "detail": "@cubejs-client/core 1.0.0 → 1.7.18",
+      "done": 3,
+      "total": 14
+    },
+    {
+      "at": 125776,
+      "phase": "Up to date",
+      "detail": "@gitlab/at.js@1.5.9",
+      "done": 4,
+      "total": 14
+    },
+    {
+      "at": 125776,
+      "phase": "Checking the npm registry",
+      "detail": "@gitlab/cluster-client (installed 3.0.0)",
+      "done": 4,
+      "total": 14
+    },
+    {
+      "at": 126098,
+      "phase": "Up to date",
+      "detail": "@gitlab/cluster-client@3.0.0",
+      "done": 5,
+      "total": 14
+    },
+    {
+      "at": 126098,
+      "phase": "Checking the npm registry",
+      "detail": "@gitlab/duo-ui (installed 15.41.0)",
+      "done": 5,
+      "total": 14
+    },
+    {
+      "at": 126404,
+      "phase": "Reading release notes and changelog",
+      "detail": "@gitlab/duo-ui 15.41.0 → 15.46.1",
+      "done": 5,
+      "total": 14
+    },
+    {
+      "at": 126622,
+      "phase": "Comparing the public API surface",
+      "detail": "@gitlab/duo-ui 15.41.0 → 15.46.1 · 1 evidence source",
+      "done": 5,
+      "total": 14
+    },
+    {
+      "at": 126622,
+      "phase": "No breaking changes to look for",
+      "detail": "@gitlab/duo-ui 15.41.0 → 15.46.1",
+      "done": 5,
+      "total": 14
+    },
+    {
+      "at": 126624,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "@gitlab/duo-ui 15.41.0 → 15.46.1",
+      "done": 5,
+      "total": 14
+    },
+    {
+      "at": 126783,
+      "phase": "Checked",
+      "detail": "@gitlab/duo-ui 15.41.0 → 15.46.1 · safe for your code · no breaking changes found",
+      "done": 6,
+      "total": 14
+    },
+    {
+      "at": 126783,
+      "phase": "Checking the npm registry",
+      "detail": "@gitlab/favicon-overlay (installed 2.0.0)",
+      "done": 6,
+      "total": 14
+    },
+    {
+      "at": 126999,
+      "phase": "Comparing the public API surface",
+      "detail": "@apollo/client 3.5.10 → 3.14.1 · 19 evidence sources",
+      "done": 6,
+      "total": 14
+    },
+    {
+      "at": 127038,
+      "phase": "Searching your code for 88 breaking changes",
+      "detail": "@apollo/client 3.5.10 → 3.14.1",
+      "done": 6,
+      "total": 14
+    },
+    {
+      "at": 129198,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "@apollo/client 3.5.10 → 3.14.1",
+      "done": 6,
+      "total": 14
+    },
+    {
+      "at": 129206,
+      "phase": "Up to date",
+      "detail": "@gitlab/favicon-overlay@2.0.0",
+      "done": 7,
+      "total": 14
+    },
+    {
+      "at": 129206,
+      "phase": "Checking the npm registry",
+      "detail": "@gitlab/fonts (installed 1.3.1)",
+      "done": 7,
+      "total": 14
+    },
+    {
+      "at": 129334,
+      "phase": "Comparing the public API surface",
+      "detail": "@csstools/postcss-global-data 2.1.1 → 4.0.0 · 2 evidence sources",
+      "done": 7,
+      "total": 14
+    },
+    {
+      "at": 129334,
+      "phase": "Searching your code for 1 breaking change",
+      "detail": "@csstools/postcss-global-data 2.1.1 → 4.0.0",
+      "done": 7,
+      "total": 14
+    },
+    {
+      "at": 129344,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "@csstools/postcss-global-data 2.1.1 → 4.0.0",
+      "done": 7,
+      "total": 14
+    },
+    {
+      "at": 129586,
+      "phase": "Needs your attention",
+      "detail": "@apollo/client 3.5.10 → 3.14.1 · affects your code · 12 sites in 4 files",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 129586,
+      "phase": "Checking the npm registry",
+      "detail": "@gitlab/query-language-rust (installed 0.33.0)",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 129588,
+      "phase": "Up to date",
+      "detail": "@gitlab/fonts@1.3.1",
+      "done": 9,
+      "total": 14
+    },
+    {
+      "at": 129588,
+      "phase": "Checking the npm registry",
+      "detail": "@gitlab/svgs (installed 3.163.0)",
+      "done": 9,
+      "total": 14
+    },
+    {
+      "at": 129685,
+      "phase": "Checked",
+      "detail": "@csstools/postcss-global-data 2.1.1 → 4.0.0 · safe for your code · 1 upstream change, none used here",
+      "done": 10,
+      "total": 14
+    },
+    {
+      "at": 129685,
+      "phase": "Checking the npm registry",
+      "detail": "@gitlab/ui (installed 136.1.0)",
+      "done": 10,
+      "total": 14
+    },
+    {
+      "at": 129841,
+      "phase": "Reading release notes and changelog",
+      "detail": "@gitlab/query-language-rust 0.33.0 → 0.34.0",
+      "done": 10,
+      "total": 14
+    },
+    {
+      "at": 129910,
+      "phase": "Up to date",
+      "detail": "@gitlab/svgs@3.163.0",
+      "done": 11,
+      "total": 14
+    },
+    {
+      "at": 130452,
+      "phase": "Up to date",
+      "detail": "@gitlab/ui@136.1.0",
+      "done": 12,
+      "total": 14
+    },
+    {
+      "at": 130658,
+      "phase": "Comparing the public API surface",
+      "detail": "@gitlab/query-language-rust 0.33.0 → 0.34.0 · 1 evidence source",
+      "done": 12,
+      "total": 14
+    },
+    {
+      "at": 130658,
+      "phase": "No breaking changes to look for",
+      "detail": "@gitlab/query-language-rust 0.33.0 → 0.34.0",
+      "done": 12,
+      "total": 14
+    },
+    {
+      "at": 130670,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "@gitlab/query-language-rust 0.33.0 → 0.34.0",
+      "done": 12,
+      "total": 14
+    },
+    {
+      "at": 132565,
+      "phase": "Checked",
+      "detail": "@gitlab/query-language-rust 0.33.0 → 0.34.0 · safe for your code · no breaking changes found",
+      "done": 13,
+      "total": 14
+    },
+    {
+      "at": 132668,
+      "phase": "Comparing the public API surface",
+      "detail": "@cubejs-client/core 1.0.0 → 1.7.18 · 7 evidence sources",
+      "done": 13,
+      "total": 14
+    },
+    {
+      "at": 132684,
+      "phase": "Searching your code for 46 breaking changes",
+      "detail": "@cubejs-client/core 1.0.0 → 1.7.18",
+      "done": 13,
+      "total": 14
+    },
+    {
+      "at": 132694,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "@cubejs-client/core 1.0.0 → 1.7.18",
+      "done": 13,
+      "total": 14
+    },
+    {
+      "at": 132886,
+      "phase": "Checked",
+      "detail": "@cubejs-client/core 1.0.0 → 1.7.18 · safe for your code · 46 upstream changes, none used here",
+      "done": 14,
+      "total": 14
+    },
+    {
+      "at": 142365,
+      "phase": "Auditing installed versions",
+      "detail": "@babel/core 7.23.7 → 7.27.1 (installed)",
+      "done": 1,
+      "total": 14
+    }
+  ],
+  "candidates": [
+    {
+      "name": "@apollo/client",
+      "ecosystem": "npm",
+      "current": "3.5.10",
+      "latest": "4.2.10",
+      "selected": "3.14.1",
+      "safeLatest": "3.14.1",
+      "status": "ready",
+      "risk": "high",
+      "summary": "Manual migration required. 12 places in this repository use an API that @apollo/client changed.",
+      "recommendation": "manual-migration-required",
+      "breakingCount": 88,
+      "impactCount": 12,
+      "impactFiles": 4,
+      "evidenceCount": 19,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`SubscriptionHookOptions.subscription` was removed.",
+          "remediation": "The member `SubscriptionHookOptions.subscription` no longer exists in `@apollo/client`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "symbols": [
+            "SubscriptionHookOptions.subscription",
+            "subscription"
+          ],
+          "sites": [
+            {
+              "file": "app/assets/javascripts/actioncable_link.js",
+              "line": 10,
+              "excerpt": "const subscription = cable.subscriptions.create(",
+              "matchedSymbol": "subscription",
+              "confidence": "medium"
+            },
+            {
+              "file": "app/assets/javascripts/actioncable_link.js",
+              "line": 41,
+              "excerpt": "subscription.unsubscribe();",
+              "matchedSymbol": "subscription",
+              "confidence": "medium"
+            },
+            {
+              "file": "app/assets/javascripts/lib/apollo/operation_finished_link.js",
+              "line": 26,
+              "excerpt": "const subscription = forward(operation).subscribe({",
+              "matchedSymbol": "subscription",
+              "confidence": "medium"
+            },
+            {
+              "file": "app/assets/javascripts/lib/apollo/operation_finished_link.js",
+              "line": 40,
+              "excerpt": "subscription.unsubscribe();",
+              "matchedSymbol": "subscription",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`WatchQueryOptions.fetchPolicy` was removed.",
+          "remediation": "The member `WatchQueryOptions.fetchPolicy` no longer exists in `@apollo/client`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "symbols": [
+            "WatchQueryOptions.fetchPolicy",
+            "fetchPolicy"
+          ],
+          "sites": [
+            {
+              "file": "app/assets/javascripts/entrypoints/graphql_explorer.js",
+              "line": 23,
+              "excerpt": "fetchPolicy: fetchPolicies.NO_CACHE,",
+              "matchedSymbol": "fetchPolicy",
+              "confidence": "medium"
+            },
+            {
+              "file": "app/assets/javascripts/lib/graphql.js",
+              "line": 182,
+              "excerpt": "fetchPolicy = fetchPolicies.CACHE_FIRST,",
+              "matchedSymbol": "fetchPolicy",
+              "confidence": "medium"
+            },
+            {
+              "file": "app/assets/javascripts/lib/graphql.js",
+              "line": 336,
+              "excerpt": "fetchPolicy,",
+              "matchedSymbol": "fetchPolicy",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`MutationOptions.fetchPolicy` was removed.",
+          "remediation": "The member `MutationOptions.fetchPolicy` no longer exists in `@apollo/client`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "symbols": [
+            "MutationOptions.fetchPolicy",
+            "fetchPolicy"
+          ],
+          "sites": [
+            {
+              "file": "app/assets/javascripts/entrypoints/graphql_explorer.js",
+              "line": 23,
+              "excerpt": "fetchPolicy: fetchPolicies.NO_CACHE,",
+              "matchedSymbol": "fetchPolicy",
+              "confidence": "medium"
+            },
+            {
+              "file": "app/assets/javascripts/lib/graphql.js",
+              "line": 182,
+              "excerpt": "fetchPolicy = fetchPolicies.CACHE_FIRST,",
+              "matchedSymbol": "fetchPolicy",
+              "confidence": "medium"
+            },
+            {
+              "file": "app/assets/javascripts/lib/graphql.js",
+              "line": 336,
+              "excerpt": "fetchPolicy,",
+              "matchedSymbol": "fetchPolicy",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "kind": "behaviour-change",
+          "summary": "`HttpLink` no longer attempts to parse the boundary (e",
+          "remediation": "Behaviour changed: `HttpLink` no longer attempts to parse the boundary (e. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
+          "confidence": "medium",
+          "symbols": [
+            "HttpLink"
+          ],
+          "sites": [
+            {
+              "file": "app/assets/javascripts/lib/graphql.js",
+              "line": 1,
+              "excerpt": "import { ApolloClient, InMemoryCache, ApolloLink, HttpLink } from '@apollo/client/core';",
+              "matchedSymbol": "HttpLink",
+              "confidence": "high"
+            },
+            {
+              "file": "app/assets/javascripts/lib/graphql.js",
+              "line": 242,
+              "excerpt": "new HttpLink({ ...httpOptions, fetch: fetchIntervention }),",
+              "matchedSymbol": "HttpLink",
+              "confidence": "high"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "@cubejs-client/core",
+      "ecosystem": "npm",
+      "current": "1.0.0",
+      "latest": "1.7.18",
+      "selected": "1.7.18",
+      "safeLatest": "1.7.18",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Safe to upgrade. 46 upstream breaking changes, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 46,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 7,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `defaultHeuristics` changed.",
+          "remediation": "The signature of `defaultHeuristics` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: export function defaultHeuristics( newState: TDefaultHeuristicsState, oldQuery: Query, options: TDefaultHeuristicsOptions ): TDefaultHeuristicsResponse;\n  after:  export declare function defaultHeuristics(newState: TDefaultHeuristicsState, oldQuery: Query, options: TDefaultHeuristicsOptions): TDefaultHeuristicsResponse;",
+          "confidence": "high",
+          "symbols": [
+            "defaultHeuristics"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `isQueryPresent` changed.",
+          "remediation": "The signature of `isQueryPresent` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: export function isQueryPresent(query: DeeplyReadonly<Query | Query[]> | null | undefined): boolean;\n  after:  export declare function isQueryPresent(query: DeeplyReadonly<Query | Query[]> | null | undefined): boolean;",
+          "confidence": "high",
+          "symbols": [
+            "isQueryPresent"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `movePivotItem` changed.",
+          "remediation": "The signature of `movePivotItem` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: export function movePivotItem( pivotConfig: PivotConfig, sourceIndex: number, destinationIndex: number, sourceAxis: TSourceAxis, destinationAxis: TSourceAxis ): PivotConfig;\n  after:  export declare function movePivotItem(pivotConfig: PivotConfig, sourceIndex: number, destinationIndex: number, sourceAxis: TSourceAxis, destinationAxis: TSourceAxis): PivotConfig;",
+          "confidence": "high",
+          "symbols": [
+            "movePivotItem"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `moveItemInArray` changed.",
+          "remediation": "The signature of `moveItemInArray` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: export function moveItemInArray<T = any>(list: T[], sourceIndex: number, destinationIndex: number): T[];\n  after:  export declare function moveItemInArray<T = any>(list: T[], sourceIndex: number, destinationIndex: number): T[];",
+          "confidence": "high",
+          "symbols": [
+            "moveItemInArray"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "@csstools/postcss-global-data",
+      "ecosystem": "npm",
+      "current": "2.1.1",
+      "latest": "4.0.0",
+      "selected": "4.0.0",
+      "safeLatest": null,
+      "status": "ready",
+      "risk": "none",
+      "summary": "Upgrade recommended. 1 upstream breaking change, none of which this repository uses.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 1,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [
+        "No release notes, changelog, or migration guide was reachable for @csstools/postcss-global-data 4.0.0."
+      ],
+      "breaking": [
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `pluginOptions` changed.",
+          "remediation": "The signature of `pluginOptions` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: export declare type pluginOptions = { files?: Array<string>; }\n  after:  export declare type pluginOptions = { files?: Array<string>; lateRemover?: boolean; prepend?: boolean; }",
+          "confidence": "high",
+          "symbols": [
+            "pluginOptions"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "@babel/core",
+      "ecosystem": "npm",
+      "current": "7.27.1",
+      "latest": "8.0.1",
+      "selected": "7.29.7",
+      "safeLatest": "7.29.7",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Upgrade recommended. Fixes 1 known vulnerability.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read 21 sets of release notes and the changelog for @babel/core 7.29.7 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "@babel/preset-env",
+      "ecosystem": "npm",
+      "current": "7.23.7",
+      "latest": "8.0.2",
+      "selected": "7.29.7",
+      "safeLatest": "7.29.7",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift read 25 sets of release notes and the changelog for @babel/preset-env 7.29.7 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read 25 sets of release notes and the changelog for @babel/preset-env 7.29.7 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "@gitlab/duo-ui",
+      "ecosystem": "npm",
+      "current": "15.41.0",
+      "latest": "15.46.1",
+      "selected": "15.46.1",
+      "safeLatest": "15.46.1",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. No release notes, changelog, or migration guide was reachable for @gitlab/duo-ui 15.46.1, and no source repository could be resolved for it.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "No release notes, changelog, or migration guide was reachable for @gitlab/duo-ui 15.46.1, and no source repository could be resolved for it."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "@gitlab/query-language-rust",
+      "ecosystem": "npm",
+      "current": "0.33.0",
+      "latest": "0.34.0",
+      "selected": "0.34.0",
+      "safeLatest": null,
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. No release notes, changelog, or migration guide was reachable for @gitlab/query-language-rust 0.34.0, and no source repository could be resolved for it.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "No release notes, changelog, or migration guide was reachable for @gitlab/query-language-rust 0.34.0, and no source repository could be resolved for it."
+      ],
+      "breaking": []
+    }
+  ],
+  "audit": {
+    "checked": 14,
+    "analysed": 1,
+    "findings": []
+  }
+}

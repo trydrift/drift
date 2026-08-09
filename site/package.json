@@ -1,0 +1,32 @@
+{
+  "name": "@usedrift/site",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Drift landing page — a replayed recording of real analyses.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "capture": "node scripts/capture.mjs",
+    "sync": "node scripts/sync-severity.mjs",
+    "prebuild": "npm run sync",
+    "predev": "npm run sync",
+    "pretypecheck": "npm run sync"
+  },
+  "dependencies": {
+    "next": "16.3.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.2",
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "playwright-core": "^1.62.1",
+    "postcss": "^8.5.18",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^5.9.3"
+  }
+}

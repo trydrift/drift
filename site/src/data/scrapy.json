@@ -1,0 +1,1621 @@
+{
+  "id": "scrapy",
+  "label": "scrapy",
+  "ecosystem": "pypi",
+  "language": "Python",
+  "repo": "https://github.com/scrapy/scrapy",
+  "blurb": "The web crawling framework that most Python scrapers are built on.",
+  "capturedAt": "2026-08-09T19:14:11.384Z",
+  "commit": "ae68786210b99240b269125673704754a282ff5e",
+  "durationMs": 71402,
+  "packagesChecked": 14,
+  "packagesCapped": 14,
+  "manifests": [
+    "pyproject.toml",
+    "docs/requirements.txt"
+  ],
+  "events": [
+    {
+      "at": 3083,
+      "phase": "Looking for manifests",
+      "detail": "scrapy/scrapy",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 3098,
+      "phase": "Reading the workspace",
+      "detail": "2 packages · undeclared",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 3098,
+      "phase": "Reading manifest",
+      "detail": "pyproject.toml",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 3103,
+      "phase": "Reading manifest",
+      "detail": "docs/requirements.txt",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 3104,
+      "phase": "Indexing your code",
+      "detail": "Walking source files",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 3541,
+      "phase": "Indexing your code",
+      "detail": "485 files indexed · 14 direct dependencies to check",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 3541,
+      "phase": "Checking the PyPI",
+      "detail": "twisted (installed 21.7.0)",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 3541,
+      "phase": "Checking the PyPI",
+      "detail": "cryptography (installed 37.0.0)",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 3541,
+      "phase": "Checking the PyPI",
+      "detail": "cssselect (installed 0.9.1)",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 3541,
+      "phase": "Checking the PyPI",
+      "detail": "defusedxml (installed 0.7.1)",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 3643,
+      "phase": "Reading release notes and changelog",
+      "detail": "cssselect 0.9.1 → 1.5.0",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 3654,
+      "phase": "Reading release notes and changelog",
+      "detail": "defusedxml 0.7.1 → 0.8.0",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 3673,
+      "phase": "Reading release notes and changelog",
+      "detail": "twisted 21.7.0 → 26.4.0",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 3833,
+      "phase": "Reading release notes and changelog",
+      "detail": "cryptography 37.0.0 → 50.0.0",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 7549,
+      "phase": "Comparing the public API surface",
+      "detail": "defusedxml 0.7.1 → 0.8.0 · 1 evidence source",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 7549,
+      "phase": "No breaking changes to look for",
+      "detail": "defusedxml 0.7.1 → 0.8.0",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 7549,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "defusedxml 0.7.1 → 0.8.0",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 7742,
+      "phase": "Comparing the public API surface",
+      "detail": "cssselect 0.9.1 → 1.5.0 · 2 evidence sources",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 7743,
+      "phase": "Searching your code for 13 breaking changes",
+      "detail": "cssselect 0.9.1 → 1.5.0",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 7744,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "cssselect 0.9.1 → 1.5.0",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 7893,
+      "phase": "Checked",
+      "detail": "defusedxml 0.7.1 → 0.8.0 · safe for your code · no breaking changes found",
+      "done": 1,
+      "total": 14
+    },
+    {
+      "at": 7893,
+      "phase": "Checking the PyPI",
+      "detail": "itemadapter (installed 0.1.0)",
+      "done": 1,
+      "total": 14
+    },
+    {
+      "at": 7917,
+      "phase": "Reading release notes and changelog",
+      "detail": "itemadapter 0.1.0 → 0.13.1",
+      "done": 1,
+      "total": 14
+    },
+    {
+      "at": 7992,
+      "phase": "Checked",
+      "detail": "cssselect 0.9.1 → 1.5.0 · safe for your code · 13 upstream changes, none used here",
+      "done": 2,
+      "total": 14
+    },
+    {
+      "at": 7992,
+      "phase": "Checking the PyPI",
+      "detail": "itemloaders (installed 1.0.1)",
+      "done": 2,
+      "total": 14
+    },
+    {
+      "at": 8011,
+      "phase": "Reading release notes and changelog",
+      "detail": "itemloaders 1.0.1 → 1.4.0",
+      "done": 2,
+      "total": 14
+    },
+    {
+      "at": 8389,
+      "phase": "Comparing the public API surface",
+      "detail": "cryptography 37.0.0 → 50.0.0 · 2 evidence sources",
+      "done": 2,
+      "total": 14
+    },
+    {
+      "at": 8436,
+      "phase": "Searching your code for 310 breaking changes",
+      "detail": "cryptography 37.0.0 → 50.0.0",
+      "done": 2,
+      "total": 14
+    },
+    {
+      "at": 20481,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "cryptography 37.0.0 → 50.0.0",
+      "done": 2,
+      "total": 14
+    },
+    {
+      "at": 20928,
+      "phase": "Needs your attention",
+      "detail": "cryptography 37.0.0 → 50.0.0 · affects your code · 59 sites in 4 files",
+      "done": 3,
+      "total": 14
+    },
+    {
+      "at": 20928,
+      "phase": "Checking the PyPI",
+      "detail": "lxml (installed 4.6.4)",
+      "done": 3,
+      "total": 14
+    },
+    {
+      "at": 21285,
+      "phase": "Reading release notes and changelog",
+      "detail": "lxml 4.6.4 → 7.0.0",
+      "done": 3,
+      "total": 14
+    },
+    {
+      "at": 24657,
+      "phase": "Comparing the public API surface",
+      "detail": "itemloaders 1.0.1 → 1.4.0 · 2 evidence sources",
+      "done": 3,
+      "total": 14
+    },
+    {
+      "at": 24659,
+      "phase": "Searching your code for 1 breaking change",
+      "detail": "itemloaders 1.0.1 → 1.4.0",
+      "done": 3,
+      "total": 14
+    },
+    {
+      "at": 24661,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "itemloaders 1.0.1 → 1.4.0",
+      "done": 3,
+      "total": 14
+    },
+    {
+      "at": 24756,
+      "phase": "Comparing the public API surface",
+      "detail": "itemadapter 0.1.0 → 0.13.1 · 2 evidence sources",
+      "done": 3,
+      "total": 14
+    },
+    {
+      "at": 24756,
+      "phase": "Searching your code for 4 breaking changes",
+      "detail": "itemadapter 0.1.0 → 0.13.1",
+      "done": 3,
+      "total": 14
+    },
+    {
+      "at": 24908,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "itemadapter 0.1.0 → 0.13.1",
+      "done": 3,
+      "total": 14
+    },
+    {
+      "at": 24913,
+      "phase": "Checked",
+      "detail": "itemloaders 1.0.1 → 1.4.0 · safe for your code · 1 upstream change, none used here",
+      "done": 4,
+      "total": 14
+    },
+    {
+      "at": 24913,
+      "phase": "Checking the PyPI",
+      "detail": "parsel (installed 1.5.0)",
+      "done": 4,
+      "total": 14
+    },
+    {
+      "at": 24990,
+      "phase": "Reading release notes and changelog",
+      "detail": "parsel 1.5.0 → 1.11.0",
+      "done": 4,
+      "total": 14
+    },
+    {
+      "at": 25087,
+      "phase": "Checked",
+      "detail": "itemadapter 0.1.0 → 0.13.1 · safe for your code · 4 upstream changes, none used here",
+      "done": 5,
+      "total": 14
+    },
+    {
+      "at": 25087,
+      "phase": "Checking the PyPI",
+      "detail": "protego (installed 0.1.15)",
+      "done": 5,
+      "total": 14
+    },
+    {
+      "at": 25105,
+      "phase": "Reading release notes and changelog",
+      "detail": "protego 0.1.15 → 0.6.2",
+      "done": 5,
+      "total": 14
+    },
+    {
+      "at": 27185,
+      "phase": "Comparing the public API surface",
+      "detail": "lxml 4.6.4 → 7.0.0 · 1 evidence source",
+      "done": 5,
+      "total": 14
+    },
+    {
+      "at": 27185,
+      "phase": "No breaking changes to look for",
+      "detail": "lxml 4.6.4 → 7.0.0",
+      "done": 5,
+      "total": 14
+    },
+    {
+      "at": 27186,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "lxml 4.6.4 → 7.0.0",
+      "done": 5,
+      "total": 14
+    },
+    {
+      "at": 27477,
+      "phase": "Checked",
+      "detail": "lxml 4.6.4 → 7.0.0 · worth taking · no breaking changes, and it improves on what you have",
+      "done": 6,
+      "total": 14
+    },
+    {
+      "at": 27477,
+      "phase": "Checking the PyPI",
+      "detail": "pyopenssl (installed 22.0.0)",
+      "done": 6,
+      "total": 14
+    },
+    {
+      "at": 27505,
+      "phase": "Reading release notes and changelog",
+      "detail": "pyopenssl 22.0.0 → 26.4.0",
+      "done": 6,
+      "total": 14
+    },
+    {
+      "at": 28848,
+      "phase": "Comparing the public API surface",
+      "detail": "parsel 1.5.0 → 1.11.0 · 2 evidence sources",
+      "done": 6,
+      "total": 14
+    },
+    {
+      "at": 28848,
+      "phase": "Searching your code for 11 breaking changes",
+      "detail": "parsel 1.5.0 → 1.11.0",
+      "done": 6,
+      "total": 14
+    },
+    {
+      "at": 28931,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "parsel 1.5.0 → 1.11.0",
+      "done": 6,
+      "total": 14
+    },
+    {
+      "at": 29132,
+      "phase": "Checked",
+      "detail": "parsel 1.5.0 → 1.11.0 · safe for your code · 11 upstream changes, none used here",
+      "done": 7,
+      "total": 14
+    },
+    {
+      "at": 29132,
+      "phase": "Checking the PyPI",
+      "detail": "queuelib (installed 1.6.1)",
+      "done": 7,
+      "total": 14
+    },
+    {
+      "at": 29144,
+      "phase": "Reading release notes and changelog",
+      "detail": "queuelib 1.6.1 → 1.9.0",
+      "done": 7,
+      "total": 14
+    },
+    {
+      "at": 30098,
+      "phase": "Comparing the public API surface",
+      "detail": "pyopenssl 22.0.0 → 26.4.0 · 2 evidence sources",
+      "done": 7,
+      "total": 14
+    },
+    {
+      "at": 30099,
+      "phase": "Searching your code for 27 breaking changes",
+      "detail": "pyopenssl 22.0.0 → 26.4.0",
+      "done": 7,
+      "total": 14
+    },
+    {
+      "at": 30101,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pyopenssl 22.0.0 → 26.4.0",
+      "done": 7,
+      "total": 14
+    },
+    {
+      "at": 30332,
+      "phase": "Checked",
+      "detail": "pyopenssl 22.0.0 → 26.4.0 · safe for your code · 27 upstream changes, none used here",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 30332,
+      "phase": "Checking the PyPI",
+      "detail": "service-identity (installed 23.1.0)",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 30361,
+      "phase": "Reading release notes and changelog",
+      "detail": "service-identity 23.1.0 → 26.1.0",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 30671,
+      "phase": "Comparing the public API surface",
+      "detail": "twisted 21.7.0 → 26.4.0 · 2 evidence sources",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 30686,
+      "phase": "Searching your code for 111 breaking changes",
+      "detail": "twisted 21.7.0 → 26.4.0",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 63334,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "twisted 21.7.0 → 26.4.0",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 65002,
+      "phase": "Needs your attention",
+      "detail": "twisted 21.7.0 → 26.4.0 · affects your code · 56 sites in 22 files",
+      "done": 9,
+      "total": 14
+    },
+    {
+      "at": 65002,
+      "phase": "Checking the PyPI",
+      "detail": "w3lib (installed 1.17.0)",
+      "done": 9,
+      "total": 14
+    },
+    {
+      "at": 65026,
+      "phase": "Reading release notes and changelog",
+      "detail": "w3lib 1.17.0 → 2.4.1",
+      "done": 9,
+      "total": 14
+    },
+    {
+      "at": 65625,
+      "phase": "Comparing the public API surface",
+      "detail": "queuelib 1.6.1 → 1.9.0 · 1 evidence source",
+      "done": 9,
+      "total": 14
+    },
+    {
+      "at": 65625,
+      "phase": "No breaking changes to look for",
+      "detail": "queuelib 1.6.1 → 1.9.0",
+      "done": 9,
+      "total": 14
+    },
+    {
+      "at": 65625,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "queuelib 1.6.1 → 1.9.0",
+      "done": 9,
+      "total": 14
+    },
+    {
+      "at": 65888,
+      "phase": "Comparing the public API surface",
+      "detail": "service-identity 23.1.0 → 26.1.0 · 1 evidence source",
+      "done": 9,
+      "total": 14
+    },
+    {
+      "at": 65888,
+      "phase": "No breaking changes to look for",
+      "detail": "service-identity 23.1.0 → 26.1.0",
+      "done": 9,
+      "total": 14
+    },
+    {
+      "at": 65888,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "service-identity 23.1.0 → 26.1.0",
+      "done": 9,
+      "total": 14
+    },
+    {
+      "at": 66001,
+      "phase": "Checked",
+      "detail": "queuelib 1.6.1 → 1.9.0 · safe for your code · no breaking changes found",
+      "done": 10,
+      "total": 14
+    },
+    {
+      "at": 66001,
+      "phase": "Checking the PyPI",
+      "detail": "zope-interface (installed 5.1.0)",
+      "done": 10,
+      "total": 14
+    },
+    {
+      "at": 66161,
+      "phase": "Reading release notes and changelog",
+      "detail": "zope-interface 5.1.0 → 8.5.0",
+      "done": 10,
+      "total": 14
+    },
+    {
+      "at": 66187,
+      "phase": "Checked",
+      "detail": "service-identity 23.1.0 → 26.1.0 · safe for your code · no breaking changes found",
+      "done": 11,
+      "total": 14
+    },
+    {
+      "at": 67709,
+      "phase": "Comparing the public API surface",
+      "detail": "protego 0.1.15 → 0.6.2 · 5 evidence sources",
+      "done": 11,
+      "total": 14
+    },
+    {
+      "at": 67714,
+      "phase": "Searching your code for 5 breaking changes",
+      "detail": "protego 0.1.15 → 0.6.2",
+      "done": 11,
+      "total": 14
+    },
+    {
+      "at": 67720,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "protego 0.1.15 → 0.6.2",
+      "done": 11,
+      "total": 14
+    },
+    {
+      "at": 68045,
+      "phase": "Needs your attention",
+      "detail": "protego 0.1.15 → 0.6.2 · affects your code · 2 sites in 1 file",
+      "done": 12,
+      "total": 14
+    },
+    {
+      "at": 68571,
+      "phase": "Comparing the public API surface",
+      "detail": "w3lib 1.17.0 → 2.4.1 · 6 evidence sources",
+      "done": 12,
+      "total": 14
+    },
+    {
+      "at": 68572,
+      "phase": "Searching your code for 13 breaking changes",
+      "detail": "w3lib 1.17.0 → 2.4.1",
+      "done": 12,
+      "total": 14
+    },
+    {
+      "at": 69598,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "w3lib 1.17.0 → 2.4.1",
+      "done": 12,
+      "total": 14
+    },
+    {
+      "at": 69898,
+      "phase": "Needs your attention",
+      "detail": "w3lib 1.17.0 → 2.4.1 · affects your code · 29 sites in 9 files",
+      "done": 13,
+      "total": 14
+    },
+    {
+      "at": 70471,
+      "phase": "Comparing the public API surface",
+      "detail": "zope-interface 5.1.0 → 8.5.0 · 1 evidence source",
+      "done": 13,
+      "total": 14
+    },
+    {
+      "at": 70471,
+      "phase": "No breaking changes to look for",
+      "detail": "zope-interface 5.1.0 → 8.5.0",
+      "done": 13,
+      "total": 14
+    },
+    {
+      "at": 70471,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "zope-interface 5.1.0 → 8.5.0",
+      "done": 13,
+      "total": 14
+    },
+    {
+      "at": 70791,
+      "phase": "Checked",
+      "detail": "zope-interface 5.1.0 → 8.5.0 · worth taking · no breaking changes, and it improves on what you have",
+      "done": 14,
+      "total": 14
+    }
+  ],
+  "candidates": [
+    {
+      "name": "cryptography",
+      "ecosystem": "pypi",
+      "current": "37.0.0",
+      "latest": "50.0.0",
+      "selected": "50.0.0",
+      "safeLatest": "50.0.0",
+      "status": "ready",
+      "risk": "medium",
+      "summary": "Manual migration required. 59 places in this repository use an API that cryptography changed; fixes 16 known vulnerabilities.",
+      "recommendation": "manual-migration-required",
+      "breakingCount": 310,
+      "impactCount": 59,
+      "impactFiles": 4,
+      "evidenceCount": 2,
+      "gaps": [
+        "Drift read the changelog for cryptography 50.0.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": [
+        {
+          "kind": "type-change",
+          "summary": "`base.Certificate` changed from a class to a variable.",
+          "remediation": "`base.Certificate` changed form (for example class to function, or interface to type alias). Update declarations, `new` expressions, and type positions accordingly.",
+          "confidence": "high",
+          "symbols": [
+            "base.Certificate",
+            "Certificate"
+          ],
+          "sites": [
+            {
+              "file": "tests/test_crawl.py",
+              "line": 13,
+              "excerpt": "from twisted.internet.ssl import Certificate",
+              "matchedSymbol": "Certificate",
+              "confidence": "medium"
+            },
+            {
+              "file": "tests/test_crawl.py",
+              "line": 718,
+              "excerpt": "if isinstance(cert, Certificate):  # Twisted",
+              "matchedSymbol": "Certificate",
+              "confidence": "medium"
+            },
+            {
+              "file": "tests/utils/bases/download_handlers_http.py",
+              "line": 19,
+              "excerpt": "from twisted.internet.ssl import Certificate",
+              "matchedSymbol": "Certificate",
+              "confidence": "medium"
+            },
+            {
+              "file": "tests/utils/bases/download_handlers_http.py",
+              "line": 1164,
+              "excerpt": "if isinstance(cert, Certificate):  # Twisted",
+              "matchedSymbol": "Certificate",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `base.load_der_x509_certificate` changed.",
+          "remediation": "The signature of `base.load_der_x509_certificate` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: def load_der_x509_certificate(data, backend) defaults=1\n  after:  load_der_x509_certificate",
+          "confidence": "high",
+          "symbols": [
+            "base.load_der_x509_certificate",
+            "load_der_x509_certificate"
+          ],
+          "sites": [
+            {
+              "file": "tests/test_crawl.py",
+              "line": 11,
+              "excerpt": "from cryptography.x509 import load_der_x509_certificate",
+              "matchedSymbol": "load_der_x509_certificate",
+              "confidence": "high"
+            },
+            {
+              "file": "tests/test_crawl.py",
+              "line": 722,
+              "excerpt": "cert_x509 = load_der_x509_certificate(cert)",
+              "matchedSymbol": "load_der_x509_certificate",
+              "confidence": "high"
+            },
+            {
+              "file": "tests/utils/bases/download_handlers_http.py",
+              "line": 18,
+              "excerpt": "from cryptography.x509 import load_der_x509_certificate",
+              "matchedSymbol": "load_der_x509_certificate",
+              "confidence": "high"
+            },
+            {
+              "file": "tests/utils/bases/download_handlers_http.py",
+              "line": 1168,
+              "excerpt": "cert_x509 = load_der_x509_certificate(cert)",
+              "matchedSymbol": "load_der_x509_certificate",
+              "confidence": "high"
+            }
+          ]
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `x509.load_der_x509_certificate` changed.",
+          "remediation": "The signature of `x509.load_der_x509_certificate` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: def load_der_x509_certificate(data) defaults=0\n  after:  def load_der_x509_certificate(data, backend) defaults=1",
+          "confidence": "high",
+          "symbols": [
+            "x509.load_der_x509_certificate",
+            "load_der_x509_certificate"
+          ],
+          "sites": [
+            {
+              "file": "tests/test_crawl.py",
+              "line": 11,
+              "excerpt": "from cryptography.x509 import load_der_x509_certificate",
+              "matchedSymbol": "load_der_x509_certificate",
+              "confidence": "high"
+            },
+            {
+              "file": "tests/test_crawl.py",
+              "line": 722,
+              "excerpt": "cert_x509 = load_der_x509_certificate(cert)",
+              "matchedSymbol": "load_der_x509_certificate",
+              "confidence": "high"
+            },
+            {
+              "file": "tests/utils/bases/download_handlers_http.py",
+              "line": 18,
+              "excerpt": "from cryptography.x509 import load_der_x509_certificate",
+              "matchedSymbol": "load_der_x509_certificate",
+              "confidence": "high"
+            },
+            {
+              "file": "tests/utils/bases/download_handlers_http.py",
+              "line": 1168,
+              "excerpt": "cert_x509 = load_der_x509_certificate(cert)",
+              "matchedSymbol": "load_der_x509_certificate",
+              "confidence": "high"
+            }
+          ]
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`_serialization.Encoding` is no longer exported (was a class).",
+          "remediation": "Every use of `_serialization.Encoding` from `cryptography` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `_serialization.Encoding` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "_serialization.Encoding",
+            "Encoding"
+          ],
+          "sites": [
+            {
+              "file": "tests/keys/__init__.py",
+              "line": 8,
+              "excerpt": "Encoding,",
+              "matchedSymbol": "Encoding",
+              "confidence": "medium"
+            },
+            {
+              "file": "tests/keys/__init__.py",
+              "line": 34,
+              "excerpt": "encoding=Encoding.PEM,",
+              "matchedSymbol": "Encoding",
+              "confidence": "medium"
+            },
+            {
+              "file": "tests/keys/__init__.py",
+              "line": 61,
+              "excerpt": "(folder / \"localhost.crt\").write_bytes(cert.public_bytes(Encoding.PEM))",
+              "matchedSymbol": "Encoding",
+              "confidence": "medium"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "twisted",
+      "ecosystem": "pypi",
+      "current": "21.7.0",
+      "latest": "26.4.0",
+      "selected": "26.4.0",
+      "safeLatest": "26.4.0",
+      "status": "ready",
+      "risk": "high",
+      "summary": "Manual migration required. 56 places in this repository use an API that twisted changed; fixes 8 known vulnerabilities.",
+      "recommendation": "manual-migration-required",
+      "breakingCount": 111,
+      "impactCount": 56,
+      "impactFiles": 22,
+      "evidenceCount": 2,
+      "gaps": [
+        "No release notes, changelog, or migration guide was reachable for twisted 26.4.0."
+      ],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`tls_alpn_npn_server.certificate` is no longer exported (was a variable).",
+          "remediation": "Every use of `tls_alpn_npn_server.certificate` from `twisted` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `tls_alpn_npn_server.certificate` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "tls_alpn_npn_server.certificate",
+            "certificate"
+          ],
+          "sites": [
+            {
+              "file": "scrapy/core/downloader/handlers/http11.py",
+              "line": 80,
+              "excerpt": "certificate: NotRequired[ssl.Certificate | None]",
+              "matchedSymbol": "certificate",
+              "confidence": "medium"
+            },
+            {
+              "file": "scrapy/core/downloader/handlers/http11.py",
+              "line": 595,
+              "excerpt": "certificate=result.get(\"certificate\"),",
+              "matchedSymbol": "certificate",
+              "confidence": "medium"
+            },
+            {
+              "file": "scrapy/core/http2/stream.py",
+              "line": 541,
+              "excerpt": "certificate=self._protocol.metadata[\"certificate\"],",
+              "matchedSymbol": "certificate",
+              "confidence": "medium"
+            },
+            {
+              "file": "scrapy/http/response/__init__.py",
+              "line": 82,
+              "excerpt": "certificate: Any = None,",
+              "matchedSymbol": "certificate",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`trial.Options.extra` was removed.",
+          "remediation": "The member `trial.Options.extra` no longer exists in `twisted`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "symbols": [
+            "trial.Options.extra",
+            "extra",
+            "Options.extra"
+          ],
+          "sites": [
+            {
+              "file": "scrapy/core/downloader/handlers/__init__.py",
+              "line": 127,
+              "excerpt": "extra={\"crawler\": self._crawler},",
+              "matchedSymbol": "extra",
+              "confidence": "medium"
+            },
+            {
+              "file": "scrapy/core/downloader/handlers/http11.py",
+              "line": 234,
+              "excerpt": "extra: Any",
+              "matchedSymbol": "extra",
+              "confidence": "medium"
+            },
+            {
+              "file": "scrapy/core/downloader/handlers/http11.py",
+              "line": 236,
+              "excerpt": "extra = {",
+              "matchedSymbol": "extra",
+              "confidence": "medium"
+            },
+            {
+              "file": "scrapy/core/downloader/handlers/http11.py",
+              "line": 241,
+              "excerpt": "extra = data[: self._truncatedLength]",
+              "matchedSymbol": "extra",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`tls_alpn_npn_server.endpoint` is no longer exported (was a variable).",
+          "remediation": "Every use of `tls_alpn_npn_server.endpoint` from `twisted` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `tls_alpn_npn_server.endpoint` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "tls_alpn_npn_server.endpoint",
+            "endpoint"
+          ],
+          "sites": [
+            {
+              "file": "scrapy/core/downloader/handlers/http11.py",
+              "line": 320,
+              "excerpt": "endpoint: TCP4ClientEndpoint,",
+              "matchedSymbol": "endpoint",
+              "confidence": "medium"
+            },
+            {
+              "file": "scrapy/core/downloader/handlers/http11.py",
+              "line": 333,
+              "excerpt": "endpoint=endpoint,",
+              "matchedSymbol": "endpoint",
+              "confidence": "medium"
+            },
+            {
+              "file": "scrapy/core/downloader/handlers/http11.py",
+              "line": 375,
+              "excerpt": "endpoint=self._getEndpoint(self._proxyURI),  # type: ignore[no-untyped-call]",
+              "matchedSymbol": "endpoint",
+              "confidence": "medium"
+            },
+            {
+              "file": "scrapy/core/http2/agent.py",
+              "line": 51,
+              "excerpt": "self, key: ConnectionKeyT, uri: URI, endpoint: HostnameEndpoint",
+              "matchedSymbol": "endpoint",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `gtk3reactor.install` changed.",
+          "remediation": "The signature of `gtk3reactor.install` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: def install() defaults=0\n  after:  install",
+          "confidence": "high",
+          "symbols": [
+            "gtk3reactor.install",
+            "install"
+          ],
+          "sites": [
+            {
+              "file": "scrapy/utils/reactor.py",
+              "line": 123,
+              "excerpt": "asyncioreactor.install(eventloop=event_loop)",
+              "matchedSymbol": "install",
+              "confidence": "medium"
+            },
+            {
+              "file": "tests/AsyncCrawlerProcess/asyncio_enabled_reactor_different_loop.py",
+              "line": 11,
+              "excerpt": "asyncioreactor.install()",
+              "matchedSymbol": "install",
+              "confidence": "medium"
+            },
+            {
+              "file": "tests/AsyncCrawlerProcess/asyncio_enabled_reactor_same_loop_default.py",
+              "line": 13,
+              "excerpt": "asyncioreactor.install(loop)",
+              "matchedSymbol": "install",
+              "confidence": "medium"
+            },
+            {
+              "file": "tests/AsyncCrawlerProcess/asyncio_enabled_reactor_same_loop.py",
+              "line": 13,
+              "excerpt": "asyncioreactor.install(asyncio.get_event_loop())",
+              "matchedSymbol": "install",
+              "confidence": "medium"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "w3lib",
+      "ecosystem": "pypi",
+      "current": "1.17.0",
+      "latest": "2.4.1",
+      "selected": "2.4.1",
+      "safeLatest": "2.4.1",
+      "status": "ready",
+      "risk": "high",
+      "summary": "Manual migration required. 29 places in this repository use an API that w3lib changed.",
+      "recommendation": "manual-migration-required",
+      "breakingCount": 13,
+      "impactCount": 29,
+      "impactFiles": 9,
+      "evidenceCount": 6,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `http.basic_auth_header` changed.",
+          "remediation": "The signature of `http.basic_auth_header` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: def basic_auth_header(username, password) defaults=0\n  after:  def basic_auth_header(username, password, encoding) defaults=1",
+          "confidence": "high",
+          "symbols": [
+            "http.basic_auth_header",
+            "basic_auth_header"
+          ],
+          "sites": [
+            {
+              "file": "scrapy/downloadermiddlewares/httpauth.py",
+              "line": 12,
+              "excerpt": "from w3lib.http import basic_auth_header",
+              "matchedSymbol": "basic_auth_header",
+              "confidence": "high"
+            },
+            {
+              "file": "scrapy/downloadermiddlewares/httpauth.py",
+              "line": 49,
+              "excerpt": "o._auth = basic_auth_header(usr, pwd)",
+              "matchedSymbol": "basic_auth_header",
+              "confidence": "high"
+            },
+            {
+              "file": "scrapy/downloadermiddlewares/httpauth.py",
+              "line": 66,
+              "excerpt": "self._auth = basic_auth_header(usr, pwd)",
+              "matchedSymbol": "basic_auth_header",
+              "confidence": "high"
+            },
+            {
+              "file": "scrapy/downloadermiddlewares/httpauth.py",
+              "line": 81,
+              "excerpt": "request.headers[b\"Authorization\"] = basic_auth_header(usr, pwd)",
+              "matchedSymbol": "basic_auth_header",
+              "confidence": "high"
+            }
+          ]
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `url.safe_url_string` changed.",
+          "remediation": "The signature of `url.safe_url_string` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: def safe_url_string(url, encoding, path_encoding) defaults=2\n  after:  def safe_url_string(url, encoding, path_encoding, quote_path) defaults=3",
+          "confidence": "high",
+          "symbols": [
+            "url.safe_url_string",
+            "safe_url_string"
+          ],
+          "sites": [
+            {
+              "file": "scrapy/downloadermiddlewares/redirect.py",
+              "line": 7,
+              "excerpt": "from w3lib.url import safe_url_string",
+              "matchedSymbol": "safe_url_string",
+              "confidence": "high"
+            },
+            {
+              "file": "scrapy/downloadermiddlewares/redirect.py",
+              "line": 224,
+              "excerpt": "location = safe_url_string(response.headers[\"Location\"])",
+              "matchedSymbol": "safe_url_string",
+              "confidence": "high"
+            },
+            {
+              "file": "scrapy/http/request/__init__.py",
+              "line": 22,
+              "excerpt": "from w3lib.url import safe_url_string",
+              "matchedSymbol": "safe_url_string",
+              "confidence": "high"
+            },
+            {
+              "file": "scrapy/http/request/__init__.py",
+              "line": 269,
+              "excerpt": "self._url = safe_url_string(url, self.encoding)",
+              "matchedSymbol": "safe_url_string",
+              "confidence": "high"
+            }
+          ]
+        },
+        {
+          "kind": "behaviour-change",
+          "summary": "`canonicalize_url` no longer applies lowercase to the userinfo URL component",
+          "remediation": "Behaviour changed: `canonicalize_url` no longer applies lowercase to the userinfo URL component. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
+          "confidence": "medium",
+          "symbols": [
+            "canonicalize_url"
+          ],
+          "sites": [
+            {
+              "file": "scrapy/linkextractors/lxmlhtml.py",
+              "line": 18,
+              "excerpt": "from w3lib.url import canonicalize_url, safe_url_string",
+              "matchedSymbol": "canonicalize_url",
+              "confidence": "high"
+            },
+            {
+              "file": "scrapy/linkextractors/lxmlhtml.py",
+              "line": 57,
+              "excerpt": "return canonicalize_url(link.url, keep_fragments=True)",
+              "matchedSymbol": "canonicalize_url",
+              "confidence": "high"
+            },
+            {
+              "file": "scrapy/linkextractors/lxmlhtml.py",
+              "line": 399,
+              "excerpt": "link.url = canonicalize_url(link.url)",
+              "matchedSymbol": "canonicalize_url",
+              "confidence": "high"
+            },
+            {
+              "file": "scrapy/utils/request.py",
+              "line": 15,
+              "excerpt": "from w3lib.url import canonicalize_url",
+              "matchedSymbol": "canonicalize_url",
+              "confidence": "high"
+            }
+          ]
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`form.encode_multipart` is no longer exported (was a function).",
+          "remediation": "Every use of `form.encode_multipart` from `w3lib` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `form.encode_multipart` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "form.encode_multipart",
+            "encode_multipart"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "protego",
+      "ecosystem": "pypi",
+      "current": "0.1.15",
+      "latest": "0.6.2",
+      "selected": "0.6.2",
+      "safeLatest": "0.6.2",
+      "status": "ready",
+      "risk": "high",
+      "summary": "Manual migration required. 2 places in this repository use an API that protego changed.",
+      "recommendation": "manual-migration-required",
+      "breakingCount": 5,
+      "impactCount": 2,
+      "impactFiles": 1,
+      "evidenceCount": 5,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`protego.Protego` is no longer exported (was a class).",
+          "remediation": "Every use of `protego.Protego` from `protego` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `protego.Protego` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "protego.Protego",
+            "Protego"
+          ],
+          "sites": [
+            {
+              "file": "scrapy/robotstxt.py",
+              "line": 9,
+              "excerpt": "from protego import Protego",
+              "matchedSymbol": "Protego",
+              "confidence": "high"
+            },
+            {
+              "file": "scrapy/robotstxt.py",
+              "line": 130,
+              "excerpt": "self.rp = Protego.parse(body_decoded)",
+              "matchedSymbol": "Protego",
+              "confidence": "high"
+            }
+          ]
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`protego.RequestRate` is no longer exported (was a variable).",
+          "remediation": "Every use of `protego.RequestRate` from `protego` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `protego.RequestRate` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "protego.RequestRate",
+            "RequestRate"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "runtime-requirement",
+          "summary": "Dropped support for Python 3",
+          "remediation": "Dropped support for Python 3. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
+          "confidence": "medium",
+          "symbols": [
+            "Python 3"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "runtime-requirement",
+          "summary": "Dropped support for Python 2",
+          "remediation": "Dropped support for Python 2. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
+          "confidence": "medium",
+          "symbols": [
+            "Python 2"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "pyopenssl",
+      "ecosystem": "pypi",
+      "current": "22.0.0",
+      "latest": "26.4.0",
+      "selected": "26.4.0",
+      "safeLatest": "26.4.0",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Upgrade recommended. 27 upstream breaking changes, none of which this repository uses; fixes 2 known vulnerabilities.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 27,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [
+        "Drift read the changelog for pyopenssl 26.4.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`SSL.OP_COOKIE_EXCHANGE` is no longer exported (was a variable).",
+          "remediation": "Every use of `SSL.OP_COOKIE_EXCHANGE` from `pyopenssl` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `SSL.OP_COOKIE_EXCHANGE` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "SSL.OP_COOKIE_EXCHANGE",
+            "OP_COOKIE_EXCHANGE"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `SSL.SSLeay_version` changed.",
+          "remediation": "The signature of `SSL.SSLeay_version` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: def SSLeay_version(type) defaults=0\n  after:  SSLeay_version",
+          "confidence": "high",
+          "symbols": [
+            "SSL.SSLeay_version",
+            "SSLeay_version"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`SSL.SSLv2_METHOD` is no longer exported (was a variable).",
+          "remediation": "Every use of `SSL.SSLv2_METHOD` from `pyopenssl` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `SSL.SSLv2_METHOD` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "SSL.SSLv2_METHOD",
+            "SSLv2_METHOD"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`SSL.SSLv3_METHOD` is no longer exported (was a variable).",
+          "remediation": "Every use of `SSL.SSLv3_METHOD` from `pyopenssl` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `SSL.SSLv3_METHOD` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "SSL.SSLv3_METHOD",
+            "SSLv3_METHOD"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "cssselect",
+      "ecosystem": "pypi",
+      "current": "0.9.1",
+      "latest": "1.5.0",
+      "selected": "1.5.0",
+      "safeLatest": "1.5.0",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Safe to upgrade. 13 upstream breaking changes, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 13,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [
+        "No release notes, changelog, or migration guide was reachable for cssselect 1.5.0."
+      ],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`VERSION` is no longer exported (was a variable).",
+          "remediation": "Every use of `VERSION` from `cssselect` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `VERSION` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "VERSION"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`__version__` is no longer exported (was a variable).",
+          "remediation": "Every use of `__version__` from `cssselect` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `__version__` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "__version__"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`conf.copyright` is no longer exported (was a variable).",
+          "remediation": "Every use of `conf.copyright` from `cssselect` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `conf.copyright` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "conf.copyright",
+            "copyright"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`parser.FunctionalPseudoElement.specificity` was removed.",
+          "remediation": "The member `parser.FunctionalPseudoElement.specificity` no longer exists in `cssselect`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "symbols": [
+            "parser.FunctionalPseudoElement.specificity",
+            "specificity",
+            "FunctionalPseudoElement.specificity"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "parsel",
+      "ecosystem": "pypi",
+      "current": "1.5.0",
+      "latest": "1.11.0",
+      "selected": "1.11.0",
+      "safeLatest": "1.11.0",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Safe to upgrade. 11 upstream breaking changes, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 11,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [
+        "No release notes, changelog, or migration guide was reachable for parsel 1.11.0."
+      ],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`__author__` is no longer exported (was a variable).",
+          "remediation": "Every use of `__author__` from `parsel` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `__author__` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "__author__"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`__email__` is no longer exported (was a variable).",
+          "remediation": "Every use of `__email__` from `parsel` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `__email__` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "__email__"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`__version__` is no longer exported (was a variable).",
+          "remediation": "Every use of `__version__` from `parsel` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `__version__` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "__version__"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`conf.copyright` is no longer exported (was a variable).",
+          "remediation": "Every use of `conf.copyright` from `parsel` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `conf.copyright` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "conf.copyright",
+            "copyright"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "itemadapter",
+      "ecosystem": "pypi",
+      "current": "0.1.0",
+      "latest": "0.13.1",
+      "selected": "0.13.1",
+      "safeLatest": "0.13.1",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Safe to upgrade. 4 upstream breaking changes, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 4,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [
+        "Drift read 11 sets of release notes for itemadapter 0.13.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`__version__` is no longer exported (was a variable).",
+          "remediation": "Every use of `__version__` from `itemadapter` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `__version__` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "__version__"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`utils.is_attrs_instance` is no longer exported (was a function).",
+          "remediation": "Every use of `utils.is_attrs_instance` from `itemadapter` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `utils.is_attrs_instance` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "utils.is_attrs_instance",
+            "is_attrs_instance"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`utils.is_dataclass_instance` is no longer exported (was a function).",
+          "remediation": "Every use of `utils.is_dataclass_instance` from `itemadapter` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `utils.is_dataclass_instance` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "utils.is_dataclass_instance",
+            "is_dataclass_instance"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`utils.is_scrapy_item` is no longer exported (was a function).",
+          "remediation": "Every use of `utils.is_scrapy_item` from `itemadapter` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `utils.is_scrapy_item` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "utils.is_scrapy_item",
+            "is_scrapy_item"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "itemloaders",
+      "ecosystem": "pypi",
+      "current": "1.0.1",
+      "latest": "1.4.0",
+      "selected": "1.4.0",
+      "safeLatest": "1.4.0",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Upgrade recommended. 1 upstream breaking change, none of which this repository uses.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 1,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "runtime-requirement",
+          "summary": "Dropped support for Python 3",
+          "remediation": "Dropped support for Python 3. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
+          "confidence": "medium",
+          "symbols": [
+            "Python 3"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "defusedxml",
+      "ecosystem": "pypi",
+      "current": "0.7.1",
+      "latest": "0.8.0",
+      "selected": "0.8.0",
+      "safeLatest": "0.8.0",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. No release notes, changelog, or migration guide was reachable for defusedxml 0.8.0.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "No release notes, changelog, or migration guide was reachable for defusedxml 0.8.0."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "lxml",
+      "ecosystem": "pypi",
+      "current": "4.6.4",
+      "latest": "7.0.0",
+      "selected": "7.0.0",
+      "safeLatest": "7.0.0",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Upgrade recommended. Fixes 3 known vulnerabilities.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "No release notes, changelog, or migration guide was reachable for lxml 7.0.0."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "queuelib",
+      "ecosystem": "pypi",
+      "current": "1.6.1",
+      "latest": "1.9.0",
+      "selected": "1.9.0",
+      "safeLatest": "1.9.0",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. No release notes, changelog, or migration guide was reachable for queuelib 1.9.0.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "No release notes, changelog, or migration guide was reachable for queuelib 1.9.0."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "service-identity",
+      "ecosystem": "pypi",
+      "current": "23.1.0",
+      "latest": "26.1.0",
+      "selected": "26.1.0",
+      "safeLatest": "26.1.0",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift read 3 sets of release notes and the changelog for service-identity 26.1.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read 3 sets of release notes and the changelog for service-identity 26.1.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "zope-interface",
+      "ecosystem": "pypi",
+      "current": "5.1.0",
+      "latest": "8.5.0",
+      "selected": "8.5.0",
+      "safeLatest": "8.5.0",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Upgrade recommended. Drift read the changelog for zope-interface 8.5.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read the changelog for zope-interface 8.5.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    }
+  ],
+  "audit": {
+    "checked": 14,
+    "analysed": 0,
+    "findings": []
+  }
+}
