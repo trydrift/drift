@@ -17,6 +17,8 @@ import { main as serveWebhook } from './runners/webhook.js';
 import { sampleTelemetryEvent } from './telemetry.js';
 import { createLogger, type LogLevel, type Logger } from './util/logger.js';
 import { dispatchRemainingToCopilot, runFix } from './remediation/cli-runner.js';
+import { installUpgrade, scanUpgrades, upgradeCommandFor } from './upgrade/scan.js';
+import { describeSeverity, scanTitle, severityOf } from './upgrade/severity.js';
 
 const run = promisify(execFile);
 
@@ -194,12 +196,29 @@ drift — dependency changes, proven and fixed
 
 Usage:
   drift analyze [options]     Analyse a local repository and print the report
+  drift outdated [options]    Scan for available upgrades, not just past ones
   drift fix [options]         Analyse, then apply the fixes and push a branch
   drift pr [options]          Push the current branch and open a pull request
   drift action                Run as a GitHub Action (reads INPUT_* env vars)
   drift serve                 Run the self-hosted webhook server
   drift telemetry print       Print the exact telemetry event shape
   drift --version             Print the version
+
+Options for \`outdated\`:
+  --repo <owner/name>         Repository label for output. Default: git remote
+  --dir <path>                Local checkout to scan.    Default: cwd
+  --dev                       Also check dev/optional/peer dependencies
+  --upgrade <name>             Install the recommended version for one
+                              package found by the scan (writes the
+                              manifest/lockfile locally — run \`drift
+                              analyze\`/\`fix\` afterwards)
+  --force                     With --upgrade, ignore the declared range and
+                              take the true latest, not just the safe one
+  --token <token>             Optional, only to raise the public API rate
+                              limit. Default: $GITHUB_TOKEN, then \`gh auth token\`
+  --config <path>             Config file. Default: .github/drift.yml
+  --json                      Emit the full scan result as JSON
+  --log-level <level>         debug | info | warn | error. Default: info
 
 Options for \`analyze\`:
   --repo <owner/name>         Repository to analyse. Default: the git remote
@@ -240,7 +259,11 @@ Options for \`pr\`:
 
 \`analyze\` never writes anything: no branches, no issues, no agent tasks — and
 reads the local checkout directly, like the VS Code extension, so it never
-needs a token.
+needs a token. \`outdated\` is the same idea aimed the other direction: instead
+of a commit range that already changed a manifest, it checks every direct
+dependency against its registry for a version that could — the same "Scan
+Dependencies" check the extension runs. It never writes either, except when
+given --upgrade, and even then only a local manifest/lockfile edit.
 \`fix\` applies the plan in an isolated git worktree — your working tree is
 never touched — using, per commit, Drift's own deterministic fix, then (if
 enabled) a community recipe, then an AI agent, in that order; it pushes a
@@ -275,6 +298,8 @@ export async function main(argv: string[]): Promise<number> {
     case 'analyze':
     case 'analyse':
       return analyzeCommand(parseFlags(rest));
+    case 'outdated':
+      return outdatedCommand(parseFlags(rest));
     case 'fix':
       return fixCommand(parseFlags(rest));
     case 'pr':
@@ -413,6 +438,124 @@ async function analyzeCommand(flags: Flags): Promise<number> {
   }
 
   return 0;
+}
+
+/**
+ * Scan every direct dependency for a newer published version — not "what
+ * changed", which `analyze` answers for a specific commit range, but "what
+ * *could* change": the same check the VS Code extension's "Scan Dependencies"
+ * runs, over `src/upgrade/scan.ts`, shared so both surfaces find the same
+ * upgrades and reach the same verdict on each one.
+ *
+ * Read-only, like `analyze`: nothing here edits a manifest or installs
+ * anything. `drift outdated --upgrade <name>` is the one exception, and even
+ * that only writes the manifest/lockfile locally — the same uncommitted edit
+ * `npm install <pkg>@<version>` would leave, which `analyze`/`fix` already
+ * know how to pick up via their own working-tree detection.
+ */
+async function outdatedCommand(flags: Flags): Promise<number> {
+  const logLevel = (typeof flags['log-level'] === 'string' ? flags['log-level'] : 'info') as LogLevel;
+  const logger = createLogger(logLevel);
+
+  const workspace = resolve(typeof flags.dir === 'string' ? flags.dir : process.cwd());
+  const token = await resolveGitHubToken(flags);
+
+  const slug = typeof flags.repo === 'string' ? flags.repo : await detectRepoSlug(workspace);
+  const [owner, repoName] = slug ? slug.split('/') : ['local', 'workspace'];
+  if (slug && (!owner || !repoName)) {
+    logger.error(`Invalid repository "${slug}". Expected owner/name.`);
+    return 1;
+  }
+
+  const head = (await gitRev(workspace, 'HEAD')) ?? 'HEAD';
+  const branch = (await gitRev(workspace, '--abbrev-ref HEAD')) ?? 'main';
+  const repo: RepoContext = {
+    owner: owner!,
+    repo: repoName!,
+    baseBranch: branch,
+    beforeSha: head,
+    afterSha: head,
+    workspace,
+  };
+
+  const { config, path, problems } = await loadConfig(async (candidate) => {
+    const target = typeof flags.config === 'string' ? flags.config : candidate;
+    try {
+      return await readFile(resolve(workspace, target), 'utf8');
+    } catch {
+      return null;
+    }
+  });
+  for (const problem of problems) logger.warn(problem);
+  if (path) logger.info(`Using config from ${path}`);
+
+  logger.info(`Scanning ${owner}/${repoName} for available upgrades`);
+
+  const result = await scanUpgrades({
+    root: workspace,
+    repo,
+    config,
+    logger,
+    githubToken: token || undefined,
+    breadth: { includeDev: Boolean(flags.dev), maxSites: 40, maxPackages: 0 },
+    onProgress: (progress) => logger.debug(`${progress.phase}: ${progress.detail}`),
+  });
+
+  for (const ambiguity of result.ambiguities) {
+    logger.warn(
+      `${ambiguity.dir || '.'}: multiple package managers claim ${ambiguity.ecosystem} ` +
+        `(${ambiguity.candidates.map((c) => c.manager.id).join(', ')}); using ${ambiguity.candidates[0]!.manager.id}`,
+    );
+  }
+
+  if (typeof flags.upgrade === 'string') {
+    const candidate = result.candidates.find((c) => c.name === flags.upgrade);
+    if (!candidate) {
+      logger.error(`${flags.upgrade} is not an outdated direct dependency in this repository.`);
+      return 1;
+    }
+    const command = upgradeCommandFor(candidate, flags.force ? 'force' : 'safe');
+    if (!command) {
+      logger.error(
+        `${candidate.packageManager} cannot pin a version from the command line. Edit ${candidate.manifestPath} ` +
+          `to require ${candidate.name} ${candidate.selected} by hand.`,
+      );
+      return 1;
+    }
+    logger.info(`Running: ${command}`);
+    await installUpgrade(workspace, candidate, flags.force ? 'force' : 'safe');
+    console.log(
+      `\nUpgraded ${candidate.name} to ${candidate.selected}. The manifest/lockfile edit is uncommitted — ` +
+        `run \`drift analyze\` or \`drift fix\` to check it for breaking changes and open a pull request.\n`,
+    );
+    return 0;
+  }
+
+  if (flags.json) {
+    console.log(JSON.stringify(result, null, 2));
+    return result.candidates.some((c) => severityOf(c) === 'affected') ? 1 : 0;
+  }
+
+  if (result.checked === 0) {
+    console.log('\nNo direct dependencies found to check.\n');
+    return 0;
+  }
+
+  console.log(`\n${scanTitle(result.candidates, result.checked)}\n`);
+
+  for (const candidate of result.candidates) {
+    const versionLabel =
+      candidate.selected === candidate.latest
+        ? `${candidate.current} → ${candidate.selected}`
+        : `${candidate.current} → ${candidate.selected} (latest ${candidate.latest})`;
+    console.log(`${candidate.name} ${versionLabel}`);
+    console.log(`  ${describeSeverity(candidate)}`);
+    if (candidate.summary) console.log(`  ${candidate.summary}`);
+    console.log(`  Run: drift outdated --upgrade ${candidate.name}\n`);
+  }
+
+  const affected = result.candidates.filter((c) => severityOf(c) === 'affected').length;
+  return affected > 0 ? 1 : 0;
 }
 
 /**
