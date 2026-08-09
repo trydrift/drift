@@ -216,13 +216,13 @@ function rejectionReason(
   const zeroVerBreaking = isZeroVerBreaking(change.from, change.to);
 
   if (change.bump === 'major' && !config.triggerOn.major) {
-    return 'major bumps are disabled in drift.yml';
+    return 'major bumps are disabled in drift.yml (enable `triggerOn.major` to include these)';
   }
   if (change.bump === 'minor' && !config.triggerOn.minor && !zeroVerBreaking) {
-    return 'minor bumps are disabled in drift.yml';
+    return 'minor bumps are disabled in drift.yml (enable `triggerOn.minor` to include these)';
   }
   if (change.bump === 'patch' && !config.triggerOn.patch) {
-    return 'patch bumps are disabled in drift.yml';
+    return 'patch bumps are disabled in drift.yml (enable `triggerOn.patch` to include these)';
   }
   if (change.bump === 'prerelease' && !config.triggerOn.patch) {
     return 'prerelease moves are disabled in drift.yml (enable `triggerOn.patch`)';

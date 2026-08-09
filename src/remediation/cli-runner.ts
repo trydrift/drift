@@ -9,6 +9,7 @@ import { executeCommunityRecipe } from './execute-recipe.js';
 import { dispatchToCopilot } from '../dispatch/copilot.js';
 import { planForCommits } from './partition.js';
 import type { CommunityRecipeCandidate } from './types.js';
+import { ask as defaultAsk } from '../util/prompt.js';
 
 /**
  * `drift fix`: apply a plan's commits through the same three-tier priority
@@ -159,22 +160,6 @@ async function shouldUseRecipe(args: {
     ['Use community recipe', 'Continue with AI'],
   );
   return /^use/i.test(answer);
-}
-
-async function defaultAsk(question: string, options: string[]): Promise<string> {
-  if (!process.stdin.isTTY) return options[options.length - 1]!;
-
-  const { createInterface } = await import('node:readline/promises');
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  try {
-    console.log(`\n${question}`);
-    options.forEach((option, index) => console.log(`  [${index + 1}] ${option}`));
-    const answer = await rl.question('> ');
-    const index = Number.parseInt(answer.trim(), 10);
-    return Number.isInteger(index) && options[index - 1] ? options[index - 1]! : options[options.length - 1]!;
-  } finally {
-    rl.close();
-  }
 }
 
 async function applyBuiltinCommit(

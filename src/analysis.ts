@@ -115,19 +115,22 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   }
 
   const changes = labelWorkspaces(detectChanges(snapshots), layouts);
-  logger.info(`Detected ${changes.length} dependency change(s)`);
 
   if (changes.length === 0) {
     return empty('Manifests changed, but no dependency versions moved.');
   }
 
+  logger.info(`Detected ${changes.length} dependency change(s)`);
+
   /* Stage 2 — triage */
   const { actionable, skipped } = triage(changes, config);
-  for (const entry of skipped) logger.info(`Skipping ${entry.change.name}: ${entry.reason}`);
+  for (const entry of skipped) logger.info(`  - ${entry.change.name}: skipped — ${entry.reason}`);
 
   if (actionable.length === 0) {
     return empty(
-      `${changes.length} dependency change(s) found, none matching the analysis criteria in drift.yml.`,
+      changes.length === 1
+        ? `The 1 dependency change found doesn't match the analysis criteria in drift.yml (see reason above).`
+        : `None of the ${changes.length} dependency changes found match the analysis criteria in drift.yml (see reasons above).`,
     );
   }
   progress('triage', `${actionable.length} change(s) to analyse`);

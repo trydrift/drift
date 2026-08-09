@@ -19,6 +19,7 @@ import { createLogger, type LogLevel, type Logger } from './util/logger.js';
 import { dispatchRemainingToCopilot, runFix } from './remediation/cli-runner.js';
 import { installUpgrade, scanUpgrades, upgradeCommandFor } from './upgrade/scan.js';
 import { describeSeverity, scanTitle, severityOf } from './upgrade/severity.js';
+import { ask } from './util/prompt.js';
 
 const run = promisify(execFile);
 
@@ -551,7 +552,33 @@ async function outdatedCommand(flags: Flags): Promise<number> {
     console.log(`${candidate.name} ${versionLabel}`);
     console.log(`  ${describeSeverity(candidate)}`);
     if (candidate.summary) console.log(`  ${candidate.summary}`);
-    console.log(`  Run: drift outdated --upgrade ${candidate.name}\n`);
+    if (!process.stdin.isTTY) console.log(`  Run: drift outdated --upgrade ${candidate.name}`);
+    console.log();
+  }
+
+  if (result.candidates.length > 0 && process.stdin.isTTY) {
+    const choice = await ask(
+      'Upgrade one of these now?',
+      [...result.candidates.map((c) => c.name), 'Skip'],
+      'Skip',
+    );
+    const picked = result.candidates.find((c) => c.name === choice);
+    if (picked) {
+      const command = upgradeCommandFor(picked, 'safe');
+      if (!command) {
+        logger.error(
+          `${picked.packageManager} cannot pin a version from the command line. Edit ${picked.manifestPath} ` +
+            `to require ${picked.name} ${picked.selected} by hand.`,
+        );
+        return 1;
+      }
+      logger.info(`Running: ${command}`);
+      await installUpgrade(workspace, picked, 'safe');
+      console.log(
+        `\nUpgraded ${picked.name} to ${picked.selected}. The manifest/lockfile edit is uncommitted — ` +
+          `run \`drift analyze\` or \`drift fix\` to check it for breaking changes and open a pull request.\n`,
+      );
+    }
   }
 
   const affected = result.candidates.filter((c) => severityOf(c) === 'affected').length;
