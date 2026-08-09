@@ -19,6 +19,8 @@ import {
   VERDICT_TEXT,
 } from './confidence.js';
 import { PLAN_SCHEMA_VERSION, planDigest } from '../approval/digest.js';
+import { renderAudit } from './audit.js';
+import type { AuditResult } from '../audit/types.js';
 import { renderApprovalMetadata } from '../approval/metadata.js';
 
 /**
@@ -48,8 +50,20 @@ const RISK_BADGE: Record<string, string> = {
   high: '🔴 high',
 };
 
-/** Body for the pull request Copilot opens. */
-export function renderPullRequestBody(plan: RemediationPlan, config: DriftConfig): string {
+/**
+ * Body for the pull request Copilot opens.
+ *
+ * `audit` is optional because most callers have a plan and nothing else — the
+ * approval flow reconstructs one from a filed issue, for instance, and has no
+ * checkout to audit. When it is present it goes near the top, above the
+ * proposal: findings that are already true outrank findings that would become
+ * true if this pull request merged.
+ */
+export function renderPullRequestBody(
+  plan: RemediationPlan,
+  config: DriftConfig,
+  audit?: AuditResult,
+): string {
   const sections: string[] = [];
 
   sections.push(renderHeader(plan));
@@ -57,6 +71,8 @@ export function renderPullRequestBody(plan: RemediationPlan, config: DriftConfig
 
   if (plan.blockers.length > 0) sections.push(renderBlockers(plan));
   if (plan.warnings.length > 0) sections.push(renderWarnings(plan));
+
+  sections.push(renderAudit(audit));
 
   sections.push(renderBreakingChanges(plan));
   sections.push(renderRationale(plan));
@@ -72,10 +88,15 @@ export function renderPullRequestBody(plan: RemediationPlan, config: DriftConfig
 }
 
 /** Body for the approval issue posted in `approve` mode. */
-export function renderApprovalIssue(plan: RemediationPlan, config: DriftConfig): string {
+export function renderApprovalIssue(
+  plan: RemediationPlan,
+  config: DriftConfig,
+  audit?: AuditResult,
+): string {
   const sections: string[] = [];
 
   sections.push('## Drift found breaking changes that need your call');
+  sections.push(renderAudit(audit));
   sections.push(
     plan.blockers.length > 0
       ? 'Drift analysed this dependency change and prepared a fix, then stopped. The reasons are listed below.'

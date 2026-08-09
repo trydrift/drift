@@ -90,6 +90,31 @@ export const DriftConfigSchema = z.object({
     })
     .default({}),
 
+  /**
+   * The present-tense question: is this code correct against what is *installed*?
+   *
+   * A manifest range is a standing instruction to a resolver, so the version on
+   * disk drifts ahead of the version the code was written against without
+   * anyone deciding that it should. The audit analyses that window — declared
+   * floor to installed version — and reports what already bites. See
+   * `src/audit/index.ts`.
+   *
+   * On by default, because the findings are about code that is wrong now
+   * rather than code that might be wrong later, and a developer who has to opt
+   * in to hearing that will not know to.
+   */
+  audit: z
+    .object({
+      enabled: z.boolean().default(true),
+      /** Audit dev, peer and optional dependencies too. */
+      includeDev: z.boolean().default(false),
+      /** Cap on dependencies examined. `0` means no cap. */
+      maxPackages: z.number().int().min(0).default(0),
+      /** Cap on affected locations recorded per finding. */
+      maxSites: z.number().int().min(1).max(500).default(40),
+    })
+    .default({}),
+
   /** Evidence-gathering knobs. */
   evidence: z
     .object({

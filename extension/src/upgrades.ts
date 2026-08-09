@@ -15,6 +15,7 @@ import type {
   UpgradeStatus,
 } from '../../src/upgrade/scan.js';
 import { envWithShellPath } from './shell-path.js';
+import { auditCurrentUsage, type AuditResult } from '../../src/audit/index.js';
 
 /**
  * The extension's half of dependency scanning: everything that actually needs
@@ -107,6 +108,38 @@ export async function scanUpgrades(args: {
     concurrency: concurrency(),
   });
 }
+
+/**
+ * The present-tense check, run over the workspace as it stands.
+ *
+ * Sits beside `scanUpgrades` because the two answer opposite halves of the
+ * same question and a developer wants both from one press: the scan says what
+ * would break if you moved forward, this says what is broken where you are.
+ * The versions come from the manifest and lockfile already in the checkout, so
+ * unlike the scan it needs no registry round trip per package to get started.
+ */
+export async function auditInstalled(args: {
+  root: string;
+  repo: RepoContext;
+  config: DriftConfig;
+  githubToken?: string;
+  includeDev?: boolean;
+  onProgress?: (phase: string, detail: string, done: number, total: number) => void;
+  token?: { isCancellationRequested: boolean };
+}): Promise<AuditResult> {
+  return auditCurrentUsage({
+    ...args,
+    logger: scanLogger(),
+    fs: vscodeWorkspaceFs(),
+    env: await envWithShellPath(),
+    concurrency: concurrency(),
+    maxSites: args.config.audit.maxSites,
+    maxPackages: args.config.audit.maxPackages,
+    includeDev: args.includeDev ?? args.config.audit.includeDev,
+  });
+}
+
+export type { AuditResult };
 
 export async function reanalyzeUpgrade(args: {
   candidate: UpgradeCandidate;

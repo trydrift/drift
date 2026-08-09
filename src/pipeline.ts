@@ -4,6 +4,7 @@ import type { Logger } from './util/logger.js';
 import type { GitHubClient } from './github/client.js';
 import type { RepoProvider } from './repo/provider.js';
 import { analyzeRepository } from './analysis.js';
+import type { AuditResult } from './audit/index.js';
 import { dispatch } from './dispatch/index.js';
 import { renderSummaryLine } from './report/markdown.js';
 import { buildUpgradeOutcomeEvent, sendTelemetryEvent, telemetryEnabled } from './telemetry.js';
@@ -52,13 +53,22 @@ export interface PipelineResult {
   plan: RemediationPlan | null;
   dispatch: DispatchResult;
   summary: string;
+  /**
+   * What is already broken against the installed versions.
+   *
+   * Carried through untouched from the analysis. Present-tense findings are
+   * never a reason to dispatch anything — nothing here has been proposed, so
+   * there is nothing to approve — but every surface that renders a run wants
+   * to say them, including the ones that reach a null plan.
+   */
+  audit?: AuditResult;
 }
 
 export async function runPipeline(options: PipelineOptions): Promise<PipelineResult> {
   const { repo, config, logger, github, copilotToken, githubToken, dryRun, approved } = options;
   const started = Date.now();
 
-  const { plan, summary } = await logger.group('Drift: analysing', () =>
+  const { plan, summary, audit } = await logger.group('Drift: analysing', () =>
     analyzeRepository({
       repo,
       config,
@@ -76,6 +86,7 @@ export async function runPipeline(options: PipelineOptions): Promise<PipelineRes
       plan: null,
       dispatch: { status: 'skipped', planId: 'none', message: summary },
       summary,
+      ...(audit ? { audit } : {}),
     };
   }
 
@@ -83,7 +94,7 @@ export async function runPipeline(options: PipelineOptions): Promise<PipelineRes
   for (const blocker of plan.blockers) logger.warn(`Blocker: ${blocker}`);
 
   const result = await logger.group('Drift: dispatching', () =>
-    dispatch({ repo, plan, config, github, logger, copilotToken, dryRun, approved }),
+    dispatch({ repo, plan, config, github, logger, copilotToken, dryRun, approved, ...(audit ? { audit } : {}) }),
   );
 
   logger.info(result.message);
@@ -98,7 +109,7 @@ export async function runPipeline(options: PipelineOptions): Promise<PipelineRes
     logger,
   });
 
-  return { plan, dispatch: result, summary: result.message };
+  return { plan, dispatch: result, summary: result.message, ...(audit ? { audit } : {}) };
 }
 
 /**

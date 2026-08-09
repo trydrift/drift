@@ -117,6 +117,40 @@ Runs the full pipeline against your working tree and prints the report. Creates 
 branches, no issues, no agent tasks — there is no code path in `analyze` that
 writes anything.
 
+### The question the other tools don't ask
+
+`analyze` looks at a version move that already happened. `outdated` looks at one
+that could. Both are about a version you are not running.
+
+```bash
+drift audit
+```
+
+`audit` asks about the present: **given the dependency tree on disk right now,
+is your code correct against it?** Usually not, and it isn't anyone's fault. A
+range like `^4.0.0` is a standing instruction to install anything on 4.x, so a
+resolver does — during a lockfile refresh nobody read. Your code still assumes
+the 4.x of the day it was written. Everything removed or re-specified in
+between is live in your repository today.
+
+So Drift analyses that window — from the oldest version your range admits to
+the version actually installed — with the same evidence, the same
+breaking-change analysis, and the same import-graph localization it uses
+everywhere else. The findings are present tense. **They will not go away by
+upgrading.**
+
+It also reports any dependency whose installed version does not satisfy its own
+declared range, because a clean install elsewhere would not reproduce your tree.
+
+`drift analyze` runs the same audit and includes it in its report, above the
+plan. The VS Code extension runs it after "Scan Dependencies" and flags each
+site inline in the Problems panel — worded so an already-broken call never
+reads like a hypothetical one. The Action writes it into the job summary and
+the pull request body, even on runs where no manifest changed.
+
+Configure it under `audit:` in `drift.yml` (`enabled`, `includeDev`,
+`maxPackages`, `maxSites`); it is on by default.
+
 Once you're ready to act on the plan:
 
 ```bash
