@@ -1,8 +1,8 @@
 import { instrumentSerif } from "@/lib/fonts";
 import { Demo } from "@/components/demo";
+import { Pipeline } from "@/components/pipeline";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { loadRecordings } from "@/lib/load";
-import { ECOSYSTEM_LABEL } from "@/lib/recordings";
 
 /**
  * The landing page.
@@ -155,37 +155,10 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── How ─────────────────────────────────────────────────────── */}
-        <section id="how" className="scroll-mt-8 pt-16 sm:pt-24">
-          <h2 className={`${instrumentSerif.className} text-2xl text-landing sm:text-3xl`}>
-            How it works
-          </h2>
-          <ol className="mt-6 space-y-4">
-            <Step n={1} title="Detect">
-              Read the manifests and lockfiles and work out which versions actually moved — across{" "}
-              {Object.keys(ECOSYSTEM_LABEL).length}+ ecosystems, monorepo members included.
-            </Step>
-            <Step n={2} title="Evidence">
-              Gather citable facts: registry metadata, release notes, changelogs, and a computed
-              diff of the published API surface where the ecosystem allows one.
-            </Step>
-            <Step n={3} title="Analyze">
-              Decide which of those changes can break a consumer, and why. Nothing becomes a finding
-              without a piece of evidence behind it.
-            </Step>
-            <Step n={4} title="Localize">
-              Search only the files that import the dependency, for the symbols the evidence named.
-              The import graph is what keeps the report short enough to read.
-            </Step>
-            <Step n={5} title="Plan and fix">
-              One commit per concern, in dependency order — resolved by a deterministic codemod, a
-              community recipe, or an AI agent, in that order, and never silently.
-            </Step>
-          </ol>
-        </section>
+        <Pipeline />
 
         {/* ── Get it ──────────────────────────────────────────────────── */}
-        <section className="pt-16 sm:pt-24">
+        <section id="install" className="scroll-mt-8 pt-16 sm:pt-24">
           <h2 className={`${instrumentSerif.className} text-2xl text-landing sm:text-3xl`}>
             Three ways in
           </h2>
@@ -236,19 +209,5 @@ function Point({ title, children }: { title: string; children: React.ReactNode }
       <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       <p className="mt-2 text-[13px] leading-relaxed text-muted">{children}</p>
     </div>
-  );
-}
-
-function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
-  return (
-    <li className="flex gap-4">
-      <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border border-brand/30 bg-brand-soft font-mono text-xs text-brand-text">
-        {n}
-      </span>
-      <div>
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-        <p className="mt-1 max-w-2xl text-[13px] leading-relaxed text-muted">{children}</p>
-      </div>
-    </li>
   );
 }

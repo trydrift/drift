@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   viewportFit: "cover",
-  themeColor: "#0a0b0a",
+  themeColor: "#07100c",
 };
 
 /**
@@ -28,7 +28,7 @@ export const viewport: Viewport = {
  * renders, and tints the browser chrome to match so the status bar on a phone
  * does not sit as a bright seam above a dark page.
  */
-const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem('drift:theme');var d=t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');var m=document.querySelector('meta[name="theme-color"]');if(!m){m=document.createElement('meta');m.setAttribute('name','theme-color');document.head.appendChild(m);}m.setAttribute('content',d?'#0a0b0a':'#f6f7f4');}catch(e){}})();`;
+const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem('drift:theme');var d=t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');var m=document.querySelector('meta[name="theme-color"]');if(!m){m=document.createElement('meta');m.setAttribute('name','theme-color');document.head.appendChild(m);}m.setAttribute('content',d?'#07100c':'#f4faf6');}catch(e){}})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

@@ -72,6 +72,27 @@ does not bundle — Turbopack will not resolve across the project root. It is
 committed so a fresh checkout type-checks, and regenerated before anything is
 bundled, so a stale copy has a lifetime of zero builds.
 
+## Three things the panel does on purpose
+
+**It plays itself, once it can be seen.** A visitor should not have to work out
+that the panel is interactive before the product shows them anything — an
+argument that waits to be clicked mostly does not get made. But the demo sits
+below the fold, so autoplaying on load would finish the run into a viewport
+nobody was looking at. An `IntersectionObserver` starts it when the panel is
+actually on screen. Switching ecosystems remounts the component, which replays
+the new recording from its first event.
+
+**Every location is a permalink.** `file:line` links to that line in that
+repository at the commit that was analysed. "Trust us, line 130" is a claim; a
+link a reader opens in one click is evidence, and this page is not entitled to
+the first one.
+
+**The action buttons say they cannot act.** `Upgrade to 1.3.3` and `Fix 2 sites`
+are the extension's real affordances and belong in a demo of it, but a button
+that silently does nothing is the kind of small dishonesty a page about evidence
+cannot afford. Pressing one explains what it does in an editor and points at the
+install section.
+
 ## Local development
 
 ```bash
