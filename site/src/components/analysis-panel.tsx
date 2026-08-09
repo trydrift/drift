@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import {
   ECOSYSTEM_LABEL,
@@ -21,8 +21,8 @@ import { usePlayer } from "./use-player";
  * Modelled on the extension's dependency view, because the point of the demo is
  * to show what using Drift is actually like — a visitor who installs it after
  * watching this should recognise what they get. Same ordering (findings first),
- * same three verdicts, same insistence that "could not check" is its own answer
- * and not a quiet kind of safe.
+ * same verdicts, same insistence that "could not check" is its own answer and
+ * not a quiet kind of safe, and the same two actions offered on a row.
  *
  * Colour follows one rule, which is the reason the palette can be green at all:
  * green means checked and fine, amber means we could not see, and a finding is
@@ -31,15 +31,6 @@ import { usePlayer } from "./use-player";
  * exists to say.
  */
 
-/**
- * One rule: green is earned, amber is honest, and nothing is red.
- *
- * `upstream-only` gets the emphasis of a border without the brand fill — it is
- * the row that says "a hundred things changed and none of them are yours",
- * which deserves to be noticed but is not work. `unchecked` is the only amber
- * on the page, because "we could not see" is the one state a developer must
- * never mistake for a pass.
- */
 const VERDICT_STYLE: Record<UpgradeSeverity, string> = {
   affected: "border-brand/45 bg-brand-soft text-brand-text",
   "upstream-only": "border-border bg-surface-hover text-muted",
@@ -63,18 +54,77 @@ const CONFIDENCE_STYLE: Record<ImpactSite["confidence"], string> = {
   low: "bg-surface-hover text-faint",
 };
 
+/** Permalink to the exact line, at the exact commit that was analysed. */
+export function sourceUrl(recording: Recording, site: ImpactSite): string {
+  return `${recording.repo}/blob/${recording.commit}/${site.file}#L${site.line}`;
+}
+
 export function AnalysisPanel({ recording }: { recording: Recording }) {
   const { state, start, reset, currentEvent, speed } = usePlayer(recording);
   const totals = useMemo(() => totalsOf(recording), [recording]);
   const [open, setOpen] = useState<string | null>(null);
+  const [note, setNote] = useState(false);
+
+  const root = useRef<HTMLDivElement>(null);
+  const autoStarted = useRef(false);
+
+  /**
+   * Play it without being asked — but only once it can be seen.
+   *
+   * A visitor should not have to work out that the panel is interactive before
+   * the product will show them anything. The demo is the argument, and an
+   * argument that waits to be clicked mostly does not get made. Autoplaying
+   * blind would be worse though: the panel sits below the fold, so the whole
+   * run would finish into a viewport nobody was looking at, and the visitor
+   * would scroll down to a static list of results having missed the part that
+   * shows the work happening.
+   *
+   * Switching ecosystems remounts this component (see the `key` in `demo.tsx`),
+   * which resets the guard and plays the new recording from its first event —
+   * which is what "reselect a tab and watch it again" means.
+   */
+  useEffect(() => {
+    const node = root.current;
+    if (!node || autoStarted.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting || autoStarted.current) continue;
+          autoStarted.current = true;
+          observer.disconnect();
+          start();
+        }
+      },
+      // Enough of the panel to be worth watching, but low enough that a short
+      // viewport can still reach the threshold.
+      { threshold: 0.3 },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [start]);
+
+  const replay = () => {
+    setOpen(null);
+    setNote(false);
+    reset();
+    // One frame, so the reset paints before the run restarts — otherwise
+    // replaying a finished recording looks like nothing happened.
+    requestAnimationFrame(() => start());
+  };
 
   const done = state.phase === "done";
   const running = state.phase === "running";
   const visible = done ? recording.candidates : recording.candidates.slice(0, state.resolved);
+  const affected = recording.candidates.filter((c) => severityOf(c) === "affected");
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-surface/60 shadow-lg backdrop-blur-sm">
-      {/* Title bar — the editor chrome, so the panel reads as a tool and not a
+    <div
+      ref={root}
+      className="overflow-hidden rounded-2xl border border-border bg-surface/60 shadow-lg backdrop-blur-sm"
+    >
+      {/* Title bar — editor chrome, so the panel reads as a tool rather than a
           marketing card. */}
       <div className="flex items-center gap-3 border-b border-border bg-surface-hover/60 px-4 py-2.5">
         <div className="flex gap-1.5" aria-hidden>
@@ -93,17 +143,13 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
       {/* Status line */}
       <div className="border-b border-border px-4 py-3.5 sm:px-5">
         {state.phase === "idle" && (
-          <button
-            onClick={start}
-            className="group flex w-full items-center gap-3 text-left"
-            aria-label={`Replay Drift's analysis of ${recording.label}`}
-          >
+          <button onClick={start} className="group flex w-full items-center gap-3 text-left">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand text-brand-foreground transition-transform group-hover:scale-105">
               <PlayIcon />
             </span>
             <span className="min-w-0">
               <span className="block text-sm font-medium text-foreground">
-                Replay this analysis
+                Analysing {recording.label}…
               </span>
               <span className="block truncate text-xs text-faint">
                 {recording.packagesChecked} direct dependencies · recorded{" "}
@@ -117,9 +163,7 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
           <div className="flex items-center gap-3">
             <span className="size-2.5 shrink-0 rounded-full bg-brand orb" aria-hidden />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-foreground">
-                {currentEvent?.phase ?? "Starting"}
-              </p>
+              <p className="truncate text-sm text-foreground">{currentEvent?.phase ?? "Starting"}</p>
               <p className="truncate font-mono text-[11px] text-faint">
                 {currentEvent?.detail ?? recording.repo.replace("https://github.com/", "")}
               </p>
@@ -136,8 +180,7 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <p className="text-sm text-foreground">
               <span className="font-medium">{totals.packages}</span> packages ·{" "}
-              <span className="font-medium text-brand-text">{totals.affected}</span> affect this
-              code
+              <span className="font-medium text-brand-text">{totals.affected}</span> affect this code
               {totals.breaking > totals.sites && (
                 <span className="text-muted">
                   {" "}
@@ -146,12 +189,22 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
                 </span>
               )}
             </p>
-            <button
-              onClick={reset}
-              className="ml-auto rounded-md border border-border px-2.5 py-1 text-xs text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
-            >
-              Replay
-            </button>
+            <div className="ml-auto flex items-center gap-2">
+              {affected.length > 0 && (
+                <button
+                  onClick={() => setNote(true)}
+                  className="rounded-md bg-brand px-2.5 py-1 text-xs font-medium text-brand-foreground transition-colors hover:bg-brand-200"
+                >
+                  Fix all {affected.length} · {totals.sites} sites
+                </button>
+              )}
+              <button
+                onClick={replay}
+                className="rounded-md border border-border px-2.5 py-1 text-xs text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+              >
+                Replay
+              </button>
+            </div>
           </div>
         )}
 
@@ -172,6 +225,20 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
             />
           )}
         </div>
+
+        {/* Says plainly that the buttons cannot do anything here. A demo button
+            that silently does nothing is the kind of small dishonesty a page
+            about evidence cannot afford. */}
+        {note && (
+          <p className="animate-rise mt-3 rounded-lg border border-brand/25 bg-brand-soft px-3 py-2 text-xs leading-relaxed text-muted">
+            In your editor this opens a branch, applies every fix Drift can prove, and hands the rest
+            to your agent — one commit per concern.{" "}
+            <a href="#install" className="font-medium text-brand-text underline underline-offset-2">
+              Run it on your own repository
+            </a>{" "}
+            to see it act; this page is a recording, so there is nothing here to change.
+          </p>
+        )}
       </div>
 
       {/* Results */}
@@ -189,8 +256,10 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
             <PackageRow
               key={candidate.name}
               candidate={candidate}
+              recording={recording}
               expanded={open === candidate.name}
               onToggle={() => setOpen(open === candidate.name ? null : candidate.name)}
+              onAct={() => setNote(true)}
               interactive={done}
             />
           ))}
@@ -227,13 +296,17 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
 
 function PackageRow({
   candidate,
+  recording,
   expanded,
   onToggle,
+  onAct,
   interactive,
 }: {
   candidate: Candidate;
+  recording: Recording;
   expanded: boolean;
   onToggle: () => void;
+  onAct: () => void;
   interactive: boolean;
 }) {
   const verdict = severityOf(candidate);
@@ -283,12 +356,39 @@ function PackageRow({
         </span>
 
         {hasDetail && interactive && (
-          <ChevronIcon className={cn("shrink-0 text-faint transition-transform", expanded && "rotate-90")} />
+          <ChevronIcon
+            className={cn("shrink-0 text-faint transition-transform", expanded && "rotate-90")}
+          />
         )}
       </button>
 
       {expanded && (
         <div className="space-y-3 border-t border-border bg-surface-hover/30 px-4 py-4 sm:px-5">
+          {/* The two things a developer does next, in the extension's own
+              words: take the version, or fix what taking it would break. */}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={onAct}
+              className="rounded-md border border-border bg-surface px-2.5 py-1.5 font-mono text-[11px] text-foreground transition-colors hover:bg-surface-hover"
+            >
+              Upgrade to {candidate.selected}
+            </button>
+            {candidate.impactCount > 0 && (
+              <button
+                onClick={onAct}
+                className="rounded-md bg-brand px-2.5 py-1.5 text-[11px] font-medium text-brand-foreground transition-colors hover:bg-brand-200"
+              >
+                Fix {candidate.impactCount} site{candidate.impactCount === 1 ? "" : "s"} in{" "}
+                {candidate.impactFiles} file{candidate.impactFiles === 1 ? "" : "s"}
+              </button>
+            )}
+            {candidate.safeLatest && candidate.safeLatest !== candidate.selected && (
+              <span className="font-mono text-[10px] text-faint">
+                {candidate.safeLatest} stays inside the declared range
+              </span>
+            )}
+          </div>
+
           {candidate.breaking.map((change, index) => (
             <div key={index}>
               <div className="flex flex-wrap items-center gap-2">
@@ -311,12 +411,20 @@ function PackageRow({
                           {/* `w-px` + `whitespace-nowrap` collapses this column
                               to its content so the code sits next to the
                               location rather than half a panel away. */}
-                          <td className="w-px whitespace-nowrap px-2.5 py-1.5 align-top text-faint">
-                            {site.file}:{site.line}
+                          <td className="w-px whitespace-nowrap px-2.5 py-1.5 align-top">
+                            {/* Straight to that line, at the commit that was
+                                analysed. "Trust us, line 130" is a claim; a
+                                link a reader opens in one click is evidence. */}
+                            <a
+                              href={sourceUrl(recording, site)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-faint underline decoration-dotted underline-offset-2 transition-colors hover:text-brand-text"
+                            >
+                              {site.file}:{site.line}
+                            </a>
                           </td>
-                          <td className="px-2.5 py-1.5 align-top text-foreground">
-                            {site.excerpt}
-                          </td>
+                          <td className="px-2.5 py-1.5 align-top text-foreground">{site.excerpt}</td>
                           <td className="whitespace-nowrap px-2.5 py-1.5 align-top">
                             <span
                               className={cn(
@@ -347,11 +455,7 @@ function PackageRow({
 }
 
 /** The present-tense findings, when the recording has any. */
-function AuditSection({
-  findings,
-}: {
-  findings: NonNullable<Recording["audit"]>["findings"];
-}) {
+function AuditSection({ findings }: { findings: NonNullable<Recording["audit"]>["findings"] }) {
   return (
     <div className="border-t-2 border-brand/30 bg-brand-soft/40 px-4 py-4 sm:px-5">
       <p className="text-xs font-semibold uppercase tracking-wider text-brand-text">

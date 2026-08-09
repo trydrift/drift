@@ -34,9 +34,9 @@ jobs:
       run:
         working-directory: site
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -53,6 +53,13 @@ jobs:
       - name: Configure Pages
         id: pages
         uses: actions/configure-pages@v5
+        with:
+          # Turn Pages on for this repository if it is not already, rather than
+          # failing with "Get Pages site failed" until somebody visits Settings.
+          # The workflow already holds `pages: write`, which is the permission
+          # this needs, so the setup is a property of the repository's code
+          # instead of a step in someone's memory.
+          enablement: true
 
       - name: Build
         run: npm run build
