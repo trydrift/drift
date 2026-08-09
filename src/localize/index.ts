@@ -298,25 +298,30 @@ function searchFiles(
     const importsDependency = relevantImports.length > 0;
 
     const lines = content.split('\n');
-    // Block comments are stripped up front, tracking state across lines, so a
-    // `/* ... */` continuation that doesn't itself start with `*` is not
-    // mistaken for real code. String and template literal contents are left
-    // in place for matching — a URL-path symbol like `/api/v1/users` or a
-    // scoped package name legitimately lives inside a string literal
-    // (`fetch('/api/v1/users')`, `from '@scope/pkg'`) — but quotes are still
-    // tracked while scanning so a `/*`-looking sequence inside a string never
-    // opens a (nonexistent) block comment.
-    const commentMasked = maskBlockComments(lines);
+    // Two views of the same file, because two kinds of symbol need opposite
+    // things from a string literal.
+    //
+    // A URL path or a scoped package name *lives* inside one —
+    // `fetch('/api/v1/users')`, `from '@scope/pkg'` — so blanking strings
+    // would find nothing at all. An identifier does not: a bare word inside a
+    // docstring is prose, and matching it is how `define` came to be reported
+    // as an affected site on the line `" to define format set a colon at the
+    // end of the o"`. Both views strip comments; only one keeps string
+    // contents, and `matcherFor`'s symbol shape decides which a symbol reads.
+    const withStrings = maskComments(lines, { blankStrings: false });
+    const withoutStrings = maskComments(lines, { blankStrings: true });
 
     for (const symbol of change.symbols) {
       const matcher = matcherFor(symbol);
       if (!matcher) continue;
 
+      const masked = livesInStringLiteral(symbol) ? withStrings : withoutStrings;
+
       for (let i = 0; i < lines.length && sites.length < limit; i++) {
         const line = lines[i]!;
         if (isCommentOnly(line)) continue;
 
-        const searchable = commentMasked[i]!;
+        const searchable = masked[i]!;
         if (!matcher.test(searchable)) continue;
 
         const unit = fileIndex ? unitAtLine(fileIndex, i + 1) : undefined;
@@ -361,6 +366,18 @@ function matcherFor(symbol: string): RegExp | null {
   const trailing = /\w$/.test(trimmed) ? '\\b' : '(?![\\w$])';
 
   return new RegExp(`${leading}${escaped}${trailing}`);
+}
+
+/**
+ * Is this symbol something a developer writes *inside* a string?
+ *
+ * URL paths and package specifiers are: they are data, and the only place they
+ * ever appear is a literal. Everything else is an identifier, written as code,
+ * and a match inside a string is prose that happens to share a word.
+ */
+function livesInStringLiteral(symbol: string): boolean {
+  const trimmed = symbol.trim();
+  return trimmed.startsWith('/') || trimmed.startsWith('@') || trimmed.includes('/');
 }
 
 function confidenceFor(
@@ -409,21 +426,28 @@ function isCommentOnly(line: string): boolean {
 }
 
 /**
- * Strip `/* ... *\/` block comments from every line, tracking whether a
- * comment opened on an earlier line is still open — a continuation line like
- * `still explaining the old option` inside a block comment has no `*` prefix
- * and would otherwise read as real code.
+ * Strip comments from every line, optionally blanking string contents too.
  *
- * Quotes are tracked (without being stripped) purely so a `/*`-looking
- * sequence inside a string or template literal is never mistaken for the
- * start of a real block comment — string contents themselves are left intact,
- * since a URL-path symbol or a scoped package name legitimately lives inside
- * one (`fetch('/api/v1/users')`, `from '@scope/pkg'`) and stripping it there
- * would defeat the match this function exists to enable.
+ * State is carried across lines, so a block comment or a docstring that opened
+ * earlier keeps swallowing text until it closes — a continuation line inside
+ * one carries no marker of its own and would otherwise read as real code.
+ *
+ * Triple-quoted strings are handled because Python docstrings are where the
+ * worst false positives lived: a paragraph of English describing what a method
+ * does is not a use of an API that happens to share one of its words.
+ *
+ * `blankStrings` replaces string *contents* with spaces while keeping the
+ * quotes, so every column outside the literal stays where it was. The excerpt
+ * shown to a developer is always the untouched source line; only the search
+ * runs against this.
  */
-function maskBlockComments(lines: readonly string[]): string[] {
+function maskComments(
+  lines: readonly string[],
+  options: { blankStrings: boolean },
+): string[] {
   const masked: string[] = [];
   let inBlockComment = false;
+  let triple: string | null = null;
 
   for (const rawLine of lines) {
     let result = '';
@@ -432,6 +456,19 @@ function maskBlockComments(lines: readonly string[]): string[] {
 
     while (i < rawLine.length) {
       const ch = rawLine[i]!;
+
+      if (triple) {
+        const end = rawLine.indexOf(triple, i);
+        if (end === -1) {
+          result += ' '.repeat(rawLine.length - i);
+          i = rawLine.length;
+          break;
+        }
+        result += ' '.repeat(end - i + triple.length);
+        i = end + triple.length;
+        triple = null;
+        continue;
+      }
 
       if (inBlockComment) {
         const end = rawLine.indexOf('*/', i);
@@ -445,14 +482,31 @@ function maskBlockComments(lines: readonly string[]): string[] {
       }
 
       if (quote) {
-        result += ch;
         if (ch === '\\') {
-          result += rawLine[i + 1] ?? '';
+          result += options.blankStrings ? '  ' : `\\${rawLine[i + 1] ?? ''}`;
           i += 2;
           continue;
         }
+        result += options.blankStrings && ch !== quote ? ' ' : ch;
         if (ch === quote) quote = null;
         i += 1;
+        continue;
+      }
+
+      // Triple quotes are checked before single ones: `"""` read as an empty
+      // string followed by a stray quote is what let the rest of a Python
+      // docstring's opening line through as if it were code.
+      const three = rawLine.slice(i, i + 3);
+      if (three === '"""' || three === "'''") {
+        const close = rawLine.indexOf(three, i + 3);
+        if (close === -1) {
+          triple = three;
+          result += ' '.repeat(rawLine.length - i);
+          i = rawLine.length;
+          break;
+        }
+        result += ' '.repeat(close + 3 - i);
+        i = close + 3;
         continue;
       }
 

@@ -155,7 +155,16 @@ function symbolsFromFinding(finding: StructuredFinding): string[] {
   if (finding.symbol.includes('.') && !/\s/.test(finding.symbol)) {
     const parts = finding.symbol.split('.');
     const last = parts[parts.length - 1];
-    if (last) symbols.add(last);
+    // The bare leaf earns its place only when it identifies something. A
+    // language's universal method names do not: `_synctest.Todo.__init__`
+    // contributed `__init__`, which matches the constructor of every class in
+    // every file that imports the package, and Twisted alone turned a handful
+    // of real removals into 229 reported sites — most of them `def
+    // __init__(self):` in code that had never heard of `Todo`. The qualified
+    // forms are still searched, so a genuine `Todo.__init__` reference is
+    // still found; what is given up is aliased usage of a name so common that
+    // matching it was never evidence of anything.
+    if (last && !isGenericLeaf(last)) symbols.add(last);
 
     if (parts.length > 2) {
       // `unix.NexthopGrp.Resvd1` → also search `NexthopGrp.Resvd1`, which is how
@@ -178,6 +187,39 @@ function symbolsFromFinding(finding: StructuredFinding): string[] {
 
   return [...symbols];
 }
+
+/**
+ * Names too common to be evidence on their own.
+ *
+ * Two families. Dunders are a language's universal protocol methods — every
+ * Python class has `__init__`, so finding one says nothing about whether this
+ * repository uses the symbol that changed. The rest are ordinary English words
+ * that also happen to be method names: `define`, `match` and `send` each
+ * matched prose in a docstring before this existed.
+ *
+ * Only ever applied to the *derived* bare leaf, never to the symbol a provider
+ * actually reported. If upstream says `send` was removed, Drift still searches
+ * for `send` — the finding named it, and second-guessing a provider's own
+ * symbol would be a different and worse mistake.
+ */
+function isGenericLeaf(name: string): boolean {
+  // `__init__`, `__call__`, `__enter__`, and every other dunder.
+  if (/^__\w+__$/.test(name)) return true;
+  return GENERIC_LEAF_NAMES.has(name.toLowerCase());
+}
+
+const GENERIC_LEAF_NAMES = new Set([
+  'add', 'all', 'any', 'append', 'apply', 'build', 'call', 'check', 'clear',
+  'clone', 'close', 'connect', 'copy', 'count', 'create', 'data', 'define',
+  'delete', 'each', 'emit', 'end', 'error', 'execute', 'exists', 'extend',
+  'fetch', 'filter', 'find', 'first', 'flush', 'format', 'get', 'handle',
+  'has', 'id', 'index', 'init', 'insert', 'is', 'items', 'iter', 'join',
+  'keys', 'last', 'length', 'list', 'load', 'log', 'main', 'map', 'match',
+  'name', 'new', 'next', 'open', 'options', 'parse', 'pop', 'push', 'put',
+  'query', 'read', 'remove', 'render', 'reset', 'resolve', 'result', 'run',
+  'save', 'send', 'set', 'size', 'sort', 'split', 'start', 'status', 'stop',
+  'type', 'update', 'value', 'values', 'wait', 'write',
+]);
 
 function fromProseEvidence(record: Evidence, dependency: string, workspace: string | undefined): BreakingChange[] {
   const out: BreakingChange[] = [];
