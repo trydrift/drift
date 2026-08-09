@@ -107,6 +107,41 @@ describe('manifest CodeLens and hover', () => {
 
     assert.match((lens!.command as { title: string }).title, /2 packages have breaking changes/);
     assert.equal((lens!.command as { command: string }).command, 'drift.showReport');
+    assert.equal(lens!.range.start.line, 1);
+    provider.dispose();
+  });
+
+  test('anchors a single breaking package on its dependency entry and opens its report', () => {
+    const state = new DriftState();
+    state.setRoots([{ path: '/repo', label: 'repo', repo: null, gitRoot: null, subprojects: [] }]);
+    state.setCandidates([candidate({ name: 'zod', current: '3.24.1', selected: '4.0.0' })]);
+
+    const provider = new ManifestLensProvider(state);
+    const [lens] = provider.provideCodeLenses(
+      document(
+        '/repo/package.json',
+        [
+          '{',
+          '  "name": "drift",',
+          '  "keywords": [',
+          '    "dependencies",',
+          '    "breaking changes"',
+          '  ],',
+          '  "dependencies": {',
+          '    "zod": "^3.24.1"',
+          '  }',
+          '}',
+        ].join('\n'),
+      ),
+    );
+
+    assert.match((lens!.command as { title: string }).title, /1 package have breaking changes/);
+    assert.equal(lens!.range.start.line, 7);
+    assert.deepEqual(lens!.command, {
+      title: '$(warning) Drift: 1 package have breaking changes, 1 affect this repo',
+      command: 'drift.openDependency',
+      arguments: ['zod@18->19'],
+    });
     provider.dispose();
   });
 

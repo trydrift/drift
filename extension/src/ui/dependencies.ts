@@ -98,11 +98,11 @@ export class ManifestLensProvider implements vscode.CodeLensProvider, vscode.Dis
       return [];
     }
     if (!isManifest(document.uri.fsPath)) return [];
-    const line = dependencyBlockLine(document);
-    const range = new vscode.Range(line, 0, line, 0);
     const candidates = candidatesForDocument(this.state, document.uri);
 
     if (candidates.length === 0) {
+      const line = dependencyBlockLine(document);
+      const range = new vscode.Range(line, 0, line, 0);
       return [
         new vscode.CodeLens(range, {
           title: '$(search) Drift: scan dependencies',
@@ -113,12 +113,18 @@ export class ManifestLensProvider implements vscode.CodeLensProvider, vscode.Dis
 
     const breaking = candidates.filter((candidate) => candidate.breakingCount > 0);
     if (breaking.length === 0) return [];
+    const line =
+      breaking.length === 1
+        ? findDependencyLine(document, breaking[0]!.name, basename(breaking[0]!.manifestPath))
+        : dependencyBlockLine(document);
+    const range = new vscode.Range(line, 0, line, 0);
     const affected = breaking.filter((candidate) => severityOf(candidate) === 'affected').length;
     const suffix = affected > 0 ? `, ${affected} affect this repo` : '';
     return [
       new vscode.CodeLens(range, {
         title: `$(warning) Drift: ${breaking.length} package${breaking.length === 1 ? '' : 's'} have breaking changes${suffix}`,
-        command: 'drift.showReport',
+        command: breaking.length === 1 ? 'drift.openDependency' : 'drift.showReport',
+        arguments: breaking.length === 1 ? [breaking[0]!.id] : undefined,
       }),
     ];
   }
@@ -218,15 +224,20 @@ function dependencyBlockLine(document: vscode.TextDocument): number {
   const name = basename(document.uri.fsPath);
   const markers =
     name === 'package.json'
-      ? ['"dependencies"', '"devDependencies"', '"peerDependencies"', '"optionalDependencies"']
+      ? [
+          /^\s*"dependencies"\s*:/,
+          /^\s*"devDependencies"\s*:/,
+          /^\s*"peerDependencies"\s*:/,
+          /^\s*"optionalDependencies"\s*:/,
+        ]
       : name === 'Cargo.toml'
-        ? ['[dependencies]', '[dev-dependencies]', '[build-dependencies]']
+        ? [/^\s*\[dependencies\]/, /^\s*\[dev-dependencies\]/, /^\s*\[build-dependencies\]/]
         : name === 'pom.xml'
-          ? ['<dependencies>']
+          ? [/<dependencies>/]
           : [];
   for (let i = 0; i < document.lineCount; i++) {
     const text = document.lineAt(i).text;
-    if (markers.some((marker) => text.includes(marker))) return i;
+    if (markers.some((marker) => marker.test(text))) return i;
   }
   return 0;
 }
