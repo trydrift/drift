@@ -2,20 +2,20 @@
 import { readFile } from 'node:fs/promises';
 import { realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import type { RepoContext } from './types.js';
 import { loadConfig } from './config/load.js';
 import { GitHubClient } from './github/client.js';
-import { LocalGitProvider } from './repo/local-git.js';
+import { LocalGitProvider, WORKING_TREE, chooseManifestRange, inspectLocalRepo } from './repo/local-git.js';
 import { runPipeline } from './pipeline.js';
 import { resolveBaseBranch, titleFor } from './plan/pull-request.js';
 import { renderPullRequestBody } from './report/markdown.js';
 import { runAction } from './runners/action.js';
 import { main as serveWebhook } from './runners/webhook.js';
 import { sampleTelemetryEvent } from './telemetry.js';
-import { createLogger, type LogLevel } from './util/logger.js';
+import { createLogger, type LogLevel, type Logger } from './util/logger.js';
 import { dispatchRemainingToCopilot, runFix } from './remediation/cli-runner.js';
 
 const run = promisify(execFile);
@@ -42,6 +42,143 @@ async function resolveGitHubToken(flags: Flags): Promise<string> {
   }
 }
 
+/** Whether the GitHub CLI is on PATH and signed in. */
+async function hasGitHubCli(): Promise<boolean> {
+  try {
+    await run('gh', ['auth', 'status']);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Whether the `gh` binary is on PATH at all, signed in or not. */
+async function isGhInstalled(): Promise<boolean> {
+  try {
+    await run('gh', ['--version']);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Offer a browser sign-in via `gh auth login --web` before falling back to a
+ * manually pasted token — signing in with a click beats minting and copying
+ * a personal access token whenever there's a terminal to run it in.
+ *
+ * Silently declines (returns `false`, no prompt shown) when `gh` isn't
+ * installed or this isn't an interactive terminal — a script piping into
+ * `drift fix` must never block on a browser flow nobody is there to complete.
+ */
+async function tryBrowserSignIn(logger: Logger): Promise<boolean> {
+  if (!process.stdin.isTTY || !process.stdout.isTTY) return false;
+  if (!(await isGhInstalled())) return false;
+
+  logger.info('No GitHub token found. Opening a browser to sign in (`gh auth login`)...');
+  const loggedIn = await new Promise<boolean>((resolvePromise) => {
+    const child = spawn('gh', ['auth', 'login', '--hostname', 'github.com', '--git-protocol', 'https', '--web'], {
+      stdio: 'inherit',
+    });
+    child.on('close', (code) => resolvePromise(code === 0));
+    child.on('error', () => resolvePromise(false));
+  });
+
+  return loggedIn && (await hasGitHubCli());
+}
+
+interface OpenPrParams {
+  head: string;
+  base: string;
+  title: string;
+  body: string;
+  draft?: boolean;
+  labels?: readonly string[];
+  reviewers?: readonly string[];
+}
+
+/**
+ * Open (or find) a pull request via `gh pr create`.
+ *
+ * `gh` already owns its own credential (from `gh auth login`), so this path
+ * never needs `repoToken` at all — it is what lets `fix`/`pr` work with zero
+ * token configuration for the many developers who already have the GitHub CLI
+ * signed in for other things.
+ */
+async function openPullRequestViaGh(
+  workspace: string,
+  params: OpenPrParams,
+  logger: Logger,
+): Promise<{ url: string; existing: boolean } | null> {
+  const { mkdtemp, writeFile, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+
+  const dir = await mkdtemp(join(tmpdir(), 'drift-pr-'));
+  try {
+    const bodyPath = join(dir, 'body.md');
+    await writeFile(bodyPath, params.body, 'utf8');
+
+    const args = [
+      'pr',
+      'create',
+      '--head',
+      params.head,
+      '--base',
+      params.base,
+      '--title',
+      params.title,
+      '--body-file',
+      bodyPath,
+    ];
+    if (params.draft) args.push('--draft');
+    for (const label of params.labels ?? []) args.push('--label', label);
+    for (const reviewer of params.reviewers ?? []) args.push('--reviewer', reviewer);
+
+    try {
+      const { stdout } = await run('gh', args, { cwd: workspace });
+      const url = stdout.trim().split('\n').pop()?.trim();
+      return url ? { url, existing: false } : null;
+    } catch (err) {
+      // `gh` exits non-zero when a pull request already exists for this
+      // branch (among other reasons) — ask it directly rather than guessing
+      // from stderr text, which differs across `gh` versions.
+      try {
+        const { stdout } = await run('gh', ['pr', 'view', params.head, '--json', 'url'], { cwd: workspace });
+        const url = (JSON.parse(stdout) as { url?: string }).url;
+        if (url) return { url, existing: true };
+      } catch {
+        // Not an "already exists" case; fall through to reporting failure.
+      }
+      logger.debug(`gh pr create failed: ${(err as Error).message}`);
+      return null;
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
+/**
+ * Open a pull request, preferring the GitHub CLI (no token needed) and
+ * falling back to the GitHub API with `token` when `gh` isn't signed in.
+ */
+async function openPullRequest(
+  workspace: string,
+  token: string,
+  logger: Logger,
+  repo: RepoContext,
+  params: OpenPrParams,
+): Promise<{ url: string; existing: boolean } | null> {
+  if (await hasGitHubCli()) {
+    const viaGh = await openPullRequestViaGh(workspace, params, logger);
+    if (viaGh) return viaGh;
+    logger.debug('Falling back to the GitHub API for pull request creation.');
+  }
+  if (!token) return null;
+  const github = new GitHubClient({ repoToken: token, logger });
+  return github.createPullRequest(repo, params);
+}
+
 /**
  * Drift CLI.
  *
@@ -66,8 +203,10 @@ Usage:
 
 Options for \`analyze\`:
   --repo <owner/name>         Repository to analyse. Default: the git remote
-  --before <sha>              Commit before the change. Default: HEAD^
-  --after <sha>               Commit after the change.  Default: HEAD
+  --before <sha>              Commit before the change. Default: auto-detected
+  --after <sha>               Commit after the change.  Default: auto-detected
+                              — an uncommitted manifest edit, else the most
+                              recent commit that touched one
   --dir <path>                Local checkout to index.  Default: cwd
   --token <token>             GitHub token, only to raise the public API rate
                               limit for release notes/changelogs. Optional —
@@ -94,9 +233,10 @@ Options for \`pr\`:
   --title <text>              Pull request title.       Default: proposed
   --draft                     Open as a draft
   --yes                       Do not ask; use the proposed title as-is
-  --token <token>             GitHub token, required to push a branch/open a
-                              pull request. Default: $GITHUB_TOKEN, then
-                              \`gh auth token\`
+  --token <token>             GitHub token, only needed if signing in isn't
+                              possible. Default: $GITHUB_TOKEN, then
+                              \`gh auth token\`, then an interactive
+                              \`gh auth login\` browser sign-in
 
 \`analyze\` never writes anything: no branches, no issues, no agent tasks — and
 reads the local checkout directly, like the VS Code extension, so it never
@@ -110,11 +250,17 @@ explicit choice, in this run or in \`remediation.communityRecipes\`.
 \`pr\` pushes the current branch and opens a pull request. It never merges,
 never force-pushes, and never touches the base branch.
 
+\`fix\` and \`pr\` need write access to open a pull request. In order of
+preference: $GITHUB_TOKEN or --token, then \`gh auth token\` if the GitHub CLI
+is already signed in, then — in an interactive terminal, with \`gh\` installed
+but not yet signed in — a browser-based \`gh auth login\`. Pasting a token is
+the last resort, not the first.
+
 Environment:
   GITHUB_TOKEN                Token for repository reads/writes. \`fix\` and
-                              \`pr\` need one; \`analyze\` does not. If unset,
-                              falls back to \`gh auth token\` when the GitHub
-                              CLI is installed and signed in. Create one at
+                              \`pr\` need write access from somewhere; \`analyze\`
+                              never does. Prefer signing in with \`gh auth
+                              login\` over minting one of these. Create one at
                               ${CREATE_TOKEN_URL}
   DRIFT_COPILOT_TOKEN         User-scoped token for the Copilot agent API
   DRIFT_TELEMETRY_DISABLED    1/true disables telemetry even if configured
@@ -213,9 +359,7 @@ async function analyzeCommand(flags: Flags): Promise<number> {
     logger.info('No GitHub remote found; analysing the local checkout only. Pass --repo owner/name to name one.');
   }
 
-  const after = (typeof flags.after === 'string' ? flags.after : await gitRev(workspace, 'HEAD')) ?? 'HEAD';
-  const before =
-    (typeof flags.before === 'string' ? flags.before : await gitRev(workspace, 'HEAD^')) ?? `${after}^`;
+  const { before, after } = await resolveRange(workspace, flags);
   const branch = (await gitRev(workspace, '--abbrev-ref HEAD')) ?? 'main';
 
   const repo: RepoContext = {
@@ -227,7 +371,7 @@ async function analyzeCommand(flags: Flags): Promise<number> {
     workspace,
   };
 
-  logger.info(`Analysing ${owner}/${repoName} ${before.slice(0, 7)}..${after.slice(0, 7)}`);
+  logger.info(`Analysing ${owner}/${repoName} ${before.slice(0, 7)}..${describeRef(after)}`);
 
   // Never used for a network call in this command (dryRun forced below), but
   // still required to construct the pipeline's dispatch stage.
@@ -286,12 +430,13 @@ async function fixCommand(flags: Flags): Promise<number> {
 
   const workspace = resolve(typeof flags.dir === 'string' ? flags.dir : process.cwd());
   const token = await resolveGitHubToken(flags);
+  const ghSignedIn = token ? false : (await hasGitHubCli()) || (await tryBrowserSignIn(logger));
 
-  if (!token) {
+  if (!token && !ghSignedIn) {
     logger.error(
-      `A GitHub token is required to push a branch and open a pull request. Set GITHUB_TOKEN, pass --token, ` +
-        `or run \`gh auth login\` if you have the GitHub CLI installed. Create one at ${CREATE_TOKEN_URL} ` +
-        '(the "repo" scope is enough).',
+      `Signing in to GitHub is required to push a branch and open a pull request. Run \`gh auth login\` if you ` +
+        `have the GitHub CLI installed, or set GITHUB_TOKEN / pass --token. Create a token at ` +
+        `${CREATE_TOKEN_URL} (the "repo" scope is enough).`,
     );
     return 1;
   }
@@ -307,9 +452,7 @@ async function fixCommand(flags: Flags): Promise<number> {
     return 1;
   }
 
-  const after = (typeof flags.after === 'string' ? flags.after : await gitRev(workspace, 'HEAD')) ?? 'HEAD';
-  const before =
-    (typeof flags.before === 'string' ? flags.before : await gitRev(workspace, 'HEAD^')) ?? `${after}^`;
+  const { before, after } = await resolveRange(workspace, flags, { includeWorkingTree: false });
   const branch = (await gitRev(workspace, '--abbrev-ref HEAD')) ?? 'main';
 
   const repo: RepoContext = { owner, repo: repoName, baseBranch: branch, beforeSha: before, afterSha: after, workspace };
@@ -327,7 +470,7 @@ async function fixCommand(flags: Flags): Promise<number> {
   for (const problem of problems) logger.warn(problem);
   if (path) logger.info(`Using config from ${path}`);
 
-  logger.info(`Analysing ${owner}/${repoName} ${before.slice(0, 7)}..${after.slice(0, 7)}`);
+  logger.info(`Analysing ${owner}/${repoName} ${before.slice(0, 7)}..${describeRef(after)}`);
 
   const result = await runPipeline({
     repo,
@@ -393,9 +536,14 @@ async function fixCommand(flags: Flags): Promise<number> {
       } else {
         if (!fix.pushed) {
           // Copilot works from the remote branch, which nothing has created
-          // yet if every commit needed an agent — same branch creation the
-          // Action performs before dispatch.
-          await github.createBranch(repo, fix.branch, repo.afterSha);
+          // yet if every commit needed an agent. A plain push of the
+          // analysed commit under the new branch name does this without
+          // touching the GitHub API — no token needed for this step.
+          try {
+            await run('git', ['push', 'origin', `${repo.afterSha}:refs/heads/${fix.branch}`], { cwd: workspace });
+          } catch (err) {
+            logger.error(`Could not create branch \`${fix.branch}\`: ${(err as Error).message}`);
+          }
         }
         const dispatched = await dispatchRemainingToCopilot({
           copilotToken,
@@ -423,7 +571,7 @@ async function fixCommand(flags: Flags): Promise<number> {
       ? `> **Incomplete:** ${fix.needsAgent.length} commit(s) still need an AI agent and could not be dispatched. This pull request does not yet contain a fix for them.\n\n${renderPullRequestBody(plan, config)}`
       : renderPullRequestBody(plan, config);
 
-    const pr = await github.createPullRequest(repo, {
+    const pr = await openPullRequest(workspace, token, logger, repo, {
       head: fix.branch,
       base: plan.baseBranch,
       title: titleFor({ changes: plan.changes }, { title: config.pullRequest.titleTemplate, prefix: config.remediation.branchPrefix }),
@@ -475,10 +623,12 @@ async function prCommand(flags: Flags): Promise<number> {
   const workspace = resolve(typeof flags.dir === 'string' ? flags.dir : process.cwd());
 
   const token = await resolveGitHubToken(flags);
-  if (!token) {
+  const ghSignedIn = token ? false : (await hasGitHubCli()) || (await tryBrowserSignIn(logger));
+
+  if (!token && !ghSignedIn) {
     logger.error(
-      `A GitHub token is required to open a pull request. Set GITHUB_TOKEN, pass --token, or run ` +
-        `\`gh auth login\` if you have the GitHub CLI installed. Create one at ${CREATE_TOKEN_URL} ` +
+      `Signing in to GitHub is required to open a pull request. Run \`gh auth login\` if you have the GitHub ` +
+        `CLI installed, or set GITHUB_TOKEN / pass --token. Create a token at ${CREATE_TOKEN_URL} ` +
         '(the "repo" scope is enough).',
     );
     return 1;
@@ -550,7 +700,6 @@ async function prCommand(flags: Flags): Promise<number> {
     return 1;
   }
 
-  const github = new GitHubClient({ repoToken: token, logger });
   const repo: RepoContext = {
     owner,
     repo: repoName,
@@ -560,7 +709,7 @@ async function prCommand(flags: Flags): Promise<number> {
     workspace,
   };
 
-  const pr = await github.createPullRequest(repo, {
+  const pr = await openPullRequest(workspace, token, logger, repo, {
     head: branch,
     base: base.branch,
     title,
@@ -679,6 +828,43 @@ async function showFile(cwd: string, ref: string, path: string): Promise<string 
   } catch {
     return null;
   }
+}
+
+/**
+ * Which commits to analyse, for `analyze` and `fix`.
+ *
+ * `--before`/`--after` win outright when either is given. Otherwise this
+ * finds the dependency change itself — an uncommitted manifest edit, else the
+ * most recent commit that touched a manifest — rather than blindly diffing
+ * `HEAD^..HEAD`, which is usually unrelated work and is why the CLI used to
+ * report "nothing changed" on ranges the VS Code extension flagged correctly.
+ * `fix` passes `includeWorkingTree: false` since it checks `after` out into a
+ * worktree and needs a real commit, not the sentinel for "the working tree".
+ */
+async function resolveRange(
+  workspace: string,
+  flags: Flags,
+  opts: { includeWorkingTree?: boolean } = {},
+): Promise<{ before: string; after: string }> {
+  if (typeof flags.before === 'string' || typeof flags.after === 'string') {
+    const after = (typeof flags.after === 'string' ? flags.after : await gitRev(workspace, 'HEAD')) ?? 'HEAD';
+    const before =
+      (typeof flags.before === 'string' ? flags.before : await gitRev(workspace, 'HEAD^')) ?? `${after}^`;
+    return { before, after };
+  }
+
+  const info = await inspectLocalRepo(workspace);
+  const chosen = info ? await chooseManifestRange(workspace, info, opts) : null;
+  if (chosen) return chosen;
+
+  const after = (await gitRev(workspace, 'HEAD')) ?? 'HEAD';
+  const before = (await gitRev(workspace, 'HEAD^')) ?? `${after}^`;
+  return { before, after };
+}
+
+/** Short label for a ref in log output — `WORKING_TREE` has no SHA to slice. */
+function describeRef(ref: string): string {
+  return ref === WORKING_TREE ? 'working tree' : ref.slice(0, 7);
 }
 
 async function detectRepoSlug(cwd: string): Promise<string | null> {

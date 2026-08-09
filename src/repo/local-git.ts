@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { RefRange, RepoProvider } from './provider.js';
+import { isManifestPath } from '../detect/index.js';
 
 const run = promisify(execFile);
 
@@ -75,6 +76,114 @@ export class LocalGitProvider implements RepoProvider {
       return null;
     }
   }
+}
+
+/** Every manifest filename Drift knows how to parse, for git pathspecs. */
+export const MANIFEST_GLOBS = [
+  'package.json',
+  'package-lock.json',
+  'yarn.lock',
+  'pnpm-lock.yaml',
+  'requirements*.txt',
+  'pyproject.toml',
+  'poetry.lock',
+  'Pipfile',
+  'go.mod',
+  'Cargo.toml',
+  'pom.xml',
+  'build.gradle',
+  'build.gradle.kts',
+  'Gemfile',
+  'Gemfile.lock',
+  '**/*.csproj',
+  '**/*.fsproj',
+  '**/*.vbproj',
+  '**/Directory.Packages.props',
+  '**/packages.config',
+  '**/packages.lock.json',
+  '**/composer.json',
+  '**/composer.lock',
+  '**/mix.exs',
+  '**/mix.lock',
+  '**/rebar.config',
+  '**/pubspec.yaml',
+  '**/pubspec.yml',
+  '**/pubspec.lock',
+  '**/Package.swift',
+  '**/Package@swift-*.swift',
+  '**/Podfile',
+  '**/Podfile.lock',
+  '**/dune-project',
+  '**/*.opam',
+  '**/build.sbt',
+];
+
+/**
+ * Work out which commit range to analyse from a local checkout, with no range
+ * given explicitly.
+ *
+ * Order of preference, most-likely-to-be-what-you-meant first:
+ *   1. Uncommitted manifest edits — you just changed a dependency.
+ *   2. The last commit that touched a manifest — the bump you merged.
+ *   3. `parentSha..headSha`, but only if that diff itself touched a manifest.
+ *   4. Nothing. Better to say so than to analyse an unrelated diff.
+ *
+ * Shared by the VS Code extension and the CLI's `analyze`/`fix` commands, so
+ * both answer "what changed?" the same way — diffing `HEAD^..HEAD` blindly
+ * finds whatever commit happens to be most recent, which is usually unrelated
+ * work rather than the dependency bump the user actually wants to see.
+ */
+export async function chooseManifestRange(
+  cwd: string,
+  info: { headSha: string; parentSha: string | null },
+  opts: {
+    /**
+     * Whether uncommitted manifest edits can win (step 1). Callers that need
+     * a real commit to build from — `fix`, which checks out `after` into a
+     * worktree — must disable this, since `WORKING_TREE` is not a ref.
+     */
+    includeWorkingTree?: boolean;
+  } = {},
+): Promise<RefRange | null> {
+  const { includeWorkingTree = true } = opts;
+
+  const git = async (args: string[]): Promise<string | null> => {
+    try {
+      const { stdout } = await run('git', args, { cwd, windowsHide: true });
+      return stdout;
+    } catch {
+      return null;
+    }
+  };
+
+  // 1 — uncommitted manifest changes, staged or not.
+  if (includeWorkingTree) {
+    const dirty = await git(['status', '--porcelain']);
+    if (dirty) {
+      const dirtyManifests = dirty
+        .split('\n')
+        .map((l) => l.slice(3).trim())
+        .filter((p) => p && isManifestPath(p));
+
+      if (dirtyManifests.length > 0) {
+        return { before: info.headSha, after: WORKING_TREE };
+      }
+    }
+  }
+
+  // 2 — the most recent commit that moved a manifest.
+  const recent = await lastCommitTouching(cwd, MANIFEST_GLOBS);
+  if (recent) return { before: recent.parent, after: recent.sha };
+
+  // 3 — fall back to HEAD^..HEAD only if it actually touched a manifest.
+  if (info.parentSha) {
+    const changed = await git(['diff', '--name-only', info.parentSha, info.headSha]);
+    if (changed?.split('\n').some((p) => p.trim() && isManifestPath(p.trim()))) {
+      return { before: info.parentSha, after: info.headSha };
+    }
+  }
+
+  return null;
 }
 
 export interface LocalRepoInfo {

@@ -2,13 +2,8 @@ import * as vscode from 'vscode';
 import { analyzeRepository } from '../../src/analysis.js';
 import { DriftConfigSchema, type DriftConfig } from '../../src/config/schema.js';
 import { parseConfig } from '../../src/config/load.js';
-import {
-  LocalGitProvider,
-  WORKING_TREE,
-  inspectLocalRepo,
-  lastCommitTouching,
-} from '../../src/repo/local-git.js';
-import { isManifestPath, PARSERS } from '../../src/detect/index.js';
+import { LocalGitProvider, chooseManifestRange, inspectLocalRepo } from '../../src/repo/local-git.js';
+import { PARSERS } from '../../src/detect/index.js';
 import { createLogger } from '../../src/util/logger.js';
 import type { RemediationPlan } from '../../src/types.js';
 import { getRateLimitToken } from './github-auth.js';
@@ -44,46 +39,6 @@ export interface AnalyzeResult {
   summary: string;
 }
 
-/** Every manifest filename Drift knows how to parse, for git pathspecs. */
-const MANIFEST_GLOBS = [
-  'package.json',
-  'package-lock.json',
-  'yarn.lock',
-  'pnpm-lock.yaml',
-  'requirements*.txt',
-  'pyproject.toml',
-  'poetry.lock',
-  'Pipfile',
-  'go.mod',
-  'Cargo.toml',
-  'pom.xml',
-  'build.gradle',
-  'build.gradle.kts',
-  'Gemfile',
-  'Gemfile.lock',
-  '**/*.csproj',
-  '**/*.fsproj',
-  '**/*.vbproj',
-  '**/Directory.Packages.props',
-  '**/packages.config',
-  '**/packages.lock.json',
-  '**/composer.json',
-  '**/composer.lock',
-  '**/mix.exs',
-  '**/mix.lock',
-  '**/rebar.config',
-  '**/pubspec.yaml',
-  '**/pubspec.yml',
-  '**/pubspec.lock',
-  '**/Package.swift',
-  '**/Package@swift-*.swift',
-  '**/Podfile',
-  '**/Podfile.lock',
-  '**/dune-project',
-  '**/*.opam',
-  '**/build.sbt',
-];
-
 export async function runAnalysis(options: AnalyzeOptions): Promise<AnalyzeResult> {
   const { state, progress, token } = options;
 
@@ -107,7 +62,7 @@ export async function runAnalysis(options: AnalyzeOptions): Promise<AnalyzeResul
 
   state.setRepo(info, root);
 
-  const range = options.range ?? (await chooseRange(root, info));
+  const range = options.range ?? (await chooseManifestRange(root, info));
   if (!range) {
     state.set({ kind: 'clean', summary: 'No dependency changes found to analyse.', at: Date.now() });
     return { plan: null, summary: 'No dependency changes found to analyse.' };
@@ -164,61 +119,6 @@ export async function runAnalysis(options: AnalyzeOptions): Promise<AnalyzeResul
     state.set({ kind: 'error', message });
     return { plan: null, summary: message };
   }
-}
-
-/**
- * Work out which commit range to analyse.
- *
- * Order of preference, most-likely-to-be-what-you-meant first:
- *   1. Uncommitted manifest edits — you just changed a dependency.
- *   2. The last commit that touched a manifest — the bump you merged.
- *   3. Nothing. Better to say so than to analyse an unrelated diff.
- */
-async function chooseRange(
-  root: string,
-  info: { headSha: string; parentSha: string | null },
-): Promise<{ before: string; after: string } | null> {
-  const { execFile } = await import('node:child_process');
-  const { promisify } = await import('node:util');
-  const run = promisify(execFile);
-
-  const git = async (args: string[]): Promise<string | null> => {
-    try {
-      const { stdout } = await run('git', args, { cwd: root, windowsHide: true });
-      return stdout;
-    } catch {
-      return null;
-    }
-  };
-
-  // 1 — uncommitted manifest changes, staged or not.
-  const dirty = await git(['status', '--porcelain']);
-  if (dirty) {
-    const dirtyManifests = dirty
-      .split('\n')
-      .map((l) => l.slice(3).trim())
-      .filter((p) => p && isManifestPath(p));
-
-    if (dirtyManifests.length > 0) {
-      // The most common editor case by far: the user just ran `npm install`
-      // and has not committed. Compare HEAD to what is on disk right now.
-      return { before: info.headSha, after: WORKING_TREE };
-    }
-  }
-
-  // 2 — the most recent commit that moved a manifest.
-  const recent = await lastCommitTouching(root, MANIFEST_GLOBS);
-  if (recent) return { before: recent.parent, after: recent.sha };
-
-  // 3 — fall back to HEAD^..HEAD only if it actually touched a manifest.
-  if (info.parentSha) {
-    const changed = await git(['diff', '--name-only', info.parentSha, info.headSha]);
-    if (changed?.split('\n').some((p) => p.trim() && isManifestPath(p.trim()))) {
-      return { before: info.parentSha, after: info.headSha };
-    }
-  }
-
-  return null;
 }
 
 export async function loadWorkspaceConfig(root: string): Promise<DriftConfig> {
