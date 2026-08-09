@@ -97,11 +97,20 @@ export class DriftDiagnostics implements vscode.Disposable {
     const diagnostic = new vscode.Diagnostic(
       range,
       `${finding.dependency} ${finding.installedVersion} is installed: ${lowerFirst(change?.summary ?? finding.summary)}`,
-      // Deliberately capped at Warning even for a high-confidence site. These
-      // findings pre-date the edit in front of the developer, and turning a
-      // file red for code that has been shipping for months — the moment they
-      // install the extension — is how an editor integration gets uninstalled.
-      site.confidence === 'low' ? vscode.DiagnosticSeverity.Information : vscode.DiagnosticSeverity.Warning,
+      // Same mapping as a plan finding, and for the same reason: severity
+      // tracks how sure Drift is, not how long the problem has been there.
+      //
+      // This was briefly capped at Warning on the theory that turning a file
+      // red for months-old code is how an editor integration gets uninstalled.
+      // That reasoning traded accuracy for adoption, which is the trade this
+      // project exists not to make. A high-confidence latent finding means the
+      // file binds that symbol from that dependency's import and the symbol is
+      // not in the version on disk — the code is broken now, and it was broken
+      // yesterday too. Age is not evidence of harmlessness; it usually means
+      // nobody has run that path lately. If the volume is genuinely too much
+      // for a repository, `drift.ui.showInlineDiagnostics` already turns the
+      // markers off, which is an honest lever in a way a quiet severity is not.
+      latentSeverityFor(site.confidence),
     );
     diagnostic.source = SOURCE;
     diagnostic.code = {
@@ -185,6 +194,25 @@ function severityFor(change: BreakingChange, pendingUpgrade: boolean): vscode.Di
   }
 
   switch (change.confidence) {
+    case 'high':
+      return vscode.DiagnosticSeverity.Error;
+    case 'medium':
+      return vscode.DiagnosticSeverity.Warning;
+    default:
+      return vscode.DiagnosticSeverity.Information;
+  }
+}
+
+/**
+ * Severity for a finding about the installed version.
+ *
+ * Deliberately identical to `severityFor`'s non-pending branch. The
+ * pending-upgrade downgrade does not apply here: that exists because a plan
+ * describes a break that *would* happen if the developer takes an upgrade they
+ * have not taken yet. Nothing about a latent finding is conditional.
+ */
+function latentSeverityFor(confidence: ImpactSite['confidence']): vscode.DiagnosticSeverity {
+  switch (confidence) {
     case 'high':
       return vscode.DiagnosticSeverity.Error;
     case 'medium':
