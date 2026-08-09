@@ -165,6 +165,16 @@ never touched, and it never merges or force-pushes. See `drift fix --help`
 
 ---
 
+## See it work first
+
+[**trydrift.github.io/Drift**](https://trydrift.github.io/Drift/) replays real
+Drift runs against Supabase, Scrapy, GitLab, Kubernetes, Deno and Elasticsearch
+— every dependency, every finding, and every progress event with the timestamp
+it actually happened at. Not a mock-up: the commit each run was taken against is
+linked, so you can check it. Built from [`site/`](site/).
+
+---
+
 ## VS Code, CLI, or Action — which one?
 
 All three share the same analysis pipeline and the same remediation priority

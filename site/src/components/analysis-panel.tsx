@@ -1,0 +1,403 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { cn } from "@/lib/cn";
+import {
+  ECOSYSTEM_LABEL,
+  describeSeverity,
+  severityOf,
+  shortDate,
+  totalsOf,
+  type Candidate,
+  type ImpactSite,
+  type Recording,
+  type UpgradeSeverity,
+} from "@/lib/recordings";
+import { usePlayer } from "./use-player";
+
+/**
+ * The panel.
+ *
+ * Modelled on the extension's dependency view, because the point of the demo is
+ * to show what using Drift is actually like — a visitor who installs it after
+ * watching this should recognise what they get. Same ordering (findings first),
+ * same three verdicts, same insistence that "could not check" is its own answer
+ * and not a quiet kind of safe.
+ *
+ * Colour follows one rule, which is the reason the palette can be green at all:
+ * green means checked and fine, amber means we could not see, and a finding is
+ * neutral-with-emphasis rather than red. Nothing on this page is an emergency —
+ * it is a report — and a wall of red would say the opposite of what the tool
+ * exists to say.
+ */
+
+/**
+ * One rule: green is earned, amber is honest, and nothing is red.
+ *
+ * `upstream-only` gets the emphasis of a border without the brand fill — it is
+ * the row that says "a hundred things changed and none of them are yours",
+ * which deserves to be noticed but is not work. `unchecked` is the only amber
+ * on the page, because "we could not see" is the one state a developer must
+ * never mistake for a pass.
+ */
+const VERDICT_STYLE: Record<UpgradeSeverity, string> = {
+  affected: "border-brand/45 bg-brand-soft text-brand-text",
+  "upstream-only": "border-border bg-surface-hover text-muted",
+  unchecked: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  clean: "border-border bg-surface-hover text-faint",
+  error: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+};
+
+/** The short form for the pill. `describeSeverity` writes the long one. */
+const VERDICT_PILL: Record<UpgradeSeverity, string> = {
+  affected: "Affects you",
+  "upstream-only": "None used here",
+  unchecked: "Not verified",
+  clean: "Safe",
+  error: "Could not check",
+};
+
+const CONFIDENCE_STYLE: Record<ImpactSite["confidence"], string> = {
+  high: "bg-brand-soft text-brand-text",
+  medium: "bg-amber-500/12 text-amber-700 dark:text-amber-400",
+  low: "bg-surface-hover text-faint",
+};
+
+export function AnalysisPanel({ recording }: { recording: Recording }) {
+  const { state, start, reset, currentEvent, speed } = usePlayer(recording);
+  const totals = useMemo(() => totalsOf(recording), [recording]);
+  const [open, setOpen] = useState<string | null>(null);
+
+  const done = state.phase === "done";
+  const running = state.phase === "running";
+  const visible = done ? recording.candidates : recording.candidates.slice(0, state.resolved);
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border bg-surface/60 shadow-lg backdrop-blur-sm">
+      {/* Title bar — the editor chrome, so the panel reads as a tool and not a
+          marketing card. */}
+      <div className="flex items-center gap-3 border-b border-border bg-surface-hover/60 px-4 py-2.5">
+        <div className="flex gap-1.5" aria-hidden>
+          <span className="size-2.5 rounded-full bg-faint/25" />
+          <span className="size-2.5 rounded-full bg-faint/25" />
+          <span className="size-2.5 rounded-full bg-faint/25" />
+        </div>
+        <span className="truncate font-mono text-[11px] text-faint sm:text-xs">
+          drift outdated — {recording.repo.replace("https://github.com/", "")}
+        </span>
+        <span className="ml-auto hidden shrink-0 rounded-full border border-border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-faint sm:inline">
+          {ECOSYSTEM_LABEL[recording.ecosystem] ?? recording.ecosystem}
+        </span>
+      </div>
+
+      {/* Status line */}
+      <div className="border-b border-border px-4 py-3.5 sm:px-5">
+        {state.phase === "idle" && (
+          <button
+            onClick={start}
+            className="group flex w-full items-center gap-3 text-left"
+            aria-label={`Replay Drift's analysis of ${recording.label}`}
+          >
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand text-brand-foreground transition-transform group-hover:scale-105">
+              <PlayIcon />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-medium text-foreground">
+                Replay this analysis
+              </span>
+              <span className="block truncate text-xs text-faint">
+                {recording.packagesChecked} direct dependencies · recorded{" "}
+                {shortDate(recording.capturedAt)}
+              </span>
+            </span>
+          </button>
+        )}
+
+        {running && (
+          <div className="flex items-center gap-3">
+            <span className="size-2.5 shrink-0 rounded-full bg-brand orb" aria-hidden />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm text-foreground">
+                {currentEvent?.phase ?? "Starting"}
+              </p>
+              <p className="truncate font-mono text-[11px] text-faint">
+                {currentEvent?.detail ?? recording.repo.replace("https://github.com/", "")}
+              </p>
+            </div>
+            <span className="shrink-0 tabular text-xs text-faint">
+              {currentEvent && currentEvent.total > 0
+                ? `${currentEvent.done}/${currentEvent.total}`
+                : `${(state.elapsed / 1000).toFixed(1)}s`}
+            </span>
+          </div>
+        )}
+
+        {done && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <p className="text-sm text-foreground">
+              <span className="font-medium">{totals.packages}</span> packages ·{" "}
+              <span className="font-medium text-brand-text">{totals.affected}</span> affect this
+              code
+              {totals.breaking > totals.sites && (
+                <span className="text-muted">
+                  {" "}
+                  · {totals.breaking} upstream breaking change
+                  {totals.breaking === 1 ? "" : "s"} found, most of them irrelevant here
+                </span>
+              )}
+            </p>
+            <button
+              onClick={reset}
+              className="ml-auto rounded-md border border-border px-2.5 py-1 text-xs text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+            >
+              Replay
+            </button>
+          </div>
+        )}
+
+        {/* Progress rail. Determinate once the scan knows its total. */}
+        <div className="mt-3 h-[3px] overflow-hidden rounded-full bg-surface-hover">
+          {running && (!currentEvent || currentEvent.total === 0) ? (
+            <div className="indeterminate h-full w-full" />
+          ) : (
+            <div
+              className="h-full rounded-full bg-brand transition-[width] duration-300 ease-out"
+              style={{
+                width: done
+                  ? "100%"
+                  : currentEvent && currentEvent.total > 0
+                    ? `${Math.round((currentEvent.done / currentEvent.total) * 100)}%`
+                    : "0%",
+              }}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Results */}
+      <div className="max-h-[26rem] overflow-y-auto overscroll-contain">
+        {visible.length === 0 && !done && (
+          <div className="space-y-2 p-4 sm:p-5" aria-hidden>
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="skeleton h-11 rounded-lg border border-border bg-surface/50" />
+            ))}
+          </div>
+        )}
+
+        <ul className="divide-y divide-border">
+          {visible.map((candidate) => (
+            <PackageRow
+              key={candidate.name}
+              candidate={candidate}
+              expanded={open === candidate.name}
+              onToggle={() => setOpen(open === candidate.name ? null : candidate.name)}
+              interactive={done}
+            />
+          ))}
+        </ul>
+
+        {done && recording.audit && recording.audit.findings.length > 0 && (
+          <AuditSection findings={recording.audit.findings} />
+        )}
+      </div>
+
+      {/* Provenance. The claim that this is a real run is only worth making if
+          it can be checked, so the commit and the real duration are printed. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border bg-surface-hover/40 px-4 py-2.5 font-mono text-[10px] text-faint sm:px-5 sm:text-[11px]">
+        <a
+          href={`${recording.repo}/tree/${recording.commit}`}
+          target="_blank"
+          rel="noreferrer"
+          className="underline decoration-dotted underline-offset-2 transition-colors hover:text-brand-text"
+        >
+          {recording.commit.slice(0, 9)}
+        </a>
+        <span>·</span>
+        <span>
+          real run took {(recording.durationMs / 1000).toFixed(1)}s, replayed at {speed}×
+        </span>
+        <span className="hidden sm:inline">·</span>
+        <span className="hidden sm:inline">
+          capped at {recording.packagesCapped} packages for length
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function PackageRow({
+  candidate,
+  expanded,
+  onToggle,
+  interactive,
+}: {
+  candidate: Candidate;
+  expanded: boolean;
+  onToggle: () => void;
+  interactive: boolean;
+}) {
+  const verdict = severityOf(candidate);
+  const hasDetail = candidate.breaking.length > 0;
+
+  return (
+    <li className="animate-rise">
+      <button
+        onClick={hasDetail && interactive ? onToggle : undefined}
+        disabled={!hasDetail || !interactive}
+        className={cn(
+          "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors sm:px-5",
+          hasDetail && interactive && "cursor-pointer hover:bg-surface-hover",
+        )}
+      >
+        <div className="min-w-0 flex-1">
+          {/* Wraps rather than truncates on a narrow screen: a Go module path
+              or a scoped npm name is mostly prefix, and truncating it leaves
+              the developer looking at `@radix-ui/react-…`, which identifies
+              nothing. The version pair moves to its own line instead. */}
+          <div className="flex flex-wrap items-baseline gap-x-2">
+            <span className="break-all font-mono text-[13px] font-medium text-foreground">
+              {candidate.name}
+            </span>
+            <span className="tabular font-mono text-[11px] text-faint">
+              {candidate.current} → {candidate.selected}
+            </span>
+          </div>
+          {/* Drift's own sentence about this package, not a rephrasing — it is
+              already written to lead with what the developer has to do. */}
+          <p className="mt-0.5 line-clamp-2 text-xs text-muted sm:line-clamp-1">
+            {describeSeverity(candidate)}
+          </p>
+        </div>
+
+        <span
+          className={cn(
+            "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wide",
+            VERDICT_STYLE[verdict],
+          )}
+        >
+          {verdict === "affected"
+            ? `${candidate.impactCount} site${candidate.impactCount === 1 ? "" : "s"}`
+            : verdict === "upstream-only"
+              ? `${candidate.breakingCount} upstream`
+              : VERDICT_PILL[verdict]}
+        </span>
+
+        {hasDetail && interactive && (
+          <ChevronIcon className={cn("shrink-0 text-faint transition-transform", expanded && "rotate-90")} />
+        )}
+      </button>
+
+      {expanded && (
+        <div className="space-y-3 border-t border-border bg-surface-hover/30 px-4 py-4 sm:px-5">
+          {candidate.breaking.map((change, index) => (
+            <div key={index}>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded bg-surface-hover px-1.5 py-0.5 font-mono text-[10px] text-faint">
+                  {change.kind}
+                </span>
+                <span className="text-xs font-medium text-foreground">{change.summary}</span>
+              </div>
+              {change.remediation && (
+                <p className="mt-1 text-xs leading-relaxed text-muted">{change.remediation}</p>
+              )}
+              {change.sites.length > 0 && (
+                // Horizontal scroll is contained here rather than on the page:
+                // a long source line must never widen the document on a phone.
+                <div className="mt-2 overflow-x-auto rounded-lg border border-border bg-[var(--pre-bg)]">
+                  <table className="w-full min-w-[22rem] border-collapse text-left font-mono text-[11px]">
+                    <tbody>
+                      {change.sites.map((site, i) => (
+                        <tr key={i} className="border-b border-border/60 last:border-0">
+                          {/* `w-px` + `whitespace-nowrap` collapses this column
+                              to its content so the code sits next to the
+                              location rather than half a panel away. */}
+                          <td className="w-px whitespace-nowrap px-2.5 py-1.5 align-top text-faint">
+                            {site.file}:{site.line}
+                          </td>
+                          <td className="px-2.5 py-1.5 align-top text-foreground">
+                            {site.excerpt}
+                          </td>
+                          <td className="whitespace-nowrap px-2.5 py-1.5 align-top">
+                            <span
+                              className={cn(
+                                "rounded px-1.5 py-0.5 text-[10px]",
+                                CONFIDENCE_STYLE[site.confidence],
+                              )}
+                            >
+                              {site.confidence}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ))}
+          {candidate.gaps.length > 0 && (
+            <p className="text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
+              Incomplete: {candidate.gaps[0]}
+            </p>
+          )}
+        </div>
+      )}
+    </li>
+  );
+}
+
+/** The present-tense findings, when the recording has any. */
+function AuditSection({
+  findings,
+}: {
+  findings: NonNullable<Recording["audit"]>["findings"];
+}) {
+  return (
+    <div className="border-t-2 border-brand/30 bg-brand-soft/40 px-4 py-4 sm:px-5">
+      <p className="text-xs font-semibold uppercase tracking-wider text-brand-text">
+        Already broken — no upgrade required
+      </p>
+      <p className="mt-1 text-xs leading-relaxed text-muted">
+        These are true of the versions installed in this repository right now.
+      </p>
+      <ul className="mt-3 space-y-2.5">
+        {findings.map((finding, index) => (
+          <li key={index}>
+            <p className="text-xs text-foreground">
+              <span className="font-mono font-medium">{finding.dependency}</span>{" "}
+              <span className="text-faint">
+                declared {finding.declaredRange}, {finding.installedVersion} installed
+              </span>
+            </p>
+            <p className="mt-0.5 text-xs text-muted">{finding.summary}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function PlayIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className="size-4 translate-x-px" aria-hidden>
+      <path d="M8 5.14v13.72a.5.5 0 0 0 .76.43l11.2-6.86a.5.5 0 0 0 0-.86L8.76 4.71A.5.5 0 0 0 8 5.14Z" />
+    </svg>
+  );
+}
+
+function ChevronIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={cn("size-4", className)}
+      aria-hidden
+    >
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  );
+}

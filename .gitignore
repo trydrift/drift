@@ -10,3 +10,15 @@ dist/
 coverage/
 .drift-cache/
 settings.json
+
+# Build output for the landing page (site/).
+#
+# Listed at the repository root, not only in `site/.gitignore`, because a
+# per-directory ignore file is itself tracked — checking out a branch that
+# predates it deletes the ignore rules while leaving the untracked build
+# output on disk, and the next `git add -A` on that branch commits 134MB of
+# Turbopack cache. Which is exactly what happened once.
+site/.next/
+site/out/
+site/next-env.d.ts
+*.tsbuildinfo

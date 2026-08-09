@@ -1,0 +1,175 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Design tokens.
+
+   Same architecture as the career-ops web app — brand as a mode-invariant
+   accent, warm neutrals in light, near-black in dark, and a separate
+   `brand-text` for small type — with the palette moved from burnt orange to a
+   deep, slightly cool green.
+
+   Green is doing real work here, not decoration. The whole product is a verdict
+   about whether code is safe, and the one colour a developer already reads as
+   "checked, and fine" is this one. That means it has to be *earned* on the
+   page: green marks a clean result and the brand itself, never a finding. A
+   green that also meant "problem" would say nothing at all.
+
+   Contrast is the reason for the split tokens. The raw brand passes AA as
+   large text and as an accent in both themes, but not as 14px body copy on a
+   light background — so `--brand-text` darkens it for light mode and keeps the
+   raw value in dark, exactly as the reference does.
+   ────────────────────────────────────────────────────────────────────────── */
+@theme {
+  --color-brand: hsl(152 58% 36%);
+  --color-brand-200: hsl(150 52% 45%); /* hover / lighter */
+  /* Near-black on the brand green: the button is the same colour in both
+     themes, so white here would fail AA in both. */
+  --color-brand-foreground: hsl(155 45% 8%);
+  --color-brand-soft: hsl(152 58% 36% / 0.12);
+  --color-brand-secondary: hsl(168 60% 40%);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+/* Semantic surfaces reference runtime vars so they swap with the theme class. */
+@theme inline {
+  --color-background: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-foreground: var(--fg);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-landing: var(--landing);
+  --color-brand-text: var(--brand-text);
+}
+
+:root {
+  --bg: #f6f7f4; /* off-white with a green cast, so the brand sits in it */
+  --surface: #ffffff;
+  --surface-hover: #ecefe9;
+  --border: hsl(140 9% 86%);
+  --fg: hsl(155 12% 11%);
+  --muted: hsl(150 8% 34%);
+  --faint: hsl(150 7% 42%); /* AA: ~4.6:1 on #fff */
+  --landing: #2f4436; /* deep forest, for editorial headlines */
+  --brand-text: hsl(155 62% 25%); /* darkened brand for small text in light */
+  --dot: 150 8% 42% / 0.09;
+  --pre-bg: #eff1ed;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0a0b0a;
+  --surface: #141614;
+  --surface-hover: #1f231f;
+  --border: #252825;
+  --fg: #f7f8f6;
+  --muted: #a3aaa4;
+  --faint: #8a918b; /* AA: ~4.6:1 on --surface */
+  --landing: #dfe7dc;
+  --brand-text: hsl(150 55% 55%); /* raw brand is too dark on near-black */
+  --dot: 150 6% 65% / 0.10;
+  --pre-bg: #101210;
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* The animated panel is wide and scrolls inside its own container; the page
+     itself must never scroll sideways on a phone. */
+  overflow-x: hidden;
+}
+html {
+  scrollbar-gutter: stable;
+  scroll-behavior: smooth;
+}
+
+@layer utilities {
+  /* Ambient dot grid — adapts to the theme via --dot. Pure CSS, 0 DOM. */
+  .dot-bg {
+    background-image: radial-gradient(circle, hsl(var(--dot)) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ── Animation ──────────────────────────────────────────────────────────── */
+@keyframes fade-in-delayed {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in-delayed { animation: fade-in-delayed 700ms ease 200ms both; }
+
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-rise { animation: rise-in 260ms ease both; }
+
+@keyframes cli-cursor-pulse {
+  0%, 50% { opacity: 1; }
+  50.01%, 100% { opacity: 0; }
+}
+.cli-cursor { animation: cli-cursor-pulse 1s infinite; }
+
+/* The pulsing orb on a package currently being checked. */
+@keyframes orb-pulse {
+  0% { box-shadow: 0 0 0 0 hsl(152 58% 42% / 0.5); }
+  70% { box-shadow: 0 0 0 0.5rem hsl(152 58% 42% / 0); }
+  100% { box-shadow: 0 0 0 0 hsl(152 58% 42% / 0); }
+}
+.orb { animation: orb-pulse 1.4s ease-out infinite; }
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+.skeleton { position: relative; overflow: hidden; }
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--fg) 8%, transparent), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 1.5s infinite;
+}
+
+/* An indeterminate brand sweep, for a phase with no countable total. */
+@keyframes sweep {
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(320%); }
+}
+.indeterminate { position: relative; overflow: hidden; }
+.indeterminate::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 35%;
+  background: linear-gradient(90deg, transparent, var(--color-brand), transparent);
+  animation: sweep 1.3s ease-in-out infinite;
+}
+
+/* Motion here is informational — it is how the page shows that work takes
+   time — so reduced-motion gets the finished state immediately rather than a
+   silent, still panel that never resolves. See `usePlayer`, which reads the
+   same preference and jumps to the end. */
+@media (prefers-reduced-motion: reduce) {
+  .cli-cursor,
+  .animate-fade-in-delayed,
+  .animate-rise,
+  .orb,
+  .skeleton::after {
+    animation: none;
+  }
+  .indeterminate::after { animation: none; width: 100%; opacity: 0.35; }
+  html { scroll-behavior: auto; }
+}

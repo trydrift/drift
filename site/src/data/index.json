@@ -1,0 +1,80 @@
+[
+  {
+    "id": "supabase",
+    "label": "supabase-js",
+    "ecosystem": "npm",
+    "language": "TypeScript",
+    "repo": "https://github.com/supabase/supabase-js",
+    "blurb": "The official Supabase client for JavaScript and TypeScript.",
+    "commit": "381bded5ced48c4621830576bf8cbecc34edc85c",
+    "capturedAt": "2026-08-09T19:12:59.979Z",
+    "packagesChecked": 14,
+    "candidates": 7,
+    "findings": 0
+  },
+  {
+    "id": "scrapy",
+    "label": "scrapy",
+    "ecosystem": "pypi",
+    "language": "Python",
+    "repo": "https://github.com/scrapy/scrapy",
+    "blurb": "The web crawling framework that most Python scrapers are built on.",
+    "commit": "ae68786210b99240b269125673704754a282ff5e",
+    "capturedAt": "2026-08-09T19:14:11.384Z",
+    "packagesChecked": 14,
+    "candidates": 14,
+    "findings": 0
+  },
+  {
+    "id": "gitlab",
+    "label": "gitlab",
+    "ecosystem": "rubygems",
+    "language": "Ruby",
+    "repo": "https://github.com/gitlabhq/gitlabhq",
+    "blurb": "GitLab's Rails monolith — one of the largest Ruby codebases in the open.",
+    "commit": "5cdb1efa2a4dd791026131e7e7ad46d76b404fe7",
+    "capturedAt": "2026-08-09T19:16:47.336Z",
+    "packagesChecked": 14,
+    "candidates": 7,
+    "findings": 0
+  },
+  {
+    "id": "kubernetes",
+    "label": "kubernetes",
+    "ecosystem": "go",
+    "language": "Go",
+    "repo": "https://github.com/kubernetes/kubernetes",
+    "blurb": "The container orchestrator. One of the largest Go codebases in the open.",
+    "commit": "94c136764292cc5fac976c0de6587daaea56410f",
+    "capturedAt": "2026-08-09T19:18:11.829Z",
+    "packagesChecked": 34,
+    "candidates": 8,
+    "findings": 0
+  },
+  {
+    "id": "deno",
+    "label": "deno",
+    "ecosystem": "cargo",
+    "language": "Rust",
+    "repo": "https://github.com/denoland/deno",
+    "blurb": "A modern runtime for JavaScript and TypeScript, written in Rust.",
+    "commit": "98dc759254a90b98f7bbb62ba5361e531d0db6a5",
+    "capturedAt": "2026-08-09T19:18:56.892Z",
+    "packagesChecked": 14,
+    "candidates": 8,
+    "findings": 0
+  },
+  {
+    "id": "elasticsearch",
+    "label": "elasticsearch-java",
+    "ecosystem": "maven",
+    "language": "Java",
+    "repo": "https://github.com/elastic/elasticsearch-java",
+    "blurb": "Elasticsearch's official Java API client.",
+    "commit": "d336cc188162cba603f7226aef601fff33e2cfc8",
+    "capturedAt": "2026-08-09T19:19:37.299Z",
+    "packagesChecked": 14,
+    "candidates": 9,
+    "findings": 0
+  }
+]
