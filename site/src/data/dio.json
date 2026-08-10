@@ -1,0 +1,564 @@
+{
+  "id": "dio",
+  "label": "dio",
+  "ecosystem": "pub",
+  "language": "Dart",
+  "repo": "https://github.com/cfug/dio",
+  "blurb": "Dart's most-used HTTP client, in the package that declares its dependencies.",
+  "capturedAt": "2026-08-10T15:52:57.162Z",
+  "commit": "a553f46bdec8d0511898c19ca3858a32f3c80545",
+  "durationMs": 8564,
+  "packagesChecked": 7,
+  "manifests": [
+    "pubspec.yaml"
+  ],
+  "events": [
+    {
+      "at": 3291,
+      "phase": "Looking for manifests",
+      "detail": "cfug/dio/dio",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 3295,
+      "phase": "Reading manifest",
+      "detail": "pubspec.yaml",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 3297,
+      "phase": "Indexing your code",
+      "detail": "Walking source files",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 3349,
+      "phase": "Indexing your code",
+      "detail": "64 files indexed · 7 direct dependencies to check",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 3349,
+      "phase": "Checking the pub.dev",
+      "detail": "async (installed 2.8.2)",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 3349,
+      "phase": "Checking the pub.dev",
+      "detail": "collection (installed 1.16.0)",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 3349,
+      "phase": "Checking the pub.dev",
+      "detail": "http_parser (installed 4.0.0)",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 3349,
+      "phase": "Checking the pub.dev",
+      "detail": "meta (installed 1.5.0)",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 3349,
+      "phase": "Checking the pub.dev",
+      "detail": "mime (installed 1.0.0)",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 3349,
+      "phase": "Checking the pub.dev",
+      "detail": "path (installed 1.8.0)",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 3349,
+      "phase": "Checking the pub.dev",
+      "detail": "dio_web_adapter (installed 1.1.0)",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 3351,
+      "phase": "Reading release notes and changelog",
+      "detail": "collection 1.16.0 → 1.19.1",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 3352,
+      "phase": "Reading release notes and changelog",
+      "detail": "mime 1.0.0 → 2.0.0",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 3354,
+      "phase": "Reading release notes and changelog",
+      "detail": "meta 1.5.0 → 1.19.0",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 3355,
+      "phase": "Reading release notes and changelog",
+      "detail": "async 2.8.2 → 2.13.1",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 3364,
+      "phase": "Reading release notes and changelog",
+      "detail": "http_parser 4.0.0 → 4.1.2",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 3366,
+      "phase": "Reading release notes and changelog",
+      "detail": "path 1.8.0 → 1.9.1",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 3367,
+      "phase": "Reading release notes and changelog",
+      "detail": "dio_web_adapter 1.1.0 → 2.2.1",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 5385,
+      "phase": "Comparing the public API surface",
+      "detail": "meta 1.5.0 → 1.19.0 · 13 evidence sources",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 5387,
+      "phase": "Searching your code for 29 breaking changes",
+      "detail": "meta 1.5.0 → 1.19.0",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 5667,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "meta 1.5.0 → 1.19.0",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 5884,
+      "phase": "Checked",
+      "detail": "meta 1.5.0 → 1.19.0 · safe for your code · 29 upstream changes, none used here",
+      "done": 1,
+      "total": 7
+    },
+    {
+      "at": 7789,
+      "phase": "Comparing the public API surface",
+      "detail": "dio_web_adapter 1.1.0 → 2.2.1 · 2 evidence sources",
+      "done": 1,
+      "total": 7
+    },
+    {
+      "at": 7789,
+      "phase": "No breaking changes to look for",
+      "detail": "dio_web_adapter 1.1.0 → 2.2.1",
+      "done": 1,
+      "total": 7
+    },
+    {
+      "at": 7789,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "dio_web_adapter 1.1.0 → 2.2.1",
+      "done": 1,
+      "total": 7
+    },
+    {
+      "at": 7900,
+      "phase": "Comparing the public API surface",
+      "detail": "http_parser 4.0.0 → 4.1.2 · 1 evidence source",
+      "done": 1,
+      "total": 7
+    },
+    {
+      "at": 7900,
+      "phase": "No breaking changes to look for",
+      "detail": "http_parser 4.0.0 → 4.1.2",
+      "done": 1,
+      "total": 7
+    },
+    {
+      "at": 7900,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "http_parser 4.0.0 → 4.1.2",
+      "done": 1,
+      "total": 7
+    },
+    {
+      "at": 7994,
+      "phase": "Checked",
+      "detail": "dio_web_adapter 1.1.0 → 2.2.1 · safe for your code · no breaking changes found",
+      "done": 2,
+      "total": 7
+    },
+    {
+      "at": 8110,
+      "phase": "Comparing the public API surface",
+      "detail": "async 2.8.2 → 2.13.1 · 1 evidence source",
+      "done": 2,
+      "total": 7
+    },
+    {
+      "at": 8110,
+      "phase": "No breaking changes to look for",
+      "detail": "async 2.8.2 → 2.13.1",
+      "done": 2,
+      "total": 7
+    },
+    {
+      "at": 8110,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "async 2.8.2 → 2.13.1",
+      "done": 2,
+      "total": 7
+    },
+    {
+      "at": 8110,
+      "phase": "Comparing the public API surface",
+      "detail": "collection 1.16.0 → 1.19.1 · 1 evidence source",
+      "done": 2,
+      "total": 7
+    },
+    {
+      "at": 8110,
+      "phase": "No breaking changes to look for",
+      "detail": "collection 1.16.0 → 1.19.1",
+      "done": 2,
+      "total": 7
+    },
+    {
+      "at": 8110,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "collection 1.16.0 → 1.19.1",
+      "done": 2,
+      "total": 7
+    },
+    {
+      "at": 8111,
+      "phase": "Comparing the public API surface",
+      "detail": "path 1.8.0 → 1.9.1 · 2 evidence sources",
+      "done": 2,
+      "total": 7
+    },
+    {
+      "at": 8111,
+      "phase": "Searching your code for 2 breaking changes",
+      "detail": "path 1.8.0 → 1.9.1",
+      "done": 2,
+      "total": 7
+    },
+    {
+      "at": 8112,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "path 1.8.0 → 1.9.1",
+      "done": 2,
+      "total": 7
+    },
+    {
+      "at": 8188,
+      "phase": "Checked",
+      "detail": "http_parser 4.0.0 → 4.1.2 · safe for your code · no breaking changes found",
+      "done": 3,
+      "total": 7
+    },
+    {
+      "at": 8282,
+      "phase": "Comparing the public API surface",
+      "detail": "mime 1.0.0 → 2.0.0 · 3 evidence sources",
+      "done": 3,
+      "total": 7
+    },
+    {
+      "at": 8282,
+      "phase": "Searching your code for 2 breaking changes",
+      "detail": "mime 1.0.0 → 2.0.0",
+      "done": 3,
+      "total": 7
+    },
+    {
+      "at": 8284,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "mime 1.0.0 → 2.0.0",
+      "done": 3,
+      "total": 7
+    },
+    {
+      "at": 8325,
+      "phase": "Checked",
+      "detail": "async 2.8.2 → 2.13.1 · safe for your code · no breaking changes found",
+      "done": 4,
+      "total": 7
+    },
+    {
+      "at": 8344,
+      "phase": "Checked",
+      "detail": "collection 1.16.0 → 1.19.1 · safe for your code · no breaking changes found",
+      "done": 5,
+      "total": 7
+    },
+    {
+      "at": 8345,
+      "phase": "Checked",
+      "detail": "path 1.8.0 → 1.9.1 · safe for your code · 2 upstream changes, none used here",
+      "done": 6,
+      "total": 7
+    },
+    {
+      "at": 8453,
+      "phase": "Checked",
+      "detail": "mime 1.0.0 → 2.0.0 · safe for your code · 2 upstream changes, none used here",
+      "done": 7,
+      "total": 7
+    }
+  ],
+  "candidates": [
+    {
+      "name": "meta",
+      "ecosystem": "pub",
+      "current": "1.5.0",
+      "latest": "1.19.0",
+      "selected": "1.19.0",
+      "safeLatest": "1.19.0",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Safe to upgrade. 29 upstream breaking changes, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 29,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 13,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`TargetKindExtension` is no longer exported (was a class).",
+          "remediation": "Every use of `TargetKindExtension` from `meta` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `TargetKindExtension` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "TargetKindExtension"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `noInline` changed.",
+          "remediation": "The signature of `noInline` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: const _NoInline noInline = _NoInline()\n  after:  const noInline = pragma('dart2js:noInline')",
+          "confidence": "high",
+          "symbols": [
+            "noInline"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `tryInline` changed.",
+          "remediation": "The signature of `tryInline` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: const _TryInline tryInline = _TryInline()\n  after:  const tryInline = pragma('dart2js:tryInline')",
+          "confidence": "high",
+          "symbols": [
+            "tryInline"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `alwaysThrows` changed.",
+          "remediation": "The signature of `alwaysThrows` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: const _AlwaysThrows alwaysThrows = _AlwaysThrows()\n  after:  const Object alwaysThrows = _AlwaysThrows()",
+          "confidence": "high",
+          "symbols": [
+            "alwaysThrows"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "mime",
+      "ecosystem": "pub",
+      "current": "1.0.0",
+      "latest": "2.0.0",
+      "selected": "2.0.0",
+      "safeLatest": "2.0.0",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Safe to upgrade. 2 upstream breaking changes, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 2,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 3,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`MimeMultipartTransformer.BoundMultipartStream` was removed.",
+          "remediation": "The member `MimeMultipartTransformer.BoundMultipartStream` no longer exists in `mime`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "symbols": [
+            "MimeMultipartTransformer.BoundMultipartStream",
+            "BoundMultipartStream"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `extensionFromMime` changed.",
+          "remediation": "The signature of `extensionFromMime` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: String extensionFromMime(String mime)\n  after:  String? extensionFromMime(String mimeType) =>",
+          "confidence": "high",
+          "symbols": [
+            "extensionFromMime"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "path",
+      "ecosystem": "pub",
+      "current": "1.8.0",
+      "latest": "1.9.1",
+      "selected": "1.9.1",
+      "safeLatest": "1.9.1",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Safe to upgrade. 2 upstream breaking changes, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 2,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [
+        "Drift read the release notes for path 1.9.1 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": [
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `fromUri` changed.",
+          "remediation": "The signature of `fromUri` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: String fromUri(uri) => context.fromUri(uri)\n  after:  String fromUri(Object? uri) => context.fromUri(uri!)",
+          "confidence": "high",
+          "symbols": [
+            "fromUri"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `prettyUri` changed.",
+          "remediation": "The signature of `prettyUri` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: String prettyUri(uri) => context.prettyUri(uri)\n  after:  String prettyUri(Object? uri) => context.prettyUri(uri!)",
+          "confidence": "high",
+          "symbols": [
+            "prettyUri"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "async",
+      "ecosystem": "pub",
+      "current": "2.8.2",
+      "latest": "2.13.1",
+      "selected": "2.13.1",
+      "safeLatest": "2.13.1",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift read 3 sets of release notes for async 2.13.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read 3 sets of release notes for async 2.13.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "collection",
+      "ecosystem": "pub",
+      "current": "1.16.0",
+      "latest": "1.19.1",
+      "selected": "1.19.1",
+      "safeLatest": "1.19.1",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift read the release notes for collection 1.19.1 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read the release notes for collection 1.19.1 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "dio_web_adapter",
+      "ecosystem": "pub",
+      "current": "1.1.0",
+      "latest": "2.2.1",
+      "selected": "2.2.1",
+      "safeLatest": "2.2.1",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. No breaking changes found for this version of dio_web_adapter.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "http_parser",
+      "ecosystem": "pub",
+      "current": "4.0.0",
+      "latest": "4.1.2",
+      "selected": "4.1.2",
+      "safeLatest": "4.1.2",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift read 2 sets of release notes for http_parser 4.1.2 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read 2 sets of release notes for http_parser 4.1.2 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    }
+  ],
+  "audit": {
+    "checked": 7,
+    "analysed": 0,
+    "findings": []
+  }
+}

@@ -131,8 +131,8 @@ sixteen package ecosystems and two front ends (VS Code extension, GitHub
 Action) plus a CLI, verified against a real upgrade in a real repository.
 
 Known limitations are documented rather than hidden — including single-hop
-localization, computed API diffs that need a local toolchain in four of the nine
-ecosystems that have one, and prompt injection via attacker-influenced
+localization, computed API diffs that need a local toolchain in four of the
+eleven ecosystems that have one, and prompt injection via attacker-influenced
 changelogs as mitigated rather than solved.
 [docs/architecture.md § Known limitations](architecture.md#known-limitations)
 
@@ -142,7 +142,7 @@ changelogs as mitigated rather than solved.
 |---|---|
 | **Computed API diffing** | Fetches both versions' `.d.ts` and diffs the exported surface with the TypeScript compiler. Catches undocumented removals. |
 | **Consumer-direction OpenAPI diffing** | Reports only what breaks *callers* — tightened requests, loosened responses. Catches upstream service changes no package manager can see. |
-| **Import-graph localization** | Search scoped to actual importers, not the whole repo. This is the precision lever. |
+| **Import-graph localization** | Search scoped to actual importers — and to the code one re-export edge past them — against module names read from the package's own published artefact rather than guessed. This is the precision lever. |
 | **Meta-RAG index** | AST-aligned, adapted from arXiv:2510.03480 — with structural summaries instead of LLM-generated ones, so the core pipeline needs no model at all. |
 | **Separated commits** | One per concern, dependency-ordered. `git revert` and `git bisect` stay meaningful. |
 | **Zero-infrastructure deployment** | Runs entirely inside the customer's trust boundary. |

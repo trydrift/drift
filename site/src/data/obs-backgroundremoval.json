@@ -1,0 +1,211 @@
+{
+  "id": "obs-backgroundremoval",
+  "label": "obs-backgroundremoval",
+  "ecosystem": "vcpkg",
+  "language": "C++",
+  "repo": "https://github.com/royshil/obs-backgroundremoval",
+  "blurb": "An OBS plugin that pins its native dependencies through vcpkg.",
+  "capturedAt": "2026-08-10T15:53:45.993Z",
+  "commit": "c097c67eb85a080f1cbefeb8ddcf0957375d65df",
+  "durationMs": 19758,
+  "packagesChecked": 4,
+  "manifests": [
+    "vcpkg.json",
+    "pages/package.json"
+  ],
+  "events": [
+    {
+      "at": 15338,
+      "phase": "Looking for manifests",
+      "detail": "royshil/obs-backgroundremoval",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 15344,
+      "phase": "Reading the workspace",
+      "detail": "2 packages · undeclared",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 15345,
+      "phase": "Reading manifest",
+      "detail": "vcpkg.json",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 15345,
+      "phase": "Reading manifest",
+      "detail": "pages/package.json",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 15348,
+      "phase": "Indexing your code",
+      "detail": "Walking source files",
+      "done": 0,
+      "total": 4
+    },
+    {
+      "at": 15378,
+      "phase": "Indexing your code",
+      "detail": "63 files indexed · 4 direct dependencies to check",
+      "done": 0,
+      "total": 4
+    },
+    {
+      "at": 15378,
+      "phase": "Checking the npm registry",
+      "detail": "@octokit/rest (installed 22.0.1)",
+      "done": 0,
+      "total": 4
+    },
+    {
+      "at": 15380,
+      "phase": "Checking the npm registry",
+      "detail": "astro (installed 6.4.8)",
+      "done": 0,
+      "total": 4
+    },
+    {
+      "at": 15381,
+      "phase": "Checking the npm registry",
+      "detail": "pretty-bytes (installed 7.1.1)",
+      "done": 0,
+      "total": 4
+    },
+    {
+      "at": 15383,
+      "phase": "Checking the npm registry",
+      "detail": "typescript (installed 7.0.2)",
+      "done": 0,
+      "total": 4
+    },
+    {
+      "at": 15467,
+      "phase": "Up to date",
+      "detail": "pretty-bytes@7.1.1",
+      "done": 1,
+      "total": 4
+    },
+    {
+      "at": 15573,
+      "phase": "Up to date",
+      "detail": "@octokit/rest@22.0.1",
+      "done": 2,
+      "total": 4
+    },
+    {
+      "at": 15685,
+      "phase": "Reading release notes and changelog",
+      "detail": "astro 6.4.8 → 7.2.0",
+      "done": 2,
+      "total": 4
+    },
+    {
+      "at": 16140,
+      "phase": "Up to date",
+      "detail": "typescript@7.0.2",
+      "done": 3,
+      "total": 4
+    },
+    {
+      "at": 19397,
+      "phase": "Comparing the public API surface",
+      "detail": "astro 6.4.8 → 7.2.0 · 7 evidence sources",
+      "done": 3,
+      "total": 4
+    },
+    {
+      "at": 19399,
+      "phase": "Searching your code for 28 breaking changes",
+      "detail": "astro 6.4.8 → 7.2.0",
+      "done": 3,
+      "total": 4
+    },
+    {
+      "at": 19404,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "astro 6.4.8 → 7.2.0",
+      "done": 3,
+      "total": 4
+    },
+    {
+      "at": 19662,
+      "phase": "Checked",
+      "detail": "astro 6.4.8 → 7.2.0 · safe for your code · 28 upstream changes, none used here",
+      "done": 4,
+      "total": 4
+    }
+  ],
+  "candidates": [
+    {
+      "name": "astro",
+      "ecosystem": "npm",
+      "current": "6.4.8",
+      "latest": "7.2.0",
+      "selected": "7.2.0",
+      "safeLatest": null,
+      "status": "ready",
+      "risk": "none",
+      "summary": "Upgrade recommended. 28 upstream breaking changes, none of which this repository uses; fixes 3 known vulnerabilities.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 28,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 7,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `SSRManifest` changed.",
+          "remediation": "The signature of `SSRManifest` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: export type SSRManifest = { adapterName: string; routes: RouteInfo[]; site?: string; base: string; userAssetsBase: string | undefined; trailingSlash: AstroConfig['trailingSlash']; buildFormat: NonNullable<AstroConfig['build']>['format']; compressHTML: boolean | 'jsx'; experimentalQueuedRendering: { enabled: boolean; poolSize?: number; contentCache?: boolean; }; assetsPrefix?: AssetsPrefix; renderers: SSRLoadedRenderer[]; serverLike: boolean; middlewareMode: MiddlewareMode; clientDirectives: Map<string, string>; entryModules: Record<string, string>; inlinedScripts: Map<string, string>; assets: Set<string>; componentMetadata: SSRResult['componentMetadata']; pageModule?: SinglePageBuiltModule; pageMap?: Map<ComponentPath, ImportComponentInstance>; serverIslandMappings?: () => Promise<ServerIslandMappings> | ServerIslandMappings; key: Promise<CryptoKey>; i18n: SSRManifestI18n | undefined; middleware?: () => Promise<AstroMiddlewareInstance> | AstroMiddlewareInstance; logger?: () => Promise<{ default: AstroLoggerDestination<AstroLoggerMessage>; }> | { default: AstroLoggerDestination<AstroLoggerMessage>; }; actions?: () => Promise<SSRActions> | SSRActions; sessionDriver?: () => Promise<{ default: SessionDriverFactory | null; }>; cacheProvider?: () => Promise<{ default: CacheProviderFactory | null; }>; checkOrigin: boolean; allowedDomains?: Partial<RemotePattern>[]; actionBodySizeLimit: number; serverIslandBodySizeLimit: number; sessionConfig?: SSRManifestSession; cacheConfig?: SSRManifestCache; cacheDir: URL; srcDir: URL; outDir: URL; rootDir: URL; publicDir: URL; assetsDir: string; buildClientDir: URL; buildServerDir: URL; csp: SSRManifestCSP | undefined; image: { objectFit?: string; objectPosition?: string; layout?: string; }; shouldInjectCspMetaTags: boolean; devToolbar: { enabled: boolean; latestAstroVersion: string | undefined; debugInfoOutput: string | undefined; placement: DevToolbarPlacement | undefined; }; internalFetchHeaders?: Record<string, string>; logLevel: AstroLoggerLevel; experimentalLogger: LoggerHandlerConfig | undefined; }\n  after:  export type SSRManifest = { adapterName: string; routes: RouteInfo[]; site?: string; base: string; userAssetsBase: string | undefined; trailingSlash: AstroConfig['trailingSlash']; buildFormat: NonNullable<AstroConfig['build']>['format']; compressHTML: boolean | 'jsx'; assetsPrefix?: AssetsPrefix; renderers: SSRLoadedRenderer[]; serverLike: boolean; middlewareMode: MiddlewareMode; clientDirectives: Map<string, string>; entryModules: Record<string, string>; inlinedScripts: Map<string, string>; assets: Set<string>; componentMetadata: SSRResult['componentMetadata']; pageModule?: SinglePageBuiltModule; pageMap?: Map<ComponentPath, ImportComponentInstance>; serverIslandMappings?: () => Promise<ServerIslandMappings> | ServerIslandMappings; key: Promise<CryptoKey>; i18n: SSRManifestI18n | undefined; middleware?: () => Promise<AstroMiddlewareInstance> | AstroMiddlewareInstance; logger?: () => Promise<{ default: AstroLoggerDestination; }> | { default: AstroLoggerDestination; }; actions?: () => Promise<SSRActions> | SSRActions; sessionDriver?: () => Promise<{ default: SessionDriverFactory | null; }>; cacheProvider?: () => Promise<{ default: CacheProviderFactory | null; }>; checkOrigin: boolean; allowedDomains?: Partial<RemotePattern>[]; actionBodySizeLimit: number; serverIslandBodySizeLimit: number; sessionConfig?: SSRManifestSession; cacheConfig?: SSRManifestCache; cacheDir: URL; srcDir: URL; outDir: URL; rootDir: URL; publicDir: URL; assetsDir: string; buildClientDir: URL; buildServerDir: URL; csp: SSRManifestCSP | undefined; image: { objectFit?: string; objectPosition?: string; layout?: string; }; shouldInjectCspMetaTags: boolean; devToolbar: { enabled: boolean; latestAstroVersion: string | undefined; debugInfoOutput: string | undefined; placement: DevToolbarPlacement | undefined; }; internalFetchHeaders?: Record<string, string>; logLevel: AstroLoggerLevel; }",
+          "confidence": "high",
+          "symbols": [
+            "SSRManifest"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `SSRManifestCSP` changed.",
+          "remediation": "The signature of `SSRManifestCSP` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: export type SSRManifestCSP = { cspDestination: 'adapter' | 'meta' | 'header' | undefined; algorithm: CspAlgorithm; scriptHashes: string[]; scriptResources: string[]; isStrictDynamic: boolean; styleHashes: string[]; styleResources: string[]; directives: CspDirective[]; }\n  after:  export type SSRManifestCSP = { cspDestination: 'adapter' | 'meta' | 'header' | undefined; algorithm: CspAlgorithm; directives: CspDirective[]; scriptHashes: string[]; scriptResources: string[]; isStrictDynamic: boolean; styleHashes: string[]; styleResources: string[]; scriptDirective: { resources: CspResourceEntry[]; hashes: CspHashEntry[]; strictDynamic: boolean; }; styleDirective: { resources: CspResourceEntry[]; hashes: CspHashEntry[]; }; }",
+          "confidence": "high",
+          "symbols": [
+            "SSRManifestCSP"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`AstroSession.cookies` was removed.",
+          "remediation": "The member `AstroSession.cookies` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "symbols": [
+            "AstroSession.cookies",
+            "cookies"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`AstroSession.config` was removed.",
+          "remediation": "The member `AstroSession.config` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "symbols": [
+            "AstroSession.config"
+          ],
+          "sites": []
+        }
+      ]
+    }
+  ],
+  "audit": {
+    "checked": 4,
+    "analysed": 0,
+    "findings": []
+  }
+}

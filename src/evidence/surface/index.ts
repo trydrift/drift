@@ -10,6 +10,8 @@ import { javaSurface } from './java.js';
 import { pythonSurface } from './python.js';
 import { arduinoSurface, conanSurface, vcpkgSurface } from './c.js';
 import { nugetSurface } from './dotnet.js';
+import { pubSurface } from './dart.js';
+import { hexSurface } from './hex.js';
 import { unavailable, type SurfaceOutcome, type SurfaceProvider } from './types.js';
 
 /**
@@ -31,6 +33,8 @@ const PROVIDERS: readonly SurfaceProvider[] = [
   vcpkgSurface,
   arduinoSurface,
   nugetSurface,
+  pubSurface,
+  hexSurface,
 ];
 
 export function surfaceProviderFor(ecosystem: Ecosystem): SurfaceProvider | undefined {
@@ -110,3 +114,5 @@ export { parsePythonSurface } from './python.js';
 export { parseHeader, parseHeaderSurface, publicHeaders } from './c-headers.js';
 export { folderForVersion, sourceUrlForVersion, matchesVersion } from './c.js';
 export { readAssemblySurface } from './dotnet.js';
+export { declarationsIn, publicApiOf as dartPublicApi } from './dart.js';
+export { elixirModules, erlangExports, publicApiOf as hexPublicApi } from './hex.js';

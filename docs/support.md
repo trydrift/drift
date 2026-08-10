@@ -25,6 +25,45 @@ reassuring.** Drift never renders the first as the second.
 | Fix | Drift produces scoped changes. |
 | Automated PR | Drift can branch, validate, commit, push, and open a pull request. |
 
+## How deep the support goes
+
+Sixteen rows of `Partial` do not tell you which ecosystems Drift is *good* at.
+This does. Three things decide it, and the tier is how many of them hold:
+
+1. **A computed API diff** — Drift compares what was actually published, rather
+   than reading the changelog and hoping it is complete.
+2. **Module names the package declares** — the join between "this changed" and
+   "you use it" runs on names read from the artefact or fixed by the manifest,
+   not on a naming habit Drift is guessing at.
+3. **Verification Drift can run** — the ecosystem's own build and tests, over
+   the change Drift proposes.
+
+| Tier | What it means |
+| --- | --- |
+| Deep | Drift computes the API diff from the published artefact, joins it to your code against module names the package itself declares, and can run the ecosystem's own build and tests over the result. |
+| Strong | Two of the three hold. Drift has a real answer here; one of the diff, the name resolution, or the verification is weaker than the others. |
+| Working | One of the three holds. Drift will tell you what moved and research it properly, and leaves more of the judgement with you. |
+| Limited | Detected, versioned, and researched. Whether it breaks your code is a question Drift cannot answer in this ecosystem. |
+
+| Ecosystem | Depth | Module names |
+| --- | --- | --- |
+| JavaScript / TypeScript | Deep | Fixed by the manifest — the coordinate is the import name |
+| Python | Deep | Read from the published artefact |
+| Go | Deep | Fixed by the manifest — the coordinate is the import name |
+| Rust | Deep | Fixed by the manifest — the coordinate is the import name |
+| Java / Kotlin / Scala | Deep | Read from the published artefact |
+| Ruby | Strong | Read from the published artefact |
+| .NET | Deep | Read from the published artefact |
+| PHP | Strong | Read from the published artefact |
+| Elixir / Erlang | Deep | Read from the published artefact |
+| Dart / Flutter | Deep | Fixed by the manifest — the coordinate is the import name |
+| Swift | Strong | Read from the published artefact |
+| CocoaPods | Working | Read from the published artefact |
+| OCaml | Working | Inferred from the ecosystem's naming convention |
+| C / C++ (Conan) | Strong | Inferred from the ecosystem's naming convention |
+| C / C++ (vcpkg) | Strong | Inferred from the ecosystem's naming convention |
+| Arduino / PlatformIO | Strong | Inferred from the ecosystem's naming convention |
+
 ## The matrix
 
 | Ecosystem | Detect | Evidence | API surface | Static analysis | Verify | Fix | Automated PR |
@@ -36,12 +75,12 @@ reassuring.** Drift never renders the first as the second.
 | Java / Kotlin / Scala | Partial | Yes | Partial | Partial | Partial | Partial | Yes |
 | Ruby | Yes | Yes | No | Partial | Partial | Yes | Yes |
 | .NET | Yes | Partial | Partial | Partial | Partial | Yes | Yes |
-| PHP | Yes | Partial | No | No | Partial | Yes | Yes |
-| Elixir / Erlang | Yes | Partial | No | No | Partial | Yes | Yes |
-| Dart / Flutter | Yes | Partial | No | Partial | Partial | Yes | Yes |
-| Swift | Partial | Partial | No | No | Partial | Yes | Yes |
-| CocoaPods | Yes | Partial | No | No | No | Yes | Yes |
-| OCaml | Yes | Partial | No | No | Partial | Yes | Yes |
+| PHP | Yes | Partial | No | Partial | Partial | Yes | Yes |
+| Elixir / Erlang | Yes | Partial | Partial | Partial | Partial | Yes | Yes |
+| Dart / Flutter | Yes | Partial | Partial | Partial | Partial | Yes | Yes |
+| Swift | Partial | Partial | No | Partial | Partial | Yes | Yes |
+| CocoaPods | Yes | Partial | No | Partial | No | Yes | Yes |
+| OCaml | Yes | Partial | No | Partial | Partial | Yes | Yes |
 | C / C++ (Conan) | Partial | Partial | Partial | Partial | Partial | Yes | Yes |
 | C / C++ (vcpkg) | Partial | Partial | Partial | Partial | Partial | Yes | Yes |
 | Arduino / PlatformIO | Yes | Partial | Partial | Partial | Partial | Yes | Yes |
@@ -52,8 +91,10 @@ reassuring.** Drift never renders the first as the second.
 
 **Package managers:** npm, pnpm, Yarn (classic), Yarn (berry), Bun
 
+**Depth:** Deep. Module names are fixed by the manifest — the coordinate is the import name.
+
 - **API surface — Partial.** Diffs published TypeScript declarations. A package that ships no declarations of its own falls back to prose evidence rather than reporting a clean comparison.
-- **Static analysis — Partial.** Matches imports and references to symbols named in the evidence; cannot see through reflection, dynamic dispatch, or generated code.
+- **Static analysis — Partial.** Resolves imports against the module names the published package declares, follows re-exports inside your repository, and matches references to symbols named in the evidence. Cannot see through reflection, dynamic dispatch, or generated code.
 - **Verify — Partial.** Runs the typecheck, test, and build scripts the project's package.json actually declares.
 
 ## Python
@@ -62,8 +103,10 @@ reassuring.** Drift never renders the first as the second.
 
 **Package managers:** pip, Poetry, uv
 
+**Depth:** Deep. Module names are read from the published artefact.
+
 - **API surface — Partial.** Compares the public surface reconstructed from published type stubs. Packages without stubs fall back to prose evidence. *Requires a local Python interpreter.*
-- **Static analysis — Partial.** Matches imports and references to symbols named in the evidence; cannot see through reflection, dynamic dispatch, or generated code.
+- **Static analysis — Partial.** Resolves imports against the module names the published package declares, follows re-exports inside your repository, and matches references to symbols named in the evidence. Cannot see through reflection, dynamic dispatch, or generated code.
 - **Verify — Partial.** Runs mypy/pyright and pytest when the project declares them.
 
 ## Go
@@ -72,8 +115,10 @@ reassuring.** Drift never renders the first as the second.
 
 **Package managers:** Go modules
 
+**Depth:** Deep. Module names are fixed by the manifest — the coordinate is the import name.
+
 - **API surface — Partial.** Compares the exported API of both module versions. *Requires the Go toolchain.*
-- **Static analysis — Partial.** Matches imports and references to symbols named in the evidence; cannot see through reflection, dynamic dispatch, or generated code.
+- **Static analysis — Partial.** Resolves imports against the module names the published package declares, follows re-exports inside your repository, and matches references to symbols named in the evidence. Cannot see through reflection, dynamic dispatch, or generated code.
 - **Verify — Partial.** Runs `go vet`, `go test`, and `go build`. *Requires the Go toolchain.*
 
 ## Rust
@@ -82,8 +127,10 @@ reassuring.** Drift never renders the first as the second.
 
 **Package managers:** Cargo
 
+**Depth:** Deep. Module names are fixed by the manifest — the coordinate is the import name.
+
 - **API surface — Partial.** Compares the public API of both crate versions. *Requires cargo-public-api.*
-- **Static analysis — Partial.** Matches imports and references to symbols named in the evidence; cannot see through reflection, dynamic dispatch, or generated code.
+- **Static analysis — Partial.** Resolves imports against the module names the published package declares, follows re-exports inside your repository, and matches references to symbols named in the evidence. Cannot see through reflection, dynamic dispatch, or generated code.
 - **Verify — Partial.** Runs `cargo check`, `cargo test`, and `cargo build`. *Requires the Rust toolchain.*
 
 ## Java / Kotlin / Scala
@@ -92,9 +139,11 @@ reassuring.** Drift never renders the first as the second.
 
 **Package managers:** Maven, Gradle, sbt
 
+**Depth:** Deep. Module names are read from the published artefact.
+
 - **Detect — Partial.** Reads pom.xml, Gradle build files and version catalogs, and sbt coordinates. Gradle versions computed at configuration time are not visible without running Gradle.
 - **API surface — Partial.** Compares both published JARs. *Requires japicmp.*
-- **Static analysis — Partial.** Matches imports and references to symbols named in the evidence; cannot see through reflection, dynamic dispatch, or generated code.
+- **Static analysis — Partial.** Resolves imports against the module names the published package declares, follows re-exports inside your repository, and matches references to symbols named in the evidence. Cannot see through reflection, dynamic dispatch, or generated code.
 - **Verify — Partial.** Runs Maven or Gradle. sbt projects verify through sbt when it is installed.
 - **Fix — Partial.** Maven and sbt are edited through the build file; Gradle versions declared outside a version catalog may need a manual edit.
 
@@ -104,8 +153,10 @@ reassuring.** Drift never renders the first as the second.
 
 **Package managers:** Bundler
 
+**Depth:** Strong. Module names are read from the published artefact.
+
 - **API surface — No.** Ruby has no static public API surface to compare, so upgrades rest on release notes, changelogs, and advisories.
-- **Static analysis — Partial.** Matches imports and references to symbols named in the evidence; cannot see through reflection, dynamic dispatch, or generated code.
+- **Static analysis — Partial.** Resolves imports against the module names the published package declares, follows re-exports inside your repository, and matches references to symbols named in the evidence. Cannot see through reflection, dynamic dispatch, or generated code.
 - **Verify — Partial.** Runs RSpec or Rake when the Gemfile declares them. *Requires Bundler.*
 
 ## .NET
@@ -114,9 +165,11 @@ reassuring.** Drift never renders the first as the second.
 
 **Package managers:** NuGet
 
+**Depth:** Deep. Module names are read from the published artefact.
+
 - **Evidence — Partial.** Registry metadata, published versions, deprecation, and OSV advisories. Release notes depend on the package declaring a GitHub repository.
 - **API surface — Partial.** Compares the public types and member signatures in both versions' published assemblies, preferring the reference assembly and a common target framework. A package that ships only native binaries, analyzers, or nothing at all has no surface to compare.
-- **Static analysis — Partial.** Matches imports and references to symbols named in the evidence; cannot see through reflection, dynamic dispatch, or generated code.
+- **Static analysis — Partial.** Resolves imports against the module names the published package declares, follows re-exports inside your repository, and matches references to symbols named in the evidence. Cannot see through reflection, dynamic dispatch, or generated code.
 - **Verify — Partial.** Runs `dotnet build` and `dotnet test`. *Requires the .NET SDK.*
 
 ## PHP
@@ -125,9 +178,11 @@ reassuring.** Drift never renders the first as the second.
 
 **Package managers:** Composer
 
+**Depth:** Strong. Module names are read from the published artefact.
+
 - **Evidence — Partial.** Registry metadata, published versions, abandonment notices, and OSV advisories. Release notes depend on the package declaring a source repository.
 - **API surface — No.** PHP publishes no machine-comparable API artefact; upgrades rest on release notes, changelogs, and advisories.
-- **Static analysis — No.** PHP namespaces do not map deterministically to a Composer package name (a PSR-4 root can belong to any vendor); Drift does not localize usages in this ecosystem yet.
+- **Static analysis — Partial.** Resolves `use` statements against the PSR-4 and PSR-0 roots the package declares in its own composer.json, read from Packagist. A package that autoloads only by classmap declares no namespace root and is not localized.
 - **Verify — Partial.** Runs PHPUnit when composer.json declares it. *Requires Composer.*
 
 ## Elixir / Erlang
@@ -136,9 +191,11 @@ reassuring.** Drift never renders the first as the second.
 
 **Package managers:** Mix
 
+**Depth:** Deep. Module names are read from the published artefact.
+
 - **Evidence — Partial.** Registry metadata, published versions, retirement notices, and OSV advisories.
-- **API surface — No.** Hex publishes no machine-comparable API artefact; upgrades rest on release notes, changelogs, and advisories.
-- **Static analysis — No.** Elixir and Erlang code can call a module without any import statement naming its package; Drift does not localize usages in this ecosystem yet.
+- **API surface — Partial.** Compares the public modules and their functions, by name and arity, in both versions' published sources — `def` and `defmacro` in Elixir, `-export` in Erlang. A function a macro generates at compile time is not visible without compiling.
+- **Static analysis — Partial.** Resolves module references against every module the released tarball defines, so a fully qualified call needs no `alias` to be found. Cannot see through `apply/3` or a module name computed at runtime.
 - **Verify — Partial.** Runs `mix compile --warnings-as-errors` and `mix test`. *Requires Elixir and Mix.*
 
 ## Dart / Flutter
@@ -147,9 +204,11 @@ reassuring.** Drift never renders the first as the second.
 
 **Package managers:** Dart pub, Flutter
 
+**Depth:** Deep. Module names are fixed by the manifest — the coordinate is the import name.
+
 - **Evidence — Partial.** Registry metadata, published versions, retraction, and OSV advisories. Release notes depend on the package declaring a repository.
-- **API surface — No.** Drift does not compare published Dart APIs; upgrades rest on release notes, changelogs, and advisories.
-- **Static analysis — Partial.** Matches imports and references to symbols named in the evidence; cannot see through reflection, dynamic dispatch, or generated code.
+- **API surface — Partial.** Compares the public declarations of both versions' published libraries, following each `export` out of the private `lib/src` tree the way a consumer's import does. Read from source rather than from a compiled artefact.
+- **Static analysis — Partial.** Resolves imports against the module names the published package declares, follows re-exports inside your repository, and matches references to symbols named in the evidence. Cannot see through reflection, dynamic dispatch, or generated code.
 - **Verify — Partial.** Runs `dart analyze` and `dart test`, or their Flutter equivalents. *Requires the Dart or Flutter SDK.*
 
 ## Swift
@@ -158,10 +217,12 @@ reassuring.** Drift never renders the first as the second.
 
 **Package managers:** Swift Package Manager
 
+**Depth:** Strong. Module names are read from the published artefact.
+
 - **Detect — Partial.** Reads literal `.package(...)` declarations and Package.resolved. Versions computed by Swift code at manifest-evaluation time are not visible without running SwiftPM.
 - **Evidence — Partial.** Source repository, releases, and changelogs, because SwiftPM identifies packages by git URL. There is no central registry to query for deprecation.
 - **API surface — No.** Comparing two Swift module interfaces needs a local toolchain and a built artefact Drift does not produce; upgrades rest on prose evidence.
-- **Static analysis — No.** A Swift package can vend module names unrelated to the package name in Package.swift; Drift does not localize usages in this ecosystem yet.
+- **Static analysis — Partial.** Resolves `import` statements against the library and target names declared in the dependency's own Package.swift at the resolved version. A module name a manifest computes at evaluation time is not visible without running SwiftPM.
 - **Verify — Partial.** Runs `swift build` and `swift test`. *Requires the Swift toolchain.*
 
 ## CocoaPods
@@ -170,9 +231,11 @@ reassuring.** Drift never renders the first as the second.
 
 **Package managers:** CocoaPods
 
+**Depth:** Working. Module names are read from the published artefact.
+
 - **Evidence — Partial.** Release notes and changelogs when the pod declares a GitHub source. CocoaPods publishes no queryable metadata API, so there is no deprecation or advisory signal.
 - **API surface — No.** Drift does not compare compiled iOS frameworks; upgrades rest on prose evidence.
-- **Static analysis — No.** A pod's Swift or Objective-C module name is not derivable from its podspec name; Drift does not localize usages in this ecosystem yet.
+- **Static analysis — Partial.** Resolves `import` statements against the `module_name` the pod declares in its podspec, read from the CocoaPods CDN. A pod that builds its module name in Ruby at podspec-evaluation time is not visible without running CocoaPods.
 - **Verify — No.** Building an iOS target needs Xcode and a scheme Drift cannot infer; verification stays with the developer.
 
 ## OCaml
@@ -181,9 +244,11 @@ reassuring.** Drift never renders the first as the second.
 
 **Package managers:** opam
 
+**Depth:** Working. Module names are inferred from the ecosystem's naming convention.
+
 - **Evidence — Partial.** Release notes and changelogs when the package declares a GitHub source. opam has no JSON metadata API, so there is no registry deprecation signal.
 - **API surface — No.** Comparing two OCaml module interfaces needs a built switch Drift does not create; upgrades rest on prose evidence.
-- **Static analysis — No.** An OCaml library's top-level module name is not derivable from its opam package name without reading its dune build rules; Drift does not localize usages in this ecosystem yet.
+- **Static analysis — Partial.** Matches imports and references to symbols named in the evidence, using the ecosystem's own module-naming convention where no published module list exists. Cannot see through reflection, dynamic dispatch, or generated code.
 - **Verify — Partial.** Runs `dune build` and `dune runtest`. *Requires opam and dune.*
 
 ## C / C++ (Conan)
@@ -192,10 +257,12 @@ reassuring.** Drift never renders the first as the second.
 
 **Package managers:** Conan
 
+**Depth:** Strong. Module names are inferred from the ecosystem's naming convention.
+
 - **Detect — Partial.** Reads conanfile.txt, conan.lock, and the literal `requires` declarations in conanfile.py. A reference a recipe builds at evaluation time is not visible without running Python.
 - **Evidence — Partial.** Versions from the ConanCenter recipe index, and releases and changelogs from the upstream project the recipe builds — not from the recipe itself. ConanCenter publishes no deprecation signal, and OSV has no Conan ecosystem.
 - **API surface — Partial.** Compares the declarations in both versions' public headers, which is what a consumer compiles against. Declarations behind preprocessor conditionals are read as written, not per build configuration.
-- **Static analysis — Partial.** Matches `#include` directives and references to symbols named in the evidence. A macro-generated call site is invisible, as is a header reached through another header.
+- **Static analysis — Partial.** Matches `#include` directives and references to symbols named in the evidence, following includes through your own headers so a library reached indirectly still counts. A macro-generated call site is invisible.
 - **Verify — Partial.** Runs `conan build`, which is the compiler — in C and C++ an incompatible header change is a build failure rather than a runtime surprise. *Requires Conan.*
 
 ## C / C++ (vcpkg)
@@ -204,10 +271,12 @@ reassuring.** Drift never renders the first as the second.
 
 **Package managers:** vcpkg
 
+**Depth:** Strong. Module names are inferred from the ecosystem's naming convention.
+
 - **Detect — Partial.** Reads declared dependencies, `version>=` floors, and `overrides`. A registry baseline moving changes every unpinned version at once; Drift reports the baseline move rather than resolving it to versions.
 - **Evidence — Partial.** Versions from the vcpkg versions database, and releases and changelogs from the port's upstream project. vcpkg publishes no deprecation signal, and OSV has no vcpkg ecosystem.
 - **API surface — Partial.** Compares the declarations in both versions' public headers, which is what a consumer compiles against. Declarations behind preprocessor conditionals are read as written, not per build configuration.
-- **Static analysis — Partial.** Matches `#include` directives and references to symbols named in the evidence. A macro-generated call site is invisible, as is a header reached through another header.
+- **Static analysis — Partial.** Matches `#include` directives and references to symbols named in the evidence, following includes through your own headers so a library reached indirectly still counts. A macro-generated call site is invisible.
 - **Verify — Partial.** Runs the project's CMake build, which is where an incompatible header change surfaces. *Requires CMake.*
 
 ## Arduino / PlatformIO
@@ -216,9 +285,11 @@ reassuring.** Drift never renders the first as the second.
 
 **Package managers:** Arduino CLI, PlatformIO
 
+**Depth:** Strong. Module names are inferred from the ecosystem's naming convention.
+
 - **Evidence — Partial.** Versions and repositories from the Arduino Library Manager index, plus releases and changelogs from the library's own repository. A library published only to PlatformIO has metadata but no version history, because that registry serves only the current release.
 - **API surface — Partial.** Compares the declarations in both versions' public headers, which is what a consumer compiles against. Declarations behind preprocessor conditionals are read as written, not per build configuration.
-- **Static analysis — Partial.** Matches `#include` directives and references to symbols named in the evidence. A macro-generated call site is invisible, as is a header reached through another header.
+- **Static analysis — Partial.** Matches `#include` directives and references to symbols named in the evidence, following includes through your own headers so a library reached indirectly still counts. A macro-generated call site is invisible.
 - **Verify — Partial.** Runs `arduino-cli compile` or `pio run`, and `pio test` where the project has tests. *Requires Arduino CLI or PlatformIO.*
 
 ## Ecosystems that are not on this list

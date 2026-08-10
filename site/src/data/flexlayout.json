@@ -1,0 +1,277 @@
+{
+  "id": "flexlayout",
+  "label": "FlexLayout",
+  "ecosystem": "cocoapods",
+  "language": "Swift",
+  "repo": "https://github.com/layoutBox/FlexLayout",
+  "blurb": "A Swift flexbox layout library, with the Podfile that pins its pods.",
+  "capturedAt": "2026-08-10T15:53:15.552Z",
+  "commit": "b1fcc81828e4b735c79d4c3fac35ef0754be0060",
+  "durationMs": 2970,
+  "packagesChecked": 5,
+  "manifests": [
+    "Package.swift",
+    "Podfile"
+  ],
+  "events": [
+    {
+      "at": 2483,
+      "phase": "Looking for manifests",
+      "detail": "layoutBox/FlexLayout",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 2493,
+      "phase": "Reading manifest",
+      "detail": "Package.swift",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 2493,
+      "phase": "Reading manifest",
+      "detail": "Podfile",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 2495,
+      "phase": "Indexing your code",
+      "detail": "Walking source files",
+      "done": 0,
+      "total": 5
+    },
+    {
+      "at": 2525,
+      "phase": "Indexing your code",
+      "detail": "59 files indexed · 5 direct dependencies to check",
+      "done": 0,
+      "total": 5
+    },
+    {
+      "at": 2525,
+      "phase": "Checking the the package’s git repository",
+      "detail": "facebook/yoga (installed 3.2.1)",
+      "done": 0,
+      "total": 5
+    },
+    {
+      "at": 2525,
+      "phase": "Checking the CocoaPods Trunk",
+      "detail": "Yoga (installed 3.2.1)",
+      "done": 0,
+      "total": 5
+    },
+    {
+      "at": 2525,
+      "phase": "Checking the CocoaPods Trunk",
+      "detail": "FlexLayout (installed 2.2.1)",
+      "done": 0,
+      "total": 5
+    },
+    {
+      "at": 2525,
+      "phase": "Checking the CocoaPods Trunk",
+      "detail": "PinLayout (installed 1.10.5)",
+      "done": 0,
+      "total": 5
+    },
+    {
+      "at": 2525,
+      "phase": "Checking the CocoaPods Trunk",
+      "detail": "SwiftLint (installed 0.55.1)",
+      "done": 0,
+      "total": 5
+    },
+    {
+      "at": 2525,
+      "phase": "Up to date",
+      "detail": "facebook/yoga@3.2.1",
+      "done": 1,
+      "total": 5
+    },
+    {
+      "at": 2527,
+      "phase": "Reading release notes and changelog",
+      "detail": "FlexLayout 2.2.1 → 2.2.3",
+      "done": 1,
+      "total": 5
+    },
+    {
+      "at": 2527,
+      "phase": "Comparing the public API surface",
+      "detail": "FlexLayout 2.2.1 → 2.2.3 · 1 evidence source",
+      "done": 1,
+      "total": 5
+    },
+    {
+      "at": 2527,
+      "phase": "No breaking changes to look for",
+      "detail": "FlexLayout 2.2.1 → 2.2.3",
+      "done": 1,
+      "total": 5
+    },
+    {
+      "at": 2527,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "FlexLayout 2.2.1 → 2.2.3",
+      "done": 1,
+      "total": 5
+    },
+    {
+      "at": 2528,
+      "phase": "Checked",
+      "detail": "FlexLayout 2.2.1 → 2.2.3 · not verified · drift found nothing it could check this version against",
+      "done": 2,
+      "total": 5
+    },
+    {
+      "at": 2528,
+      "phase": "Up to date",
+      "detail": "Yoga@3.2.1",
+      "done": 3,
+      "total": 5
+    },
+    {
+      "at": 2528,
+      "phase": "Reading release notes and changelog",
+      "detail": "PinLayout 1.10.5 → 1.10.6",
+      "done": 3,
+      "total": 5
+    },
+    {
+      "at": 2528,
+      "phase": "Comparing the public API surface",
+      "detail": "PinLayout 1.10.5 → 1.10.6 · 1 evidence source",
+      "done": 3,
+      "total": 5
+    },
+    {
+      "at": 2528,
+      "phase": "No breaking changes to look for",
+      "detail": "PinLayout 1.10.5 → 1.10.6",
+      "done": 3,
+      "total": 5
+    },
+    {
+      "at": 2528,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "PinLayout 1.10.5 → 1.10.6",
+      "done": 3,
+      "total": 5
+    },
+    {
+      "at": 2529,
+      "phase": "Checked",
+      "detail": "PinLayout 1.10.5 → 1.10.6 · not verified · drift found nothing it could check this version against",
+      "done": 4,
+      "total": 5
+    },
+    {
+      "at": 2530,
+      "phase": "Reading release notes and changelog",
+      "detail": "SwiftLint 0.55.1 → 0.65.0",
+      "done": 4,
+      "total": 5
+    },
+    {
+      "at": 2530,
+      "phase": "Comparing the public API surface",
+      "detail": "SwiftLint 0.55.1 → 0.65.0 · 1 evidence source",
+      "done": 4,
+      "total": 5
+    },
+    {
+      "at": 2530,
+      "phase": "No breaking changes to look for",
+      "detail": "SwiftLint 0.55.1 → 0.65.0",
+      "done": 4,
+      "total": 5
+    },
+    {
+      "at": 2530,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "SwiftLint 0.55.1 → 0.65.0",
+      "done": 4,
+      "total": 5
+    },
+    {
+      "at": 2530,
+      "phase": "Checked",
+      "detail": "SwiftLint 0.55.1 → 0.65.0 · not verified · drift found nothing it could check this version against",
+      "done": 5,
+      "total": 5
+    }
+  ],
+  "candidates": [
+    {
+      "name": "FlexLayout",
+      "ecosystem": "cocoapods",
+      "current": "2.2.1",
+      "latest": "2.2.3",
+      "selected": "2.2.3",
+      "safeLatest": "2.2.3",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Insufficient evidence. No release notes, changelog, or migration guide was reachable for FlexLayout 2.2.3, and no source repository could be resolved for it. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "recommendation": "insufficient-evidence",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "No release notes, changelog, or migration guide was reachable for FlexLayout 2.2.3, and no source repository could be resolved for it.",
+        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "PinLayout",
+      "ecosystem": "cocoapods",
+      "current": "1.10.5",
+      "latest": "1.10.6",
+      "selected": "1.10.6",
+      "safeLatest": "1.10.6",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Insufficient evidence. No release notes, changelog, or migration guide was reachable for PinLayout 1.10.6, and no source repository could be resolved for it. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "recommendation": "insufficient-evidence",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "No release notes, changelog, or migration guide was reachable for PinLayout 1.10.6, and no source repository could be resolved for it.",
+        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "SwiftLint",
+      "ecosystem": "cocoapods",
+      "current": "0.55.1",
+      "latest": "0.65.0",
+      "selected": "0.65.0",
+      "safeLatest": null,
+      "status": "clean",
+      "risk": "none",
+      "summary": "Insufficient evidence. No release notes, changelog, or migration guide was reachable for SwiftLint 0.65.0, and no source repository could be resolved for it. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "recommendation": "insufficient-evidence",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "No release notes, changelog, or migration guide was reachable for SwiftLint 0.65.0, and no source repository could be resolved for it.",
+        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+      ],
+      "breaking": []
+    }
+  ],
+  "audit": {
+    "checked": 5,
+    "analysed": 0,
+    "findings": []
+  }
+}

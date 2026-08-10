@@ -1,0 +1,546 @@
+{
+  "id": "trantor",
+  "label": "trantor",
+  "ecosystem": "conan",
+  "language": "C++",
+  "repo": "https://github.com/an-tao/trantor",
+  "blurb": "The C++ network library underneath Drogon, with a conanfile.txt.",
+  "capturedAt": "2026-08-10T15:53:26.234Z",
+  "commit": "63a4e5e164e219dc3bf30cdbfa1462ae5602fa97",
+  "durationMs": 8247,
+  "packagesChecked": 3,
+  "manifests": [
+    "conanfile.txt"
+  ],
+  "events": [
+    {
+      "at": 1522,
+      "phase": "Looking for manifests",
+      "detail": "an-tao/trantor",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 1525,
+      "phase": "Reading manifest",
+      "detail": "conanfile.txt",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 1526,
+      "phase": "Indexing your code",
+      "detail": "Walking source files",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "at": 1580,
+      "phase": "Indexing your code",
+      "detail": "131 files indexed · 3 direct dependencies to check",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "at": 1581,
+      "phase": "Checking the ConanCenter",
+      "detail": "gtest (installed 1.10.0)",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "at": 1581,
+      "phase": "Checking the ConanCenter",
+      "detail": "openssl (installed 1.1.1)",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "at": 1581,
+      "phase": "Checking the ConanCenter",
+      "detail": "spdlog (installed 1.12.0)",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "at": 1586,
+      "phase": "Reading release notes and changelog",
+      "detail": "spdlog 1.12.0 → 1.17.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "at": 1586,
+      "phase": "Reading release notes and changelog",
+      "detail": "openssl 1.1.1 → 4.0.1",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "at": 1589,
+      "phase": "Reading release notes and changelog",
+      "detail": "gtest 1.10.0 → 1.17.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "at": 4505,
+      "phase": "Comparing the public API surface",
+      "detail": "openssl 1.1.1 → 4.0.1 · 18 evidence sources",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "at": 4506,
+      "phase": "Searching your code for 10 breaking changes",
+      "detail": "openssl 1.1.1 → 4.0.1",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "at": 4548,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "openssl 1.1.1 → 4.0.1",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "at": 4553,
+      "phase": "Needs your attention",
+      "detail": "openssl 1.1.1 → 4.0.1 · affects your code · 3 sites in 1 file",
+      "done": 1,
+      "total": 3
+    },
+    {
+      "at": 6166,
+      "phase": "Comparing the public API surface",
+      "detail": "gtest 1.10.0 → 1.17.0 · 5 evidence sources",
+      "done": 1,
+      "total": 3
+    },
+    {
+      "at": 6239,
+      "phase": "Searching your code for 199 breaking changes",
+      "detail": "gtest 1.10.0 → 1.17.0",
+      "done": 1,
+      "total": 3
+    },
+    {
+      "at": 6853,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "gtest 1.10.0 → 1.17.0",
+      "done": 1,
+      "total": 3
+    },
+    {
+      "at": 6929,
+      "phase": "Needs your attention",
+      "detail": "gtest 1.10.0 → 1.17.0 · affects your code · 8 sites in 6 files",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "at": 7033,
+      "phase": "Comparing the public API surface",
+      "detail": "spdlog 1.12.0 → 1.17.0 · 2 evidence sources",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "at": 7054,
+      "phase": "Searching your code for 170 breaking changes",
+      "detail": "spdlog 1.12.0 → 1.17.0",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "at": 8131,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "spdlog 1.12.0 → 1.17.0",
+      "done": 2,
+      "total": 3
+    },
+    {
+      "at": 8155,
+      "phase": "Needs your attention",
+      "detail": "spdlog 1.12.0 → 1.17.0 · affects your code · 30 sites in 1 file",
+      "done": 3,
+      "total": 3
+    }
+  ],
+  "candidates": [
+    {
+      "name": "spdlog",
+      "ecosystem": "conan",
+      "current": "1.12.0",
+      "latest": "1.17.0",
+      "selected": "1.17.0",
+      "safeLatest": "1.17.0",
+      "status": "ready",
+      "risk": "medium",
+      "summary": "Manual migration required. 30 places in this repository use an API that spdlog changed.",
+      "recommendation": "manual-migration-required",
+      "breakingCount": 170,
+      "impactCount": 30,
+      "impactFiles": 1,
+      "evidenceCount": 2,
+      "gaps": [
+        "Drift read 9 sets of release notes for spdlog 1.17.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+      ],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`level` is no longer exported (was a function).",
+          "remediation": "Every use of `level` from `spdlog` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `level` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "level"
+          ],
+          "sites": [
+            {
+              "file": "trantor/utils/Logger.cc",
+              "line": 209,
+              "excerpt": "Logger::Logger(SourceFile file, int line, LogLevel level)",
+              "matchedSymbol": "level",
+              "confidence": "medium"
+            },
+            {
+              "file": "trantor/utils/Logger.cc",
+              "line": 212,
+              "excerpt": "level_(std::clamp(level, kTrace, kFatal))",
+              "matchedSymbol": "level",
+              "confidence": "medium"
+            },
+            {
+              "file": "trantor/utils/Logger.cc",
+              "line": 220,
+              "excerpt": "Logger::Logger(SourceFile file, int line, LogLevel level, const char *func)",
+              "matchedSymbol": "level",
+              "confidence": "medium"
+            },
+            {
+              "file": "trantor/utils/Logger.cc",
+              "line": 223,
+              "excerpt": "level_(std::clamp(level, kTrace, kFatal))",
+              "matchedSymbol": "level",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`sinks` is no longer exported (was a function).",
+          "remediation": "Every use of `sinks` from `spdlog` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `sinks` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "sinks"
+          ],
+          "sites": [
+            {
+              "file": "trantor/utils/Logger.cc",
+              "line": 315,
+              "excerpt": "auto &sinks =",
+              "matchedSymbol": "sinks",
+              "confidence": "medium"
+            },
+            {
+              "file": "trantor/utils/Logger.cc",
+              "line": 318,
+              "excerpt": "->sinks();",
+              "matchedSymbol": "sinks",
+              "confidence": "medium"
+            },
+            {
+              "file": "trantor/utils/Logger.cc",
+              "line": 320,
+              "excerpt": "sinks.begin(),",
+              "matchedSymbol": "sinks",
+              "confidence": "medium"
+            },
+            {
+              "file": "trantor/utils/Logger.cc",
+              "line": 321,
+              "excerpt": "sinks.end());",
+              "matchedSymbol": "sinks",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`basic_cstring_view.c_str` was removed.",
+          "remediation": "The member `basic_cstring_view.c_str` no longer exists in `spdlog`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "symbols": [
+            "basic_cstring_view.c_str",
+            "c_str"
+          ],
+          "sites": [
+            {
+              "file": "trantor/utils/Logger.cc",
+              "line": 117,
+              "excerpt": "date_.toFormattedStringLocal(false).c_str(),",
+              "matchedSymbol": "c_str",
+              "confidence": "medium"
+            },
+            {
+              "file": "trantor/utils/Logger.cc",
+              "line": 122,
+              "excerpt": "date_.toFormattedStringLocal(false).c_str(),",
+              "matchedSymbol": "c_str",
+              "confidence": "medium"
+            },
+            {
+              "file": "trantor/utils/Logger.cc",
+              "line": 130,
+              "excerpt": "date_.toFormattedString(false).c_str(),",
+              "matchedSymbol": "c_str",
+              "confidence": "medium"
+            },
+            {
+              "file": "trantor/utils/Logger.cc",
+              "line": 135,
+              "excerpt": "date_.toFormattedString(false).c_str(),",
+              "matchedSymbol": "c_str",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`name` is no longer exported (was a function).",
+          "remediation": "Every use of `name` from `spdlog` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `name` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "name"
+          ],
+          "sites": [
+            {
+              "file": "trantor/utils/Logger.cc",
+              "line": 366,
+              "excerpt": "spdlog::drop(itRaw->second->name());",
+              "matchedSymbol": "name",
+              "confidence": "medium"
+            },
+            {
+              "file": "trantor/utils/Logger.cc",
+              "line": 375,
+              "excerpt": "std::make_shared<spdlog::logger>(mainLogger->name() + \"_raw\",",
+              "matchedSymbol": "name",
+              "confidence": "medium"
+            },
+            {
+              "file": "trantor/utils/Logger.cc",
+              "line": 410,
+              "excerpt": "if (it->second->name() == defaultSpdLoggerName(index))",
+              "matchedSymbol": "name",
+              "confidence": "medium"
+            },
+            {
+              "file": "trantor/utils/Logger.cc",
+              "line": 411,
+              "excerpt": "spdlog::drop(it->second->name());",
+              "matchedSymbol": "name",
+              "confidence": "medium"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "gtest",
+      "ecosystem": "conan",
+      "current": "1.10.0",
+      "latest": "1.17.0",
+      "selected": "1.17.0",
+      "safeLatest": "1.17.0",
+      "status": "ready",
+      "risk": "medium",
+      "summary": "Manual migration required. 8 places in this repository use an API that gtest changed.",
+      "recommendation": "manual-migration-required",
+      "breakingCount": 199,
+      "impactCount": 8,
+      "impactFiles": 6,
+      "evidenceCount": 5,
+      "gaps": [
+        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+      ],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`RUN_ALL_TESTS` is no longer exported (was a function).",
+          "remediation": "Every use of `RUN_ALL_TESTS` from `gtest` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `RUN_ALL_TESTS` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "RUN_ALL_TESTS"
+          ],
+          "sites": [
+            {
+              "file": "trantor/unittests/DateUnittest.cc",
+              "line": 164,
+              "excerpt": "return RUN_ALL_TESTS();",
+              "matchedSymbol": "RUN_ALL_TESTS",
+              "confidence": "medium"
+            },
+            {
+              "file": "trantor/unittests/HashUnittest.cc",
+              "line": 57,
+              "excerpt": "return RUN_ALL_TESTS();",
+              "matchedSymbol": "RUN_ALL_TESTS",
+              "confidence": "medium"
+            },
+            {
+              "file": "trantor/unittests/InetAddressUnittest.cc",
+              "line": 46,
+              "excerpt": "return RUN_ALL_TESTS();",
+              "matchedSymbol": "RUN_ALL_TESTS",
+              "confidence": "medium"
+            },
+            {
+              "file": "trantor/unittests/MsgBufferUnittest.cc",
+              "line": 77,
+              "excerpt": "return RUN_ALL_TESTS();",
+              "matchedSymbol": "RUN_ALL_TESTS",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `EXPECT_TRUE` changed.",
+          "remediation": "The signature of `EXPECT_TRUE` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: #define EXPECT_TRUE(condition) GTEST_TEST_BOOLEAN_(condition, #condition, false, true, GTEST_NONFATAL_FAILURE_)\n  after:  #define EXPECT_TRUE(condition) GTEST_EXPECT_TRUE(condition)",
+          "confidence": "high",
+          "symbols": [
+            "EXPECT_TRUE"
+          ],
+          "sites": [
+            {
+              "file": "trantor/unittests/splitStringUnittest.cc",
+              "line": 17,
+              "excerpt": "EXPECT_TRUE(out[0].empty());",
+              "matchedSymbol": "EXPECT_TRUE",
+              "confidence": "medium"
+            },
+            {
+              "file": "trantor/unittests/splitStringUnittest.cc",
+              "line": 24,
+              "excerpt": "EXPECT_TRUE(out[0].empty());",
+              "matchedSymbol": "EXPECT_TRUE",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`GTEST_DISALLOW_COPY_AND_ASSIGN_` is no longer exported (was a function).",
+          "remediation": "Every use of `GTEST_DISALLOW_COPY_AND_ASSIGN_` from `gtest` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `GTEST_DISALLOW_COPY_AND_ASSIGN_` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "GTEST_DISALLOW_COPY_AND_ASSIGN_"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `MOCK_METHOD` changed.",
+          "remediation": "The signature of `MOCK_METHOD` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: #define MOCK_METHOD(...) GMOCK_PP_VARIADIC_CALL(GMOCK_INTERNAL_MOCK_METHOD_ARG_, __VA_ARGS__)\n  after:  #define MOCK_METHOD(...) GMOCK_INTERNAL_WARNING_PUSH() GMOCK_INTERNAL_WARNING_CLANG(ignored, \"-Wunused-member-function\") GMOCK_PP_VARIADIC_CALL(GMOCK_INTERNAL_MOCK_METHOD_ARG_, __VA_ARGS__) GMOCK_INTERNAL_WARNING_POP()",
+          "confidence": "high",
+          "symbols": [
+            "MOCK_METHOD"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "openssl",
+      "ecosystem": "conan",
+      "current": "1.1.1",
+      "latest": "4.0.1",
+      "selected": "4.0.1",
+      "safeLatest": null,
+      "status": "ready",
+      "risk": "high",
+      "summary": "Manual migration required. 3 places in this repository use an API that openssl changed.",
+      "recommendation": "manual-migration-required",
+      "breakingCount": 10,
+      "impactCount": 3,
+      "impactFiles": 1,
+      "evidenceCount": 18,
+      "gaps": [
+        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+      ],
+      "breaking": [
+        {
+          "kind": "behaviour-change",
+          "summary": "`SSL_get_error` no longer depends on the state of the error stack,",
+          "remediation": "Behaviour changed: `SSL_get_error` no longer depends on the state of the error stack,. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
+          "confidence": "medium",
+          "symbols": [
+            "SSL_get_error"
+          ],
+          "sites": [
+            {
+              "file": "trantor/net/inner/tlsprovider/OpenSSLProvider.cc",
+              "line": 657,
+              "excerpt": "int err = SSL_get_error(ssl_, ret);",
+              "matchedSymbol": "SSL_get_error",
+              "confidence": "medium"
+            },
+            {
+              "file": "trantor/net/inner/tlsprovider/OpenSSLProvider.cc",
+              "line": 714,
+              "excerpt": "int err = SSL_get_error(ssl_, n);",
+              "matchedSymbol": "SSL_get_error",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "kind": "behaviour-change",
+          "summary": "`OPENSSL_cleanup` no longer by default free global",
+          "remediation": "Behaviour changed: `OPENSSL_cleanup` no longer by default free global. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
+          "confidence": "medium",
+          "symbols": [
+            "OPENSSL_cleanup"
+          ],
+          "sites": [
+            {
+              "file": "trantor/net/inner/tlsprovider/OpenSSLProvider.cc",
+              "line": 30,
+              "excerpt": "atexit(OPENSSL_cleanup);",
+              "matchedSymbol": "OPENSSL_cleanup",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "kind": "behaviour-change",
+          "summary": "`libcrypto` no longer cleans up globally allocated data via `atexit()`",
+          "remediation": "Behaviour changed: `libcrypto` no longer cleans up globally allocated data via `atexit()`. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
+          "confidence": "medium",
+          "symbols": [
+            "libcrypto"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "runtime-requirement",
+          "summary": "Dropped support for the SSLv2 Client Hello",
+          "remediation": "Dropped support for the SSLv2 Client Hello. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
+          "confidence": "medium",
+          "symbols": [
+            "the SSLv2 Client Hello"
+          ],
+          "sites": []
+        }
+      ]
+    }
+  ],
+  "audit": {
+    "checked": 3,
+    "analysed": 0,
+    "findings": []
+  }
+}

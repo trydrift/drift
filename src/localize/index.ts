@@ -1,8 +1,9 @@
 import type { BreakingChange, Confidence, DependencyChange, Ecosystem, ImpactSite } from '../types.js';
 import type { Logger } from '../util/logger.js';
-import { unitAtLine, type FileIndex, type RepoIndex } from '../index/metarag.js';
+import { importKeys, unitAtLine, type FileIndex, type ImportRecord, type RepoIndex } from '../index/metarag.js';
 import { isRuntimeConfigPath, type SourceFile } from '../index/walk.js';
 import { withinMember } from '../detect/workspace.js';
+import { moduleMapKey, type ModuleMaps } from './modules.js';
 
 /**
  * Localization: where does this breaking change actually bite?
@@ -22,6 +23,26 @@ import { withinMember } from '../detect/workspace.js';
  *   low    — the symbol appears but the import link could not be established
  *            (dynamic import, re-export barrel, or an ecosystem where the
  *            package name and module name differ).
+ *
+ * Two things widen that search without widening the noise, and both are worth
+ * naming because they are what separates this from grep with extra steps:
+ *
+ *   **The names come from the package.** `importKeysFor` still knows that
+ *   `pillow` is imported as `PIL`, but it is the fallback now. When
+ *   `src/localize/modules.ts` could read the published artefact — the wheel,
+ *   the jar, the `.nupkg`, the gem, the Hex tarball, Packagist's autoload map
+ *   — the join runs against what the package *says* it provides. That is what
+ *   makes PHP, Elixir, and Swift localizable at all, and what stops a
+ *   `jackson-core` finding landing in a file that imports only
+ *   `jackson-databind`.
+ *
+ *   **The import graph is followed, not just queried.** A barrel file that
+ *   re-exports `axios` puts every one of its own importers one edge away from
+ *   a change nobody would find by searching for `import axios`. Those files
+ *   are reached through `RepoIndex.localImporters` and reported at reduced
+ *   confidence, because the binding is inherited rather than observed. Only
+ *   genuine re-exports propagate: a module that *wraps* a dependency is the
+ *   module that breaks, and its callers have nothing to fix.
  */
 
 export interface LocalizeOptions {
@@ -40,6 +61,23 @@ export interface LocalizeOptions {
    * boundary still resolves — only the sites are scoped.
    */
   member?: string;
+  /**
+   * Module names read from the published artefacts, keyed by `moduleMapKey`.
+   *
+   * Absent means "nobody asked the registry", which is an ordinary state —
+   * the audit and the tests both run without it — and the name heuristics take
+   * over. It never means "the package provides no modules".
+   */
+  moduleMaps?: ModuleMaps;
+  /**
+   * How far to follow this repository's own re-export edges. `0` disables it.
+   *
+   * Three is deliberate rather than arbitrary: `feature -> index barrel ->
+   * package barrel -> dependency` is the deepest chain that occurs in ordinary
+   * layouts, and each extra hop multiplies the candidate set while the
+   * confidence attached to it is already `low`.
+   */
+  maxReExportDepth?: number;
 }
 
 export function localize(
@@ -49,7 +87,7 @@ export function localize(
   files: readonly SourceFile[],
   options: LocalizeOptions,
 ): ImpactSite[] {
-  const { logger, maxSitesPerChange = 100, member } = options;
+  const { logger, maxSitesPerChange = 100, member, moduleMaps, maxReExportDepth = 3 } = options;
 
   const contentByPath = new Map(files.map((f) => [f.path, f.content]));
   const indexByPath = new Map(index.files.map((f) => [f.path, f]));
@@ -78,10 +116,13 @@ export function localize(
       continue;
     }
 
-    const { files: candidateFileList, names } = candidateFiles(
+    const { files: candidateFileList, names, reach } = candidateFiles(
       change,
       index,
       ecosystemsByName.get(change.dependency) ?? [],
+      moduleMaps,
+      maxReExportDepth,
+      indexByPath,
     );
     const candidates = candidateFileList.filter(
       (file) => member === undefined || withinMember(file.path, member),
@@ -92,7 +133,15 @@ export function localize(
       continue;
     }
 
-    const found = searchFiles(change, candidates, contentByPath, indexByPath, maxSitesPerChange, names);
+    const found = searchFiles(
+      change,
+      candidates,
+      contentByPath,
+      indexByPath,
+      maxSitesPerChange,
+      names,
+      reach,
+    );
     sites.push(...found);
 
     if (found.length >= maxSitesPerChange) {
@@ -182,15 +231,15 @@ function candidateFiles(
   change: BreakingChange,
   index: RepoIndex,
   ecosystemsForName: readonly Ecosystem[],
-): { files: FileIndex[]; names: string[] } {
+  moduleMaps: ModuleMaps | undefined,
+  maxReExportDepth: number,
+  byPath: Map<string, FileIndex>,
+): { files: FileIndex[]; names: string[]; reach: Reach } {
   const isEndpointChange =
     change.kind === 'removed-endpoint' || change.kind === 'changed-endpoint';
-  if (isEndpointChange) return { files: index.files, names: [] };
+  if (isEndpointChange) return { files: index.files, names: [], reach: new Map() };
 
-  const names =
-    ecosystemsForName.length > 0
-      ? [...new Set(ecosystemsForName.flatMap((eco) => importKeysFor(change.dependency, eco)))]
-      : importKeysFor(change.dependency, undefined);
+  const { names, exact } = candidateNames(change.dependency, ecosystemsForName, moduleMaps);
   const paths = new Set<string>();
 
   for (const name of names) {
@@ -199,7 +248,13 @@ function candidateFiles(
 
   // Prefix match catches Go module paths and Java package prefixes, where the
   // manifest coordinate and the import path share a root but are not equal.
-  if (paths.size === 0) {
+  //
+  // Skipped outright when the names came from the published artefact, because
+  // there the approximation is not a safety net but a leak: the whole value of
+  // reading `jackson-core`'s jar is knowing it ships nothing under
+  // `...jackson.databind`, and a prefix walk would hand that finding straight
+  // back to a file importing the sibling artifact.
+  if (paths.size === 0 && !exact) {
     for (const [key, importerPaths] of index.importers) {
       if (matchesImportName(key, names)) {
         for (const path of importerPaths) paths.add(path);
@@ -207,12 +262,129 @@ function candidateFiles(
     }
   }
 
-  return { files: index.files.filter((f) => paths.has(f.path)), names };
+  const reach: Reach = new Map();
+  for (const path of paths) reach.set(path, { direct: true, inherited: new Set() });
+
+  if (maxReExportDepth > 0) {
+    reachThroughReExports(index, names, reach, maxReExportDepth, byPath);
+  }
+
+  return { files: index.files.filter((f) => reach.has(f.path)), names, reach };
 }
 
-/** Does an import's package name identify one of the given candidate names? */
-function matchesImportName(packageName: string, names: readonly string[]): boolean {
-  return names.some((name) => identifies(packageName, name) || identifies(name, packageName));
+/**
+ * Every name this dependency might be imported under, best source first.
+ *
+ * When the published artefact answered, its answer is used *instead of* the
+ * heuristics, not alongside them. That is the whole point: mixing a fact with
+ * a guess produces the guess's false positives with the fact's air of
+ * authority. The dependency's own name is kept regardless, because in most
+ * ecosystems it really is the import name and an artefact that lists modules
+ * has no reason to repeat it.
+ */
+function candidateNames(
+  dependency: string,
+  ecosystemsForName: readonly Ecosystem[],
+  moduleMaps: ModuleMaps | undefined,
+): { names: string[]; exact: boolean } {
+  const fromArtefact = new Set<string>();
+  for (const ecosystem of ecosystemsForName) {
+    const map = moduleMaps?.get(moduleMapKey(ecosystem, dependency));
+    for (const name of map?.names ?? []) fromArtefact.add(name);
+  }
+  if (fromArtefact.size > 0) {
+    return { names: [...new Set([...fromArtefact, dependency])], exact: true };
+  }
+
+  const names =
+    ecosystemsForName.length > 0
+      ? [...new Set(ecosystemsForName.flatMap((eco) => importKeysFor(dependency, eco)))]
+      : importKeysFor(dependency, undefined);
+  return { names, exact: false };
+}
+
+/**
+ * How a file came to be a candidate, and what it inherited if indirectly.
+ *
+ * `direct` files import the dependency themselves. The rest reached it through
+ * one or more of this repository's own re-export edges, and `inherited` holds
+ * the names they took across the last one — which is what keeps a transitive
+ * site's confidence honest: a name the importing file actually asked for by
+ * name is worth more than one that arrived under `export *`.
+ */
+type Reach = Map<string, { direct: boolean; inherited: Set<string> }>;
+
+/**
+ * Walk outward from the direct importers along re-export edges.
+ *
+ * The rule that keeps this from becoming a whole-repository search is that
+ * only a *forwarding* import extends the frontier. `export { Foo } from 'pkg'`
+ * forwards; `import { Foo } from 'pkg'` does not. In C the distinction does not
+ * exist — an `#include` is a textual splice and everything it pulled in comes
+ * with it — which is why a header that includes `<zlib.h>` really does put
+ * every file including that header in range, and why the C localizer needed
+ * this more than any other.
+ */
+function reachThroughReExports(
+  index: RepoIndex,
+  names: readonly string[],
+  reach: Reach,
+  maxDepth: number,
+  // Built once per `localize` call rather than once per breaking change. A
+  // repository with five thousand files and a package reporting two hundred
+  // removals paid for a million map insertions to answer a question whose
+  // answer never changed between them.
+  byPath: Map<string, FileIndex>,
+): void {
+  // A frontier is only extended by files that forward what they imported.
+  let frontier = [...reach.keys()].filter((path) => forwards(byPath.get(path), names));
+
+  for (let depth = 0; depth < maxDepth && frontier.length > 0; depth++) {
+    const next: string[] = [];
+
+    for (const path of frontier) {
+      for (const edge of index.localImporters.get(path) ?? []) {
+        if (reach.size >= MAX_REACHED_FILES) return;
+        const existing = reach.get(edge.from);
+        if (existing) {
+          for (const binding of edge.bindings) existing.inherited.add(binding);
+          continue;
+        }
+        reach.set(edge.from, { direct: false, inherited: new Set(edge.bindings) });
+        // The chain continues only where this file forwards too.
+        if (edge.reExport) next.push(edge.from);
+      }
+    }
+
+    frontier = next;
+  }
+}
+
+/**
+ * A ceiling on the transitive set.
+ *
+ * A repository whose root barrel re-exports a dependency puts every file in
+ * the project one edge away from it, and a "finding" spanning nine hundred
+ * files is not a finding — it is a reason to stop reading the report. The cap
+ * is high enough that ordinary layouts never touch it and low enough that a
+ * pathological one degrades to the direct importers plus a large sample.
+ */
+const MAX_REACHED_FILES = 400;
+
+/** Does this file forward one of the named packages on to its own importers? */
+function forwards(file: FileIndex | undefined, names: readonly string[]): boolean {
+  if (!file) return false;
+  return file.imports.some(
+    (record) =>
+      record.reExport === true &&
+      (names.length === 0 || matchesImportName(record, names)),
+  );
+}
+
+/** Does an import identify one of the given candidate names, under any key? */
+function matchesImportName(record: ImportRecord | string, names: readonly string[]): boolean {
+  const keys = typeof record === 'string' ? [record] : importKeys(record);
+  return keys.some((key) => names.some((name) => identifies(key, name) || identifies(name, key)));
 }
 
 /**
@@ -229,7 +401,10 @@ function identifies(longer: string, shorter: string): boolean {
   if (longer === shorter) return true;
   if (!longer.startsWith(shorter)) return false;
   const next = longer[shorter.length];
-  return next === '/' || next === '.' || next === ':';
+  // `\\` is PHP's namespace separator, and a PSR-4 root is an ancestor of the
+  // namespace a class lives in exactly the way a Go module path is an ancestor
+  // of a package path.
+  return next === '/' || next === '.' || next === ':' || next === '\\';
 }
 
 /**
@@ -279,11 +454,66 @@ function importKeysFor(dependency: string, ecosystem: Ecosystem | undefined): st
       if (lower.startsWith('lib') && lower.length > 4) names.add(lower.slice(3));
       break;
     }
+    // Everything below is a *fallback*. The artefact-backed resolver in
+    // `modules.ts` answers all four of these from the package itself, and does
+    // it correctly; these rules exist for the run where the registry was
+    // unreachable, and they are the ecosystems' own naming conventions rather
+    // than a table of names somebody happened to know.
+    case 'packagist': {
+      // Composer coordinates are `vendor/package` and PSR-4 roots are
+      // overwhelmingly `Vendor\Package`, StudlyCased from the same words.
+      const [vendor, pkg] = dependency.split('/');
+      if (vendor && pkg) {
+        names.add(`${studly(vendor)}\\${studly(pkg)}`);
+        names.add(studly(vendor));
+      }
+      break;
+    }
+    case 'hex': {
+      // Elixir modules are the package name StudlyCased; an Erlang package's
+      // modules keep the bare atom.
+      names.add(studly(dependency));
+      names.add(dependency.toLowerCase());
+      break;
+    }
+    case 'swift': {
+      // Swift packages are identified by `owner/repo` here, there being no
+      // registry, and a repository conventionally names its module after
+      // itself minus the `swift-` the community prefixes to make it findable.
+      const repo = dependency.split('/').pop() ?? dependency;
+      names.add(repo);
+      names.add(studly(repo));
+      if (repo.toLowerCase().startsWith('swift-')) names.add(studly(repo.slice(6)));
+      break;
+    }
+    case 'cocoapods':
+      // A pod name that cannot be an identifier is underscored to make one.
+      names.add(dependency.replace(/[-.]/g, '_'));
+      break;
+    case 'opam':
+      // dune names a library's module after the package with the first letter
+      // capitalised, and a sub-library `pkg.sub` as `Pkg_sub`.
+      names.add(studly(dependency.replace(/\./g, '_')));
+      names.add(capitalize(dependency.replace(/\./g, '_')));
+      break;
     default:
       break;
   }
 
   return [...names];
+}
+
+/** `phoenix_live_view` -> `PhoenixLiveView`; `guzzlehttp` -> `Guzzlehttp`. */
+function studly(name: string): string {
+  return name
+    .split(/[-_.]/)
+    .filter(Boolean)
+    .map((part) => capitalize(part))
+    .join('');
+}
+
+function capitalize(name: string): string {
+  return name.length === 0 ? name : name[0]!.toUpperCase() + name.slice(1);
 }
 
 /**
@@ -336,6 +566,7 @@ function searchFiles(
   indexByPath: Map<string, FileIndex>,
   limit: number,
   names: readonly string[],
+  reach: Reach,
 ): ImpactSite[] {
   const sites: ImpactSite[] = [];
 
@@ -351,9 +582,15 @@ function searchFiles(
     const relevantImports =
       names.length === 0
         ? candidate.imports
-        : candidate.imports.filter((i) => matchesImportName(i.packageName, names));
+        : candidate.imports.filter((i) => matchesImportName(i, names));
     const importedNames = new Set(relevantImports.flatMap((i) => i.bindings));
     const importsDependency = relevantImports.length > 0;
+    // A file that never imported the dependency but inherited its names across
+    // a re-export edge. Its bindings are real — they are the names it asked the
+    // barrel for — but they were never observed against the dependency itself,
+    // so `confidenceFor` refuses to call any of them `high`.
+    const inherited = reach.get(candidate.path);
+    const indirect = inherited !== undefined && !inherited.direct;
 
     // Names this file provably got from somewhere *else*, and the lines every
     // import in it occupies. Both exist to answer questions about a specific
@@ -361,11 +598,32 @@ function searchFiles(
     // `breaksTheImport`.
     const foreignNames = new Set(
       candidate.imports
-        .filter((i) => !matchesImportName(i.packageName, names))
+        .filter((i) => !matchesImportName(i, names))
         .flatMap((i) => i.bindings)
         .filter((binding) => binding !== '*'),
     );
-    const importLines = new Set(candidate.imports.map((i) => i.line));
+
+    /**
+     * Names this file defines itself.
+     *
+     * A repository that declares its own `parse`, `Client`, or `render` has
+     * shadowed the dependency's symbol of the same name for the whole module,
+     * and every mention below the definition is the local one. This was the
+     * single largest remaining source of confident-looking false positives in
+     * the ecosystems whose imports bind nothing by name, where there was no
+     * import binding to contradict the match.
+     */
+    const locallyDefined = new Set(
+      candidate.units
+        .filter((unit) => unit.kind !== 'method')
+        .map((unit) => unit.name),
+    );
+    // Synthetic records are call sites the index inferred, not import lines.
+    // Excluding them here is what lets `Jason.encode!(body)` be reported as the
+    // site it is rather than suppressed as the import it is not.
+    const importLines = new Set(
+      candidate.imports.filter((i) => i.synthetic !== true).map((i) => i.line),
+    );
     const importStatementBreaks = breaksTheImport(change.kind);
     // A changed signature is a fact about invocations. Whether this file has
     // any is a per-file question, because the answer depends on the language
@@ -396,6 +654,7 @@ function searchFiles(
       // Twisted's class, whatever cryptography did to a class of the same name,
       // and reporting it is a false positive no reviewer can act on.
       if (shadowed(symbol, importedNames, foreignNames)) continue;
+      if (definedLocally(symbol, importedNames, locallyDefined)) continue;
 
       const inString = livesInStringLiteral(symbol);
       const masked = inString ? withStrings : withoutStrings;
@@ -419,12 +678,22 @@ function searchFiles(
         const searchable = masked[i]!;
         // The argument list is allowed to start on the next line, which is how
         // a long call gets formatted by every formatter in wide use.
+        matcher.lastIndex = 0;
+        const hit = matcher.exec(searchable);
         if (
-          !matcher.test(searchable) &&
+          !hit &&
           !(invocationOnly && callOpensOnNextLine(symbol, searchable, masked[i + 1]))
         ) {
           continue;
         }
+
+        // What is written immediately before the match decides whether it is a
+        // use of this dependency at all, and neither rule can be expressed in
+        // the matcher because both are about a *different* name.
+        if (hit && qualifiedByAnother(searchable, hit.index, importedNames, foreignNames, locallyDefined)) {
+          continue;
+        }
+        if (hit && isAtomLiteral(searchable, hit.index, candidate.language)) continue;
 
         const unit = fileIndex ? unitAtLine(fileIndex, i + 1) : undefined;
 
@@ -435,7 +704,7 @@ function searchFiles(
           excerpt: line.trim().slice(0, 200),
           enclosingSymbol: unit?.name,
           matchedSymbol: symbol,
-          confidence: confidenceFor(symbol, importedNames, importsDependency),
+          confidence: confidenceFor(symbol, importedNames, importsDependency, indirect, inherited?.inherited),
         });
       }
     }
@@ -561,7 +830,48 @@ function isImportStatement(line: string): boolean {
 }
 
 const IMPORT_STATEMENT =
-  /^\s*(?:@?import\b|from\s+[\w.]+\s+import\b|#\s*include\b|using\s+(?:static\s+)?[\w.]+\s*;|(?:pub\s+)?use\s+[\w:]|require(?:_relative|_once)?\s*[("'`]|include(?:_once)?\s*[("']|open\s+[A-Z]|extern\s+crate\b|package\s+[\w.]+\s*;)/;
+  /^\s*(?:@?import\b|from\s+[\w.]+\s+import\b|#\s*include\b|-include(?:_lib)?\(|using\s+(?:static\s+)?[\w.]+\s*;|(?:pub\s+)?use\s+[\w:\\]|alias\s+[A-Z]|require\s+[A-Z]|require(?:_relative|_once)?\s*[("'`]|include(?:_once)?\s*[("']|open\s+[A-Z]|extern\s+crate\b|package\s+[\w.]+\s*;)/;
+
+/**
+ * Is the match a member of something that belongs to somebody else?
+ *
+ * `Scope.push(...)` is a call on Phoenix's own `Scope` module, whatever Plug
+ * did to a function called `push`. The receiver is the evidence and it is
+ * right there in the text: a name bound from another package's import, or
+ * declared in this very file. Phoenix's router was reported as using Plug's
+ * `push` on that exact line, and no reviewer could have acted on it.
+ *
+ * Only a *known* receiver counts. `client.request()` where `client` is a local
+ * variable proves nothing either way, and treating an unknown receiver as
+ * disqualifying would suppress most real findings in object-oriented code.
+ */
+function qualifiedByAnother(
+  line: string,
+  at: number,
+  importedNames: ReadonlySet<string>,
+  foreignNames: ReadonlySet<string>,
+  locallyDefined: ReadonlySet<string>,
+): boolean {
+  const before = line.slice(0, at);
+  const receiver = /([A-Za-z_$][\w$]*)\s*(?:\.|::)\s*$/.exec(before)?.[1];
+  if (!receiver) return false;
+  // A receiver this file bound from *this* dependency is the opposite signal.
+  if (importedNames.has(receiver) || importedNames.has('*')) return false;
+  return foreignNames.has(receiver) || locallyDefined.has(receiver);
+}
+
+/**
+ * `:push` is an atom, not a call.
+ *
+ * Elixir, Erlang and Ruby all spell a bare symbolic constant with a leading
+ * colon, and `{:push, message, state}` is a tuple tag rather than a use of
+ * anything. `::` is excluded because in every language that has it — C++,
+ * Rust, PHP, Ruby's own scope operator — it introduces a real reference.
+ */
+function isAtomLiteral(line: string, at: number, language: FileIndex['language']): boolean {
+  if (language !== 'elixir' && language !== 'erlang' && language !== 'ruby') return false;
+  return line[at - 1] === ':' && line[at - 2] !== ':';
+}
 
 /**
  * Is the matched name bound from a *different* dependency in this file?
@@ -623,12 +933,53 @@ function livesInStringLiteral(symbol: string): boolean {
   return trimmed.startsWith('/') || trimmed.startsWith('@') || trimmed.includes('/');
 }
 
+/**
+ * Is the matched name one this file declares itself?
+ *
+ * A repository with its own `function parse()` has bound that name for the
+ * whole module, so every mention of it is the local one — the same argument
+ * `shadowed` makes about another package's import, applied to the file's own
+ * declarations. An explicit import of the dependency's symbol wins, because a
+ * file that both imports `parse` and defines something else called `parse`
+ * would not compile in most of these languages, and where it would, the import
+ * is the stronger evidence.
+ *
+ * Methods are excluded deliberately. `client.request()` calling into a
+ * dependency is not shadowed by some unrelated class in the same file having a
+ * `request` method, and treating it as though it were would hide real findings
+ * in exactly the object-oriented code where they are most common.
+ */
+function definedLocally(
+  symbol: string,
+  importedNames: Set<string>,
+  locallyDefined: ReadonlySet<string>,
+): boolean {
+  if (importedNames.has(symbol) || importedNames.has('*')) return false;
+  // A dotted symbol is reached through its root, and the root is what a local
+  // declaration could shadow.
+  const root = symbol.split('.')[0] ?? symbol;
+  if (importedNames.has(root)) return false;
+  return locallyDefined.has(symbol) || (symbol !== root && locallyDefined.has(root));
+}
+
 function confidenceFor(
   symbol: string,
   importedNames: Set<string>,
   importsDependency: boolean,
+  indirect: boolean,
+  inherited: ReadonlySet<string> | undefined,
 ): Confidence {
   const root = symbol.split('.')[0] ?? symbol;
+
+  // Reached across the repository's own re-export edges rather than by an
+  // import of the dependency. `medium` is the ceiling and it has to be earned:
+  // the file asked the barrel for this name specifically. A name that arrived
+  // under `export *` is a possibility, not an observation.
+  if (indirect) {
+    if (!inherited) return 'low';
+    return inherited.has(symbol) || inherited.has(root) ? 'medium' : 'low';
+  }
+
   if (importedNames.has(symbol) || importedNames.has(root) || importedNames.has('*')) {
     return 'high';
   }
@@ -664,6 +1015,10 @@ function isCommentOnly(line: string): boolean {
   // directive in C, where `#include <zlib.h>` is the most important line in
   // the file for exactly the finding that says zlib.h is gone.
   if (trimmed.startsWith('#')) return !PREPROCESSOR.test(trimmed);
+  // `%` opens a comment in Erlang, `(*` in OCaml, `--` in nothing Drift reads
+  // but Haskell — the first two are languages the localizer now searches, and
+  // a comment in them was previously read as code.
+  if (trimmed.startsWith('%') || trimmed.startsWith('(*')) return true;
   return trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*');
 }
 

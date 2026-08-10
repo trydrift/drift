@@ -39,6 +39,7 @@ import { analyze } from '../analyze/index.js';
 import { walkSourceFiles } from '../index/walk.js';
 import { buildIndex } from '../index/metarag.js';
 import { localize } from '../localize/index.js';
+import { resolveModuleMaps } from '../localize/modules.js';
 import { buildPlan } from '../plan/index.js';
 import { compareSeverity, describeSeverity, severityOf, type UpgradeSeverity } from './severity.js';
 
@@ -735,10 +736,18 @@ async function analyzeUpgrade(args: {
         : 'No breaking changes to look for',
       label,
     );
+    // Only worth a round trip when there is something to localize. The
+    // resolver caches per process, so a repository whose dependencies repeat
+    // across findings pays for each package once however many times this runs.
+    const moduleMaps =
+      breakingChanges.length > 0
+        ? await resolveModuleMaps([change], { logger: args.logger })
+        : undefined;
     const impactSites = localize(breakingChanges, [change], args.index, args.files, {
       logger: args.logger,
       maxSitesPerChange: args.maxSites ?? 40,
       member: args.member,
+      ...(moduleMaps ? { moduleMaps } : {}),
     });
     report('Weighing what this upgrade is worth', label);
     const [rationale] = await buildRationale(

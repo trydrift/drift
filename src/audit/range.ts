@@ -37,9 +37,10 @@ export function rangeFloor(range: string, ecosystem: Ecosystem): string | null {
 
   switch (ecosystem) {
     case 'npm':
-    case 'hex':
     case 'pub':
       return semverFloor(raw);
+    case 'hex':
+      return semverFloor(hexRange(raw) ?? raw);
     case 'cargo':
       // Cargo's bare `1.2` is `^1.2`, which `semver` already reads as a caret
       // range; the operator-less form needs no special handling here.
@@ -75,9 +76,67 @@ export function satisfiesRange(version: string, range: string, ecosystem: Ecosys
   }
 
   const normalized = normalizeVersion(version);
-  if (!normalized || !semver.validRange(raw)) return null;
+  if (!normalized) return null;
 
-  return semver.satisfies(normalized, raw, { includePrerelease: true });
+  const translated = ecosystem === 'hex' ? hexRange(raw) : raw;
+  if (translated === null || !semver.validRange(translated)) return null;
+
+  return semver.satisfies(normalized, translated, { includePrerelease: true });
+}
+
+/**
+ * Hex's `~>` is Ruby's pessimistic operator, not npm's tilde.
+ *
+ * They look identical and differ on the most common declaration in the whole
+ * Elixir ecosystem. `~> 4.0` in `mix.exs` means *4.0.0 up to but not including
+ * 5.0.0*; node-semver reads `~4.0` as *4.0.0 up to 4.1.0*. So every Phoenix
+ * project on `{:ecto, "~> 3.0"}` with 3.14 resolved was reported as running a
+ * version its own manifest forbids — twenty-five such findings on Phoenix
+ * itself, every one of them wrong, and wrong in the direction that costs the
+ * most: a confident, specific, actionable claim about a file that is fine.
+ *
+ * The rule is that `~>` pins every segment *except* the last one written:
+ *
+ *   `~> 2`        >= 2.0.0  < 3.0.0     (also what a bare major means)
+ *   `~> 2.1`      >= 2.1.0  < 3.0.0
+ *   `~> 2.1.3`    >= 2.1.3  < 2.2.0
+ *   `~> 2.1.3-rc` >= 2.1.3-rc < 2.2.0
+ *
+ * Hex also joins requirements with `and` / `or` rather than with spaces and
+ * `||`, which is a spelling difference and translates directly.
+ */
+export function hexRange(range: string): string | null {
+  const clauses = range.split(/\s+or\s+/i).map((clause) =>
+    clause
+      .split(/\s+and\s+/i)
+      .map((term) => hexTerm(term.trim()))
+      .join(' '),
+  );
+
+  return clauses.some((clause) => clause.includes('!')) ? null : clauses.join(' || ');
+}
+
+function hexTerm(term: string): string {
+  const pessimistic = /^~>\s*(.+)$/.exec(term);
+  if (!pessimistic?.[1]) return term;
+
+  const version = pessimistic[1].trim();
+  // Split off any pre-release or build metadata before counting segments, so
+  // `2.1.3-rc.1` is read as three segments rather than four.
+  const [core = ''] = version.split(/[-+]/);
+  const segments = core.split('.').filter((segment) => segment !== '');
+  const major = Number(segments[0] ?? 0);
+  const minor = Number(segments[1] ?? 0);
+
+  if (segments.length <= 2) {
+    // `~> 2` and `~> 2.1` both stop at the next major.
+    const floor = segments.length === 1 ? `${major}.0.0` : `${major}.${minor}.0`;
+    return `>=${floor} <${major + 1}.0.0`;
+  }
+
+  // Three or more segments: the ceiling is the next minor. Anything past the
+  // patch is a pre-release or build tag, which does not move the ceiling.
+  return `>=${version} <${major}.${minor + 1}.0`;
 }
 
 function semverFloor(range: string): string | null {

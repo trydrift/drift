@@ -386,8 +386,39 @@ Per-site confidence: `high` when the symbol was actually bound from that import,
 `medium` when the file imports the dependency, `low` when no import link could be
 established.
 
-Package name ≠ import name often enough to matter (`beautifulsoup4` → `bs4`), so
-there's an explicit alias table.
+**Package name ≠ import name, so Drift asks the package.** `beautifulsoup4` is
+imported as `bs4` and `apple/swift-log` vends a module called `Logging`, and an
+alias table could only ever contain the packages somebody had thought of —
+where the failure mode is *silence*, which reads as reassurance. So
+`src/localize/modules.ts` reads the mapping out of the artefact the registry
+published: a wheel's `top_level.txt` or `RECORD`, a jar's package directories,
+the ECMA-335 namespaces in a `.nupkg`, Packagist's PSR-4 roots, every
+`defmodule` in a Hex tarball, a gem's `lib/` paths and top-level constants, the
+target names in a `Package.swift`, a podspec's `module_name`. Nothing is
+installed or executed — archives are opened and read. Every resolver degrades
+to the old heuristics on any failure, so a rate-limited registry costs
+precision and never correctness.
+
+This is what makes PHP, Elixir, Swift and CocoaPods localizable at all. All
+four previously declined for the same reason — a package name does not
+determine the name used in source — and the package itself settles it. Ruby and
+Erlang gain the other half of the same problem: code that reaches into a
+package with no import line (`ActiveSupport::Inflector`, `Jason.encode!`,
+`crypto:hash`) is recorded as the dependency edge it is, deduplicated to first
+use.
+
+**The graph is followed, not just queried.** A call behind a barrel file, or a
+header reached through another header, used to be invisible: only direct
+importers were searched. `RepoIndex.localImporters` carries this repository's
+own edges, and localization walks outward from the direct importers across them
+— but only across genuine *re-exports*, because a module that wraps a
+dependency is the module that breaks and its callers have nothing to fix. A
+site reached that way is capped below `high`, since the binding was inherited
+rather than observed.
+
+**A name the repository declares itself is not the dependency's.** A file with
+its own `function parse()` has bound that name for the whole module — the same
+argument as the cross-package rule below, applied to local declarations.
 
 C is the one language with no import that binds a name — `#include` is a textual
 splice, and everything the header declares arrives at once. So a C impact site
@@ -676,20 +707,31 @@ that and asks for a fresh plan.
 
 Stated plainly, because a tool that hides these hasn't earned trust.
 
-**Localization is single-hop.** Drift finds direct usage of a changed symbol. If
-you wrap a dependency in your own abstraction and use *that* everywhere, Drift
-flags the wrapper — correct, and the right place to fix it, but it won't trace
-downstream consequences through your own indirection.
+**Localization follows re-exports, not abstractions.** A barrel file that
+forwards a dependency's names is walked through, up to three hops, so the code
+one edge past it is found. A module that *wraps* a dependency behind its own
+interface is deliberately not: Drift flags the wrapper, which is correct and
+the right place to fix it, and does not trace downstream consequences through
+your own indirection. The distinction is whether the names cross the boundary
+or stop at it.
 
 **Non-JS/TS parsing is pattern-based.** Only TypeScript and JavaScript get real
-AST parsing. Python, Go, Rust, Java, C, C++, and Ruby use declaration-line
-matching, so enclosing-symbol attribution can be wrong in unusual formatting.
-The file and line are always exact; the symbol is a convenience.
+AST parsing. Every other language uses declaration-line matching, so
+enclosing-symbol attribution can be wrong in unusual formatting. The file and
+line are always exact; the symbol is a convenience.
 
 **Computed API diffs need a local toolchain — in four ecosystems.** npm, NuGet,
-Conan, vcpkg, and Arduino need nothing installed. Cargo, Go, Maven, and PyPI
-degrade to prose evidence, with the reason stated, when their tool is missing.
-RubyGems has no computed signal at all.
+Hex, pub, Conan, vcpkg, and Arduino need nothing installed. Cargo, Go, Maven,
+and PyPI degrade to prose evidence, with the reason stated, when their tool is
+missing. RubyGems, Composer, SwiftPM, CocoaPods, and opam have no computed
+signal at all.
+
+**Module maps need the network.** The names localization searches for are read
+from the published artefact, which means a run behind an unreachable registry
+falls back to naming conventions — accurate for npm, Go, Cargo and pub, where
+the coordinate *is* the import name, and a guess everywhere else. Failure is
+silent by design (the run degrades to what it was rather than erroring), which
+means an offline run is quietly less precise than an online one.
 
 **The C/C++ header diff over-reports on header-only C++ libraries.** A library
 whose entire implementation ships in its public headers — fmt, ArduinoJson,
@@ -732,8 +774,11 @@ not currently poll the task to completion and check CI. The scaffolding
 register it in `PARSERS`, and describe it in `detect/capabilities.ts` (the
 `Ecosystem` union makes omitting it a compile error). Add a package manager in
 `package-manager.ts`, its checks in `checks.ts`, a registry lookup in
-`evidence/registry.ts`, an OSV name in `rationale/osv.ts`, import extraction in
-`metarag.ts`, and any distribution→module aliases in `localize/index.ts`.
+`evidence/registry.ts`, an OSV name in `rationale/osv.ts`, and import
+extraction in `metarag.ts`. For the module names localization joins against,
+prefer a resolver in `localize/modules.ts` that reads them out of the published
+artefact; the convention rules in `localize/index.ts` are the fallback for when
+that is impossible, not the first place to add a package.
 
 **A new evidence source** — return `Evidence[]` from `gatherEvidence`, with a
 weight that honestly reflects how directly it speaks to breakage. Populate

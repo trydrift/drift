@@ -35,9 +35,19 @@ npm run capture               # every target
 npm run capture -- deno       # one, by id
 ```
 
-Targets are declared at the top of `scripts/capture.mjs`. Output lands in
-`src/data/*.json` and is committed — the site is static, and a build must not
-depend on cloning six repositories.
+Targets are declared at the top of `scripts/capture.mjs` — one per supported
+ecosystem, sixteen of them, because a page that showed seven and said nothing
+about the rest was making a claim by omission. Output lands in `src/data/*.json`
+and is committed: the site is static, and a build must not depend on cloning
+sixteen repositories.
+
+Some of those recordings are thin, and that is the honest part. An OCaml project
+whose dependencies are all open version floors genuinely has nothing to upgrade,
+and a CocoaPods run has no advisory feed and no verification command. The page
+shows them anyway, next to a computed depth badge that says which of Drift's
+three core capabilities that ecosystem actually gets — see
+`src/components/ecosystems.tsx`, and `src/detect/capabilities.ts` in the core,
+which is where the badge is decided.
 
 `GITHUB_TOKEN` is optional and only raises the public API rate limit; without
 one, expect more packages to come back as *not verified*, which the recording
@@ -71,6 +81,15 @@ The copy exists because a TypeScript path alias into `../src` type-checks but
 does not bundle — Turbopack will not resolve across the project root. It is
 committed so a fresh checkout type-checks, and regenerated before anything is
 bundled, so a stale copy has a lifetime of zero builds.
+
+`src/lib/capabilities.ts` is generated the same way and for the same reason, by
+`scripts/sync-capabilities.mjs`. It cannot be a verbatim copy — the core's
+capability module imports the `Ecosystem` union and would drag the whole type
+graph across the boundary — so the script *evaluates* the compiled module and
+writes out plain data: the same stage levels, the same notes, the same computed
+depth tier that `docs/support.md` is rendered from. Nobody types a badge colour
+into this project, which is the only arrangement under which a support table on
+a marketing page stays true.
 
 ## Three things the panel does on purpose
 

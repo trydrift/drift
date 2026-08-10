@@ -139,6 +139,12 @@ export const ECOSYSTEM_LABEL: Record<string, string> = {
   conan: "ConanCenter",
   vcpkg: "vcpkg",
   arduino: "Arduino Library Manager",
+  packagist: "Packagist",
+  hex: "Hex",
+  pub: "pub.dev",
+  swift: "Swift Package Manager",
+  cocoapods: "CocoaPods",
+  opam: "opam",
 };
 
 /**

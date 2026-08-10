@@ -9,7 +9,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "capture": "node scripts/capture.mjs",
-    "sync": "node scripts/sync-severity.mjs",
+    "sync": "node scripts/sync-severity.mjs && node scripts/sync-capabilities.mjs",
     "prebuild": "npm run sync",
     "predev": "npm run sync",
     "pretypecheck": "npm run sync"

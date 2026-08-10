@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { ECOSYSTEM_LABEL, type Recording } from "@/lib/recordings";
+import { ECOSYSTEM_CAPABILITIES, type SupportTier } from "@/lib/capabilities";
 import { AnalysisPanel } from "./analysis-panel";
 
 /**
@@ -18,7 +19,31 @@ import { AnalysisPanel } from "./analysis-panel";
  * Switching tabs resets the player rather than continuing where the last one
  * was, because a half-played recording of a different repository is a lie about
  * how far the new one has got.
+ *
+ * Each tab carries the depth Drift claims for that ecosystem, computed in
+ * `src/detect/capabilities.ts` and synced into the site. A visitor picking the
+ * CocoaPods tab should know before they press play that this is the ecosystem
+ * where Drift cannot run a verification, rather than inferring it from a panel
+ * that says less than the others did.
  */
+
+const TIER_DOT: Record<SupportTier, string> = {
+  deep: "bg-brand",
+  strong: "bg-brand/55",
+  working: "bg-amber-500/70",
+  limited: "bg-faint/50",
+};
+
+const TIER_TITLE: Record<SupportTier, string> = {
+  deep: "Deep support: computed API diff, published module names, runnable verification.",
+  strong: "Strong support: two of the three.",
+  working: "Working support: one of the three.",
+  limited: "Limited support: detected and researched; the judgement is yours.",
+};
+
+const TIER_BY_ECOSYSTEM = new Map(
+  ECOSYSTEM_CAPABILITIES.map((capability) => [capability.ecosystem, capability.tier]),
+);
 export function Demo({ recordings }: { recordings: Recording[] }) {
   const [active, setActive] = useState(recordings[0]?.id ?? "");
   const current = recordings.find((r) => r.id === active) ?? recordings[0];
@@ -27,8 +52,8 @@ export function Demo({ recordings }: { recordings: Recording[] }) {
 
   return (
     <div>
-      {/* Horizontally scrollable on a phone, so six ecosystems never wrap into
-          a three-row block that pushes the panel below the fold. */}
+      {/* Horizontally scrollable on every width, so sixteen ecosystems never
+          wrap into a five-row block that pushes the panel below the fold. */}
       <div
         className="-mx-4 mb-4 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0"
         role="tablist"
@@ -52,10 +77,18 @@ export function Demo({ recordings }: { recordings: Recording[] }) {
               >
                 <span
                   className={cn(
-                    "text-[13px] font-medium",
+                    "flex items-center gap-1.5 text-[13px] font-medium",
                     selected ? "text-brand-text" : "text-foreground",
                   )}
                 >
+                  <span
+                    aria-hidden
+                    title={TIER_TITLE[TIER_BY_ECOSYSTEM.get(recording.ecosystem) ?? "limited"]}
+                    className={cn(
+                      "size-1.5 shrink-0 rounded-full",
+                      TIER_DOT[TIER_BY_ECOSYSTEM.get(recording.ecosystem) ?? "limited"],
+                    )}
+                  />
                   {recording.language}
                 </span>
                 <span className="font-mono text-[10px] text-faint">

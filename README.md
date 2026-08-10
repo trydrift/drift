@@ -43,11 +43,11 @@ is mostly about that problem:
 | | |
 |---|---|
 | **Evidence, not recall** | Every finding cites a changelog entry, a release note, or a computed API diff you can click. Drift never asks an agent to act on "I think this package changed." |
-| **Computed diffs beat prose** | Drift downloads both versions and diffs the actual exported API — `.d.ts` for npm, every importable package at three platforms for Go, rustdoc for cargo, ECMA-335 metadata read straight out of a `.nupkg` for .NET, public headers for C and C++. Changelogs omit removals; the shipped artefact doesn't. |
+| **Computed diffs beat prose** | Drift downloads both versions and diffs the actual exported API — `.d.ts` for npm, every importable package at three platforms for Go, rustdoc for cargo, ECMA-335 metadata read straight out of a `.nupkg` for .NET, public headers for C and C++, published `lib/` for Dart, every `def` and `-export` for Elixir and Erlang. Changelogs omit removals; the shipped artefact doesn't. |
 | **Nothing is installed to be read** | Every artefact is fetched and parsed, never installed or built. `pip download` runs a build backend and a `.nupkg` can carry an install script; Drift opens the archive instead. |
 | **Benefits need a citation too** | The upgrade rationale reports which advisories a version closes and what its maintainer says improved, each linked. A benefit Drift can't cite is a benefit Drift doesn't mention. |
 | **Rules, not scores** | The recommendation is a ladder of `if` statements that each record the sentence they fired with. You can disagree with a sentence; you can't disagree with `0.72`. |
-| **Import-graph precision** | A file that never imports `express` cannot be broken by an `express` change. Drift searches importers, not the whole repo — and a name this file bound from a *different* package is that package's name, not a finding. |
+| **Import-graph precision** | A file that never imports `express` cannot be broken by an `express` change. Drift searches importers, not the whole repo — following your own barrel files to the code one edge past them — and the names it searches for are read from the package's published artefact rather than guessed. A name this file bound from a *different* package, or declared itself, is not a finding. |
 | **Separated commits** | One commit per concern, ordered so build-enabling changes land first. `git revert` and `git bisect` stay meaningful. |
 | **Guardrails that downgrade, never drop** | A tripped guardrail turns an automatic run into an approval request. You still see the work. |
 | **Approval by default** | Fresh installs analyse and ask. Autonomy is opt-in. |
@@ -298,6 +298,7 @@ speaks to breakage:
 | 1.00 | **OpenAPI spec diff** — computed |
 | 0.90 | Computed C/C++ header surface — real, but blind to the preprocessor |
 | 0.90 | Computed Python surface — reconstructed, so capped below the rest |
+| 0.80 | Computed Dart and Hex surfaces — read from the published *source* under the ecosystem's own visibility rule (`lib/` vs `lib/src/`, `def` vs `defp`), which is one inference more than a compiled artefact makes |
 | 0.80 | Migration guide |
 | 0.70 | GitHub release notes |
 | 0.65 | CHANGELOG |
@@ -338,6 +339,23 @@ Builds a **Meta-RAG** index — an AST-aligned map of every file's imports, code
 units, and signatures — then searches only the files that import the changed
 dependency. Word-boundary matching stops `get` matching `getUserById`. Each site
 carries its enclosing function and a per-site confidence.
+
+Which names to search for is not guessed. `src/localize/modules.ts` reads them
+from the artefact the registry published — a wheel's `top_level.txt`, a jar's
+package directories, a `.nupkg`'s namespaces, Packagist's PSR-4 roots, every
+`defmodule` in a Hex tarball, a gem's require paths and constants, the target
+names in a `Package.swift`, a podspec's `module_name` — opened in memory,
+never installed. That is what lets Drift localize PHP, Elixir, Swift and
+CocoaPods at all: every one of them declined before because a package name does
+not determine the name used in source, and the package itself settles it. Any
+failure falls back to the naming conventions Drift used before, so an
+unreachable registry costs precision and not correctness.
+
+And the graph is followed rather than only queried: a call behind a barrel
+file, or a header reached through another header, is reached across your own
+re-export edges and reported at reduced confidence, because an inherited
+binding is weaker evidence than an observed one. A symbol your own code
+declares is not reported as the dependency's.
 
 ### 4a · Verify (optional)
 An off-by-default behavioural probe that runs old and new dependency code
