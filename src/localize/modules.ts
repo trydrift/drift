@@ -39,8 +39,9 @@ import { mapWithConcurrency } from '../util/http.js';
  *   - **Failure is silent and safe.** Every resolver returns `undefined` on
  *     any problem, and the caller falls back to the old name heuristics. A
  *     rate-limited registry degrades Drift to what it was, never below it.
- *   - **The answer is cached per process** and, through `fetchText`, on disk,
- *     so a repository with two hundred dependencies pays for each once.
+ *   - **The answer is cached per process**, and only the answer — a few dozen
+ *     strings — never the archive it was read from. A repository with six
+ *     hundred dependencies pays one download each and holds none of them.
  *
  * This is also the piece that makes PHP, Elixir, and Swift localizable at all.
  * Their capability rows said "Drift does not localize usages in this ecosystem
@@ -98,16 +99,18 @@ export async function resolveModuleMaps(
   if (wanted.size === 0) return maps;
 
   const entries = [...wanted.entries()];
-  const resolved = await mapWithConcurrency(
+  const results = await mapWithConcurrency(
     entries,
     options.concurrency ?? 6,
     async ([key, change]) => {
       const version = change.to ?? change.from;
       if (!version) return [key, undefined] as const;
       try {
-        const map = await RESOLVERS[change.ecosystem]!(change.name, version, {
-          timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
-        });
+        const map = await cached(`${key}|${version}`, () =>
+          RESOLVERS[change.ecosystem]!(change.name, version, {
+            timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+          }),
+        );
         return [key, map] as const;
       } catch (err) {
         // A resolver throwing is a bug in Drift, not a fact about the package.
@@ -118,7 +121,7 @@ export async function resolveModuleMaps(
     },
   );
 
-  for (const [key, map] of resolved) {
+  for (const [key, map] of results) {
     if (map && map.names.length > 0) maps.set(key, map);
   }
 
@@ -591,39 +594,84 @@ export const ARTIFACT_BACKED_ECOSYSTEMS: readonly Ecosystem[] = Object.keys(
 /* ---------------- fetching ---------------- */
 
 /**
- * Archive bytes, cached for the life of the process.
+ * A cap on what will be pulled into memory to read a name list.
  *
- * Deliberately not routed through the disk cache: a jar is megabytes, a wheel
- * can be tens of them, and a persistent cache of them on a developer's machine
- * is a cost they did not ask for. Within one run, one download each is enough.
+ * A jar is megabytes and a wheel with native extensions can be a hundred. The
+ * question being answered here — what is this package called in source? — is
+ * never worth that, and the fallback heuristics are one line away.
  */
-const archiveCache = new Map<string, ArchiveEntry[] | null>();
+const MAX_ARCHIVE_BYTES = 64 * 1024 * 1024;
 
 async function fetchArchive(url: string, timeoutMs: number): Promise<ArchiveEntry[] | undefined> {
-  const cached = archiveCache.get(url);
-  if (cached !== undefined) return cached ?? undefined;
-
   try {
     const response = await fetch(url, {
       signal: AbortSignal.timeout(timeoutMs),
       headers: { 'User-Agent': 'drift-bot/0.1 (+https://github.com/trydrift/drift)' },
     });
-    if (!response.ok) {
-      archiveCache.set(url, null);
+    if (!response.ok) return undefined;
+
+    const declared = Number(response.headers.get('content-length') ?? '0');
+    if (declared > MAX_ARCHIVE_BYTES) {
+      void response.body?.cancel();
       return undefined;
     }
-    const entries = readArchive(Buffer.from(await response.arrayBuffer()));
-    archiveCache.set(url, entries);
-    return entries;
+
+    const body = Buffer.from(await response.arrayBuffer());
+    if (body.byteLength > MAX_ARCHIVE_BYTES) return undefined;
+    return readArchive(body);
   } catch {
-    archiveCache.set(url, null);
     return undefined;
   }
 }
 
-/** Reset the in-process archive cache. Tests only. */
+/**
+ * The answer, cached; never the archive it came from.
+ *
+ * The first version of this cached the decompressed `ArchiveEntry[]` per URL,
+ * which was a memory leak wearing a cache's clothes: each entry closes over
+ * the whole archive buffer, so a sweep of GitLab — six hundred and thirty gems,
+ * each a few megabytes — retained every byte of every gem for the life of the
+ * process, and the run died partway through. What is worth keeping is the
+ * output: a few dozen strings per package, and the `null` that records a
+ * package whose registry had nothing to say, so a second caller does not go and
+ * ask again.
+ *
+ * `inFlight` matters as much as the cache. Localization is called per
+ * dependency from three different places, and without it the same package is
+ * downloaded once per concurrent caller.
+ */
+const resolved = new Map<string, ModuleMap | null>();
+const inFlight = new Map<string, Promise<ModuleMap | undefined>>();
+
+function cached(
+  key: string,
+  compute: () => Promise<ModuleMap | undefined>,
+): Promise<ModuleMap | undefined> {
+  const done = resolved.get(key);
+  if (done !== undefined) return Promise.resolve(done ?? undefined);
+
+  const pending = inFlight.get(key);
+  if (pending) return pending;
+
+  const promise = compute()
+    .then((map) => {
+      resolved.set(key, map ?? null);
+      return map;
+    })
+    .catch(() => {
+      resolved.set(key, null);
+      return undefined;
+    })
+    .finally(() => inFlight.delete(key));
+
+  inFlight.set(key, promise);
+  return promise;
+}
+
+/** Reset the in-process module-map cache. Tests only. */
 export function resetModuleMapCache(): void {
-  archiveCache.clear();
+  resolved.clear();
+  inFlight.clear();
 }
 
 function decode(entry: ArchiveEntry): string {

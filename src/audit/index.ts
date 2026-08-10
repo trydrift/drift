@@ -119,6 +119,23 @@ export async function auditCurrentUsage(options: AuditOptions): Promise<AuditRes
   const files = options.files ?? (await walkSourceFiles(root, { members: dirs }));
   const index = options.index ?? buildIndex(files);
 
+  // Every package's module names, resolved once for the whole audit rather
+  // than once per dependency inside the parallel loop below. Six hundred
+  // concurrent resolutions of six hundred different gems is the shape of
+  // request burst that gets a run rate-limited.
+  const moduleMaps = await resolveModuleMaps(
+    deps.map(({ dep, target }) => ({
+      name: dep.name,
+      ecosystem: target.manager.ecosystem,
+      from: dep.current,
+      to: dep.current,
+      kind: dep.kind,
+      bump: 'patch' as const,
+      manifestPath: target.manifestPath,
+    })),
+    { logger },
+  );
+
   const findings: LatentFinding[] = [];
   const gaps: AnalysisGap[] = [];
   const checkedSurfaces: CheckedSurface[] = [];
@@ -211,7 +228,6 @@ export async function auditCurrentUsage(options: AuditOptions): Promise<AuditRes
         return;
       }
 
-      const moduleMaps = await resolveModuleMaps([change], { logger });
       const sites = localize(breakingChanges, [change], index, files, {
         logger,
         maxSitesPerChange: maxSites,

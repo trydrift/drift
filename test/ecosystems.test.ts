@@ -722,6 +722,52 @@ depends: [
     assert.equal(deps.get('cmdliner')?.version, '1.2.0');
     assert.equal(deps.get('lwt')?.kind, 'transitive');
   });
+
+  /**
+   * `dune-project` is where a modern OCaml project's dependencies actually
+   * live. A project with `(generate_opam_files true)` writes its `.opam` files
+   * from it and commits them with a "edit dune-project instead" header, and
+   * `dune-project` sorts before every `*.opam` in the manifest search — so
+   * reading it as opam syntax found nothing and reported the project as having
+   * no dependencies at all. ocaml-cohttp: twelve opam packages, sixty-four
+   * dependencies, analysed as a project with one.
+   */
+  test('reads dependencies from dune syntax, not just opam syntax', () => {
+    const deps = parse(
+      'dune-project',
+      `
+(lang dune 3.8)
+(name cohttp)
+(generate_opam_files true)
+
+(package
+ (name cohttp)
+ (synopsis "An OCaml library for HTTP clients and servers")
+ (depends
+  (ocaml (>= 4.08))
+  (re (>= 1.9.0))
+  uri
+  (alcotest :with-test)
+  (odoc :with-doc)))
+
+(package
+ (name cohttp-lwt)
+ (depends
+  cohttp
+  (lwt (>= 5.3.0))))
+`,
+    );
+
+    assert.equal(deps.get('ocaml')?.version, '>= 4.08');
+    assert.equal(deps.get('re')?.version, '>= 1.9.0');
+    assert.equal(deps.get('uri')?.version, null);
+    assert.equal(deps.get('alcotest')?.kind, 'dev');
+    assert.equal(deps.get('odoc')?.kind, 'dev');
+    // Every package stanza in the file counts, not just the first.
+    assert.equal(deps.get('lwt')?.version, '>= 5.3.0');
+    // `:with-test` is a marker, and markers are not packages.
+    assert.ok(!deps.has(':with-test'));
+  });
 });
 
 describe('Scala', () => {

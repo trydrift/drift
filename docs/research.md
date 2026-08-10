@@ -150,10 +150,11 @@ less visibility into the repair loop than LADU does — see
 **Paper:** Java/Maven, evaluated on Spring Boot.
 
 **Drift:** sixteen ecosystems for detection. Consequently Drift's computed-diff
-coverage is uneven — npm, NuGet, and the three C/C++ ecosystems need nothing
-installed, while Go, Cargo, Maven, and Python need a local toolchain; RubyGems
-and the rest fall back to prose evidence, with no computed signal at all for
-RubyGems. Stated in the limitations rather than smoothed over.
+coverage is uneven — npm, NuGet, Hex, pub and the three C/C++ ecosystems need
+nothing installed, while Go, Cargo, Maven, and Python need a local toolchain;
+RubyGems, Composer, SwiftPM, CocoaPods and opam fall back to prose evidence.
+Which is which is stated per stage in [support.md](support.md), generated from
+the same data the pipeline reads at runtime, rather than smoothed over.
 
 ---
 
@@ -167,7 +168,7 @@ RubyGems. Stated in the limitations rather than smoothed over.
 | Evidence trail | Not a design goal | Mandatory — every finding cites a source |
 | Output | Working tree | Branch + separated commits + PR + report |
 | Autonomy control | Not addressed | Guardrails, risk gating, approval mode |
-| Ecosystems | Java/Maven | 13, incl. npm, PyPI, Go, Cargo, Maven, RubyGems |
+| Ecosystems | Java/Maven | 16, incl. npm, PyPI, Go, Cargo, Maven, NuGet, RubyGems, Composer, Hex, pub |
 | LLM required | Yes (GPT-4o) | No — optional recall assist only |
 
 The paper's contribution Drift relies on most is not Meta-RAG itself. It's the

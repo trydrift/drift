@@ -175,9 +175,9 @@ If your repo has a `.github/drift.yml` (used by the [Drift GitHub Action](https:
 
 ## Supported ecosystems
 
-npm/yarn/pnpm/bun · pip/poetry/uv · Go modules · Cargo · Maven/Gradle/sbt · Bundler · NuGet · Composer · Mix · pub · Swift Package Manager · CocoaPods · opam — the same set the CLI and Action detect, scoped by `drift.analysis.ecosystems`.
+npm/yarn/pnpm/bun · pip/poetry/uv · Go modules · Cargo · Maven/Gradle/sbt · Bundler · NuGet · Composer · Mix · pub · Swift Package Manager · CocoaPods · opam · Conan · vcpkg · Arduino/PlatformIO — the same set the CLI and Action detect, scoped by `drift.analysis.ecosystems`.
 
-Computed API-surface diffing (not just changelog evidence) is available for npm, Go, Cargo, Maven, and Python; the rest rely on changelog and release-note evidence. See [docs/support.md](https://github.com/trydrift/drift/blob/main/docs/support.md) for exactly what's checked per ecosystem.
+Computed API-surface diffing (not just changelog evidence) is available for npm, NuGet, Hex, pub, Conan, vcpkg and Arduino with nothing installed, and for Go, Cargo, Maven and Python when their toolchain is present; the rest rely on changelog and release-note evidence. See [docs/support.md](https://github.com/trydrift/drift/blob/main/docs/support.md) for exactly what's checked per ecosystem, and how deep the support goes.
 
 ## Also available as a GitHub Action
 
