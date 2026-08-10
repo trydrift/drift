@@ -308,10 +308,18 @@ const composerModules: Resolver = async (name, version, { timeoutMs }) => {
   // `null` means the field was removed rather than unchanged.
   const wanted = version.replace(/^v/, '');
   let autoload: PhpAutoload | undefined;
+  let found = false;
   for (const entry of releases) {
     if (entry.autoload !== undefined) autoload = entry.autoload ?? undefined;
-    if ((entry.version ?? '').replace(/^v/, '') === wanted) break;
+    if ((entry.version ?? '').replace(/^v/, '') === wanted) {
+      found = true;
+      break;
+    }
   }
+  // A version Packagist has never heard of — a private fork, a dev branch, a
+  // typo. The newest release's map is a better answer than the oldest one the
+  // walk happened to end on, and a PSR-4 root almost never moves.
+  if (!found) autoload = releases[0]!.autoload ?? undefined;
 
   const namespaces = new Set<string>();
   for (const section of [autoload?.['psr-4'], autoload?.['psr-0']]) {

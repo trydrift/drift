@@ -122,6 +122,7 @@ export function localize(
       ecosystemsByName.get(change.dependency) ?? [],
       moduleMaps,
       maxReExportDepth,
+      indexByPath,
     );
     const candidates = candidateFileList.filter(
       (file) => member === undefined || withinMember(file.path, member),
@@ -232,6 +233,7 @@ function candidateFiles(
   ecosystemsForName: readonly Ecosystem[],
   moduleMaps: ModuleMaps | undefined,
   maxReExportDepth: number,
+  byPath: Map<string, FileIndex>,
 ): { files: FileIndex[]; names: string[]; reach: Reach } {
   const isEndpointChange =
     change.kind === 'removed-endpoint' || change.kind === 'changed-endpoint';
@@ -264,7 +266,7 @@ function candidateFiles(
   for (const path of paths) reach.set(path, { direct: true, inherited: new Set() });
 
   if (maxReExportDepth > 0) {
-    reachThroughReExports(index, names, reach, maxReExportDepth);
+    reachThroughReExports(index, names, reach, maxReExportDepth, byPath);
   }
 
   return { files: index.files.filter((f) => reach.has(f.path)), names, reach };
@@ -328,8 +330,12 @@ function reachThroughReExports(
   names: readonly string[],
   reach: Reach,
   maxDepth: number,
+  // Built once per `localize` call rather than once per breaking change. A
+  // repository with five thousand files and a package reporting two hundred
+  // removals paid for a million map insertions to answer a question whose
+  // answer never changed between them.
+  byPath: Map<string, FileIndex>,
 ): void {
-  const byPath = new Map(index.files.map((f) => [f.path, f]));
   // A frontier is only extended by files that forward what they imported.
   let frontier = [...reach.keys()].filter((path) => forwards(byPath.get(path), names));
 

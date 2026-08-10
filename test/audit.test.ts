@@ -349,3 +349,32 @@ describe('alpha equivalence of declarations', () => {
     assert.equal(alphaEquivalent('declare const a: string;', 'declare const a: string;'), true);
   });
 });
+
+describe('Hex ranges are pessimistic, not tilde', () => {
+  /**
+   * `~>` is spelled the same in `mix.exs` and in a semver tilde range, and
+   * means something different. Phoenix declares `{:ecto, "~> 3.0"}` and
+   * resolves 3.14, which its manifest permits and node-semver's `~3.0` does
+   * not — twenty-five findings on one repository, every one wrong.
+   */
+  test('a two-segment requirement runs to the next major', () => {
+    assert.equal(satisfiesRange('4.1.3', '~> 4.0', 'hex'), true);
+    assert.equal(satisfiesRange('3.14.0', '~> 3.0', 'hex'), true);
+    assert.equal(satisfiesRange('5.0.0', '~> 4.0', 'hex'), false);
+  });
+
+  test('a three-segment requirement runs to the next minor', () => {
+    assert.equal(satisfiesRange('2.1.5', '~> 2.1.3', 'hex'), true);
+    assert.equal(satisfiesRange('2.2.0', '~> 2.1.3', 'hex'), false);
+  });
+
+  test('`and` joins requirements the way spaces do in npm', () => {
+    assert.equal(satisfiesRange('1.5.0', '~> 1.4 and < 2.0', 'hex'), true);
+    assert.equal(satisfiesRange('2.1.0', '~> 1.4 and < 2.0', 'hex'), false);
+  });
+
+  test('the floor is the version written, not the one semver would infer', () => {
+    assert.equal(rangeFloor('~> 3.13', 'hex'), '3.13.0');
+    assert.equal(rangeFloor('~> 1.0', 'hex'), '1.0.0');
+  });
+});
