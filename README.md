@@ -134,10 +134,12 @@ resolver does — during a lockfile refresh nobody read. Your code still assumes
 the 4.x of the day it was written. Everything removed or re-specified in
 between is live in your repository today.
 
-So Drift analyses that window — from the oldest version your range admits to
-the version actually installed — with the same evidence, the same
-breaking-change analysis, and the same import-graph localization it uses
-everywhere else. The findings are present tense. **They will not go away by
+So Drift skips the range entirely and reads the package that is actually
+installed — its real declarations, straight out of `node_modules`, never a
+registry — then checks every symbol your code imports from it against that
+file, with the same import-graph localization it uses everywhere else. No
+version diff, no manifest floor: one file on disk, compared against one
+import statement. The findings are present tense. **They will not go away by
 upgrading.**
 
 It also reports any dependency whose installed version does not satisfy its own

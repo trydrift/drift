@@ -1,21 +1,17 @@
-import semver from 'semver';
-import type { DependencyChange, Ecosystem, RepoContext } from '../types.js';
+import type { BreakingChange, Ecosystem, RepoContext } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
 import type { AnalysisGap, CheckedSurface } from '../confidence/types.js';
-import type { SurfaceUnavailable } from '../evidence/surface/types.js';
-import { classifyBump } from '../detect/version.js';
-import { detectWorkspaces, memberDirectories, nodeWorkspaceFs, type WorkspaceFs } from '../detect/workspace.js';
+import { detectWorkspaces, memberDirectories, nodeWorkspaceFs, withinMember, type WorkspaceFs } from '../detect/workspace.js';
 import { discoverNestedProjects } from '../detect/nested.js';
-import { gatherEvidence } from '../evidence/index.js';
-import { analyze } from '../analyze/index.js';
 import { walkSourceFiles, type SourceFile } from '../index/walk.js';
-import { buildIndex, type RepoIndex } from '../index/metarag.js';
+import { buildIndex, packageNameFromSpecifier, type RepoIndex } from '../index/metarag.js';
 import { localize } from '../localize/index.js';
 import { resolveModuleMaps } from '../localize/modules.js';
 import { stableId } from '../util/id.js';
 import { discoverTargets, directDependencies, type EcosystemTarget } from '../upgrade/scan.js';
-import { rangeFloor, satisfiesRange } from './range.js';
+import { satisfiesRange } from './range.js';
+import { readInstalledSurface } from './installed-surface.js';
 import { emptyAudit, type AuditResult, type LatentFinding } from './types.js';
 
 export { rangeFloor, satisfiesRange } from './range.js';
@@ -35,18 +31,28 @@ export * from './types.js';
  * the resolver does, on a schedule nobody set, in a lockfile refresh nobody
  * read. The code was written against whatever 4.x looked like the day it was
  * written; the dependency on disk is whatever 4.x looked like the day the lock
- * was last touched. Everything upstream deprecated, removed, or quietly
- * re-specified between those two points is live in this repository right now.
+ * was last touched.
  *
- * So the audit runs the ordinary pipeline over an unordinary window: from the
- * oldest version the range admits, to the version actually installed. Findings
- * are present tense. They are not a reason to upgrade — they are a reason to
- * read the code, and they will not go away by waiting.
+ * Earlier versions of this check answered that with a version diff: compute
+ * the oldest release the manifest's range admits, fetch its published
+ * declarations, and diff them against the installed version the same way
+ * `analyze` diffs an upgrade. That worked, but it asked the wrong question — a
+ * repository pinned to an exact version, or one whose lockfile happened to sit
+ * right at the floor, has no window to diff and got no answer, even though
+ * "does my code match what's on disk" is just as true of a pin as of a range.
  *
- * Nothing here is new machinery. Evidence gathering, breaking-change analysis
- * and localization are the same functions the rest of Drift uses, held to the
- * same standard: a finding still needs a citation, and a site still needs the
- * file to import the dependency. Only the two versions handed in are different.
+ * So the check now skips the manifest, and the diff, entirely. It reads the
+ * declarations of the package that is *actually installed* — straight out of
+ * `node_modules`, never a registry — and asks whether every symbol this
+ * repository imports from it is still there. No range, no floor, no second
+ * version: one real file on disk, compared against one real import statement.
+ * A symbol that is not in that file is not usable, no matter what the
+ * manifest says was intended.
+ *
+ * Localization is still the same machinery the rest of Drift uses — a finding
+ * still needs a real import site, found by `localize`, not a synthetic one.
+ * Only where the "expected API" comes from is different: not evidence about a
+ * change, but the file the runtime will actually resolve.
  */
 
 export interface AuditOptions {
@@ -171,77 +177,91 @@ export async function auditCurrentUsage(options: AuditOptions): Promise<AuditRes
       });
     }
 
-    const floor = rangeFloor(dep.range, ecosystem);
-    if (!floor) {
+    // The static check reads real `.d.ts` text off disk, which only npm
+    // packages publish in a form Drift can parse today. Every other ecosystem
+    // is stated as a gap rather than silently skipped — the difference between
+    // "checked, nothing wrong" and "never looked" matters here as much as it
+    // does everywhere else in this file.
+    if (ecosystem !== 'npm') {
+      checkedSurfaces.push({
+        surface: 'api-surface',
+        dependency: dep.name,
+        ecosystem,
+        status: 'unavailable',
+        detail: 'A static check against the installed package is only available for npm/TypeScript today.',
+      });
       done += 1;
       return;
     }
 
-    // An exact pin, or a lockfile older than its own floor. Either way there is
-    // no unreviewed window, which is the answer — not a shortfall.
-    if (!semver.valid(floor) || !semver.valid(installed) || !semver.gt(installed, floor)) {
-      done += 1;
-      return;
-    }
-
-    analysed += 1;
-    report('Auditing installed versions', `${dep.name} ${floor} → ${installed} (installed)`, done, deps.length);
-
-    const change: DependencyChange = {
-      name: dep.name,
-      ecosystem,
-      from: floor,
-      to: installed,
-      kind: dep.kind,
-      bump: classifyBump(floor, installed),
-      manifestPath: target.manifestPath,
-      rawFrom: dep.range,
-      rawTo: installed,
-      ...(member === undefined ? {} : { workspace: member }),
-      ...(memberName ? { workspaceName: memberName } : {}),
-    };
+    report('Checking installed versions', `${dep.name} ${installed} (installed)`, done, deps.length);
 
     try {
-      const surfaceGaps = new Map<string, SurfaceUnavailable>();
-      const evidence = await gatherEvidence([change], {
-        config,
-        logger,
-        githubToken,
-        env,
-        workspaceRoot: root,
-        onUnavailableSurface: (_change, reason) => surfaceGaps.set(dep.name, reason),
-      });
+      const usedSymbols = namedSymbolsImported(files, index, dep.name, member);
+      if (usedSymbols.size === 0) return;
 
-      const breakingChanges = await analyze([change], evidence, { config, logger });
-      if (breakingChanges.length === 0) {
+      const surface = await readInstalledSurface(root, member, dep.name, fs);
+      if (surface.status !== 'found') {
+        gaps.push({
+          stage: 'evidence',
+          surface: 'api-surface',
+          reason:
+            surface.status === 'not-installed'
+              ? `${dep.name}: not found in node_modules — run an install before auditing.`
+              : `${dep.name}@${installed}: no readable TypeScript declarations on disk; static check skipped.`,
+          severity: 'minor',
+          automaticExecution: 'none',
+          remediation:
+            'Install dependencies so node_modules is present, or accept this package cannot be statically checked.',
+        });
+        return;
+      }
+
+      analysed += 1;
+
+      const missing = [...usedSymbols].filter((name) => !surface.api.has(name));
+      if (missing.length === 0) {
         checkedSurfaces.push({
           surface: 'api-surface',
           dependency: dep.name,
           ecosystem,
-          status: surfaceGaps.size > 0 ? 'unavailable' : 'checked',
-          detail:
-            surfaceGaps.size > 0
-              ? [...surfaceGaps.values()][0]!.reason
-              : `Nothing breaking was found between ${floor} and the installed ${installed}.`,
+          status: 'checked',
+          detail: `Checked ${usedSymbols.size} symbol(s) this repository imports from ${dep.name} against the installed ${installed}; all present.`,
         });
-        done += 1;
         return;
       }
 
-      const sites = localize(breakingChanges, [change], index, files, {
+      const breakingChanges: BreakingChange[] = missing.map((symbol) => ({
+        id: stableId('latent', target.manifestPath, dep.name, installed, symbol),
+        dependency: dep.name,
+        ...(member === undefined ? {} : { workspace: member }),
+        kind: 'removed-export',
+        summary: `\`${symbol}\` is imported from \`${dep.name}\`, but the installed ${dep.name}@${installed} does not export it.`,
+        remediation: `Check what ${dep.name}@${installed} actually exports in place of \`${symbol}\` and update the import.`,
+        symbols: [symbol],
+        confidence: 'high',
+        citations: [`node_modules/${dep.name}/${surface.entryPath}`],
+      }));
+
+      const dependencyChange = {
+        name: dep.name,
+        ecosystem,
+        from: installed,
+        to: installed,
+        kind: dep.kind,
+        bump: 'patch' as const,
+        manifestPath: target.manifestPath,
+        ...(member === undefined ? {} : { workspace: member }),
+        ...(memberName ? { workspaceName: memberName } : {}),
+      };
+
+      const sites = localize(breakingChanges, [dependencyChange], index, files, {
         logger,
         maxSitesPerChange: maxSites,
         member,
         moduleMaps,
       });
 
-      // The whole point of the audit is present-tense breakage, and a finding
-      // with no site is not present tense — it is trivia about a version window
-      // this repository never touched. `analyze` and `outdated` both have
-      // reasons to report an unlocalized breaking change (they are proposing a
-      // move, and "we could not find where this bites" is a real caveat about a
-      // decision the developer is about to make). Here there is no decision
-      // pending, so an unsited finding is pure noise and is dropped.
       const sitesByChange = new Map<string, typeof sites>();
       for (const site of sites) {
         const list = sitesByChange.get(site.breakingChangeId);
@@ -249,6 +269,8 @@ export async function auditCurrentUsage(options: AuditOptions): Promise<AuditRes
         else sitesByChange.set(site.breakingChangeId, [site]);
       }
 
+      // Same rule as before: a missing export with no site Drift can point at
+      // is trivia, not a finding worth a developer's attention.
       for (const breaking of breakingChanges) {
         const hits = sitesByChange.get(breaking.id);
         if (!hits || hits.length === 0) continue;
@@ -261,7 +283,6 @@ export async function auditCurrentUsage(options: AuditOptions): Promise<AuditRes
           ...(member === undefined ? {} : { workspace: member }),
           manifestPath: target.manifestPath,
           declaredRange: dep.range,
-          rangeFloor: floor,
           installedVersion: installed,
           breakingChange: breaking,
           sites: hits,
@@ -274,7 +295,7 @@ export async function auditCurrentUsage(options: AuditOptions): Promise<AuditRes
         dependency: dep.name,
         ecosystem,
         status: 'checked',
-        detail: `Checked the installed ${installed} against ${floor}, the oldest version ${dep.range} admits.`,
+        detail: `Checked ${usedSymbols.size} symbol(s) this repository imports from ${dep.name} against the installed ${installed}; ${missing.length} missing.`,
       });
     } catch (err) {
       gaps.push({
@@ -283,7 +304,7 @@ export async function auditCurrentUsage(options: AuditOptions): Promise<AuditRes
         reason: `${dep.name}: the installed version could not be audited — ${(err as Error).message}`,
         severity: 'minor',
         automaticExecution: 'none',
-        remediation: 'Re-run with network access, or pin the dependency to remove the unreviewed window.',
+        remediation: 'Re-run once the failure above is resolved, or pin the dependency to skip it.',
       });
     } finally {
       done += 1;
@@ -313,8 +334,8 @@ function compareFindings(a: LatentFinding, b: LatentFinding): number {
 export function summarizeAudit(result: AuditResult): string {
   if (result.findings.length === 0) {
     return result.analysed === 0
-      ? `No dependency had an unreviewed version window (${result.checked} checked, all pinned or unreadable).`
-      : `Nothing in this repository is out of step with its installed dependencies (${result.analysed} of ${result.checked} had a window worth checking).`;
+      ? `No dependency had anything to statically check (${result.checked} checked; unused, unreadable, or not npm).`
+      : `Nothing in this repository is out of step with its installed dependencies (${result.analysed} of ${result.checked} had something worth checking).`;
   }
 
   const files = new Set(result.findings.flatMap((f) => f.sites.map((s) => s.file))).size;
@@ -324,6 +345,50 @@ export function summarizeAudit(result: AuditResult): string {
     (files > 0 ? ` affecting ${files} file(s)` : '') +
     ' — already true of the versions installed today.'
   );
+}
+
+/**
+ * The real, exported names this repository's own source binds from a named
+ * import of `packageName` — the "expected API" the installed surface is
+ * checked against.
+ *
+ * Deliberately narrow: only `import { a, b as c } from 'pkg'` and
+ * `export { a } from 'pkg'` are read, and only the name declared by the
+ * package (`a`), never the local alias (`c`). A default or namespace import
+ * binds an arbitrary local name that carries no relationship to what the
+ * package actually calls its export, so there is nothing safe to check it
+ * against — counting it would mean guessing, which is the one failure mode
+ * this feature must not have.
+ */
+function namedSymbolsImported(
+  files: readonly SourceFile[],
+  index: RepoIndex,
+  packageName: string,
+  member: string | undefined,
+): Set<string> {
+  const relevant = new Set(index.importers.get(packageName) ?? []);
+  const names = new Set<string>();
+  const pattern =
+    /\b(?:import|export)\s+(?:type\s+)?(?:[\w$]+\s*,\s*)?\{([^}]*)\}\s+from\s+['"]([^'"]+)['"]/g;
+
+  for (const file of files) {
+    if (!relevant.has(file.path)) continue;
+    if (member !== undefined && !withinMember(file.path, member)) continue;
+
+    for (const match of file.content.matchAll(pattern)) {
+      const [, group, specifier] = match;
+      if (!specifier || packageNameFromSpecifier(specifier) !== packageName) continue;
+
+      for (const part of (group ?? '').split(',')) {
+        const cleaned = part.replace(/\btype\s+/g, '').trim();
+        if (!cleaned) continue;
+        const imported = cleaned.split(/\s+as\s+/)[0]!.trim();
+        if (imported && imported !== 'default') names.add(imported);
+      }
+    }
+  }
+
+  return names;
 }
 
 /** Run `worker` over `items`, at most `limit` in flight. */

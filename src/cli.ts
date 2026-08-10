@@ -278,11 +278,11 @@ of a commit range that already changed a manifest, it checks every direct
 dependency against its registry for a version that could — the same "Scan
 Dependencies" check the extension runs. It never writes either, except when
 given --upgrade, and even then only a local manifest/lockfile edit.
-\`audit\` asks the third question, the one about the present: a range like
-\`^4.0.0\` lets a resolver move you to 4.9.0 without anyone reading what
-changed, so it analyses that window — declared floor to what is actually
-installed — and reports the code that no longer matches the dependency already
-on disk. Those findings do not go away by upgrading; they are true today.
+\`audit\` asks the third question, the one about the present: does this code
+match the dependency actually installed in \`node_modules\` right now? It reads
+each package's real, on-disk declarations — no registry, no version diff — and
+checks every symbol this repository imports from it against that file. Those
+findings do not go away by upgrading; they are true today.
 \`analyze\` runs the same audit and includes it in its report.
 \`fix\` applies the plan in an isolated git worktree — your working tree is
 never touched — using, per commit, Drift's own deterministic fix, then (if

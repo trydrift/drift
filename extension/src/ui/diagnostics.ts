@@ -120,7 +120,9 @@ export class DriftDiagnostics implements vscode.Disposable {
     diagnostic.relatedInformation = [
       new vscode.DiagnosticRelatedInformation(
         new vscode.Location(uri, range),
-        `Declared as ${finding.declaredRange} in ${finding.manifestPath}, so ${finding.rangeFloor} or newer was permitted; ${finding.installedVersion} resolved.`,
+        finding.kind === 'range-violation'
+          ? `Declared as ${finding.declaredRange} in ${finding.manifestPath}; ${finding.installedVersion} resolved, which the range does not permit.`
+          : `Checked directly against ${finding.dependency}@${finding.installedVersion} in node_modules — not a version diff.`,
       ),
     ];
 

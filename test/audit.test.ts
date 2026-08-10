@@ -104,9 +104,11 @@ describe('range satisfaction', () => {
  * End-to-end over a temporary checkout.
  *
  * `evidence.githubReleases`/`changelog` are off so nothing here reaches the
- * network: the audit must still do its own job — read the manifest and
- * lockfile, compute the window, walk the code — and reach an honest, empty
- * conclusion rather than throwing or inventing one.
+ * network — moot for the static check itself, which never touches the
+ * network at all, but still exercised by the range-violation check that
+ * shares this pipeline. The audit must still do its own job — read the
+ * manifest, walk the code, read what is actually on disk in `node_modules` —
+ * and reach an honest, empty conclusion rather than throwing or inventing one.
  */
 describe('auditing a checkout', () => {
   const offline = DriftConfigSchema.parse({
@@ -152,17 +154,137 @@ describe('auditing a checkout', () => {
     }
   });
 
-  test('an exact pin has no unreviewed window and is not analysed', async () => {
+  test('a package this repository never imports by name has nothing to check', async () => {
     const root = await scaffold({
       'package.json': JSON.stringify({ name: 'app', dependencies: { 'acme-sdk': '4.2.0' } }),
       'src/index.js': "const acme = require('acme-sdk');\n",
     });
 
     try {
+      // `require(...)` binds no name the static check can compare against a
+      // declaration file, so there is nothing to look up on disk at all.
       const result = await auditCurrentUsage({ root, repo, config: offline, logger });
       assert.equal(result.findings.length, 0);
-      assert.equal(result.analysed, 0, 'a pinned dependency has nothing to audit');
+      assert.equal(result.analysed, 0);
       assert.equal(result.checked, 1, 'but it was still examined, and the summary must say so');
+      assert.equal(result.gaps.length, 0, 'nothing to check is not a failure worth reporting');
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  test('a named import of a package missing from node_modules is reported as a gap', async () => {
+    const root = await scaffold({
+      'package.json': JSON.stringify({ name: 'app', dependencies: { 'acme-sdk': '4.2.0' } }),
+      'src/index.ts': "import { createClient } from 'acme-sdk';\ncreateClient();\n",
+    });
+
+    try {
+      const result = await auditCurrentUsage({ root, repo, config: offline, logger });
+      assert.equal(result.findings.length, 0);
+      assert.equal(result.analysed, 0);
+      assert.equal(result.gaps.length, 1);
+      assert.match(result.gaps[0]!.reason, /not found in node_modules/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  test('flags a symbol this repository imports that the installed package does not export', async () => {
+    const root = await scaffold({
+      'package.json': JSON.stringify({ name: 'app', dependencies: { 'acme-sdk': '4.2.0' } }),
+      'node_modules/acme-sdk/package.json': JSON.stringify({
+        name: 'acme-sdk',
+        version: '4.2.0',
+        types: 'index.d.ts',
+      }),
+      'node_modules/acme-sdk/index.d.ts': 'export declare function createClient(): void;\n',
+      'src/index.ts':
+        "import { createClient, createLegacyClient } from 'acme-sdk';\n" +
+        'createClient();\n' +
+        'createLegacyClient();\n',
+    });
+
+    try {
+      const result = await auditCurrentUsage({ root, repo, config: offline, logger });
+      assert.equal(result.analysed, 1);
+
+      const finding = result.findings.find((f) => f.kind === 'unreviewed-drift');
+      assert.ok(finding, 'expected createLegacyClient to be reported as missing');
+      assert.equal(finding.dependency, 'acme-sdk');
+      assert.equal(finding.installedVersion, '4.2.0');
+      assert.equal(finding.breakingChange?.symbols[0], 'createLegacyClient');
+      // The import line and the call site both mention the name; localize()
+      // reports both, which is the same behaviour every other Drift finding has.
+      assert.ok(finding.sites.length >= 1);
+      assert.ok(finding.sites.every((site) => site.file === 'src/index.ts'));
+      assert.ok(finding.sites.some((site) => site.excerpt.includes('createLegacyClient();')));
+
+      // `createClient` really is exported, so it must not also show up as broken.
+      assert.equal(
+        result.findings.filter((f) => f.breakingChange?.symbols.includes('createClient')).length,
+        0,
+      );
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  test('every imported symbol actually being exported is a clean, checked result', async () => {
+    const root = await scaffold({
+      'package.json': JSON.stringify({ name: 'app', dependencies: { 'acme-sdk': '4.2.0' } }),
+      'node_modules/acme-sdk/package.json': JSON.stringify({
+        name: 'acme-sdk',
+        version: '4.2.0',
+        types: 'index.d.ts',
+      }),
+      'node_modules/acme-sdk/index.d.ts': 'export declare function createClient(): void;\n',
+      'src/index.ts': "import { createClient } from 'acme-sdk';\ncreateClient();\n",
+    });
+
+    try {
+      const result = await auditCurrentUsage({ root, repo, config: offline, logger });
+      assert.equal(result.findings.length, 0);
+      assert.equal(result.analysed, 1, 'it was checked, not skipped');
+      assert.equal(result.gaps.length, 0);
+      const checked = result.checkedSurfaces.find((s) => s.dependency === 'acme-sdk');
+      assert.equal(checked?.status, 'checked');
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  test('a package with no on-disk declarations is a gap, not a silent pass', async () => {
+    const root = await scaffold({
+      'package.json': JSON.stringify({ name: 'app', dependencies: { 'acme-sdk': '4.2.0' } }),
+      'node_modules/acme-sdk/package.json': JSON.stringify({ name: 'acme-sdk', version: '4.2.0' }),
+      'node_modules/acme-sdk/index.js': 'module.exports.createClient = () => {};\n',
+      'src/index.ts': "import { createClient } from 'acme-sdk';\ncreateClient();\n",
+    });
+
+    try {
+      const result = await auditCurrentUsage({ root, repo, config: offline, logger });
+      assert.equal(result.findings.length, 0);
+      assert.equal(result.analysed, 0);
+      assert.equal(result.gaps.length, 1);
+      assert.match(result.gaps[0]!.reason, /no readable TypeScript declarations/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  test('ecosystems without a readable on-disk declaration format are stated as unavailable', async () => {
+    const root = await scaffold({
+      'requirements.txt': 'acme-sdk==4.2.0\n',
+      'src/app.py': 'import acme_sdk\n',
+    });
+
+    try {
+      const result = await auditCurrentUsage({ root, repo, config: offline, logger });
+      assert.equal(result.analysed, 0);
+      assert.equal(result.findings.length, 0);
+      const surface = result.checkedSurfaces.find((s) => s.dependency === 'acme-sdk');
+      assert.equal(surface?.status, 'unavailable');
     } finally {
       await rm(root, { recursive: true, force: true });
     }
@@ -221,7 +343,7 @@ describe('audit summaries', () => {
   test('distinguishes "nothing to check" from "checked and clean"', () => {
     // These read identically in a naive summary and mean opposite things: one
     // is a clean bill of health, the other is a tool that never got to look.
-    assert.match(summarizeAudit(emptyResult({ checked: 12, analysed: 0 })), /all pinned or unreadable/);
+    assert.match(summarizeAudit(emptyResult({ checked: 12, analysed: 0 })), /unused, unreadable, or not npm/);
     assert.match(summarizeAudit(emptyResult({ checked: 12, analysed: 9 })), /Nothing in this repository is out of step/);
   });
 });
@@ -234,7 +356,6 @@ describe('audit rendering', () => {
     ecosystem: 'npm',
     manifestPath: 'package.json',
     declaredRange: '^4.0.0',
-    rangeFloor: '4.0.0',
     installedVersion: '4.9.0',
     breakingChange: {
       id: 'bc_1',
@@ -274,11 +395,11 @@ describe('audit rendering', () => {
     assert.equal(renderAudit({ findings: [], checked: 3, analysed: 3, gaps: [], checkedSurfaces: [] }), '');
   });
 
-  test('states the finding in the present tense, with the window that produced it', () => {
+  test('states the finding in the present tense, checked directly against what is installed', () => {
     const markdown = renderAudit(result);
     assert.match(markdown, /Already broken, before any upgrade/);
     assert.match(markdown, /installed 4\.9\.0/);
-    assert.match(markdown, /anything from 4\.0\.0 up was permitted/);
+    assert.match(markdown, /Checked directly against `acme-sdk@4\.9\.0`/);
     assert.match(markdown, /src\/api\.ts/);
     assert.match(markdown, /Use `createClient`/);
     // The claim that must survive every future edit to this renderer.
