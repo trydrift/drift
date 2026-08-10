@@ -145,6 +145,33 @@ end`,
     assert.equal(sites[0]!.line, 3);
   });
 
+  test('an alias inside @moduledoc is documentation, not a dependency edge', () => {
+    const source = [
+      'defmodule App.Controller do',
+      '  @moduledoc """',
+      '  Fetch a record:',
+      '',
+      '      alias MyApp.Repo',
+      '      Repo.get(User, id)',
+      '  """',
+      '  def show(conn), do: conn',
+      'end',
+    ].join('\n');
+
+    const files = [file('lib/app/controller.ex', 'elixir', source)];
+    const maps = new Map([
+      [moduleMapKey('hex', 'some_repo'), { names: ['Repo'], source: 'hex tarball' }],
+    ]);
+
+    assert.deepEqual(
+      run(files, dep('some_repo', 'hex'), change('some_repo', ['get'], 'signature-change'), {
+        moduleMaps: maps,
+      }),
+      [],
+      'a package called Repo is not a dependency of every file documenting one',
+    );
+  });
+
   test('a stdlib module is never attributed to a package', () => {
     const files = [
       file('lib/app/text.ex', 'elixir', `defmodule App.Text do\n  def up(s), do: String.upcase(s)\nend`),

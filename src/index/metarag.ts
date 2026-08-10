@@ -1104,9 +1104,27 @@ function extractElixirImports(content: string): ImportRecord[] {
     });
   };
 
+  // Elixir documents itself in heredocs, and Elixir documentation is full of
+  // Elixir. `@moduledoc """ ... alias MyApp.Repo ... """` is prose about an
+  // imaginary application, and reading it as an import puts this file in range
+  // of any package that happens to define a module called `Repo`. Phoenix's
+  // own `controller.ex` contributes four such names.
+  let inHeredoc = false;
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
     const trimmed = line.trim();
+
+    const fences = (line.match(/"""/g) ?? []).length;
+    if (inHeredoc) {
+      if (fences % 2 === 1) inHeredoc = false;
+      continue;
+    }
+    if (fences % 2 === 1) {
+      inHeredoc = true;
+      continue;
+    }
+
     if (trimmed.startsWith('#')) continue;
 
     // `alias Foo.{Bar, Baz}`
