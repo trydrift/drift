@@ -410,7 +410,7 @@ function VerdictStack({ proof }: { proof: ProofSummary }) {
   const total = Math.max(1, proof.clean + proof.affected + proof.unchecked);
   const lanes = [
     { label: "Safe here", value: proof.clean, className: "bg-brand" },
-    { label: "Affects you", value: proof.affected, className: "bg-brand-secondary" },
+    { label: "Affects you", value: proof.affected, className: "bg-rose-600" },
     { label: "Not verified", value: proof.unchecked, className: "bg-amber-500" },
   ];
 
