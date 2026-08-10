@@ -1151,7 +1151,7 @@ function renderBreak(change: BreakingChange, plan: RemediationPlan, expanded: bo
     </summary>
     <div class="break-body">
       ${change.symbols.length ? `<p class="symbols">${change.symbols.map((s) => `<code>${escapeHtml(s)}</code>`).join(' ')}</p>` : ''}
-      <p class="fix"><b>Fix:</b> ${renderMarkdown(change.remediation)}</p>
+      <div class="fix"><b>Fix:</b> <div class="markdown fix-body">${renderMarkdown(change.remediation)}</div></div>
       ${
         sites.length
           ? `<ul class="sites">${sites
@@ -1594,6 +1594,17 @@ export function renderMarkdown(text: string, options: MarkdownOptions = {}): str
 
     if (!line) {
       out.push(closeList());
+      continue;
+    }
+
+    const labelledCode = /^(before|after):\s*(.*)$/i.exec(line);
+    if (labelledCode) {
+      out.push(
+        closeList(),
+        `<figure class="code-compare"><figcaption>${escapeHtml(labelledCode[1]!.toLowerCase())}</figcaption><pre><code>${escapeHtml(
+          labelledCode[2]!,
+        )}</code></pre></figure>`,
+      );
       continue;
     }
 
@@ -2236,6 +2247,7 @@ button.wide { width: 100%; }
 .symbols { display: flex; flex-wrap: wrap; gap: 4px; }
 .fix { margin: 6px 0; }
 .fix .markdown, .fix p { display: inline; }
+.fix .code-compare { display: block; }
 ul.sites { margin: 6px 0; padding: 0; list-style: none; display: grid; gap: 5px; }
 ul.sites li { display: grid; gap: 1px; overflow-wrap: anywhere; }
 ul.sites span { font-size: 11px; color: var(--vscode-descriptionForeground); }
@@ -2252,6 +2264,15 @@ ul.sites span { font-size: 11px; color: var(--vscode-descriptionForeground); }
   white-space: nowrap;
 }
 .quote { max-height: 200px; overflow: auto; margin-top: 5px; font-size: 11px; }
+.code-compare { margin: 6px 0; }
+.code-compare figcaption {
+  color: var(--vscode-descriptionForeground);
+  font-size: 9px;
+  letter-spacing: .04em;
+  margin-bottom: 3px;
+  text-transform: uppercase;
+}
+.code-compare pre { margin-top: 0; }
 
 /* Changes --------------------------------------------------------- */
 .changes {

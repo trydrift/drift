@@ -626,6 +626,8 @@ interface MarkdownOptions {
 function renderMarkdown(text: string, options: MarkdownOptions = {}): string {
   const blocks: string[] = [];
   let inList = false;
+  let inCode = false;
+  let code: string[] = [];
 
   const closeList = () => {
     if (!inList) return '';
@@ -635,8 +637,37 @@ function renderMarkdown(text: string, options: MarkdownOptions = {}): string {
 
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim();
+
+    if (line.startsWith('```')) {
+      if (inCode) {
+        blocks.push(`<pre><code>${escapeHtml(code.join('\n'))}</code></pre>`);
+        code = [];
+        inCode = false;
+      } else {
+        blocks.push(closeList());
+        inCode = true;
+      }
+      continue;
+    }
+
+    if (inCode) {
+      code.push(raw);
+      continue;
+    }
+
     if (!line) {
       blocks.push(closeList());
+      continue;
+    }
+
+    const labelledCode = /^(before|after):\s*(.*)$/i.exec(line);
+    if (labelledCode) {
+      blocks.push(
+        closeList(),
+        `<figure class="code-compare"><figcaption>${escapeHtml(labelledCode[1]!.toLowerCase())}</figcaption><pre><code>${escapeHtml(
+          labelledCode[2]!,
+        )}</code></pre></figure>`,
+      );
       continue;
     }
 
@@ -659,6 +690,7 @@ function renderMarkdown(text: string, options: MarkdownOptions = {}): string {
     blocks.push(closeList(), `<p>${inlineMarkdown(line, options)}</p>`);
   }
 
+  if (inCode && code.length) blocks.push(`<pre><code>${escapeHtml(code.join('\n'))}</code></pre>`);
   blocks.push(closeList());
   return blocks.filter(Boolean).join('');
 }
@@ -841,6 +873,15 @@ a:hover { text-decoration: underline; color: var(--vscode-textLink-activeForegro
 pre { background: var(--vscode-textCodeBlock-background); padding: 10px; border-radius: 4px;
       overflow-x: auto; font-family: var(--vscode-editor-font-family); font-size: 0.85em;
       white-space: pre-wrap; word-break: break-word; margin: 8px 0 0; }
+.code-compare { margin: 8px 0; }
+.code-compare figcaption {
+  color: var(--vscode-descriptionForeground);
+  font-size: 0.72rem;
+  letter-spacing: .04em;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+.code-compare pre { margin-top: 0; }
 .markdown {
   background: transparent;
   max-height: 260px;

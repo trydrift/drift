@@ -240,7 +240,7 @@ function renderBreakingChanges(plan: RemediationPlan): string {
     );
     lines.push('');
 
-    lines.push('**Fix:** ' + change.remediation);
+    lines.push(...renderFix(change.remediation));
     lines.push('');
 
     const citations = change.citations
@@ -257,6 +257,53 @@ function renderBreakingChanges(plan: RemediationPlan): string {
   }
 
   return lines.join('\n').trim();
+}
+
+function renderFix(remediation: string): string[] {
+  const rendered = renderCodeAwareMarkdown(remediation);
+  if (rendered.length === 1) return [`**Fix:** ${rendered[0]}`];
+  return ['**Fix:**', '', ...rendered];
+}
+
+function renderCodeAwareMarkdown(text: string): string[] {
+  const out: string[] = [];
+  const paragraph: string[] = [];
+
+  const flushParagraph = () => {
+    const value = paragraph.join(' ').trim();
+    paragraph.length = 0;
+    if (value) out.push(value);
+  };
+
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    const labelledCode = /^(before|after):\s*(.*)$/i.exec(line);
+    if (labelledCode) {
+      flushParagraph();
+      out.push(`**${capitalize(labelledCode[1]!)}:**`, '', fencedCode(labelledCode[2]!), '');
+      continue;
+    }
+
+    if (!line) {
+      flushParagraph();
+      continue;
+    }
+
+    paragraph.push(line);
+  }
+
+  flushParagraph();
+  return out.filter((line, index, lines) => line || (lines[index - 1] && lines[index + 1]));
+}
+
+function fencedCode(code: string): string {
+  const ticks = code.match(/`+/g)?.reduce((max, run) => Math.max(max, run.length), 2) ?? 2;
+  const fence = '`'.repeat(ticks + 1);
+  return [fence, code, fence].join('\n');
+}
+
+function capitalize(text: string): string {
+  return text ? `${text[0]!.toUpperCase()}${text.slice(1).toLowerCase()}` : text;
 }
 
 function renderCommitPlan(plan: RemediationPlan): string {

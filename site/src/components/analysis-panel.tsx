@@ -119,6 +119,10 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
   const running = state.phase === "running";
   const visible = done ? recording.candidates : recording.candidates.slice(0, state.resolved);
   const affected = recording.candidates.filter((c) => severityOf(c) === "affected");
+  const safe = recording.candidates.filter((c) => {
+    const severity = severityOf(c);
+    return severity === "clean" || severity === "upstream-only";
+  });
 
   return (
     <div
@@ -216,6 +220,14 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
               </p>
             )}
             <SpeedControl value={speedMultiplier} onChange={setSpeedMultiplier} />
+            {safe.length > 1 && (
+              <button
+                onClick={() => setNote(true)}
+                className="rounded-md border border-border bg-surface px-2.5 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-hover"
+              >
+                Upgrade all {safe.length}
+              </button>
+            )}
             {affected.length > 0 && (
               <button
                 onClick={() => setNote(true)}
@@ -250,8 +262,8 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
             about evidence cannot afford. */}
         {note && (
           <p className="animate-rise mt-3 rounded-lg border border-brand/25 bg-brand-soft px-3 py-2 text-xs leading-relaxed text-muted">
-            In your editor this opens a branch, applies every fix Drift can prove, and hands the rest
-            to your agent — one commit per concern.{" "}
+            In your editor this installs selected upgrades, opens a branch when fixes are needed,
+            and hands affected code to your agent — one commit per concern.{" "}
             <a href="#install" className="font-medium text-brand-text underline underline-offset-2">
               Run it on your own repository
             </a>{" "}
@@ -383,15 +395,16 @@ function PackageRow({
 }) {
   const verdict = severityOf(candidate);
   const hasDetail = candidate.breaking.length > 0;
+  const canExpand = interactive && (hasDetail || candidate.current !== candidate.selected || candidate.gaps.length > 0);
 
   return (
     <li className="animate-rise">
       <button
-        onClick={hasDetail && interactive ? onToggle : undefined}
-        disabled={!hasDetail || !interactive}
+        onClick={canExpand ? onToggle : undefined}
+        disabled={!canExpand}
         className={cn(
           "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors sm:px-5",
-          hasDetail && interactive && "cursor-pointer hover:bg-surface-hover",
+          canExpand && "cursor-pointer hover:bg-surface-hover",
         )}
       >
         <div className="min-w-0 flex-1">
@@ -427,7 +440,7 @@ function PackageRow({
               : VERDICT_PILL[verdict]}
         </span>
 
-        {hasDetail && interactive && (
+        {canExpand && (
           <ChevronIcon
             className={cn("shrink-0 text-faint transition-transform", expanded && "rotate-90")}
           />
@@ -470,7 +483,7 @@ function PackageRow({
                 <span className="text-xs font-medium text-foreground">{change.summary}</span>
               </div>
               {change.remediation && (
-                <p className="mt-1 text-xs leading-relaxed text-muted">{change.remediation}</p>
+                <CodeAwareText text={change.remediation} className="mt-1 text-xs leading-relaxed text-muted" />
               )}
               {change.sites.length > 0 && (
                 // Horizontal scroll is contained here rather than on the page:
@@ -524,6 +537,82 @@ function PackageRow({
       )}
     </li>
   );
+}
+
+type TextSegment =
+  | { kind: "paragraph"; text: string }
+  | { kind: "code"; label: "before" | "after"; code: string };
+
+function CodeAwareText({ text, className }: { text: string; className?: string }) {
+  const segments = useMemo(() => parseTextSegments(text), [text]);
+
+  return (
+    <div className={cn("space-y-2", className)}>
+      {segments.map((segment, index) =>
+        segment.kind === "paragraph" ? (
+          <p key={index}>
+            <InlineCode text={segment.text} />
+          </p>
+        ) : (
+          <figure key={index} className="overflow-hidden rounded-md border border-border bg-[var(--pre-bg)]">
+            <figcaption className="border-b border-border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide text-faint">
+              {segment.label}
+            </figcaption>
+            <pre className="overflow-x-auto whitespace-pre-wrap break-words p-2.5 font-mono text-[11px] leading-relaxed text-foreground">
+              <code>{segment.code}</code>
+            </pre>
+          </figure>
+        ),
+      )}
+    </div>
+  );
+}
+
+function InlineCode({ text }: { text: string }) {
+  return text.split(/(`[^`]+`)/g).map((part, index) => {
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return (
+        <code key={index} className="rounded bg-surface-hover px-1 py-0.5 font-mono text-[0.92em] text-foreground">
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return <span key={index}>{part}</span>;
+  });
+}
+
+function parseTextSegments(text: string): TextSegment[] {
+  const segments: TextSegment[] = [];
+  const paragraph: string[] = [];
+
+  const flushParagraph = () => {
+    const value = paragraph.join(" ").trim();
+    paragraph.length = 0;
+    if (value) segments.push({ kind: "paragraph", text: value });
+  };
+
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    const labelledCode = /^(before|after):\s*(.*)$/i.exec(line);
+    if (labelledCode) {
+      flushParagraph();
+      segments.push({
+        kind: "code",
+        label: labelledCode[1]!.toLowerCase() as "before" | "after",
+        code: labelledCode[2]!,
+      });
+      continue;
+    }
+
+    if (!line) {
+      flushParagraph();
+      continue;
+    }
+    paragraph.push(line);
+  }
+
+  flushParagraph();
+  return segments.length ? segments : [{ kind: "paragraph", text }];
 }
 
 /** The present-tense findings, when the recording has any. */

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { crossesMajor, renderBody, renderPanel, SLASH_COMMANDS, type ViewModel } from '../src/ui/webview.js';
+import { crossesMajor, renderBody, renderMarkdown, renderPanel, SLASH_COMMANDS, type ViewModel } from '../src/ui/webview.js';
 import type { TaskGroup } from '../src/session.js';
 import { describeSeverity, severityOf } from '../src/severity.js';
 import type { UpgradeCandidate } from '../src/upgrades.js';
@@ -542,6 +542,16 @@ test('safe upgrades can be taken in one action, unknown ones cannot', () => {
 
   assert.match(html, /data-action="upgradeAll"/);
   assert.match(html, /Upgrade all 2/);
+});
+
+test('markdown renders signature evidence as labelled code blocks', () => {
+  const html = renderMarkdown('Update call sites.\n  before: old(<tag>)\n  after:  next(value)');
+
+  assert.match(html, /<p>Update call sites\.<\/p>/);
+  assert.match(html, /<figcaption>before<\/figcaption>/);
+  assert.match(html, /<pre><code>old\(&lt;tag&gt;\)<\/code><\/pre>/);
+  assert.match(html, /<figcaption>after<\/figcaption>/);
+  assert.match(html, /<pre><code>next\(value\)<\/code><\/pre>/);
 });
 
 test('a scan whose results have gone stale says so and offers a rescan', () => {

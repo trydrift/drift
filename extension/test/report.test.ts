@@ -114,6 +114,45 @@ describe('report rendering', () => {
     assert.match(html, /report-tail-visible/);
   });
 
+  test('formats before and after signatures in remediation and evidence', () => {
+    const state = new DriftState();
+    state.set({
+      kind: 'findings',
+      plan: plan({
+        evidence: [
+          {
+            id: 'e1',
+            source: 'type-surface-diff',
+            dependency: 'react',
+            title: 'API diff',
+            content: 'before: old(<tag>)\nafter: next(value)',
+            weight: 1,
+          },
+        ],
+        breakingChanges: [
+          {
+            id: 'b1',
+            dependency: 'react',
+            kind: 'signature-change',
+            summary: 'signature changed',
+            remediation: 'Update calls.\n  before: render(<App />)\n  after:  createRoot(node).render(<App />)',
+            symbols: ['render'],
+            confidence: 'high',
+            citations: ['e1'],
+          },
+        ],
+      }),
+      at: Date.now(),
+    });
+
+    const html = __renderForTest(state);
+
+    assert.match(html, /<figcaption>before<\/figcaption>/);
+    assert.match(html, /render\(&lt;App \/&gt;\)/);
+    assert.match(html, /old\(&lt;tag&gt;\)/);
+    assert.doesNotMatch(html, /render\(<App \/>/);
+  });
+
   test('a candidateId focus renders that candidate\'s plan, not the global one', () => {
     const state = new DriftState();
     state.set({ kind: 'clean', summary: 'nothing breaking', at: Date.now(), plan: cleanPlan() });

@@ -630,4 +630,23 @@ describe('reporting never turns an absence into an all-clear', () => {
     const body = renderPullRequestBody(planWith({ impactSites: [site()] }), DEFAULT_CONFIG);
     assert.match(body, /\*\*Automatic execution:\*\*/);
   });
+
+  test('signature remediation renders before and after snippets as code fences', () => {
+    const body = renderPullRequestBody(
+      planWith({
+        impactSites: [site()],
+        breakingChanges: [
+          breaking({
+            kind: 'signature-change',
+            remediation: 'Update calls exactly.\n  before: ACTION(old)\n  after:  ACTION(next)',
+          }),
+        ],
+      }),
+      DEFAULT_CONFIG,
+    );
+
+    assert.match(body, /\*\*Fix:\*\*\n\nUpdate calls exactly\./);
+    assert.match(body, /\*\*Before:\*\*\n\n```\nACTION\(old\)\n```/);
+    assert.match(body, /\*\*After:\*\*\n\n```\nACTION\(next\)\n```/);
+  });
 });
