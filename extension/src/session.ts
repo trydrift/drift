@@ -506,8 +506,12 @@ export class DriftSession {
         }
         update({ phase, detail, done, total });
       },
-      done: (phase) => update({ state: 'done', phase, detail: '' }),
-      fail: (phase) => update({ state: 'failed', phase, detail: '' }),
+      // Clearing done/total here (not just flipping `state`) matters: `renderStep`
+      // keys the "N / M" badge and progress bar off `total > 0` alone, so without
+      // this a finished step still shows a fraction like "7 / 14" next to its
+      // checkmark — read by a developer mid-glance as "still running, stuck at 7".
+      done: (phase) => update({ state: 'done', phase, detail: '', done: 0, total: 0 }),
+      fail: (phase) => update({ state: 'failed', phase, detail: '', done: 0, total: 0 }),
     };
   }
 
