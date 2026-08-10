@@ -418,6 +418,12 @@ bumping `@szmarczak/http-timer` 4.0.6 → 5.0.1, Drift:
 The first run of that experiment found nothing at all. Fixing it surfaced four
 genuine bugs, [documented in the commit history](https://github.com/trydrift/drift/commits/main).
 
+That walkthrough is one manual example. `test/real-repo-recordings.test.ts` runs
+sixteen more automatically — the real captured runs behind the site's demos,
+one per supported ecosystem (gitlab, kubernetes, deno, scrapy, and twelve
+others) — as a regression check in `npm test`. See
+[testing-on-a-real-repo.md](docs/testing-on-a-real-repo.md).
+
 ## Status
 
 MVP. The pipeline is complete and tested end to end, covered by the test suite
