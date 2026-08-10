@@ -2,6 +2,17 @@
 
 Four ways to try it, in ascending order of commitment. Start at 1.
 
+> **Automated coverage:** the walkthrough below is one manual example (`got`,
+> npm). `test/real-repo-recordings.test.ts` covers the other sixteen — it
+> replays the real captured runs behind the [site's real-run
+> demos](../site/src/data/), one per supported ecosystem, and checks that
+> `severityOf`'s verdict agrees with the recorded counts, that every breaking
+> change carries evidence, and that the reported impact counts are internally
+> consistent. Those recordings come from `site/scripts/capture.mjs` against
+> real, large, unrelated-to-Drift repositories (gitlab, kubernetes, deno,
+> scrapy, and twelve others) — they run automatically in CI as part of `npm
+> test`, no network access required.
+
 > **Note:** Drift is not published to the GitHub Marketplace yet, so
 > `uses: trydrift/drift@v0` will not resolve. Until it is, reference the action
 > from your own fork or a local path — both covered below.
