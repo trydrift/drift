@@ -149,11 +149,11 @@ less visibility into the repair loop than LADU does — see
 
 **Paper:** Java/Maven, evaluated on Spring Boot.
 
-**Drift:** thirteen ecosystems for detection. Consequently Drift's computed-diff
-coverage is uneven — a local toolchain gives npm, Go, Cargo, Maven, and Python a
-computed surface diff; RubyGems and the rest fall back to prose evidence, with
-no computed signal at all for RubyGems. Stated in the limitations rather than
-smoothed over.
+**Drift:** sixteen ecosystems for detection. Consequently Drift's computed-diff
+coverage is uneven — npm, NuGet, and the three C/C++ ecosystems need nothing
+installed, while Go, Cargo, Maven, and Python need a local toolchain; RubyGems
+and the rest fall back to prose evidence, with no computed signal at all for
+RubyGems. Stated in the limitations rather than smoothed over.
 
 ---
 

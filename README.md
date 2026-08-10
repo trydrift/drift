@@ -43,10 +43,11 @@ is mostly about that problem:
 | | |
 |---|---|
 | **Evidence, not recall** | Every finding cites a changelog entry, a release note, or a computed API diff you can click. Drift never asks an agent to act on "I think this package changed." |
-| **Computed diffs beat prose** | Drift downloads both versions and diffs the actual exported API — `.d.ts` for npm, every importable package at three platforms for Go, rustdoc for cargo. Changelogs omit removals; the shipped artefact doesn't. |
+| **Computed diffs beat prose** | Drift downloads both versions and diffs the actual exported API — `.d.ts` for npm, every importable package at three platforms for Go, rustdoc for cargo, ECMA-335 metadata read straight out of a `.nupkg` for .NET, public headers for C and C++. Changelogs omit removals; the shipped artefact doesn't. |
+| **Nothing is installed to be read** | Every artefact is fetched and parsed, never installed or built. `pip download` runs a build backend and a `.nupkg` can carry an install script; Drift opens the archive instead. |
 | **Benefits need a citation too** | The upgrade rationale reports which advisories a version closes and what its maintainer says improved, each linked. A benefit Drift can't cite is a benefit Drift doesn't mention. |
 | **Rules, not scores** | The recommendation is a ladder of `if` statements that each record the sentence they fired with. You can disagree with a sentence; you can't disagree with `0.72`. |
-| **Import-graph precision** | A file that never imports `express` cannot be broken by an `express` change. Drift searches importers, not the whole repo. |
+| **Import-graph precision** | A file that never imports `express` cannot be broken by an `express` change. Drift searches importers, not the whole repo — and a name this file bound from a *different* package is that package's name, not a finding. |
 | **Separated commits** | One commit per concern, ordered so build-enabling changes land first. `git revert` and `git bisect` stay meaningful. |
 | **Guardrails that downgrade, never drop** | A tripped guardrail turns an automatic run into an approval request. You still see the work. |
 | **Approval by default** | Fresh installs analyse and ask. Autonomy is opt-in. |
@@ -245,9 +246,10 @@ Each can legitimately produce nothing — most dependency bumps genuinely don't
 break you, and saying so quickly is a feature.
 
 ### 1 · Detect
-Diffs manifests and lockfiles across thirteen ecosystems: **npm/pnpm/yarn/bun,
+Diffs manifests and lockfiles across sixteen ecosystems: **npm/pnpm/yarn/bun,
 pip/poetry/uv, Go modules, Cargo, Maven/Gradle/sbt, Bundler, NuGet, Composer,
-Mix, pub (Dart & Flutter), Swift Package Manager, CocoaPods, and opam**.
+Mix, pub (Dart & Flutter), Swift Package Manager, CocoaPods, opam, Conan,
+vcpkg, and Arduino/PlatformIO**.
 
 The work is in the cases a regex gets wrong. .NET Central Package Management
 means a `.csproj` carries no versions at all. `"org" %% "artifact"` in sbt
@@ -259,6 +261,15 @@ wrong one sends the fix stage editing a dependency that was never there.
 
 Parsers never throw: a half-rebased lockfile degrades the run, it doesn't fail
 it.
+
+C and C++ get three entries rather than one, because they have three package
+managers and no agreement between them. Conan reads `conanfile.txt`, the literal
+`requires` in `conanfile.py`, and `conan.lock`; vcpkg reads `vcpkg.json`,
+including the `overrides` that are its only per-port pin; Arduino and PlatformIO
+share one ecosystem, because `library.properties` and `platformio.ini` name the
+same libraries from the same registry. What they share below the manifest — the
+`#include` graph, the header surface diff — is shared where that is actually
+true.
 
 Scala and React Native are supported without being separate ecosystems. sbt
 coordinates resolve to Maven Central, so `build.sbt` is parsed into `maven` and
@@ -283,8 +294,9 @@ speaks to breakage:
 
 | Weight | Source |
 |---|---|
-| 1.00 | **Computed API surface diff** — npm, Go, cargo, Maven |
+| 1.00 | **Computed API surface diff** — npm, Go, cargo, Maven, NuGet |
 | 1.00 | **OpenAPI spec diff** — computed |
+| 0.90 | Computed C/C++ header surface — real, but blind to the preprocessor |
 | 0.90 | Computed Python surface — reconstructed, so capped below the rest |
 | 0.80 | Migration guide |
 | 0.70 | GitHub release notes |

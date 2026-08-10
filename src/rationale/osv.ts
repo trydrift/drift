@@ -45,6 +45,16 @@ const OSV_ECOSYSTEM: Record<Ecosystem, string | null> = {
   // checked here" rather than "no advisories", which are not the same claim.
   cocoapods: null,
   opam: null,
+  // C and C++ vulnerabilities are catalogued against the upstream project, not
+  // against the Conan recipe, the vcpkg port, or the Arduino library that
+  // repackages it — OSV has no ecosystem for any of the three. `null` is the
+  // honest answer, and it matters more here than elsewhere: this is the
+  // ecosystem where a reader is most likely to assume that "no advisories"
+  // means "no CVEs", when what it means is that the CVE is filed under a name
+  // Drift was not given.
+  conan: null,
+  vcpkg: null,
+  arduino: null,
 };
 
 interface OsvSeverity {

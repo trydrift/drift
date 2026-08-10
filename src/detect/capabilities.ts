@@ -110,6 +110,24 @@ const LOCALIZE_NOTE =
   'Matches imports and references to symbols named in the evidence; cannot see through reflection, dynamic dispatch, or generated code.';
 
 /**
+ * C and C++ share a surface diff and a localizer across three package
+ * managers, so their caveats are written once here rather than three times
+ * below in slightly different words.
+ *
+ * The surface diff is the strongest one Drift has outside npm, and for a
+ * reason worth stating: in C and C++ the published header *is* the public API,
+ * not a reconstruction of it the way a Python stub is. What it cannot see is
+ * the preprocessor — a declaration behind `#ifdef` exists for some builds and
+ * not others, and Drift reads the text rather than configuring and running
+ * cpp. That is also why the weight sits one notch below a compiled diff.
+ */
+const C_SURFACE_NOTE =
+  'Compares the declarations in both versions\' public headers, which is what a consumer compiles against. Declarations behind preprocessor conditionals are read as written, not per build configuration.';
+
+const C_LOCALIZE_NOTE =
+  'Matches `#include` directives and references to symbols named in the evidence. A macro-generated call site is invisible, as is a header reached through another header.';
+
+/**
  * Keyed by ecosystem rather than held as an array, so that adding a member to
  * the `Ecosystem` union without describing it here is a *compile* error at this
  * declaration. An array plus a runtime lookup would let the omission ship.
@@ -240,8 +258,11 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       evidence: partial(
         'Registry metadata, published versions, deprecation, and OSV advisories. Release notes depend on the package declaring a GitHub repository.',
       ),
-      surface: none(
-        'Comparing two .NET assemblies needs a local SDK and a decompiler Drift does not ship; upgrades rest on prose evidence.',
+      // No SDK, no decompiler, nothing installed. A .NET assembly carries a
+      // complete description of its own public surface in a documented format,
+      // and Drift reads it out of the published .nupkg directly.
+      surface: partial(
+        'Compares the public types and member signatures in both versions\' published assemblies, preferring the reference assembly and a common target framework. A package that ships only native binaries, analyzers, or nothing at all has no surface to compare.',
       ),
       'static-analysis': partial(LOCALIZE_NOTE),
       verify: partial('Runs `dotnet build` and `dotnet test`.', 'the .NET SDK'),
@@ -375,6 +396,72 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
         'An OCaml library\'s top-level module name is not derivable from its opam package name without reading its dune build rules; Drift does not localize usages in this ecosystem yet.',
       ),
       verify: partial('Runs `dune build` and `dune runtest`.', 'opam and dune'),
+      fix: full(),
+      'pull-request': full(),
+    },
+  },
+  conan: {
+    ecosystem: 'conan',
+    label: 'C / C++ (Conan)',
+    files: ['conanfile.txt', 'conanfile.py', 'conan.lock'],
+    managers: ['Conan'],
+    support: {
+      detect: partial(
+        'Reads conanfile.txt, conan.lock, and the literal `requires` declarations in conanfile.py. A reference a recipe builds at evaluation time is not visible without running Python.',
+      ),
+      evidence: partial(
+        'Versions from the ConanCenter recipe index, and releases and changelogs from the upstream project the recipe builds — not from the recipe itself. ConanCenter publishes no deprecation signal, and OSV has no Conan ecosystem.',
+      ),
+      surface: partial(C_SURFACE_NOTE),
+      'static-analysis': partial(C_LOCALIZE_NOTE),
+      verify: partial(
+        'Runs `conan build`, which is the compiler — in C and C++ an incompatible header change is a build failure rather than a runtime surprise.',
+        'Conan',
+      ),
+      fix: full(),
+      'pull-request': full(),
+    },
+  },
+  vcpkg: {
+    ecosystem: 'vcpkg',
+    label: 'C / C++ (vcpkg)',
+    files: ['vcpkg.json', 'vcpkg-configuration.json'],
+    managers: ['vcpkg'],
+    support: {
+      // The baseline is the honest hole and it is a large one: vcpkg's model
+      // is that one commit of the ports tree decides every version at once,
+      // so a manifest that pins nothing has moved every dependency when that
+      // commit moves. Drift reports the baseline move rather than resolving
+      // it, which would mean cloning the ports tree at both commits.
+      detect: partial(
+        'Reads declared dependencies, `version>=` floors, and `overrides`. A registry baseline moving changes every unpinned version at once; Drift reports the baseline move rather than resolving it to versions.',
+      ),
+      evidence: partial(
+        'Versions from the vcpkg versions database, and releases and changelogs from the port\'s upstream project. vcpkg publishes no deprecation signal, and OSV has no vcpkg ecosystem.',
+      ),
+      surface: partial(C_SURFACE_NOTE),
+      'static-analysis': partial(C_LOCALIZE_NOTE),
+      verify: partial('Runs the project\'s CMake build, which is where an incompatible header change surfaces.', 'CMake'),
+      fix: full(),
+      'pull-request': full(),
+    },
+  },
+  arduino: {
+    ecosystem: 'arduino',
+    label: 'Arduino / PlatformIO',
+    files: ['library.properties', 'platformio.ini'],
+    managers: ['Arduino CLI', 'PlatformIO'],
+    support: {
+      detect: full(),
+      evidence: partial(
+        'Versions and repositories from the Arduino Library Manager index, plus releases and changelogs from the library\'s own repository. A library published only to PlatformIO has metadata but no version history, because that registry serves only the current release.',
+      ),
+      surface: partial(C_SURFACE_NOTE),
+      'static-analysis': partial(C_LOCALIZE_NOTE),
+      verify: partial(
+        'Runs `arduino-cli compile` or `pio run`, and `pio test` where the project has tests.',
+        'Arduino CLI or PlatformIO',
+      ),
       fix: full(),
       'pull-request': full(),
     },

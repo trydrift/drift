@@ -1,5 +1,6 @@
 import type { Ecosystem } from '../types.js';
 import { fetchJson, fetchText } from '../util/http.js';
+import { arduinoLibrary } from './arduino-index.js';
 
 /** Normalised registry facts Drift needs, across every ecosystem. */
 export interface RegistryInfo {
@@ -52,6 +53,12 @@ export async function fetchRegistryInfo(
       return swiftRegistryInfo(name);
     case 'cocoapods':
       return fetchCocoaPods(name);
+    case 'conan':
+      return fetchConan(name);
+    case 'vcpkg':
+      return fetchVcpkg(name);
+    case 'arduino':
+      return fetchArduino(name);
     // opam publishes no JSON metadata API. Returning `null` means the evidence
     // stage reports "no registry data" rather than an empty version list, which
     // would read as "this package has no releases".
@@ -247,6 +254,229 @@ async function fetchCocoaPods(name: string): Promise<RegistryInfo | null> {
     deprecated: null,
     description: null,
   };
+}
+
+/**
+ * ConanCenter, read as what it is: a git repository of recipes.
+ *
+ * Conan's own web API answers about *binaries* — which package ids were built
+ * for which compiler and ABI — and cannot answer "what versions of zlib
+ * exist", which is the only question here. The recipe index can, exactly, in
+ * one file: `recipes/<name>/config.yml` lists every version ConanCenter will
+ * build and the recipe folder each one uses.
+ *
+ * The second fetch is the one that earns its keep. `conandata.yml` holds the
+ * upstream source URL per version, which is where the *real* project lives —
+ * so a Conan dependency ends up with the same GitHub repository, releases, and
+ * CHANGELOG evidence as a native one, rather than being stuck at "a recipe
+ * exists". A Conan recipe is a wrapper, and evidence about the wrapper is not
+ * evidence about the library.
+ */
+async function fetchConan(name: string): Promise<RegistryInfo | null> {
+  const base = `https://raw.githubusercontent.com/conan-io/conan-center-index/master/recipes/${encodeURIComponent(name)}`;
+  const config = await fetchText(`${base}/config.yml`);
+  if (!config) return null;
+
+  const { versions, folders } = parseConanConfig(config);
+  if (versions.length === 0) return null;
+
+  // Every version in one folder is the common case; where a recipe is split
+  // across folders, the newest version's is the one whose sources are current.
+  const folder = folders[versions[versions.length - 1]!] ?? folders[versions[0]!] ?? 'all';
+  const conandata = await fetchText(`${base}/${folder}/conandata.yml`);
+
+  return {
+    name,
+    ecosystem: 'conan',
+    githubRepo: conandata ? firstGitHubRepo(conandata) : null,
+    homepage: `https://conan.io/center/recipes/${name}`,
+    versions,
+    deprecated: null,
+    description: null,
+  };
+}
+
+/**
+ * `config.yml`: a `versions:` map of version to `{ folder: ... }`.
+ *
+ * Parsed by hand rather than with the YAML dependency because the shape is
+ * two levels deep and fixed, and because a quoted key (`"1.3.2"`) and a bare
+ * one (`1.3.2`) both appear in the index — the latter would arrive from a
+ * general-purpose parser as the number 1.3, which is not a version.
+ */
+export function parseConanConfig(content: string): {
+  versions: string[];
+  folders: Record<string, string>;
+} {
+  const versions: string[] = [];
+  const folders: Record<string, string> = {};
+
+  let inVersions = false;
+  let current: string | null = null;
+
+  for (const rawLine of content.split('\n')) {
+    const line = rawLine.split('#')[0]!.replace(/\s+$/, '');
+    if (!line.trim()) continue;
+
+    if (/^versions\s*:/.test(line)) {
+      inVersions = true;
+      continue;
+    }
+    if (!/^\s/.test(line)) {
+      inVersions = false;
+      continue;
+    }
+    if (!inVersions) continue;
+
+    const version = /^\s{2,}["']?([^"':\s]+)["']?\s*:\s*$/.exec(line);
+    if (version) {
+      current = version[1]!.trim();
+      if (current && !versions.includes(current)) versions.push(current);
+      continue;
+    }
+
+    const folder = /^\s{4,}folder\s*:\s*["']?([^"'\s]+)["']?/.exec(line);
+    if (folder && current) folders[current] = folder[1]!;
+  }
+
+  return { versions, folders };
+}
+
+/** The first GitHub URL in a blob of YAML — a recipe's upstream source. */
+function firstGitHubRepo(content: string): string | null {
+  for (const match of content.matchAll(/https?:\/\/github\.com\/[\w.-]+\/[\w.-]+/g)) {
+    const repo = parseGitHubRepo(match[0]);
+    if (repo) return repo;
+  }
+  return null;
+}
+
+/**
+ * vcpkg, read from the versions database the tool itself resolves against.
+ *
+ * `versions/<first-letter>-/<port>.json` is not a mirror of the ports tree; it
+ * *is* how vcpkg finds a version, so what it lists is exactly what a project
+ * can pin to. Newest is first.
+ *
+ * `port-version` is dropped on purpose. It counts packaging fixes to the same
+ * upstream release — a patch to the portfile, a corrected dependency — and
+ * surfacing `1.3.2#2` as an upgrade from `1.3.2#1` would report a change to
+ * the recipe as a change to the library, which is the one thing a C++ team
+ * upgrading zlib does not need to hear about.
+ */
+async function fetchVcpkg(name: string): Promise<RegistryInfo | null> {
+  const first = name[0]?.toLowerCase();
+  if (!first || !/[a-z0-9]/.test(first)) return null;
+
+  const [database, port] = await Promise.all([
+    fetchJson<{ versions?: { version?: string; 'version-string'?: string; 'version-semver'?: string; 'version-date'?: string }[] }>(
+      `https://raw.githubusercontent.com/microsoft/vcpkg/master/versions/${first}-/${encodeURIComponent(name)}.json`,
+    ),
+    fetchJson<{ description?: string | string[]; homepage?: string }>(
+      `https://raw.githubusercontent.com/microsoft/vcpkg/master/ports/${encodeURIComponent(name)}/vcpkg.json`,
+    ),
+  ]);
+  if (!database) return null;
+
+  const versions: string[] = [];
+  for (const entry of database.versions ?? []) {
+    const version =
+      entry.version ?? entry['version-semver'] ?? entry['version-string'] ?? entry['version-date'];
+    if (version && !versions.includes(version)) versions.push(version);
+  }
+  if (versions.length === 0) return null;
+
+  const description = Array.isArray(port?.description)
+    ? port.description.join(' ')
+    : (port?.description ?? null);
+
+  return {
+    name,
+    ecosystem: 'vcpkg',
+    githubRepo: parseGitHubRepo(port?.homepage ?? null),
+    homepage: port?.homepage ?? `https://vcpkg.io/en/package/${name}`,
+    versions,
+    deprecated: null,
+    description,
+  };
+}
+
+/**
+ * An Arduino library, from the Library Manager index.
+ *
+ * The index carries the version history and, for the overwhelming majority of
+ * libraries, the GitHub repository — which is what unlocks releases and
+ * CHANGELOG evidence. PlatformIO's registry is asked only for what the index
+ * lacks: a library published to PlatformIO but not to the Arduino Library
+ * Manager exists, and the second call is the difference between analysing it
+ * and reporting it as unknown.
+ */
+async function fetchArduino(name: string): Promise<RegistryInfo | null> {
+  const library = await arduinoLibrary(name);
+  if (library) {
+    return {
+      name: library.name,
+      ecosystem: 'arduino',
+      githubRepo: library.githubRepo,
+      homepage: library.website ?? `https://www.arduino.cc/reference/en/libraries/${slugify(name)}/`,
+      versions: library.versions,
+      deprecated: null,
+      description: library.description,
+    };
+  }
+
+  const pio = await platformIOLibrary(name);
+  if (!pio) return null;
+
+  return {
+    name: pio.name ?? name,
+    ecosystem: 'arduino',
+    githubRepo: parseGitHubRepo(pio.repository_url ?? null),
+    homepage: pio.homepage ?? null,
+    // The PlatformIO API answers with one version — the current one — and has
+    // no endpoint that lists the rest. Reporting that single version as the
+    // published history would make every library look brand new and every
+    // upgrade look impossible, so the list stays empty and the capability
+    // matrix says which libraries this affects.
+    versions: pio.version?.name ? [pio.version.name] : [],
+    deprecated: null,
+    description: pio.description ?? null,
+  };
+}
+
+interface PlatformIOPackage {
+  name?: string;
+  description?: string;
+  homepage?: string;
+  repository_url?: string;
+  version?: { name?: string };
+}
+
+/**
+ * PlatformIO's registry, which needs the owner it will not tell you directly.
+ *
+ * Package lookup is `/{owner}/library/{name}`, and a project's `lib_deps` may
+ * name the library without an owner, so the search endpoint supplies it. The
+ * first exact name match wins — search ranks by popularity, and the forks
+ * ("ArduinoJson-esphomelib") sort below the original.
+ */
+async function platformIOLibrary(name: string): Promise<PlatformIOPackage | null> {
+  const results = await fetchJson<{ items?: ({ owner?: { username?: string } } & PlatformIOPackage)[] }>(
+    `https://api.registry.platformio.org/v3/search?query=${encodeURIComponent(name)}`,
+  );
+
+  const exact = (results?.items ?? []).find(
+    (item) => item.name?.toLowerCase() === name.toLowerCase() && item.owner?.username,
+  );
+  if (!exact) return null;
+
+  return fetchJson<PlatformIOPackage>(
+    `https://api.registry.platformio.org/v3/packages/${encodeURIComponent(exact.owner!.username!)}/library/${encodeURIComponent(exact.name!)}`,
+  );
+}
+
+function slugify(name: string): string {
+  return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
 /**
