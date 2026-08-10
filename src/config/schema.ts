@@ -23,6 +23,9 @@ const ECOSYSTEM_NAMES = z.enum([
   'swift',
   'cocoapods',
   'opam',
+  'conan',
+  'vcpkg',
+  'arduino',
 ] as const satisfies readonly Ecosystem[]);
 
 /**

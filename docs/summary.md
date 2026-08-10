@@ -127,13 +127,13 @@ because the expensive part (inference) is already paid for by someone else.
 ## Status
 
 Working MVP. Pipeline complete end to end, covered by the test suite, across
-thirteen package ecosystems and two front ends (VS Code extension, GitHub
+sixteen package ecosystems and two front ends (VS Code extension, GitHub
 Action) plus a CLI, verified against a real upgrade in a real repository.
 
 Known limitations are documented rather than hidden — including single-hop
-localization, computed API diffs that need a local toolchain outside npm, and
-prompt injection via attacker-influenced changelogs as mitigated rather than
-solved.
+localization, computed API diffs that need a local toolchain in four of the nine
+ecosystems that have one, and prompt injection via attacker-influenced
+changelogs as mitigated rather than solved.
 [docs/architecture.md § Known limitations](architecture.md#known-limitations)
 
 ## Technical differentiators

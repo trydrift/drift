@@ -154,6 +154,38 @@ function checksFor(manager: PackageManagerId, manifest: string | null): LocalChe
         check('test', { command: 'dune', args: ['runtest'] }, 'dune'),
         check('build', { command: 'dune', args: ['build'] }, 'dune'),
       ];
+    case 'conan':
+    case 'vcpkg':
+      // C and C++ have no typecheck separate from the build — the compiler is
+      // both — so the build is offered once and honestly rather than twice
+      // under two names. It is also the strongest check either ecosystem has:
+      // an incompatible header change is a compile error, not a runtime
+      // surprise, which is the whole reason a C upgrade is easier to trust
+      // than a Python one. The build itself belongs to CMake or Meson, which
+      // Drift does not choose for a project; `--build=missing` and
+      // `vcpkg install` get the dependencies in place for whatever it is.
+      return [
+        check(
+          'build',
+          manager === 'conan'
+            ? { command: 'conan', args: ['build', '.'] }
+            : { command: 'cmake', args: ['--build', 'build'] },
+          manager === 'conan' ? 'Conan' : 'CMake',
+        ),
+      ];
+    case 'arduino-cli':
+      return [
+        check(
+          'build',
+          { command: 'arduino-cli', args: ['compile', '--warnings', 'all'] },
+          'Arduino CLI',
+        ),
+      ];
+    case 'platformio':
+      return [
+        check('build', { command: 'pio', args: ['run'] }, 'PlatformIO'),
+        check('test', { command: 'pio', args: ['test'] }, 'PlatformIO'),
+      ];
   }
 }
 

@@ -8,6 +8,8 @@ import { rustSurface } from './rust.js';
 import { goSurface } from './go.js';
 import { javaSurface } from './java.js';
 import { pythonSurface } from './python.js';
+import { arduinoSurface, conanSurface, vcpkgSurface } from './c.js';
+import { nugetSurface } from './dotnet.js';
 import { unavailable, type SurfaceOutcome, type SurfaceProvider } from './types.js';
 
 /**
@@ -20,7 +22,16 @@ import { unavailable, type SurfaceOutcome, type SurfaceProvider } from './types.
  * lie told by a number.
  */
 
-const PROVIDERS: readonly SurfaceProvider[] = [rustSurface, goSurface, javaSurface, pythonSurface];
+const PROVIDERS: readonly SurfaceProvider[] = [
+  rustSurface,
+  goSurface,
+  javaSurface,
+  pythonSurface,
+  conanSurface,
+  vcpkgSurface,
+  arduinoSurface,
+  nugetSurface,
+];
 
 export function surfaceProviderFor(ecosystem: Ecosystem): SurfaceProvider | undefined {
   return PROVIDERS.find((p) => p.ecosystem === ecosystem);
@@ -96,3 +107,6 @@ export * from './go-api.js';
 export * from './go-toolchain.js';
 export { parseJapicmp, jarUrl, parseCoordinate } from './java.js';
 export { parsePythonSurface } from './python.js';
+export { parseHeader, parseHeaderSurface, publicHeaders } from './c-headers.js';
+export { folderForVersion, sourceUrlForVersion, matchesVersion } from './c.js';
+export { readAssemblySurface } from './dotnet.js';

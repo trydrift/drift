@@ -1081,6 +1081,12 @@ function registryLabel(ecosystem: Ecosystem): string {
       return 'the package’s git repository';
     case 'opam':
       return 'the opam repository';
+    case 'conan':
+      return 'ConanCenter';
+    case 'vcpkg':
+      return 'the vcpkg registry';
+    case 'arduino':
+      return 'the Arduino Library Manager';
   }
 }
 

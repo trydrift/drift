@@ -42,14 +42,21 @@ src/
 │   ├── package-manager.ts  Which tool owns a directory, and what it runs
 │   ├── workspace.ts      Monorepo members, and where each package ends
 │   └── ecosystems/       npm, pypi, go, cargo, maven (+ sbt), rubygems, nuget,
-│                         composer, cocoapods, hex, opam, pub, swift
+│                         composer, cocoapods, hex, opam, pub, swift,
+│                         conan, vcpkg, arduino (+ PlatformIO)
 ├── evidence/             Stage 2 — citable ground truth
 │   ├── registry.ts       npm, PyPI, crates.io, Go proxy, Maven, RubyGems
 │   ├── changelog.ts      CHANGELOG + migration guide retrieval and slicing
 │   ├── releases.ts       GitHub release notes for a version range
 │   ├── openapi.ts        Consumer-breaking spec diff engine
 │   ├── type-surface.ts   TypeScript .d.ts API diff via the compiler API
-│   └── surface/          Computed API diffs for cargo, go, maven, pypi
+│   ├── arduino-index.ts  The Arduino Library Manager index, reduced and cached
+│   └── surface/          Computed API diffs for cargo, go, maven, pypi, nuget,
+│       │                 and the three C/C++ ecosystems
+│       ├── c.ts          Source resolution per C ecosystem
+│       ├── c-headers.ts  The header parser — what a consumer compiles against
+│       ├── dotnet.ts     Which assembly in a .nupkg to read
+│       └── ecma335.ts    .NET metadata, parsed from the PE file directly
 │       ├── go.ts         Module-cache fetch + per-package extraction
 │       ├── go-apidump.ts The Go extractor, as embedded source
 │       └── go-toolchain.ts  Toolchain probing and required-version lookup
@@ -213,9 +220,10 @@ Declarations are *fetched*, not installed: the old version is gone from
 `node_modules` after the upgrade, and fetching means never executing a
 third-party install script.
 
-**API-surface diff, elsewhere** — the same question in five ecosystems, each
-answered by that ecosystem's own tool, each returning the same `SurfaceChange[]`
-so nothing downstream learns which produced it:
+**API-surface diff, elsewhere** — the same question in every other ecosystem
+that has an answer, each one read by whatever that ecosystem publishes, and
+every one returning the same `SurfaceChange[]` so nothing downstream learns
+which produced it:
 
 | Ecosystem | Tool | Weight | Reads |
 |---|---|---|---|
@@ -224,12 +232,17 @@ so nothing downstream learns which produced it:
 | go | `go/build` + `go/parser`, run from a scratch module | 1.00 | every importable package, per platform |
 | maven | `japicmp` | 1.00 | classfiles of both jars |
 | pypi | `ast` in a Python subprocess | 0.90 | sources or `.pyi` stubs |
+| nuget | ECMA-335 metadata reader | 1.00 | the published assembly |
+| conan / vcpkg / arduino | header parser | 0.90 | both versions' public headers |
 | rubygems | — | — | prose only |
 
-Every one of these depends on a tool Drift does not ship. A missing toolchain is
-an ordinary outcome with a stated reason — "`cargo public-api` is not installed"
-and "that version was yanked" lead a developer to different actions, and
-collapsing both into "could not check" throws that away.
+Four of them depend on a tool Drift does not ship — cargo, go, maven, and pypi.
+The rest need nothing installed at all: npm's declarations come from jsDelivr, a
+.NET assembly describes itself, and a C header is text. A missing toolchain,
+where one is needed, is an ordinary outcome with a stated reason —
+"`cargo public-api` is not installed" and "that version was yanked" lead a
+developer to different actions, and collapsing both into "could not check"
+throws that away.
 
 Python sits at 0.90 on purpose, which caps a lone Python surface diff at
 `medium` confidence. It is a reconstruction rather than a reading of what
@@ -242,6 +255,54 @@ backend, and Drift does not run a third party's code to find out what is in it.
 Ruby is deliberately absent. There is no reliable static public surface for a
 gem, and forcing a low-confidence signal into the highest-weight slot is a lie
 told by a number.
+
+**.NET, without a decompiler.** A `.dll` is not opaque: every managed assembly
+carries a complete description of its own public surface in ECMA-335's metadata
+tables, inside a PE file, inside the `.nupkg` zip. `ecma335.ts` reads it
+directly — PE headers, metadata streams, the table schema, and the signature
+blobs — which is why NuGet is weighted 1.00 alongside npm. It is the same class
+of act as reading a `.d.ts`: the artefact that shipped, not a reconstruction.
+The alternative was `ildasm` (Windows-only) or a decompiler Drift would have to
+ship, and either would have made .NET the one ecosystem needing a tool a Linux
+CI runner cannot reasonably install.
+
+The choice of *which* assembly is load-bearing. A package ships the same library
+for several target frameworks and their surfaces genuinely differ, so comparing
+a `net48` build against a `netstandard2.0` one would report the difference
+between two frameworks as a breaking change. `ref/` beats `lib/` — a reference
+assembly is the public surface with the implementation stripped — then
+`netstandard2.0`, the target most likely to exist in both an old version and a
+new one.
+
+**C and C++, from the headers.** In every other ecosystem the public API has to
+be reconstructed from something that is not it. In C the header *is* the
+interface: it is the file a consumer includes and the declarations they compile
+against. Both versions' archives are fetched and read in memory — no toolchain,
+no unpacking to disk, no build — and the declarations diffed.
+
+What it cannot see is the preprocessor, and that is why the weight is 0.90
+rather than 1.00. A declaration behind `#ifdef` exists for some builds and not
+others; both branches are read, because pretending to pick a configuration
+means picking the wrong one for somebody. A library that declares its API
+through macro expansion is reported as having *no* surface rather than as having
+none left.
+
+Two rules do most of the precision work. The release's own top directory is
+stripped, or `zlib-1.3.1/zlib.h` and `zlib-1.3.2/zlib.h` compare as different
+symbols and every one reports as removed. And private namespaces are excluded —
+including the macro-delimited kind (`FMT_BEGIN_DETAIL_NAMESPACE`,
+`ARDUINOJSON_BEGIN_PRIVATE_NAMESPACE`) that most large C++ libraries use, whose
+opening brace this parser never sees. Without the second, a routine fmt release
+reports a hundred removals of symbols no consumer could name.
+
+Where the source of a version comes from differs per ecosystem and nothing
+downstream learns which ran: Arduino's index records an exact archive URL per
+release, ConanCenter's `conandata.yml` names the upstream tarball, and vcpkg —
+whose recipe is a CMake program Drift will not evaluate — falls back to matching
+the upstream repository's tags. ConanCenter also prunes old versions from its
+index, so the version a project *has installed* is usually absent from it; the
+same tag fallback is what makes a Conan comparison possible at all for a
+repository that is not already current.
 
 **How the Go diff works, and why it is not `go doc`.** Drift writes a small
 standard-library Go program into a scratch module and runs it against the module
@@ -327,6 +388,25 @@ established.
 
 Package name ≠ import name often enough to matter (`beautifulsoup4` → `bs4`), so
 there's an explicit alias table.
+
+C is the one language with no import that binds a name — `#include` is a textual
+splice, and everything the header declares arrives at once. So a C impact site
+caps at `medium`: the file provably includes the dependency's header, and
+nothing short of a compiler can prove which declarations it used. The join is
+case-insensitive on the header root (`<ArduinoJson.h>` against a `platformio.ini`
+that says `arduinojson`), which is how include resolution behaves on the two
+platforms most C is written on anyway.
+
+**Two rules keep a site somewhere there is work to do.** A symbol bound from a
+*different* package in the same file is that package's symbol — `Certificate` in
+a file that writes `from twisted.internet.ssl import Certificate` is Twisted's,
+whatever `cryptography` did to a class of the same name, and a name has one
+binding in a scope. And an import statement is a site only when the change
+breaks the import: a removal, a rename, or a move. A symbol that changed *shape*
+— a class that became a variable, a function that gained a parameter — is still
+importable under the same name from the same module, so the work is at the call
+and listing the import beside it is noise that makes a computed finding look
+like it came from grep.
 
 Localization also looks up, per impact site, whether Drift's own deterministic
 codemod applies (`src/codemod/`) and — separately — whether a matching
@@ -602,14 +682,30 @@ flags the wrapper — correct, and the right place to fix it, but it won't trace
 downstream consequences through your own indirection.
 
 **Non-JS/TS parsing is pattern-based.** Only TypeScript and JavaScript get real
-AST parsing. Python, Go, Rust, Java, and Ruby use declaration-line matching, so
-enclosing-symbol attribution can be wrong in unusual formatting. The file and
-line are always exact; the symbol is a convenience.
+AST parsing. Python, Go, Rust, Java, C, C++, and Ruby use declaration-line
+matching, so enclosing-symbol attribution can be wrong in unusual formatting.
+The file and line are always exact; the symbol is a convenience.
 
-**Computed API diffs need a local toolchain.** Only npm's works with no
-installed tool. Cargo, Go, Maven, and PyPI diffs degrade to prose evidence, with
-the reason stated, when their tool is missing. RubyGems has no computed signal
-at all.
+**Computed API diffs need a local toolchain — in four ecosystems.** npm, NuGet,
+Conan, vcpkg, and Arduino need nothing installed. Cargo, Go, Maven, and PyPI
+degrade to prose evidence, with the reason stated, when their tool is missing.
+RubyGems has no computed signal at all.
+
+**The C/C++ header diff over-reports on header-only C++ libraries.** A library
+whose entire implementation ships in its public headers — fmt, ArduinoJson,
+Eigen — has no path-based boundary between interface and internals, so a release
+that reorganises inline code can produce a long list of removals no consumer
+could name. Private namespaces are excluded, including the macro-delimited kind,
+which removes most of it; what remains is filtered by localization against real
+usage, so the *sites* stay honest even when the upstream count is inflated. The
+alternative rule that would fix the count — treating `src/Foo/` as private when
+`src/Foo.h` exists beside it — leaves those libraries with no readable surface
+at all, and a silent miss is worse than a loud over-count. See `c-headers.ts`.
+
+**The preprocessor is invisible.** A C declaration behind `#ifdef` is read as
+present regardless of build configuration, and an API generated by macro
+expansion is not read at all — reported as *no surface*, never as a clean
+comparison.
 
 **Behaviour changes are the weak spot.** A changelog saying "retries are now
 exponential" has no symbol to search for and no compile error to catch. Drift
@@ -633,8 +729,11 @@ not currently poll the task to completion and check CI. The scaffolding
 ## Extension points
 
 **A new ecosystem** — implement `ManifestParser` in `src/detect/ecosystems/`,
-register it in `PARSERS`. Add import extraction in `metarag.ts` and any
-distribution→module aliases in `localize/index.ts`.
+register it in `PARSERS`, and describe it in `detect/capabilities.ts` (the
+`Ecosystem` union makes omitting it a compile error). Add a package manager in
+`package-manager.ts`, its checks in `checks.ts`, a registry lookup in
+`evidence/registry.ts`, an OSV name in `rationale/osv.ts`, import extraction in
+`metarag.ts`, and any distribution→module aliases in `localize/index.ts`.
 
 **A new evidence source** — return `Evidence[]` from `gatherEvidence`, with a
 weight that honestly reflects how directly it speaks to breakage. Populate

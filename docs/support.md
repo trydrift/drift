@@ -35,13 +35,16 @@ reassuring.** Drift never renders the first as the second.
 | Rust | Yes | Yes | Partial | Partial | Partial | Yes | Yes |
 | Java / Kotlin / Scala | Partial | Yes | Partial | Partial | Partial | Partial | Yes |
 | Ruby | Yes | Yes | No | Partial | Partial | Yes | Yes |
-| .NET | Yes | Partial | No | Partial | Partial | Yes | Yes |
+| .NET | Yes | Partial | Partial | Partial | Partial | Yes | Yes |
 | PHP | Yes | Partial | No | No | Partial | Yes | Yes |
 | Elixir / Erlang | Yes | Partial | No | No | Partial | Yes | Yes |
 | Dart / Flutter | Yes | Partial | No | Partial | Partial | Yes | Yes |
 | Swift | Partial | Partial | No | No | Partial | Yes | Yes |
 | CocoaPods | Yes | Partial | No | No | No | Yes | Yes |
 | OCaml | Yes | Partial | No | No | Partial | Yes | Yes |
+| C / C++ (Conan) | Partial | Partial | Partial | Partial | Partial | Yes | Yes |
+| C / C++ (vcpkg) | Partial | Partial | Partial | Partial | Partial | Yes | Yes |
+| Arduino / PlatformIO | Yes | Partial | Partial | Partial | Partial | Yes | Yes |
 
 ## JavaScript / TypeScript
 
@@ -112,7 +115,7 @@ reassuring.** Drift never renders the first as the second.
 **Package managers:** NuGet
 
 - **Evidence — Partial.** Registry metadata, published versions, deprecation, and OSV advisories. Release notes depend on the package declaring a GitHub repository.
-- **API surface — No.** Comparing two .NET assemblies needs a local SDK and a decompiler Drift does not ship; upgrades rest on prose evidence.
+- **API surface — Partial.** Compares the public types and member signatures in both versions' published assemblies, preferring the reference assembly and a common target framework. A package that ships only native binaries, analyzers, or nothing at all has no surface to compare.
 - **Static analysis — Partial.** Matches imports and references to symbols named in the evidence; cannot see through reflection, dynamic dispatch, or generated code.
 - **Verify — Partial.** Runs `dotnet build` and `dotnet test`. *Requires the .NET SDK.*
 
@@ -182,6 +185,41 @@ reassuring.** Drift never renders the first as the second.
 - **API surface — No.** Comparing two OCaml module interfaces needs a built switch Drift does not create; upgrades rest on prose evidence.
 - **Static analysis — No.** An OCaml library's top-level module name is not derivable from its opam package name without reading its dune build rules; Drift does not localize usages in this ecosystem yet.
 - **Verify — Partial.** Runs `dune build` and `dune runtest`. *Requires opam and dune.*
+
+## C / C++ (Conan)
+
+**Files:** `conanfile.txt`, `conanfile.py`, `conan.lock`
+
+**Package managers:** Conan
+
+- **Detect — Partial.** Reads conanfile.txt, conan.lock, and the literal `requires` declarations in conanfile.py. A reference a recipe builds at evaluation time is not visible without running Python.
+- **Evidence — Partial.** Versions from the ConanCenter recipe index, and releases and changelogs from the upstream project the recipe builds — not from the recipe itself. ConanCenter publishes no deprecation signal, and OSV has no Conan ecosystem.
+- **API surface — Partial.** Compares the declarations in both versions' public headers, which is what a consumer compiles against. Declarations behind preprocessor conditionals are read as written, not per build configuration.
+- **Static analysis — Partial.** Matches `#include` directives and references to symbols named in the evidence. A macro-generated call site is invisible, as is a header reached through another header.
+- **Verify — Partial.** Runs `conan build`, which is the compiler — in C and C++ an incompatible header change is a build failure rather than a runtime surprise. *Requires Conan.*
+
+## C / C++ (vcpkg)
+
+**Files:** `vcpkg.json`, `vcpkg-configuration.json`
+
+**Package managers:** vcpkg
+
+- **Detect — Partial.** Reads declared dependencies, `version>=` floors, and `overrides`. A registry baseline moving changes every unpinned version at once; Drift reports the baseline move rather than resolving it to versions.
+- **Evidence — Partial.** Versions from the vcpkg versions database, and releases and changelogs from the port's upstream project. vcpkg publishes no deprecation signal, and OSV has no vcpkg ecosystem.
+- **API surface — Partial.** Compares the declarations in both versions' public headers, which is what a consumer compiles against. Declarations behind preprocessor conditionals are read as written, not per build configuration.
+- **Static analysis — Partial.** Matches `#include` directives and references to symbols named in the evidence. A macro-generated call site is invisible, as is a header reached through another header.
+- **Verify — Partial.** Runs the project's CMake build, which is where an incompatible header change surfaces. *Requires CMake.*
+
+## Arduino / PlatformIO
+
+**Files:** `library.properties`, `platformio.ini`
+
+**Package managers:** Arduino CLI, PlatformIO
+
+- **Evidence — Partial.** Versions and repositories from the Arduino Library Manager index, plus releases and changelogs from the library's own repository. A library published only to PlatformIO has metadata but no version history, because that registry serves only the current release.
+- **API surface — Partial.** Compares the declarations in both versions' public headers, which is what a consumer compiles against. Declarations behind preprocessor conditionals are read as written, not per build configuration.
+- **Static analysis — Partial.** Matches `#include` directives and references to symbols named in the evidence. A macro-generated call site is invisible, as is a header reached through another header.
+- **Verify — Partial.** Runs `arduino-cli compile` or `pio run`, and `pio test` where the project has tests. *Requires Arduino CLI or PlatformIO.*
 
 ## Ecosystems that are not on this list
 

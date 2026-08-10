@@ -134,9 +134,64 @@ function extractImports(file: SourceFile): ImportRecord[] {
       return extractDotnetImports(file.content);
     case 'dart':
       return extractDartImports(file.content);
+    case 'c':
+    case 'cpp':
+      return extractIncludes(file.content);
     default:
       return [];
   }
+}
+
+/**
+ * `#include <ArduinoJson.h>` and `#include "zlib.h"`.
+ *
+ * C has no import statement that binds names — an include is a textual splice,
+ * and everything the header declares lands in the translation unit at once. So
+ * `bindings` is empty on purpose, and every C impact site is capped at `medium`
+ * confidence by `confidenceFor`. That is the correct ceiling: the file
+ * provably includes the dependency's header, and nothing weaker than a
+ * compiler can prove which of its declarations the file actually used.
+ *
+ * The package name is the first path segment with its extension dropped, and
+ * lowercased, because the two ends of this join disagree about case more often
+ * than not — `#include <ArduinoJson.h>` against a `platformio.ini` that says
+ * `arduinojson`, `<zlib.h>` against a Conan recipe called `zlib`. Include
+ * resolution on the two platforms most C is written on is case-insensitive
+ * anyway, so matching case-insensitively is the behaviour, not a shortcut.
+ *
+ * Quoted includes are kept rather than skipped the way a relative `import` is.
+ * The quotes mean "look next to this file first", not "this is mine" — a great
+ * deal of published C is included as `"zlib.h"` — so the decision about whether
+ * a header belongs to the project is left to the importer join, which answers
+ * it by knowing the dependency's actual name.
+ */
+function extractIncludes(content: string): ImportRecord[] {
+  const out: ImportRecord[] = [];
+  const lines = content.split('\n');
+
+  for (let i = 0; i < lines.length; i++) {
+    const match = /^\s*#\s*include\s*(?:<([^>]+)>|"([^"]+)")/.exec(lines[i]!);
+    const specifier = match?.[1] ?? match?.[2];
+    if (!specifier) continue;
+
+    // `./foo.h` and `../foo.h` name a path, never a package.
+    if (specifier.startsWith('.')) continue;
+
+    out.push({
+      specifier,
+      packageName: includeRoot(specifier),
+      bindings: [],
+      line: i + 1,
+    });
+  }
+
+  return out;
+}
+
+/** `boost/asio.hpp` -> `boost`; `ArduinoJson.h` -> `arduinojson`. */
+export function includeRoot(specifier: string): string {
+  const first = specifier.split('/')[0] ?? specifier;
+  return first.replace(/\.(h|hpp|hh|hxx|inl|tpp|h\+\+)$/i, '').toLowerCase();
 }
 
 function extractJsImports(content: string): ImportRecord[] {
@@ -711,7 +766,11 @@ function extractUnitsByPattern(content: string, language: Language): CodeUnit[] 
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i]!;
     const line = raw.trim();
-    if (!line || line.startsWith('#') || line.startsWith('//')) continue;
+    // `#` opens a comment in Python and Ruby and a directive in C, and the one
+    // directive that declares something is a function-like macro — which is a
+    // real part of a C library's surface and the only unit in some headers.
+    if (!line || line.startsWith('//')) continue;
+    if (line.startsWith('#') && !/^#\s*define\s+\w+\s*\(/.test(line)) continue;
 
     for (const { pattern, kind } of patterns) {
       const match = pattern.exec(line);
@@ -767,7 +826,44 @@ const DECLARATION_PATTERNS: Partial<
     { pattern: /^def\s+(?:self\.)?(\w+[?!=]?)/, kind: 'method' },
     { pattern: /^(?:class|module)\s+([\w:]+)/, kind: 'class' },
   ],
+  // Aggregates first, then functions. Order is what keeps `struct Foo {` from
+  // being read as a function by the return-type-then-name pattern below it,
+  // since `extractUnitsByPattern` takes the first rule that matches a line.
+  c: C_DECLARATIONS(),
+  cpp: [
+    { pattern: /^(?:template\s*<[^>]*>\s*)?(?:class|struct)\s+(?:\w+_API\s+|\w+_EXPORT\s+)?(\w+)\s*(?::|\{|$)/, kind: 'class' },
+    { pattern: /^namespace\s+(\w+)/, kind: 'module' },
+    ...C_DECLARATIONS(),
+  ],
 };
+
+/**
+ * The declarations C and C++ share.
+ *
+ * The function rule is the hard one, because C has no keyword introducing a
+ * function — a definition is a type, a name, and a parameter list, which is
+ * also the shape of a variable declaration with an initialiser call. Requiring
+ * the line to end in `{` or `;` after the closing paren is what separates
+ * `int read(int fd)` from `int n = read(fd);`, and requiring at least one
+ * leading type token is what stops a bare call at file scope matching.
+ *
+ * Built as a function rather than a shared constant because the patterns carry
+ * no `g` flag but the array is spread into two languages, and two languages
+ * sharing one mutable array is the kind of thing that stays correct only until
+ * someone adds a flag.
+ */
+function C_DECLARATIONS(): { pattern: RegExp; kind: CodeUnit['kind'] }[] {
+  return [
+    { pattern: /^typedef\s+(?:struct|union|enum)?\s*[\w\s*]*?(\w+)\s*;/, kind: 'type' },
+    { pattern: /^(?:typedef\s+)?(?:struct|union|enum)\s+(\w+)\s*\{?\s*$/, kind: 'class' },
+    {
+      pattern:
+        /^(?:(?:static|extern|inline|const|constexpr|virtual|explicit|friend|unsigned|signed|struct|enum|class|\w+_API|\w+_EXPORT)\s+)*[\w:<>,\s]*?[\w>]\s*[*&\s]\s*(\w+)\s*\([^;]*\)\s*(?:const\s*)?(?:noexcept\s*)?[{;]?\s*$/,
+      kind: 'function',
+    },
+    { pattern: /^#\s*define\s+(\w+)\s*\(/, kind: 'function' },
+  ];
+}
 
 /* ---------------- summaries ---------------- */
 

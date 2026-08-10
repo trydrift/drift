@@ -2,7 +2,9 @@ import type { DependencyChange, Ecosystem } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import { matchesAny } from '../util/glob.js';
 import { classifyBump, isDowngrade, isZeroVerBreaking, normalizeVersion, normalizeVersionExact } from './version.js';
+import { arduinoParser } from './ecosystems/arduino.js';
 import { cargoParser } from './ecosystems/cargo.js';
+import { conanParser } from './ecosystems/conan.js';
 import { cocoapodsParser } from './ecosystems/cocoapods.js';
 import { composerParser } from './ecosystems/composer.js';
 import { goParser } from './ecosystems/go.js';
@@ -16,6 +18,7 @@ import { pythonParser } from './ecosystems/python.js';
 import { rubygemsParser } from './ecosystems/rubygems.js';
 import { sbtParser } from './ecosystems/sbt.js';
 import { swiftParser } from './ecosystems/swift.js';
+import { vcpkgParser } from './ecosystems/vcpkg.js';
 import type { ManifestParser } from './ecosystems/types.js';
 
 /**
@@ -40,6 +43,9 @@ export const PARSERS: readonly ManifestParser[] = [
   swiftParser,
   cocoapodsParser,
   opamParser,
+  conanParser,
+  vcpkgParser,
+  arduinoParser,
 ];
 
 /** A manifest file as it looked on each side of the diff. */

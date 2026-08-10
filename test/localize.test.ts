@@ -543,3 +543,102 @@ describe('generic nouns as derived leaves', () => {
     assert.equal(sites.length, 0);
   });
 });
+
+/**
+ * Precision: the line a developer is sent to has to be a line with work on it.
+ *
+ * Both of these came from a real run against Scrapy. `cryptography` changed
+ * `base.Certificate` from a class to a variable, and Drift reported 59 sites
+ * across four files — every one of them either an `import` line, which the
+ * change does not break, or a use of Twisted's unrelated `Certificate`, which
+ * the change has nothing to do with.
+ */
+describe('a site has to be somewhere there is work to do', () => {
+  const typeChange = {
+    id: 'bc1',
+    dependency: 'cryptography',
+    kind: 'type-change' as const,
+    summary: '`base.Certificate` changed from a class to a variable.',
+    remediation: 'Update declarations, `new` expressions, and type positions.',
+    symbols: ['Certificate', 'base.Certificate'],
+    confidence: 'medium' as const,
+    citations: ['e1'],
+  };
+
+  test('a symbol bound from another package is that package’s symbol', () => {
+    const files = [
+      file(
+        'tests/test_crawl.py',
+        'python',
+        `from cryptography import x509
+from twisted.internet.ssl import Certificate
+
+
+def check(cert):
+    if isinstance(cert, Certificate):  # Twisted
+        return True
+    return False`,
+      ),
+    ];
+
+    const sites = localize(
+      [typeChange],
+      [dep('cryptography', 'pypi')],
+      buildIndex(files),
+      files,
+      { logger },
+    );
+
+    assert.equal(sites.length, 0, 'Certificate here is twisted.internet.ssl.Certificate');
+  });
+
+  test('a changed shape does not break the import that names it', () => {
+    const files = [
+      file(
+        'src/tls.py',
+        'python',
+        `from cryptography.x509 import Certificate
+
+
+def load(der):
+    return Certificate.from_der(der)`,
+      ),
+    ];
+
+    const sites = localize(
+      [typeChange],
+      [dep('cryptography', 'pypi')],
+      buildIndex(files),
+      files,
+      { logger },
+    );
+
+    assert.equal(sites.length, 1, 'the use site, not the import line');
+    assert.equal(sites[0]?.line, 5);
+  });
+
+  test('a removed export does break the import, and that line is the site', () => {
+    const files = [
+      file('src/tls.py', 'python', `from cryptography.x509 import Certificate\n`),
+    ];
+
+    const removed = { ...typeChange, kind: 'removed-export' as const };
+    const sites = localize([removed], [dep('cryptography', 'pypi')], buildIndex(files), files, {
+      logger,
+    });
+
+    assert.equal(sites.length, 1);
+    assert.equal(sites[0]?.line, 1);
+  });
+
+  test('a shared prefix is not a shared package', () => {
+    const files = [
+      file('src/a.ts', 'typescript', `import { hash } from 'crypto-js';\nhash('x');`),
+    ];
+
+    const change = { ...typeChange, dependency: 'crypto', symbols: ['hash'] };
+    const sites = localize([change], [dep('crypto', 'npm')], buildIndex(files), files, { logger });
+
+    assert.equal(sites.length, 0, 'crypto-js is not crypto');
+  });
+});

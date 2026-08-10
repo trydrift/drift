@@ -57,7 +57,18 @@ export type Ecosystem =
   | 'pub'
   | 'swift'
   | 'cocoapods'
-  | 'opam';
+  | 'opam'
+  /**
+   * C and C++ have no single package manager, so they have three entries here
+   * rather than one. Collapsing them into a `c` ecosystem would have been
+   * tidier and wrong: they have different manifests, different registries,
+   * different version grammars, and a project using one has never heard of the
+   * others. What they share — the language, the `#include` graph, the header
+   * surface diff — is shared at the layers where that is actually true.
+   */
+  | 'conan'
+  | 'vcpkg'
+  | 'arduino';
 
 /** Semantic classification of a version move. */
 export type BumpKind =

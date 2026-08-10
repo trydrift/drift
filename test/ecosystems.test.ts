@@ -390,6 +390,129 @@ describe('.NET', () => {
   });
 });
 
+describe('C and C++', () => {
+  test('Conan reads both manifest shapes and strips what is not a version', () => {
+    const txt = parse(
+      'conanfile.txt',
+      `[requires]
+zlib/1.3.1
+openssl/3.2.0@company/stable
+boost/[>=1.80 <2]
+
+[tool_requires]
+cmake/3.28.1
+
+[generators]
+CMakeDeps
+`,
+    );
+
+    assert.equal(txt.get('zlib')?.version, '1.3.1');
+    // A user/channel is identity, not version.
+    assert.equal(txt.get('openssl')?.version, '3.2.0');
+    // A range is kept verbatim; resolving it here would report a bump that
+    // never happened.
+    assert.equal(txt.get('boost')?.version, '[>=1.80 <2]');
+    assert.equal(txt.get('cmake')?.kind, 'dev');
+    // `[generators]` is not a dependency section.
+    assert.equal(txt.get('CMakeDeps'), undefined);
+
+    const py = parse(
+      'conanfile.py',
+      `from conan import ConanFile
+
+class App(ConanFile):
+    requires = "zlib/1.3.1", "fmt/10.2.1"
+    tool_requires = "cmake/3.28.1"
+
+    def requirements(self):
+        self.requires("spdlog/1.12.0")
+`,
+    );
+    assert.equal(py.get('zlib')?.version, '1.3.1');
+    assert.equal(py.get('fmt')?.version, '10.2.1');
+    assert.equal(py.get('spdlog')?.version, '1.12.0');
+    assert.equal(py.get('cmake')?.kind, 'dev');
+  });
+
+  test('a Conan lockfile revision moving is not a version change', () => {
+    const before = parse('conan.lock', JSON.stringify({ requires: ['zlib/1.3.1#aaa'] }));
+    const after = parse('conan.lock', JSON.stringify({ requires: ['zlib/1.3.1#bbb'] }));
+    assert.equal(before.get('zlib')?.version, after.get('zlib')?.version);
+  });
+
+  test('vcpkg reports a baseline move rather than pretending nothing changed', () => {
+    const manifest = (baseline: string) =>
+      JSON.stringify({
+        name: 'app',
+        'builtin-baseline': baseline,
+        dependencies: ['fmt', { name: 'zlib', 'version>=': '1.3.0' }, { name: 'vcpkg-cmake', host: true }],
+        overrides: [{ name: 'fmt', version: '10.2.1' }],
+      });
+
+    const deps = parse('vcpkg.json', manifest('a'.repeat(40)));
+    // An override is the last word on a port's version.
+    assert.equal(deps.get('fmt')?.version, '10.2.1');
+    assert.equal(deps.get('zlib')?.version, '1.3.0');
+    assert.equal(deps.get('vcpkg-cmake')?.kind, 'dev');
+
+    const changes = detectChanges([
+      { path: 'vcpkg.json', before: manifest('a'.repeat(40)), after: manifest('b'.repeat(40)) },
+    ]);
+    // Silence here would be indistinguishable from "nothing moved", which is
+    // the one reading that is definitely wrong when a baseline changes.
+    assert.ok(changes.some((c) => c.name === 'vcpkg-baseline'));
+  });
+
+  test('an Arduino library name may contain spaces', () => {
+    const deps = parse(
+      'library.properties',
+      `name=MySketch
+version=1.0.0
+depends=ArduinoJson (>=6.0.0), Adafruit GFX Library, WiFi (^1.2.7)
+`,
+    );
+
+    assert.equal(deps.get('ArduinoJson')?.version, '>=6.0.0');
+    assert.equal(deps.get('Adafruit GFX Library')?.version, null);
+    assert.equal(deps.get('WiFi')?.version, '^1.2.7');
+  });
+
+  test('PlatformIO lib_deps, in every spelling projects actually use', () => {
+    const deps = parse(
+      'platformio.ini',
+      `[env:esp32]
+platform = espressif32
+lib_deps =
+    bblanchon/ArduinoJson@^6.19.4
+    ArduinoJson-Fork
+    Wire
+    https://github.com/someone/thing.git
+
+[env:uno]
+lib_deps = knolleary/PubSubClient@2.8
+`,
+    );
+
+    // The owner disambiguates a fork in the registry but is not part of the
+    // library's identity, and library.properties never carries one.
+    assert.equal(deps.get('ArduinoJson')?.version, '^6.19.4');
+    assert.equal(deps.get('ArduinoJson-Fork')?.version, null);
+    assert.equal(deps.get('Wire')?.version, null);
+    assert.equal(deps.get('PubSubClient')?.version, '2.8');
+    // No registry stands behind a bare git URL, so an entry for one could only
+    // ever report "no versions available".
+    assert.equal(deps.size, 4);
+  });
+
+  test('the C ecosystems are told apart by their manifests', () => {
+    assert.equal(parserFor('conanfile.txt')?.ecosystem, 'conan');
+    assert.equal(parserFor('vcpkg.json')?.ecosystem, 'vcpkg');
+    assert.equal(parserFor('library.properties')?.ecosystem, 'arduino');
+    assert.equal(parserFor('platformio.ini')?.ecosystem, 'arduino');
+  });
+});
+
 describe('PHP', () => {
   test('platform requirements are not packages', () => {
     // `php: ^8.1 → ^8.2` is a real and important change, but it is not a

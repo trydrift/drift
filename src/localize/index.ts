@@ -201,7 +201,7 @@ function candidateFiles(
   // manifest coordinate and the import path share a root but are not equal.
   if (paths.size === 0) {
     for (const [key, importerPaths] of index.importers) {
-      if (names.some((name) => key.startsWith(name) || name.startsWith(key))) {
+      if (matchesImportName(key, names)) {
         for (const path of importerPaths) paths.add(path);
       }
     }
@@ -212,7 +212,24 @@ function candidateFiles(
 
 /** Does an import's package name identify one of the given candidate names? */
 function matchesImportName(packageName: string, names: readonly string[]): boolean {
-  return names.some((name) => packageName === name || packageName.startsWith(name) || name.startsWith(packageName));
+  return names.some((name) => identifies(packageName, name) || identifies(name, packageName));
+}
+
+/**
+ * Is `longer` the same identity as `shorter`, or a path beneath it?
+ *
+ * A bare `startsWith` is wrong in both directions that matter. `crypto` would
+ * claim `crypto-js`, and `pytest` would claim `pytest-cov` — different packages
+ * with different maintainers, whose only relationship is a shared prefix. The
+ * prefix rule exists for Go module paths and Java package roots, where the
+ * manifest coordinate really is an ancestor of the import path, so the next
+ * character has to be the separator that makes it one.
+ */
+function identifies(longer: string, shorter: string): boolean {
+  if (longer === shorter) return true;
+  if (!longer.startsWith(shorter)) return false;
+  const next = longer[shorter.length];
+  return next === '/' || next === '.' || next === ':';
 }
 
 /**
@@ -243,12 +260,53 @@ function importKeysFor(dependency: string, ecosystem: Ecosystem | undefined): st
     case 'cargo':
       names.add(dependency.replace(/-/g, '_'));
       break;
+    // C and C++: the join is against `includeRoot`, which lowercases and drops
+    // the header extension, so these keys must be lowercased to meet it. Conan
+    // and vcpkg names carry separators the include path usually does not
+    // (`nlohmann_json` is included as `<nlohmann/json.hpp>`, `libpng` as
+    // `<png.h>`), so each separator-stripped form is offered as a candidate
+    // rather than one guess being made and the rest silently lost.
+    case 'conan':
+    case 'vcpkg':
+    case 'arduino': {
+      const lower = dependency.toLowerCase();
+      names.add(lower);
+      names.add(lower.replace(/[-_]/g, ''));
+      names.add(lower.replace(/[-_]/g, '/'));
+      const alias = C_INCLUDE_ALIASES[lower];
+      if (alias) names.add(alias);
+      // `libfoo` is included as `<foo.h>` about as often as `<libfoo.h>`.
+      if (lower.startsWith('lib') && lower.length > 4) names.add(lower.slice(3));
+      break;
+    }
     default:
       break;
   }
 
   return [...names];
 }
+
+/**
+ * Package name -> include root, where the rule above cannot get there.
+ *
+ * Short and explicit for the same reason `PYPI_MODULE_ALIASES` is: a wrong
+ * guess here does not produce a wrong finding, it produces silence, which is
+ * the failure mode nobody notices.
+ */
+const C_INCLUDE_ALIASES: Record<string, string> = {
+  // Only the ones the rules above cannot reach. An entry that merely repeats
+  // the lowercased name (`fmt` -> `fmt`) or that the `lib` prefix rule already
+  // covers (`libpng` -> `png`) is noise pretending to be knowledge.
+  nlohmann_json: 'nlohmann',
+  'libjpeg-turbo': 'jpeglib',
+  libxml2: 'libxml',
+  sdl: 'sdl2',
+  protobuf: 'google',
+  grpc: 'grpcpp',
+  abseil: 'absl',
+  'ms-gsl': 'gsl',
+  'gtest': 'gtest',
+};
 
 /** Distribution name -> import name, for cases the normalisation rule misses. */
 const PYPI_MODULE_ALIASES: Record<string, string> = {
@@ -297,6 +355,19 @@ function searchFiles(
     const importedNames = new Set(relevantImports.flatMap((i) => i.bindings));
     const importsDependency = relevantImports.length > 0;
 
+    // Names this file provably got from somewhere *else*, and the lines every
+    // import in it occupies. Both exist to answer questions about a specific
+    // line rather than about the file as a whole — see `shadowed` and
+    // `breaksTheImport`.
+    const foreignNames = new Set(
+      candidate.imports
+        .filter((i) => !matchesImportName(i.packageName, names))
+        .flatMap((i) => i.bindings)
+        .filter((binding) => binding !== '*'),
+    );
+    const importLines = new Set(candidate.imports.map((i) => i.line));
+    const importStatementBreaks = breaksTheImport(change.kind);
+
     const lines = content.split('\n');
     // Two views of the same file, because two kinds of symbol need opposite
     // things from a string literal.
@@ -315,11 +386,30 @@ function searchFiles(
       const matcher = matcherFor(symbol);
       if (!matcher) continue;
 
-      const masked = livesInStringLiteral(symbol) ? withStrings : withoutStrings;
+      // The name in this file belongs to a different package. `Certificate` in
+      // a file that writes `from twisted.internet.ssl import Certificate` is
+      // Twisted's class, whatever cryptography did to a class of the same name,
+      // and reporting it is a false positive no reviewer can act on.
+      if (shadowed(symbol, importedNames, foreignNames)) continue;
+
+      const inString = livesInStringLiteral(symbol);
+      const masked = inString ? withStrings : withoutStrings;
+      // A module specifier only ever appears on an import line, so suppressing
+      // those would suppress the finding entirely. The rule below is about
+      // identifiers, which have somewhere else to be.
+      const importLineIsASite = importStatementBreaks || inString;
 
       for (let i = 0; i < lines.length && sites.length < limit; i++) {
         const line = lines[i]!;
         if (isCommentOnly(line)) continue;
+
+        // An import statement is a site only when the change breaks the import
+        // itself. A symbol that changed shape — a class that became a variable,
+        // a function that gained a parameter — is still importable under the
+        // same name from the same module, so the fix lives at the call, and
+        // listing the import line beside it is noise that makes the finding
+        // look like it was produced by grep.
+        if (!importLineIsASite && (importLines.has(i + 1) || isImportStatement(line))) continue;
 
         const searchable = masked[i]!;
         if (!matcher.test(searchable)) continue;
@@ -340,6 +430,66 @@ function searchFiles(
   }
 
   return dedupeSites(sites);
+}
+
+/**
+ * Does this kind of change break the import statement itself?
+ *
+ * Only three do. If an export was removed, renamed, or moved to another module,
+ * the line naming it is the thing that stops working, and it is the first line
+ * anyone has to edit. Every other kind — a changed signature, a class that
+ * became a variable, a new required field, a different default — leaves the
+ * import valid: the name still exists, in the same module, spelled the same
+ * way. Reporting the import for those tells a developer to go and look at a
+ * line where there is nothing to do.
+ *
+ * `unknown` counts as breaking, because a finding Drift could not classify is
+ * exactly where the cost of a missed site outweighs the cost of an extra one.
+ */
+function breaksTheImport(kind: BreakingChange['kind']): boolean {
+  return (
+    kind === 'removed-export' ||
+    kind === 'renamed-export' ||
+    kind === 'moved-export' ||
+    kind === 'unknown'
+  );
+}
+
+/**
+ * Import statements, for the languages whose imports the index does not parse.
+ *
+ * `ImportRecord.line` is the precise answer and is preferred; this covers the
+ * rest — PHP, Swift, Elixir, and anything that reached the walker as `other` —
+ * where the alternative is to fall back to the old behaviour of reporting the
+ * import line for every kind of change.
+ */
+function isImportStatement(line: string): boolean {
+  return IMPORT_STATEMENT.test(line);
+}
+
+const IMPORT_STATEMENT =
+  /^\s*(?:@?import\b|from\s+[\w.]+\s+import\b|#\s*include\b|using\s+(?:static\s+)?[\w.]+\s*;|(?:pub\s+)?use\s+[\w:]|require(?:_relative|_once)?\s*[("'`]|include(?:_once)?\s*[("']|open\s+[A-Z]|extern\s+crate\b|package\s+[\w.]+\s*;)/;
+
+/**
+ * Is the matched name bound from a *different* dependency in this file?
+ *
+ * A file that imports both `cryptography` and `twisted` contains one `Certificate`,
+ * and the import that binds it says whose it is. When another package's import
+ * binds the name and this dependency's imports do not, every occurrence in the
+ * file refers to the other package — not some of them, all of them, because a
+ * name has one binding in a scope.
+ *
+ * Dotted symbols are checked on their root for the same reason `confidenceFor`
+ * is: `base.Certificate` is reachable as `base` plus an attribute.
+ */
+function shadowed(
+  symbol: string,
+  importedNames: Set<string>,
+  foreignNames: Set<string>,
+): boolean {
+  const root = symbol.split('.')[0] ?? symbol;
+  if (importedNames.has(symbol) || importedNames.has(root) || importedNames.has('*')) return false;
+  return foreignNames.has(symbol) || foreignNames.has(root);
 }
 
 /**
@@ -417,13 +567,15 @@ function rank(confidence: Confidence): number {
 /** Line comments only. A trailing comment on real code is still a real site. */
 function isCommentOnly(line: string): boolean {
   const trimmed = line.trim();
-  return (
-    trimmed.startsWith('//') ||
-    trimmed.startsWith('#') ||
-    trimmed.startsWith('*') ||
-    trimmed.startsWith('/*')
-  );
+  // `#` opens a comment in Python, Ruby, and YAML — and a preprocessor
+  // directive in C, where `#include <zlib.h>` is the most important line in
+  // the file for exactly the finding that says zlib.h is gone.
+  if (trimmed.startsWith('#')) return !PREPROCESSOR.test(trimmed);
+  return trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*');
 }
+
+const PREPROCESSOR =
+  /^#\s*(include|define|undef|if|ifdef|ifndef|elif|else|endif|pragma|error|warning|line)\b/;
 
 /**
  * Strip comments from every line, optionally blanking string contents too.

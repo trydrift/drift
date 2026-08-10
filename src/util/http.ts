@@ -88,6 +88,15 @@ export function configureHttpDiskCache(path: string | null): void {
   diskCacheDir = path;
 }
 
+/**
+ * Where disk-cached responses live, for the one caller that caches something
+ * other than a response: the Arduino index, which is reduced from 57 MB to a
+ * few hundred kilobytes before it is worth keeping.
+ */
+export function httpCacheDir(): string | null {
+  return diskCacheDir;
+}
+
 export function clearHttpCache(): void {
   cache.clear();
 }

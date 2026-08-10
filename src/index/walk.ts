@@ -42,6 +42,22 @@ export const IGNORED_DIRECTORIES = new Set([
   '.terraform',
   'Pods',
   'DerivedData',
+  // C and C++ put dependencies in the source tree far more often than other
+  // ecosystems do, and an impact site inside one is a site in code the project
+  // does not own. `.pio` is PlatformIO's build and library cache, `third_party`
+  // is what a CMake project overwhelmingly calls a vendored subtree, and
+  // `cmake-build-*` is what CLion writes.
+  //
+  // `external/` is deliberately not here despite being the runner-up name for
+  // the same thing. It is also an ordinary directory name in projects with no
+  // vendoring at all, and a wrong entry in this list does not produce a wrong
+  // finding — it produces no finding, silently, in a directory the developer
+  // believes was analysed.
+  '.pio',
+  'third_party',
+  'thirdparty',
+  'cmake-build-debug',
+  'cmake-build-release',
 ]);
 
 export type Language =
@@ -52,6 +68,14 @@ export type Language =
   | 'rust'
   | 'java'
   | 'ruby'
+  /**
+   * `.c` and `.h`. Kept apart from `cpp` because the two answer the same
+   * questions differently — a `.h` shared by both is read as C, which is the
+   * conservative choice: every C declaration is valid C++, and the reverse is
+   * not true.
+   */
+  | 'c'
+  | 'cpp'
   | 'dotnet'
   | 'php'
   | 'elixir'
@@ -107,6 +131,22 @@ const EXTENSION_LANGUAGES: Record<string, Language> = {
   '.pyi': 'python',
   '.go': 'go',
   '.rs': 'rust',
+  '.c': 'c',
+  '.h': 'c',
+  '.cpp': 'cpp',
+  '.cc': 'cpp',
+  '.cxx': 'cpp',
+  '.c++': 'cpp',
+  '.hpp': 'cpp',
+  '.hh': 'cpp',
+  '.hxx': 'cpp',
+  '.h++': 'cpp',
+  '.inl': 'cpp',
+  '.tpp': 'cpp',
+  // Arduino sketches. `.ino` is C++ with an implicit prelude, and `.pde` is
+  // its pre-1.0 spelling that a great many published examples still use.
+  '.ino': 'cpp',
+  '.pde': 'cpp',
   '.java': 'java',
   '.kt': 'java',
   '.kts': 'java',

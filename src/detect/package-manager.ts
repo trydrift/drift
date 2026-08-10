@@ -36,7 +36,11 @@ export type PackageManagerId =
   | 'flutter'
   | 'swiftpm'
   | 'cocoapods'
-  | 'opam';
+  | 'opam'
+  | 'conan'
+  | 'vcpkg'
+  | 'arduino-cli'
+  | 'platformio';
 
 /** A command line, kept as argv so nothing is ever passed through a shell. */
 export interface Command {
@@ -425,6 +429,60 @@ const MANAGERS: readonly PackageManager[] = [
       args: ['install', `${name}.${version}`, '--yes'],
     }),
   },
+  {
+    id: 'conan',
+    ecosystem: 'conan',
+    label: 'Conan',
+    manifests: ['conanfile.txt', 'conanfile.py'],
+    lockfiles: ['conan.lock'],
+    outdated: null,
+    // Conan has no `add` command: the reference in the conanfile is the
+    // declaration, and `install` resolves whatever it finds there. So the
+    // rewrite is the upgrade, and this re-resolves against it.
+    upgrade: () => ({ command: 'conan', args: ['install', '.', '--build=missing'] }),
+    rewriteManifest: (content, { name, version }) => rewriteConanfile(content, name, version),
+  },
+  {
+    id: 'vcpkg',
+    ecosystem: 'vcpkg',
+    label: 'vcpkg',
+    manifests: ['vcpkg.json'],
+    lockfiles: [],
+    outdated: null,
+    upgrade: () => ({ command: 'vcpkg', args: ['install'] }),
+    // vcpkg's only per-port version control is the `overrides` array — the
+    // dependency entry itself takes a floor, not a pin. Writing the override
+    // is therefore the whole upgrade, and writing it anywhere else would
+    // produce a manifest vcpkg accepts and ignores.
+    rewriteManifest: (content, { name, version }) => rewriteVcpkgManifest(content, name, version),
+  },
+  {
+    id: 'arduino-cli',
+    ecosystem: 'arduino',
+    label: 'Arduino CLI',
+    manifests: ['library.properties'],
+    lockfiles: [],
+    outdated: { command: 'arduino-cli', args: ['lib', 'upgrade', '--dry-run'] },
+    upgrade: ({ name, version }) => ({
+      command: 'arduino-cli',
+      args: ['lib', 'install', `${name}@${version}`],
+    }),
+    rewriteManifest: (content, { name, version }) =>
+      rewriteLibraryProperties(content, name, version),
+  },
+  {
+    id: 'platformio',
+    ecosystem: 'arduino',
+    label: 'PlatformIO',
+    manifests: ['platformio.ini'],
+    lockfiles: [],
+    outdated: { command: 'pio', args: ['pkg', 'outdated'] },
+    upgrade: ({ name, version }) => ({
+      command: 'pio',
+      args: ['pkg', 'install', '--library', `${name}@${version}`],
+    }),
+    rewriteManifest: (content, { name, version }) => rewriteLibDeps(content, name, version),
+  },
 ];
 
 function escapeRegExp(value: string): string {
@@ -498,6 +556,89 @@ function rewritePodfile(content: string, name: string, version: string): string 
   if (withConstraint.test(content)) return content.replace(withConstraint, `$1, '${version}'`);
   const bare = new RegExp(`(pod\\s+["']${escaped}["'])(?!\\s*,\\s*["'])`);
   return content.replace(bare, `$1, '${version}'`);
+}
+
+/**
+ * `zlib/1.2.13` -> `zlib/1.3.1`, wherever the reference appears.
+ *
+ * One expression covers `conanfile.txt`'s bare lines and `conanfile.py`'s
+ * quoted literals, because a Conan reference has the same shape in both. The
+ * trailing `(?=["'\s]|$)` is what stops `zlib/1.2.13` also rewriting the
+ * `zlib-ng/1.2.13` two lines below it.
+ */
+function rewriteConanfile(content: string, name: string, version: string): string {
+  const escaped = escapeRegExp(name);
+  const reference = new RegExp(`\\b${escaped}/[^\\s"'#@]+`, 'g');
+  return content.replace(reference, `${name}/${version}`);
+}
+
+/**
+ * Pin a port by writing vcpkg's `overrides` array.
+ *
+ * JSON in, JSON out, through `JSON.parse`: a manifest is machine-written as
+ * often as it is hand-written, and a regex that edited the text would have to
+ * guess at the formatting of an array that may not exist yet. Two spaces of
+ * indentation is what `vcpkg new` emits.
+ *
+ * Unparseable input is returned untouched rather than replaced with something
+ * well-formed — losing a developer's comments-in-JSON to a "fix" they did not
+ * ask for is worse than declining to edit.
+ */
+function rewriteVcpkgManifest(content: string, name: string, version: string): string {
+  let doc: { overrides?: { name?: string; version?: string }[] };
+  try {
+    doc = JSON.parse(content) as typeof doc;
+  } catch {
+    return content;
+  }
+
+  const overrides = Array.isArray(doc.overrides) ? doc.overrides : [];
+  const existing = overrides.find((entry) => entry.name === name);
+  if (existing) existing.version = version;
+  else overrides.push({ name, version });
+  doc.overrides = overrides;
+
+  return `${JSON.stringify(doc, null, 2)}\n`;
+}
+
+/** `depends=Foo (>=1.0),Bar` -> the same list with one constraint pinned. */
+function rewriteLibraryProperties(content: string, name: string, version: string): string {
+  return content
+    .split('\n')
+    .map((line) => {
+      const match = /^(\s*depends\s*=\s*)(.*)$/i.exec(line);
+      if (!match) return line;
+
+      const entries = match[2]!.split(',').map((entry) => {
+        const withoutConstraint = entry.replace(/\s*\([^)]*\)\s*$/, '').trim();
+        if (withoutConstraint !== name) return entry;
+        // A leading space is the convention in every published
+        // library.properties, and preserving the author's is not worth the
+        // parse; normalising to one is.
+        return ` ${name} (${version})`;
+      });
+
+      return `${match[1]}${entries.join(',').replace(/^\s+/, '')}`;
+    })
+    .join('\n');
+}
+
+/**
+ * Pin one entry of PlatformIO's `lib_deps`.
+ *
+ * The owner prefix is preserved where the author wrote one: `bblanchon/ArduinoJson`
+ * and `ArduinoJson` resolve to different registry entries when a fork exists,
+ * and dropping the owner during an upgrade would silently switch which library
+ * the project builds against.
+ */
+function rewriteLibDeps(content: string, name: string, version: string): string {
+  const escaped = escapeRegExp(name);
+  const entry = new RegExp(`^(\\s*)((?:[\\w.-]+/)?${escaped})(@[^\\s;#]*)?\\s*$`, 'gm');
+  return content.replace(entry, (line, indent: string, spec: string) =>
+    // Only inside a lib_deps block: an `[env:...]` key that happens to share
+    // the library's name is not a dependency declaration.
+    /^\s+/.test(indent) ? `${indent}${spec}@${version}` : line,
+  );
 }
 
 export function packageManagerById(id: PackageManagerId): PackageManager | undefined {
