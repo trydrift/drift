@@ -9,6 +9,7 @@ import {
   shortDate,
   totalsOf,
   type Candidate,
+  type EvidenceRef,
   type ImpactSite,
   type Recording,
   type UpgradeSeverity,
@@ -57,6 +58,10 @@ const CONFIDENCE_STYLE: Record<ImpactSite["confidence"], string> = {
 /** Permalink to the exact line, at the exact commit that was analysed. */
 export function sourceUrl(recording: Recording, site: ImpactSite): string {
   return `${recording.repo}/blob/${recording.commit}/${site.file}#L${site.line}`;
+}
+
+function repoFileUrl(recording: Recording, path: string): string {
+  return `${recording.repo}/blob/${recording.commit}/${path}`;
 }
 
 export function AnalysisPanel({ recording }: { recording: Recording }) {
@@ -300,7 +305,7 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
         </ul>
 
         {done && recording.audit && recording.audit.findings.length > 0 && (
-          <AuditSection findings={recording.audit.findings} />
+          <AuditSection findings={recording.audit.findings} recording={recording} />
         )}
       </div>
 
@@ -324,6 +329,15 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
           whole repository, {recording.packagesChecked} package
           {recording.packagesChecked === 1 ? "" : "s"}, no sampling
         </span>
+        {recording.nestedGitRepos && recording.nestedGitRepos.length > 0 && (
+          <>
+            <span className="hidden sm:inline">·</span>
+            <span title={recording.nestedGitRepos.join(", ")}>
+              {recording.nestedGitRepos.length} nested git repo
+              {recording.nestedGitRepos.length === 1 ? "" : "s"} kept separate
+            </span>
+          </>
+        )}
       </div>
     </div>
   );
@@ -396,6 +410,8 @@ function PackageRow({
   const verdict = severityOf(candidate);
   const hasDetail = candidate.breaking.length > 0;
   const canExpand = interactive && (hasDetail || candidate.current !== candidate.selected || candidate.gaps.length > 0);
+  const manifestPath = candidate.manifestPath ?? null;
+  const location = packageLocation(candidate);
 
   return (
     <li className="animate-rise">
@@ -416,6 +432,14 @@ function PackageRow({
             <span className="break-all font-mono text-[13px] font-medium text-foreground">
               {candidate.name}
             </span>
+            {location && (
+              <span
+                className="rounded border border-border bg-surface px-1.5 py-0.5 font-mono text-[10px] text-faint"
+                title={manifestPath ? `Declared in ${manifestPath}` : location}
+              >
+                {location}
+              </span>
+            )}
             <span className="tabular font-mono text-[11px] text-faint">
               {candidate.current} → {candidate.selected}
             </span>
@@ -449,6 +473,20 @@ function PackageRow({
 
       {expanded && (
         <div className="space-y-3 border-t border-border bg-surface-hover/30 px-4 py-4 sm:px-5">
+          {manifestPath && (
+            <p className="font-mono text-[11px] text-faint">
+              Declared in{" "}
+              <a
+                href={repoFileUrl(recording, manifestPath)}
+                target="_blank"
+                rel="noreferrer"
+                className="underline decoration-dotted underline-offset-2 transition-colors hover:text-brand-text"
+              >
+                {manifestPath}
+              </a>
+            </p>
+          )}
+
           {/* The two things a developer does next, in the extension's own
               words: take the version, or fix what taking it would break. */}
           <div className="flex flex-wrap items-center gap-2">
@@ -485,6 +523,7 @@ function PackageRow({
               {change.remediation && (
                 <CodeAwareText text={change.remediation} className="mt-1 text-xs leading-relaxed text-muted" />
               )}
+              <EvidenceLinks evidence={change.evidence ?? []} />
               {change.sites.length > 0 && (
                 // Horizontal scroll is contained here rather than on the page:
                 // a long source line must never widen the document on a phone.
@@ -615,8 +654,23 @@ function parseTextSegments(text: string): TextSegment[] {
   return segments.length ? segments : [{ kind: "paragraph", text }];
 }
 
+function packageLocation(candidate: Pick<Candidate, "manifestPath" | "workspace" | "workspaceName">): string | null {
+  if (candidate.workspaceName) return candidate.workspaceName;
+  if (candidate.workspace) return candidate.workspace;
+
+  const manifest = candidate.manifestPath;
+  if (!manifest || !manifest.includes("/")) return null;
+  return manifest.slice(0, manifest.lastIndexOf("/"));
+}
+
 /** The present-tense findings, when the recording has any. */
-function AuditSection({ findings }: { findings: NonNullable<Recording["audit"]>["findings"] }) {
+function AuditSection({
+  findings,
+  recording,
+}: {
+  findings: NonNullable<Recording["audit"]>["findings"];
+  recording: Recording;
+}) {
   return (
     <div className="border-t-2 border-brand/30 bg-brand-soft/40 px-4 py-4 sm:px-5">
       <p className="text-xs font-semibold uppercase tracking-wider text-brand-text">
@@ -630,15 +684,69 @@ function AuditSection({ findings }: { findings: NonNullable<Recording["audit"]>[
           <li key={index}>
             <p className="text-xs text-foreground">
               <span className="font-mono font-medium">{finding.dependency}</span>{" "}
+              {packageLocation(finding) && (
+                <span
+                  className="mr-1 rounded border border-brand/20 bg-surface px-1.5 py-0.5 font-mono text-[10px] text-faint"
+                  title={`Declared in ${finding.manifestPath}`}
+                >
+                  {packageLocation(finding)}
+                </span>
+              )}
               <span className="text-faint">
                 declared {finding.declaredRange}, {finding.installedVersion} installed
               </span>
             </p>
+            {finding.manifestPath && (
+              <p className="mt-0.5 font-mono text-[10px] text-faint">
+                Declared in{" "}
+                <a
+                  href={repoFileUrl(recording, finding.manifestPath)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline decoration-dotted underline-offset-2 transition-colors hover:text-brand-text"
+                >
+                  {finding.manifestPath}
+                </a>
+              </p>
+            )}
             <p className="mt-0.5 text-xs text-muted">{finding.summary}</p>
+            <EvidenceLinks evidence={finding.evidence ?? []} />
           </li>
         ))}
       </ul>
     </div>
+  );
+}
+
+function EvidenceLinks({ evidence }: { evidence: EvidenceRef[] }) {
+  const visible = evidence.filter((entry) => entry.url || entry.locator);
+  if (visible.length === 0) return null;
+
+  return (
+    <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] text-faint">
+      <span>Evidence:</span>
+      {visible.map((entry, index) => {
+        const label = `${entry.source}: ${entry.title}`;
+        const separator = index < visible.length - 1 ? <span aria-hidden>·</span> : null;
+        return (
+          <span key={`${entry.source}:${entry.title}:${index}`} className="inline-flex items-center gap-1.5">
+            {entry.url ? (
+              <a
+                href={entry.url}
+                target="_blank"
+                rel="noreferrer"
+                className="underline decoration-dotted underline-offset-2 transition-colors hover:text-brand-text"
+              >
+                {label}
+              </a>
+            ) : (
+              <span title={entry.locator ?? undefined}>{label}</span>
+            )}
+            {separator}
+          </span>
+        );
+      })}
+    </p>
   );
 }
 

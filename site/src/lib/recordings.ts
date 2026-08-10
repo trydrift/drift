@@ -29,18 +29,29 @@ export interface ImpactSite {
   confidence: "high" | "medium" | "low";
 }
 
+export interface EvidenceRef {
+  source: string;
+  title: string;
+  url: string | null;
+  locator: string | null;
+}
+
 export interface BreakingChange {
   kind: string;
   summary: string;
   remediation: string;
   confidence: "high" | "medium" | "low";
   symbols: string[];
+  evidence?: EvidenceRef[];
   sites: ImpactSite[];
 }
 
 export interface Candidate {
   name: string;
   ecosystem: string;
+  manifestPath?: string;
+  workspace?: string | null;
+  workspaceName?: string | null;
   current: string;
   latest: string;
   selected: string;
@@ -60,11 +71,14 @@ export interface Candidate {
 export interface LatentFinding {
   kind: "unreviewed-drift" | "range-violation";
   dependency: string;
+  manifestPath?: string;
+  workspace?: string | null;
   declaredRange: string;
   rangeFloor: string;
   installedVersion: string;
   summary: string;
   remediation: string | null;
+  evidence?: EvidenceRef[];
   sites: ImpactSite[];
 }
 
@@ -80,6 +94,7 @@ export interface Recording {
   durationMs: number;
   packagesChecked: number;
   manifests: string[];
+  nestedGitRepos?: string[];
   events: ProgressEvent[];
   candidates: Candidate[];
   audit: { checked: number; analysed: number; findings: LatentFinding[] } | null;

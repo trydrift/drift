@@ -78,9 +78,10 @@ if (!githubToken) {
  * What to record.
  *
  * Each is a real, well-known project in its ecosystem, chosen so a visitor
- * recognises it and can go and check the claim. `dir` narrows a monorepo to the
- * package that actually declares dependencies — cloning Supabase and pointing
- * Drift at the root would analyse the website, not the client library.
+ * recognises it and can go and check the claim. `dir` is kept only as display
+ * metadata for repositories whose best-known package lives below the checkout
+ * root; the scan itself always starts at the repository root, matching the
+ * extension's open-folder behaviour.
  *
  * Every recording is a **whole-repository** run at the CLI's own defaults —
  * every direct runtime dependency of every manifest, up to forty impact sites
@@ -294,7 +295,7 @@ async function capture(target) {
   const [owner, name] = new URL(target.repo).pathname.slice(1).split('/');
   const head = (await run('git', ['rev-parse', 'HEAD'], { cwd: checkout })).stdout.trim();
   const branch = (await run('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: checkout })).stdout.trim();
-  const root = target.dir ? join(checkout, target.dir) : checkout;
+  const root = checkout;
 
   const repo = {
     owner,
@@ -373,6 +374,7 @@ async function capture(target) {
     durationMs: Date.now() - started,
     packagesChecked: scan?.checked ?? 0,
     manifests: (scan?.targets ?? []).map((t) => t.manifestPath),
+    nestedGitRepos: (scan?.nestedGitRepos ?? []).map((project) => project.dir),
     events,
     candidates: candidates.sort(byAttention),
     audit: audit
@@ -394,9 +396,14 @@ async function capture(target) {
  * data spent on fields nothing reads.
  */
 function slimCandidate(candidate) {
+  const evidenceById = new Map((candidate.plan?.evidence ?? []).map((entry) => [entry.id, entry]));
+
   return {
     name: candidate.name,
     ecosystem: candidate.ecosystem,
+    manifestPath: candidate.manifestPath,
+    workspace: candidate.workspace ?? null,
+    workspaceName: candidate.workspaceName ?? null,
     current: candidate.current,
     latest: candidate.latest,
     selected: candidate.selected,
@@ -435,6 +442,7 @@ function slimCandidate(candidate) {
         remediation: change.remediation,
         confidence: change.confidence,
         symbols: change.symbols.slice(0, 4),
+        evidence: evidenceFor(change, evidenceById),
         // Strongest evidence first — the same ranking `dedupeSites` applies in
         // the core. Only four sites of a possible few hundred are kept, and
         // taking them in file order meant the page could show a `medium` match
@@ -456,12 +464,32 @@ function slimFinding(finding) {
   return {
     kind: finding.kind,
     dependency: finding.dependency,
+    manifestPath: finding.manifestPath,
+    workspace: finding.workspace ?? null,
     declaredRange: finding.declaredRange,
     rangeFloor: finding.rangeFloor,
     installedVersion: finding.installedVersion,
     summary: finding.breakingChange?.summary ?? finding.summary,
     remediation: finding.breakingChange?.remediation ?? null,
+    evidence: [],
     sites: finding.sites.slice(0, 4).map(slimSite),
+  };
+}
+
+function evidenceFor(change, evidenceById) {
+  return change.citations
+    .map((id) => evidenceById.get(id))
+    .filter(Boolean)
+    .slice(0, 3)
+    .map(slimEvidence);
+}
+
+function slimEvidence(evidence) {
+  return {
+    source: evidence.source,
+    title: evidence.title,
+    url: evidence.url ?? null,
+    locator: evidence.locator ?? null,
   };
 }
 

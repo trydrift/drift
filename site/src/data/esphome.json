@@ -5,9 +5,9 @@
   "language": "C++",
   "repo": "https://github.com/esphome/esphome",
   "blurb": "The firmware behind most ESP32 and ESP8266 home-automation devices.",
-  "capturedAt": "2026-08-10T15:52:14.196Z",
-  "commit": "f3d1fc0d643ceaba252e8a0ecaeecf127a0c1bcb",
-  "durationMs": 42780,
+  "capturedAt": "2026-08-10T17:30:48.835Z",
+  "commit": "2184ec292828be5a03e068fc809d785bc1ac43ad",
+  "durationMs": 43176,
   "packagesChecked": 25,
   "manifests": [
     "pyproject.toml",
@@ -15,660 +15,661 @@
     ".github/scripts/auto-label-pr/package.json",
     "esphome/components/nrf52/requirements.txt"
   ],
+  "nestedGitRepos": [],
   "events": [
     {
-      "at": 7106,
+      "at": 8704,
       "phase": "Looking for manifests",
       "detail": "esphome/esphome",
       "done": 0,
       "total": 0
     },
     {
-      "at": 7365,
+      "at": 8952,
       "phase": "Reading the workspace",
       "detail": "3 packages · undeclared",
       "done": 0,
       "total": 0
     },
     {
-      "at": 7366,
+      "at": 8953,
       "phase": "Reading manifest",
       "detail": "pyproject.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 7366,
+      "at": 8954,
       "phase": "Reading manifest",
       "detail": "platformio.ini",
       "done": 0,
       "total": 0
     },
     {
-      "at": 7369,
+      "at": 8955,
       "phase": "Reading manifest",
       "detail": ".github/scripts/auto-label-pr/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 7369,
+      "at": 8955,
       "phase": "Reading manifest",
       "detail": "esphome/components/nrf52/requirements.txt",
       "done": 0,
       "total": 0
     },
     {
-      "at": 7369,
+      "at": 8956,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 25
     },
     {
-      "at": 9918,
+      "at": 11582,
       "phase": "Indexing your code",
       "detail": "5000 files indexed · 25 direct dependencies to check",
       "done": 0,
       "total": 25
     },
     {
-      "at": 9918,
+      "at": 11583,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "qr-code-generator-library (installed 1.7.0)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 9918,
+      "at": 11583,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "arduino-MLX90393 (installed 1.0.2)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 9919,
+      "at": 11583,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "HaierProtocol (installed 0.9.31)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 9919,
+      "at": 11583,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "dsmr_parser (installed 1.9.0)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 9919,
+      "at": 11583,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "noise-c (installed 0.1.11)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 9919,
+      "at": 11583,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "Improv (installed 1.2.6)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 9919,
+      "at": 11583,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "pngle (installed 1.1.0)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 9919,
+      "at": 11583,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "googletest (installed 1.15.2)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 10020,
+      "at": 11691,
       "phase": "Reading release notes and changelog",
       "detail": "HaierProtocol 0.9.31 → 0.9.32",
       "done": 0,
       "total": 25
     },
     {
-      "at": 10020,
+      "at": 11691,
       "phase": "Up to date",
       "detail": "pngle@1.1.0",
       "done": 1,
       "total": 25
     },
     {
-      "at": 10020,
+      "at": 11691,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "AsyncMqttClient-esphome (installed 2.0.0)",
       "done": 1,
       "total": 25
     },
     {
-      "at": 10038,
+      "at": 11704,
       "phase": "Up to date",
-      "detail": "arduino-MLX90393@1.0.2",
+      "detail": "qr-code-generator-library@1.7.0",
       "done": 2,
       "total": 25
     },
     {
-      "at": 10038,
+      "at": 11704,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "TM1651 (installed 1.0.1)",
       "done": 2,
       "total": 25
     },
     {
-      "at": 10038,
+      "at": 11705,
       "phase": "Up to date",
-      "detail": "Improv@1.2.6",
+      "detail": "arduino-MLX90393@1.0.2",
       "done": 3,
       "total": 25
     },
     {
-      "at": 10038,
+      "at": 11705,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "HeatpumpIR (installed 1.0.42)",
       "done": 3,
       "total": 25
     },
     {
-      "at": 10038,
+      "at": 11705,
       "phase": "Up to date",
       "detail": "HeatpumpIR@1.0.42",
       "done": 4,
       "total": 25
     },
     {
-      "at": 10038,
+      "at": 11705,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "dlms_parser (installed 1.1.0)",
       "done": 4,
       "total": 25
     },
     {
-      "at": 10039,
-      "phase": "Reading release notes and changelog",
-      "detail": "dsmr_parser 1.9.0 → 1.10.0",
-      "done": 4,
-      "total": 25
-    },
-    {
-      "at": 10039,
+      "at": 11705,
       "phase": "Up to date",
-      "detail": "qr-code-generator-library@1.7.0",
+      "detail": "Improv@1.2.6",
       "done": 5,
       "total": 25
     },
     {
-      "at": 10039,
+      "at": 11705,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "ArduinoJson (installed 7.4.3)",
       "done": 5,
       "total": 25
     },
     {
-      "at": 10040,
+      "at": 11705,
       "phase": "Up to date",
       "detail": "ArduinoJson@7.4.3",
       "done": 6,
       "total": 25
     },
     {
-      "at": 10040,
+      "at": 11705,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "lvgl (installed 9.5.0)",
       "done": 6,
       "total": 25
     },
     {
-      "at": 10040,
+      "at": 11706,
       "phase": "Up to date",
       "detail": "lvgl@9.5.0",
       "done": 7,
       "total": 25
     },
     {
-      "at": 10040,
+      "at": 11706,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "FastLED (installed 3.9.16)",
       "done": 7,
       "total": 25
     },
     {
-      "at": 10040,
+      "at": 11706,
       "phase": "Reading release notes and changelog",
       "detail": "FastLED 3.9.16 → 3.10.5",
       "done": 7,
       "total": 25
     },
     {
-      "at": 10041,
+      "at": 11706,
+      "phase": "Reading release notes and changelog",
+      "detail": "dsmr_parser 1.9.0 → 1.10.0",
+      "done": 7,
+      "total": 25
+    },
+    {
+      "at": 11707,
       "phase": "Reading release notes and changelog",
       "detail": "googletest 1.15.2 → 1.17.0",
       "done": 7,
       "total": 25
     },
     {
-      "at": 10042,
+      "at": 11710,
       "phase": "Reading release notes and changelog",
       "detail": "noise-c 0.1.11 → 0.1.13",
       "done": 7,
       "total": 25
     },
     {
-      "at": 10042,
+      "at": 11711,
       "phase": "Reading release notes and changelog",
       "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0",
       "done": 7,
       "total": 25
     },
     {
-      "at": 10049,
+      "at": 11721,
       "phase": "Up to date",
       "detail": "TM1651@1.0.1",
       "done": 8,
       "total": 25
     },
     {
-      "at": 10049,
+      "at": 11721,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "ESPAsyncTCP (installed 2.0.0)",
       "done": 8,
       "total": 25
     },
     {
-      "at": 10049,
+      "at": 11721,
       "phase": "Up to date",
       "detail": "ESPAsyncTCP@2.0.0",
       "done": 9,
       "total": 25
     },
     {
-      "at": 10049,
+      "at": 11721,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "ESPAsyncWebServer (installed 3.9.6)",
       "done": 9,
       "total": 25
     },
     {
-      "at": 10049,
+      "at": 11721,
       "phase": "Up to date",
       "detail": "ESPAsyncWebServer@3.9.6",
       "done": 10,
       "total": 25
     },
     {
-      "at": 10049,
+      "at": 11721,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "NeoPixelBus (installed 2.8.0)",
       "done": 10,
       "total": 25
     },
     {
-      "at": 10053,
+      "at": 11721,
       "phase": "Reading release notes and changelog",
       "detail": "dlms_parser 1.1.0 → 2.1.0",
       "done": 10,
       "total": 25
     },
     {
-      "at": 10055,
+      "at": 11724,
       "phase": "Reading release notes and changelog",
       "detail": "NeoPixelBus 2.8.0 → 2.8.4",
       "done": 10,
       "total": 25
     },
     {
-      "at": 16077,
+      "at": 19059,
       "phase": "Comparing the public API surface",
-      "detail": "dlms_parser 1.1.0 → 2.1.0 · 2 evidence sources",
+      "detail": "HaierProtocol 0.9.31 → 0.9.32 · 1 evidence source",
       "done": 10,
       "total": 25
     },
     {
-      "at": 16082,
-      "phase": "Searching your code for 43 breaking changes",
-      "detail": "dlms_parser 1.1.0 → 2.1.0",
-      "done": 10,
-      "total": 25
-    },
-    {
-      "at": 16318,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "dlms_parser 1.1.0 → 2.1.0",
-      "done": 10,
-      "total": 25
-    },
-    {
-      "at": 16319,
-      "phase": "Comparing the public API surface",
-      "detail": "NeoPixelBus 2.8.0 → 2.8.4 · 1 evidence source",
-      "done": 10,
-      "total": 25
-    },
-    {
-      "at": 16319,
+      "at": 19059,
       "phase": "No breaking changes to look for",
-      "detail": "NeoPixelBus 2.8.0 → 2.8.4",
+      "detail": "HaierProtocol 0.9.31 → 0.9.32",
       "done": 10,
       "total": 25
     },
     {
-      "at": 16321,
+      "at": 19062,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "NeoPixelBus 2.8.0 → 2.8.4",
+      "detail": "HaierProtocol 0.9.31 → 0.9.32",
       "done": 10,
       "total": 25
     },
     {
-      "at": 16329,
+      "at": 19065,
       "phase": "Checked",
-      "detail": "NeoPixelBus 2.8.0 → 2.8.4 · safe for your code · no breaking changes found",
+      "detail": "HaierProtocol 0.9.31 → 0.9.32 · safe for your code · no breaking changes found",
       "done": 11,
       "total": 25
     },
     {
-      "at": 16329,
+      "at": 19065,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "esp_wireguard (installed 0.4.5)",
       "done": 11,
       "total": 25
     },
     {
-      "at": 16334,
-      "phase": "Needs your attention",
-      "detail": "dlms_parser 1.1.0 → 2.1.0 · affects your code · 4 sites in 1 file",
+      "at": 19067,
+      "phase": "Up to date",
+      "detail": "esp_wireguard@0.4.5",
       "done": 12,
       "total": 25
     },
     {
-      "at": 16334,
+      "at": 19068,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "ESP32-audioI2S (installed 2.3.0)",
       "done": 12,
       "total": 25
     },
     {
-      "at": 16335,
+      "at": 19070,
       "phase": "Up to date",
-      "detail": "esp_wireguard@0.4.5",
+      "detail": "ESP32-audioI2S@2.3.0",
       "done": 13,
       "total": 25
     },
     {
-      "at": 16335,
+      "at": 19070,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "RPAsyncTCP (installed 1.3.2)",
       "done": 13,
       "total": 25
     },
     {
-      "at": 16335,
+      "at": 19070,
       "phase": "Up to date",
       "detail": "RPAsyncTCP@1.3.2",
       "done": 14,
       "total": 25
     },
     {
-      "at": 16335,
+      "at": 19070,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "AsyncTCP (installed 3.4.5)",
       "done": 14,
       "total": 25
     },
     {
-      "at": 16335,
+      "at": 19070,
       "phase": "Up to date",
       "detail": "AsyncTCP@3.4.5",
       "done": 15,
       "total": 25
     },
     {
-      "at": 16335,
+      "at": 19070,
       "phase": "Checking the PyPI",
       "detail": "west (installed 1.5.0)",
       "done": 15,
       "total": 25
     },
     {
-      "at": 16336,
+      "at": 19075,
       "phase": "Up to date",
-      "detail": "ESP32-audioI2S@2.3.0",
+      "detail": "west@1.5.0",
       "done": 16,
       "total": 25
     },
     {
-      "at": 16336,
+      "at": 19075,
       "phase": "Checking the PyPI",
       "detail": "ninja (installed 1.13.0)",
       "done": 16,
       "total": 25
     },
     {
-      "at": 16338,
+      "at": 19080,
       "phase": "Up to date",
-      "detail": "west@1.5.0",
+      "detail": "ninja@1.13.0",
       "done": 17,
       "total": 25
     },
     {
-      "at": 16338,
+      "at": 19080,
       "phase": "Checking the PyPI",
       "detail": "cmake (installed 4.3.2)",
       "done": 17,
       "total": 25
     },
     {
-      "at": 16341,
-      "phase": "Up to date",
-      "detail": "ninja@1.13.0",
-      "done": 18,
-      "total": 25
-    },
-    {
-      "at": 16357,
+      "at": 19097,
       "phase": "Reading release notes and changelog",
       "detail": "cmake 4.3.2 → 4.4.2",
-      "done": 18,
+      "done": 17,
       "total": 25
     },
     {
-      "at": 16637,
+      "at": 20014,
       "phase": "Comparing the public API surface",
       "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0 · 1 evidence source",
-      "done": 18,
+      "done": 17,
       "total": 25
     },
     {
-      "at": 16637,
+      "at": 20014,
       "phase": "No breaking changes to look for",
       "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0",
-      "done": 18,
+      "done": 17,
       "total": 25
     },
     {
-      "at": 16639,
+      "at": 20017,
       "phase": "Weighing what this upgrade is worth",
       "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0",
+      "done": 17,
+      "total": 25
+    },
+    {
+      "at": 20019,
+      "phase": "Checked",
+      "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0 · safe for your code · no breaking changes found",
       "done": 18,
       "total": 25
     },
     {
-      "at": 16641,
-      "phase": "Checked",
-      "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0 · safe for your code · no breaking changes found",
-      "done": 19,
-      "total": 25
-    },
-    {
-      "at": 16801,
+      "at": 20034,
       "phase": "Comparing the public API surface",
-      "detail": "googletest 1.15.2 → 1.17.0 · 3 evidence sources",
-      "done": 19,
+      "detail": "NeoPixelBus 2.8.0 → 2.8.4 · 1 evidence source",
+      "done": 18,
       "total": 25
     },
     {
-      "at": 16802,
-      "phase": "Searching your code for 10 breaking changes",
-      "detail": "googletest 1.15.2 → 1.17.0",
-      "done": 19,
+      "at": 20034,
+      "phase": "No breaking changes to look for",
+      "detail": "NeoPixelBus 2.8.0 → 2.8.4",
+      "done": 18,
       "total": 25
     },
     {
-      "at": 16820,
+      "at": 20037,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "googletest 1.15.2 → 1.17.0",
+      "detail": "NeoPixelBus 2.8.0 → 2.8.4",
+      "done": 18,
+      "total": 25
+    },
+    {
+      "at": 20038,
+      "phase": "Checked",
+      "detail": "NeoPixelBus 2.8.0 → 2.8.4 · safe for your code · no breaking changes found",
       "done": 19,
       "total": 25
     },
     {
-      "at": 16890,
+      "at": 20265,
       "phase": "Comparing the public API surface",
       "detail": "noise-c 0.1.11 → 0.1.13 · 1 evidence source",
       "done": 19,
       "total": 25
     },
     {
-      "at": 16890,
+      "at": 20265,
       "phase": "No breaking changes to look for",
       "detail": "noise-c 0.1.11 → 0.1.13",
       "done": 19,
       "total": 25
     },
     {
-      "at": 16892,
+      "at": 20268,
       "phase": "Weighing what this upgrade is worth",
       "detail": "noise-c 0.1.11 → 0.1.13",
       "done": 19,
       "total": 25
     },
     {
-      "at": 16902,
+      "at": 20269,
       "phase": "Checked",
-      "detail": "googletest 1.15.2 → 1.17.0 · safe for your code · 10 upstream changes, none used here",
+      "detail": "noise-c 0.1.11 → 0.1.13 · safe for your code · no breaking changes found",
       "done": 20,
       "total": 25
     },
     {
-      "at": 16903,
-      "phase": "Checked",
-      "detail": "noise-c 0.1.11 → 0.1.13 · safe for your code · no breaking changes found",
-      "done": 21,
-      "total": 25
-    },
-    {
-      "at": 17419,
+      "at": 20276,
       "phase": "Comparing the public API surface",
-      "detail": "HaierProtocol 0.9.31 → 0.9.32 · 1 evidence source",
-      "done": 21,
+      "detail": "dlms_parser 1.1.0 → 2.1.0 · 2 evidence sources",
+      "done": 20,
       "total": 25
     },
     {
-      "at": 17419,
-      "phase": "No breaking changes to look for",
-      "detail": "HaierProtocol 0.9.31 → 0.9.32",
-      "done": 21,
+      "at": 20283,
+      "phase": "Searching your code for 43 breaking changes",
+      "detail": "dlms_parser 1.1.0 → 2.1.0",
+      "done": 20,
       "total": 25
     },
     {
-      "at": 17424,
+      "at": 20410,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "HaierProtocol 0.9.31 → 0.9.32",
+      "detail": "dlms_parser 1.1.0 → 2.1.0",
+      "done": 20,
+      "total": 25
+    },
+    {
+      "at": 20424,
+      "phase": "Needs your attention",
+      "detail": "dlms_parser 1.1.0 → 2.1.0 · affects your code · 4 sites in 1 file",
       "done": 21,
       "total": 25
     },
     {
-      "at": 17426,
+      "at": 20927,
+      "phase": "Comparing the public API surface",
+      "detail": "googletest 1.15.2 → 1.17.0 · 3 evidence sources",
+      "done": 21,
+      "total": 25
+    },
+    {
+      "at": 20928,
+      "phase": "Searching your code for 10 breaking changes",
+      "detail": "googletest 1.15.2 → 1.17.0",
+      "done": 21,
+      "total": 25
+    },
+    {
+      "at": 20940,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "googletest 1.15.2 → 1.17.0",
+      "done": 21,
+      "total": 25
+    },
+    {
+      "at": 20942,
       "phase": "Checked",
-      "detail": "HaierProtocol 0.9.31 → 0.9.32 · safe for your code · no breaking changes found",
+      "detail": "googletest 1.15.2 → 1.17.0 · safe for your code · 10 upstream changes, none used here",
       "done": 22,
       "total": 25
     },
     {
-      "at": 17569,
+      "at": 21866,
       "phase": "Comparing the public API surface",
       "detail": "FastLED 3.9.16 → 3.10.5 · 5 evidence sources",
       "done": 22,
       "total": 25
     },
     {
-      "at": 17692,
+      "at": 21991,
       "phase": "Searching your code for 634 breaking changes",
       "detail": "FastLED 3.9.16 → 3.10.5",
       "done": 22,
       "total": 25
     },
     {
-      "at": 19639,
+      "at": 23133,
       "phase": "Weighing what this upgrade is worth",
       "detail": "FastLED 3.9.16 → 3.10.5",
       "done": 22,
       "total": 25
     },
     {
-      "at": 19777,
+      "at": 23267,
       "phase": "Needs your attention",
       "detail": "FastLED 3.9.16 → 3.10.5 · affects your code · 29 sites in 2 files",
       "done": 23,
       "total": 25
     },
     {
-      "at": 23477,
-      "phase": "Comparing the public API surface",
-      "detail": "cmake 4.3.2 → 4.4.2 · 2 evidence sources",
-      "done": 23,
-      "total": 25
-    },
-    {
-      "at": 23477,
-      "phase": "Searching your code for 11 breaking changes",
-      "detail": "cmake 4.3.2 → 4.4.2",
-      "done": 23,
-      "total": 25
-    },
-    {
-      "at": 23866,
+      "at": 24479,
       "phase": "Comparing the public API surface",
       "detail": "dsmr_parser 1.9.0 → 1.10.0 · 1 evidence source",
       "done": 23,
       "total": 25
     },
     {
-      "at": 23866,
+      "at": 24479,
       "phase": "No breaking changes to look for",
       "detail": "dsmr_parser 1.9.0 → 1.10.0",
       "done": 23,
       "total": 25
     },
     {
-      "at": 23868,
+      "at": 24482,
       "phase": "Weighing what this upgrade is worth",
       "detail": "dsmr_parser 1.9.0 → 1.10.0",
       "done": 23,
       "total": 25
     },
     {
-      "at": 23870,
+      "at": 24483,
       "phase": "Checked",
       "detail": "dsmr_parser 1.9.0 → 1.10.0 · safe for your code · no breaking changes found",
       "done": 24,
       "total": 25
     },
     {
-      "at": 28999,
+      "at": 24711,
+      "phase": "Comparing the public API surface",
+      "detail": "cmake 4.3.2 → 4.4.2 · 2 evidence sources",
+      "done": 24,
+      "total": 25
+    },
+    {
+      "at": 24712,
+      "phase": "Searching your code for 11 breaking changes",
+      "detail": "cmake 4.3.2 → 4.4.2",
+      "done": 24,
+      "total": 25
+    },
+    {
+      "at": 32173,
       "phase": "Weighing what this upgrade is worth",
       "detail": "cmake 4.3.2 → 4.4.2",
       "done": 24,
       "total": 25
     },
     {
-      "at": 29326,
+      "at": 32430,
       "phase": "Checked",
       "detail": "cmake 4.3.2 → 4.4.2 · safe for your code · 11 upstream changes, none used here",
       "done": 25,
@@ -679,6 +680,9 @@
     {
       "name": "FastLED",
       "ecosystem": "arduino",
+      "manifestPath": "platformio.ini",
+      "workspace": "",
+      "workspaceName": null,
       "current": "3.9.16",
       "latest": "3.10.5",
       "selected": "3.10.5",
@@ -703,6 +707,14 @@
           "symbols": [
             "CLEDController.CLEDController",
             "CLEDController"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "634 API surface change(s) in FastLED",
+              "url": null,
+              "locator": "FastLED 3.9.16 → 3.10.5 (public headers) · computed by header diff"
+            }
           ],
           "sites": [
             {
@@ -744,6 +756,14 @@
             "UISlider.uint8_t",
             "uint8_t"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "634 API surface change(s) in FastLED",
+              "url": null,
+              "locator": "FastLED 3.9.16 → 3.10.5 (public headers) · computed by header diff"
+            }
+          ],
           "sites": [
             {
               "file": "esphome/components/fastled_base/fastled_light.h",
@@ -783,6 +803,14 @@
           "symbols": [
             "size"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "634 API surface change(s) in FastLED",
+              "url": null,
+              "locator": "FastLED 3.9.16 → 3.10.5 (public headers) · computed by header diff"
+            }
+          ],
           "sites": [
             {
               "file": "esphome/components/fastled_base/fastled_light.h",
@@ -809,6 +837,14 @@
             "CLEDController.showLeds",
             "showLeds"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "634 API surface change(s) in FastLED",
+              "url": null,
+              "locator": "FastLED 3.9.16 → 3.10.5 (public headers) · computed by header diff"
+            }
+          ],
           "sites": [
             {
               "file": "esphome/components/fastled_base/fastled_light.cpp",
@@ -824,6 +860,9 @@
     {
       "name": "dlms_parser",
       "ecosystem": "arduino",
+      "manifestPath": "platformio.ini",
+      "workspace": "",
+      "workspaceName": null,
       "current": "1.1.0",
       "latest": "2.1.0",
       "selected": "2.1.0",
@@ -837,7 +876,6 @@
       "impactFiles": 1,
       "evidenceCount": 2,
       "gaps": [
-        "Drift read 4 sets of release notes for dlms_parser 2.1.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
         "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
       ],
       "breaking": [
@@ -848,6 +886,14 @@
           "confidence": "high",
           "symbols": [
             "register_pattern"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "43 API surface change(s) in dlms_parser",
+              "url": null,
+              "locator": "dlms_parser 1.1.0 → 2.1.0 (public headers) · computed by header diff"
+            }
           ],
           "sites": [
             {
@@ -881,6 +927,14 @@
           "symbols": [
             "parse"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "43 API surface change(s) in dlms_parser",
+              "url": null,
+              "locator": "dlms_parser 1.1.0 → 2.1.0 (public headers) · computed by header diff"
+            }
+          ],
           "sites": [
             {
               "file": "esphome/components/dlms_meter/dlms_meter.cpp",
@@ -899,6 +953,14 @@
           "symbols": [
             "AxdrPatternStep"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "43 API surface change(s) in dlms_parser",
+              "url": null,
+              "locator": "dlms_parser 1.1.0 → 2.1.0 (public headers) · computed by header diff"
+            }
+          ],
           "sites": []
         },
         {
@@ -909,6 +971,14 @@
           "symbols": [
             "AxdrDescriptorPattern"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "43 API surface change(s) in dlms_parser",
+              "url": null,
+              "locator": "dlms_parser 1.1.0 → 2.1.0 (public headers) · computed by header diff"
+            }
+          ],
           "sites": []
         }
       ]
@@ -916,6 +986,9 @@
     {
       "name": "cmake",
       "ecosystem": "pypi",
+      "manifestPath": "esphome/components/nrf52/requirements.txt",
+      "workspace": "esphome/components/nrf52",
+      "workspaceName": null,
       "current": "4.3.2",
       "latest": "4.4.2",
       "selected": "4.4.2",
@@ -928,9 +1001,7 @@
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 2,
-      "gaps": [
-        "Drift read 2 sets of release notes for cmake 4.4.2 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
-      ],
+      "gaps": [],
       "breaking": [
         {
           "kind": "removed-export",
@@ -940,6 +1011,14 @@
           "symbols": [
             "conf.blockdiag_antialias",
             "blockdiag_antialias"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "11 API surface change(s) in cmake",
+              "url": null,
+              "locator": "cmake 4.3.2 → 4.4.2 (public symbols, best-effort) · computed by python ast"
+            }
           ],
           "sites": []
         },
@@ -952,6 +1031,14 @@
             "conf.latex_documents",
             "latex_documents"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "11 API surface change(s) in cmake",
+              "url": null,
+              "locator": "cmake 4.3.2 → 4.4.2 (public symbols, best-effort) · computed by python ast"
+            }
+          ],
           "sites": []
         },
         {
@@ -962,6 +1049,14 @@
           "symbols": [
             "conf.latex_elements",
             "latex_elements"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "11 API surface change(s) in cmake",
+              "url": null,
+              "locator": "cmake 4.3.2 → 4.4.2 (public symbols, best-effort) · computed by python ast"
+            }
           ],
           "sites": []
         },
@@ -974,6 +1069,14 @@
             "conf.main_doc",
             "main_doc"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "11 API surface change(s) in cmake",
+              "url": null,
+              "locator": "cmake 4.3.2 → 4.4.2 (public symbols, best-effort) · computed by python ast"
+            }
+          ],
           "sites": []
         }
       ]
@@ -981,6 +1084,9 @@
     {
       "name": "googletest",
       "ecosystem": "arduino",
+      "manifestPath": "platformio.ini",
+      "workspace": "",
+      "workspaceName": null,
       "current": "1.15.2",
       "latest": "1.17.0",
       "selected": "1.17.0",
@@ -1005,6 +1111,14 @@
           "symbols": [
             "ACTION"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "10 API surface change(s) in googletest",
+              "url": null,
+              "locator": "googletest 1.15.2 → 1.17.0 (public headers) · computed by header diff"
+            }
+          ],
           "sites": []
         },
         {
@@ -1014,6 +1128,14 @@
           "confidence": "high",
           "symbols": [
             "MATCHER"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "10 API surface change(s) in googletest",
+              "url": null,
+              "locator": "googletest 1.15.2 → 1.17.0 (public headers) · computed by header diff"
+            }
           ],
           "sites": []
         },
@@ -1025,6 +1147,14 @@
           "symbols": [
             "GMOCK_INTERNAL_MATCHER"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "10 API surface change(s) in googletest",
+              "url": null,
+              "locator": "googletest 1.15.2 → 1.17.0 (public headers) · computed by header diff"
+            }
+          ],
           "sites": []
         },
         {
@@ -1035,6 +1165,14 @@
           "symbols": [
             "ACTION_TEMPLATE"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "10 API surface change(s) in googletest",
+              "url": null,
+              "locator": "googletest 1.15.2 → 1.17.0 (public headers) · computed by header diff"
+            }
+          ],
           "sites": []
         }
       ]
@@ -1042,20 +1180,22 @@
     {
       "name": "AsyncMqttClient-esphome",
       "ecosystem": "arduino",
+      "manifestPath": "platformio.ini",
+      "workspace": "",
+      "workspaceName": null,
       "current": "2.0.0",
       "latest": "2.1.0",
       "selected": "2.1.0",
       "safeLatest": "2.1.0",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read the release notes for AsyncMqttClient-esphome 2.1.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "summary": "Safe to upgrade. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift read the release notes for AsyncMqttClient-esphome 2.1.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
         "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
       ],
       "breaking": []
@@ -1063,20 +1203,22 @@
     {
       "name": "dsmr_parser",
       "ecosystem": "arduino",
+      "manifestPath": "platformio.ini",
+      "workspace": "",
+      "workspaceName": null,
       "current": "1.9.0",
       "latest": "1.10.0",
       "selected": "1.10.0",
       "safeLatest": "1.10.0",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read the release notes for dsmr_parser 1.10.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "summary": "Safe to upgrade. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift read the release notes for dsmr_parser 1.10.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
         "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
       ],
       "breaking": []
@@ -1084,20 +1226,23 @@
     {
       "name": "HaierProtocol",
       "ecosystem": "arduino",
+      "manifestPath": "platformio.ini",
+      "workspace": "",
+      "workspaceName": null,
       "current": "0.9.31",
       "latest": "0.9.32",
       "selected": "0.9.32",
       "safeLatest": "0.9.32",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read the release notes for HaierProtocol 0.9.32 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "summary": "Safe to upgrade. No source archive is published for HaierProtocol 0.9.31 in the Arduino Library Manager, so its headers could not be read. Drift read the release notes for HaierProtocol 0.9.32 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift read the release notes for HaierProtocol 0.9.32 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+        "No source archive is published for HaierProtocol 0.9.31 in the Arduino Library Manager, so its headers could not be read. Drift read the release notes for HaierProtocol 0.9.32 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
         "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
       ],
       "breaking": []
@@ -1105,20 +1250,22 @@
     {
       "name": "NeoPixelBus",
       "ecosystem": "arduino",
+      "manifestPath": "platformio.ini",
+      "workspace": "",
+      "workspaceName": null,
       "current": "2.8.0",
       "latest": "2.8.4",
       "selected": "2.8.4",
       "safeLatest": "2.8.4",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read 4 sets of release notes for NeoPixelBus 2.8.4 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "summary": "Safe to upgrade. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift read 4 sets of release notes for NeoPixelBus 2.8.4 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
         "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
       ],
       "breaking": []
@@ -1126,20 +1273,22 @@
     {
       "name": "noise-c",
       "ecosystem": "arduino",
+      "manifestPath": "platformio.ini",
+      "workspace": "",
+      "workspaceName": null,
       "current": "0.1.11",
       "latest": "0.1.13",
       "selected": "0.1.13",
       "safeLatest": "0.1.13",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read 2 sets of release notes for noise-c 0.1.13 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "summary": "Safe to upgrade. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift read 2 sets of release notes for noise-c 0.1.13 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
         "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
       ],
       "breaking": []

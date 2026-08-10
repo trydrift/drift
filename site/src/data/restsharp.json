@@ -5,1286 +5,1287 @@
   "language": "C#",
   "repo": "https://github.com/restsharp/RestSharp",
   "blurb": "The HTTP client most .NET codebases reach for first.",
-  "capturedAt": "2026-08-10T15:52:28.510Z",
+  "capturedAt": "2026-08-10T17:31:08.554Z",
   "commit": "6a5082169257438cd085f822f050d93256a8e499",
-  "durationMs": 14312,
+  "durationMs": 19717,
   "packagesChecked": 34,
   "manifests": [
     "Directory.Packages.props",
     "docs/package.json"
   ],
+  "nestedGitRepos": [],
   "events": [
     {
-      "at": 3113,
+      "at": 2106,
       "phase": "Looking for manifests",
       "detail": "restsharp/RestSharp",
       "done": 0,
       "total": 0
     },
     {
-      "at": 3125,
+      "at": 2125,
       "phase": "Reading the workspace",
       "detail": "2 packages · undeclared",
       "done": 0,
       "total": 0
     },
     {
-      "at": 3126,
+      "at": 2125,
       "phase": "Reading manifest",
       "detail": "Directory.Packages.props",
       "done": 0,
       "total": 0
     },
     {
-      "at": 3129,
+      "at": 2127,
       "phase": "Reading manifest",
       "detail": "docs/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 3129,
+      "at": 2128,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 34
     },
     {
-      "at": 3212,
+      "at": 2295,
       "phase": "Indexing your code",
       "detail": "264 files indexed · 34 direct dependencies to check",
       "done": 0,
       "total": 34
     },
     {
-      "at": 3212,
+      "at": 2295,
       "phase": "Checking the NuGet",
       "detail": "Microsoft.Extensions.Http (installed 10.0.0)",
       "done": 0,
       "total": 34
     },
     {
-      "at": 3213,
+      "at": 2296,
       "phase": "Checking the NuGet",
       "detail": "Newtonsoft.Json (installed 13.0.3)",
       "done": 0,
       "total": 34
     },
     {
-      "at": 3213,
+      "at": 2296,
       "phase": "Checking the NuGet",
       "detail": "CsvHelper (installed 33.0.1)",
       "done": 0,
       "total": 34
     },
     {
-      "at": 3213,
+      "at": 2296,
       "phase": "Checking the NuGet",
       "detail": "BenchmarkDotNet (installed 0.14.0)",
       "done": 0,
       "total": 34
     },
     {
-      "at": 3213,
+      "at": 2296,
       "phase": "Checking the NuGet",
       "detail": "Microsoft.CodeAnalysis.CSharp (installed 4.12.0)",
       "done": 0,
       "total": 34
     },
     {
-      "at": 3214,
+      "at": 2296,
       "phase": "Checking the NuGet",
       "detail": "Microsoft.CodeAnalysis.Analyzers (installed 3.11.0)",
       "done": 0,
       "total": 34
     },
     {
-      "at": 3214,
+      "at": 2296,
       "phase": "Checking the NuGet",
       "detail": "MinVer (installed 6.0.0)",
       "done": 0,
       "total": 34
     },
     {
-      "at": 3214,
+      "at": 2296,
       "phase": "Checking the NuGet",
       "detail": "Nullable (installed 1.3.1)",
       "done": 0,
       "total": 34
     },
     {
-      "at": 3217,
+      "at": 2302,
       "phase": "Reading release notes and changelog",
       "detail": "Microsoft.Extensions.Http 10.0.0 → 10.0.10",
       "done": 0,
       "total": 34
     },
     {
-      "at": 3218,
-      "phase": "Reading release notes and changelog",
-      "detail": "CsvHelper 33.0.1 → 33.1.0",
-      "done": 0,
-      "total": 34
-    },
-    {
-      "at": 3219,
-      "phase": "Reading release notes and changelog",
-      "detail": "Microsoft.CodeAnalysis.CSharp 4.12.0 → 4.14.0",
-      "done": 0,
-      "total": 34
-    },
-    {
-      "at": 3221,
+      "at": 2307,
       "phase": "Reading release notes and changelog",
       "detail": "Newtonsoft.Json 13.0.3 → 13.0.4",
       "done": 0,
       "total": 34
     },
     {
-      "at": 3228,
+      "at": 2310,
       "phase": "Reading release notes and changelog",
-      "detail": "Microsoft.CodeAnalysis.Analyzers 3.11.0 → 5.6.0",
+      "detail": "CsvHelper 33.0.1 → 33.1.0",
       "done": 0,
       "total": 34
     },
     {
-      "at": 3228,
+      "at": 2311,
+      "phase": "Reading release notes and changelog",
+      "detail": "Microsoft.CodeAnalysis.CSharp 4.12.0 → 4.14.0",
+      "done": 0,
+      "total": 34
+    },
+    {
+      "at": 2313,
       "phase": "Up to date",
       "detail": "Nullable@1.3.1",
       "done": 1,
       "total": 34
     },
     {
-      "at": 3228,
+      "at": 2313,
       "phase": "Checking the NuGet",
       "detail": "Microsoft.NETFramework.ReferenceAssemblies.net472 (installed 1.0.3)",
       "done": 1,
       "total": 34
     },
     {
-      "at": 3229,
+      "at": 2318,
       "phase": "Reading release notes and changelog",
       "detail": "MinVer 6.0.0 → 6.1.0",
       "done": 1,
       "total": 34
     },
     {
-      "at": 3234,
+      "at": 2322,
+      "phase": "Reading release notes and changelog",
+      "detail": "Microsoft.CodeAnalysis.Analyzers 3.11.0 → 5.6.0",
+      "done": 1,
+      "total": 34
+    },
+    {
+      "at": 2332,
       "phase": "Reading release notes and changelog",
       "detail": "BenchmarkDotNet 0.14.0 → 0.15.8",
       "done": 1,
       "total": 34
     },
     {
-      "at": 3240,
+      "at": 2334,
       "phase": "Up to date",
       "detail": "Microsoft.NETFramework.ReferenceAssemblies.net472@1.0.3",
       "done": 2,
       "total": 34
     },
     {
-      "at": 3240,
+      "at": 2334,
       "phase": "Checking the NuGet",
       "detail": "Microsoft.SourceLink.GitHub (installed 8.0.0)",
       "done": 2,
       "total": 34
     },
     {
-      "at": 3242,
+      "at": 2337,
       "phase": "Reading release notes and changelog",
       "detail": "Microsoft.SourceLink.GitHub 8.0.0 → 10.0.301",
       "done": 2,
       "total": 34
     },
     {
-      "at": 3641,
+      "at": 3206,
       "phase": "Comparing the public API surface",
       "detail": "Microsoft.Extensions.Http 10.0.0 → 10.0.10 · 1 evidence source",
       "done": 2,
       "total": 34
     },
     {
-      "at": 3641,
+      "at": 3206,
       "phase": "No breaking changes to look for",
       "detail": "Microsoft.Extensions.Http 10.0.0 → 10.0.10",
       "done": 2,
       "total": 34
     },
     {
-      "at": 3641,
+      "at": 3209,
       "phase": "Weighing what this upgrade is worth",
       "detail": "Microsoft.Extensions.Http 10.0.0 → 10.0.10",
       "done": 2,
       "total": 34
     },
     {
-      "at": 3788,
-      "phase": "Comparing the public API surface",
-      "detail": "CsvHelper 33.0.1 → 33.1.0 · 1 evidence source",
-      "done": 2,
-      "total": 34
-    },
-    {
-      "at": 3788,
-      "phase": "No breaking changes to look for",
-      "detail": "CsvHelper 33.0.1 → 33.1.0",
-      "done": 2,
-      "total": 34
-    },
-    {
-      "at": 3789,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "CsvHelper 33.0.1 → 33.1.0",
-      "done": 2,
-      "total": 34
-    },
-    {
-      "at": 3958,
+      "at": 3810,
       "phase": "Checked",
       "detail": "Microsoft.Extensions.Http 10.0.0 → 10.0.10 · safe for your code · no breaking changes found",
       "done": 3,
       "total": 34
     },
     {
-      "at": 3958,
+      "at": 3810,
       "phase": "Checking the NuGet",
       "detail": "JetBrains.Annotations (installed 2024.3.0)",
       "done": 3,
       "total": 34
     },
     {
-      "at": 3965,
+      "at": 3813,
+      "phase": "Comparing the public API surface",
+      "detail": "CsvHelper 33.0.1 → 33.1.0 · 1 evidence source",
+      "done": 3,
+      "total": 34
+    },
+    {
+      "at": 3813,
+      "phase": "No breaking changes to look for",
+      "detail": "CsvHelper 33.0.1 → 33.1.0",
+      "done": 3,
+      "total": 34
+    },
+    {
+      "at": 3814,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "CsvHelper 33.0.1 → 33.1.0",
+      "done": 3,
+      "total": 34
+    },
+    {
+      "at": 3827,
       "phase": "Reading release notes and changelog",
       "detail": "JetBrains.Annotations 2024.3.0 → 2026.2.0",
       "done": 3,
       "total": 34
     },
     {
-      "at": 4378,
+      "at": 4000,
       "phase": "Checked",
       "detail": "CsvHelper 33.0.1 → 33.1.0 · safe for your code · no breaking changes found",
       "done": 4,
       "total": 34
     },
     {
-      "at": 4378,
+      "at": 4000,
       "phase": "Checking the NuGet",
       "detail": "HttpMultipartParser (installed 8.4.0)",
       "done": 4,
       "total": 34
     },
     {
-      "at": 4380,
-      "phase": "Comparing the public API surface",
-      "detail": "Newtonsoft.Json 13.0.3 → 13.0.4 · 1 evidence source",
+      "at": 4002,
+      "phase": "Reading release notes and changelog",
+      "detail": "HttpMultipartParser 8.4.0 → 10.0.0",
       "done": 4,
       "total": 34
     },
     {
-      "at": 4380,
-      "phase": "No breaking changes to look for",
-      "detail": "Newtonsoft.Json 13.0.3 → 13.0.4",
-      "done": 4,
-      "total": 34
-    },
-    {
-      "at": 4381,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "Newtonsoft.Json 13.0.3 → 13.0.4",
-      "done": 4,
-      "total": 34
-    },
-    {
-      "at": 4382,
+      "at": 4035,
       "phase": "Comparing the public API surface",
       "detail": "JetBrains.Annotations 2024.3.0 → 2026.2.0 · 1 evidence source",
       "done": 4,
       "total": 34
     },
     {
-      "at": 4382,
+      "at": 4035,
       "phase": "No breaking changes to look for",
       "detail": "JetBrains.Annotations 2024.3.0 → 2026.2.0",
       "done": 4,
       "total": 34
     },
     {
-      "at": 4383,
+      "at": 4035,
       "phase": "Weighing what this upgrade is worth",
       "detail": "JetBrains.Annotations 2024.3.0 → 2026.2.0",
       "done": 4,
       "total": 34
     },
     {
-      "at": 4386,
-      "phase": "Reading release notes and changelog",
-      "detail": "HttpMultipartParser 8.4.0 → 10.0.0",
+      "at": 4171,
+      "phase": "Comparing the public API surface",
+      "detail": "Newtonsoft.Json 13.0.3 → 13.0.4 · 1 evidence source",
       "done": 4,
       "total": 34
     },
     {
-      "at": 4561,
+      "at": 4171,
+      "phase": "No breaking changes to look for",
+      "detail": "Newtonsoft.Json 13.0.3 → 13.0.4",
+      "done": 4,
+      "total": 34
+    },
+    {
+      "at": 4172,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "Newtonsoft.Json 13.0.3 → 13.0.4",
+      "done": 4,
+      "total": 34
+    },
+    {
+      "at": 4212,
       "phase": "Checked",
-      "detail": "Newtonsoft.Json 13.0.3 → 13.0.4 · safe for your code · no breaking changes found",
+      "detail": "JetBrains.Annotations 2024.3.0 → 2026.2.0 · safe for your code · no breaking changes found",
       "done": 5,
       "total": 34
     },
     {
-      "at": 4561,
+      "at": 4212,
       "phase": "Checking the NuGet",
       "detail": "PolySharp (installed 1.15.0)",
       "done": 5,
       "total": 34
     },
     {
-      "at": 4563,
+      "at": 4215,
       "phase": "Reading release notes and changelog",
       "detail": "PolySharp 1.15.0 → 1.16.0",
       "done": 5,
       "total": 34
     },
     {
-      "at": 4573,
+      "at": 4689,
       "phase": "Checked",
-      "detail": "JetBrains.Annotations 2024.3.0 → 2026.2.0 · safe for your code · no breaking changes found",
+      "detail": "Newtonsoft.Json 13.0.3 → 13.0.4 · safe for your code · no breaking changes found",
       "done": 6,
       "total": 34
     },
     {
-      "at": 4573,
+      "at": 4689,
       "phase": "Checking the NuGet",
       "detail": "AutoFixture (installed 4.18.1)",
       "done": 6,
       "total": 34
     },
     {
-      "at": 4575,
+      "at": 4693,
       "phase": "Reading release notes and changelog",
       "detail": "AutoFixture 4.18.1 → 5.0.0-rc.1",
       "done": 6,
       "total": 34
     },
     {
-      "at": 4718,
+      "at": 5235,
       "phase": "Comparing the public API surface",
       "detail": "AutoFixture 4.18.1 → 5.0.0-rc.1 · 2 evidence sources",
       "done": 6,
       "total": 34
     },
     {
-      "at": 4729,
+      "at": 5248,
       "phase": "Searching your code for 102 breaking changes",
       "detail": "AutoFixture 4.18.1 → 5.0.0-rc.1",
       "done": 6,
       "total": 34
     },
     {
-      "at": 4926,
+      "at": 5377,
       "phase": "Weighing what this upgrade is worth",
       "detail": "AutoFixture 4.18.1 → 5.0.0-rc.1",
       "done": 6,
       "total": 34
     },
     {
-      "at": 5402,
+      "at": 5494,
+      "phase": "Comparing the public API surface",
+      "detail": "MinVer 6.0.0 → 6.1.0 · 1 evidence source",
+      "done": 6,
+      "total": 34
+    },
+    {
+      "at": 5494,
+      "phase": "No breaking changes to look for",
+      "detail": "MinVer 6.0.0 → 6.1.0",
+      "done": 6,
+      "total": 34
+    },
+    {
+      "at": 5494,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "MinVer 6.0.0 → 6.1.0",
+      "done": 6,
+      "total": 34
+    },
+    {
+      "at": 5586,
       "phase": "Checked",
       "detail": "AutoFixture 4.18.1 → 5.0.0-rc.1 · safe for your code · 102 upstream changes, none used here",
       "done": 7,
       "total": 34
     },
     {
-      "at": 5402,
+      "at": 5586,
       "phase": "Checking the NuGet",
       "detail": "coverlet.collector (installed 6.0.2)",
       "done": 7,
       "total": 34
     },
     {
-      "at": 5411,
-      "phase": "Comparing the public API surface",
-      "detail": "Microsoft.CodeAnalysis.CSharp 4.12.0 → 4.14.0 · 2 evidence sources",
-      "done": 7,
-      "total": 34
-    },
-    {
-      "at": 5411,
-      "phase": "Searching your code for 3 breaking changes",
-      "detail": "Microsoft.CodeAnalysis.CSharp 4.12.0 → 4.14.0",
-      "done": 7,
-      "total": 34
-    },
-    {
-      "at": 5413,
+      "at": 5590,
       "phase": "Reading release notes and changelog",
       "detail": "coverlet.collector 6.0.2 → 6.0.4",
       "done": 7,
       "total": 34
     },
     {
-      "at": 5857,
-      "phase": "Comparing the public API surface",
-      "detail": "MinVer 6.0.0 → 6.1.0 · 1 evidence source",
-      "done": 7,
-      "total": 34
-    },
-    {
-      "at": 5857,
-      "phase": "No breaking changes to look for",
-      "detail": "MinVer 6.0.0 → 6.1.0",
-      "done": 7,
-      "total": 34
-    },
-    {
-      "at": 5857,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "MinVer 6.0.0 → 6.1.0",
-      "done": 7,
-      "total": 34
-    },
-    {
-      "at": 6168,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "Microsoft.CodeAnalysis.CSharp 4.12.0 → 4.14.0",
-      "done": 7,
-      "total": 34
-    },
-    {
-      "at": 6173,
+      "at": 5655,
       "phase": "Checked",
       "detail": "MinVer 6.0.0 → 6.1.0 · safe for your code · no breaking changes found",
       "done": 8,
       "total": 34
     },
     {
-      "at": 6173,
+      "at": 5656,
       "phase": "Checking the NuGet",
       "detail": "FluentAssertions (installed 7.0.0)",
       "done": 8,
       "total": 34
     },
     {
-      "at": 6176,
+      "at": 5659,
       "phase": "Reading release notes and changelog",
       "detail": "FluentAssertions 7.0.0 → 7.2.2",
       "done": 8,
       "total": 34
     },
     {
-      "at": 6381,
+      "at": 6597,
+      "phase": "Comparing the public API surface",
+      "detail": "FluentAssertions 7.0.0 → 7.2.2 · 2 evidence sources",
+      "done": 8,
+      "total": 34
+    },
+    {
+      "at": 6597,
+      "phase": "Searching your code for 1 breaking change",
+      "detail": "FluentAssertions 7.0.0 → 7.2.2",
+      "done": 8,
+      "total": 34
+    },
+    {
+      "at": 6774,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "FluentAssertions 7.0.0 → 7.2.2",
+      "done": 8,
+      "total": 34
+    },
+    {
+      "at": 6965,
       "phase": "Checked",
-      "detail": "Microsoft.CodeAnalysis.CSharp 4.12.0 → 4.14.0 · safe for your code · 3 upstream changes, none used here",
+      "detail": "FluentAssertions 7.0.0 → 7.2.2 · safe for your code · 1 upstream change, none used here",
       "done": 9,
       "total": 34
     },
     {
-      "at": 6381,
+      "at": 6966,
       "phase": "Checking the NuGet",
       "detail": "Microsoft.NET.Test.Sdk (installed 17.12.0)",
       "done": 9,
       "total": 34
     },
     {
-      "at": 6384,
+      "at": 6969,
       "phase": "Reading release notes and changelog",
       "detail": "Microsoft.NET.Test.Sdk 17.12.0 → 17.14.1",
       "done": 9,
       "total": 34
     },
     {
-      "at": 6422,
-      "phase": "Comparing the public API surface",
-      "detail": "FluentAssertions 7.0.0 → 7.2.2 · 2 evidence sources",
-      "done": 9,
-      "total": 34
-    },
-    {
-      "at": 6422,
-      "phase": "Searching your code for 1 breaking change",
-      "detail": "FluentAssertions 7.0.0 → 7.2.2",
-      "done": 9,
-      "total": 34
-    },
-    {
-      "at": 6422,
+      "at": 7007,
       "phase": "Comparing the public API surface",
       "detail": "Microsoft.NET.Test.Sdk 17.12.0 → 17.14.1 · 1 evidence source",
       "done": 9,
       "total": 34
     },
     {
-      "at": 6422,
+      "at": 7007,
       "phase": "No breaking changes to look for",
       "detail": "Microsoft.NET.Test.Sdk 17.12.0 → 17.14.1",
       "done": 9,
       "total": 34
     },
     {
-      "at": 6422,
+      "at": 7007,
       "phase": "Weighing what this upgrade is worth",
       "detail": "Microsoft.NET.Test.Sdk 17.12.0 → 17.14.1",
       "done": 9,
       "total": 34
     },
     {
-      "at": 6490,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "FluentAssertions 7.0.0 → 7.2.2",
-      "done": 9,
-      "total": 34
-    },
-    {
-      "at": 6590,
+      "at": 7280,
       "phase": "Checked",
       "detail": "Microsoft.NET.Test.Sdk 17.12.0 → 17.14.1 · safe for your code · no breaking changes found",
       "done": 10,
       "total": 34
     },
     {
-      "at": 6590,
+      "at": 7280,
       "phase": "Checking the NuGet",
       "detail": "Moq (installed 4.20.72)",
       "done": 10,
       "total": 34
     },
     {
-      "at": 6597,
+      "at": 7283,
+      "phase": "Comparing the public API surface",
+      "detail": "Microsoft.CodeAnalysis.CSharp 4.12.0 → 4.14.0 · 2 evidence sources",
+      "done": 10,
+      "total": 34
+    },
+    {
+      "at": 7284,
+      "phase": "Searching your code for 3 breaking changes",
+      "detail": "Microsoft.CodeAnalysis.CSharp 4.12.0 → 4.14.0",
+      "done": 10,
+      "total": 34
+    },
+    {
+      "at": 7290,
       "phase": "Up to date",
       "detail": "Moq@4.20.72",
       "done": 11,
       "total": 34
     },
     {
-      "at": 6597,
+      "at": 7290,
       "phase": "Checking the NuGet",
       "detail": "Polly (installed 8.5.0)",
       "done": 11,
       "total": 34
     },
     {
-      "at": 6600,
+      "at": 7296,
       "phase": "Reading release notes and changelog",
       "detail": "Polly 8.5.0 → 8.7.0",
       "done": 11,
       "total": 34
     },
     {
-      "at": 6660,
+      "at": 8869,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "Microsoft.CodeAnalysis.CSharp 4.12.0 → 4.14.0",
+      "done": 11,
+      "total": 34
+    },
+    {
+      "at": 9033,
       "phase": "Checked",
-      "detail": "FluentAssertions 7.0.0 → 7.2.2 · safe for your code · 1 upstream change, none used here",
+      "detail": "Microsoft.CodeAnalysis.CSharp 4.12.0 → 4.14.0 · safe for your code · 3 upstream changes, none used here",
       "done": 12,
       "total": 34
     },
     {
-      "at": 6660,
+      "at": 9033,
       "phase": "Checking the NuGet",
       "detail": "rest-mock-core (installed 0.7.12)",
       "done": 12,
       "total": 34
     },
     {
-      "at": 6662,
+      "at": 9037,
       "phase": "Reading release notes and changelog",
       "detail": "rest-mock-core 0.7.12 → 0.7.14",
       "done": 12,
       "total": 34
     },
     {
-      "at": 7855,
+      "at": 9385,
       "phase": "Comparing the public API surface",
-      "detail": "rest-mock-core 0.7.12 → 0.7.14 · 1 evidence source",
+      "detail": "BenchmarkDotNet 0.14.0 → 0.15.8 · 5 evidence sources",
       "done": 12,
       "total": 34
     },
     {
-      "at": 7855,
-      "phase": "No breaking changes to look for",
-      "detail": "rest-mock-core 0.7.12 → 0.7.14",
+      "at": 9388,
+      "phase": "Searching your code for 32 breaking changes",
+      "detail": "BenchmarkDotNet 0.14.0 → 0.15.8",
       "done": 12,
       "total": 34
     },
     {
-      "at": 7855,
+      "at": 9561,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "rest-mock-core 0.7.12 → 0.7.14",
+      "detail": "BenchmarkDotNet 0.14.0 → 0.15.8",
       "done": 12,
       "total": 34
     },
     {
-      "at": 7958,
+      "at": 9566,
       "phase": "Comparing the public API surface",
-      "detail": "Polly 8.5.0 → 8.7.0 · 1 evidence source",
+      "detail": "Microsoft.CodeAnalysis.Analyzers 3.11.0 → 5.6.0 · 1 evidence source",
       "done": 12,
       "total": 34
     },
     {
-      "at": 7958,
+      "at": 9566,
       "phase": "No breaking changes to look for",
-      "detail": "Polly 8.5.0 → 8.7.0",
+      "detail": "Microsoft.CodeAnalysis.Analyzers 3.11.0 → 5.6.0",
       "done": 12,
       "total": 34
     },
     {
-      "at": 7958,
+      "at": 9567,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "Polly 8.5.0 → 8.7.0",
+      "detail": "Microsoft.CodeAnalysis.Analyzers 3.11.0 → 5.6.0",
       "done": 12,
       "total": 34
     },
     {
-      "at": 7988,
+      "at": 9734,
       "phase": "Checked",
-      "detail": "rest-mock-core 0.7.12 → 0.7.14 · safe for your code · no breaking changes found",
+      "detail": "Microsoft.CodeAnalysis.Analyzers 3.11.0 → 5.6.0 · safe for your code · no breaking changes found",
       "done": 13,
       "total": 34
     },
     {
-      "at": 7988,
+      "at": 9734,
       "phase": "Checking the NuGet",
       "detail": "RichardSzalay.MockHttp (installed 7.0.0)",
       "done": 13,
       "total": 34
     },
     {
-      "at": 7990,
+      "at": 9738,
       "phase": "Reading release notes and changelog",
       "detail": "RichardSzalay.MockHttp 7.0.0 → 7.1.0",
       "done": 13,
       "total": 34
     },
     {
-      "at": 8027,
-      "phase": "Comparing the public API surface",
-      "detail": "RichardSzalay.MockHttp 7.0.0 → 7.1.0 · 1 evidence source",
-      "done": 13,
-      "total": 34
-    },
-    {
-      "at": 8027,
-      "phase": "No breaking changes to look for",
-      "detail": "RichardSzalay.MockHttp 7.0.0 → 7.1.0",
-      "done": 13,
-      "total": 34
-    },
-    {
-      "at": 8027,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "RichardSzalay.MockHttp 7.0.0 → 7.1.0",
-      "done": 13,
-      "total": 34
-    },
-    {
-      "at": 8102,
+      "at": 9778,
       "phase": "Checked",
-      "detail": "Polly 8.5.0 → 8.7.0 · safe for your code · no breaking changes found",
+      "detail": "BenchmarkDotNet 0.14.0 → 0.15.8 · safe for your code · 32 upstream changes, none used here",
       "done": 14,
       "total": 34
     },
     {
-      "at": 8102,
+      "at": 9778,
       "phase": "Checking the NuGet",
       "detail": "System.Net.Http.Json (installed 9.0.0)",
       "done": 14,
       "total": 34
     },
     {
-      "at": 8111,
+      "at": 9789,
       "phase": "Reading release notes and changelog",
       "detail": "System.Net.Http.Json 9.0.0 → 9.0.18",
       "done": 14,
       "total": 34
     },
     {
-      "at": 8165,
+      "at": 9798,
+      "phase": "Comparing the public API surface",
+      "detail": "RichardSzalay.MockHttp 7.0.0 → 7.1.0 · 1 evidence source",
+      "done": 14,
+      "total": 34
+    },
+    {
+      "at": 9798,
+      "phase": "No breaking changes to look for",
+      "detail": "RichardSzalay.MockHttp 7.0.0 → 7.1.0",
+      "done": 14,
+      "total": 34
+    },
+    {
+      "at": 9798,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "RichardSzalay.MockHttp 7.0.0 → 7.1.0",
+      "done": 14,
+      "total": 34
+    },
+    {
+      "at": 9804,
+      "phase": "Comparing the public API surface",
+      "detail": "Polly 8.5.0 → 8.7.0 · 1 evidence source",
+      "done": 14,
+      "total": 34
+    },
+    {
+      "at": 9804,
+      "phase": "No breaking changes to look for",
+      "detail": "Polly 8.5.0 → 8.7.0",
+      "done": 14,
+      "total": 34
+    },
+    {
+      "at": 9804,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "Polly 8.5.0 → 8.7.0",
+      "done": 14,
+      "total": 34
+    },
+    {
+      "at": 9807,
+      "phase": "Comparing the public API surface",
+      "detail": "HttpMultipartParser 8.4.0 → 10.0.0 · 1 evidence source",
+      "done": 14,
+      "total": 34
+    },
+    {
+      "at": 9807,
+      "phase": "No breaking changes to look for",
+      "detail": "HttpMultipartParser 8.4.0 → 10.0.0",
+      "done": 14,
+      "total": 34
+    },
+    {
+      "at": 9807,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "HttpMultipartParser 8.4.0 → 10.0.0",
+      "done": 14,
+      "total": 34
+    },
+    {
+      "at": 9868,
+      "phase": "Comparing the public API surface",
+      "detail": "System.Net.Http.Json 9.0.0 → 9.0.18 · 1 evidence source",
+      "done": 14,
+      "total": 34
+    },
+    {
+      "at": 9868,
+      "phase": "No breaking changes to look for",
+      "detail": "System.Net.Http.Json 9.0.0 → 9.0.18",
+      "done": 14,
+      "total": 34
+    },
+    {
+      "at": 9868,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "System.Net.Http.Json 9.0.0 → 9.0.18",
+      "done": 14,
+      "total": 34
+    },
+    {
+      "at": 9892,
+      "phase": "Comparing the public API surface",
+      "detail": "PolySharp 1.15.0 → 1.16.0 · 1 evidence source",
+      "done": 14,
+      "total": 34
+    },
+    {
+      "at": 9892,
+      "phase": "No breaking changes to look for",
+      "detail": "PolySharp 1.15.0 → 1.16.0",
+      "done": 14,
+      "total": 34
+    },
+    {
+      "at": 9892,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "PolySharp 1.15.0 → 1.16.0",
+      "done": 14,
+      "total": 34
+    },
+    {
+      "at": 9960,
       "phase": "Checked",
       "detail": "RichardSzalay.MockHttp 7.0.0 → 7.1.0 · safe for your code · no breaking changes found",
       "done": 15,
       "total": 34
     },
     {
-      "at": 8165,
+      "at": 9960,
       "phase": "Checking the NuGet",
       "detail": "Xunit.Extensions.Logging (installed 1.1.0)",
       "done": 15,
       "total": 34
     },
     {
-      "at": 8168,
-      "phase": "Comparing the public API surface",
-      "detail": "System.Net.Http.Json 9.0.0 → 9.0.18 · 1 evidence source",
-      "done": 15,
-      "total": 34
-    },
-    {
-      "at": 8168,
-      "phase": "No breaking changes to look for",
-      "detail": "System.Net.Http.Json 9.0.0 → 9.0.18",
-      "done": 15,
-      "total": 34
-    },
-    {
-      "at": 8168,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "System.Net.Http.Json 9.0.0 → 9.0.18",
-      "done": 15,
-      "total": 34
-    },
-    {
-      "at": 8169,
+      "at": 9962,
       "phase": "Up to date",
       "detail": "Xunit.Extensions.Logging@1.1.0",
       "done": 16,
       "total": 34
     },
     {
-      "at": 8169,
+      "at": 9962,
       "phase": "Checking the NuGet",
       "detail": "xunit (installed 2.9.2)",
       "done": 16,
       "total": 34
     },
     {
-      "at": 8174,
+      "at": 9966,
       "phase": "Reading release notes and changelog",
       "detail": "xunit 2.9.2 → 2.9.3",
       "done": 16,
       "total": 34
     },
     {
-      "at": 8185,
-      "phase": "Comparing the public API surface",
-      "detail": "xunit 2.9.2 → 2.9.3 · 2 evidence sources",
-      "done": 16,
-      "total": 34
-    },
-    {
-      "at": 8185,
-      "phase": "No breaking changes to look for",
-      "detail": "xunit 2.9.2 → 2.9.3",
-      "done": 16,
-      "total": 34
-    },
-    {
-      "at": 8185,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "xunit 2.9.2 → 2.9.3",
-      "done": 16,
-      "total": 34
-    },
-    {
-      "at": 8323,
+      "at": 9984,
       "phase": "Checked",
-      "detail": "xunit 2.9.2 → 2.9.3 · safe for your code · no breaking changes found",
+      "detail": "Polly 8.5.0 → 8.7.0 · safe for your code · no breaking changes found",
       "done": 17,
       "total": 34
     },
     {
-      "at": 8323,
+      "at": 9984,
       "phase": "Checking the NuGet",
       "detail": "WireMock.Net (installed 1.16.0)",
       "done": 17,
       "total": 34
     },
     {
-      "at": 8326,
+      "at": 9987,
       "phase": "Reading release notes and changelog",
       "detail": "WireMock.Net 1.16.0 → 1.25.0",
       "done": 17,
       "total": 34
     },
     {
-      "at": 8398,
+      "at": 9999,
       "phase": "Comparing the public API surface",
-      "detail": "WireMock.Net 1.16.0 → 1.25.0 · 1 evidence source",
+      "detail": "xunit 2.9.2 → 2.9.3 · 2 evidence sources",
       "done": 17,
       "total": 34
     },
     {
-      "at": 8398,
+      "at": 9999,
       "phase": "No breaking changes to look for",
-      "detail": "WireMock.Net 1.16.0 → 1.25.0",
+      "detail": "xunit 2.9.2 → 2.9.3",
       "done": 17,
       "total": 34
     },
     {
-      "at": 8398,
+      "at": 9999,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "WireMock.Net 1.16.0 → 1.25.0",
+      "detail": "xunit 2.9.2 → 2.9.3",
       "done": 17,
       "total": 34
     },
     {
-      "at": 8407,
+      "at": 10061,
       "phase": "Checked",
-      "detail": "System.Net.Http.Json 9.0.0 → 9.0.18 · safe for your code · no breaking changes found",
+      "detail": "HttpMultipartParser 8.4.0 → 10.0.0 · safe for your code · no breaking changes found",
       "done": 18,
       "total": 34
     },
     {
-      "at": 8407,
+      "at": 10061,
       "phase": "Checking the NuGet",
       "detail": "WireMock.Net.FluentAssertions (installed 1.5.51)",
       "done": 18,
       "total": 34
     },
     {
-      "at": 8409,
+      "at": 10062,
+      "phase": "Comparing the public API surface",
+      "detail": "WireMock.Net 1.16.0 → 1.25.0 · 1 evidence source",
+      "done": 18,
+      "total": 34
+    },
+    {
+      "at": 10062,
+      "phase": "No breaking changes to look for",
+      "detail": "WireMock.Net 1.16.0 → 1.25.0",
+      "done": 18,
+      "total": 34
+    },
+    {
+      "at": 10062,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "WireMock.Net 1.16.0 → 1.25.0",
+      "done": 18,
+      "total": 34
+    },
+    {
+      "at": 10065,
       "phase": "Reading release notes and changelog",
       "detail": "WireMock.Net.FluentAssertions 1.5.51 → 1.25.0",
       "done": 18,
       "total": 34
     },
     {
-      "at": 8423,
+      "at": 10107,
       "phase": "Comparing the public API surface",
       "detail": "Microsoft.SourceLink.GitHub 8.0.0 → 10.0.301 · 1 evidence source",
       "done": 18,
       "total": 34
     },
     {
-      "at": 8423,
+      "at": 10107,
       "phase": "No breaking changes to look for",
       "detail": "Microsoft.SourceLink.GitHub 8.0.0 → 10.0.301",
       "done": 18,
       "total": 34
     },
     {
-      "at": 8423,
+      "at": 10107,
       "phase": "Weighing what this upgrade is worth",
       "detail": "Microsoft.SourceLink.GitHub 8.0.0 → 10.0.301",
       "done": 18,
       "total": 34
     },
     {
-      "at": 8459,
-      "phase": "Comparing the public API surface",
-      "detail": "WireMock.Net.FluentAssertions 1.5.51 → 1.25.0 · 1 evidence source",
-      "done": 18,
-      "total": 34
-    },
-    {
-      "at": 8459,
-      "phase": "No breaking changes to look for",
-      "detail": "WireMock.Net.FluentAssertions 1.5.51 → 1.25.0",
-      "done": 18,
-      "total": 34
-    },
-    {
-      "at": 8459,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "WireMock.Net.FluentAssertions 1.5.51 → 1.25.0",
-      "done": 18,
-      "total": 34
-    },
-    {
-      "at": 8545,
+      "at": 10119,
       "phase": "Checked",
-      "detail": "WireMock.Net 1.16.0 → 1.25.0 · safe for your code · no breaking changes found",
+      "detail": "System.Net.Http.Json 9.0.0 → 9.0.18 · safe for your code · no breaking changes found",
       "done": 19,
       "total": 34
     },
     {
-      "at": 8545,
+      "at": 10119,
       "phase": "Checking the npm registry",
       "detail": "@docusaurus/core (installed 3.9.2)",
       "done": 19,
       "total": 34
     },
     {
-      "at": 8573,
+      "at": 10136,
       "phase": "Checked",
-      "detail": "Microsoft.SourceLink.GitHub 8.0.0 → 10.0.301 · safe for your code · no breaking changes found",
+      "detail": "PolySharp 1.15.0 → 1.16.0 · safe for your code · no breaking changes found",
       "done": 20,
       "total": 34
     },
     {
-      "at": 8573,
+      "at": 10136,
       "phase": "Checking the npm registry",
       "detail": "@docusaurus/plugin-client-redirects (installed 3.9.2)",
       "done": 20,
       "total": 34
     },
     {
-      "at": 8698,
+      "at": 10153,
+      "phase": "Comparing the public API surface",
+      "detail": "WireMock.Net.FluentAssertions 1.5.51 → 1.25.0 · 1 evidence source",
+      "done": 20,
+      "total": 34
+    },
+    {
+      "at": 10153,
+      "phase": "No breaking changes to look for",
+      "detail": "WireMock.Net.FluentAssertions 1.5.51 → 1.25.0",
+      "done": 20,
+      "total": 34
+    },
+    {
+      "at": 10153,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "WireMock.Net.FluentAssertions 1.5.51 → 1.25.0",
+      "done": 20,
+      "total": 34
+    },
+    {
+      "at": 10173,
       "phase": "Checked",
-      "detail": "WireMock.Net.FluentAssertions 1.5.51 → 1.25.0 · safe for your code · no breaking changes found",
+      "detail": "xunit 2.9.2 → 2.9.3 · safe for your code · no breaking changes found",
       "done": 21,
       "total": 34
     },
     {
-      "at": 8698,
+      "at": 10173,
       "phase": "Checking the npm registry",
       "detail": "@docusaurus/preset-classic (installed 3.9.2)",
       "done": 21,
       "total": 34
     },
     {
-      "at": 8906,
-      "phase": "Comparing the public API surface",
-      "detail": "Microsoft.CodeAnalysis.Analyzers 3.11.0 → 5.6.0 · 1 evidence source",
-      "done": 21,
-      "total": 34
-    },
-    {
-      "at": 8906,
-      "phase": "No breaking changes to look for",
-      "detail": "Microsoft.CodeAnalysis.Analyzers 3.11.0 → 5.6.0",
-      "done": 21,
-      "total": 34
-    },
-    {
-      "at": 8906,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "Microsoft.CodeAnalysis.Analyzers 3.11.0 → 5.6.0",
-      "done": 21,
-      "total": 34
-    },
-    {
-      "at": 9064,
-      "phase": "Reading release notes and changelog",
-      "detail": "@docusaurus/core 3.9.2 → 3.10.2",
-      "done": 21,
-      "total": 34
-    },
-    {
-      "at": 9185,
-      "phase": "Comparing the public API surface",
-      "detail": "BenchmarkDotNet 0.14.0 → 0.15.8 · 5 evidence sources",
-      "done": 21,
-      "total": 34
-    },
-    {
-      "at": 9187,
-      "phase": "Searching your code for 32 breaking changes",
-      "detail": "BenchmarkDotNet 0.14.0 → 0.15.8",
-      "done": 21,
-      "total": 34
-    },
-    {
-      "at": 9188,
-      "phase": "Comparing the public API surface",
-      "detail": "PolySharp 1.15.0 → 1.16.0 · 1 evidence source",
-      "done": 21,
-      "total": 34
-    },
-    {
-      "at": 9188,
-      "phase": "No breaking changes to look for",
-      "detail": "PolySharp 1.15.0 → 1.16.0",
-      "done": 21,
-      "total": 34
-    },
-    {
-      "at": 9188,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "PolySharp 1.15.0 → 1.16.0",
-      "done": 21,
-      "total": 34
-    },
-    {
-      "at": 9189,
-      "phase": "Comparing the public API surface",
-      "detail": "HttpMultipartParser 8.4.0 → 10.0.0 · 1 evidence source",
-      "done": 21,
-      "total": 34
-    },
-    {
-      "at": 9189,
-      "phase": "No breaking changes to look for",
-      "detail": "HttpMultipartParser 8.4.0 → 10.0.0",
-      "done": 21,
-      "total": 34
-    },
-    {
-      "at": 9189,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "HttpMultipartParser 8.4.0 → 10.0.0",
-      "done": 21,
-      "total": 34
-    },
-    {
-      "at": 9288,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "BenchmarkDotNet 0.14.0 → 0.15.8",
-      "done": 21,
-      "total": 34
-    },
-    {
-      "at": 9295,
+      "at": 10238,
       "phase": "Checked",
-      "detail": "Microsoft.CodeAnalysis.Analyzers 3.11.0 → 5.6.0 · safe for your code · no breaking changes found",
+      "detail": "WireMock.Net 1.16.0 → 1.25.0 · safe for your code · no breaking changes found",
       "done": 22,
       "total": 34
     },
     {
-      "at": 9295,
+      "at": 10238,
       "phase": "Checking the npm registry",
       "detail": "@mdx-js/react (installed 3.1.1)",
       "done": 22,
       "total": 34
     },
     {
-      "at": 9347,
-      "phase": "Reading release notes and changelog",
-      "detail": "@docusaurus/plugin-client-redirects 3.9.2 → 3.10.2",
-      "done": 22,
-      "total": 34
-    },
-    {
-      "at": 9415,
+      "at": 10289,
       "phase": "Checked",
-      "detail": "PolySharp 1.15.0 → 1.16.0 · safe for your code · no breaking changes found",
+      "detail": "Microsoft.SourceLink.GitHub 8.0.0 → 10.0.301 · safe for your code · no breaking changes found",
       "done": 23,
       "total": 34
     },
     {
-      "at": 9415,
+      "at": 10289,
       "phase": "Checking the npm registry",
       "detail": "clsx (installed 2.1.1)",
       "done": 23,
       "total": 34
     },
     {
-      "at": 9430,
-      "phase": "Up to date",
-      "detail": "@mdx-js/react@3.1.1",
+      "at": 10348,
+      "phase": "Checked",
+      "detail": "WireMock.Net.FluentAssertions 1.5.51 → 1.25.0 · safe for your code · no breaking changes found",
       "done": 24,
       "total": 34
     },
     {
-      "at": 9430,
+      "at": 10348,
       "phase": "Checking the npm registry",
       "detail": "prism-react-renderer (installed 2.4.1)",
       "done": 24,
       "total": 34
     },
     {
-      "at": 9443,
+      "at": 10392,
       "phase": "Up to date",
-      "detail": "clsx@2.1.1",
+      "detail": "@mdx-js/react@3.1.1",
       "done": 25,
       "total": 34
     },
     {
-      "at": 9443,
+      "at": 10392,
       "phase": "Checking the npm registry",
       "detail": "react (installed 19.2.0)",
       "done": 25,
       "total": 34
     },
     {
-      "at": 9505,
-      "phase": "Reading release notes and changelog",
-      "detail": "@docusaurus/preset-classic 3.9.2 → 3.10.2",
-      "done": 25,
-      "total": 34
-    },
-    {
-      "at": 9510,
-      "phase": "Checked",
-      "detail": "HttpMultipartParser 8.4.0 → 10.0.0 · safe for your code · no breaking changes found",
+      "at": 10397,
+      "phase": "Up to date",
+      "detail": "clsx@2.1.1",
       "done": 26,
       "total": 34
     },
     {
-      "at": 9510,
+      "at": 10397,
       "phase": "Checking the npm registry",
       "detail": "react-dom (installed 19.2.0)",
       "done": 26,
       "total": 34
     },
     {
-      "at": 9515,
-      "phase": "Checked",
-      "detail": "BenchmarkDotNet 0.14.0 → 0.15.8 · safe for your code · 32 upstream changes, none used here",
+      "at": 10486,
+      "phase": "Comparing the public API surface",
+      "detail": "rest-mock-core 0.7.12 → 0.7.14 · 1 evidence source",
+      "done": 26,
+      "total": 34
+    },
+    {
+      "at": 10486,
+      "phase": "No breaking changes to look for",
+      "detail": "rest-mock-core 0.7.12 → 0.7.14",
+      "done": 26,
+      "total": 34
+    },
+    {
+      "at": 10486,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "rest-mock-core 0.7.12 → 0.7.14",
+      "done": 26,
+      "total": 34
+    },
+    {
+      "at": 10541,
+      "phase": "Up to date",
+      "detail": "prism-react-renderer@2.4.1",
       "done": 27,
       "total": 34
     },
     {
-      "at": 9527,
-      "phase": "Up to date",
-      "detail": "prism-react-renderer@2.4.1",
+      "at": 10625,
+      "phase": "Checked",
+      "detail": "rest-mock-core 0.7.12 → 0.7.14 · safe for your code · no breaking changes found",
       "done": 28,
       "total": 34
     },
     {
-      "at": 9700,
+      "at": 10839,
       "phase": "Reading release notes and changelog",
       "detail": "react 19.2.0 → 19.2.8",
       "done": 28,
       "total": 34
     },
     {
-      "at": 9869,
+      "at": 10842,
       "phase": "Comparing the public API surface",
       "detail": "coverlet.collector 6.0.2 → 6.0.4 · 1 evidence source",
       "done": 28,
       "total": 34
     },
     {
-      "at": 9869,
+      "at": 10842,
       "phase": "No breaking changes to look for",
       "detail": "coverlet.collector 6.0.2 → 6.0.4",
       "done": 28,
       "total": 34
     },
     {
-      "at": 9869,
+      "at": 10842,
       "phase": "Weighing what this upgrade is worth",
       "detail": "coverlet.collector 6.0.2 → 6.0.4",
       "done": 28,
       "total": 34
     },
     {
-      "at": 10108,
-      "phase": "Reading release notes and changelog",
-      "detail": "react-dom 19.2.0 → 19.2.8",
-      "done": 28,
-      "total": 34
-    },
-    {
-      "at": 10118,
+      "at": 11004,
       "phase": "Checked",
       "detail": "coverlet.collector 6.0.2 → 6.0.4 · safe for your code · no breaking changes found",
       "done": 29,
       "total": 34
     },
     {
-      "at": 10860,
+      "at": 11084,
+      "phase": "Reading release notes and changelog",
+      "detail": "@docusaurus/preset-classic 3.9.2 → 3.10.2",
+      "done": 29,
+      "total": 34
+    },
+    {
+      "at": 11334,
+      "phase": "Reading release notes and changelog",
+      "detail": "@docusaurus/plugin-client-redirects 3.9.2 → 3.10.2",
+      "done": 29,
+      "total": 34
+    },
+    {
+      "at": 11981,
+      "phase": "Reading release notes and changelog",
+      "detail": "react-dom 19.2.0 → 19.2.8",
+      "done": 29,
+      "total": 34
+    },
+    {
+      "at": 12169,
+      "phase": "Reading release notes and changelog",
+      "detail": "@docusaurus/core 3.9.2 → 3.10.2",
+      "done": 29,
+      "total": 34
+    },
+    {
+      "at": 13523,
       "phase": "Comparing the public API surface",
-      "detail": "@docusaurus/preset-classic 3.9.2 → 3.10.2 · 3 evidence sources",
+      "detail": "@docusaurus/core 3.9.2 → 3.10.2 · 4 evidence sources",
       "done": 29,
       "total": 34
     },
     {
-      "at": 10860,
-      "phase": "No breaking changes to look for",
-      "detail": "@docusaurus/preset-classic 3.9.2 → 3.10.2",
+      "at": 13523,
+      "phase": "Searching your code for 1 breaking change",
+      "detail": "@docusaurus/core 3.9.2 → 3.10.2",
       "done": 29,
       "total": 34
     },
     {
-      "at": 10860,
+      "at": 13524,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "@docusaurus/preset-classic 3.9.2 → 3.10.2",
+      "detail": "@docusaurus/core 3.9.2 → 3.10.2",
       "done": 29,
       "total": 34
     },
     {
-      "at": 10862,
+      "at": 13539,
       "phase": "Comparing the public API surface",
       "detail": "@docusaurus/plugin-client-redirects 3.9.2 → 3.10.2 · 3 evidence sources",
       "done": 29,
       "total": 34
     },
     {
-      "at": 10862,
+      "at": 13539,
       "phase": "No breaking changes to look for",
       "detail": "@docusaurus/plugin-client-redirects 3.9.2 → 3.10.2",
       "done": 29,
       "total": 34
     },
     {
-      "at": 10862,
+      "at": 13540,
       "phase": "Weighing what this upgrade is worth",
       "detail": "@docusaurus/plugin-client-redirects 3.9.2 → 3.10.2",
       "done": 29,
       "total": 34
     },
     {
-      "at": 11038,
+      "at": 13546,
+      "phase": "Comparing the public API surface",
+      "detail": "@docusaurus/preset-classic 3.9.2 → 3.10.2 · 3 evidence sources",
+      "done": 29,
+      "total": 34
+    },
+    {
+      "at": 13546,
+      "phase": "No breaking changes to look for",
+      "detail": "@docusaurus/preset-classic 3.9.2 → 3.10.2",
+      "done": 29,
+      "total": 34
+    },
+    {
+      "at": 13547,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "@docusaurus/preset-classic 3.9.2 → 3.10.2",
+      "done": 29,
+      "total": 34
+    },
+    {
+      "at": 13679,
+      "phase": "Comparing the public API surface",
+      "detail": "react 19.2.0 → 19.2.8 · 1 evidence source",
+      "done": 29,
+      "total": 34
+    },
+    {
+      "at": 13679,
+      "phase": "No breaking changes to look for",
+      "detail": "react 19.2.0 → 19.2.8",
+      "done": 29,
+      "total": 34
+    },
+    {
+      "at": 13679,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "react 19.2.0 → 19.2.8",
+      "done": 29,
+      "total": 34
+    },
+    {
+      "at": 13684,
+      "phase": "Comparing the public API surface",
+      "detail": "react-dom 19.2.0 → 19.2.8 · 1 evidence source",
+      "done": 29,
+      "total": 34
+    },
+    {
+      "at": 13684,
+      "phase": "No breaking changes to look for",
+      "detail": "react-dom 19.2.0 → 19.2.8",
+      "done": 29,
+      "total": 34
+    },
+    {
+      "at": 13684,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "react-dom 19.2.0 → 19.2.8",
+      "done": 29,
+      "total": 34
+    },
+    {
+      "at": 13704,
       "phase": "Checked",
-      "detail": "@docusaurus/preset-classic 3.9.2 → 3.10.2 · safe for your code · no breaking changes found",
+      "detail": "@docusaurus/core 3.9.2 → 3.10.2 · safe for your code · 1 upstream change, none used here",
       "done": 30,
       "total": 34
     },
     {
-      "at": 11047,
+      "at": 13740,
+      "phase": "Checked",
+      "detail": "@docusaurus/preset-classic 3.9.2 → 3.10.2 · safe for your code · no breaking changes found",
+      "done": 31,
+      "total": 34
+    },
+    {
+      "at": 13747,
       "phase": "Checked",
       "detail": "@docusaurus/plugin-client-redirects 3.9.2 → 3.10.2 · safe for your code · no breaking changes found",
-      "done": 31,
-      "total": 34
-    },
-    {
-      "at": 11207,
-      "phase": "Comparing the public API surface",
-      "detail": "react 19.2.0 → 19.2.8 · 1 evidence source",
-      "done": 31,
-      "total": 34
-    },
-    {
-      "at": 11207,
-      "phase": "No breaking changes to look for",
-      "detail": "react 19.2.0 → 19.2.8",
-      "done": 31,
-      "total": 34
-    },
-    {
-      "at": 11207,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "react 19.2.0 → 19.2.8",
-      "done": 31,
-      "total": 34
-    },
-    {
-      "at": 11210,
-      "phase": "Comparing the public API surface",
-      "detail": "react-dom 19.2.0 → 19.2.8 · 1 evidence source",
-      "done": 31,
-      "total": 34
-    },
-    {
-      "at": 11210,
-      "phase": "No breaking changes to look for",
-      "detail": "react-dom 19.2.0 → 19.2.8",
-      "done": 31,
-      "total": 34
-    },
-    {
-      "at": 11210,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "react-dom 19.2.0 → 19.2.8",
-      "done": 31,
-      "total": 34
-    },
-    {
-      "at": 11366,
-      "phase": "Checked",
-      "detail": "react-dom 19.2.0 → 19.2.8 · safe for your code · no breaking changes found",
       "done": 32,
       "total": 34
     },
     {
-      "at": 11420,
+      "at": 13887,
+      "phase": "Checked",
+      "detail": "react-dom 19.2.0 → 19.2.8 · safe for your code · no breaking changes found",
+      "done": 33,
+      "total": 34
+    },
+    {
+      "at": 13903,
       "phase": "Checked",
       "detail": "react 19.2.0 → 19.2.8 · safe for your code · no breaking changes found",
-      "done": 33,
-      "total": 34
-    },
-    {
-      "at": 12304,
-      "phase": "Comparing the public API surface",
-      "detail": "@docusaurus/core 3.9.2 → 3.10.2 · 4 evidence sources",
-      "done": 33,
-      "total": 34
-    },
-    {
-      "at": 12304,
-      "phase": "Searching your code for 1 breaking change",
-      "detail": "@docusaurus/core 3.9.2 → 3.10.2",
-      "done": 33,
-      "total": 34
-    },
-    {
-      "at": 12304,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "@docusaurus/core 3.9.2 → 3.10.2",
-      "done": 33,
-      "total": 34
-    },
-    {
-      "at": 12463,
-      "phase": "Checked",
-      "detail": "@docusaurus/core 3.9.2 → 3.10.2 · safe for your code · 1 upstream change, none used here",
       "done": 34,
       "total": 34
     }
@@ -1293,6 +1294,9 @@
     {
       "name": "AutoFixture",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "4.18.1",
       "latest": "5.0.0-rc.1",
       "selected": "5.0.0-rc.1",
@@ -1319,6 +1323,14 @@
             "CreateAnonymous",
             "BooleanSwitch.CreateAnonymous"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "102 API surface change(s) in AutoFixture",
+              "url": null,
+              "locator": "AutoFixture 4.18.1 → 5.0.0-rc.1 (netstandard2.0 assembly metadata) · computed by assembly metadata"
+            }
+          ],
           "sites": []
         },
         {
@@ -1329,6 +1341,14 @@
           "symbols": [
             "AutoFixture.BooleanSwitch.Create(): bool"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "102 API surface change(s) in AutoFixture",
+              "url": null,
+              "locator": "AutoFixture 4.18.1 → 5.0.0-rc.1 (netstandard2.0 assembly metadata) · computed by assembly metadata"
+            }
+          ],
           "sites": []
         },
         {
@@ -1338,6 +1358,14 @@
           "confidence": "high",
           "symbols": [
             "AutoFixture.BooleanSwitch.CreateAnonymous(): bool"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "102 API surface change(s) in AutoFixture",
+              "url": null,
+              "locator": "AutoFixture 4.18.1 → 5.0.0-rc.1 (netstandard2.0 assembly metadata) · computed by assembly metadata"
+            }
           ],
           "sites": []
         },
@@ -1351,6 +1379,14 @@
             "CreateAnonymous",
             "ByteSequenceGenerator.CreateAnonymous"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "102 API surface change(s) in AutoFixture",
+              "url": null,
+              "locator": "AutoFixture 4.18.1 → 5.0.0-rc.1 (netstandard2.0 assembly metadata) · computed by assembly metadata"
+            }
+          ],
           "sites": []
         }
       ]
@@ -1358,6 +1394,9 @@
     {
       "name": "BenchmarkDotNet",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "0.14.0",
       "latest": "0.15.8",
       "selected": "0.15.8",
@@ -1382,6 +1421,14 @@
             "ConfigCompatibilityValidator",
             "Validators.ConfigCompatibilityValidator"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "32 API surface change(s) in BenchmarkDotNet",
+              "url": null,
+              "locator": "BenchmarkDotNet 0.14.0 → 0.15.8 (netstandard2.0 assembly metadata) · computed by assembly metadata"
+            }
+          ],
           "sites": []
         },
         {
@@ -1394,6 +1441,14 @@
             "IntermediateDirectoryPath",
             "ArtifactsPaths.IntermediateDirectoryPath"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "32 API surface change(s) in BenchmarkDotNet",
+              "url": null,
+              "locator": "BenchmarkDotNet 0.14.0 → 0.15.8 (netstandard2.0 assembly metadata) · computed by assembly metadata"
+            }
+          ],
           "sites": []
         },
         {
@@ -1403,6 +1458,14 @@
           "confidence": "high",
           "symbols": [
             "BenchmarkDotNet.Toolchains.ArtifactsPaths.IntermediateDirectoryPath { get; set; }"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "32 API surface change(s) in BenchmarkDotNet",
+              "url": null,
+              "locator": "BenchmarkDotNet 0.14.0 → 0.15.8 (netstandard2.0 assembly metadata) · computed by assembly metadata"
+            }
           ],
           "sites": []
         },
@@ -1416,6 +1479,14 @@
             "GetIntermediateDirectoryPath",
             "GeneratorBase.GetIntermediateDirectoryPath"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "32 API surface change(s) in BenchmarkDotNet",
+              "url": null,
+              "locator": "BenchmarkDotNet 0.14.0 → 0.15.8 (netstandard2.0 assembly metadata) · computed by assembly metadata"
+            }
+          ],
           "sites": []
         }
       ]
@@ -1423,6 +1494,9 @@
     {
       "name": "Microsoft.CodeAnalysis.CSharp",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "4.12.0",
       "latest": "5.6.0",
       "selected": "4.14.0",
@@ -1449,6 +1523,14 @@
             "NonTypeMembers",
             "SourceMemberContainerTypeSymbol+DeclaredMembersAndInitializers.NonTypeMembers"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "3 API surface change(s) in Microsoft.CodeAnalysis.CSharp",
+              "url": null,
+              "locator": "Microsoft.CodeAnalysis.CSharp 4.12.0 → 4.14.0 (netstandard2.0 assembly metadata) · computed by assembly metadata"
+            }
+          ],
           "sites": []
         },
         {
@@ -1458,6 +1540,14 @@
           "confidence": "high",
           "symbols": [
             "Microsoft.CodeAnalysis.CSharp.Symbols.SourceMemberContainerTypeSymbol+DeclaredMembersAndInitializers.NonTypeMembers: System.Collections.Immutable.ImmutableArray`1<Microsoft.CodeAnalysis.CSharp.Symbol>"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "3 API surface change(s) in Microsoft.CodeAnalysis.CSharp",
+              "url": null,
+              "locator": "Microsoft.CodeAnalysis.CSharp 4.12.0 → 4.14.0 (netstandard2.0 assembly metadata) · computed by assembly metadata"
+            }
           ],
           "sites": []
         },
@@ -1469,6 +1559,14 @@
           "symbols": [
             "Microsoft.CodeAnalysis.CSharp.Symbols.SourceMemberMethodSymbol+Flags..ctor(Microsoft.CodeAnalysis.MethodKind, Microsoft.CodeAnalysis.RefKind, Microsoft.CodeAnalysis.CSharp.DeclarationModifiers, bool, bool, bool, bool, bool, bool, bool, bool, bool): void"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "3 API surface change(s) in Microsoft.CodeAnalysis.CSharp",
+              "url": null,
+              "locator": "Microsoft.CodeAnalysis.CSharp 4.12.0 → 4.14.0 (netstandard2.0 assembly metadata) · computed by assembly metadata"
+            }
+          ],
           "sites": []
         }
       ]
@@ -1476,6 +1574,9 @@
     {
       "name": "@docusaurus/core",
       "ecosystem": "npm",
+      "manifestPath": "docs/package.json",
+      "workspace": "docs",
+      "workspaceName": null,
       "current": "3.9.2",
       "latest": "3.10.2",
       "selected": "3.10.2",
@@ -1498,6 +1599,14 @@
           "symbols": [
             "WriteHeadingIDOptions"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "1 API surface change(s) in @docusaurus/core",
+              "url": "https://cdn.jsdelivr.net/npm/@docusaurus/core@3.10.2/lib/index.d.ts",
+              "locator": "@docusaurus/core@3.9.2:lib/index.d.ts → @docusaurus/core@3.10.2:lib/index.d.ts"
+            }
+          ],
           "sites": []
         }
       ]
@@ -1505,6 +1614,9 @@
     {
       "name": "FluentAssertions",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "7.0.0",
       "latest": "8.10.0",
       "selected": "7.2.2",
@@ -1529,6 +1641,14 @@
           "symbols": [
             "FluentAssertions.Execution.AssertionFailedException..ctor(System.Runtime.Serialization.SerializationInfo, System.Runtime.Serialization.StreamingContext): void"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "1 API surface change(s) in FluentAssertions",
+              "url": null,
+              "locator": "FluentAssertions 7.0.0 → 7.2.2 (netstandard2.0 assembly metadata) · computed by assembly metadata"
+            }
+          ],
           "sites": []
         }
       ]
@@ -1536,6 +1656,9 @@
     {
       "name": "@docusaurus/plugin-client-redirects",
       "ecosystem": "npm",
+      "manifestPath": "docs/package.json",
+      "workspace": "docs",
+      "workspaceName": null,
       "current": "3.9.2",
       "latest": "3.10.2",
       "selected": "3.10.2",
@@ -1554,44 +1677,55 @@
     {
       "name": "@docusaurus/preset-classic",
       "ecosystem": "npm",
+      "manifestPath": "docs/package.json",
+      "workspace": "docs",
+      "workspaceName": null,
       "current": "3.9.2",
       "latest": "3.10.2",
       "selected": "3.10.2",
       "safeLatest": "3.10.2",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. No breaking changes found for this version of @docusaurus/preset-classic.",
+      "summary": "Safe to upgrade. @docusaurus/preset-classic publishes no TypeScript declarations Drift could compare, so this upgrade rests on prose evidence.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 3,
-      "gaps": [],
+      "gaps": [
+        "@docusaurus/preset-classic publishes no TypeScript declarations Drift could compare, so this upgrade rests on prose evidence."
+      ],
       "breaking": []
     },
     {
       "name": "coverlet.collector",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "6.0.2",
       "latest": "10.0.1",
       "selected": "6.0.4",
       "safeLatest": "6.0.4",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read 2 sets of release notes for coverlet.collector 6.0.4 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "summary": "Safe to upgrade. coverlet.collector 6.0.2 publishes no managed assembly under lib/ or ref/. Meta-packages, analyzers, and native-only packages have no API surface to compare. Drift read 2 sets of release notes for coverlet.collector 6.0.4 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift read 2 sets of release notes for coverlet.collector 6.0.4 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        "coverlet.collector 6.0.2 publishes no managed assembly under lib/ or ref/. Meta-packages, analyzers, and native-only packages have no API surface to compare. Drift read 2 sets of release notes for coverlet.collector 6.0.4 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
       "breaking": []
     },
     {
       "name": "CsvHelper",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "33.0.1",
       "latest": "33.1.0",
       "selected": "33.1.0",
@@ -1612,26 +1746,30 @@
     {
       "name": "HttpMultipartParser",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "8.4.0",
       "latest": "10.0.0",
       "selected": "10.0.0",
       "safeLatest": null,
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read 4 sets of release notes for HttpMultipartParser 10.0.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "summary": "Safe to upgrade. No breaking changes found for this version of HttpMultipartParser.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
-      "gaps": [
-        "Drift read 4 sets of release notes for HttpMultipartParser 10.0.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
-      ],
+      "gaps": [],
       "breaking": []
     },
     {
       "name": "JetBrains.Annotations",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "2024.3.0",
       "latest": "2026.2.0",
       "selected": "2026.2.0",
@@ -1652,26 +1790,32 @@
     {
       "name": "Microsoft.CodeAnalysis.Analyzers",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "3.11.0",
       "latest": "5.6.0",
       "selected": "5.6.0",
       "safeLatest": null,
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read 8 sets of release notes for Microsoft.CodeAnalysis.Analyzers 5.6.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "summary": "Safe to upgrade. Microsoft.CodeAnalysis.Analyzers 3.11.0 publishes no managed assembly under lib/ or ref/. Meta-packages, analyzers, and native-only packages have no API surface to compare. Drift read 8 sets of release notes for Microsoft.CodeAnalysis.Analyzers 5.6.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift read 8 sets of release notes for Microsoft.CodeAnalysis.Analyzers 5.6.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        "Microsoft.CodeAnalysis.Analyzers 3.11.0 publishes no managed assembly under lib/ or ref/. Meta-packages, analyzers, and native-only packages have no API surface to compare. Drift read 8 sets of release notes for Microsoft.CodeAnalysis.Analyzers 5.6.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
       "breaking": []
     },
     {
       "name": "Microsoft.Extensions.Http",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "10.0.0",
       "latest": "10.0.10",
       "selected": "10.0.10",
@@ -1692,66 +1836,78 @@
     {
       "name": "Microsoft.NET.Test.Sdk",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "17.12.0",
       "latest": "18.8.1",
       "selected": "17.14.1",
       "safeLatest": "17.14.1",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. No release notes, changelog, or migration guide was reachable for Microsoft.NET.Test.Sdk 17.14.1, and no source repository could be resolved for it.",
+      "summary": "Safe to upgrade. Microsoft.NET.Test.Sdk 17.12.0 publishes no managed assembly under lib/ or ref/. Meta-packages, analyzers, and native-only packages have no API surface to compare. No release notes, changelog, or migration guide was reachable for Microsoft.NET.Test.Sdk 17.14.1, and no source repository could be resolved for it.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "No release notes, changelog, or migration guide was reachable for Microsoft.NET.Test.Sdk 17.14.1, and no source repository could be resolved for it."
+        "Microsoft.NET.Test.Sdk 17.12.0 publishes no managed assembly under lib/ or ref/. Meta-packages, analyzers, and native-only packages have no API surface to compare. No release notes, changelog, or migration guide was reachable for Microsoft.NET.Test.Sdk 17.14.1, and no source repository could be resolved for it."
       ],
       "breaking": []
     },
     {
       "name": "Microsoft.SourceLink.GitHub",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "8.0.0",
       "latest": "10.0.301",
       "selected": "10.0.301",
       "safeLatest": null,
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read 25 sets of release notes for Microsoft.SourceLink.GitHub 10.0.301 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "summary": "Safe to upgrade. Microsoft.SourceLink.GitHub 8.0.0 publishes no managed assembly under lib/ or ref/. Meta-packages, analyzers, and native-only packages have no API surface to compare. Drift read 25 sets of release notes for Microsoft.SourceLink.GitHub 10.0.301 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift read 25 sets of release notes for Microsoft.SourceLink.GitHub 10.0.301 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        "Microsoft.SourceLink.GitHub 8.0.0 publishes no managed assembly under lib/ or ref/. Meta-packages, analyzers, and native-only packages have no API surface to compare. Drift read 25 sets of release notes for Microsoft.SourceLink.GitHub 10.0.301 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
       "breaking": []
     },
     {
       "name": "MinVer",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "6.0.0",
       "latest": "7.0.0",
       "selected": "6.1.0",
       "safeLatest": "6.1.0",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read the changelog for MinVer 6.1.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "summary": "Safe to upgrade. MinVer 6.0.0 publishes no managed assembly under lib/ or ref/. Meta-packages, analyzers, and native-only packages have no API surface to compare. Drift read the changelog for MinVer 6.1.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift read the changelog for MinVer 6.1.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        "MinVer 6.0.0 publishes no managed assembly under lib/ or ref/. Meta-packages, analyzers, and native-only packages have no API surface to compare. Drift read the changelog for MinVer 6.1.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
       "breaking": []
     },
     {
       "name": "Newtonsoft.Json",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "13.0.3",
       "latest": "13.0.4",
       "selected": "13.0.4",
@@ -1772,106 +1928,120 @@
     {
       "name": "Polly",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "8.5.0",
       "latest": "8.7.0",
       "selected": "8.7.0",
       "safeLatest": "8.7.0",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read 10 sets of release notes and the changelog for Polly 8.7.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "summary": "Safe to upgrade. No breaking changes found for this version of Polly.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
-      "gaps": [
-        "Drift read 10 sets of release notes and the changelog for Polly 8.7.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
-      ],
+      "gaps": [],
       "breaking": []
     },
     {
       "name": "PolySharp",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "1.15.0",
       "latest": "1.16.0",
       "selected": "1.16.0",
       "safeLatest": "1.16.0",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read the release notes for PolySharp 1.16.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "summary": "Safe to upgrade. PolySharp 1.15.0 publishes no managed assembly under lib/ or ref/. Meta-packages, analyzers, and native-only packages have no API surface to compare. Drift read the release notes for PolySharp 1.16.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift read the release notes for PolySharp 1.16.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        "PolySharp 1.15.0 publishes no managed assembly under lib/ or ref/. Meta-packages, analyzers, and native-only packages have no API surface to compare. Drift read the release notes for PolySharp 1.16.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
       "breaking": []
     },
     {
       "name": "react",
       "ecosystem": "npm",
+      "manifestPath": "docs/package.json",
+      "workspace": "docs",
+      "workspaceName": null,
       "current": "19.2.0",
       "latest": "19.2.8",
       "selected": "19.2.8",
       "safeLatest": "19.2.8",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read 8 sets of release notes and the changelog for react 19.2.8 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "summary": "Safe to upgrade. react publishes no TypeScript declarations Drift could compare, so this upgrade rests on prose evidence. Drift read 8 sets of release notes and the changelog for react 19.2.8 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift read 8 sets of release notes and the changelog for react 19.2.8 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        "react publishes no TypeScript declarations Drift could compare, so this upgrade rests on prose evidence. Drift read 8 sets of release notes and the changelog for react 19.2.8 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
       "breaking": []
     },
     {
       "name": "react-dom",
       "ecosystem": "npm",
+      "manifestPath": "docs/package.json",
+      "workspace": "docs",
+      "workspaceName": null,
       "current": "19.2.0",
       "latest": "19.2.8",
       "selected": "19.2.8",
       "safeLatest": "19.2.8",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read 8 sets of release notes and the changelog for react-dom 19.2.8 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "summary": "Safe to upgrade. react-dom publishes no TypeScript declarations Drift could compare, so this upgrade rests on prose evidence. Drift read 8 sets of release notes and the changelog for react-dom 19.2.8 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift read 8 sets of release notes and the changelog for react-dom 19.2.8 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        "react-dom publishes no TypeScript declarations Drift could compare, so this upgrade rests on prose evidence. Drift read 8 sets of release notes and the changelog for react-dom 19.2.8 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
       "breaking": []
     },
     {
       "name": "rest-mock-core",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "0.7.12",
       "latest": "0.9.1",
       "selected": "0.7.14",
       "safeLatest": "0.7.14",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read the changelog for rest-mock-core 0.7.14 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "summary": "Safe to upgrade. No breaking changes found for this version of rest-mock-core.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
-      "gaps": [
-        "Drift read the changelog for rest-mock-core 0.7.14 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
-      ],
+      "gaps": [],
       "breaking": []
     },
     {
       "name": "RichardSzalay.MockHttp",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "7.0.0",
       "latest": "7.1.0",
       "selected": "7.1.0",
@@ -1892,6 +2062,9 @@
     {
       "name": "System.Net.Http.Json",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "9.0.0",
       "latest": "10.0.10",
       "selected": "9.0.18",
@@ -1912,6 +2085,9 @@
     {
       "name": "WireMock.Net",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "1.16.0",
       "latest": "2.14.0",
       "selected": "1.25.0",
@@ -1932,6 +2108,9 @@
     {
       "name": "WireMock.Net.FluentAssertions",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "1.5.51",
       "latest": "2.14.0",
       "selected": "1.25.0",
@@ -1952,20 +2131,23 @@
     {
       "name": "xunit",
       "ecosystem": "nuget",
+      "manifestPath": "Directory.Packages.props",
+      "workspace": "",
+      "workspaceName": null,
       "current": "2.9.2",
       "latest": "2.9.3",
       "selected": "2.9.3",
       "safeLatest": "2.9.3",
       "status": "clean",
       "risk": "none",
-      "summary": "Do not upgrade yet. No release notes, changelog, or migration guide was reachable for xunit 2.9.3, and no source repository could be resolved for it.",
+      "summary": "Do not upgrade yet. xunit 2.9.2 publishes no managed assembly under lib/ or ref/. Meta-packages, analyzers, and native-only packages have no API surface to compare. No release notes, changelog, or migration guide was reachable for xunit 2.9.3, and no source repository could be resolved for it.",
       "recommendation": "do-not-upgrade-yet",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 2,
       "gaps": [
-        "No release notes, changelog, or migration guide was reachable for xunit 2.9.3, and no source repository could be resolved for it."
+        "xunit 2.9.2 publishes no managed assembly under lib/ or ref/. Meta-packages, analyzers, and native-only packages have no API surface to compare. No release notes, changelog, or migration guide was reachable for xunit 2.9.3, and no source repository could be resolved for it."
       ],
       "breaking": []
     }

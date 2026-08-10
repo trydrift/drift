@@ -5,136 +5,137 @@
   "language": "C++",
   "repo": "https://github.com/royshil/obs-backgroundremoval",
   "blurb": "An OBS plugin that pins its native dependencies through vcpkg.",
-  "capturedAt": "2026-08-10T15:53:45.993Z",
+  "capturedAt": "2026-08-10T17:32:56.442Z",
   "commit": "c097c67eb85a080f1cbefeb8ddcf0957375d65df",
-  "durationMs": 19758,
+  "durationMs": 25276,
   "packagesChecked": 4,
   "manifests": [
     "vcpkg.json",
     "pages/package.json"
   ],
+  "nestedGitRepos": [],
   "events": [
     {
-      "at": 15338,
+      "at": 19411,
       "phase": "Looking for manifests",
       "detail": "royshil/obs-backgroundremoval",
       "done": 0,
       "total": 0
     },
     {
-      "at": 15344,
+      "at": 19417,
       "phase": "Reading the workspace",
       "detail": "2 packages · undeclared",
       "done": 0,
       "total": 0
     },
     {
-      "at": 15345,
+      "at": 19417,
       "phase": "Reading manifest",
       "detail": "vcpkg.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 15345,
+      "at": 19418,
       "phase": "Reading manifest",
       "detail": "pages/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 15348,
+      "at": 19421,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 4
     },
     {
-      "at": 15378,
+      "at": 19452,
       "phase": "Indexing your code",
       "detail": "63 files indexed · 4 direct dependencies to check",
       "done": 0,
       "total": 4
     },
     {
-      "at": 15378,
+      "at": 19452,
       "phase": "Checking the npm registry",
       "detail": "@octokit/rest (installed 22.0.1)",
       "done": 0,
       "total": 4
     },
     {
-      "at": 15380,
+      "at": 19453,
       "phase": "Checking the npm registry",
       "detail": "astro (installed 6.4.8)",
       "done": 0,
       "total": 4
     },
     {
-      "at": 15381,
+      "at": 19453,
       "phase": "Checking the npm registry",
       "detail": "pretty-bytes (installed 7.1.1)",
       "done": 0,
       "total": 4
     },
     {
-      "at": 15383,
+      "at": 19454,
       "phase": "Checking the npm registry",
       "detail": "typescript (installed 7.0.2)",
       "done": 0,
       "total": 4
     },
     {
-      "at": 15467,
+      "at": 19771,
       "phase": "Up to date",
       "detail": "pretty-bytes@7.1.1",
       "done": 1,
       "total": 4
     },
     {
-      "at": 15573,
+      "at": 20047,
+      "phase": "Reading release notes and changelog",
+      "detail": "astro 6.4.8 → 7.2.0",
+      "done": 1,
+      "total": 4
+    },
+    {
+      "at": 20195,
       "phase": "Up to date",
       "detail": "@octokit/rest@22.0.1",
       "done": 2,
       "total": 4
     },
     {
-      "at": 15685,
-      "phase": "Reading release notes and changelog",
-      "detail": "astro 6.4.8 → 7.2.0",
-      "done": 2,
-      "total": 4
-    },
-    {
-      "at": 16140,
+      "at": 20490,
       "phase": "Up to date",
       "detail": "typescript@7.0.2",
       "done": 3,
       "total": 4
     },
     {
-      "at": 19397,
+      "at": 24819,
       "phase": "Comparing the public API surface",
       "detail": "astro 6.4.8 → 7.2.0 · 7 evidence sources",
       "done": 3,
       "total": 4
     },
     {
-      "at": 19399,
+      "at": 24823,
       "phase": "Searching your code for 28 breaking changes",
       "detail": "astro 6.4.8 → 7.2.0",
       "done": 3,
       "total": 4
     },
     {
-      "at": 19404,
+      "at": 24827,
       "phase": "Weighing what this upgrade is worth",
       "detail": "astro 6.4.8 → 7.2.0",
       "done": 3,
       "total": 4
     },
     {
-      "at": 19662,
+      "at": 25190,
       "phase": "Checked",
       "detail": "astro 6.4.8 → 7.2.0 · safe for your code · 28 upstream changes, none used here",
       "done": 4,
@@ -145,6 +146,9 @@
     {
       "name": "astro",
       "ecosystem": "npm",
+      "manifestPath": "pages/package.json",
+      "workspace": "pages",
+      "workspaceName": null,
       "current": "6.4.8",
       "latest": "7.2.0",
       "selected": "7.2.0",
@@ -167,6 +171,14 @@
           "symbols": [
             "SSRManifest"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "27 API surface change(s) in astro",
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.0/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts → astro@7.2.0:dist/index.d.ts"
+            }
+          ],
           "sites": []
         },
         {
@@ -176,6 +188,14 @@
           "confidence": "high",
           "symbols": [
             "SSRManifestCSP"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "27 API surface change(s) in astro",
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.0/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts → astro@7.2.0:dist/index.d.ts"
+            }
           ],
           "sites": []
         },
@@ -188,6 +208,14 @@
             "AstroSession.cookies",
             "cookies"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "27 API surface change(s) in astro",
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.0/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts → astro@7.2.0:dist/index.d.ts"
+            }
+          ],
           "sites": []
         },
         {
@@ -197,6 +225,14 @@
           "confidence": "high",
           "symbols": [
             "AstroSession.config"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "27 API surface change(s) in astro",
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.0/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts → astro@7.2.0:dist/index.d.ts"
+            }
           ],
           "sites": []
         }

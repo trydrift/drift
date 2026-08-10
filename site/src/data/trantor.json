@@ -5,165 +5,166 @@
   "language": "C++",
   "repo": "https://github.com/an-tao/trantor",
   "blurb": "The C++ network library underneath Drogon, with a conanfile.txt.",
-  "capturedAt": "2026-08-10T15:53:26.234Z",
+  "capturedAt": "2026-08-10T17:32:31.164Z",
   "commit": "63a4e5e164e219dc3bf30cdbfa1462ae5602fa97",
-  "durationMs": 8247,
+  "durationMs": 12071,
   "packagesChecked": 3,
   "manifests": [
     "conanfile.txt"
   ],
+  "nestedGitRepos": [],
   "events": [
     {
-      "at": 1522,
+      "at": 2734,
       "phase": "Looking for manifests",
       "detail": "an-tao/trantor",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1525,
+      "at": 2740,
       "phase": "Reading manifest",
       "detail": "conanfile.txt",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1526,
+      "at": 2743,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 3
     },
     {
-      "at": 1580,
+      "at": 2894,
       "phase": "Indexing your code",
       "detail": "131 files indexed · 3 direct dependencies to check",
       "done": 0,
       "total": 3
     },
     {
-      "at": 1581,
+      "at": 2894,
       "phase": "Checking the ConanCenter",
       "detail": "gtest (installed 1.10.0)",
       "done": 0,
       "total": 3
     },
     {
-      "at": 1581,
+      "at": 2895,
       "phase": "Checking the ConanCenter",
       "detail": "openssl (installed 1.1.1)",
       "done": 0,
       "total": 3
     },
     {
-      "at": 1581,
+      "at": 2895,
       "phase": "Checking the ConanCenter",
       "detail": "spdlog (installed 1.12.0)",
       "done": 0,
       "total": 3
     },
     {
-      "at": 1586,
+      "at": 2898,
       "phase": "Reading release notes and changelog",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
       "total": 3
     },
     {
-      "at": 1586,
+      "at": 2898,
       "phase": "Reading release notes and changelog",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
       "total": 3
     },
     {
-      "at": 1589,
+      "at": 2899,
       "phase": "Reading release notes and changelog",
       "detail": "gtest 1.10.0 → 1.17.0",
       "done": 0,
       "total": 3
     },
     {
-      "at": 4505,
+      "at": 7646,
       "phase": "Comparing the public API surface",
       "detail": "openssl 1.1.1 → 4.0.1 · 18 evidence sources",
       "done": 0,
       "total": 3
     },
     {
-      "at": 4506,
+      "at": 7647,
       "phase": "Searching your code for 10 breaking changes",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
       "total": 3
     },
     {
-      "at": 4548,
+      "at": 7731,
       "phase": "Weighing what this upgrade is worth",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
       "total": 3
     },
     {
-      "at": 4553,
+      "at": 7739,
       "phase": "Needs your attention",
       "detail": "openssl 1.1.1 → 4.0.1 · affects your code · 3 sites in 1 file",
       "done": 1,
       "total": 3
     },
     {
-      "at": 6166,
+      "at": 9519,
       "phase": "Comparing the public API surface",
       "detail": "gtest 1.10.0 → 1.17.0 · 5 evidence sources",
       "done": 1,
       "total": 3
     },
     {
-      "at": 6239,
+      "at": 9589,
       "phase": "Searching your code for 199 breaking changes",
       "detail": "gtest 1.10.0 → 1.17.0",
       "done": 1,
       "total": 3
     },
     {
-      "at": 6853,
+      "at": 10232,
       "phase": "Weighing what this upgrade is worth",
       "detail": "gtest 1.10.0 → 1.17.0",
       "done": 1,
       "total": 3
     },
     {
-      "at": 6929,
+      "at": 10304,
       "phase": "Needs your attention",
       "detail": "gtest 1.10.0 → 1.17.0 · affects your code · 8 sites in 6 files",
       "done": 2,
       "total": 3
     },
     {
-      "at": 7033,
+      "at": 10839,
       "phase": "Comparing the public API surface",
       "detail": "spdlog 1.12.0 → 1.17.0 · 2 evidence sources",
       "done": 2,
       "total": 3
     },
     {
-      "at": 7054,
+      "at": 10858,
       "phase": "Searching your code for 170 breaking changes",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 2,
       "total": 3
     },
     {
-      "at": 8131,
+      "at": 11952,
       "phase": "Weighing what this upgrade is worth",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 2,
       "total": 3
     },
     {
-      "at": 8155,
+      "at": 11976,
       "phase": "Needs your attention",
-      "detail": "spdlog 1.12.0 → 1.17.0 · affects your code · 30 sites in 1 file",
+      "detail": "spdlog 1.12.0 → 1.17.0 · affects your code · 29 sites in 1 file",
       "done": 3,
       "total": 3
     }
@@ -172,20 +173,22 @@
     {
       "name": "spdlog",
       "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
       "current": "1.12.0",
       "latest": "1.17.0",
       "selected": "1.17.0",
       "safeLatest": "1.17.0",
       "status": "ready",
       "risk": "medium",
-      "summary": "Manual migration required. 30 places in this repository use an API that spdlog changed.",
+      "summary": "Manual migration required. 29 places in this repository use an API that spdlog changed.",
       "recommendation": "manual-migration-required",
       "breakingCount": 170,
-      "impactCount": 30,
+      "impactCount": 29,
       "impactFiles": 1,
       "evidenceCount": 2,
       "gaps": [
-        "Drift read 9 sets of release notes for spdlog 1.17.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
         "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
       ],
       "breaking": [
@@ -196,6 +199,14 @@
           "confidence": "high",
           "symbols": [
             "level"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "170 API surface change(s) in spdlog",
+              "url": null,
+              "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
+            }
           ],
           "sites": [
             {
@@ -235,6 +246,14 @@
           "confidence": "high",
           "symbols": [
             "sinks"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "170 API surface change(s) in spdlog",
+              "url": null,
+              "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
+            }
           ],
           "sites": [
             {
@@ -276,6 +295,14 @@
             "basic_cstring_view.c_str",
             "c_str"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "170 API surface change(s) in spdlog",
+              "url": null,
+              "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
+            }
+          ],
           "sites": [
             {
               "file": "trantor/utils/Logger.cc",
@@ -315,6 +342,14 @@
           "symbols": [
             "name"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "170 API surface change(s) in spdlog",
+              "url": null,
+              "locator": "spdlog 1.12.0 → 1.17.0 (public headers) · computed by header diff"
+            }
+          ],
           "sites": [
             {
               "file": "trantor/utils/Logger.cc",
@@ -351,6 +386,9 @@
     {
       "name": "gtest",
       "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
       "current": "1.10.0",
       "latest": "1.17.0",
       "selected": "1.17.0",
@@ -374,6 +412,14 @@
           "confidence": "high",
           "symbols": [
             "RUN_ALL_TESTS"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "198 API surface change(s) in gtest",
+              "url": null,
+              "locator": "gtest 1.10.0 → 1.17.0 (public headers) · computed by header diff"
+            }
           ],
           "sites": [
             {
@@ -414,6 +460,14 @@
           "symbols": [
             "EXPECT_TRUE"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "198 API surface change(s) in gtest",
+              "url": null,
+              "locator": "gtest 1.10.0 → 1.17.0 (public headers) · computed by header diff"
+            }
+          ],
           "sites": [
             {
               "file": "trantor/unittests/splitStringUnittest.cc",
@@ -439,6 +493,14 @@
           "symbols": [
             "GTEST_DISALLOW_COPY_AND_ASSIGN_"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "198 API surface change(s) in gtest",
+              "url": null,
+              "locator": "gtest 1.10.0 → 1.17.0 (public headers) · computed by header diff"
+            }
+          ],
           "sites": []
         },
         {
@@ -449,6 +511,14 @@
           "symbols": [
             "MOCK_METHOD"
           ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "198 API surface change(s) in gtest",
+              "url": null,
+              "locator": "gtest 1.10.0 → 1.17.0 (public headers) · computed by header diff"
+            }
+          ],
           "sites": []
         }
       ]
@@ -456,6 +526,9 @@
     {
       "name": "openssl",
       "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
       "current": "1.1.1",
       "latest": "4.0.1",
       "selected": "4.0.1",
@@ -469,6 +542,7 @@
       "impactFiles": 1,
       "evidenceCount": 18,
       "gaps": [
+        "No source archive is published for openssl 1.1.1 in ConanCenter, so its headers could not be read.",
         "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
       ],
       "breaking": [
@@ -479,6 +553,14 @@
           "confidence": "medium",
           "symbols": [
             "SSL_get_error"
+          ],
+          "evidence": [
+            {
+              "source": "changelog",
+              "title": "openssl CHANGELOG § 3.6.0",
+              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1586",
+              "locator": "CHANGES.md:1586"
+            }
           ],
           "sites": [
             {
@@ -505,6 +587,14 @@
           "symbols": [
             "OPENSSL_cleanup"
           ],
+          "evidence": [
+            {
+              "source": "changelog",
+              "title": "openssl CHANGELOG § 3.6.0",
+              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1586",
+              "locator": "CHANGES.md:1586"
+            }
+          ],
           "sites": [
             {
               "file": "trantor/net/inner/tlsprovider/OpenSSLProvider.cc",
@@ -523,6 +613,20 @@
           "symbols": [
             "libcrypto"
           ],
+          "evidence": [
+            {
+              "source": "github-release",
+              "title": "openssl OpenSSL 4.0.0-alpha1 release notes",
+              "url": "https://github.com/openssl/openssl/releases/tag/openssl-4.0.0-alpha1",
+              "locator": null
+            },
+            {
+              "source": "changelog",
+              "title": "openssl CHANGELOG § 3.6.0",
+              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1586",
+              "locator": "CHANGES.md:1586"
+            }
+          ],
           "sites": []
         },
         {
@@ -532,6 +636,14 @@
           "confidence": "medium",
           "symbols": [
             "the SSLv2 Client Hello"
+          ],
+          "evidence": [
+            {
+              "source": "github-release",
+              "title": "openssl OpenSSL 4.0.0-alpha1 release notes",
+              "url": "https://github.com/openssl/openssl/releases/tag/openssl-4.0.0-alpha1",
+              "locator": null
+            }
           ],
           "sites": []
         }
