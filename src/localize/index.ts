@@ -678,12 +678,22 @@ function searchFiles(
         const searchable = masked[i]!;
         // The argument list is allowed to start on the next line, which is how
         // a long call gets formatted by every formatter in wide use.
+        matcher.lastIndex = 0;
+        const hit = matcher.exec(searchable);
         if (
-          !matcher.test(searchable) &&
+          !hit &&
           !(invocationOnly && callOpensOnNextLine(symbol, searchable, masked[i + 1]))
         ) {
           continue;
         }
+
+        // What is written immediately before the match decides whether it is a
+        // use of this dependency at all, and neither rule can be expressed in
+        // the matcher because both are about a *different* name.
+        if (hit && qualifiedByAnother(searchable, hit.index, importedNames, foreignNames, locallyDefined)) {
+          continue;
+        }
+        if (hit && isAtomLiteral(searchable, hit.index, candidate.language)) continue;
 
         const unit = fileIndex ? unitAtLine(fileIndex, i + 1) : undefined;
 
@@ -821,6 +831,47 @@ function isImportStatement(line: string): boolean {
 
 const IMPORT_STATEMENT =
   /^\s*(?:@?import\b|from\s+[\w.]+\s+import\b|#\s*include\b|-include(?:_lib)?\(|using\s+(?:static\s+)?[\w.]+\s*;|(?:pub\s+)?use\s+[\w:\\]|alias\s+[A-Z]|require\s+[A-Z]|require(?:_relative|_once)?\s*[("'`]|include(?:_once)?\s*[("']|open\s+[A-Z]|extern\s+crate\b|package\s+[\w.]+\s*;)/;
+
+/**
+ * Is the match a member of something that belongs to somebody else?
+ *
+ * `Scope.push(...)` is a call on Phoenix's own `Scope` module, whatever Plug
+ * did to a function called `push`. The receiver is the evidence and it is
+ * right there in the text: a name bound from another package's import, or
+ * declared in this very file. Phoenix's router was reported as using Plug's
+ * `push` on that exact line, and no reviewer could have acted on it.
+ *
+ * Only a *known* receiver counts. `client.request()` where `client` is a local
+ * variable proves nothing either way, and treating an unknown receiver as
+ * disqualifying would suppress most real findings in object-oriented code.
+ */
+function qualifiedByAnother(
+  line: string,
+  at: number,
+  importedNames: ReadonlySet<string>,
+  foreignNames: ReadonlySet<string>,
+  locallyDefined: ReadonlySet<string>,
+): boolean {
+  const before = line.slice(0, at);
+  const receiver = /([A-Za-z_$][\w$]*)\s*(?:\.|::)\s*$/.exec(before)?.[1];
+  if (!receiver) return false;
+  // A receiver this file bound from *this* dependency is the opposite signal.
+  if (importedNames.has(receiver) || importedNames.has('*')) return false;
+  return foreignNames.has(receiver) || locallyDefined.has(receiver);
+}
+
+/**
+ * `:push` is an atom, not a call.
+ *
+ * Elixir, Erlang and Ruby all spell a bare symbolic constant with a leading
+ * colon, and `{:push, message, state}` is a tuple tag rather than a use of
+ * anything. `::` is excluded because in every language that has it — C++,
+ * Rust, PHP, Ruby's own scope operator — it introduces a real reference.
+ */
+function isAtomLiteral(line: string, at: number, language: FileIndex['language']): boolean {
+  if (language !== 'elixir' && language !== 'erlang' && language !== 'ruby') return false;
+  return line[at - 1] === ':' && line[at - 2] !== ':';
+}
 
 /**
  * Is the matched name bound from a *different* dependency in this file?

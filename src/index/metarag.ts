@@ -1608,6 +1608,45 @@ const DECLARATION_PATTERNS: Partial<
     { pattern: /^def\s+(?:self\.)?(\w+[?!=]?)/, kind: 'method' },
     { pattern: /^(?:class|module)\s+([\w:]+)/, kind: 'class' },
   ],
+  dotnet: [
+    { pattern: /^(?:public|private|protected|internal|sealed|abstract|static|partial|\s)*(?:class|interface|struct|record|enum)\s+(\w+)/, kind: 'class' },
+    { pattern: /^(?:public|private|protected|internal|static|virtual|override|async|sealed|\s)+[\w<>[\],.?\s]+\s+(\w+)\s*\(/, kind: 'method' },
+  ],
+  /**
+   * These six were parsed for their imports before they were parsed for their
+   * declarations, and the gap had a cost. A file with no units has no
+   * enclosing symbol to name in the report, and — since a name a file declares
+   * itself cannot be the dependency's — no way to rule out a match. Phoenix's
+   * `Scope.push` was reported as a use of Plug's `push` for exactly that
+   * reason: `scope.ex` defines `def push(module, path)` two lines above the
+   * match, and Drift could not see it.
+   */
+  php: [
+    { pattern: /^(?:abstract\s+|final\s+|readonly\s+)*(?:class|interface|trait|enum)\s+(\w+)/, kind: 'class' },
+    { pattern: /^(?:public\s+|private\s+|protected\s+|static\s+|abstract\s+|final\s+)*function\s+&?(\w+)\s*\(/, kind: 'function' },
+  ],
+  elixir: [
+    { pattern: /^\s*defmodule\s+([A-Z][\w.]*)/, kind: 'module' },
+    { pattern: /^\s*(?:def|defp|defmacro|defmacrop|defguard|defdelegate)\s+([a-z_]\w*[!?]?)/, kind: 'function' },
+    { pattern: /^\s*(?:defstruct|defexception|defprotocol|defimpl)\s+([A-Z][\w.]*)?/, kind: 'type' },
+  ],
+  erlang: [
+    { pattern: /^([a-z]\w*)\s*\(.*\)\s*(?:when\b.*)?->/, kind: 'function' },
+    { pattern: /^-record\(\s*(\w+)/, kind: 'type' },
+  ],
+  swift: [
+    { pattern: /^(?:public\s+|internal\s+|private\s+|fileprivate\s+|open\s+|final\s+|@\w+\s+)*(?:class|struct|enum|protocol|actor|extension)\s+(\w+)/, kind: 'class' },
+    { pattern: /^(?:public\s+|internal\s+|private\s+|fileprivate\s+|open\s+|static\s+|final\s+|override\s+|mutating\s+|@\w+\s+)*func\s+(\w+)/, kind: 'function' },
+  ],
+  dart: [
+    { pattern: /^(?:abstract\s+|base\s+|final\s+|sealed\s+|interface\s+)*(?:class|mixin|enum|extension)\s+(\w+)/, kind: 'class' },
+    { pattern: /^typedef\s+(\w+)/, kind: 'type' },
+  ],
+  ocaml: [
+    { pattern: /^let\s+(?:rec\s+)?([a-z_]\w*)/, kind: 'function' },
+    { pattern: /^(?:module|module\s+type)\s+([A-Z]\w*)/, kind: 'module' },
+    { pattern: /^type\s+(?:'\w+\s+)?([a-z_]\w*)/, kind: 'type' },
+  ],
   // Aggregates first, then functions. Order is what keeps `struct Foo {` from
   // being read as a function by the return-type-then-name pattern below it,
   // since `extractUnitsByPattern` takes the first rule that matches a line.

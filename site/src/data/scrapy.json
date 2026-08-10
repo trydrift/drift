@@ -5,9 +5,9 @@
   "language": "Python",
   "repo": "https://github.com/scrapy/scrapy",
   "blurb": "The web crawling framework that most Python scrapers are built on.",
-  "capturedAt": "2026-08-10T13:35:08.165Z",
+  "capturedAt": "2026-08-10T15:40:11.822Z",
   "commit": "f1694269d8c9437461936ed449e81aa2ccb3b7cb",
-  "durationMs": 53594,
+  "durationMs": 58637,
   "packagesChecked": 87,
   "manifests": [
     "pyproject.toml",
@@ -15,2520 +15,2520 @@
   ],
   "events": [
     {
-      "at": 2172,
+      "at": 2229,
       "phase": "Looking for manifests",
       "detail": "scrapy/scrapy",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2186,
+      "at": 2245,
       "phase": "Reading the workspace",
       "detail": "2 packages · undeclared",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2186,
+      "at": 2245,
       "phase": "Reading manifest",
       "detail": "pyproject.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2190,
+      "at": 2250,
       "phase": "Reading manifest",
       "detail": "docs/requirements.txt",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2191,
+      "at": 2250,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 87
     },
     {
-      "at": 2408,
+      "at": 2509,
       "phase": "Indexing your code",
       "detail": "485 files indexed · 87 direct dependencies to check",
       "done": 0,
       "total": 87
     },
     {
-      "at": 2408,
+      "at": 2509,
       "phase": "Checking the PyPI",
       "detail": "twisted (installed 21.7.0)",
       "done": 0,
       "total": 87
     },
     {
-      "at": 2408,
+      "at": 2509,
       "phase": "Checking the PyPI",
       "detail": "cryptography (installed 37.0.0)",
       "done": 0,
       "total": 87
     },
     {
-      "at": 2408,
+      "at": 2509,
       "phase": "Checking the PyPI",
       "detail": "cssselect (installed 0.9.1)",
       "done": 0,
       "total": 87
     },
     {
-      "at": 2408,
+      "at": 2509,
       "phase": "Checking the PyPI",
       "detail": "defusedxml (installed 0.7.1)",
       "done": 0,
       "total": 87
     },
     {
-      "at": 2408,
+      "at": 2509,
       "phase": "Checking the PyPI",
       "detail": "itemadapter (installed 0.1.0)",
       "done": 0,
       "total": 87
     },
     {
-      "at": 2408,
+      "at": 2509,
       "phase": "Checking the PyPI",
       "detail": "itemloaders (installed 1.0.1)",
       "done": 0,
       "total": 87
     },
     {
-      "at": 2408,
+      "at": 2509,
       "phase": "Checking the PyPI",
       "detail": "lxml (installed 4.6.4)",
       "done": 0,
       "total": 87
     },
     {
-      "at": 2408,
+      "at": 2509,
       "phase": "Checking the PyPI",
       "detail": "parsel (installed 1.5.0)",
       "done": 0,
       "total": 87
     },
     {
-      "at": 2413,
+      "at": 2512,
       "phase": "Reading release notes and changelog",
       "detail": "cssselect 0.9.1 → 1.5.0",
       "done": 0,
       "total": 87
     },
     {
-      "at": 2414,
-      "phase": "Reading release notes and changelog",
-      "detail": "defusedxml 0.7.1 → 0.8.0",
-      "done": 0,
-      "total": 87
-    },
-    {
-      "at": 2414,
-      "phase": "Reading release notes and changelog",
-      "detail": "itemloaders 1.0.1 → 1.4.0",
-      "done": 0,
-      "total": 87
-    },
-    {
-      "at": 2419,
+      "at": 2516,
       "phase": "Reading release notes and changelog",
       "detail": "twisted 21.7.0 → 26.4.0",
       "done": 0,
       "total": 87
     },
     {
-      "at": 2426,
+      "at": 2517,
+      "phase": "Reading release notes and changelog",
+      "detail": "defusedxml 0.7.1 → 0.8.0",
+      "done": 0,
+      "total": 87
+    },
+    {
+      "at": 2517,
+      "phase": "Reading release notes and changelog",
+      "detail": "itemloaders 1.0.1 → 1.4.0",
+      "done": 0,
+      "total": 87
+    },
+    {
+      "at": 2519,
       "phase": "Reading release notes and changelog",
       "detail": "itemadapter 0.1.0 → 0.13.1",
       "done": 0,
       "total": 87
     },
     {
-      "at": 2426,
+      "at": 2521,
       "phase": "Reading release notes and changelog",
       "detail": "parsel 1.5.0 → 1.11.0",
       "done": 0,
       "total": 87
     },
     {
-      "at": 2459,
+      "at": 2574,
       "phase": "Reading release notes and changelog",
       "detail": "cryptography 37.0.0 → 50.0.0",
       "done": 0,
       "total": 87
     },
     {
-      "at": 2489,
+      "at": 2616,
       "phase": "Reading release notes and changelog",
       "detail": "lxml 4.6.4 → 7.0.0",
       "done": 0,
       "total": 87
     },
     {
-      "at": 6512,
+      "at": 6746,
       "phase": "Comparing the public API surface",
       "detail": "cryptography 37.0.0 → 50.0.0 · 2 evidence sources",
       "done": 0,
       "total": 87
     },
     {
-      "at": 6548,
+      "at": 6784,
       "phase": "Searching your code for 310 breaking changes",
       "detail": "cryptography 37.0.0 → 50.0.0",
       "done": 0,
       "total": 87
     },
     {
-      "at": 11250,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "cryptography 37.0.0 → 50.0.0",
+      "at": 6786,
+      "phase": "Comparing the public API surface",
+      "detail": "parsel 1.5.0 → 1.11.0 · 8 evidence sources",
       "done": 0,
       "total": 87
     },
     {
-      "at": 11692,
+      "at": 6787,
+      "phase": "Searching your code for 13 breaking changes",
+      "detail": "parsel 1.5.0 → 1.11.0",
+      "done": 0,
+      "total": 87
+    },
+    {
+      "at": 6922,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "parsel 1.5.0 → 1.11.0",
+      "done": 0,
+      "total": 87
+    },
+    {
+      "at": 6995,
+      "phase": "Comparing the public API surface",
+      "detail": "defusedxml 0.7.1 → 0.8.0 · 1 evidence source",
+      "done": 0,
+      "total": 87
+    },
+    {
+      "at": 6995,
+      "phase": "No breaking changes to look for",
+      "detail": "defusedxml 0.7.1 → 0.8.0",
+      "done": 0,
+      "total": 87
+    },
+    {
+      "at": 6995,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "defusedxml 0.7.1 → 0.8.0",
+      "done": 0,
+      "total": 87
+    },
+    {
+      "at": 7140,
+      "phase": "Comparing the public API surface",
+      "detail": "cssselect 0.9.1 → 1.5.0 · 2 evidence sources",
+      "done": 0,
+      "total": 87
+    },
+    {
+      "at": 7141,
+      "phase": "Searching your code for 13 breaking changes",
+      "detail": "cssselect 0.9.1 → 1.5.0",
+      "done": 0,
+      "total": 87
+    },
+    {
+      "at": 7156,
       "phase": "Needs your attention",
-      "detail": "cryptography 37.0.0 → 50.0.0 · affects your code · 48 sites in 4 files",
+      "detail": "parsel 1.5.0 → 1.11.0 · affects your code · 4 sites in 1 file",
       "done": 1,
       "total": 87
     },
     {
-      "at": 11692,
+      "at": 7156,
       "phase": "Checking the PyPI",
       "detail": "protego (installed 0.1.15)",
       "done": 1,
       "total": 87
     },
     {
-      "at": 11699,
-      "phase": "Reading release notes and changelog",
-      "detail": "protego 0.1.15 → 0.6.2",
-      "done": 1,
-      "total": 87
-    },
-    {
-      "at": 11848,
+      "at": 7156,
       "phase": "Comparing the public API surface",
       "detail": "itemadapter 0.1.0 → 0.13.1 · 2 evidence sources",
       "done": 1,
       "total": 87
     },
     {
-      "at": 11849,
+      "at": 7157,
       "phase": "Searching your code for 4 breaking changes",
       "detail": "itemadapter 0.1.0 → 0.13.1",
       "done": 1,
       "total": 87
     },
     {
-      "at": 11982,
+      "at": 7158,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "cssselect 0.9.1 → 1.5.0",
+      "done": 1,
+      "total": 87
+    },
+    {
+      "at": 7161,
+      "phase": "Reading release notes and changelog",
+      "detail": "protego 0.1.15 → 0.6.2",
+      "done": 1,
+      "total": 87
+    },
+    {
+      "at": 7178,
+      "phase": "Comparing the public API surface",
+      "detail": "itemloaders 1.0.1 → 1.4.0 · 2 evidence sources",
+      "done": 1,
+      "total": 87
+    },
+    {
+      "at": 7179,
+      "phase": "Searching your code for 1 breaking change",
+      "detail": "itemloaders 1.0.1 → 1.4.0",
+      "done": 1,
+      "total": 87
+    },
+    {
+      "at": 7336,
       "phase": "Weighing what this upgrade is worth",
       "detail": "itemadapter 0.1.0 → 0.13.1",
       "done": 1,
       "total": 87
     },
     {
-      "at": 12099,
-      "phase": "Comparing the public API surface",
-      "detail": "defusedxml 0.7.1 → 0.8.0 · 1 evidence source",
-      "done": 1,
-      "total": 87
-    },
-    {
-      "at": 12099,
-      "phase": "No breaking changes to look for",
-      "detail": "defusedxml 0.7.1 → 0.8.0",
-      "done": 1,
-      "total": 87
-    },
-    {
-      "at": 12099,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "defusedxml 0.7.1 → 0.8.0",
-      "done": 1,
-      "total": 87
-    },
-    {
-      "at": 12120,
-      "phase": "Comparing the public API surface",
-      "detail": "parsel 1.5.0 → 1.11.0 · 8 evidence sources",
-      "done": 1,
-      "total": 87
-    },
-    {
-      "at": 12121,
-      "phase": "Searching your code for 13 breaking changes",
-      "detail": "parsel 1.5.0 → 1.11.0",
-      "done": 1,
-      "total": 87
-    },
-    {
-      "at": 12213,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "parsel 1.5.0 → 1.11.0",
-      "done": 1,
-      "total": 87
-    },
-    {
-      "at": 12215,
+      "at": 7341,
       "phase": "Checked",
-      "detail": "itemadapter 0.1.0 → 0.13.1 · safe for your code · 4 upstream changes, none used here",
+      "detail": "cssselect 0.9.1 → 1.5.0 · safe for your code · 13 upstream changes, none used here",
       "done": 2,
       "total": 87
     },
     {
-      "at": 12215,
+      "at": 7341,
       "phase": "Checking the PyPI",
       "detail": "pyopenssl (installed 22.0.0)",
       "done": 2,
       "total": 87
     },
     {
-      "at": 12221,
+      "at": 7345,
       "phase": "Reading release notes and changelog",
       "detail": "pyopenssl 22.0.0 → 26.4.0",
       "done": 2,
       "total": 87
     },
     {
-      "at": 12276,
-      "phase": "Comparing the public API surface",
-      "detail": "cssselect 0.9.1 → 1.5.0 · 2 evidence sources",
-      "done": 2,
-      "total": 87
-    },
-    {
-      "at": 12276,
-      "phase": "Searching your code for 13 breaking changes",
-      "detail": "cssselect 0.9.1 → 1.5.0",
-      "done": 2,
-      "total": 87
-    },
-    {
-      "at": 12277,
+      "at": 7434,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "cssselect 0.9.1 → 1.5.0",
+      "detail": "itemloaders 1.0.1 → 1.4.0",
       "done": 2,
       "total": 87
     },
     {
-      "at": 12401,
-      "phase": "Needs your attention",
-      "detail": "parsel 1.5.0 → 1.11.0 · affects your code · 4 sites in 1 file",
+      "at": 7674,
+      "phase": "Checked",
+      "detail": "itemloaders 1.0.1 → 1.4.0 · safe for your code · 1 upstream change, none used here",
       "done": 3,
       "total": 87
     },
     {
-      "at": 12401,
+      "at": 7674,
       "phase": "Checking the PyPI",
       "detail": "queuelib (installed 1.6.1)",
       "done": 3,
       "total": 87
     },
     {
-      "at": 12403,
+      "at": 7677,
       "phase": "Reading release notes and changelog",
       "detail": "queuelib 1.6.1 → 1.9.0",
       "done": 3,
       "total": 87
     },
     {
-      "at": 12526,
+      "at": 7832,
+      "phase": "Comparing the public API surface",
+      "detail": "lxml 4.6.4 → 7.0.0 · 1 evidence source",
+      "done": 3,
+      "total": 87
+    },
+    {
+      "at": 7833,
+      "phase": "No breaking changes to look for",
+      "detail": "lxml 4.6.4 → 7.0.0",
+      "done": 3,
+      "total": 87
+    },
+    {
+      "at": 7833,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "lxml 4.6.4 → 7.0.0",
+      "done": 3,
+      "total": 87
+    },
+    {
+      "at": 7869,
       "phase": "Checked",
-      "detail": "cssselect 0.9.1 → 1.5.0 · safe for your code · 13 upstream changes, none used here",
+      "detail": "itemadapter 0.1.0 → 0.13.1 · safe for your code · 4 upstream changes, none used here",
       "done": 4,
       "total": 87
     },
     {
-      "at": 12526,
+      "at": 7869,
       "phase": "Checking the PyPI",
       "detail": "service-identity (installed 23.1.0)",
       "done": 4,
       "total": 87
     },
     {
-      "at": 12528,
+      "at": 7870,
       "phase": "Reading release notes and changelog",
       "detail": "service-identity 23.1.0 → 26.1.0",
       "done": 4,
       "total": 87
     },
     {
-      "at": 12711,
-      "phase": "Comparing the public API surface",
-      "detail": "itemloaders 1.0.1 → 1.4.0 · 2 evidence sources",
-      "done": 4,
-      "total": 87
-    },
-    {
-      "at": 12711,
-      "phase": "Searching your code for 1 breaking change",
-      "detail": "itemloaders 1.0.1 → 1.4.0",
-      "done": 4,
-      "total": 87
-    },
-    {
-      "at": 12712,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "itemloaders 1.0.1 → 1.4.0",
-      "done": 4,
-      "total": 87
-    },
-    {
-      "at": 12798,
+      "at": 8011,
       "phase": "Checked",
       "detail": "defusedxml 0.7.1 → 0.8.0 · safe for your code · no breaking changes found",
       "done": 5,
       "total": 87
     },
     {
-      "at": 12798,
+      "at": 8011,
       "phase": "Checking the PyPI",
       "detail": "w3lib (installed 1.17.0)",
       "done": 5,
       "total": 87
     },
     {
-      "at": 12801,
+      "at": 8013,
       "phase": "Reading release notes and changelog",
       "detail": "w3lib 1.17.0 → 2.4.1",
       "done": 5,
       "total": 87
     },
     {
-      "at": 12888,
+      "at": 13194,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "cryptography 37.0.0 → 50.0.0",
+      "done": 5,
+      "total": 87
+    },
+    {
+      "at": 13202,
       "phase": "Checked",
-      "detail": "itemloaders 1.0.1 → 1.4.0 · safe for your code · 1 upstream change, none used here",
+      "detail": "lxml 4.6.4 → 7.0.0 · worth taking · no breaking changes, and it improves on what you have",
       "done": 6,
       "total": 87
     },
     {
-      "at": 12888,
+      "at": 13202,
       "phase": "Checking the PyPI",
       "detail": "zope-interface (installed 5.1.0)",
       "done": 6,
       "total": 87
     },
     {
-      "at": 12907,
+      "at": 13231,
       "phase": "Reading release notes and changelog",
       "detail": "zope-interface 5.1.0 → 8.5.0",
       "done": 6,
       "total": 87
     },
     {
-      "at": 12913,
-      "phase": "Comparing the public API surface",
-      "detail": "lxml 4.6.4 → 7.0.0 · 1 evidence source",
-      "done": 6,
-      "total": 87
-    },
-    {
-      "at": 12913,
-      "phase": "No breaking changes to look for",
-      "detail": "lxml 4.6.4 → 7.0.0",
-      "done": 6,
-      "total": 87
-    },
-    {
-      "at": 12913,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "lxml 4.6.4 → 7.0.0",
-      "done": 6,
-      "total": 87
-    },
-    {
-      "at": 13217,
-      "phase": "Checked",
-      "detail": "lxml 4.6.4 → 7.0.0 · worth taking · no breaking changes, and it improves on what you have",
+      "at": 13515,
+      "phase": "Needs your attention",
+      "detail": "cryptography 37.0.0 → 50.0.0 · affects your code · 48 sites in 4 files",
       "done": 7,
       "total": 87
     },
     {
-      "at": 13217,
+      "at": 13515,
       "phase": "Checking the PyPI",
       "detail": "pydispatcher (installed 2.0.5)",
       "done": 7,
       "total": 87
     },
     {
-      "at": 13219,
+      "at": 13603,
       "phase": "Reading release notes and changelog",
       "detail": "pydispatcher 2.0.5 → 2.0.7",
       "done": 7,
       "total": 87
     },
     {
-      "at": 14367,
+      "at": 16142,
       "phase": "Comparing the public API surface",
       "detail": "service-identity 23.1.0 → 26.1.0 · 1 evidence source",
       "done": 7,
       "total": 87
     },
     {
-      "at": 14367,
+      "at": 16142,
       "phase": "No breaking changes to look for",
       "detail": "service-identity 23.1.0 → 26.1.0",
       "done": 7,
       "total": 87
     },
     {
-      "at": 14368,
+      "at": 16142,
       "phase": "Weighing what this upgrade is worth",
       "detail": "service-identity 23.1.0 → 26.1.0",
       "done": 7,
       "total": 87
     },
     {
-      "at": 14507,
+      "at": 16328,
       "phase": "Checked",
       "detail": "service-identity 23.1.0 → 26.1.0 · safe for your code · no breaking changes found",
       "done": 8,
       "total": 87
     },
     {
-      "at": 14507,
+      "at": 16328,
       "phase": "Checking the PyPI",
       "detail": "pypydispatcher (installed 2.1.0)",
       "done": 8,
       "total": 87
     },
     {
-      "at": 14510,
+      "at": 16329,
       "phase": "Reading release notes and changelog",
       "detail": "pypydispatcher 2.1.0 → 2.1.2",
       "done": 8,
       "total": 87
     },
     {
-      "at": 14984,
+      "at": 16386,
       "phase": "Comparing the public API surface",
       "detail": "pyopenssl 22.0.0 → 26.4.0 · 2 evidence sources",
       "done": 8,
       "total": 87
     },
     {
-      "at": 14985,
+      "at": 16388,
       "phase": "Searching your code for 27 breaking changes",
       "detail": "pyopenssl 22.0.0 → 26.4.0",
       "done": 8,
       "total": 87
     },
     {
-      "at": 14987,
+      "at": 16620,
       "phase": "Weighing what this upgrade is worth",
       "detail": "pyopenssl 22.0.0 → 26.4.0",
       "done": 8,
       "total": 87
     },
     {
-      "at": 15164,
-      "phase": "Checked",
-      "detail": "pyopenssl 22.0.0 → 26.4.0 · safe for your code · 27 upstream changes, none used here",
+      "at": 16768,
+      "phase": "Needs your attention",
+      "detail": "pyopenssl 22.0.0 → 26.4.0 · affects your code · 1 site in 1 file",
       "done": 9,
       "total": 87
     },
     {
-      "at": 15164,
+      "at": 16768,
       "phase": "Checking the PyPI",
       "detail": "brotli (installed 1.2.0)",
       "done": 9,
       "total": 87
     },
     {
-      "at": 15173,
+      "at": 16774,
       "phase": "Up to date",
       "detail": "brotli@1.2.0",
       "done": 10,
       "total": 87
     },
     {
-      "at": 15173,
+      "at": 16774,
       "phase": "Checking the PyPI",
       "detail": "brotlicffi (installed 1.2.0)",
       "done": 10,
       "total": 87
     },
     {
-      "at": 15176,
+      "at": 16777,
       "phase": "Up to date",
       "detail": "brotlicffi@1.2.0",
       "done": 11,
       "total": 87
     },
     {
-      "at": 15176,
+      "at": 16777,
       "phase": "Checking the PyPI",
       "detail": "alabaster (installed 1.0.0)",
       "done": 11,
       "total": 87
     },
     {
-      "at": 15177,
+      "at": 16778,
       "phase": "Up to date",
       "detail": "alabaster@1.0.0",
       "done": 12,
       "total": 87
     },
     {
-      "at": 15177,
+      "at": 16778,
       "phase": "Checking the PyPI",
       "detail": "annotated-types (installed 0.7.0)",
       "done": 12,
       "total": 87
     },
     {
-      "at": 15178,
+      "at": 16779,
       "phase": "Reading release notes and changelog",
       "detail": "annotated-types 0.7.0 → 0.8.0",
       "done": 12,
       "total": 87
     },
     {
-      "at": 16821,
+      "at": 18098,
       "phase": "Comparing the public API surface",
-      "detail": "twisted 21.7.0 → 26.4.0 · 14 evidence sources",
+      "detail": "queuelib 1.6.1 → 1.9.0 · 4 evidence sources",
       "done": 12,
       "total": 87
     },
     {
-      "at": 16835,
-      "phase": "Searching your code for 117 breaking changes",
-      "detail": "twisted 21.7.0 → 26.4.0",
+      "at": 18098,
+      "phase": "Searching your code for 1 breaking change",
+      "detail": "queuelib 1.6.1 → 1.9.0",
       "done": 12,
       "total": 87
     },
     {
-      "at": 34350,
+      "at": 18124,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "twisted 21.7.0 → 26.4.0",
+      "detail": "queuelib 1.6.1 → 1.9.0",
       "done": 12,
       "total": 87
     },
     {
-      "at": 34731,
-      "phase": "Needs your attention",
-      "detail": "twisted 21.7.0 → 26.4.0 · affects your code · 87 sites in 35 files",
+      "at": 18278,
+      "phase": "Checked",
+      "detail": "queuelib 1.6.1 → 1.9.0 · safe for your code · 1 upstream change, none used here",
       "done": 13,
       "total": 87
     },
     {
-      "at": 34731,
+      "at": 18278,
       "phase": "Checking the PyPI",
       "detail": "attrs (installed 26.1.0)",
       "done": 13,
       "total": 87
     },
     {
-      "at": 34733,
+      "at": 18281,
       "phase": "Up to date",
       "detail": "attrs@26.1.0",
       "done": 14,
       "total": 87
     },
     {
-      "at": 34733,
+      "at": 18281,
       "phase": "Checking the PyPI",
       "detail": "automat (installed 25.4.16)",
       "done": 14,
       "total": 87
     },
     {
-      "at": 34734,
+      "at": 18282,
       "phase": "Up to date",
       "detail": "automat@25.4.16",
       "done": 15,
       "total": 87
     },
     {
-      "at": 34734,
+      "at": 18282,
       "phase": "Checking the PyPI",
       "detail": "babel (installed 2.18.0)",
       "done": 15,
       "total": 87
     },
     {
-      "at": 34737,
+      "at": 18283,
       "phase": "Up to date",
       "detail": "babel@2.18.0",
       "done": 16,
       "total": 87
     },
     {
-      "at": 34737,
+      "at": 18283,
       "phase": "Checking the PyPI",
       "detail": "certifi (installed 2026.2.25)",
       "done": 16,
       "total": 87
     },
     {
-      "at": 34739,
+      "at": 18286,
       "phase": "Reading release notes and changelog",
       "detail": "certifi 2026.2.25 → 2026.7.22",
       "done": 16,
       "total": 87
     },
     {
-      "at": 34761,
+      "at": 18358,
       "phase": "Comparing the public API surface",
       "detail": "zope-interface 5.1.0 → 8.5.0 · 1 evidence source",
       "done": 16,
       "total": 87
     },
     {
-      "at": 34761,
+      "at": 18358,
       "phase": "No breaking changes to look for",
       "detail": "zope-interface 5.1.0 → 8.5.0",
       "done": 16,
       "total": 87
     },
     {
-      "at": 34761,
+      "at": 18358,
       "phase": "Weighing what this upgrade is worth",
       "detail": "zope-interface 5.1.0 → 8.5.0",
       "done": 16,
       "total": 87
     },
     {
-      "at": 34793,
+      "at": 18467,
       "phase": "Comparing the public API surface",
-      "detail": "queuelib 1.6.1 → 1.9.0 · 4 evidence sources",
+      "detail": "twisted 21.7.0 → 26.4.0 · 14 evidence sources",
       "done": 16,
       "total": 87
     },
     {
-      "at": 34793,
-      "phase": "Searching your code for 1 breaking change",
-      "detail": "queuelib 1.6.1 → 1.9.0",
+      "at": 18480,
+      "phase": "Searching your code for 117 breaking changes",
+      "detail": "twisted 21.7.0 → 26.4.0",
       "done": 16,
       "total": 87
     },
     {
-      "at": 34794,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "queuelib 1.6.1 → 1.9.0",
-      "done": 16,
-      "total": 87
-    },
-    {
-      "at": 34934,
+      "at": 18497,
       "phase": "Checked",
       "detail": "zope-interface 5.1.0 → 8.5.0 · worth taking · no breaking changes, and it improves on what you have",
       "done": 17,
       "total": 87
     },
     {
-      "at": 34934,
+      "at": 18497,
       "phase": "Checking the PyPI",
       "detail": "cffi (installed 2.0.0)",
       "done": 17,
       "total": 87
     },
     {
-      "at": 34951,
+      "at": 18513,
       "phase": "Reading release notes and changelog",
       "detail": "cffi 2.0.0 → 2.1.1",
       "done": 17,
       "total": 87
     },
     {
-      "at": 35039,
-      "phase": "Checked",
-      "detail": "queuelib 1.6.1 → 1.9.0 · safe for your code · 1 upstream change, none used here",
+      "at": 18555,
+      "phase": "Comparing the public API surface",
+      "detail": "w3lib 1.17.0 → 2.4.1 · 6 evidence sources",
+      "done": 17,
+      "total": 87
+    },
+    {
+      "at": 18555,
+      "phase": "Searching your code for 13 breaking changes",
+      "detail": "w3lib 1.17.0 → 2.4.1",
+      "done": 17,
+      "total": 87
+    },
+    {
+      "at": 36679,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "twisted 21.7.0 → 26.4.0",
+      "done": 17,
+      "total": 87
+    },
+    {
+      "at": 36683,
+      "phase": "Comparing the public API surface",
+      "detail": "pydispatcher 2.0.5 → 2.0.7 · 2 evidence sources",
+      "done": 17,
+      "total": 87
+    },
+    {
+      "at": 36683,
+      "phase": "Searching your code for 3 breaking changes",
+      "detail": "pydispatcher 2.0.5 → 2.0.7",
+      "done": 17,
+      "total": 87
+    },
+    {
+      "at": 37306,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "w3lib 1.17.0 → 2.4.1",
+      "done": 17,
+      "total": 87
+    },
+    {
+      "at": 37365,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pydispatcher 2.0.5 → 2.0.7",
+      "done": 17,
+      "total": 87
+    },
+    {
+      "at": 37709,
+      "phase": "Needs your attention",
+      "detail": "w3lib 1.17.0 → 2.4.1 · affects your code · 25 sites in 10 files",
       "done": 18,
       "total": 87
     },
     {
-      "at": 35039,
+      "at": 37709,
       "phase": "Checking the PyPI",
       "detail": "charset-normalizer (installed 3.4.6)",
       "done": 18,
       "total": 87
     },
     {
-      "at": 35063,
-      "phase": "Reading release notes and changelog",
-      "detail": "charset-normalizer 3.4.6 → 3.4.9",
-      "done": 18,
-      "total": 87
-    },
-    {
-      "at": 35084,
-      "phase": "Comparing the public API surface",
-      "detail": "w3lib 1.17.0 → 2.4.1 · 6 evidence sources",
-      "done": 18,
-      "total": 87
-    },
-    {
-      "at": 35085,
-      "phase": "Searching your code for 13 breaking changes",
-      "detail": "w3lib 1.17.0 → 2.4.1",
-      "done": 18,
-      "total": 87
-    },
-    {
-      "at": 35693,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "w3lib 1.17.0 → 2.4.1",
-      "done": 18,
-      "total": 87
-    },
-    {
-      "at": 35861,
-      "phase": "Needs your attention",
-      "detail": "w3lib 1.17.0 → 2.4.1 · affects your code · 25 sites in 10 files",
+      "at": 37710,
+      "phase": "Checked",
+      "detail": "pydispatcher 2.0.5 → 2.0.7 · safe for your code · 3 upstream changes, none used here",
       "done": 19,
       "total": 87
     },
     {
-      "at": 35861,
+      "at": 37710,
       "phase": "Checking the PyPI",
       "detail": "constantly (installed 23.10.4)",
       "done": 19,
       "total": 87
     },
     {
-      "at": 35863,
+      "at": 37713,
       "phase": "Up to date",
       "detail": "constantly@23.10.4",
       "done": 20,
       "total": 87
     },
     {
-      "at": 35863,
+      "at": 37713,
       "phase": "Checking the PyPI",
       "detail": "cryptography (installed 46.0.6)",
       "done": 20,
       "total": 87
     },
     {
-      "at": 35864,
+      "at": 37714,
       "phase": "Reading release notes and changelog",
       "detail": "cryptography 46.0.6 → 46.0.7",
       "done": 20,
       "total": 87
     },
     {
-      "at": 36138,
-      "phase": "Comparing the public API surface",
-      "detail": "pydispatcher 2.0.5 → 2.0.7 · 2 evidence sources",
+      "at": 37737,
+      "phase": "Reading release notes and changelog",
+      "detail": "charset-normalizer 3.4.6 → 3.4.9",
       "done": 20,
       "total": 87
     },
     {
-      "at": 36138,
-      "phase": "Searching your code for 3 breaking changes",
-      "detail": "pydispatcher 2.0.5 → 2.0.7",
-      "done": 20,
-      "total": 87
-    },
-    {
-      "at": 36138,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "pydispatcher 2.0.5 → 2.0.7",
-      "done": 20,
-      "total": 87
-    },
-    {
-      "at": 36277,
-      "phase": "Checked",
-      "detail": "pydispatcher 2.0.5 → 2.0.7 · safe for your code · 3 upstream changes, none used here",
+      "at": 37916,
+      "phase": "Needs your attention",
+      "detail": "twisted 21.7.0 → 26.4.0 · affects your code · 87 sites in 35 files",
       "done": 21,
       "total": 87
     },
     {
-      "at": 36277,
+      "at": 37916,
       "phase": "Checking the PyPI",
       "detail": "cssselect (installed 1.4.0)",
       "done": 21,
       "total": 87
     },
     {
-      "at": 36277,
+      "at": 37916,
       "phase": "Reading release notes and changelog",
       "detail": "cssselect 1.4.0 → 1.5.0",
       "done": 21,
       "total": 87
     },
     {
-      "at": 36661,
+      "at": 38407,
       "phase": "Comparing the public API surface",
       "detail": "cssselect 1.4.0 → 1.5.0 · 2 evidence sources",
       "done": 21,
       "total": 87
     },
     {
-      "at": 36661,
+      "at": 38407,
       "phase": "Searching your code for 1 breaking change",
       "detail": "cssselect 1.4.0 → 1.5.0",
       "done": 21,
       "total": 87
     },
     {
-      "at": 36661,
+      "at": 38407,
       "phase": "Weighing what this upgrade is worth",
       "detail": "cssselect 1.4.0 → 1.5.0",
       "done": 21,
       "total": 87
     },
     {
-      "at": 36798,
+      "at": 38567,
       "phase": "Checked",
       "detail": "cssselect 1.4.0 → 1.5.0 · safe for your code · 1 upstream change, none used here",
       "done": 22,
       "total": 87
     },
     {
-      "at": 36798,
+      "at": 38567,
       "phase": "Checking the PyPI",
       "detail": "defusedxml (installed 0.7.1)",
       "done": 22,
       "total": 87
     },
     {
-      "at": 36798,
+      "at": 38567,
       "phase": "Reading release notes and changelog",
       "detail": "defusedxml 0.7.1 → 0.8.0",
       "done": 22,
       "total": 87
     },
     {
-      "at": 36995,
+      "at": 38574,
       "phase": "Comparing the public API surface",
-      "detail": "defusedxml 0.7.1 → 0.8.0 · 1 evidence source",
+      "detail": "protego 0.1.15 → 0.6.2 · 5 evidence sources",
       "done": 22,
       "total": 87
     },
     {
-      "at": 36995,
-      "phase": "No breaking changes to look for",
-      "detail": "defusedxml 0.7.1 → 0.8.0",
+      "at": 38574,
+      "phase": "Searching your code for 5 breaking changes",
+      "detail": "protego 0.1.15 → 0.6.2",
       "done": 22,
       "total": 87
     },
     {
-      "at": 36995,
+      "at": 38604,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "defusedxml 0.7.1 → 0.8.0",
+      "detail": "protego 0.1.15 → 0.6.2",
       "done": 22,
       "total": 87
     },
     {
-      "at": 37121,
-      "phase": "Checked",
-      "detail": "defusedxml 0.7.1 → 0.8.0 · safe for your code · no breaking changes found",
+      "at": 38787,
+      "phase": "Needs your attention",
+      "detail": "protego 0.1.15 → 0.6.2 · affects your code · 2 sites in 1 file",
       "done": 23,
       "total": 87
     },
     {
-      "at": 37121,
+      "at": 38787,
       "phase": "Checking the PyPI",
       "detail": "docutils (installed 0.22.4)",
       "done": 23,
       "total": 87
     },
     {
-      "at": 37124,
+      "at": 38793,
       "phase": "Reading release notes and changelog",
       "detail": "docutils 0.22.4 → 0.23.0",
       "done": 23,
       "total": 87
     },
     {
-      "at": 37363,
+      "at": 38800,
       "phase": "Comparing the public API surface",
-      "detail": "cryptography 46.0.6 → 46.0.7 · 1 evidence source",
+      "detail": "defusedxml 0.7.1 → 0.8.0 · 1 evidence source",
       "done": 23,
       "total": 87
     },
     {
-      "at": 37363,
+      "at": 38800,
       "phase": "No breaking changes to look for",
-      "detail": "cryptography 46.0.6 → 46.0.7",
+      "detail": "defusedxml 0.7.1 → 0.8.0",
       "done": 23,
       "total": 87
     },
     {
-      "at": 37363,
+      "at": 38800,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "cryptography 46.0.6 → 46.0.7",
+      "detail": "defusedxml 0.7.1 → 0.8.0",
       "done": 23,
       "total": 87
     },
     {
-      "at": 37544,
+      "at": 39008,
       "phase": "Checked",
-      "detail": "cryptography 46.0.6 → 46.0.7 · worth taking · no breaking changes, and it improves on what you have",
+      "detail": "defusedxml 0.7.1 → 0.8.0 · safe for your code · no breaking changes found",
       "done": 24,
       "total": 87
     },
     {
-      "at": 37544,
+      "at": 39008,
       "phase": "Checking the PyPI",
       "detail": "filelock (installed 3.25.2)",
       "done": 24,
       "total": 87
     },
     {
-      "at": 37548,
+      "at": 39018,
       "phase": "Reading release notes and changelog",
       "detail": "filelock 3.25.2 → 3.32.2",
       "done": 24,
       "total": 87
     },
     {
-      "at": 37975,
+      "at": 39413,
       "phase": "Comparing the public API surface",
-      "detail": "pypydispatcher 2.1.0 → 2.1.2 · 1 evidence source",
+      "detail": "cryptography 46.0.6 → 46.0.7 · 1 evidence source",
       "done": 24,
       "total": 87
     },
     {
-      "at": 37975,
+      "at": 39413,
       "phase": "No breaking changes to look for",
-      "detail": "pypydispatcher 2.1.0 → 2.1.2",
+      "detail": "cryptography 46.0.6 → 46.0.7",
       "done": 24,
       "total": 87
     },
     {
-      "at": 37975,
+      "at": 39413,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "pypydispatcher 2.1.0 → 2.1.2",
+      "detail": "cryptography 46.0.6 → 46.0.7",
       "done": 24,
       "total": 87
     },
     {
-      "at": 38119,
+      "at": 39605,
       "phase": "Checked",
-      "detail": "pypydispatcher 2.1.0 → 2.1.2 · safe for your code · no breaking changes found",
+      "detail": "cryptography 46.0.6 → 46.0.7 · worth taking · no breaking changes, and it improves on what you have",
       "done": 25,
       "total": 87
     },
     {
-      "at": 38119,
+      "at": 39605,
       "phase": "Checking the PyPI",
       "detail": "h2 (installed 4.3.0)",
       "done": 25,
       "total": 87
     },
     {
-      "at": 38121,
+      "at": 39607,
       "phase": "Reading release notes and changelog",
       "detail": "h2 4.3.0 → 4.4.1",
       "done": 25,
       "total": 87
     },
     {
-      "at": 38371,
-      "phase": "Comparing the public API surface",
-      "detail": "protego 0.1.15 → 0.6.2 · 5 evidence sources",
-      "done": 25,
-      "total": 87
-    },
-    {
-      "at": 38371,
-      "phase": "Searching your code for 5 breaking changes",
-      "detail": "protego 0.1.15 → 0.6.2",
-      "done": 25,
-      "total": 87
-    },
-    {
-      "at": 38375,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "protego 0.1.15 → 0.6.2",
-      "done": 25,
-      "total": 87
-    },
-    {
-      "at": 38391,
-      "phase": "Comparing the public API surface",
-      "detail": "annotated-types 0.7.0 → 0.8.0 · 1 evidence source",
-      "done": 25,
-      "total": 87
-    },
-    {
-      "at": 38391,
-      "phase": "No breaking changes to look for",
-      "detail": "annotated-types 0.7.0 → 0.8.0",
-      "done": 25,
-      "total": 87
-    },
-    {
-      "at": 38391,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "annotated-types 0.7.0 → 0.8.0",
-      "done": 25,
-      "total": 87
-    },
-    {
-      "at": 38490,
+      "at": 40001,
       "phase": "Comparing the public API surface",
       "detail": "docutils 0.22.4 → 0.23.0 · 1 evidence source",
       "done": 25,
       "total": 87
     },
     {
-      "at": 38490,
+      "at": 40001,
       "phase": "No breaking changes to look for",
       "detail": "docutils 0.22.4 → 0.23.0",
       "done": 25,
       "total": 87
     },
     {
-      "at": 38490,
+      "at": 40002,
       "phase": "Weighing what this upgrade is worth",
       "detail": "docutils 0.22.4 → 0.23.0",
       "done": 25,
       "total": 87
     },
     {
-      "at": 38558,
-      "phase": "Needs your attention",
-      "detail": "protego 0.1.15 → 0.6.2 · affects your code · 2 sites in 1 file",
+      "at": 40163,
+      "phase": "Comparing the public API surface",
+      "detail": "pypydispatcher 2.1.0 → 2.1.2 · 1 evidence source",
+      "done": 25,
+      "total": 87
+    },
+    {
+      "at": 40163,
+      "phase": "No breaking changes to look for",
+      "detail": "pypydispatcher 2.1.0 → 2.1.2",
+      "done": 25,
+      "total": 87
+    },
+    {
+      "at": 40163,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pypydispatcher 2.1.0 → 2.1.2",
+      "done": 25,
+      "total": 87
+    },
+    {
+      "at": 40167,
+      "phase": "Checked",
+      "detail": "docutils 0.22.4 → 0.23.0 · safe for your code · no breaking changes found",
       "done": 26,
       "total": 87
     },
     {
-      "at": 38558,
+      "at": 40167,
       "phase": "Checking the PyPI",
       "detail": "hpack (installed 4.1.0)",
       "done": 26,
       "total": 87
     },
     {
-      "at": 38568,
+      "at": 40168,
       "phase": "Reading release notes and changelog",
       "detail": "hpack 4.1.0 → 4.2.0",
       "done": 26,
       "total": 87
     },
     {
-      "at": 38572,
+      "at": 40216,
+      "phase": "Comparing the public API surface",
+      "detail": "annotated-types 0.7.0 → 0.8.0 · 1 evidence source",
+      "done": 26,
+      "total": 87
+    },
+    {
+      "at": 40216,
+      "phase": "No breaking changes to look for",
+      "detail": "annotated-types 0.7.0 → 0.8.0",
+      "done": 26,
+      "total": 87
+    },
+    {
+      "at": 40216,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "annotated-types 0.7.0 → 0.8.0",
+      "done": 26,
+      "total": 87
+    },
+    {
+      "at": 40330,
       "phase": "Checked",
-      "detail": "annotated-types 0.7.0 → 0.8.0 · worth taking · no breaking changes, and it improves on what you have",
+      "detail": "pypydispatcher 2.1.0 → 2.1.2 · safe for your code · no breaking changes found",
       "done": 27,
       "total": 87
     },
     {
-      "at": 38573,
+      "at": 40330,
       "phase": "Checking the PyPI",
       "detail": "hyperframe (installed 6.1.0)",
       "done": 27,
       "total": 87
     },
     {
-      "at": 38576,
+      "at": 40331,
       "phase": "Up to date",
       "detail": "hyperframe@6.1.0",
       "done": 28,
       "total": 87
     },
     {
-      "at": 38576,
+      "at": 40331,
       "phase": "Checking the PyPI",
       "detail": "hyperlink (installed 21.0.0)",
       "done": 28,
       "total": 87
     },
     {
-      "at": 38577,
+      "at": 40332,
       "phase": "Up to date",
       "detail": "hyperlink@21.0.0",
       "done": 29,
       "total": 87
     },
     {
-      "at": 38577,
+      "at": 40332,
       "phase": "Checking the PyPI",
       "detail": "idna (installed 3.11.0)",
       "done": 29,
       "total": 87
     },
     {
-      "at": 38580,
+      "at": 40334,
       "phase": "Reading release notes and changelog",
       "detail": "idna 3.11.0 → 3.18.0",
       "done": 29,
       "total": 87
     },
     {
-      "at": 38698,
+      "at": 40422,
       "phase": "Checked",
-      "detail": "docutils 0.22.4 → 0.23.0 · safe for your code · no breaking changes found",
+      "detail": "annotated-types 0.7.0 → 0.8.0 · worth taking · no breaking changes, and it improves on what you have",
       "done": 30,
       "total": 87
     },
     {
-      "at": 38698,
+      "at": 40422,
       "phase": "Checking the PyPI",
       "detail": "imagesize (installed 2.0.0)",
       "done": 30,
       "total": 87
     },
     {
-      "at": 38699,
+      "at": 40423,
       "phase": "Up to date",
       "detail": "imagesize@2.0.0",
       "done": 31,
       "total": 87
     },
     {
-      "at": 38699,
+      "at": 40423,
       "phase": "Checking the PyPI",
       "detail": "incremental (installed 24.11.0)",
       "done": 31,
       "total": 87
     },
     {
-      "at": 38701,
+      "at": 40425,
       "phase": "Up to date",
       "detail": "incremental@24.11.0",
       "done": 32,
       "total": 87
     },
     {
-      "at": 38701,
+      "at": 40425,
       "phase": "Checking the PyPI",
       "detail": "itemadapter (installed 0.13.1)",
       "done": 32,
       "total": 87
     },
     {
-      "at": 38701,
+      "at": 40425,
       "phase": "Up to date",
       "detail": "itemadapter@0.13.1",
       "done": 33,
       "total": 87
     },
     {
-      "at": 38701,
+      "at": 40425,
       "phase": "Checking the PyPI",
       "detail": "itemloaders (installed 1.4.0)",
       "done": 33,
       "total": 87
     },
     {
-      "at": 38701,
+      "at": 40425,
       "phase": "Up to date",
       "detail": "itemloaders@1.4.0",
       "done": 34,
       "total": 87
     },
     {
-      "at": 38701,
+      "at": 40425,
       "phase": "Checking the PyPI",
       "detail": "jinja2 (installed 3.1.6)",
       "done": 34,
       "total": 87
     },
     {
-      "at": 38703,
+      "at": 40426,
       "phase": "Up to date",
       "detail": "jinja2@3.1.6",
       "done": 35,
       "total": 87
     },
     {
-      "at": 38703,
+      "at": 40426,
       "phase": "Checking the PyPI",
       "detail": "jmespath (installed 1.1.0)",
       "done": 35,
       "total": 87
     },
     {
-      "at": 38704,
+      "at": 40428,
       "phase": "Up to date",
       "detail": "jmespath@1.1.0",
       "done": 36,
       "total": 87
     },
     {
-      "at": 38704,
+      "at": 40428,
       "phase": "Checking the PyPI",
       "detail": "lxml (installed 6.0.2)",
       "done": 36,
       "total": 87
     },
     {
-      "at": 38705,
+      "at": 40428,
       "phase": "Reading release notes and changelog",
       "detail": "lxml 6.0.2 → 6.1.1",
       "done": 36,
       "total": 87
     },
     {
-      "at": 39148,
+      "at": 41674,
+      "phase": "Comparing the public API surface",
+      "detail": "certifi 2026.2.25 → 2026.7.22 · 1 evidence source",
+      "done": 36,
+      "total": 87
+    },
+    {
+      "at": 41674,
+      "phase": "No breaking changes to look for",
+      "detail": "certifi 2026.2.25 → 2026.7.22",
+      "done": 36,
+      "total": 87
+    },
+    {
+      "at": 41674,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "certifi 2026.2.25 → 2026.7.22",
+      "done": 36,
+      "total": 87
+    },
+    {
+      "at": 41782,
       "phase": "Comparing the public API surface",
       "detail": "charset-normalizer 3.4.6 → 3.4.9 · 4 evidence sources",
       "done": 36,
       "total": 87
     },
     {
-      "at": 39149,
+      "at": 41782,
       "phase": "Searching your code for 2 breaking changes",
       "detail": "charset-normalizer 3.4.6 → 3.4.9",
       "done": 36,
       "total": 87
     },
     {
-      "at": 39149,
+      "at": 41810,
       "phase": "Weighing what this upgrade is worth",
       "detail": "charset-normalizer 3.4.6 → 3.4.9",
       "done": 36,
       "total": 87
     },
     {
-      "at": 39308,
+      "at": 41884,
       "phase": "Checked",
-      "detail": "charset-normalizer 3.4.6 → 3.4.9 · safe for your code · 2 upstream changes, none used here",
+      "detail": "certifi 2026.2.25 → 2026.7.22 · safe for your code · no breaking changes found",
       "done": 37,
       "total": 87
     },
     {
-      "at": 39308,
+      "at": 41884,
       "phase": "Checking the PyPI",
       "detail": "markupsafe (installed 3.0.3)",
       "done": 37,
       "total": 87
     },
     {
-      "at": 39317,
+      "at": 41940,
       "phase": "Up to date",
       "detail": "markupsafe@3.0.3",
       "done": 38,
       "total": 87
     },
     {
-      "at": 39317,
+      "at": 41940,
       "phase": "Checking the PyPI",
       "detail": "packaging (installed 26.0.0)",
       "done": 38,
       "total": 87
     },
     {
-      "at": 39320,
+      "at": 41951,
       "phase": "Reading release notes and changelog",
       "detail": "packaging 26.0.0 → 26.3.0",
       "done": 38,
       "total": 87
     },
     {
-      "at": 39338,
+      "at": 41959,
       "phase": "Comparing the public API surface",
-      "detail": "certifi 2026.2.25 → 2026.7.22 · 1 evidence source",
+      "detail": "lxml 6.0.2 → 6.1.1 · 1 evidence source",
       "done": 38,
       "total": 87
     },
     {
-      "at": 39338,
+      "at": 41959,
       "phase": "No breaking changes to look for",
-      "detail": "certifi 2026.2.25 → 2026.7.22",
+      "detail": "lxml 6.0.2 → 6.1.1",
       "done": 38,
       "total": 87
     },
     {
-      "at": 39338,
+      "at": 41959,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "certifi 2026.2.25 → 2026.7.22",
+      "detail": "lxml 6.0.2 → 6.1.1",
       "done": 38,
       "total": 87
     },
     {
-      "at": 39498,
+      "at": 42114,
       "phase": "Checked",
-      "detail": "certifi 2026.2.25 → 2026.7.22 · safe for your code · no breaking changes found",
+      "detail": "lxml 6.0.2 → 6.1.1 · worth taking · no breaking changes, and it improves on what you have",
       "done": 39,
       "total": 87
     },
     {
-      "at": 39498,
+      "at": 42114,
       "phase": "Checking the PyPI",
       "detail": "parsel (installed 1.11.0)",
       "done": 39,
       "total": 87
     },
     {
-      "at": 39498,
+      "at": 42114,
       "phase": "Up to date",
       "detail": "parsel@1.11.0",
       "done": 40,
       "total": 87
     },
     {
-      "at": 39498,
+      "at": 42114,
       "phase": "Checking the PyPI",
       "detail": "protego (installed 0.6.0)",
       "done": 40,
       "total": 87
     },
     {
-      "at": 39499,
+      "at": 42114,
       "phase": "Reading release notes and changelog",
       "detail": "protego 0.6.0 → 0.6.2",
       "done": 40,
       "total": 87
     },
     {
-      "at": 40859,
-      "phase": "Comparing the public API surface",
-      "detail": "cffi 2.0.0 → 2.1.1 · 3 evidence sources",
-      "done": 40,
-      "total": 87
-    },
-    {
-      "at": 40859,
-      "phase": "Searching your code for 1 breaking change",
-      "detail": "cffi 2.0.0 → 2.1.1",
-      "done": 40,
-      "total": 87
-    },
-    {
-      "at": 40859,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "cffi 2.0.0 → 2.1.1",
-      "done": 40,
-      "total": 87
-    },
-    {
-      "at": 40997,
+      "at": 42327,
       "phase": "Checked",
-      "detail": "cffi 2.0.0 → 2.1.1 · safe for your code · 1 upstream change, none used here",
+      "detail": "charset-normalizer 3.4.6 → 3.4.9 · safe for your code · 2 upstream changes, none used here",
       "done": 41,
       "total": 87
     },
     {
-      "at": 40997,
+      "at": 42327,
       "phase": "Checking the PyPI",
       "detail": "pyasn1 (installed 0.6.3)",
       "done": 41,
       "total": 87
     },
     {
-      "at": 41002,
+      "at": 42330,
       "phase": "Reading release notes and changelog",
       "detail": "pyasn1 0.6.3 → 0.6.4",
       "done": 41,
       "total": 87
     },
     {
-      "at": 41452,
+      "at": 43256,
       "phase": "Comparing the public API surface",
-      "detail": "lxml 6.0.2 → 6.1.1 · 1 evidence source",
+      "detail": "cffi 2.0.0 → 2.1.1 · 3 evidence sources",
       "done": 41,
       "total": 87
     },
     {
-      "at": 41452,
-      "phase": "No breaking changes to look for",
-      "detail": "lxml 6.0.2 → 6.1.1",
+      "at": 43256,
+      "phase": "Searching your code for 1 breaking change",
+      "detail": "cffi 2.0.0 → 2.1.1",
       "done": 41,
       "total": 87
     },
     {
-      "at": 41452,
+      "at": 43278,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "lxml 6.0.2 → 6.1.1",
+      "detail": "cffi 2.0.0 → 2.1.1",
       "done": 41,
       "total": 87
     },
     {
-      "at": 41600,
+      "at": 43369,
+      "phase": "Comparing the public API surface",
+      "detail": "filelock 3.25.2 → 3.32.2 · 3 evidence sources",
+      "done": 41,
+      "total": 87
+    },
+    {
+      "at": 43369,
+      "phase": "No breaking changes to look for",
+      "detail": "filelock 3.25.2 → 3.32.2",
+      "done": 41,
+      "total": 87
+    },
+    {
+      "at": 43369,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "filelock 3.25.2 → 3.32.2",
+      "done": 41,
+      "total": 87
+    },
+    {
+      "at": 43395,
+      "phase": "Comparing the public API surface",
+      "detail": "idna 3.11.0 → 3.18.0 · 2 evidence sources",
+      "done": 41,
+      "total": 87
+    },
+    {
+      "at": 43395,
+      "phase": "No breaking changes to look for",
+      "detail": "idna 3.11.0 → 3.18.0",
+      "done": 41,
+      "total": 87
+    },
+    {
+      "at": 43395,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "idna 3.11.0 → 3.18.0",
+      "done": 41,
+      "total": 87
+    },
+    {
+      "at": 43450,
       "phase": "Checked",
-      "detail": "lxml 6.0.2 → 6.1.1 · worth taking · no breaking changes, and it improves on what you have",
+      "detail": "cffi 2.0.0 → 2.1.1 · safe for your code · 1 upstream change, none used here",
       "done": 42,
       "total": 87
     },
     {
-      "at": 41600,
+      "at": 43450,
       "phase": "Checking the PyPI",
       "detail": "pyasn1-modules (installed 0.4.2)",
       "done": 42,
       "total": 87
     },
     {
-      "at": 41603,
+      "at": 43452,
       "phase": "Up to date",
       "detail": "pyasn1-modules@0.4.2",
       "done": 43,
       "total": 87
     },
     {
-      "at": 41603,
+      "at": 43452,
       "phase": "Checking the PyPI",
       "detail": "pycparser (installed 3.0.0)",
       "done": 43,
       "total": 87
     },
     {
-      "at": 41605,
+      "at": 43454,
       "phase": "Up to date",
       "detail": "pycparser@3.0.0",
       "done": 44,
       "total": 87
     },
     {
-      "at": 41605,
+      "at": 43454,
       "phase": "Checking the PyPI",
       "detail": "pydantic (installed 2.12.5)",
       "done": 44,
       "total": 87
     },
     {
-      "at": 41623,
+      "at": 43472,
       "phase": "Reading release notes and changelog",
       "detail": "pydantic 2.12.5 → 2.14.0",
       "done": 44,
       "total": 87
     },
     {
-      "at": 41624,
-      "phase": "Comparing the public API surface",
-      "detail": "packaging 26.0.0 → 26.3.0 · 2 evidence sources",
-      "done": 44,
-      "total": 87
-    },
-    {
-      "at": 41624,
-      "phase": "Searching your code for 1 breaking change",
-      "detail": "packaging 26.0.0 → 26.3.0",
-      "done": 44,
-      "total": 87
-    },
-    {
-      "at": 41625,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "packaging 26.0.0 → 26.3.0",
-      "done": 44,
-      "total": 87
-    },
-    {
-      "at": 41627,
-      "phase": "Comparing the public API surface",
-      "detail": "idna 3.11.0 → 3.18.0 · 2 evidence sources",
-      "done": 44,
-      "total": 87
-    },
-    {
-      "at": 41627,
-      "phase": "No breaking changes to look for",
-      "detail": "idna 3.11.0 → 3.18.0",
-      "done": 44,
-      "total": 87
-    },
-    {
-      "at": 41628,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "idna 3.11.0 → 3.18.0",
-      "done": 44,
-      "total": 87
-    },
-    {
-      "at": 41772,
+      "at": 43544,
       "phase": "Checked",
-      "detail": "packaging 26.0.0 → 26.3.0 · safe for your code · 1 upstream change, none used here",
+      "detail": "filelock 3.25.2 → 3.32.2 · safe for your code · no breaking changes found",
       "done": 45,
       "total": 87
     },
     {
-      "at": 41772,
+      "at": 43544,
       "phase": "Checking the PyPI",
       "detail": "pydantic-core (installed 2.41.5)",
       "done": 45,
       "total": 87
     },
     {
-      "at": 41876,
+      "at": 43655,
       "phase": "Reading release notes and changelog",
       "detail": "pydantic-core 2.41.5 → 2.48.0",
       "done": 45,
       "total": 87
     },
     {
-      "at": 41893,
+      "at": 43669,
       "phase": "Checked",
       "detail": "idna 3.11.0 → 3.18.0 · worth taking · no breaking changes, and it improves on what you have",
       "done": 46,
       "total": 87
     },
     {
-      "at": 41893,
+      "at": 43669,
       "phase": "Checking the PyPI",
       "detail": "pydispatcher (installed 2.0.7)",
       "done": 46,
       "total": 87
     },
     {
-      "at": 41893,
+      "at": 43669,
       "phase": "Up to date",
       "detail": "pydispatcher@2.0.7",
       "done": 47,
       "total": 87
     },
     {
-      "at": 41893,
+      "at": 43669,
       "phase": "Checking the PyPI",
       "detail": "pygments (installed 2.19.2)",
       "done": 47,
       "total": 87
     },
     {
-      "at": 41894,
-      "phase": "Comparing the public API surface",
-      "detail": "filelock 3.25.2 → 3.32.2 · 3 evidence sources",
-      "done": 47,
-      "total": 87
-    },
-    {
-      "at": 41894,
-      "phase": "No breaking changes to look for",
-      "detail": "filelock 3.25.2 → 3.32.2",
-      "done": 47,
-      "total": 87
-    },
-    {
-      "at": 41894,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "filelock 3.25.2 → 3.32.2",
-      "done": 47,
-      "total": 87
-    },
-    {
-      "at": 41901,
+      "at": 43674,
       "phase": "Reading release notes and changelog",
       "detail": "pygments 2.19.2 → 2.20.0",
       "done": 47,
       "total": 87
     },
     {
-      "at": 42062,
+      "at": 43748,
+      "phase": "Comparing the public API surface",
+      "detail": "h2 4.3.0 → 4.4.1 · 1 evidence source",
+      "done": 47,
+      "total": 87
+    },
+    {
+      "at": 43748,
+      "phase": "No breaking changes to look for",
+      "detail": "h2 4.3.0 → 4.4.1",
+      "done": 47,
+      "total": 87
+    },
+    {
+      "at": 43748,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "h2 4.3.0 → 4.4.1",
+      "done": 47,
+      "total": 87
+    },
+    {
+      "at": 43937,
       "phase": "Checked",
-      "detail": "filelock 3.25.2 → 3.32.2 · safe for your code · no breaking changes found",
+      "detail": "h2 4.3.0 → 4.4.1 · worth taking · no breaking changes, and it improves on what you have",
       "done": 48,
       "total": 87
     },
     {
-      "at": 42062,
+      "at": 43937,
       "phase": "Checking the PyPI",
       "detail": "pyopenssl (installed 26.0.0)",
       "done": 48,
       "total": 87
     },
     {
-      "at": 42062,
+      "at": 43937,
       "phase": "Reading release notes and changelog",
       "detail": "pyopenssl 26.0.0 → 26.4.0",
       "done": 48,
       "total": 87
     },
     {
-      "at": 42685,
+      "at": 44129,
       "phase": "Comparing the public API surface",
-      "detail": "pyopenssl 26.0.0 → 26.4.0 · 2 evidence sources",
+      "detail": "packaging 26.0.0 → 26.3.0 · 2 evidence sources",
       "done": 48,
       "total": 87
     },
     {
-      "at": 42685,
-      "phase": "Searching your code for 6 breaking changes",
-      "detail": "pyopenssl 26.0.0 → 26.4.0",
+      "at": 44129,
+      "phase": "Searching your code for 1 breaking change",
+      "detail": "packaging 26.0.0 → 26.3.0",
       "done": 48,
       "total": 87
     },
     {
-      "at": 42686,
+      "at": 44152,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "pyopenssl 26.0.0 → 26.4.0",
+      "detail": "packaging 26.0.0 → 26.3.0",
       "done": 48,
       "total": 87
     },
     {
-      "at": 42853,
+      "at": 44255,
+      "phase": "Comparing the public API surface",
+      "detail": "hpack 4.1.0 → 4.2.0 · 1 evidence source",
+      "done": 48,
+      "total": 87
+    },
+    {
+      "at": 44255,
+      "phase": "No breaking changes to look for",
+      "detail": "hpack 4.1.0 → 4.2.0",
+      "done": 48,
+      "total": 87
+    },
+    {
+      "at": 44255,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "hpack 4.1.0 → 4.2.0",
+      "done": 48,
+      "total": 87
+    },
+    {
+      "at": 44316,
       "phase": "Checked",
-      "detail": "pyopenssl 26.0.0 → 26.4.0 · safe for your code · 6 upstream changes, none used here",
+      "detail": "packaging 26.0.0 → 26.3.0 · safe for your code · 1 upstream change, none used here",
       "done": 49,
       "total": 87
     },
     {
-      "at": 42853,
+      "at": 44316,
       "phase": "Checking the PyPI",
       "detail": "queuelib (installed 1.9.0)",
       "done": 49,
       "total": 87
     },
     {
-      "at": 42853,
+      "at": 44316,
       "phase": "Up to date",
       "detail": "queuelib@1.9.0",
       "done": 50,
       "total": 87
     },
     {
-      "at": 42853,
+      "at": 44316,
       "phase": "Checking the PyPI",
       "detail": "requests (installed 2.33.0)",
       "done": 50,
       "total": 87
     },
     {
-      "at": 42857,
+      "at": 44320,
       "phase": "Reading release notes and changelog",
       "detail": "requests 2.33.0 → 2.34.2",
       "done": 50,
       "total": 87
     },
     {
-      "at": 43082,
-      "phase": "Comparing the public API surface",
-      "detail": "hpack 4.1.0 → 4.2.0 · 1 evidence source",
-      "done": 50,
-      "total": 87
-    },
-    {
-      "at": 43082,
-      "phase": "No breaking changes to look for",
-      "detail": "hpack 4.1.0 → 4.2.0",
-      "done": 50,
-      "total": 87
-    },
-    {
-      "at": 43082,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "hpack 4.1.0 → 4.2.0",
-      "done": 50,
-      "total": 87
-    },
-    {
-      "at": 43264,
+      "at": 44422,
       "phase": "Checked",
       "detail": "hpack 4.1.0 → 4.2.0 · worth taking · no breaking changes, and it improves on what you have",
       "done": 51,
       "total": 87
     },
     {
-      "at": 43264,
+      "at": 44422,
       "phase": "Checking the PyPI",
       "detail": "requests-file (installed 3.0.1)",
       "done": 51,
       "total": 87
     },
     {
-      "at": 43281,
+      "at": 44429,
       "phase": "Up to date",
       "detail": "requests-file@3.0.1",
       "done": 52,
       "total": 87
     },
     {
-      "at": 43281,
+      "at": 44429,
       "phase": "Checking the PyPI",
       "detail": "roman-numerals (installed 4.1.0)",
       "done": 52,
       "total": 87
     },
     {
-      "at": 43282,
+      "at": 44430,
       "phase": "Up to date",
       "detail": "roman-numerals@4.1.0",
       "done": 53,
       "total": 87
     },
     {
-      "at": 43282,
+      "at": 44430,
       "phase": "Checking the PyPI",
       "detail": "scrapy (installed 2.14.2)",
       "done": 53,
       "total": 87
     },
     {
-      "at": 43294,
+      "at": 44434,
       "phase": "Reading release notes and changelog",
       "detail": "scrapy 2.14.2 → 2.17.0",
       "done": 53,
       "total": 87
     },
     {
-      "at": 43391,
+      "at": 44598,
       "phase": "Comparing the public API surface",
-      "detail": "pydantic 2.12.5 → 2.14.0 · 8 evidence sources",
+      "detail": "pyopenssl 26.0.0 → 26.4.0 · 2 evidence sources",
       "done": 53,
       "total": 87
     },
     {
-      "at": 43402,
-      "phase": "Searching your code for 13 breaking changes",
-      "detail": "pydantic 2.12.5 → 2.14.0",
+      "at": 44599,
+      "phase": "Searching your code for 6 breaking changes",
+      "detail": "pyopenssl 26.0.0 → 26.4.0",
       "done": 53,
       "total": 87
     },
     {
-      "at": 43403,
+      "at": 44599,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "pydantic 2.12.5 → 2.14.0",
+      "detail": "pyopenssl 26.0.0 → 26.4.0",
       "done": 53,
       "total": 87
     },
     {
-      "at": 43406,
-      "phase": "Comparing the public API surface",
-      "detail": "pydantic-core 2.41.5 → 2.48.0 · 3 evidence sources",
-      "done": 53,
-      "total": 87
-    },
-    {
-      "at": 43412,
-      "phase": "Searching your code for 16 breaking changes",
-      "detail": "pydantic-core 2.41.5 → 2.48.0",
-      "done": 53,
-      "total": 87
-    },
-    {
-      "at": 43414,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "pydantic-core 2.41.5 → 2.48.0",
-      "done": 53,
-      "total": 87
-    },
-    {
-      "at": 43450,
-      "phase": "Comparing the public API surface",
-      "detail": "h2 4.3.0 → 4.4.1 · 1 evidence source",
-      "done": 53,
-      "total": 87
-    },
-    {
-      "at": 43451,
-      "phase": "No breaking changes to look for",
-      "detail": "h2 4.3.0 → 4.4.1",
-      "done": 53,
-      "total": 87
-    },
-    {
-      "at": 43451,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "h2 4.3.0 → 4.4.1",
-      "done": 53,
-      "total": 87
-    },
-    {
-      "at": 43624,
+      "at": 44784,
       "phase": "Checked",
-      "detail": "h2 4.3.0 → 4.4.1 · worth taking · no breaking changes, and it improves on what you have",
+      "detail": "pyopenssl 26.0.0 → 26.4.0 · safe for your code · 6 upstream changes, none used here",
       "done": 54,
       "total": 87
     },
     {
-      "at": 43624,
+      "at": 44784,
       "phase": "Checking the PyPI",
       "detail": "scrapy-spider-metadata (installed 0.2.0)",
       "done": 54,
       "total": 87
     },
     {
-      "at": 43626,
+      "at": 44804,
       "phase": "Up to date",
       "detail": "scrapy-spider-metadata@0.2.0",
       "done": 55,
       "total": 87
     },
     {
-      "at": 43626,
+      "at": 44804,
       "phase": "Checking the PyPI",
       "detail": "service-identity (installed 24.2.0)",
       "done": 55,
       "total": 87
     },
     {
-      "at": 43626,
+      "at": 44804,
       "phase": "Reading release notes and changelog",
       "detail": "service-identity 24.2.0 → 26.1.0",
       "done": 55,
       "total": 87
     },
     {
-      "at": 43680,
+      "at": 45332,
+      "phase": "Comparing the public API surface",
+      "detail": "service-identity 24.2.0 → 26.1.0 · 1 evidence source",
+      "done": 55,
+      "total": 87
+    },
+    {
+      "at": 45332,
+      "phase": "No breaking changes to look for",
+      "detail": "service-identity 24.2.0 → 26.1.0",
+      "done": 55,
+      "total": 87
+    },
+    {
+      "at": 45332,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "service-identity 24.2.0 → 26.1.0",
+      "done": 55,
+      "total": 87
+    },
+    {
+      "at": 45465,
+      "phase": "Comparing the public API surface",
+      "detail": "pydantic 2.12.5 → 2.14.0 · 8 evidence sources",
+      "done": 55,
+      "total": 87
+    },
+    {
+      "at": 45472,
+      "phase": "Searching your code for 13 breaking changes",
+      "detail": "pydantic 2.12.5 → 2.14.0",
+      "done": 55,
+      "total": 87
+    },
+    {
+      "at": 45475,
+      "phase": "Comparing the public API surface",
+      "detail": "pydantic-core 2.41.5 → 2.48.0 · 3 evidence sources",
+      "done": 55,
+      "total": 87
+    },
+    {
+      "at": 45482,
+      "phase": "Searching your code for 16 breaking changes",
+      "detail": "pydantic-core 2.41.5 → 2.48.0",
+      "done": 55,
+      "total": 87
+    },
+    {
+      "at": 45490,
       "phase": "Checked",
-      "detail": "pydantic-core 2.41.5 → 2.48.0 · safe for your code · 16 upstream changes, none used here",
+      "detail": "service-identity 24.2.0 → 26.1.0 · safe for your code · no breaking changes found",
       "done": 56,
       "total": 87
     },
     {
-      "at": 43680,
+      "at": 45490,
       "phase": "Checking the PyPI",
       "detail": "snowballstemmer (installed 3.0.1)",
       "done": 56,
       "total": 87
     },
     {
-      "at": 43684,
+      "at": 45492,
       "phase": "Reading release notes and changelog",
       "detail": "snowballstemmer 3.0.1 → 3.1.1",
       "done": 56,
       "total": 87
     },
     {
-      "at": 43942,
+      "at": 45584,
+      "phase": "Comparing the public API surface",
+      "detail": "pyasn1 0.6.3 → 0.6.4 · 1 evidence source",
+      "done": 56,
+      "total": 87
+    },
+    {
+      "at": 45585,
+      "phase": "No breaking changes to look for",
+      "detail": "pyasn1 0.6.3 → 0.6.4",
+      "done": 56,
+      "total": 87
+    },
+    {
+      "at": 45585,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pyasn1 0.6.3 → 0.6.4",
+      "done": 56,
+      "total": 87
+    },
+    {
+      "at": 45680,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pydantic-core 2.41.5 → 2.48.0",
+      "done": 56,
+      "total": 87
+    },
+    {
+      "at": 45715,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pydantic 2.12.5 → 2.14.0",
+      "done": 56,
+      "total": 87
+    },
+    {
+      "at": 45813,
       "phase": "Checked",
-      "detail": "pydantic 2.12.5 → 2.14.0 · safe for your code · 13 upstream changes, none used here",
+      "detail": "pyasn1 0.6.3 → 0.6.4 · worth taking · no breaking changes, and it improves on what you have",
       "done": 57,
       "total": 87
     },
     {
-      "at": 43942,
+      "at": 45813,
       "phase": "Checking the PyPI",
       "detail": "sphinx (installed 9.1.0)",
       "done": 57,
       "total": 87
     },
     {
-      "at": 43948,
+      "at": 45821,
       "phase": "Up to date",
       "detail": "sphinx@9.1.0",
       "done": 58,
       "total": 87
     },
     {
-      "at": 43948,
+      "at": 45821,
       "phase": "Checking the PyPI",
       "detail": "sphinx-copybutton (installed 0.5.2)",
       "done": 58,
       "total": 87
     },
     {
-      "at": 43950,
+      "at": 45826,
       "phase": "Up to date",
       "detail": "sphinx-copybutton@0.5.2",
       "done": 59,
       "total": 87
     },
     {
-      "at": 43950,
+      "at": 45826,
       "phase": "Checking the PyPI",
       "detail": "sphinx-last-updated-by-git (installed 0.3.8)",
       "done": 59,
       "total": 87
     },
     {
-      "at": 43951,
+      "at": 45827,
       "phase": "Up to date",
       "detail": "sphinx-last-updated-by-git@0.3.8",
       "done": 60,
       "total": 87
     },
     {
-      "at": 43951,
+      "at": 45827,
       "phase": "Checking the PyPI",
       "detail": "sphinx-notfound-page (installed 1.1.0)",
       "done": 60,
       "total": 87
     },
     {
-      "at": 43953,
+      "at": 45828,
       "phase": "Up to date",
       "detail": "sphinx-notfound-page@1.1.0",
       "done": 61,
       "total": 87
     },
     {
-      "at": 43953,
+      "at": 45828,
       "phase": "Checking the PyPI",
       "detail": "sphinx-reredirects (installed 1.1.0)",
       "done": 61,
       "total": 87
     },
     {
-      "at": 43954,
+      "at": 45830,
       "phase": "Up to date",
       "detail": "sphinx-reredirects@1.1.0",
       "done": 62,
       "total": 87
     },
     {
-      "at": 43954,
+      "at": 45830,
       "phase": "Checking the PyPI",
       "detail": "sphinx-rtd-dark-mode (installed 1.3.0)",
       "done": 62,
       "total": 87
     },
     {
-      "at": 43955,
+      "at": 45831,
       "phase": "Up to date",
       "detail": "sphinx-rtd-dark-mode@1.3.0",
       "done": 63,
       "total": 87
     },
     {
-      "at": 43955,
+      "at": 45831,
       "phase": "Checking the PyPI",
       "detail": "sphinx-rtd-theme (installed 3.1.0)",
       "done": 63,
       "total": 87
     },
     {
-      "at": 43957,
+      "at": 45834,
       "phase": "Up to date",
       "detail": "sphinx-rtd-theme@3.1.0",
       "done": 64,
       "total": 87
     },
     {
-      "at": 43957,
+      "at": 45834,
       "phase": "Checking the PyPI",
       "detail": "sphinx-sitemap (installed 2.9.0)",
       "done": 64,
       "total": 87
     },
     {
-      "at": 43958,
+      "at": 45835,
       "phase": "Up to date",
       "detail": "sphinx-sitemap@2.9.0",
       "done": 65,
       "total": 87
     },
     {
-      "at": 43958,
+      "at": 45835,
       "phase": "Checking the PyPI",
       "detail": "sphinxcontrib-applehelp (installed 2.0.0)",
       "done": 65,
       "total": 87
     },
     {
-      "at": 43959,
+      "at": 45836,
       "phase": "Up to date",
       "detail": "sphinxcontrib-applehelp@2.0.0",
       "done": 66,
       "total": 87
     },
     {
-      "at": 43959,
+      "at": 45836,
       "phase": "Checking the PyPI",
       "detail": "sphinxcontrib-devhelp (installed 2.0.0)",
       "done": 66,
       "total": 87
     },
     {
-      "at": 43960,
+      "at": 45837,
       "phase": "Up to date",
       "detail": "sphinxcontrib-devhelp@2.0.0",
       "done": 67,
       "total": 87
     },
     {
-      "at": 43960,
+      "at": 45837,
       "phase": "Checking the PyPI",
       "detail": "sphinxcontrib-htmlhelp (installed 2.1.0)",
       "done": 67,
       "total": 87
     },
     {
-      "at": 43961,
+      "at": 45839,
       "phase": "Up to date",
       "detail": "sphinxcontrib-htmlhelp@2.1.0",
       "done": 68,
       "total": 87
     },
     {
-      "at": 43961,
+      "at": 45839,
       "phase": "Checking the PyPI",
       "detail": "sphinxcontrib-jquery (installed 4.1.0)",
       "done": 68,
       "total": 87
     },
     {
-      "at": 43962,
+      "at": 45840,
       "phase": "Up to date",
       "detail": "sphinxcontrib-jquery@4.1.0",
       "done": 69,
       "total": 87
     },
     {
-      "at": 43962,
+      "at": 45840,
       "phase": "Checking the PyPI",
       "detail": "sphinxcontrib-jsmath (installed 1.0.1)",
       "done": 69,
       "total": 87
     },
     {
-      "at": 43963,
+      "at": 45841,
       "phase": "Up to date",
       "detail": "sphinxcontrib-jsmath@1.0.1",
       "done": 70,
       "total": 87
     },
     {
-      "at": 43963,
+      "at": 45841,
       "phase": "Checking the PyPI",
       "detail": "sphinxcontrib-qthelp (installed 2.0.0)",
       "done": 70,
       "total": 87
     },
     {
-      "at": 43964,
+      "at": 45842,
       "phase": "Up to date",
       "detail": "sphinxcontrib-qthelp@2.0.0",
       "done": 71,
       "total": 87
     },
     {
-      "at": 43964,
+      "at": 45842,
       "phase": "Checking the PyPI",
       "detail": "sphinxcontrib-serializinghtml (installed 2.0.0)",
       "done": 71,
       "total": 87
     },
     {
-      "at": 43966,
+      "at": 45843,
       "phase": "Up to date",
       "detail": "sphinxcontrib-serializinghtml@2.0.0",
       "done": 72,
       "total": 87
     },
     {
-      "at": 43966,
+      "at": 45843,
       "phase": "Checking the PyPI",
       "detail": "tabulate (installed 0.10.0)",
       "done": 72,
       "total": 87
     },
     {
-      "at": 43968,
+      "at": 45845,
       "phase": "Up to date",
       "detail": "tabulate@0.10.0",
       "done": 73,
       "total": 87
     },
     {
-      "at": 43968,
+      "at": 45845,
       "phase": "Checking the PyPI",
       "detail": "tldextract (installed 5.3.1)",
       "done": 73,
       "total": 87
     },
     {
-      "at": 43970,
+      "at": 45848,
       "phase": "Reading release notes and changelog",
       "detail": "tldextract 5.3.1 → 5.3.2",
       "done": 73,
       "total": 87
     },
     {
-      "at": 44935,
-      "phase": "Comparing the public API surface",
-      "detail": "protego 0.6.0 → 0.6.2 · 1 evidence source",
-      "done": 73,
-      "total": 87
-    },
-    {
-      "at": 44935,
-      "phase": "No breaking changes to look for",
-      "detail": "protego 0.6.0 → 0.6.2",
-      "done": 73,
-      "total": 87
-    },
-    {
-      "at": 44935,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "protego 0.6.0 → 0.6.2",
-      "done": 73,
-      "total": 87
-    },
-    {
-      "at": 44949,
-      "phase": "Comparing the public API surface",
-      "detail": "service-identity 24.2.0 → 26.1.0 · 1 evidence source",
-      "done": 73,
-      "total": 87
-    },
-    {
-      "at": 44949,
-      "phase": "No breaking changes to look for",
-      "detail": "service-identity 24.2.0 → 26.1.0",
-      "done": 73,
-      "total": 87
-    },
-    {
-      "at": 44949,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "service-identity 24.2.0 → 26.1.0",
-      "done": 73,
-      "total": 87
-    },
-    {
-      "at": 45091,
+      "at": 45858,
       "phase": "Checked",
-      "detail": "service-identity 24.2.0 → 26.1.0 · safe for your code · no breaking changes found",
+      "detail": "pydantic-core 2.41.5 → 2.48.0 · safe for your code · 16 upstream changes, none used here",
       "done": 74,
       "total": 87
     },
     {
-      "at": 45091,
+      "at": 45858,
       "phase": "Checking the PyPI",
       "detail": "twisted (installed 25.5.0)",
       "done": 74,
       "total": 87
     },
     {
-      "at": 45092,
+      "at": 45859,
       "phase": "Reading release notes and changelog",
       "detail": "twisted 25.5.0 → 26.4.0",
       "done": 74,
       "total": 87
     },
     {
-      "at": 45093,
-      "phase": "Comparing the public API surface",
-      "detail": "pyasn1 0.6.3 → 0.6.4 · 1 evidence source",
-      "done": 74,
-      "total": 87
-    },
-    {
-      "at": 45093,
-      "phase": "No breaking changes to look for",
-      "detail": "pyasn1 0.6.3 → 0.6.4",
-      "done": 74,
-      "total": 87
-    },
-    {
-      "at": 45093,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "pyasn1 0.6.3 → 0.6.4",
-      "done": 74,
-      "total": 87
-    },
-    {
-      "at": 45120,
+      "at": 45910,
       "phase": "Checked",
-      "detail": "protego 0.6.0 → 0.6.2 · safe for your code · no breaking changes found",
+      "detail": "pydantic 2.12.5 → 2.14.0 · safe for your code · 13 upstream changes, none used here",
       "done": 75,
       "total": 87
     },
     {
-      "at": 45120,
+      "at": 45910,
       "phase": "Checking the PyPI",
       "detail": "typing-extensions (installed 4.15.0)",
       "done": 75,
       "total": 87
     },
     {
-      "at": 45123,
+      "at": 45915,
       "phase": "Reading release notes and changelog",
       "detail": "typing-extensions 4.15.0 → 4.16.0",
       "done": 75,
       "total": 87
     },
     {
-      "at": 45242,
+      "at": 46824,
+      "phase": "Comparing the public API surface",
+      "detail": "requests 2.33.0 → 2.34.2 · 3 evidence sources",
+      "done": 75,
+      "total": 87
+    },
+    {
+      "at": 46824,
+      "phase": "Searching your code for 2 breaking changes",
+      "detail": "requests 2.33.0 → 2.34.2",
+      "done": 75,
+      "total": 87
+    },
+    {
+      "at": 46838,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "requests 2.33.0 → 2.34.2",
+      "done": 75,
+      "total": 87
+    },
+    {
+      "at": 47601,
       "phase": "Checked",
-      "detail": "pyasn1 0.6.3 → 0.6.4 · worth taking · no breaking changes, and it improves on what you have",
+      "detail": "requests 2.33.0 → 2.34.2 · safe for your code · 2 upstream changes, none used here",
       "done": 76,
       "total": 87
     },
     {
-      "at": 45242,
+      "at": 47601,
       "phase": "Checking the PyPI",
       "detail": "typing-inspection (installed 0.4.2)",
       "done": 76,
       "total": 87
     },
     {
-      "at": 45243,
+      "at": 48819,
       "phase": "Up to date",
       "detail": "typing-inspection@0.4.2",
       "done": 77,
       "total": 87
     },
     {
-      "at": 45243,
+      "at": 48819,
       "phase": "Checking the PyPI",
       "detail": "urllib3 (installed 2.6.3)",
       "done": 77,
       "total": 87
     },
     {
-      "at": 45248,
+      "at": 48822,
+      "phase": "Comparing the public API surface",
+      "detail": "protego 0.6.0 → 0.6.2 · 1 evidence source",
+      "done": 77,
+      "total": 87
+    },
+    {
+      "at": 48822,
+      "phase": "No breaking changes to look for",
+      "detail": "protego 0.6.0 → 0.6.2",
+      "done": 77,
+      "total": 87
+    },
+    {
+      "at": 48822,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "protego 0.6.0 → 0.6.2",
+      "done": 77,
+      "total": 87
+    },
+    {
+      "at": 48825,
       "phase": "Reading release notes and changelog",
       "detail": "urllib3 2.6.3 → 2.7.0",
       "done": 77,
       "total": 87
     },
     {
-      "at": 46146,
-      "phase": "Comparing the public API surface",
-      "detail": "requests 2.33.0 → 2.34.2 · 3 evidence sources",
-      "done": 77,
-      "total": 87
-    },
-    {
-      "at": 46146,
-      "phase": "Searching your code for 2 breaking changes",
-      "detail": "requests 2.33.0 → 2.34.2",
-      "done": 77,
-      "total": 87
-    },
-    {
-      "at": 46146,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "requests 2.33.0 → 2.34.2",
-      "done": 77,
-      "total": 87
-    },
-    {
-      "at": 46295,
+      "at": 49021,
       "phase": "Checked",
-      "detail": "requests 2.33.0 → 2.34.2 · safe for your code · 2 upstream changes, none used here",
+      "detail": "protego 0.6.0 → 0.6.2 · safe for your code · no breaking changes found",
       "done": 78,
       "total": 87
     },
     {
-      "at": 46295,
+      "at": 49021,
       "phase": "Checking the PyPI",
       "detail": "w3lib (installed 2.4.1)",
       "done": 78,
       "total": 87
     },
     {
-      "at": 46296,
+      "at": 49021,
       "phase": "Up to date",
       "detail": "w3lib@2.4.1",
       "done": 79,
       "total": 87
     },
     {
-      "at": 46296,
+      "at": 49021,
       "phase": "Checking the PyPI",
       "detail": "zope-interface (installed 8.2.0)",
       "done": 79,
       "total": 87
     },
     {
-      "at": 46296,
+      "at": 49023,
       "phase": "Reading release notes and changelog",
       "detail": "zope-interface 8.2.0 → 8.5.0",
       "done": 79,
       "total": 87
     },
     {
-      "at": 46327,
+      "at": 49073,
       "phase": "Comparing the public API surface",
       "detail": "zope-interface 8.2.0 → 8.5.0 · 1 evidence source",
       "done": 79,
       "total": 87
     },
     {
-      "at": 46327,
+      "at": 49073,
       "phase": "No breaking changes to look for",
       "detail": "zope-interface 8.2.0 → 8.5.0",
       "done": 79,
       "total": 87
     },
     {
-      "at": 46327,
+      "at": 49073,
       "phase": "Weighing what this upgrade is worth",
       "detail": "zope-interface 8.2.0 → 8.5.0",
       "done": 79,
       "total": 87
     },
     {
-      "at": 46503,
+      "at": 49324,
       "phase": "Checked",
       "detail": "zope-interface 8.2.0 → 8.5.0 · safe for your code · no breaking changes found",
       "done": 80,
       "total": 87
     },
     {
-      "at": 47500,
+      "at": 50239,
       "phase": "Comparing the public API surface",
       "detail": "typing-extensions 4.15.0 → 4.16.0 · 2 evidence sources",
       "done": 80,
       "total": 87
     },
     {
-      "at": 47500,
+      "at": 50239,
       "phase": "Searching your code for 8 breaking changes",
       "detail": "typing-extensions 4.15.0 → 4.16.0",
       "done": 80,
       "total": 87
     },
     {
-      "at": 47501,
+      "at": 50261,
       "phase": "Weighing what this upgrade is worth",
       "detail": "typing-extensions 4.15.0 → 4.16.0",
       "done": 80,
       "total": 87
     },
     {
-      "at": 47686,
+      "at": 50513,
       "phase": "Checked",
       "detail": "typing-extensions 4.15.0 → 4.16.0 · safe for your code · 8 upstream changes, none used here",
       "done": 81,
       "total": 87
     },
     {
-      "at": 47949,
+      "at": 50734,
       "phase": "Comparing the public API surface",
       "detail": "tldextract 5.3.1 → 5.3.2 · 1 evidence source",
       "done": 81,
       "total": 87
     },
     {
-      "at": 47949,
+      "at": 50734,
       "phase": "No breaking changes to look for",
       "detail": "tldextract 5.3.1 → 5.3.2",
       "done": 81,
       "total": 87
     },
     {
-      "at": 47950,
+      "at": 50734,
       "phase": "Weighing what this upgrade is worth",
       "detail": "tldextract 5.3.1 → 5.3.2",
       "done": 81,
       "total": 87
     },
     {
-      "at": 48084,
+      "at": 50903,
       "phase": "Checked",
       "detail": "tldextract 5.3.1 → 5.3.2 · safe for your code · no breaking changes found",
       "done": 82,
       "total": 87
     },
     {
-      "at": 48333,
+      "at": 51784,
       "phase": "Comparing the public API surface",
       "detail": "urllib3 2.6.3 → 2.7.0 · 2 evidence sources",
       "done": 82,
       "total": 87
     },
     {
-      "at": 48333,
+      "at": 51784,
       "phase": "Searching your code for 2 breaking changes",
       "detail": "urllib3 2.6.3 → 2.7.0",
       "done": 82,
       "total": 87
     },
     {
-      "at": 48334,
+      "at": 52493,
       "phase": "Weighing what this upgrade is worth",
       "detail": "urllib3 2.6.3 → 2.7.0",
       "done": 82,
       "total": 87
     },
     {
-      "at": 48514,
+      "at": 52686,
       "phase": "Checked",
       "detail": "urllib3 2.6.3 → 2.7.0 · safe for your code · 2 upstream changes, none used here",
       "done": 83,
       "total": 87
     },
     {
-      "at": 49472,
+      "at": 52922,
       "phase": "Comparing the public API surface",
       "detail": "snowballstemmer 3.0.1 → 3.1.1 · 2 evidence sources",
       "done": 83,
       "total": 87
     },
     {
-      "at": 49497,
+      "at": 52952,
       "phase": "Searching your code for 244 breaking changes",
       "detail": "snowballstemmer 3.0.1 → 3.1.1",
       "done": 83,
       "total": 87
     },
     {
-      "at": 49507,
+      "at": 53032,
       "phase": "Weighing what this upgrade is worth",
       "detail": "snowballstemmer 3.0.1 → 3.1.1",
       "done": 83,
       "total": 87
     },
     {
-      "at": 49668,
+      "at": 53034,
+      "phase": "Comparing the public API surface",
+      "detail": "twisted 25.5.0 → 26.4.0 · 4 evidence sources",
+      "done": 83,
+      "total": 87
+    },
+    {
+      "at": 53036,
+      "phase": "Searching your code for 21 breaking changes",
+      "detail": "twisted 25.5.0 → 26.4.0",
+      "done": 83,
+      "total": 87
+    },
+    {
+      "at": 53039,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "twisted 25.5.0 → 26.4.0",
+      "done": 83,
+      "total": 87
+    },
+    {
+      "at": 53162,
+      "phase": "Comparing the public API surface",
+      "detail": "scrapy 2.14.2 → 2.17.0 · 2 evidence sources",
+      "done": 83,
+      "total": 87
+    },
+    {
+      "at": 53166,
+      "phase": "Searching your code for 51 breaking changes",
+      "detail": "scrapy 2.14.2 → 2.17.0",
+      "done": 83,
+      "total": 87
+    },
+    {
+      "at": 53270,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "scrapy 2.14.2 → 2.17.0",
+      "done": 83,
+      "total": 87
+    },
+    {
+      "at": 53296,
       "phase": "Checked",
       "detail": "snowballstemmer 3.0.1 → 3.1.1 · safe for your code · 244 upstream changes, none used here",
       "done": 84,
       "total": 87
     },
     {
-      "at": 50032,
-      "phase": "Comparing the public API surface",
-      "detail": "scrapy 2.14.2 → 2.17.0 · 2 evidence sources",
-      "done": 84,
-      "total": 87
-    },
-    {
-      "at": 50036,
-      "phase": "Searching your code for 51 breaking changes",
-      "detail": "scrapy 2.14.2 → 2.17.0",
-      "done": 84,
-      "total": 87
-    },
-    {
-      "at": 50098,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "scrapy 2.14.2 → 2.17.0",
-      "done": 84,
-      "total": 87
-    },
-    {
-      "at": 50306,
-      "phase": "Checked",
-      "detail": "scrapy 2.14.2 → 2.17.0 · safe for your code · 51 upstream changes, none used here",
-      "done": 85,
-      "total": 87
-    },
-    {
-      "at": 50393,
-      "phase": "Comparing the public API surface",
-      "detail": "twisted 25.5.0 → 26.4.0 · 4 evidence sources",
-      "done": 85,
-      "total": 87
-    },
-    {
-      "at": 50394,
-      "phase": "Searching your code for 21 breaking changes",
-      "detail": "twisted 25.5.0 → 26.4.0",
-      "done": 85,
-      "total": 87
-    },
-    {
-      "at": 50395,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "twisted 25.5.0 → 26.4.0",
-      "done": 85,
-      "total": 87
-    },
-    {
-      "at": 50610,
+      "at": 53315,
       "phase": "Checked",
       "detail": "twisted 25.5.0 → 26.4.0 · safe for your code · 21 upstream changes, none used here",
+      "done": 85,
+      "total": 87
+    },
+    {
+      "at": 53622,
+      "phase": "Checked",
+      "detail": "scrapy 2.14.2 → 2.17.0 · safe for your code · 51 upstream changes, none used here",
       "done": 86,
       "total": 87
     },
     {
-      "at": 53158,
+      "at": 55962,
       "phase": "Comparing the public API surface",
       "detail": "pygments 2.19.2 → 2.20.0 · 3 evidence sources",
       "done": 86,
       "total": 87
     },
     {
-      "at": 53158,
+      "at": 55963,
       "phase": "Searching your code for 1 breaking change",
       "detail": "pygments 2.19.2 → 2.20.0",
       "done": 86,
       "total": 87
     },
     {
-      "at": 53159,
+      "at": 56023,
       "phase": "Weighing what this upgrade is worth",
       "detail": "pygments 2.19.2 → 2.20.0",
       "done": 86,
       "total": 87
     },
     {
-      "at": 53298,
+      "at": 56201,
       "phase": "Checked",
       "detail": "pygments 2.19.2 → 2.20.0 · safe for your code · 1 upstream change, none used here",
       "done": 87,
@@ -3163,6 +3163,79 @@
       ]
     },
     {
+      "name": "pyopenssl",
+      "ecosystem": "pypi",
+      "current": "22.0.0",
+      "latest": "26.4.0",
+      "selected": "26.4.0",
+      "safeLatest": "26.4.0",
+      "status": "ready",
+      "risk": "medium",
+      "summary": "Manual migration required. 1 place in this repository uses an API that pyopenssl changed; fixes 2 known vulnerabilities.",
+      "recommendation": "manual-migration-required",
+      "breakingCount": 27,
+      "impactCount": 1,
+      "impactFiles": 1,
+      "evidenceCount": 2,
+      "gaps": [
+        "Drift read the changelog for pyopenssl 26.4.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": [
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `SSL.SSLeay_version` changed.",
+          "remediation": "The signature of `SSL.SSLeay_version` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: def SSLeay_version(type) defaults=0\n  after:  SSLeay_version",
+          "confidence": "high",
+          "symbols": [
+            "SSL.SSLeay_version",
+            "SSLeay_version"
+          ],
+          "sites": [
+            {
+              "file": "scrapy/utils/ssl.py",
+              "line": 201,
+              "excerpt": "system_openssl_bytes = OpenSSL.SSL.SSLeay_version(OpenSSL.SSL.SSLEAY_VERSION)",
+              "matchedSymbol": "SSL.SSLeay_version",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`SSL.OP_COOKIE_EXCHANGE` is no longer exported (was a variable).",
+          "remediation": "Every use of `SSL.OP_COOKIE_EXCHANGE` from `pyopenssl` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `SSL.OP_COOKIE_EXCHANGE` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "SSL.OP_COOKIE_EXCHANGE",
+            "OP_COOKIE_EXCHANGE"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`SSL.SSLv2_METHOD` is no longer exported (was a variable).",
+          "remediation": "Every use of `SSL.SSLv2_METHOD` from `pyopenssl` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `SSL.SSLv2_METHOD` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "SSL.SSLv2_METHOD",
+            "SSLv2_METHOD"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`SSL.SSLv3_METHOD` is no longer exported (was a variable).",
+          "remediation": "Every use of `SSL.SSLv3_METHOD` from `pyopenssl` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `SSL.SSLv3_METHOD` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "SSL.SSLv3_METHOD",
+            "SSLv3_METHOD"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
       "name": "snowballstemmer",
       "ecosystem": "pypi",
       "current": "3.0.1",
@@ -3289,71 +3362,6 @@
           "symbols": [
             "agent.ScrapyProxyH2Agent",
             "ScrapyProxyH2Agent"
-          ],
-          "sites": []
-        }
-      ]
-    },
-    {
-      "name": "pyopenssl",
-      "ecosystem": "pypi",
-      "current": "22.0.0",
-      "latest": "26.4.0",
-      "selected": "26.4.0",
-      "safeLatest": "26.4.0",
-      "status": "ready",
-      "risk": "none",
-      "summary": "Upgrade recommended. 27 upstream breaking changes, none of which this repository uses; fixes 2 known vulnerabilities.",
-      "recommendation": "upgrade-recommended",
-      "breakingCount": 27,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 2,
-      "gaps": [
-        "Drift read the changelog for pyopenssl 26.4.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
-      ],
-      "breaking": [
-        {
-          "kind": "removed-export",
-          "summary": "`SSL.OP_COOKIE_EXCHANGE` is no longer exported (was a variable).",
-          "remediation": "Every use of `SSL.OP_COOKIE_EXCHANGE` from `pyopenssl` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `SSL.OP_COOKIE_EXCHANGE` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
-          "confidence": "high",
-          "symbols": [
-            "SSL.OP_COOKIE_EXCHANGE",
-            "OP_COOKIE_EXCHANGE"
-          ],
-          "sites": []
-        },
-        {
-          "kind": "signature-change",
-          "summary": "The signature of `SSL.SSLeay_version` changed.",
-          "remediation": "The signature of `SSL.SSLeay_version` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: def SSLeay_version(type) defaults=0\n  after:  SSLeay_version",
-          "confidence": "high",
-          "symbols": [
-            "SSL.SSLeay_version",
-            "SSLeay_version"
-          ],
-          "sites": []
-        },
-        {
-          "kind": "removed-export",
-          "summary": "`SSL.SSLv2_METHOD` is no longer exported (was a variable).",
-          "remediation": "Every use of `SSL.SSLv2_METHOD` from `pyopenssl` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `SSL.SSLv2_METHOD` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
-          "confidence": "high",
-          "symbols": [
-            "SSL.SSLv2_METHOD",
-            "SSLv2_METHOD"
-          ],
-          "sites": []
-        },
-        {
-          "kind": "removed-export",
-          "summary": "`SSL.SSLv3_METHOD` is no longer exported (was a variable).",
-          "remediation": "Every use of `SSL.SSLv3_METHOD` from `pyopenssl` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `SSL.SSLv3_METHOD` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
-          "confidence": "high",
-          "symbols": [
-            "SSL.SSLv3_METHOD",
-            "SSLv3_METHOD"
           ],
           "sites": []
         }

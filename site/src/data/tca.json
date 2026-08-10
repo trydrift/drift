@@ -1,0 +1,472 @@
+{
+  "id": "tca",
+  "label": "swift-composable-architecture",
+  "ecosystem": "swift",
+  "language": "Swift",
+  "repo": "https://github.com/pointfreeco/swift-composable-architecture",
+  "blurb": "The state-management library much of the Swift app ecosystem builds on.",
+  "capturedAt": "2026-08-10T15:53:12.581Z",
+  "commit": "269d6457986d163557ea2601275b1117e4dee3c0",
+  "durationMs": 15417,
+  "packagesChecked": 17,
+  "manifests": [
+    "Package.swift",
+    "Benchmarks/Package.swift",
+    "Examples/Package.swift",
+    "Examples/TicTacToe/tic-tac-toe/Package.swift"
+  ],
+  "events": [
+    {
+      "at": 6732,
+      "phase": "Looking for manifests",
+      "detail": "pointfreeco/swift-composable-architecture",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 6761,
+      "phase": "Reading the workspace",
+      "detail": "4 packages · undeclared",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 6762,
+      "phase": "Reading manifest",
+      "detail": "Package.swift",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 6764,
+      "phase": "Reading manifest",
+      "detail": "Benchmarks/Package.swift",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 6764,
+      "phase": "Reading manifest",
+      "detail": "Examples/Package.swift",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 6764,
+      "phase": "Reading manifest",
+      "detail": "Examples/TicTacToe/tic-tac-toe/Package.swift",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 6764,
+      "phase": "Indexing your code",
+      "detail": "Walking source files",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Indexing your code",
+      "detail": "799 files indexed · 17 direct dependencies to check",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Checking the the package’s git repository",
+      "detail": "apple/swift-collections (installed 1.6.0)",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Checking the the package’s git repository",
+      "detail": "pointfreeco/combine-schedulers (installed 1.2.0)",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Checking the the package’s git repository",
+      "detail": "pointfreeco/swift-case-paths (installed 1.7.3)",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Checking the the package’s git repository",
+      "detail": "pointfreeco/swift-clocks (installed 1.0.6)",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Checking the the package’s git repository",
+      "detail": "pointfreeco/swift-concurrency-extras (installed 1.4.0)",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Checking the the package’s git repository",
+      "detail": "pointfreeco/swift-custom-dump (installed 1.6.0)",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Checking the the package’s git repository",
+      "detail": "pointfreeco/swift-dependencies (installed 1.13.0)",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Checking the the package’s git repository",
+      "detail": "pointfreeco/swift-identified-collections (installed 1.1.1)",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Up to date",
+      "detail": "apple/swift-collections@1.6.0",
+      "done": 1,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Up to date",
+      "detail": "pointfreeco/combine-schedulers@1.2.0",
+      "done": 2,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Up to date",
+      "detail": "pointfreeco/swift-case-paths@1.7.3",
+      "done": 3,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Up to date",
+      "detail": "pointfreeco/swift-clocks@1.0.6",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Up to date",
+      "detail": "pointfreeco/swift-concurrency-extras@1.4.0",
+      "done": 5,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Up to date",
+      "detail": "pointfreeco/swift-custom-dump@1.6.0",
+      "done": 6,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Up to date",
+      "detail": "pointfreeco/swift-dependencies@1.13.0",
+      "done": 7,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Up to date",
+      "detail": "pointfreeco/swift-identified-collections@1.1.1",
+      "done": 8,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Checking the the package’s git repository",
+      "detail": "pointfreeco/swift-macro-testing (installed 0.6.5)",
+      "done": 8,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Checking the the package’s git repository",
+      "detail": "pointfreeco/swift-navigation (installed 2.8.0)",
+      "done": 8,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Checking the the package’s git repository",
+      "detail": "pointfreeco/swift-perception (installed 2.0.10)",
+      "done": 8,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Checking the the package’s git repository",
+      "detail": "pointfreeco/swift-sharing (installed 2.8.1)",
+      "done": 8,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Checking the the package’s git repository",
+      "detail": "pointfreeco/xctest-dynamic-overlay (installed 1.9.0)",
+      "done": 8,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Checking the the package’s git repository",
+      "detail": "swiftlang/swift-docc-plugin (installed 1.5.0)",
+      "done": 8,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Checking the the package’s git repository",
+      "detail": "swiftlang/swift-syntax (installed 603.0.2)",
+      "done": 8,
+      "total": 17
+    },
+    {
+      "at": 7024,
+      "phase": "Checking the the package’s git repository",
+      "detail": "ordo-one/package-benchmark (installed 1.25.0)",
+      "done": 8,
+      "total": 17
+    },
+    {
+      "at": 7025,
+      "phase": "Up to date",
+      "detail": "pointfreeco/swift-macro-testing@0.6.5",
+      "done": 9,
+      "total": 17
+    },
+    {
+      "at": 7025,
+      "phase": "Up to date",
+      "detail": "pointfreeco/swift-navigation@2.8.0",
+      "done": 10,
+      "total": 17
+    },
+    {
+      "at": 7025,
+      "phase": "Up to date",
+      "detail": "pointfreeco/swift-perception@2.0.10",
+      "done": 11,
+      "total": 17
+    },
+    {
+      "at": 7025,
+      "phase": "Up to date",
+      "detail": "pointfreeco/swift-sharing@2.8.1",
+      "done": 12,
+      "total": 17
+    },
+    {
+      "at": 7025,
+      "phase": "Up to date",
+      "detail": "pointfreeco/xctest-dynamic-overlay@1.9.0",
+      "done": 13,
+      "total": 17
+    },
+    {
+      "at": 7025,
+      "phase": "Up to date",
+      "detail": "swiftlang/swift-docc-plugin@1.5.0",
+      "done": 14,
+      "total": 17
+    },
+    {
+      "at": 7025,
+      "phase": "Up to date",
+      "detail": "swiftlang/swift-syntax@603.0.2",
+      "done": 15,
+      "total": 17
+    },
+    {
+      "at": 7025,
+      "phase": "Up to date",
+      "detail": "ordo-one/package-benchmark@1.25.0",
+      "done": 16,
+      "total": 17
+    },
+    {
+      "at": 7025,
+      "phase": "Checking the the package’s git repository",
+      "detail": "pointfreeco/swift-dependencies (installed 1.0.0)",
+      "done": 16,
+      "total": 17
+    },
+    {
+      "at": 7025,
+      "phase": "Up to date",
+      "detail": "pointfreeco/swift-dependencies@1.0.0",
+      "done": 17,
+      "total": 17
+    },
+    {
+      "at": 7901,
+      "phase": "Auditing installed versions",
+      "detail": "apple/swift-collections 1.1.0 → 1.6.0 (installed)",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 7901,
+      "phase": "Auditing installed versions",
+      "detail": "pointfreeco/combine-schedulers 1.0.2 → 1.2.0 (installed)",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 7901,
+      "phase": "Auditing installed versions",
+      "detail": "pointfreeco/swift-case-paths 1.5.4 → 1.7.3 (installed)",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 7901,
+      "phase": "Auditing installed versions",
+      "detail": "pointfreeco/swift-clocks 1.0.4 → 1.0.6 (installed)",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 7901,
+      "phase": "Auditing installed versions",
+      "detail": "pointfreeco/swift-concurrency-extras 1.2.0 → 1.4.0 (installed)",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 7901,
+      "phase": "Auditing installed versions",
+      "detail": "pointfreeco/swift-custom-dump 1.3.2 → 1.6.0 (installed)",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 7901,
+      "phase": "Auditing installed versions",
+      "detail": "pointfreeco/swift-dependencies 1.4.0 → 1.13.0 (installed)",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 7901,
+      "phase": "Auditing installed versions",
+      "detail": "pointfreeco/swift-identified-collections 1.1.0 → 1.1.1 (installed)",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 11110,
+      "phase": "Auditing installed versions",
+      "detail": "pointfreeco/swift-macro-testing 0.2.0 → 0.6.5 (installed)",
+      "done": 2,
+      "total": 17
+    },
+    {
+      "at": 11136,
+      "phase": "Auditing installed versions",
+      "detail": "pointfreeco/swift-navigation 2.7.0 → 2.8.0 (installed)",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 11314,
+      "phase": "Auditing installed versions",
+      "detail": "pointfreeco/swift-perception 1.3.4 → 2.0.10 (installed)",
+      "done": 6,
+      "total": 17
+    },
+    {
+      "at": 11327,
+      "phase": "Auditing installed versions",
+      "detail": "pointfreeco/swift-sharing 1.0.0 → 2.8.1 (installed)",
+      "done": 8,
+      "total": 17
+    },
+    {
+      "at": 11385,
+      "phase": "Auditing installed versions",
+      "detail": "pointfreeco/xctest-dynamic-overlay 1.3.0 → 1.9.0 (installed)",
+      "done": 9,
+      "total": 17
+    },
+    {
+      "at": 11406,
+      "phase": "Auditing installed versions",
+      "detail": "swiftlang/swift-docc-plugin 1.0.0 → 1.5.0 (installed)",
+      "done": 11,
+      "total": 17
+    },
+    {
+      "at": 11449,
+      "phase": "Auditing installed versions",
+      "detail": "swiftlang/swift-syntax 509.0.0 → 603.0.2 (installed)",
+      "done": 13,
+      "total": 17
+    },
+    {
+      "at": 11585,
+      "phase": "Auditing installed versions",
+      "detail": "ordo-one/package-benchmark 1.4.0 → 1.25.0 (installed)",
+      "done": 15,
+      "total": 17
+    }
+  ],
+  "candidates": [],
+  "audit": {
+    "checked": 17,
+    "analysed": 16,
+    "findings": [
+      {
+        "kind": "unreviewed-drift",
+        "dependency": "swiftlang/swift-syntax",
+        "declaredRange": ">=509.0.0 <605.0.0",
+        "rangeFloor": "509.0.0",
+        "installedVersion": "603.0.2",
+        "summary": "`expression` no longer optional",
+        "remediation": "Behaviour changed: `expression` no longer optional. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
+        "sites": [
+          {
+            "file": "Sources/ComposableArchitectureMacros/PresentsMacro.swift",
+            "line": 144,
+            "excerpt": "expression: binding.initializer?.value ?? ExprSyntax(NilLiteralExprSyntax())",
+            "matchedSymbol": "expression",
+            "confidence": "medium"
+          },
+          {
+            "file": "Sources/ComposableArchitectureMacros/PresentsMacro.swift",
+            "line": 218,
+            "excerpt": "expression: MemberAccessExprSyntax(",
+            "matchedSymbol": "expression",
+            "confidence": "medium"
+          },
+          {
+            "file": "Sources/ComposableArchitectureMacros/PresentsMacro.swift",
+            "line": 232,
+            "excerpt": "expression: MemberAccessExprSyntax(",
+            "matchedSymbol": "expression",
+            "confidence": "medium"
+          },
+          {
+            "file": "Sources/ComposableArchitectureMacros/ReducerMacro.swift",
+            "line": 304,
+            "excerpt": "$0.expression.as(MemberAccessExprSyntax.self)?.declName.baseName.text.capitalized",
+            "matchedSymbol": "expression",
+            "confidence": "medium"
+          }
+        ]
+      }
+    ]
+  }
+}

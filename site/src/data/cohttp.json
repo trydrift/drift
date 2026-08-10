@@ -1,0 +1,374 @@
+{
+  "id": "cohttp",
+  "label": "ocaml-cohttp",
+  "ecosystem": "opam",
+  "language": "OCaml",
+  "repo": "https://github.com/mirage/ocaml-cohttp",
+  "blurb": "OCaml's HTTP library, from the MirageOS project.",
+  "capturedAt": "2026-08-10T15:53:17.985Z",
+  "commit": "0178a219286ed3b59c16cc37557c2c5f93503b6a",
+  "durationMs": 2432,
+  "packagesChecked": 22,
+  "manifests": [
+    "dune-project",
+    "cohttp-lwt-jsoo/test/package.json"
+  ],
+  "events": [
+    {
+      "at": 2056,
+      "phase": "Looking for manifests",
+      "detail": "mirage/ocaml-cohttp",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 2063,
+      "phase": "Reading the workspace",
+      "detail": "2 packages · undeclared",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 2064,
+      "phase": "Reading manifest",
+      "detail": "dune-project",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 2066,
+      "phase": "Reading manifest",
+      "detail": "cohttp-lwt-jsoo/test/package.json",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 2067,
+      "phase": "Indexing your code",
+      "detail": "Walking source files",
+      "done": 0,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Indexing your code",
+      "detail": "179 files indexed · 22 direct dependencies to check",
+      "done": 0,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "re (installed 1.9.0)",
+      "done": 0,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "base64 (installed 3.1.0)",
+      "done": 0,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "ipaddr (installed 5.6.0)",
+      "done": 0,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "lwt (installed 5.3.0)",
+      "done": 0,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "cmdliner (installed 2.0.0)",
+      "done": 0,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "js_of_ocaml (installed 3.3.0)",
+      "done": 0,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "js_of_ocaml-ppx (installed 3.3.0)",
+      "done": 0,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "js_of_ocaml-lwt (installed 3.5.0)",
+      "done": 0,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Up to date",
+      "detail": "re@1.9.0",
+      "done": 1,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Up to date",
+      "detail": "base64@3.1.0",
+      "done": 2,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Up to date",
+      "detail": "ipaddr@5.6.0",
+      "done": 3,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Up to date",
+      "detail": "lwt@5.3.0",
+      "done": 4,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Up to date",
+      "detail": "cmdliner@2.0.0",
+      "done": 5,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Up to date",
+      "detail": "js_of_ocaml@3.3.0",
+      "done": 6,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Up to date",
+      "detail": "js_of_ocaml-ppx@3.3.0",
+      "done": 7,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Up to date",
+      "detail": "js_of_ocaml-lwt@3.5.0",
+      "done": 8,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "async (installed 0.16.0)",
+      "done": 8,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "base (installed 0.16.0)",
+      "done": 8,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "core (installed 0.13.0)",
+      "done": 8,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "core_unix (installed 0.14.0)",
+      "done": 8,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "conduit-async (installed 1.2.0)",
+      "done": 8,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "mirage-flow (installed 2.0.0)",
+      "done": 8,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "mirage-channel (installed 4.0.0)",
+      "done": 8,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "conduit (installed 8.0.0)",
+      "done": 8,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Up to date",
+      "detail": "async@0.16.0",
+      "done": 9,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Up to date",
+      "detail": "base@0.16.0",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Up to date",
+      "detail": "core@0.13.0",
+      "done": 11,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Up to date",
+      "detail": "core_unix@0.14.0",
+      "done": 12,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Up to date",
+      "detail": "conduit-async@1.2.0",
+      "done": 13,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Up to date",
+      "detail": "mirage-flow@2.0.0",
+      "done": 14,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Up to date",
+      "detail": "mirage-channel@4.0.0",
+      "done": 15,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Up to date",
+      "detail": "conduit@8.0.0",
+      "done": 16,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "conduit-mirage (installed 8.0.0)",
+      "done": 16,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "mirage-kv (installed 3.0.0)",
+      "done": 16,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "cstruct (installed 6.0.0)",
+      "done": 16,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "ocurl (installed 0.9.2)",
+      "done": 16,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the the opam repository",
+      "detail": "eio (installed 0.12.0)",
+      "done": 16,
+      "total": 22
+    },
+    {
+      "at": 2147,
+      "phase": "Checking the npm registry",
+      "detail": "xmlhttprequest (installed 1.8.0)",
+      "done": 16,
+      "total": 22
+    },
+    {
+      "at": 2148,
+      "phase": "Up to date",
+      "detail": "conduit-mirage@8.0.0",
+      "done": 17,
+      "total": 22
+    },
+    {
+      "at": 2148,
+      "phase": "Up to date",
+      "detail": "mirage-kv@3.0.0",
+      "done": 18,
+      "total": 22
+    },
+    {
+      "at": 2148,
+      "phase": "Up to date",
+      "detail": "cstruct@6.0.0",
+      "done": 19,
+      "total": 22
+    },
+    {
+      "at": 2148,
+      "phase": "Up to date",
+      "detail": "ocurl@0.9.2",
+      "done": 20,
+      "total": 22
+    },
+    {
+      "at": 2148,
+      "phase": "Up to date",
+      "detail": "eio@0.12.0",
+      "done": 21,
+      "total": 22
+    },
+    {
+      "at": 2297,
+      "phase": "Up to date",
+      "detail": "xmlhttprequest@1.8.0",
+      "done": 22,
+      "total": 22
+    }
+  ],
+  "candidates": [],
+  "audit": {
+    "checked": 22,
+    "analysed": 0,
+    "findings": []
+  }
+}

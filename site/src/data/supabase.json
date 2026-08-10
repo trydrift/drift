@@ -5,9 +5,9 @@
   "language": "TypeScript",
   "repo": "https://github.com/supabase/supabase-js",
   "blurb": "The official Supabase client for JavaScript and TypeScript.",
-  "capturedAt": "2026-08-10T13:34:14.567Z",
+  "capturedAt": "2026-08-10T15:39:13.181Z",
   "commit": "586dee38d946273c8c7e5eacd5b37136edef9c4f",
-  "durationMs": 12480,
+  "durationMs": 14198,
   "packagesChecked": 22,
   "manifests": [
     "package.json",
@@ -23,742 +23,742 @@
   ],
   "events": [
     {
-      "at": 1789,
+      "at": 3149,
       "phase": "Looking for manifests",
       "detail": "supabase/supabase-js",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1813,
+      "at": 3172,
       "phase": "Reading the workspace",
       "detail": "10 packages · pnpm-workspace",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1817,
+      "at": 3176,
       "phase": "Reading manifest",
       "detail": "package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2436,
+      "at": 3810,
       "phase": "Reading manifest",
       "detail": "packages/core/auth-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2437,
+      "at": 3811,
       "phase": "Reading manifest",
       "detail": "packages/core/auth-js/example/react/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2437,
+      "at": 3812,
       "phase": "Reading manifest",
       "detail": "packages/core/functions-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2437,
+      "at": 3812,
       "phase": "Reading manifest",
       "detail": "packages/core/postgrest-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2438,
+      "at": 3812,
       "phase": "Reading manifest",
       "detail": "packages/core/realtime-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2438,
+      "at": 3813,
       "phase": "Reading manifest",
       "detail": "packages/core/realtime-js/example/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2438,
+      "at": 3813,
       "phase": "Reading manifest",
       "detail": "packages/core/storage-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2438,
+      "at": 3813,
       "phase": "Reading manifest",
       "detail": "packages/core/supabase-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2439,
+      "at": 3814,
       "phase": "Reading manifest",
       "detail": "packages/shared/tracing/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2439,
+      "at": 3814,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 22
     },
     {
-      "at": 2767,
+      "at": 4247,
       "phase": "Indexing your code",
       "detail": "383 files indexed · 22 direct dependencies to check",
       "done": 0,
       "total": 22
     },
     {
-      "at": 2767,
+      "at": 4247,
       "phase": "Checking the npm registry",
       "detail": "tslib (installed 2.8.1)",
       "done": 0,
       "total": 22
     },
     {
-      "at": 2863,
+      "at": 4374,
       "phase": "Checking the npm registry",
       "detail": "react (installed 19.2.0)",
       "done": 0,
       "total": 22
     },
     {
-      "at": 2864,
+      "at": 4376,
       "phase": "Checking the npm registry",
       "detail": "react-dom (installed 19.2.0)",
       "done": 0,
       "total": 22
     },
     {
-      "at": 2865,
+      "at": 4377,
       "phase": "Checking the npm registry",
       "detail": "tslib (installed 2.8.1)",
       "done": 0,
       "total": 22
     },
     {
-      "at": 2867,
+      "at": 4379,
       "phase": "Checking the npm registry",
       "detail": "tslib (installed 2.8.1)",
       "done": 0,
       "total": 22
     },
     {
-      "at": 2868,
+      "at": 4380,
       "phase": "Checking the npm registry",
       "detail": "@supabase/phoenix (installed 0.4.5)",
       "done": 0,
       "total": 22
     },
     {
-      "at": 2869,
+      "at": 4381,
       "phase": "Checking the npm registry",
       "detail": "tslib (installed 2.8.1)",
       "done": 0,
       "total": 22
     },
     {
-      "at": 2871,
+      "at": 4383,
       "phase": "Checking the npm registry",
       "detail": "@radix-ui/react-checkbox (installed 1.3.1)",
       "done": 0,
       "total": 22
     },
     {
-      "at": 3030,
+      "at": 4552,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 1,
       "total": 22
     },
     {
-      "at": 3030,
+      "at": 4552,
       "phase": "Checking the npm registry",
       "detail": "@radix-ui/react-dropdown-menu (installed 2.1.14)",
       "done": 1,
       "total": 22
     },
     {
-      "at": 3033,
+      "at": 4555,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 2,
       "total": 22
     },
     {
-      "at": 3033,
+      "at": 4555,
       "phase": "Checking the npm registry",
       "detail": "@radix-ui/react-label (installed 2.1.6)",
       "done": 2,
       "total": 22
     },
     {
-      "at": 3035,
+      "at": 4560,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 3,
       "total": 22
     },
     {
-      "at": 3035,
+      "at": 4560,
       "phase": "Checking the npm registry",
       "detail": "@radix-ui/react-slot (installed 1.2.2)",
       "done": 3,
       "total": 22
     },
     {
-      "at": 3038,
+      "at": 4574,
       "phase": "Up to date",
-      "detail": "tslib@2.8.1",
+      "detail": "@supabase/phoenix@0.4.5",
       "done": 4,
       "total": 22
     },
     {
-      "at": 3038,
+      "at": 4574,
       "phase": "Checking the npm registry",
       "detail": "class-variance-authority (installed 0.7.1)",
       "done": 4,
       "total": 22
     },
     {
-      "at": 3111,
+      "at": 4581,
       "phase": "Up to date",
-      "detail": "class-variance-authority@0.7.1",
+      "detail": "tslib@2.8.1",
       "done": 5,
       "total": 22
     },
     {
-      "at": 3111,
+      "at": 4581,
       "phase": "Checking the npm registry",
       "detail": "clsx (installed 2.1.1)",
       "done": 5,
       "total": 22
     },
     {
-      "at": 3121,
+      "at": 4615,
       "phase": "Up to date",
-      "detail": "@supabase/phoenix@0.4.5",
+      "detail": "clsx@2.1.1",
       "done": 6,
       "total": 22
     },
     {
-      "at": 3121,
+      "at": 4615,
       "phase": "Checking the npm registry",
       "detail": "lucide-react (installed 0.511.0)",
       "done": 6,
       "total": 22
     },
     {
-      "at": 3134,
-      "phase": "Reading release notes and changelog",
-      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
-      "done": 6,
-      "total": 22
-    },
-    {
-      "at": 3142,
+      "at": 4630,
       "phase": "Up to date",
-      "detail": "clsx@2.1.1",
+      "detail": "class-variance-authority@0.7.1",
       "done": 7,
       "total": 22
     },
     {
-      "at": 3142,
+      "at": 4630,
       "phase": "Checking the npm registry",
       "detail": "next (installed 16.2.11)",
       "done": 7,
       "total": 22
     },
     {
-      "at": 3186,
-      "phase": "Reading release notes and changelog",
-      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
-      "done": 7,
-      "total": 22
-    },
-    {
-      "at": 3211,
+      "at": 4655,
       "phase": "Reading release notes and changelog",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 7,
       "total": 22
     },
     {
-      "at": 3258,
+      "at": 4708,
+      "phase": "Reading release notes and changelog",
+      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
+      "done": 7,
+      "total": 22
+    },
+    {
+      "at": 4749,
+      "phase": "Reading release notes and changelog",
+      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
+      "done": 7,
+      "total": 22
+    },
+    {
+      "at": 4811,
       "phase": "Reading release notes and changelog",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 7,
       "total": 22
     },
     {
-      "at": 3398,
+      "at": 4890,
       "phase": "Reading release notes and changelog",
       "detail": "lucide-react 0.511.0 → 1.31.0",
       "done": 7,
       "total": 22
     },
     {
-      "at": 3971,
+      "at": 5574,
+      "phase": "Reading release notes and changelog",
+      "detail": "react 19.2.0 → 19.2.8",
+      "done": 7,
+      "total": 22
+    },
+    {
+      "at": 5826,
       "phase": "Reading release notes and changelog",
       "detail": "react-dom 19.2.0 → 19.2.8",
       "done": 7,
       "total": 22
     },
     {
-      "at": 4066,
-      "phase": "Reading release notes and changelog",
-      "detail": "react 19.2.0 → 19.2.8",
-      "done": 7,
-      "total": 22
-    },
-    {
-      "at": 4895,
+      "at": 6688,
       "phase": "Reading release notes and changelog",
       "detail": "next 16.2.11 → 16.3.0",
       "done": 7,
       "total": 22
     },
     {
-      "at": 6899,
-      "phase": "Comparing the public API surface",
-      "detail": "react 19.2.0 → 19.2.8 · 1 evidence source",
-      "done": 7,
-      "total": 22
-    },
-    {
-      "at": 6899,
-      "phase": "No breaking changes to look for",
-      "detail": "react 19.2.0 → 19.2.8",
-      "done": 7,
-      "total": 22
-    },
-    {
-      "at": 6900,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "react 19.2.0 → 19.2.8",
-      "done": 7,
-      "total": 22
-    },
-    {
-      "at": 6903,
+      "at": 8314,
       "phase": "Comparing the public API surface",
       "detail": "react-dom 19.2.0 → 19.2.8 · 1 evidence source",
       "done": 7,
       "total": 22
     },
     {
-      "at": 6903,
+      "at": 8315,
       "phase": "No breaking changes to look for",
       "detail": "react-dom 19.2.0 → 19.2.8",
       "done": 7,
       "total": 22
     },
     {
-      "at": 6903,
+      "at": 8315,
       "phase": "Weighing what this upgrade is worth",
       "detail": "react-dom 19.2.0 → 19.2.8",
       "done": 7,
       "total": 22
     },
     {
-      "at": 7136,
+      "at": 8319,
+      "phase": "Comparing the public API surface",
+      "detail": "react 19.2.0 → 19.2.8 · 1 evidence source",
+      "done": 7,
+      "total": 22
+    },
+    {
+      "at": 8319,
+      "phase": "No breaking changes to look for",
+      "detail": "react 19.2.0 → 19.2.8",
+      "done": 7,
+      "total": 22
+    },
+    {
+      "at": 8319,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "react 19.2.0 → 19.2.8",
+      "done": 7,
+      "total": 22
+    },
+    {
+      "at": 8544,
       "phase": "Checked",
-      "detail": "react-dom 19.2.0 → 19.2.8 · safe for your code · no breaking changes found",
+      "detail": "react 19.2.0 → 19.2.8 · safe for your code · no breaking changes found",
       "done": 8,
       "total": 22
     },
     {
-      "at": 7136,
+      "at": 8544,
       "phase": "Checking the npm registry",
       "detail": "next-themes (installed 0.4.6)",
       "done": 8,
       "total": 22
     },
     {
-      "at": 7181,
+      "at": 8601,
       "phase": "Checked",
-      "detail": "react 19.2.0 → 19.2.8 · safe for your code · no breaking changes found",
+      "detail": "react-dom 19.2.0 → 19.2.8 · safe for your code · no breaking changes found",
       "done": 9,
       "total": 22
     },
     {
-      "at": 7181,
+      "at": 8601,
       "phase": "Checking the npm registry",
       "detail": "react (installed 19.0.0)",
       "done": 9,
       "total": 22
     },
     {
-      "at": 7244,
+      "at": 8685,
       "phase": "Up to date",
       "detail": "next-themes@0.4.6",
       "done": 10,
       "total": 22
     },
     {
-      "at": 7244,
+      "at": 8685,
       "phase": "Checking the npm registry",
       "detail": "react-dom (installed 19.0.0)",
       "done": 10,
       "total": 22
     },
     {
-      "at": 7461,
+      "at": 8892,
       "phase": "Reading release notes and changelog",
       "detail": "react 19.0.0 → 19.2.8",
       "done": 10,
       "total": 22
     },
     {
-      "at": 7591,
+      "at": 9108,
       "phase": "Reading release notes and changelog",
       "detail": "react-dom 19.0.0 → 19.2.8",
       "done": 10,
       "total": 22
     },
     {
-      "at": 7642,
+      "at": 9122,
       "phase": "Comparing the public API surface",
       "detail": "react 19.0.0 → 19.2.8 · 4 evidence sources",
       "done": 10,
       "total": 22
     },
     {
-      "at": 7648,
+      "at": 9128,
       "phase": "Searching your code for 2 breaking changes",
       "detail": "react 19.0.0 → 19.2.8",
       "done": 10,
       "total": 22
     },
     {
-      "at": 7652,
+      "at": 9132,
       "phase": "Weighing what this upgrade is worth",
       "detail": "react 19.0.0 → 19.2.8",
       "done": 10,
       "total": 22
     },
     {
-      "at": 7828,
+      "at": 9209,
+      "phase": "Comparing the public API surface",
+      "detail": "react-dom 19.0.0 → 19.2.8 · 4 evidence sources",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 9209,
+      "phase": "Searching your code for 2 breaking changes",
+      "detail": "react-dom 19.0.0 → 19.2.8",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 9212,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "react-dom 19.0.0 → 19.2.8",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 9344,
       "phase": "Checked",
       "detail": "react 19.0.0 → 19.2.8 · safe for your code · 2 upstream changes, none used here",
       "done": 11,
       "total": 22
     },
     {
-      "at": 7828,
+      "at": 9344,
       "phase": "Checking the npm registry",
       "detail": "tailwind-merge (installed 3.3.0)",
       "done": 11,
       "total": 22
     },
     {
-      "at": 7870,
-      "phase": "Comparing the public API surface",
-      "detail": "react-dom 19.0.0 → 19.2.8 · 4 evidence sources",
-      "done": 11,
-      "total": 22
-    },
-    {
-      "at": 7870,
-      "phase": "Searching your code for 2 breaking changes",
-      "detail": "react-dom 19.0.0 → 19.2.8",
-      "done": 11,
-      "total": 22
-    },
-    {
-      "at": 7873,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "react-dom 19.0.0 → 19.2.8",
-      "done": 11,
-      "total": 22
-    },
-    {
-      "at": 7900,
-      "phase": "Reading release notes and changelog",
-      "detail": "tailwind-merge 3.3.0 → 3.6.0",
-      "done": 11,
-      "total": 22
-    },
-    {
-      "at": 8040,
+      "at": 9364,
       "phase": "Checked",
       "detail": "react-dom 19.0.0 → 19.2.8 · safe for your code · 2 upstream changes, none used here",
       "done": 12,
       "total": 22
     },
     {
-      "at": 8040,
+      "at": 9364,
       "phase": "Checking the npm registry",
       "detail": "iceberg-js (installed 0.8.1)",
       "done": 12,
       "total": 22
     },
     {
-      "at": 8069,
+      "at": 9396,
       "phase": "Reading release notes and changelog",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 12,
       "total": 22
     },
     {
-      "at": 8205,
+      "at": 9437,
+      "phase": "Reading release notes and changelog",
+      "detail": "tailwind-merge 3.3.0 → 3.6.0",
+      "done": 12,
+      "total": 22
+    },
+    {
+      "at": 9504,
       "phase": "Comparing the public API surface",
       "detail": "iceberg-js 0.8.1 → 1.0.0 · 5 evidence sources",
       "done": 12,
       "total": 22
     },
     {
-      "at": 8214,
+      "at": 9513,
       "phase": "Searching your code for 26 breaking changes",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 12,
       "total": 22
     },
     {
-      "at": 8244,
+      "at": 9550,
       "phase": "Weighing what this upgrade is worth",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 12,
       "total": 22
     },
     {
-      "at": 8393,
+      "at": 9719,
       "phase": "Checked",
       "detail": "iceberg-js 0.8.1 → 1.0.0 · safe for your code · 26 upstream changes, none used here",
       "done": 13,
       "total": 22
     },
     {
-      "at": 8393,
+      "at": 9719,
       "phase": "Checking the npm registry",
       "detail": "tslib (installed 2.8.1)",
       "done": 13,
       "total": 22
     },
     {
-      "at": 8420,
+      "at": 9760,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 14,
       "total": 22
     },
     {
-      "at": 8420,
+      "at": 9760,
       "phase": "Checking the npm registry",
       "detail": "tslib (installed 2.8.1)",
       "done": 14,
       "total": 22
     },
     {
-      "at": 8446,
+      "at": 9800,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 15,
       "total": 22
     },
     {
-      "at": 8470,
+      "at": 10261,
       "phase": "Comparing the public API surface",
-      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24 · 1 evidence source",
+      "detail": "next 16.2.11 → 16.3.0 · 2 evidence sources",
       "done": 15,
       "total": 22
     },
     {
-      "at": 8470,
+      "at": 10262,
       "phase": "No breaking changes to look for",
-      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
+      "detail": "next 16.2.11 → 16.3.0",
       "done": 15,
       "total": 22
     },
     {
-      "at": 8470,
+      "at": 10262,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
+      "detail": "next 16.2.11 → 16.3.0",
       "done": 15,
       "total": 22
     },
     {
-      "at": 8471,
-      "phase": "Comparing the public API surface",
-      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15 · 1 evidence source",
-      "done": 15,
-      "total": 22
-    },
-    {
-      "at": 8471,
-      "phase": "No breaking changes to look for",
-      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
-      "done": 15,
-      "total": 22
-    },
-    {
-      "at": 8471,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
-      "done": 15,
-      "total": 22
-    },
-    {
-      "at": 8472,
+      "at": 10339,
       "phase": "Comparing the public API surface",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3 · 2 evidence sources",
       "done": 15,
       "total": 22
     },
     {
-      "at": 8472,
+      "at": 10339,
       "phase": "Searching your code for 4 breaking changes",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
       "done": 15,
       "total": 22
     },
     {
-      "at": 8474,
+      "at": 10341,
       "phase": "Weighing what this upgrade is worth",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
       "done": 15,
       "total": 22
     },
     {
-      "at": 8475,
+      "at": 10342,
+      "phase": "Comparing the public API surface",
+      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15 · 1 evidence source",
+      "done": 15,
+      "total": 22
+    },
+    {
+      "at": 10342,
+      "phase": "No breaking changes to look for",
+      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
+      "done": 15,
+      "total": 22
+    },
+    {
+      "at": 10342,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
+      "done": 15,
+      "total": 22
+    },
+    {
+      "at": 10343,
       "phase": "Comparing the public API surface",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11 · 1 evidence source",
       "done": 15,
       "total": 22
     },
     {
-      "at": 8475,
+      "at": 10343,
       "phase": "No breaking changes to look for",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 15,
       "total": 22
     },
     {
-      "at": 8475,
+      "at": 10343,
       "phase": "Weighing what this upgrade is worth",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 15,
       "total": 22
     },
     {
-      "at": 8642,
+      "at": 10344,
+      "phase": "Comparing the public API surface",
+      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24 · 1 evidence source",
+      "done": 15,
+      "total": 22
+    },
+    {
+      "at": 10344,
+      "phase": "No breaking changes to look for",
+      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
+      "done": 15,
+      "total": 22
+    },
+    {
+      "at": 10344,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
+      "done": 15,
+      "total": 22
+    },
+    {
+      "at": 10454,
       "phase": "Checked",
-      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11 · safe for your code · no breaking changes found",
+      "detail": "next 16.2.11 → 16.3.0 · safe for your code · no breaking changes found",
       "done": 16,
       "total": 22
     },
     {
-      "at": 8644,
+      "at": 10555,
       "phase": "Checked",
-      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15 · safe for your code · no breaking changes found",
+      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3 · safe for your code · 4 upstream changes, none used here",
       "done": 17,
       "total": 22
     },
     {
-      "at": 8646,
+      "at": 10556,
       "phase": "Comparing the public API surface",
-      "detail": "next 16.2.11 → 16.3.0 · 2 evidence sources",
+      "detail": "lucide-react 0.511.0 → 1.31.0 · 2 evidence sources",
       "done": 17,
       "total": 22
     },
     {
-      "at": 8647,
-      "phase": "No breaking changes to look for",
-      "detail": "next 16.2.11 → 16.3.0",
+      "at": 10585,
+      "phase": "Searching your code for 107 breaking changes",
+      "detail": "lucide-react 0.511.0 → 1.31.0",
       "done": 17,
       "total": 22
     },
     {
-      "at": 8647,
+      "at": 10617,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "next 16.2.11 → 16.3.0",
+      "detail": "lucide-react 0.511.0 → 1.31.0",
       "done": 17,
       "total": 22
     },
     {
-      "at": 8721,
+      "at": 10757,
       "phase": "Checked",
-      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24 · safe for your code · no breaking changes found",
+      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11 · safe for your code · no breaking changes found",
       "done": 18,
       "total": 22
     },
     {
-      "at": 8726,
+      "at": 10793,
       "phase": "Checked",
-      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3 · safe for your code · 4 upstream changes, none used here",
+      "detail": "lucide-react 0.511.0 → 1.31.0 · safe for your code · 107 upstream changes, none used here",
       "done": 19,
       "total": 22
     },
     {
-      "at": 8844,
+      "at": 10866,
       "phase": "Checked",
-      "detail": "next 16.2.11 → 16.3.0 · safe for your code · no breaking changes found",
+      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24 · safe for your code · no breaking changes found",
       "done": 20,
       "total": 22
     },
     {
-      "at": 8855,
-      "phase": "Comparing the public API surface",
-      "detail": "lucide-react 0.511.0 → 1.31.0 · 2 evidence sources",
-      "done": 20,
-      "total": 22
-    },
-    {
-      "at": 8883,
-      "phase": "Searching your code for 107 breaking changes",
-      "detail": "lucide-react 0.511.0 → 1.31.0",
-      "done": 20,
-      "total": 22
-    },
-    {
-      "at": 8908,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "lucide-react 0.511.0 → 1.31.0",
-      "done": 20,
-      "total": 22
-    },
-    {
-      "at": 9095,
+      "at": 11153,
       "phase": "Checked",
-      "detail": "lucide-react 0.511.0 → 1.31.0 · safe for your code · 107 upstream changes, none used here",
+      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15 · safe for your code · no breaking changes found",
       "done": 21,
       "total": 22
     },
     {
-      "at": 11424,
+      "at": 13137,
       "phase": "Comparing the public API surface",
       "detail": "tailwind-merge 3.3.0 → 3.6.0 · 2 evidence sources",
       "done": 21,
       "total": 22
     },
     {
-      "at": 11425,
+      "at": 13137,
       "phase": "Searching your code for 4 breaking changes",
       "detail": "tailwind-merge 3.3.0 → 3.6.0",
       "done": 21,
       "total": 22
     },
     {
-      "at": 11426,
+      "at": 13138,
       "phase": "Weighing what this upgrade is worth",
       "detail": "tailwind-merge 3.3.0 → 3.6.0",
       "done": 21,
       "total": 22
     },
     {
-      "at": 11573,
+      "at": 13285,
       "phase": "Checked",
       "detail": "tailwind-merge 3.3.0 → 3.6.0 · safe for your code · 4 upstream changes, none used here",
       "done": 22,

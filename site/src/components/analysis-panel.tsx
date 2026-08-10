@@ -190,17 +190,31 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
             >
               <ReplayIcon className="transition-transform group-hover:-rotate-45" />
             </button>
-            <p className="min-w-[14rem] flex-1 text-sm text-foreground">
-              <span className="font-medium">{totals.packages}</span> packages ·{" "}
-              <span className="font-medium text-brand-text">{totals.affected}</span> affect this code
-              {totals.breaking > totals.sites && (
-                <span className="text-muted">
-                  {" "}
-                  · {totals.breaking} upstream breaking change
-                  {totals.breaking === 1 ? "" : "s"} found, most of them irrelevant here
-                </span>
-              )}
-            </p>
+            {/* A repository with nothing to upgrade is a real result and the
+                most common one on a well-maintained project. Rendering it as
+                "0 packages · 0 affect this code" made a correct answer look
+                like a failed run, which is the same category of mistake as
+                showing a gap as a pass — just in the other direction. */}
+            {totals.packages === 0 ? (
+              <p className="min-w-[14rem] flex-1 text-sm text-foreground">
+                <span className="font-medium">{recording.packagesChecked}</span> direct
+                dependenc{recording.packagesChecked === 1 ? "y" : "ies"} checked ·{" "}
+                <span className="font-medium text-brand-text">every one already current</span>
+              </p>
+            ) : (
+              <p className="min-w-[14rem] flex-1 text-sm text-foreground">
+                <span className="font-medium">{totals.packages}</span> packages ·{" "}
+                <span className="font-medium text-brand-text">{totals.affected}</span> affect this
+                code
+                {totals.breaking > totals.sites && (
+                  <span className="text-muted">
+                    {" "}
+                    · {totals.breaking} upstream breaking change
+                    {totals.breaking === 1 ? "" : "s"} found, most of them irrelevant here
+                  </span>
+                )}
+              </p>
+            )}
             <SpeedControl value={speedMultiplier} onChange={setSpeedMultiplier} />
             {affected.length > 0 && (
               <button

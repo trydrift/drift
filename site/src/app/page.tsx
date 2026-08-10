@@ -2,6 +2,7 @@ import { instrumentSerif } from "@/lib/fonts";
 import { Backdrop } from "@/components/backdrop";
 import { Code, GhIcon, GhPanel, type CodeLine } from "@/components/gh";
 import { Demo } from "@/components/demo";
+import { Ecosystems } from "@/components/ecosystems";
 import { Pipeline } from "@/components/pipeline";
 import { ActionFlow } from "@/components/action-flow";
 import { Terminal } from "@/components/terminal";
@@ -50,6 +51,12 @@ export default function Home() {
             className="rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
           >
             How it works
+          </a>
+          <a
+            href="#ecosystems"
+            className="hidden rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:block"
+          >
+            Ecosystems
           </a>
           <a
             href="#action"
@@ -131,6 +138,43 @@ export default function Home() {
           <div className="mt-7">
             <Demo recordings={recordings} />
           </div>
+        </section>
+
+        {/* ── Coverage ────────────────────────────────────────────────── */}
+        <section id="ecosystems" className="scroll-mt-8 pt-16 sm:pt-24">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
+            <span className="text-faint">//</span> sixteen ecosystems, graded
+          </p>
+          <h2 className={`${instrumentSerif.className} mt-3 text-2xl text-landing sm:text-3xl`}>
+            How far Drift gets, per ecosystem
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
+            Every one of these has a recording above, including the ones where Drift can do less.
+            The grade is computed from the same table the CLI consults before it runs a stage —
+            nobody types a colour in here, so an ecosystem that loses a capability loses its
+            badge on the next build. Three things decide it: whether Drift computes the API diff
+            from what was actually published, whether the module names it searches for come from
+            the package rather than from a guess, and whether it can run the ecosystem&rsquo;s own
+            build and tests over its work.
+          </p>
+
+          <div className="mt-7">
+            <Ecosystems recorded={new Set(recordings.map((r) => r.ecosystem))} />
+          </div>
+
+          <p className="mt-6 text-[13px] text-muted">
+            The full matrix — seven stages per ecosystem, each with the sentence saying exactly
+            what it does and does not cover — is in{" "}
+            <a
+              href={`${GITHUB}/blob/main/docs/support.md`}
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-brand-text underline decoration-dotted underline-offset-4"
+            >
+              docs/support.md
+            </a>
+            , generated from the same source.
+          </p>
         </section>
 
         {/* ── The point ───────────────────────────────────────────────── */}

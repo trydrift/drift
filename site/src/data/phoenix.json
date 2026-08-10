@@ -1,0 +1,1452 @@
+{
+  "id": "phoenix",
+  "label": "phoenix",
+  "ecosystem": "hex",
+  "language": "Elixir",
+  "repo": "https://github.com/phoenixframework/phoenix",
+  "blurb": "The web framework nearly every production Elixir application is built on.",
+  "capturedAt": "2026-08-10T15:57:08.367Z",
+  "commit": "5506184f9180ef21cb99dbbcb08645329e0784a3",
+  "durationMs": 13440,
+  "packagesChecked": 44,
+  "manifests": [
+    "package.json",
+    "mix.exs",
+    "assets/package.json",
+    "installer/mix.exs",
+    "integration_test/mix.exs"
+  ],
+  "events": [
+    {
+      "at": 1585,
+      "phase": "Looking for manifests",
+      "detail": "phoenixframework/phoenix",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 1605,
+      "phase": "Reading the workspace",
+      "detail": "4 packages · undeclared",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 1607,
+      "phase": "Reading manifest",
+      "detail": "package.json",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 1614,
+      "phase": "Reading manifest",
+      "detail": "mix.exs",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 1617,
+      "phase": "Reading manifest",
+      "detail": "assets/package.json",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 1617,
+      "phase": "Reading manifest",
+      "detail": "installer/mix.exs",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 1617,
+      "phase": "Reading manifest",
+      "detail": "integration_test/mix.exs",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 1620,
+      "phase": "Indexing your code",
+      "detail": "Walking source files",
+      "done": 0,
+      "total": 44
+    },
+    {
+      "at": 1867,
+      "phase": "Indexing your code",
+      "detail": "209 files indexed · 44 direct dependencies to check",
+      "done": 0,
+      "total": 44
+    },
+    {
+      "at": 1867,
+      "phase": "Checking the Hex",
+      "detail": "plug (installed 1.20.3)",
+      "done": 0,
+      "total": 44
+    },
+    {
+      "at": 1869,
+      "phase": "Checking the Hex",
+      "detail": "plug_crypto (installed 2.2.0)",
+      "done": 0,
+      "total": 44
+    },
+    {
+      "at": 1870,
+      "phase": "Checking the Hex",
+      "detail": "telemetry (installed 1.4.2)",
+      "done": 0,
+      "total": 44
+    },
+    {
+      "at": 1870,
+      "phase": "Checking the Hex",
+      "detail": "phoenix_pubsub (installed 2.2.0)",
+      "done": 0,
+      "total": 44
+    },
+    {
+      "at": 1870,
+      "phase": "Checking the Hex",
+      "detail": "phoenix_template (installed 1.0.4)",
+      "done": 0,
+      "total": 44
+    },
+    {
+      "at": 1870,
+      "phase": "Checking the Hex",
+      "detail": "websock_adapter (installed 0.6.0)",
+      "done": 0,
+      "total": 44
+    },
+    {
+      "at": 1870,
+      "phase": "Checking the Hex",
+      "detail": "phoenix_view (installed 2.0.4)",
+      "done": 0,
+      "total": 44
+    },
+    {
+      "at": 1870,
+      "phase": "Checking the Hex",
+      "detail": "plug_cowboy (installed 2.8.1)",
+      "done": 0,
+      "total": 44
+    },
+    {
+      "at": 1873,
+      "phase": "Up to date",
+      "detail": "plug_crypto@2.2.0",
+      "done": 1,
+      "total": 44
+    },
+    {
+      "at": 1873,
+      "phase": "Checking the Hex",
+      "detail": "bandit (installed 1.12.4)",
+      "done": 1,
+      "total": 44
+    },
+    {
+      "at": 1874,
+      "phase": "Up to date",
+      "detail": "phoenix_pubsub@2.2.0",
+      "done": 2,
+      "total": 44
+    },
+    {
+      "at": 1874,
+      "phase": "Checking the Hex",
+      "detail": "jason (installed 1.4.5)",
+      "done": 2,
+      "total": 44
+    },
+    {
+      "at": 1874,
+      "phase": "Up to date",
+      "detail": "phoenix_template@1.0.4",
+      "done": 3,
+      "total": 44
+    },
+    {
+      "at": 1874,
+      "phase": "Checking the Hex",
+      "detail": "ex_doc (installed 0.40.3)",
+      "done": 3,
+      "total": 44
+    },
+    {
+      "at": 1875,
+      "phase": "Up to date",
+      "detail": "plug@1.20.3",
+      "done": 4,
+      "total": 44
+    },
+    {
+      "at": 1875,
+      "phase": "Checking the Hex",
+      "detail": "ecto (installed 3.14.0)",
+      "done": 4,
+      "total": 44
+    },
+    {
+      "at": 1876,
+      "phase": "Up to date",
+      "detail": "websock_adapter@0.6.0",
+      "done": 5,
+      "total": 44
+    },
+    {
+      "at": 1876,
+      "phase": "Checking the Hex",
+      "detail": "ecto_sql (installed 3.14.0)",
+      "done": 5,
+      "total": 44
+    },
+    {
+      "at": 1876,
+      "phase": "Up to date",
+      "detail": "phoenix_view@2.0.4",
+      "done": 6,
+      "total": 44
+    },
+    {
+      "at": 1876,
+      "phase": "Checking the Hex",
+      "detail": "gettext (installed 1.0.2)",
+      "done": 6,
+      "total": 44
+    },
+    {
+      "at": 1876,
+      "phase": "Up to date",
+      "detail": "telemetry@1.4.2",
+      "done": 7,
+      "total": 44
+    },
+    {
+      "at": 1876,
+      "phase": "Checking the Hex",
+      "detail": "telemetry_poller (installed 1.3.0)",
+      "done": 7,
+      "total": 44
+    },
+    {
+      "at": 1882,
+      "phase": "Reading release notes and changelog",
+      "detail": "plug_cowboy 2.8.1 → 2.9.0",
+      "done": 7,
+      "total": 44
+    },
+    {
+      "at": 1983,
+      "phase": "Reading release notes and changelog",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "done": 7,
+      "total": 44
+    },
+    {
+      "at": 1985,
+      "phase": "Up to date",
+      "detail": "bandit@1.12.4",
+      "done": 8,
+      "total": 44
+    },
+    {
+      "at": 1985,
+      "phase": "Checking the Hex",
+      "detail": "telemetry_metrics (installed 1.1.0)",
+      "done": 8,
+      "total": 44
+    },
+    {
+      "at": 1986,
+      "phase": "Up to date",
+      "detail": "ex_doc@0.40.3",
+      "done": 9,
+      "total": 44
+    },
+    {
+      "at": 1986,
+      "phase": "Checking the Hex",
+      "detail": "makeup_elixir (installed 1.0.1)",
+      "done": 9,
+      "total": 44
+    },
+    {
+      "at": 1986,
+      "phase": "Up to date",
+      "detail": "ecto_sql@3.14.0",
+      "done": 10,
+      "total": 44
+    },
+    {
+      "at": 1986,
+      "phase": "Checking the Hex",
+      "detail": "makeup_eex (installed 2.0.2)",
+      "done": 10,
+      "total": 44
+    },
+    {
+      "at": 1987,
+      "phase": "Up to date",
+      "detail": "gettext@1.0.2",
+      "done": 11,
+      "total": 44
+    },
+    {
+      "at": 1987,
+      "phase": "Checking the Hex",
+      "detail": "makeup_syntect (installed 0.1.4)",
+      "done": 11,
+      "total": 44
+    },
+    {
+      "at": 1989,
+      "phase": "Reading release notes and changelog",
+      "detail": "ecto 3.14.0 → 3.14.1",
+      "done": 11,
+      "total": 44
+    },
+    {
+      "at": 1991,
+      "phase": "Up to date",
+      "detail": "telemetry_poller@1.3.0",
+      "done": 12,
+      "total": 44
+    },
+    {
+      "at": 1991,
+      "phase": "Checking the Hex",
+      "detail": "ex_doc (installed 0.40.3)",
+      "done": 12,
+      "total": 44
+    },
+    {
+      "at": 1992,
+      "phase": "Up to date",
+      "detail": "ex_doc@0.40.3",
+      "done": 13,
+      "total": 44
+    },
+    {
+      "at": 1992,
+      "phase": "Checking the Hex",
+      "detail": "phoenix_ecto (installed 4.7.0)",
+      "done": 13,
+      "total": 44
+    },
+    {
+      "at": 1994,
+      "phase": "Up to date",
+      "detail": "telemetry_metrics@1.1.0",
+      "done": 14,
+      "total": 44
+    },
+    {
+      "at": 1994,
+      "phase": "Checking the Hex",
+      "detail": "esbuild (installed 0.10.0)",
+      "done": 14,
+      "total": 44
+    },
+    {
+      "at": 1994,
+      "phase": "Up to date",
+      "detail": "makeup_eex@2.0.2",
+      "done": 15,
+      "total": 44
+    },
+    {
+      "at": 1994,
+      "phase": "Checking the Hex",
+      "detail": "ecto_sql (installed 3.14.0)",
+      "done": 15,
+      "total": 44
+    },
+    {
+      "at": 1994,
+      "phase": "Up to date",
+      "detail": "ecto_sql@3.14.0",
+      "done": 16,
+      "total": 44
+    },
+    {
+      "at": 1994,
+      "phase": "Checking the Hex",
+      "detail": "postgrex (installed 0.22.3)",
+      "done": 16,
+      "total": 44
+    },
+    {
+      "at": 1994,
+      "phase": "Up to date",
+      "detail": "makeup_elixir@1.0.1",
+      "done": 17,
+      "total": 44
+    },
+    {
+      "at": 1994,
+      "phase": "Checking the Hex",
+      "detail": "myxql (installed 0.9.0)",
+      "done": 17,
+      "total": 44
+    },
+    {
+      "at": 1995,
+      "phase": "Up to date",
+      "detail": "makeup_syntect@0.1.4",
+      "done": 18,
+      "total": 44
+    },
+    {
+      "at": 1995,
+      "phase": "Checking the Hex",
+      "detail": "tds (installed 2.3.8)",
+      "done": 18,
+      "total": 44
+    },
+    {
+      "at": 1995,
+      "phase": "Up to date",
+      "detail": "phoenix_ecto@4.7.0",
+      "done": 19,
+      "total": 44
+    },
+    {
+      "at": 1995,
+      "phase": "Checking the Hex",
+      "detail": "ecto_sqlite3 (installed 0.24.0)",
+      "done": 19,
+      "total": 44
+    },
+    {
+      "at": 1996,
+      "phase": "Up to date",
+      "detail": "esbuild@0.10.0",
+      "done": 20,
+      "total": 44
+    },
+    {
+      "at": 1996,
+      "phase": "Checking the Hex",
+      "detail": "phoenix_html (installed 4.3.0)",
+      "done": 20,
+      "total": 44
+    },
+    {
+      "at": 1997,
+      "phase": "Reading release notes and changelog",
+      "detail": "postgrex 0.22.3 → 0.22.4",
+      "done": 20,
+      "total": 44
+    },
+    {
+      "at": 1998,
+      "phase": "Up to date",
+      "detail": "myxql@0.9.0",
+      "done": 21,
+      "total": 44
+    },
+    {
+      "at": 1998,
+      "phase": "Checking the Hex",
+      "detail": "phoenix_live_view (installed 1.2.0)",
+      "done": 21,
+      "total": 44
+    },
+    {
+      "at": 1998,
+      "phase": "Up to date",
+      "detail": "tds@2.3.8",
+      "done": 22,
+      "total": 44
+    },
+    {
+      "at": 1998,
+      "phase": "Checking the Hex",
+      "detail": "dns_cluster (installed 0.2.0)",
+      "done": 22,
+      "total": 44
+    },
+    {
+      "at": 1999,
+      "phase": "Reading release notes and changelog",
+      "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
+      "done": 22,
+      "total": 44
+    },
+    {
+      "at": 2004,
+      "phase": "Up to date",
+      "detail": "phoenix_html@4.3.0",
+      "done": 23,
+      "total": 44
+    },
+    {
+      "at": 2004,
+      "phase": "Checking the Hex",
+      "detail": "lazy_html (installed 0.1.11)",
+      "done": 23,
+      "total": 44
+    },
+    {
+      "at": 2004,
+      "phase": "Up to date",
+      "detail": "dns_cluster@0.2.0",
+      "done": 24,
+      "total": 44
+    },
+    {
+      "at": 2004,
+      "phase": "Checking the Hex",
+      "detail": "phoenix_live_reload (installed 1.6.2)",
+      "done": 24,
+      "total": 44
+    },
+    {
+      "at": 2006,
+      "phase": "Reading release notes and changelog",
+      "detail": "phoenix_live_view 1.2.0 → 1.2.9",
+      "done": 24,
+      "total": 44
+    },
+    {
+      "at": 2008,
+      "phase": "Reading release notes and changelog",
+      "detail": "lazy_html 0.1.11 → 0.1.12",
+      "done": 24,
+      "total": 44
+    },
+    {
+      "at": 2009,
+      "phase": "Reading release notes and changelog",
+      "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
+      "done": 24,
+      "total": 44
+    },
+    {
+      "at": 3567,
+      "phase": "Comparing the public API surface",
+      "detail": "ecto_sqlite3 0.24.0 → 0.24.1 · 2 evidence sources",
+      "done": 24,
+      "total": 44
+    },
+    {
+      "at": 3568,
+      "phase": "No breaking changes to look for",
+      "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
+      "done": 24,
+      "total": 44
+    },
+    {
+      "at": 3568,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
+      "done": 24,
+      "total": 44
+    },
+    {
+      "at": 3663,
+      "phase": "Comparing the public API surface",
+      "detail": "phoenix_live_view 1.2.0 → 1.2.9 · 2 evidence sources",
+      "done": 24,
+      "total": 44
+    },
+    {
+      "at": 3664,
+      "phase": "No breaking changes to look for",
+      "detail": "phoenix_live_view 1.2.0 → 1.2.9",
+      "done": 24,
+      "total": 44
+    },
+    {
+      "at": 3664,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "phoenix_live_view 1.2.0 → 1.2.9",
+      "done": 24,
+      "total": 44
+    },
+    {
+      "at": 3781,
+      "phase": "Comparing the public API surface",
+      "detail": "phoenix_live_reload 1.6.2 → 1.7.0 · 2 evidence sources",
+      "done": 24,
+      "total": 44
+    },
+    {
+      "at": 3781,
+      "phase": "No breaking changes to look for",
+      "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
+      "done": 24,
+      "total": 44
+    },
+    {
+      "at": 3781,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
+      "done": 24,
+      "total": 44
+    },
+    {
+      "at": 3891,
+      "phase": "Checked",
+      "detail": "ecto_sqlite3 0.24.0 → 0.24.1 · safe for your code · no breaking changes found",
+      "done": 25,
+      "total": 44
+    },
+    {
+      "at": 3891,
+      "phase": "Checking the Hex",
+      "detail": "phoenix_live_dashboard (installed 0.8.7)",
+      "done": 25,
+      "total": 44
+    },
+    {
+      "at": 3894,
+      "phase": "Up to date",
+      "detail": "phoenix_live_dashboard@0.8.7",
+      "done": 26,
+      "total": 44
+    },
+    {
+      "at": 3894,
+      "phase": "Checking the Hex",
+      "detail": "telemetry_metrics (installed 1.1.0)",
+      "done": 26,
+      "total": 44
+    },
+    {
+      "at": 3895,
+      "phase": "Up to date",
+      "detail": "telemetry_metrics@1.1.0",
+      "done": 27,
+      "total": 44
+    },
+    {
+      "at": 3895,
+      "phase": "Checking the Hex",
+      "detail": "telemetry_poller (installed 1.3.0)",
+      "done": 27,
+      "total": 44
+    },
+    {
+      "at": 3895,
+      "phase": "Up to date",
+      "detail": "telemetry_poller@1.3.0",
+      "done": 28,
+      "total": 44
+    },
+    {
+      "at": 3895,
+      "phase": "Checking the Hex",
+      "detail": "gettext (installed 1.0.2)",
+      "done": 28,
+      "total": 44
+    },
+    {
+      "at": 3895,
+      "phase": "Up to date",
+      "detail": "gettext@1.0.2",
+      "done": 29,
+      "total": 44
+    },
+    {
+      "at": 3895,
+      "phase": "Checking the Hex",
+      "detail": "jason (installed 1.4.5)",
+      "done": 29,
+      "total": 44
+    },
+    {
+      "at": 3895,
+      "phase": "Reading release notes and changelog",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "done": 29,
+      "total": 44
+    },
+    {
+      "at": 3981,
+      "phase": "Checked",
+      "detail": "phoenix_live_view 1.2.0 → 1.2.9 · safe for your code · no breaking changes found",
+      "done": 30,
+      "total": 44
+    },
+    {
+      "at": 3981,
+      "phase": "Checking the Hex",
+      "detail": "swoosh (installed 1.27.0)",
+      "done": 30,
+      "total": 44
+    },
+    {
+      "at": 3983,
+      "phase": "Up to date",
+      "detail": "swoosh@1.27.0",
+      "done": 31,
+      "total": 44
+    },
+    {
+      "at": 3983,
+      "phase": "Checking the Hex",
+      "detail": "bandit (installed 1.12.4)",
+      "done": 31,
+      "total": 44
+    },
+    {
+      "at": 3983,
+      "phase": "Up to date",
+      "detail": "bandit@1.12.4",
+      "done": 32,
+      "total": 44
+    },
+    {
+      "at": 3983,
+      "phase": "Checking the Hex",
+      "detail": "bcrypt_elixir (installed 3.3.2)",
+      "done": 32,
+      "total": 44
+    },
+    {
+      "at": 3984,
+      "phase": "Up to date",
+      "detail": "bcrypt_elixir@3.3.2",
+      "done": 33,
+      "total": 44
+    },
+    {
+      "at": 3984,
+      "phase": "Checking the Hex",
+      "detail": "argon2_elixir (installed 4.1.3)",
+      "done": 33,
+      "total": 44
+    },
+    {
+      "at": 3985,
+      "phase": "Up to date",
+      "detail": "argon2_elixir@4.1.3",
+      "done": 34,
+      "total": 44
+    },
+    {
+      "at": 3985,
+      "phase": "Checking the Hex",
+      "detail": "pbkdf2_elixir (installed 2.3.1)",
+      "done": 34,
+      "total": 44
+    },
+    {
+      "at": 3986,
+      "phase": "Up to date",
+      "detail": "pbkdf2_elixir@2.3.1",
+      "done": 35,
+      "total": 44
+    },
+    {
+      "at": 3986,
+      "phase": "Checking the Hex",
+      "detail": "tailwind (installed 0.5.1)",
+      "done": 35,
+      "total": 44
+    },
+    {
+      "at": 3987,
+      "phase": "Up to date",
+      "detail": "tailwind@0.5.1",
+      "done": 36,
+      "total": 44
+    },
+    {
+      "at": 3987,
+      "phase": "Checking the Hex",
+      "detail": "req (installed 0.7.2)",
+      "done": 36,
+      "total": 44
+    },
+    {
+      "at": 3988,
+      "phase": "Up to date",
+      "detail": "req@0.7.2",
+      "done": 37,
+      "total": 44
+    },
+    {
+      "at": 3995,
+      "phase": "Comparing the public API surface",
+      "detail": "lazy_html 0.1.11 → 0.1.12 · 1 evidence source",
+      "done": 37,
+      "total": 44
+    },
+    {
+      "at": 3995,
+      "phase": "No breaking changes to look for",
+      "detail": "lazy_html 0.1.11 → 0.1.12",
+      "done": 37,
+      "total": 44
+    },
+    {
+      "at": 3995,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "lazy_html 0.1.11 → 0.1.12",
+      "done": 37,
+      "total": 44
+    },
+    {
+      "at": 4017,
+      "phase": "Checked",
+      "detail": "phoenix_live_reload 1.6.2 → 1.7.0 · safe for your code · no breaking changes found",
+      "done": 38,
+      "total": 44
+    },
+    {
+      "at": 4141,
+      "phase": "Checked",
+      "detail": "lazy_html 0.1.11 → 0.1.12 · safe for your code · no breaking changes found",
+      "done": 39,
+      "total": 44
+    },
+    {
+      "at": 4754,
+      "phase": "Comparing the public API surface",
+      "detail": "plug_cowboy 2.8.1 → 2.9.0 · 2 evidence sources",
+      "done": 39,
+      "total": 44
+    },
+    {
+      "at": 4754,
+      "phase": "No breaking changes to look for",
+      "detail": "plug_cowboy 2.8.1 → 2.9.0",
+      "done": 39,
+      "total": 44
+    },
+    {
+      "at": 4754,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "plug_cowboy 2.8.1 → 2.9.0",
+      "done": 39,
+      "total": 44
+    },
+    {
+      "at": 4856,
+      "phase": "Comparing the public API surface",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2 · 1 evidence source",
+      "done": 39,
+      "total": 44
+    },
+    {
+      "at": 4856,
+      "phase": "No breaking changes to look for",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "done": 39,
+      "total": 44
+    },
+    {
+      "at": 4857,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "done": 39,
+      "total": 44
+    },
+    {
+      "at": 4857,
+      "phase": "Comparing the public API surface",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2 · 1 evidence source",
+      "done": 39,
+      "total": 44
+    },
+    {
+      "at": 4857,
+      "phase": "No breaking changes to look for",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "done": 39,
+      "total": 44
+    },
+    {
+      "at": 4857,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "done": 39,
+      "total": 44
+    },
+    {
+      "at": 4881,
+      "phase": "Comparing the public API surface",
+      "detail": "ecto 3.14.0 → 3.14.1 · 1 evidence source",
+      "done": 39,
+      "total": 44
+    },
+    {
+      "at": 4881,
+      "phase": "No breaking changes to look for",
+      "detail": "ecto 3.14.0 → 3.14.1",
+      "done": 39,
+      "total": 44
+    },
+    {
+      "at": 4881,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "ecto 3.14.0 → 3.14.1",
+      "done": 39,
+      "total": 44
+    },
+    {
+      "at": 4994,
+      "phase": "Comparing the public API surface",
+      "detail": "postgrex 0.22.3 → 0.22.4 · 2 evidence sources",
+      "done": 39,
+      "total": 44
+    },
+    {
+      "at": 4994,
+      "phase": "No breaking changes to look for",
+      "detail": "postgrex 0.22.3 → 0.22.4",
+      "done": 39,
+      "total": 44
+    },
+    {
+      "at": 4994,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "postgrex 0.22.3 → 0.22.4",
+      "done": 39,
+      "total": 44
+    },
+    {
+      "at": 4995,
+      "phase": "Checked",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2 · safe for your code · no breaking changes found",
+      "done": 40,
+      "total": 44
+    },
+    {
+      "at": 5012,
+      "phase": "Checked",
+      "detail": "plug_cowboy 2.8.1 → 2.9.0 · safe for your code · no breaking changes found",
+      "done": 41,
+      "total": 44
+    },
+    {
+      "at": 5013,
+      "phase": "Checked",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2 · safe for your code · no breaking changes found",
+      "done": 42,
+      "total": 44
+    },
+    {
+      "at": 5087,
+      "phase": "Checked",
+      "detail": "ecto 3.14.0 → 3.14.1 · safe for your code · no breaking changes found",
+      "done": 43,
+      "total": 44
+    },
+    {
+      "at": 5148,
+      "phase": "Checked",
+      "detail": "postgrex 0.22.3 → 0.22.4 · safe for your code · no breaking changes found",
+      "done": 44,
+      "total": 44
+    },
+    {
+      "at": 5660,
+      "phase": "Auditing installed versions",
+      "detail": "plug 1.14.0 → 1.20.3 (installed)",
+      "done": 0,
+      "total": 44
+    },
+    {
+      "at": 5660,
+      "phase": "Auditing installed versions",
+      "detail": "telemetry 0.4.0 → 1.4.2 (installed)",
+      "done": 1,
+      "total": 44
+    },
+    {
+      "at": 5661,
+      "phase": "Auditing installed versions",
+      "detail": "phoenix_pubsub 2.1.0 → 2.2.0 (installed)",
+      "done": 1,
+      "total": 44
+    },
+    {
+      "at": 5661,
+      "phase": "Auditing installed versions",
+      "detail": "phoenix_template 1.0.0 → 1.0.4 (installed)",
+      "done": 1,
+      "total": 44
+    },
+    {
+      "at": 5661,
+      "phase": "Auditing installed versions",
+      "detail": "websock_adapter 0.5.0 → 0.6.0 (installed)",
+      "done": 1,
+      "total": 44
+    },
+    {
+      "at": 5661,
+      "phase": "Auditing installed versions",
+      "detail": "phoenix_view 2.0.0 → 2.0.4 (installed)",
+      "done": 1,
+      "total": 44
+    },
+    {
+      "at": 5661,
+      "phase": "Auditing installed versions",
+      "detail": "plug_cowboy 2.7.0 → 2.8.1 (installed)",
+      "done": 1,
+      "total": 44
+    },
+    {
+      "at": 5661,
+      "phase": "Auditing installed versions",
+      "detail": "bandit 1.0.0 → 1.12.4 (installed)",
+      "done": 1,
+      "total": 44
+    },
+    {
+      "at": 5742,
+      "phase": "Auditing installed versions",
+      "detail": "jason 1.0.0 → 1.4.5 (installed)",
+      "done": 3,
+      "total": 44
+    },
+    {
+      "at": 5799,
+      "phase": "Auditing installed versions",
+      "detail": "ex_doc 0.38.0 → 0.40.3 (installed)",
+      "done": 4,
+      "total": 44
+    },
+    {
+      "at": 6939,
+      "phase": "Auditing installed versions",
+      "detail": "ecto 3.0.0 → 3.14.0 (installed)",
+      "done": 5,
+      "total": 44
+    },
+    {
+      "at": 7023,
+      "phase": "Auditing installed versions",
+      "detail": "ecto_sql 3.10.0 → 3.14.0 (installed)",
+      "done": 6,
+      "total": 44
+    },
+    {
+      "at": 7323,
+      "phase": "Auditing installed versions",
+      "detail": "gettext 1.0.0 → 1.0.2 (installed)",
+      "done": 7,
+      "total": 44
+    },
+    {
+      "at": 7325,
+      "phase": "Auditing installed versions",
+      "detail": "telemetry_poller 1.0.0 → 1.3.0 (installed)",
+      "done": 9,
+      "total": 44
+    },
+    {
+      "at": 7353,
+      "phase": "Auditing installed versions",
+      "detail": "telemetry_metrics 1.0.0 → 1.1.0 (installed)",
+      "done": 10,
+      "total": 44
+    },
+    {
+      "at": 7354,
+      "phase": "Auditing installed versions",
+      "detail": "makeup_eex 2.0.0 → 2.0.2 (installed)",
+      "done": 13,
+      "total": 44
+    },
+    {
+      "at": 8154,
+      "phase": "Auditing installed versions",
+      "detail": "makeup_syntect 0.1.0 → 0.1.4 (installed)",
+      "done": 14,
+      "total": 44
+    },
+    {
+      "at": 8172,
+      "phase": "Auditing installed versions",
+      "detail": "ex_doc 0.24.0 → 0.40.3 (installed)",
+      "done": 16,
+      "total": 44
+    },
+    {
+      "at": 8250,
+      "phase": "Auditing installed versions",
+      "detail": "phoenix_ecto 4.5.0 → 4.7.0 (installed)",
+      "done": 17,
+      "total": 44
+    },
+    {
+      "at": 8268,
+      "phase": "Auditing installed versions",
+      "detail": "ecto_sql 3.13.0 → 3.14.0 (installed)",
+      "done": 20,
+      "total": 44
+    },
+    {
+      "at": 9344,
+      "phase": "Auditing installed versions",
+      "detail": "postgrex 0.0.0 → 0.22.3 (installed)",
+      "done": 21,
+      "total": 44
+    },
+    {
+      "at": 9346,
+      "phase": "Auditing installed versions",
+      "detail": "myxql 0.0.0 → 0.9.0 (installed)",
+      "done": 23,
+      "total": 44
+    },
+    {
+      "at": 9393,
+      "phase": "Auditing installed versions",
+      "detail": "tds 0.0.0 → 2.3.8 (installed)",
+      "done": 25,
+      "total": 44
+    },
+    {
+      "at": 9413,
+      "phase": "Auditing installed versions",
+      "detail": "ecto_sqlite3 0.0.0 → 0.24.0 (installed)",
+      "done": 27,
+      "total": 44
+    },
+    {
+      "at": 9453,
+      "phase": "Auditing installed versions",
+      "detail": "phoenix_html 4.1.0 → 4.3.0 (installed)",
+      "done": 28,
+      "total": 44
+    },
+    {
+      "at": 9459,
+      "phase": "Auditing installed versions",
+      "detail": "lazy_html 0.1.0 → 0.1.11 (installed)",
+      "done": 32,
+      "total": 44
+    },
+    {
+      "at": 9505,
+      "phase": "Auditing installed versions",
+      "detail": "phoenix_live_reload 1.2.0 → 1.6.2 (installed)",
+      "done": 33,
+      "total": 44
+    },
+    {
+      "at": 9525,
+      "phase": "Auditing installed versions",
+      "detail": "phoenix_live_dashboard 0.8.3 → 0.8.7 (installed)",
+      "done": 34,
+      "total": 44
+    },
+    {
+      "at": 9538,
+      "phase": "Auditing installed versions",
+      "detail": "telemetry_metrics 1.0.0 → 1.1.0 (installed)",
+      "done": 36,
+      "total": 44
+    },
+    {
+      "at": 9582,
+      "phase": "Auditing installed versions",
+      "detail": "telemetry_poller 1.0.0 → 1.3.0 (installed)",
+      "done": 38,
+      "total": 44
+    },
+    {
+      "at": 9624,
+      "phase": "Auditing installed versions",
+      "detail": "gettext 1.0.0 → 1.0.2 (installed)",
+      "done": 40,
+      "total": 44
+    },
+    {
+      "at": 9680,
+      "phase": "Auditing installed versions",
+      "detail": "jason 1.2.0 → 1.4.5 (installed)",
+      "done": 42,
+      "total": 44
+    },
+    {
+      "at": 9733,
+      "phase": "Auditing installed versions",
+      "detail": "swoosh 1.16.0 → 1.27.0 (installed)",
+      "done": 43,
+      "total": 44
+    },
+    {
+      "at": 10495,
+      "phase": "Auditing installed versions",
+      "detail": "bandit 1.12.0 → 1.12.4 (installed)",
+      "done": 45,
+      "total": 44
+    },
+    {
+      "at": 10515,
+      "phase": "Auditing installed versions",
+      "detail": "bcrypt_elixir 3.0.0 → 3.3.2 (installed)",
+      "done": 46,
+      "total": 44
+    },
+    {
+      "at": 10588,
+      "phase": "Auditing installed versions",
+      "detail": "argon2_elixir 4.0.0 → 4.1.3 (installed)",
+      "done": 47,
+      "total": 44
+    },
+    {
+      "at": 10736,
+      "phase": "Auditing installed versions",
+      "detail": "pbkdf2_elixir 2.0.0 → 2.3.1 (installed)",
+      "done": 49,
+      "total": 44
+    },
+    {
+      "at": 10857,
+      "phase": "Auditing installed versions",
+      "detail": "tailwind 0.5.0 → 0.5.1 (installed)",
+      "done": 51,
+      "total": 44
+    },
+    {
+      "at": 10938,
+      "phase": "Auditing installed versions",
+      "detail": "req 0.5.0 → 0.7.2 (installed)",
+      "done": 53,
+      "total": 44
+    }
+  ],
+  "candidates": [
+    {
+      "name": "ecto",
+      "ecosystem": "hex",
+      "current": "3.14.0",
+      "latest": "3.14.1",
+      "selected": "3.14.1",
+      "safeLatest": "3.14.1",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift read the changelog for ecto 3.14.1 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read the changelog for ecto 3.14.1 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "ecto_sqlite3",
+      "ecosystem": "hex",
+      "current": "0.24.0",
+      "latest": "0.24.1",
+      "selected": "0.24.1",
+      "safeLatest": "0.24.1",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Do not upgrade yet. Drift read the changelog for ecto_sqlite3 0.24.1 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "do-not-upgrade-yet",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [
+        "Drift read the changelog for ecto_sqlite3 0.24.1 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "jason",
+      "ecosystem": "hex",
+      "current": "1.4.5",
+      "latest": "1.5.0-alpha.2",
+      "selected": "1.5.0-alpha.2",
+      "safeLatest": null,
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift read the release notes and the changelog for jason 1.5.0-alpha.2 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read the release notes and the changelog for jason 1.5.0-alpha.2 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "jason",
+      "ecosystem": "hex",
+      "current": "1.4.5",
+      "latest": "1.5.0-alpha.2",
+      "selected": "1.5.0-alpha.2",
+      "safeLatest": null,
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift read the release notes and the changelog for jason 1.5.0-alpha.2 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read the release notes and the changelog for jason 1.5.0-alpha.2 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "lazy_html",
+      "ecosystem": "hex",
+      "current": "0.1.11",
+      "latest": "0.1.12",
+      "selected": "0.1.12",
+      "safeLatest": "0.1.12",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift read the release notes and the changelog for lazy_html 0.1.12 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read the release notes and the changelog for lazy_html 0.1.12 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "phoenix_live_reload",
+      "ecosystem": "hex",
+      "current": "1.6.2",
+      "latest": "1.7.0",
+      "selected": "1.7.0",
+      "safeLatest": "1.7.0",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Do not upgrade yet. Drift read the changelog for phoenix_live_reload 1.7.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "do-not-upgrade-yet",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [
+        "Drift read the changelog for phoenix_live_reload 1.7.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "phoenix_live_view",
+      "ecosystem": "hex",
+      "current": "1.2.0",
+      "latest": "1.2.9",
+      "selected": "1.2.9",
+      "safeLatest": "1.2.9",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Do not upgrade yet. Fixes 1 known vulnerability.",
+      "recommendation": "do-not-upgrade-yet",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [
+        "Drift read 9 sets of release notes and the changelog for phoenix_live_view 1.2.9 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "plug_cowboy",
+      "ecosystem": "hex",
+      "current": "2.8.1",
+      "latest": "2.9.0",
+      "selected": "2.9.0",
+      "safeLatest": "2.9.0",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Do not upgrade yet. Drift read the changelog for plug_cowboy 2.9.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "do-not-upgrade-yet",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [
+        "Drift read the changelog for plug_cowboy 2.9.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "postgrex",
+      "ecosystem": "hex",
+      "current": "0.22.3",
+      "latest": "0.22.4",
+      "selected": "0.22.4",
+      "safeLatest": "0.22.4",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Do not upgrade yet. Fixes 1 known vulnerability.",
+      "recommendation": "do-not-upgrade-yet",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [
+        "Drift read the changelog for postgrex 0.22.4 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    }
+  ],
+  "audit": {
+    "checked": 44,
+    "analysed": 39,
+    "findings": [
+      {
+        "kind": "unreviewed-drift",
+        "dependency": "plug",
+        "declaredRange": "~> 1.14",
+        "rangeFloor": "1.14.0",
+        "installedVersion": "1.20.3",
+        "summary": "`push` no longer supported by browsers",
+        "remediation": "Behaviour changed: `push` no longer supported by browsers. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
+        "sites": [
+          {
+            "file": "test/phoenix/integration/websocket_channels_test.exs",
+            "line": 43,
+            "excerpt": "push(socket, \"joined\", Map.merge(%{status: \"connected\"}, socket.assigns))",
+            "matchedSymbol": "push",
+            "confidence": "medium"
+          },
+          {
+            "file": "test/phoenix/integration/websocket_channels_test.exs",
+            "line": 57,
+            "excerpt": "push(socket, \"binary_event\", {:binary, <<0, 1>>})",
+            "matchedSymbol": "push",
+            "confidence": "medium"
+          },
+          {
+            "file": "test/phoenix/integration/websocket_channels_test.exs",
+            "line": 62,
+            "excerpt": "push(socket, \"new_msg\", Map.put(payload, \"transport\", inspect(socket.transport)))",
+            "matchedSymbol": "push",
+            "confidence": "medium"
+          },
+          {
+            "file": "test/phoenix/integration/websocket_channels_test.exs",
+            "line": 67,
+            "excerpt": "push(socket, \"you_left\", %{message: \"bye!\"})",
+            "matchedSymbol": "push",
+            "confidence": "medium"
+          }
+        ]
+      }
+    ]
+  }
+}

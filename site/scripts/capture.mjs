@@ -175,6 +175,101 @@ const TARGETS = [
     blurb: 'The firmware behind most ESP32 and ESP8266 home-automation devices.',
     dir: '',
   },
+  // Everything below completes the set. The page used to show seven
+  // ecosystems out of sixteen, which reads as a list of the ones that work —
+  // and the nine it left out include the three that changed most: PHP, Elixir,
+  // and Swift could not be localized at all until the module map landed.
+  //
+  // Some of these recordings are thinner than the seven above, and that is the
+  // honest part of showing them. A CocoaPods run has no advisory feed and no
+  // verification command; an opam run has no registry metadata API. The page
+  // says so with the same tier badge the capability matrix computes, rather
+  // than quietly omitting the ecosystem and letting a visitor assume.
+  {
+    id: 'restsharp',
+    label: 'RestSharp',
+    ecosystem: 'nuget',
+    language: 'C#',
+    repo: 'https://github.com/restsharp/RestSharp',
+    blurb: 'The HTTP client most .NET codebases reach for first.',
+    dir: '',
+  },
+  {
+    id: 'guzzle',
+    label: 'guzzle',
+    ecosystem: 'packagist',
+    language: 'PHP',
+    repo: 'https://github.com/guzzle/guzzle',
+    blurb: "PHP's HTTP client, and a dependency of a large share of the ecosystem.",
+    dir: '',
+  },
+  {
+    id: 'phoenix',
+    label: 'phoenix',
+    ecosystem: 'hex',
+    language: 'Elixir',
+    repo: 'https://github.com/phoenixframework/phoenix',
+    blurb: 'The web framework nearly every production Elixir application is built on.',
+    dir: '',
+  },
+  {
+    id: 'dio',
+    label: 'dio',
+    ecosystem: 'pub',
+    language: 'Dart',
+    repo: 'https://github.com/cfug/dio',
+    blurb: "Dart's most-used HTTP client, in the package that declares its dependencies.",
+    dir: 'dio',
+  },
+  {
+    // Vapor was the first choice and produced an honest, boring recording:
+    // twenty-two dependencies, every one already current. The Composable
+    // Architecture pins more of its graph and moves more slowly, which is what
+    // an upgrade scan is about.
+    id: 'tca',
+    label: 'swift-composable-architecture',
+    ecosystem: 'swift',
+    language: 'Swift',
+    repo: 'https://github.com/pointfreeco/swift-composable-architecture',
+    blurb: 'The state-management library much of the Swift app ecosystem builds on.',
+    dir: '',
+  },
+  {
+    id: 'flexlayout',
+    label: 'FlexLayout',
+    ecosystem: 'cocoapods',
+    language: 'Swift',
+    repo: 'https://github.com/layoutBox/FlexLayout',
+    blurb: 'A Swift flexbox layout library, with the Podfile that pins its pods.',
+    dir: '',
+  },
+  {
+    id: 'cohttp',
+    label: 'ocaml-cohttp',
+    ecosystem: 'opam',
+    language: 'OCaml',
+    repo: 'https://github.com/mirage/ocaml-cohttp',
+    blurb: "OCaml's HTTP library, from the MirageOS project.",
+    dir: '',
+  },
+  {
+    id: 'trantor',
+    label: 'trantor',
+    ecosystem: 'conan',
+    language: 'C++',
+    repo: 'https://github.com/an-tao/trantor',
+    blurb: 'The C++ network library underneath Drogon, with a conanfile.txt.',
+    dir: '',
+  },
+  {
+    id: 'obs-backgroundremoval',
+    label: 'obs-backgroundremoval',
+    ecosystem: 'vcpkg',
+    language: 'C++',
+    repo: 'https://github.com/royshil/obs-backgroundremoval',
+    blurb: 'An OBS plugin that pins its native dependencies through vcpkg.',
+    dir: '',
+  },
 ];
 
 const config = DriftConfigSchema.parse({});
