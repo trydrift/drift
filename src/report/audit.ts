@@ -35,9 +35,8 @@ export function renderAudit(audit: AuditResult | undefined): string {
   lines.push(
     '',
     `These findings are about the versions **installed right now**. Each one is a place where this ` +
-      `repository's code no longer matches the dependency on disk — the manifest's range let a newer ` +
-      `version in, and nothing checked the code against it. Upgrading will not fix them; they are ` +
-      `already true.`,
+      `repository imports something that, checked directly against the package sitting in ` +
+      `\`node_modules\`, is not there. Upgrading will not fix them; they are already true.`,
     '',
   );
 
@@ -71,7 +70,8 @@ export function renderAudit(audit: AuditResult | undefined): string {
 
   lines.push(
     `<sub>Audited ${audit.analysed} of ${audit.checked} direct ${audit.checked === 1 ? 'dependency' : 'dependencies'}; ` +
-      `the rest are pinned to an exact version, which leaves no unreviewed window to check.</sub>`,
+      `the rest were not npm packages, had no on-disk declarations, or this repository imports ` +
+      `nothing from them by name.</sub>`,
   );
 
   return lines.join('\n').trimEnd();
@@ -94,8 +94,8 @@ function renderFinding(finding: LatentFinding): string {
     '',
     breaking?.summary ?? finding.summary,
     '',
-    `Declared as \`${finding.declaredRange}\`, so anything from ${finding.rangeFloor} up was permitted. ` +
-      `${finding.installedVersion} is what resolved, and this change landed somewhere in between.`,
+    `Checked directly against \`${finding.dependency}@${finding.installedVersion}\` as installed in ` +
+      `\`node_modules\` — not a version diff, the file this repository's own tooling would resolve.`,
   );
 
   if (breaking?.remediation) lines.push('', `**Fix:** ${breaking.remediation}`);

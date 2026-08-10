@@ -4,11 +4,11 @@ import type { AnalysisGap, CheckedSurface } from '../confidence/types.js';
 /**
  * Why a dependency's current state is a problem, as opposed to a future one.
  *
- * `unreviewed-drift` — the installed version is ahead of the oldest version the
- * manifest range admits, and code in this repository still uses an API that
- * changed somewhere in that window. Nobody chose this: the range permitted it
- * and a resolver took it. The code is out of step with the dependency that is
- * on disk right now.
+ * `unreviewed-drift` — this repository imports a symbol from a package that,
+ * checked directly against the copy actually installed in `node_modules`,
+ * does not export it. No manifest range or version diff is involved: this is
+ * a fact about the file on disk right now, read the same way Node or `tsc`
+ * would resolve it.
  *
  * `range-violation` — the installed version does not satisfy the declared range
  * at all. A fresh install on another machine would resolve something different
@@ -36,8 +36,15 @@ export interface LatentFinding {
   manifestPath: string;
   /** The constraint as written in the manifest, e.g. `^4.0.0`. */
   declaredRange: string;
-  /** Oldest version that range admits — see `rangeFloor`. */
-  rangeFloor: string;
+  /**
+   * Oldest version the declared range admits — see `rangeFloor`.
+   *
+   * Only meaningful on `range-violation`, where it doubles as "what actually
+   * resolved" for lack of a better field. `unreviewed-drift` findings compare
+   * the installed package directly against this repository's own imports, not
+   * against a range, so there is no floor to report.
+   */
+  rangeFloor?: string;
   /** What is actually resolved on disk, from the lockfile where one exists. */
   installedVersion: string;
   /**

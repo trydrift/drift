@@ -570,7 +570,7 @@ async function collectDeclarationSources(
  * most likely to have a breaking change in it — went unread while the diff
  * still reported itself as a comparison.
  */
-function relativeReExports(content: string): string[] {
+export function relativeReExports(content: string): string[] {
   const out = new Set<string>();
   const pattern =
     /\bexport\s+(?:type\s+)?(?:\*(?:\s+as\s+\w+)?|\{[^}]*\})\s+from\s+['"](\.[^'"]+)['"]/g;

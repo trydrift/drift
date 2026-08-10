@@ -225,9 +225,10 @@ export default function Home() {
                 Some of your code is already broken
               </h2>
               <p className="mt-4 max-w-lg text-sm leading-relaxed text-muted">
-                A range like <code className="rounded bg-surface-hover px-1.5 py-0.5 font-mono text-xs text-brand-text">^4.0.0</code>{" "}
-                keeps admitting new 4.x versions. <code className="rounded bg-surface-hover px-1.5 py-0.5 font-mono text-xs text-brand-text">drift audit</code>{" "}
-                checks the window between the oldest allowed version and what is installed today.
+                <code className="rounded bg-surface-hover px-1.5 py-0.5 font-mono text-xs text-brand-text">drift audit</code>{" "}
+                skips the manifest entirely and reads the package actually sitting in{" "}
+                <code className="rounded bg-surface-hover px-1.5 py-0.5 font-mono text-xs text-brand-text">node_modules</code>
+                , then checks every symbol your code imports from it against that file. No registry, no version diff.
               </p>
             </div>
             <RangeWindowVisual findings={proof.auditFindings} />
@@ -468,18 +469,18 @@ function RangeWindowVisual({ findings }: { findings: number }) {
   return (
     <div className="rounded-lg border border-border bg-surface/80 p-4 sm:p-5">
       <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-        <VersionNode label="oldest allowed" value="4.0.0" />
+        <VersionNode label="your code imports" value="createLegacyClient" />
         <div className="hidden h-px min-w-20 bg-gradient-to-r from-brand/30 via-brand to-brand/30 sm:block" />
-        <VersionNode label="installed today" value="4.8.2" emphasis />
+        <VersionNode label="node_modules, version" value="4.8.2" emphasis />
       </div>
       <div className="mt-5 rounded-md border border-border bg-[var(--pre-bg)] p-3">
         <div className="flex items-center gap-2 font-mono text-[11px] text-faint">
           <span className="size-2 rounded-full bg-amber-500" />
-          range window
-          <span className="ml-auto text-brand-text">^4.0.0</span>
+          read straight off disk
+          <span className="ml-auto text-brand-text">no version diff</span>
         </div>
         <div className="mt-3 grid grid-cols-[auto_1fr_auto] items-center gap-2 text-xs">
-          <span className="font-mono text-faint">removed API</span>
+          <span className="font-mono text-faint">not exported</span>
           <span className="h-px bg-border" />
           <span className="font-mono text-foreground">call site still uses it</span>
         </div>

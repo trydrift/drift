@@ -872,8 +872,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     if (merged.length === 0) {
       step.done(
         analysed === 0
-          ? `Nothing to audit — all ${checked} dependencies are pinned to exact versions`
-          : `Your code matches all ${analysed} dependencies that had an unreviewed version window`,
+          ? `Nothing to statically check — none of ${checked} dependencies had a readable, imported symbol to verify`
+          : `Your code matches everything actually exported by the ${analysed} package${analysed === 1 ? '' : 's'} checked` +
+              (checked > analysed
+                ? ` (the other ${checked - analysed} of ${checked} weren't npm, had no on-disk types, or aren't imported by name)`
+                : ''),
       );
       return;
     }

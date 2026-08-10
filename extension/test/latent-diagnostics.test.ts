@@ -39,7 +39,6 @@ const finding = (over: Partial<LatentFinding> = {}): LatentFinding => ({
   ecosystem: 'npm',
   manifestPath: 'package.json',
   declaredRange: '^3.60.0',
-  rangeFloor: '3.60.0',
   installedVersion: '3.90.0',
   breakingChange: {
     id: 'bc_1',
@@ -154,14 +153,14 @@ describe('inline markers for already-installed breakage', () => {
     diagnostics.dispose();
   });
 
-  test('the marker explains the window that produced it', () => {
+  test('the marker explains it was checked against the real installed package', () => {
     const diagnostics = new DriftDiagnostics(stateWith({ audit: auditOf([finding()]) }));
     diagnostics.render();
 
     const [entry] = [...collectionStore(diagnostics).values()].flat();
     const related = (entry!.relatedInformation ?? []) as { message: string }[];
-    assert.match(related[0]!.message, /\^3\.60\.0/);
-    assert.match(related[0]!.message, /3\.90\.0 resolved/);
+    assert.match(related[0]!.message, /phaser@3\.90\.0/);
+    assert.match(related[0]!.message, /node_modules/);
     diagnostics.dispose();
   });
 
