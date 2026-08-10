@@ -12,6 +12,7 @@ import { analyze } from '../analyze/index.js';
 import { walkSourceFiles, type SourceFile } from '../index/walk.js';
 import { buildIndex, type RepoIndex } from '../index/metarag.js';
 import { localize } from '../localize/index.js';
+import { resolveModuleMaps } from '../localize/modules.js';
 import { stableId } from '../util/id.js';
 import { discoverTargets, directDependencies, type EcosystemTarget } from '../upgrade/scan.js';
 import { rangeFloor, satisfiesRange } from './range.js';
@@ -210,10 +211,12 @@ export async function auditCurrentUsage(options: AuditOptions): Promise<AuditRes
         return;
       }
 
+      const moduleMaps = await resolveModuleMaps([change], { logger });
       const sites = localize(breakingChanges, [change], index, files, {
         logger,
         maxSitesPerChange: maxSites,
         member,
+        moduleMaps,
       });
 
       // The whole point of the audit is present-tense breakage, and a finding

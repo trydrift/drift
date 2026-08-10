@@ -16,6 +16,7 @@ import { analyze } from './analyze/index.js';
 import { buildIndex } from './index/metarag.js';
 import { walkSourceFiles } from './index/walk.js';
 import { localize } from './localize/index.js';
+import { resolveModuleMaps } from './localize/modules.js';
 import { attemptCodemod, type CodemodResult } from './codemod/index.js';
 import { findCommunityRecipe } from './remediation/registry.js';
 import type { CommunityRecipeCandidate } from './remediation/types.js';
@@ -270,6 +271,12 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     const index = buildIndex(files);
     indexed = { files, index };
 
+    // What each package calls itself in source, read from the artefact the
+    // registry published. Resolved once for the whole run — every dependency
+    // that moved, concurrently — because the alternative is one round trip per
+    // breaking change against packages that repeat across findings.
+    const moduleMaps = await resolveModuleMaps(actionable, { logger });
+
     for (const [member, changesHere] of groupByMember(actionable)) {
       const ids = new Set(changesHere.map((c) => c.name));
       // `b.workspace === member` matters as much as the name: two members can
@@ -277,7 +284,9 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       // also pick up — and search for — the other member's findings.
       const relevant = breakingChanges.filter((b) => ids.has(b.dependency) && b.workspace === member);
       if (relevant.length === 0) continue;
-      impactSites.push(...localize(relevant, changesHere, index, files, { logger, member }));
+      impactSites.push(
+        ...localize(relevant, changesHere, index, files, { logger, member, moduleMaps }),
+      );
     }
 
     logger.info(`Found ${impactSites.length} impact site(s)`);
