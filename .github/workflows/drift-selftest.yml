@@ -7,7 +7,7 @@
 # Trigger it by hand from the Actions tab, or let it fire when Drift's own
 # dependencies change.
 
-name: Drift (self-test)
+name: Drift (self-check)
 
 on:
   workflow_dispatch:
