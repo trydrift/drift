@@ -2,8 +2,12 @@ import {
   CAPABILITY_STAGES,
   ECOSYSTEM_CAPABILITIES,
   STAGE_LABEL,
+  TIER_DESCRIPTION,
+  tierFor,
   type EcosystemCapability,
+  type LocalizationBasis,
   type SupportLevel,
+  type SupportTier,
 } from '../detect/capabilities.js';
 
 /**
@@ -51,6 +55,31 @@ export function renderSupportMatrix(): string {
   lines.push('| --- | --- |');
   for (const stage of CAPABILITY_STAGES) {
     lines.push(`| ${STAGE_LABEL[stage]} | ${STAGE_MEANING[stage]} |`);
+  }
+  lines.push('');
+
+  lines.push('## How deep the support goes');
+  lines.push('');
+  lines.push('Sixteen rows of `Partial` do not tell you which ecosystems Drift is *good* at.');
+  lines.push('This does. Three things decide it, and the tier is how many of them hold:');
+  lines.push('');
+  lines.push('1. **A computed API diff** — Drift compares what was actually published, rather');
+  lines.push('   than reading the changelog and hoping it is complete.');
+  lines.push('2. **Module names the package declares** — the join between "this changed" and');
+  lines.push('   "you use it" runs on names read from the artefact or fixed by the manifest,');
+  lines.push('   not on a naming habit Drift is guessing at.');
+  lines.push("3. **Verification Drift can run** — the ecosystem's own build and tests, over");
+  lines.push('   the change Drift proposes.');
+  lines.push('');
+  lines.push('| Tier | What it means |');
+  lines.push('| --- | --- |');
+  for (const tier of TIERS) lines.push(`| ${TIER_LABEL[tier]} | ${TIER_DESCRIPTION[tier]} |`);
+  lines.push('');
+  lines.push('| Ecosystem | Depth | Module names |');
+  lines.push('| --- | --- | --- |');
+  for (const capability of ECOSYSTEM_CAPABILITIES) {
+    const tier = TIER_LABEL[tierFor(capability.ecosystem)];
+    lines.push(`| ${capability.label} | ${tier} | ${BASIS_LABEL[capability.localizationBasis]} |`);
   }
   lines.push('');
 
@@ -108,6 +137,11 @@ function renderEcosystem(capability: EcosystemCapability): string[] {
   lines.push('');
   lines.push(`**Package managers:** ${capability.managers.join(', ')}`);
   lines.push('');
+  lines.push(
+    `**Depth:** ${TIER_LABEL[tierFor(capability.ecosystem)]}. ` +
+      `Module names are ${BASIS_LABEL[capability.localizationBasis].toLowerCase()}.`,
+  );
+  lines.push('');
 
   for (const stage of CAPABILITY_STAGES) {
     const support = capability.support[stage];
@@ -123,6 +157,21 @@ function renderEcosystem(capability: EcosystemCapability): string[] {
   lines.push('');
   return lines;
 }
+
+const TIERS: readonly SupportTier[] = ['deep', 'strong', 'working', 'limited'];
+
+const TIER_LABEL: Record<SupportTier, string> = {
+  deep: 'Deep',
+  strong: 'Strong',
+  working: 'Working',
+  limited: 'Limited',
+};
+
+const BASIS_LABEL: Record<LocalizationBasis, string> = {
+  declared: 'Fixed by the manifest — the coordinate is the import name',
+  published: 'Read from the published artefact',
+  convention: "Inferred from the ecosystem's naming convention",
+};
 
 const STAGE_MEANING: Record<(typeof CAPABILITY_STAGES)[number], string> = {
   detect: 'Drift finds manifests, lockfiles, and the dependency versions that moved.',

@@ -80,10 +80,33 @@ export interface StageSupport {
   requires?: string;
 }
 
+/**
+ * Where the names localization joins against actually come from.
+ *
+ * This is the fact that decides whether a null result is reassuring, and it is
+ * not visible anywhere in the seven stage levels. All three bases produce a
+ * `partial` static-analysis row and they are not the same thing:
+ *
+ *   `declared`   — the manifest coordinate *is* the import name. `express` is
+ *                  imported as `express` and `github.com/x/y` as itself. There
+ *                  is nothing to infer and nothing to get wrong.
+ *   `published`  — the package states its own module names and Drift reads
+ *                  them out of the artefact: a wheel's `top_level.txt`, a
+ *                  jar's package directories, Packagist's PSR-4 map. Equally
+ *                  exact, one network call away.
+ *   `convention` — no published list exists, so Drift applies the ecosystem's
+ *                  naming habits. `libpng` is usually included as `<png.h>`
+ *                  and an opam `lwt` is usually the module `Lwt`. Usually is
+ *                  doing real work in that sentence.
+ */
+export type LocalizationBasis = 'declared' | 'published' | 'convention';
+
 export interface EcosystemCapability {
   ecosystem: Ecosystem;
   /** What a developer calls this ecosystem. */
   label: string;
+  /** Where the module names come from. See `LocalizationBasis`. */
+  localizationBasis: LocalizationBasis;
   /** Manifests and lockfiles that identify it, for the docs table. */
   files: readonly string[];
   /** Package managers Drift knows how to drive here, by label. */
@@ -100,14 +123,26 @@ const partial = (note: string, requires?: string): StageSupport => ({
 const none = (note: string): StageSupport => ({ level: 'none', note });
 
 /**
- * Static analysis is text-and-import matching against symbols named in the
- * evidence, not a compiler frontend. It is genuinely good at "you import the
- * thing that was removed" and genuinely cannot see through reflection, dynamic
- * dispatch, or code generation. Saying so once, here, keeps every ecosystem's
- * row from re-inventing the same caveat in slightly different words.
+ * Static analysis is an import-graph join, not a compiler frontend.
+ *
+ * Two facts are worth stating once here rather than sixteen times below. The
+ * first is what it does: it resolves what a file imports against what the
+ * package provides — read from the published artefact where the registry
+ * serves one — and follows this repository's own re-export edges so a call
+ * behind a barrel file is still found. The second is what it cannot do:
+ * reflection, dynamic dispatch, and code generation are invisible to it, and
+ * always will be without building the project.
  */
 const LOCALIZE_NOTE =
-  'Matches imports and references to symbols named in the evidence; cannot see through reflection, dynamic dispatch, or generated code.';
+  'Resolves imports against the module names the published package declares, follows re-exports inside your repository, and matches references to symbols named in the evidence. Cannot see through reflection, dynamic dispatch, or generated code.';
+
+/**
+ * The same note, for the ecosystems where the module names are a convention
+ * Drift applies rather than a list the registry publishes. The difference is
+ * real and a developer deciding whether to trust a null result should see it.
+ */
+const CONVENTION_LOCALIZE_NOTE =
+  'Matches imports and references to symbols named in the evidence, using the ecosystem\'s own module-naming convention where no published module list exists. Cannot see through reflection, dynamic dispatch, or generated code.';
 
 /**
  * C and C++ share a surface diff and a localizer across three package
@@ -125,7 +160,7 @@ const C_SURFACE_NOTE =
   'Compares the declarations in both versions\' public headers, which is what a consumer compiles against. Declarations behind preprocessor conditionals are read as written, not per build configuration.';
 
 const C_LOCALIZE_NOTE =
-  'Matches `#include` directives and references to symbols named in the evidence. A macro-generated call site is invisible, as is a header reached through another header.';
+  'Matches `#include` directives and references to symbols named in the evidence, following includes through your own headers so a library reached indirectly still counts. A macro-generated call site is invisible.';
 
 /**
  * Keyed by ecosystem rather than held as an array, so that adding a member to
@@ -135,6 +170,7 @@ const C_LOCALIZE_NOTE =
 const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
   npm: {
     ecosystem: 'npm',
+    localizationBasis: 'declared',
     label: 'JavaScript / TypeScript',
     files: [
       'package.json',
@@ -161,6 +197,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
   },
   pypi: {
     ecosystem: 'pypi',
+    localizationBasis: 'published',
     label: 'Python',
     files: ['pyproject.toml', 'requirements.txt', 'setup.py', 'poetry.lock', 'uv.lock', 'Pipfile'],
     managers: ['pip', 'Poetry', 'uv'],
@@ -179,6 +216,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
   },
   go: {
     ecosystem: 'go',
+    localizationBasis: 'declared',
     label: 'Go',
     files: ['go.mod', 'go.sum'],
     managers: ['Go modules'],
@@ -194,6 +232,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
   },
   cargo: {
     ecosystem: 'cargo',
+    localizationBasis: 'declared',
     label: 'Rust',
     files: ['Cargo.toml', 'Cargo.lock'],
     managers: ['Cargo'],
@@ -209,6 +248,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
   },
   maven: {
     ecosystem: 'maven',
+    localizationBasis: 'published',
     label: 'Java / Kotlin / Scala',
     files: ['pom.xml', 'build.gradle', 'build.gradle.kts', 'gradle/libs.versions.toml', 'build.sbt'],
     managers: ['Maven', 'Gradle', 'sbt'],
@@ -230,6 +270,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
   },
   rubygems: {
     ecosystem: 'rubygems',
+    localizationBasis: 'published',
     label: 'Ruby',
     files: ['Gemfile', 'Gemfile.lock', '*.gemspec'],
     managers: ['Bundler'],
@@ -250,6 +291,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
   },
   nuget: {
     ecosystem: 'nuget',
+    localizationBasis: 'published',
     label: '.NET',
     files: ['*.csproj', '*.fsproj', '*.vbproj', 'Directory.Packages.props', 'packages.lock.json'],
     managers: ['NuGet'],
@@ -272,6 +314,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
   },
   packagist: {
     ecosystem: 'packagist',
+    localizationBasis: 'published',
     label: 'PHP',
     files: ['composer.json', 'composer.lock'],
     managers: ['Composer'],
@@ -283,8 +326,11 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       surface: none(
         'PHP publishes no machine-comparable API artefact; upgrades rest on release notes, changelogs, and advisories.',
       ),
-      'static-analysis': none(
-        'PHP namespaces do not map deterministically to a Composer package name (a PSR-4 root can belong to any vendor); Drift does not localize usages in this ecosystem yet.',
+      // The PSR-4 map is the missing link, and Packagist serves it. A namespace
+      // does not determine a package, but a package states its namespaces, and
+      // that direction of the mapping is all localization needs.
+      'static-analysis': partial(
+        'Resolves `use` statements against the PSR-4 and PSR-0 roots the package declares in its own composer.json, read from Packagist. A package that autoloads only by classmap declares no namespace root and is not localized.',
       ),
       verify: partial('Runs PHPUnit when composer.json declares it.', 'Composer'),
       fix: full(),
@@ -293,6 +339,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
   },
   hex: {
     ecosystem: 'hex',
+    localizationBasis: 'published',
     label: 'Elixir / Erlang',
     files: ['mix.exs', 'mix.lock'],
     managers: ['Mix'],
@@ -301,11 +348,11 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       evidence: partial(
         'Registry metadata, published versions, retirement notices, and OSV advisories.',
       ),
-      surface: none(
-        'Hex publishes no machine-comparable API artefact; upgrades rest on release notes, changelogs, and advisories.',
+      surface: partial(
+        'Compares the public modules and their functions, by name and arity, in both versions\' published sources — `def` and `defmacro` in Elixir, `-export` in Erlang. A function a macro generates at compile time is not visible without compiling.',
       ),
-      'static-analysis': none(
-        'Elixir and Erlang code can call a module without any import statement naming its package; Drift does not localize usages in this ecosystem yet.',
+      'static-analysis': partial(
+        'Resolves module references against every module the released tarball defines, so a fully qualified call needs no `alias` to be found. Cannot see through `apply/3` or a module name computed at runtime.',
       ),
       verify: partial('Runs `mix compile --warnings-as-errors` and `mix test`.', 'Elixir and Mix'),
       fix: full(),
@@ -314,6 +361,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
   },
   pub: {
     ecosystem: 'pub',
+    localizationBasis: 'declared',
     label: 'Dart / Flutter',
     files: ['pubspec.yaml', 'pubspec.lock'],
     managers: ['Dart pub', 'Flutter'],
@@ -322,8 +370,8 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       evidence: partial(
         'Registry metadata, published versions, retraction, and OSV advisories. Release notes depend on the package declaring a repository.',
       ),
-      surface: none(
-        'Drift does not compare published Dart APIs; upgrades rest on release notes, changelogs, and advisories.',
+      surface: partial(
+        'Compares the public declarations of both versions\' published libraries, following each `export` out of the private `lib/src` tree the way a consumer\'s import does. Read from source rather than from a compiled artefact.',
       ),
       'static-analysis': partial(LOCALIZE_NOTE),
       verify: partial('Runs `dart analyze` and `dart test`, or their Flutter equivalents.', 'the Dart or Flutter SDK'),
@@ -333,6 +381,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
   },
   swift: {
     ecosystem: 'swift',
+    localizationBasis: 'published',
     label: 'Swift',
     files: ['Package.swift', 'Package.resolved'],
     managers: ['Swift Package Manager'],
@@ -350,8 +399,11 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       surface: none(
         'Comparing two Swift module interfaces needs a local toolchain and a built artefact Drift does not produce; upgrades rest on prose evidence.',
       ),
-      'static-analysis': none(
-        'A Swift package can vend module names unrelated to the package name in Package.swift; Drift does not localize usages in this ecosystem yet.',
+      // A Swift package can vend a module named nothing like itself —
+      // `apple/swift-log` vends `Logging` — and the manifest is the only place
+      // that says so. Drift reads it at the resolved tag rather than guessing.
+      'static-analysis': partial(
+        'Resolves `import` statements against the library and target names declared in the dependency\'s own Package.swift at the resolved version. A module name a manifest computes at evaluation time is not visible without running SwiftPM.',
       ),
       verify: partial('Runs `swift build` and `swift test`.', 'the Swift toolchain'),
       fix: full(),
@@ -360,6 +412,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
   },
   cocoapods: {
     ecosystem: 'cocoapods',
+    localizationBasis: 'published',
     label: 'CocoaPods',
     files: ['Podfile', 'Podfile.lock', '*.podspec'],
     managers: ['CocoaPods'],
@@ -369,8 +422,8 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
         'Release notes and changelogs when the pod declares a GitHub source. CocoaPods publishes no queryable metadata API, so there is no deprecation or advisory signal.',
       ),
       surface: none('Drift does not compare compiled iOS frameworks; upgrades rest on prose evidence.'),
-      'static-analysis': none(
-        'A pod\'s Swift or Objective-C module name is not derivable from its podspec name; Drift does not localize usages in this ecosystem yet.',
+      'static-analysis': partial(
+        'Resolves `import` statements against the `module_name` the pod declares in its podspec, read from the CocoaPods CDN. A pod that builds its module name in Ruby at podspec-evaluation time is not visible without running CocoaPods.',
       ),
       verify: none(
         'Building an iOS target needs Xcode and a scheme Drift cannot infer; verification stays with the developer.',
@@ -381,6 +434,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
   },
   opam: {
     ecosystem: 'opam',
+    localizationBasis: 'convention',
     label: 'OCaml',
     files: ['*.opam', 'dune-project', '*.opam.locked'],
     managers: ['opam'],
@@ -392,9 +446,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       surface: none(
         'Comparing two OCaml module interfaces needs a built switch Drift does not create; upgrades rest on prose evidence.',
       ),
-      'static-analysis': none(
-        'An OCaml library\'s top-level module name is not derivable from its opam package name without reading its dune build rules; Drift does not localize usages in this ecosystem yet.',
-      ),
+      'static-analysis': partial(CONVENTION_LOCALIZE_NOTE),
       verify: partial('Runs `dune build` and `dune runtest`.', 'opam and dune'),
       fix: full(),
       'pull-request': full(),
@@ -402,6 +454,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
   },
   conan: {
     ecosystem: 'conan',
+    localizationBasis: 'convention',
     label: 'C / C++ (Conan)',
     files: ['conanfile.txt', 'conanfile.py', 'conan.lock'],
     managers: ['Conan'],
@@ -424,6 +477,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
   },
   vcpkg: {
     ecosystem: 'vcpkg',
+    localizationBasis: 'convention',
     label: 'C / C++ (vcpkg)',
     files: ['vcpkg.json', 'vcpkg-configuration.json'],
     managers: ['vcpkg'],
@@ -448,6 +502,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
   },
   arduino: {
     ecosystem: 'arduino',
+    localizationBasis: 'convention',
     label: 'Arduino / PlatformIO',
     files: ['library.properties', 'platformio.ini'],
     managers: ['Arduino CLI', 'PlatformIO'],
@@ -471,6 +526,73 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
 /** Every ecosystem, in declaration order, for the docs table and the UI. */
 export const ECOSYSTEM_CAPABILITIES: readonly EcosystemCapability[] =
   Object.values(CAPABILITY_BY_ECOSYSTEM);
+
+/**
+ * How much of Drift's answer an ecosystem actually gets.
+ *
+ * The matrix is seven independent facts, which is right for a developer
+ * reading one row and wrong for anyone comparing sixteen. A single word per
+ * ecosystem is what a reader wants first, and computing it here — from the
+ * same data the notes come from — is what stops it drifting from the truth the
+ * way a hand-maintained badge would.
+ *
+ * The tier is not an average over the seven stages. Drift's claim is "this
+ * upstream change does or does not break your code", and only three things
+ * decide how well an ecosystem can answer it — see `strengths`. Detection and
+ * a pull request matter, but every ecosystem here has them, so counting them
+ * would flatten exactly the distinction the tier exists to draw.
+ */
+export type SupportTier =
+  /** All three: computed diff, published module names, runnable verification. */
+  | 'deep'
+  /** Two of the three. */
+  | 'strong'
+  /** One of the three. */
+  | 'working'
+  /** None of the three; detection and evidence only. */
+  | 'limited';
+
+/**
+ * The three questions that actually separate one ecosystem from another.
+ *
+ * A weighted average over the seven stages was the first attempt and it was
+ * useless: every ecosystem is `partial` almost everywhere, so every score
+ * landed within a few points of every other and the word on the badge stopped
+ * carrying information. What varies is narrower and more interesting:
+ *
+ *   1. Does Drift compute an API diff from what was published, or is the
+ *      upgrade weighed on prose?
+ *   2. Are the module names localization joins against stated by the package,
+ *      or inferred from a naming habit?
+ *   3. Can Drift run the ecosystem's own build and tests to check its work?
+ *
+ * Three yes/no answers, and the tier is how many are yes.
+ */
+function strengths(ecosystem: Ecosystem): number {
+  const capability = capabilitiesFor(ecosystem);
+  const computedSurface = capability.support.surface.level !== 'none';
+  const groundedNames =
+    capability.localizationBasis !== 'convention' &&
+    capability.support['static-analysis'].level !== 'none';
+  const runsVerification = capability.support.verify.level !== 'none';
+  return [computedSurface, groundedNames, runsVerification].filter(Boolean).length;
+}
+
+export function tierFor(ecosystem: Ecosystem): SupportTier {
+  const score = strengths(ecosystem);
+  if (score === 3) return 'deep';
+  if (score === 2) return 'strong';
+  if (score === 1) return 'working';
+  return 'limited';
+}
+
+/** One line describing what a tier promises, written for someone choosing. */
+export const TIER_DESCRIPTION: Record<SupportTier, string> = {
+  deep: 'Drift computes the API diff from the published artefact, joins it to your code against module names the package itself declares, and can run the ecosystem\'s own build and tests over the result.',
+  strong: 'Two of the three hold. Drift has a real answer here; one of the diff, the name resolution, or the verification is weaker than the others.',
+  working: 'One of the three holds. Drift will tell you what moved and research it properly, and leaves more of the judgement with you.',
+  limited: 'Detected, versioned, and researched. Whether it breaks your code is a question Drift cannot answer in this ecosystem.',
+};
 
 /**
  * What Drift can do for one ecosystem.
