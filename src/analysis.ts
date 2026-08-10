@@ -11,7 +11,7 @@ import {
   type WorkspaceLayout,
 } from './detect/workspace.js';
 import { discoverNestedProjects } from './detect/nested.js';
-import { gatherEvidence } from './evidence/index.js';
+import { gatherEvidence, type ProseSource } from './evidence/index.js';
 import { analyze } from './analyze/index.js';
 import { buildIndex } from './index/metarag.js';
 import { walkSourceFiles } from './index/walk.js';
@@ -210,6 +210,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   // the other's computed diff.
   const additions = new Map<string, { additions: SurfaceAddition[]; locator: string }>();
   const surfaceGaps = new Map<string, SurfaceUnavailable>();
+  const prose = new Map<string, ProseSource[]>();
   // Whether a surface diff was successfully computed at all, independent of
   // whether it found anything — `additions` alone cannot answer that, because
   // a clean diff and "never computed" both leave it without an entry.
@@ -230,6 +231,10 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       additions.set(key, { additions: diff.additions ?? [], locator: diff.locator });
     },
     onUnavailableSurface: (change, reason) => surfaceGaps.set(dependencyEcosystemKey(change), reason),
+    onProseConsulted: (change, source) => {
+      const key = dependencyEcosystemKey(change);
+      prose.set(key, [...(prose.get(key) ?? []), source]);
+    },
   });
   logger.info(`Gathered ${evidence.length} evidence record(s)`);
 
@@ -470,15 +475,17 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
           : 'No computed API diff was available for this ecosystem or version pair.',
     });
 
-    const prose = records.filter((e) => e.source === 'changelog' || e.source === 'github-release');
+    const proseRead = prose
+      .get(key)
+      ?.filter((source) => source.kind === 'changelog' || source.kind === 'github-release');
     checkedSurfaces.push({
       surface: 'release-notes',
       dependency: change.name,
       ecosystem: change.ecosystem,
-      status: prose.length > 0 ? 'checked' : 'unavailable',
+      status: proseRead && proseRead.length > 0 ? 'checked' : 'unavailable',
       detail:
-        prose.length > 0
-          ? `${prose.length} release note or changelog section(s) retrieved.`
+        proseRead && proseRead.length > 0
+          ? `${proseRead.length} release note or changelog section(s) retrieved.`
           : 'No changelog or release notes could be retrieved.',
     });
   }
@@ -498,7 +505,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   progress('rationale', 'Weighing what each upgrade is worth');
   const rationale = await buildRationale(
     { changes: actionable, evidence, breakingChanges, impactSites },
-    { config, logger, githubToken, additions, surfaceGaps },
+    { config, logger, githubToken, additions, surfaceCompared: surfaceComputed, surfaceGaps, prose },
   );
 
   /* Stage 8 — plan */

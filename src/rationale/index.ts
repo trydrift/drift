@@ -39,9 +39,11 @@ export interface RationaleContext {
   osv?: OsvOptions;
   /** Computed API additions, keyed by `dependencyEcosystemKey` (ecosystem + workspace + name). */
   additions?: Map<string, { additions: SurfaceAddition[]; locator: string }>;
+  /** Computed API diffs that ran, keyed by `dependencyEcosystemKey` (ecosystem + workspace + name). */
+  surfaceCompared?: ReadonlySet<string>;
   /** Surface diffs that could not be produced, keyed by `dependencyEcosystemKey` (ecosystem + workspace + name). */
   surfaceGaps?: Map<string, SurfaceUnavailable>;
-  /** Prose documents that were actually read, keyed by dependency name. */
+  /** Prose documents that were actually read, keyed by `dependencyEcosystemKey` when available. */
   prose?: Map<string, ProseSource[]>;
 }
 
@@ -123,7 +125,9 @@ async function rationaleFor(
   const relevantIds = new Set(breakingChanges.map((b) => b.id));
   const impactSites = input.impactSites.filter((s) => relevantIds.has(s.breakingChangeId));
 
-  const computed = ctx.additions?.get(dependencyEcosystemKey(change));
+  const key = dependencyEcosystemKey(change);
+  const computed = ctx.additions?.get(key);
+  const surfaceCompared = ctx.surfaceCompared?.has(key) ?? computed !== undefined;
   const summary = config.rationale.summary
     ? summarizeRelease({
         dependency: change.name,
@@ -138,9 +142,10 @@ async function rationaleFor(
   const additive = computed ? describeAdditions(computed.additions, computed.locator) : null;
   if (additive) improvements.push(additive);
 
-  const prose = ctx.prose?.get(change.name) ?? [];
+  const prose = ctx.prose?.get(key) ?? ctx.prose?.get(change.name) ?? [];
   const gaps = collectGaps(change, {
-    surfaceGap: ctx.surfaceGaps?.get(dependencyEcosystemKey(change)),
+    surfaceCompared,
+    surfaceGap: ctx.surfaceGaps?.get(key),
     security,
     registry,
     evidence: input.evidence,
@@ -158,7 +163,7 @@ async function rationaleFor(
     maintenance,
     license,
     gaps,
-    surfaceCompared: computed !== undefined,
+    surfaceCompared,
     proseRead: prose.length,
   });
 
@@ -194,6 +199,7 @@ async function rationaleFor(
 function collectGaps(
   change: DependencyChange,
   sources: {
+    surfaceCompared: boolean;
     surfaceGap?: SurfaceUnavailable;
     security: UpgradeRationale['security'];
     registry: RegistryInfo | null;
@@ -230,7 +236,9 @@ function collectGaps(
     cited.length > 0
       ? null
       : sources.prose.length > 0
-        ? `Drift read ${describeSources(sources.prose)} for ${change.name} ${change.to} and found nothing in ${sources.prose.length === 1 ? 'it' : 'them'} that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.`
+        ? sources.surfaceCompared
+          ? null
+          : `Drift read ${describeSources(sources.prose)} for ${change.name} ${change.to} and found nothing in ${sources.prose.length === 1 ? 'it' : 'them'} that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.`
         : `No release notes, changelog, or migration guide was reachable for ${change.name} ${change.to}${sources.registry?.githubRepo ? '' : ', and no source repository could be resolved for it'}.`;
 
   // The two most common absences are stated as one sentence rather than two,

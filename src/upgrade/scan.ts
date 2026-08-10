@@ -41,6 +41,7 @@ import { buildIndex } from '../index/metarag.js';
 import { localize } from '../localize/index.js';
 import { resolveModuleMaps } from '../localize/modules.js';
 import { buildPlan } from '../plan/index.js';
+import { dependencyEcosystemKey } from '../util/id.js';
 import { compareSeverity, describeSeverity, severityOf, type UpgradeSeverity } from './severity.js';
 
 const run = promisify(execFile);
@@ -704,6 +705,7 @@ async function analyzeUpgrade(args: {
     // and cleared.
     const additions = new Map<string, { additions: SurfaceAddition[]; locator: string }>();
     const surfaceGaps = new Map<string, SurfaceUnavailable>();
+    const surfaceCompared = new Set<string>();
     const prose = new Map<string, ProseSource[]>();
 
     const evidence = await gatherEvidence([change], {
@@ -714,11 +716,17 @@ async function analyzeUpgrade(args: {
       // Lets the Go provider read this repository's own go.mod, so a missing
       // toolchain is reported with the version this repository actually needs.
       workspaceRoot: args.root,
-      onSurfaceComputed: (_change, diff) =>
-        additions.set(change.name, { additions: diff.additions ?? [], locator: diff.locator }),
-      onUnavailableSurface: (_change, reason) => surfaceGaps.set(change.name, reason),
-      onProseConsulted: (_change, source) =>
-        prose.set(change.name, [...(prose.get(change.name) ?? []), source]),
+      onSurfaceComputed: (computedChange, diff) => {
+        const key = dependencyEcosystemKey(computedChange);
+        surfaceCompared.add(key);
+        additions.set(key, { additions: diff.additions ?? [], locator: diff.locator });
+      },
+      onUnavailableSurface: (unavailableChange, reason) =>
+        surfaceGaps.set(dependencyEcosystemKey(unavailableChange), reason),
+      onProseConsulted: (proseChange, source) => {
+        const key = dependencyEcosystemKey(proseChange);
+        prose.set(key, [...(prose.get(key) ?? []), source]);
+      },
     });
 
     report(
@@ -757,6 +765,7 @@ async function analyzeUpgrade(args: {
         logger: args.logger,
         githubToken: args.githubToken,
         additions,
+        surfaceCompared,
         surfaceGaps,
         prose,
       },

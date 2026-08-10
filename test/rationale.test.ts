@@ -705,6 +705,39 @@ describe('assembling the rationale', () => {
     assert.match(stated, /the changelog and the migration guide/);
   });
 
+  test('a clean computed surface diff suppresses the prose-only caveat', async () => {
+    const key = 'npm pkg';
+    const prose = new Map([
+      [
+        key,
+        [
+          {
+            kind: 'github-release' as const,
+            label: 'v2.0.0 release notes',
+            url: 'https://github.com/o/pkg/releases/tag/v2.0.0',
+            breaking: false,
+          },
+        ],
+      ],
+    ]);
+
+    const [rationale] = await buildRationale(
+      { changes: [change], evidence: [], breakingChanges: [], impactSites: [] },
+      {
+        config,
+        logger,
+        osv: noNetwork,
+        additions: new Map([[key, { additions: [], locator: 'pkg@1:index.d.ts → pkg@2:index.d.ts' }]]),
+        surfaceCompared: new Set([key]),
+        prose,
+      },
+    );
+
+    assert.equal(rationale!.assessment.confidence, 'high');
+    assert.doesNotMatch(rationale!.assessment.reasons.join(' '), /weaker than a clean API comparison/);
+    assert.equal(rationale!.gaps.some((gap) => /found nothing.*announces a breaking change/.test(gap)), false);
+  });
+
   test('an unreadable dependency is insufficient evidence, and says so', async () => {
     const [rationale] = await buildRationale(
       { changes: [change], evidence: [], breakingChanges: [], impactSites: [] },
