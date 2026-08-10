@@ -19,7 +19,10 @@ import type { Recording } from "@/lib/recordings";
  * does once.
  */
 
+export const REPLAY_SPEEDS = [1, 2, 4] as const;
+
 export type PlayerPhase = "idle" | "running" | "done";
+export type ReplaySpeed = (typeof REPLAY_SPEEDS)[number];
 
 export interface PlayerState {
   phase: PlayerPhase;
@@ -85,7 +88,8 @@ export function usePlayer(recording: Recording) {
    */
   const timeline = useRef<{ at: number; index: number }[]>([]);
   const duration = useRef(0);
-  const [speed, setSpeed] = useState(MIN_SPEED);
+  const [baseSpeed, setBaseSpeed] = useState(MIN_SPEED);
+  const [speedMultiplier, setSpeedMultiplierState] = useState<ReplaySpeed>(1);
   const speedRef = useRef(MIN_SPEED);
 
   useEffect(() => {
@@ -107,9 +111,14 @@ export function usePlayer(recording: Recording) {
     const rate = Math.round(
       Math.min(MAX_SPEED, Math.max(MIN_SPEED, duration.current / TARGET_MS)),
     );
-    speedRef.current = rate;
-    setSpeed(rate);
-  }, [recording]);
+    setBaseSpeed(rate);
+    speedRef.current = rate * speedMultiplier;
+  }, [recording, speedMultiplier]);
+
+  const setSpeedMultiplier = useCallback((next: ReplaySpeed) => {
+    setSpeedMultiplierState(next);
+    speedRef.current = baseSpeed * next;
+  }, [baseSpeed]);
 
   const stop = useCallback(() => {
     if (frame.current) cancelAnimationFrame(frame.current);
@@ -197,5 +206,14 @@ export function usePlayer(recording: Recording) {
 
   const currentEvent = state.cursor > 0 ? recording.events[timeline.current[state.cursor - 1]?.index ?? 0] : undefined;
 
-  return { state, start, reset, complete, currentEvent, speed };
+  return {
+    state,
+    start,
+    reset,
+    complete,
+    currentEvent,
+    speed: baseSpeed * speedMultiplier,
+    speedMultiplier,
+    setSpeedMultiplier,
+  };
 }

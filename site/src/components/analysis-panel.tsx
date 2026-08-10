@@ -13,7 +13,7 @@ import {
   type Recording,
   type UpgradeSeverity,
 } from "@/lib/recordings";
-import { usePlayer } from "./use-player";
+import { REPLAY_SPEEDS, type ReplaySpeed, usePlayer } from "./use-player";
 
 /**
  * The panel.
@@ -60,7 +60,8 @@ export function sourceUrl(recording: Recording, site: ImpactSite): string {
 }
 
 export function AnalysisPanel({ recording }: { recording: Recording }) {
-  const { state, start, reset, currentEvent, speed } = usePlayer(recording);
+  const { state, start, reset, currentEvent, speed, speedMultiplier, setSpeedMultiplier } =
+    usePlayer(recording);
   const totals = useMemo(() => totalsOf(recording), [recording]);
   const [open, setOpen] = useState<string | null>(null);
   const [note, setNote] = useState(false);
@@ -143,24 +144,27 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
       {/* Status line */}
       <div className="border-b border-border px-4 py-3.5 sm:px-5">
         {state.phase === "idle" && (
-          <button onClick={start} className="group flex w-full items-center gap-3 text-left">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand text-brand-foreground transition-transform group-hover:scale-105">
-              <PlayIcon />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-sm font-medium text-foreground">
-                Analysing {recording.label}…
+          <div className="flex flex-wrap items-center gap-3">
+            <button onClick={start} className="group flex min-w-0 flex-1 items-center gap-3 text-left">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-brand text-brand-foreground transition-transform group-hover:scale-105">
+                <PlayIcon />
               </span>
-              <span className="block truncate text-xs text-faint">
-                {recording.packagesChecked} direct dependencies · recorded{" "}
-                {shortDate(recording.capturedAt)}
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-foreground">
+                  Analysing {recording.label}…
+                </span>
+                <span className="block truncate text-xs text-faint">
+                  {recording.packagesChecked} direct dependencies · recorded{" "}
+                  {shortDate(recording.capturedAt)}
+                </span>
               </span>
-            </span>
-          </button>
+            </button>
+            <SpeedControl value={speedMultiplier} onChange={setSpeedMultiplier} />
+          </div>
         )}
 
         {running && (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <span className="size-2.5 shrink-0 rounded-full bg-brand orb" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm text-foreground">{currentEvent?.phase ?? "Starting"}</p>
@@ -173,12 +177,20 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
                 ? `${currentEvent.done}/${currentEvent.total}`
                 : `${(state.elapsed / 1000).toFixed(1)}s`}
             </span>
+            <SpeedControl value={speedMultiplier} onChange={setSpeedMultiplier} />
           </div>
         )}
 
         {done && (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <p className="text-sm text-foreground">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+            <button
+              onClick={replay}
+              aria-label="Replay analysis"
+              className="group flex size-11 shrink-0 items-center justify-center rounded-full border border-brand/40 bg-brand-soft text-brand-text transition-colors hover:bg-brand hover:text-brand-foreground"
+            >
+              <ReplayIcon className="transition-transform group-hover:-rotate-45" />
+            </button>
+            <p className="min-w-[14rem] flex-1 text-sm text-foreground">
               <span className="font-medium">{totals.packages}</span> packages ·{" "}
               <span className="font-medium text-brand-text">{totals.affected}</span> affect this code
               {totals.breaking > totals.sites && (
@@ -189,22 +201,15 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
                 </span>
               )}
             </p>
-            <div className="ml-auto flex items-center gap-2">
-              {affected.length > 0 && (
-                <button
-                  onClick={() => setNote(true)}
-                  className="rounded-md bg-brand px-2.5 py-1 text-xs font-medium text-brand-foreground transition-colors hover:bg-brand-200"
-                >
-                  Fix all {affected.length} · {totals.sites} sites
-                </button>
-              )}
+            <SpeedControl value={speedMultiplier} onChange={setSpeedMultiplier} />
+            {affected.length > 0 && (
               <button
-                onClick={replay}
-                className="rounded-md border border-border px-2.5 py-1 text-xs text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+                onClick={() => setNote(true)}
+                className="rounded-md bg-brand px-2.5 py-1 text-xs font-medium text-brand-foreground transition-colors hover:bg-brand-200"
               >
-                Replay
+                Fix all {affected.length} · {totals.sites} sites
               </button>
-            </div>
+            )}
           </div>
         )}
 
@@ -252,17 +257,20 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
         )}
 
         <ul className="divide-y divide-border">
-          {visible.map((candidate) => (
-            <PackageRow
-              key={candidate.name}
-              candidate={candidate}
-              recording={recording}
-              expanded={open === candidate.name}
-              onToggle={() => setOpen(open === candidate.name ? null : candidate.name)}
-              onAct={() => setNote(true)}
-              interactive={done}
-            />
-          ))}
+          {visible.map((candidate, index) => {
+            const rowKey = candidateRowKey(candidate, index);
+            return (
+              <PackageRow
+                key={rowKey}
+                candidate={candidate}
+                recording={recording}
+                expanded={open === rowKey}
+                onToggle={() => setOpen(open === rowKey ? null : rowKey)}
+                onAct={() => setNote(true)}
+                interactive={done}
+              />
+            );
+          })}
         </ul>
 
         {done && recording.audit && recording.audit.findings.length > 0 && (
@@ -295,6 +303,39 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
   );
 }
 
+function SpeedControl({
+  value,
+  onChange,
+}: {
+  value: ReplaySpeed;
+  onChange: (speed: ReplaySpeed) => void;
+}) {
+  return (
+    <div
+      className="flex shrink-0 items-center gap-1 rounded-full border border-border bg-surface px-1 py-1"
+      role="group"
+      aria-label="Replay speed"
+    >
+      {REPLAY_SPEEDS.map((speed) => (
+        <button
+          key={speed}
+          type="button"
+          onClick={() => onChange(speed)}
+          aria-pressed={value === speed}
+          className={cn(
+            "min-w-8 rounded-full px-2 py-1 font-mono text-[10px] font-semibold tabular transition-colors",
+            value === speed
+              ? "bg-brand text-brand-foreground"
+              : "text-faint hover:bg-surface-hover hover:text-foreground",
+          )}
+        >
+          {speed}×
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /**
  * `14.3s`, `23m 04s`. A whole-repository run of GitLab really does take
  * twenty-three minutes, and printing that as `1383.8s` buries the one number
@@ -305,6 +346,10 @@ function formatDuration(ms: number): string {
   if (seconds < 90) return `${seconds.toFixed(1)}s`;
   const minutes = Math.floor(seconds / 60);
   return `${minutes}m ${String(Math.round(seconds % 60)).padStart(2, "0")}s`;
+}
+
+function candidateRowKey(candidate: Candidate, index: number): string {
+  return `${candidate.ecosystem}:${candidate.name}:${candidate.current}:${candidate.selected}:${index}`;
 }
 
 function PackageRow({
@@ -498,6 +543,25 @@ function PlayIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className="size-4 translate-x-px" aria-hidden>
       <path d="M8 5.14v13.72a.5.5 0 0 0 .76.43l11.2-6.86a.5.5 0 0 0 0-.86L8.76 4.71A.5.5 0 0 0 8 5.14Z" />
+    </svg>
+  );
+}
+
+function ReplayIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={cn("size-4", className)}
+      aria-hidden
+    >
+      <path d="M3 12a9 9 0 1 0 3-6.7" />
+      <path d="M3 4v5h5" />
+      <path d="m10 9 5 3-5 3V9Z" fill="currentColor" stroke="none" />
     </svg>
   );
 }

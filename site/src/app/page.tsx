@@ -5,6 +5,7 @@ import { ActionFlow } from "@/components/action-flow";
 import { Terminal } from "@/components/terminal";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { loadRecordings } from "@/lib/load";
+import { totalsOf, type Recording } from "@/lib/recordings";
 
 /**
  * The landing page.
@@ -25,6 +26,7 @@ const GITHUB = "https://github.com/trydrift/Drift";
 export default function Home() {
   const recordings = loadRecordings();
   const languages = [...new Set(recordings.map((r) => r.language))];
+  const proof = summarizeRecordings(recordings);
 
   return (
     <div className="dot-bg min-h-screen">
@@ -96,6 +98,8 @@ export default function Home() {
           <p className="mt-5 font-mono text-xs text-faint">
             {languages.join(" · ")}
           </p>
+
+          <ProofStrip proof={proof} />
         </section>
 
         {/* ── The demo ────────────────────────────────────────────────── */}
@@ -119,47 +123,58 @@ export default function Home() {
 
         {/* ── The point ───────────────────────────────────────────────── */}
         <section className="pt-16 sm:pt-24">
-          <h2 className={`${instrumentSerif.className} text-2xl text-landing sm:text-3xl`}>
-            The number that matters is the small one
-          </h2>
-          <div className="mt-6 grid gap-4 sm:grid-cols-3">
-            <Point title="Most upgrades are fine">
-              A package can ship a hundred breaking changes and touch nothing you wrote. Drift says
-              so, out loud, rather than making you read a changelog to find out — that is most of
-              the value, and no tool that only shouts can deliver it.
-            </Point>
-            <Point title="Some are not, and it names them">
-              When a change does land on your code, you get the file, the line, the symbol, and what
-              the fix has to accomplish. Not &ldquo;review the migration guide&rdquo;.
-            </Point>
-            <Point title="&ldquo;Could not check&rdquo; is an answer">
-              A changelog Drift failed to fetch is reported as unchecked, never as clean. Silently
-              rounding the two together is how a tool talks someone into shipping a break.
-            </Point>
+          <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+            <div>
+              <h2 className={`${instrumentSerif.className} text-2xl text-landing sm:text-3xl`}>
+                The number that matters is the small one
+              </h2>
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted">
+                Drift separates upstream noise from code you actually own. The report is allowed to
+                say three different things: safe here, affected here, or not verified.
+              </p>
+              <VerdictStack proof={proof} />
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              <OutcomeCard
+                icon="quiet"
+                metric={String(proof.clean)}
+                label="safe here"
+                detail="Upstream changed; your repository does not call the changed surface."
+              />
+              <OutcomeCard
+                icon="target"
+                metric={String(proof.affected)}
+                label="need attention"
+                detail={`${proof.sites} exact call site${proof.sites === 1 ? "" : "s"} linked to files and lines.`}
+              />
+              <OutcomeCard
+                icon="gap"
+                metric={String(proof.unchecked)}
+                label="not verified"
+                detail="Missing evidence is shown as a gap, not softened into a pass."
+              />
+            </div>
           </div>
         </section>
 
         {/* ── Already broken ──────────────────────────────────────────── */}
         <section className="pt-16 sm:pt-24">
-          <div className="rounded-2xl border border-brand/25 bg-gradient-to-br from-brand/[0.07] via-transparent to-transparent bg-origin-border p-6 sm:p-8">
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-brand-text">
-              the question nothing else asks
-            </p>
-            <h2 className={`${instrumentSerif.className} mt-3 text-2xl text-landing sm:text-3xl`}>
-              Some of your code is already broken
-            </h2>
-            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted">
-              A range like <code className="rounded bg-surface-hover px-1.5 py-0.5 font-mono text-xs text-brand-text">^4.0.0</code>{" "}
-              is a standing instruction to install anything on 4.x — so a resolver did, during a
-              lockfile refresh nobody read. Your code still assumes the 4.x it was written against.
-              Everything removed in between is live in your repository <em className="not-italic text-foreground">right now</em>.
-            </p>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-              <code className="rounded bg-surface-hover px-1.5 py-0.5 font-mono text-xs text-brand-text">drift audit</code>{" "}
-              analyses that window — from the oldest version your range admits to the version
-              actually installed — and reports what already bites. These findings do not go away by
-              upgrading.
-            </p>
+          <div className="grid gap-6 border-y border-brand/25 bg-brand-soft/35 py-7 sm:py-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-brand-text">
+                the question nothing else asks
+              </p>
+              <h2 className={`${instrumentSerif.className} mt-3 text-2xl text-landing sm:text-3xl`}>
+                Some of your code is already broken
+              </h2>
+              <p className="mt-4 max-w-lg text-sm leading-relaxed text-muted">
+                A range like <code className="rounded bg-surface-hover px-1.5 py-0.5 font-mono text-xs text-brand-text">^4.0.0</code>{" "}
+                keeps admitting new 4.x versions. <code className="rounded bg-surface-hover px-1.5 py-0.5 font-mono text-xs text-brand-text">drift audit</code>{" "}
+                checks the window between the oldest allowed version and what is installed today.
+              </p>
+            </div>
+            <RangeWindowVisual findings={proof.auditFindings} />
           </div>
         </section>
 
@@ -215,19 +230,16 @@ export default function Home() {
             Three ways in
           </h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
-            <Point title="CLI">
-              <code className="font-mono text-xs text-brand-text">drift analyze</code> runs the full
-              pipeline against your working tree and prints the report. It writes nothing, and needs
-              no token.
-            </Point>
-            <Point title="VS Code">
-              Scan your dependencies, then see every affected line flagged inline in the Problems
-              panel — including the ones that are already broken.
-            </Point>
-            <Point title="GitHub Action">
-              On every dependency change, a check run and — once you have said yes — a pull request
-              that explains itself. <a href="#action" className="text-brand-text underline decoration-dotted underline-offset-2">See the whole run.</a>
-            </Point>
+            <EntryPoint icon="terminal" title="CLI" command="drift analyze">
+              Full report against your working tree. No writes, no token.
+            </EntryPoint>
+            <EntryPoint icon="editor" title="VS Code" command="Problems panel">
+              Affected lines inline, including code already broken by range drift.
+            </EntryPoint>
+            <EntryPoint icon="action" title="GitHub Action" command="trydrift/drift@v0">
+              Checks first, approval next, pull request only after you allow it.{" "}
+              <a href="#action" className="text-brand-text underline decoration-dotted underline-offset-2">See the run.</a>
+            </EntryPoint>
           </div>
 
           <Terminal />
@@ -249,11 +261,252 @@ export default function Home() {
   );
 }
 
-function Point({ title, children }: { title: string; children: React.ReactNode }) {
+interface ProofSummary {
+  recordings: number;
+  languages: number;
+  packages: number;
+  affected: number;
+  clean: number;
+  unchecked: number;
+  breaking: number;
+  sites: number;
+  auditFindings: number;
+}
+
+function summarizeRecordings(recordings: Recording[]): ProofSummary {
+  return recordings.reduce<ProofSummary>(
+    (summary, recording) => {
+      const totals = totalsOf(recording);
+      summary.packages += totals.packages;
+      summary.affected += totals.affected;
+      summary.clean += totals.clean;
+      summary.unchecked += totals.unchecked;
+      summary.breaking += totals.breaking;
+      summary.sites += totals.sites;
+      summary.auditFindings += recording.audit?.findings.length ?? 0;
+      return summary;
+    },
+    {
+      recordings: recordings.length,
+      languages: new Set(recordings.map((recording) => recording.language)).size,
+      packages: 0,
+      affected: 0,
+      clean: 0,
+      unchecked: 0,
+      breaking: 0,
+      sites: 0,
+      auditFindings: 0,
+    },
+  );
+}
+
+function ProofStrip({ proof }: { proof: ProofSummary }) {
+  const items = [
+    { value: proof.recordings, label: "recorded runs" },
+    { value: proof.languages, label: "ecosystems" },
+    { value: proof.packages, label: "packages checked" },
+    { value: proof.sites, label: "linked code sites" },
+  ];
+
   return (
-    <div className="rounded-2xl border border-border bg-surface/50 p-5">
-      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-      <p className="mt-2 text-[13px] leading-relaxed text-muted">{children}</p>
+    <div className="mt-8 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-4">
+      {items.map((item) => (
+        <div key={item.label} className="bg-surface/75 px-4 py-3">
+          <p className="font-mono text-2xl text-landing tabular">{item.value}</p>
+          <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-faint">{item.label}</p>
+        </div>
+      ))}
     </div>
+  );
+}
+
+function VerdictStack({ proof }: { proof: ProofSummary }) {
+  const total = Math.max(1, proof.clean + proof.affected + proof.unchecked);
+  const lanes = [
+    { label: "Safe here", value: proof.clean, className: "bg-brand" },
+    { label: "Affects you", value: proof.affected, className: "bg-brand-secondary" },
+    { label: "Not verified", value: proof.unchecked, className: "bg-amber-500" },
+  ];
+
+  return (
+    <div className="mt-6">
+      <div className="flex h-3 overflow-hidden rounded-full bg-surface-hover">
+        {lanes.map((lane) => (
+          <span
+            key={lane.label}
+            className={lane.className}
+            style={{ width: lane.value === 0 ? 0 : `${Math.max(4, (lane.value / total) * 100)}%` }}
+            aria-hidden
+          />
+        ))}
+      </div>
+      <div className="mt-4 grid gap-2">
+        {lanes.map((lane) => (
+          <div key={lane.label} className="flex items-center gap-3 text-sm">
+            <span className={`size-2.5 rounded-full ${lane.className}`} aria-hidden />
+            <span className="min-w-0 flex-1 text-muted">{lane.label}</span>
+            <span className="font-mono text-xs text-foreground tabular">{lane.value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OutcomeCard({
+  icon,
+  metric,
+  label,
+  detail,
+}: {
+  icon: "quiet" | "target" | "gap";
+  metric: string;
+  label: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-surface/70 p-4">
+      <div className="flex items-start gap-3">
+        <IconBadge icon={icon} />
+        <div className="min-w-0">
+          <p className="font-mono text-2xl leading-none text-landing tabular">{metric}</p>
+          <h3 className="mt-1 text-sm font-semibold text-foreground">{label}</h3>
+          <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">{detail}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RangeWindowVisual({ findings }: { findings: number }) {
+  return (
+    <div className="rounded-lg border border-border bg-surface/80 p-4 sm:p-5">
+      <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+        <VersionNode label="oldest allowed" value="4.0.0" />
+        <div className="hidden h-px min-w-20 bg-gradient-to-r from-brand/30 via-brand to-brand/30 sm:block" />
+        <VersionNode label="installed today" value="4.8.2" emphasis />
+      </div>
+      <div className="mt-5 rounded-md border border-border bg-[var(--pre-bg)] p-3">
+        <div className="flex items-center gap-2 font-mono text-[11px] text-faint">
+          <span className="size-2 rounded-full bg-amber-500" />
+          range window
+          <span className="ml-auto text-brand-text">^4.0.0</span>
+        </div>
+        <div className="mt-3 grid grid-cols-[auto_1fr_auto] items-center gap-2 text-xs">
+          <span className="font-mono text-faint">removed API</span>
+          <span className="h-px bg-border" />
+          <span className="font-mono text-foreground">call site still uses it</span>
+        </div>
+      </div>
+      <p className="mt-4 text-[13px] leading-relaxed text-muted">
+        The sample recordings include <span className="font-medium text-foreground">{findings}</span>{" "}
+        present-tense audit finding{findings === 1 ? "" : "s"}: no upgrade is required for the
+        code to be wrong.
+      </p>
+    </div>
+  );
+}
+
+function VersionNode({
+  label,
+  value,
+  emphasis = false,
+}: {
+  label: string;
+  value: string;
+  emphasis?: boolean;
+}) {
+  return (
+    <div className="rounded-md border border-border bg-surface px-3 py-2">
+      <p className="font-mono text-[10px] uppercase tracking-wider text-faint">{label}</p>
+      <p className={emphasis ? "mt-1 font-mono text-lg text-brand-text" : "mt-1 font-mono text-lg text-foreground"}>
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function EntryPoint({
+  icon,
+  title,
+  command,
+  children,
+}: {
+  icon: "terminal" | "editor" | "action";
+  title: string;
+  command: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-surface/70 p-4">
+      <IconBadge icon={icon} />
+      <h3 className="mt-3 text-sm font-semibold text-foreground">{title}</h3>
+      <p className="mt-2 inline-flex rounded-md bg-surface-hover px-2 py-1 font-mono text-[11px] text-brand-text">
+        {command}
+      </p>
+      <p className="mt-3 text-[13px] leading-relaxed text-muted">{children}</p>
+    </div>
+  );
+}
+
+function IconBadge({ icon }: { icon: "quiet" | "target" | "gap" | "terminal" | "editor" | "action" }) {
+  return (
+    <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-brand/25 bg-brand-soft text-brand-text">
+      <VisualIcon icon={icon} />
+    </span>
+  );
+}
+
+function VisualIcon({ icon }: { icon: "quiet" | "target" | "gap" | "terminal" | "editor" | "action" }) {
+  const common = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 2,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+
+  return (
+    <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
+      {icon === "quiet" && (
+        <>
+          <path {...common} d="m5 12 4 4L19 6" />
+          <path {...common} d="M4 20h16" />
+        </>
+      )}
+      {icon === "target" && (
+        <>
+          <circle {...common} cx="12" cy="12" r="8" />
+          <circle {...common} cx="12" cy="12" r="3" />
+          <path {...common} d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+        </>
+      )}
+      {icon === "gap" && (
+        <>
+          <path {...common} d="M12 8v5" />
+          <path {...common} d="M12 17h.01" />
+          <path {...common} d="M10.3 3.9 2.6 17.2A2 2 0 0 0 4.3 20h15.4a2 2 0 0 0 1.7-2.8L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+        </>
+      )}
+      {icon === "terminal" && (
+        <>
+          <path {...common} d="m5 7 5 5-5 5" />
+          <path {...common} d="M12 17h7" />
+        </>
+      )}
+      {icon === "editor" && (
+        <>
+          <rect {...common} x="4" y="4" width="16" height="16" rx="2" />
+          <path {...common} d="M8 8h8M8 12h5M8 16h7" />
+        </>
+      )}
+      {icon === "action" && (
+        <>
+          <path {...common} d="M6 4v6a6 6 0 0 0 12 0V4" />
+          <path {...common} d="M8 20h8" />
+          <path {...common} d="M12 16v4" />
+        </>
+      )}
+    </svg>
   );
 }
