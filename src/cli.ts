@@ -12,8 +12,6 @@ import { LocalGitProvider, WORKING_TREE, chooseManifestRange, inspectLocalRepo }
 import { runPipeline } from './pipeline.js';
 import { resolveBaseBranch, titleFor } from './plan/pull-request.js';
 import { renderPullRequestBody } from './report/markdown.js';
-import { renderAudit } from './report/audit.js';
-import { auditCurrentUsage, summarizeAudit } from './audit/index.js';
 import { runAction } from './runners/action.js';
 import { main as serveWebhook } from './runners/webhook.js';
 import { sampleTelemetryEvent } from './telemetry.js';
@@ -200,7 +198,6 @@ drift — dependency changes, proven and fixed
 Usage:
   drift analyze [options]     Analyse a local repository and print the report
   drift outdated [options]    Scan for available upgrades, not just past ones
-  drift audit [options]       Check this code against the versions installed now
   drift fix [options]         Analyse, then apply the fixes and push a branch
   drift pr [options]          Push the current branch and open a pull request
   drift action                Run as a GitHub Action (reads INPUT_* env vars)
@@ -222,16 +219,6 @@ Options for \`outdated\`:
                               limit. Default: $GITHUB_TOKEN, then \`gh auth token\`
   --config <path>             Config file. Default: .github/drift.yml
   --json                      Emit the full scan result as JSON
-  --log-level <level>         debug | info | warn | error. Default: info
-
-Options for \`audit\`:
-  --repo <owner/name>         Repository label for output. Default: git remote
-  --dir <path>                Local checkout to audit.  Default: cwd
-  --dev                       Also audit dev/optional/peer dependencies
-  --token <token>             Optional, only to raise the public API rate
-                              limit. Default: $GITHUB_TOKEN, then \`gh auth token\`
-  --config <path>             Config file. Default: .github/drift.yml
-  --json                      Emit the findings as JSON
   --log-level <level>         debug | info | warn | error. Default: info
 
 Options for \`analyze\`:
@@ -278,12 +265,6 @@ of a commit range that already changed a manifest, it checks every direct
 dependency against its registry for a version that could — the same "Scan
 Dependencies" check the extension runs. It never writes either, except when
 given --upgrade, and even then only a local manifest/lockfile edit.
-\`audit\` asks the third question, the one about the present: does this code
-match the dependency actually installed in \`node_modules\` right now? It reads
-each package's real, on-disk declarations — no registry, no version diff — and
-checks every symbol this repository imports from it against that file. Those
-findings do not go away by upgrading; they are true today.
-\`analyze\` runs the same audit and includes it in its report.
 \`fix\` applies the plan in an isolated git worktree — your working tree is
 never touched — using, per commit, Drift's own deterministic fix, then (if
 enabled) a community recipe, then an AI agent, in that order; it pushes a
@@ -320,8 +301,6 @@ export async function main(argv: string[]): Promise<number> {
       return analyzeCommand(parseFlags(rest));
     case 'outdated':
       return outdatedCommand(parseFlags(rest));
-    case 'audit':
-      return auditCommand(parseFlags(rest));
     case 'fix':
       return fixCommand(parseFlags(rest));
     case 'pr':
@@ -448,113 +427,22 @@ async function analyzeCommand(flags: Flags): Promise<number> {
     workspace,
   });
 
-  // A null plan means nothing moved in this range. It has never meant the
-  // repository is fine, and now there is something to say about that: the audit
-  // runs regardless of whether a manifest changed, so print it rather than
-  // letting "no dependency manifest changed" stand as the whole answer.
   if (!result.plan) {
     if (flags.json) {
-      console.log(JSON.stringify({ plan: null, summary: result.summary, audit: result.audit ?? null }, null, 2));
+      console.log(JSON.stringify({ plan: null, summary: result.summary }, null, 2));
       return 0;
     }
 
     console.log(`\n${result.summary}\n`);
-    const section = renderAudit(result.audit);
-    if (section) console.log(`${section}\n`);
     return 0;
   }
 
   if (flags.json) {
-    console.log(JSON.stringify({ ...result.plan, audit: result.audit ?? null }, null, 2));
+    console.log(JSON.stringify(result.plan, null, 2));
   } else {
-    console.log(`\n${renderPullRequestBody(result.plan, config, result.audit)}\n`);
+    console.log(`\n${renderPullRequestBody(result.plan, config)}\n`);
   }
 
-  return 0;
-}
-
-/**
- * `drift audit` — the present tense.
- *
- * `analyze` looks at a version move that already happened and `outdated` at one
- * that could; both are about a version this repository is not running. This
- * command asks the question neither of them can: given the dependency tree
- * actually on disk, is the code in this repository correct against it?
- *
- * Usually there is a gap, and it is not anyone's fault. A range like `^4.0.0`
- * is a standing instruction to install anything on 4.x, so the resolver does,
- * during an unrelated lockfile refresh nobody read. The code still assumes the
- * 4.x of the day it was written. Everything removed or re-specified in between
- * is live right now — no upgrade required, and no upgrade will fix it.
- *
- * Read-only, and needs no token: the versions come from the manifest and
- * lockfile already in the checkout.
- */
-async function auditCommand(flags: Flags): Promise<number> {
-  const logLevel = (typeof flags['log-level'] === 'string' ? flags['log-level'] : 'info') as LogLevel;
-  const logger = createLogger(logLevel);
-
-  const workspace = resolve(typeof flags.dir === 'string' ? flags.dir : process.cwd());
-  const token = await resolveGitHubToken(flags);
-
-  const slug = typeof flags.repo === 'string' ? flags.repo : await detectRepoSlug(workspace);
-  const [owner, repoName] = slug ? slug.split('/') : ['local', 'workspace'];
-  if (slug && (!owner || !repoName)) {
-    logger.error(`Invalid repository "${slug}". Expected owner/name.`);
-    return 1;
-  }
-
-  const head = (await gitRev(workspace, 'HEAD')) ?? 'HEAD';
-  const branch = (await gitRev(workspace, '--abbrev-ref HEAD')) ?? 'main';
-  const repo: RepoContext = {
-    owner: owner!,
-    repo: repoName!,
-    baseBranch: branch,
-    beforeSha: head,
-    afterSha: head,
-    workspace,
-  };
-
-  const { config, path, problems } = await loadConfig(async (candidate) => {
-    const target = typeof flags.config === 'string' ? flags.config : candidate;
-    try {
-      return await readFile(resolve(workspace, target), 'utf8');
-    } catch {
-      return null;
-    }
-  });
-  for (const problem of problems) logger.warn(problem);
-  if (path) logger.info(`Using config from ${path}`);
-
-  logger.info(`Auditing ${owner}/${repoName} against the versions installed in this checkout`);
-
-  const result = await auditCurrentUsage({
-    root: workspace,
-    repo,
-    config,
-    logger,
-    githubToken: token || undefined,
-    includeDev: Boolean(flags.dev) || config.audit.includeDev,
-    maxSites: config.audit.maxSites,
-    maxPackages: config.audit.maxPackages,
-    onProgress: (phase, detail, done, total) =>
-      logger.debug(`${phase}: ${detail}${total > 0 ? ` (${done}/${total})` : ''}`),
-  });
-
-  if (flags.json) {
-    console.log(JSON.stringify(result, null, 2));
-    return 0;
-  }
-
-  const section = renderAudit(result);
-  console.log(section ? `\n${section}\n` : `\n${summarizeAudit(result)}\n`);
-
-  for (const gap of result.gaps) logger.warn(gap.reason);
-
-  // A non-zero exit would be wrong here: these findings are pre-existing by
-  // definition, so failing a build on them would fail every build from the
-  // moment the command is added to CI, on code nobody touched in that commit.
-  // Callers that want a gate can read --json and decide their own threshold.
   return 0;
 }
 

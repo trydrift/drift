@@ -919,9 +919,6 @@ export interface ScanDependency {
  * only to sharpen the *installed* version — a range in the manifest says what
  * is permitted, not what is on disk.
  *
- * Exported for the audit (`src/audit/index.ts`), which needs the same three
- * facts this produces — declared range, installed version, owning manifest —
- * to ask its own question about the gap between the first two.
  */
 export async function directDependencies(
   root: string,

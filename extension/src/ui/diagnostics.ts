@@ -4,7 +4,6 @@ import { readFileSync } from 'node:fs';
 import type { BreakingChange, ImpactSite, RemediationPlan } from '../../../src/types.js';
 import type { DriftState } from '../state.js';
 import type { DriftReview } from '../review/store.js';
-import type { LatentFinding } from '../../../src/audit/types.js';
 
 /**
  * Inline flagging.
@@ -40,11 +39,6 @@ export class DriftDiagnostics implements vscode.Disposable {
       return;
     }
 
-    // Both kinds of marker are collected per file before anything is published:
-    // `DiagnosticCollection.set` replaces a file's markers outright, so writing
-    // the plan's and then the audit's would silently drop whichever went first
-    // in any file that has both — and a file with both is exactly the file a
-    // developer most needs to see completely.
     const byFile = new Map<string, vscode.Diagnostic[]>();
     const push = (file: string, diagnostic: vscode.Diagnostic) => {
       const bucket = byFile.get(file);
@@ -65,69 +59,9 @@ export class DriftDiagnostics implements vscode.Disposable {
       }
     }
 
-    for (const finding of this.state.audit?.findings ?? []) {
-      for (const site of finding.sites) {
-        const uri = vscode.Uri.file(join(root, site.file));
-        push(site.file, this.toLatentDiagnostic(site, finding, uri));
-      }
-    }
-
     for (const [file, diagnostics] of byFile) {
       this.collection.set(vscode.Uri.file(join(root, file)), diagnostics);
     }
-  }
-
-  /**
-   * A marker for code that is already wrong.
-   *
-   * Worded in the present tense and never softened by the pending-upgrade
-   * rule that applies to plan markers, because there is nothing pending: the
-   * version named here is the one in `node_modules` right now. A developer who
-   * reads "this breaks in v5" files it under later; "v4.9.0 is installed and
-   * this call does not exist in it" is a bug they can reproduce before lunch.
-   */
-  private toLatentDiagnostic(
-    site: ImpactSite,
-    finding: LatentFinding,
-    uri: vscode.Uri,
-  ): vscode.Diagnostic {
-    const range = rangeForSite(uri, site);
-    const change = finding.breakingChange;
-
-    const diagnostic = new vscode.Diagnostic(
-      range,
-      `${finding.dependency} ${finding.installedVersion} is installed: ${lowerFirst(change?.summary ?? finding.summary)}`,
-      // Same mapping as a plan finding, and for the same reason: severity
-      // tracks how sure Drift is, not how long the problem has been there.
-      //
-      // This was briefly capped at Warning on the theory that turning a file
-      // red for months-old code is how an editor integration gets uninstalled.
-      // That reasoning traded accuracy for adoption, which is the trade this
-      // project exists not to make. A high-confidence latent finding means the
-      // file binds that symbol from that dependency's import and the symbol is
-      // not in the version on disk — the code is broken now, and it was broken
-      // yesterday too. Age is not evidence of harmlessness; it usually means
-      // nobody has run that path lately. If the volume is genuinely too much
-      // for a repository, `drift.ui.showInlineDiagnostics` already turns the
-      // markers off, which is an honest lever in a way a quiet severity is not.
-      latentSeverityFor(site.confidence),
-    );
-    diagnostic.source = SOURCE;
-    diagnostic.code = {
-      value: `${finding.dependency} installed ${finding.installedVersion}`,
-      target: vscode.Uri.parse('https://github.com/trydrift/drift#audit'),
-    };
-    diagnostic.relatedInformation = [
-      new vscode.DiagnosticRelatedInformation(
-        new vscode.Location(uri, range),
-        finding.kind === 'range-violation'
-          ? `Declared as ${finding.declaredRange} in ${finding.manifestPath}; ${finding.installedVersion} resolved, which the range does not permit.`
-          : `Checked directly against ${finding.dependency}@${finding.installedVersion} in node_modules — not a version diff.`,
-      ),
-    ];
-
-    if (change) this.index.set(keyFor(uri, range, change.id), change);
-    return diagnostic;
   }
 
   private toDiagnostic(
@@ -196,25 +130,6 @@ function severityFor(change: BreakingChange, pendingUpgrade: boolean): vscode.Di
   }
 
   switch (change.confidence) {
-    case 'high':
-      return vscode.DiagnosticSeverity.Error;
-    case 'medium':
-      return vscode.DiagnosticSeverity.Warning;
-    default:
-      return vscode.DiagnosticSeverity.Information;
-  }
-}
-
-/**
- * Severity for a finding about the installed version.
- *
- * Deliberately identical to `severityFor`'s non-pending branch. The
- * pending-upgrade downgrade does not apply here: that exists because a plan
- * describes a break that *would* happen if the developer takes an upgrade they
- * have not taken yet. Nothing about a latent finding is conditional.
- */
-function latentSeverityFor(confidence: ImpactSite['confidence']): vscode.DiagnosticSeverity {
-  switch (confidence) {
     case 'high':
       return vscode.DiagnosticSeverity.Error;
     case 'medium':

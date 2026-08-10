@@ -6,7 +6,6 @@ import { loadConfig } from '../config/load.js';
 import { GitHubClient } from '../github/client.js';
 import { runPipeline } from '../pipeline.js';
 import { renderPullRequestBody } from '../report/markdown.js';
-import { renderAudit } from '../report/audit.js';
 import { createLogger, type Logger, type LogLevel } from '../util/logger.js';
 import { matchesAny } from '../util/glob.js';
 import { applyApproval } from '../approval/apply.js';
@@ -107,15 +106,8 @@ export async function runAction(): Promise<number> {
     });
 
     await writeOutputs(result.dispatch, result.summary);
-    // The job summary is written even with no plan, because the audit runs
-    // whether or not a manifest moved — a workflow that only ever prints
-    // something when a dependency changed cannot report code that has been
-    // wrong against its installed tree for months.
     if (result.plan) {
-      await writeJobSummary(renderPullRequestBody(result.plan, effectiveConfig, result.audit));
-    } else {
-      const section = renderAudit(result.audit);
-      if (section) await writeJobSummary(section);
+      await writeJobSummary(renderPullRequestBody(result.plan, effectiveConfig));
     }
 
     if (result.dispatch.status === 'dispatched') {

@@ -4,7 +4,6 @@ import type { RemediationPlan } from '../../src/types.js';
 import type { LocalRepoInfo } from '../../src/repo/local-git.js';
 import type { NestedProject } from '../../src/detect/nested.js';
 import type { UpgradeCandidate } from './upgrades.js';
-import type { AuditResult } from '../../src/audit/index.js';
 
 /**
  * Extension state.
@@ -51,7 +50,6 @@ export class DriftState {
   private _roots: RepoRoot[] = [];
   private _activeRootPath: string | null = null;
   private _candidates: UpgradeCandidate[] = [];
-  private _audit: AuditResult | null = null;
 
   private readonly emitter = new vscode.EventEmitter<DriftStatus>();
   readonly onDidChange = this.emitter.event;
@@ -94,28 +92,6 @@ export class DriftState {
     return this._candidates;
   }
 
-  /**
-   * What is already broken against the installed versions.
-   *
-   * Deliberately outside `status`. Every `DriftStatus` describes the progress
-   * of one analysis of one version move, and these findings are not about a
-   * move — they stay true across an idle state, a clean state, and a finished
-   * fix, and clearing them on a state transition would be wrong every time.
-   */
-  get audit(): AuditResult | null {
-    return this._audit;
-  }
-
-  setAudit(audit: AuditResult | null): void {
-    this._audit = audit;
-    this.emitter.fire(this._status);
-    void vscode.commands.executeCommand(
-      'setContext',
-      'drift.hasLatentFindings',
-      (audit?.findings.length ?? 0) > 0,
-    );
-  }
-
   setCandidates(candidates: readonly UpgradeCandidate[]): void {
     this._candidates = [...candidates];
     this.emitter.fire(this._status);
@@ -143,7 +119,6 @@ export class DriftState {
     // them in place would let a later "Fix All" apply one repository's plan —
     // file scopes, commit units, everything — inside a different one.
     this._candidates = [];
-    this._audit = null;
     this.set({ kind: 'idle' });
   }
 

@@ -9,7 +9,6 @@ import { buildPlan } from '../../../src/plan/index.js';
 import { resolveBaseBranch } from '../../../src/plan/pull-request.js';
 import type { RevisionRequest } from '../agents/types.js';
 import { renderPullRequestBody } from '../../../src/report/markdown.js';
-import type { LatentFinding } from '../../../src/audit/types.js';
 import { inspectLocalRepo, WORKING_TREE } from '../../../src/repo/local-git.js';
 import { DriftConfigSchema, type DriftConfig } from '../../../src/config/schema.js';
 import { loadWorkspaceConfig, runAnalysis } from '../analyze.js';
@@ -54,7 +53,6 @@ import {
   installUpgrade,
   reanalyzeUpgrade,
   scanUpgrades,
-  auditInstalled,
   upgradeCommandFor,
   severityOf,
   type ManagerPreferences,
@@ -821,77 +819,6 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
    * Returns `null` when the developer declined to choose, which cancels the
    * scan rather than proceeding on a guess.
    */
-  /**
-   * Check the code against the versions actually installed.
-   *
-   * Runs across every scanned root and merges the results, because the state
-   * store holds one audit and a developer looking at a multi-root window wants
-   * one list of what is broken, not one per folder. Failures are swallowed to
-   * a notice: the upgrade scan has already succeeded by this point, and losing
-   * its result to a registry timeout in a follow-up step would be a poor
-   * trade.
-   */
-  private async auditInstalledVersions(
-    contexts: readonly WorkspaceContext[],
-    roots: readonly RepoRoot[],
-    token: vscode.CancellationToken,
-  ): Promise<void> {
-    if (!contexts[0]?.config.audit.enabled) return;
-
-    const step = this.session.step('Checking your code against the versions installed now');
-    const merged: LatentFinding[] = [];
-    let checked = 0;
-    let analysed = 0;
-
-    for (const ctx of contexts) {
-      if (token.isCancellationRequested) break;
-
-      const label = roots.find((root) => root.path === ctx.root)?.label;
-      try {
-        const result = await auditInstalled({
-          root: ctx.root,
-          repo: ctx.repo,
-          config: ctx.config,
-          githubToken: await getRateLimitToken(),
-          includeDev: ctx.config.triggerOn.dev,
-          token,
-          onProgress: (phase, detail, done, total) =>
-            step.progress(label ? `${label}: ${phase}` : phase, detail, done, total),
-        });
-
-        merged.push(...result.findings);
-        checked += result.checked;
-        analysed += result.analysed;
-      } catch (err) {
-        this.session.notice('warn', label ? `${label}: ${(err as Error).message}` : (err as Error).message);
-      }
-    }
-
-    this.state.setAudit({ findings: merged, checked, analysed, gaps: [], checkedSurfaces: [] });
-
-    if (merged.length === 0) {
-      step.done(
-        analysed === 0
-          ? `Nothing to statically check — none of ${checked} dependencies had a readable, imported symbol to verify`
-          : `Your code matches everything actually exported by the ${analysed} package${analysed === 1 ? '' : 's'} checked` +
-              (checked > analysed
-                ? ` (the other ${checked - analysed} of ${checked} weren't npm, had no on-disk types, or aren't imported by name)`
-                : ''),
-      );
-      return;
-    }
-
-    const files = new Set(merged.flatMap((f) => f.sites.map((site) => site.file))).size;
-    step.done(
-      `${merged.length} place${merged.length === 1 ? '' : 's'} already conflict${merged.length === 1 ? 's' : ''} with an installed version` +
-        (files > 0 ? ` · ${files} file${files === 1 ? '' : 's'}` : ''),
-    );
-    this.session.say(
-      `These are not upgrade risks — they are true of the versions in your \`node_modules\` right now, and ` +
-        `they will not go away by upgrading. They are flagged inline in the Problems panel.`,
-    );
-  }
-
   private async resolveManagers(root: string): Promise<ManagerPreferences | null> {
     const stored = new Map<string, PackageManagerId>(
       Object.entries(this.memento.get<Record<string, PackageManagerId>>(MANAGER_KEY, {})),
@@ -1123,7 +1050,6 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     this.scanned = true;
     this.clearStale();
     this.state.setCandidates([]);
-    this.state.setAudit(null);
     const step = this.session.step(
       multiRoot ? `Checking your dependencies across ${contexts.length} repositories` : 'Checking your dependencies',
     );
@@ -1196,14 +1122,6 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       step.done(
         `Checked ${checked} package${checked === 1 ? '' : 's'} · ${ranked.filter((c) => severityOf(c) === 'affected').length} need attention`,
       );
-
-      // The other half of the scan, and the half a developer can act on today.
-      // Everything above is about versions that are not installed; this is
-      // about the ones that are. Run after, not before, because the upgrade
-      // list is what the developer asked for and must not wait behind it — and
-      // reported separately for the same reason it is stored separately: a
-      // present-tense finding is not an item on an upgrade list.
-      await this.auditInstalledVersions(contexts, multiRoot ? roots : [], token);
 
       // A directory with its own `.git` is a separate repository, most often
       // a submodule — Drift never folds its commits into this one's, so it

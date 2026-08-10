@@ -107,15 +107,6 @@ export async function runAnalysis(options: AnalyzeOptions): Promise<AnalyzeResul
       return { plan: null, summary: 'Cancelled.' };
     }
 
-    // Set before the status, so the diagnostics refresh that a status change
-    // triggers already has the audit in hand and paints both kinds of marker in
-    // one pass rather than flashing the plan's and then adding to it.
-    //
-    // Only overwritten when the analysis actually produced one: an analysis run
-    // with the audit disabled must leave a previous scan's findings alone
-    // rather than silently clearing markers the developer has not addressed.
-    if (result.audit) state.setAudit(result.audit);
-
     if (!result.plan || result.plan.breakingChanges.length === 0) {
       state.set({ kind: 'clean', summary: result.summary, plan: result.plan ?? undefined, at: Date.now() });
       return result;
