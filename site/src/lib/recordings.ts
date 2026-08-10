@@ -79,7 +79,6 @@ export interface Recording {
   commit: string;
   durationMs: number;
   packagesChecked: number;
-  packagesCapped: number;
   manifests: string[];
   events: ProgressEvent[];
   candidates: Candidate[];
@@ -136,6 +135,10 @@ export const ECOSYSTEM_LABEL: Record<string, string> = {
   cargo: "crates.io",
   maven: "Maven",
   rubygems: "RubyGems",
+  nuget: "NuGet",
+  conan: "ConanCenter",
+  vcpkg: "vcpkg",
+  arduino: "Arduino Library Manager",
 };
 
 /**

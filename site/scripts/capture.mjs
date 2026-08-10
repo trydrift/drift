@@ -23,7 +23,7 @@
  *   node site/scripts/capture.mjs deno       # one, by id
  */
 
-import { execFile } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
 import { promisify } from 'node:util';
 import { mkdir, mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
@@ -40,6 +40,39 @@ const { scanUpgrades } = await import(join(repoRoot, 'dist/upgrade/scan.js'));
 const { auditCurrentUsage } = await import(join(repoRoot, 'dist/audit/index.js'));
 const { DriftConfigSchema } = await import(join(repoRoot, 'dist/config/schema.js'));
 const { createLogger } = await import(join(repoRoot, 'dist/util/logger.js'));
+const { configureHttpDiskCache } = await import(join(repoRoot, 'dist/util/http.js'));
+
+/**
+ * A disk cache, and a GitHub token.
+ *
+ * Both exist for the same reason: a whole-repository sweep of GitLab asks the
+ * GitHub API about several hundred gems, and an unauthenticated run is rate
+ * limited at sixty requests an hour. It does not fail — it degrades, quietly,
+ * into a recording full of "could not check" that would be a fair record of a
+ * throttled laptop and a libel against the tool. The cache means a re-run after
+ * a fix costs nothing, and the token means the first run is not throttled.
+ *
+ * Neither is committed: the cache lives in the OS temp directory, and the token
+ * comes from the environment or `gh`.
+ */
+configureHttpDiskCache(join(tmpdir(), 'drift-capture-cache'));
+
+const githubToken =
+  process.env.GITHUB_TOKEN ||
+  (() => {
+    try {
+      return execFileSync('gh', ['auth', 'token'], { encoding: 'utf8' }).trim();
+    } catch {
+      return '';
+    }
+  })();
+
+if (!githubToken) {
+  process.stderr.write(
+    'warning: no GITHUB_TOKEN and no `gh` login. Release notes will be rate limited, ' +
+      'and the recording will understate what Drift can see.\n',
+  );
+}
 
 /**
  * What to record.
@@ -49,10 +82,20 @@ const { createLogger } = await import(join(repoRoot, 'dist/util/logger.js'));
  * package that actually declares dependencies — cloning Supabase and pointing
  * Drift at the root would analyse the website, not the client library.
  *
- * `maxPackages` is a recording budget, not a limitation of the tool: a full
- * sweep of Kubernetes' go.mod is hundreds of registry round trips, and nobody
- * watches a four-minute animation. It is stated on the page rather than hidden.
+ * Every recording is a **whole-repository** run at the CLI's own defaults —
+ * every direct runtime dependency of every manifest, up to forty impact sites
+ * per finding. There is no sampling and no budget. That is the point: someone
+ * who clones the linked commit and runs `drift outdated` should get what they
+ * see here, and a recording that quietly analysed fourteen of a project's two
+ * hundred packages would make the page a demo of a different tool.
+ *
+ * The cost is that a large repository takes minutes to capture and the
+ * recording is measured in megabytes. Both are paid once, here, rather than by
+ * every visitor's trust.
  */
+
+/** The CLI's own defaults, so a local run and a recording agree. */
+const FULL_REPO = { maxPackages: 0, maxSites: 40 };
 const TARGETS = [
   {
     id: 'supabase',
@@ -62,7 +105,6 @@ const TARGETS = [
     repo: 'https://github.com/supabase/supabase-js',
     blurb: 'The official Supabase client for JavaScript and TypeScript.',
     dir: '',
-    maxPackages: 14,
   },
   {
     // sentry-python was the first choice and is not usable: its runtime
@@ -79,7 +121,6 @@ const TARGETS = [
     repo: 'https://github.com/scrapy/scrapy',
     blurb: 'The web crawling framework that most Python scrapers are built on.',
     dir: '',
-    maxPackages: 14,
   },
   {
     id: 'gitlab',
@@ -89,7 +130,6 @@ const TARGETS = [
     repo: 'https://github.com/gitlabhq/gitlabhq',
     blurb: "GitLab's Rails monolith — one of the largest Ruby codebases in the open.",
     dir: '',
-    maxPackages: 14,
   },
   {
     id: 'kubernetes',
@@ -99,11 +139,6 @@ const TARGETS = [
     repo: 'https://github.com/kubernetes/kubernetes',
     blurb: 'The container orchestrator. One of the largest Go codebases in the open.',
     dir: '',
-    // Wider than the others on purpose. Go projects pin exact versions in
-    // go.mod and keep them current, so a 14-package slice of Kubernetes found
-    // two outdated dependencies — a true result, and a thin recording. A wider
-    // sweep shows the same discipline over a sample worth looking at.
-    maxPackages: 34,
   },
   {
     id: 'deno',
@@ -113,7 +148,6 @@ const TARGETS = [
     repo: 'https://github.com/denoland/deno',
     blurb: 'A modern runtime for JavaScript and TypeScript, written in Rust.',
     dir: '',
-    maxPackages: 14,
   },
   {
     id: 'elasticsearch',
@@ -123,7 +157,23 @@ const TARGETS = [
     repo: 'https://github.com/elastic/elasticsearch-java',
     blurb: "Elasticsearch's official Java API client.",
     dir: '',
-    maxPackages: 14,
+  },
+  {
+    // The C++ entry, and the one that makes the clearest case for the header
+    // surface diff: in C and C++ the published header *is* the API, so what
+    // Drift compares is what the compiler would have compared.
+    //
+    // ESPHome rather than a single Arduino library, because `library.properties`
+    // declares dependencies without versions — a real fact about that format,
+    // and one that leaves nothing to be outdated. A PlatformIO project pins
+    // exact versions, which is what an upgrade scan is about.
+    id: 'esphome',
+    label: 'esphome',
+    ecosystem: 'arduino',
+    language: 'C++',
+    repo: 'https://github.com/esphome/esphome',
+    blurb: 'The firmware behind most ESP32 and ESP8266 home-automation devices.',
+    dir: '',
   },
 ];
 
@@ -186,9 +236,9 @@ async function capture(target) {
       repo,
       config,
       logger,
-      githubToken: process.env.GITHUB_TOKEN || undefined,
-      breadth: { includeDev: false, maxSites: 12, maxPackages: target.maxPackages },
-      concurrency: 4,
+      githubToken: githubToken || undefined,
+      breadth: { includeDev: false, maxSites: FULL_REPO.maxSites, maxPackages: FULL_REPO.maxPackages },
+      concurrency: 8,
       onProgress: ({ phase, detail, done, total }) => mark(phase, detail, done, total),
       onCandidate: (candidate) => candidates.push(slimCandidate(candidate)),
     });
@@ -204,10 +254,10 @@ async function capture(target) {
       repo,
       config,
       logger,
-      githubToken: process.env.GITHUB_TOKEN || undefined,
-      maxPackages: target.maxPackages,
-      maxSites: 8,
-      concurrency: 4,
+      githubToken: githubToken || undefined,
+      maxPackages: FULL_REPO.maxPackages,
+      maxSites: FULL_REPO.maxSites,
+      concurrency: 8,
       onProgress: (phase, detail, done, total) => mark(phase, detail, done, total),
     });
   } catch (err) {
@@ -227,7 +277,6 @@ async function capture(target) {
     commit: head,
     durationMs: Date.now() - started,
     packagesChecked: scan?.checked ?? 0,
-    packagesCapped: target.maxPackages,
     manifests: (scan?.targets ?? []).map((t) => t.manifestPath),
     events,
     candidates: candidates.sort(byAttention),

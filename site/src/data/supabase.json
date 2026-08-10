@@ -5,11 +5,10 @@
   "language": "TypeScript",
   "repo": "https://github.com/supabase/supabase-js",
   "blurb": "The official Supabase client for JavaScript and TypeScript.",
-  "capturedAt": "2026-08-09T19:12:59.979Z",
+  "capturedAt": "2026-08-10T06:18:43.016Z",
   "commit": "381bded5ced48c4621830576bf8cbecc34edc85c",
-  "durationMs": 18338,
-  "packagesChecked": 14,
-  "packagesCapped": 14,
+  "durationMs": 14262,
+  "packagesChecked": 22,
   "manifests": [
     "package.json",
     "packages/core/auth-js/package.json",
@@ -24,494 +23,746 @@
   ],
   "events": [
     {
-      "at": 2090,
+      "at": 1722,
       "phase": "Looking for manifests",
       "detail": "supabase/supabase-js",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2116,
+      "at": 1745,
       "phase": "Reading the workspace",
       "detail": "10 packages · pnpm-workspace",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2121,
+      "at": 1749,
       "phase": "Reading manifest",
       "detail": "package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 3783,
+      "at": 2351,
       "phase": "Reading manifest",
       "detail": "packages/core/auth-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 3788,
+      "at": 2352,
       "phase": "Reading manifest",
       "detail": "packages/core/auth-js/example/react/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 3789,
+      "at": 2352,
       "phase": "Reading manifest",
       "detail": "packages/core/functions-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 3789,
+      "at": 2353,
       "phase": "Reading manifest",
       "detail": "packages/core/postgrest-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 3789,
+      "at": 2353,
       "phase": "Reading manifest",
       "detail": "packages/core/realtime-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 3791,
+      "at": 2353,
       "phase": "Reading manifest",
       "detail": "packages/core/realtime-js/example/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 3791,
+      "at": 2353,
       "phase": "Reading manifest",
       "detail": "packages/core/storage-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 3791,
+      "at": 2354,
       "phase": "Reading manifest",
       "detail": "packages/core/supabase-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 3792,
+      "at": 2354,
       "phase": "Reading manifest",
       "detail": "packages/shared/tracing/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 3792,
+      "at": 2354,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
-      "total": 14
+      "total": 22
     },
     {
-      "at": 4668,
+      "at": 2683,
       "phase": "Indexing your code",
-      "detail": "383 files indexed · 14 direct dependencies to check",
+      "detail": "383 files indexed · 22 direct dependencies to check",
       "done": 0,
-      "total": 14
+      "total": 22
     },
     {
-      "at": 4675,
+      "at": 2684,
       "phase": "Checking the npm registry",
       "detail": "tslib (installed 2.8.1)",
       "done": 0,
-      "total": 14
+      "total": 22
     },
     {
-      "at": 4946,
+      "at": 2779,
       "phase": "Checking the npm registry",
       "detail": "react (installed 19.2.0)",
       "done": 0,
-      "total": 14
+      "total": 22
     },
     {
-      "at": 4949,
+      "at": 2781,
       "phase": "Checking the npm registry",
       "detail": "react-dom (installed 19.2.0)",
       "done": 0,
-      "total": 14
+      "total": 22
     },
     {
-      "at": 4950,
+      "at": 2782,
       "phase": "Checking the npm registry",
       "detail": "tslib (installed 2.8.1)",
       "done": 0,
-      "total": 14
+      "total": 22
     },
     {
-      "at": 5159,
-      "phase": "Up to date",
-      "detail": "tslib@2.8.1",
-      "done": 1,
-      "total": 14
-    },
-    {
-      "at": 5159,
+      "at": 2783,
       "phase": "Checking the npm registry",
       "detail": "tslib (installed 2.8.1)",
-      "done": 1,
-      "total": 14
+      "done": 0,
+      "total": 22
     },
     {
-      "at": 5163,
-      "phase": "Up to date",
-      "detail": "tslib@2.8.1",
-      "done": 2,
-      "total": 14
-    },
-    {
-      "at": 5163,
+      "at": 2785,
       "phase": "Checking the npm registry",
       "detail": "@supabase/phoenix (installed 0.4.5)",
-      "done": 2,
-      "total": 14
+      "done": 0,
+      "total": 22
     },
     {
-      "at": 5202,
-      "phase": "Up to date",
-      "detail": "tslib@2.8.1",
-      "done": 3,
-      "total": 14
-    },
-    {
-      "at": 5202,
+      "at": 2786,
       "phase": "Checking the npm registry",
       "detail": "tslib (installed 2.8.1)",
-      "done": 3,
-      "total": 14
+      "done": 0,
+      "total": 22
     },
     {
-      "at": 5235,
+      "at": 2787,
+      "phase": "Checking the npm registry",
+      "detail": "@radix-ui/react-checkbox (installed 1.3.1)",
+      "done": 0,
+      "total": 22
+    },
+    {
+      "at": 2939,
+      "phase": "Up to date",
+      "detail": "tslib@2.8.1",
+      "done": 1,
+      "total": 22
+    },
+    {
+      "at": 2939,
+      "phase": "Checking the npm registry",
+      "detail": "@radix-ui/react-dropdown-menu (installed 2.1.14)",
+      "done": 1,
+      "total": 22
+    },
+    {
+      "at": 2943,
+      "phase": "Up to date",
+      "detail": "tslib@2.8.1",
+      "done": 2,
+      "total": 22
+    },
+    {
+      "at": 2943,
+      "phase": "Checking the npm registry",
+      "detail": "@radix-ui/react-label (installed 2.1.6)",
+      "done": 2,
+      "total": 22
+    },
+    {
+      "at": 2947,
+      "phase": "Up to date",
+      "detail": "tslib@2.8.1",
+      "done": 3,
+      "total": 22
+    },
+    {
+      "at": 2947,
+      "phase": "Checking the npm registry",
+      "detail": "@radix-ui/react-slot (installed 1.2.2)",
+      "done": 3,
+      "total": 22
+    },
+    {
+      "at": 2954,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 4,
-      "total": 14
+      "total": 22
     },
     {
-      "at": 5235,
-      "phase": "Checking the npm registry",
-      "detail": "@radix-ui/react-checkbox (installed 1.3.1)",
-      "done": 4,
-      "total": 14
-    },
-    {
-      "at": 5358,
-      "phase": "Up to date",
-      "detail": "@supabase/phoenix@0.4.5",
-      "done": 5,
-      "total": 14
-    },
-    {
-      "at": 5358,
-      "phase": "Checking the npm registry",
-      "detail": "@radix-ui/react-dropdown-menu (installed 2.1.14)",
-      "done": 5,
-      "total": 14
-    },
-    {
-      "at": 5462,
-      "phase": "Reading release notes and changelog",
-      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
-      "done": 5,
-      "total": 14
-    },
-    {
-      "at": 5810,
-      "phase": "Reading release notes and changelog",
-      "detail": "react 19.2.0 → 19.2.8",
-      "done": 5,
-      "total": 14
-    },
-    {
-      "at": 5880,
-      "phase": "Reading release notes and changelog",
-      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
-      "done": 5,
-      "total": 14
-    },
-    {
-      "at": 6272,
-      "phase": "Reading release notes and changelog",
-      "detail": "react-dom 19.2.0 → 19.2.8",
-      "done": 5,
-      "total": 14
-    },
-    {
-      "at": 8812,
-      "phase": "Comparing the public API surface",
-      "detail": "react 19.2.0 → 19.2.8 · 1 evidence source",
-      "done": 5,
-      "total": 14
-    },
-    {
-      "at": 8813,
-      "phase": "No breaking changes to look for",
-      "detail": "react 19.2.0 → 19.2.8",
-      "done": 5,
-      "total": 14
-    },
-    {
-      "at": 8813,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "react 19.2.0 → 19.2.8",
-      "done": 5,
-      "total": 14
-    },
-    {
-      "at": 8817,
-      "phase": "Comparing the public API surface",
-      "detail": "react-dom 19.2.0 → 19.2.8 · 1 evidence source",
-      "done": 5,
-      "total": 14
-    },
-    {
-      "at": 8817,
-      "phase": "No breaking changes to look for",
-      "detail": "react-dom 19.2.0 → 19.2.8",
-      "done": 5,
-      "total": 14
-    },
-    {
-      "at": 8818,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "react-dom 19.2.0 → 19.2.8",
-      "done": 5,
-      "total": 14
-    },
-    {
-      "at": 9166,
-      "phase": "Checked",
-      "detail": "react 19.2.0 → 19.2.8 · safe for your code · no breaking changes found",
-      "done": 6,
-      "total": 14
-    },
-    {
-      "at": 9166,
-      "phase": "Checking the npm registry",
-      "detail": "@radix-ui/react-label (installed 2.1.6)",
-      "done": 6,
-      "total": 14
-    },
-    {
-      "at": 9177,
-      "phase": "Checked",
-      "detail": "react-dom 19.2.0 → 19.2.8 · safe for your code · no breaking changes found",
-      "done": 7,
-      "total": 14
-    },
-    {
-      "at": 9177,
-      "phase": "Checking the npm registry",
-      "detail": "@radix-ui/react-slot (installed 1.2.2)",
-      "done": 7,
-      "total": 14
-    },
-    {
-      "at": 9243,
-      "phase": "Reading release notes and changelog",
-      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
-      "done": 7,
-      "total": 14
-    },
-    {
-      "at": 9250,
-      "phase": "Reading release notes and changelog",
-      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
-      "done": 7,
-      "total": 14
-    },
-    {
-      "at": 11153,
-      "phase": "Comparing the public API surface",
-      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11 · 1 evidence source",
-      "done": 7,
-      "total": 14
-    },
-    {
-      "at": 11153,
-      "phase": "No breaking changes to look for",
-      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
-      "done": 7,
-      "total": 14
-    },
-    {
-      "at": 11153,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
-      "done": 7,
-      "total": 14
-    },
-    {
-      "at": 11154,
-      "phase": "Comparing the public API surface",
-      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24 · 1 evidence source",
-      "done": 7,
-      "total": 14
-    },
-    {
-      "at": 11154,
-      "phase": "No breaking changes to look for",
-      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
-      "done": 7,
-      "total": 14
-    },
-    {
-      "at": 11154,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
-      "done": 7,
-      "total": 14
-    },
-    {
-      "at": 11155,
-      "phase": "Comparing the public API surface",
-      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3 · 2 evidence sources",
-      "done": 7,
-      "total": 14
-    },
-    {
-      "at": 11157,
-      "phase": "Searching your code for 4 breaking changes",
-      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
-      "done": 7,
-      "total": 14
-    },
-    {
-      "at": 11162,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
-      "done": 7,
-      "total": 14
-    },
-    {
-      "at": 11163,
-      "phase": "Comparing the public API surface",
-      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15 · 1 evidence source",
-      "done": 7,
-      "total": 14
-    },
-    {
-      "at": 11163,
-      "phase": "No breaking changes to look for",
-      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
-      "done": 7,
-      "total": 14
-    },
-    {
-      "at": 11163,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
-      "done": 7,
-      "total": 14
-    },
-    {
-      "at": 11339,
-      "phase": "Checked",
-      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11 · safe for your code · no breaking changes found",
-      "done": 8,
-      "total": 14
-    },
-    {
-      "at": 11339,
+      "at": 2954,
       "phase": "Checking the npm registry",
       "detail": "class-variance-authority (installed 0.7.1)",
-      "done": 8,
-      "total": 14
+      "done": 4,
+      "total": 22
     },
     {
-      "at": 11343,
-      "phase": "Checked",
-      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24 · safe for your code · no breaking changes found",
-      "done": 9,
-      "total": 14
+      "at": 2991,
+      "phase": "Reading release notes and changelog",
+      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
+      "done": 4,
+      "total": 22
     },
     {
-      "at": 11343,
-      "phase": "Checking the npm registry",
-      "detail": "clsx (installed 2.1.1)",
-      "done": 9,
-      "total": 14
-    },
-    {
-      "at": 11378,
+      "at": 3018,
       "phase": "Up to date",
       "detail": "class-variance-authority@0.7.1",
-      "done": 10,
-      "total": 14
+      "done": 5,
+      "total": 22
     },
     {
-      "at": 11378,
+      "at": 3018,
+      "phase": "Checking the npm registry",
+      "detail": "clsx (installed 2.1.1)",
+      "done": 5,
+      "total": 22
+    },
+    {
+      "at": 3024,
+      "phase": "Up to date",
+      "detail": "@supabase/phoenix@0.4.5",
+      "done": 6,
+      "total": 22
+    },
+    {
+      "at": 3024,
       "phase": "Checking the npm registry",
       "detail": "lucide-react (installed 0.511.0)",
-      "done": 10,
-      "total": 14
+      "done": 6,
+      "total": 22
     },
     {
-      "at": 11437,
+      "at": 3040,
+      "phase": "Reading release notes and changelog",
+      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
+      "done": 6,
+      "total": 22
+    },
+    {
+      "at": 3056,
+      "phase": "Reading release notes and changelog",
+      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
+      "done": 6,
+      "total": 22
+    },
+    {
+      "at": 3062,
       "phase": "Up to date",
       "detail": "clsx@2.1.1",
-      "done": 11,
-      "total": 14
+      "done": 7,
+      "total": 22
     },
     {
-      "at": 11463,
+      "at": 3062,
+      "phase": "Checking the npm registry",
+      "detail": "next (installed 16.2.11)",
+      "done": 7,
+      "total": 22
+    },
+    {
+      "at": 3084,
+      "phase": "Reading release notes and changelog",
+      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
+      "done": 7,
+      "total": 22
+    },
+    {
+      "at": 3270,
       "phase": "Reading release notes and changelog",
       "detail": "lucide-react 0.511.0 → 1.31.0",
-      "done": 11,
-      "total": 14
+      "done": 7,
+      "total": 22
     },
     {
-      "at": 11471,
-      "phase": "Needs your attention",
-      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3 · affects your code · 2 sites in 1 file",
-      "done": 12,
-      "total": 14
+      "at": 3381,
+      "phase": "Reading release notes and changelog",
+      "detail": "react 19.2.0 → 19.2.8",
+      "done": 7,
+      "total": 22
     },
     {
-      "at": 11570,
+      "at": 3574,
+      "phase": "Reading release notes and changelog",
+      "detail": "react-dom 19.2.0 → 19.2.8",
+      "done": 7,
+      "total": 22
+    },
+    {
+      "at": 5027,
+      "phase": "Reading release notes and changelog",
+      "detail": "next 16.2.11 → 16.3.0",
+      "done": 7,
+      "total": 22
+    },
+    {
+      "at": 6928,
+      "phase": "Comparing the public API surface",
+      "detail": "react-dom 19.2.0 → 19.2.8 · 1 evidence source",
+      "done": 7,
+      "total": 22
+    },
+    {
+      "at": 6928,
+      "phase": "No breaking changes to look for",
+      "detail": "react-dom 19.2.0 → 19.2.8",
+      "done": 7,
+      "total": 22
+    },
+    {
+      "at": 6929,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "react-dom 19.2.0 → 19.2.8",
+      "done": 7,
+      "total": 22
+    },
+    {
+      "at": 6932,
+      "phase": "Comparing the public API surface",
+      "detail": "react 19.2.0 → 19.2.8 · 1 evidence source",
+      "done": 7,
+      "total": 22
+    },
+    {
+      "at": 6932,
+      "phase": "No breaking changes to look for",
+      "detail": "react 19.2.0 → 19.2.8",
+      "done": 7,
+      "total": 22
+    },
+    {
+      "at": 6933,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "react 19.2.0 → 19.2.8",
+      "done": 7,
+      "total": 22
+    },
+    {
+      "at": 7491,
+      "phase": "Checked",
+      "detail": "react-dom 19.2.0 → 19.2.8 · safe for your code · no breaking changes found",
+      "done": 8,
+      "total": 22
+    },
+    {
+      "at": 7491,
+      "phase": "Checking the npm registry",
+      "detail": "next-themes (installed 0.4.6)",
+      "done": 8,
+      "total": 22
+    },
+    {
+      "at": 7513,
+      "phase": "Checked",
+      "detail": "react 19.2.0 → 19.2.8 · safe for your code · no breaking changes found",
+      "done": 9,
+      "total": 22
+    },
+    {
+      "at": 7513,
+      "phase": "Checking the npm registry",
+      "detail": "react (installed 19.0.0)",
+      "done": 9,
+      "total": 22
+    },
+    {
+      "at": 7597,
+      "phase": "Up to date",
+      "detail": "next-themes@0.4.6",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 7597,
+      "phase": "Checking the npm registry",
+      "detail": "react-dom (installed 19.0.0)",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 7794,
+      "phase": "Reading release notes and changelog",
+      "detail": "react 19.0.0 → 19.2.8",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 7944,
+      "phase": "Reading release notes and changelog",
+      "detail": "react-dom 19.0.0 → 19.2.8",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8466,
+      "phase": "Comparing the public API surface",
+      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15 · 1 evidence source",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8466,
+      "phase": "No breaking changes to look for",
+      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8466,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8467,
+      "phase": "Comparing the public API surface",
+      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24 · 1 evidence source",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8467,
+      "phase": "No breaking changes to look for",
+      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8467,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8468,
+      "phase": "Comparing the public API surface",
+      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11 · 1 evidence source",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8468,
+      "phase": "No breaking changes to look for",
+      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8468,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8469,
+      "phase": "Comparing the public API surface",
+      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3 · 2 evidence sources",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8471,
+      "phase": "Searching your code for 4 breaking changes",
+      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8476,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8738,
+      "phase": "Comparing the public API surface",
+      "detail": "react 19.0.0 → 19.2.8 · 4 evidence sources",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8744,
+      "phase": "Searching your code for 2 breaking changes",
+      "detail": "react 19.0.0 → 19.2.8",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8749,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "react 19.0.0 → 19.2.8",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8904,
+      "phase": "Comparing the public API surface",
+      "detail": "react-dom 19.0.0 → 19.2.8 · 4 evidence sources",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8905,
+      "phase": "Searching your code for 2 breaking changes",
+      "detail": "react-dom 19.0.0 → 19.2.8",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8908,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "react-dom 19.0.0 → 19.2.8",
+      "done": 10,
+      "total": 22
+    },
+    {
+      "at": 8913,
       "phase": "Checked",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15 · safe for your code · no breaking changes found",
-      "done": 13,
-      "total": 14
+      "done": 11,
+      "total": 22
     },
     {
-      "at": 15920,
+      "at": 8913,
+      "phase": "Checking the npm registry",
+      "detail": "tailwind-merge (installed 3.3.0)",
+      "done": 11,
+      "total": 22
+    },
+    {
+      "at": 8992,
+      "phase": "Reading release notes and changelog",
+      "detail": "tailwind-merge 3.3.0 → 3.6.0",
+      "done": 11,
+      "total": 22
+    },
+    {
+      "at": 9010,
+      "phase": "Checked",
+      "detail": "react 19.0.0 → 19.2.8 · safe for your code · 2 upstream changes, none used here",
+      "done": 12,
+      "total": 22
+    },
+    {
+      "at": 9011,
+      "phase": "Checking the npm registry",
+      "detail": "iceberg-js (installed 0.8.1)",
+      "done": 12,
+      "total": 22
+    },
+    {
+      "at": 9032,
+      "phase": "Checked",
+      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24 · safe for your code · no breaking changes found",
+      "done": 13,
+      "total": 22
+    },
+    {
+      "at": 9032,
+      "phase": "Checking the npm registry",
+      "detail": "tslib (installed 2.8.1)",
+      "done": 13,
+      "total": 22
+    },
+    {
+      "at": 9050,
+      "phase": "Checked",
+      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11 · safe for your code · no breaking changes found",
+      "done": 14,
+      "total": 22
+    },
+    {
+      "at": 9050,
+      "phase": "Checking the npm registry",
+      "detail": "tslib (installed 2.8.1)",
+      "done": 14,
+      "total": 22
+    },
+    {
+      "at": 9052,
+      "phase": "Reading release notes and changelog",
+      "detail": "iceberg-js 0.8.1 → 1.0.0",
+      "done": 14,
+      "total": 22
+    },
+    {
+      "at": 9064,
+      "phase": "Needs your attention",
+      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3 · affects your code · 1 site in 1 file",
+      "done": 15,
+      "total": 22
+    },
+    {
+      "at": 9131,
       "phase": "Comparing the public API surface",
       "detail": "lucide-react 0.511.0 → 1.31.0 · 2 evidence sources",
-      "done": 13,
-      "total": 14
+      "done": 15,
+      "total": 22
     },
     {
-      "at": 15954,
+      "at": 9160,
       "phase": "Searching your code for 107 breaking changes",
       "detail": "lucide-react 0.511.0 → 1.31.0",
-      "done": 13,
-      "total": 14
+      "done": 15,
+      "total": 22
     },
     {
-      "at": 15974,
+      "at": 9181,
       "phase": "Weighing what this upgrade is worth",
       "detail": "lucide-react 0.511.0 → 1.31.0",
-      "done": 13,
-      "total": 14
+      "done": 15,
+      "total": 22
     },
     {
-      "at": 16301,
+      "at": 9193,
+      "phase": "Checked",
+      "detail": "react-dom 19.0.0 → 19.2.8 · safe for your code · 2 upstream changes, none used here",
+      "done": 16,
+      "total": 22
+    },
+    {
+      "at": 9207,
+      "phase": "Up to date",
+      "detail": "tslib@2.8.1",
+      "done": 17,
+      "total": 22
+    },
+    {
+      "at": 9208,
+      "phase": "Up to date",
+      "detail": "tslib@2.8.1",
+      "done": 18,
+      "total": 22
+    },
+    {
+      "at": 9618,
       "phase": "Checked",
       "detail": "lucide-react 0.511.0 → 1.31.0 · safe for your code · 107 upstream changes, none used here",
-      "done": 14,
-      "total": 14
+      "done": 19,
+      "total": 22
+    },
+    {
+      "at": 9780,
+      "phase": "Comparing the public API surface",
+      "detail": "iceberg-js 0.8.1 → 1.0.0 · 5 evidence sources",
+      "done": 19,
+      "total": 22
+    },
+    {
+      "at": 9788,
+      "phase": "Searching your code for 26 breaking changes",
+      "detail": "iceberg-js 0.8.1 → 1.0.0",
+      "done": 19,
+      "total": 22
+    },
+    {
+      "at": 9812,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "iceberg-js 0.8.1 → 1.0.0",
+      "done": 19,
+      "total": 22
+    },
+    {
+      "at": 10234,
+      "phase": "Comparing the public API surface",
+      "detail": "next 16.2.11 → 16.3.0 · 2 evidence sources",
+      "done": 19,
+      "total": 22
+    },
+    {
+      "at": 10236,
+      "phase": "No breaking changes to look for",
+      "detail": "next 16.2.11 → 16.3.0",
+      "done": 19,
+      "total": 22
+    },
+    {
+      "at": 10236,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "next 16.2.11 → 16.3.0",
+      "done": 19,
+      "total": 22
+    },
+    {
+      "at": 10275,
+      "phase": "Checked",
+      "detail": "iceberg-js 0.8.1 → 1.0.0 · safe for your code · 26 upstream changes, none used here",
+      "done": 20,
+      "total": 22
+    },
+    {
+      "at": 11850,
+      "phase": "Checked",
+      "detail": "next 16.2.11 → 16.3.0 · safe for your code · no breaking changes found",
+      "done": 21,
+      "total": 22
+    },
+    {
+      "at": 13012,
+      "phase": "Comparing the public API surface",
+      "detail": "tailwind-merge 3.3.0 → 3.6.0 · 2 evidence sources",
+      "done": 21,
+      "total": 22
+    },
+    {
+      "at": 13012,
+      "phase": "Searching your code for 4 breaking changes",
+      "detail": "tailwind-merge 3.3.0 → 3.6.0",
+      "done": 21,
+      "total": 22
+    },
+    {
+      "at": 13013,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "tailwind-merge 3.3.0 → 3.6.0",
+      "done": 21,
+      "total": 22
+    },
+    {
+      "at": 13375,
+      "phase": "Checked",
+      "detail": "tailwind-merge 3.3.0 → 3.6.0 · safe for your code · 4 upstream changes, none used here",
+      "done": 22,
+      "total": 22
     }
   ],
   "candidates": [
@@ -524,10 +775,10 @@
       "safeLatest": "1.3.3",
       "status": "ready",
       "risk": "low",
-      "summary": "Manual migration required. 2 places in this repository use an API that @radix-ui/react-slot changed.",
+      "summary": "Manual migration required. 1 place in this repository uses an API that @radix-ui/react-slot changed.",
       "recommendation": "manual-migration-required",
       "breakingCount": 4,
-      "impactCount": 2,
+      "impactCount": 1,
       "impactFiles": 1,
       "evidenceCount": 2,
       "gaps": [
@@ -543,13 +794,6 @@
             "Slot"
           ],
           "sites": [
-            {
-              "file": "packages/core/realtime-js/example/components/ui/button.tsx",
-              "line": 2,
-              "excerpt": "import { Slot } from \"@radix-ui/react-slot\";",
-              "matchedSymbol": "Slot",
-              "confidence": "high"
-            },
             {
               "file": "packages/core/realtime-js/example/components/ui/button.tsx",
               "line": 45,
@@ -607,7 +851,7 @@
       "impactFiles": 0,
       "evidenceCount": 2,
       "gaps": [
-        "No release notes, changelog, or migration guide was reachable for lucide-react 1.31.0."
+        "Drift read 25 sets of release notes for lucide-react 1.31.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
       "breaking": [
         {
@@ -647,6 +891,204 @@
           "confidence": "high",
           "symbols": [
             "AlignRight"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "iceberg-js",
+      "ecosystem": "npm",
+      "current": "0.8.1",
+      "latest": "1.0.0",
+      "selected": "1.0.0",
+      "safeLatest": null,
+      "status": "ready",
+      "risk": "none",
+      "summary": "Upgrade recommended. 26 upstream breaking changes, none of which this repository uses.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 26,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 5,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `AccessDelegation` changed.",
+          "remediation": "The signature of `AccessDelegation` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: type AccessDelegation = 'vended-credentials' | 'remote-signing'; | type AccessDelegation, type AuthConfig, type CommitTableResponse, type CreateNamespaceResponse, type CreateTableRequest, type DropTableRequest, IcebergError, type IcebergErrorResponse, IcebergRestCatalog, type IcebergRestCatalogOptions, type IcebergType, type ListType, type MapType, type NamespaceIdentifier, type NamespaceMetadata, type PartitionField, type PartitionSpec, type PrimitiveType, type PrimitiveTypeValue, type SortField, type SortOrder, type StructField, type StructType, type TableField, type TableIdentifier, type TableMetadata, type TableSchema, type UpdateTableRequest, getCurrentSchema, isDecimalType, isFixedType, parseDecimalType, parseFixedType, typesEqual };\n  after:  type AccessDelegation = 'vended-credentials' | 'remote-signing'; | type AccessDelegation, type AddEncryptionKeyUpdate, type AddPartitionSpecUpdate, type AddSchemaUpdate, type AddSnapshotUpdate, type AddSortOrderUpdate, type AssertCreate, type AssertCurrentSchemaId, type AssertDefaultSortOrderId, type AssertDefaultSpecId, type AssertLastAssignedFieldId, type AssertLastAssignedPartitionId, type AssertRefSnapshotId, type AssertTableUUID, type AssignUUIDUpdate, type AuthConfig, type BlobMetadata, type CatalogConfig, type CommitTableRequest, type CommitTableResponse, type CreateNamespaceRequest, type CreateNamespaceResponse, type CreateTableRequest, type DropTableRequest, type EncryptedKey, type GetNamespaceResponse, ICEBERG_REST_SPEC_TAG, ICEBERG_REST_SPEC_URL, IcebergError, type IcebergErrorResponse, IcebergRestCatalog, type IcebergRestCatalogOptions, type IcebergType, type ListNamespacesOptions, type ListNamespacesResponse, type ListNamespacesResult, type ListTablesOptions, type ListTablesResponse, type ListTablesResult, type ListType, type LoadTableOptions, type LoadTableResponse, type LoadTableResult, type LoadTableResultWithEtag, type MapType, type NamespaceIdentifier, type NamespaceMetadata, type PartitionField, type PartitionSpec, type PartitionStatisticsFile, type PrimitiveType, type PrimitiveTypeValue, type RegisterTableRequest, type RemoveEncryptionKeyUpdate, type RemovePartitionSpecsUpdate, type RemovePartitionStatisticsUpdate, type RemovePropertiesUpdate, type RemoveSchemasUpdate, type RemoveSnapshotRefUpdate, type RemoveSnapshotsUpdate, type RemoveStatisticsUpdate, type RenameTableRequest, type SetCurrentSchemaUpdate, type SetDefaultSortOrderUpdate, type SetDefaultSpecUpdate, type SetLocationUpdate, type SetPartitionStatisticsUpdate, type SetPropertiesUpdate, type SetSnapshotRefUpdate, type SetStatisticsUpdate, type Snapshot, type SnapshotReference, type SortField, type SortOrder, type StatisticsFile, type StorageCredential, type StructField, type StructType, type TableField, type TableIdentifier, type TableMetadata, type TableRequirement, type TableSchema, type TableUpdate, type UpdateNamespacePropertiesRequest, type UpdateNamespacePropertiesResponse, type UpdateTableRequest, type UpgradeFormatVersionUpdate, generateIdempotencyKey, getCurrentSchema, isDecimalType, isFixedType, parseDecimalType, parseFixedType, typesEqual };",
+          "confidence": "high",
+          "symbols": [
+            "AccessDelegation"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `AuthConfig` changed.",
+          "remediation": "The signature of `AuthConfig` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: type AuthConfig = { type: 'none'; } | type AuthConfig, type CommitTableResponse, type CreateNamespaceResponse, type CreateTableRequest, type DropTableRequest, IcebergError, type IcebergErrorResponse, IcebergRestCatalog, type IcebergRestCatalogOptions, type IcebergType, type ListType, type MapType, type NamespaceIdentifier, type NamespaceMetadata, type PartitionField, type PartitionSpec, type PrimitiveType, type PrimitiveTypeValue, type SortField, type SortOrder, type StructField, type StructType, type TableField, type TableIdentifier, type TableMetadata, type TableSchema, type UpdateTableRequest, getCurrentSchema, isDecimalType, isFixedType, parseDecimalType, parseFixedType, typesEqual };\n  after:  type AuthConfig = { type: 'none'; } | type AuthConfig, type BlobMetadata, type CatalogConfig, type CommitTableRequest, type CommitTableResponse, type CreateNamespaceRequest, type CreateNamespaceResponse, type CreateTableRequest, type DropTableRequest, type EncryptedKey, type GetNamespaceResponse, ICEBERG_REST_SPEC_TAG, ICEBERG_REST_SPEC_URL, IcebergError, type IcebergErrorResponse, IcebergRestCatalog, type IcebergRestCatalogOptions, type IcebergType, type ListNamespacesOptions, type ListNamespacesResponse, type ListNamespacesResult, type ListTablesOptions, type ListTablesResponse, type ListTablesResult, type ListType, type LoadTableOptions, type LoadTableResponse, type LoadTableResult, type LoadTableResultWithEtag, type MapType, type NamespaceIdentifier, type NamespaceMetadata, type PartitionField, type PartitionSpec, type PartitionStatisticsFile, type PrimitiveType, type PrimitiveTypeValue, type RegisterTableRequest, type RemoveEncryptionKeyUpdate, type RemovePartitionSpecsUpdate, type RemovePartitionStatisticsUpdate, type RemovePropertiesUpdate, type RemoveSchemasUpdate, type RemoveSnapshotRefUpdate, type RemoveSnapshotsUpdate, type RemoveStatisticsUpdate, type RenameTableRequest, type SetCurrentSchemaUpdate, type SetDefaultSortOrderUpdate, type SetDefaultSpecUpdate, type SetLocationUpdate, type SetPartitionStatisticsUpdate, type SetPropertiesUpdate, type SetSnapshotRefUpdate, type SetStatisticsUpdate, type Snapshot, type SnapshotReference, type SortField, type SortOrder, type StatisticsFile, type StorageCredential, type StructField, type StructType, type TableField, type TableIdentifier, type TableMetadata, type TableRequirement, type TableSchema, type TableUpdate, type UpdateNamespacePropertiesRequest, type UpdateNamespacePropertiesResponse, type UpdateTableRequest, type UpgradeFormatVersionUpdate, generateIdempotencyKey, getCurrentSchema, isDecimalType, isFixedType, parseDecimalType, parseFixedType, typesEqual };",
+          "confidence": "high",
+          "symbols": [
+            "AuthConfig"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `CommitTableResponse` changed.",
+          "remediation": "The signature of `CommitTableResponse` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: type CommitTableResponse, type CreateNamespaceResponse, type CreateTableRequest, type DropTableRequest, IcebergError, type IcebergErrorResponse, IcebergRestCatalog, type IcebergRestCatalogOptions, type IcebergType, type ListType, type MapType, type NamespaceIdentifier, type NamespaceMetadata, type PartitionField, type PartitionSpec, type PrimitiveType, type PrimitiveTypeValue, type SortField, type SortOrder, type StructField, type StructType, type TableField, type TableIdentifier, type TableMetadata, type TableSchema, type UpdateTableRequest, getCurrentSchema, isDecimalType, isFixedType, parseDecimalType, parseFixedType, typesEqual };\n  after:  type CommitTableResponse, type CreateNamespaceRequest, type CreateNamespaceResponse, type CreateTableRequest, type DropTableRequest, type EncryptedKey, type GetNamespaceResponse, ICEBERG_REST_SPEC_TAG, ICEBERG_REST_SPEC_URL, IcebergError, type IcebergErrorResponse, IcebergRestCatalog, type IcebergRestCatalogOptions, type IcebergType, type ListNamespacesOptions, type ListNamespacesResponse, type ListNamespacesResult, type ListTablesOptions, type ListTablesResponse, type ListTablesResult, type ListType, type LoadTableOptions, type LoadTableResponse, type LoadTableResult, type LoadTableResultWithEtag, type MapType, type NamespaceIdentifier, type NamespaceMetadata, type PartitionField, type PartitionSpec, type PartitionStatisticsFile, type PrimitiveType, type PrimitiveTypeValue, type RegisterTableRequest, type RemoveEncryptionKeyUpdate, type RemovePartitionSpecsUpdate, type RemovePartitionStatisticsUpdate, type RemovePropertiesUpdate, type RemoveSchemasUpdate, type RemoveSnapshotRefUpdate, type RemoveSnapshotsUpdate, type RemoveStatisticsUpdate, type RenameTableRequest, type SetCurrentSchemaUpdate, type SetDefaultSortOrderUpdate, type SetDefaultSpecUpdate, type SetLocationUpdate, type SetPartitionStatisticsUpdate, type SetPropertiesUpdate, type SetSnapshotRefUpdate, type SetStatisticsUpdate, type Snapshot, type SnapshotReference, type SortField, type SortOrder, type StatisticsFile, type StorageCredential, type StructField, type StructType, type TableField, type TableIdentifier, type TableMetadata, type TableRequirement, type TableSchema, type TableUpdate, type UpdateNamespacePropertiesRequest, type UpdateNamespacePropertiesResponse, type UpdateTableRequest, type UpgradeFormatVersionUpdate, generateIdempotencyKey, getCurrentSchema, isDecimalType, isFixedType, parseDecimalType, parseFixedType, typesEqual };",
+          "confidence": "high",
+          "symbols": [
+            "CommitTableResponse"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `CreateNamespaceResponse` changed.",
+          "remediation": "The signature of `CreateNamespaceResponse` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: type CreateNamespaceResponse, type CreateTableRequest, type DropTableRequest, IcebergError, type IcebergErrorResponse, IcebergRestCatalog, type IcebergRestCatalogOptions, type IcebergType, type ListType, type MapType, type NamespaceIdentifier, type NamespaceMetadata, type PartitionField, type PartitionSpec, type PrimitiveType, type PrimitiveTypeValue, type SortField, type SortOrder, type StructField, type StructType, type TableField, type TableIdentifier, type TableMetadata, type TableSchema, type UpdateTableRequest, getCurrentSchema, isDecimalType, isFixedType, parseDecimalType, parseFixedType, typesEqual };\n  after:  type CreateNamespaceResponse, type CreateTableRequest, type DropTableRequest, type EncryptedKey, type GetNamespaceResponse, ICEBERG_REST_SPEC_TAG, ICEBERG_REST_SPEC_URL, IcebergError, type IcebergErrorResponse, IcebergRestCatalog, type IcebergRestCatalogOptions, type IcebergType, type ListNamespacesOptions, type ListNamespacesResponse, type ListNamespacesResult, type ListTablesOptions, type ListTablesResponse, type ListTablesResult, type ListType, type LoadTableOptions, type LoadTableResponse, type LoadTableResult, type LoadTableResultWithEtag, type MapType, type NamespaceIdentifier, type NamespaceMetadata, type PartitionField, type PartitionSpec, type PartitionStatisticsFile, type PrimitiveType, type PrimitiveTypeValue, type RegisterTableRequest, type RemoveEncryptionKeyUpdate, type RemovePartitionSpecsUpdate, type RemovePartitionStatisticsUpdate, type RemovePropertiesUpdate, type RemoveSchemasUpdate, type RemoveSnapshotRefUpdate, type RemoveSnapshotsUpdate, type RemoveStatisticsUpdate, type RenameTableRequest, type SetCurrentSchemaUpdate, type SetDefaultSortOrderUpdate, type SetDefaultSpecUpdate, type SetLocationUpdate, type SetPartitionStatisticsUpdate, type SetPropertiesUpdate, type SetSnapshotRefUpdate, type SetStatisticsUpdate, type Snapshot, type SnapshotReference, type SortField, type SortOrder, type StatisticsFile, type StorageCredential, type StructField, type StructType, type TableField, type TableIdentifier, type TableMetadata, type TableRequirement, type TableSchema, type TableUpdate, type UpdateNamespacePropertiesRequest, type UpdateNamespacePropertiesResponse, type UpdateTableRequest, type UpgradeFormatVersionUpdate, generateIdempotencyKey, getCurrentSchema, isDecimalType, isFixedType, parseDecimalType, parseFixedType, typesEqual };",
+          "confidence": "high",
+          "symbols": [
+            "CreateNamespaceResponse"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "tailwind-merge",
+      "ecosystem": "npm",
+      "current": "3.3.0",
+      "latest": "3.6.0",
+      "selected": "3.6.0",
+      "safeLatest": "3.6.0",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Safe to upgrade. 4 upstream breaking changes, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 4,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [
+        "Drift read 5 sets of release notes for tailwind-merge 3.6.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": [
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `createTailwindMerge` changed.",
+          "remediation": "The signature of `createTailwindMerge` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: declare function createTailwindMerge(createConfigFirst: CreateConfigFirst, ...createConfigRest: CreateConfigSubsequent$1[]): TailwindMerge;\n  after:  declare const createTailwindMerge: (createConfigFirst: CreateConfigFirst, ...createConfigRest: CreateConfigSubsequent$1[]) => TailwindMerge;",
+          "confidence": "high",
+          "symbols": [
+            "createTailwindMerge"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `getDefaultConfig` changed.",
+          "remediation": "The signature of `getDefaultConfig` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: declare const getDefaultConfig: () => { readonly cacheSize: 500; readonly theme: { readonly animate: readonly [\"spin\", \"ping\", \"pulse\", \"bounce\"]; readonly aspect: readonly [\"video\"]; readonly blur: readonly [(value: string) => boolean]; readonly breakpoint: readonly [(value: string) => boolean]; readonly color: readonly [() => boolean]; readonly container: readonly [(value: string) => boolean]; readonly 'drop-shadow': readonly [(value: string) => boolean]; readonly ease: readonly [\"in\", \"out\", \"in-out\"]; readonly font: readonly [(value: string) => boolean]; readonly 'font-weight': readonly [\"thin\", \"extralight\", \"light\", \"normal\", \"medium\", \"semibold\", \"bold\", \"extrabold\", \"black\"]; readonly 'inset-shadow': readonly [(value: string) => boolean]; readonly leading: readonly [\"none\", \"tight\", \"snug\", \"normal\", \"relaxed\", \"loose\"]; readonly perspective: readonly [\"dramatic\", \"near\", \"normal\", \"midrange\", \"distant\", \"none\"]; readonly radius: readonly [(value: string) => boolean]; readonly shadow: readonly [(value: string) => boolean]; readonly spacing: readonly [\"px\", (value: string) => boolean]; readonly text: readonly [(value: string) => boolean]; readonly 'text-shadow': readonly [(value: string) => boolean]; readonly tracking: readonly [\"tighter\", \"tight\", \"normal\", \"wide\", \"wider\", \"widest\"]; }; readonly classGroups: { readonly aspect: readonly [{ readonly aspect: readonly [\"auto\", \"square\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly container: readonly [\"container\"]; readonly columns: readonly [{ readonly columns: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'break-after': readonly [{ readonly 'break-after': readonly [\"auto\", \"avoid\", \"all\", \"avoid-page\", \"page\", \"left\", \"right\", \"column\"]; }]; readonly 'break-before': readonly [{ readonly 'break-before': readonly [\"auto\", \"avoid\", \"all\", \"avoid-page\", \"page\", \"left\", \"right\", \"column\"]; }]; readonly 'break-inside': readonly [{ readonly 'break-inside': readonly [\"auto\", \"avoid\", \"avoid-page\", \"avoid-column\"]; }]; readonly 'box-decoration': readonly [{ readonly 'box-decoration': readonly [\"slice\", \"clone\"]; }]; readonly box: readonly [{ readonly box: readonly [\"border\", \"content\"]; }]; readonly display: readonly [\"block\", \"inline-block\", \"inline\", \"flex\", \"inline-flex\", \"table\", \"inline-table\", \"table-caption\", \"table-cell\", \"table-column\", \"table-column-group\", \"table-footer-group\", \"table-header-group\", \"table-row-group\", \"table-row\", \"flow-root\", \"grid\", \"inline-grid\", \"contents\", \"list-item\", \"hidden\"]; readonly sr: readonly [\"sr-only\", \"not-sr-only\"]; readonly float: readonly [{ readonly float: readonly [\"right\", \"left\", \"none\", \"start\", \"end\"]; }]; readonly clear: readonly [{ readonly clear: readonly [\"left\", \"right\", \"both\", \"none\", \"start\", \"end\"]; }]; readonly isolation: readonly [\"isolate\", \"isolation-auto\"]; readonly 'object-fit': readonly [{ readonly object: readonly [\"contain\", \"cover\", \"fill\", \"none\", \"scale-down\"]; }]; readonly 'object-position': readonly [{ readonly object: readonly [\"center\", \"top\", \"bottom\", \"left\", \"right\", \"top-left\", \"left-top\", \"top-right\", \"right-top\", \"bottom-right\", \"right-bottom\", \"bottom-left\", \"left-bottom\", (value: string) => boolean, (value: string) => boolean]; }]; readonly overflow: readonly [{ readonly overflow: readonly [\"auto\", \"hidden\", \"clip\", \"visible\", \"scroll\"]; }]; readonly 'overflow-x': readonly [{ readonly 'overflow-x': readonly [\"auto\", \"hidden\", \"clip\", \"visible\", \"scroll\"]; }]; readonly 'overflow-y': readonly [{ readonly 'overflow-y': readonly [\"auto\", \"hidden\", \"clip\", \"visible\", \"scroll\"]; }]; readonly overscroll: readonly [{ readonly overscroll: readonly [\"auto\", \"contain\", \"none\"]; }]; readonly 'overscroll-x': readonly [{ readonly 'overscroll-x': readonly [\"auto\", \"contain\", \"none\"]; }]; readonly 'overscroll-y': readonly [{ readonly 'overscroll-y': readonly [\"auto\", \"contain\", \"none\"]; }]; readonly position: readonly [\"static\", \"fixed\", \"absolute\", \"relative\", \"sticky\"]; readonly inset: readonly [{ readonly inset: readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'inset-x': readonly [{ readonly 'inset-x': readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'inset-y': readonly [{ readonly 'inset-y': readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly start: readonly [{ readonly start: readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly end: readonly [{ readonly end: readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly top: readonly [{ readonly top: readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly right: readonly [{ readonly right: readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly bottom: readonly [{ readonly bottom: readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly left: readonly [{ readonly left: readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly visibility: readonly [\"visible\", \"invisible\", \"collapse\"]; readonly z: readonly [{ readonly z: readonly [(value: string) => boolean, \"auto\", (value: string) => boolean, (value: string) => boolean]; }]; readonly basis: readonly [{ readonly basis: readonly [(value: string) => boolean, \"full\", \"auto\", ThemeGetter, (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'flex-direction': readonly [{ readonly flex: readonly [\"row\", \"row-reverse\", \"col\", \"col-reverse\"]; }]; readonly 'flex-wrap': readonly [{ readonly flex: readonly [\"nowrap\", \"wrap\", \"wrap-reverse\"]; }]; readonly flex: readonly [{ readonly flex: readonly [(value: string) => boolean, (value: string) => boolean, \"auto\", \"initial\", \"none\", (value: string) => boolean]; }]; readonly grow: readonly [{ readonly grow: readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly shrink: readonly [{ readonly shrink: readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly order: readonly [{ readonly order: readonly [(value: string) => boolean, \"first\", \"last\", \"none\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'grid-cols': readonly [{ readonly 'grid-cols': readonly [(value: string) => boolean, \"none\", \"subgrid\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'col-start-end': readonly [{ readonly col: readonly [\"auto\", { readonly span: readonly [\"full\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'col-start': readonly [{ readonly 'col-start': readonly [(value: string) => boolean, \"auto\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'col-end': readonly [{ readonly 'col-end': readonly [(value: string) => boolean, \"auto\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'grid-rows': readonly [{ readonly 'grid-rows': readonly [(value: string) => boolean, \"none\", \"subgrid\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'row-start-end': readonly [{ readonly row: readonly [\"auto\", { readonly span: readonly [\"full\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'row-start': readonly [{ readonly 'row-start': readonly [(value: string) => boolean, \"auto\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'row-end': readonly [{ readonly 'row-end': readonly [(value: string) => boolean, \"auto\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'grid-flow': readonly [{ readonly 'grid-flow': readonly [\"row\", \"col\", \"dense\", \"row-dense\", \"col-dense\"]; }]; readonly 'auto-cols': readonly [{ readonly 'auto-cols': readonly [\"auto\", \"min\", \"max\", \"fr\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'auto-rows': readonly [{ readonly 'auto-rows': readonly [\"auto\", \"min\", \"max\", \"fr\", (value: string) => boolean, (value: string) => boolean]; }]; readonly gap: readonly [{ readonly gap: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'gap-x': readonly [{ readonly 'gap-x': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'gap-y': readonly [{ readonly 'gap-y': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'justify-content': readonly [{ readonly justify: readonly [\"start\", \"end\", \"center\", \"between\", \"around\", \"evenly\", \"stretch\", \"baseline\", \"center-safe\", \"end-safe\", \"normal\"]; }]; readonly 'justify-items': readonly [{ readonly 'justify-items': readonly [\"start\", \"end\", \"center\", \"stretch\", \"center-safe\", \"end-safe\", \"normal\"]; }]; readonly 'justify-self': readonly [{ readonly 'justify-self': readonly [\"auto\", \"start\", \"end\", \"center\", \"stretch\", \"center-safe\", \"end-safe\"]; }]; readonly 'align-content': readonly [{ readonly content: readonly [\"normal\", \"start\", \"end\", \"center\", \"between\", \"around\", \"evenly\", \"stretch\", \"baseline\", \"center-safe\", \"end-safe\"]; }]; readonly 'align-items': readonly [{ readonly items: readonly [\"start\", \"end\", \"center\", \"stretch\", \"center-safe\", \"end-safe\", { readonly baseline: readonly [\"\", \"last\"]; }]; }]; readonly 'align-self': readonly [{ readonly self: readonly [\"auto\", \"start\", \"end\", \"center\", \"stretch\", \"center-safe\", \"end-safe\", { readonly baseline: readonly [\"\", \"last\"]; }]; }]; readonly 'place-content': readonly [{ readonly 'place-content': readonly [\"start\", \"end\", \"center\", \"between\", \"around\", \"evenly\", \"stretch\", \"baseline\", \"center-safe\", \"end-safe\"]; }]; readonly 'place-items': readonly [{ readonly 'place-items': readonly [\"start\", \"end\", \"center\", \"stretch\", \"center-safe\", \"end-safe\", \"baseline\"]; }]; readonly 'place-self': readonly [{ readonly 'place-self': readonly [\"auto\", \"start\", \"end\", \"center\", \"stretch\", \"center-safe\", \"end-safe\"]; }]; readonly p: readonly [{ readonly p: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly px: readonly [{ readonly px: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly py: readonly [{ readonly py: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly ps: readonly [{ readonly ps: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly pe: readonly [{ readonly pe: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly pt: readonly [{ readonly pt: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly pr: readonly [{ readonly pr: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly pb: readonly [{ readonly pb: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly pl: readonly [{ readonly pl: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly m: readonly [{ readonly m: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly mx: readonly [{ readonly mx: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly my: readonly [{ readonly my: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly ms: readonly [{ readonly ms: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly me: readonly [{ readonly me: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly mt: readonly [{ readonly mt: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly mr: readonly [{ readonly mr: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly mb: readonly [{ readonly mb: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly ml: readonly [{ readonly ml: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'space-x': readonly [{ readonly 'space-x': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'space-x-reverse': readonly [\"space-x-reverse\"]; readonly 'space-y': readonly [{ readonly 'space-y': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'space-y-reverse': readonly [\"space-y-reverse\"]; readonly size: readonly [{ readonly size: readonly [(value: string) => boolean, \"auto\", \"full\", \"dvw\", \"dvh\", \"lvw\", \"lvh\", \"svw\", \"svh\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly w: readonly [{ readonly w: readonly [ThemeGetter, \"screen\", (value: string) => boolean, \"auto\", \"full\", \"dvw\", \"dvh\", \"lvw\", \"lvh\", \"svw\", \"svh\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'min-w': readonly [{ readonly 'min-w': readonly [ThemeGetter, \"screen\", \"none\", (value: string) => boolean, \"auto\", \"full\", \"dvw\", \"dvh\", \"lvw\", \"lvh\", \"svw\", \"svh\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'max-w': readonly [{ readonly 'max-w': readonly [ThemeGetter, \"screen\", \"none\", \"prose\", { readonly screen: readonly [ThemeGetter]; }, (value: string) => boolean, \"auto\", \"full\", \"dvw\", \"dvh\", \"lvw\", \"lvh\", \"svw\", \"svh\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly h: readonly [{ readonly h: readonly [\"screen\", \"lh\", (value: string) => boolean, \"auto\", \"full\", \"dvw\", \"dvh\", \"lvw\", \"lvh\", \"svw\", \"svh\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'min-h': readonly [{ readonly 'min-h': readonly [\"screen\", \"lh\", \"none\", (value: string) => boolean, \"auto\", \"full\", \"dvw\", \"dvh\", \"lvw\", \"lvh\", \"svw\", \"svh\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'max-h': readonly [{ readonly 'max-h': readonly [\"screen\", \"lh\", (value: string) => boolean, \"auto\", \"full\", \"dvw\", \"dvh\", \"lvw\", \"lvh\", \"svw\", \"svh\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'font-size': readonly [{ readonly text: readonly [\"base\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'font-smoothing': readonly [\"antialiased\", \"subpixel-antialiased\"]; readonly 'font-style': readonly [\"italic\", \"not-italic\"]; readonly 'font-weight': readonly [{ readonly font: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'font-stretch': readonly [{ readonly 'font-stretch': readonly [\"ultra-condensed\", \"extra-condensed\", \"condensed\", \"semi-condensed\", \"normal\", \"semi-expanded\", \"expanded\", \"extra-expanded\", \"ultra-expanded\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'font-family': readonly [{ readonly font: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'fvn-normal': readonly [\"normal-nums\"]; readonly 'fvn-ordinal': readonly [\"ordinal\"]; readonly 'fvn-slashed-zero': readonly [\"slashed-zero\"]; readonly 'fvn-figure': readonly [\"lining-nums\", \"oldstyle-nums\"]; readonly 'fvn-spacing': readonly [\"proportional-nums\", \"tabular-nums\"]; readonly 'fvn-fraction': readonly [\"diagonal-fractions\", \"stacked-fractions\"]; readonly tracking: readonly [{ readonly tracking: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'line-clamp': readonly [{ readonly 'line-clamp': readonly [(value: string) => boolean, \"none\", (value: string) => boolean, (value: string) => boolean]; }]; readonly leading: readonly [{ readonly leading: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'list-image': readonly [{ readonly 'list-image': readonly [\"none\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'list-style-position': readonly [{ readonly list: readonly [\"inside\", \"outside\"]; }]; readonly 'list-style-type': readonly [{ readonly list: readonly [\"disc\", \"decimal\", \"none\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'text-alignment': readonly [{ readonly text: readonly [\"left\", \"center\", \"right\", \"justify\", \"start\", \"end\"]; }]; readonly 'placeholder-color': readonly [{ readonly placeholder: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'text-color': readonly [{ readonly text: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'text-decoration': readonly [\"underline\", \"overline\", \"line-through\", \"no-underline\"]; readonly 'text-decoration-style': readonly [{ readonly decoration: readonly [\"solid\", \"dashed\", \"dotted\", \"double\", \"wavy\"]; }]; readonly 'text-decoration-thickness': readonly [{ readonly decoration: readonly [(value: string) => boolean, \"from-font\", \"auto\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'text-decoration-color': readonly [{ readonly decoration: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'underline-offset': readonly [{ readonly 'underline-offset': readonly [(value: string) => boolean, \"auto\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'text-transform': readonly [\"uppercase\", \"lowercase\", \"capitalize\", \"normal-case\"]; readonly 'text-overflow': readonly [\"truncate\", \"text-ellipsis\", \"text-clip\"]; readonly 'text-wrap': readonly [{ readonly text: readonly [\"wrap\", \"nowrap\", \"balance\", \"pretty\"]; }]; readonly indent: readonly [{ readonly indent: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'vertical-align': readonly [{ readonly align: readonly [\"baseline\", \"top\", \"middle\", \"bottom\", \"text-top\", \"text-bottom\", \"sub\", \"super\", (value: string) => boolean, (value: string) => boolean]; }]; readonly whitespace: readonly [{ readonly whitespace: readonly [\"normal\", \"nowrap\", \"pre\", \"pre-line\", \"pre-wrap\", \"break-spaces\"]; }]; readonly break: readonly [{ readonly break: readonly [\"normal\", \"words\", \"all\", \"keep\"]; }]; readonly wrap: readonly [{ readonly wrap: readonly [\"break-word\", \"anywhere\", \"normal\"]; }]; readonly hyphens: readonly [{ readonly hyphens: readonly [\"none\", \"manual\", \"auto\"]; }]; readonly content: readonly [{ readonly content: readonly [\"none\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'bg-attachment': readonly [{ readonly bg: readonly [\"fixed\", \"local\", \"scroll\"]; }]; readonly 'bg-clip': readonly [{ readonly 'bg-clip': readonly [\"border\", \"padding\", \"content\", \"text\"]; }]; readonly 'bg-origin': readonly [{ readonly 'bg-origin': readonly [\"border\", \"padding\", \"content\"]; }]; readonly 'bg-position': readonly [{ readonly bg: readonly [\"center\", \"top\", \"bottom\", \"left\", \"right\", \"top-left\", \"left-top\", \"top-right\", \"right-top\", \"bottom-right\", \"right-bottom\", \"bottom-left\", \"left-bottom\", (value: string) => boolean, (value: string) => boolean, { readonly position: readonly [(value: string) => boolean, (value: string) => boolean]; }]; }]; readonly 'bg-repeat': readonly [{ readonly bg: readonly [\"no-repeat\", { readonly repeat: readonly [\"\", \"x\", \"y\", \"space\", \"round\"]; }]; }]; readonly 'bg-size': readonly [{ readonly bg: readonly [\"auto\", \"cover\", \"contain\", (value: string) => boolean, (value: string) => boolean, { readonly size: readonly [(value: string) => boolean, (value: string) => boolean]; }]; }]; readonly 'bg-image': readonly [{ readonly bg: readonly [\"none\", { readonly linear: readonly [{ readonly to: readonly [\"t\", \"tr\", \"r\", \"br\", \"b\", \"bl\", \"l\", \"tl\"]; }, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; readonly radial: readonly [\"\", (value: string) => boolean, (value: string) => boolean]; readonly conic: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'bg-color': readonly [{ readonly bg: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'gradient-from-pos': readonly [{ readonly from: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'gradient-via-pos': readonly [{ readonly via: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'gradient-to-pos': readonly [{ readonly to: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'gradient-from': readonly [{ readonly from: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'gradient-via': readonly [{ readonly via: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'gradient-to': readonly [{ readonly to: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly rounded: readonly [{ readonly rounded: readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-s': readonly [{ readonly 'rounded-s': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-e': readonly [{ readonly 'rounded-e': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-t': readonly [{ readonly 'rounded-t': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-r': readonly [{ readonly 'rounded-r': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-b': readonly [{ readonly 'rounded-b': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-l': readonly [{ readonly 'rounded-l': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-ss': readonly [{ readonly 'rounded-ss': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-se': readonly [{ readonly 'rounded-se': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-ee': readonly [{ readonly 'rounded-ee': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-es': readonly [{ readonly 'rounded-es': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-tl': readonly [{ readonly 'rounded-tl': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-tr': readonly [{ readonly 'rounded-tr': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-br': readonly [{ readonly 'rounded-br': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-bl': readonly [{ readonly 'rounded-bl': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w': readonly [{ readonly border: readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w-x': readonly [{ readonly 'border-x': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w-y': readonly [{ readonly 'border-y': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w-s': readonly [{ readonly 'border-s': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w-e': readonly [{ readonly 'border-e': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w-t': readonly [{ readonly 'border-t': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w-r': readonly [{ readonly 'border-r': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w-b': readonly [{ readonly 'border-b': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w-l': readonly [{ readonly 'border-l': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'divide-x': readonly [{ readonly 'divide-x': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'divide-x-reverse': readonly [\"divide-x-reverse\"]; readonly 'divide-y': readonly [{ readonly 'divide-y': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'divide-y-reverse': readonly [\"divide-y-reverse\"]; readonly 'border-style': readonly [{ readonly border: readonly [\"solid\", \"dashed\", \"dotted\", \"double\", \"hidden\", \"none\"]; }]; readonly 'divide-style': readonly [{ readonly divide: readonly [\"solid\", \"dashed\", \"dotted\", \"double\", \"hidden\", \"none\"]; }]; readonly 'border-color': readonly [{ readonly border: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-color-x': readonly [{ readonly 'border-x': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-color-y': readonly [{ readonly 'border-y': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-color-s': readonly [{ readonly 'border-s': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-color-e': readonly [{ readonly 'border-e': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-color-t': readonly [{ readonly 'border-t': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-color-r': readonly [{ readonly 'border-r': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-color-b': readonly [{ readonly 'border-b': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-color-l': readonly [{ readonly 'border-l': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'divide-color': readonly [{ readonly divide: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'outline-style': readonly [{ readonly outline: readonly [\"solid\", \"dashed\", \"dotted\", \"double\", \"none\", \"hidden\"]; }]; readonly 'outline-offset': readonly [{ readonly 'outline-offset': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'outline-w': readonly [{ readonly outline: readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'outline-color': readonly [{ readonly outline: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly shadow: readonly [{ readonly shadow: readonly [\"\", \"none\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'shadow-color': readonly [{ readonly shadow: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'inset-shadow': readonly [{ readonly 'inset-shadow': readonly [\"none\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'inset-shadow-color': readonly [{ readonly 'inset-shadow': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'ring-w': readonly [{ readonly ring: readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'ring-w-inset': readonly [\"ring-inset\"]; readonly 'ring-color': readonly [{ readonly ring: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'ring-offset-w': readonly [{ readonly 'ring-offset': readonly [(value: string) => boolean, (value: string) => boolean]; }]; readonly 'ring-offset-color': readonly [{ readonly 'ring-offset': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'inset-ring-w': readonly [{ readonly 'inset-ring': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'inset-ring-color': readonly [{ readonly 'inset-ring': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'text-shadow': readonly [{ readonly 'text-shadow': readonly [\"none\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'text-shadow-color': readonly [{ readonly 'text-shadow': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly opacity: readonly [{ readonly opacity: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mix-blend': readonly [{ readonly 'mix-blend': readonly [\"normal\", \"multiply\", \"screen\", \"overlay\", \"darken\", \"lighten\", \"color-dodge\", \"color-burn\", \"hard-light\", \"soft-light\", \"difference\", \"exclusion\", \"hue\", \"saturation\", \"color\", \"luminosity\", \"plus-darker\", \"plus-lighter\"]; }]; readonly 'bg-blend': readonly [{ readonly 'bg-blend': readonly [\"normal\", \"multiply\", \"screen\", \"overlay\", \"darken\", \"lighten\", \"color-dodge\", \"color-burn\", \"hard-light\", \"soft-light\", \"difference\", \"exclusion\", \"hue\", \"saturation\", \"color\", \"luminosity\"]; }]; readonly 'mask-clip': readonly [{ readonly 'mask-clip': readonly [\"border\", \"padding\", \"content\", \"fill\", \"stroke\", \"view\"]; }, \"mask-no-clip\"]; readonly 'mask-composite': readonly [{ readonly mask: readonly [\"add\", \"subtract\", \"intersect\", \"exclude\"]; }]; readonly 'mask-image-linear-pos': readonly [{ readonly 'mask-linear': readonly [(value: string) => boolean]; }]; readonly 'mask-image-linear-from-pos': readonly [{ readonly 'mask-linear-from': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-linear-to-pos': readonly [{ readonly 'mask-linear-to': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-linear-from-color': readonly [{ readonly 'mask-linear-from': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-linear-to-color': readonly [{ readonly 'mask-linear-to': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-t-from-pos': readonly [{ readonly 'mask-t-from': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-t-to-pos': readonly [{ readonly 'mask-t-to': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-t-from-color': readonly [{ readonly 'mask-t-from': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-t-to-color': readonly [{ readonly 'mask-t-to': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-r-from-pos': readonly [{ readonly 'mask-r-from': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-r-to-pos': readonly [{ readonly 'mask-r-to': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-r-from-color': readonly [{ readonly 'mask-r-from': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-r-to-color': readonly [{ readonly 'mask-r-to': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-b-from-pos': readonly [{ readonly 'mask-b-from': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-b-to-pos': readonly [{ readonly 'mask-b-to': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-b-from-color': readonly [{ readonly 'mask-b-from': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-b-to-color': readonly [{ readonly 'mask-b-to': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-l-from-pos': readonly [{ readonly 'mask-l-from': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-l-to-pos': readonly [{ readonly 'mask-l-to': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-l-from-color': readonly [{ readonly 'mask-l-from': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-l-to-color': readonly [{ readonly 'mask-l-to': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-x-from-pos': readonly [{ readonly 'mask-x-from': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-x-to-pos': readonly [{ readonly 'mask-x-to': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-x-from-color': readonly [{ readonly 'mask-x-from': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-x-to-color': readonly [{ readonly 'mask-x-to': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-y-from-pos': readonly [{ readonly 'mask-y-from': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-y-to-pos': readonly [{ readonly 'mask-y-to': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-y-from-color': readonly [{ readonly 'mask-y-from': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-y-to-color': readonly [{ readonly 'mask-y-to': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-radial': readonly [{ readonly 'mask-radial': readonly [(value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-radial-from-pos': readonly [{ readonly 'mask-radial-from': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-radial-to-pos': readonly [{ readonly 'mask-radial-to': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-radial-from-color': readonly [{ readonly 'mask-radial-from': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-radial-to-color': readonly [{ readonly 'mask-radial-to': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-radial-shape': readonly [{ readonly 'mask-radial': readonly [\"circle\", \"ellipse\"]; }]; readonly 'mask-image-radial-size': readonly [{ readonly 'mask-radial': readonly [{ readonly closest: readonly [\"side\", \"corner\"]; readonly farthest: readonly [\"side\", \"corner\"]; }]; }]; readonly 'mask-image-radial-pos': readonly [{ readonly 'mask-radial-at': readonly [\"center\", \"top\", \"bottom\", \"left\", \"right\", \"top-left\", \"left-top\", \"top-right\", \"right-top\", \"bottom-right\", \"right-bottom\", \"bottom-left\", \"left-bottom\"]; }]; readonly 'mask-image-conic-pos': readonly [{ readonly 'mask-conic': readonly [(value: string) => boolean]; }]; readonly 'mask-image-conic-from-pos': readonly [{ readonly 'mask-conic-from': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-conic-to-pos': readonly [{ readonly 'mask-conic-to': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-conic-from-color': readonly [{ readonly 'mask-conic-from': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-conic-to-color': readonly [{ readonly 'mask-conic-to': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-mode': readonly [{ readonly mask: readonly [\"alpha\", \"luminance\", \"match\"]; }]; readonly 'mask-origin': readonly [{ readonly 'mask-origin': readonly [\"border\", \"padding\", \"content\", \"fill\", \"stroke\", \"view\"]; }]; readonly 'mask-position': readonly [{ readonly mask: readonly [\"center\", \"top\", \"bottom\", \"left\", \"right\", \"top-left\", \"left-top\", \"top-right\", \"right-top\", \"bottom-right\", \"right-bottom\", \"bottom-left\", \"left-bottom\", (value: string) => boolean, (value: string) => boolean, { readonly position: readonly [(value: string) => boolean, (value: string) => boolean]; }]; }]; readonly 'mask-repeat': readonly [{ readonly mask: readonly [\"no-repeat\", { readonly repeat: readonly [\"\", \"x\", \"y\", \"space\", \"round\"]; }]; }]; readonly 'mask-size': readonly [{ readonly mask: readonly [\"auto\", \"cover\", \"contain\", (value: string) => boolean, (value: string) => boolean, { readonly size: readonly [(value: string) => boolean, (value: string) => boolean]; }]; }]; readonly 'mask-type': readonly [{ readonly 'mask-type': readonly [\"alpha\", \"luminance\"]; }]; readonly 'mask-image': readonly [{ readonly mask: readonly [\"none\", (value: string) => boolean, (value: string) => boolean]; }]; readonly filter: readonly [{ readonly filter: readonly [\"\", \"none\", (value: string) => boolean, (value: string) => boolean]; }]; readonly blur: readonly [{ readonly blur: readonly [\"\", \"none\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly brightness: readonly [{ readonly brightness: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly contrast: readonly [{ readonly contrast: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'drop-shadow': readonly [{ readonly 'drop-shadow': readonly [\"\", \"none\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'drop-shadow-color': readonly [{ readonly 'drop-shadow': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly grayscale: readonly [{ readonly grayscale: readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'hue-rotate': readonly [{ readonly 'hue-rotate': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly invert: readonly [{ readonly invert: readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly saturate: readonly [{ readonly saturate: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly sepia: readonly [{ readonly sepia: readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-filter': readonly [{ readonly 'backdrop-filter': readonly [\"\", \"none\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-blur': readonly [{ readonly 'backdrop-blur': readonly [\"\", \"none\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-brightness': readonly [{ readonly 'backdrop-brightness': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-contrast': readonly [{ readonly 'backdrop-contrast': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-grayscale': readonly [{ readonly 'backdrop-grayscale': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-hue-rotate': readonly [{ readonly 'backdrop-hue-rotate': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-invert': readonly [{ readonly 'backdrop-invert': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-opacity': readonly [{ readonly 'backdrop-opacity': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-saturate': readonly [{ readonly 'backdrop-saturate': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-sepia': readonly [{ readonly 'backdrop-sepia': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-collapse': readonly [{ readonly border: readonly [\"collapse\", \"separate\"]; }]; readonly 'border-spacing': readonly [{ readonly 'border-spacing': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'border-spacing-x': readonly [{ readonly 'border-spacing-x': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'border-spacing-y': readonly [{ readonly 'border-spacing-y': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'table-layout': readonly [{ readonly table: readonly [\"auto\", \"fixed\"]; }]; readonly caption: readonly [{ readonly caption: readonly [\"top\", \"bottom\"]; }]; readonly transition: readonly [{ readonly transition: readonly [\"\", \"all\", \"colors\", \"opacity\", \"shadow\", \"transform\", \"none\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'transition-behavior': readonly [{ readonly transition: readonly [\"normal\", \"discrete\"]; }]; readonly duration: readonly [{ readonly duration: readonly [(value: string) => boolean, \"initial\", (value: string) => boolean, (value: string) => boolean]; }]; readonly ease: readonly [{ readonly ease: readonly [\"linear\", \"initial\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly delay: readonly [{ readonly delay: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly animate: readonly [{ readonly animate: readonly [\"none\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly backface: readonly [{ readonly backface: readonly [\"hidden\", \"visible\"]; }]; readonly perspective: readonly [{ readonly perspective: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'perspective-origin': readonly [{ readonly 'perspective-origin': readonly [\"center\", \"top\", \"bottom\", \"left\", \"right\", \"top-left\", \"left-top\", \"top-right\", \"right-top\", \"bottom-right\", \"right-bottom\", \"bottom-left\", \"left-bottom\", (value: string) => boolean, (value: string) => boolean]; }]; readonly rotate: readonly [{ readonly rotate: readonly [\"none\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rotate-x': readonly [{ readonly 'rotate-x': readonly [\"none\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rotate-y': readonly [{ readonly 'rotate-y': readonly [\"none\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rotate-z': readonly [{ readonly 'rotate-z': readonly [\"none\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly scale: readonly [{ readonly scale: readonly [\"none\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'scale-x': readonly [{ readonly 'scale-x': readonly [\"none\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'scale-y': readonly [{ readonly 'scale-y': readonly [\"none\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'scale-z': readonly [{ readonly 'scale-z': readonly [\"none\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'scale-3d': readonly [\"scale-3d\"]; readonly skew: readonly [{ readonly skew: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'skew-x': readonly [{ readonly 'skew-x': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'skew-y': readonly [{ readonly 'skew-y': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly transform: readonly [{ readonly transform: readonly [(value: string) => boolean, (value: string) => boolean, \"\", \"none\", \"gpu\", \"cpu\"]; }]; readonly 'transform-origin': readonly [{ readonly origin: readonly [\"center\", \"top\", \"bottom\", \"left\", \"right\", \"top-left\", \"left-top\", \"top-right\", \"right-top\", \"bottom-right\", \"right-bottom\", \"bottom-left\", \"left-bottom\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'transform-style': readonly [{ readonly transform: readonly [\"3d\", \"flat\"]; }]; readonly translate: readonly [{ readonly translate: readonly [(value: string) => boolean, \"full\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'translate-x': readonly [{ readonly 'translate-x': readonly [(value: string) => boolean, \"full\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'translate-y': readonly [{ readonly 'translate-y': readonly [(value: string) => boolean, \"full\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'translate-z': readonly [{ readonly 'translate-z': readonly [(value: string) => boolean, \"full\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'translate-none': readonly [\"translate-none\"]; readonly accent: readonly [{ readonly accent: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly appearance: readonly [{ readonly appearance: readonly [\"none\", \"auto\"]; }]; readonly 'caret-color': readonly [{ readonly caret: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'color-scheme': readonly [{ readonly scheme: readonly [\"normal\", \"dark\", \"light\", \"light-dark\", \"only-dark\", \"only-light\"]; }]; readonly cursor: readonly [{ readonly cursor: readonly [\"auto\", \"default\", \"pointer\", \"wait\", \"text\", \"move\", \"help\", \"not-allowed\", \"none\", \"context-menu\", \"progress\", \"cell\", \"crosshair\", \"vertical-text\", \"alias\", \"copy\", \"no-drop\", \"grab\", \"grabbing\", \"all-scroll\", \"col-resize\", \"row-resize\", \"n-resize\", \"e-resize\", \"s-resize\", \"w-resize\", \"ne-resize\", \"nw-resize\", \"se-resize\", \"sw-resize\", \"ew-resize\", \"ns-resize\", \"nesw-resize\", \"nwse-resize\", \"zoom-in\", \"zoom-out\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'field-sizing': readonly [{ readonly 'field-sizing': readonly [\"fixed\", \"content\"]; }]; readonly 'pointer-events': readonly [{ readonly 'pointer-events': readonly [\"auto\", \"none\"]; }]; readonly resize: readonly [{ readonly resize: readonly [\"none\", \"\", \"y\", \"x\"]; }]; readonly 'scroll-behavior': readonly [{ readonly scroll: readonly [\"auto\", \"smooth\"]; }]; readonly 'scroll-m': readonly [{ readonly 'scroll-m': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-mx': readonly [{ readonly 'scroll-mx': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-my': readonly [{ readonly 'scroll-my': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-ms': readonly [{ readonly 'scroll-ms': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-me': readonly [{ readonly 'scroll-me': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-mt': readonly [{ readonly 'scroll-mt': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-mr': readonly [{ readonly 'scroll-mr': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-mb': readonly [{ readonly 'scroll-mb': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-ml': readonly [{ readonly 'scroll-ml': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-p': readonly [{ readonly 'scroll-p': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-px': readonly [{ readonly 'scroll-px': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-py': readonly [{ readonly 'scroll-py': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-ps': readonly [{ readonly 'scroll-ps': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-pe': readonly [{ readonly 'scroll-pe': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-pt': readonly [{ readonly 'scroll-pt': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-pr': readonly [{ readonly 'scroll-pr': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-pb': readonly [{ readonly 'scroll-pb': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-pl': readonly [{ readonly 'scroll-pl': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'snap-align': readonly [{ readonly snap: readonly [\"start\", \"end\", \"center\", \"align-none\"]; }]; readonly 'snap-stop': readonly [{ readonly snap: readonly [\"normal\", \"always\"]; }]; readonly 'snap-type': readonly [{ readonly snap: readonly [\"none\", \"x\", \"y\", \"both\"]; }]; readonly 'snap-strictness': readonly [{ readonly snap: readonly [\"mandatory\", \"proximity\"]; }]; readonly touch: readonly [{ readonly touch: readonly [\"auto\", \"none\", \"manipulation\"]; }]; readonly 'touch-x': readonly [{ readonly 'touch-pan': readonly [\"x\", \"left\", \"right\"]; }]; readonly 'touch-y': readonly [{ readonly 'touch-pan': readonly [\"y\", \"up\", \"down\"]; }]; readonly 'touch-pz': readonly [\"touch-pinch-zoom\"]; readonly select: readonly [{ readonly select: readonly [\"none\", \"text\", \"all\", \"auto\"]; }]; readonly 'will-change': readonly [{ readonly 'will-change': readonly [\"auto\", \"scroll\", \"contents\", \"transform\", (value: string) => boolean, (value: string) => boolean]; }]; readonly fill: readonly [{ readonly fill: readonly [\"none\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'stroke-w': readonly [{ readonly stroke: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly stroke: readonly [{ readonly stroke: readonly [\"none\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'forced-color-adjust': readonly [{ readonly 'forced-color-adjust': readonly [\"auto\", \"none\"]; }]; }; readonly conflictingClassGroups: { readonly overflow: readonly [\"overflow-x\", \"overflow-y\"]; readonly overscroll: readonly [\"overscroll-x\", \"overscroll-y\"]; readonly inset: readonly [\"inset-x\", \"inset-y\", \"start\", \"end\", \"top\", \"right\", \"bottom\", \"left\"]; readonly 'inset-x': readonly [\"right\", \"left\"]; readonly 'inset-y': readonly [\"top\", \"bottom\"]; readonly flex: readonly [\"basis\", \"grow\", \"shrink\"]; readonly gap: readonly [\"gap-x\", \"gap-y\"]; readonly p: readonly [\"px\", \"py\", \"ps\", \"pe\", \"pt\", \"pr\", \"pb\", \"pl\"]; readonly px: readonly [\"pr\", \"pl\"]; readonly py: readonly [\"pt\", \"pb\"]; readonly m: readonly [\"mx\", \"my\", \"ms\", \"me\", \"mt\", \"mr\", \"mb\", \"ml\"]; readonly mx: readonly [\"mr\", \"ml\"]; readonly my: readonly [\"mt\", \"mb\"]; readonly size: readonly [\"w\", \"h\"]; readonly 'font-size': readonly [\"leading\"]; readonly 'fvn-normal': readonly [\"fvn-ordinal\", \"fvn-slashed-zero\", \"fvn-figure\", \"fvn-spacing\", \"fvn-fraction\"]; readonly 'fvn-ordinal': readonly [\"fvn-normal\"]; readonly 'fvn-slashed-zero': readonly [\"fvn-normal\"]; readonly 'fvn-figure': readonly [\"fvn-normal\"]; readonly 'fvn-spacing': readonly [\"fvn-normal\"]; readonly 'fvn-fraction': readonly [\"fvn-normal\"]; readonly 'line-clamp': readonly [\"display\", \"overflow\"]; readonly rounded: readonly [\"rounded-s\", \"rounded-e\", \"rounded-t\", \"rounded-r\", \"rounded-b\", \"rounded-l\", \"rounded-ss\", \"rounded-se\", \"rounded-ee\", \"rounded-es\", \"rounded-tl\", \"rounded-tr\", \"rounded-br\", \"rounded-bl\"]; readonly 'rounded-s': readonly [\"rounded-ss\", \"rounded-es\"]; readonly 'rounded-e': readonly [\"rounded-se\", \"rounded-ee\"]; readonly 'rounded-t': readonly [\"rounded-tl\", \"rounded-tr\"]; readonly 'rounded-r': readonly [\"rounded-tr\", \"rounded-br\"]; readonly 'rounded-b': readonly [\"rounded-br\", \"rounded-bl\"]; readonly 'rounded-l': readonly [\"rounded-tl\", \"rounded-bl\"]; readonly 'border-spacing': readonly [\"border-spacing-x\", \"border-spacing-y\"]; readonly 'border-w': readonly [\"border-w-x\", \"border-w-y\", \"border-w-s\", \"border-w-e\", \"border-w-t\", \"border-w-r\", \"border-w-b\", \"border-w-l\"]; readonly 'border-w-x': readonly [\"border-w-r\", \"border-w-l\"]; readonly 'border-w-y': readonly [\"border-w-t\", \"border-w-b\"]; readonly 'border-color': readonly [\"border-color-x\", \"border-color-y\", \"border-color-s\", \"border-color-e\", \"border-color-t\", \"border-color-r\", \"border-color-b\", \"border-color-l\"]; readonly 'border-color-x': readonly [\"border-color-r\", \"border-color-l\"]; readonly 'border-color-y': readonly [\"border-color-t\", \"border-color-b\"]; readonly translate: readonly [\"translate-x\", \"translate-y\", \"translate-none\"]; readonly 'translate-none': readonly [\"translate\", \"translate-x\", \"translate-y\", \"translate-z\"]; readonly 'scroll-m': readonly [\"scroll-mx\", \"scroll-my\", \"scroll-ms\", \"scroll-me\", \"scroll-mt\", \"scroll-mr\", \"scroll-mb\", \"scroll-ml\"]; readonly 'scroll-mx': readonly [\"scroll-mr\", \"scroll-ml\"]; readonly 'scroll-my': readonly [\"scroll-mt\", \"scroll-mb\"]; readonly 'scroll-p': readonly [\"scroll-px\", \"scroll-py\", \"scroll-ps\", \"scroll-pe\", \"scroll-pt\", \"scroll-pr\", \"scroll-pb\", \"scroll-pl\"]; readonly 'scroll-px': readonly [\"scroll-pr\", \"scroll-pl\"]; readonly 'scroll-py': readonly [\"scroll-pt\", \"scroll-pb\"]; readonly touch: readonly [\"touch-x\", \"touch-y\", \"touch-pz\"]; readonly 'touch-x': readonly [\"touch\"]; readonly 'touch-y': readonly [\"touch\"]; readonly 'touch-pz': readonly [\"touch\"]; }; readonly conflictingClassGroupModifiers: { readonly 'font-size': readonly [\"leading\"]; }; readonly orderSensitiveModifiers: [\"*\", \"**\", \"after\", \"backdrop\", \"before\", \"details-content\", \"file\", \"first-letter\", \"first-line\", \"marker\", \"placeholder\", \"selection\"]; }\n  after:  declare const getDefaultConfig: () => { readonly cacheSize: 500; readonly theme: { readonly animate: readonly [\"spin\", \"ping\", \"pulse\", \"bounce\"]; readonly aspect: readonly [\"video\"]; readonly blur: readonly [(value: string) => boolean]; readonly breakpoint: readonly [(value: string) => boolean]; readonly color: readonly [() => boolean]; readonly container: readonly [(value: string) => boolean]; readonly 'drop-shadow': readonly [(value: string) => boolean]; readonly ease: readonly [\"in\", \"out\", \"in-out\"]; readonly font: readonly [(value: string) => boolean]; readonly 'font-weight': readonly [\"thin\", \"extralight\", \"light\", \"normal\", \"medium\", \"semibold\", \"bold\", \"extrabold\", \"black\"]; readonly 'inset-shadow': readonly [(value: string) => boolean]; readonly leading: readonly [\"none\", \"tight\", \"snug\", \"normal\", \"relaxed\", \"loose\"]; readonly perspective: readonly [\"dramatic\", \"near\", \"normal\", \"midrange\", \"distant\", \"none\"]; readonly radius: readonly [(value: string) => boolean]; readonly shadow: readonly [(value: string) => boolean]; readonly spacing: readonly [\"px\", (value: string) => boolean]; readonly text: readonly [(value: string) => boolean]; readonly 'text-shadow': readonly [(value: string) => boolean]; readonly tracking: readonly [\"tighter\", \"tight\", \"normal\", \"wide\", \"wider\", \"widest\"]; }; readonly classGroups: { readonly aspect: readonly [{ readonly aspect: readonly [\"auto\", \"square\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly container: readonly [\"container\"]; readonly 'container-type': readonly [{ readonly '@container': readonly [\"\", \"normal\", \"size\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'container-named': readonly [(value: string) => boolean]; readonly columns: readonly [{ readonly columns: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'break-after': readonly [{ readonly 'break-after': readonly [\"auto\", \"avoid\", \"all\", \"avoid-page\", \"page\", \"left\", \"right\", \"column\"]; }]; readonly 'break-before': readonly [{ readonly 'break-before': readonly [\"auto\", \"avoid\", \"all\", \"avoid-page\", \"page\", \"left\", \"right\", \"column\"]; }]; readonly 'break-inside': readonly [{ readonly 'break-inside': readonly [\"auto\", \"avoid\", \"avoid-page\", \"avoid-column\"]; }]; readonly 'box-decoration': readonly [{ readonly 'box-decoration': readonly [\"slice\", \"clone\"]; }]; readonly box: readonly [{ readonly box: readonly [\"border\", \"content\"]; }]; readonly display: readonly [\"block\", \"inline-block\", \"inline\", \"flex\", \"inline-flex\", \"table\", \"inline-table\", \"table-caption\", \"table-cell\", \"table-column\", \"table-column-group\", \"table-footer-group\", \"table-header-group\", \"table-row-group\", \"table-row\", \"flow-root\", \"grid\", \"inline-grid\", \"contents\", \"list-item\", \"hidden\"]; readonly sr: readonly [\"sr-only\", \"not-sr-only\"]; readonly float: readonly [{ readonly float: readonly [\"right\", \"left\", \"none\", \"start\", \"end\"]; }]; readonly clear: readonly [{ readonly clear: readonly [\"left\", \"right\", \"both\", \"none\", \"start\", \"end\"]; }]; readonly isolation: readonly [\"isolate\", \"isolation-auto\"]; readonly 'object-fit': readonly [{ readonly object: readonly [\"contain\", \"cover\", \"fill\", \"none\", \"scale-down\"]; }]; readonly 'object-position': readonly [{ readonly object: readonly [\"center\", \"top\", \"bottom\", \"left\", \"right\", \"top-left\", \"left-top\", \"top-right\", \"right-top\", \"bottom-right\", \"right-bottom\", \"bottom-left\", \"left-bottom\", (value: string) => boolean, (value: string) => boolean]; }]; readonly overflow: readonly [{ readonly overflow: readonly [\"auto\", \"hidden\", \"clip\", \"visible\", \"scroll\"]; }]; readonly 'overflow-x': readonly [{ readonly 'overflow-x': readonly [\"auto\", \"hidden\", \"clip\", \"visible\", \"scroll\"]; }]; readonly 'overflow-y': readonly [{ readonly 'overflow-y': readonly [\"auto\", \"hidden\", \"clip\", \"visible\", \"scroll\"]; }]; readonly overscroll: readonly [{ readonly overscroll: readonly [\"auto\", \"contain\", \"none\"]; }]; readonly 'overscroll-x': readonly [{ readonly 'overscroll-x': readonly [\"auto\", \"contain\", \"none\"]; }]; readonly 'overscroll-y': readonly [{ readonly 'overscroll-y': readonly [\"auto\", \"contain\", \"none\"]; }]; readonly position: readonly [\"static\", \"fixed\", \"absolute\", \"relative\", \"sticky\"]; readonly inset: readonly [{ readonly inset: readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'inset-x': readonly [{ readonly 'inset-x': readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'inset-y': readonly [{ readonly 'inset-y': readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly start: readonly [{ readonly 'inset-s': readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; readonly start: readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly end: readonly [{ readonly 'inset-e': readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; readonly end: readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'inset-bs': readonly [{ readonly 'inset-bs': readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'inset-be': readonly [{ readonly 'inset-be': readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly top: readonly [{ readonly top: readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly right: readonly [{ readonly right: readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly bottom: readonly [{ readonly bottom: readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly left: readonly [{ readonly left: readonly [(value: string) => boolean, \"full\", \"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly visibility: readonly [\"visible\", \"invisible\", \"collapse\"]; readonly z: readonly [{ readonly z: readonly [(value: string) => boolean, \"auto\", (value: string) => boolean, (value: string) => boolean]; }]; readonly basis: readonly [{ readonly basis: readonly [(value: string) => boolean, \"full\", \"auto\", ThemeGetter, (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'flex-direction': readonly [{ readonly flex: readonly [\"row\", \"row-reverse\", \"col\", \"col-reverse\"]; }]; readonly 'flex-wrap': readonly [{ readonly flex: readonly [\"nowrap\", \"wrap\", \"wrap-reverse\"]; }]; readonly flex: readonly [{ readonly flex: readonly [(value: string) => boolean, (value: string) => boolean, \"auto\", \"initial\", \"none\", (value: string) => boolean]; }]; readonly grow: readonly [{ readonly grow: readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly shrink: readonly [{ readonly shrink: readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly order: readonly [{ readonly order: readonly [(value: string) => boolean, \"first\", \"last\", \"none\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'grid-cols': readonly [{ readonly 'grid-cols': readonly [(value: string) => boolean, \"none\", \"subgrid\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'col-start-end': readonly [{ readonly col: readonly [\"auto\", { readonly span: readonly [\"full\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'col-start': readonly [{ readonly 'col-start': readonly [(value: string) => boolean, \"auto\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'col-end': readonly [{ readonly 'col-end': readonly [(value: string) => boolean, \"auto\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'grid-rows': readonly [{ readonly 'grid-rows': readonly [(value: string) => boolean, \"none\", \"subgrid\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'row-start-end': readonly [{ readonly row: readonly [\"auto\", { readonly span: readonly [\"full\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'row-start': readonly [{ readonly 'row-start': readonly [(value: string) => boolean, \"auto\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'row-end': readonly [{ readonly 'row-end': readonly [(value: string) => boolean, \"auto\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'grid-flow': readonly [{ readonly 'grid-flow': readonly [\"row\", \"col\", \"dense\", \"row-dense\", \"col-dense\"]; }]; readonly 'auto-cols': readonly [{ readonly 'auto-cols': readonly [\"auto\", \"min\", \"max\", \"fr\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'auto-rows': readonly [{ readonly 'auto-rows': readonly [\"auto\", \"min\", \"max\", \"fr\", (value: string) => boolean, (value: string) => boolean]; }]; readonly gap: readonly [{ readonly gap: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'gap-x': readonly [{ readonly 'gap-x': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'gap-y': readonly [{ readonly 'gap-y': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'justify-content': readonly [{ readonly justify: readonly [\"start\", \"end\", \"center\", \"between\", \"around\", \"evenly\", \"stretch\", \"baseline\", \"center-safe\", \"end-safe\", \"normal\"]; }]; readonly 'justify-items': readonly [{ readonly 'justify-items': readonly [\"start\", \"end\", \"center\", \"stretch\", \"center-safe\", \"end-safe\", \"normal\"]; }]; readonly 'justify-self': readonly [{ readonly 'justify-self': readonly [\"auto\", \"start\", \"end\", \"center\", \"stretch\", \"center-safe\", \"end-safe\"]; }]; readonly 'align-content': readonly [{ readonly content: readonly [\"normal\", \"start\", \"end\", \"center\", \"between\", \"around\", \"evenly\", \"stretch\", \"baseline\", \"center-safe\", \"end-safe\"]; }]; readonly 'align-items': readonly [{ readonly items: readonly [\"start\", \"end\", \"center\", \"stretch\", \"center-safe\", \"end-safe\", { readonly baseline: readonly [\"\", \"last\"]; }]; }]; readonly 'align-self': readonly [{ readonly self: readonly [\"auto\", \"start\", \"end\", \"center\", \"stretch\", \"center-safe\", \"end-safe\", { readonly baseline: readonly [\"\", \"last\"]; }]; }]; readonly 'place-content': readonly [{ readonly 'place-content': readonly [\"start\", \"end\", \"center\", \"between\", \"around\", \"evenly\", \"stretch\", \"baseline\", \"center-safe\", \"end-safe\"]; }]; readonly 'place-items': readonly [{ readonly 'place-items': readonly [\"start\", \"end\", \"center\", \"stretch\", \"center-safe\", \"end-safe\", \"baseline\"]; }]; readonly 'place-self': readonly [{ readonly 'place-self': readonly [\"auto\", \"start\", \"end\", \"center\", \"stretch\", \"center-safe\", \"end-safe\"]; }]; readonly p: readonly [{ readonly p: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly px: readonly [{ readonly px: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly py: readonly [{ readonly py: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly ps: readonly [{ readonly ps: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly pe: readonly [{ readonly pe: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly pbs: readonly [{ readonly pbs: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly pbe: readonly [{ readonly pbe: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly pt: readonly [{ readonly pt: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly pr: readonly [{ readonly pr: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly pb: readonly [{ readonly pb: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly pl: readonly [{ readonly pl: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly m: readonly [{ readonly m: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly mx: readonly [{ readonly mx: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly my: readonly [{ readonly my: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly ms: readonly [{ readonly ms: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly me: readonly [{ readonly me: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly mbs: readonly [{ readonly mbs: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly mbe: readonly [{ readonly mbe: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly mt: readonly [{ readonly mt: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly mr: readonly [{ readonly mr: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly mb: readonly [{ readonly mb: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly ml: readonly [{ readonly ml: readonly [\"auto\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'space-x': readonly [{ readonly 'space-x': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'space-x-reverse': readonly [\"space-x-reverse\"]; readonly 'space-y': readonly [{ readonly 'space-y': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'space-y-reverse': readonly [\"space-y-reverse\"]; readonly size: readonly [{ readonly size: readonly [(value: string) => boolean, \"auto\", \"full\", \"dvw\", \"dvh\", \"lvw\", \"lvh\", \"svw\", \"svh\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'inline-size': readonly [{ readonly inline: readonly [\"auto\", (value: string) => boolean, \"screen\", \"full\", \"dvw\", \"lvw\", \"svw\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'min-inline-size': readonly [{ readonly 'min-inline': readonly [\"auto\", (value: string) => boolean, \"screen\", \"full\", \"dvw\", \"lvw\", \"svw\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'max-inline-size': readonly [{ readonly 'max-inline': readonly [\"none\", (value: string) => boolean, \"screen\", \"full\", \"dvw\", \"lvw\", \"svw\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'block-size': readonly [{ readonly block: readonly [\"auto\", (value: string) => boolean, \"screen\", \"full\", \"lh\", \"dvh\", \"lvh\", \"svh\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'min-block-size': readonly [{ readonly 'min-block': readonly [\"auto\", (value: string) => boolean, \"screen\", \"full\", \"lh\", \"dvh\", \"lvh\", \"svh\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'max-block-size': readonly [{ readonly 'max-block': readonly [\"none\", (value: string) => boolean, \"screen\", \"full\", \"lh\", \"dvh\", \"lvh\", \"svh\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly w: readonly [{ readonly w: readonly [ThemeGetter, \"screen\", (value: string) => boolean, \"auto\", \"full\", \"dvw\", \"dvh\", \"lvw\", \"lvh\", \"svw\", \"svh\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'min-w': readonly [{ readonly 'min-w': readonly [ThemeGetter, \"screen\", \"none\", (value: string) => boolean, \"auto\", \"full\", \"dvw\", \"dvh\", \"lvw\", \"lvh\", \"svw\", \"svh\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'max-w': readonly [{ readonly 'max-w': readonly [ThemeGetter, \"screen\", \"none\", \"prose\", { readonly screen: readonly [ThemeGetter]; }, (value: string) => boolean, \"auto\", \"full\", \"dvw\", \"dvh\", \"lvw\", \"lvh\", \"svw\", \"svh\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly h: readonly [{ readonly h: readonly [\"screen\", \"lh\", (value: string) => boolean, \"auto\", \"full\", \"dvw\", \"dvh\", \"lvw\", \"lvh\", \"svw\", \"svh\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'min-h': readonly [{ readonly 'min-h': readonly [\"screen\", \"lh\", \"none\", (value: string) => boolean, \"auto\", \"full\", \"dvw\", \"dvh\", \"lvw\", \"lvh\", \"svw\", \"svh\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'max-h': readonly [{ readonly 'max-h': readonly [\"screen\", \"lh\", (value: string) => boolean, \"auto\", \"full\", \"dvw\", \"dvh\", \"lvw\", \"lvh\", \"svw\", \"svh\", \"min\", \"max\", \"fit\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'font-size': readonly [{ readonly text: readonly [\"base\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'font-smoothing': readonly [\"antialiased\", \"subpixel-antialiased\"]; readonly 'font-style': readonly [\"italic\", \"not-italic\"]; readonly 'font-weight': readonly [{ readonly font: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'font-stretch': readonly [{ readonly 'font-stretch': readonly [\"ultra-condensed\", \"extra-condensed\", \"condensed\", \"semi-condensed\", \"normal\", \"semi-expanded\", \"expanded\", \"extra-expanded\", \"ultra-expanded\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'font-family': readonly [{ readonly font: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'font-features': readonly [{ readonly 'font-features': readonly [(value: string) => boolean]; }]; readonly 'fvn-normal': readonly [\"normal-nums\"]; readonly 'fvn-ordinal': readonly [\"ordinal\"]; readonly 'fvn-slashed-zero': readonly [\"slashed-zero\"]; readonly 'fvn-figure': readonly [\"lining-nums\", \"oldstyle-nums\"]; readonly 'fvn-spacing': readonly [\"proportional-nums\", \"tabular-nums\"]; readonly 'fvn-fraction': readonly [\"diagonal-fractions\", \"stacked-fractions\"]; readonly tracking: readonly [{ readonly tracking: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'line-clamp': readonly [{ readonly 'line-clamp': readonly [(value: string) => boolean, \"none\", (value: string) => boolean, (value: string) => boolean]; }]; readonly leading: readonly [{ readonly leading: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'list-image': readonly [{ readonly 'list-image': readonly [\"none\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'list-style-position': readonly [{ readonly list: readonly [\"inside\", \"outside\"]; }]; readonly 'list-style-type': readonly [{ readonly list: readonly [\"disc\", \"decimal\", \"none\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'text-alignment': readonly [{ readonly text: readonly [\"left\", \"center\", \"right\", \"justify\", \"start\", \"end\"]; }]; readonly 'placeholder-color': readonly [{ readonly placeholder: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'text-color': readonly [{ readonly text: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'text-decoration': readonly [\"underline\", \"overline\", \"line-through\", \"no-underline\"]; readonly 'text-decoration-style': readonly [{ readonly decoration: readonly [\"solid\", \"dashed\", \"dotted\", \"double\", \"wavy\"]; }]; readonly 'text-decoration-thickness': readonly [{ readonly decoration: readonly [(value: string) => boolean, \"from-font\", \"auto\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'text-decoration-color': readonly [{ readonly decoration: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'underline-offset': readonly [{ readonly 'underline-offset': readonly [(value: string) => boolean, \"auto\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'text-transform': readonly [\"uppercase\", \"lowercase\", \"capitalize\", \"normal-case\"]; readonly 'text-overflow': readonly [\"truncate\", \"text-ellipsis\", \"text-clip\"]; readonly 'text-wrap': readonly [{ readonly text: readonly [\"wrap\", \"nowrap\", \"balance\", \"pretty\"]; }]; readonly indent: readonly [{ readonly indent: readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'tab-size': readonly [{ readonly tab: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'vertical-align': readonly [{ readonly align: readonly [\"baseline\", \"top\", \"middle\", \"bottom\", \"text-top\", \"text-bottom\", \"sub\", \"super\", (value: string) => boolean, (value: string) => boolean]; }]; readonly whitespace: readonly [{ readonly whitespace: readonly [\"normal\", \"nowrap\", \"pre\", \"pre-line\", \"pre-wrap\", \"break-spaces\"]; }]; readonly break: readonly [{ readonly break: readonly [\"normal\", \"words\", \"all\", \"keep\"]; }]; readonly wrap: readonly [{ readonly wrap: readonly [\"break-word\", \"anywhere\", \"normal\"]; }]; readonly hyphens: readonly [{ readonly hyphens: readonly [\"none\", \"manual\", \"auto\"]; }]; readonly content: readonly [{ readonly content: readonly [\"none\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'bg-attachment': readonly [{ readonly bg: readonly [\"fixed\", \"local\", \"scroll\"]; }]; readonly 'bg-clip': readonly [{ readonly 'bg-clip': readonly [\"border\", \"padding\", \"content\", \"text\"]; }]; readonly 'bg-origin': readonly [{ readonly 'bg-origin': readonly [\"border\", \"padding\", \"content\"]; }]; readonly 'bg-position': readonly [{ readonly bg: readonly [\"center\", \"top\", \"bottom\", \"left\", \"right\", \"top-left\", \"left-top\", \"top-right\", \"right-top\", \"bottom-right\", \"right-bottom\", \"bottom-left\", \"left-bottom\", (value: string) => boolean, (value: string) => boolean, { readonly position: readonly [(value: string) => boolean, (value: string) => boolean]; }]; }]; readonly 'bg-repeat': readonly [{ readonly bg: readonly [\"no-repeat\", { readonly repeat: readonly [\"\", \"x\", \"y\", \"space\", \"round\"]; }]; }]; readonly 'bg-size': readonly [{ readonly bg: readonly [\"auto\", \"cover\", \"contain\", (value: string) => boolean, (value: string) => boolean, { readonly size: readonly [(value: string) => boolean, (value: string) => boolean]; }]; }]; readonly 'bg-image': readonly [{ readonly bg: readonly [\"none\", { readonly linear: readonly [{ readonly to: readonly [\"t\", \"tr\", \"r\", \"br\", \"b\", \"bl\", \"l\", \"tl\"]; }, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; readonly radial: readonly [\"\", (value: string) => boolean, (value: string) => boolean]; readonly conic: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'bg-color': readonly [{ readonly bg: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'gradient-from-pos': readonly [{ readonly from: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'gradient-via-pos': readonly [{ readonly via: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'gradient-to-pos': readonly [{ readonly to: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'gradient-from': readonly [{ readonly from: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'gradient-via': readonly [{ readonly via: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'gradient-to': readonly [{ readonly to: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly rounded: readonly [{ readonly rounded: readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-s': readonly [{ readonly 'rounded-s': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-e': readonly [{ readonly 'rounded-e': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-t': readonly [{ readonly 'rounded-t': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-r': readonly [{ readonly 'rounded-r': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-b': readonly [{ readonly 'rounded-b': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-l': readonly [{ readonly 'rounded-l': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-ss': readonly [{ readonly 'rounded-ss': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-se': readonly [{ readonly 'rounded-se': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-ee': readonly [{ readonly 'rounded-ee': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-es': readonly [{ readonly 'rounded-es': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-tl': readonly [{ readonly 'rounded-tl': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-tr': readonly [{ readonly 'rounded-tr': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-br': readonly [{ readonly 'rounded-br': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rounded-bl': readonly [{ readonly 'rounded-bl': readonly [\"\", \"none\", \"full\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w': readonly [{ readonly border: readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w-x': readonly [{ readonly 'border-x': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w-y': readonly [{ readonly 'border-y': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w-s': readonly [{ readonly 'border-s': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w-e': readonly [{ readonly 'border-e': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w-bs': readonly [{ readonly 'border-bs': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w-be': readonly [{ readonly 'border-be': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w-t': readonly [{ readonly 'border-t': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w-r': readonly [{ readonly 'border-r': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w-b': readonly [{ readonly 'border-b': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-w-l': readonly [{ readonly 'border-l': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'divide-x': readonly [{ readonly 'divide-x': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'divide-x-reverse': readonly [\"divide-x-reverse\"]; readonly 'divide-y': readonly [{ readonly 'divide-y': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'divide-y-reverse': readonly [\"divide-y-reverse\"]; readonly 'border-style': readonly [{ readonly border: readonly [\"solid\", \"dashed\", \"dotted\", \"double\", \"hidden\", \"none\"]; }]; readonly 'divide-style': readonly [{ readonly divide: readonly [\"solid\", \"dashed\", \"dotted\", \"double\", \"hidden\", \"none\"]; }]; readonly 'border-color': readonly [{ readonly border: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-color-x': readonly [{ readonly 'border-x': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-color-y': readonly [{ readonly 'border-y': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-color-s': readonly [{ readonly 'border-s': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-color-e': readonly [{ readonly 'border-e': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-color-bs': readonly [{ readonly 'border-bs': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-color-be': readonly [{ readonly 'border-be': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-color-t': readonly [{ readonly 'border-t': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-color-r': readonly [{ readonly 'border-r': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-color-b': readonly [{ readonly 'border-b': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-color-l': readonly [{ readonly 'border-l': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'divide-color': readonly [{ readonly divide: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'outline-style': readonly [{ readonly outline: readonly [\"solid\", \"dashed\", \"dotted\", \"double\", \"none\", \"hidden\"]; }]; readonly 'outline-offset': readonly [{ readonly 'outline-offset': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'outline-w': readonly [{ readonly outline: readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'outline-color': readonly [{ readonly outline: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly shadow: readonly [{ readonly shadow: readonly [\"\", \"none\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'shadow-color': readonly [{ readonly shadow: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'inset-shadow': readonly [{ readonly 'inset-shadow': readonly [\"none\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'inset-shadow-color': readonly [{ readonly 'inset-shadow': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'ring-w': readonly [{ readonly ring: readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'ring-w-inset': readonly [\"ring-inset\"]; readonly 'ring-color': readonly [{ readonly ring: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'ring-offset-w': readonly [{ readonly 'ring-offset': readonly [(value: string) => boolean, (value: string) => boolean]; }]; readonly 'ring-offset-color': readonly [{ readonly 'ring-offset': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'inset-ring-w': readonly [{ readonly 'inset-ring': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'inset-ring-color': readonly [{ readonly 'inset-ring': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'text-shadow': readonly [{ readonly 'text-shadow': readonly [\"none\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'text-shadow-color': readonly [{ readonly 'text-shadow': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly opacity: readonly [{ readonly opacity: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mix-blend': readonly [{ readonly 'mix-blend': readonly [\"normal\", \"multiply\", \"screen\", \"overlay\", \"darken\", \"lighten\", \"color-dodge\", \"color-burn\", \"hard-light\", \"soft-light\", \"difference\", \"exclusion\", \"hue\", \"saturation\", \"color\", \"luminosity\", \"plus-darker\", \"plus-lighter\"]; }]; readonly 'bg-blend': readonly [{ readonly 'bg-blend': readonly [\"normal\", \"multiply\", \"screen\", \"overlay\", \"darken\", \"lighten\", \"color-dodge\", \"color-burn\", \"hard-light\", \"soft-light\", \"difference\", \"exclusion\", \"hue\", \"saturation\", \"color\", \"luminosity\"]; }]; readonly 'mask-clip': readonly [{ readonly 'mask-clip': readonly [\"border\", \"padding\", \"content\", \"fill\", \"stroke\", \"view\"]; }, \"mask-no-clip\"]; readonly 'mask-composite': readonly [{ readonly mask: readonly [\"add\", \"subtract\", \"intersect\", \"exclude\"]; }]; readonly 'mask-image-linear-pos': readonly [{ readonly 'mask-linear': readonly [(value: string) => boolean]; }]; readonly 'mask-image-linear-from-pos': readonly [{ readonly 'mask-linear-from': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-linear-to-pos': readonly [{ readonly 'mask-linear-to': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-linear-from-color': readonly [{ readonly 'mask-linear-from': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-linear-to-color': readonly [{ readonly 'mask-linear-to': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-t-from-pos': readonly [{ readonly 'mask-t-from': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-t-to-pos': readonly [{ readonly 'mask-t-to': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-t-from-color': readonly [{ readonly 'mask-t-from': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-t-to-color': readonly [{ readonly 'mask-t-to': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-r-from-pos': readonly [{ readonly 'mask-r-from': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-r-to-pos': readonly [{ readonly 'mask-r-to': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-r-from-color': readonly [{ readonly 'mask-r-from': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-r-to-color': readonly [{ readonly 'mask-r-to': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-b-from-pos': readonly [{ readonly 'mask-b-from': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-b-to-pos': readonly [{ readonly 'mask-b-to': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-b-from-color': readonly [{ readonly 'mask-b-from': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-b-to-color': readonly [{ readonly 'mask-b-to': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-l-from-pos': readonly [{ readonly 'mask-l-from': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-l-to-pos': readonly [{ readonly 'mask-l-to': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-l-from-color': readonly [{ readonly 'mask-l-from': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-l-to-color': readonly [{ readonly 'mask-l-to': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-x-from-pos': readonly [{ readonly 'mask-x-from': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-x-to-pos': readonly [{ readonly 'mask-x-to': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-x-from-color': readonly [{ readonly 'mask-x-from': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-x-to-color': readonly [{ readonly 'mask-x-to': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-y-from-pos': readonly [{ readonly 'mask-y-from': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-y-to-pos': readonly [{ readonly 'mask-y-to': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-y-from-color': readonly [{ readonly 'mask-y-from': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-y-to-color': readonly [{ readonly 'mask-y-to': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-radial': readonly [{ readonly 'mask-radial': readonly [(value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-radial-from-pos': readonly [{ readonly 'mask-radial-from': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-radial-to-pos': readonly [{ readonly 'mask-radial-to': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-radial-from-color': readonly [{ readonly 'mask-radial-from': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-radial-to-color': readonly [{ readonly 'mask-radial-to': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-radial-shape': readonly [{ readonly 'mask-radial': readonly [\"circle\", \"ellipse\"]; }]; readonly 'mask-image-radial-size': readonly [{ readonly 'mask-radial': readonly [{ readonly closest: readonly [\"side\", \"corner\"]; readonly farthest: readonly [\"side\", \"corner\"]; }]; }]; readonly 'mask-image-radial-pos': readonly [{ readonly 'mask-radial-at': readonly [\"center\", \"top\", \"bottom\", \"left\", \"right\", \"top-left\", \"left-top\", \"top-right\", \"right-top\", \"bottom-right\", \"right-bottom\", \"bottom-left\", \"left-bottom\"]; }]; readonly 'mask-image-conic-pos': readonly [{ readonly 'mask-conic': readonly [(value: string) => boolean]; }]; readonly 'mask-image-conic-from-pos': readonly [{ readonly 'mask-conic-from': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-conic-to-pos': readonly [{ readonly 'mask-conic-to': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-conic-from-color': readonly [{ readonly 'mask-conic-from': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-image-conic-to-color': readonly [{ readonly 'mask-conic-to': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'mask-mode': readonly [{ readonly mask: readonly [\"alpha\", \"luminance\", \"match\"]; }]; readonly 'mask-origin': readonly [{ readonly 'mask-origin': readonly [\"border\", \"padding\", \"content\", \"fill\", \"stroke\", \"view\"]; }]; readonly 'mask-position': readonly [{ readonly mask: readonly [\"center\", \"top\", \"bottom\", \"left\", \"right\", \"top-left\", \"left-top\", \"top-right\", \"right-top\", \"bottom-right\", \"right-bottom\", \"bottom-left\", \"left-bottom\", (value: string) => boolean, (value: string) => boolean, { readonly position: readonly [(value: string) => boolean, (value: string) => boolean]; }]; }]; readonly 'mask-repeat': readonly [{ readonly mask: readonly [\"no-repeat\", { readonly repeat: readonly [\"\", \"x\", \"y\", \"space\", \"round\"]; }]; }]; readonly 'mask-size': readonly [{ readonly mask: readonly [\"auto\", \"cover\", \"contain\", (value: string) => boolean, (value: string) => boolean, { readonly size: readonly [(value: string) => boolean, (value: string) => boolean]; }]; }]; readonly 'mask-type': readonly [{ readonly 'mask-type': readonly [\"alpha\", \"luminance\"]; }]; readonly 'mask-image': readonly [{ readonly mask: readonly [\"none\", (value: string) => boolean, (value: string) => boolean]; }]; readonly filter: readonly [{ readonly filter: readonly [\"\", \"none\", (value: string) => boolean, (value: string) => boolean]; }]; readonly blur: readonly [{ readonly blur: readonly [\"\", \"none\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly brightness: readonly [{ readonly brightness: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly contrast: readonly [{ readonly contrast: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'drop-shadow': readonly [{ readonly 'drop-shadow': readonly [\"\", \"none\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'drop-shadow-color': readonly [{ readonly 'drop-shadow': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly grayscale: readonly [{ readonly grayscale: readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'hue-rotate': readonly [{ readonly 'hue-rotate': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly invert: readonly [{ readonly invert: readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly saturate: readonly [{ readonly saturate: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly sepia: readonly [{ readonly sepia: readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-filter': readonly [{ readonly 'backdrop-filter': readonly [\"\", \"none\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-blur': readonly [{ readonly 'backdrop-blur': readonly [\"\", \"none\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-brightness': readonly [{ readonly 'backdrop-brightness': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-contrast': readonly [{ readonly 'backdrop-contrast': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-grayscale': readonly [{ readonly 'backdrop-grayscale': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-hue-rotate': readonly [{ readonly 'backdrop-hue-rotate': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-invert': readonly [{ readonly 'backdrop-invert': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-opacity': readonly [{ readonly 'backdrop-opacity': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-saturate': readonly [{ readonly 'backdrop-saturate': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'backdrop-sepia': readonly [{ readonly 'backdrop-sepia': readonly [\"\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'border-collapse': readonly [{ readonly border: readonly [\"collapse\", \"separate\"]; }]; readonly 'border-spacing': readonly [{ readonly 'border-spacing': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'border-spacing-x': readonly [{ readonly 'border-spacing-x': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'border-spacing-y': readonly [{ readonly 'border-spacing-y': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'table-layout': readonly [{ readonly table: readonly [\"auto\", \"fixed\"]; }]; readonly caption: readonly [{ readonly caption: readonly [\"top\", \"bottom\"]; }]; readonly transition: readonly [{ readonly transition: readonly [\"\", \"all\", \"colors\", \"opacity\", \"shadow\", \"transform\", \"none\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'transition-behavior': readonly [{ readonly transition: readonly [\"normal\", \"discrete\"]; }]; readonly duration: readonly [{ readonly duration: readonly [(value: string) => boolean, \"initial\", (value: string) => boolean, (value: string) => boolean]; }]; readonly ease: readonly [{ readonly ease: readonly [\"linear\", \"initial\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly delay: readonly [{ readonly delay: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly animate: readonly [{ readonly animate: readonly [\"none\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly backface: readonly [{ readonly backface: readonly [\"hidden\", \"visible\"]; }]; readonly perspective: readonly [{ readonly perspective: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'perspective-origin': readonly [{ readonly 'perspective-origin': readonly [\"center\", \"top\", \"bottom\", \"left\", \"right\", \"top-left\", \"left-top\", \"top-right\", \"right-top\", \"bottom-right\", \"right-bottom\", \"bottom-left\", \"left-bottom\", (value: string) => boolean, (value: string) => boolean]; }]; readonly rotate: readonly [{ readonly rotate: readonly [\"none\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rotate-x': readonly [{ readonly 'rotate-x': readonly [\"none\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rotate-y': readonly [{ readonly 'rotate-y': readonly [\"none\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'rotate-z': readonly [{ readonly 'rotate-z': readonly [\"none\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly scale: readonly [{ readonly scale: readonly [\"none\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'scale-x': readonly [{ readonly 'scale-x': readonly [\"none\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'scale-y': readonly [{ readonly 'scale-y': readonly [\"none\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'scale-z': readonly [{ readonly 'scale-z': readonly [\"none\", (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'scale-3d': readonly [\"scale-3d\"]; readonly skew: readonly [{ readonly skew: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'skew-x': readonly [{ readonly 'skew-x': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'skew-y': readonly [{ readonly 'skew-y': readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly transform: readonly [{ readonly transform: readonly [(value: string) => boolean, (value: string) => boolean, \"\", \"none\", \"gpu\", \"cpu\"]; }]; readonly 'transform-origin': readonly [{ readonly origin: readonly [\"center\", \"top\", \"bottom\", \"left\", \"right\", \"top-left\", \"left-top\", \"top-right\", \"right-top\", \"bottom-right\", \"right-bottom\", \"bottom-left\", \"left-bottom\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'transform-style': readonly [{ readonly transform: readonly [\"3d\", \"flat\"]; }]; readonly translate: readonly [{ readonly translate: readonly [(value: string) => boolean, \"full\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'translate-x': readonly [{ readonly 'translate-x': readonly [(value: string) => boolean, \"full\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'translate-y': readonly [{ readonly 'translate-y': readonly [(value: string) => boolean, \"full\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'translate-z': readonly [{ readonly 'translate-z': readonly [(value: string) => boolean, \"full\", (value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'translate-none': readonly [\"translate-none\"]; readonly zoom: readonly [{ readonly zoom: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly accent: readonly [{ readonly accent: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly appearance: readonly [{ readonly appearance: readonly [\"none\", \"auto\"]; }]; readonly 'caret-color': readonly [{ readonly caret: readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'color-scheme': readonly [{ readonly scheme: readonly [\"normal\", \"dark\", \"light\", \"light-dark\", \"only-dark\", \"only-light\"]; }]; readonly cursor: readonly [{ readonly cursor: readonly [\"auto\", \"default\", \"pointer\", \"wait\", \"text\", \"move\", \"help\", \"not-allowed\", \"none\", \"context-menu\", \"progress\", \"cell\", \"crosshair\", \"vertical-text\", \"alias\", \"copy\", \"no-drop\", \"grab\", \"grabbing\", \"all-scroll\", \"col-resize\", \"row-resize\", \"n-resize\", \"e-resize\", \"s-resize\", \"w-resize\", \"ne-resize\", \"nw-resize\", \"se-resize\", \"sw-resize\", \"ew-resize\", \"ns-resize\", \"nesw-resize\", \"nwse-resize\", \"zoom-in\", \"zoom-out\", (value: string) => boolean, (value: string) => boolean]; }]; readonly 'field-sizing': readonly [{ readonly 'field-sizing': readonly [\"fixed\", \"content\"]; }]; readonly 'pointer-events': readonly [{ readonly 'pointer-events': readonly [\"auto\", \"none\"]; }]; readonly resize: readonly [{ readonly resize: readonly [\"none\", \"\", \"y\", \"x\"]; }]; readonly 'scroll-behavior': readonly [{ readonly scroll: readonly [\"auto\", \"smooth\"]; }]; readonly 'scrollbar-thumb-color': readonly [{ readonly 'scrollbar-thumb': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'scrollbar-track-color': readonly [{ readonly 'scrollbar-track': readonly [ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'scrollbar-gutter': readonly [{ readonly 'scrollbar-gutter': readonly [\"auto\", \"stable\", \"both\"]; }]; readonly 'scrollbar-w': readonly [{ readonly scrollbar: readonly [\"auto\", \"thin\", \"none\"]; }]; readonly 'scroll-m': readonly [{ readonly 'scroll-m': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-mx': readonly [{ readonly 'scroll-mx': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-my': readonly [{ readonly 'scroll-my': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-ms': readonly [{ readonly 'scroll-ms': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-me': readonly [{ readonly 'scroll-me': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-mbs': readonly [{ readonly 'scroll-mbs': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-mbe': readonly [{ readonly 'scroll-mbe': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-mt': readonly [{ readonly 'scroll-mt': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-mr': readonly [{ readonly 'scroll-mr': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-mb': readonly [{ readonly 'scroll-mb': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-ml': readonly [{ readonly 'scroll-ml': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-p': readonly [{ readonly 'scroll-p': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-px': readonly [{ readonly 'scroll-px': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-py': readonly [{ readonly 'scroll-py': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-ps': readonly [{ readonly 'scroll-ps': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-pe': readonly [{ readonly 'scroll-pe': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-pbs': readonly [{ readonly 'scroll-pbs': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-pbe': readonly [{ readonly 'scroll-pbe': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-pt': readonly [{ readonly 'scroll-pt': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-pr': readonly [{ readonly 'scroll-pr': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-pb': readonly [{ readonly 'scroll-pb': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'scroll-pl': readonly [{ readonly 'scroll-pl': readonly [(value: string) => boolean, (value: string) => boolean, ThemeGetter]; }]; readonly 'snap-align': readonly [{ readonly snap: readonly [\"start\", \"end\", \"center\", \"align-none\"]; }]; readonly 'snap-stop': readonly [{ readonly snap: readonly [\"normal\", \"always\"]; }]; readonly 'snap-type': readonly [{ readonly snap: readonly [\"none\", \"x\", \"y\", \"both\"]; }]; readonly 'snap-strictness': readonly [{ readonly snap: readonly [\"mandatory\", \"proximity\"]; }]; readonly touch: readonly [{ readonly touch: readonly [\"auto\", \"none\", \"manipulation\"]; }]; readonly 'touch-x': readonly [{ readonly 'touch-pan': readonly [\"x\", \"left\", \"right\"]; }]; readonly 'touch-y': readonly [{ readonly 'touch-pan': readonly [\"y\", \"up\", \"down\"]; }]; readonly 'touch-pz': readonly [\"touch-pinch-zoom\"]; readonly select: readonly [{ readonly select: readonly [\"none\", \"text\", \"all\", \"auto\"]; }]; readonly 'will-change': readonly [{ readonly 'will-change': readonly [\"auto\", \"scroll\", \"contents\", \"transform\", (value: string) => boolean, (value: string) => boolean]; }]; readonly fill: readonly [{ readonly fill: readonly [\"none\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'stroke-w': readonly [{ readonly stroke: readonly [(value: string) => boolean, (value: string) => boolean, (value: string) => boolean, (value: string) => boolean]; }]; readonly stroke: readonly [{ readonly stroke: readonly [\"none\", ThemeGetter, (value: string) => boolean, (value: string) => boolean]; }]; readonly 'forced-color-adjust': readonly [{ readonly 'forced-color-adjust': readonly [\"auto\", \"none\"]; }]; }; readonly conflictingClassGroups: { readonly 'container-named': readonly [\"container-type\"]; readonly overflow: readonly [\"overflow-x\", \"overflow-y\"]; readonly overscroll: readonly [\"overscroll-x\", \"overscroll-y\"]; readonly inset: readonly [\"inset-x\", \"inset-y\", \"inset-bs\", \"inset-be\", \"start\", \"end\", \"top\", \"right\", \"bottom\", \"left\"]; readonly 'inset-x': readonly [\"right\", \"left\"]; readonly 'inset-y': readonly [\"top\", \"bottom\"]; readonly flex: readonly [\"basis\", \"grow\", \"shrink\"]; readonly gap: readonly [\"gap-x\", \"gap-y\"]; readonly p: readonly [\"px\", \"py\", \"ps\", \"pe\", \"pbs\", \"pbe\", \"pt\", \"pr\", \"pb\", \"pl\"]; readonly px: readonly [\"pr\", \"pl\"]; readonly py: readonly [\"pt\", \"pb\"]; readonly m: readonly [\"mx\", \"my\", \"ms\", \"me\", \"mbs\", \"mbe\", \"mt\", \"mr\", \"mb\", \"ml\"]; readonly mx: readonly [\"mr\", \"ml\"]; readonly my: readonly [\"mt\", \"mb\"]; readonly size: readonly [\"w\", \"h\"]; readonly 'font-size': readonly [\"leading\"]; readonly 'fvn-normal': readonly [\"fvn-ordinal\", \"fvn-slashed-zero\", \"fvn-figure\", \"fvn-spacing\", \"fvn-fraction\"]; readonly 'fvn-ordinal': readonly [\"fvn-normal\"]; readonly 'fvn-slashed-zero': readonly [\"fvn-normal\"]; readonly 'fvn-figure': readonly [\"fvn-normal\"]; readonly 'fvn-spacing': readonly [\"fvn-normal\"]; readonly 'fvn-fraction': readonly [\"fvn-normal\"]; readonly 'line-clamp': readonly [\"display\", \"overflow\"]; readonly rounded: readonly [\"rounded-s\", \"rounded-e\", \"rounded-t\", \"rounded-r\", \"rounded-b\", \"rounded-l\", \"rounded-ss\", \"rounded-se\", \"rounded-ee\", \"rounded-es\", \"rounded-tl\", \"rounded-tr\", \"rounded-br\", \"rounded-bl\"]; readonly 'rounded-s': readonly [\"rounded-ss\", \"rounded-es\"]; readonly 'rounded-e': readonly [\"rounded-se\", \"rounded-ee\"]; readonly 'rounded-t': readonly [\"rounded-tl\", \"rounded-tr\"]; readonly 'rounded-r': readonly [\"rounded-tr\", \"rounded-br\"]; readonly 'rounded-b': readonly [\"rounded-br\", \"rounded-bl\"]; readonly 'rounded-l': readonly [\"rounded-tl\", \"rounded-bl\"]; readonly 'border-spacing': readonly [\"border-spacing-x\", \"border-spacing-y\"]; readonly 'border-w': readonly [\"border-w-x\", \"border-w-y\", \"border-w-s\", \"border-w-e\", \"border-w-bs\", \"border-w-be\", \"border-w-t\", \"border-w-r\", \"border-w-b\", \"border-w-l\"]; readonly 'border-w-x': readonly [\"border-w-r\", \"border-w-l\"]; readonly 'border-w-y': readonly [\"border-w-t\", \"border-w-b\"]; readonly 'border-color': readonly [\"border-color-x\", \"border-color-y\", \"border-color-s\", \"border-color-e\", \"border-color-bs\", \"border-color-be\", \"border-color-t\", \"border-color-r\", \"border-color-b\", \"border-color-l\"]; readonly 'border-color-x': readonly [\"border-color-r\", \"border-color-l\"]; readonly 'border-color-y': readonly [\"border-color-t\", \"border-color-b\"]; readonly translate: readonly [\"translate-x\", \"translate-y\", \"translate-none\"]; readonly 'translate-none': readonly [\"translate\", \"translate-x\", \"translate-y\", \"translate-z\"]; readonly 'scroll-m': readonly [\"scroll-mx\", \"scroll-my\", \"scroll-ms\", \"scroll-me\", \"scroll-mbs\", \"scroll-mbe\", \"scroll-mt\", \"scroll-mr\", \"scroll-mb\", \"scroll-ml\"]; readonly 'scroll-mx': readonly [\"scroll-mr\", \"scroll-ml\"]; readonly 'scroll-my': readonly [\"scroll-mt\", \"scroll-mb\"]; readonly 'scroll-p': readonly [\"scroll-px\", \"scroll-py\", \"scroll-ps\", \"scroll-pe\", \"scroll-pbs\", \"scroll-pbe\", \"scroll-pt\", \"scroll-pr\", \"scroll-pb\", \"scroll-pl\"]; readonly 'scroll-px': readonly [\"scroll-pr\", \"scroll-pl\"]; readonly 'scroll-py': readonly [\"scroll-pt\", \"scroll-pb\"]; readonly touch: readonly [\"touch-x\", \"touch-y\", \"touch-pz\"]; readonly 'touch-x': readonly [\"touch\"]; readonly 'touch-y': readonly [\"touch\"]; readonly 'touch-pz': readonly [\"touch\"]; }; readonly conflictingClassGroupModifiers: { readonly 'font-size': readonly [\"leading\"]; }; readonly postfixLookupClassGroups: readonly [\"container-type\"]; readonly orderSensitiveModifiers: [\"*\", \"**\", \"after\", \"backdrop\", \"before\", \"details-content\", \"file\", \"first-letter\", \"first-line\", \"marker\", \"placeholder\", \"selection\"]; }",
+          "confidence": "high",
+          "symbols": [
+            "getDefaultConfig"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `twJoin` changed.",
+          "remediation": "The signature of `twJoin` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: declare function twJoin(...classLists: ClassNameValue[]): string;\n  after:  declare const twJoin: (...classLists: ClassNameValue[]) => string;",
+          "confidence": "high",
+          "symbols": [
+            "twJoin"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `DefaultClassGroupIds` changed.",
+          "remediation": "The signature of `DefaultClassGroupIds` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: type DefaultClassGroupIds = 'accent' | 'align-content' | 'align-items' | 'align-self' | 'animate' | 'appearance' | 'aspect' | 'auto-cols' | 'auto-rows' | 'backdrop-blur' | 'backdrop-brightness' | 'backdrop-contrast' | 'backdrop-filter' | 'backdrop-grayscale' | 'backdrop-hue-rotate' | 'backdrop-invert' | 'backdrop-opacity' | 'backdrop-saturate' | 'backdrop-sepia' | 'backface' | 'basis' | 'bg-attachment' | 'bg-blend' | 'bg-clip' | 'bg-color' | 'bg-image' | 'bg-origin' | 'bg-position' | 'bg-repeat' | 'bg-size' | 'blur' | 'border-collapse' | 'border-color-b' | 'border-color-e' | 'border-color-l' | 'border-color-r' | 'border-color-s' | 'border-color-t' | 'border-color-x' | 'border-color-y' | 'border-color' | 'border-spacing-x' | 'border-spacing-y' | 'border-spacing' | 'border-style' | 'border-w-b' | 'border-w-e' | 'border-w-l' | 'border-w-r' | 'border-w-s' | 'border-w-t' | 'border-w-x' | 'border-w-y' | 'border-w' | 'bottom' | 'box-decoration' | 'box' | 'break-after' | 'break-before' | 'break-inside' | 'break' | 'brightness' | 'caption' | 'caret-color' | 'clear' | 'col-end' | 'col-start-end' | 'col-start' | 'color-scheme' | 'columns' | 'container' | 'content' | 'contrast' | 'cursor' | 'delay' | 'display' | 'divide-color' | 'divide-style' | 'divide-x-reverse' | 'divide-x' | 'divide-y-reverse' | 'divide-y' | 'drop-shadow' | 'drop-shadow-color' | 'duration' | 'ease' | 'end' | 'field-sizing' | 'fill' | 'filter' | 'flex-direction' | 'flex-wrap' | 'flex' | 'float' | 'font-family' | 'font-size' | 'font-smoothing' | 'font-stretch' | 'font-style' | 'font-weight' | 'forced-color-adjust' | 'fvn-figure' | 'fvn-fraction' | 'fvn-normal' | 'fvn-ordinal' | 'fvn-slashed-zero' | 'fvn-spacing' | 'gap-x' | 'gap-y' | 'gap' | 'gradient-from-pos' | 'gradient-from' | 'gradient-to-pos' | 'gradient-to' | 'gradient-via-pos' | 'gradient-via' | 'grayscale' | 'grid-cols' | 'grid-flow' | 'grid-rows' | 'grow' | 'h' | 'hue-rotate' | 'hyphens' | 'indent' | 'inset-ring-color' | 'inset-ring-w' | 'inset-shadow-color' | 'inset-shadow' | 'inset-x' | 'inset-y' | 'inset' | 'invert' | 'isolation' | 'justify-content' | 'justify-items' | 'justify-self' | 'leading' | 'left' | 'line-clamp' | 'list-image' | 'list-style-position' | 'list-style-type' | 'm' | 'mask-clip' | 'mask-composite' | 'mask-image-b-from-color' | 'mask-image-b-from-pos' | 'mask-image-b-to-color' | 'mask-image-b-to-pos' | 'mask-image-conic-from-color' | 'mask-image-conic-from-pos' | 'mask-image-conic-pos' | 'mask-image-conic-to-color' | 'mask-image-conic-to-pos' | 'mask-image-l-from-color' | 'mask-image-l-from-pos' | 'mask-image-l-to-color' | 'mask-image-l-to-pos' | 'mask-image-linear-from-color' | 'mask-image-linear-from-pos' | 'mask-image-linear-pos' | 'mask-image-linear-to-color' | 'mask-image-linear-to-pos' | 'mask-image-r-from-color' | 'mask-image-r-from-pos' | 'mask-image-r-to-color' | 'mask-image-r-to-pos' | 'mask-image-radial-from-color' | 'mask-image-radial-from-pos' | 'mask-image-radial-pos' | 'mask-image-radial-shape' | 'mask-image-radial-size' | 'mask-image-radial-to-color' | 'mask-image-radial-to-pos' | 'mask-image-radial' | 'mask-image-t-from-color' | 'mask-image-t-from-pos' | 'mask-image-t-to-color' | 'mask-image-t-to-pos' | 'mask-image-x-from-color' | 'mask-image-x-from-pos' | 'mask-image-x-to-color' | 'mask-image-x-to-pos' | 'mask-image-y-from-color' | 'mask-image-y-from-pos' | 'mask-image-y-to-color' | 'mask-image-y-to-pos' | 'mask-image' | 'mask-mode' | 'mask-origin' | 'mask-position' | 'mask-repeat' | 'mask-size' | 'mask-type' | 'max-h' | 'max-w' | 'mb' | 'me' | 'min-h' | 'min-w' | 'mix-blend' | 'ml' | 'mr' | 'ms' | 'mt' | 'mx' | 'my' | 'object-fit' | 'object-position' | 'opacity' | 'order' | 'outline-color' | 'outline-offset' | 'outline-style' | 'outline-w' | 'overflow-x' | 'overflow-y' | 'overflow' | 'overscroll-x' | 'overscroll-y' | 'overscroll' | 'p' | 'pb' | 'pe' | 'perspective-origin' | 'perspective' | 'pl' | 'place-content' | 'place-items' | 'place-self' | 'placeholder-color' | 'pointer-events' | 'position' | 'pr' | 'ps' | 'pt' | 'px' | 'py' | 'resize' | 'right' | 'ring-color' | 'ring-offset-color' | 'ring-offset-w' | 'ring-w-inset' | 'ring-w' | 'rotate-x' | 'rotate-y' | 'rotate-z' | 'rotate' | 'rounded-b' | 'rounded-bl' | 'rounded-br' | 'rounded-e' | 'rounded-ee' | 'rounded-es' | 'rounded-l' | 'rounded-r' | 'rounded-s' | 'rounded-se' | 'rounded-ss' | 'rounded-t' | 'rounded-tl' | 'rounded-tr' | 'rounded' | 'row-end' | 'row-start-end' | 'row-start' | 'saturate' | 'scale-3d' | 'scale-x' | 'scale-y' | 'scale-z' | 'scale' | 'scroll-behavior' | 'scroll-m' | 'scroll-mb' | 'scroll-me' | 'scroll-ml' | 'scroll-mr' | 'scroll-ms' | 'scroll-mt' | 'scroll-mx' | 'scroll-my' | 'scroll-p' | 'scroll-pb' | 'scroll-pe' | 'scroll-pl' | 'scroll-pr' | 'scroll-ps' | 'scroll-pt' | 'scroll-px' | 'scroll-py' | 'select' | 'sepia' | 'shadow-color' | 'shadow' | 'shrink' | 'size' | 'skew-x' | 'skew-y' | 'skew' | 'snap-align' | 'snap-stop' | 'snap-strictness' | 'snap-type' | 'space-x-reverse' | 'space-x' | 'space-y-reverse' | 'space-y' | 'sr' | 'start' | 'stroke-w' | 'stroke' | 'table-layout' | 'text-alignment' | 'text-color' | 'text-decoration-color' | 'text-decoration-style' | 'text-decoration-thickness' | 'text-decoration' | 'text-overflow' | 'text-shadow' | 'text-shadow-color' | 'text-transform' | 'text-wrap' | 'top' | 'touch-pz' | 'touch-x' | 'touch-y' | 'touch' | 'tracking' | 'transform-origin' | 'transform-style' | 'transform' | 'transition-behavior' | 'transition' | 'translate-none' | 'translate-x' | 'translate-y' | 'translate-z' | 'translate' | 'underline-offset' | 'vertical-align' | 'visibility' | 'w' | 'whitespace' | 'will-change' | 'wrap' | 'z';\n  after:  type DefaultClassGroupIds = 'accent' | 'align-content' | 'align-items' | 'align-self' | 'animate' | 'appearance' | 'aspect' | 'auto-cols' | 'auto-rows' | 'backdrop-blur' | 'backdrop-brightness' | 'backdrop-contrast' | 'backdrop-filter' | 'backdrop-grayscale' | 'backdrop-hue-rotate' | 'backdrop-invert' | 'backdrop-opacity' | 'backdrop-saturate' | 'backdrop-sepia' | 'backface' | 'basis' | 'bg-attachment' | 'bg-blend' | 'bg-clip' | 'bg-color' | 'bg-image' | 'bg-origin' | 'bg-position' | 'bg-repeat' | 'bg-size' | 'block-size' | 'blur' | 'border-collapse' | 'border-color-b' | 'border-color-be' | 'border-color-bs' | 'border-color-e' | 'border-color-l' | 'border-color-r' | 'border-color-s' | 'border-color-t' | 'border-color-x' | 'border-color-y' | 'border-color' | 'border-spacing-x' | 'border-spacing-y' | 'border-spacing' | 'border-style' | 'border-w-b' | 'border-w-be' | 'border-w-bs' | 'border-w-e' | 'border-w-l' | 'border-w-r' | 'border-w-s' | 'border-w-t' | 'border-w-x' | 'border-w-y' | 'border-w' | 'bottom' | 'box-decoration' | 'box' | 'break-after' | 'break-before' | 'break-inside' | 'break' | 'brightness' | 'caption' | 'caret-color' | 'clear' | 'col-end' | 'col-start-end' | 'col-start' | 'color-scheme' | 'columns' | 'container' | 'container-named' | 'container-type' | 'content' | 'contrast' | 'cursor' | 'delay' | 'display' | 'divide-color' | 'divide-style' | 'divide-x-reverse' | 'divide-x' | 'divide-y-reverse' | 'divide-y' | 'drop-shadow' | 'drop-shadow-color' | 'duration' | 'ease' | 'end' | 'field-sizing' | 'fill' | 'filter' | 'flex-direction' | 'flex-wrap' | 'flex' | 'float' | 'font-family' | 'font-features' | 'font-size' | 'font-smoothing' | 'font-stretch' | 'font-style' | 'font-weight' | 'forced-color-adjust' | 'fvn-figure' | 'fvn-fraction' | 'fvn-normal' | 'fvn-ordinal' | 'fvn-slashed-zero' | 'fvn-spacing' | 'gap-x' | 'gap-y' | 'gap' | 'gradient-from-pos' | 'gradient-from' | 'gradient-to-pos' | 'gradient-to' | 'gradient-via-pos' | 'gradient-via' | 'grayscale' | 'grid-cols' | 'grid-flow' | 'grid-rows' | 'grow' | 'h' | 'hue-rotate' | 'hyphens' | 'indent' | 'inline-size' | 'inset-ring-color' | 'inset-ring-w' | 'inset-shadow-color' | 'inset-shadow' | 'inset-be' | 'inset-bs' | 'inset-x' | 'inset-y' | 'inset' | 'invert' | 'isolation' | 'justify-content' | 'justify-items' | 'justify-self' | 'leading' | 'left' | 'line-clamp' | 'list-image' | 'list-style-position' | 'list-style-type' | 'm' | 'mask-clip' | 'mask-composite' | 'mask-image-b-from-color' | 'mask-image-b-from-pos' | 'mask-image-b-to-color' | 'mask-image-b-to-pos' | 'mask-image-conic-from-color' | 'mask-image-conic-from-pos' | 'mask-image-conic-pos' | 'mask-image-conic-to-color' | 'mask-image-conic-to-pos' | 'mask-image-l-from-color' | 'mask-image-l-from-pos' | 'mask-image-l-to-color' | 'mask-image-l-to-pos' | 'mask-image-linear-from-color' | 'mask-image-linear-from-pos' | 'mask-image-linear-pos' | 'mask-image-linear-to-color' | 'mask-image-linear-to-pos' | 'mask-image-r-from-color' | 'mask-image-r-from-pos' | 'mask-image-r-to-color' | 'mask-image-r-to-pos' | 'mask-image-radial-from-color' | 'mask-image-radial-from-pos' | 'mask-image-radial-pos' | 'mask-image-radial-shape' | 'mask-image-radial-size' | 'mask-image-radial-to-color' | 'mask-image-radial-to-pos' | 'mask-image-radial' | 'mask-image-t-from-color' | 'mask-image-t-from-pos' | 'mask-image-t-to-color' | 'mask-image-t-to-pos' | 'mask-image-x-from-color' | 'mask-image-x-from-pos' | 'mask-image-x-to-color' | 'mask-image-x-to-pos' | 'mask-image-y-from-color' | 'mask-image-y-from-pos' | 'mask-image-y-to-color' | 'mask-image-y-to-pos' | 'mask-image' | 'mask-mode' | 'mask-origin' | 'mask-position' | 'mask-repeat' | 'mask-size' | 'mask-type' | 'max-block-size' | 'max-h' | 'max-inline-size' | 'max-w' | 'mb' | 'mbe' | 'mbs' | 'me' | 'min-block-size' | 'min-h' | 'min-inline-size' | 'min-w' | 'mix-blend' | 'ml' | 'mr' | 'ms' | 'mt' | 'mx' | 'my' | 'object-fit' | 'object-position' | 'opacity' | 'order' | 'outline-color' | 'outline-offset' | 'outline-style' | 'outline-w' | 'overflow-x' | 'overflow-y' | 'overflow' | 'overscroll-x' | 'overscroll-y' | 'overscroll' | 'p' | 'pb' | 'pbe' | 'pe' | 'perspective-origin' | 'perspective' | 'pl' | 'place-content' | 'place-items' | 'place-self' | 'placeholder-color' | 'pointer-events' | 'position' | 'pr' | 'ps' | 'pbs' | 'pt' | 'px' | 'py' | 'resize' | 'right' | 'ring-color' | 'ring-offset-color' | 'ring-offset-w' | 'ring-w-inset' | 'ring-w' | 'rotate-x' | 'rotate-y' | 'rotate-z' | 'rotate' | 'rounded-b' | 'rounded-bl' | 'rounded-br' | 'rounded-e' | 'rounded-ee' | 'rounded-es' | 'rounded-l' | 'rounded-r' | 'rounded-s' | 'rounded-se' | 'rounded-ss' | 'rounded-t' | 'rounded-tl' | 'rounded-tr' | 'rounded' | 'row-end' | 'row-start-end' | 'row-start' | 'saturate' | 'scale-3d' | 'scale-x' | 'scale-y' | 'scale-z' | 'scale' | 'scrollbar-gutter' | 'scrollbar-thumb-color' | 'scrollbar-track-color' | 'scrollbar-w' | 'scroll-behavior' | 'scroll-m' | 'scroll-mb' | 'scroll-mbe' | 'scroll-me' | 'scroll-ml' | 'scroll-mr' | 'scroll-mbs' | 'scroll-ms' | 'scroll-mt' | 'scroll-mx' | 'scroll-my' | 'scroll-p' | 'scroll-pb' | 'scroll-pbe' | 'scroll-pe' | 'scroll-pl' | 'scroll-pr' | 'scroll-pbs' | 'scroll-ps' | 'scroll-pt' | 'scroll-px' | 'scroll-py' | 'select' | 'sepia' | 'shadow-color' | 'shadow' | 'shrink' | 'size' | 'skew-x' | 'skew-y' | 'skew' | 'snap-align' | 'snap-stop' | 'snap-strictness' | 'snap-type' | 'space-x-reverse' | 'space-x' | 'space-y-reverse' | 'space-y' | 'sr' | 'start' | 'stroke-w' | 'stroke' | 'table-layout' | 'tab-size' | 'text-alignment' | 'text-color' | 'text-decoration-color' | 'text-decoration-style' | 'text-decoration-thickness' | 'text-decoration' | 'text-overflow' | 'text-shadow' | 'text-shadow-color' | 'text-transform' | 'text-wrap' | 'top' | 'touch-pz' | 'touch-x' | 'touch-y' | 'touch' | 'tracking' | 'transform-origin' | 'transform-style' | 'transform' | 'transition-behavior' | 'transition' | 'translate-none' | 'translate-x' | 'translate-y' | 'translate-z' | 'translate' | 'underline-offset' | 'vertical-align' | 'visibility' | 'w' | 'whitespace' | 'will-change' | 'wrap' | 'zoom' | 'z';",
+          "confidence": "high",
+          "symbols": [
+            "DefaultClassGroupIds"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "react",
+      "ecosystem": "npm",
+      "current": "19.0.0",
+      "latest": "19.2.8",
+      "selected": "19.2.8",
+      "safeLatest": "19.2.8",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Safe to upgrade. 2 upstream breaking changes, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 2,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 4,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "runtime-requirement",
+          "summary": "Minimum Node.js version raised to 18",
+          "remediation": "Minimum Node.js version raised to 18. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
+          "confidence": "medium",
+          "symbols": [
+            "Node.js"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "runtime-requirement",
+          "summary": "Dropped support for using HTML comments (e",
+          "remediation": "Dropped support for using HTML comments (e. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
+          "confidence": "medium",
+          "symbols": [
+            "using HTML comments (e"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "react-dom",
+      "ecosystem": "npm",
+      "current": "19.0.0",
+      "latest": "19.2.8",
+      "selected": "19.2.8",
+      "safeLatest": "19.2.8",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Safe to upgrade. 2 upstream breaking changes, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 2,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 4,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "runtime-requirement",
+          "summary": "Minimum Node.js version raised to 18",
+          "remediation": "Minimum Node.js version raised to 18. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
+          "confidence": "medium",
+          "symbols": [
+            "Node.js"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "runtime-requirement",
+          "summary": "Dropped support for using HTML comments (e",
+          "remediation": "Dropped support for using HTML comments (e. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
+          "confidence": "medium",
+          "symbols": [
+            "using HTML comments (e"
           ],
           "sites": []
         }
@@ -713,6 +1155,24 @@
       "breaking": []
     },
     {
+      "name": "next",
+      "ecosystem": "npm",
+      "current": "16.2.11",
+      "latest": "16.3.0",
+      "selected": "16.3.0",
+      "safeLatest": "16.3.0",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. No breaking changes found for this version of next.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [],
+      "breaking": []
+    },
+    {
       "name": "react",
       "ecosystem": "npm",
       "current": "19.2.0",
@@ -721,14 +1181,14 @@
       "safeLatest": "19.2.8",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read the changelog for react 19.2.8 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "summary": "Safe to upgrade. Drift read 8 sets of release notes and the changelog for react 19.2.8 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift read the changelog for react 19.2.8 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        "Drift read 8 sets of release notes and the changelog for react 19.2.8 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
       "breaking": []
     },
@@ -741,20 +1201,20 @@
       "safeLatest": "19.2.8",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read the changelog for react-dom 19.2.8 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "summary": "Safe to upgrade. Drift read 8 sets of release notes and the changelog for react-dom 19.2.8 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift read the changelog for react-dom 19.2.8 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        "Drift read 8 sets of release notes and the changelog for react-dom 19.2.8 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
       "breaking": []
     }
   ],
   "audit": {
-    "checked": 14,
+    "checked": 22,
     "analysed": 0,
     "findings": []
   }

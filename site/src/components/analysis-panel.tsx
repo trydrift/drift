@@ -283,15 +283,28 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
         </a>
         <span>·</span>
         <span>
-          real run took {(recording.durationMs / 1000).toFixed(1)}s, replayed at {speed}×
+          real run took {formatDuration(recording.durationMs)}, replayed at {speed}×
         </span>
         <span className="hidden sm:inline">·</span>
         <span className="hidden sm:inline">
-          capped at {recording.packagesCapped} packages for length
+          whole repository, {recording.packagesChecked} package
+          {recording.packagesChecked === 1 ? "" : "s"}, no sampling
         </span>
       </div>
     </div>
   );
+}
+
+/**
+ * `14.3s`, `23m 04s`. A whole-repository run of GitLab really does take
+ * twenty-three minutes, and printing that as `1383.8s` buries the one number
+ * that explains why the replay is compressed at all.
+ */
+function formatDuration(ms: number): string {
+  const seconds = ms / 1000;
+  if (seconds < 90) return `${seconds.toFixed(1)}s`;
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}m ${String(Math.round(seconds % 60)).padStart(2, "0")}s`;
 }
 
 function PackageRow({

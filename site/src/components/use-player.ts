@@ -32,17 +32,32 @@ export interface PlayerState {
 }
 
 /**
- * How much faster than life.
+ * How long a replay should take, whatever it is a replay of.
  *
- * A real scan of Deno took 46 seconds, which is the right amount of time for a
- * developer's own repository and far too long for a landing page: the honest
- * pacing is what makes it read as real, but nobody watches for 46 seconds to
- * find out. Playing at 3× keeps the *shape* of the timing — the pauses, the
- * bursts, the one package that stalls — while fitting inside the attention a
- * visitor actually has. The real duration is printed under the panel, so the
+ * The recordings are whole-repository runs, and they are wildly different
+ * lengths because the repositories are: Supabase's twelve packages take
+ * fourteen seconds and GitLab's three hundred and fifty-four take
+ * twenty-three minutes. One fixed multiplier cannot serve both — 3× turns
+ * Supabase into a five-second flicker and GitLab into something nobody will
+ * ever watch the end of.
+ *
+ * So the rate is derived per recording, to land every replay in about the same
+ * window. A uniform multiplier preserves the *shape* of the timing exactly —
+ * the pauses, the bursts, the one package that stalls behind a changelog fetch
+ * — which is the part that makes it read as real. Only the clock is scaled,
+ * and the panel prints both the true duration and the rate underneath, so the
  * compression is stated rather than implied.
  */
-const SPEED = 3;
+const TARGET_MS = 26_000;
+
+/**
+ * A short recording plays at life speed — 1× is the floor, not a compromise.
+ * Elasticsearch's fourteen packages really do finish in seven seconds, and
+ * padding that out to fill a window would be inventing time the run did not
+ * take. The ceiling is where the panel stops being readable.
+ */
+const MIN_SPEED = 1;
+const MAX_SPEED = 90;
 
 /** Never leave a viewer looking at a still panel for longer than this. */
 const MAX_GAP_MS = 900;
@@ -70,6 +85,8 @@ export function usePlayer(recording: Recording) {
    */
   const timeline = useRef<{ at: number; index: number }[]>([]);
   const duration = useRef(0);
+  const [speed, setSpeed] = useState(MIN_SPEED);
+  const speedRef = useRef(MIN_SPEED);
 
   useEffect(() => {
     let clock = 0;
@@ -82,6 +99,16 @@ export function usePlayer(recording: Recording) {
     // A beat at the end, so the final event is legible before the summary
     // replaces the running state.
     duration.current = clock + 600;
+
+    // Derived from the *compressed* timeline rather than from the recording's
+    // wall-clock duration: dead air has already been taken out, and scaling
+    // against a number that still contains it would race through the events
+    // that are left.
+    const rate = Math.round(
+      Math.min(MAX_SPEED, Math.max(MIN_SPEED, duration.current / TARGET_MS)),
+    );
+    speedRef.current = rate;
+    setSpeed(rate);
   }, [recording]);
 
   const stop = useCallback(() => {
@@ -123,7 +150,7 @@ export function usePlayer(recording: Recording) {
     const tick = (now: number) => {
       const delta = now - last.current;
       last.current = now;
-      elapsed.current += delta * SPEED;
+      elapsed.current += delta * speedRef.current;
       const at = elapsed.current;
 
       if (at >= duration.current) {
@@ -170,5 +197,5 @@ export function usePlayer(recording: Recording) {
 
   const currentEvent = state.cursor > 0 ? recording.events[timeline.current[state.cursor - 1]?.index ?? 0] : undefined;
 
-  return { state, start, reset, complete, currentEvent, speed: SPEED };
+  return { state, start, reset, complete, currentEvent, speed };
 }

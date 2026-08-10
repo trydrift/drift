@@ -5,11 +5,10 @@
   "language": "Rust",
   "repo": "https://github.com/denoland/deno",
   "blurb": "A modern runtime for JavaScript and TypeScript, written in Rust.",
-  "capturedAt": "2026-08-09T19:18:56.892Z",
+  "capturedAt": "2026-08-10T06:45:20.558Z",
   "commit": "98dc759254a90b98f7bbb62ba5361e531d0db6a5",
-  "durationMs": 45062,
-  "packagesChecked": 14,
-  "packagesCapped": 14,
+  "durationMs": 45745,
+  "packagesChecked": 77,
   "manifests": [
     "cli/Cargo.toml",
     "cli/lib/Cargo.toml",
@@ -322,2611 +321,4206 @@
   ],
   "events": [
     {
-      "at": 19642,
+      "at": 13216,
       "phase": "Looking for manifests",
       "detail": "denoland/deno",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19810,
+      "at": 13340,
       "phase": "Reading the workspace",
       "detail": "308 packages · cargo-workspace, undeclared",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19949,
+      "at": 13392,
       "phase": "Reading manifest",
       "detail": "cli/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19951,
+      "at": 13397,
       "phase": "Reading manifest",
       "detail": "cli/lib/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19951,
+      "at": 13398,
       "phase": "Reading manifest",
       "detail": "cli/rt/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19952,
+      "at": 13399,
       "phase": "Reading manifest",
       "detail": "cli/rt_desktop/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19952,
+      "at": 13399,
       "phase": "Reading manifest",
       "detail": "cli/snapshot/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19952,
+      "at": 13399,
       "phase": "Reading manifest",
       "detail": "ext/bundle/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19952,
+      "at": 13399,
       "phase": "Reading manifest",
       "detail": "ext/cache/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19953,
+      "at": 13399,
       "phase": "Reading manifest",
       "detail": "ext/canvas/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19953,
+      "at": 13399,
       "phase": "Reading manifest",
       "detail": "ext/cron/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19954,
+      "at": 13399,
       "phase": "Reading manifest",
       "detail": "ext/crypto/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19954,
+      "at": 13399,
       "phase": "Reading manifest",
       "detail": "ext/fetch/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19954,
+      "at": 13400,
       "phase": "Reading manifest",
       "detail": "ext/ffi/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19955,
+      "at": 13400,
       "phase": "Reading manifest",
       "detail": "ext/fs/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19955,
+      "at": 13400,
       "phase": "Reading manifest",
       "detail": "ext/http/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19955,
+      "at": 13400,
       "phase": "Reading manifest",
       "detail": "ext/image/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19955,
+      "at": 13400,
       "phase": "Reading manifest",
       "detail": "ext/io/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19956,
+      "at": 13400,
       "phase": "Reading manifest",
       "detail": "ext/kv/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19957,
+      "at": 13400,
       "phase": "Reading manifest",
       "detail": "ext/napi/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19957,
+      "at": 13400,
       "phase": "Reading manifest",
       "detail": "ext/napi/sym/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19958,
+      "at": 13401,
       "phase": "Reading manifest",
       "detail": "ext/net/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19958,
+      "at": 13401,
       "phase": "Reading manifest",
       "detail": "ext/node/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19959,
+      "at": 13401,
       "phase": "Reading manifest",
       "detail": "ext/node_crypto/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19960,
+      "at": 13401,
       "phase": "Reading manifest",
       "detail": "ext/node_sqlite/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19960,
+      "at": 13401,
       "phase": "Reading manifest",
       "detail": "ext/rt_helper/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19960,
+      "at": 13401,
       "phase": "Reading manifest",
       "detail": "ext/signals/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19961,
+      "at": 13401,
       "phase": "Reading manifest",
       "detail": "ext/telemetry/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19961,
+      "at": 13402,
       "phase": "Reading manifest",
       "detail": "ext/url/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19961,
+      "at": 13402,
       "phase": "Reading manifest",
       "detail": "ext/web/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19962,
+      "at": 13402,
       "phase": "Reading manifest",
       "detail": "ext/webgpu/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19963,
+      "at": 13403,
       "phase": "Reading manifest",
       "detail": "ext/webidl/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19963,
+      "at": 13403,
       "phase": "Reading manifest",
       "detail": "ext/websocket/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19963,
+      "at": 13403,
       "phase": "Reading manifest",
       "detail": "ext/webstorage/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19963,
+      "at": 13403,
       "phase": "Reading manifest",
       "detail": "libs/cache_dir/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19964,
+      "at": 13403,
       "phase": "Reading manifest",
       "detail": "libs/cli_parser/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19964,
+      "at": 13403,
       "phase": "Reading manifest",
       "detail": "libs/config/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19965,
+      "at": 13403,
       "phase": "Reading manifest",
       "detail": "libs/core/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19966,
+      "at": 13404,
       "phase": "Reading manifest",
       "detail": "libs/core/examples/snapshot/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19966,
+      "at": 13404,
       "phase": "Reading manifest",
       "detail": "libs/core_testing/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19966,
+      "at": 13404,
       "phase": "Reading manifest",
       "detail": "libs/crypto/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19967,
+      "at": 13404,
       "phase": "Reading manifest",
       "detail": "libs/dcore/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19967,
+      "at": 13404,
       "phase": "Reading manifest",
       "detail": "libs/deno_v8/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19968,
+      "at": 13404,
       "phase": "Reading manifest",
       "detail": "libs/dotenv/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19968,
+      "at": 13404,
       "phase": "Reading manifest",
       "detail": "libs/eszip/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19968,
+      "at": 13404,
       "phase": "Reading manifest",
       "detail": "libs/http_h1/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19969,
+      "at": 13405,
       "phase": "Reading manifest",
       "detail": "libs/inspector_server/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19969,
+      "at": 13405,
       "phase": "Reading manifest",
       "detail": "libs/lockfile/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19969,
+      "at": 13405,
       "phase": "Reading manifest",
       "detail": "libs/maybe_sync/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19969,
+      "at": 13405,
       "phase": "Reading manifest",
       "detail": "libs/napi_sys/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19969,
+      "at": 13405,
       "phase": "Reading manifest",
       "detail": "libs/node_resolver/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19969,
+      "at": 13405,
       "phase": "Reading manifest",
       "detail": "libs/node_shim/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19970,
+      "at": 13405,
       "phase": "Reading manifest",
       "detail": "libs/npm/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19970,
+      "at": 13405,
       "phase": "Reading manifest",
       "detail": "libs/npm_cache/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19970,
+      "at": 13406,
       "phase": "Reading manifest",
       "detail": "libs/npm_installer/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19971,
+      "at": 13406,
       "phase": "Reading manifest",
       "detail": "libs/npmrc/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19971,
+      "at": 13406,
       "phase": "Reading manifest",
       "detail": "libs/ops/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19971,
+      "at": 13406,
       "phase": "Reading manifest",
       "detail": "libs/ops/compile_test_runner/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19971,
+      "at": 13406,
       "phase": "Reading manifest",
       "detail": "libs/package_json/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19971,
+      "at": 13406,
       "phase": "Reading manifest",
       "detail": "libs/print/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19971,
+      "at": 13406,
       "phase": "Reading manifest",
       "detail": "libs/resolver/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19972,
+      "at": 13406,
       "phase": "Reading manifest",
       "detail": "libs/serde_v8/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19972,
+      "at": 13406,
       "phase": "Reading manifest",
       "detail": "runtime/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19972,
+      "at": 13407,
       "phase": "Reading manifest",
       "detail": "runtime/features/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19972,
+      "at": 13408,
       "phase": "Reading manifest",
       "detail": "runtime/permissions/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19973,
+      "at": 13408,
       "phase": "Reading manifest",
       "detail": "runtime/subprocess_windows/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19973,
+      "at": 13408,
       "phase": "Reading manifest",
       "detail": "tests/bench/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19973,
+      "at": 13408,
       "phase": "Reading manifest",
       "detail": "tests/bench_util/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19973,
+      "at": 13408,
       "phase": "Reading manifest",
       "detail": "tests/ffi/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19973,
+      "at": 13408,
       "phase": "Reading manifest",
       "detail": "tests/integration/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19974,
+      "at": 13408,
       "phase": "Reading manifest",
       "detail": "tests/napi/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19974,
+      "at": 13408,
       "phase": "Reading manifest",
       "detail": "tests/node_compat/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19974,
+      "at": 13408,
       "phase": "Reading manifest",
       "detail": "tests/specs/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19974,
+      "at": 13409,
       "phase": "Reading manifest",
       "detail": "tests/unit/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19974,
+      "at": 13409,
       "phase": "Reading manifest",
       "detail": "tests/unit_node/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19974,
+      "at": 13409,
       "phase": "Reading manifest",
       "detail": "tests/util/lib/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19975,
+      "at": 13409,
       "phase": "Reading manifest",
       "detail": "tests/util/server/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19975,
+      "at": 13409,
       "phase": "Reading manifest",
       "detail": "tests/util/test_macro/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19975,
+      "at": 13409,
       "phase": "Reading manifest",
       "detail": "tools/bsdiff_helper/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19975,
+      "at": 13409,
       "phase": "Reading manifest",
       "detail": "ext/broadcast_channel/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19976,
+      "at": 13409,
       "phase": "Reading manifest",
       "detail": "ext/console/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19976,
+      "at": 13409,
       "phase": "Reading manifest",
       "detail": "ext/os/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19976,
+      "at": 13410,
       "phase": "Reading manifest",
       "detail": "ext/process/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19977,
+      "at": 13410,
       "phase": "Reading manifest",
       "detail": "ext/tls/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19977,
+      "at": 13410,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/CAPITALS/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19978,
+      "at": 13410,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/MixedCase/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19978,
+      "at": 13410,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/add/0.5.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19979,
+      "at": 13410,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/add/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19979,
+      "at": 13410,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/augments-global/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19979,
+      "at": 13410,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/better-say-hello/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19979,
+      "at": 13411,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/bin/0.5.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19980,
+      "at": 13411,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/bin/0.6.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19980,
+      "at": 13411,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/bin/0.7.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19981,
+      "at": 13411,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/bin/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19981,
+      "at": 13411,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/bin-created-by-lifecycle/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19981,
+      "at": 13411,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/binary-package/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19982,
+      "at": 13411,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/binary-package-linux/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19982,
+      "at": 13411,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/binary-package-mac/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19982,
+      "at": 13411,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/binary-package-windows/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19983,
+      "at": 13411,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/breaking-change-between-versions/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19983,
+      "at": 13411,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/breaking-change-between-versions/2.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19983,
+      "at": 13412,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/browser-export-condition/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19984,
+      "at": 13412,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/browser-field/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19984,
+      "at": 13412,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/browser-field-map/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19985,
+      "at": 13412,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/builtin-module-module/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19985,
+      "at": 13412,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/bundled-add/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19986,
+      "at": 13412,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/bundled-deps/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19986,
+      "at": 13412,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/check-error/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19987,
+      "at": 13412,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/check-worker-globals/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19987,
+      "at": 13412,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/child-process-fork/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19988,
+      "at": 13413,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-deep-relative-reexport/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19988,
+      "at": 13413,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-default-export/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19989,
+      "at": 13413,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-exportstar-reexport/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19989,
+      "at": 13413,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-import-dual/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19990,
+      "at": 13413,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-internal-types-default-export/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19990,
+      "at": 13413,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-invalid-name-exports/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19990,
+      "at": 13413,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-local-global-decls/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19991,
+      "at": 13413,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-module-export-assignment/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19991,
+      "at": 13413,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-module-export-assignment-number/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19991,
+      "at": 13414,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-module-exports-require-member/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19992,
+      "at": 13414,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-module-exports-require-member-narrow/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19992,
+      "at": 13414,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-module-exports-require-member-nested/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19992,
+      "at": 13414,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-module-exports-require-member-umd/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19993,
+      "at": 13414,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-multiple-exports/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19993,
+      "at": 13414,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-pkg-imports/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19993,
+      "at": 13414,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-reexport-collision/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19994,
+      "at": 13414,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-reexport-noext-main/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19994,
+      "at": 13414,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-reexport-relative-parent/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19994,
+      "at": 13414,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-reexport-same-specifier-in-sub-folder/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19994,
+      "at": 13414,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-require-esm/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19995,
+      "at": 13415,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-require-esm/1.0.0/esm/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19995,
+      "at": 13415,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-require-node-builtin/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19995,
+      "at": 13415,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-this-in-exports/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19996,
+      "at": 13415,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cjs-with-file-stem/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19998,
+      "at": 13415,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/cli-with-permissions/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19998,
+      "at": 13415,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/conditional-exports/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19998,
+      "at": 13415,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/conditional-exports-node/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19999,
+      "at": 13415,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/conditional-exports-strict/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19999,
+      "at": 13415,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/create/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 19999,
+      "at": 13415,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/create-require/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20000,
+      "at": 13416,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/css-export/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20000,
+      "at": 13416,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/d-ext/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20000,
+      "at": 13416,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/deno/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20001,
+      "at": 13416,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/dep-cannot-parse/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20001,
+      "at": 13416,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/deprecated-package/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20002,
+      "at": 13416,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/deprecated-package-with-bin/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20002,
+      "at": 13417,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/different-nested-dep/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20002,
+      "at": 13417,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/different-nested-dep-child/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20003,
+      "at": 13417,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/different-nested-dep-child/2.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20003,
+      "at": 13417,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/directories-bin/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20003,
+      "at": 13417,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/dual-cjs-esm/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20004,
+      "at": 13417,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/dual-cjs-esm/1.0.0/cjs/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20004,
+      "at": 13418,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/dual-cjs-esm/1.0.0/subpath/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20004,
+      "at": 13418,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/dual-cjs-esm-dep/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20005,
+      "at": 13418,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/dual-cjs-esm-dep-missing/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20005,
+      "at": 13418,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/dynamic-import/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20006,
+      "at": 13418,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/env-var-re-export/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20006,
+      "at": 13418,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/esm-basic/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20007,
+      "at": 13418,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/esm-import-cjs-default/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20007,
+      "at": 13418,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/esm-import-deep-cjs/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20007,
+      "at": 13418,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/esm-package-no-default-export-types/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20008,
+      "at": 13418,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/exec-file/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20008,
+      "at": 13419,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/exec-fs-permissions/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20008,
+      "at": 13419,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/extra-info/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20009,
+      "at": 13419,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/fallible-imports/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20009,
+      "at": 13419,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/file-dep/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20009,
+      "at": 13419,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/file-dts-dmts-dcts/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20010,
+      "at": 13419,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/globals/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20010,
+      "at": 13419,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/has-patch-versions/0.1.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20010,
+      "at": 13419,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/has-patch-versions/0.1.1/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20011,
+      "at": 13419,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/has-patch-versions/0.2.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20011,
+      "at": 13419,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/has-pre-release/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20011,
+      "at": 13420,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/has-pre-release/2.0.0-beta.1/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20012,
+      "at": 13420,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/has-pre-release/2.0.0-beta.2/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20012,
+      "at": 13420,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/hoisted-cycle-a/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20012,
+      "at": 13420,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/hoisted-cycle-a/2.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20013,
+      "at": 13420,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/hoisted-cycle-b/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20013,
+      "at": 13420,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/hoisted-cycle-b/2.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20013,
+      "at": 13420,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/hoisted-cycle-trigger/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20014,
+      "at": 13420,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/hoisted-nested-grandchild-chain/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20014,
+      "at": 13420,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/hoisted-nested-grandchild-chain/2.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20014,
+      "at": 13420,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/hoisted-nested-grandchild-parent/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20015,
+      "at": 13420,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/hoisted-walkup-chain/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20016,
+      "at": 13421,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/hoisted-walkup-chain/2.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20016,
+      "at": 13421,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/hoisted-walkup-needs-chain2/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20017,
+      "at": 13421,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/hoisted-walkup-needs-x2/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20017,
+      "at": 13421,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/hoisted-walkup-x/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20017,
+      "at": 13421,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/hoisted-walkup-x/2.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20018,
+      "at": 13421,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/imports-package-json/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20018,
+      "at": 13421,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/imports-package-json/1.0.0/sub_path/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20019,
+      "at": 13421,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/index-export-no-types/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20019,
+      "at": 13421,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/insiders-tag/0.0.0-insiders.fc3a063/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20020,
+      "at": 13421,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/insiders-tag/0.0.0-insiders.fe49d70/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20020,
+      "at": 13422,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/insiders-tag/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20020,
+      "at": 13422,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/install-launch-cjs-temp-dir/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20021,
+      "at": 13422,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/install-no-ext/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20021,
+      "at": 13422,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/invalid-bin-target/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20021,
+      "at": 13422,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/legacy-subpath-main/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20022,
+      "at": 13422,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/legacy-subpath-main/1.0.0/subpath/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20022,
+      "at": 13422,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/lifecycle-scripts-cjs/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20022,
+      "at": 13422,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/lifecycle-scripts-init-cwd/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20023,
+      "at": 13422,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/lifecycle-scripts-simple/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20023,
+      "at": 13422,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/lossy-utf8-module/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20023,
+      "at": 13422,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/lossy-utf8-package-json/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20023,
+      "at": 13423,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/lossy-utf8-script/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20024,
+      "at": 13423,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/min-release-age-latest/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20024,
+      "at": 13423,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/min-release-age-latest/2.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20024,
+      "at": 13423,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/mjs-reexport-cjs/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20025,
+      "at": 13423,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/monaco-editor/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20025,
+      "at": 13423,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/multi-bin/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20025,
+      "at": 13423,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/multiple-arch-deps/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20026,
+      "at": 13423,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/multiple-arches-win32-arm64/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20026,
+      "at": 13423,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/multiple-arches-win32-x64/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20026,
+      "at": 13423,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/needs-different-nested-dep-child-v2/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20027,
+      "at": 13424,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/no-shasums/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20027,
+      "at": 13424,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/no-types-cjs/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20027,
+      "at": 13424,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/no-types-in-conditional-exports/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20027,
+      "at": 13424,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/node-addon/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20028,
+      "at": 13424,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/node-addon-implicit-node-gyp/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20028,
+      "at": 13424,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/node-lifecycle-scripts/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20029,
+      "at": 13424,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/non-existent-dep/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20029,
+      "at": 13424,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/non-existent-dep-version/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20029,
+      "at": 13424,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/non-existent-optional-peer/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20030,
+      "at": 13424,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/one-bin/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20030,
+      "at": 13425,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/peer-dep-base/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20030,
+      "at": 13425,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/peer-dep-base/1.1.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20031,
+      "at": 13425,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/peer-dep-consumer/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20031,
+      "at": 13425,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/peer-dep-consumer-2/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20031,
+      "at": 13425,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/peer-dep-specific-constraint/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20032,
+      "at": 13425,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/peer-dep-test-child/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20032,
+      "at": 13425,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/peer-dep-test-child/2.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20032,
+      "at": 13425,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/peer-dep-test-grandchild/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20033,
+      "at": 13425,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/peer-dep-test-peer/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20033,
+      "at": 13426,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/peer-dep-test-peer/2.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20033,
+      "at": 13426,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/permissions-outside-package/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20034,
+      "at": 13426,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/pre-release-latest-min-age/1.0.0-dev.1/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20034,
+      "at": 13426,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/pre-release-latest-min-age/1.0.0-dev.2/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20034,
+      "at": 13426,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/pre-release-stable-latest/0.45.1/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20035,
+      "at": 13426,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/pre-release-stable-latest/1.0.0-beta.13/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20035,
+      "at": 13426,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/pre-release-stable-latest/1.0.0-beta.18/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20071,
+      "at": 13426,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/pre-release-stable-latest/1.0.0-beta.9/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20076,
+      "at": 13426,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/pre-release-stable-latest/1.0.0-beta.9-c26fd2f/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20077,
+      "at": 13426,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/pre-release-with-nightlies/1.0.0-beta.13/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20078,
+      "at": 13426,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/pre-release-with-nightlies/1.0.0-beta.32/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20078,
+      "at": 13427,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/pre-release-with-nightlies/1.0.0-beta.9-commit.d91dfb5/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20079,
+      "at": 13427,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/print-npm-user-agent/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20079,
+      "at": 13427,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/print-version/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20079,
+      "at": 13427,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/print-version/2.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20080,
+      "at": 13427,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/reexport-from-non-export/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20080,
+      "at": 13427,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/require-added-nm-folder/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20080,
+      "at": 13427,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/require-non-existent/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20080,
+      "at": 13427,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/require-resolve/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20081,
+      "at": 13427,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/reserved-word-exports/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20081,
+      "at": 13427,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/say-hello/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20081,
+      "at": 13428,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/say-hello-on-install/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20082,
+      "at": 13428,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/scripts-with-publish-date/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20082,
+      "at": 13428,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/sloppy-import/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20083,
+      "at": 13428,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/spawn-keeps-npm-state/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20083,
+      "at": 13428,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/special-chars-in-bin-name/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20083,
+      "at": 13428,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/specifier-two-slashes/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20084,
+      "at": 13428,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/sub-folders/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20084,
+      "at": 13428,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/subtract/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20084,
+      "at": 13428,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/tarballs-npmjs/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20084,
+      "at": 13428,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/tarballs-privateserver2/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20085,
+      "at": 13428,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/transitive-bin/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20085,
+      "at": 13429,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/trust-downgrade/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20085,
+      "at": 13429,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/trust-downgrade/1.1.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20086,
+      "at": 13429,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/trusted-publisher/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20086,
+      "at": 13429,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/try-write/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20086,
+      "at": 13429,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/type-commonjs/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20086,
+      "at": 13429,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/types/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20087,
+      "at": 13429,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/types-ambient/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20087,
+      "at": 13429,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/types-entry-value-not-exists/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20087,
+      "at": 13429,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/types-exports-import-types/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20088,
+      "at": 13429,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/types-exports-subpaths/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20088,
+      "at": 13430,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/types-nested-js-dts/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20088,
+      "at": 13430,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/types-no-types-entry/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20089,
+      "at": 13430,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/types-pkg-json-import/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20089,
+      "at": 13430,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/types_imported/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20089,
+      "at": 13430,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/typescript-file/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20090,
+      "at": 13430,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/unicode-subpath/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20090,
+      "at": 13430,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/unsafe-proto-bin/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20090,
+      "at": 13430,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/unstable/1.0.0-beta.1/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20090,
+      "at": 13430,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/update-latest-semver/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20091,
+      "at": 13431,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/update-latest-semver/1.0.1/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20091,
+      "at": 13431,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/using-vuln/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20091,
+      "at": 13431,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/wasm-esm/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20091,
+      "at": 13431,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/with-vuln1/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20092,
+      "at": 13431,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/with-vuln1/1.1.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20092,
+      "at": 13431,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/with-vuln2/1.5.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20092,
+      "at": 13432,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/with-vuln2/2.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20093,
+      "at": 13432,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/with-vuln3/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20093,
+      "at": 13432,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/with-vuln3/1.1.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20093,
+      "at": 13432,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/x-min-dep-age/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20093,
+      "at": 13432,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@denotest/x-min-dep-age/2.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20094,
+      "at": 13432,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@types/denotest__index-export-no-types/0.5.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20094,
+      "at": 13433,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm/@types/denotest__index-export-no-types/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20094,
+      "at": 13433,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm-jsr/@jsr/denotest__add/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20094,
+      "at": 13433,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm-private/@denotest/basic/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20095,
+      "at": 13433,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm-private/@denotest/tarballs-privateserver2/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20095,
+      "at": 13433,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm-private/@denotest/tarballs-privateserver404/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20095,
+      "at": 13433,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm-private2/@denotest/tarballs-privateserver2/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20096,
+      "at": 13433,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm-private2/@denotest2/basic/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20096,
+      "at": 13433,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm-private3/@denotest3/basic/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20096,
+      "at": 13433,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm-private3/@denotest3/gitlab-pkg/1.0.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20096,
+      "at": 13433,
       "phase": "Reading manifest",
       "detail": "tests/registry/npm-private3/@denotest3/gitlab-pkg/1.1.0/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20097,
+      "at": 13433,
       "phase": "Reading manifest",
       "detail": "tests/sqlite_extension/Cargo.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20097,
+      "at": 13434,
       "phase": "Reading manifest",
       "detail": "tests/testdata/commonjs/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20098,
+      "at": 13434,
       "phase": "Reading manifest",
       "detail": "tests/testdata/npm/different_nested_dep/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20098,
+      "at": 13434,
       "phase": "Reading manifest",
       "detail": "tests/testdata/run/with_package_json/with_stop/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 20098,
+      "at": 13434,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
-      "total": 14
+      "total": 77
     },
     {
-      "at": 26604,
+      "at": 16236,
       "phase": "Indexing your code",
-      "detail": "5000 files indexed · 14 direct dependencies to check",
+      "detail": "5000 files indexed · 77 direct dependencies to check",
       "done": 0,
-      "total": 14
+      "total": 77
     },
     {
-      "at": 26604,
+      "at": 16236,
       "phase": "Checking the crates.io",
       "detail": "deno_panic (installed 0.2.1)",
       "done": 0,
-      "total": 14
+      "total": 77
     },
     {
-      "at": 26604,
+      "at": 16236,
       "phase": "Checking the crates.io",
       "detail": "esbuild_client (installed 0.7.2)",
       "done": 0,
-      "total": 14
+      "total": 77
     },
     {
-      "at": 26604,
+      "at": 16236,
       "phase": "Checking the crates.io",
       "detail": "keyring (installed 3.6.3)",
       "done": 0,
-      "total": 14
+      "total": 77
     },
     {
-      "at": 26604,
+      "at": 16236,
       "phase": "Checking the crates.io",
       "detail": "locked-tripwire (installed 0.1.1)",
       "done": 0,
-      "total": 14
+      "total": 77
     },
     {
-      "at": 26806,
+      "at": 16236,
+      "phase": "Checking the crates.io",
+      "detail": "plist (installed 1.0.0)",
+      "done": 0,
+      "total": 77
+    },
+    {
+      "at": 16236,
+      "phase": "Checking the crates.io",
+      "detail": "wasm_dep_analyzer (installed 0.4.0)",
+      "done": 0,
+      "total": 77
+    },
+    {
+      "at": 16236,
+      "phase": "Checking the crates.io",
+      "detail": "wasmparser (installed 0.244.0)",
+      "done": 0,
+      "total": 77
+    },
+    {
+      "at": 16236,
+      "phase": "Checking the crates.io",
+      "detail": "laufey (installed 0.6.1)",
+      "done": 0,
+      "total": 77
+    },
+    {
+      "at": 16438,
+      "phase": "Reading release notes and changelog",
+      "detail": "keyring 3.6.3 → 4.1.6",
+      "done": 0,
+      "total": 77
+    },
+    {
+      "at": 16445,
       "phase": "Up to date",
       "detail": "deno_panic@0.2.1",
       "done": 1,
-      "total": 14
+      "total": 77
     },
     {
-      "at": 26806,
+      "at": 16445,
       "phase": "Checking the crates.io",
-      "detail": "plist (installed 1.0.0)",
+      "detail": "libnghttp2 (installed 1.68.0)",
       "done": 1,
-      "total": 14
+      "total": 77
     },
     {
-      "at": 26820,
+      "at": 16446,
+      "phase": "Reading release notes and changelog",
+      "detail": "locked-tripwire 0.1.1 → 0.1.1002",
+      "done": 1,
+      "total": 77
+    },
+    {
+      "at": 16452,
       "phase": "Up to date",
       "detail": "esbuild_client@0.7.2",
       "done": 2,
-      "total": 14
+      "total": 77
     },
     {
-      "at": 26820,
+      "at": 16452,
       "phase": "Checking the crates.io",
-      "detail": "wasm_dep_analyzer (installed 0.4.0)",
+      "detail": "errno (installed 0.3.10)",
       "done": 2,
-      "total": 14
+      "total": 77
     },
     {
-      "at": 26855,
-      "phase": "Reading release notes and changelog",
-      "detail": "locked-tripwire 0.1.1 → 0.1.1002",
-      "done": 2,
-      "total": 14
-    },
-    {
-      "at": 26857,
-      "phase": "Reading release notes and changelog",
-      "detail": "keyring 3.6.3 → 4.1.6",
-      "done": 2,
-      "total": 14
-    },
-    {
-      "at": 26933,
-      "phase": "Reading release notes and changelog",
-      "detail": "plist 1.0.0 → 1.10.0",
-      "done": 2,
-      "total": 14
-    },
-    {
-      "at": 26969,
+      "at": 16452,
       "phase": "Up to date",
       "detail": "wasm_dep_analyzer@0.4.0",
       "done": 3,
-      "total": 14
+      "total": 77
     },
     {
-      "at": 26969,
-      "phase": "Checking the crates.io",
-      "detail": "wasmparser (installed 0.244.0)",
-      "done": 3,
-      "total": 14
-    },
-    {
-      "at": 27124,
-      "phase": "Reading release notes and changelog",
-      "detail": "wasmparser 0.244.0 → 0.255.0",
-      "done": 3,
-      "total": 14
-    },
-    {
-      "at": 30145,
-      "phase": "Comparing the public API surface",
-      "detail": "plist 1.0.0 → 1.10.0 · 1 evidence source",
-      "done": 3,
-      "total": 14
-    },
-    {
-      "at": 30145,
-      "phase": "No breaking changes to look for",
-      "detail": "plist 1.0.0 → 1.10.0",
-      "done": 3,
-      "total": 14
-    },
-    {
-      "at": 30149,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "plist 1.0.0 → 1.10.0",
-      "done": 3,
-      "total": 14
-    },
-    {
-      "at": 30559,
-      "phase": "Checked",
-      "detail": "plist 1.0.0 → 1.10.0 · safe for your code · no breaking changes found",
-      "done": 4,
-      "total": 14
-    },
-    {
-      "at": 30559,
-      "phase": "Checking the crates.io",
-      "detail": "laufey (installed 0.6.1)",
-      "done": 4,
-      "total": 14
-    },
-    {
-      "at": 30681,
-      "phase": "Up to date",
-      "detail": "laufey@0.6.1",
-      "done": 5,
-      "total": 14
-    },
-    {
-      "at": 30681,
-      "phase": "Checking the crates.io",
-      "detail": "libnghttp2 (installed 1.68.0)",
-      "done": 5,
-      "total": 14
-    },
-    {
-      "at": 30810,
-      "phase": "Up to date",
-      "detail": "libnghttp2@1.68.0",
-      "done": 6,
-      "total": 14
-    },
-    {
-      "at": 30810,
-      "phase": "Checking the crates.io",
-      "detail": "errno (installed 0.3.10)",
-      "done": 6,
-      "total": 14
-    },
-    {
-      "at": 30912,
-      "phase": "Reading release notes and changelog",
-      "detail": "errno 0.3.10 → 0.3.14",
-      "done": 6,
-      "total": 14
-    },
-    {
-      "at": 30984,
-      "phase": "Comparing the public API surface",
-      "detail": "keyring 3.6.3 → 4.1.6 · 1 evidence source",
-      "done": 6,
-      "total": 14
-    },
-    {
-      "at": 30984,
-      "phase": "No breaking changes to look for",
-      "detail": "keyring 3.6.3 → 4.1.6",
-      "done": 6,
-      "total": 14
-    },
-    {
-      "at": 30986,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "keyring 3.6.3 → 4.1.6",
-      "done": 6,
-      "total": 14
-    },
-    {
-      "at": 31001,
-      "phase": "Comparing the public API surface",
-      "detail": "wasmparser 0.244.0 → 0.255.0 · 1 evidence source",
-      "done": 6,
-      "total": 14
-    },
-    {
-      "at": 31001,
-      "phase": "No breaking changes to look for",
-      "detail": "wasmparser 0.244.0 → 0.255.0",
-      "done": 6,
-      "total": 14
-    },
-    {
-      "at": 31003,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "wasmparser 0.244.0 → 0.255.0",
-      "done": 6,
-      "total": 14
-    },
-    {
-      "at": 31270,
-      "phase": "Comparing the public API surface",
-      "detail": "locked-tripwire 0.1.1 → 0.1.1002 · 1 evidence source",
-      "done": 6,
-      "total": 14
-    },
-    {
-      "at": 31270,
-      "phase": "No breaking changes to look for",
-      "detail": "locked-tripwire 0.1.1 → 0.1.1002",
-      "done": 6,
-      "total": 14
-    },
-    {
-      "at": 31273,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "locked-tripwire 0.1.1 → 0.1.1002",
-      "done": 6,
-      "total": 14
-    },
-    {
-      "at": 31331,
-      "phase": "Checked",
-      "detail": "keyring 3.6.3 → 4.1.6 · worth taking · no breaking changes, and it improves on what you have",
-      "done": 7,
-      "total": 14
-    },
-    {
-      "at": 31331,
+      "at": 16452,
       "phase": "Checking the crates.io",
       "detail": "yasna (installed 0.5.0)",
-      "done": 7,
-      "total": 14
+      "done": 3,
+      "total": 77
     },
     {
-      "at": 31473,
+      "at": 16453,
       "phase": "Reading release notes and changelog",
-      "detail": "yasna 0.5.0 → 0.5.2",
-      "done": 7,
-      "total": 14
+      "detail": "plist 1.0.0 → 1.10.0",
+      "done": 3,
+      "total": 77
     },
     {
-      "at": 31523,
-      "phase": "Checked",
-      "detail": "wasmparser 0.244.0 → 0.255.0 · worth taking · no breaking changes, and it improves on what you have",
-      "done": 8,
-      "total": 14
+      "at": 16454,
+      "phase": "Up to date",
+      "detail": "laufey@0.6.1",
+      "done": 4,
+      "total": 77
     },
     {
-      "at": 31523,
+      "at": 16454,
       "phase": "Checking the crates.io",
       "detail": "az (installed 1.2.1)",
-      "done": 8,
-      "total": 14
+      "done": 4,
+      "total": 77
     },
     {
-      "at": 31573,
-      "phase": "Checked",
-      "detail": "locked-tripwire 0.1.1 → 0.1.1002 · safe for your code · no breaking changes found",
-      "done": 9,
-      "total": 14
+      "at": 16507,
+      "phase": "Reading release notes and changelog",
+      "detail": "wasmparser 0.244.0 → 0.255.0",
+      "done": 4,
+      "total": 77
     },
     {
-      "at": 31573,
+      "at": 16566,
+      "phase": "Reading release notes and changelog",
+      "detail": "errno 0.3.10 → 0.3.14",
+      "done": 4,
+      "total": 77
+    },
+    {
+      "at": 16572,
+      "phase": "Up to date",
+      "detail": "libnghttp2@1.68.0",
+      "done": 5,
+      "total": 77
+    },
+    {
+      "at": 16572,
       "phase": "Checking the crates.io",
       "detail": "capacity_builder (installed 0.5.0)",
-      "done": 9,
-      "total": 14
+      "done": 5,
+      "total": 77
     },
     {
-      "at": 31643,
+      "at": 16573,
       "phase": "Reading release notes and changelog",
       "detail": "az 1.2.1 → 1.3.0",
-      "done": 9,
-      "total": 14
+      "done": 5,
+      "total": 77
     },
     {
-      "at": 31706,
+      "at": 16574,
+      "phase": "Reading release notes and changelog",
+      "detail": "yasna 0.5.0 → 0.5.2",
+      "done": 5,
+      "total": 77
+    },
+    {
+      "at": 16698,
       "phase": "Up to date",
       "detail": "capacity_builder@0.5.0",
-      "done": 10,
-      "total": 14
+      "done": 6,
+      "total": 77
     },
     {
-      "at": 31706,
+      "at": 16698,
       "phase": "Checking the crates.io",
       "detail": "inventory (installed 0.3.21)",
-      "done": 10,
-      "total": 14
+      "done": 6,
+      "total": 77
     },
     {
-      "at": 31823,
+      "at": 16818,
       "phase": "Reading release notes and changelog",
       "detail": "inventory 0.3.21 → 0.3.24",
-      "done": 10,
-      "total": 14
+      "done": 6,
+      "total": 77
     },
     {
-      "at": 32189,
+      "at": 16932,
       "phase": "Comparing the public API surface",
       "detail": "az 1.2.1 → 1.3.0 · 1 evidence source",
-      "done": 10,
-      "total": 14
+      "done": 6,
+      "total": 77
     },
     {
-      "at": 32189,
+      "at": 16932,
       "phase": "No breaking changes to look for",
       "detail": "az 1.2.1 → 1.3.0",
-      "done": 10,
-      "total": 14
+      "done": 6,
+      "total": 77
     },
     {
-      "at": 32191,
+      "at": 16935,
       "phase": "Weighing what this upgrade is worth",
       "detail": "az 1.2.1 → 1.3.0",
-      "done": 10,
-      "total": 14
+      "done": 6,
+      "total": 77
     },
     {
-      "at": 32488,
+      "at": 17300,
       "phase": "Checked",
       "detail": "az 1.2.1 → 1.3.0 · safe for your code · no breaking changes found",
-      "done": 11,
-      "total": 14
+      "done": 7,
+      "total": 77
     },
     {
-      "at": 32876,
+      "at": 17300,
+      "phase": "Checking the crates.io",
+      "detail": "wasm_dep_analyzer (installed 0.4.0)",
+      "done": 7,
+      "total": 77
+    },
+    {
+      "at": 17300,
+      "phase": "Up to date",
+      "detail": "wasm_dep_analyzer@0.4.0",
+      "done": 8,
+      "total": 77
+    },
+    {
+      "at": 17300,
+      "phase": "Checking the crates.io",
+      "detail": "fastwebsockets (installed 0.10.0)",
+      "done": 8,
+      "total": 77
+    },
+    {
+      "at": 17424,
+      "phase": "Up to date",
+      "detail": "fastwebsockets@0.10.0",
+      "done": 9,
+      "total": 77
+    },
+    {
+      "at": 17424,
+      "phase": "Checking the crates.io",
+      "detail": "http (installed 1.3.0)",
+      "done": 9,
+      "total": 77
+    },
+    {
+      "at": 17498,
+      "phase": "Reading release notes and changelog",
+      "detail": "http 1.3.0 → 1.3.1",
+      "done": 9,
+      "total": 77
+    },
+    {
+      "at": 18734,
       "phase": "Comparing the public API surface",
       "detail": "errno 0.3.10 → 0.3.14 · 1 evidence source",
-      "done": 11,
-      "total": 14
+      "done": 9,
+      "total": 77
     },
     {
-      "at": 32876,
+      "at": 18734,
       "phase": "No breaking changes to look for",
       "detail": "errno 0.3.10 → 0.3.14",
-      "done": 11,
-      "total": 14
+      "done": 9,
+      "total": 77
     },
     {
-      "at": 32878,
+      "at": 18737,
       "phase": "Weighing what this upgrade is worth",
       "detail": "errno 0.3.10 → 0.3.14",
-      "done": 11,
-      "total": 14
+      "done": 9,
+      "total": 77
     },
     {
-      "at": 33173,
+      "at": 19152,
       "phase": "Checked",
       "detail": "errno 0.3.10 → 0.3.14 · safe for your code · no breaking changes found",
-      "done": 12,
-      "total": 14
+      "done": 10,
+      "total": 77
     },
     {
-      "at": 34594,
+      "at": 19152,
+      "phase": "Checking the crates.io",
+      "detail": "http-body-util (installed 0.1.3)",
+      "done": 10,
+      "total": 77
+    },
+    {
+      "at": 19254,
+      "phase": "Reading release notes and changelog",
+      "detail": "http-body-util 0.1.3 → 0.1.4",
+      "done": 10,
+      "total": 77
+    },
+    {
+      "at": 20200,
       "phase": "Comparing the public API surface",
       "detail": "yasna 0.5.0 → 0.5.2 · 1 evidence source",
-      "done": 12,
-      "total": 14
+      "done": 10,
+      "total": 77
     },
     {
-      "at": 34594,
+      "at": 20200,
       "phase": "No breaking changes to look for",
       "detail": "yasna 0.5.0 → 0.5.2",
-      "done": 12,
-      "total": 14
+      "done": 10,
+      "total": 77
     },
     {
-      "at": 34596,
+      "at": 20203,
       "phase": "Weighing what this upgrade is worth",
       "detail": "yasna 0.5.0 → 0.5.2",
-      "done": 12,
-      "total": 14
+      "done": 10,
+      "total": 77
     },
     {
-      "at": 34933,
+      "at": 20292,
+      "phase": "Comparing the public API surface",
+      "detail": "plist 1.0.0 → 1.10.0 · 1 evidence source",
+      "done": 10,
+      "total": 77
+    },
+    {
+      "at": 20292,
+      "phase": "No breaking changes to look for",
+      "detail": "plist 1.0.0 → 1.10.0",
+      "done": 10,
+      "total": 77
+    },
+    {
+      "at": 20294,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "plist 1.0.0 → 1.10.0",
+      "done": 10,
+      "total": 77
+    },
+    {
+      "at": 20647,
       "phase": "Checked",
       "detail": "yasna 0.5.0 → 0.5.2 · safe for your code · no breaking changes found",
-      "done": 13,
-      "total": 14
+      "done": 11,
+      "total": 77
     },
     {
-      "at": 36052,
+      "at": 20647,
+      "phase": "Checking the crates.io",
+      "detail": "hyper (installed 1.6.0)",
+      "done": 11,
+      "total": 77
+    },
+    {
+      "at": 20729,
+      "phase": "Checked",
+      "detail": "plist 1.0.0 → 1.10.0 · safe for your code · no breaking changes found",
+      "done": 12,
+      "total": 77
+    },
+    {
+      "at": 20729,
+      "phase": "Checking the crates.io",
+      "detail": "hyper-util (installed 0.1.10)",
+      "done": 12,
+      "total": 77
+    },
+    {
+      "at": 20806,
+      "phase": "Reading release notes and changelog",
+      "detail": "hyper 1.6.0 → 1.11.0",
+      "done": 12,
+      "total": 77
+    },
+    {
+      "at": 20842,
+      "phase": "Reading release notes and changelog",
+      "detail": "hyper-util 0.1.10 → 0.1.20",
+      "done": 12,
+      "total": 77
+    },
+    {
+      "at": 21148,
+      "phase": "Comparing the public API surface",
+      "detail": "http 1.3.0 → 1.3.1 · 1 evidence source",
+      "done": 12,
+      "total": 77
+    },
+    {
+      "at": 21148,
+      "phase": "No breaking changes to look for",
+      "detail": "http 1.3.0 → 1.3.1",
+      "done": 12,
+      "total": 77
+    },
+    {
+      "at": 21150,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "http 1.3.0 → 1.3.1",
+      "done": 12,
+      "total": 77
+    },
+    {
+      "at": 21339,
+      "phase": "Comparing the public API surface",
+      "detail": "locked-tripwire 0.1.1 → 0.1.1002 · 1 evidence source",
+      "done": 12,
+      "total": 77
+    },
+    {
+      "at": 21339,
+      "phase": "No breaking changes to look for",
+      "detail": "locked-tripwire 0.1.1 → 0.1.1002",
+      "done": 12,
+      "total": 77
+    },
+    {
+      "at": 21342,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "locked-tripwire 0.1.1 → 0.1.1002",
+      "done": 12,
+      "total": 77
+    },
+    {
+      "at": 21579,
+      "phase": "Checked",
+      "detail": "http 1.3.0 → 1.3.1 · safe for your code · no breaking changes found",
+      "done": 13,
+      "total": 77
+    },
+    {
+      "at": 21579,
+      "phase": "Checking the crates.io",
+      "detail": "uuid (installed 1.16.0)",
+      "done": 13,
+      "total": 77
+    },
+    {
+      "at": 21637,
+      "phase": "Comparing the public API surface",
+      "detail": "keyring 3.6.3 → 4.1.6 · 2 evidence sources",
+      "done": 13,
+      "total": 77
+    },
+    {
+      "at": 21637,
+      "phase": "No breaking changes to look for",
+      "detail": "keyring 3.6.3 → 4.1.6",
+      "done": 13,
+      "total": 77
+    },
+    {
+      "at": 21640,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "keyring 3.6.3 → 4.1.6",
+      "done": 13,
+      "total": 77
+    },
+    {
+      "at": 21703,
+      "phase": "Reading release notes and changelog",
+      "detail": "uuid 1.16.0 → 1.24.0",
+      "done": 13,
+      "total": 77
+    },
+    {
+      "at": 21868,
+      "phase": "Checked",
+      "detail": "locked-tripwire 0.1.1 → 0.1.1002 · safe for your code · no breaking changes found",
+      "done": 14,
+      "total": 77
+    },
+    {
+      "at": 21868,
+      "phase": "Checking the crates.io",
+      "detail": "rusty_v8 (installed 150.4.0)",
+      "done": 14,
+      "total": 77
+    },
+    {
+      "at": 21992,
+      "phase": "Up to date",
+      "detail": "rusty_v8@150.4.0",
+      "done": 15,
+      "total": 77
+    },
+    {
+      "at": 21992,
+      "phase": "Checking the crates.io",
+      "detail": "v8x_backend (installed 149.4.0-rc.4)",
+      "done": 15,
+      "total": 77
+    },
+    {
+      "at": 22014,
       "phase": "Comparing the public API surface",
       "detail": "inventory 0.3.21 → 0.3.24 · 1 evidence source",
-      "done": 13,
-      "total": 14
+      "done": 15,
+      "total": 77
     },
     {
-      "at": 36052,
+      "at": 22014,
       "phase": "No breaking changes to look for",
       "detail": "inventory 0.3.21 → 0.3.24",
-      "done": 13,
-      "total": 14
+      "done": 15,
+      "total": 77
     },
     {
-      "at": 36054,
+      "at": 22016,
       "phase": "Weighing what this upgrade is worth",
       "detail": "inventory 0.3.21 → 0.3.24",
-      "done": 13,
-      "total": 14
+      "done": 15,
+      "total": 77
     },
     {
-      "at": 36392,
+      "at": 22075,
+      "phase": "Checked",
+      "detail": "keyring 3.6.3 → 4.1.6 · worth taking · no breaking changes, and it improves on what you have",
+      "done": 16,
+      "total": 77
+    },
+    {
+      "at": 22075,
+      "phase": "Checking the crates.io",
+      "detail": "anyhow (installed 1.0.0)",
+      "done": 16,
+      "total": 77
+    },
+    {
+      "at": 22115,
+      "phase": "Up to date",
+      "detail": "v8x_backend@149.4.0-rc.4",
+      "done": 17,
+      "total": 77
+    },
+    {
+      "at": 22115,
+      "phase": "Checking the crates.io",
+      "detail": "async-trait (installed 0.1.68)",
+      "done": 17,
+      "total": 77
+    },
+    {
+      "at": 22202,
+      "phase": "Reading release notes and changelog",
+      "detail": "async-trait 0.1.68 → 0.1.92",
+      "done": 17,
+      "total": 77
+    },
+    {
+      "at": 22211,
+      "phase": "Reading release notes and changelog",
+      "detail": "anyhow 1.0.0 → 1.0.104",
+      "done": 17,
+      "total": 77
+    },
+    {
+      "at": 22419,
       "phase": "Checked",
       "detail": "inventory 0.3.21 → 0.3.24 · worth taking · no breaking changes, and it improves on what you have",
-      "done": 14,
-      "total": 14
+      "done": 18,
+      "total": 77
+    },
+    {
+      "at": 22419,
+      "phase": "Checking the crates.io",
+      "detail": "deno_error (installed 0.7.0)",
+      "done": 18,
+      "total": 77
+    },
+    {
+      "at": 22486,
+      "phase": "Reading release notes and changelog",
+      "detail": "deno_error 0.7.0 → 0.7.3",
+      "done": 18,
+      "total": 77
+    },
+    {
+      "at": 22535,
+      "phase": "Comparing the public API surface",
+      "detail": "wasmparser 0.244.0 → 0.255.0 · 1 evidence source",
+      "done": 18,
+      "total": 77
+    },
+    {
+      "at": 22535,
+      "phase": "No breaking changes to look for",
+      "detail": "wasmparser 0.244.0 → 0.255.0",
+      "done": 18,
+      "total": 77
+    },
+    {
+      "at": 22538,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "wasmparser 0.244.0 → 0.255.0",
+      "done": 18,
+      "total": 77
+    },
+    {
+      "at": 22843,
+      "phase": "Comparing the public API surface",
+      "detail": "hyper-util 0.1.10 → 0.1.20 · 1 evidence source",
+      "done": 18,
+      "total": 77
+    },
+    {
+      "at": 22843,
+      "phase": "No breaking changes to look for",
+      "detail": "hyper-util 0.1.10 → 0.1.20",
+      "done": 18,
+      "total": 77
+    },
+    {
+      "at": 22845,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "hyper-util 0.1.10 → 0.1.20",
+      "done": 18,
+      "total": 77
+    },
+    {
+      "at": 22987,
+      "phase": "Checked",
+      "detail": "wasmparser 0.244.0 → 0.255.0 · worth taking · no breaking changes, and it improves on what you have",
+      "done": 19,
+      "total": 77
+    },
+    {
+      "at": 22987,
+      "phase": "Checking the crates.io",
+      "detail": "futures (installed 0.3.26)",
+      "done": 19,
+      "total": 77
+    },
+    {
+      "at": 23099,
+      "phase": "Reading release notes and changelog",
+      "detail": "futures 0.3.26 → 0.3.33",
+      "done": 19,
+      "total": 77
+    },
+    {
+      "at": 23343,
+      "phase": "Checked",
+      "detail": "hyper-util 0.1.10 → 0.1.20 · worth taking · no breaking changes, and it improves on what you have",
+      "done": 20,
+      "total": 77
+    },
+    {
+      "at": 23343,
+      "phase": "Checking the crates.io",
+      "detail": "hashlink (installed 0.8.2)",
+      "done": 20,
+      "total": 77
+    },
+    {
+      "at": 23410,
+      "phase": "Reading release notes and changelog",
+      "detail": "hashlink 0.8.2 → 0.8.4",
+      "done": 20,
+      "total": 77
+    },
+    {
+      "at": 24052,
+      "phase": "Comparing the public API surface",
+      "detail": "http-body-util 0.1.3 → 0.1.4 · 1 evidence source",
+      "done": 20,
+      "total": 77
+    },
+    {
+      "at": 24052,
+      "phase": "No breaking changes to look for",
+      "detail": "http-body-util 0.1.3 → 0.1.4",
+      "done": 20,
+      "total": 77
+    },
+    {
+      "at": 24055,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "http-body-util 0.1.3 → 0.1.4",
+      "done": 20,
+      "total": 77
+    },
+    {
+      "at": 24458,
+      "phase": "Comparing the public API surface",
+      "detail": "hyper 1.6.0 → 1.11.0 · 3 evidence sources",
+      "done": 20,
+      "total": 77
+    },
+    {
+      "at": 24458,
+      "phase": "Searching your code for 1 breaking change",
+      "detail": "hyper 1.6.0 → 1.11.0",
+      "done": 20,
+      "total": 77
+    },
+    {
+      "at": 24463,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "hyper 1.6.0 → 1.11.0",
+      "done": 20,
+      "total": 77
+    },
+    {
+      "at": 24512,
+      "phase": "Checked",
+      "detail": "http-body-util 0.1.3 → 0.1.4 · safe for your code · no breaking changes found",
+      "done": 21,
+      "total": 77
+    },
+    {
+      "at": 24512,
+      "phase": "Checking the crates.io",
+      "detail": "sha2 (installed 0.10.1)",
+      "done": 21,
+      "total": 77
+    },
+    {
+      "at": 24632,
+      "phase": "Reading release notes and changelog",
+      "detail": "sha2 0.10.1 → 0.10.9",
+      "done": 21,
+      "total": 77
+    },
+    {
+      "at": 24993,
+      "phase": "Checked",
+      "detail": "hyper 1.6.0 → 1.11.0 · safe for your code · 1 upstream change, none used here",
+      "done": 22,
+      "total": 77
+    },
+    {
+      "at": 24993,
+      "phase": "Checking the crates.io",
+      "detail": "thiserror (installed 2.0.0)",
+      "done": 22,
+      "total": 77
+    },
+    {
+      "at": 25106,
+      "phase": "Reading release notes and changelog",
+      "detail": "thiserror 2.0.0 → 2.0.20",
+      "done": 22,
+      "total": 77
+    },
+    {
+      "at": 25298,
+      "phase": "Comparing the public API surface",
+      "detail": "futures 0.3.26 → 0.3.33 · 3 evidence sources",
+      "done": 22,
+      "total": 77
+    },
+    {
+      "at": 25298,
+      "phase": "No breaking changes to look for",
+      "detail": "futures 0.3.26 → 0.3.33",
+      "done": 22,
+      "total": 77
+    },
+    {
+      "at": 25300,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "futures 0.3.26 → 0.3.33",
+      "done": 22,
+      "total": 77
+    },
+    {
+      "at": 25500,
+      "phase": "Comparing the public API surface",
+      "detail": "hashlink 0.8.2 → 0.8.4 · 1 evidence source",
+      "done": 22,
+      "total": 77
+    },
+    {
+      "at": 25500,
+      "phase": "No breaking changes to look for",
+      "detail": "hashlink 0.8.2 → 0.8.4",
+      "done": 22,
+      "total": 77
+    },
+    {
+      "at": 25502,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "hashlink 0.8.2 → 0.8.4",
+      "done": 22,
+      "total": 77
+    },
+    {
+      "at": 25783,
+      "phase": "Checked",
+      "detail": "futures 0.3.26 → 0.3.33 · worth taking · no breaking changes, and it improves on what you have",
+      "done": 23,
+      "total": 77
+    },
+    {
+      "at": 25783,
+      "phase": "Checking the crates.io",
+      "detail": "xxhash-rust (installed 0.8.0)",
+      "done": 23,
+      "total": 77
+    },
+    {
+      "at": 25901,
+      "phase": "Reading release notes and changelog",
+      "detail": "xxhash-rust 0.8.0 → 0.8.18",
+      "done": 23,
+      "total": 77
+    },
+    {
+      "at": 25917,
+      "phase": "Checked",
+      "detail": "hashlink 0.8.2 → 0.8.4 · safe for your code · no breaking changes found",
+      "done": 24,
+      "total": 77
+    },
+    {
+      "at": 25917,
+      "phase": "Checking the crates.io",
+      "detail": "libloading (installed 0.7.0)",
+      "done": 24,
+      "total": 77
+    },
+    {
+      "at": 25954,
+      "phase": "Comparing the public API surface",
+      "detail": "uuid 1.16.0 → 1.24.0 · 2 evidence sources",
+      "done": 24,
+      "total": 77
+    },
+    {
+      "at": 25954,
+      "phase": "No breaking changes to look for",
+      "detail": "uuid 1.16.0 → 1.24.0",
+      "done": 24,
+      "total": 77
+    },
+    {
+      "at": 25956,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "uuid 1.16.0 → 1.24.0",
+      "done": 24,
+      "total": 77
+    },
+    {
+      "at": 25985,
+      "phase": "Reading release notes and changelog",
+      "detail": "libloading 0.7.0 → 0.7.4",
+      "done": 24,
+      "total": 77
+    },
+    {
+      "at": 26417,
+      "phase": "Checked",
+      "detail": "uuid 1.16.0 → 1.24.0 · worth taking · no breaking changes, and it improves on what you have",
+      "done": 25,
+      "total": 77
+    },
+    {
+      "at": 26417,
+      "phase": "Checking the crates.io",
+      "detail": "arrayref (installed 0.3.9)",
+      "done": 25,
+      "total": 77
+    },
+    {
+      "at": 26465,
+      "phase": "Comparing the public API surface",
+      "detail": "async-trait 0.1.68 → 0.1.92 · 1 evidence source",
+      "done": 25,
+      "total": 77
+    },
+    {
+      "at": 26465,
+      "phase": "No breaking changes to look for",
+      "detail": "async-trait 0.1.68 → 0.1.92",
+      "done": 25,
+      "total": 77
+    },
+    {
+      "at": 26467,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "async-trait 0.1.68 → 0.1.92",
+      "done": 25,
+      "total": 77
+    },
+    {
+      "at": 26533,
+      "phase": "Up to date",
+      "detail": "arrayref@0.3.9",
+      "done": 26,
+      "total": 77
+    },
+    {
+      "at": 26533,
+      "phase": "Checking the crates.io",
+      "detail": "wide (installed 0.7.32)",
+      "done": 26,
+      "total": 77
+    },
+    {
+      "at": 26626,
+      "phase": "Reading release notes and changelog",
+      "detail": "wide 0.7.32 → 0.7.34",
+      "done": 26,
+      "total": 77
+    },
+    {
+      "at": 26704,
+      "phase": "Comparing the public API surface",
+      "detail": "deno_error 0.7.0 → 0.7.3 · 1 evidence source",
+      "done": 26,
+      "total": 77
+    },
+    {
+      "at": 26705,
+      "phase": "No breaking changes to look for",
+      "detail": "deno_error 0.7.0 → 0.7.3",
+      "done": 26,
+      "total": 77
+    },
+    {
+      "at": 26707,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "deno_error 0.7.0 → 0.7.3",
+      "done": 26,
+      "total": 77
+    },
+    {
+      "at": 26825,
+      "phase": "Checked",
+      "detail": "async-trait 0.1.68 → 0.1.92 · worth taking · no breaking changes, and it improves on what you have",
+      "done": 27,
+      "total": 77
+    },
+    {
+      "at": 26825,
+      "phase": "Checking the crates.io",
+      "detail": "stringcase (installed 0.4.0)",
+      "done": 27,
+      "total": 77
+    },
+    {
+      "at": 26894,
+      "phase": "Up to date",
+      "detail": "stringcase@0.4.0",
+      "done": 28,
+      "total": 77
+    },
+    {
+      "at": 26894,
+      "phase": "Checking the crates.io",
+      "detail": "syn-match (installed 0.3.1)",
+      "done": 28,
+      "total": 77
+    },
+    {
+      "at": 26959,
+      "phase": "Comparing the public API surface",
+      "detail": "anyhow 1.0.0 → 1.0.104 · 1 evidence source",
+      "done": 28,
+      "total": 77
+    },
+    {
+      "at": 26959,
+      "phase": "No breaking changes to look for",
+      "detail": "anyhow 1.0.0 → 1.0.104",
+      "done": 28,
+      "total": 77
+    },
+    {
+      "at": 26962,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "anyhow 1.0.0 → 1.0.104",
+      "done": 28,
+      "total": 77
+    },
+    {
+      "at": 27005,
+      "phase": "Up to date",
+      "detail": "syn-match@0.3.1",
+      "done": 29,
+      "total": 77
+    },
+    {
+      "at": 27005,
+      "phase": "Checking the crates.io",
+      "detail": "futures-channel (installed 0.3.31)",
+      "done": 29,
+      "total": 77
+    },
+    {
+      "at": 27120,
+      "phase": "Reading release notes and changelog",
+      "detail": "futures-channel 0.3.31 → 0.3.33",
+      "done": 29,
+      "total": 77
+    },
+    {
+      "at": 27194,
+      "phase": "Checked",
+      "detail": "deno_error 0.7.0 → 0.7.3 · safe for your code · no breaking changes found",
+      "done": 30,
+      "total": 77
+    },
+    {
+      "at": 27194,
+      "phase": "Checking the crates.io",
+      "detail": "libc (installed 0.2.172)",
+      "done": 30,
+      "total": 77
+    },
+    {
+      "at": 27286,
+      "phase": "Reading release notes and changelog",
+      "detail": "libc 0.2.172 → 0.2.189",
+      "done": 30,
+      "total": 77
+    },
+    {
+      "at": 27388,
+      "phase": "Checked",
+      "detail": "anyhow 1.0.0 → 1.0.104 · worth taking · no breaking changes, and it improves on what you have",
+      "done": 31,
+      "total": 77
+    },
+    {
+      "at": 27388,
+      "phase": "Checking the crates.io",
+      "detail": "windows-sys (installed 0.59.0)",
+      "done": 31,
+      "total": 77
+    },
+    {
+      "at": 27414,
+      "phase": "Comparing the public API surface",
+      "detail": "futures-channel 0.3.31 → 0.3.33 · 1 evidence source",
+      "done": 31,
+      "total": 77
+    },
+    {
+      "at": 27414,
+      "phase": "No breaking changes to look for",
+      "detail": "futures-channel 0.3.31 → 0.3.33",
+      "done": 31,
+      "total": 77
+    },
+    {
+      "at": 27416,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "futures-channel 0.3.31 → 0.3.33",
+      "done": 31,
+      "total": 77
+    },
+    {
+      "at": 27513,
+      "phase": "Reading release notes and changelog",
+      "detail": "windows-sys 0.59.0 → 0.61.2",
+      "done": 31,
+      "total": 77
+    },
+    {
+      "at": 27663,
+      "phase": "Checked",
+      "detail": "futures-channel 0.3.31 → 0.3.33 · worth taking · no breaking changes, and it improves on what you have",
+      "done": 32,
+      "total": 77
+    },
+    {
+      "at": 27663,
+      "phase": "Checking the crates.io",
+      "detail": "deno_unsync (installed 0.0.0)",
+      "done": 32,
+      "total": 77
+    },
+    {
+      "at": 27771,
+      "phase": "Reading release notes and changelog",
+      "detail": "deno_unsync 0.0.0 → 0.4.4",
+      "done": 32,
+      "total": 77
+    },
+    {
+      "at": 28665,
+      "phase": "Comparing the public API surface",
+      "detail": "sha2 0.10.1 → 0.10.9 · 1 evidence source",
+      "done": 32,
+      "total": 77
+    },
+    {
+      "at": 28665,
+      "phase": "No breaking changes to look for",
+      "detail": "sha2 0.10.1 → 0.10.9",
+      "done": 32,
+      "total": 77
+    },
+    {
+      "at": 28667,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "sha2 0.10.1 → 0.10.9",
+      "done": 32,
+      "total": 77
+    },
+    {
+      "at": 29126,
+      "phase": "Checked",
+      "detail": "sha2 0.10.1 → 0.10.9 · safe for your code · no breaking changes found",
+      "done": 33,
+      "total": 77
+    },
+    {
+      "at": 29126,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/CAPITALS (installed 1.0.0)",
+      "done": 33,
+      "total": 77
+    },
+    {
+      "at": 29346,
+      "phase": "Up to date",
+      "detail": "@denotest/CAPITALS@1.0.0",
+      "done": 34,
+      "total": 77
+    },
+    {
+      "at": 29346,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/add (installed 1.0.0)",
+      "done": 34,
+      "total": 77
+    },
+    {
+      "at": 29385,
+      "phase": "Comparing the public API surface",
+      "detail": "thiserror 2.0.0 → 2.0.20 · 1 evidence source",
+      "done": 34,
+      "total": 77
+    },
+    {
+      "at": 29385,
+      "phase": "No breaking changes to look for",
+      "detail": "thiserror 2.0.0 → 2.0.20",
+      "done": 34,
+      "total": 77
+    },
+    {
+      "at": 29387,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "thiserror 2.0.0 → 2.0.20",
+      "done": 34,
+      "total": 77
+    },
+    {
+      "at": 29524,
+      "phase": "Up to date",
+      "detail": "@denotest/add@1.0.0",
+      "done": 35,
+      "total": 77
+    },
+    {
+      "at": 29524,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/non-existent (installed 1.0.0)",
+      "done": 35,
+      "total": 77
+    },
+    {
+      "at": 29606,
+      "phase": "Comparing the public API surface",
+      "detail": "wide 0.7.32 → 0.7.34 · 1 evidence source",
+      "done": 35,
+      "total": 77
+    },
+    {
+      "at": 29606,
+      "phase": "No breaking changes to look for",
+      "detail": "wide 0.7.32 → 0.7.34",
+      "done": 35,
+      "total": 77
+    },
+    {
+      "at": 29608,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "wide 0.7.32 → 0.7.34",
+      "done": 35,
+      "total": 77
+    },
+    {
+      "at": 29623,
+      "phase": "Comparing the public API surface",
+      "detail": "libc 0.2.172 → 0.2.189 · 9 evidence sources",
+      "done": 35,
+      "total": 77
+    },
+    {
+      "at": 29623,
+      "phase": "No breaking changes to look for",
+      "detail": "libc 0.2.172 → 0.2.189",
+      "done": 35,
+      "total": 77
+    },
+    {
+      "at": 29626,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "libc 0.2.172 → 0.2.189",
+      "done": 35,
+      "total": 77
+    },
+    {
+      "at": 29660,
+      "phase": "Up to date",
+      "detail": "@denotest/non-existent@1.0.0",
+      "done": 36,
+      "total": 77
+    },
+    {
+      "at": 29660,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/cjs-reexport-noext-main (installed 1.0.0)",
+      "done": 36,
+      "total": 77
+    },
+    {
+      "at": 29790,
+      "phase": "Up to date",
+      "detail": "@denotest/cjs-reexport-noext-main@1.0.0",
+      "done": 37,
+      "total": 77
+    },
+    {
+      "at": 29790,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/dual-cjs-esm (installed 1.0.0)",
+      "done": 37,
+      "total": 77
+    },
+    {
+      "at": 29817,
+      "phase": "Checked",
+      "detail": "thiserror 2.0.0 → 2.0.20 · worth taking · no breaking changes, and it improves on what you have",
+      "done": 38,
+      "total": 77
+    },
+    {
+      "at": 29817,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/different-nested-dep-child (installed 1.0.0)",
+      "done": 38,
+      "total": 77
+    },
+    {
+      "at": 29904,
+      "phase": "Comparing the public API surface",
+      "detail": "xxhash-rust 0.8.0 → 0.8.18 · 1 evidence source",
+      "done": 38,
+      "total": 77
+    },
+    {
+      "at": 29904,
+      "phase": "No breaking changes to look for",
+      "detail": "xxhash-rust 0.8.0 → 0.8.18",
+      "done": 38,
+      "total": 77
+    },
+    {
+      "at": 29907,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "xxhash-rust 0.8.0 → 0.8.18",
+      "done": 38,
+      "total": 77
+    },
+    {
+      "at": 29920,
+      "phase": "Up to date",
+      "detail": "@denotest/dual-cjs-esm@1.0.0",
+      "done": 39,
+      "total": 77
+    },
+    {
+      "at": 29920,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/cjs-default-export (installed 1.0.0)",
+      "done": 39,
+      "total": 77
+    },
+    {
+      "at": 29955,
+      "phase": "Up to date",
+      "detail": "@denotest/different-nested-dep-child@1.0.0",
+      "done": 40,
+      "total": 77
+    },
+    {
+      "at": 29955,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/hoisted-cycle-b (installed 1.0.0)",
+      "done": 40,
+      "total": 77
+    },
+    {
+      "at": 30008,
+      "phase": "Checked",
+      "detail": "wide 0.7.32 → 0.7.34 · safe for your code · no breaking changes found",
+      "done": 41,
+      "total": 77
+    },
+    {
+      "at": 30008,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/hoisted-cycle-a (installed 1.0.0)",
+      "done": 41,
+      "total": 77
+    },
+    {
+      "at": 30089,
+      "phase": "Up to date",
+      "detail": "@denotest/hoisted-cycle-b@1.0.0",
+      "done": 42,
+      "total": 77
+    },
+    {
+      "at": 30089,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/hoisted-cycle-a (installed 1.0.0)",
+      "done": 42,
+      "total": 77
+    },
+    {
+      "at": 30095,
+      "phase": "Up to date",
+      "detail": "@denotest/cjs-default-export@1.0.0",
+      "done": 43,
+      "total": 77
+    },
+    {
+      "at": 30095,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/hoisted-cycle-b (installed 1.0.0)",
+      "done": 43,
+      "total": 77
+    },
+    {
+      "at": 30123,
+      "phase": "Up to date",
+      "detail": "@denotest/hoisted-cycle-b@1.0.0",
+      "done": 44,
+      "total": 77
+    },
+    {
+      "at": 30123,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/different-nested-dep-child (installed 1.0.0)",
+      "done": 44,
+      "total": 77
+    },
+    {
+      "at": 30138,
+      "phase": "Up to date",
+      "detail": "@denotest/hoisted-cycle-a@1.0.0",
+      "done": 45,
+      "total": 77
+    },
+    {
+      "at": 30138,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/hoisted-nested-grandchild-chain (installed 2.0.0)",
+      "done": 45,
+      "total": 77
+    },
+    {
+      "at": 30143,
+      "phase": "Comparing the public API surface",
+      "detail": "libloading 0.7.0 → 0.7.4 · 1 evidence source",
+      "done": 45,
+      "total": 77
+    },
+    {
+      "at": 30143,
+      "phase": "No breaking changes to look for",
+      "detail": "libloading 0.7.0 → 0.7.4",
+      "done": 45,
+      "total": 77
+    },
+    {
+      "at": 30145,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "libloading 0.7.0 → 0.7.4",
+      "done": 45,
+      "total": 77
+    },
+    {
+      "at": 30147,
+      "phase": "Checked",
+      "detail": "libc 0.2.172 → 0.2.189 · worth taking · no breaking changes, and it improves on what you have",
+      "done": 46,
+      "total": 77
+    },
+    {
+      "at": 30147,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/hoisted-walkup-x (installed 1.0.0)",
+      "done": 46,
+      "total": 77
+    },
+    {
+      "at": 30154,
+      "phase": "Up to date",
+      "detail": "@denotest/different-nested-dep-child@1.0.0",
+      "done": 47,
+      "total": 77
+    },
+    {
+      "at": 30154,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/hoisted-walkup-chain (installed 2.0.0)",
+      "done": 47,
+      "total": 77
+    },
+    {
+      "at": 30159,
+      "phase": "Up to date",
+      "detail": "@denotest/hoisted-cycle-a@1.0.0",
+      "done": 48,
+      "total": 77
+    },
+    {
+      "at": 30159,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/hoisted-walkup-x (installed 2.0.0)",
+      "done": 48,
+      "total": 77
+    },
+    {
+      "at": 30264,
+      "phase": "Up to date",
+      "detail": "@denotest/hoisted-nested-grandchild-chain@2.0.0",
+      "done": 49,
+      "total": 77
+    },
+    {
+      "at": 30264,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/hoisted-walkup-chain (installed 1.0.0)",
+      "done": 49,
+      "total": 77
+    },
+    {
+      "at": 30286,
+      "phase": "Up to date",
+      "detail": "@denotest/hoisted-walkup-x@1.0.0",
+      "done": 50,
+      "total": 77
+    },
+    {
+      "at": 30286,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/bin (installed 1.0.0)",
+      "done": 50,
+      "total": 77
+    },
+    {
+      "at": 30288,
+      "phase": "Up to date",
+      "detail": "@denotest/hoisted-walkup-x@2.0.0",
+      "done": 51,
+      "total": 77
+    },
+    {
+      "at": 30288,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/different-nested-dep-child (installed 2.0.0)",
+      "done": 51,
+      "total": 77
+    },
+    {
+      "at": 30306,
+      "phase": "Checked",
+      "detail": "xxhash-rust 0.8.0 → 0.8.18 · worth taking · no breaking changes, and it improves on what you have",
+      "done": 52,
+      "total": 77
+    },
+    {
+      "at": 30306,
+      "phase": "Checking the npm registry",
+      "detail": "node-gyp (installed 10.1.0)",
+      "done": 52,
+      "total": 77
+    },
+    {
+      "at": 30311,
+      "phase": "Up to date",
+      "detail": "@denotest/different-nested-dep-child@2.0.0",
+      "done": 53,
+      "total": 77
+    },
+    {
+      "at": 30311,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/bin (installed 1.0.0)",
+      "done": 53,
+      "total": 77
+    },
+    {
+      "at": 30360,
+      "phase": "Reading release notes and changelog",
+      "detail": "node-gyp 10.1.0 → 10.3.1",
+      "done": 53,
+      "total": 77
+    },
+    {
+      "at": 30360,
+      "phase": "Up to date",
+      "detail": "@denotest/hoisted-walkup-chain@1.0.0",
+      "done": 54,
+      "total": 77
+    },
+    {
+      "at": 30360,
+      "phase": "Checking the npm registry",
+      "detail": "cowsay (installed 1.5.0)",
+      "done": 54,
+      "total": 77
+    },
+    {
+      "at": 30361,
+      "phase": "Up to date",
+      "detail": "@denotest/hoisted-walkup-chain@2.0.0",
+      "done": 55,
+      "total": 77
+    },
+    {
+      "at": 30361,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/non-existent (installed 1.0.0)",
+      "done": 55,
+      "total": 77
+    },
+    {
+      "at": 30387,
+      "phase": "Up to date",
+      "detail": "@denotest/non-existent@1.0.0",
+      "done": 56,
+      "total": 77
+    },
+    {
+      "at": 30387,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/esm-basic (installed 99.99.99)",
+      "done": 56,
+      "total": 77
+    },
+    {
+      "at": 30421,
+      "phase": "Up to date",
+      "detail": "@denotest/bin@1.0.0",
+      "done": 57,
+      "total": 77
+    },
+    {
+      "at": 30421,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/peer-dep-test-peer (installed 1.0.0)",
+      "done": 57,
+      "total": 77
+    },
+    {
+      "at": 30421,
+      "phase": "Up to date",
+      "detail": "@denotest/bin@1.0.0",
+      "done": 58,
+      "total": 77
+    },
+    {
+      "at": 30421,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/peer-dep-test-peer (installed 2.0.0)",
+      "done": 58,
+      "total": 77
+    },
+    {
+      "at": 30451,
+      "phase": "Reading release notes and changelog",
+      "detail": "cowsay 1.5.0 → 1.6.0",
+      "done": 58,
+      "total": 77
+    },
+    {
+      "at": 30527,
+      "phase": "Up to date",
+      "detail": "@denotest/esm-basic@99.99.99",
+      "done": 59,
+      "total": 77
+    },
+    {
+      "at": 30527,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/say-hello (installed 1.0.0)",
+      "done": 59,
+      "total": 77
+    },
+    {
+      "at": 30530,
+      "phase": "Checked",
+      "detail": "libloading 0.7.0 → 0.7.4 · safe for your code · no breaking changes found",
+      "done": 60,
+      "total": 77
+    },
+    {
+      "at": 30530,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/bin (installed 1.0.0)",
+      "done": 60,
+      "total": 77
+    },
+    {
+      "at": 30549,
+      "phase": "Up to date",
+      "detail": "@denotest/peer-dep-test-peer@2.0.0",
+      "done": 61,
+      "total": 77
+    },
+    {
+      "at": 30549,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/types-entry-value-not-exists (installed 1.0.0)",
+      "done": 61,
+      "total": 77
+    },
+    {
+      "at": 30550,
+      "phase": "Up to date",
+      "detail": "@denotest/peer-dep-test-peer@1.0.0",
+      "done": 62,
+      "total": 77
+    },
+    {
+      "at": 30550,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/with-vuln2 (installed 1.5.0)",
+      "done": 62,
+      "total": 77
+    },
+    {
+      "at": 30557,
+      "phase": "Up to date",
+      "detail": "@denotest/bin@1.0.0",
+      "done": 63,
+      "total": 77
+    },
+    {
+      "at": 30557,
+      "phase": "Checking the crates.io",
+      "detail": "rusqlite (installed 0.37.0)",
+      "done": 63,
+      "total": 77
+    },
+    {
+      "at": 30653,
+      "phase": "Up to date",
+      "detail": "@denotest/say-hello@1.0.0",
+      "done": 64,
+      "total": 77
+    },
+    {
+      "at": 30653,
+      "phase": "Checking the npm registry",
+      "detail": "colorette (installed 1.2.1)",
+      "done": 64,
+      "total": 77
+    },
+    {
+      "at": 30676,
+      "phase": "Reading release notes and changelog",
+      "detail": "rusqlite 0.37.0 → 0.40.2",
+      "done": 64,
+      "total": 77
+    },
+    {
+      "at": 30685,
+      "phase": "Reading release notes and changelog",
+      "detail": "colorette 1.2.1 → 1.4.0",
+      "done": 64,
+      "total": 77
+    },
+    {
+      "at": 30686,
+      "phase": "Up to date",
+      "detail": "@denotest/with-vuln2@1.5.0",
+      "done": 65,
+      "total": 77
+    },
+    {
+      "at": 30686,
+      "phase": "Checking the npm registry",
+      "detail": "left-pad (installed 1.3.0)",
+      "done": 65,
+      "total": 77
+    },
+    {
+      "at": 30687,
+      "phase": "Up to date",
+      "detail": "@denotest/types-entry-value-not-exists@1.0.0",
+      "done": 66,
+      "total": 77
+    },
+    {
+      "at": 30687,
+      "phase": "Checking the npm registry",
+      "detail": "imports_exports (installed 1.0.0)",
+      "done": 66,
+      "total": 77
+    },
+    {
+      "at": 30771,
+      "phase": "Up to date",
+      "detail": "left-pad@1.3.0",
+      "done": 67,
+      "total": 77
+    },
+    {
+      "at": 30771,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/different-nested-dep (installed 1.0.0)",
+      "done": 67,
+      "total": 77
+    },
+    {
+      "at": 30824,
+      "phase": "Up to date",
+      "detail": "imports_exports@1.0.0",
+      "done": 68,
+      "total": 77
+    },
+    {
+      "at": 30824,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/different-nested-dep-child (installed 2.0.0)",
+      "done": 68,
+      "total": 77
+    },
+    {
+      "at": 30844,
+      "phase": "Up to date",
+      "detail": "@denotest/different-nested-dep-child@2.0.0",
+      "done": 69,
+      "total": 77
+    },
+    {
+      "at": 30844,
+      "phase": "Checking the npm registry",
+      "detail": "@denotest/check-error (installed 1.0.0)",
+      "done": 69,
+      "total": 77
+    },
+    {
+      "at": 30902,
+      "phase": "Up to date",
+      "detail": "@denotest/different-nested-dep@1.0.0",
+      "done": 70,
+      "total": 77
+    },
+    {
+      "at": 30978,
+      "phase": "Up to date",
+      "detail": "@denotest/check-error@1.0.0",
+      "done": 71,
+      "total": 77
+    },
+    {
+      "at": 31829,
+      "phase": "Comparing the public API surface",
+      "detail": "deno_unsync 0.0.0 → 0.4.4 · 1 evidence source",
+      "done": 71,
+      "total": 77
+    },
+    {
+      "at": 31829,
+      "phase": "No breaking changes to look for",
+      "detail": "deno_unsync 0.0.0 → 0.4.4",
+      "done": 71,
+      "total": 77
+    },
+    {
+      "at": 31831,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "deno_unsync 0.0.0 → 0.4.4",
+      "done": 71,
+      "total": 77
+    },
+    {
+      "at": 31923,
+      "phase": "Comparing the public API surface",
+      "detail": "windows-sys 0.59.0 → 0.61.2 · 2 evidence sources",
+      "done": 71,
+      "total": 77
+    },
+    {
+      "at": 31923,
+      "phase": "No breaking changes to look for",
+      "detail": "windows-sys 0.59.0 → 0.61.2",
+      "done": 71,
+      "total": 77
+    },
+    {
+      "at": 31925,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "windows-sys 0.59.0 → 0.61.2",
+      "done": 71,
+      "total": 77
+    },
+    {
+      "at": 32315,
+      "phase": "Checked",
+      "detail": "deno_unsync 0.0.0 → 0.4.4 · safe for your code · no breaking changes found",
+      "done": 72,
+      "total": 77
+    },
+    {
+      "at": 32500,
+      "phase": "Checked",
+      "detail": "windows-sys 0.59.0 → 0.61.2 · worth taking · no breaking changes, and it improves on what you have",
+      "done": 73,
+      "total": 77
+    },
+    {
+      "at": 34876,
+      "phase": "Comparing the public API surface",
+      "detail": "rusqlite 0.37.0 → 0.40.2 · 3 evidence sources",
+      "done": 73,
+      "total": 77
+    },
+    {
+      "at": 34877,
+      "phase": "No breaking changes to look for",
+      "detail": "rusqlite 0.37.0 → 0.40.2",
+      "done": 73,
+      "total": 77
+    },
+    {
+      "at": 34879,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "rusqlite 0.37.0 → 0.40.2",
+      "done": 73,
+      "total": 77
+    },
+    {
+      "at": 34880,
+      "phase": "Comparing the public API surface",
+      "detail": "cowsay 1.5.0 → 1.6.0 · 1 evidence source",
+      "done": 73,
+      "total": 77
+    },
+    {
+      "at": 34880,
+      "phase": "No breaking changes to look for",
+      "detail": "cowsay 1.5.0 → 1.6.0",
+      "done": 73,
+      "total": 77
+    },
+    {
+      "at": 34882,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "cowsay 1.5.0 → 1.6.0",
+      "done": 73,
+      "total": 77
+    },
+    {
+      "at": 35260,
+      "phase": "Checked",
+      "detail": "cowsay 1.5.0 → 1.6.0 · safe for your code · no breaking changes found",
+      "done": 74,
+      "total": 77
+    },
+    {
+      "at": 35388,
+      "phase": "Comparing the public API surface",
+      "detail": "colorette 1.2.1 → 1.4.0 · 1 evidence source",
+      "done": 74,
+      "total": 77
+    },
+    {
+      "at": 35388,
+      "phase": "No breaking changes to look for",
+      "detail": "colorette 1.2.1 → 1.4.0",
+      "done": 74,
+      "total": 77
+    },
+    {
+      "at": 35391,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "colorette 1.2.1 → 1.4.0",
+      "done": 74,
+      "total": 77
+    },
+    {
+      "at": 35440,
+      "phase": "Checked",
+      "detail": "rusqlite 0.37.0 → 0.40.2 · safe for your code · no breaking changes found",
+      "done": 75,
+      "total": 77
+    },
+    {
+      "at": 35807,
+      "phase": "Checked",
+      "detail": "colorette 1.2.1 → 1.4.0 · safe for your code · no breaking changes found",
+      "done": 76,
+      "total": 77
+    },
+    {
+      "at": 40210,
+      "phase": "Comparing the public API surface",
+      "detail": "node-gyp 10.1.0 → 10.3.1 · 3 evidence sources",
+      "done": 76,
+      "total": 77
+    },
+    {
+      "at": 40210,
+      "phase": "No breaking changes to look for",
+      "detail": "node-gyp 10.1.0 → 10.3.1",
+      "done": 76,
+      "total": 77
+    },
+    {
+      "at": 40215,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "node-gyp 10.1.0 → 10.3.1",
+      "done": 76,
+      "total": 77
+    },
+    {
+      "at": 40871,
+      "phase": "Checked",
+      "detail": "node-gyp 10.1.0 → 10.3.1 · safe for your code · no breaking changes found",
+      "done": 77,
+      "total": 77
     }
   ],
   "candidates": [
+    {
+      "name": "hyper",
+      "ecosystem": "cargo",
+      "current": "1.6.0",
+      "latest": "1.11.0",
+      "selected": "1.11.0",
+      "safeLatest": "1.11.0",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Safe to upgrade. 1 upstream breaking change, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 1,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 3,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "behaviour-change",
+          "summary": "`Http2ClientConnExec` no longer dyn-compatible, because it now expects to",
+          "remediation": "Behaviour changed: `Http2ClientConnExec` no longer dyn-compatible, because it now expects to. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
+          "confidence": "medium",
+          "symbols": [
+            "Http2ClientConnExec"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "anyhow",
+      "ecosystem": "cargo",
+      "current": "1.0.0",
+      "latest": "1.0.104",
+      "selected": "1.0.104",
+      "safeLatest": "1.0.104",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Upgrade recommended. Fixes 1 known vulnerability.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read 25 sets of release notes for anyhow 1.0.104 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "async-trait",
+      "ecosystem": "cargo",
+      "current": "0.1.68",
+      "latest": "0.1.92",
+      "selected": "0.1.92",
+      "safeLatest": "0.1.92",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Upgrade recommended. Drift read 24 sets of release notes for async-trait 0.1.92 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read 24 sets of release notes for async-trait 0.1.92 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
     {
       "name": "az",
       "ecosystem": "cargo",
@@ -2948,6 +4542,86 @@
       "breaking": []
     },
     {
+      "name": "colorette",
+      "ecosystem": "npm",
+      "current": "1.2.1",
+      "latest": "2.0.20",
+      "selected": "1.4.0",
+      "safeLatest": "1.4.0",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift read 3 sets of release notes for colorette 1.4.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read 3 sets of release notes for colorette 1.4.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "cowsay",
+      "ecosystem": "npm",
+      "current": "1.5.0",
+      "latest": "1.6.0",
+      "selected": "1.6.0",
+      "safeLatest": "1.6.0",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. No release notes, changelog, or migration guide was reachable for cowsay 1.6.0.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "No release notes, changelog, or migration guide was reachable for cowsay 1.6.0."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "deno_error",
+      "ecosystem": "cargo",
+      "current": "0.7.0",
+      "latest": "0.7.3",
+      "selected": "0.7.3",
+      "safeLatest": "0.7.3",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift read the release notes for deno_error 0.7.3 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read the release notes for deno_error 0.7.3 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "deno_unsync",
+      "ecosystem": "cargo",
+      "current": "0.0.0",
+      "latest": "0.4.4",
+      "selected": "0.4.4",
+      "safeLatest": "0.4.4",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift read 5 sets of release notes for deno_unsync 0.4.4 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read 5 sets of release notes for deno_unsync 0.4.4 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
       "name": "errno",
       "ecosystem": "cargo",
       "current": "0.3.10",
@@ -2956,14 +4630,132 @@
       "safeLatest": "0.3.14",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read the changelog for errno 0.3.14 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "summary": "Safe to upgrade. Drift read 2 sets of release notes and the changelog for errno 0.3.14 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift read the changelog for errno 0.3.14 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        "Drift read 2 sets of release notes and the changelog for errno 0.3.14 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "futures",
+      "ecosystem": "cargo",
+      "current": "0.3.26",
+      "latest": "0.3.33",
+      "selected": "0.3.33",
+      "safeLatest": "0.3.33",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Upgrade recommended. No breaking changes found for this version of futures.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 3,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "futures-channel",
+      "ecosystem": "cargo",
+      "current": "0.3.31",
+      "latest": "0.3.33",
+      "selected": "0.3.33",
+      "safeLatest": "0.3.33",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Upgrade recommended. Drift read 2 sets of release notes and the changelog for futures-channel 0.3.33 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read 2 sets of release notes and the changelog for futures-channel 0.3.33 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "hashlink",
+      "ecosystem": "cargo",
+      "current": "0.8.2",
+      "latest": "0.12.1",
+      "selected": "0.8.4",
+      "safeLatest": "0.8.4",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift read the release notes and the changelog for hashlink 0.8.4 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read the release notes and the changelog for hashlink 0.8.4 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "http",
+      "ecosystem": "cargo",
+      "current": "1.3.0",
+      "latest": "1.5.0",
+      "selected": "1.3.1",
+      "safeLatest": "1.3.1",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift read the release notes and the changelog for http 1.3.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read the release notes and the changelog for http 1.3.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "http-body-util",
+      "ecosystem": "cargo",
+      "current": "0.1.3",
+      "latest": "0.1.4",
+      "selected": "0.1.4",
+      "safeLatest": "0.1.4",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift read the release notes for http-body-util 0.1.4 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read the release notes for http-body-util 0.1.4 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "hyper-util",
+      "ecosystem": "cargo",
+      "current": "0.1.10",
+      "latest": "0.1.20",
+      "selected": "0.1.20",
+      "safeLatest": "0.1.20",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Upgrade recommended. Drift read 10 sets of release notes and the changelog for hyper-util 0.1.20 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read 10 sets of release notes and the changelog for hyper-util 0.1.20 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
       "breaking": []
     },
@@ -2976,14 +4768,14 @@
       "safeLatest": "0.3.24",
       "status": "clean",
       "risk": "none",
-      "summary": "Upgrade recommended. No release notes, changelog, or migration guide was reachable for inventory 0.3.24.",
+      "summary": "Upgrade recommended. Drift read 3 sets of release notes for inventory 0.3.24 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "upgrade-recommended",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "No release notes, changelog, or migration guide was reachable for inventory 0.3.24."
+        "Drift read 3 sets of release notes for inventory 0.3.24 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
       "breaking": []
     },
@@ -2996,14 +4788,50 @@
       "safeLatest": null,
       "status": "clean",
       "risk": "none",
-      "summary": "Upgrade recommended. No release notes, changelog, or migration guide was reachable for keyring 4.1.6.",
+      "summary": "Upgrade recommended. No breaking changes found for this version of keyring.",
       "recommendation": "upgrade-recommended",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "libc",
+      "ecosystem": "cargo",
+      "current": "0.2.172",
+      "latest": "0.2.189",
+      "selected": "0.2.189",
+      "safeLatest": "0.2.189",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Upgrade recommended. No breaking changes found for this version of libc.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 9,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "libloading",
+      "ecosystem": "cargo",
+      "current": "0.7.0",
+      "latest": "0.9.0",
+      "selected": "0.7.4",
+      "safeLatest": "0.7.4",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. No release notes, changelog, or migration guide was reachable for libloading 0.7.4.",
+      "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "No release notes, changelog, or migration guide was reachable for keyring 4.1.6."
+        "No release notes, changelog, or migration guide was reachable for libloading 0.7.4."
       ],
       "breaking": []
     },
@@ -3028,6 +4856,24 @@
       "breaking": []
     },
     {
+      "name": "node-gyp",
+      "ecosystem": "npm",
+      "current": "10.1.0",
+      "latest": "13.0.1",
+      "selected": "10.3.1",
+      "safeLatest": "10.3.1",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. No breaking changes found for this version of node-gyp.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 3,
+      "gaps": [],
+      "breaking": []
+    },
+    {
       "name": "plist",
       "ecosystem": "cargo",
       "current": "1.0.0",
@@ -3036,15 +4882,91 @@
       "safeLatest": "1.10.0",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. Drift read the changelog for plist 1.10.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "summary": "Safe to upgrade. Drift read 13 sets of release notes and the changelog for plist 1.10.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift read the changelog for plist 1.10.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+        "Drift read 13 sets of release notes and the changelog for plist 1.10.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
+      "breaking": []
+    },
+    {
+      "name": "rusqlite",
+      "ecosystem": "cargo",
+      "current": "0.37.0",
+      "latest": "0.40.2",
+      "selected": "0.40.2",
+      "safeLatest": null,
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. No breaking changes found for this version of rusqlite.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 3,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "sha2",
+      "ecosystem": "cargo",
+      "current": "0.10.1",
+      "latest": "0.11.0",
+      "selected": "0.10.9",
+      "safeLatest": "0.10.9",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. No release notes, changelog, or migration guide was reachable for sha2 0.10.9.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "No release notes, changelog, or migration guide was reachable for sha2 0.10.9."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "thiserror",
+      "ecosystem": "cargo",
+      "current": "2.0.0",
+      "latest": "2.0.20",
+      "selected": "2.0.20",
+      "safeLatest": "2.0.20",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Upgrade recommended. Drift read 20 sets of release notes for thiserror 2.0.20 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read 20 sets of release notes for thiserror 2.0.20 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "uuid",
+      "ecosystem": "cargo",
+      "current": "1.16.0",
+      "latest": "1.24.0",
+      "selected": "1.24.0",
+      "safeLatest": "1.24.0",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Upgrade recommended. No breaking changes found for this version of uuid.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [],
       "breaking": []
     },
     {
@@ -3064,6 +4986,64 @@
       "evidenceCount": 1,
       "gaps": [
         "No release notes, changelog, or migration guide was reachable for wasmparser 0.255.0."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "wide",
+      "ecosystem": "cargo",
+      "current": "0.7.32",
+      "latest": "1.6.1",
+      "selected": "0.7.34",
+      "safeLatest": "0.7.34",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Do not upgrade yet. Drift read the changelog for wide 0.7.34 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "do-not-upgrade-yet",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift read the changelog for wide 0.7.34 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "windows-sys",
+      "ecosystem": "cargo",
+      "current": "0.59.0",
+      "latest": "0.61.2",
+      "selected": "0.61.2",
+      "safeLatest": null,
+      "status": "clean",
+      "risk": "none",
+      "summary": "Upgrade recommended. No breaking changes found for this version of windows-sys.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "xxhash-rust",
+      "ecosystem": "cargo",
+      "current": "0.8.0",
+      "latest": "0.8.18",
+      "selected": "0.8.18",
+      "safeLatest": "0.8.18",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Upgrade recommended. No release notes, changelog, or migration guide was reachable for xxhash-rust 0.8.18.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "No release notes, changelog, or migration guide was reachable for xxhash-rust 0.8.18."
       ],
       "breaking": []
     },
@@ -3089,7 +5069,7 @@
     }
   ],
   "audit": {
-    "checked": 14,
+    "checked": 77,
     "analysed": 0,
     "findings": []
   }

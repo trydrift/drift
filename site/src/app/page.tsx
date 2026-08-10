@@ -1,6 +1,8 @@
 import { instrumentSerif } from "@/lib/fonts";
 import { Demo } from "@/components/demo";
 import { Pipeline } from "@/components/pipeline";
+import { ActionFlow } from "@/components/action-flow";
+import { Terminal } from "@/components/terminal";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { loadRecordings } from "@/lib/load";
 
@@ -34,6 +36,12 @@ export default function Home() {
             className="rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
           >
             How it works
+          </a>
+          <a
+            href="#action"
+            className="hidden rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:block"
+          >
+            Action
           </a>
           <a
             href={GITHUB}
@@ -157,6 +165,50 @@ export default function Home() {
 
         <Pipeline />
 
+        {/* ── The Action ──────────────────────────────────────────────── */}
+        <section id="action" className="scroll-mt-8 pt-16 sm:pt-24">
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
+            <span className="text-faint">//</span> on every dependency change
+          </p>
+          <h2 className={`${instrumentSerif.className} mt-3 text-2xl text-landing sm:text-3xl`}>
+            The same analysis, running without you
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
+            The Action is the only surface where Drift acts while nobody is watching, so what it is
+            allowed to do is worth knowing before you enable it. Out of the box it opens no pull
+            request: it analyses, posts a check, files an issue with the plan, and waits for someone
+            to say yes. Autonomy is a setting you turn on per repository, and every guardrail
+            downgrades an automatic run to an approval request rather than dropping it.
+          </p>
+
+          <div className="mt-7 grid gap-4 lg:grid-cols-[1.15fr_1fr] lg:items-start">
+            <ActionFlow />
+
+            <div className="rounded-2xl border border-border bg-surface/50 p-5">
+              <h3 className="text-sm font-semibold text-foreground">One step in a workflow</h3>
+              <div className="mt-3 overflow-x-auto rounded-xl border border-border bg-[var(--pre-bg)] p-3.5">
+                <pre className="font-mono text-[12px] leading-relaxed text-foreground">
+{`- uses: trydrift/drift@v0
+  with:
+    repo-token: \${{ secrets.GITHUB_TOKEN }}
+    copilot-token: \${{ secrets.DRIFT_COPILOT_TOKEN }}`}
+                </pre>
+              </div>
+              <p className="mt-3 text-[13px] leading-relaxed text-muted">
+                The built-in <code className="font-mono text-[11.5px] text-brand-text">GITHUB_TOKEN</code>{" "}
+                covers everything except invoking Copilot, which GitHub bills per seat and so
+                requires a user-scoped token. Omit it entirely and Drift runs in analysis-only mode:
+                it still finds and reports everything, it just cannot dispatch the fix.
+              </p>
+              <p className="mt-3 text-[13px] leading-relaxed text-muted">
+                Not ready to grant write access at all?{" "}
+                <code className="font-mono text-[11.5px] text-brand-text">dry-run: true</code>{" "}
+                produces the whole report and creates nothing.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* ── Get it ──────────────────────────────────────────────────── */}
         <section id="install" className="scroll-mt-8 pt-16 sm:pt-24">
           <h2 className={`${instrumentSerif.className} text-2xl text-landing sm:text-3xl`}>
@@ -173,18 +225,12 @@ export default function Home() {
               panel — including the ones that are already broken.
             </Point>
             <Point title="GitHub Action">
-              On every dependency change, a pull request that explains itself: what broke, where,
-              and the evidence for each claim.
+              On every dependency change, a check run and — once you have said yes — a pull request
+              that explains itself. <a href="#action" className="text-brand-text underline decoration-dotted underline-offset-2">See the whole run.</a>
             </Point>
           </div>
 
-          <div className="mt-6 overflow-x-auto rounded-xl border border-border bg-[var(--pre-bg)] p-4">
-            <pre className="font-mono text-[13px] leading-relaxed text-foreground">
-              <span className="text-faint">$ </span>npm install -g @usedrift/cli{"\n"}
-              <span className="text-faint">$ </span>drift analyze
-              <span className="cli-cursor text-brand"> ▋</span>
-            </pre>
-          </div>
+          <Terminal />
         </section>
       </main>
 

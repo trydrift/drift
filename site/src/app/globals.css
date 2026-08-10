@@ -141,6 +141,18 @@ html {
 }
 .orb { animation: orb-pulse 1.4s ease-out infinite; }
 
+/* The bar under the Action panel, showing how long the current step has left. */
+@keyframes action-step {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.action-step-progress {
+  transform-origin: left;
+  animation-name: action-step;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+
 @keyframes shimmer {
   100% { transform: translateX(100%); }
 }
@@ -178,6 +190,7 @@ html {
   .animate-fade-in-delayed,
   .animate-rise,
   .orb,
+  .action-step-progress,
   .skeleton::after {
     animation: none;
   }

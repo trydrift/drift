@@ -6,6 +6,7 @@ import gitlab from "@/data/gitlab.json";
 import kubernetes from "@/data/kubernetes.json";
 import deno from "@/data/deno.json";
 import elasticsearch from "@/data/elasticsearch.json";
+import esphome from "@/data/esphome.json";
 
 /**
  * Every recording, in the order the tabs show them.
@@ -22,5 +23,13 @@ import elasticsearch from "@/data/elasticsearch.json";
  * is what lets `recordings.ts` stay the single description of the shape.
  */
 export function loadRecordings(): Recording[] {
-  return [supabase, scrapy, gitlab, kubernetes, deno, elasticsearch] as unknown as Recording[];
+  return [
+    supabase,
+    scrapy,
+    gitlab,
+    kubernetes,
+    deno,
+    elasticsearch,
+    esphome,
+  ] as unknown as Recording[];
 }
