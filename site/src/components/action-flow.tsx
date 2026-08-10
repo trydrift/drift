@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
+import { GhIcon } from "@/components/gh";
 
 /**
  * What the GitHub Action does, as the sequence it actually is.
@@ -16,48 +17,67 @@ import { cn } from "@/lib/cn";
  * So this animates the whole run, ending on the thing that matters most: by
  * default it does not open a pull request at all. It files an issue and waits.
  *
- * The steps are the real ones, in the real order, with the real permissions
- * from `examples/workflows/drift.yml`.
+ * Drawn as the workflow-run page it would be. A developer who has watched a
+ * run go green knows this layout — the run header, the step list with its
+ * status glyphs, the log that scrolls under the open step — and recognising it
+ * costs nothing where reading a fifth kind of card costs attention. The steps
+ * are the real ones, in the real order, with the real permissions from
+ * `examples/workflows/drift.yml`.
  */
 
 interface Step {
   /** What GitHub is doing, in its own vocabulary. */
   title: string;
   detail: string;
-  /** A short line of evidence, rendered monospace. */
-  trace: string;
+  /** The log the step writes, in its own voice. */
+  log: string[];
+  /** Wall-clock, as a run page shows it. */
+  took: string;
 }
 
 const STEPS: Step[] = [
   {
-    title: "A dependency file changes on main",
+    title: "Set up job",
     detail:
       "The workflow triggers on manifests and lockfiles only, so it does not start on every push and do nothing.",
-    trace: "on: push · paths: **/package.json, **/go.mod, **/vcpkg.json, …",
+    log: [
+      "on: push",
+      "paths: **/package.json, **/go.mod, **/vcpkg.json, …",
+      "permissions: contents: read · checks: write · issues: write",
+    ],
+    took: "2s",
   },
   {
-    title: "Drift analyses the diff",
+    title: "Run trydrift/drift@v0",
     detail:
       "The same pipeline the CLI runs — evidence, breaking changes, and the lines in this repository that use them.",
-    trace: "uses: trydrift/drift@v0",
+    log: [
+      "detect  ▸ 2 manifests, 1 lockfile",
+      "evidence ▸ registry + release notes + computed surface",
+      "localize ▸ 25 sites across 10 files",
+    ],
+    took: "48s",
   },
   {
-    title: "A check run carries the verdict",
+    title: "Post the check run",
     detail:
       "Affected, upstream-only, or clean, with the count of files. It is a check, so it shows up where reviewers already look.",
-    trace: "checks: write · status: affected · 3 files",
+    log: ["drift / analyze — affected", "3 files · 13 upstream changes · 0 gaps"],
+    took: "1s",
   },
   {
-    title: "By default, it asks",
+    title: "Ask before acting",
     detail:
       "A fresh install files an approval issue containing the plan and waits for a human to comment /drift apply. Autonomy is opt-in, per repository.",
-    trace: "mode: approve · issue #482 opened",
+    log: ["mode: approve", "opened issue #482 — “Upgrade plan: w3lib 1.17.0 → 2.4.1”", "waiting for /drift apply"],
+    took: "1s",
   },
   {
-    title: "Then a pull request that explains itself",
+    title: "Open the pull request",
     detail:
       "One commit per concern, in dependency order, each resolved by a deterministic codemod, then a version-pinned community recipe, then an agent — never silently, and always in that order.",
-    trace: "3 commits · every claim cites the evidence it came from",
+    log: ["3 commits · codemod → recipe → agent", "every claim cites the evidence it came from"],
+    took: "12s",
   },
 ];
 
@@ -90,23 +110,41 @@ export function ActionFlow() {
   const finished = active >= STEPS.length - 1;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-surface/50">
-      <div className="flex items-center gap-2 border-b border-border bg-surface-hover/40 px-4 py-2.5">
-        <span className="size-2 rounded-full bg-brand" />
-        <span className="font-mono text-[11px] text-faint">.github/workflows/drift.yml</span>
-        {finished && playing ? (
-          <button
-            type="button"
-            onClick={() => setActive(0)}
-            className="ml-auto rounded-md px-1.5 py-0.5 font-mono text-[11px] text-faint transition-colors hover:bg-surface-hover hover:text-foreground"
+    <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+      {/* The run header. */}
+      <div className="border-b border-border bg-surface-hover/40 px-4 py-3">
+        <div className="flex items-center gap-2">
+          <span
+            className={cn(
+              "flex size-5 shrink-0 items-center justify-center rounded-full",
+              finished ? "bg-brand text-brand-foreground" : "border border-brand/50 bg-brand-soft text-brand-text orb",
+            )}
           >
-            replay
-          </button>
-        ) : (
-          <span className="ml-auto font-mono text-[11px] text-faint">
-            {String(active + 1).padStart(2, "0")} / {String(STEPS.length).padStart(2, "0")}
+            <GhIcon icon={finished ? "check" : "play"} className="size-3.5" />
           </span>
-        )}
+          <span className="truncate text-[13px] font-semibold text-foreground">
+            Analyse dependency changes
+          </span>
+          {finished && playing ? (
+            <button
+              type="button"
+              onClick={() => setActive(0)}
+              className="ml-auto shrink-0 rounded-md px-1.5 py-0.5 font-mono text-[11px] text-faint transition-colors hover:bg-surface-hover hover:text-foreground"
+            >
+              re-run
+            </button>
+          ) : (
+            <span className="ml-auto shrink-0 font-mono text-[11px] text-faint">
+              {String(active + 1).padStart(2, "0")} / {String(STEPS.length).padStart(2, "0")}
+            </span>
+          )}
+        </div>
+        <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10.5px] text-faint">
+          <span className="rounded-full border border-border bg-surface px-1.5 py-0.5">main</span>
+          <span>.github/workflows/drift.yml</span>
+          <span className="text-border">·</span>
+          <span>push · pyproject.toml</span>
+        </p>
       </div>
 
       <ol className="divide-y divide-border">
@@ -115,45 +153,40 @@ export function ActionFlow() {
           const current = index === active;
 
           return (
-            <li
-              key={step.title}
-              className={cn(
-                "flex gap-3.5 px-4 py-3.5 transition-colors duration-500 sm:px-5",
-                current && "bg-brand-soft/40",
-              )}
-            >
-              <span
-                className={cn(
-                  "mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border font-mono text-[10px] font-semibold transition-colors duration-500",
-                  current
-                    ? "border-brand/50 bg-brand-soft text-brand-text orb"
-                    : done
-                      ? "border-brand/30 bg-brand-soft/60 text-brand-text"
-                      : "border-border bg-surface text-faint",
-                )}
-              >
-                {done ? "✓" : index + 1}
-              </span>
-
-              <div className="min-w-0 flex-1">
+            <li key={step.title} className={cn("transition-colors duration-500", current && "bg-brand-soft/25")}>
+              <div className="flex items-center gap-2.5 px-4 py-2.5">
+                <StepGlyph state={done ? "done" : current ? "running" : "queued"} />
                 <p
                   className={cn(
-                    "text-[13px] font-semibold transition-colors duration-500",
+                    "min-w-0 flex-1 truncate text-[12.5px] font-medium transition-colors duration-500",
                     current || done ? "text-foreground" : "text-muted",
                   )}
                 >
                   {step.title}
                 </p>
-                <p className="mt-1 text-[12.5px] leading-relaxed text-muted">{step.detail}</p>
-                <p
-                  className={cn(
-                    "mt-1.5 break-words font-mono text-[10.5px] leading-relaxed transition-colors duration-500",
-                    current ? "text-brand-text" : "text-faint",
-                  )}
-                >
-                  {step.trace}
-                </p>
+                <span className="shrink-0 font-mono text-[10.5px] text-faint">
+                  {done || current ? step.took : "—"}
+                </span>
               </div>
+
+              {/* The open step, showing its log. Only one is ever open, which
+                  is how a run page behaves and also keeps the panel a fixed
+                  enough height not to shove the page around. */}
+              {current && (
+                <div className="px-4 pb-3">
+                  <p className="mb-2 text-[12px] leading-relaxed text-muted">{step.detail}</p>
+                  <div className="overflow-x-auto rounded-lg border border-border bg-[var(--pre-bg)] py-1.5">
+                    {step.log.map((line, n) => (
+                      <p key={line} className="flex gap-3 px-2 font-mono text-[11px] leading-[1.7]">
+                        <span className="w-4 shrink-0 select-none text-right text-faint/70 tabular">
+                          {n + 1}
+                        </span>
+                        <span className="whitespace-pre text-muted">{line}</span>
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
             </li>
           );
         })}
@@ -170,4 +203,34 @@ export function ActionFlow() {
       </div>
     </div>
   );
+}
+
+function StepGlyph({ state }: { state: "done" | "running" | "queued" }) {
+  if (state === "done") {
+    return (
+      <span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-brand text-brand-foreground">
+        <svg viewBox="0 0 16 16" className="size-2.5" aria-hidden>
+          <path
+            d="m4 8 3 3 5-6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
+    );
+  }
+
+  if (state === "running") {
+    return (
+      <span
+        className="orb size-4 shrink-0 rounded-full border-2 border-brand/40 border-t-brand"
+        aria-hidden
+      />
+    );
+  }
+
+  return <span className="size-4 shrink-0 rounded-full border border-dashed border-border" aria-hidden />;
 }

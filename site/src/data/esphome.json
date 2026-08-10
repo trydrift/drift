@@ -5,9 +5,9 @@
   "language": "C++",
   "repo": "https://github.com/esphome/esphome",
   "blurb": "The firmware behind most ESP32 and ESP8266 home-automation devices.",
-  "capturedAt": "2026-08-10T06:46:18.636Z",
+  "capturedAt": "2026-08-10T13:33:41.077Z",
   "commit": "25cb4400059e6d8dca4b5cfb5049830d6a815c31",
-  "durationMs": 24927,
+  "durationMs": 25935,
   "packagesChecked": 25,
   "manifests": [
     "pyproject.toml",
@@ -17,658 +17,658 @@
   ],
   "events": [
     {
-      "at": 6551,
+      "at": 8915,
       "phase": "Looking for manifests",
       "detail": "esphome/esphome",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6783,
+      "at": 9172,
       "phase": "Reading the workspace",
       "detail": "3 packages · undeclared",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6783,
+      "at": 9173,
       "phase": "Reading manifest",
       "detail": "pyproject.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6784,
+      "at": 9176,
       "phase": "Reading manifest",
       "detail": "platformio.ini",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6787,
+      "at": 9179,
       "phase": "Reading manifest",
       "detail": ".github/scripts/auto-label-pr/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6787,
+      "at": 9179,
       "phase": "Reading manifest",
       "detail": "esphome/components/nrf52/requirements.txt",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6787,
+      "at": 9180,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 25
     },
     {
-      "at": 8776,
+      "at": 11504,
       "phase": "Indexing your code",
       "detail": "5000 files indexed · 25 direct dependencies to check",
       "done": 0,
       "total": 25
     },
     {
-      "at": 8776,
+      "at": 11505,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "qr-code-generator-library (installed 1.7.0)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 8777,
+      "at": 11506,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "arduino-MLX90393 (installed 1.0.2)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 8777,
+      "at": 11506,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "HaierProtocol (installed 0.9.31)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 8777,
+      "at": 11506,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "dsmr_parser (installed 1.9.0)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 8777,
+      "at": 11506,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "noise-c (installed 0.1.11)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 8777,
+      "at": 11506,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "Improv (installed 1.2.6)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 8777,
+      "at": 11506,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "pngle (installed 1.1.0)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 8777,
+      "at": 11506,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "googletest (installed 1.15.2)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 10305,
+      "at": 11608,
       "phase": "Reading release notes and changelog",
       "detail": "HaierProtocol 0.9.31 → 0.9.32",
       "done": 0,
       "total": 25
     },
     {
-      "at": 10306,
+      "at": 11608,
       "phase": "Up to date",
       "detail": "pngle@1.1.0",
       "done": 1,
       "total": 25
     },
     {
-      "at": 10306,
+      "at": 11608,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "AsyncMqttClient-esphome (installed 2.0.0)",
       "done": 1,
       "total": 25
     },
     {
-      "at": 10956,
-      "phase": "Reading release notes and changelog",
-      "detail": "dsmr_parser 1.9.0 → 1.10.0",
-      "done": 1,
-      "total": 25
-    },
-    {
-      "at": 10985,
+      "at": 11624,
       "phase": "Up to date",
-      "detail": "qr-code-generator-library@1.7.0",
+      "detail": "arduino-MLX90393@1.0.2",
       "done": 2,
       "total": 25
     },
     {
-      "at": 10985,
+      "at": 11624,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "TM1651 (installed 1.0.1)",
       "done": 2,
       "total": 25
     },
     {
-      "at": 11021,
+      "at": 11624,
       "phase": "Up to date",
-      "detail": "arduino-MLX90393@1.0.2",
+      "detail": "qr-code-generator-library@1.7.0",
       "done": 3,
       "total": 25
     },
     {
-      "at": 11021,
+      "at": 11624,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "HeatpumpIR (installed 1.0.42)",
       "done": 3,
       "total": 25
     },
     {
-      "at": 11021,
+      "at": 11624,
       "phase": "Up to date",
       "detail": "HeatpumpIR@1.0.42",
       "done": 4,
       "total": 25
     },
     {
-      "at": 11021,
+      "at": 11624,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "dlms_parser (installed 1.1.0)",
       "done": 4,
       "total": 25
     },
     {
-      "at": 11056,
+      "at": 11625,
       "phase": "Reading release notes and changelog",
-      "detail": "noise-c 0.1.11 → 0.1.13",
+      "detail": "dsmr_parser 1.9.0 → 1.10.0",
       "done": 4,
       "total": 25
     },
     {
-      "at": 11087,
+      "at": 11626,
       "phase": "Up to date",
       "detail": "Improv@1.2.6",
       "done": 5,
       "total": 25
     },
     {
-      "at": 11087,
+      "at": 11626,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "ArduinoJson (installed 7.4.3)",
       "done": 5,
       "total": 25
     },
     {
-      "at": 11087,
+      "at": 11627,
       "phase": "Up to date",
       "detail": "ArduinoJson@7.4.3",
       "done": 6,
       "total": 25
     },
     {
-      "at": 11087,
+      "at": 11627,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "lvgl (installed 9.5.0)",
       "done": 6,
       "total": 25
     },
     {
-      "at": 11087,
+      "at": 11627,
       "phase": "Up to date",
       "detail": "lvgl@9.5.0",
       "done": 7,
       "total": 25
     },
     {
-      "at": 11087,
+      "at": 11627,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "FastLED (installed 3.9.16)",
       "done": 7,
       "total": 25
     },
     {
-      "at": 11088,
+      "at": 11628,
       "phase": "Reading release notes and changelog",
       "detail": "FastLED 3.9.16 → 3.10.5",
       "done": 7,
       "total": 25
     },
     {
-      "at": 11121,
+      "at": 11629,
       "phase": "Reading release notes and changelog",
-      "detail": "googletest 1.15.2 → 1.17.0",
+      "detail": "noise-c 0.1.11 → 0.1.13",
       "done": 7,
       "total": 25
     },
     {
-      "at": 11157,
+      "at": 11630,
       "phase": "Reading release notes and changelog",
       "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0",
       "done": 7,
       "total": 25
     },
     {
-      "at": 11317,
+      "at": 11631,
+      "phase": "Reading release notes and changelog",
+      "detail": "googletest 1.15.2 → 1.17.0",
+      "done": 7,
+      "total": 25
+    },
+    {
+      "at": 11751,
       "phase": "Up to date",
       "detail": "TM1651@1.0.1",
       "done": 8,
       "total": 25
     },
     {
-      "at": 11317,
+      "at": 11751,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "ESPAsyncTCP (installed 2.0.0)",
       "done": 8,
       "total": 25
     },
     {
-      "at": 11317,
+      "at": 11751,
       "phase": "Up to date",
       "detail": "ESPAsyncTCP@2.0.0",
       "done": 9,
       "total": 25
     },
     {
-      "at": 11317,
+      "at": 11751,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "ESPAsyncWebServer (installed 3.9.6)",
       "done": 9,
       "total": 25
     },
     {
-      "at": 11317,
+      "at": 11751,
       "phase": "Up to date",
       "detail": "ESPAsyncWebServer@3.9.6",
       "done": 10,
       "total": 25
     },
     {
-      "at": 11317,
+      "at": 11751,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "NeoPixelBus (installed 2.8.0)",
       "done": 10,
       "total": 25
     },
     {
-      "at": 11358,
+      "at": 11754,
       "phase": "Reading release notes and changelog",
       "detail": "dlms_parser 1.1.0 → 2.1.0",
       "done": 10,
       "total": 25
     },
     {
-      "at": 11602,
+      "at": 11758,
       "phase": "Reading release notes and changelog",
       "detail": "NeoPixelBus 2.8.0 → 2.8.4",
       "done": 10,
       "total": 25
     },
     {
-      "at": 15323,
+      "at": 17247,
       "phase": "Comparing the public API surface",
       "detail": "HaierProtocol 0.9.31 → 0.9.32 · 1 evidence source",
       "done": 10,
       "total": 25
     },
     {
-      "at": 15323,
+      "at": 17247,
       "phase": "No breaking changes to look for",
       "detail": "HaierProtocol 0.9.31 → 0.9.32",
       "done": 10,
       "total": 25
     },
     {
-      "at": 15327,
+      "at": 17251,
       "phase": "Weighing what this upgrade is worth",
       "detail": "HaierProtocol 0.9.31 → 0.9.32",
       "done": 10,
       "total": 25
     },
     {
-      "at": 15557,
-      "phase": "Comparing the public API surface",
-      "detail": "dsmr_parser 1.9.0 → 1.10.0 · 1 evidence source",
-      "done": 10,
-      "total": 25
-    },
-    {
-      "at": 15557,
-      "phase": "No breaking changes to look for",
-      "detail": "dsmr_parser 1.9.0 → 1.10.0",
-      "done": 10,
-      "total": 25
-    },
-    {
-      "at": 15559,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "dsmr_parser 1.9.0 → 1.10.0",
-      "done": 10,
-      "total": 25
-    },
-    {
-      "at": 15581,
+      "at": 17258,
       "phase": "Checked",
-      "detail": "HaierProtocol 0.9.31 → 0.9.32 · not verified · drift found nothing it could check this version against",
+      "detail": "HaierProtocol 0.9.31 → 0.9.32 · safe for your code · no breaking changes found",
       "done": 11,
       "total": 25
     },
     {
-      "at": 15581,
+      "at": 17258,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "esp_wireguard (installed 0.4.5)",
       "done": 11,
       "total": 25
     },
     {
-      "at": 15824,
+      "at": 17260,
       "phase": "Up to date",
       "detail": "esp_wireguard@0.4.5",
       "done": 12,
       "total": 25
     },
     {
-      "at": 15824,
+      "at": 17260,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "ESP32-audioI2S (installed 2.3.0)",
       "done": 12,
       "total": 25
     },
     {
-      "at": 15827,
-      "phase": "Comparing the public API surface",
-      "detail": "googletest 1.15.2 → 1.17.0 · 2 evidence sources",
-      "done": 12,
-      "total": 25
-    },
-    {
-      "at": 15827,
-      "phase": "No breaking changes to look for",
-      "detail": "googletest 1.15.2 → 1.17.0",
-      "done": 12,
-      "total": 25
-    },
-    {
-      "at": 15830,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "googletest 1.15.2 → 1.17.0",
-      "done": 12,
-      "total": 25
-    },
-    {
-      "at": 15888,
-      "phase": "Checked",
-      "detail": "dsmr_parser 1.9.0 → 1.10.0 · not verified · drift found nothing it could check this version against",
+      "at": 17261,
+      "phase": "Up to date",
+      "detail": "ESP32-audioI2S@2.3.0",
       "done": 13,
       "total": 25
     },
     {
-      "at": 15888,
+      "at": 17261,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "RPAsyncTCP (installed 1.3.2)",
       "done": 13,
       "total": 25
     },
     {
-      "at": 15888,
+      "at": 17261,
       "phase": "Up to date",
       "detail": "RPAsyncTCP@1.3.2",
       "done": 14,
       "total": 25
     },
     {
-      "at": 15888,
+      "at": 17261,
       "phase": "Checking the the Arduino Library Manager",
       "detail": "AsyncTCP (installed 3.4.5)",
       "done": 14,
       "total": 25
     },
     {
-      "at": 15888,
+      "at": 17261,
       "phase": "Up to date",
       "detail": "AsyncTCP@3.4.5",
       "done": 15,
       "total": 25
     },
     {
-      "at": 15888,
+      "at": 17261,
       "phase": "Checking the PyPI",
       "detail": "west (installed 1.5.0)",
       "done": 15,
       "total": 25
     },
     {
-      "at": 15902,
-      "phase": "Comparing the public API surface",
-      "detail": "dlms_parser 1.1.0 → 2.1.0 · 1 evidence source",
-      "done": 15,
-      "total": 25
-    },
-    {
-      "at": 15902,
-      "phase": "No breaking changes to look for",
-      "detail": "dlms_parser 1.1.0 → 2.1.0",
-      "done": 15,
-      "total": 25
-    },
-    {
-      "at": 15905,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "dlms_parser 1.1.0 → 2.1.0",
-      "done": 15,
-      "total": 25
-    },
-    {
-      "at": 15982,
-      "phase": "Comparing the public API surface",
-      "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0 · 1 evidence source",
-      "done": 15,
-      "total": 25
-    },
-    {
-      "at": 15982,
-      "phase": "No breaking changes to look for",
-      "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0",
-      "done": 15,
-      "total": 25
-    },
-    {
-      "at": 15984,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0",
-      "done": 15,
-      "total": 25
-    },
-    {
-      "at": 16014,
+      "at": 17264,
       "phase": "Up to date",
       "detail": "west@1.5.0",
       "done": 16,
       "total": 25
     },
     {
-      "at": 16014,
+      "at": 17264,
       "phase": "Checking the PyPI",
       "detail": "ninja (installed 1.13.0)",
       "done": 16,
       "total": 25
     },
     {
-      "at": 16038,
-      "phase": "Comparing the public API surface",
-      "detail": "NeoPixelBus 2.8.0 → 2.8.4 · 1 evidence source",
-      "done": 16,
-      "total": 25
-    },
-    {
-      "at": 16038,
-      "phase": "No breaking changes to look for",
-      "detail": "NeoPixelBus 2.8.0 → 2.8.4",
-      "done": 16,
-      "total": 25
-    },
-    {
-      "at": 16041,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "NeoPixelBus 2.8.0 → 2.8.4",
-      "done": 16,
-      "total": 25
-    },
-    {
-      "at": 16058,
+      "at": 17269,
       "phase": "Up to date",
-      "detail": "ESP32-audioI2S@2.3.0",
+      "detail": "ninja@1.13.0",
       "done": 17,
       "total": 25
     },
     {
-      "at": 16058,
+      "at": 17269,
       "phase": "Checking the PyPI",
       "detail": "cmake (installed 4.3.2)",
       "done": 17,
       "total": 25
     },
     {
-      "at": 16104,
-      "phase": "Up to date",
-      "detail": "ninja@1.13.0",
+      "at": 17285,
+      "phase": "Reading release notes and changelog",
+      "detail": "cmake 4.3.2 → 4.4.2",
+      "done": 17,
+      "total": 25
+    },
+    {
+      "at": 17575,
+      "phase": "Comparing the public API surface",
+      "detail": "NeoPixelBus 2.8.0 → 2.8.4 · 1 evidence source",
+      "done": 17,
+      "total": 25
+    },
+    {
+      "at": 17575,
+      "phase": "No breaking changes to look for",
+      "detail": "NeoPixelBus 2.8.0 → 2.8.4",
+      "done": 17,
+      "total": 25
+    },
+    {
+      "at": 17578,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "NeoPixelBus 2.8.0 → 2.8.4",
+      "done": 17,
+      "total": 25
+    },
+    {
+      "at": 17580,
+      "phase": "Checked",
+      "detail": "NeoPixelBus 2.8.0 → 2.8.4 · safe for your code · no breaking changes found",
       "done": 18,
       "total": 25
     },
     {
-      "at": 16145,
+      "at": 17708,
+      "phase": "Comparing the public API surface",
+      "detail": "dlms_parser 1.1.0 → 2.1.0 · 2 evidence sources",
+      "done": 18,
+      "total": 25
+    },
+    {
+      "at": 17714,
+      "phase": "Searching your code for 43 breaking changes",
+      "detail": "dlms_parser 1.1.0 → 2.1.0",
+      "done": 18,
+      "total": 25
+    },
+    {
+      "at": 17769,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "dlms_parser 1.1.0 → 2.1.0",
+      "done": 18,
+      "total": 25
+    },
+    {
+      "at": 17782,
       "phase": "Checked",
-      "detail": "googletest 1.15.2 → 1.17.0 · not verified · drift found nothing it could check this version against",
+      "detail": "dlms_parser 1.1.0 → 2.1.0 · safe for your code · 43 upstream changes, none used here",
       "done": 19,
       "total": 25
     },
     {
-      "at": 16156,
-      "phase": "Checked",
-      "detail": "dlms_parser 1.1.0 → 2.1.0 · not verified · drift found nothing it could check this version against",
-      "done": 20,
-      "total": 25
-    },
-    {
-      "at": 16218,
-      "phase": "Reading release notes and changelog",
-      "detail": "cmake 4.3.2 → 4.4.2",
-      "done": 20,
-      "total": 25
-    },
-    {
-      "at": 16318,
+      "at": 17821,
       "phase": "Comparing the public API surface",
-      "detail": "noise-c 0.1.11 → 0.1.13 · 1 evidence source",
-      "done": 20,
+      "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0 · 1 evidence source",
+      "done": 19,
       "total": 25
     },
     {
-      "at": 16318,
+      "at": 17821,
       "phase": "No breaking changes to look for",
-      "detail": "noise-c 0.1.11 → 0.1.13",
-      "done": 20,
+      "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0",
+      "done": 19,
       "total": 25
     },
     {
-      "at": 16320,
+      "at": 17823,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "noise-c 0.1.11 → 0.1.13",
+      "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0",
+      "done": 19,
+      "total": 25
+    },
+    {
+      "at": 17825,
+      "phase": "Checked",
+      "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0 · safe for your code · no breaking changes found",
       "done": 20,
       "total": 25
     },
     {
-      "at": 16408,
+      "at": 17835,
+      "phase": "Comparing the public API surface",
+      "detail": "googletest 1.15.2 → 1.17.0 · 3 evidence sources",
+      "done": 20,
+      "total": 25
+    },
+    {
+      "at": 17839,
+      "phase": "Searching your code for 10 breaking changes",
+      "detail": "googletest 1.15.2 → 1.17.0",
+      "done": 20,
+      "total": 25
+    },
+    {
+      "at": 17848,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "googletest 1.15.2 → 1.17.0",
+      "done": 20,
+      "total": 25
+    },
+    {
+      "at": 17853,
       "phase": "Checked",
-      "detail": "NeoPixelBus 2.8.0 → 2.8.4 · not verified · drift found nothing it could check this version against",
+      "detail": "googletest 1.15.2 → 1.17.0 · safe for your code · 10 upstream changes, none used here",
       "done": 21,
       "total": 25
     },
     {
-      "at": 16461,
+      "at": 18620,
+      "phase": "Comparing the public API surface",
+      "detail": "noise-c 0.1.11 → 0.1.13 · 1 evidence source",
+      "done": 21,
+      "total": 25
+    },
+    {
+      "at": 18620,
+      "phase": "No breaking changes to look for",
+      "detail": "noise-c 0.1.11 → 0.1.13",
+      "done": 21,
+      "total": 25
+    },
+    {
+      "at": 18622,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "noise-c 0.1.11 → 0.1.13",
+      "done": 21,
+      "total": 25
+    },
+    {
+      "at": 18624,
       "phase": "Checked",
-      "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0 · not verified · drift found nothing it could check this version against",
+      "detail": "noise-c 0.1.11 → 0.1.13 · safe for your code · no breaking changes found",
       "done": 22,
       "total": 25
     },
     {
-      "at": 16836,
-      "phase": "Checked",
-      "detail": "noise-c 0.1.11 → 0.1.13 · not verified · drift found nothing it could check this version against",
-      "done": 23,
-      "total": 25
-    },
-    {
-      "at": 17906,
+      "at": 18799,
       "phase": "Comparing the public API surface",
       "detail": "FastLED 3.9.16 → 3.10.5 · 5 evidence sources",
-      "done": 23,
+      "done": 22,
       "total": 25
     },
     {
-      "at": 18033,
+      "at": 18924,
       "phase": "Searching your code for 634 breaking changes",
       "detail": "FastLED 3.9.16 → 3.10.5",
-      "done": 23,
+      "done": 22,
       "total": 25
     },
     {
-      "at": 18966,
+      "at": 19805,
       "phase": "Weighing what this upgrade is worth",
       "detail": "FastLED 3.9.16 → 3.10.5",
+      "done": 22,
+      "total": 25
+    },
+    {
+      "at": 19942,
+      "phase": "Needs your attention",
+      "detail": "FastLED 3.9.16 → 3.10.5 · affects your code · 23 sites in 1 file",
       "done": 23,
       "total": 25
     },
     {
-      "at": 19394,
-      "phase": "Needs your attention",
-      "detail": "FastLED 3.9.16 → 3.10.5 · affects your code · 23 sites in 1 file",
+      "at": 20974,
+      "phase": "Comparing the public API surface",
+      "detail": "dsmr_parser 1.9.0 → 1.10.0 · 1 evidence source",
+      "done": 23,
+      "total": 25
+    },
+    {
+      "at": 20974,
+      "phase": "No breaking changes to look for",
+      "detail": "dsmr_parser 1.9.0 → 1.10.0",
+      "done": 23,
+      "total": 25
+    },
+    {
+      "at": 20976,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "dsmr_parser 1.9.0 → 1.10.0",
+      "done": 23,
+      "total": 25
+    },
+    {
+      "at": 20978,
+      "phase": "Checked",
+      "detail": "dsmr_parser 1.9.0 → 1.10.0 · safe for your code · no breaking changes found",
       "done": 24,
       "total": 25
     },
     {
-      "at": 21393,
+      "at": 22388,
       "phase": "Comparing the public API surface",
       "detail": "cmake 4.3.2 → 4.4.2 · 2 evidence sources",
       "done": 24,
       "total": 25
     },
     {
-      "at": 21393,
+      "at": 22389,
       "phase": "Searching your code for 11 breaking changes",
       "detail": "cmake 4.3.2 → 4.4.2",
       "done": 24,
       "total": 25
     },
     {
-      "at": 21404,
+      "at": 22393,
       "phase": "Weighing what this upgrade is worth",
       "detail": "cmake 4.3.2 → 4.4.2",
       "done": 24,
       "total": 25
     },
     {
-      "at": 21891,
+      "at": 22639,
       "phase": "Checked",
       "detail": "cmake 4.3.2 → 4.4.2 · safe for your code · 11 upstream changes, none used here",
       "done": 25,
@@ -821,6 +821,68 @@
       ]
     },
     {
+      "name": "dlms_parser",
+      "ecosystem": "arduino",
+      "current": "1.1.0",
+      "latest": "2.1.0",
+      "selected": "2.1.0",
+      "safeLatest": null,
+      "status": "ready",
+      "risk": "none",
+      "summary": "Safe to upgrade. 43 upstream breaking changes, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 43,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [
+        "Drift read 4 sets of release notes for dlms_parser 2.1.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+      ],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`AxdrPatternStep` is no longer exported (was a interface).",
+          "remediation": "Every use of `AxdrPatternStep` from `dlms_parser` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `AxdrPatternStep` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "AxdrPatternStep"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`AxdrDescriptorPattern` is no longer exported (was a interface).",
+          "remediation": "Every use of `AxdrDescriptorPattern` from `dlms_parser` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `AxdrDescriptorPattern` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "AxdrDescriptorPattern"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`AxdrCaptures` is no longer exported (was a interface).",
+          "remediation": "Every use of `AxdrCaptures` from `dlms_parser` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `AxdrCaptures` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "AxdrCaptures"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`ParseResult` is no longer exported (was a interface).",
+          "remediation": "Every use of `ParseResult` from `dlms_parser` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `ParseResult` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "ParseResult"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
       "name": "cmake",
       "ecosystem": "pypi",
       "current": "4.3.2",
@@ -886,6 +948,67 @@
       ]
     },
     {
+      "name": "googletest",
+      "ecosystem": "arduino",
+      "current": "1.15.2",
+      "latest": "1.17.0",
+      "selected": "1.17.0",
+      "safeLatest": "1.17.0",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Safe to upgrade. 10 upstream breaking changes, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 10,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 3,
+      "gaps": [
+        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+      ],
+      "breaking": [
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `ACTION` changed.",
+          "remediation": "The signature of `ACTION` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: #define ACTION(name) class name##Action { public: explicit name##Action() noexcept {} name##Action(const name##Action&) noexcept {} template <typename F> operator ::testing::Action<F>() const { return ::testing::internal::MakeAction<F, gmock_Impl>(); } private: class gmock_Impl { public: template <typename function_type, typename return_type, typename args_type, GMOCK_ACTION_TEMPLATE_ARGS_NAMES_> return_type gmock_PerformImpl(GMOCK_ACTION_ARG_TYPES_AND_NAMES_) const; }; }; inline name##Action name() GTEST_MUST_USE_RESULT_; inline name##Action name() { return name##Action(); } template <typename function_type, typename return_type, typename args_type, GMOCK_ACTION_TEMPLATE_ARGS_NAMES_> return_type name##Action::gmock_Impl::gmock_PerformImpl( GMOCK_ACTION_ARG_TYPES_AND_NAMES_UNUSED_) const\n  after:  #define ACTION(name) class name##Action { public: explicit name##Action() noexcept {} name##Action(const name##Action&) noexcept {} template <typename F> operator ::testing::Action<F>() const { return ::testing::internal::MakeAction<F, gmock_Impl>(); } private: class gmock_Impl { public: template <typename function_type, typename return_type, typename args_type, GMOCK_ACTION_TEMPLATE_ARGS_NAMES_> return_type gmock_PerformImpl(GMOCK_ACTION_ARG_TYPES_AND_NAMES_) const; }; }; [[nodiscard]] inline name##Action name(); inline name##Action name() { return name##Action(); } template <typename function_type, typename return_type, typename args_type, GMOCK_ACTION_TEMPLATE_ARGS_NAMES_> return_type name##Action::gmock_Impl::gmock_PerformImpl( GMOCK_ACTION_ARG_TYPES_AND_NAMES_UNUSED_) const",
+          "confidence": "high",
+          "symbols": [
+            "ACTION"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `MATCHER` changed.",
+          "remediation": "The signature of `MATCHER` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: #define MATCHER(name, description) class name##Matcher : public ::testing::internal::MatcherBaseImpl<name##Matcher> { public: template <typename arg_type> class gmock_Impl : public ::testing::MatcherInterface<const arg_type&> { public: gmock_Impl() {} bool MatchAndExplain( const arg_type& arg, ::testing::MatchResultListener* result_listener) const override; void DescribeTo(::std::ostream* gmock_os) const override { *gmock_os << FormatDescription(false); } void DescribeNegationTo(::std::ostream* gmock_os) const override { *gmock_os << FormatDescription(true); } private: ::std::string FormatDescription(bool negation) const { ::std::string gmock_description = (description); if (!gmock_description.empty()) { return gmock_description; } return ::testing::internal::FormatMatcherDescription(negation, #name, {}, {}); } }; }; inline name##Matcher GMOCK_INTERNAL_WARNING_PUSH() GMOCK_INTERNAL_WARNING_CLANG(ignored, \"-Wunused-function\") GMOCK_INTERNAL_WARNING_CLANG(ignored, \"-Wunused-member-function\") name GMOCK_INTERNAL_WARNING_POP()() { return {}; } template <typename arg_type> bool name##Matcher::gmock_Impl<arg_type>::MatchAndExplain( const arg_type& arg, GTEST_INTERNAL_ATTRIBUTE_MAYBE_UNUSED ::testing::MatchResultListener* result_listener) const\n  after:  #define MATCHER(name, description) class name##Matcher : public ::testing::internal::MatcherBaseImpl<name##Matcher> { public: template <typename arg_type> class gmock_Impl : public ::testing::MatcherInterface<const arg_type&> { public: gmock_Impl() {} bool MatchAndExplain( const arg_type& arg, ::testing::MatchResultListener* result_listener) const override; void DescribeTo(::std::ostream* gmock_os) const override { *gmock_os << FormatDescription(false); } void DescribeNegationTo(::std::ostream* gmock_os) const override { *gmock_os << FormatDescription(true); } private: ::std::string FormatDescription(bool negation) const { ::std::string gmock_description = (description); if (!gmock_description.empty()) { return gmock_description; } return ::testing::internal::FormatMatcherDescription(negation, #name, {}, {}); } }; }; inline name##Matcher GMOCK_INTERNAL_WARNING_PUSH() GMOCK_INTERNAL_WARNING_CLANG(ignored, \"-Wunused-function\") GMOCK_INTERNAL_WARNING_CLANG(ignored, \"-Wunused-member-function\") name GMOCK_INTERNAL_WARNING_POP()() { return {}; } template <typename arg_type> bool name##Matcher::gmock_Impl<arg_type>::MatchAndExplain( const arg_type& arg, [[maybe_unused]] ::testing::MatchResultListener* result_listener) const",
+          "confidence": "high",
+          "symbols": [
+            "MATCHER"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `GMOCK_INTERNAL_MATCHER` changed.",
+          "remediation": "The signature of `GMOCK_INTERNAL_MATCHER` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: #define GMOCK_INTERNAL_MATCHER(name, full_name, description, arg_names, args) template <GMOCK_INTERNAL_MATCHER_TEMPLATE_PARAMS(args)> class full_name : public ::testing::internal::MatcherBaseImpl< full_name<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)>> { public: using full_name::MatcherBaseImpl::MatcherBaseImpl; template <typename arg_type> class gmock_Impl : public ::testing::MatcherInterface<const arg_type&> { public: explicit gmock_Impl(GMOCK_INTERNAL_MATCHER_FUNCTION_ARGS(args)) : GMOCK_INTERNAL_MATCHER_FORWARD_ARGS(args) {} bool MatchAndExplain( const arg_type& arg, ::testing::MatchResultListener* result_listener) const override; void DescribeTo(::std::ostream* gmock_os) const override { *gmock_os << FormatDescription(false); } void DescribeNegationTo(::std::ostream* gmock_os) const override { *gmock_os << FormatDescription(true); } GMOCK_INTERNAL_MATCHER_MEMBERS(args) private: ::std::string FormatDescription(bool negation) const { ::std::string gmock_description; gmock_description = (description); if (!gmock_description.empty()) { return gmock_description; } return ::testing::internal::FormatMatcherDescription( negation, #name, {GMOCK_PP_REMOVE_PARENS(arg_names)}, ::testing::internal::UniversalTersePrintTupleFieldsToStrings( ::std::tuple<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)>( GMOCK_INTERNAL_MATCHER_MEMBERS_USAGE(args)))); } }; }; template <GMOCK_INTERNAL_MATCHER_TEMPLATE_PARAMS(args)> inline full_name<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)> name( GMOCK_INTERNAL_MATCHER_FUNCTION_ARGS(args)) { return full_name<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)>( GMOCK_INTERNAL_MATCHER_ARGS_USAGE(args)); } template <GMOCK_INTERNAL_MATCHER_TEMPLATE_PARAMS(args)> template <typename arg_type> bool full_name<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)>:: gmock_Impl<arg_type>::MatchAndExplain( const arg_type& arg, GTEST_INTERNAL_ATTRIBUTE_MAYBE_UNUSED ::testing:: MatchResultListener* result_listener) const\n  after:  #define GMOCK_INTERNAL_MATCHER(name, full_name, description, arg_names, args) template <GMOCK_INTERNAL_MATCHER_TEMPLATE_PARAMS(args)> class full_name : public ::testing::internal::MatcherBaseImpl< full_name<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)>> { public: using full_name::MatcherBaseImpl::MatcherBaseImpl; template <typename arg_type> class gmock_Impl : public ::testing::MatcherInterface<const arg_type&> { public: explicit gmock_Impl(GMOCK_INTERNAL_MATCHER_FUNCTION_ARGS(args)) : GMOCK_INTERNAL_MATCHER_FORWARD_ARGS(args) {} bool MatchAndExplain( const arg_type& arg, ::testing::MatchResultListener* result_listener) const override; void DescribeTo(::std::ostream* gmock_os) const override { *gmock_os << FormatDescription(false); } void DescribeNegationTo(::std::ostream* gmock_os) const override { *gmock_os << FormatDescription(true); } GMOCK_INTERNAL_MATCHER_MEMBERS(args) private: ::std::string FormatDescription(bool negation) const { ::std::string gmock_description; gmock_description = (description); if (!gmock_description.empty()) { return gmock_description; } return ::testing::internal::FormatMatcherDescription( negation, #name, {GMOCK_PP_REMOVE_PARENS(arg_names)}, ::testing::internal::UniversalTersePrintTupleFieldsToStrings( ::std::tuple<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)>( GMOCK_INTERNAL_MATCHER_MEMBERS_USAGE(args)))); } }; }; template <GMOCK_INTERNAL_MATCHER_TEMPLATE_PARAMS(args)> inline full_name<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)> name( GMOCK_INTERNAL_MATCHER_FUNCTION_ARGS(args)) { return full_name<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)>( GMOCK_INTERNAL_MATCHER_ARGS_USAGE(args)); } template <GMOCK_INTERNAL_MATCHER_TEMPLATE_PARAMS(args)> template <typename arg_type> bool full_name<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)>:: gmock_Impl<arg_type>::MatchAndExplain( const arg_type& arg, [[maybe_unused]] ::testing::MatchResultListener* result_listener) const",
+          "confidence": "high",
+          "symbols": [
+            "GMOCK_INTERNAL_MATCHER"
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `ACTION_TEMPLATE` changed.",
+          "remediation": "The signature of `ACTION_TEMPLATE` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: #define ACTION_TEMPLATE(name, template_params, value_params) template <GMOCK_INTERNAL_DECL_##template_params GMOCK_INTERNAL_DECL_TYPE_##value_params> class GMOCK_ACTION_CLASS_(name, value_params) { public: explicit GMOCK_ACTION_CLASS_(name, value_params)( GMOCK_INTERNAL_DECL_##value_params) GMOCK_PP_IF(GMOCK_PP_IS_EMPTY(GMOCK_INTERNAL_COUNT_##value_params), = default; , : impl_(std::make_shared<gmock_Impl>( GMOCK_INTERNAL_LIST_##value_params)){}) GMOCK_ACTION_CLASS_(name, value_params)(const GMOCK_ACTION_CLASS_( name, value_params) &) noexcept GMOCK_INTERNAL_DEFN_COPY_ ##value_params GMOCK_ACTION_CLASS_(name, value_params)(GMOCK_ACTION_CLASS_( name, value_params) &&) noexcept GMOCK_INTERNAL_DEFN_COPY_ ##value_params template <typename F> operator ::testing::Action<F>() const { return GMOCK_PP_IF( GMOCK_PP_IS_EMPTY(GMOCK_INTERNAL_COUNT_##value_params), (::testing::internal::MakeAction<F, gmock_Impl>()), (::testing::internal::MakeAction<F>(impl_))); } private: class gmock_Impl { public: explicit gmock_Impl GMOCK_INTERNAL_INIT_##value_params {} template <typename function_type, typename return_type, typename args_type, GMOCK_ACTION_TEMPLATE_ARGS_NAMES_> return_type gmock_PerformImpl(GMOCK_ACTION_ARG_TYPES_AND_NAMES_) const; GMOCK_INTERNAL_DEFN_##value_params }; GMOCK_PP_IF(GMOCK_PP_IS_EMPTY(GMOCK_INTERNAL_COUNT_##value_params), , std::shared_ptr<const gmock_Impl> impl_;) }; template <GMOCK_INTERNAL_DECL_##template_params GMOCK_INTERNAL_DECL_TYPE_##value_params> GMOCK_ACTION_CLASS_( name, value_params)<GMOCK_INTERNAL_LIST_##template_params GMOCK_INTERNAL_LIST_TYPE_##value_params> name(GMOCK_INTERNAL_DECL_##value_params) GTEST_MUST_USE_RESULT_; template <GMOCK_INTERNAL_DECL_##template_params GMOCK_INTERNAL_DECL_TYPE_##value_params> inline GMOCK_ACTION_CLASS_( name, value_params)<GMOCK_INTERNAL_LIST_##template_params GMOCK_INTERNAL_LIST_TYPE_##value_params> name(GMOCK_INTERNAL_DECL_##value_params) { return GMOCK_ACTION_CLASS_( name, value_params)<GMOCK_INTERNAL_LIST_##template_params GMOCK_INTERNAL_LIST_TYPE_##value_params>( GMOCK_INTERNAL_LIST_##value_params); } template <GMOCK_INTERNAL_DECL_##template_params GMOCK_INTERNAL_DECL_TYPE_##value_params> template <typename function_type, typename return_type, typename args_type, GMOCK_ACTION_TEMPLATE_ARGS_NAMES_> return_type GMOCK_ACTION_CLASS_( name, value_params)<GMOCK_INTERNAL_LIST_##template_params GMOCK_INTERNAL_LIST_TYPE_##value_params>:: gmock_Impl::gmock_PerformImpl(GMOCK_ACTION_ARG_TYPES_AND_NAMES_UNUSED_) const\n  after:  #define ACTION_TEMPLATE(name, template_params, value_params) template <GMOCK_INTERNAL_DECL_##template_params GMOCK_INTERNAL_DECL_TYPE_##value_params> class GMOCK_ACTION_CLASS_(name, value_params) { public: explicit GMOCK_ACTION_CLASS_(name, value_params)( GMOCK_INTERNAL_DECL_##value_params) GMOCK_PP_IF(GMOCK_PP_IS_EMPTY(GMOCK_INTERNAL_COUNT_##value_params), = default; , : impl_(std::make_shared<gmock_Impl>( GMOCK_INTERNAL_LIST_##value_params)){}) GMOCK_ACTION_CLASS_(name, value_params)(const GMOCK_ACTION_CLASS_( name, value_params) &) noexcept GMOCK_INTERNAL_DEFN_COPY_ ##value_params GMOCK_ACTION_CLASS_(name, value_params)(GMOCK_ACTION_CLASS_( name, value_params) &&) noexcept GMOCK_INTERNAL_DEFN_COPY_ ##value_params template <typename F> operator ::testing::Action<F>() const { return GMOCK_PP_IF( GMOCK_PP_IS_EMPTY(GMOCK_INTERNAL_COUNT_##value_params), (::testing::internal::MakeAction<F, gmock_Impl>()), (::testing::internal::MakeAction<F>(impl_))); } private: class gmock_Impl { public: explicit gmock_Impl GMOCK_INTERNAL_INIT_##value_params {} template <typename function_type, typename return_type, typename args_type, GMOCK_ACTION_TEMPLATE_ARGS_NAMES_> return_type gmock_PerformImpl(GMOCK_ACTION_ARG_TYPES_AND_NAMES_) const; GMOCK_INTERNAL_DEFN_##value_params }; GMOCK_PP_IF(GMOCK_PP_IS_EMPTY(GMOCK_INTERNAL_COUNT_##value_params), , std::shared_ptr<const gmock_Impl> impl_;) }; template <GMOCK_INTERNAL_DECL_##template_params GMOCK_INTERNAL_DECL_TYPE_##value_params> [[nodiscard]] GMOCK_ACTION_CLASS_( name, value_params)<GMOCK_INTERNAL_LIST_##template_params GMOCK_INTERNAL_LIST_TYPE_##value_params> name(GMOCK_INTERNAL_DECL_##value_params); template <GMOCK_INTERNAL_DECL_##template_params GMOCK_INTERNAL_DECL_TYPE_##value_params> inline GMOCK_ACTION_CLASS_( name, value_params)<GMOCK_INTERNAL_LIST_##template_params GMOCK_INTERNAL_LIST_TYPE_##value_params> name(GMOCK_INTERNAL_DECL_##value_params) { return GMOCK_ACTION_CLASS_( name, value_params)<GMOCK_INTERNAL_LIST_##template_params GMOCK_INTERNAL_LIST_TYPE_##value_params>( GMOCK_INTERNAL_LIST_##value_params); } template <GMOCK_INTERNAL_DECL_##template_params GMOCK_INTERNAL_DECL_TYPE_##value_params> template <typename function_type, typename return_type, typename args_type, GMOCK_ACTION_TEMPLATE_ARGS_NAMES_> return_type GMOCK_ACTION_CLASS_( name, value_params)<GMOCK_INTERNAL_LIST_##template_params GMOCK_INTERNAL_LIST_TYPE_##value_params>:: gmock_Impl::gmock_PerformImpl(GMOCK_ACTION_ARG_TYPES_AND_NAMES_UNUSED_) const",
+          "confidence": "high",
+          "symbols": [
+            "ACTION_TEMPLATE"
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
       "name": "AsyncMqttClient-esphome",
       "ecosystem": "arduino",
       "current": "2.0.0",
@@ -894,35 +1017,14 @@
       "safeLatest": "2.1.0",
       "status": "clean",
       "risk": "none",
-      "summary": "Insufficient evidence. Drift read the release notes for AsyncMqttClient-esphome 2.1.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
-      "recommendation": "insufficient-evidence",
+      "summary": "Safe to upgrade. Drift read the release notes for AsyncMqttClient-esphome 2.1.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
         "Drift read the release notes for AsyncMqttClient-esphome 2.1.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
-        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
-      ],
-      "breaking": []
-    },
-    {
-      "name": "dlms_parser",
-      "ecosystem": "arduino",
-      "current": "1.1.0",
-      "latest": "2.1.0",
-      "selected": "2.1.0",
-      "safeLatest": null,
-      "status": "clean",
-      "risk": "none",
-      "summary": "Insufficient evidence. Drift read 4 sets of release notes for dlms_parser 2.1.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
-      "recommendation": "insufficient-evidence",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift read 4 sets of release notes for dlms_parser 2.1.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
         "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
       ],
       "breaking": []
@@ -936,34 +1038,14 @@
       "safeLatest": "1.10.0",
       "status": "clean",
       "risk": "none",
-      "summary": "Insufficient evidence. Drift read the release notes for dsmr_parser 1.10.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
-      "recommendation": "insufficient-evidence",
+      "summary": "Safe to upgrade. Drift read the release notes for dsmr_parser 1.10.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
         "Drift read the release notes for dsmr_parser 1.10.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
-        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
-      ],
-      "breaking": []
-    },
-    {
-      "name": "googletest",
-      "ecosystem": "arduino",
-      "current": "1.15.2",
-      "latest": "1.17.0",
-      "selected": "1.17.0",
-      "safeLatest": "1.17.0",
-      "status": "clean",
-      "risk": "none",
-      "summary": "Insufficient evidence. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
-      "recommendation": "insufficient-evidence",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 2,
-      "gaps": [
         "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
       ],
       "breaking": []
@@ -977,8 +1059,8 @@
       "safeLatest": "0.9.32",
       "status": "clean",
       "risk": "none",
-      "summary": "Insufficient evidence. Drift read the release notes for HaierProtocol 0.9.32 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
-      "recommendation": "insufficient-evidence",
+      "summary": "Safe to upgrade. Drift read the release notes for HaierProtocol 0.9.32 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -998,8 +1080,8 @@
       "safeLatest": "2.8.4",
       "status": "clean",
       "risk": "none",
-      "summary": "Insufficient evidence. Drift read 4 sets of release notes for NeoPixelBus 2.8.4 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
-      "recommendation": "insufficient-evidence",
+      "summary": "Safe to upgrade. Drift read 4 sets of release notes for NeoPixelBus 2.8.4 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
@@ -1019,8 +1101,8 @@
       "safeLatest": "0.1.13",
       "status": "clean",
       "risk": "none",
-      "summary": "Insufficient evidence. Drift read 2 sets of release notes for noise-c 0.1.13 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
-      "recommendation": "insufficient-evidence",
+      "summary": "Safe to upgrade. Drift read 2 sets of release notes for noise-c 0.1.13 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,

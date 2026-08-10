@@ -69,6 +69,13 @@
   --brand-text: hsl(159 78% 27%); /* darkened brand for small text in light */
   --dot: 155 20% 42% / 0.10;
   --pre-bg: #edf5f0;
+  --glow-a: 157 72% 43% / 0.16;
+  --glow-b: 172 70% 44% / 0.12;
+  /* Diff tints. Green already means "the brand" on this page, so an added line
+     borrows the brand's own hue rather than a second, competing green. */
+  --diff-add: 157 60% 45% / 0.13;
+  --diff-del: 4 72% 55% / 0.11;
+  --diff-gutter: 155 12% 45%;
   color-scheme: light;
 }
 
@@ -86,6 +93,11 @@
   --brand-text: hsl(152 72% 62%);
   --dot: 152 22% 62% / 0.11;
   --pre-bg: #0b1410;
+  --glow-a: 157 76% 46% / 0.20;
+  --glow-b: 172 70% 44% / 0.14;
+  --diff-add: 157 62% 46% / 0.15;
+  --diff-del: 4 74% 58% / 0.14;
+  --diff-gutter: 152 8% 55%;
   color-scheme: dark;
 }
 
@@ -109,8 +121,24 @@ html {
     background-image: radial-gradient(circle, hsl(var(--dot)) 1px, transparent 1px);
     background-size: 24px 24px;
   }
+  /* The still half of the backdrop: two soft corner washes that are there from
+     the first paint, so the shader has something to fade into rather than
+     appearing against bare background. See `components/backdrop.tsx`. */
+  .bg-glow-still {
+    background-image:
+      radial-gradient(70rem 40rem at 8% -10%, hsl(var(--glow-a)), transparent 60%),
+      radial-gradient(60rem 34rem at 96% 4%, hsl(var(--glow-b)), transparent 62%);
+  }
   .tabular {
     font-variant-numeric: tabular-nums;
+  }
+  /* A diff hunk, as GitHub renders one. The tint is the semantic part: nothing
+     else on the page uses red, so a removed line reads as removed instantly. */
+  .diff-add {
+    background: hsl(var(--diff-add));
+  }
+  .diff-del {
+    background: hsl(var(--diff-del));
   }
 }
 

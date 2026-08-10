@@ -138,12 +138,13 @@ async function rationaleFor(
   const additive = computed ? describeAdditions(computed.additions, computed.locator) : null;
   if (additive) improvements.push(additive);
 
+  const prose = ctx.prose?.get(change.name) ?? [];
   const gaps = collectGaps(change, {
     surfaceGap: ctx.surfaceGaps?.get(dependencyEcosystemKey(change)),
     security,
     registry,
     evidence: input.evidence,
-    prose: ctx.prose?.get(change.name) ?? [],
+    prose,
     licenseUnknown: license.verdict === 'unknown',
   });
 
@@ -158,6 +159,7 @@ async function rationaleFor(
     license,
     gaps,
     surfaceCompared: computed !== undefined,
+    proseRead: prose.length,
   });
 
   logger.debug(`${change.name} ${from} → ${to}: ${assessment.recommendation}`);

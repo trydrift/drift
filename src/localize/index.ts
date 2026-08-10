@@ -367,6 +367,11 @@ function searchFiles(
     );
     const importLines = new Set(candidate.imports.map((i) => i.line));
     const importStatementBreaks = breaksTheImport(change.kind);
+    // A changed signature is a fact about invocations. Whether this file has
+    // any is a per-file question, because the answer depends on the language
+    // it is written in — see `callsAreParenthesised`.
+    const invocationOnly =
+      breaksOnlyAtTheCall(change.kind) && callsAreParenthesised(candidate.language);
 
     const lines = content.split('\n');
     // Two views of the same file, because two kinds of symbol need opposite
@@ -383,7 +388,7 @@ function searchFiles(
     const withoutStrings = maskComments(lines, { blankStrings: true });
 
     for (const symbol of change.symbols) {
-      const matcher = matcherFor(symbol);
+      const matcher = invocationOnly ? invocationMatcherFor(symbol) : matcherFor(symbol);
       if (!matcher) continue;
 
       // The name in this file belongs to a different package. `Certificate` in
@@ -412,7 +417,14 @@ function searchFiles(
         if (!importLineIsASite && (importLines.has(i + 1) || isImportStatement(line))) continue;
 
         const searchable = masked[i]!;
-        if (!matcher.test(searchable)) continue;
+        // The argument list is allowed to start on the next line, which is how
+        // a long call gets formatted by every formatter in wide use.
+        if (
+          !matcher.test(searchable) &&
+          !(invocationOnly && callOpensOnNextLine(symbol, searchable, masked[i + 1]))
+        ) {
+          continue;
+        }
 
         const unit = fileIndex ? unitAtLine(fileIndex, i + 1) : undefined;
 
@@ -453,6 +465,87 @@ function breaksTheImport(kind: BreakingChange['kind']): boolean {
     kind === 'moved-export' ||
     kind === 'unknown'
   );
+}
+
+/**
+ * Does this kind of change only bite where the symbol is *invoked*?
+ *
+ * A changed signature is a statement about argument lists. The name itself
+ * keeps working everywhere else: `const Comp = asChild ? Slot : "button"`
+ * stores a reference, `export { Slot }` re-exports one, `typeof Slot` asks
+ * about a type — none of them pass arguments, so none of them have anything to
+ * update, and reporting them is how a signature finding comes to list a line
+ * where the answer is "yes, that is the name, and?".
+ *
+ * Only the signature kinds qualify. A removed export breaks the mere mention;
+ * a changed default or a new required field lands in object literals and
+ * config, which are not calls at all.
+ */
+function breaksOnlyAtTheCall(kind: BreakingChange['kind']): boolean {
+  return kind === 'signature-change';
+}
+
+/**
+ * Are calls in this language reliably written with parentheses?
+ *
+ * The invocation rule is only safe where an argument list is punctuation rather
+ * than convention. Ruby's `render Slot, locals: {}` and Elixir's pipelines call
+ * without a paren in sight, so applying the rule there would trade a handful of
+ * false positives for silence on whole ecosystems. Those languages keep the
+ * plain identifier search.
+ */
+function callsAreParenthesised(language: FileIndex['language']): boolean {
+  return !UNPARENTHESISED_CALL_LANGUAGES.has(language);
+}
+
+const UNPARENTHESISED_CALL_LANGUAGES = new Set<FileIndex['language']>([
+  'ruby',
+  'elixir',
+  'erlang',
+  'ocaml',
+  'other',
+  'config',
+]);
+
+/**
+ * Build a matcher that only fires where the symbol is actually applied.
+ *
+ * Five shapes count, and they are the five ways a language spells "pass these
+ * arguments to this thing":
+ *
+ *   `Slot(props)`          — the plain call
+ *   `Slot<T>(props)`       — the call with explicit type arguments
+ *   `new Slot(props)`      — construction, whose arguments are the signature
+ *   `<Slot ...>`           — JSX, where the props object *is* the argument
+ *   `@Slot(...)`           — a decorator, which is a call with syntax sugar
+ */
+function invocationMatcherFor(symbol: string): RegExp | null {
+  const trimmed = symbol.trim();
+  if (!trimmed || trimmed.length < 2) return null;
+  // A path-like symbol is a URL or a module specifier, never a callee.
+  if (trimmed.startsWith('/') || trimmed.startsWith('@')) return matcherFor(trimmed);
+
+  const escaped = trimmed.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+  const leading = /^\w/.test(trimmed) ? '\\b' : '(?<![\\w$])';
+  // A type-argument list may contain nested angle brackets but never a brace,
+  // a semicolon, or an assignment — those end the expression instead.
+  const typeArguments = '(?:\\s*<[^;={}()]*>)?';
+
+  return new RegExp(
+    // The JSX alternative refuses a word character before the `<`, which is
+    // what separates the element `<Slot ...>` from the type `Array<Slot>`.
+    `(?:new\\s+)?${leading}${escaped}${typeArguments}\\s*\\(` +
+      `|(?<![\\w$])<${escaped}(?![\\w$])`,
+  );
+}
+
+/** `foo(` split across two lines by a formatter is still `foo(`. */
+function callOpensOnNextLine(symbol: string, line: string, next: string | undefined): boolean {
+  if (next === undefined || !/^\s*\(/.test(next)) return false;
+  const trimmed = symbol.trim();
+  const escaped = trimmed.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+  const leading = /^\w/.test(trimmed) ? '\\b' : '(?<![\\w$])';
+  return new RegExp(`${leading}${escaped}\\s*$`).test(line);
 }
 
 /**

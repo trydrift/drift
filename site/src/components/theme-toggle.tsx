@@ -30,6 +30,9 @@ export function ThemeToggle() {
     document
       .querySelector('meta[name="theme-color"]')
       ?.setAttribute("content", next ? "#0a0b0a" : "#f6f7f4");
+    // Anything painting outside the CSS variables — the backdrop shader takes
+    // its colours as props — has no other way to learn the theme changed.
+    window.dispatchEvent(new Event("themechange"));
   };
 
   return (

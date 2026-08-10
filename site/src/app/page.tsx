@@ -1,4 +1,6 @@
 import { instrumentSerif } from "@/lib/fonts";
+import { Backdrop } from "@/components/backdrop";
+import { Code, GhIcon, GhPanel, type CodeLine } from "@/components/gh";
 import { Demo } from "@/components/demo";
 import { Pipeline } from "@/components/pipeline";
 import { ActionFlow } from "@/components/action-flow";
@@ -23,14 +25,24 @@ import { totalsOf, type Recording } from "@/lib/recordings";
 
 const GITHUB = "https://github.com/trydrift/Drift";
 
+/** The step as a repository really carries it — see `examples/workflows/`. */
+const WORKFLOW: CodeLine[] = [
+  { n: 18, text: "- uses: trydrift/drift@v0" },
+  { n: 19, text: "  with:" },
+  { n: 20, text: "    repo-token: ${{ secrets.GITHUB_TOKEN }}" },
+  { n: 21, text: "    copilot-token: ${{ secrets.DRIFT_COPILOT_TOKEN }}" },
+];
+
 export default function Home() {
   const recordings = loadRecordings();
   const languages = [...new Set(recordings.map((r) => r.language))];
   const proof = summarizeRecordings(recordings);
 
   return (
-    <div className="dot-bg min-h-screen">
-      <header className="mx-auto flex max-w-5xl items-center gap-3 px-5 py-5 sm:px-8">
+    <div className="relative min-h-screen">
+      <Backdrop />
+
+      <header className="relative z-10 mx-auto flex max-w-5xl items-center gap-3 px-5 py-5 sm:px-8">
         <span className={`${instrumentSerif.className} text-2xl text-landing`}>Drift</span>
         <nav className="ml-auto flex items-center gap-1 sm:gap-2">
           <a
@@ -57,7 +69,7 @@ export default function Home() {
         </nav>
       </header>
 
-      <main className="mx-auto max-w-5xl px-5 pb-24 sm:px-8">
+      <main className="relative z-10 mx-auto max-w-5xl px-5 pb-24 sm:px-8">
         {/* ── Hero ────────────────────────────────────────────────────── */}
         <section className="pt-8 sm:pt-16">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
@@ -199,27 +211,57 @@ export default function Home() {
           <div className="mt-7 grid gap-4 lg:grid-cols-[1.15fr_1fr] lg:items-start">
             <ActionFlow />
 
-            <div className="rounded-2xl border border-border bg-surface/50 p-5">
-              <h3 className="text-sm font-semibold text-foreground">One step in a workflow</h3>
-              <div className="mt-3 overflow-x-auto rounded-xl border border-border bg-[var(--pre-bg)] p-3.5">
-                <pre className="font-mono text-[12px] leading-relaxed text-foreground">
-{`- uses: trydrift/drift@v0
-  with:
-    repo-token: \${{ secrets.GITHUB_TOKEN }}
-    copilot-token: \${{ secrets.DRIFT_COPILOT_TOKEN }}`}
-                </pre>
+            <div className="grid gap-4">
+              <GhPanel icon="file" name=".github/workflows/drift.yml" meta="4 lines">
+                <Code lines={WORKFLOW} />
+              </GhPanel>
+
+              {/* What the run leaves behind, in the two places GitHub puts it.
+                  The default install produces exactly these two artefacts and
+                  no third one — which is the section's whole claim, so it is
+                  drawn rather than asserted. */}
+              <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+                <p className="border-b border-border bg-surface-hover/40 px-4 py-2 font-mono text-[11px] text-faint">
+                  what the default run leaves behind
+                </p>
+                <div className="flex items-start gap-2.5 border-b border-border px-4 py-3">
+                  <GhIcon icon="check" className="mt-0.5 size-4 shrink-0 text-brand" />
+                  <div className="min-w-0">
+                    <p className="text-[12.5px] font-medium text-foreground">
+                      drift / analyze — <span className="text-brand-text">affected</span>
+                    </p>
+                    <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
+                      A check run on the commit, next to your tests.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2.5 px-4 py-3">
+                  <GhIcon icon="issue" className="mt-0.5 size-4 shrink-0 text-brand" />
+                  <div className="min-w-0">
+                    <p className="text-[12.5px] font-medium text-foreground">
+                      #482 Upgrade plan: w3lib 1.17.0 → 2.4.1
+                    </p>
+                    <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
+                      The plan, the evidence, and a comment box. Nothing is pushed until someone
+                      writes <code className="font-mono text-[11.5px] text-brand-text">/drift apply</code>.
+                    </p>
+                  </div>
+                </div>
               </div>
-              <p className="mt-3 text-[13px] leading-relaxed text-muted">
-                The built-in <code className="font-mono text-[11.5px] text-brand-text">GITHUB_TOKEN</code>{" "}
-                covers everything except invoking Copilot, which GitHub bills per seat and so
-                requires a user-scoped token. Omit it entirely and Drift runs in analysis-only mode:
-                it still finds and reports everything, it just cannot dispatch the fix.
-              </p>
-              <p className="mt-3 text-[13px] leading-relaxed text-muted">
-                Not ready to grant write access at all?{" "}
-                <code className="font-mono text-[11.5px] text-brand-text">dry-run: true</code>{" "}
-                produces the whole report and creates nothing.
-              </p>
+
+              <div className="rounded-2xl border border-border bg-surface/50 p-5">
+                <p className="text-[13px] leading-relaxed text-muted">
+                  The built-in <code className="font-mono text-[11.5px] text-brand-text">GITHUB_TOKEN</code>{" "}
+                  covers everything except invoking Copilot, which GitHub bills per seat and so
+                  requires a user-scoped token. Omit it entirely and Drift runs in analysis-only
+                  mode: it still finds and reports everything, it just cannot dispatch the fix.
+                </p>
+                <p className="mt-3 text-[13px] leading-relaxed text-muted">
+                  Not ready to grant write access at all?{" "}
+                  <code className="font-mono text-[11.5px] text-brand-text">dry-run: true</code>{" "}
+                  produces the whole report and creates nothing.
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -246,7 +288,7 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="border-t border-border">
+      <footer className="relative z-10 border-t border-border bg-background/60">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-5 py-6 text-xs text-faint sm:px-8">
           <span className={`${instrumentSerif.className} text-base text-landing`}>Drift</span>
           <a href={GITHUB} target="_blank" rel="noreferrer" className="transition-colors hover:text-foreground">

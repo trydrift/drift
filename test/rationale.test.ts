@@ -571,6 +571,44 @@ describe('the upgrade assessment', () => {
     assert.equal(result.recommendation, 'safe-to-upgrade');
   });
 
+  test('a changelog that announced nothing was still read', () => {
+    // The document produced no evidence record precisely because it flagged
+    // nothing. Counting records rather than documents is what filed seven
+    // Arduino libraries as "not verified" with their release notes in cache.
+    const result = assessUpgrade(
+      input({
+        surfaceCompared: false,
+        security: { ...clean, checked: false, direction: 'unknown' },
+        evidence: [],
+        proseRead: 4,
+        gaps: ['Drift read 4 sets of release notes and found nothing that announces a breaking change.'],
+      }),
+    );
+
+    assert.equal(result.recommendation, 'safe-to-upgrade');
+    assert.match(result.confidenceBasis, /[Rr]elease notes/);
+  });
+
+  test('release notes that were read are an answer, not an absence', () => {
+    // The header diff could not run and OSV was unreachable, but four sets of
+    // release notes were fetched and read. "Not verified" would put this beside
+    // the packages where nothing at all could be had, which it is not.
+    const result = assessUpgrade(
+      input({
+        surfaceCompared: false,
+        security: { ...clean, checked: false, direction: 'unknown' },
+        evidence: [
+          { id: 'e1', source: 'github-release', dependency: 'pkg', title: 't', content: 'c', weight: 0.7 },
+        ],
+        gaps: ['Drift read the release notes and found nothing that announces a breaking change.'],
+      }),
+    );
+
+    assert.equal(result.recommendation, 'safe-to-upgrade');
+    assert.equal(result.confidence, 'medium', 'prose alone never reads as strongly as a diff');
+    assert.ok(result.reasons.some((r: string) => /Drift read the release notes/.test(r)));
+  });
+
   test('confidence names what it rests on', () => {
     const withProse = assessUpgrade(
       input({

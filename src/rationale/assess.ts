@@ -37,6 +37,18 @@ export interface AssessmentInput {
   gaps: readonly string[];
   /** True when a computed API diff actually ran for this dependency. */
   surfaceCompared: boolean;
+  /**
+   * How many release notes, changelogs and migration guides were fetched and
+   * read — including the ones that turned out to announce nothing.
+   *
+   * Deliberately not derivable from `evidence`, which only carries the
+   * passages that matched a rule. A changelog read end to end with no breaking
+   * passage in it produces zero evidence records and is nonetheless an answer;
+   * counting records instead of documents is what made Drift file seven
+   * Arduino libraries as *not verified* while their release notes sat in its
+   * own cache.
+   */
+  proseRead?: number;
 }
 
 /**
@@ -168,9 +180,36 @@ function decide(
  * "no advisories". Both are the difference between "Drift checked and this is
  * clean" and "Drift could not check", and conflating them is the specific lie
  * this codebase already had to be corrected for once.
+ *
+ * So are release notes that were fetched and read. That was missing, and the
+ * omission produced its own smaller version of the same lie in the other
+ * direction: a library whose four release notes Drift had downloaded, parsed,
+ * and summarised as announcing nothing breaking was still reported as *not
+ * verified*, next to a library where every source had failed. The two are not
+ * the same fact. Prose is weaker than a computed diff — it reports what the
+ * maintainer chose to write down — and it stays weaker: `judgeConfidence` caps
+ * a prose-only assessment at `medium`, and the gap sentence saying so is
+ * printed either way.
  */
 function answeredSomething(input: AssessmentInput): boolean {
-  return input.surfaceCompared || input.security.checked;
+  return (
+    input.surfaceCompared ||
+    input.security.checked ||
+    (input.proseRead ?? 0) > 0 ||
+    proseEvidence(input).length > 0
+  );
+}
+
+/** Release notes, changelogs and migration guides read for this dependency. */
+function proseEvidence(input: AssessmentInput): readonly Evidence[] {
+  return input.evidence.filter(
+    (record) =>
+      record.dependency === input.dependency &&
+      record.workspace === input.workspace &&
+      (record.source === 'github-release' ||
+        record.source === 'changelog' ||
+        record.source === 'migration-guide'),
+  );
 }
 
 /**
@@ -182,18 +221,13 @@ function answeredSomething(input: AssessmentInput): boolean {
  * know which they are looking at.
  */
 function judgeConfidence(input: AssessmentInput): { level: EvidenceConfidence; basis: string } {
-  const prose = input.evidence.filter(
-    (record) =>
-      record.dependency === input.dependency &&
-      record.workspace === input.workspace &&
-      (record.source === 'github-release' ||
-        record.source === 'changelog' ||
-        record.source === 'migration-guide'),
-  );
+  // Documents read, not passages matched — a changelog that announced nothing
+  // was still consulted, and the basis line has to be able to say so.
+  const prose = Math.max(proseEvidence(input).length, input.proseRead ?? 0);
 
   const sources: string[] = [];
   if (input.surfaceCompared) sources.push('the computed API diff');
-  if (prose.length > 0) sources.push(prose.length === 1 ? 'release notes' : 'release notes and changelog');
+  if (prose > 0) sources.push(prose === 1 ? 'release notes' : 'release notes and changelog');
   if (input.security.checked) sources.push('the OSV advisory database');
 
   if (sources.length === 0) {

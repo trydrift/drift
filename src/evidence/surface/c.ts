@@ -2,7 +2,7 @@ import type { Ecosystem } from '../../types.js';
 import { readArchive } from '../../util/archive.js';
 import { fetchJson, fetchText } from '../../util/http.js';
 import { arduinoLibrary } from '../arduino-index.js';
-import { parseGitHubRepo } from '../registry.js';
+import { fetchRegistryInfo, parseGitHubRepo } from '../registry.js';
 import { diffSurfaces, type SurfaceApi } from '../type-surface.js';
 import { publicHeaders, parseHeaderSurface, type HeaderFile } from './c-headers.js';
 import { unavailable, type SurfaceOutcome, type SurfaceProvider, type SurfaceRequest } from './types.js';
@@ -155,10 +155,39 @@ function registryName(ecosystem: Ecosystem): string {
 
 /* ---------------- per-ecosystem source resolution ---------------- */
 
-/** The Library Manager index records an exact archive URL per release. */
+/**
+ * The Library Manager index records an exact archive URL per release.
+ *
+ * When it does not, the upstream repository still does. Two large groups of
+ * libraries land here and both are ordinary rather than exotic: those published
+ * only to PlatformIO (`lib_deps` is full of them — `AsyncMqttClient-esphome`,
+ * `HaierProtocol`), and those in the index at a *different* version than the
+ * one a project pins, since a project's installed version is frequently older
+ * than anything the index still lists.
+ *
+ * Before this fallback those were reported as "not verified" while their tags,
+ * their sources, and their release notes sat one request away on GitHub — which
+ * is not a limit of what can be known, only of where Drift had looked.
+ */
 async function arduinoArchive(name: string, version: string): Promise<string | null> {
   const library = await arduinoLibrary(name);
-  return library?.archives[version] ?? null;
+  const published = library?.archives[version];
+  if (published) return published;
+
+  const repo = library?.githubRepo ?? (await arduinoRepo(name));
+  return repo ? githubTagArchive(repo, version) : null;
+}
+
+/**
+ * The upstream repository of a library the Arduino index does not carry.
+ *
+ * Goes through `fetchRegistryInfo` rather than PlatformIO directly so that the
+ * one place that knows how to find an Arduino library's repository stays the
+ * one place — including the search-then-fetch dance PlatformIO's API requires.
+ */
+async function arduinoRepo(name: string): Promise<string | null> {
+  const info = await fetchRegistryInfo(name, 'arduino', null);
+  return info?.githubRepo ?? null;
 }
 
 /**

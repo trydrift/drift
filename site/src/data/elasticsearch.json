@@ -5,9 +5,9 @@
   "language": "Java",
   "repo": "https://github.com/elastic/elasticsearch-java",
   "blurb": "Elasticsearch's official Java API client.",
-  "capturedAt": "2026-08-10T06:45:53.708Z",
-  "commit": "d336cc188162cba603f7226aef601fff33e2cfc8",
-  "durationMs": 33146,
+  "capturedAt": "2026-08-10T13:48:12.236Z",
+  "commit": "b350c400718eacfe7e1bcb73437be931345a3817",
+  "durationMs": 14019,
   "packagesChecked": 19,
   "manifests": [
     "java-client/build.gradle.kts",
@@ -23,758 +23,758 @@
   ],
   "events": [
     {
-      "at": 6639,
+      "at": 8700,
       "phase": "Looking for manifests",
       "detail": "elastic/elasticsearch-java",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6647,
+      "at": 8713,
       "phase": "Reading the workspace",
       "detail": "10 packages · gradle-settings, undeclared",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6648,
+      "at": 8717,
       "phase": "Reading manifest",
       "detail": "java-client/build.gradle.kts",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6649,
+      "at": 8719,
       "phase": "Reading manifest",
       "detail": "rest5-client/build.gradle.kts",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6649,
+      "at": 8719,
       "phase": "Reading manifest",
       "detail": "tools/build.gradle.kts",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6650,
+      "at": 8720,
       "phase": "Reading manifest",
       "detail": "buildSrc/build.gradle.kts",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6650,
+      "at": 8720,
       "phase": "Reading manifest",
       "detail": "example-transports/build.gradle.kts",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6650,
+      "at": 8720,
       "phase": "Reading manifest",
       "detail": "examples/esql-article/build.gradle.kts",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6650,
+      "at": 8720,
       "phase": "Reading manifest",
       "detail": "examples/realworld-app/build.gradle",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6650,
+      "at": 8720,
       "phase": "Reading manifest",
       "detail": "examples/realworld-app/rw-database/build.gradle",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6650,
+      "at": 8721,
       "phase": "Reading manifest",
       "detail": "examples/realworld-app/rw-rest/build.gradle",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6650,
+      "at": 8721,
       "phase": "Reading manifest",
       "detail": "examples/realworld-app/rw-server/build.gradle",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6650,
+      "at": 8721,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 19
     },
     {
-      "at": 8529,
+      "at": 10867,
       "phase": "Indexing your code",
       "detail": "4317 files indexed · 19 direct dependencies to check",
       "done": 0,
       "total": 19
     },
     {
-      "at": 8529,
+      "at": 10868,
       "phase": "Checking the Maven Central",
       "detail": "com.google.code.findbugs:jsr305 (installed 3.0.2)",
       "done": 0,
       "total": 19
     },
     {
-      "at": 8529,
+      "at": 10869,
       "phase": "Checking the Maven Central",
       "detail": "jakarta.json:jakarta.json-api (installed 2.1.3)",
       "done": 0,
       "total": 19
     },
     {
-      "at": 8529,
+      "at": 10869,
       "phase": "Checking the Maven Central",
       "detail": "org.eclipse.parsson:parsson (installed 1.1.9)",
       "done": 0,
       "total": 19
     },
     {
-      "at": 8529,
+      "at": 10870,
       "phase": "Checking the Maven Central",
       "detail": "commons-logging:commons-logging (installed 1.3.5)",
       "done": 0,
       "total": 19
     },
     {
-      "at": 8529,
+      "at": 10870,
       "phase": "Checking the Maven Central",
       "detail": "commons-logging:commons-logging (installed 1.3.5)",
       "done": 0,
       "total": 19
     },
     {
-      "at": 8530,
+      "at": 10870,
       "phase": "Checking the Maven Central",
       "detail": "jakarta.json:jakarta.json-api (installed 2.1.3)",
       "done": 0,
       "total": 19
     },
     {
-      "at": 8530,
+      "at": 10870,
       "phase": "Checking the Maven Central",
       "detail": "org.eclipse.parsson:parsson (installed 1.1.9)",
       "done": 0,
       "total": 19
     },
     {
-      "at": 8530,
+      "at": 10870,
       "phase": "Checking the Maven Central",
       "detail": "org.ajoberstar.grgit:grgit-gradle (installed 5.0.0)",
       "done": 0,
       "total": 19
     },
     {
-      "at": 8720,
-      "phase": "Reading release notes and changelog",
-      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
-      "done": 0,
-      "total": 19
-    },
-    {
-      "at": 8728,
-      "phase": "Comparing the public API surface",
-      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6 · 1 evidence source",
-      "done": 0,
-      "total": 19
-    },
-    {
-      "at": 8729,
-      "phase": "No breaking changes to look for",
-      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
-      "done": 0,
-      "total": 19
-    },
-    {
-      "at": 8734,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
-      "done": 0,
-      "total": 19
-    },
-    {
-      "at": 8740,
-      "phase": "Reading release notes and changelog",
-      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
-      "done": 0,
-      "total": 19
-    },
-    {
-      "at": 8740,
+      "at": 10872,
       "phase": "Up to date",
-      "detail": "jakarta.json:jakarta.json-api@2.1.3",
+      "detail": "org.eclipse.parsson:parsson@1.1.9",
       "done": 1,
       "total": 19
     },
     {
-      "at": 8740,
+      "at": 10872,
       "phase": "Checking the Maven Central",
       "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv (installed 2.17.0)",
       "done": 1,
       "total": 19
     },
     {
-      "at": 8744,
+      "at": 10877,
+      "phase": "Reading release notes and changelog",
+      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
+      "done": 1,
+      "total": 19
+    },
+    {
+      "at": 10878,
       "phase": "Up to date",
-      "detail": "jakarta.json:jakarta.json-api@2.1.3",
+      "detail": "org.eclipse.parsson:parsson@1.1.9",
       "done": 2,
       "total": 19
     },
     {
-      "at": 8744,
+      "at": 10878,
       "phase": "Checking the Maven Central",
       "detail": "org.springframework.boot:spring-boot-starter-parent (installed 3.2.0)",
       "done": 2,
       "total": 19
     },
     {
-      "at": 8745,
-      "phase": "Reading release notes and changelog",
-      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0",
-      "done": 2,
-      "total": 19
-    },
-    {
-      "at": 8748,
-      "phase": "Comparing the public API surface",
-      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6 · 1 evidence source",
-      "done": 2,
-      "total": 19
-    },
-    {
-      "at": 8748,
-      "phase": "No breaking changes to look for",
-      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
-      "done": 2,
-      "total": 19
-    },
-    {
-      "at": 8752,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
-      "done": 2,
-      "total": 19
-    },
-    {
-      "at": 8754,
-      "phase": "Comparing the public API surface",
-      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0 · 1 evidence source",
-      "done": 2,
-      "total": 19
-    },
-    {
-      "at": 8754,
-      "phase": "No breaking changes to look for",
-      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0",
-      "done": 2,
-      "total": 19
-    },
-    {
-      "at": 8759,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0",
-      "done": 2,
-      "total": 19
-    },
-    {
-      "at": 8812,
-      "phase": "Reading release notes and changelog",
-      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0",
-      "done": 2,
-      "total": 19
-    },
-    {
-      "at": 8816,
-      "phase": "Comparing the public API surface",
-      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0 · 1 evidence source",
-      "done": 2,
-      "total": 19
-    },
-    {
-      "at": 8816,
-      "phase": "No breaking changes to look for",
-      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0",
-      "done": 2,
-      "total": 19
-    },
-    {
-      "at": 8818,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0",
-      "done": 2,
-      "total": 19
-    },
-    {
-      "at": 8939,
-      "phase": "Checked",
-      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6 · safe for your code · no breaking changes found",
+      "at": 10879,
+      "phase": "Up to date",
+      "detail": "com.google.code.findbugs:jsr305@3.0.2",
       "done": 3,
       "total": 19
     },
     {
-      "at": 8939,
+      "at": 10879,
       "phase": "Checking the Maven Central",
       "detail": "org.springframework.boot:spring-boot-starter (installed 3.2.0)",
       "done": 3,
       "total": 19
     },
     {
-      "at": 8961,
-      "phase": "Checked",
-      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6 · safe for your code · no breaking changes found",
+      "at": 10879,
+      "phase": "Reading release notes and changelog",
+      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
+      "done": 3,
+      "total": 19
+    },
+    {
+      "at": 10880,
+      "phase": "Up to date",
+      "detail": "jakarta.json:jakarta.json-api@2.1.3",
       "done": 4,
       "total": 19
     },
     {
-      "at": 8961,
+      "at": 10880,
       "phase": "Checking the Maven Central",
       "detail": "org.springframework.boot:spring-boot-starter-validation (installed 3.2.0)",
       "done": 4,
       "total": 19
     },
     {
-      "at": 8997,
-      "phase": "Checked",
-      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0 · safe for your code · no breaking changes found",
+      "at": 10884,
+      "phase": "Up to date",
+      "detail": "jakarta.json:jakarta.json-api@2.1.3",
       "done": 5,
       "total": 19
     },
     {
-      "at": 8997,
+      "at": 10884,
       "phase": "Checking the Maven Central",
       "detail": "co.elastic.clients:elasticsearch-java (installed 8.11.4)",
       "done": 5,
       "total": 19
     },
     {
-      "at": 9069,
+      "at": 10885,
+      "phase": "Reading release notes and changelog",
+      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 10893,
+      "phase": "Reading release notes and changelog",
+      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 10896,
+      "phase": "Reading release notes and changelog",
+      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 10898,
+      "phase": "Reading release notes and changelog",
+      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 10898,
+      "phase": "Comparing the public API surface",
+      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6 · 1 evidence source",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 10899,
+      "phase": "No breaking changes to look for",
+      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 10903,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11029,
+      "phase": "Comparing the public API surface",
+      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6 · 1 evidence source",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11029,
+      "phase": "No breaking changes to look for",
+      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11031,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11041,
+      "phase": "Reading release notes and changelog",
+      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11042,
+      "phase": "Comparing the public API surface",
+      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0 · 1 evidence source",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11042,
+      "phase": "No breaking changes to look for",
+      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11044,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11053,
+      "phase": "Reading release notes and changelog",
+      "detail": "co.elastic.clients:elasticsearch-java 8.11.4 → 8.18.3",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11060,
+      "phase": "Comparing the public API surface",
+      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0 · 1 evidence source",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11060,
+      "phase": "No breaking changes to look for",
+      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11063,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11065,
+      "phase": "Comparing the public API surface",
+      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3 · 1 evidence source",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11066,
+      "phase": "No breaking changes to look for",
+      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11068,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11073,
+      "phase": "Comparing the public API surface",
+      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3 · 1 evidence source",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11073,
+      "phase": "No breaking changes to look for",
+      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11075,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11077,
+      "phase": "Comparing the public API surface",
+      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3 · 1 evidence source",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11077,
+      "phase": "No breaking changes to look for",
+      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11082,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11084,
+      "phase": "Comparing the public API surface",
+      "detail": "co.elastic.clients:elasticsearch-java 8.11.4 → 8.18.3 · 1 evidence source",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11084,
+      "phase": "No breaking changes to look for",
+      "detail": "co.elastic.clients:elasticsearch-java 8.11.4 → 8.18.3",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11086,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "co.elastic.clients:elasticsearch-java 8.11.4 → 8.18.3",
+      "done": 5,
+      "total": 19
+    },
+    {
+      "at": 11321,
       "phase": "Checked",
-      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0 · safe for your code · no breaking changes found",
+      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6 · safe for your code · no breaking changes found",
       "done": 6,
       "total": 19
     },
     {
-      "at": 9069,
+      "at": 11321,
       "phase": "Checking the Maven Central",
       "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 (installed 2.16.0)",
       "done": 6,
       "total": 19
     },
     {
-      "at": 9089,
-      "phase": "Reading release notes and changelog",
-      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3",
-      "done": 6,
-      "total": 19
-    },
-    {
-      "at": 9093,
-      "phase": "Comparing the public API surface",
-      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3 · 1 evidence source",
-      "done": 6,
-      "total": 19
-    },
-    {
-      "at": 9093,
-      "phase": "No breaking changes to look for",
-      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3",
-      "done": 6,
-      "total": 19
-    },
-    {
-      "at": 9095,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3",
-      "done": 6,
-      "total": 19
-    },
-    {
-      "at": 9218,
-      "phase": "Reading release notes and changelog",
-      "detail": "co.elastic.clients:elasticsearch-java 8.11.4 → 8.18.3",
-      "done": 6,
-      "total": 19
-    },
-    {
-      "at": 9221,
-      "phase": "Comparing the public API surface",
-      "detail": "co.elastic.clients:elasticsearch-java 8.11.4 → 8.18.3 · 1 evidence source",
-      "done": 6,
-      "total": 19
-    },
-    {
-      "at": 9221,
-      "phase": "No breaking changes to look for",
-      "detail": "co.elastic.clients:elasticsearch-java 8.11.4 → 8.18.3",
-      "done": 6,
-      "total": 19
-    },
-    {
-      "at": 9223,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "co.elastic.clients:elasticsearch-java 8.11.4 → 8.18.3",
-      "done": 6,
-      "total": 19
-    },
-    {
-      "at": 9231,
+      "at": 11323,
       "phase": "Checked",
-      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3 · safe for your code · no breaking changes found",
+      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6 · safe for your code · no breaking changes found",
       "done": 7,
       "total": 19
     },
     {
-      "at": 9231,
+      "at": 11323,
       "phase": "Checking the Maven Central",
       "detail": "javax.xml.bind:jaxb-api (installed 2.3.1)",
       "done": 7,
       "total": 19
     },
     {
-      "at": 9285,
+      "at": 11326,
+      "phase": "Reading release notes and changelog",
+      "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.16.0 → 2.19.0",
+      "done": 7,
+      "total": 19
+    },
+    {
+      "at": 11327,
       "phase": "Reading release notes and changelog",
       "detail": "javax.xml.bind:jaxb-api 2.3.1 → 2.4.0",
       "done": 7,
       "total": 19
     },
     {
-      "at": 9288,
-      "phase": "Comparing the public API surface",
-      "detail": "javax.xml.bind:jaxb-api 2.3.1 → 2.4.0 · 1 evidence source",
-      "done": 7,
-      "total": 19
-    },
-    {
-      "at": 9288,
-      "phase": "No breaking changes to look for",
-      "detail": "javax.xml.bind:jaxb-api 2.3.1 → 2.4.0",
-      "done": 7,
-      "total": 19
-    },
-    {
-      "at": 9290,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "javax.xml.bind:jaxb-api 2.3.1 → 2.4.0",
-      "done": 7,
-      "total": 19
-    },
-    {
-      "at": 9362,
+      "at": 11335,
       "phase": "Checked",
-      "detail": "co.elastic.clients:elasticsearch-java 8.11.4 → 8.18.3 · safe for your code · no breaking changes found",
+      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3 · safe for your code · no breaking changes found",
       "done": 8,
       "total": 19
     },
     {
-      "at": 9362,
+      "at": 11335,
       "phase": "Checking the Maven Central",
       "detail": "io.jsonwebtoken:jjwt (installed 0.9.1)",
       "done": 8,
       "total": 19
     },
     {
-      "at": 9409,
+      "at": 11336,
+      "phase": "Comparing the public API surface",
+      "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.16.0 → 2.19.0 · 1 evidence source",
+      "done": 8,
+      "total": 19
+    },
+    {
+      "at": 11336,
+      "phase": "No breaking changes to look for",
+      "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.16.0 → 2.19.0",
+      "done": 8,
+      "total": 19
+    },
+    {
+      "at": 11338,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.16.0 → 2.19.0",
+      "done": 8,
+      "total": 19
+    },
+    {
+      "at": 11340,
+      "phase": "Comparing the public API surface",
+      "detail": "javax.xml.bind:jaxb-api 2.3.1 → 2.4.0 · 1 evidence source",
+      "done": 8,
+      "total": 19
+    },
+    {
+      "at": 11340,
+      "phase": "No breaking changes to look for",
+      "detail": "javax.xml.bind:jaxb-api 2.3.1 → 2.4.0",
+      "done": 8,
+      "total": 19
+    },
+    {
+      "at": 11342,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "javax.xml.bind:jaxb-api 2.3.1 → 2.4.0",
+      "done": 8,
+      "total": 19
+    },
+    {
+      "at": 11344,
       "phase": "Reading release notes and changelog",
       "detail": "io.jsonwebtoken:jjwt 0.9.1 → 0.12.6",
       "done": 8,
       "total": 19
     },
     {
-      "at": 9412,
+      "at": 11347,
       "phase": "Comparing the public API surface",
       "detail": "io.jsonwebtoken:jjwt 0.9.1 → 0.12.6 · 1 evidence source",
       "done": 8,
       "total": 19
     },
     {
-      "at": 9412,
+      "at": 11347,
       "phase": "No breaking changes to look for",
       "detail": "io.jsonwebtoken:jjwt 0.9.1 → 0.12.6",
       "done": 8,
       "total": 19
     },
     {
-      "at": 9414,
+      "at": 11350,
       "phase": "Weighing what this upgrade is worth",
       "detail": "io.jsonwebtoken:jjwt 0.9.1 → 0.12.6",
       "done": 8,
       "total": 19
     },
     {
-      "at": 9452,
+      "at": 11354,
       "phase": "Checked",
-      "detail": "javax.xml.bind:jaxb-api 2.3.1 → 2.4.0 · safe for your code · no breaking changes found",
+      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0 · safe for your code · no breaking changes found",
       "done": 9,
       "total": 19
     },
     {
-      "at": 9452,
+      "at": 11354,
       "phase": "Checking the Maven Central",
       "detail": "com.github.slugify:slugify (installed 3.0.6)",
       "done": 9,
       "total": 19
     },
     {
-      "at": 9533,
+      "at": 11355,
       "phase": "Reading release notes and changelog",
       "detail": "com.github.slugify:slugify 3.0.6 → 3.0.7",
       "done": 9,
       "total": 19
     },
     {
-      "at": 9536,
+      "at": 11359,
       "phase": "Comparing the public API surface",
       "detail": "com.github.slugify:slugify 3.0.6 → 3.0.7 · 1 evidence source",
       "done": 9,
       "total": 19
     },
     {
-      "at": 9536,
+      "at": 11359,
       "phase": "No breaking changes to look for",
       "detail": "com.github.slugify:slugify 3.0.6 → 3.0.7",
       "done": 9,
       "total": 19
     },
     {
-      "at": 9538,
+      "at": 11361,
       "phase": "Weighing what this upgrade is worth",
       "detail": "com.github.slugify:slugify 3.0.6 → 3.0.7",
       "done": 9,
       "total": 19
     },
     {
-      "at": 9587,
+      "at": 11374,
       "phase": "Checked",
-      "detail": "io.jsonwebtoken:jjwt 0.9.1 → 0.12.6 · safe for your code · no breaking changes found",
+      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0 · safe for your code · no breaking changes found",
       "done": 10,
       "total": 19
     },
     {
-      "at": 9587,
+      "at": 11374,
       "phase": "Checking the Maven Central",
       "detail": "org.springframework.boot:spring-boot-starter-web (installed 3.2.0)",
       "done": 10,
       "total": 19
     },
     {
-      "at": 9652,
-      "phase": "Reading release notes and changelog",
-      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3",
-      "done": 10,
-      "total": 19
-    },
-    {
-      "at": 9655,
-      "phase": "Comparing the public API surface",
-      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3 · 1 evidence source",
-      "done": 10,
-      "total": 19
-    },
-    {
-      "at": 9655,
-      "phase": "No breaking changes to look for",
-      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3",
-      "done": 10,
-      "total": 19
-    },
-    {
-      "at": 9657,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3",
-      "done": 10,
-      "total": 19
-    },
-    {
-      "at": 9673,
+      "at": 11376,
       "phase": "Checked",
-      "detail": "com.github.slugify:slugify 3.0.6 → 3.0.7 · safe for your code · no breaking changes found",
+      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3 · safe for your code · no breaking changes found",
       "done": 11,
       "total": 19
     },
     {
-      "at": 9673,
+      "at": 11376,
       "phase": "Checking the Maven Central",
       "detail": "org.springframework.boot:spring-boot-starter (installed 3.2.0)",
       "done": 11,
       "total": 19
     },
     {
-      "at": 9772,
+      "at": 11376,
       "phase": "Reading release notes and changelog",
       "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
       "done": 11,
       "total": 19
     },
     {
-      "at": 9775,
-      "phase": "Comparing the public API surface",
-      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3 · 1 evidence source",
-      "done": 11,
-      "total": 19
-    },
-    {
-      "at": 9775,
-      "phase": "No breaking changes to look for",
-      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
-      "done": 11,
-      "total": 19
-    },
-    {
-      "at": 9778,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
-      "done": 11,
-      "total": 19
-    },
-    {
-      "at": 9829,
+      "at": 11378,
       "phase": "Checked",
-      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3 · safe for your code · no breaking changes found",
+      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3 · safe for your code · no breaking changes found",
       "done": 12,
       "total": 19
     },
     {
-      "at": 9920,
+      "at": 11385,
       "phase": "Checked",
-      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3 · safe for your code · no breaking changes found",
+      "detail": "co.elastic.clients:elasticsearch-java 8.11.4 → 8.18.3 · safe for your code · no breaking changes found",
       "done": 13,
       "total": 19
     },
     {
-      "at": 19049,
-      "phase": "Up to date",
-      "detail": "org.eclipse.parsson:parsson@1.1.9",
+      "at": 11386,
+      "phase": "Reading release notes and changelog",
+      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3",
+      "done": 13,
+      "total": 19
+    },
+    {
+      "at": 11386,
+      "phase": "Comparing the public API surface",
+      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3 · 1 evidence source",
+      "done": 13,
+      "total": 19
+    },
+    {
+      "at": 11386,
+      "phase": "No breaking changes to look for",
+      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
+      "done": 13,
+      "total": 19
+    },
+    {
+      "at": 11389,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
+      "done": 13,
+      "total": 19
+    },
+    {
+      "at": 11393,
+      "phase": "Comparing the public API surface",
+      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3 · 1 evidence source",
+      "done": 13,
+      "total": 19
+    },
+    {
+      "at": 11393,
+      "phase": "No breaking changes to look for",
+      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3",
+      "done": 13,
+      "total": 19
+    },
+    {
+      "at": 11395,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3",
+      "done": 13,
+      "total": 19
+    },
+    {
+      "at": 11497,
+      "phase": "Checked",
+      "detail": "com.github.slugify:slugify 3.0.6 → 3.0.7 · safe for your code · no breaking changes found",
       "done": 14,
       "total": 19
     },
     {
-      "at": 19177,
-      "phase": "Up to date",
-      "detail": "com.google.code.findbugs:jsr305@3.0.2",
+      "at": 11499,
+      "phase": "Checked",
+      "detail": "javax.xml.bind:jaxb-api 2.3.1 → 2.4.0 · safe for your code · no breaking changes found",
       "done": 15,
       "total": 19
     },
     {
-      "at": 29868,
-      "phase": "Up to date",
-      "detail": "org.eclipse.parsson:parsson@1.1.9",
-      "done": 16,
-      "total": 19
-    },
-    {
-      "at": 30161,
-      "phase": "Reading release notes and changelog",
-      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3",
-      "done": 16,
-      "total": 19
-    },
-    {
-      "at": 30164,
-      "phase": "Comparing the public API surface",
-      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3 · 1 evidence source",
-      "done": 16,
-      "total": 19
-    },
-    {
-      "at": 30164,
-      "phase": "No breaking changes to look for",
-      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3",
-      "done": 16,
-      "total": 19
-    },
-    {
-      "at": 30166,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3",
-      "done": 16,
-      "total": 19
-    },
-    {
-      "at": 30389,
+      "at": 11500,
       "phase": "Checked",
-      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3 · safe for your code · no breaking changes found",
+      "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.16.0 → 2.19.0 · safe for your code · no breaking changes found",
+      "done": 16,
+      "total": 19
+    },
+    {
+      "at": 11526,
+      "phase": "Checked",
+      "detail": "io.jsonwebtoken:jjwt 0.9.1 → 0.12.6 · safe for your code · no breaking changes found",
       "done": 17,
       "total": 19
     },
     {
-      "at": 30404,
-      "phase": "Reading release notes and changelog",
-      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
-      "done": 17,
-      "total": 19
-    },
-    {
-      "at": 30407,
-      "phase": "Comparing the public API surface",
-      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3 · 1 evidence source",
-      "done": 17,
-      "total": 19
-    },
-    {
-      "at": 30407,
-      "phase": "No breaking changes to look for",
-      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
-      "done": 17,
-      "total": 19
-    },
-    {
-      "at": 30409,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
-      "done": 17,
-      "total": 19
-    },
-    {
-      "at": 30513,
-      "phase": "Reading release notes and changelog",
-      "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.16.0 → 2.19.0",
-      "done": 17,
-      "total": 19
-    },
-    {
-      "at": 30521,
-      "phase": "Comparing the public API surface",
-      "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.16.0 → 2.19.0 · 1 evidence source",
-      "done": 17,
-      "total": 19
-    },
-    {
-      "at": 30521,
-      "phase": "No breaking changes to look for",
-      "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.16.0 → 2.19.0",
-      "done": 17,
-      "total": 19
-    },
-    {
-      "at": 30524,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.16.0 → 2.19.0",
-      "done": 17,
-      "total": 19
-    },
-    {
-      "at": 30578,
+      "at": 11536,
       "phase": "Checked",
       "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3 · safe for your code · no breaking changes found",
       "done": 18,
       "total": 19
     },
     {
-      "at": 30764,
+      "at": 11564,
       "phase": "Checked",
-      "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.16.0 → 2.19.0 · safe for your code · no breaking changes found",
+      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3 · safe for your code · no breaking changes found",
       "done": 19,
       "total": 19
     }

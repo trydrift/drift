@@ -642,3 +642,97 @@ def load(der):
     assert.equal(sites.length, 0, 'crypto-js is not crypto');
   });
 });
+
+describe('a changed signature is a fact about calls', () => {
+  const signatureChange = {
+    id: 'bc1',
+    dependency: '@radix-ui/react-slot',
+    kind: 'signature-change' as const,
+    summary: 'The signature of `Slot` changed.',
+    remediation: 'Update every call site to match the new signature.',
+    symbols: ['Slot'],
+    confidence: 'high' as const,
+    citations: ['e1'],
+  };
+
+  const localizeIn = (files: ReturnType<typeof file>[]) =>
+    localize(
+      [signatureChange],
+      [dep('@radix-ui/react-slot', 'npm')],
+      buildIndex(files),
+      files,
+      { logger },
+    );
+
+  test('a reference that passes no arguments has nothing to update', () => {
+    const sites = localizeIn([
+      file(
+        'components/ui/button.tsx',
+        'typescript',
+        `import { Slot } from '@radix-ui/react-slot';
+
+export function Button({ asChild, ...props }) {
+  const Comp = asChild ? Slot : 'button';
+  return <Comp {...props} />;
+}`,
+      ),
+    ]);
+
+    assert.equal(sites.length, 0, 'storing the name is not calling it');
+  });
+
+  test('the call, the construction and the element are all sites', () => {
+    const sites = localizeIn([
+      file(
+        'src/app.tsx',
+        'typescript',
+        `import { Slot } from '@radix-ui/react-slot';
+
+const a = Slot({ children: null });
+const b = new Slot({});
+const c = <Slot asChild />;
+const d = Slot<HTMLDivElement>({});
+const held: Array<Slot> = [];
+export { Slot };`,
+      ),
+    ]);
+
+    assert.deepEqual(sites.map((s) => s.line), [3, 4, 5, 6]);
+  });
+
+  test('an argument list opened on the next line still counts', () => {
+    const sites = localizeIn([
+      file(
+        'src/wrap.ts',
+        'typescript',
+        `import { Slot } from '@radix-ui/react-slot';
+
+const rendered = Slot
+  ({ children: null });`,
+      ),
+    ]);
+
+    assert.deepEqual(sites.map((s) => s.line), [3]);
+  });
+
+  test('languages that call without parens keep the plain search', () => {
+    const files = [
+      file(
+        'app/views.rb',
+        'ruby',
+        `require 'acme'
+
+def show
+  render Slot, locals: {}
+end`,
+      ),
+    ];
+
+    const change = { ...signatureChange, dependency: 'acme' };
+    const sites = localize([change], [dep('acme', 'rubygems')], buildIndex(files), files, {
+      logger,
+    });
+
+    assert.equal(sites.length, 1, 'a paren rule would go silent on Ruby');
+  });
+});
