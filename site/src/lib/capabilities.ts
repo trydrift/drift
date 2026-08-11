@@ -26,13 +26,15 @@ export interface EcosystemCapability {
   support: Record<string, StageSupport>;
 }
 
-export const CAPABILITY_STAGES = ["detect","evidence","surface","static-analysis","verify","fix","pull-request"] as const;
+export const CAPABILITY_STAGES = ["detect","evidence","surface","static-analysis","upgrade-discovery","upgrade-install","verify","fix","pull-request"] as const;
 
 export const STAGE_LABEL: Record<string, string> = {
   "detect": "Detect",
   "evidence": "Evidence",
   "surface": "API surface",
   "static-analysis": "Static analysis",
+  "upgrade-discovery": "Find upgrades",
+  "upgrade-install": "Install a version",
   "verify": "Verify",
   "fix": "Fix",
   "pull-request": "Automated PR"
@@ -81,6 +83,12 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
         "level": "partial",
         "note": "Resolves imports against the module names the published package declares, follows re-exports inside your repository, and matches references to symbols named in the evidence. Cannot see through reflection, dynamic dispatch, or generated code."
       },
+      "upgrade-discovery": {
+        "level": "full"
+      },
+      "upgrade-install": {
+        "level": "full"
+      },
       "verify": {
         "level": "partial",
         "note": "Runs the typecheck, test, and build scripts the project's package.json actually declares."
@@ -127,6 +135,12 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
         "level": "partial",
         "note": "Resolves imports against the module names the published package declares, follows re-exports inside your repository, and matches references to symbols named in the evidence. Cannot see through reflection, dynamic dispatch, or generated code."
       },
+      "upgrade-discovery": {
+        "level": "full"
+      },
+      "upgrade-install": {
+        "level": "full"
+      },
       "verify": {
         "level": "partial",
         "note": "Runs mypy/pyright and pytest when the project declares them."
@@ -166,6 +180,12 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
       "static-analysis": {
         "level": "partial",
         "note": "Resolves imports against the module names the published package declares, follows re-exports inside your repository, and matches references to symbols named in the evidence. Cannot see through reflection, dynamic dispatch, or generated code."
+      },
+      "upgrade-discovery": {
+        "level": "full"
+      },
+      "upgrade-install": {
+        "level": "full"
       },
       "verify": {
         "level": "partial",
@@ -207,6 +227,12 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
       "static-analysis": {
         "level": "partial",
         "note": "Resolves imports against the module names the published package declares, follows re-exports inside your repository, and matches references to symbols named in the evidence. Cannot see through reflection, dynamic dispatch, or generated code."
+      },
+      "upgrade-discovery": {
+        "level": "full"
+      },
+      "upgrade-install": {
+        "level": "full"
       },
       "verify": {
         "level": "partial",
@@ -255,6 +281,13 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
         "level": "partial",
         "note": "Resolves imports against the module names the published package declares, follows re-exports inside your repository, and matches references to symbols named in the evidence. Cannot see through reflection, dynamic dispatch, or generated code."
       },
+      "upgrade-discovery": {
+        "level": "full"
+      },
+      "upgrade-install": {
+        "level": "partial",
+        "note": "Maven can install a chosen version directly. Gradle, sbt cannot: the version lives in a build file the tool will not rewrite, so Drift tells you what to change instead of running something that silently changes nothing."
+      },
       "verify": {
         "level": "partial",
         "note": "Runs Maven or Gradle. sbt projects verify through sbt when it is installed."
@@ -295,6 +328,12 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
       "static-analysis": {
         "level": "partial",
         "note": "Resolves imports against the module names the published package declares, follows re-exports inside your repository, and matches references to symbols named in the evidence. Cannot see through reflection, dynamic dispatch, or generated code."
+      },
+      "upgrade-discovery": {
+        "level": "full"
+      },
+      "upgrade-install": {
+        "level": "full"
       },
       "verify": {
         "level": "partial",
@@ -340,6 +379,12 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
         "level": "partial",
         "note": "Resolves imports against the module names the published package declares, follows re-exports inside your repository, and matches references to symbols named in the evidence. Cannot see through reflection, dynamic dispatch, or generated code."
       },
+      "upgrade-discovery": {
+        "level": "full"
+      },
+      "upgrade-install": {
+        "level": "full"
+      },
       "verify": {
         "level": "partial",
         "note": "Runs `dotnet build` and `dotnet test`.",
@@ -381,6 +426,12 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
         "level": "partial",
         "note": "Resolves `use` statements against the PSR-4 and PSR-0 roots the package declares in its own composer.json, read from Packagist. A package that autoloads only by classmap declares no namespace root and is not localized."
       },
+      "upgrade-discovery": {
+        "level": "full"
+      },
+      "upgrade-install": {
+        "level": "full"
+      },
       "verify": {
         "level": "partial",
         "note": "Runs PHPUnit when composer.json declares it.",
@@ -421,6 +472,12 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
       "static-analysis": {
         "level": "partial",
         "note": "Resolves module references against every module the released tarball defines, so a fully qualified call needs no `alias` to be found. Cannot see through `apply/3` or a module name computed at runtime."
+      },
+      "upgrade-discovery": {
+        "level": "full"
+      },
+      "upgrade-install": {
+        "level": "full"
       },
       "verify": {
         "level": "partial",
@@ -464,6 +521,12 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
         "level": "partial",
         "note": "Resolves imports against the module names the published package declares, follows re-exports inside your repository, and matches references to symbols named in the evidence. Cannot see through reflection, dynamic dispatch, or generated code."
       },
+      "upgrade-discovery": {
+        "level": "full"
+      },
+      "upgrade-install": {
+        "level": "full"
+      },
       "verify": {
         "level": "partial",
         "note": "Runs `dart analyze` and `dart test`, or their Flutter equivalents.",
@@ -505,6 +568,14 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
       "static-analysis": {
         "level": "partial",
         "note": "Resolves `import` statements against the library and target names declared in the dependency's own Package.swift at the resolved version. A module name a manifest computes at evaluation time is not visible without running SwiftPM."
+      },
+      "upgrade-discovery": {
+        "level": "partial",
+        "note": "Versions are git tags, since SwiftPM has no package registry to ask. Drift lists them for packages hosted on GitHub; anything on another git host is reported as unchecked rather than up to date."
+      },
+      "upgrade-install": {
+        "level": "none",
+        "note": "Swift Package Manager has no command that pins a version — the coordinate lives in a build file the tool will not rewrite. Drift reports the version to set and where, and leaves the edit to you."
       },
       "verify": {
         "level": "partial",
@@ -548,6 +619,12 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
         "level": "partial",
         "note": "Resolves `import` statements against the `module_name` the pod declares in its podspec, read from the CocoaPods CDN. A pod that builds its module name in Ruby at podspec-evaluation time is not visible without running CocoaPods."
       },
+      "upgrade-discovery": {
+        "level": "full"
+      },
+      "upgrade-install": {
+        "level": "full"
+      },
       "verify": {
         "level": "none",
         "note": "Building an iOS target needs Xcode and a scheme Drift cannot infer; verification stays with the developer."
@@ -588,6 +665,13 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
       "static-analysis": {
         "level": "partial",
         "note": "Matches imports and references to symbols named in the evidence, using the ecosystem's own module-naming convention where no published module list exists. Cannot see through reflection, dynamic dispatch, or generated code."
+      },
+      "upgrade-discovery": {
+        "level": "partial",
+        "note": "opam publishes no version API, so releases are read from the package directories in the opam-repository index. A package published only in a custom repository is reported as unchecked rather than up to date."
+      },
+      "upgrade-install": {
+        "level": "full"
       },
       "verify": {
         "level": "partial",
@@ -632,6 +716,12 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
         "level": "partial",
         "note": "Matches `#include` directives and references to symbols named in the evidence, following includes through your own headers so a library reached indirectly still counts. A macro-generated call site is invisible."
       },
+      "upgrade-discovery": {
+        "level": "full"
+      },
+      "upgrade-install": {
+        "level": "full"
+      },
       "verify": {
         "level": "partial",
         "note": "Runs `conan build`, which is the compiler — in C and C++ an incompatible header change is a build failure rather than a runtime surprise.",
@@ -674,6 +764,12 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
         "level": "partial",
         "note": "Matches `#include` directives and references to symbols named in the evidence, following includes through your own headers so a library reached indirectly still counts. A macro-generated call site is invisible."
       },
+      "upgrade-discovery": {
+        "level": "full"
+      },
+      "upgrade-install": {
+        "level": "full"
+      },
       "verify": {
         "level": "partial",
         "note": "Runs the project's CMake build, which is where an incompatible header change surfaces.",
@@ -715,6 +811,12 @@ export const ECOSYSTEM_CAPABILITIES: EcosystemCapability[] = [
       "static-analysis": {
         "level": "partial",
         "note": "Matches `#include` directives and references to symbols named in the evidence, following includes through your own headers so a library reached indirectly still counts. A macro-generated call site is invisible."
+      },
+      "upgrade-discovery": {
+        "level": "full"
+      },
+      "upgrade-install": {
+        "level": "full"
       },
       "verify": {
         "level": "partial",
