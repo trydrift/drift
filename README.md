@@ -23,9 +23,10 @@ Dependabot tells you a version number changed. It does not tell you whether your
 code still works. So the PR sits there, or it gets merged on faith, or someone
 spends an afternoon reading a changelog.
 
-The gap is real and measurable: **around 5% of npm packages have been broken by a
-minor or patch release of a dependency**, and the majority of those breakages come
-from changes to the package's public API — changes a version number cannot express.
+The gap is real: **minor and patch releases break consumers often enough that
+nobody sensible trusts a version number**, and the breakages that matter come
+from changes to a package's public API — changes a version number, by
+definition, cannot express.
 
 Drift closes that gap. It answers four questions Dependabot doesn't:
 

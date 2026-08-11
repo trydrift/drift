@@ -15,10 +15,14 @@ So one of three things happens: the PR sits open for weeks, or it gets merged on
 faith, or an engineer spends an afternoon reading a changelog to find out. All
 three are bad, and the third is the expensive one.
 
-The gap is measurable. **Around 5% of npm packages have been broken by a minor or
-patch release of a dependency**, and the majority of those breakages come from
-changes to the package's public API — changes a version number, by definition,
-cannot express.
+The gap is real. **Minor and patch releases break consumers often enough that
+nobody sensible trusts a version number**, and the breakages that matter come
+from changes to the package's public API — changes a version number, by
+definition, cannot express.
+
+> If we want to put a figure on this publicly, it needs a citation attached.
+> The previous version of this sentence carried "around 5%" with no source,
+> which is the first thing a technical audience asks about.
 
 Dependency updates are one of the few engineering tasks that are simultaneously
 mandatory (security), frequent (weekly), low-status (nobody wants it), and
