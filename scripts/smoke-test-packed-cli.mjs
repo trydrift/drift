@@ -63,18 +63,29 @@ try {
   assert(help.status === 0, `--help exited ${help.status}: ${help.stderr}`);
   assert(/drift analyze/.test(help.stdout), '--help output missing usage text');
 
-  // No git remote / no token here: this must fail with Drift's own, readable
-  // error — not an import error, not a stack trace, not a hang.
+  // No git remote / no token here. The commands divide on exactly this: the
+  // read-only ones must work anyway, and the ones that write must refuse
+  // clearly. Either way the failure mode must be Drift's own readable message
+  // — never an import error, a stack trace, or a hang.
   const emptyDir = mkdtempSync(join(tmpdir(), 'drift-smoke-empty-'));
   const env = { ...process.env };
   delete env.GITHUB_TOKEN;
 
-  log('drift analyze (no token, clean install, non-repo cwd) — expect a clean, deterministic failure');
+  // `analyze` is read-only by construction: it diffs the local checkout and
+  // needs no token at all. This assertion used to demand exit 1 and "GitHub
+  // token is required", which stopped being true when analyze was made
+  // token-free — so the gate had been failing on `main` against behaviour that
+  // is not merely acceptable but is the whole "try it with zero permissions"
+  // promise. It is asserted the right way round now.
+  log('drift analyze (no token, clean install, non-repo cwd) — must succeed; analyze never needs a token');
   const analyzeNoToken = run(bin, ['analyze'], { cwd: emptyDir, env });
-  assert(analyzeNoToken.status === 1, `analyze without a token should exit 1, got ${analyzeNoToken.status}`);
   assert(
-    /GitHub token is required/.test(analyzeNoToken.stderr) || /GitHub token is required/.test(analyzeNoToken.stdout),
-    `analyze without a token printed an unexpected error:\n${analyzeNoToken.stderr}\n${analyzeNoToken.stdout}`,
+    analyzeNoToken.status === 0,
+    `analyze needs no token and must exit 0, got ${analyzeNoToken.status}:\n${analyzeNoToken.stderr}`,
+  );
+  assert(
+    /No dependency manifest changed/.test(analyzeNoToken.stdout + analyzeNoToken.stderr),
+    `analyze should report that nothing changed, got:\n${analyzeNoToken.stdout}\n${analyzeNoToken.stderr}`,
   );
   assert(
     !/Cannot find module|ERR_MODULE_NOT_FOUND|ERR_REQUIRE_ESM|is not a function/.test(
@@ -83,12 +94,38 @@ try {
     `analyze without a token hit a runtime/import error instead of Drift's own error path:\n${analyzeNoToken.stderr}`,
   );
 
-  log('drift fix (no token) — expect the same deterministic failure, no worktree created');
+  // `fix` writes — it pushes a branch and opens a pull request — so it must
+  // refuse without credentials, and say why in words a user can act on.
+  log('drift fix (no token) — expect a clean refusal, no worktree created');
   const fixNoToken = run(bin, ['fix'], { cwd: emptyDir, env });
   assert(fixNoToken.status === 1, `fix without a token should exit 1, got ${fixNoToken.status}`);
   assert(
-    /GitHub token is required/.test(fixNoToken.stderr) || /GitHub token is required/.test(fixNoToken.stdout),
+    /Signing in to GitHub is required|Could not determine the repository/.test(
+      fixNoToken.stderr + fixNoToken.stdout,
+    ),
     `fix without a token printed an unexpected error:\n${fixNoToken.stderr}\n${fixNoToken.stdout}`,
+  );
+  assert(
+    !/Cannot find module|ERR_MODULE_NOT_FOUND|ERR_REQUIRE_ESM|is not a function/.test(
+      fixNoToken.stderr + fixNoToken.stdout,
+    ),
+    `fix hit a runtime/import error instead of Drift's own error path:\n${fixNoToken.stderr}`,
+  );
+
+  // `outdated` is the other read-only command, and the one a first-time user
+  // is most likely to run. It scans the registry, so it is allowed to find
+  // nothing here — it is not allowed to demand credentials or crash.
+  log('drift outdated (no token, non-repo cwd) — read-only, must not require credentials');
+  const outdatedNoToken = run(bin, ['outdated'], { cwd: emptyDir, env });
+  assert(
+    outdatedNoToken.status === 0,
+    `outdated needs no token and must exit 0, got ${outdatedNoToken.status}:\n${outdatedNoToken.stderr}`,
+  );
+  assert(
+    !/Cannot find module|ERR_MODULE_NOT_FOUND|ERR_REQUIRE_ESM|is not a function/.test(
+      outdatedNoToken.stderr + outdatedNoToken.stdout,
+    ),
+    `outdated hit a runtime/import error:\n${outdatedNoToken.stderr}`,
   );
 
   log('drift pr (no token, no git repo) — expect a clean failure, not a crash');
