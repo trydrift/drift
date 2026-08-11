@@ -1,9 +1,8 @@
 import { dirname, join } from 'node:path';
 import { readFileSync } from 'node:fs';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import semver from 'semver';
 import type { DependencyChange, DependencyKind, Ecosystem, RemediationPlan, RepoContext } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
@@ -20,7 +19,6 @@ import {
   type PackageManagerAmbiguity,
   type PackageManagerId,
 } from '../detect/package-manager.js';
-import { fetchRegistryInfo } from '../evidence/registry.js';
 import {
   detectWorkspaces,
   memberDirectories,
@@ -656,6 +654,21 @@ function plannedUpgrade(candidate: UpgradeCandidate, mode: 'safe' | 'force'): Co
     : command;
 }
 
+/**
+ * Install one candidate's selected version.
+ *
+ * Transactional, by snapshot and restore. Drift's whole proposition is that it
+ * modifies a repository safely, and a half-applied upgrade is the one outcome
+ * that breaks that promise outright: for every manager that needs a manifest
+ * rewrite (Bundler, Mix, Rebar3, CocoaPods, Conan, vcpkg, pip's
+ * `requirements.txt`, ...), the rewrite lands *before* the install command
+ * runs, so a command that then fails used to leave the manifest declaring a
+ * version that was never installed and no longer matches the lockfile.
+ *
+ * So both files the operation can touch — the manifest and the lockfile — are
+ * read first and written back verbatim if anything throws. Either the upgrade
+ * happened or the tree is exactly as it was found; there is no third state.
+ */
 export async function installUpgrade(
   root: string,
   candidate: UpgradeCandidate,
@@ -666,19 +679,28 @@ export async function installUpgrade(
   if (!command) throw new NoUpgradeCommandError(candidate);
 
   const manager = packageManagerById(candidate.packageManager);
-  if (manager?.rewriteManifest) {
-    const manifestFile = join(root, candidate.manifestPath);
-    const original = await readFile(manifestFile, 'utf8');
-    const rewritten = manager.rewriteManifest(
-      original,
-      { name: candidate.name, version: candidate.selected, kind: candidate.kind },
-      candidate.manifestPath,
-    );
-    if (rewritten !== original) await writeFile(manifestFile, rewritten, 'utf8');
-  }
+  const manifestFile = join(root, candidate.manifestPath);
+  const cwd = dirname(manifestFile);
 
-  const cwd = dirname(join(root, candidate.manifestPath));
+  // Taken before the first write, and covering the lockfile as well as the
+  // manifest: the install command rewrites both, so restoring only the one
+  // Drift edited by hand would still leave the pair inconsistent.
+  const snapshot = await snapshotFiles([
+    manifestFile,
+    ...(manager?.lockfiles ?? []).map((name) => join(cwd, name)),
+  ]);
+
   try {
+    if (manager?.rewriteManifest) {
+      const original = await readFile(manifestFile, 'utf8');
+      const rewritten = manager.rewriteManifest(
+        original,
+        { name: candidate.name, version: candidate.selected, kind: candidate.kind },
+        candidate.manifestPath,
+      );
+      if (rewritten !== original) await writeFile(manifestFile, rewritten, 'utf8');
+    }
+
     await run(command.command, command.args, {
       cwd,
       env,
@@ -689,6 +711,8 @@ export async function installUpgrade(
       maxBuffer: 8 * 1024 * 1024,
     });
   } catch (err) {
+    await restoreFiles(snapshot);
+
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
       throw new Error(
         `${command.command} was not found on PATH. Run \`command -v ${command.command}\` to check, and install it ` +
@@ -697,6 +721,40 @@ export async function installUpgrade(
     }
     throw err;
   }
+}
+
+/** A file's contents before an upgrade, or `null` where it did not exist. */
+type FileSnapshot = { path: string; content: string | null };
+
+async function snapshotFiles(paths: readonly string[]): Promise<FileSnapshot[]> {
+  return Promise.all(
+    paths.map(async (path) => ({
+      path,
+      content: await readFile(path, 'utf8').catch(() => null),
+    })),
+  );
+}
+
+/**
+ * Put every snapshotted file back exactly as it was.
+ *
+ * A file that did not exist before is deleted rather than left behind — a
+ * lockfile the failed install created is as much a leftover as an edit to one
+ * that was already there. Restore failures are swallowed deliberately: the
+ * caller is already throwing the error that actually matters, and replacing it
+ * with a filesystem error from the cleanup would hide the cause.
+ */
+async function restoreFiles(snapshot: readonly FileSnapshot[]): Promise<void> {
+  await Promise.all(
+    snapshot.map(async ({ path, content }) => {
+      try {
+        if (content === null) await rm(path, { force: true });
+        else await writeFile(path, content, 'utf8');
+      } catch {
+        // Nothing useful to do here, and nothing worth masking the real error for.
+      }
+    }),
+  );
 }
 
 async function analyzeUpgrade(args: {
