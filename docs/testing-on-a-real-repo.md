@@ -180,8 +180,9 @@ granting anything more.
 
 ### 3d. Then add Copilot
 
-Create a fine-grained PAT (actions, contents, issues, pull requests — all
-read+write), save it as the secret `DRIFT_COPILOT_TOKEN`, and add:
+Create a fine-grained PAT with **Agent tasks: read and write** (the only
+permission the endpoint checks), save it as the secret `DRIFT_COPILOT_TOKEN`,
+and add:
 
 ```yaml
           copilot-token: ${{ secrets.DRIFT_COPILOT_TOKEN }}

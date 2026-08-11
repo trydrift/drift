@@ -91,11 +91,30 @@ Scope it to the repositories Drift should work on, and grant:
 
 | Permission | Access | Why |
 |---|---|---|
-| Actions | Read and write | The agent runs workflows to verify its changes |
-| Contents | Read and write | Read source, push commits |
-| Issues | Read and write | The approval flow |
-| Pull requests | Read and write | Open the fix PR |
+| Agent tasks | Read and write | The only permission the Agent Tasks API checks |
 | Metadata | Read | Mandatory for fine-grained PATs |
+
+That is the whole list, and it is deliberately short. This token does exactly
+one thing: call GitHub's Agent Tasks endpoint. Everything else Drift does in a
+workflow — reading source, creating the branch, filing the approval issue,
+opening the pull request — runs on the separate `repo-token`, which defaults to
+the workflow's built-in `GITHUB_TOKEN`.
+
+Drift used to ask for `actions`, `contents`, `issues`, and `pull requests` here.
+That list was wrong in the direction that hurts most: it was a set of
+permissions the endpoint does not check, so following it granted broad repo
+write access to a token that did not need it *and* still produced a 403,
+because the one permission the endpoint does check was missing.
+
+Installation tokens are not supported at all. If the token is a GitHub App
+installation token, no permission set will make this work.
+
+> **Public preview.** The Agent Tasks REST endpoint is in public preview, and
+> which Copilot plans may call it is decided by GitHub, not by Drift — GitHub's
+> own documentation has changed on this during the preview and is currently
+> inconsistent between pages. Drift does not claim a list. Check
+> [the endpoint documentation](https://docs.github.com/en/rest/agent-tasks/agent-tasks)
+> for your plan before assuming a 403 is a Drift problem.
 
 Set the shortest expiry you can operationally live with. Drift fails loudly on a
 401 rather than silently degrading.

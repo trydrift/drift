@@ -144,7 +144,7 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
         ...plan,
         blockers: [
           ...plan.blockers,
-          'No Copilot token was available. Set the `DRIFT_COPILOT_TOKEN` secret to a user-scoped token with `actions`, `contents`, `issues`, and `pull_requests` write access. The Copilot agent API does not accept GitHub App installation tokens.',
+          'No Copilot token was available. Set the `DRIFT_COPILOT_TOKEN` secret to a user-scoped fine-grained token with `Agent tasks: read and write` — that is the only permission the Agent Tasks endpoint checks. The Copilot agent API does not accept GitHub App installation tokens.',
         ],
       },
     });

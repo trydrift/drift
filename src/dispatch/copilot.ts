@@ -406,7 +406,15 @@ function explainFailure(status: number, detail: string): string {
     case 401:
       return 'Copilot rejected the token (401). Check that DRIFT_COPILOT_TOKEN is set and has not expired.';
     case 403:
-      return `Copilot denied the request (403). The most common causes are: the token is a GitHub App installation token (the agent API requires a user-scoped token), the account has no Copilot seat, or the coding agent is disabled for this repository. Detail: ${detail}`;
+      return (
+        `Copilot denied the request (403). The most common causes, in the order worth checking: the token lacks ` +
+        `the "Agent tasks: read and write" permission (this is the only permission the endpoint checks, and it is ` +
+        `not implied by contents/issues/pull-request access); the token is a GitHub App installation token, which ` +
+        `is not supported at all; the account has no Copilot seat, or a plan that cannot call this endpoint — it ` +
+        `is in public preview and GitHub decides which plans may (see ` +
+        `https://docs.github.com/en/rest/agent-tasks/agent-tasks); or the coding agent is disabled for this ` +
+        `repository. Detail: ${detail}`
+      );
     case 404:
       return 'The Copilot agent API returned 404. Either the coding agent is not enabled for this repository, or the token lacks access to it.';
     case 422:
