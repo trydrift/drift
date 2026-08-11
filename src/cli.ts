@@ -547,7 +547,23 @@ async function outdatedCommand(flags: Flags): Promise<number> {
     return 0;
   }
 
-  console.log(`\n${scanTitle(result.candidates, result.checked)}\n`);
+  console.log(`\n${scanTitle(result.candidates, result.checked, result.unchecked.length)}\n`);
+
+  // Printed before the candidates, not after, and never folded into the
+  // up-to-date count. "All 47 dependencies are current" when four of them
+  // could not be reached is the single most misleading thing this command
+  // could say, so the dependencies Drift failed to check lead the report.
+  if (result.unchecked.length > 0) {
+    console.log(
+      `Could not check ${result.unchecked.length} dependenc${result.unchecked.length === 1 ? 'y' : 'ies'} — ` +
+        `this is not the same as “up to date”:`,
+    );
+    for (const dep of result.unchecked) {
+      console.log(`  ${dep.name} ${dep.current} (${dep.manifestPath})`);
+      console.log(`    ${dep.reason}`);
+    }
+    console.log();
+  }
 
   for (const candidate of result.candidates) {
     const versionLabel =

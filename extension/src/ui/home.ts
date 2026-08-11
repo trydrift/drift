@@ -56,6 +56,7 @@ import {
   upgradeCommandFor,
   severityOf,
   type ManagerPreferences,
+  type UncheckedDependency,
   type UpgradeCandidate,
 } from '../upgrades.js';
 import { scanTitle } from '../severity.js';
@@ -1057,6 +1058,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     await this.run(async (token) => {
       const found: UpgradeCandidate[] = [];
       const nestedGitRepos: NestedProject[] = [];
+      /** Dependencies whose version lookup never returned. Never silently dropped. */
+      const unlooked: UncheckedDependency[] = [];
       let checked = 0;
       let failures = 0;
 
@@ -1098,7 +1101,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
               // Fill the list in as results arrive rather than after the whole
               // sweep; a partial answer now beats a complete one in a minute.
               this.session.updatePackages(
-                headline(found, checked),
+                headline(found, checked, unlooked.length),
                 [...found].sort(bySeverity).map((c) => c.id),
               );
               this.state.setCandidates([...found].sort(bySeverity));
@@ -1106,6 +1109,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           });
 
           checked += result.checked;
+          unlooked.push(...result.unchecked);
           nestedGitRepos.push(...result.nestedGitRepos);
         } catch (err) {
           failures += 1;
@@ -1120,8 +1124,23 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
       const ranked = found.slice().sort(bySeverity);
       step.done(
-        `Checked ${checked} package${checked === 1 ? '' : 's'} · ${ranked.filter((c) => severityOf(c) === 'affected').length} need attention`,
+        `Checked ${checked - unlooked.length} package${checked - unlooked.length === 1 ? '' : 's'} · ` +
+          `${ranked.filter((c) => severityOf(c) === 'affected').length} need attention` +
+          (unlooked.length > 0 ? ` · ${unlooked.length} could not be checked` : ''),
       );
+
+      // Named, with the reason, rather than reduced to a count. "Drift could
+      // not reach PyPI for boto3" is something a developer can act on; "4
+      // skipped" is something they will assume was unimportant — and the whole
+      // point of tracking these separately is that they are not.
+      if (unlooked.length > 0) {
+        const lines = unlooked.map((dep) => `- \`${dep.name}\` (${dep.current}) — ${dep.reason}`);
+        this.session.notice(
+          'warn',
+          `${unlooked.length} dependenc${unlooked.length === 1 ? 'y' : 'ies'} could not be checked for upgrades. ` +
+            `This is not the same as being up to date:\n\n${lines.join('\n')}`,
+        );
+      }
 
       // A directory with its own `.git` is a separate repository, most often
       // a submodule — Drift never folds its commits into this one's, so it
@@ -1137,20 +1156,26 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
       if (ranked.length === 0) {
         this.state.setCandidates([]);
+        const upToDate = Math.max(0, checked - unlooked.length);
         this.session.updatePackages(
-          `Every one of your ${checked} direct dependenc${checked === 1 ? 'y is' : 'ies are'} already at the newest version.`,
+          // Never "every one of your N dependencies is already at the newest
+          // version" when some of them were never looked at. The sentence is
+          // only true about the ones a source actually answered for.
+          unlooked.length > 0
+            ? `${upToDate} of your ${checked} direct dependencies ${upToDate === 1 ? 'is' : 'are'} already at the newest version. ${unlooked.length} could not be checked at all.`
+            : `Every one of your ${checked} direct dependenc${checked === 1 ? 'y is' : 'ies are'} already at the newest version.`,
           [],
         );
-        this.session.setTitle(scanTitle([], checked));
+        this.session.setTitle(scanTitle([], checked, unlooked.length));
         return;
       }
 
-      this.session.updatePackages(headline(ranked, checked), ranked.map((c) => c.id));
+      this.session.updatePackages(headline(ranked, checked, unlooked.length), ranked.map((c) => c.id));
       this.state.setCandidates(ranked);
       // Named now rather than from the `/scan` that started it: every scan is
       // started the same way, and only the result tells two of them apart in
       // the history list.
-      this.session.setTitle(scanTitle(ranked, checked));
+      this.session.setTitle(scanTitle(ranked, checked, unlooked.length));
 
       const affected = ranked.filter((c) => severityOf(c) === 'affected');
       if (affected.length > 0 && !options.quiet) {
@@ -4762,13 +4787,26 @@ function namesOf(names: readonly string[]): string {
   return `${unique.slice(0, 2).join(', ')} +${unique.length - 2}`;
 }
 
-function headline(candidates: readonly UpgradeCandidate[], checked: number): string {
+function headline(
+  candidates: readonly UpgradeCandidate[],
+  checked: number,
+  /**
+   * Dependencies whose version lookup never returned, so they never became
+   * candidates. Counted into the caveat below rather than left out: a
+   * dependency Drift could not reach is not one it found nothing wrong with.
+   */
+  unlooked = 0,
+): string {
   const affected = candidates.filter((c) => severityOf(c) === 'affected').length;
-  const unchecked = candidates.filter((c) => severityOf(c) === 'unchecked').length;
-  const safe = candidates.length - affected - unchecked;
+  const unchecked = candidates.filter((c) => severityOf(c) === 'unchecked').length + unlooked;
+  const safe = candidates.length - affected - (unchecked - unlooked);
   const scope = checked > 0 ? ` out of ${checked} checked` : '';
 
-  if (candidates.length === 0) return 'No newer versions available.';
+  if (candidates.length === 0) {
+    return unlooked > 0
+      ? `No newer versions available for the dependencies Drift could check. ${unlooked} could not be checked at all.`
+      : 'No newer versions available.';
+  }
 
   // Never folded into "safe". A headline that counts an unverified upgrade as
   // safe is the same claim that put zod 4 and typescript 7 into this

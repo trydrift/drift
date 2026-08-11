@@ -43,6 +43,7 @@ import { resolveModuleMaps } from '../localize/modules.js';
 import { buildPlan } from '../plan/index.js';
 import { dependencyEcosystemKey } from '../util/id.js';
 import { compareSeverity, describeSeverity, severityOf, type UpgradeSeverity } from './severity.js';
+import { lookupVersions, versionSourceLabel } from './versions.js';
 
 const run = promisify(execFile);
 
@@ -127,10 +128,45 @@ export interface UpgradeCandidate {
   error?: string;
 }
 
+/**
+ * A dependency the scan could not reach a verdict on.
+ *
+ * Its own list, not a candidate with empty fields: there is no version to
+ * offer, no severity to rank, and nothing to press a button on. What there is
+ * is a name and a reason, and a caller that renders those has told the truth.
+ */
+export interface UncheckedDependency {
+  name: string;
+  kind: DependencyKind;
+  ecosystem: Ecosystem;
+  packageManager: PackageManagerId;
+  manifestPath: string;
+  /** The installed version, which is all Drift managed to learn. */
+  current: string;
+  /** Why the check came up empty, in the developer's terms. */
+  reason: string;
+}
+
 export interface UpgradeScanResult {
   candidates: UpgradeCandidate[];
   checked: number;
-  skipped: number;
+  /**
+   * Dependencies confirmed current: a source answered, and nothing it has
+   * published is newer. Distinct from `unchecked` on purpose — this one is
+   * the only one that earns the words "up to date".
+   */
+  upToDate: number;
+  /**
+   * Dependencies Drift could not check at all.
+   *
+   * This list is the reason the field exists. These used to be counted as
+   * `skipped` and reported as "Up to date", which turned a registry timeout,
+   * an unreadable version list, or an ecosystem with no version API into a
+   * clean bill of health. A caller that ignores this is making the same claim
+   * again, so it is a list of reasons rather than a number that is easy to
+   * drop on the floor.
+   */
+  unchecked: UncheckedDependency[];
   /** Which manifests were read, so the caller can say what was covered. */
   targets: EcosystemTarget[];
   /** Workspace layouts found at the root. Empty for a single-package repo. */
@@ -188,11 +224,6 @@ export interface ScanProgress {
   done: number;
   /** Packages to check in total, once known. */
   total: number;
-}
-
-interface NpmPackument {
-  versions?: Record<string, unknown>;
-  'dist-tags'?: Record<string, string>;
 }
 
 /** How widely to look. */
@@ -339,7 +370,16 @@ export async function scanUpgrades(args: {
 
   const { targets, ambiguities } = await discoverTargets(root, dirs, args.managers ?? new Map(), fs);
   if (targets.length === 0) {
-    return { candidates: [], checked: 0, skipped: 0, targets, workspaces, ambiguities, nestedGitRepos };
+    return {
+      candidates: [],
+      checked: 0,
+      upToDate: 0,
+      unchecked: [],
+      targets,
+      workspaces,
+      ambiguities,
+      nestedGitRepos,
+    };
   }
 
   const memberNames = new Map<string, string>();
@@ -370,9 +410,10 @@ export async function scanUpgrades(args: {
     deps.length,
   );
 
-  let skipped = 0;
+  let upToDate = 0;
   let done = 0;
   const candidates: UpgradeCandidate[] = [];
+  const unchecked: UncheckedDependency[] = [];
 
   // Checking a package is almost entirely waiting: a registry request, a
   // changelog fetch, a release-notes call, a type-declaration download. Doing
@@ -383,17 +424,42 @@ export async function scanUpgrades(args: {
     if (token?.isCancellationRequested) return;
 
     report(
-      `Checking the ${registryLabel(dep.target.manager.ecosystem)}`,
+      `Checking ${versionSourceLabel(dep.target.manager.ecosystem)}`,
       `${dep.name} (installed ${dep.current})`,
       done,
       deps.length,
     );
-    const available = await availableVersions(dep, dep.current, dep.range).catch(() => null);
+    const available = await lookupVersions({
+      name: dep.name,
+      ecosystem: dep.target.manager.ecosystem,
+      current: dep.current,
+      range: dep.range,
+      ...(githubToken ? { githubToken } : {}),
+    });
 
-    if (!available || available.versions.length === 0) {
-      skipped += 1;
+    if (available.outcome === 'up-to-date') {
+      upToDate += 1;
       done += 1;
       report('Up to date', `${dep.name}@${dep.current}`, done, deps.length);
+      return;
+    }
+
+    // The case this whole shape exists for. Reporting it as "Up to date" —
+    // which is what happened until the lookup learned to say so — turns every
+    // registry timeout and every ecosystem without a version API into a clean
+    // bill of health for a dependency nobody looked at.
+    if (available.outcome === 'unchecked') {
+      unchecked.push({
+        name: dep.name,
+        kind: dep.kind,
+        ecosystem: dep.target.manager.ecosystem,
+        packageManager: dep.target.manager.id,
+        manifestPath: dep.target.manifestPath,
+        current: dep.current,
+        reason: available.reason,
+      });
+      done += 1;
+      report('Could not check', `${dep.name}@${dep.current} · ${available.reason}`, done, deps.length);
       return;
     }
 
@@ -437,7 +503,8 @@ export async function scanUpgrades(args: {
   return {
     candidates: candidates.sort(compareCandidates),
     checked: deps.length,
-    skipped,
+    upToDate,
+    unchecked,
     targets,
     workspaces,
     ambiguities,
@@ -500,8 +567,14 @@ export async function reanalyzeUpgrade(args: {
     args.onProgress?.('Checking the registry', `${dep.name} (installed ${dep.current})`);
     // A failed refresh keeps the list from the scan rather than emptying it: a
     // registry hiccup must not turn a re-check into "no versions available".
-    const available = await availableVersions(dep, dep.current, dep.range).catch(() => null);
-    if (available && available.versions.length > 0) {
+    const available = await lookupVersions({
+      name: dep.name,
+      ecosystem: dep.target.manager.ecosystem,
+      current: dep.current,
+      range: dep.range,
+      ...(args.githubToken ? { githubToken: args.githubToken } : {}),
+    });
+    if (available.outcome === 'upgrade') {
       versions = available.versions;
       latest = available.latest;
       safeLatest = available.safeLatest;
@@ -956,104 +1029,6 @@ export async function directDependencies(
   return out;
 }
 
-/**
- * Newer published versions of one package.
- *
- * npm is special-cased for its `dist-tags`, which is the only registry that
- * tells us which version the maintainer considers current rather than merely
- * highest. Everywhere else the highest stable version is the best available
- * answer, and prereleases are excluded so a scan never proposes an alpha.
- */
-async function availableVersions(
-  dep: ScanDependency,
-  current: string,
-  range: string,
-): Promise<{ latest: string; safeLatest?: string; latestMinor?: string; versions: string[] } | null> {
-  const published =
-    dep.target.manager.ecosystem === 'npm'
-      ? await npmVersions(dep.name)
-      : await registryVersions(dep.name, dep.target.manager.ecosystem);
-  if (!published) return null;
-
-  const newer = published.versions
-    .map((raw) => normalizeVersion(raw))
-    .filter((version): version is string => Boolean(version))
-    .filter((version) => semver.gt(version, current))
-    .sort(semver.rcompare);
-
-  const latest = published.latest ?? newer.find((v) => !semver.prerelease(v)) ?? newer[0];
-  if (!latest || !semver.gt(latest, current)) return null;
-
-  // Computed over every published version, never over the truncated list the
-  // caller shows: `maxSatisfying` of the twenty newest releases of a busy
-  // package is `null` for anything still on the previous major, which left
-  // `safeLatest` undefined precisely where it mattered most.
-  const safe = safeLatest(newer, current, range, dep.target.manager.ecosystem);
-
-  // Prereleases are noise unless the developer is already on one. Twenty
-  // versions of zod came back as one release and nine canaries, with no 3.x in
-  // sight — the safe upgrade was not merely hard to find, it was not on the
-  // list. The in-range version is now pinned into the list by construction.
-  const onPrerelease = Boolean(semver.prerelease(current));
-  const stable = newer.filter((version) => onPrerelease || !semver.prerelease(version));
-
-  const withinMajor = latestWithinMajor(stable, current);
-
-  const versions = [...new Set([latest, ...(safe ? [safe] : []), ...(withinMajor ? [withinMajor] : []), ...stable.slice(0, 18)])]
-    .filter((version) => semver.gt(version, current))
-    .sort(semver.rcompare);
-
-  return { latest, safeLatest: safe, latestMinor: withinMajor, versions };
-}
-
-/**
- * The newest release that does not cross a major boundary.
- *
- * Distinct from `safeLatest`, which is bounded by the range the manifest
- * declares: a caret range on `4.2.0` stops at the 4.x line *and* at whatever
- * the developer pinned, so a repository pinned to `4.2.0` exactly has no safe
- * upgrade at all while 4.9.0 sits published and compatible. This is the target
- * a developer means by "update it, but don't put me on the next major".
- *
- * Returns undefined when the only thing ahead is a major bump — in which case
- * offering it would be offering a choice that does not exist.
- */
-function latestWithinMajor(versions: readonly string[], current: string): string | undefined {
-  const parsed = semver.parse(current);
-  if (!parsed) return undefined;
-
-  return versions
-    .filter((version) => {
-      const next = semver.parse(version);
-      return next !== null && next.major === parsed.major && semver.gt(version, current);
-    })
-    .sort(semver.rcompare)[0];
-}
-
-async function npmVersions(name: string): Promise<{ latest: string | null; versions: string[] } | null> {
-  const response = await fetch(`https://registry.npmjs.org/${encodeURIComponent(name).replace('%40', '@')}`, {
-    signal: AbortSignal.timeout(12_000),
-  });
-  if (!response.ok) return null;
-
-  const packument = (await response.json()) as NpmPackument;
-  return {
-    latest: normalizeVersion(packument['dist-tags']?.latest),
-    versions: Object.keys(packument.versions ?? {}),
-  };
-}
-
-async function registryVersions(
-  name: string,
-  ecosystem: Ecosystem,
-): Promise<{ latest: string | null; versions: string[] } | null> {
-  const info = await fetchRegistryInfo(name, ecosystem, null);
-  if (!info) return null;
-  // No registry outside npm publishes a "current" tag, so the caller derives
-  // one from the version list rather than inventing an authority for it.
-  return { latest: null, versions: info.versions };
-}
-
 /** Rebuild the manifest/manager pairing a candidate came from. */
 function targetForCandidate(candidate: UpgradeCandidate): EcosystemTarget {
   const manager = packageManagerById(candidate.packageManager);
@@ -1062,96 +1037,6 @@ function targetForCandidate(candidate: UpgradeCandidate): EcosystemTarget {
     ? candidate.manifestPath.slice(0, candidate.manifestPath.lastIndexOf('/'))
     : '';
   return { manager, dir, manifestPath: candidate.manifestPath, lockfilePath: null };
-}
-
-function registryLabel(ecosystem: Ecosystem): string {
-  switch (ecosystem) {
-    case 'npm':
-      return 'npm registry';
-    case 'pypi':
-      return 'PyPI';
-    case 'cargo':
-      return 'crates.io';
-    case 'go':
-      return 'Go module proxy';
-    case 'maven':
-      return 'Maven Central';
-    case 'rubygems':
-      return 'RubyGems';
-    case 'nuget':
-      return 'NuGet';
-    case 'packagist':
-      return 'Packagist';
-    case 'hex':
-      return 'Hex';
-    case 'pub':
-      return 'pub.dev';
-    case 'cocoapods':
-      return 'CocoaPods Trunk';
-    // Neither has a registry to name. SwiftPM resolves packages straight from
-    // their git host, and opam's index is a git repository of package
-    // definitions rather than a queryable service — so the honest label is the
-    // source, not a registry that does not exist.
-    case 'swift':
-      return 'the package’s git repository';
-    case 'opam':
-      return 'the opam repository';
-    case 'conan':
-      return 'ConanCenter';
-    case 'vcpkg':
-      return 'the vcpkg registry';
-    case 'arduino':
-      return 'the Arduino Library Manager';
-  }
-}
-
-function safeLatest(versions: readonly string[], current: string, range: string, ecosystem: Ecosystem): string | undefined {
-  const candidates = versions.filter((version) => semver.gt(version, current));
-
-  // Ruby's `~>` pessimistic operator has no npm-semver equivalent: `semver`
-  // still parses it (as `~`, which narrows differently) rather than failing,
-  // so relying on `validRange`'s success/failure to decide when to use it
-  // would silently misinterpret the range instead of falling back.
-  const rubyBound = ecosystem === 'rubygems' ? rubyPessimisticUpperBound(range) : null;
-  if (rubyBound) {
-    const matched = candidates.filter((version) => semver.lt(version, rubyBound)).sort(semver.rcompare)[0];
-    if (matched) return matched;
-  } else {
-    const validRange = semver.validRange(range);
-    if (validRange) {
-      const matched = semver.maxSatisfying(candidates, validRange);
-      if (matched) return matched;
-    }
-  }
-
-  const parsed = semver.parse(current);
-  if (!parsed) return undefined;
-
-  const sameCompatibilityBand = candidates.filter((version) => {
-    const next = semver.parse(version);
-    if (!next) return false;
-    if (parsed.major === 0) {
-      return next.major === 0 && next.minor === parsed.minor;
-    }
-    return next.major === parsed.major;
-  });
-
-  return semver.maxSatisfying(sameCompatibilityBand, '*') ?? undefined;
-}
-
-/**
- * Ruby's `~> a.b` allows anything up to (excluding) `(a+1).0`; `~> a.b.c`
- * allows anything up to (excluding) `a.(b+1).0` — the constraint locks
- * everything left of the rightmost declared component. Returns `null` for
- * anything that isn't a bare pessimistic constraint (compound ranges with
- * `,`/`&&`, or a non-`~>` operator), which falls back to the generic path.
- */
-function rubyPessimisticUpperBound(range: string): string | null {
-  const match = /^~>\s*(\d+)\.(\d+)(?:\.(\d+))?\s*$/.exec(range.trim());
-  if (!match) return null;
-  const [, major, minor, patch] = match;
-  // `~> 2.2.0` (patch declared) -> `< 2.3.0`; `~> 2.2` (patch omitted) -> `< 3.0.0`.
-  return patch !== undefined ? `${major}.${Number(minor) + 1}.0` : `${Number(major) + 1}.0.0`;
 }
 
 /**
