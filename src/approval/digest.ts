@@ -44,7 +44,7 @@ export const PLAN_SCHEMA_VERSION = 3;
  * different serialization rules, so comparing against it would fail anyway —
  * and would fail with a misleading "the plan changed" rather than the truthful
  * "this issue predates a schema change". v1 issues are refused explicitly and
- * told to re-run. See `docs/schema-migration.md`.
+ * told to re-run.
  */
 export const SUPPORTED_PLAN_SCHEMA_VERSIONS: readonly number[] = [PLAN_SCHEMA_VERSION];
 
