@@ -118,7 +118,6 @@ See [trust and safety](docs/trust-and-safety.md#an-unauthorized-user-comments-dr
 
 ```bash
 npm install -g @usedrift/cli
-export GITHUB_TOKEN=ghp_...   # public read access is enough for public repos
 drift analyze
 ```
 
@@ -126,12 +125,28 @@ Runs the full pipeline against your working tree and prints the report. Creates 
 branches, no issues, no agent tasks — there is no code path in `analyze` that
 writes anything.
 
+No token, and no account. `analyze` reads your local checkout directly and
+fetches public release notes, changelogs and registry metadata anonymously.
+`drift outdated` is the same: read-only, and tokenless. A credential is worth
+setting only if you hit GitHub's anonymous API rate limit mid-scan, in which
+case Drift picks one up on its own from `$GITHUB_TOKEN` or a signed-in `gh`:
+
+```bash
+export GITHUB_TOKEN=ghp_...   # optional — only raises the API rate limit
+```
+
 Once you're ready to act on the plan:
 
 ```bash
 drift fix   # deterministic fix, then a community recipe (if enabled), then AI — never silently
 drift pr    # push the branch `fix` built and open a pull request
 ```
+
+These two do need GitHub write access, because they push a branch and open a
+pull request. Drift takes it from `$GITHUB_TOKEN` or `--token`, then from a
+signed-in `gh`, and only as a last resort offers a browser sign-in — it never
+asks you to paste a token first. Copilot remediation is separate again, and
+wants `DRIFT_COPILOT_TOKEN`; nothing else uses it.
 
 `fix` runs entirely in an isolated git worktree, so your working tree is
 never touched, and it never merges or force-pushes. See `drift fix --help`
@@ -166,8 +181,8 @@ it enables by default. Add the ones your repository needs.
 
 | | Best for | Needs |
 |---|---|---|
-| **VS Code extension** | Working a dependency bump interactively, reviewing every edit before it lands | Nothing — no token, no account, for analysis. A Copilot/Claude/etc. session only if a commit needs an agent |
-| **CLI (`drift fix`)** | Scripting a fix locally or in a bespoke CI job, outside GitHub Actions | A GitHub token for reads; a Copilot token only if some commit needs an agent |
+| **VS Code extension** | Working a dependency bump interactively, reviewing every edit before it lands | Nothing — no token, no account, for analysis. A Copilot/Claude/etc. session only if a commit needs an agent. Pushing uses whatever credential git already pushes with; a signed-in `gh` or a GitHub sign-in only if you want Drift to open the pull request for you |
+| **CLI (`drift fix`)** | Scripting a fix locally or in a bespoke CI job, outside GitHub Actions | Nothing for `analyze` and `outdated` — credentials only raise the GitHub API rate limit. GitHub write access (a signed-in `gh`, `$GITHUB_TOKEN`, or `--token`) to push and open a pull request. A Copilot token only if some commit needs an agent |
 | **GitHub Action** | Unattended, on every dependency bump, with review via a PR or an approval issue | `DRIFT_COPILOT_TOKEN` repo secret (only required once a commit actually needs an agent) |
 
 They don't behave identically. What each surface actually does:
@@ -182,7 +197,7 @@ They don't behave identically. What each surface actually does:
 | AI remediation | Yes — Copilot, Claude Code, Codex, Gemini, Aider, OpenCode, or local Ollama | Yes — GitHub Copilot coding agent only | Yes — GitHub Copilot coding agent only |
 | Interactive hunk-level review | Yes — Keep/Undo per hunk before committing | No — reviewed as a PR after the fact | No — reviewed as a PR or approval issue |
 | Create branch / commit | Yes | Yes | Yes |
-| Create PR | Yes (`drift.pullRequest`) | Yes (`drift pr`) | Yes |
+| Create PR | Yes — directly, when an authenticated GitHub CLI or GitHub sign-in is available; otherwise it pushes the branch and opens GitHub's pull request page | Yes (`drift pr`) — directly | Yes — files an approval issue by default, and creates or dispatches the PR after approval, or straight away under `mode: auto` |
 
 ---
 
@@ -217,6 +232,13 @@ it.
 When a decision is genuinely yours — two valid migrations, a dirty working tree —
 Drift asks in the thread and waits, and the agent can raise a question the same
 way instead of guessing.
+
+Shipping is explicit and separate. Drift pushes the reviewed branch with the
+credential git already has, then raises the pull request: directly through the
+GitHub CLI when you have `gh` installed and signed in, and otherwise by opening
+GitHub's own pull request page for the branch. `gh` is a shortcut, never a
+requirement — the branch is pushed either way. Drift never force-pushes and
+never merges.
 
 ---
 

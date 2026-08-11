@@ -110,6 +110,11 @@ jobs:
       - name: Verify the example workflow matches the manifest registry
         run: npm run verify:workflow
 
+      # Invented CLI commands, invented extension identifiers, stale identity
+      # strings, and any wording that sells an unchecked result as a pass.
+      - name: Verify the READMEs and docs against the code
+        run: npm run check:docs
+
       - name: Verify the example config parses
         run: |
           node -e "

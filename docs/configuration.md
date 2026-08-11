@@ -455,6 +455,12 @@ How the pull request gets opened. Drift never merges it.
 Open a pull request once the branch is pushed. With this off, Drift stops at
 the pushed branch.
 
+How it opens depends on what the machine has. The CLI and the VS Code extension
+both prefer the GitHub CLI (`gh`) when it is installed and signed in, since it
+carries its own credential and needs nothing from you; the extension then falls
+back to your VS Code GitHub sign-in, and finally to opening GitHub's own pull
+request page for the pushed branch. `gh` is a shortcut, never a requirement.
+
 ### `pullRequest.confirm`
 
 `ask` | `never` — default **`ask`**
@@ -484,7 +490,10 @@ when this is unset.
 
 `string[]` — default **`[]`**
 
-Labels applied and reviews requested, when the token can set them.
+Labels applied and reviews requested, when the credential can set them. Read by
+the Action, the CLI and the VS Code extension alike — there is deliberately no
+editor setting for either, because a label set and a reviewer list are
+properties of the repository everyone shares, not of one developer's editor.
 
 ### `pullRequest.branchTemplate`, `pullRequest.titleTemplate`
 

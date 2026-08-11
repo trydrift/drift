@@ -88,7 +88,7 @@ In the editor:
 
 In the panel, the change list groups files by planned commit, shows `+`/`−` per file, and opens the real diff editor on click. **Keep & commit** on a group commits exactly the files the plan named for it — one commit per concern, so `git revert` and `git bisect` stay meaningful. **Undo** restores the file through the workspace API, so it lands in your normal undo stack too.
 
-Drift commits automatically once you keep a group. Pushing the branch is a separate, explicit step — **Push branch**, or **Drift: Push Branch** — and Drift never merges.
+Drift commits automatically once you keep a group. Shipping is a separate, explicit step — **Push branch**, or **Drift: Push the Fix Branch and Open a Pull Request**. It pushes the branch, then raises the pull request: directly through the GitHub CLI if you have one installed and signed in, and otherwise by opening GitHub's own pull request page for the branch. Drift never force-pushes and never merges.
 
 ## Zero configuration
 
@@ -102,7 +102,7 @@ Open a repository. That's the setup. Drift works **signed out**, because nothing
 | Fix it | Drift's own codemod, then a community recipe if enabled, then your AI agent |
 | Commit | your local git |
 
-Sign-in is asked for once, and only if you choose GitHub's cloud agent or want Drift to push a branch. It is VS Code's own one-click OAuth — no token to create or store.
+Pushing needs nothing new either: git already has whatever credential you push with every day, and Drift uses it. Sign-in is asked for only if you choose GitHub's cloud agent, or if you want Drift to open the pull request for you and have no `gh` signed in. It is VS Code's own one-click OAuth — no token to create or store.
 
 ## Bring your own agent
 
@@ -154,7 +154,8 @@ Two deliberately separate actions:
 | **Drift: Keep All Changes** / **Undo All Changes** | Resolve everything at once |
 | **Drift: Show Report** | The full report, with evidence |
 | **Drift: Select AI Agent** | See what's available, pick one |
-| **Drift: Sign in to GitHub** | Only for the cloud agent or pushing |
+| **Drift: Push the Fix Branch and Open a Pull Request** | Push the reviewed branch, then raise the PR |
+| **Drift: Sign in to GitHub** | Only for the cloud agent, or to open a PR without a signed-in `gh` |
 
 Or just use the **Drift icon** in the activity bar.
 
@@ -175,13 +176,15 @@ If your repo has a `.github/drift.yml` (used by the [Drift GitHub Action](https:
 
 ## Supported ecosystems
 
-npm/yarn/pnpm/bun · pip/poetry/uv · Go modules · Cargo · Maven/Gradle/sbt · Bundler · NuGet · Composer · Mix · pub · Swift Package Manager · CocoaPods · opam · Conan · vcpkg · Arduino/PlatformIO — the same set the CLI and Action detect, scoped by `drift.analysis.ecosystems`.
+npm/yarn/pnpm/bun · pip/poetry/uv · Go modules · Cargo · Maven/Gradle/sbt · Bundler · NuGet · Composer · Mix · pub · Swift Package Manager · CocoaPods · opam · Conan · vcpkg · Arduino/PlatformIO — the same set the CLI and Action detect. Narrow it with the `ecosystems` list in your repository's `.github/drift.yml`, which the extension reads too.
 
 Computed API-surface diffing (not just changelog evidence) is available for npm, NuGet, Hex, pub, Conan, vcpkg and Arduino with nothing installed, and for Go, Cargo, Maven and Python when their toolchain is present; the rest rely on changelog and release-note evidence. See [docs/support.md](https://github.com/trydrift/drift/blob/main/docs/support.md) for exactly what's checked per ecosystem, and how deep the support goes.
 
 ## Also available as a GitHub Action
 
-Same engine, running in CI on every dependency bump, filing a PR. See the [repository](https://github.com/trydrift/drift).
+Same engine, running in CI. It analyses dependency changes automatically as they land, and then — by default — files an **approval issue** rather than a pull request: the evidence, the plan, and a human deciding whether it goes ahead. Comment `/drift apply` and it produces or dispatches the fix PR. A repository that has decided it trusts the flow can set `mode: auto` in `.github/drift.yml` and skip the approval step, but that is an explicit choice, never the default.
+
+See the [repository](https://github.com/trydrift/drift).
 
 ## Known limitations
 

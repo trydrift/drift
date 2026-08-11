@@ -5,7 +5,6 @@
 // scripts. This never publishes anything; it only proves the artifacts are
 // safe to publish.
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
@@ -45,21 +44,10 @@ step('site: production build (catches copy that outlived the feature)', () => {
 step('workflow: the committed example matches the manifest registry', () =>
   sh('npm', ['run', 'verify:workflow']));
 
-step('docs: no stale identity references', () => {
-  const offenders = [
-    ['RodolpheKouyoumdjian', /RodolpheKouyoumdjian/i],
-    ['drift-dev (old org)', /drift-dev\/drift/],
-  ];
-  const targets = ['README.md', 'extension/README.md'];
-  for (const rel of targets) {
-    const text = readFileSync(`${repoRoot}/${rel}`, 'utf8');
-    for (const [label, pattern] of offenders) {
-      if (pattern.test(text)) {
-        throw new Error(`${rel} still references ${label} — fix before releasing`);
-      }
-    }
-  }
-});
+// Identity strings, invented CLI commands, invented extension identifiers, and
+// any wording that sells an unchecked result as a pass. The site's build runs
+// the equivalent check over the page; this one covers the READMEs and docs.
+step('docs: every documented command and identifier exists', () => sh('npm', ['run', 'check:docs']));
 
 let failed = false;
 for (const { name, fn } of steps) {
