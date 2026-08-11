@@ -2151,10 +2151,5 @@
       ],
       "breaking": []
     }
-  ],
-  "audit": {
-    "checked": 34,
-    "analysed": 0,
-    "findings": []
-  }
+  ]
 }

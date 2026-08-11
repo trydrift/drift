@@ -20183,10 +20183,5 @@
       ],
       "breaking": []
     }
-  ],
-  "audit": {
-    "checked": 545,
-    "analysed": 0,
-    "findings": []
-  }
+  ]
 }

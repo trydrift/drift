@@ -423,50 +423,5 @@
       "total": 17
     }
   ],
-  "candidates": [],
-  "audit": {
-    "checked": 17,
-    "analysed": 16,
-    "findings": [
-      {
-        "kind": "unreviewed-drift",
-        "dependency": "swiftlang/swift-syntax",
-        "declaredRange": ">=509.0.0 <605.0.0",
-        "rangeFloor": "509.0.0",
-        "installedVersion": "603.0.2",
-        "summary": "`expression` no longer optional",
-        "remediation": "Behaviour changed: `expression` no longer optional. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
-        "sites": [
-          {
-            "file": "Sources/ComposableArchitectureMacros/PresentsMacro.swift",
-            "line": 144,
-            "excerpt": "expression: binding.initializer?.value ?? ExprSyntax(NilLiteralExprSyntax())",
-            "matchedSymbol": "expression",
-            "confidence": "medium"
-          },
-          {
-            "file": "Sources/ComposableArchitectureMacros/PresentsMacro.swift",
-            "line": 218,
-            "excerpt": "expression: MemberAccessExprSyntax(",
-            "matchedSymbol": "expression",
-            "confidence": "medium"
-          },
-          {
-            "file": "Sources/ComposableArchitectureMacros/PresentsMacro.swift",
-            "line": 232,
-            "excerpt": "expression: MemberAccessExprSyntax(",
-            "matchedSymbol": "expression",
-            "confidence": "medium"
-          },
-          {
-            "file": "Sources/ComposableArchitectureMacros/ReducerMacro.swift",
-            "line": 304,
-            "excerpt": "$0.expression.as(MemberAccessExprSyntax.self)?.declName.baseName.text.capitalized",
-            "matchedSymbol": "expression",
-            "confidence": "medium"
-          }
-        ]
-      }
-    ]
-  }
+  "candidates": []
 }

@@ -122,13 +122,30 @@ export function compareSeverity(a: SeverityInput, b: SeverityInput): number {
  * Leads with the affected count when there is one, because that is what a
  * developer remembers a scan by — "the one where three things broke".
  */
-export function scanTitle(candidates: readonly SeverityInput[], checked = 0): string {
+export function scanTitle(
+  candidates: readonly SeverityInput[],
+  checked = 0,
+  /**
+   * Dependencies whose *version lookup* never returned — a registry Drift
+   * could not reach, or an ecosystem with no version API. These never became
+   * candidates at all, so counting only the candidates' own `unchecked`
+   * severity would title a run "all up to date" while four dependencies went
+   * unlooked-at. See `UpgradeScanResult.unchecked`.
+   */
+  unlooked = 0,
+): string {
   if (candidates.length === 0) {
+    if (unlooked > 0) {
+      const upToDate = Math.max(0, checked - unlooked);
+      return upToDate > 0
+        ? `Scan — ${upToDate} up to date, ${unlooked} could not be checked`
+        : `Scan — ${unlooked} could not be checked`;
+    }
     return checked > 0 ? `Scan — ${checked} up to date` : 'Scan — nothing to upgrade';
   }
 
   const affected = candidates.filter((c) => severityOf(c) === 'affected').length;
-  const unchecked = candidates.filter((c) => severityOf(c) === 'unchecked').length;
+  const unchecked = candidates.filter((c) => severityOf(c) === 'unchecked').length + unlooked;
   const total = candidates.length;
 
   if (affected > 0) return `Scan — ${affected} of ${total} affect this repo`;

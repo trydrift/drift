@@ -278,10 +278,5 @@
       ],
       "breaking": []
     }
-  ],
-  "audit": {
-    "checked": 5,
-    "analysed": 0,
-    "findings": []
-  }
+  ]
 }

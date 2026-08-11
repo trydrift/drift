@@ -5284,10 +5284,5 @@
       ],
       "breaking": []
     }
-  ],
-  "audit": {
-    "checked": 87,
-    "analysed": 0,
-    "findings": []
-  }
+  ]
 }

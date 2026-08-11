@@ -1293,10 +1293,5 @@
       ],
       "breaking": []
     }
-  ],
-  "audit": {
-    "checked": 25,
-    "analysed": 0,
-    "findings": []
-  }
+  ]
 }

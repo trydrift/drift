@@ -572,10 +572,5 @@
       ],
       "breaking": []
     }
-  ],
-  "audit": {
-    "checked": 10,
-    "analysed": 0,
-    "findings": []
-  }
+  ]
 }

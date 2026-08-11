@@ -1413,53 +1413,5 @@
       "gaps": [],
       "breaking": []
     }
-  ],
-  "audit": {
-    "checked": 44,
-    "analysed": 39,
-    "findings": [
-      {
-        "kind": "unreviewed-drift",
-        "dependency": "plug",
-        "manifestPath": "mix.exs",
-        "workspace": "",
-        "declaredRange": "~> 1.14",
-        "rangeFloor": "1.14.0",
-        "installedVersion": "1.20.3",
-        "summary": "`push` no longer supported by browsers",
-        "remediation": "Behaviour changed: `push` no longer supported by browsers. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
-        "evidence": [],
-        "sites": [
-          {
-            "file": "test/phoenix/integration/websocket_channels_test.exs",
-            "line": 43,
-            "excerpt": "push(socket, \"joined\", Map.merge(%{status: \"connected\"}, socket.assigns))",
-            "matchedSymbol": "push",
-            "confidence": "medium"
-          },
-          {
-            "file": "test/phoenix/integration/websocket_channels_test.exs",
-            "line": 57,
-            "excerpt": "push(socket, \"binary_event\", {:binary, <<0, 1>>})",
-            "matchedSymbol": "push",
-            "confidence": "medium"
-          },
-          {
-            "file": "test/phoenix/integration/websocket_channels_test.exs",
-            "line": 62,
-            "excerpt": "push(socket, \"new_msg\", Map.put(payload, \"transport\", inspect(socket.transport)))",
-            "matchedSymbol": "push",
-            "confidence": "medium"
-          },
-          {
-            "file": "test/phoenix/integration/websocket_channels_test.exs",
-            "line": 67,
-            "excerpt": "push(socket, \"you_left\", %{message: \"bye!\"})",
-            "matchedSymbol": "push",
-            "confidence": "medium"
-          }
-        ]
-      }
-    ]
-  }
+  ]
 }

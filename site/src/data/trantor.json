@@ -649,10 +649,5 @@
         }
       ]
     }
-  ],
-  "audit": {
-    "checked": 3,
-    "analysed": 0,
-    "findings": []
-  }
+  ]
 }

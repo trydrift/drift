@@ -25,6 +25,7 @@ import { totalsOf, type Recording } from "@/lib/recordings";
  */
 
 const GITHUB = "https://github.com/trydrift/Drift";
+const MARKETPLACE = "https://marketplace.visualstudio.com/items?itemName=drift.drift";
 
 /** The step as a repository really carries it — see `examples/workflows/`. */
 const WORKFLOW: CodeLine[] = [
@@ -92,15 +93,25 @@ export default function Home() {
           <p className="mt-5 max-w-2xl text-[15px] leading-relaxed text-muted sm:text-base">
             Drift reads the actual API surface of both versions, works out what really changed, then
             searches <em className="not-italic text-foreground">your</em> repository for the exact
-            lines that use it. Every claim carries a citation you can open. It also checks the
-            versions you already have installed — because plenty of code is broken today, with no
-            upgrade in sight.
+            lines that use it. Every claim carries a citation you can open, and anything it could
+            not check is reported as a gap rather than softened into a pass.
           </p>
 
+          {/* Installing is the primary action. The demo below is what convinces
+              someone, but a visitor who is already convinced should not have to
+              scroll past it to find out how to actually get Drift. */}
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <a
-              href="#demo"
+              href={MARKETPLACE}
+              target="_blank"
+              rel="noreferrer"
               className="rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-brand-foreground transition-colors hover:bg-brand-200"
+            >
+              Install for VS Code
+            </a>
+            <a
+              href="#demo"
+              className="rounded-full border border-border bg-surface px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
             >
               Watch a real analysis
             </a>
@@ -113,6 +124,10 @@ export default function Home() {
               View on GitHub
             </a>
           </div>
+
+          <p className="mt-4 font-mono text-xs text-muted">
+            <span className="text-faint">$</span> npm install -g @usedrift/cli
+          </p>
 
           <p className="mt-5 font-mono text-xs text-faint">
             {languages.join(" · ")}
@@ -214,27 +229,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Already broken ──────────────────────────────────────────── */}
-        <section className="pt-16 sm:pt-24">
-          <div className="grid gap-6 border-y border-brand/25 bg-brand-soft/35 py-7 sm:py-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
-            <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-brand-text">
-                the question nothing else asks
-              </p>
-              <h2 className={`${instrumentSerif.className} mt-3 text-2xl text-landing sm:text-3xl`}>
-                Some of your code is already broken
-              </h2>
-              <p className="mt-4 max-w-lg text-sm leading-relaxed text-muted">
-                <code className="rounded bg-surface-hover px-1.5 py-0.5 font-mono text-xs text-brand-text">drift audit</code>{" "}
-                skips the manifest entirely and reads the package actually sitting in{" "}
-                <code className="rounded bg-surface-hover px-1.5 py-0.5 font-mono text-xs text-brand-text">node_modules</code>
-                , then checks every symbol your code imports from it against that file. No registry, no version diff.
-              </p>
-            </div>
-            <RangeWindowVisual findings={proof.auditFindings} />
-          </div>
-        </section>
-
         <Pipeline />
 
         {/* ── The Action ──────────────────────────────────────────────── */}
@@ -321,7 +315,7 @@ export default function Home() {
               Full report against your working tree. No writes, no token.
             </EntryPoint>
             <EntryPoint icon="editor" title="VS Code" command="Problems panel">
-              Affected lines inline, including code already broken by range drift.
+              Affected lines inline, with the upstream change that caused each one.
             </EntryPoint>
             <EntryPoint icon="action" title="GitHub Action" command="trydrift/drift@v0">
               Checks first, approval next, pull request only after you allow it.{" "}
@@ -350,14 +344,19 @@ export default function Home() {
 
 interface ProofSummary {
   recordings: number;
-  languages: number;
+  /**
+   * Unique package ecosystems, not unique language names. Swift covers two
+   * package ecosystems and C++ covers several, so counting languages and
+   * labelling the result "ecosystems" made the strip contradict the heading
+   * directly above it.
+   */
+  ecosystems: number;
   packages: number;
   affected: number;
   clean: number;
   unchecked: number;
   breaking: number;
   sites: number;
-  auditFindings: number;
 }
 
 function summarizeRecordings(recordings: Recording[]): ProofSummary {
@@ -370,19 +369,17 @@ function summarizeRecordings(recordings: Recording[]): ProofSummary {
       summary.unchecked += totals.unchecked;
       summary.breaking += totals.breaking;
       summary.sites += totals.sites;
-      summary.auditFindings += recording.audit?.findings.length ?? 0;
       return summary;
     },
     {
       recordings: recordings.length,
-      languages: new Set(recordings.map((recording) => recording.language)).size,
+      ecosystems: new Set(recordings.map((recording) => recording.ecosystem)).size,
       packages: 0,
       affected: 0,
       clean: 0,
       unchecked: 0,
       breaking: 0,
       sites: 0,
-      auditFindings: 0,
     },
   );
 }
@@ -390,7 +387,7 @@ function summarizeRecordings(recordings: Recording[]): ProofSummary {
 function ProofStrip({ proof }: { proof: ProofSummary }) {
   const items = [
     { value: proof.recordings, label: "recorded runs" },
-    { value: proof.languages, label: "ecosystems" },
+    { value: proof.ecosystems, label: "ecosystems" },
     { value: proof.packages, label: "packages checked" },
     { value: proof.sites, label: "linked code sites" },
   ];
@@ -461,54 +458,6 @@ function OutcomeCard({
           <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">{detail}</p>
         </div>
       </div>
-    </div>
-  );
-}
-
-function RangeWindowVisual({ findings }: { findings: number }) {
-  return (
-    <div className="rounded-lg border border-border bg-surface/80 p-4 sm:p-5">
-      <div className="grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
-        <VersionNode label="your code imports" value="createLegacyClient" />
-        <div className="hidden h-px min-w-20 bg-gradient-to-r from-brand/30 via-brand to-brand/30 sm:block" />
-        <VersionNode label="node_modules, version" value="4.8.2" emphasis />
-      </div>
-      <div className="mt-5 rounded-md border border-border bg-[var(--pre-bg)] p-3">
-        <div className="flex items-center gap-2 font-mono text-[11px] text-faint">
-          <span className="size-2 rounded-full bg-amber-500" />
-          read straight off disk
-          <span className="ml-auto text-brand-text">no version diff</span>
-        </div>
-        <div className="mt-3 grid grid-cols-[auto_1fr_auto] items-center gap-2 text-xs">
-          <span className="font-mono text-faint">not exported</span>
-          <span className="h-px bg-border" />
-          <span className="font-mono text-foreground">call site still uses it</span>
-        </div>
-      </div>
-      <p className="mt-4 text-[13px] leading-relaxed text-muted">
-        The sample recordings include <span className="font-medium text-foreground">{findings}</span>{" "}
-        present-tense audit finding{findings === 1 ? "" : "s"}: no upgrade is required for the
-        code to be wrong.
-      </p>
-    </div>
-  );
-}
-
-function VersionNode({
-  label,
-  value,
-  emphasis = false,
-}: {
-  label: string;
-  value: string;
-  emphasis?: boolean;
-}) {
-  return (
-    <div className="rounded-md border border-border bg-surface px-3 py-2">
-      <p className="font-mono text-[10px] uppercase tracking-wider text-faint">{label}</p>
-      <p className={emphasis ? "mt-1 font-mono text-lg text-brand-text" : "mt-1 font-mono text-lg text-foreground"}>
-        {value}
-      </p>
     </div>
   );
 }

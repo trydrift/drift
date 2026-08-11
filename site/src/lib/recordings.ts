@@ -68,20 +68,6 @@ export interface Candidate {
   breaking: BreakingChange[];
 }
 
-export interface LatentFinding {
-  kind: "unreviewed-drift" | "range-violation";
-  dependency: string;
-  manifestPath?: string;
-  workspace?: string | null;
-  declaredRange: string;
-  rangeFloor: string;
-  installedVersion: string;
-  summary: string;
-  remediation: string | null;
-  evidence?: EvidenceRef[];
-  sites: ImpactSite[];
-}
-
 export interface Recording {
   id: string;
   label: string;
@@ -97,7 +83,6 @@ export interface Recording {
   nestedGitRepos?: string[];
   events: ProgressEvent[];
   candidates: Candidate[];
-  audit: { checked: number; analysed: number; findings: LatentFinding[] } | null;
 }
 
 /**

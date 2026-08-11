@@ -303,10 +303,6 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
             );
           })}
         </ul>
-
-        {done && recording.audit && recording.audit.findings.length > 0 && (
-          <AuditSection findings={recording.audit.findings} recording={recording} />
-        )}
       </div>
 
       {/* Provenance. The claim that this is a real run is only worth making if
@@ -661,61 +657,6 @@ function packageLocation(candidate: Pick<Candidate, "manifestPath" | "workspace"
   const manifest = candidate.manifestPath;
   if (!manifest || !manifest.includes("/")) return null;
   return manifest.slice(0, manifest.lastIndexOf("/"));
-}
-
-/** The present-tense findings, when the recording has any. */
-function AuditSection({
-  findings,
-  recording,
-}: {
-  findings: NonNullable<Recording["audit"]>["findings"];
-  recording: Recording;
-}) {
-  return (
-    <div className="border-t-2 border-brand/30 bg-brand-soft/40 px-4 py-4 sm:px-5">
-      <p className="text-xs font-semibold uppercase tracking-wider text-brand-text">
-        Already broken — no upgrade required
-      </p>
-      <p className="mt-1 text-xs leading-relaxed text-muted">
-        These are true of the versions installed in this repository right now.
-      </p>
-      <ul className="mt-3 space-y-2.5">
-        {findings.map((finding, index) => (
-          <li key={index}>
-            <p className="text-xs text-foreground">
-              <span className="font-mono font-medium">{finding.dependency}</span>{" "}
-              {packageLocation(finding) && (
-                <span
-                  className="mr-1 rounded border border-brand/20 bg-surface px-1.5 py-0.5 font-mono text-[10px] text-faint"
-                  title={`Declared in ${finding.manifestPath}`}
-                >
-                  {packageLocation(finding)}
-                </span>
-              )}
-              <span className="text-faint">
-                declared {finding.declaredRange}, {finding.installedVersion} installed
-              </span>
-            </p>
-            {finding.manifestPath && (
-              <p className="mt-0.5 font-mono text-[10px] text-faint">
-                Declared in{" "}
-                <a
-                  href={repoFileUrl(recording, finding.manifestPath)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline decoration-dotted underline-offset-2 transition-colors hover:text-brand-text"
-                >
-                  {finding.manifestPath}
-                </a>
-              </p>
-            )}
-            <p className="mt-0.5 text-xs text-muted">{finding.summary}</p>
-            <EvidenceLinks evidence={finding.evidence ?? []} />
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
 }
 
 function EvidenceLinks({ evidence }: { evidence: EvidenceRef[] }) {
