@@ -95,7 +95,7 @@
       },
       {
         "command": "drift.pushBranch",
-        "title": "Push the Fix Branch",
+        "title": "Push the Fix Branch and Open a Pull Request",
         "category": "Drift",
         "icon": "$(repo-push)"
       },
@@ -250,7 +250,7 @@
           {
             "id": "drift.getStarted.ship",
             "title": "Ship the Branch",
-            "description": "Push the reviewed fix branch and open the pull request when you are ready.",
+            "description": "Push the reviewed fix branch. Drift opens the pull request with the GitHub CLI when you have one signed in, and falls back to GitHub's own pull request page when you do not.",
             "completionEvents": ["onCommand:drift.pushBranch"],
             "media": { "markdown": "media/walkthrough-ship.md" }
           }
@@ -577,7 +577,7 @@
         "drift.pullRequest.enabled": {
           "type": "boolean",
           "default": true,
-          "markdownDescription": "Offer to open a pull request once a branch is pushed.\n\nDrift never merges. Its output is always something a human opens, never something that has already landed.",
+          "markdownDescription": "Raise a pull request once a branch is pushed.\n\nDrift opens it directly through the GitHub CLI when you have `gh` installed and signed in, and otherwise opens GitHub's own pull request page for the branch. `gh` is a shortcut, never a requirement — the branch is pushed either way.\n\nDrift never merges. Its output is always something a human opens, never something that has already landed.",
           "order": 33
         },
         "drift.pullRequest.confirm": {
