@@ -1,23 +1,51 @@
-# Drift — detect breaking dependency changes and fix them.
+#!/usr/bin/env node
+/**
+ * Generate `examples/workflows/drift.yml` from the manifest registry.
+ *
+ * The trigger list was hand-written and had fallen behind what Drift can
+ * actually parse — no `npm-shrinkwrap.json`, no `bun.lock`, no Gradle version
+ * catalog or lockfile, no `*.gemspec`, no Python constraints files. Every one
+ * of those is a dependency file Drift handles perfectly well at runtime, which
+ * does not matter at all if GitHub never starts the job. Nothing reports that
+ * failure: the repository simply goes quiet.
+ *
+ * Generating the list from `DEPENDENCY_FILE_GLOBS` makes the two impossible to
+ * separate, and `test/manifest-globs.test.ts` fails if the committed workflow
+ * is regenerated-stale.
+ *
+ * Run with `--check` to verify the committed file matches, which is what CI does.
+ */
+
+import { readFile, writeFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { DEPENDENCY_FILE_GLOBS } from '../dist/detect/manifest-globs.js';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const target = join(root, 'examples', 'workflows', 'drift.yml');
+
+const paths = DEPENDENCY_FILE_GLOBS.map((glob) => `      - '${glob}'`).join('\n');
+
+const workflow = `# Drift — detect breaking dependency changes and fix them.
 #
-# GENERATED FILE. Edit scripts/build-workflow.mjs, then run `npm run build:workflow`.
+# GENERATED FILE. Edit scripts/build-workflow.mjs, then run \`npm run build:workflow\`.
 # The dependency path list below comes from Drift's own manifest registry, so a
 # file Drift can parse is a file this workflow starts on. Hand-editing it is how
 # the two fall out of step, and a workflow that never starts is indistinguishable
 # from a repository with nothing to report.
 #
-# Copy this file to `.github/workflows/drift.yml`.
+# Copy this file to \`.github/workflows/drift.yml\`.
 #
 # Two things to know before you enable it:
 #
-#   1. The `copilot-token` secret must be a USER-scoped token (a fine-grained
+#   1. The \`copilot-token\` secret must be a USER-scoped token (a fine-grained
 #      PAT) with "Agent tasks: read and write" — the only permission the Agent
 #      Tasks endpoint checks. GitHub's Copilot agent API rejects the built-in
 #      GITHUB_TOKEN and any GitHub App installation token, because Copilot is
 #      billed per seat. See docs/copilot-integration.md.
 #
-#   2. Drift ships in `approve` mode by default: it analyses, files an issue,
-#      and waits for you. Switch to `auto` in `.github/drift.yml` once you
+#   2. Drift ships in \`approve\` mode by default: it analyses, files an issue,
+#      and waits for you. Switch to \`auto\` in \`.github/drift.yml\` once you
 #      trust what it produces.
 
 name: Drift
@@ -25,74 +53,18 @@ name: Drift
 on:
   push:
     # Deliberately unfiltered by branch. Which branches Drift acts on is
-    # `watchBranches` in .github/drift.yml (default: main, master, develop),
-    # and the Action enforces it — see `runners/action.ts`. Filtering here as
+    # \`watchBranches\` in .github/drift.yml (default: main, master, develop),
+    # and the Action enforces it — see \`runners/action.ts\`. Filtering here as
     # well meant the config could not be honoured: a team that set
-    # `watchBranches: [develop]` got a workflow that still only ran on main,
+    # \`watchBranches: [develop]\` got a workflow that still only ran on main,
     # and nothing said why. One source of truth, and it is the config.
     paths:
-      - '**/package.json'
-      - '**/package-lock.json'
-      - '**/npm-shrinkwrap.json'
-      - '**/yarn.lock'
-      - '**/pnpm-lock.yaml'
-      - '**/bun.lock'
-      - '**/requirements*.txt'
-      - '**/constraints*.txt'
-      - '**/pyproject.toml'
-      - '**/poetry.lock'
-      - '**/uv.lock'
-      - '**/Pipfile'
-      - '**/Pipfile.lock'
-      - '**/setup.py'
-      - '**/go.mod'
-      - '**/go.sum'
-      - '**/Cargo.toml'
-      - '**/Cargo.lock'
-      - '**/pom.xml'
-      - '**/build.gradle'
-      - '**/build.gradle.kts'
-      - '**/gradle/libs.versions.toml'
-      - '**/gradle.lockfile'
-      - '**/build.sbt'
-      - '**/project/*.scala'
-      - '**/Gemfile'
-      - '**/Gemfile.lock'
-      - '**/*.gemspec'
-      - '**/*.csproj'
-      - '**/*.fsproj'
-      - '**/*.vbproj'
-      - '**/Directory.Packages.props'
-      - '**/packages.config'
-      - '**/packages.lock.json'
-      - '**/composer.json'
-      - '**/composer.lock'
-      - '**/mix.exs'
-      - '**/mix.lock'
-      - '**/rebar.config'
-      - '**/pubspec.yaml'
-      - '**/pubspec.yml'
-      - '**/pubspec.lock'
-      - '**/Package.swift'
-      - '**/Package@swift-*.swift'
-      - '**/Package.resolved'
-      - '**/Podfile'
-      - '**/Podfile.lock'
-      - '**/dune-project'
-      - '**/*.opam'
-      - '**/*.opam.locked'
-      - '**/conanfile.txt'
-      - '**/conanfile.py'
-      - '**/conan.lock'
-      - '**/vcpkg.json'
-      - '**/vcpkg-configuration.json'
-      - '**/library.properties'
-      - '**/platformio.ini'
+${paths}
 
   # Lets you re-run Drift against the current commit from the Actions tab.
   workflow_dispatch:
 
-  # Enables the `/drift apply` approval flow on issues Drift files.
+  # Enables the \`/drift apply\` approval flow on issues Drift files.
   #
   # Drift re-checks everything about an approval itself: that the commenter has
   # write access, that the issue is one Drift filed, and that the plan it is
@@ -103,12 +75,12 @@ on:
 
 # Prevents two Drift runs from racing to create the same branch.
 concurrency:
-  group: drift-${{ github.ref }}
+  group: drift-\${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   drift:
-    # On comment events, only run for `/drift apply` on a Drift issue.
+    # On comment events, only run for \`/drift apply\` on a Drift issue.
     if: >-
       github.event_name != 'issue_comment' ||
       (contains(github.event.comment.body, '/drift apply') &&
@@ -129,7 +101,7 @@ jobs:
           # Drift needs the previous commit to diff manifests against, and the
           # working tree to search for affected code.
           #
-          # On an `issue_comment` run this checks out the default branch, not
+          # On an \`issue_comment\` run this checks out the default branch, not
           # the commit being approved. Drift verifies the two match before using
           # the working tree, and skips localization (saying so in the report)
           # rather than reporting impact sites from the wrong tree.
@@ -146,7 +118,7 @@ jobs:
       # laptop has.
       #
       # Go is set up below because it is the most common case. Add the ones your
-      # repository needs and delete the rest; each is `continue-on-error` so a
+      # repository needs and delete the rest; each is \`continue-on-error\` so a
       # repository without that ecosystem is unaffected.
       # ----------------------------------------------------------------------
 
@@ -186,9 +158,25 @@ jobs:
         id: drift
         uses: trydrift/drift@v0
         with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          copilot-token: ${{ secrets.DRIFT_COPILOT_TOKEN }}
+          repo-token: \${{ secrets.GITHUB_TOKEN }}
+          copilot-token: \${{ secrets.DRIFT_COPILOT_TOKEN }}
 
       - name: Report outcome
         if: always()
-        run: echo "${{ steps.drift.outputs.status }}: ${{ steps.drift.outputs.summary }}"
+        run: echo "\${{ steps.drift.outputs.status }}: \${{ steps.drift.outputs.summary }}"
+`;
+
+if (process.argv.includes('--check')) {
+  const current = await readFile(target, 'utf8').catch(() => null);
+  if (current !== workflow) {
+    console.error(
+      'build-workflow: examples/workflows/drift.yml is out of date with the manifest registry.\n' +
+        'Run `npm run build:workflow` and commit the result.',
+    );
+    process.exit(1);
+  }
+  console.log(`build-workflow: the committed workflow matches (${DEPENDENCY_FILE_GLOBS.length} trigger paths).`);
+} else {
+  await writeFile(target, workflow, 'utf8');
+  console.log(`build-workflow: wrote ${DEPENDENCY_FILE_GLOBS.length} trigger paths to examples/workflows/drift.yml`);
+}

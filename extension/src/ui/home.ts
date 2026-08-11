@@ -39,6 +39,8 @@ import { agentSupportsFastMode } from '../agents/cli.js';
 import type { AttachedContext, EffortStop } from '../agents/types.js';
 import { getGitHubSession, getRateLimitToken } from '../github-auth.js';
 import type { PackageManagerId } from '../../../src/detect/package-manager.js';
+import { describeSupportedManifests } from '../../../src/detect/capabilities.js';
+import { dependencyWatcherGlob } from '../../../src/detect/manifest-globs.js';
 import {
   availableChecks,
   describeOutcomes,
@@ -235,9 +237,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // moment a manifest or a source file moves, it is describing something that
     // no longer exists — so the panel says which files changed and offers the
     // one action that makes it true again, rather than quietly going stale.
-    const manifests = vscode.workspace.createFileSystemWatcher(
-      '**/{package.json,package-lock.json,pnpm-lock.yaml,yarn.lock,bun.lock,bun.lockb,pyproject.toml,requirements.txt,poetry.lock,uv.lock,go.mod,go.sum,Cargo.toml,Cargo.lock,Gemfile,Gemfile.lock,pom.xml,build.gradle,build.gradle.kts}',
-    );
+    // Built from Drift's own manifest registry, not typed out here. The
+    // hand-written version covered nine ecosystems out of sixteen, so a
+    // Composer or NuGet or Swift repository never learned its results had gone
+    // stale — the panel just kept showing an answer about a tree that had moved.
+    const manifests = vscode.workspace.createFileSystemWatcher(dependencyWatcherGlob());
     this.disposables.push(
       manifests,
       manifests.onDidChange((uri) => this.markStale(uri, 'dependencies')),
@@ -1095,7 +1099,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     if (roots.length === 0) {
       this.session.notice(
         'warn',
-        'Open a git repository with a dependency manifest — `package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `Gemfile`, or `pom.xml` — to scan dependencies.',
+        `Open a git repository with a dependency manifest to scan dependencies. Drift reads ${describeSupportedManifests()}.`,
       );
       return;
     }

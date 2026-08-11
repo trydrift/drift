@@ -635,3 +635,20 @@ export function explainStage(ecosystem: Ecosystem, stage: CapabilityStage): stri
       : `${label} is partial for ${capability.label}.`;
   return `${prefix} ${support.note ?? ''}${requires}`.trim();
 }
+
+/**
+ * The manifests Drift reads, named by ecosystem, for a "nothing to scan here"
+ * message.
+ *
+ * Generated from the capability table rather than typed out. The extension's
+ * version of this listed six files — `package.json`, `pyproject.toml`,
+ * `go.mod`, `Cargo.toml`, `Gemfile`, `pom.xml` — which told a developer
+ * opening a Composer, NuGet, Swift, Dart or OCaml repository that Drift does
+ * not support their ecosystem. It does; the message was ten ecosystems out of
+ * date and had no way of knowing.
+ */
+export function describeSupportedManifests(): string {
+  const primary = ECOSYSTEM_CAPABILITIES.map((capability) => capability.files[0]).filter(Boolean);
+  const last = primary[primary.length - 1];
+  return `${primary.slice(0, -1).join(', ')} and ${last} — ${ECOSYSTEM_CAPABILITIES.length} ecosystems in all`;
+}
