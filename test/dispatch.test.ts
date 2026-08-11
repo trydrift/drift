@@ -4,6 +4,7 @@ import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { dispatch } from '../dist/dispatch/index.js';
+import { dispatchToCopilot } from '../dist/dispatch/copilot.js';
 import { attemptCodemod } from '../dist/codemod/index.js';
 import { buildPlan } from '../dist/plan/index.js';
 import { DriftConfigSchema } from '../dist/config/schema.js';
@@ -228,5 +229,74 @@ describe('dispatch: deterministic remediation before an agent', () => {
       assert.equal(result.status, 'blocked');
       assert.ok(!github.calls.some((c) => c.startsWith('commitFiles')));
     });
+  });
+});
+
+/**
+ * The Agent Tasks request body.
+ *
+ * These two fields are the whole contract with GitHub, and getting them the
+ * wrong way round fails *silently*: the API accepts the request, the agent
+ * works on a branch nobody is watching, and Drift opens a pull request from
+ * the branch the agent never touched. Nothing surfaces as an error, so only
+ * an assertion on the wire format catches it.
+ */
+describe('Copilot dispatch: the Agent Tasks request body', () => {
+  const plan = {
+    branchName: 'drift/upgrade-acme-sdk',
+    baseBranch: 'develop',
+    changes: [],
+    evidence: [],
+    breakingChanges: [],
+    impactSites: [],
+    commits: [],
+    warnings: [],
+    risk: 'low',
+  };
+
+  async function capturePostedBody(): Promise<Record<string, unknown>> {
+    const realFetch = globalThis.fetch;
+    let body: Record<string, unknown> = {};
+    globalThis.fetch = (async (_url: string, init: RequestInit) => {
+      body = JSON.parse(String(init.body)) as Record<string, unknown>;
+      return new Response(JSON.stringify({ id: 'task_1', state: 'queued' }), {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }) as typeof fetch;
+
+    try {
+      const result = await dispatchToCopilot({
+        copilotToken: 'token',
+        repo,
+        plan: plan as never,
+        config: DriftConfigSchema.parse({}),
+        logger,
+      });
+      assert.equal(result.ok, true);
+      return body;
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  }
+
+  test('the branch Drift already created is sent as head_ref, not base_ref', async () => {
+    const body = await capturePostedBody();
+    // `head_ref` is an existing branch the agent commits into. Drift created
+    // this one and pushed the dependency update to it.
+    assert.equal(body.head_ref, 'drift/upgrade-acme-sdk');
+  });
+
+  test('base_ref is the branch the pull request will merge into', async () => {
+    const body = await capturePostedBody();
+    // Never the fix branch: `base_ref` is what a *new* branch would be cut
+    // from, so pointing it at Drift's own branch sends the agent elsewhere.
+    assert.equal(body.base_ref, 'develop');
+    assert.notEqual(body.base_ref, plan.branchName);
+  });
+
+  test('Drift stays the sole pull request creator', async () => {
+    const body = await capturePostedBody();
+    assert.equal(body.create_pull_request, false);
   });
 });
