@@ -20,10 +20,6 @@ nobody sensible trusts a version number**, and the breakages that matter come
 from changes to the package's public API — changes a version number, by
 definition, cannot express.
 
-> If we want to put a figure on this publicly, it needs a citation attached.
-> The previous version of this sentence carried "around 5%" with no source,
-> which is the first thing a technical audience asks about.
-
 Dependency updates are one of the few engineering tasks that are simultaneously
 mandatory (security), frequent (weekly), low-status (nobody wants it), and
 genuinely risky. That combination is why they pile up.
@@ -47,13 +43,12 @@ It never merges anything.
 ## Two front ends, one engine
 
 **A GitHub Action.** Runs on every dependency bump, files an issue with the plan,
-and opens a pull request once approved. Zero infrastructure — see the business
+and opens a pull request once approved. Zero infrastructure — see the deployment
 model below.
 
 **A VS Code extension.** The same six analysis stages, running locally, with no
-token and no account, because nothing in the analysis needs one. This is the
-distribution wedge: a developer can install it and get an answer in one minute
-without talking to anyone or asking their org for permission.
+token and no account, because nothing in the analysis needs one. Install it and
+get an answer in one minute, without configuring anything first.
 
 The extension's panel is a conversation, the shape developers already know from
 Copilot Chat and Claude. It leads with the number that decides what they do next —
@@ -94,9 +89,9 @@ mode is asking too often — never editing code it shouldn't have.
 prints the report without any write access at all. The best answer to "why should
 I trust this?" is "don't — run it read-only first."
 
-## Why now
+## What makes this approach possible
 
-Three things became true recently, and Drift needs all three:
+Three things Drift depends on, all of them recent:
 
 1. **Coding agents can do the mechanical work.** GitHub Copilot's coding agent
    shipped a public API in 2026. The refactor was never the hard part.
@@ -106,27 +101,21 @@ Three things became true recently, and Drift needs all three:
    dependency upgrades indefinitely, so the cost of the manual process is now
    being paid every week rather than deferred.
 
-## Business model
+## Deployment model
 
-Free, using the customer's own Copilot seat.
+Drift runs entirely inside your own repository, using your own Copilot seat.
 
-That's deliberate, and it's also what makes the architecture work. Because
-GitHub's agent API requires a **user-scoped** token — Copilot is billed per seat —
-the token stays in the customer's own repository secrets and Drift's
-infrastructure never touches it.
+That is what makes the architecture work. Because GitHub's agent API requires a
+**user-scoped** token — Copilot is billed per seat — the token stays in your own
+repository secrets, and no Drift-operated infrastructure ever touches it.
 
-Which means the MVP ships with **no backend, no database, and no authentication
+Which means Drift ships with **no backend, no database, and no authentication
 system**. Not a corner cut: a deployment model chosen so the question doesn't
-arise. It's also the answer every security reviewer wants — *"Where do you store
+arise. It is also the answer every security reviewer wants — *"Where do you store
 my token?" "We don't."*
 
-Adoption cost is one workflow file and one secret. No sales call, no trial, no
-data leaving the customer's boundary.
-
-Monetisation comes later and from the org, not the individual: cross-repo
-dependency risk dashboards, policy enforcement across an organisation, private
-registry support, SLAs. The free tool is the wedge, and it's genuinely free
-because the expensive part (inference) is already paid for by someone else.
+Setup is one workflow file and one secret, and no repository data leaves your
+boundary. Drift ships no model and asks for no inference API key of its own.
 
 ## Status
 
@@ -149,8 +138,8 @@ changelogs as mitigated rather than solved.
 | **Import-graph localization** | Search scoped to actual importers — and to the code one re-export edge past them — against module names read from the package's own published artefact rather than guessed. This is the precision lever. |
 | **Meta-RAG index** | AST-aligned, adapted from arXiv:2510.03480 — with structural summaries instead of LLM-generated ones, so the core pipeline needs no model at all. |
 | **Separated commits** | One per concern, dependency-ordered. `git revert` and `git bisect` stay meaningful. |
-| **Zero-infrastructure deployment** | Runs entirely inside the customer's trust boundary. |
-| **Agent-agnostic** | Drives Copilot, Claude Code, Codex, Gemini, Aider, OpenCode, or a local Ollama model. Drift ships no model and asks for no API key, so inference is already paid for. |
+| **Zero-infrastructure deployment** | Runs entirely inside your own trust boundary. |
+| **Agent-agnostic** | Drives Copilot, Claude Code, Codex, Gemini, Aider, OpenCode, or a local Ollama model. Drift ships no model and asks for no API key of its own. |
 | **Repo-relative severity** | The judgement of whether a breaking change matters *here* is a single testable function, and only it earns colour or a notification. |
 | **Hunk-level review** | Agent edits are held as a proposal with per-hunk Keep and Undo. The invariant — resolving one hunk cannot corrupt the others — is tested directly. |
 
