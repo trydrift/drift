@@ -77,8 +77,15 @@ agent API rejects the built-in `GITHUB_TOKEN` and any GitHub App installation
 token, because Copilot is billed per seat and GitHub needs to know whose seat is
 being spent.
 
-Create a fine-grained PAT with read+write on **actions**, **contents**, **issues**,
-and **pull requests**, then save it as the repository secret `DRIFT_COPILOT_TOKEN`.
+Create a fine-grained PAT with **Agent tasks: read and write** (plus the
+mandatory **Metadata: read**), then save it as the repository secret
+`DRIFT_COPILOT_TOKEN`. That is the only permission the Agent Tasks API checks —
+everything else Drift does runs on the workflow's built-in `GITHUB_TOKEN`.
+
+The endpoint is in public preview and GitHub decides which Copilot plans may
+call it; if you get a 403, check
+[the endpoint docs](https://docs.github.com/en/rest/agent-tasks/agent-tasks)
+before assuming Drift is misconfigured.
 
 The token lives in your repository secrets. Drift reads it from the environment at
 run time and sends it only to `api.github.com`. It is never stored anywhere else —

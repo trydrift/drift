@@ -21,8 +21,9 @@ repository. This is the deployment Drift is designed around — see
 
 1. Copy [`examples/workflows/drift.yml`](../examples/workflows/drift.yml) to
    `.github/workflows/drift.yml`.
-2. Create a fine-grained PAT (actions, contents, issues, pull requests — all
-   read+write) and save it as the secret `DRIFT_COPILOT_TOKEN`.
+2. Create a fine-grained PAT with **Agent tasks: read and write** — the only
+   permission the Agent Tasks endpoint checks — and save it as the secret
+   `DRIFT_COPILOT_TOKEN`.
 3. Optionally copy [`examples/drift.yml`](../examples/drift.yml) to
    `.github/drift.yml`.
 

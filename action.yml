@@ -22,9 +22,14 @@ inputs:
       A USER-SCOPED token for the GitHub Copilot coding agent API. This must be
       a fine-grained personal access token or an OAuth/GitHub App *user* token —
       the agent API rejects App installation tokens, because Copilot is billed
-      per seat. Needs read+write on actions, contents, issues, and pull
-      requests. Store it as a repository secret; Drift reads it from your
-      environment and never transmits it anywhere except api.github.com.
+      per seat. Needs "Agent tasks: read and write" — that is the only
+      permission the Agent Tasks endpoint checks, and this token is used for
+      nothing else; repository operations run on `repo-token` above. The
+      endpoint is in public preview, and which Copilot plans may call it is
+      decided by GitHub: see
+      https://docs.github.com/en/rest/agent-tasks/agent-tasks. Store it as a
+      repository secret; Drift reads it from your environment and never
+      transmits it anywhere except api.github.com.
 
       Omit this to run in analysis-only mode: Drift will still detect breaking
       changes and file an approval issue, but cannot dispatch a fix.
