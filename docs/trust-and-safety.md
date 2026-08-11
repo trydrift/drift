@@ -43,7 +43,7 @@ number, never a new branch in a guardrail.
 ### 2 · Confidence gating
 
 | Confidence | Source | Auto-dispatch under defaults |
-|---|---|---|
+| --- | --- | --- |
 | `high` | Computed diff, or two independent sources agreeing | Yes |
 | `medium` | Single prose source | Yes |
 | `low` | Weak or unconfirmed | **No** — reported for a human |
@@ -56,7 +56,7 @@ Risk reflects what Drift is asking to *change*, not how alarming the release
 sounds.
 
 | Signal | Risk |
-|---|---|
+| --- | --- |
 | Behaviour or default change | **high** |
 | Version downgrade | **high** |
 | >20 files or >75 sites | **high** |
@@ -73,7 +73,7 @@ line of defence.
 All configurable; all default to the cautious setting.
 
 | Guardrail | Default | Prevents |
-|---|---|---|
+| --- | --- | --- |
 | `protectedPaths` | workflows, lockfiles, infra, secrets | An agent editing CI, IaC, or credentials |
 | `maxFilesChanged` | 50 | A change too wide to review meaningfully |
 | `maxDependenciesPerRun` | 10 | Batching that makes regressions unattributable |
@@ -132,13 +132,13 @@ touches only the files the plan named for that group.
 ## What Drift will never do
 
 | | |
-|---|---|
+| --- | --- |
 | **Merge anything** | The output is always a PR, or a local commit, for a human |
 | **Commit an unreviewed edit** | Unless you set `drift.session.permission` to `full-auto` |
 | **Push from the editor** | `Drift: Push the Fix Branch and Open a Pull Request` is explicit and manual |
 | **Force-push** | Only fresh branches, never rewriting history. A push git would have to force is refused, not forced |
 | **Touch the base branch** | Work happens on `drift/*` |
-| **Change dependency versions** | The upgrade is the input, not the task |
+| **Silently substitute a version** | Remediation treats the upgrade you or `drift outdated --upgrade` chose as its input and does not swap in another one |
 | **Store your credentials** | The Copilot token stays in your repo secrets |
 | **Act without evidence** | The citation invariant is structural |
 | **Silently drop a change** | Every skip carries a reason in the output |
@@ -216,7 +216,8 @@ CODEOWNERS-protected.
 
 ### Token compromise
 
-The Copilot token is scoped to your chosen repositories with four permissions,
+The Copilot token is scoped to your chosen repositories with one permission —
+**Agent tasks: read and write** (plus the mandatory **Metadata: read**) —
 stored in GitHub's secret store, and never transmitted anywhere but
 `api.github.com`. Drift's infrastructure never receives it — because in the
 Action deployment there is no Drift infrastructure.
@@ -251,9 +252,13 @@ be wrong in unusual formatting. File and line are always exact.
 
 **Prompt injection.** Discussed above. Mitigated, not solved.
 
-**No post-dispatch verification.** Drift doesn't yet poll the Copilot task to
-completion or check CI before reporting. The scaffolding exists; the loop
-doesn't.
+**Agent completion tracking is deployment-dependent.** The self-hosted webhook
+runner durably tracks dispatched Copilot tasks. The GitHub Action can
+optionally wait for completion via `remediation.awaitCompletion`; it is off by
+default, because waiting keeps the Actions job — and its billed minutes —
+alive for the whole agent session. Either way, Drift does not claim that agent
+completion alone proves the patch correct: repository CI and your configured
+verification remain the final executable checks.
 
 ---
 
@@ -278,4 +283,4 @@ Most teams should stop at 3.
 
 ## Reporting a vulnerability
 
-Open a draft security advisory on the repository rather than a public issue.
+See [SECURITY.md](../SECURITY.md).

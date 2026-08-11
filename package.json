@@ -1,7 +1,7 @@
 {
   "name": "@usedrift/cli",
   "version": "0.1.0",
-  "description": "Drift detects dependency API changes, proves which ones break your code, and fixes them deterministically, via a community recipe, or with an AI agent, in a reviewable, atomically-committed pull request.",
+  "description": "Find which dependency upgrades affect your code, show the evidence, and prepare reviewable fixes from the command line.",
   "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "repository": {
@@ -64,10 +64,16 @@
   },
   "keywords": [
     "dependencies",
+    "dependency-updates",
+    "dependency-upgrades",
     "breaking-changes",
+    "dependabot",
+    "renovate",
+    "codemod",
+    "github-actions",
     "github-copilot",
-    "automated-refactoring",
-    "openapi"
+    "ai-agents",
+    "developer-tools"
   ],
   "optionalDependencies": {
     "@anthropic-ai/sdk": "^0.68.0"

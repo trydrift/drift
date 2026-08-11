@@ -1,7 +1,8 @@
 name: 'Drift'
 description: >-
-  Detects dependency API changes, proves which ones break your code, and drives
-  GitHub Copilot to fix them in a reviewable, atomically-committed pull request.
+  Finds which dependency changes affect your code, shows the evidence, and
+  prepares a reviewable fix. Drift uses deterministic remediation first and
+  GitHub Copilot only when needed.
 author: 'Drift'
 
 branding:
@@ -31,8 +32,11 @@ inputs:
       repository secret; Drift reads it from your environment and never
       transmits it anywhere except api.github.com.
 
-      Omit this to run in analysis-only mode: Drift will still detect breaking
-      changes and file an approval issue, but cannot dispatch a fix.
+      Drift only needs this for a planned fix that remains after deterministic
+      remediation and any enabled community recipe. Omit it and Drift still
+      detects breaking changes, gathers evidence, and applies what it can fix
+      itself; if a remaining commit needs an agent, it reports that instead of
+      guessing.
     required: false
 
   mode:
@@ -45,9 +49,9 @@ inputs:
 
   dry-run:
     description: >-
-      Analyse and report without creating branches, issues, or agent tasks. Use
-      this to evaluate Drift against your repository before granting it write
-      access.
+      Analyse and report without creating branches, issues, pull requests, or
+      agent tasks. Use this to evaluate Drift against your repository before
+      granting it write access.
     required: false
     default: 'false'
 

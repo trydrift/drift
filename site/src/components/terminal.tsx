@@ -27,8 +27,8 @@ interface Command {
 const COMMANDS: Command[] = [
   { args: "analyze", says: "The full pipeline against your working tree. Writes nothing, needs no token." },
   { args: "outdated", says: "Every direct dependency, and what each upgrade would actually cost you." },
-  { args: "fix", says: "Applies one commit unit — codemod, community recipe, or agent, in that order." },
-  { args: "pr", says: "Opens the pull request, one reviewable commit per concern." },
+  { args: "fix", says: "Analyse, fix in an isolated worktree, push a branch, and open a pull request." },
+  { args: "pr", says: "Push the current branch and open a pull request." },
 ];
 
 /** Milliseconds per keystroke, and how long a finished command sits there. */

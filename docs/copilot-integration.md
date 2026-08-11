@@ -68,14 +68,10 @@ we never see it."
 ## The trade-off, stated plainly
 
 The hosted-App model is a better *product* experience: install once, covered
-everywhere, nothing to configure per repository. Drift gives that up.
+everywhere, nothing to configure per repository. Drift gives that up in
+exchange for needing no credential store at all.
 
-When Drift has customers who want the hosted experience and a reason to trust us
-with credentials, the migration path is a GitHub App with an OAuth user flow and
-an encrypted token store. That is a deliberate later step, gated on demand — not
-an oversight.
-
-Meanwhile the webhook runner (`drift serve`) offers a middle path: the
+The webhook runner (`drift serve`) offers a middle path: the
 multi-repo listening experience, self-hosted, single-tenant, with one token you
 control. See [deployment.md](deployment.md).
 
@@ -206,7 +202,17 @@ discarded.
 
 ## Running without a Copilot token
 
-Drift degrades to analysis-only: it detects, gathers evidence, localizes, plans,
-and files the issue with the full report and commit plan — it simply doesn't
-dispatch. That mode is genuinely useful on its own, and it's what `drift analyze`
-runs locally.
+Copilot is a fallback, not a requirement for analysis or deterministic
+remediation.
+
+Without `DRIFT_COPILOT_TOKEN`, Drift still detects the change, gathers
+evidence, localizes affected code, builds the plan, and applies whatever it can
+resolve deterministically — or via an explicitly enabled community recipe — in
+a pushed branch and pull request. Only a commit that still needs an agent after
+that goes unresolved.
+
+If one does, Drift reports that a Copilot token is required to finish it rather
+than guessing or silently dropping the work — the Action files the approval
+issue with the full report and commit plan; the CLI opens the pull request it
+already has and marks it incomplete, then exits non-zero. `drift analyze` never
+dispatches anything regardless of token, by construction.

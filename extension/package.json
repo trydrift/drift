@@ -1,7 +1,7 @@
 {
   "name": "drift",
-  "displayName": "Drift — Dependency Breaking Changes",
-  "description": "Finds which dependency updates break your code, proves it with evidence, and fixes them deterministically, via a community recipe, or with the AI agent you already use.",
+  "displayName": "Drift — Safe Dependency Upgrades",
+  "description": "Find which dependency upgrades affect your code, see the evidence, and prepare reviewable fixes with deterministic transforms, community recipes, or your existing AI agent.",
   "version": "0.1.0",
   "publisher": "drift",
   "license": "SEE LICENSE IN LICENSE",
@@ -235,8 +235,8 @@
           },
           {
             "id": "drift.getStarted.fix",
-            "title": "Ask Your Agent to Fix It",
-            "description": "Let Drift hand affected commits to the AI agent you already use.",
+            "title": "Fix the Affected Code",
+            "description": "Drift uses a deterministic transform first, an enabled community recipe second, and your selected AI agent only for what remains.",
             "completionEvents": ["onCommand:drift.fixAll"],
             "media": { "markdown": "media/walkthrough-fix.md" }
           },

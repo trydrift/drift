@@ -21,10 +21,12 @@ repository. This is the deployment Drift is designed around — see
 
 1. Copy [`examples/workflows/drift.yml`](../examples/workflows/drift.yml) to
    `.github/workflows/drift.yml`.
-2. Create a fine-grained PAT with **Agent tasks: read and write** — the only
-   permission the Agent Tasks endpoint checks — and save it as the secret
-   `DRIFT_COPILOT_TOKEN`.
-3. Optionally copy [`examples/drift.yml`](../examples/drift.yml) to
+2. Run it in the default `approve` mode and read the first few reports.
+3. Optionally create a fine-grained PAT with **Agent tasks: read and write** —
+   the only permission the Agent Tasks endpoint checks — and save it as the
+   secret `DRIFT_COPILOT_TOKEN`, if you want Copilot to handle commits Drift
+   can't resolve deterministically.
+4. Optionally copy [`examples/drift.yml`](../examples/drift.yml) to
    `.github/drift.yml`.
 
 ### Minimal workflow
@@ -63,7 +65,7 @@ and without a diff there is nothing to analyse.
 | Input | Default | |
 | --- | --- | --- |
 | `repo-token` | `${{ github.token }}` | Repository operations |
-| `copilot-token` | — | **User-scoped**. Omit for analysis-only mode |
+| `copilot-token` | — | **User-scoped**. Only needed for commits Drift can't resolve deterministically or via an enabled community recipe |
 | `mode` | from `drift.yml` | Overrides the committed config |
 | `dry-run` | `false` | Analyse without writing |
 | `config-path` | `.github/drift.yml` | |
@@ -101,17 +103,27 @@ per-package configs.
 
 ```bash
 npm install -g @usedrift/cli
-export GITHUB_TOKEN=ghp_...
 drift analyze
 ```
 
 `analyze` is **read-only by construction** — no token is passed through to
 dispatch and dry-run is forced. There is no code path in it that creates a
-branch, an issue, or an agent task.
+branch, an issue, or an agent task. No token or account is needed; set
+`GITHUB_TOKEN` only if you hit GitHub's anonymous API rate limit.
 
 ```
 drift analyze --repo owner/name --before <sha> --after <sha> --dir ./path --json
 ```
+
+`drift outdated` scans every direct dependency for a newer version — same
+read-only rules. When you're ready to act:
+
+```
+drift fix   # analyse, apply what it can, push a branch, and open a pull request
+drift pr    # push the current branch and open a pull request
+```
+
+`fix` and `pr` need GitHub write access to push and open a pull request.
 
 Useful for:
 
@@ -119,8 +131,8 @@ Useful for:
 - Checking a dependency bump locally before pushing
 - Piping `--json` into your own tooling
 
-Other commands: `drift action` (Action entrypoint), `drift serve` (webhook
-server).
+`drift action` and `drift serve` are the entrypoints the GitHub Action and the
+webhook server run internally — see below.
 
 ---
 
@@ -128,7 +140,7 @@ server).
 
 The "App that watches your repos" experience, self-hosted and single-tenant.
 
-Requires **Node 22.5 or newer** — the delivery queue uses `node:sqlite` from the
+Requires **Node 22.6 or newer** — the delivery queue uses `node:sqlite` from the
 standard library. Drift says so at startup rather than failing later.
 
 ```bash

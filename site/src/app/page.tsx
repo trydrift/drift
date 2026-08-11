@@ -27,13 +27,8 @@ import { totalsOf, type Recording } from "@/lib/recordings";
 const GITHUB = "https://github.com/trydrift/Drift";
 const MARKETPLACE = "https://marketplace.visualstudio.com/items?itemName=drift.drift";
 
-/** The step as a repository really carries it — see `examples/workflows/`. */
-const WORKFLOW: CodeLine[] = [
-  { n: 18, text: "- uses: trydrift/drift@v0" },
-  { n: 19, text: "  with:" },
-  { n: 20, text: "    repo-token: ${{ secrets.GITHUB_TOKEN }}" },
-  { n: 21, text: "    copilot-token: ${{ secrets.DRIFT_COPILOT_TOKEN }}" },
-];
+/** Both inputs are optional — see `examples/workflows/`. */
+const WORKFLOW: CodeLine[] = [{ n: 18, text: "- uses: trydrift/drift@v0" }];
 
 export default function Home() {
   const recordings = loadRecordings();
@@ -91,10 +86,11 @@ export default function Home() {
             Drift says which three break your code.
           </h1>
           <p className="mt-5 max-w-2xl text-[15px] leading-relaxed text-muted sm:text-base">
-            Drift reads the actual API surface of both versions, works out what really changed, then
-            searches <em className="not-italic text-foreground">your</em> repository for the exact
-            lines that use it. Every claim carries a citation you can open, and anything it could
-            not check is reported as a gap rather than softened into a pass.
+            Drift works out what changed upstream using computed API surfaces where available and
+            citable release evidence everywhere else, then searches{" "}
+            <em className="not-italic text-foreground">your</em> repository for the exact lines
+            that use it. Every claim carries a citation you can open, and anything it could not
+            check is reported as a gap rather than softened into a pass.
           </p>
 
           {/* Installing is the primary action. The demo below is what convinces
@@ -258,7 +254,7 @@ export default function Home() {
             <ActionFlow />
 
             <div className="grid gap-4">
-              <GhPanel icon="file" name=".github/workflows/drift.yml" meta="4 lines">
+              <GhPanel icon="file" name=".github/workflows/drift.yml" meta="1 line">
                 <Code lines={WORKFLOW} />
               </GhPanel>
 
@@ -297,15 +293,21 @@ export default function Home() {
 
               <div className="rounded-2xl border border-border bg-surface/50 p-5">
                 <p className="text-[13px] leading-relaxed text-muted">
+                  <strong className="font-medium text-foreground">
+                    Copilot is only needed for fixes Drift can&rsquo;t resolve itself.
+                  </strong>{" "}
                   The built-in <code className="font-mono text-[11.5px] text-brand-text">GITHUB_TOKEN</code>{" "}
-                  covers everything except invoking Copilot, which GitHub bills per seat and so
-                  requires a user-scoped token. Omit it entirely and Drift runs in analysis-only
-                  mode: it still finds and reports everything, it just cannot dispatch the fix.
+                  covers everything else. Without a Copilot token, Drift still analyzes the change
+                  and applies deterministic remediation; if anything remains that needs an agent, it
+                  stops and asks instead of guessing. Add{" "}
+                  <code className="font-mono text-[11.5px] text-brand-text">copilot-token</code> only
+                  if you want agent fallback for the fixes Drift can&rsquo;t resolve itself.
                 </p>
                 <p className="mt-3 text-[13px] leading-relaxed text-muted">
-                  Not ready to grant write access at all?{" "}
+                  <strong className="font-medium text-foreground">Not ready for Drift to make changes?</strong>{" "}
                   <code className="font-mono text-[11.5px] text-brand-text">dry-run: true</code>{" "}
-                  produces the whole report and creates nothing.
+                  produces the full report without creating branches, issues, pull requests, or
+                  agent tasks.
                 </p>
               </div>
             </div>

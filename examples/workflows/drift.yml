@@ -10,7 +10,9 @@
 #
 # Two things to know before you enable it:
 #
-#   1. The `copilot-token` secret must be a USER-scoped token (a fine-grained
+#   1. `copilot-token` is optional. Drift only needs it when a planned fix
+#      remains after deterministic remediation and any enabled community
+#      recipe. If you add it, it must be a USER-scoped token (a fine-grained
 #      PAT) with "Agent tasks: read and write" — the only permission the Agent
 #      Tasks endpoint checks. GitHub's Copilot agent API rejects the built-in
 #      GITHUB_TOKEN and any GitHub App installation token, because Copilot is

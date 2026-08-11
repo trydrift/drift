@@ -3,7 +3,8 @@
 Four ways to try it, in ascending order of commitment. Start at 1.
 
 > **Automated coverage:** the walkthrough below is one manual example (`got`,
-> npm). `test/real-repo-recordings.test.ts` covers the other sixteen — it
+> npm). `test/real-repo-recordings.test.ts` covers all sixteen supported
+> ecosystems — it
 > replays the real captured runs behind the [site's real-run
 > demos](../site/src/data/), one per supported ecosystem, and checks that
 > `severityOf`'s verdict agrees with the recorded counts, that every breaking
@@ -174,9 +175,10 @@ jobs:
           # Omit copilot-token for the first run — see below
 ```
 
-**Run it without `copilot-token` first.** Drift will analyse, find the ESM
-break, and file an approval issue. Nothing gets edited. Read that issue before
-granting anything more.
+**Run it in the default `approve` mode, without `copilot-token`, first.** Drift
+will analyse, find the ESM break, and file an approval issue. Nothing gets
+edited. Read that issue before granting anything more — a Copilot token is
+only needed later, for fixes Drift can't resolve itself.
 
 ### 3d. Then add Copilot
 
@@ -206,7 +208,8 @@ Once step 3 behaves the way you expect:
 3. **Leave `mode: approve`** (the default). Read several real plans.
 4. Only then consider `mode: auto` with `maxAutoRisk: low`.
 
-Most teams should stop at step 3.
+When you move to a real repository, keep `mode: approve` until the plans have
+become routine enough that you're comfortable changing the policy.
 
 ---
 

@@ -1,4 +1,4 @@
-# Telemetry
+# Telemetry — off by default
 
 Telemetry is currently disabled unless you explicitly configure your own
 collector endpoint. This repository does not include a hosted Drift telemetry

@@ -1,6 +1,6 @@
 # Drift
 
-**Your dependency updated. Something broke. Drift finds out what, proves it, and fixes it.**
+**Your dependency updated. Did it break your code? Drift finds out, shows the evidence, and prepares the fix.**
 
 Drift watches dependency changes in your repositories, works out which upstream
 changes actually break *your* code, and fixes them — deterministically when it
@@ -36,6 +36,9 @@ Drift closes that gap. It answers four questions Dependabot doesn't:
    is still maintained, what the maintainer says you gain.
 4. **What is the fix?** Written, committed, and explained.
 
+**Dependencies change. Your codebase should adapt.** That's the direction
+this is built toward — see [docs/vision.md](docs/vision.md).
+
 ## What makes it trustworthy
 
 An agent that edits your repository unsupervised has to earn that. Drift's design
@@ -45,7 +48,7 @@ is mostly about that problem:
 | --- | --- |
 | **Evidence, not recall** | Every finding cites a changelog entry, a release note, or a computed API diff you can click. Drift never asks an agent to act on "I think this package changed." |
 | **Computed diffs beat prose** | Drift downloads both versions and diffs the actual exported API — `.d.ts` for npm, every importable package at three platforms for Go, rustdoc for cargo, ECMA-335 metadata read straight out of a `.nupkg` for .NET, public headers for C and C++, published `lib/` for Dart, every `def` and `-export` for Elixir and Erlang. Changelogs omit removals; the shipped artefact doesn't. |
-| **Nothing is installed to be read** | Every artefact is fetched and parsed, never installed or built. `pip download` runs a build backend and a `.nupkg` can carry an install script; Drift opens the archive instead. |
+| **Static wherever the ecosystem allows it** | Most artefacts are fetched and parsed, never installed or built — `pip download` runs a build backend and a `.nupkg` can carry an install script, so Drift opens the archive instead. Cargo is the one exception: rustdoc only emits its JSON API description for a crate that's actually built, so Drift compiles each version in a throwaway probe crate in an isolated temp directory to get it. Every other computed surface in the table above is read from the published artefact without executing it. |
 | **Benefits need a citation too** | The upgrade rationale reports which advisories a version closes and what its maintainer says improved, each linked. A benefit Drift can't cite is a benefit Drift doesn't mention. |
 | **Rules, not scores** | The recommendation is a ladder of `if` statements that each record the sentence they fired with. You can disagree with a sentence; you can't disagree with `0.72`. |
 | **Import-graph precision** | A file that never imports `express` cannot be broken by an `express` change. Drift searches importers, not the whole repo — following your own barrel files to the code one edge past them — and the names it searches for are read from the package's published artefact rather than guessed. A name this file bound from a *different* package, or declared itself, is not a finding. |
@@ -443,9 +446,12 @@ Drift departs from the paper in three places, deliberately. See
 | [Configuration](docs/configuration.md) | Every `drift.yml` option |
 | [Copilot integration](docs/copilot-integration.md) | The token constraint, and why it shapes everything |
 | [Trust & safety](docs/trust-and-safety.md) | Guardrails, threat model, failure modes |
+| [Agent security boundaries](docs/security/agent-boundaries.md) | How local agent output is isolated and validated |
 | [Research mapping](docs/research.md) | What Drift took from the paper, and what it changed |
 | [Deployment](docs/deployment.md) | Action, CLI, and self-hosted webhook |
 | [Testing on a real repo](docs/testing-on-a-real-repo.md) | Four ways to try it, in ascending order of commitment |
+| [Telemetry](docs/telemetry.md) | Off by default — what it collects if you turn it on |
+| [Vision](docs/vision.md) | Where this is going, and why |
 | [The VS Code extension](extension/README.md) | The editor front end — panel, agents, review |
 
 ---

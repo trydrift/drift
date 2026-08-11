@@ -1,0 +1,65 @@
+name: Incorrect analysis
+description: Drift reported something wrong — a false positive, a false negative, or wrong evidence/localization.
+labels: ["incorrect-analysis"]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of error?
+      options:
+        - "False positive — Drift says my code is affected but it isn't"
+        - "False negative — Drift missed a real breakage"
+        - "Wrong affected file or line"
+        - "Wrong upstream evidence"
+        - "Wrong safe / affected / not-verified result"
+        - "Something else"
+    validations:
+      required: true
+  - type: input
+    id: ecosystem
+    attributes:
+      label: Ecosystem
+      placeholder: npm, cargo, go, maven, pip, ...
+    validations:
+      required: true
+  - type: input
+    id: package
+    attributes:
+      label: Package
+      placeholder: e.g. got
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Old version → new version
+      placeholder: e.g. 11.8.6 -> 12.0.0
+    validations:
+      required: true
+  - type: input
+    id: surface
+    attributes:
+      label: Drift surface and version/commit
+      placeholder: CLI v0.1.0, GitHub Action @<sha>, VS Code extension v0.1.0, ...
+    validations:
+      required: true
+  - type: textarea
+    id: reported
+    attributes:
+      label: What Drift reported
+      description: Paste the relevant part of the report, or a link to the issue/PR Drift opened.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should have happened instead
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction, if you have one
+      description: A public repo and commit range is the most useful thing you can give us.
+    validations:
+      required: false

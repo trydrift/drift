@@ -62,8 +62,10 @@ graph.
 ### Structured control before generation
 
 The paper separates deciding *what* to change from *making* the change. Drift
-does the same, with the split at a different seam: stages 1–5 decide, stage 6
-delegates to Copilot. Everything before dispatch is deterministic and inspectable.
+does the same, with the split at a different seam: evidence, impact, planning,
+and verification are decided first and are deterministic and inspectable;
+remediation then applies Drift's own deterministic fix, an explicitly enabled
+community recipe, and only delegates to Copilot for whatever remains.
 
 ### Migration guides as first-class input
 
@@ -86,9 +88,11 @@ flagged `TODO(drift):` is a better outcome than a confident guess.
 **Paper:** "the control agent consults a migration guide for the target version…
 Without a guide, the system defaults to internal LLM knowledge."
 
-**Drift:** computes API diffs from the artifacts themselves — `.d.ts` surfaces
-for npm, OpenAPI specs for HTTP dependencies — and treats guides as one weighted
-source among six.
+**Drift:** computes API diffs from the artifacts themselves wherever the
+ecosystem provides enough machine-readable information to — `.d.ts` surfaces
+for npm, rustdoc for Cargo, OpenAPI specs for HTTP dependencies, and more; see
+[docs/support.md](support.md) for current coverage — and treats guides as one
+weighted source among several.
 
 **Why:** falling back to "internal LLM knowledge" is exactly the failure mode
 that makes an autonomous tool unsafe on someone's production repository. A model
@@ -97,9 +101,9 @@ guess sends an agent to edit working code.
 
 It's also an availability problem. Most packages outside the Spring ecosystem
 have no migration guide at all — a guide-dependent design would simply not fire
-for most of the real world. And changelogs lie by omission: the most common cause
-of a "minor" upgrade breaking a build is a removal nobody wrote down. Only a
-computed diff catches that.
+for most of the real world. And changelogs are often incomplete from the
+consumer's point of view: the most common cause of a "minor" upgrade breaking a
+build is a removal nobody wrote down. Only a computed diff catches that.
 
 This is Drift's most significant departure and the core of its trust argument.
 

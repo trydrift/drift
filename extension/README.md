@@ -1,6 +1,6 @@
-# Drift — Dependency Breaking Changes
+# Drift — Safe Dependency Upgrades
 
-**Which upgrades actually break your code? Drift finds out, proves it, and fixes them — deterministically when it can, with a community recipe when one applies, or with the AI agent you already use otherwise.**
+**Which upgrades actually break your code? Drift finds out, shows the evidence, and fixes them — deterministically when it can, with a community recipe when one applies, or with the AI agent you already use otherwise.**
 
 No API keys. No tokens to paste. No account.
 
