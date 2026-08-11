@@ -200,9 +200,11 @@ off by default for that reason.
 
 ## Telemetry
 
-Telemetry is off by default. See [telemetry.md](telemetry.md) for the allow-list,
-kill switches, retention target, deletion approach, and the `drift telemetry
-print` command that shows the exact event shape before collection is enabled.
+Telemetry is disabled unless you explicitly configure your own collector
+endpoint; this repository does not include a hosted telemetry backend. See
+[telemetry.md](telemetry.md) for the allow-list, kill switches, retention
+target, and the `drift telemetry print` command that shows the exact event
+shape before wiring a collector.
 
 ---
 

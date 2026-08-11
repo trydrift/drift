@@ -300,9 +300,11 @@ export const DriftConfigSchema = z.object({
   /**
    * Privacy-preserving product telemetry.
    *
-   * Off by default. Event construction is allow-listed and rejects source code,
-   * raw paths, repository names, prompts, model responses, command output, and
-   * likely secrets before anything can be sent.
+   * Disabled unless a collector endpoint is explicitly configured. There is no
+   * hosted Drift telemetry backend in this repository. Event construction is
+   * allow-listed and rejects source code, raw paths, repository names, prompts,
+   * model responses, command output, and likely secrets before anything can be
+   * sent.
    */
   telemetry: z
     .object({

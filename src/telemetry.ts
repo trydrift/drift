@@ -123,7 +123,7 @@ export interface UpgradeOutcomeTelemetryEvent {
 export function telemetryEnabled(config: TelemetryConfig, env: NodeJS.ProcessEnv = process.env): boolean {
   if (env.DRIFT_TELEMETRY_DISABLED === '1' || env.DRIFT_TELEMETRY_DISABLED === 'true') return false;
   if (env.DO_NOT_TRACK === '1') return false;
-  return Boolean(config.enabled);
+  return Boolean(config.enabled && config.endpoint);
 }
 
 export function buildUpgradeOutcomeEvent(input: UpgradeOutcomeTelemetryInput): UpgradeOutcomeTelemetryEvent {

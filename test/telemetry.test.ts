@@ -19,7 +19,8 @@ describe('privacy-preserving telemetry', () => {
     assert.equal(telemetryEnabled({ enabled: true }, { DRIFT_TELEMETRY_DISABLED: '1' }), false);
     assert.equal(telemetryEnabled({ enabled: true }, { DRIFT_TELEMETRY_DISABLED: 'true' }), false);
     assert.equal(telemetryEnabled({ enabled: true }, { DO_NOT_TRACK: '1' }), false);
-    assert.equal(telemetryEnabled({ enabled: true }, {}), true);
+    assert.equal(telemetryEnabled({ enabled: true }, {}), false);
+    assert.equal(telemetryEnabled({ enabled: true, endpoint: 'https://telemetry.example.test/events' }, {}), true);
   });
 
   test('builds an allow-listed event without paths or repository identity', () => {

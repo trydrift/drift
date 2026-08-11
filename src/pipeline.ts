@@ -106,10 +106,9 @@ export async function runPipeline(options: PipelineOptions): Promise<PipelineRes
  *
  * Never affects the return value or throws into the caller: a telemetry
  * endpoint being unreachable is not a reason to report a plan as failed. Off
- * unless a team has both enabled it and given it somewhere to send events —
- * enabling it with no endpoint configured is silently a no-op rather than an
- * error, since there is nothing wrong with wanting the event *shape* (see
- * `drift telemetry print`) without shipping any yet.
+ * unless a team has both enabled it and given it somewhere to send events.
+ * This repository does not include a hosted collector; `drift telemetry print`
+ * exists only to inspect the event shape before wiring one up.
  */
 /**
  * Exported so `/drift apply` can report the same event this module sends for
@@ -131,6 +130,8 @@ export async function reportTelemetry(args: {
 }): Promise<void> {
   const { config, plan, result, dryRun, approved, latencyMs, logger } = args;
   if (!telemetryEnabled(config.telemetry)) return;
+  const endpoint = config.telemetry.endpoint;
+  if (!endpoint) return;
 
   try {
     const event = buildUpgradeOutcomeEvent({
@@ -164,12 +165,7 @@ export async function reportTelemetry(args: {
         : {}),
     });
 
-    if (!config.telemetry.endpoint) {
-      logger.debug('Telemetry is enabled but no endpoint is configured; the event was built but not sent.');
-      return;
-    }
-
-    const outcome = await sendTelemetryEvent(event, { endpoint: config.telemetry.endpoint });
+    const outcome = await sendTelemetryEvent(event, { endpoint });
     if (!outcome.sent) logger.debug(`Telemetry event not sent: ${outcome.reason ?? outcome.status}`);
   } catch (err) {
     logger.debug(`Telemetry event not sent: ${(err as Error).message}`);
