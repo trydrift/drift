@@ -80,6 +80,14 @@ function concurrency(): number {
   return vscode.workspace.getConfiguration('drift').get<number>('analysis.concurrency', 8);
 }
 
+/**
+ * Every directory the scan will read, through VS Code's own filesystem so a
+ * remote/SSH/Codespaces workspace answers the same as a local one.
+ */
+export async function scanDirectories(root: string): Promise<string[]> {
+  return core.scanDirectories(root, vscodeWorkspaceFs());
+}
+
 export async function discoverTargets(
   root: string,
   dirs: readonly string[] = [''],

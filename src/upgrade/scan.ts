@@ -309,6 +309,31 @@ function chooseManagers(
   return out;
 }
 
+/**
+ * Every directory a scan of this root will actually read.
+ *
+ * The root, plus each declared workspace member, plus each undeclared nested
+ * project. Exported because a caller that needs to settle something *before*
+ * the scan — which package manager owns an ambiguous directory, say — has to
+ * ask about the same directories the scan will visit, and the only reliable
+ * way to guarantee that is to compute it in one place and use it in both.
+ *
+ * The VS Code extension asked about the root alone, so its careful
+ * "which package manager do you actually use?" question simply did not happen
+ * for a monorepo's members, and the ambiguity was silently guessed at exactly
+ * where a monorepo is most likely to have one.
+ */
+export async function scanDirectories(
+  root: string,
+  fs: WorkspaceFs = nodeWorkspaceFs(),
+): Promise<string[]> {
+  const workspaces = await detectWorkspaces(root, fs);
+  const declaredMembers = memberDirectories(workspaces);
+  const nested = await discoverNestedProjects(root, fs, declaredMembers).catch(() => []);
+  const undeclaredDirs = nested.filter((project) => !project.hasOwnGit).map((project) => project.dir);
+  return [...declaredMembers, ...undeclaredDirs];
+}
+
 export async function scanUpgrades(args: {
   root: string;
   repo: RepoContext;

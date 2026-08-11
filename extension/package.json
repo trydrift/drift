@@ -42,6 +42,12 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "drift.scanDependencies",
+        "title": "Scan Dependencies for Upgrades",
+        "category": "Drift",
+        "icon": "$(search)"
+      },
+      {
         "command": "drift.fixAll",
         "title": "Fix All Breaking Changes",
         "category": "Drift",
@@ -216,8 +222,8 @@
           {
             "id": "drift.getStarted.scan",
             "title": "Scan Dependencies",
-            "description": "Run Drift on the current repository and keep the dependency result available in the activity bar.",
-            "completionEvents": ["onCommand:drift.analyze"],
+            "description": "Scan every direct dependency for an available upgrade, and see which ones would affect your code.",
+            "completionEvents": ["onCommand:drift.scanDependencies"],
             "media": { "markdown": "media/walkthrough-scan.md" }
           },
           {
@@ -544,7 +550,7 @@
         "drift.ui.showInlineDiagnostics": {
           "type": "boolean",
           "default": true,
-          "markdownDescription": "Flag affected lines in the editor and the Problems panel. Already-installed breakage can be an error; findings for an upgrade you have not installed yet are warnings.",
+          "markdownDescription": "Flag affected lines in the editor and the Problems panel, with the upstream change that caused each one.",
           "order": 20
         },
         "drift.ui.showManifestCodeLens": {

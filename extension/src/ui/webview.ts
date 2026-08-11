@@ -225,6 +225,12 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     title: 'Open a pull request',
     description: 'Push if needed, then raise a pull request carrying the evidence',
   },
+  {
+    name: '/instruction',
+    args: '<text>',
+    title: 'Add a workspace instruction',
+    description: 'Tell every future agent run something about this repository',
+  },
   { name: '/agent', title: 'Choose the AI agent', description: 'Choose which AI agent does the work' },
   { name: '/clear', title: 'New conversation', description: 'Start a new session' },
   { name: '/help', title: 'What Drift can do', description: 'Commands, agents, and how review works' },
