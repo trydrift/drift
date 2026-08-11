@@ -23,6 +23,7 @@ import { inspectLocalRepo } from '../../src/repo/local-git.js';
 import { Git } from './git.js';
 import { vscodeWorkspaceFs } from './upgrades.js';
 import { detectWorkspaces, memberDirectories } from '../../src/detect/workspace.js';
+import type { RemediationPlan } from '../../src/types.js';
 import { discoverNestedProjects } from '../../src/detect/nested.js';
 
 /**
@@ -487,6 +488,20 @@ async function selectAgent(state: DriftState): Promise<void> {
   void vscode.window.showInformationMessage(`Drift will use: ${picked.label.replace(/\$\([^)]*\)\s*/, '')}`);
 }
 
+/**
+ * Push the reviewed branch, then raise the pull request.
+ *
+ * The push itself asks for nothing. Git already has whatever credential the
+ * developer pushes with every day — an SSH key, a credential helper, a
+ * manager the OS provides — and demanding an editor sign-in before letting
+ * them use it would be inventing a dependency where there was none. Sign-in
+ * is offered only if the push actually fails, which is the moment it might
+ * genuinely be the answer.
+ *
+ * Only once the branch is on the remote does anything look at pull requests,
+ * because a pull request against a ref that does not exist is not a thing
+ * GitHub will make.
+ */
 async function pushBranch(state: DriftState): Promise<void> {
   const root = state.workspaceRoot;
   const status = state.status;
@@ -496,39 +511,143 @@ async function pushBranch(state: DriftState): Promise<void> {
     return;
   }
 
-  const signedIn = await isSignedIn();
-  if (!signedIn) {
-    const choice = await vscode.window.showInformationMessage(
-      'Pushing needs GitHub access. Sign in with one click — no token required.',
-      'Sign in',
-      'Cancel',
-    );
-    if (choice !== 'Sign in') return;
-    await vscode.commands.executeCommand('drift.signInToGitHub');
-  }
-
   const { Git } = await import('./git.js');
   const git = new Git(root);
 
-  try {
-    await vscode.window.withProgress(
+  const push = () =>
+    vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: `Drift: pushing ${status.branch}` },
       () => git.push(status.branch),
     );
-    // The branch is on the remote and the next step is always the same one, so
-    // it is offered here rather than left as a link the developer has to build
-    // by hand out of the branch name.
-    const { compareUrl } = await import('./ship.js');
-    const url = compareUrl(await git.remoteUrl(), (await git.defaultBranch()) ?? 'main', status.branch);
-    const choice = await vscode.window.showInformationMessage(
-      `Drift: pushed ${status.branch}.`,
-      ...(url ? ['Open a pull request'] : []),
-    );
-    if (choice === 'Open a pull request' && url) {
-      await vscode.env.openExternal(vscode.Uri.parse(url));
-    }
+
+  try {
+    await push();
   } catch (err) {
-    void vscode.window.showErrorMessage(`Drift: push failed. ${(err as Error).message}`);
+    // A failed push is the first point at which signing in might actually
+    // help — and it only helps if they are not signed in already, so an
+    // already-signed-in developer gets the error rather than a pointless offer.
+    if (await isSignedIn()) {
+      void vscode.window.showErrorMessage(`Drift: push failed. ${(err as Error).message}`);
+      return;
+    }
+
+    const choice = await vscode.window.showErrorMessage(
+      `Drift: push failed. ${(err as Error).message}`,
+      'Sign in to GitHub',
+      'Cancel',
+    );
+    if (choice !== 'Sign in to GitHub') return;
+    await vscode.commands.executeCommand('drift.signInToGitHub');
+
+    try {
+      await push();
+    } catch (retryError) {
+      void vscode.window.showErrorMessage(`Drift: push failed. ${(retryError as Error).message}`);
+      return;
+    }
+  }
+
+  await offerPullRequest(root, git, status.branch, status.plan);
+}
+
+/**
+ * The pull request, made rather than merely linked to where that is possible.
+ *
+ * With the GitHub CLI installed and signed in, Drift opens the pull request
+ * itself, with the title and body it would have used anywhere else, and hands
+ * back the real URL. Without it — no `gh`, a signed-out `gh`, or a refusal
+ * from GitHub — the developer gets the compare page instead, which is where
+ * this always ended before and is still a fine place to end. The branch is
+ * pushed in both cases, so neither outcome loses work.
+ */
+async function offerPullRequest(
+  root: string,
+  git: Git,
+  branch: string,
+  plan: RemediationPlan,
+): Promise<void> {
+  const { compareUrl, remoteSlug } = await import('./ship.js');
+  const { createPullRequestWithGh } = await import('./gh.js');
+  const { resolveBaseBranch, titleFor } = await import('../../src/plan/pull-request.js');
+  const { renderPullRequestBody } = await import('../../src/report/markdown.js');
+  const { loadWorkspaceConfig } = await import('./analyze.js');
+  const { DriftConfigSchema, opensPullRequestAsDraft } = await import('../../src/config/schema.js');
+
+  const remote = await git.remoteUrl();
+  const slug = remoteSlug(remote);
+
+  // The same policy the panel, the CLI and the Action read: an explicit editor
+  // setting is the more specific statement of intent, and otherwise the
+  // repository's own `.github/drift.yml` decides.
+  const config = await loadWorkspaceConfig(root).catch(() => DriftConfigSchema.parse({}));
+  const settings = vscode.workspace.getConfiguration('drift');
+  const explicit = <T>(key: string): T | undefined => {
+    const inspected = settings.inspect<T>(key);
+    return inspected?.workspaceFolderValue ?? inspected?.workspaceValue ?? inspected?.globalValue;
+  };
+
+  const enabled = explicit<boolean>('pullRequest.enabled') ?? config.pullRequest.enabled;
+  const resolved = resolveBaseBranch({
+    policy:
+      explicit<'branched-from' | 'default-branch'>('pullRequest.base') ?? config.pullRequest.base,
+    branchedFrom: await git.branchedFrom(branch),
+    defaultBranch: await git.defaultBranch(),
+    currentBranch: branch,
+  });
+
+  // Committing straight onto the branch a pull request would target leaves no
+  // pull request to open. Saying so beats offering a button that returns a 422.
+  if (!slug || !resolved || !enabled) {
+    void vscode.window.showInformationMessage(`Drift: pushed ${branch}.`);
+    return;
+  }
+
+  const base = resolved.branch;
+  const fallback = compareUrl(remote, base, branch);
+  const draft = explicit<boolean>('pullRequest.draft') ?? opensPullRequestAsDraft(config);
+
+  const outcome = await vscode.window.withProgress(
+    { location: vscode.ProgressLocation.Window, title: 'Drift: opening a pull request' },
+    () =>
+      createPullRequestWithGh({
+        cwd: root,
+        head: branch,
+        base,
+        title: titleFor({ changes: plan.changes }, { title: config.pullRequest.titleTemplate }),
+        // The evidence, not a generic sentence. A reviewer's first question
+        // about a dependency bump is "why is this safe?", and the answer is
+        // the report Drift already has in hand.
+        body: renderPullRequestBody(plan, config),
+        ...(draft ? { draft: true } : {}),
+        ...(config.pullRequest.labels.length ? { labels: config.pullRequest.labels } : {}),
+        ...(config.pullRequest.reviewers.length
+          ? { reviewers: config.pullRequest.reviewers }
+          : {}),
+      }),
+  );
+
+  if (outcome.kind === 'opened') {
+    const { pr } = outcome;
+    const choice = await vscode.window.showInformationMessage(
+      pr.existing
+        ? `Drift: pushed ${branch}. Pull request #${pr.number} was already open — ${pr.url}`
+        : `Drift: pushed ${branch} and opened #${pr.number} into ${base} — ${pr.url}`,
+      'Open pull request',
+    );
+    if (choice === 'Open pull request') await vscode.env.openExternal(vscode.Uri.parse(pr.url));
+    return;
+  }
+
+  if (outcome.kind === 'failed') {
+    output.warn(`Drift: the GitHub CLI could not open the pull request — ${outcome.message}`);
+  }
+
+  const choice = await vscode.window.showInformationMessage(
+    `Drift: pushed ${branch}.`,
+    ...(fallback ? ['Open a pull request'] : []),
+  );
+  if (choice === 'Open a pull request' && fallback) {
+    await vscode.env.openExternal(vscode.Uri.parse(fallback));
   }
 }
 

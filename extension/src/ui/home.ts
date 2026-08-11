@@ -24,6 +24,7 @@ import {
   type SessionEffort,
   type SessionMode,
   type SessionPermission,
+  type StepHandle,
   type TaskGroup,
 } from '../session.js';
 import { DriftHistory, describeWhen, newConversationId } from '../history.js';
@@ -74,6 +75,7 @@ import {
   upgradeCommitMessage,
   type CommitMessage,
 } from '../ship.js';
+import { createPullRequestWithGh } from '../gh.js';
 import { Checkpoints } from '../checkpoint.js';
 import { DriftReportPanel } from './report.js';
 import {
@@ -1802,6 +1804,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     confirm: boolean;
     base: 'branched-from' | 'default-branch';
     draft: boolean;
+    labels: readonly string[];
+    reviewers: readonly string[];
   } {
     const settings = vscode.workspace.getConfiguration('drift');
     const explicit = <T>(key: string): T | undefined => {
@@ -1825,6 +1829,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       draft:
         explicit<boolean>('pullRequest.draft') ??
         (config ? opensPullRequestAsDraft(config) : true),
+      // Repository policy only. There is no editor setting for these: a label
+      // set or a reviewer list is a property of the repository everyone shares,
+      // not of one developer's editor, so `.github/drift.yml` is the only place
+      // it can be stated once and mean the same thing for the Action, the CLI
+      // and the panel.
+      labels: config?.pullRequest.labels ?? [],
+      reviewers: config?.pullRequest.reviewers ?? [],
     };
   }
 
@@ -2197,21 +2208,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       remote,
       base,
       branch,
+      root,
       plan,
       ...(resolved?.reason ? { baseReason: resolved.reason } : {}),
       confirm: prSettings.confirm,
       ...(prSettings.draft ? { draft: true } : {}),
+      labels: prSettings.labels,
+      reviewers: prSettings.reviewers,
     });
   }
 
-  /**
-   * Open the pull request through GitHub's API, falling back to the browser.
-   *
-   * The fallback matters more than the API path: a developer who declines the
-   * sign-in prompt, or whose token cannot open pull requests on this repository,
-   * still has a pushed branch and one link away from the same outcome. Failing
-   * to open a PR is never allowed to look like failing to do the work.
-   */
   /**
    * Plain text for a native VS Code prompt.
    *
@@ -2223,17 +2229,38 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     return markdown.replace(/[`*_]/g, '');
   }
 
+  /**
+   * Raise the pull request: the GitHub CLI first, then the API, then the browser.
+   *
+   * The order is about how little the developer has to do. `gh`, when it is
+   * installed and signed in, needs nothing from them at all — no editor
+   * sign-in prompt, no token, no consent dialog for a scope they already
+   * granted their terminal. The VS Code GitHub session is the next best thing
+   * and costs one click. The compare page is the floor, and it is a floor
+   * rather than a failure: the branch is already pushed by the time any of this
+   * runs, so the worst outcome is a link that opens GitHub's own form with the
+   * right refs already filled in.
+   *
+   * Which is also why nothing here is fatal. A missing `gh`, a declined
+   * sign-in, a token without `repo`, an enterprise host Drift was not built
+   * against — every one of them ends at the same link, and failing to open a
+   * pull request is never allowed to look like failing to do the work.
+   */
   private async createPullRequest(args: {
     slug: string;
     remote: string | null;
     base: string;
     branch: string;
+    /** The checkout `gh` should run in. */
+    root: string;
     plan: { message: CommitMessage; prBody: string };
     /** How the base was chosen, so the target is never a mystery. */
     baseReason?: string;
     /** Confirm the title before opening. Skipped when configured to `never`. */
     confirm?: boolean;
     draft?: boolean;
+    labels?: readonly string[];
+    reviewers?: readonly string[];
   }): Promise<void> {
     const fallback = compareUrl(args.remote, args.base, args.branch);
 
@@ -2256,6 +2283,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       }
       title = edited.trim() || title;
     }
+
+    // The GitHub CLI, if this machine has one signed in. It carries its own
+    // credential, so this path asks the developer for nothing.
+    const viaCli = await this.createPullRequestWithCli({ ...args, title });
+    if (viaCli) return;
 
     const session = await getGitHubSession({ createIfNone: true });
 
@@ -2298,6 +2330,63 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           : `GitHub would not open the pull request: ${(err as Error).message}. The branch is pushed either way.`,
       );
     }
+  }
+
+  /**
+   * The `gh` attempt, which either produces a pull request or gets out of the way.
+   *
+   * `false` means "carry on down the chain" and is the answer for every case
+   * `gh` cannot serve: not installed, installed but signed out, or a genuine
+   * refusal from GitHub. Only the last of those is worth a line in the panel —
+   * a machine without the GitHub CLI is not a machine with a problem, and
+   * saying so would advertise an install Drift does not require.
+   */
+  private async createPullRequestWithCli(args: {
+    root: string;
+    branch: string;
+    base: string;
+    title: string;
+    baseReason?: string;
+    draft?: boolean;
+    labels?: readonly string[];
+    reviewers?: readonly string[];
+    plan: { prBody: string };
+  }): Promise<boolean> {
+    let step: StepHandle | undefined;
+    const outcome = await createPullRequestWithGh({
+      cwd: args.root,
+      head: args.branch,
+      base: args.base,
+      title: args.title,
+      body: args.plan.prBody,
+      ...(args.draft ? { draft: true } : {}),
+      ...(args.labels?.length ? { labels: args.labels } : {}),
+      ...(args.reviewers?.length ? { reviewers: args.reviewers } : {}),
+      // Only announce the attempt once `gh` is known to be able to make it.
+      onAttempt: () => {
+        step = this.session.step('Opening a pull request');
+      },
+    });
+
+    if (outcome.kind === 'opened') {
+      const { pr } = outcome;
+      step?.done(pr.existing ? `Pull request #${pr.number} already open` : `Opened #${pr.number}`);
+      this.session.say(
+        pr.existing
+          ? `A pull request for \`${args.branch}\` was already open: [#${pr.number}](${pr.url}). The new commit is on it.`
+          : `Opened [#${pr.number}](${pr.url}) — \`${args.branch}\` into \`${args.base}\`${
+              args.baseReason ? ` (${args.baseReason})` : ''
+            }. The description carries the evidence: what changed upstream, and what it touches here.`,
+      );
+      await vscode.env.openExternal(vscode.Uri.parse(pr.url));
+      return true;
+    }
+
+    if (outcome.kind === 'failed') {
+      step?.fail('The GitHub CLI could not open it');
+      this.output.info(`gh pr create did not open a pull request: ${outcome.message}`);
+    }
+    return false;
   }
 
   /**
@@ -2433,10 +2522,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       remote,
       base,
       branch,
+      root: ctx.root,
       plan,
       baseReason: resolved.reason,
       confirm: prSettings.confirm,
       ...(prSettings.draft ? { draft: true } : {}),
+      labels: prSettings.labels,
+      reviewers: prSettings.reviewers,
     });
   }
 

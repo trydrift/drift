@@ -153,6 +153,45 @@ describe('pushing', () => {
     assert.equal(await git.hasUpstream('main'), true);
     assert.equal(await git.defaultBranch(), 'main');
   });
+
+  /**
+   * The property the whole shipping flow rests on: whatever Drift pushed, the
+   * remote's history was only ever added to.
+   *
+   * Proven by making the push one git would have to force to accept — a local
+   * branch rewritten behind a remote that has moved on — and requiring it to be
+   * refused. A `push` that quietly grew a `--force` would pass every other test
+   * in this file and silently destroy somebody's colleague's commit.
+   */
+  test('is refused rather than forced when it would rewrite the remote', async () => {
+    await git.checkout('main');
+    await git.push('main');
+
+    // Somebody else pushes. Here that is done directly in the bare origin's
+    // other clone — the effect is the same: origin/main has moved.
+    const other = mkdtempSync(join(tmpdir(), 'drift-git-other-'));
+    try {
+      execFileSync('git', ['clone', origin, other]);
+      execFileSync('git', ['config', 'user.email', 'other@example.com'], { cwd: other });
+      execFileSync('git', ['config', 'user.name', 'Other Dev'], { cwd: other });
+      writeFileSync(join(other, 'theirs.ts'), 'export const theirs = 1;\n');
+      execFileSync('git', ['add', '.'], { cwd: other });
+      execFileSync('git', ['commit', '-m', 'theirs'], { cwd: other });
+      execFileSync('git', ['push'], { cwd: other });
+    } finally {
+      rmSync(other, { recursive: true, force: true });
+    }
+
+    // Our main now diverges from theirs. A forcing push would win; ours must not.
+    writeFileSync(join(root, 'ours.ts'), 'export const ours = 1;\n');
+    await git.commitAll('ours');
+
+    await assert.rejects(() => git.push('main'), /push failed/);
+
+    const remoteLog = execFileSync('git', ['log', '--oneline', 'main'], { cwd: origin, encoding: 'utf8' });
+    assert.match(remoteLog, /theirs/, "the other developer's commit is still on the remote");
+    assert.doesNotMatch(remoteLog, /ours/, 'nothing was force-pushed over it');
+  });
 });
 
 /**
