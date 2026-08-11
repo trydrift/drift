@@ -416,7 +416,7 @@ export interface RemediationPlan {
    *
    * Present so a consumer reading a stored plan — an approval issue, a cached
    * report, a benchmark fixture — can tell whether it understands the format
-   * rather than misreading a newer one. See `docs/schema-migration.md`.
+   * rather than misreading a newer one.
    */
   schemaVersion: number;
   id: string;
