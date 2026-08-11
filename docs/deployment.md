@@ -230,3 +230,37 @@ Action.
 
 They compose: run the webhook server for org-wide visibility and the Action on
 the repositories where you want fixes dispatched.
+
+---
+
+## Publishing a release
+
+Everything below is a repository or account setting. None of it lives in
+source, and none of it can be created by a workflow — `release.yml` reads these
+and fails loudly if one is missing, rather than pretending.
+
+Before the first public tag:
+
+| Prerequisite | Where | Why |
+|---|---|---|
+| The repository is **public** | GitHub → Settings → General | `uses: trydrift/drift@v0` cannot resolve from a private repository, and the Marketplace listing links to it |
+| **`NPM_TOKEN`** repository secret | npm automation token with publish rights on `@usedrift/cli` | Publishes the CLI. The package name is `@usedrift/cli`; the binary it installs is `drift` |
+| **`VSCE_PAT`** repository secret | VS Code Marketplace personal access token for the `drift` publisher | Publishes the extension. `extension/package.json` must keep `"publisher": "drift"` and the `name`/`displayName`/`icon` it ships with — the Marketplace item id is `drift.drift` |
+| **GitHub Pages enabled**, source **GitHub Actions** | GitHub → Settings → Pages | `pages.yml` deploys the site with `actions/deploy-pages`, which fails outright if the source is still set to a branch |
+
+Then tag:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+`release.yml` validates every artifact before publishing any of them — the same
+checks `npm run release:check` runs locally — then publishes the CLI to npm and
+the extension to the Marketplace, creates the GitHub Release with the VSIX
+attached, and moves the floating **`v0`** tag onto `v0.1.0` so
+`uses: trydrift/drift@v0` resolves to it.
+
+Run `npm run release:check` first. It is the same validation phase, step for
+step, so a failure found locally is a failure that would have gone red in CI
+after the tag was already public.

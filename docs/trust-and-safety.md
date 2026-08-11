@@ -135,8 +135,8 @@ touches only the files the plan named for that group.
 |---|---|
 | **Merge anything** | The output is always a PR, or a local commit, for a human |
 | **Commit an unreviewed edit** | Unless you set `drift.session.permission` to `full-auto` |
-| **Push from the editor** | `Drift: Push the Fix Branch` is explicit and manual |
-| **Force-push** | Only fresh branches, never rewriting history |
+| **Push from the editor** | `Drift: Push the Fix Branch and Open a Pull Request` is explicit and manual |
+| **Force-push** | Only fresh branches, never rewriting history. A push git would have to force is refused, not forced |
 | **Touch the base branch** | Work happens on `drift/*` |
 | **Change dependency versions** | The upgrade is the input, not the task |
 | **Store your credentials** | The Copilot token stays in your repo secrets |
