@@ -318,13 +318,30 @@ export default function Home() {
             Three ways in
           </h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
-            <EntryPoint icon="terminal" title="CLI" command="drift analyze">
-              Full report against your working tree. No writes, no token.
-            </EntryPoint>
-            <EntryPoint icon="editor" title="VS Code" command="Problems panel">
+            <EntryPoint
+              icon="editor"
+              title="VS Code"
+              command="Drift for VS Code"
+              action={{ label: "Install from the Marketplace", href: MARKETPLACE, external: true }}
+            >
               Affected lines inline, with the upstream change that caused each one.
+              Nothing to configure: open a repository and it starts.
             </EntryPoint>
-            <EntryPoint icon="action" title="GitHub Action" command="trydrift/drift@v0">
+            <EntryPoint
+              icon="terminal"
+              title="CLI"
+              commands={["npm install -g @usedrift/cli", "drift analyze"]}
+              action={{ label: "Read the CLI docs", href: `${GITHUB}#try-it-with-zero-permissions`, external: true }}
+            >
+              Full report against your working tree. <code className="font-mono text-brand-text">analyze</code> writes
+              nothing and needs no token — it is the safe first command.
+            </EntryPoint>
+            <EntryPoint
+              icon="action"
+              title="GitHub Action"
+              command="uses: trydrift/drift@v0"
+              action={{ label: "Copy the example workflow", href: `${GITHUB}/blob/main/examples/workflows/drift.yml`, external: true }}
+            >
               Checks first, approval next, pull request only after you allow it.{" "}
               <a href="#action" className="text-brand-text underline decoration-dotted underline-offset-2">See the run.</a>
             </EntryPoint>
@@ -469,25 +486,63 @@ function OutcomeCard({
   );
 }
 
+/**
+ * One way in, with the next step attached.
+ *
+ * This section used to name the three surfaces and stop there, which left the
+ * page's last word weaker than its first: a visitor who had just been
+ * persuaded had to go and find the install themselves. Each card now carries
+ * the thing you would actually do next — the Marketplace listing, the two
+ * commands in order, the workflow file to copy — in the same frame the section
+ * already used.
+ *
+ * The CLI card shows two lines because the honest first run is two lines: the
+ * install, then `drift analyze`, which writes nothing and needs no token. One
+ * line would have to be either the install (which does nothing on its own) or
+ * the command (which is not runnable yet).
+ */
 function EntryPoint({
   icon,
   title,
   command,
+  commands,
+  action,
   children,
 }: {
   icon: "terminal" | "editor" | "action";
   title: string;
-  command: string;
+  command?: string;
+  commands?: readonly string[];
+  action?: { label: string; href: string; external?: boolean };
   children: React.ReactNode;
 }) {
+  const lines = commands ?? (command ? [command] : []);
+
   return (
-    <div className="rounded-lg border border-border bg-surface/70 p-4">
+    <div className="flex flex-col rounded-lg border border-border bg-surface/70 p-4">
       <IconBadge icon={icon} />
       <h3 className="mt-3 text-sm font-semibold text-foreground">{title}</h3>
-      <p className="mt-2 inline-flex rounded-md bg-surface-hover px-2 py-1 font-mono text-[11px] text-brand-text">
-        {command}
-      </p>
-      <p className="mt-3 text-[13px] leading-relaxed text-muted">{children}</p>
+      <div className="mt-2 flex flex-col items-start gap-1">
+        {lines.map((line) => (
+          <p
+            key={line}
+            className="inline-flex rounded-md bg-surface-hover px-2 py-1 font-mono text-[11px] text-brand-text"
+          >
+            {line}
+          </p>
+        ))}
+      </div>
+      <p className="mt-3 mb-4 text-[13px] leading-relaxed text-muted">{children}</p>
+      {action && (
+        <a
+          href={action.href}
+          {...(action.external ? { target: "_blank", rel: "noreferrer" } : {})}
+          className="mt-auto inline-flex w-fit items-center gap-1 rounded-full border border-brand/25 bg-brand-soft px-3 py-1.5 text-[12px] font-medium text-brand-text transition-colors hover:bg-surface-hover"
+        >
+          {action.label}
+          <span aria-hidden>→</span>
+        </a>
+      )}
     </div>
   );
 }
