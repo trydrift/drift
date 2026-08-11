@@ -125,7 +125,7 @@ The agent picker shows what Drift can use right now. **Drift: Select AI Agent** 
 Two deliberately separate actions:
 
 - **Upgrade** installs the newest version that satisfies the range already in `package.json`, or the nearest compatible semver band when the range can't be interpreted.
-- **Upgrade to `<latest>`** installs the latest published version with `npm --force`. Drift asks first, because that widens your declared range and can leave peer dependencies unsatisfied.
+- **Upgrade to `<latest>`** installs the latest published version, past the range your manifest declares (with `npm --force`, where the package manager has such a flag). Drift asks first, because that widens your declared range and can leave peer dependencies unsatisfied — and it re-runs the breaking-change analysis for that version first, since the evidence on screen was gathered for the in-range one.
 
 ## Why you can trust it with your code
 
