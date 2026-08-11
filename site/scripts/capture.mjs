@@ -37,7 +37,6 @@ const repoRoot = join(here, '..', '..');
 const outDir = join(here, '..', 'src', 'data');
 
 const { scanUpgrades } = await import(join(repoRoot, 'dist/upgrade/scan.js'));
-const { auditCurrentUsage } = await import(join(repoRoot, 'dist/audit/index.js'));
 const { DriftConfigSchema } = await import(join(repoRoot, 'dist/config/schema.js'));
 const { createLogger } = await import(join(repoRoot, 'dist/util/logger.js'));
 const { configureHttpDiskCache } = await import(join(repoRoot, 'dist/util/http.js'));
@@ -342,24 +341,6 @@ async function capture(target) {
     process.stderr.write(`[${target.id}] scan failed: ${err.message}\n`);
   }
 
-  process.stderr.write(`[${target.id}] auditing installed versions\n`);
-  let audit = null;
-  try {
-    audit = await auditCurrentUsage({
-      root,
-      repo,
-      config,
-      logger,
-      githubToken: githubToken || undefined,
-      maxPackages: FULL_REPO.maxPackages,
-      maxSites: FULL_REPO.maxSites,
-      concurrency: 8,
-      onProgress: (phase, detail, done, total) => mark(phase, detail, done, total),
-    });
-  } catch (err) {
-    process.stderr.write(`[${target.id}] audit failed: ${err.message}\n`);
-  }
-
   await rm(workdir, { recursive: true, force: true });
 
   return {
@@ -377,13 +358,6 @@ async function capture(target) {
     nestedGitRepos: (scan?.nestedGitRepos ?? []).map((project) => project.dir),
     events,
     candidates: candidates.sort(byAttention),
-    audit: audit
-      ? {
-          checked: audit.checked,
-          analysed: audit.analysed,
-          findings: audit.findings.map(slimFinding),
-        }
-      : null,
   };
 }
 
@@ -460,22 +434,6 @@ function confidenceRank(confidence) {
   return confidence === 'high' ? 2 : confidence === 'medium' ? 1 : 0;
 }
 
-function slimFinding(finding) {
-  return {
-    kind: finding.kind,
-    dependency: finding.dependency,
-    manifestPath: finding.manifestPath,
-    workspace: finding.workspace ?? null,
-    declaredRange: finding.declaredRange,
-    rangeFloor: finding.rangeFloor,
-    installedVersion: finding.installedVersion,
-    summary: finding.breakingChange?.summary ?? finding.summary,
-    remediation: finding.breakingChange?.remediation ?? null,
-    evidence: [],
-    sites: finding.sites.slice(0, 4).map(slimSite),
-  };
-}
-
 function evidenceFor(change, evidenceById) {
   return change.citations
     .map((id) => evidenceById.get(id))
@@ -526,9 +484,8 @@ for (const target of selected) {
   try {
     const result = await capture(target);
     await writeFile(join(outDir, `${target.id}.json`), `${JSON.stringify(result, null, 2)}\n`, 'utf8');
-    const findings = result.audit?.findings.length ?? 0;
     process.stderr.write(
-      `[${target.id}] done — ${result.candidates.length} candidates, ${findings} audit finding(s), ` +
+      `[${target.id}] done — ${result.candidates.length} candidates, ` +
         `${result.events.length} events, ${(result.durationMs / 1000).toFixed(1)}s\n`,
     );
   } catch (err) {
@@ -554,7 +511,6 @@ for (const target of TARGETS) {
     capturedAt: data.capturedAt,
     packagesChecked: data.packagesChecked,
     candidates: data.candidates.length,
-    findings: data.audit?.findings.length ?? 0,
   });
 }
 await writeFile(join(outDir, 'index.json'), `${JSON.stringify(captured, null, 2)}\n`, 'utf8');

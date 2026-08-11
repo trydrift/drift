@@ -238,10 +238,5 @@
         }
       ]
     }
-  ],
-  "audit": {
-    "checked": 4,
-    "analysed": 0,
-    "findings": []
-  }
+  ]
 }

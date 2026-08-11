@@ -9,8 +9,7 @@
     "commit": "586dee38d946273c8c7e5eacd5b37136edef9c4f",
     "capturedAt": "2026-08-10T17:15:23.466Z",
     "packagesChecked": 22,
-    "candidates": 12,
-    "findings": 0
+    "candidates": 12
   },
   {
     "id": "scrapy",
@@ -22,8 +21,7 @@
     "commit": "95c16aa9af7c51f26ba3ea8512b4ba782f5d216f",
     "capturedAt": "2026-08-10T17:16:31.487Z",
     "packagesChecked": 87,
-    "candidates": 45,
-    "findings": 0
+    "candidates": 45
   },
   {
     "id": "gitlab",
@@ -35,8 +33,7 @@
     "commit": "d5942942fa16e1693dea03054ba90769247ea87e",
     "capturedAt": "2026-08-10T17:41:04.616Z",
     "packagesChecked": 630,
-    "candidates": 354,
-    "findings": 18
+    "candidates": 354
   },
   {
     "id": "kubernetes",
@@ -48,8 +45,7 @@
     "commit": "8c078bc32e90f0ea72f57169846b533e20b1ca71",
     "capturedAt": "2026-08-10T17:35:33.786Z",
     "packagesChecked": 545,
-    "candidates": 226,
-    "findings": 0
+    "candidates": 226
   },
   {
     "id": "deno",
@@ -61,8 +57,7 @@
     "commit": "3bbcbe75734cfcd7288e1621788b446e69fc4918",
     "capturedAt": "2026-08-10T17:29:50.101Z",
     "packagesChecked": 77,
-    "candidates": 31,
-    "findings": 0
+    "candidates": 31
   },
   {
     "id": "elasticsearch",
@@ -74,8 +69,7 @@
     "commit": "b350c400718eacfe7e1bcb73437be931345a3817",
     "capturedAt": "2026-08-10T17:30:05.658Z",
     "packagesChecked": 19,
-    "candidates": 14,
-    "findings": 0
+    "candidates": 14
   },
   {
     "id": "esphome",
@@ -87,8 +81,7 @@
     "commit": "2184ec292828be5a03e068fc809d785bc1ac43ad",
     "capturedAt": "2026-08-10T17:30:48.835Z",
     "packagesChecked": 25,
-    "candidates": 9,
-    "findings": 0
+    "candidates": 9
   },
   {
     "id": "restsharp",
@@ -100,8 +93,7 @@
     "commit": "6a5082169257438cd085f822f050d93256a8e499",
     "capturedAt": "2026-08-10T17:31:08.554Z",
     "packagesChecked": 34,
-    "candidates": 27,
-    "findings": 0
+    "candidates": 27
   },
   {
     "id": "guzzle",
@@ -113,8 +105,7 @@
     "commit": "d1cbca76970939a9c2ced55b1e25ea26f34fc773",
     "capturedAt": "2026-08-10T17:31:15.838Z",
     "packagesChecked": 10,
-    "candidates": 7,
-    "findings": 0
+    "candidates": 7
   },
   {
     "id": "phoenix",
@@ -126,8 +117,7 @@
     "commit": "5506184f9180ef21cb99dbbcb08645329e0784a3",
     "capturedAt": "2026-08-10T17:31:35.842Z",
     "packagesChecked": 44,
-    "candidates": 9,
-    "findings": 1
+    "candidates": 9
   },
   {
     "id": "dio",
@@ -139,8 +129,7 @@
     "commit": "a553f46bdec8d0511898c19ca3858a32f3c80545",
     "capturedAt": "2026-08-10T17:32:13.258Z",
     "packagesChecked": 25,
-    "candidates": 24,
-    "findings": 0
+    "candidates": 24
   },
   {
     "id": "tca",
@@ -152,8 +141,7 @@
     "commit": "269d6457986d163557ea2601275b1117e4dee3c0",
     "capturedAt": "2026-08-10T15:53:12.581Z",
     "packagesChecked": 17,
-    "candidates": 0,
-    "findings": 1
+    "candidates": 0
   },
   {
     "id": "flexlayout",
@@ -165,8 +153,7 @@
     "commit": "b1fcc81828e4b735c79d4c3fac35ef0754be0060",
     "capturedAt": "2026-08-10T17:32:19.092Z",
     "packagesChecked": 5,
-    "candidates": 3,
-    "findings": 0
+    "candidates": 3
   },
   {
     "id": "cohttp",
@@ -178,8 +165,7 @@
     "commit": "0178a219286ed3b59c16cc37557c2c5f93503b6a",
     "capturedAt": "2026-08-10T15:53:17.985Z",
     "packagesChecked": 22,
-    "candidates": 0,
-    "findings": 0
+    "candidates": 0
   },
   {
     "id": "trantor",
@@ -191,8 +177,7 @@
     "commit": "63a4e5e164e219dc3bf30cdbfa1462ae5602fa97",
     "capturedAt": "2026-08-10T17:32:31.164Z",
     "packagesChecked": 3,
-    "candidates": 3,
-    "findings": 0
+    "candidates": 3
   },
   {
     "id": "obs-backgroundremoval",
@@ -204,7 +189,6 @@
     "commit": "c097c67eb85a080f1cbefeb8ddcf0957375d65df",
     "capturedAt": "2026-08-10T17:32:56.442Z",
     "packagesChecked": 4,
-    "candidates": 1,
-    "findings": 0
+    "candidates": 1
   }
 ]

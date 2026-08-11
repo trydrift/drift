@@ -2,17 +2,18 @@
   "name": "@usedrift/site",
   "version": "0.1.0",
   "private": true,
-  "description": "The Drift landing page — a replayed recording of real analyses.",
+  "description": "The Drift landing page \u2014 a replayed recording of real analyses.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "capture": "node scripts/capture.mjs",
-    "sync": "node scripts/sync-severity.mjs && node scripts/sync-capabilities.mjs",
+    "sync": "node scripts/sync-severity.mjs && node scripts/sync-capabilities.mjs && npm run check:commands",
     "prebuild": "npm run sync",
     "predev": "npm run sync",
-    "pretypecheck": "npm run sync"
+    "pretypecheck": "npm run sync",
+    "check:commands": "node scripts/check-commands.mjs"
   },
   "dependencies": {
     "@paper-design/shaders-react": "^0.0.80",

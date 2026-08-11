@@ -6,14 +6,17 @@ import { useEffect, useReducer, useRef, useState } from "react";
  * The install block, typing out the CLI's actual commands.
  *
  * The static version of this ended on `drift analyze` and a blinking cursor,
- * which told a visitor there was one command. There are five, and the two
- * least obvious — `outdated` and `audit` — are the ones people are surprised
- * to find, so the block cycles through all of them and says what each one does
- * underneath.
+ * which told a visitor there was one command. There are four, and the least
+ * obvious — `outdated` — is the one people are surprised to find, so the block
+ * cycles through all of them and says what each one does underneath.
  *
- * Every string here is a command the CLI really accepts (`src/cli.ts`). A
- * typewriter that invents plausible-looking commands is the exact species of
- * decoration this site is built to avoid.
+ * Every string here is a command the CLI really accepts (`src/cli.ts`), and
+ * that invariant is enforced: `site/scripts/check-commands.mjs` parses the
+ * CLI's own usage text and fails the build if this list names anything the CLI
+ * does not. It is asserted rather than merely claimed because it stopped being
+ * true — `audit` was advertised here for a while after the command had been
+ * removed, which is precisely the species of decoration this site exists to
+ * avoid.
  */
 
 interface Command {
@@ -24,7 +27,6 @@ interface Command {
 const COMMANDS: Command[] = [
   { args: "analyze", says: "The full pipeline against your working tree. Writes nothing, needs no token." },
   { args: "outdated", says: "Every direct dependency, and what each upgrade would actually cost you." },
-  { args: "audit", says: "What the versions you already have installed are breaking, today." },
   { args: "fix", says: "Applies one commit unit — codemod, community recipe, or agent, in that order." },
   { args: "pr", says: "Opens the pull request, one reviewable commit per concern." },
 ];

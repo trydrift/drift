@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Drift — prove which dependency changes actually break your code",
   description:
-    "Drift finds what an upgrade would break, what is already broken, and where — with a citation for every claim. Watch it analyse real repositories in six ecosystems.",
+    "Drift finds what an upgrade would break in your code, and where — with a citation for every claim, and a stated gap wherever it could not check. Watch it analyse real repositories across sixteen package ecosystems.",
   openGraph: {
     title: "Drift",
     description:
