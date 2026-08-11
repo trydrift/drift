@@ -215,8 +215,18 @@ export const DriftConfigSchema = z.object({
         .enum(['per-breaking-change', 'per-dependency', 'single'])
         .default('per-breaking-change'),
       branchPrefix: z.string().default('drift/'),
-      /** Open the PR as a draft for a human to promote. */
-      draftPr: z.boolean().default(true),
+      /**
+       * @deprecated Use `pullRequest.draft`. Kept only so an existing config
+       * keeps working; see `opensPullRequestAsDraft`.
+       *
+       * Optional, with no default, on purpose. It used to default to `true`
+       * while `pullRequest.draft` defaulted to `false`, and both were read —
+       * so setting the documented, current field to `false` changed nothing,
+       * because the legacy field it was OR'd with was still `true`. A setting
+       * that cannot be turned off from the page documenting it is worse than
+       * one that does not exist.
+       */
+      draftPr: z.boolean().optional(),
       /** Model hint passed to the Copilot Agent Tasks API. */
       model: z.string().optional(),
       /** Extra repo-specific guidance appended to every agent task. */
@@ -338,8 +348,20 @@ export const DriftConfigSchema = z.object({
        */
       base: z.enum(['branched-from', 'default-branch']).default('branched-from'),
 
-      /** Open as a draft for a human to promote. */
-      draft: z.boolean().default(false),
+      /**
+       * Open as a draft for a human to promote.
+       *
+       * The single source of truth. `remediation.draftPr` is the deprecated
+       * spelling and is consulted only when this is not set — see
+       * `opensPullRequestAsDraft`.
+       *
+       * Optional rather than defaulted so "the user chose false" is
+       * distinguishable from "the user said nothing", which is the whole
+       * difference between honouring a legacy setting and ignoring an explicit
+       * one. The effective default is `true`, which is what Drift has always
+       * actually done.
+       */
+      draft: z.boolean().optional(),
 
       /** Labels applied to the pull request, when the token can set them. */
       labels: z.array(z.string()).default([]),
@@ -390,6 +412,29 @@ export type DriftConfig = z.infer<typeof DriftConfigSchema>;
 export type LicensePolicy = DriftConfig['licenses'];
 
 export const DEFAULT_CONFIG: DriftConfig = DriftConfigSchema.parse({});
+
+/**
+ * Whether a pull request opens as a draft.
+ *
+ * One function, called everywhere, because there are two spellings of this
+ * setting and they used to be combined with `||` at each call site — which
+ * made the newer one unusable. `pullRequest.draft: false` next to the legacy
+ * `remediation.draftPr: true` (its old default, and the value in the shipped
+ * example) produced a draft, so the field a user had just read the docs for
+ * appeared to do nothing.
+ *
+ * Precedence is explicit instead: the current field wins outright when set,
+ * the deprecated one is honoured only in its absence, and `true` is the
+ * fallback because that is what Drift has always actually done.
+ */
+export function opensPullRequestAsDraft(config: DriftConfig): boolean {
+  return config.pullRequest.draft ?? config.remediation.draftPr ?? true;
+}
+
+/** True when a config still uses the deprecated spelling, so callers can warn once. */
+export function usesDeprecatedDraftSetting(config: DriftConfig): boolean {
+  return config.remediation.draftPr !== undefined;
+}
 
 const RISK_ORDER: Record<RiskLevel, number> = {
   none: 0,

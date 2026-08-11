@@ -1,5 +1,5 @@
 import type { DispatchResult, RemediationPlan, RepoContext } from '../types.js';
-import type { DriftConfig } from '../config/schema.js';
+import { opensPullRequestAsDraft, type DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
 import type { GitHubClient } from '../github/client.js';
 import type { Exec } from '../util/exec.js';
@@ -235,7 +235,7 @@ async function ensurePullRequest(
       { title: config.pullRequest.titleTemplate, prefix: config.remediation.branchPrefix },
     ),
     body: renderPullRequestBody(plan, config),
-    draft: config.pullRequest.draft || config.remediation.draftPr,
+    draft: opensPullRequestAsDraft(config),
     labels: [DRIFT_LABEL, ...config.pullRequest.labels],
     reviewers: config.pullRequest.reviewers,
   });

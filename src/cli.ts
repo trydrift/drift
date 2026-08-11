@@ -31,7 +31,7 @@ import {
   type UpgradeCandidate,
   type UpgradeScanResult,
 } from './upgrade/scan.js';
-import type { DriftConfig } from './config/schema.js';
+import { opensPullRequestAsDraft, type DriftConfig } from './config/schema.js';
 import { describeSeverity, scanTitle, severityOf } from './upgrade/severity.js';
 import { ask } from './util/prompt.js';
 
@@ -985,7 +985,7 @@ async function fixCommand(flags: Flags): Promise<number> {
       base: plan.baseBranch,
       title: titleFor({ changes: plan.changes }, { title: config.pullRequest.titleTemplate, prefix: config.remediation.branchPrefix }),
       body,
-      draft: Boolean(flags.draft) || config.pullRequest.draft || config.remediation.draftPr,
+      draft: Boolean(flags.draft) || opensPullRequestAsDraft(config),
       labels: config.pullRequest.labels,
       reviewers: config.pullRequest.reviewers,
     });
@@ -1123,7 +1123,7 @@ async function prCommand(flags: Flags): Promise<number> {
     base: base.branch,
     title,
     body: `Opened by \`drift pr\` from \`${branch}\`.`,
-    draft: Boolean(flags.draft) || config.pullRequest.draft,
+    draft: Boolean(flags.draft) || opensPullRequestAsDraft(config),
     labels: config.pullRequest.labels,
     reviewers: config.pullRequest.reviewers,
   });
