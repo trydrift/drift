@@ -4,7 +4,7 @@ Three ways to run Drift. They share the same pipeline and differ only in what
 surrounds it.
 
 | | Infra | Localization | Multi-repo | Recommended for |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | **GitHub Action** | None | Full | Per repo | **Almost everyone** |
 | **CLI** | None | Full | Manual | Evaluation, local checks |
 | **Webhook server** | You host | ✗ | Yes | Self-hosted multi-repo |
@@ -61,7 +61,7 @@ and without a diff there is nothing to analyse.
 ### Inputs
 
 | Input | Default | |
-|---|---|---|
+| --- | --- | --- |
 | `repo-token` | `${{ github.token }}` | Repository operations |
 | `copilot-token` | — | **User-scoped**. Omit for analysis-only mode |
 | `mode` | from `drift.yml` | Overrides the committed config |
@@ -152,7 +152,7 @@ so acknowledging work that exists only in memory means losing it on the next
 restart — silently, with the delivery marked successful in GitHub's UI.
 
 | Setting | Default | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `DRIFT_QUEUE` | `sqlite` | `sqlite` (durable) or `memory` (not durable) |
 | `DRIFT_QUEUE_PATH` | `.drift/queue.db` | Database file. Put it on a persistent volume. |
 
@@ -242,7 +242,7 @@ and fails loudly if one is missing, rather than pretending.
 Before the first public tag:
 
 | Prerequisite | Where | Why |
-|---|---|---|
+| --- | --- | --- |
 | The repository is **public** | GitHub → Settings → General | `uses: trydrift/drift@v0` cannot resolve from a private repository, and the Marketplace listing links to it |
 | **`NPM_TOKEN`** repository secret | npm automation token with publish rights on `@usedrift/cli` | Publishes the CLI. The package name is `@usedrift/cli`; the binary it installs is `drift` |
 | **`VSCE_PAT`** repository secret | VS Code Marketplace personal access token for the `drift` publisher | Publishes the extension. `extension/package.json` must keep `"publisher": "drift"` and the `name`/`displayName`/`icon` it ships with — the Marketplace item id is `drift.drift` |

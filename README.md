@@ -42,7 +42,7 @@ An agent that edits your repository unsupervised has to earn that. Drift's desig
 is mostly about that problem:
 
 | | |
-|---|---|
+| --- | --- |
 | **Evidence, not recall** | Every finding cites a changelog entry, a release note, or a computed API diff you can click. Drift never asks an agent to act on "I think this package changed." |
 | **Computed diffs beat prose** | Drift downloads both versions and diffs the actual exported API — `.d.ts` for npm, every importable package at three platforms for Go, rustdoc for cargo, ECMA-335 metadata read straight out of a `.nupkg` for .NET, public headers for C and C++, published `lib/` for Dart, every `def` and `-export` for Elixir and Erlang. Changelogs omit removals; the shipped artefact doesn't. |
 | **Nothing is installed to be read** | Every artefact is fetched and parsed, never installed or built. `pip download` runs a build backend and a `.nupkg` can carry an install script; Drift opens the archive instead. |
@@ -180,7 +180,7 @@ commented-out setup steps for Rust, the JVM, .NET and Python next to the Go one
 it enables by default. Add the ones your repository needs.
 
 | | Best for | Needs |
-|---|---|---|
+| --- | --- | --- |
 | **VS Code extension** | Working a dependency bump interactively, reviewing every edit before it lands | Nothing — no token, no account, for analysis. A Copilot/Claude/etc. session only if a commit needs an agent. Pushing uses whatever credential git already pushes with; a signed-in `gh` or a GitHub sign-in only if you want Drift to open the pull request for you |
 | **CLI (`drift fix`)** | Scripting a fix locally or in a bespoke CI job, outside GitHub Actions | Nothing for `analyze` and `outdated` — credentials only raise the GitHub API rate limit. GitHub write access (a signed-in `gh`, `$GITHUB_TOKEN`, or `--token`) to push and open a pull request. A Copilot token only if some commit needs an agent |
 | **GitHub Action** | Unattended, on every dependency bump, with review via a PR or an approval issue | `DRIFT_COPILOT_TOKEN` repo secret (only required once a commit actually needs an agent) |
@@ -188,7 +188,7 @@ it enables by default. Add the ones your repository needs.
 They don't behave identically. What each surface actually does:
 
 | Capability | VS Code | CLI | GitHub Action |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Scan for available upgrades | Yes (`/scan`) | Yes (`drift outdated`) | No — it runs on a dependency change, not on a schedule |
 | Analyse a dependency change that already happened | Yes | Yes (`drift analyze`) | Yes |
 | Evidence / localization | Yes | Yes | Yes |
@@ -249,6 +249,7 @@ Each can legitimately produce nothing — most dependency bumps genuinely don't
 break you, and saying so quickly is a feature.
 
 ### 1 · Detect
+
 Diffs manifests and lockfiles across sixteen ecosystems: **npm/pnpm/yarn/bun,
 pip/poetry/uv, Go modules, Cargo, Maven/Gradle/sbt, Bundler, NuGet, Composer,
 Mix, pub (Dart & Flutter), Swift Package Manager, CocoaPods, opam, Conan,
@@ -292,11 +293,12 @@ dev-only, transitive-only, ignore lists — and Drift records a reason for
 everything it skips rather than dropping it silently.
 
 ### 2 · Evidence
+
 Gathers citable ground truth from six sources, weighted by how directly each
 speaks to breakage:
 
 | Weight | Source |
-|---|---|
+| --- | --- |
 | 1.00 | **Computed API surface diff** — npm, Go, cargo, Maven, NuGet |
 | 1.00 | **OpenAPI spec diff** — computed |
 | 0.90 | Computed C/C++ header surface — real, but blind to the preprocessor |
@@ -322,6 +324,7 @@ reports only consumer-breaking direction: tightening what a server accepts, or
 loosening what it returns.
 
 ### 3 · Analyze
+
 Deterministic rules run first and unconditionally. Prose patterns fire **only on
 backtick-quoted identifiers** — that restriction is what stops ordinary English
 becoming a search symbol. Corroboration across independent sources raises
@@ -338,6 +341,7 @@ runs last, never overrides a rule, is capped at `medium` confidence, and is told
 extract only from supplied evidence.
 
 ### 4 · Localize
+
 Builds a **Meta-RAG** index — an AST-aligned map of every file's imports, code
 units, and signatures — then searches only the files that import the changed
 dependency. Word-boundary matching stops `get` matching `getUserById`. Each site
@@ -361,11 +365,13 @@ binding is weaker evidence than an observed one. A symbol your own code
 declares is not reported as the dependency's.
 
 ### 4a · Verify (optional)
+
 An off-by-default behavioural probe that runs old and new dependency code
 side by side to catch breakage no symbol diff would show. It stays off unless
 `verification.behavioural.enabled` is set, because it executes real code.
 
 ### 5 · Rationale
+
 Answers the question the rest of the pipeline can't: *why would I take this?*
 [OSV](https://osv.dev) is queried for **both** versions, so the report can say
 whether the upgrade improves, preserves, or worsens known exposure rather than
@@ -385,11 +391,13 @@ the sentence they fired with:
 License checking lives here too, and is off by default.
 
 ### 6 · Plan
+
 Groups findings into **one commit per concern**, ordered so runtime and config
 changes land before mechanical renames, which land before semantic rewrites. Scores
 risk. Evaluates guardrails.
 
 ### 7 · Dispatch
+
 Creates the branch pinned to the analysed commit, then resolves each commit in
 priority order: Drift's own deterministic codemod first (anchored to the exact
 impact sites localization found, never a whole-file rewrite), a matching
@@ -402,6 +410,7 @@ fixing unrelated code, inventing replacement APIs). A commit Drift resolved
 itself is never handed to Copilot.
 
 ### 8 · Report
+
 A pull request body a reviewer can act on: every claim linked to its source, every
 uncertainty stated in place rather than buried, and a checklist tailored to what
 actually changed.
@@ -419,7 +428,7 @@ Drift departs from the paper in three places, deliberately. See
 [docs/research.md](docs/research.md) for the full mapping and the reasoning:
 
 | | LADU (paper) | Drift |
-|---|---|---|
+| --- | --- | --- |
 | Breaking-change detection | Assumes a migration guide exists | Computes API diffs; treats guides as one source of several |
 | Summaries | LLM-generated prose | Structural, signature-derived — free, deterministic, cannot hallucinate |
 | Output | Working tree | Separated commits + PR + citations |
@@ -429,7 +438,7 @@ Drift departs from the paper in three places, deliberately. See
 ## Documentation
 
 | | |
-|---|---|
+| --- | --- |
 | [Architecture](docs/architecture.md) | Pipeline internals, data model, extension points |
 | [Configuration](docs/configuration.md) | Every `drift.yml` option |
 | [Copilot integration](docs/copilot-integration.md) | The token constraint, and why it shapes everything |

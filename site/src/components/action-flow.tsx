@@ -175,7 +175,7 @@ export function ActionFlow() {
               {current && (
                 <div className="px-4 pb-3">
                   <p className="mb-2 text-[12px] leading-relaxed text-muted">{step.detail}</p>
-                  <div className="overflow-x-auto rounded-lg border border-border bg-[var(--pre-bg)] py-1.5">
+                  <div className="overflow-x-auto rounded-lg border border-border bg-(--pre-bg) py-1.5">
                     {step.log.map((line, n) => (
                       <p key={line} className="flex gap-3 px-2 font-mono text-[11px] leading-[1.7]">
                         <span className="w-4 shrink-0 select-none text-right text-faint/70 tabular">

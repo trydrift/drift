@@ -152,7 +152,7 @@ over a path index warmed in the background, rather than after a project walk.
 One judgement, in one place, because the UI depends on getting it right:
 
 | Severity | Meaning |
-|---|---|
+| --- | --- |
 | `affected` | A breaking change matches code in this repository |
 | `upstream-only` | Breaking changes exist; nothing here calls them |
 | `clean` | No breaking change found for the target version |
@@ -226,7 +226,7 @@ every one returning the same `SurfaceChange[]` so nothing downstream learns
 which produced it:
 
 | Ecosystem | Tool | Weight | Reads |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | npm | TypeScript compiler API | 1.00 | published `.d.ts` |
 | cargo | `cargo public-api` | 1.00 | rustdoc JSON |
 | go | `go/build` + `go/parser`, run from a scratch module | 1.00 | every importable package, per platform |
@@ -466,7 +466,7 @@ Four sources, each attached to a specific upgrade rather than collected into a
 dashboard. Drift is not becoming a scanner:
 
 | Source | Answers | Off switch |
-|---|---|---|
+| --- | --- | --- |
 | OSV | Does taking this improve, preserve, or worsen known exposure? | `rationale.security` |
 | Registry + GitHub | Deprecated, archived, retracted, yanked, raised runtime minimum | `rationale.maintenance` |
 | Release notes | What the maintainer said changed, classified | `rationale.summary` |
@@ -589,7 +589,7 @@ nothing had verified. So they are now scored separately, by one calculation in
 `confidence/calibrate.ts`.
 
 | Dimension | Question | Evidence |
-|---|---|---|
+| --- | --- | --- |
 | `upstream` | Did this change really happen? | Retrieved release evidence, weighted by origin class |
 | `localImpact` | Does it reach code here? | Import edges, symbol binding, reachability qualifiers |
 | `verification` | Did anything run to confirm it? | Which checks ran, whether they passed, what they cover |
@@ -654,7 +654,7 @@ Reports avoid the word "safe". A finding is described as one of:
 Almost all durable state lives in GitHub:
 
 | State | Where |
-|---|---|
+| --- | --- |
 | Pending approvals | Issues labelled `drift` |
 | The approval itself | A `/drift apply` comment |
 | Which plan was approved | A machine-readable footer in the issue body |
@@ -678,7 +678,7 @@ treated as a privileged operation. An approval is honoured only when **all** of
 the following hold:
 
 | Check | Why |
-|---|---|
+| --- | --- |
 | The comment is newly created, on an issue, not a PR | An edit to an old comment is not a new decision |
 | The issue carries the `drift` label | Provenance. Anyone can paste a footer into an issue they opened; applying a label needs triage permission, so forging provenance costs at least as much access as approving does |
 | The footer parses strictly | Every key present exactly once, full 40-character SHAs, a known schema version |

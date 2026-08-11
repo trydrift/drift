@@ -18,6 +18,7 @@ A copy-paste starting point: [`examples/drift.yml`](../examples/drift.yml).
 ## Autonomy
 
 ### `mode`
+
 `auto` | `approve` — default **`approve`**
 
 - **`approve`** — Drift analyses, files an issue with the full plan, and waits
@@ -31,6 +32,7 @@ Start on `approve`. Read a few plans. Move to `auto` when they stop surprising
 you.
 
 ### `maxAutoRisk`
+
 `none` | `low` | `medium` | `high` — default **`medium`**
 
 The highest risk level eligible for automatic dispatch. Anything above falls back
@@ -41,6 +43,7 @@ maxAutoRisk: low   # only let Drift act unattended on the boring cases
 ```
 
 ### `watchBranches`
+
 `string[]` — default **`[main, master, develop]`**
 
 Glob patterns. Pushes to other branches are ignored.
@@ -75,7 +78,7 @@ turn them on; all sixteen are already on.
 ### `triggerOn`
 
 | Key | Default | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `major` | `true` | |
 | `minor` | `true` | |
 | `patch` | `false` | Breakage here is usually accidental, but real |
@@ -86,6 +89,7 @@ turn them on; all sixteen are already on.
 §4 makes them breaking.
 
 ### `ignore`
+
 `string[]` — default **`[]`**
 
 Glob patterns matched against the package name. Never analysed.
@@ -97,6 +101,7 @@ ignore:
 ```
 
 ### `alwaysApprove`
+
 `string[]` — default **`[]`**
 
 Matching dependencies always require a human, even in `auto` mode. Use this for
@@ -113,12 +118,14 @@ alwaysApprove:
 ## Evidence
 
 ### `evidence.githubReleases` · `evidence.changelog`
+
 `boolean` — default **`true`**
 
 Release notes and `CHANGELOG` / migration-guide retrieval from the dependency's
 source repository.
 
 ### `evidence.typeSurface`
+
 `boolean` — default **`true`**
 
 Diffs the actual TypeScript declarations of the old and new versions. **The
@@ -127,6 +134,7 @@ removal. npm only; packages without declarations simply produce no evidence from
 this source.
 
 ### `evidence.openapi` · `evidence.openapiSpecs`
+
 `boolean` / `string[]` — default **`true`** / **`[]`**
 
 `openapiSpecs` lists OpenAPI documents *this repo consumes*. Drift diffs them
@@ -145,6 +153,7 @@ evidence:
 Literal paths only — globs are not yet resolved.
 
 ### `evidence.maxReleases`
+
 `number` — default **`25`**
 
 Cap on release notes fetched per dependency.
@@ -215,6 +224,7 @@ default, because a tool that only ever argues against upgrading is a tool people
 stop opening.
 
 ### `rationale.security`
+
 `boolean` — default **`true`**
 
 Query [OSV](https://osv.dev) for both the installed and the target version, and
@@ -227,6 +237,7 @@ Covers npm, PyPI, Go, crates.io, Maven, and RubyGems. Unreachable OSV degrades
 the assessment to "not checked", never to an all-clear.
 
 ### `rationale.maintenance`
+
 `boolean` — default **`true`**
 
 Deprecation notices, archived repositories, Go `retract` directives, PyPI and
@@ -238,6 +249,7 @@ without a commit because it is finished; scoring that as decay is how a
 dashboard talks a team out of a dependency that was never a problem.
 
 ### `rationale.summary`
+
 `boolean` — default **`true`**
 
 A plain-English summary of what changed upstream, separated into breaking
@@ -255,6 +267,7 @@ Drift reports what the metadata says and how it compares to the policy in this
 file. **It does not give legal advice.**
 
 ### `licenses.enabled`
+
 `boolean` — default **`false`**
 
 Turn on license checking. Note that a *change* of declared license between the
@@ -263,6 +276,7 @@ inside a version bump is a decision being made silently, and that is worth
 surfacing regardless of policy.
 
 ### `licenses.allow` · `licenses.deny`
+
 `string[]` — default **`[]`**
 
 SPDX identifiers. `deny` always wins over `allow`. An empty `allow` list permits
@@ -285,6 +299,7 @@ transitive graph would mean running the package manager, which analysis never
 does — and the report says so rather than implying whole-graph coverage.
 
 ### `licenses.requireDeclared`
+
 `boolean` — default **`false`**
 
 Treat a missing or unreadable license as a violation. Off by default: many
@@ -295,6 +310,7 @@ gets a policy check switched off entirely.
 ## Guardrails
 
 ### `guardrails.protectedPaths`
+
 `string[]` — default:
 
 ```yaml
@@ -310,24 +326,28 @@ as a blocker when impact sites fall inside them, and as an explicit prohibition
 in the agent prompt.
 
 ### `guardrails.maxFilesChanged`
+
 `number` — default **`50`**
 
 A plan wider than this asks for a human. A change nobody can meaningfully review
 is not a change Drift should make unattended.
 
 ### `guardrails.maxDependenciesPerRun`
+
 `number` — default **`10`**
 
 Batched upgrades make it hard to attribute a regression to the dependency that
 caused it.
 
 ### `guardrails.requireEvidence`
+
 `boolean` — default **`true`**
 
 Refuse to dispatch when the only evidence is a semver bump. **Strongly recommend
 leaving this on** — it's the difference between Drift and guessing.
 
 ### `guardrails.minConfidence`
+
 `low` | `medium` | `high` — default **`medium`**
 
 A finding below this threshold that Drift planned a commit for **blocks
@@ -350,6 +370,7 @@ meaning anything.
 > read.
 
 ### `guardrails.experimentalDispatchBelowMinConfidence`
+
 `boolean` — default **`false`**
 
 Dispatch automatically even when findings are below `minConfidence`. Named for
@@ -359,6 +380,7 @@ behaviour back. Leaving it off is correct for every repository whose branches
 matter.
 
 ### `guardrails.forbidTestWeakening`
+
 `boolean` — default **`true`**
 
 Adds an explicit instruction that tests must be updated to the new API, never
@@ -369,6 +391,7 @@ weakened or deleted to make them pass.
 ## Remediation
 
 ### `remediation.commitGranularity`
+
 `per-breaking-change` | `per-dependency` | `single` — default
 **`per-breaking-change`**
 
@@ -376,6 +399,7 @@ Per-breaking-change is recommended: it's what keeps `git revert` and `git bisect
 meaningful, and it lets a reviewer approve one fix without judging the rest.
 
 ### `remediation.branchPrefix`
+
 `string` — default **`drift/`**
 
 Branches are named `<prefix><package>-<version>-<sha7>`.
@@ -395,9 +419,11 @@ when set, this is consulted only in its absence, and the effective default is
 `true` either way.
 
 ### `remediation.model`
+
 `string` — optional. Model hint passed to the Copilot agent API.
 
 ### `remediation.customInstructions`
+
 `string` — default **`""`**
 
 Appended verbatim to every agent task. Put your repository's conventions here —
@@ -412,6 +438,7 @@ remediation:
 ```
 
 ### `remediation.communityRecipes`
+
 `boolean` — default **`false`**
 
 Every surface resolves a commit's fix the same way: Drift's own deterministic
@@ -600,7 +627,7 @@ under its own button, listing the options with a line explaining what each does,
 so the setting does not have to be looked up to be understood.
 
 | Setting | Scope | Values | Meaning |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `drift.session.mode` | workspace | `agent` (default), `ask` | `ask` analyses and explains but never edits |
 | `drift.session.permission` | workspace | `ask`, `auto-edit` (default), `full-auto` | How much the agent may do unsupervised |
 | `drift.agent.models` | global | `{ "<agent id>": "<model id>" }` | The model chosen inside each subscription |
@@ -619,7 +646,7 @@ scan has is decided by `drift.analysis.includeDev`, `includePatch` and
 Each agent names its own stops, and Drift uses the vendor's word:
 
 | Agent | Stops | How it is passed |
-|---|---|---|
+| --- | --- | --- |
 | Claude Code | Low, Medium, High, **Ultracode** | thinking depth in the prompt (`think` → `ultrathink`) |
 | Codex | Low, Medium, High, **Extra High** | `-c model_reasoning_effort="…"` |
 | Copilot (in-editor), Copilot cloud, Gemini CLI, Aider, OpenCode, Ollama | — | no reasoning control, so the dial is not drawn |
@@ -630,7 +657,7 @@ position that would do nothing — Claude Haiku stops at High.
 **Permission:**
 
 | | Before editing | After editing |
-|---|---|---|
+| --- | --- | --- |
 | `ask` | Asks in the thread, per commit group | Waits for keep/undo |
 | `auto-edit` | Edits | Waits for keep/undo; commits a group when it is fully kept |
 | `full-auto` | Edits | Commits each group immediately |
@@ -654,7 +681,7 @@ mid-session.
 ### The rest
 
 | Setting | Default | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `drift.agent.preferred` | `auto` | Which agent, or best available |
 | `drift.agent.copilotModelFamily` | — | Pin an in-editor Copilot model family |
 | `drift.agent.ollamaHost` / `ollamaModel` | `localhost:11434`, `qwen2.5-coder` | Local model |
@@ -670,7 +697,7 @@ mid-session.
 ## Environment variables
 
 | Variable | Purpose |
-|---|---|
+| --- | --- |
 | `GITHUB_TOKEN` | Repository reads, branch creation, issues |
 | `DRIFT_COPILOT_TOKEN` | **User-scoped** token for the Copilot agent API |
 | `DRIFT_TELEMETRY_DISABLED` | `1` or `true` disables telemetry even when opted in |

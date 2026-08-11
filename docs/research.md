@@ -15,7 +15,7 @@ places where the paper's approach didn't fit and we went a different way.
 LADU upgrades Java library dependencies with a three-agent architecture:
 
 | Agent | Role |
-|---|---|
+| --- | --- |
 | **Summary Agent** | Produces AST-aligned one-line natural-language summaries of every code unit and file |
 | **Control Agent** | Retrieves over those summaries (**Meta-RAG**) to choose which units to read and which to write; consults a migration guide |
 | **Code Agent** | Applies the edits (GPT-4o) |
@@ -29,7 +29,7 @@ Evaluated on three synthetic Spring Boot repositories (3.1→3.2, 3.2→3.3,
 3.3→3.4), against an OpenHands baseline:
 
 | Metric | OpenHands | LADU |
-|---|---|---|
+| --- | --- | --- |
 | Steps (3.1→3.2) | 106 | **18** |
 | Tokens (3.1→3.2) | 1,514,456 | **78,421** |
 | Precision (3.2→3.3) | 17.2% (22/128 correct) | **71.4%** (5/7 correct) |
@@ -161,7 +161,7 @@ the same data the pipeline reads at runtime, rather than smoothed over.
 ## Summary
 
 | Dimension | LADU | Drift |
-|---|---|---|
+| --- | --- | --- |
 | Retrieval | Meta-RAG over LLM summaries | Meta-RAG over structural summaries + import graph |
 | Breaking-change source | Migration guide, else LLM recall | Computed API/spec diffs + 4 prose sources, weighted |
 | Agents | Summary, Control, Code | Deterministic detect→plan stages; codemod, then a community recipe, then Copilot to resolve each commit |

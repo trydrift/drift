@@ -90,7 +90,7 @@ control. See [deployment.md](deployment.md).
 Scope it to the repositories Drift should work on, and grant:
 
 | Permission | Access | Why |
-|---|---|---|
+| --- | --- | --- |
 | Agent tasks | Read and write | The only permission the Agent Tasks API checks |
 | Metadata | Read | Mandatory for fine-grained PATs |
 
@@ -180,7 +180,7 @@ An unsupervised coding agent has predictable failure modes. The prompt names eac
 one, because a rule the agent has read is worth more than a hope:
 
 | Failure mode | The rule |
-|---|---|
+| --- | --- |
 | Weakening tests until they pass | Update tests to the new API while asserting the same behaviour; leave a genuinely-broken test failing and explain why |
 | Fixing unrelated things it noticed | Change only what the listed breaking changes require |
 | Inventing a replacement API | Verify against the evidence and the installed package; if no replacement exists, say so |
@@ -197,7 +197,7 @@ valuable to a human even when the agent could not be reached, so it is never
 discarded.
 
 | Status | What it means | Fix |
-|---|---|---|
+| --- | --- | --- |
 | 401 | Token invalid or expired | Regenerate `DRIFT_COPILOT_TOKEN` |
 | 403 | Wrong token type, no Copilot seat, or agent disabled | Confirm it's a **user** PAT, not an App token; check the subscription |
 | 404 | Coding agent not enabled for the repo, or token lacks access | Enable it; check the token's repository scope |

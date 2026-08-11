@@ -94,7 +94,7 @@ export function Terminal() {
 
   return (
     <div className="mt-6">
-      <div className="overflow-x-auto rounded-xl border border-border bg-[var(--pre-bg)] p-4">
+      <div className="overflow-x-auto rounded-xl border border-border bg-(--pre-bg) p-4">
         <pre className="font-mono text-[13px] leading-relaxed text-foreground">
           <span className="text-faint">$ </span>npm install -g @usedrift/cli{"\n"}
           <span className="text-faint">$ </span>drift{" "}
@@ -112,7 +112,7 @@ export function Terminal() {
       */}
       <p
         aria-live="off"
-        className="mt-2.5 flex min-h-[2.5rem] items-start text-[13px] leading-relaxed text-muted"
+        className="mt-2.5 flex min-h-10 items-start text-[13px] leading-relaxed text-muted"
       >
         <span key={command.args} className="animate-rise">
           <code className="font-mono text-brand-text">drift {command.args}</code> — {command.says}

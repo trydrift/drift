@@ -143,7 +143,7 @@ changelogs as mitigated rather than solved.
 ## Technical differentiators
 
 | | |
-|---|---|
+| --- | --- |
 | **Computed API diffing** | Fetches both versions' `.d.ts` and diffs the exported surface with the TypeScript compiler. Catches undocumented removals. |
 | **Consumer-direction OpenAPI diffing** | Reports only what breaks *callers* — tightened requests, loosened responses. Catches upstream service changes no package manager can see. |
 | **Import-graph localization** | Search scoped to actual importers — and to the code one re-export edge past them — against module names read from the package's own published artefact rather than guessed. This is the precision lever. |

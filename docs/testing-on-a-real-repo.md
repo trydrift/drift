@@ -215,7 +215,7 @@ Most teams should stop at step 3.
 Dependencies with real, well-documented breaking changes:
 
 | Package | Bump | What breaks |
-|---|---|---|
+| --- | --- | --- |
 | `chalk` | 4 → 5 | ESM-only; every `require()` breaks |
 | `node-fetch` | 2 → 3 | ESM-only |
 | `@szmarczak/http-timer` | 4 → 5 | ESM-only + Node >=14.16 |
