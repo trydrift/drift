@@ -154,7 +154,15 @@ linked, so you can check it. Built from [`site/`](site/).
 
 All three share the same analysis pipeline and the same remediation priority
 (Drift's own deterministic fix, then a community recipe if one applies and is
-enabled, then an AI agent) — they differ in where that runs and who's driving:
+enabled, then an AI agent) — they differ in where that runs and who's driving.
+
+One caveat worth stating plainly: *the same pipeline* is not *the same result*.
+Drift's strongest evidence for several ecosystems needs that ecosystem's own
+toolchain present, so a runner without Go installed gets release notes and
+changelogs where your laptop got a computed API diff. Drift says so in the
+report rather than quietly reporting less, and the shipped workflow carries
+commented-out setup steps for Rust, the JVM, .NET and Python next to the Go one
+it enables by default. Add the ones your repository needs.
 
 | | Best for | Needs |
 |---|---|---|
@@ -166,7 +174,8 @@ They don't behave identically. What each surface actually does:
 
 | Capability | VS Code | CLI | GitHub Action |
 |---|---|---|---|
-| Scan upgrades | Yes | Yes (`drift analyze`) | Yes |
+| Scan for available upgrades | Yes (`/scan`) | Yes (`drift outdated`) | No — it runs on a dependency change, not on a schedule |
+| Analyse a dependency change that already happened | Yes | Yes (`drift analyze`) | Yes |
 | Evidence / localization | Yes | Yes | Yes |
 | Deterministic remediation | Yes | Yes (`drift fix`) | Yes |
 | External recipes | Yes — asks before using one | Yes — opt-in flag or interactive prompt | Yes, but only if `remediation.communityRecipes: true` in `drift.yml` — it cannot prompt |
@@ -442,4 +451,14 @@ rather than hidden — including the ones we'd rather not advertise.
 
 ## License
 
-PolyForm Shield 1.0.0
+PolyForm Shield 1.0.0 — see [LICENSE](LICENSE).
+
+Drift is **free and source-available**. Read it, run it, modify it, use it at
+work. The one thing PolyForm Shield does not permit is using it to build a
+competing product.
+
+That is deliberately *not* an OSI-approved open-source license, and it is worth
+being precise about which words to use: "we open-sourced Drift" is inaccurate
+and invites an argument about licensing instead of a conversation about the
+product. "Free and source-available" is both accurate and the thing people
+actually want to know.

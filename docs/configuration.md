@@ -181,12 +181,22 @@ No observed difference is **not** proof of behavioural compatibility. It only
 raises verification confidence for the tested contract and generated input
 domain, and the report records the limitations.
 
-**Known limitation (v0.1):** the worker process this spawns is located via
-`import.meta.url`, which esbuild's CJS output leaves empty. That resolution
-works in the published CLI (its `dist/` build keeps ES modules), but breaks
-if `enabled: true` is set for the GitHub Action or the VS Code extension,
-both of which ship as single-file bundles. Leave this disabled outside the
-CLI until that is fixed.
+**Where it runs.** The worker process this spawns is a separate `node` process,
+not an import, so it has to exist as a real file next to whatever is running.
+All three surfaces now ship it: the CLI's `dist/` build keeps ES modules and
+resolves it through `import.meta.url`, while `scripts/build-action.mjs` and
+`extension/esbuild.mjs` each place a `behavioural-worker.js` beside their
+bundle, which `behavioural.ts` finds via `__dirname` in CJS output.
+
+An earlier version of this page said the feature was broken outside the CLI
+because esbuild's CJS output leaves `import.meta.url` empty. That was true, and
+is not any more — the resolution handles both module systems and both bundles
+carry the worker.
+
+**The real limitation** is what the result means, not where it runs: it needs
+both versions of the package to be installable and executable on the machine,
+which is a much stronger requirement than the rest of the pipeline, and it is
+off by default for that reason.
 
 ## Telemetry
 

@@ -246,6 +246,13 @@ export default function Home() {
             to say yes. Autonomy is a setting you turn on per repository, and every guardrail
             downgrades an automatic run to an approval request rather than dropping it.
           </p>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
+            It is the same pipeline, which is not quite the same as the same result: Drift&rsquo;s
+            strongest evidence in some ecosystems needs that ecosystem&rsquo;s toolchain on the
+            runner. Where it is missing, Drift falls back to release notes and says so in the
+            report rather than quietly reporting less. The shipped workflow sets up Go and carries
+            commented-out steps for the rest.
+          </p>
 
           <div className="mt-7 grid gap-4 lg:grid-cols-[1.15fr_1fr] lg:items-start">
             <ActionFlow />
