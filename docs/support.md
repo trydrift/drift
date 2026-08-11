@@ -21,6 +21,8 @@ reassuring.** Drift never renders the first as the second.
 | Evidence | Drift retrieves and normalises release, changelog, advisory, and registry evidence. |
 | API surface | Drift compares the published API of the two versions. |
 | Static analysis | Drift identifies likely affected source references in your repository. |
+| Find upgrades | Drift can enumerate newer published versions, so `drift outdated` and `/scan` know what is available. Where this is partial, a dependency Drift cannot look up is reported as unchecked — never as up to date. |
+| Install a version | Drift can run the package manager to install a version you chose. Where it cannot, Drift tells you exactly what to change and where, rather than running a command that silently changes nothing. |
 | Verify | Drift runs the ecosystem's own typecheck, test, and build commands. |
 | Fix | Drift produces scoped changes. |
 | Automated PR | Drift can branch, validate, commit, push, and open a pull request. |
@@ -66,24 +68,24 @@ This does. Three things decide it, and the tier is how many of them hold:
 
 ## The matrix
 
-| Ecosystem | Detect | Evidence | API surface | Static analysis | Verify | Fix | Automated PR |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| JavaScript / TypeScript | Yes | Yes | Partial | Partial | Partial | Yes | Yes |
-| Python | Yes | Yes | Partial | Partial | Partial | Yes | Yes |
-| Go | Yes | Yes | Partial | Partial | Partial | Yes | Yes |
-| Rust | Yes | Yes | Partial | Partial | Partial | Yes | Yes |
-| Java / Kotlin / Scala | Partial | Yes | Partial | Partial | Partial | Partial | Yes |
-| Ruby | Yes | Yes | No | Partial | Partial | Yes | Yes |
-| .NET | Yes | Partial | Partial | Partial | Partial | Yes | Yes |
-| PHP | Yes | Partial | No | Partial | Partial | Yes | Yes |
-| Elixir / Erlang | Yes | Partial | Partial | Partial | Partial | Yes | Yes |
-| Dart / Flutter | Yes | Partial | Partial | Partial | Partial | Yes | Yes |
-| Swift | Partial | Partial | No | Partial | Partial | Yes | Yes |
-| CocoaPods | Yes | Partial | No | Partial | No | Yes | Yes |
-| OCaml | Yes | Partial | No | Partial | Partial | Yes | Yes |
-| C / C++ (Conan) | Partial | Partial | Partial | Partial | Partial | Yes | Yes |
-| C / C++ (vcpkg) | Partial | Partial | Partial | Partial | Partial | Yes | Yes |
-| Arduino / PlatformIO | Yes | Partial | Partial | Partial | Partial | Yes | Yes |
+| Ecosystem | Detect | Evidence | API surface | Static analysis | Find upgrades | Install a version | Verify | Fix | Automated PR |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| JavaScript / TypeScript | Yes | Yes | Partial | Partial | Yes | Yes | Partial | Yes | Yes |
+| Python | Yes | Yes | Partial | Partial | Yes | Yes | Partial | Yes | Yes |
+| Go | Yes | Yes | Partial | Partial | Yes | Yes | Partial | Yes | Yes |
+| Rust | Yes | Yes | Partial | Partial | Yes | Yes | Partial | Yes | Yes |
+| Java / Kotlin / Scala | Partial | Yes | Partial | Partial | Yes | Partial | Partial | Partial | Yes |
+| Ruby | Yes | Yes | No | Partial | Yes | Yes | Partial | Yes | Yes |
+| .NET | Yes | Partial | Partial | Partial | Yes | Yes | Partial | Yes | Yes |
+| PHP | Yes | Partial | No | Partial | Yes | Yes | Partial | Yes | Yes |
+| Elixir / Erlang | Yes | Partial | Partial | Partial | Yes | Yes | Partial | Yes | Yes |
+| Dart / Flutter | Yes | Partial | Partial | Partial | Yes | Yes | Partial | Yes | Yes |
+| Swift | Partial | Partial | No | Partial | Partial | No | Partial | Yes | Yes |
+| CocoaPods | Yes | Partial | No | Partial | Yes | Yes | No | Yes | Yes |
+| OCaml | Yes | Partial | No | Partial | Partial | Yes | Partial | Yes | Yes |
+| C / C++ (Conan) | Partial | Partial | Partial | Partial | Yes | Yes | Partial | Yes | Yes |
+| C / C++ (vcpkg) | Partial | Partial | Partial | Partial | Yes | Yes | Partial | Yes | Yes |
+| Arduino / PlatformIO | Yes | Partial | Partial | Partial | Yes | Yes | Partial | Yes | Yes |
 
 ## JavaScript / TypeScript
 
@@ -144,6 +146,7 @@ This does. Three things decide it, and the tier is how many of them hold:
 - **Detect — Partial.** Reads pom.xml, Gradle build files and version catalogs, and sbt coordinates. Gradle versions computed at configuration time are not visible without running Gradle.
 - **API surface — Partial.** Compares both published JARs. *Requires japicmp.*
 - **Static analysis — Partial.** Resolves imports against the module names the published package declares, follows re-exports inside your repository, and matches references to symbols named in the evidence. Cannot see through reflection, dynamic dispatch, or generated code.
+- **Install a version — Partial.** Maven can install a chosen version directly. Gradle, sbt cannot: the version lives in a build file the tool will not rewrite, so Drift tells you what to change instead of running something that silently changes nothing.
 - **Verify — Partial.** Runs Maven or Gradle. sbt projects verify through sbt when it is installed.
 - **Fix — Partial.** Maven and sbt are edited through the build file; Gradle versions declared outside a version catalog may need a manual edit.
 
@@ -223,6 +226,8 @@ This does. Three things decide it, and the tier is how many of them hold:
 - **Evidence — Partial.** Source repository, releases, and changelogs, because SwiftPM identifies packages by git URL. There is no central registry to query for deprecation.
 - **API surface — No.** Comparing two Swift module interfaces needs a local toolchain and a built artefact Drift does not produce; upgrades rest on prose evidence.
 - **Static analysis — Partial.** Resolves `import` statements against the library and target names declared in the dependency's own Package.swift at the resolved version. A module name a manifest computes at evaluation time is not visible without running SwiftPM.
+- **Find upgrades — Partial.** Versions are git tags, since SwiftPM has no package registry to ask. Drift lists them for packages hosted on GitHub; anything on another git host is reported as unchecked rather than up to date.
+- **Install a version — No.** Swift Package Manager has no command that pins a version — the coordinate lives in a build file the tool will not rewrite. Drift reports the version to set and where, and leaves the edit to you.
 - **Verify — Partial.** Runs `swift build` and `swift test`. *Requires the Swift toolchain.*
 
 ## CocoaPods
@@ -249,6 +254,7 @@ This does. Three things decide it, and the tier is how many of them hold:
 - **Evidence — Partial.** Release notes and changelogs when the package declares a GitHub source. opam has no JSON metadata API, so there is no registry deprecation signal.
 - **API surface — No.** Comparing two OCaml module interfaces needs a built switch Drift does not create; upgrades rest on prose evidence.
 - **Static analysis — Partial.** Matches imports and references to symbols named in the evidence, using the ecosystem's own module-naming convention where no published module list exists. Cannot see through reflection, dynamic dispatch, or generated code.
+- **Find upgrades — Partial.** opam publishes no version API, so releases are read from the package directories in the opam-repository index. A package published only in a custom repository is reported as unchecked rather than up to date.
 - **Verify — Partial.** Runs `dune build` and `dune runtest`. *Requires opam and dune.*
 
 ## C / C++ (Conan)

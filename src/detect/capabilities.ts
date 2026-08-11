@@ -1,4 +1,5 @@
 import type { Ecosystem } from '../types.js';
+import { PACKAGE_MANAGERS } from './package-manager.js';
 
 /**
  * What Drift can actually do, per ecosystem, per stage.
@@ -31,6 +32,25 @@ export type CapabilityStage =
   | 'surface'
   /** Find likely affected source references in this repository. */
   | 'static-analysis'
+  /**
+   * Ask what newer versions exist. `drift outdated` / the panel's `/scan`.
+   *
+   * Its own stage because it is not implied by `detect`. Drift can recognise a
+   * `Package.swift` perfectly and still have no way to enumerate that
+   * package's releases — and for a long time it did, reporting every Swift and
+   * opam dependency as up to date without a lookup ever happening. A matrix
+   * that says "detect: full" and nothing else lets that read as coverage.
+   */
+  | 'upgrade-discovery'
+  /**
+   * Install a chosen version by running the package manager.
+   *
+   * Also its own stage, and also not implied by anything above it. Gradle, sbt
+   * and SwiftPM have no command that pins a version: the coordinate lives in a
+   * build file they will not rewrite, so Drift tells the developer to edit it
+   * rather than running something that silently changes nothing.
+   */
+  | 'upgrade-install'
   /** Run the ecosystem's own typecheck / test / build. */
   | 'verify'
   /** Produce a scoped edit that moves the version. */
@@ -43,6 +63,8 @@ export const CAPABILITY_STAGES: readonly CapabilityStage[] = [
   'evidence',
   'surface',
   'static-analysis',
+  'upgrade-discovery',
+  'upgrade-install',
   'verify',
   'fix',
   'pull-request',
@@ -53,6 +75,8 @@ export const STAGE_LABEL: Record<CapabilityStage, string> = {
   evidence: 'Evidence',
   surface: 'API surface',
   'static-analysis': 'Static analysis',
+  'upgrade-discovery': 'Find upgrades',
+  'upgrade-install': 'Install a version',
   verify: 'Verify',
   fix: 'Fix',
   'pull-request': 'Automated PR',
@@ -101,6 +125,16 @@ export interface StageSupport {
  */
 export type LocalizationBasis = 'declared' | 'published' | 'convention';
 
+/**
+ * The stages each ecosystem states by hand.
+ *
+ * `upgrade-install` is excluded because it is *derived* — from the package
+ * manager table, which already knows whether a manager can pin a version, and
+ * is the only thing that actually decides it. Writing it out again here would
+ * be a second copy of a fact that changes, and the copies would diverge.
+ */
+type DeclaredStage = Exclude<CapabilityStage, 'upgrade-install'>;
+
 export interface EcosystemCapability {
   ecosystem: Ecosystem;
   /** What a developer calls this ecosystem. */
@@ -112,6 +146,11 @@ export interface EcosystemCapability {
   /** Package managers Drift knows how to drive here, by label. */
   managers: readonly string[];
   support: Record<CapabilityStage, StageSupport>;
+}
+
+/** The same, before the derived stages are merged in. */
+interface DeclaredCapability extends Omit<EcosystemCapability, 'support'> {
+  support: Record<DeclaredStage, StageSupport>;
 }
 
 const full = (): StageSupport => ({ level: 'full' });
@@ -167,7 +206,7 @@ const C_LOCALIZE_NOTE =
  * the `Ecosystem` union without describing it here is a *compile* error at this
  * declaration. An array plus a runtime lookup would let the omission ship.
  */
-const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
+const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, DeclaredCapability> = {
   npm: {
     ecosystem: 'npm',
     localizationBasis: 'declared',
@@ -190,6 +229,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
         'Diffs published TypeScript declarations. A package that ships no declarations of its own falls back to prose evidence rather than reporting a clean comparison.',
       ),
       'static-analysis': partial(LOCALIZE_NOTE),
+      'upgrade-discovery': full(),
       verify: partial("Runs the typecheck, test, and build scripts the project's package.json actually declares."),
       fix: full(),
       'pull-request': full(),
@@ -209,6 +249,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
         'a local Python interpreter',
       ),
       'static-analysis': partial(LOCALIZE_NOTE),
+      'upgrade-discovery': full(),
       verify: partial('Runs mypy/pyright and pytest when the project declares them.'),
       fix: full(),
       'pull-request': full(),
@@ -225,6 +266,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       evidence: full(),
       surface: partial('Compares the exported API of both module versions.', 'the Go toolchain'),
       'static-analysis': partial(LOCALIZE_NOTE),
+      'upgrade-discovery': full(),
       verify: partial('Runs `go vet`, `go test`, and `go build`.', 'the Go toolchain'),
       fix: full(),
       'pull-request': full(),
@@ -241,6 +283,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       evidence: full(),
       surface: partial('Compares the public API of both crate versions.', 'cargo-public-api'),
       'static-analysis': partial(LOCALIZE_NOTE),
+      'upgrade-discovery': full(),
       verify: partial('Runs `cargo check`, `cargo test`, and `cargo build`.', 'the Rust toolchain'),
       fix: full(),
       'pull-request': full(),
@@ -259,6 +302,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       evidence: full(),
       surface: partial('Compares both published JARs.', 'japicmp'),
       'static-analysis': partial(LOCALIZE_NOTE),
+      'upgrade-discovery': full(),
       verify: partial('Runs Maven or Gradle. sbt projects verify through sbt when it is installed.'),
       // Gradle is the honest hole: there is no Gradle command that pins a
       // dependency to a version, so Drift edits the build file as text.
@@ -284,6 +328,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
         'Ruby has no static public API surface to compare, so upgrades rest on release notes, changelogs, and advisories.',
       ),
       'static-analysis': partial(LOCALIZE_NOTE),
+      'upgrade-discovery': full(),
       verify: partial('Runs RSpec or Rake when the Gemfile declares them.', 'Bundler'),
       fix: full(),
       'pull-request': full(),
@@ -307,6 +352,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
         'Compares the public types and member signatures in both versions\' published assemblies, preferring the reference assembly and a common target framework. A package that ships only native binaries, analyzers, or nothing at all has no surface to compare.',
       ),
       'static-analysis': partial(LOCALIZE_NOTE),
+      'upgrade-discovery': full(),
       verify: partial('Runs `dotnet build` and `dotnet test`.', 'the .NET SDK'),
       fix: full(),
       'pull-request': full(),
@@ -332,6 +378,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       'static-analysis': partial(
         'Resolves `use` statements against the PSR-4 and PSR-0 roots the package declares in its own composer.json, read from Packagist. A package that autoloads only by classmap declares no namespace root and is not localized.',
       ),
+      'upgrade-discovery': full(),
       verify: partial('Runs PHPUnit when composer.json declares it.', 'Composer'),
       fix: full(),
       'pull-request': full(),
@@ -354,6 +401,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       'static-analysis': partial(
         'Resolves module references against every module the released tarball defines, so a fully qualified call needs no `alias` to be found. Cannot see through `apply/3` or a module name computed at runtime.',
       ),
+      'upgrade-discovery': full(),
       verify: partial('Runs `mix compile --warnings-as-errors` and `mix test`.', 'Elixir and Mix'),
       fix: full(),
       'pull-request': full(),
@@ -374,6 +422,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
         'Compares the public declarations of both versions\' published libraries, following each `export` out of the private `lib/src` tree the way a consumer\'s import does. Read from source rather than from a compiled artefact.',
       ),
       'static-analysis': partial(LOCALIZE_NOTE),
+      'upgrade-discovery': full(),
       verify: partial('Runs `dart analyze` and `dart test`, or their Flutter equivalents.', 'the Dart or Flutter SDK'),
       fix: full(),
       'pull-request': full(),
@@ -405,6 +454,9 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       'static-analysis': partial(
         'Resolves `import` statements against the library and target names declared in the dependency\'s own Package.swift at the resolved version. A module name a manifest computes at evaluation time is not visible without running SwiftPM.',
       ),
+      'upgrade-discovery': partial(
+        'Versions are git tags, since SwiftPM has no package registry to ask. Drift lists them for packages hosted on GitHub; anything on another git host is reported as unchecked rather than up to date.',
+      ),
       verify: partial('Runs `swift build` and `swift test`.', 'the Swift toolchain'),
       fix: full(),
       'pull-request': full(),
@@ -425,6 +477,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       'static-analysis': partial(
         'Resolves `import` statements against the `module_name` the pod declares in its podspec, read from the CocoaPods CDN. A pod that builds its module name in Ruby at podspec-evaluation time is not visible without running CocoaPods.',
       ),
+      'upgrade-discovery': full(),
       verify: none(
         'Building an iOS target needs Xcode and a scheme Drift cannot infer; verification stays with the developer.',
       ),
@@ -447,6 +500,9 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
         'Comparing two OCaml module interfaces needs a built switch Drift does not create; upgrades rest on prose evidence.',
       ),
       'static-analysis': partial(CONVENTION_LOCALIZE_NOTE),
+      'upgrade-discovery': partial(
+        'opam publishes no version API, so releases are read from the package directories in the opam-repository index. A package published only in a custom repository is reported as unchecked rather than up to date.',
+      ),
       verify: partial('Runs `dune build` and `dune runtest`.', 'opam and dune'),
       fix: full(),
       'pull-request': full(),
@@ -467,6 +523,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       ),
       surface: partial(C_SURFACE_NOTE),
       'static-analysis': partial(C_LOCALIZE_NOTE),
+      'upgrade-discovery': full(),
       verify: partial(
         'Runs `conan build`, which is the compiler — in C and C++ an incompatible header change is a build failure rather than a runtime surprise.',
         'Conan',
@@ -495,6 +552,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       ),
       surface: partial(C_SURFACE_NOTE),
       'static-analysis': partial(C_LOCALIZE_NOTE),
+      'upgrade-discovery': full(),
       verify: partial('Runs the project\'s CMake build, which is where an incompatible header change surfaces.', 'CMake'),
       fix: full(),
       'pull-request': full(),
@@ -513,6 +571,7 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
       ),
       surface: partial(C_SURFACE_NOTE),
       'static-analysis': partial(C_LOCALIZE_NOTE),
+      'upgrade-discovery': full(),
       verify: partial(
         'Runs `arduino-cli compile` or `pio run`, and `pio test` where the project has tests.',
         'Arduino CLI or PlatformIO',
@@ -524,8 +583,59 @@ const CAPABILITY_BY_ECOSYSTEM: Record<Ecosystem, EcosystemCapability> = {
 };
 
 /** Every ecosystem, in declaration order, for the docs table and the UI. */
-export const ECOSYSTEM_CAPABILITIES: readonly EcosystemCapability[] =
-  Object.values(CAPABILITY_BY_ECOSYSTEM);
+/**
+ * Whether Drift can install a chosen version, asked of the package managers
+ * themselves rather than restated here.
+ *
+ * `PackageManager.upgrade()` already returns `null` where an ecosystem has no
+ * command that pins a version — Gradle and sbt keep the coordinate in a build
+ * script they will not rewrite, and SwiftPM resolves against the requirement
+ * written in `Package.swift`. That is the fact, it lives in one place, and
+ * copying it into this table by hand would produce a second version of it that
+ * goes stale the first time a manager gains the ability.
+ *
+ * `partial` is the interesting case: an ecosystem where some managers can pin
+ * and others cannot. Maven can (`versions:use-dep-version`); Gradle and sbt,
+ * which share the `maven` ecosystem, cannot. A developer on Gradle reading
+ * "Install a version: full" would be told something untrue about their
+ * project, so the row says which managers can and which cannot.
+ */
+function upgradeInstallSupport(ecosystem: Ecosystem): StageSupport {
+  const managers = PACKAGE_MANAGERS.filter((manager) => manager.ecosystem === ecosystem);
+  const probe = { name: 'example', version: '1.0.0', kind: 'runtime' as const };
+
+  const can = managers.filter((manager) => manager.upgrade(probe) !== null);
+  const cannot = managers.filter((manager) => manager.upgrade(probe) === null);
+
+  if (cannot.length === 0) return full();
+
+  const names = (list: typeof managers) => list.map((manager) => manager.label).join(', ');
+
+  if (can.length === 0) {
+    return none(
+      `${names(cannot)} ${cannot.length === 1 ? 'has' : 'have'} no command that pins a version — the coordinate lives in a build file the tool will not rewrite. Drift reports the version to set and where, and leaves the edit to you.`,
+    );
+  }
+
+  return partial(
+    `${names(can)} can install a chosen version directly. ${names(cannot)} cannot: the version lives in a build file the tool will not rewrite, so Drift tells you what to change instead of running something that silently changes nothing.`,
+  );
+}
+
+export const ECOSYSTEM_CAPABILITIES: readonly EcosystemCapability[] = Object.values(
+  CAPABILITY_BY_ECOSYSTEM,
+).map((capability) => ({
+  ...capability,
+  support: {
+    ...capability.support,
+    'upgrade-install': upgradeInstallSupport(capability.ecosystem),
+  },
+}));
+
+/** The merged table, keyed for lookup. */
+const MERGED_BY_ECOSYSTEM = Object.fromEntries(
+  ECOSYSTEM_CAPABILITIES.map((capability) => [capability.ecosystem, capability]),
+) as Record<Ecosystem, EcosystemCapability>;
 
 /**
  * How much of Drift's answer an ecosystem actually gets.
@@ -602,7 +712,7 @@ export const TIER_DESCRIPTION: Record<SupportTier, string> = {
  * back from.
  */
 export function capabilitiesFor(ecosystem: Ecosystem): EcosystemCapability {
-  return CAPABILITY_BY_ECOSYSTEM[ecosystem];
+  return MERGED_BY_ECOSYSTEM[ecosystem];
 }
 
 export function supportFor(ecosystem: Ecosystem, stage: CapabilityStage): StageSupport {

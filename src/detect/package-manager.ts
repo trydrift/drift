@@ -302,7 +302,11 @@ const MANAGERS: readonly PackageManager[] = [
     id: 'gradle',
     ecosystem: 'maven',
     label: 'Gradle',
-    manifests: ['build.gradle', 'build.gradle.kts', 'gradle/libs.versions.toml'],
+    // The version catalog first, deliberately. A Gradle build that has one
+    // keeps its dependency versions there, and `build.gradle` then references
+    // them by alias — so picking the build script because it sorted first
+    // yielded a manifest with no versions in it.
+    manifests: ['gradle/libs.versions.toml', 'build.gradle', 'build.gradle.kts'],
     lockfiles: ['gradle.lockfile'],
     outdated: { command: 'gradle', args: ['dependencyUpdates'] },
     // Versions live in build scripts Gradle will not rewrite for us. Saying so

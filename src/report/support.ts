@@ -178,6 +178,10 @@ const STAGE_MEANING: Record<(typeof CAPABILITY_STAGES)[number], string> = {
   evidence: 'Drift retrieves and normalises release, changelog, advisory, and registry evidence.',
   surface: 'Drift compares the published API of the two versions.',
   'static-analysis': 'Drift identifies likely affected source references in your repository.',
+  'upgrade-discovery':
+    'Drift can enumerate newer published versions, so `drift outdated` and `/scan` know what is available. Where this is partial, a dependency Drift cannot look up is reported as unchecked — never as up to date.',
+  'upgrade-install':
+    'Drift can run the package manager to install a version you chose. Where it cannot, Drift tells you exactly what to change and where, rather than running a command that silently changes nothing.',
   verify: "Drift runs the ecosystem's own typecheck, test, and build commands.",
   fix: 'Drift produces scoped changes.',
   'pull-request': 'Drift can branch, validate, commit, push, and open a pull request.',

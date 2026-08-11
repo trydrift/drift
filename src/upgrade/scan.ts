@@ -13,6 +13,7 @@ import {
   detectPackageManagers,
   packageManagerAmbiguities,
   packageManagerById,
+  PACKAGE_MANAGERS,
   type Command,
   type DetectedPackageManager,
   type PackageManager,
@@ -254,8 +255,15 @@ export async function discoverTargets(
 
   for (const dir of dirs) {
     const absolute = dir ? join(root, dir) : root;
-    const entries = await fs.readDirectory(absolute);
-    if (entries.length === 0) continue;
+    const direct = await fs.readDirectory(absolute);
+    if (direct.length === 0) continue;
+
+    // A directory listing finds `build.gradle`; it never finds
+    // `gradle/libs.versions.toml`, because that is not an entry in this
+    // directory. Gradle's version catalog is where a modern Gradle build keeps
+    // the versions, so a scan that only ever looked at `readdir()` output
+    // could parse the catalog perfectly and never be handed one.
+    const entries = [...direct, ...(await nestedManifests(absolute, direct, fs))];
 
     const detected = detectPackageManagers({
       entries,
@@ -286,6 +294,39 @@ export async function discoverTargets(
   }
 
   return { targets, ambiguities };
+}
+
+/**
+ * Manifests and lockfiles a manager declares at a path rather than a name.
+ *
+ * Every entry in the package-manager table containing a `/` is probed for
+ * existence and reported in the same shape as a directory entry, so detection
+ * and manifest selection can treat it exactly like one. Only the nested names
+ * managers actually declare are checked — currently Gradle's version catalog —
+ * so this is a fixed, tiny number of probes per directory, not a walk.
+ */
+async function nestedManifests(
+  absolute: string,
+  direct: readonly string[],
+  fs: WorkspaceFs,
+): Promise<string[]> {
+  const candidates = new Set<string>();
+  for (const manager of PACKAGE_MANAGERS) {
+    for (const name of [...manager.manifests, ...manager.lockfiles]) {
+      if (name.includes('/')) candidates.add(name);
+    }
+  }
+
+  const found: string[] = [];
+  for (const name of candidates) {
+    if (direct.includes(name)) continue;
+    // The first segment has to exist as a directory entry before the file can,
+    // which skips the read entirely for the overwhelming majority of dirs.
+    const top = name.slice(0, name.indexOf('/'));
+    if (!direct.includes(top)) continue;
+    if ((await fs.readFile(join(absolute, name))) !== null) found.push(name);
+  }
+  return found;
 }
 
 /** One manager per ecosystem per directory: the preferred one, else the first. */
