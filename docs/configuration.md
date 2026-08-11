@@ -58,9 +58,19 @@ with a message naming the branch when it does not match.
 ## Selection
 
 ### `ecosystems`
-default **all** — every ecosystem Drift can detect: `npm`, `pypi`, `go`, `cargo`,
-`maven`, `rubygems`, `nuget`, `composer`, `cocoapods`, `hex`, `opam`, `pub`,
-`swift` (see [support.md](support.md) for what each can do)
+
+default **all sixteen** — `npm`, `pypi`, `go`, `cargo`, `maven`, `rubygems`,
+`nuget`, `packagist`, `hex`, `pub`, `swift`, `cocoapods`, `opam`, `conan`,
+`vcpkg`, `arduino` (see [support.md](support.md) for what each can do).
+
+Note `packagist`, not `composer`: the identifier names the registry, and
+Composer is the tool that reads it. This page said `composer` for a while,
+which is not a value the schema accepts — and because a malformed config falls
+back to the defaults, following it produced a file that looked configured and
+behaved as if it were not.
+
+Listing a subset switches the rest **off**. There is no need to list them to
+turn them on; all sixteen are already on.
 
 ### `triggerOn`
 
@@ -359,7 +369,18 @@ meaningful, and it lets a reviewer approve one fix without judging the rest.
 Branches are named `<prefix><package>-<version>-<sha7>`.
 
 ### `remediation.draftPr`
-`boolean` — default **`true`**
+
+**Deprecated — use [`pullRequest.draft`](#pullrequestdraft).**
+
+`boolean` — no default. Honoured only when `pullRequest.draft` is unset, so an
+existing config keeps working unchanged.
+
+Both fields used to be read and OR'd together, and this one defaulted to
+`true`. That made the replacement unusable: setting `pullRequest.draft: false`
+produced a draft anyway, because the deprecated field it was combined with was
+still `true`. Precedence is now explicit — `pullRequest.draft` wins outright
+when set, this is consulted only in its absence, and the effective default is
+`true` either way.
 
 ### `remediation.model`
 `string` — optional. Model hint passed to the Copilot agent API.
@@ -410,6 +431,68 @@ for non-interactive `drift fix` runs) — it is still never run without that
 choice, in this run or on this exact pinned version. A
 recipe is never executed silently on any surface, and Drift's own codemod
 always takes priority over a recipe when both could resolve a commit.
+
+---
+
+## Pull request
+
+How the pull request gets opened. Drift never merges it.
+
+### `pullRequest.enabled`
+
+`boolean` — default **`true`**
+
+Open a pull request once the branch is pushed. With this off, Drift stops at
+the pushed branch.
+
+### `pullRequest.confirm`
+
+`ask` | `never` — default **`ask`**
+
+Confirm the branch name and title first, in the CLI and the VS Code panel. The
+GitHub Action ignores this and always proceeds: there is nobody there to
+answer, and a workflow that stops to prompt is a workflow that hangs.
+
+### `pullRequest.base`
+
+`branched-from` | `default-branch` — default **`branched-from`**
+
+Which branch to merge into. `branched-from` targets whatever the work started
+from, which is the right answer on any team that does not develop directly on
+its default branch — targeting `main` from a `develop`-based branch proposes
+merging into the wrong place and shows a diff full of other people's commits.
+
+### `pullRequest.draft`
+
+`boolean` — effective default **`true`**
+
+Open as a draft for a human to promote. This is the single source of truth;
+the deprecated [`remediation.draftPr`](#remediationdraftpr) is consulted only
+when this is unset.
+
+### `pullRequest.labels`, `pullRequest.reviewers`
+
+`string[]` — default **`[]`**
+
+Labels applied and reviews requested, when the token can set them.
+
+### `pullRequest.branchTemplate`, `pullRequest.titleTemplate`
+
+`string` — default **`{prefix}upgrade-{summary}-{date}`** and
+**`chore(deps): upgrade {summary}`**
+
+Placeholders: `{prefix}`, `{summary}`, `{name}`, `{from}`, `{to}`, `{count}`,
+`{date}`. An unrecognised placeholder is left verbatim, so a typo produces an
+obviously wrong name rather than a plausible one that silently collides with
+the next run.
+
+### `pullRequest.coAuthor`
+
+`boolean` — default **`true`**
+
+Credit Drift as a co-author on the commits it makes. You stay the author — you
+chose the upgrade and reviewed the diff. Turn it off if your repository lints
+commit trailers.
 
 ---
 
