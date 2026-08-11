@@ -76,9 +76,16 @@ export async function dispatchToCopilot(
 
   const body: Record<string, unknown> = {
     prompt,
-    // Copilot works on the branch Drift already created, so its commits land
-    // where the plan expects and the eventual PR targets the right base.
-    base_ref: plan.branchName,
+    // The two refs mean different things, and swapping them is not a cosmetic
+    // error. `head_ref` names an *existing* branch the agent commits into;
+    // `base_ref` names the branch a *new* one would be cut from. Drift has
+    // already created `plan.branchName` and pushed the dependency update to
+    // it, so that is the head. Passing it as `base_ref` (as this once did)
+    // told Copilot to branch *off* Drift's branch and work somewhere else —
+    // so the agent's commits landed on a branch Drift never looked at, while
+    // Drift opened its pull request from the branch the agent had abandoned.
+    head_ref: plan.branchName,
+    base_ref: plan.baseBranch,
     // Always false: Drift is the sole PR creator (see `ensurePullRequest` in
     // dispatch/index.ts), which is what lets `pullRequest.enabled` and the
     // rest of the `pullRequest` config (draft, title, labels, reviewers)
