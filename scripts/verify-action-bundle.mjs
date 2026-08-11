@@ -6,8 +6,10 @@
 //   2. it runs with node_modules absent (nothing was left unbundled)
 //   3. the optional Anthropic SDK is statically bundled, not just referenced
 //      (llm.enabled: true has no npm install to fall back on in a real Action run)
+//   4. it runs under Node 20 — the runtime `action.yml` declares, and not the
+//      one CI otherwise uses
 import { execFileSync, spawnSync } from 'node:child_process';
-import { renameSync, existsSync, readFileSync } from 'node:fs';
+import { renameSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = fileURLToPath(new URL('..', import.meta.url));
@@ -65,4 +67,62 @@ if (!bundle.includes('AnthropicError')) {
   );
 }
 
-log('action bundle verified: current, self-contained, and includes the Anthropic SDK');
+/**
+ * Run the bundle under the runtime GitHub will actually use.
+ *
+ * `action.yml` declares `using: node20`; the CI matrix is Node 22. A bundle
+ * that parses and runs under 22 is not evidence it runs under 20 — one newer
+ * syntax or API, reaching the bundle through any dependency, fails at run time
+ * in a user's repository on their first dependency change, where nothing we
+ * run here would ever have seen it.
+ *
+ * Reaching Drift's own error path is the success condition, the same as the
+ * self-containment check above: with no token configured the Action is
+ * supposed to stop and say so, and getting that far proves the whole bundle
+ * loaded and evaluated.
+ */
+function findNode20() {
+  if (process.env.DRIFT_NODE20) return process.env.DRIFT_NODE20;
+
+  const candidates = ['node20'];
+  const nvm = `${process.env.HOME ?? ''}/.nvm/versions/node`;
+  try {
+    for (const dir of readdirSync(nvm)) {
+      if (dir.startsWith('v20.')) candidates.push(`${nvm}/${dir}/bin/node`);
+    }
+  } catch {
+    // No nvm on this machine; the PATH candidate is the only chance.
+  }
+
+  for (const candidate of candidates) {
+    const probe = spawnSync(candidate, ['--version'], { encoding: 'utf8' });
+    if (probe.status === 0 && (probe.stdout ?? '').trim().startsWith('v20.')) return candidate;
+  }
+  return null;
+}
+
+const node20 = findNode20();
+if (!node20) {
+  // Loud, not skipped. A gate that quietly passes when it could not run reads
+  // as a green tick, which is worse than not having the gate at all.
+  fail(
+    'no Node 20 runtime found, so the bundle could not be checked against the runtime action.yml ' +
+      'declares. Install Node 20 (`nvm install 20`), or set DRIFT_NODE20 to its binary. In CI, add ' +
+      'an actions/setup-node step with node-version: 20.',
+  );
+}
+
+log(`checking the bundle runs on Node 20 (${node20})`);
+const onNode20 = spawnSync(node20, ['action/index.cjs'], { cwd: repoRoot, encoding: 'utf8' });
+const node20Output = `${onNode20.stdout ?? ''}${onNode20.stderr ?? ''}`;
+
+if (/SyntaxError|ERR_UNSUPPORTED|is not a function|Unexpected token/.test(node20Output)) {
+  console.error(node20Output);
+  fail('the action bundle does not run on Node 20, which is the runtime action.yml declares.');
+}
+if (!/drift:error/.test(node20Output)) {
+  console.error(node20Output);
+  fail("the action bundle did not reach Drift's own error path under Node 20.");
+}
+
+log('action bundle verified: current, self-contained, bundles the Anthropic SDK, and runs on Node 20');
