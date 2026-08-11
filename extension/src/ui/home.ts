@@ -50,6 +50,7 @@ import {
   ambiguityKey,
   describeSeverity,
   discoverTargets,
+  scanDirectories,
   installUpgrade,
   reanalyzeUpgrade,
   scanUpgrades,
@@ -679,6 +680,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       case '/discard':
         await this.discardFix();
         return;
+      case '/instruction':
+      case '/instructions':
+        await this.addWorkspaceInstruction(argument);
+        return;
       case '/agent':
         this.openMenu('model:setup');
         return;
@@ -744,23 +749,74 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       return;
     }
 
-    // Not a request Drift can act on, so treat it as what it most likely is:
-    // something the developer wants every agent run to know about this repo.
+    // Nothing Drift can act on. It used to save the message, silently and
+    // permanently, into this workspace's agent instructions — so a developer
+    // who typed "why did you think this was unsafe?" and got no intent match
+    // had just told every future agent run to ask itself that question.
+    //
+    // In a chat box, an unrecognised message is overwhelmingly a question, not
+    // a policy. Standing instructions materially change how future code edits
+    // are made, so they are now something the developer chooses out loud —
+    // here, or with `/instruction`.
+    const answer = await this.session.ask(
+      `I could not match that to anything I can do. Did you mean to save it as a standing instruction for this workspace — something every future agent run should be told?`,
+      [
+        {
+          label: 'Save it as a workspace instruction',
+          value: 'save',
+          description: 'Every agent run in this workspace will be given it',
+        },
+        { label: 'No, I was asking a question', value: 'no' },
+      ],
+      false,
+    );
+
+    if (answer !== 'save') {
+      this.session.say(
+        [
+          'Left your instructions alone.',
+          '',
+          'I can act on `/scan`, `/recent`, `/upgrade <package>`, `/fix`, `/review`, `/commit`, `/push` and `/pr` — type `/help` for the full list. To save a standing instruction deliberately, use `/instruction <text>`.',
+        ].join('\n'),
+      );
+      return;
+    }
+
+    await this.addWorkspaceInstruction(text);
+  }
+
+  /**
+   * Add a standing instruction every future agent run in this workspace is given.
+   *
+   * Explicit by construction. This is the only path that writes
+   * `fix.customInstructions`, so a workspace's agent policy can only ever
+   * change because someone asked for it to.
+   */
+  private async addWorkspaceInstruction(text: string): Promise<void> {
+    const instruction = text.trim();
+    if (!instruction) {
+      this.session.notice(
+        'warn',
+        'Usage: `/instruction <text>` — for example `/instruction This repo uses Vitest, not Jest.`',
+      );
+      return;
+    }
+
     const config = vscode.workspace.getConfiguration('drift');
     const current = config.get<string>('fix.customInstructions', '').trim();
     await config.update(
       'fix.customInstructions',
-      [current, text].filter(Boolean).join('\n'),
+      [current, instruction].filter(Boolean).join('\n'),
       vscode.ConfigurationTarget.Workspace,
     );
 
     this.session.say(
       [
-        "I have added that to this workspace's Drift instructions, so every agent run from now on will be told:",
+        "Added to this workspace's Drift instructions. Every agent run from now on will be told:",
         '',
-        `> ${text}`,
+        `> ${instruction}`,
         '',
-        'I can act on `/scan`, `/recent`, `/upgrade <package>`, `/fix`, `/review`, `/commit`, `/push` and `/pr` — type `/help` for the full list.',
+        'Edit or remove them in Settings under `drift.fix.customInstructions`.',
       ].join('\n'),
     );
   }
@@ -788,7 +844,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         '',
         '**Review**',
         '',
-        'Agent edits are never committed until you keep them. Changed lines are highlighted in the editor with Keep and Undo on every hunk, and the change list in this panel opens the real diff editor.',
+        // Qualified deliberately. The unqualified version of this sentence was
+        // false for one of the three permission modes the same panel offers:
+        // `full-auto` commits each group as it lands. A safety claim that a
+        // setting in the menu above contradicts is worse than no claim.
+        'On **Edit, then review** — the default — agent edits are never committed until you keep them. Changed lines are highlighted in the editor with Keep and Undo on every hunk, and the change list in this panel opens the real diff editor. **Ask first** additionally asks before each edit; **Edit and commit** commits each group as it goes, which is the one mode where an edit lands without you having reviewed it.',
         '',
         '**Git**',
         '',
@@ -825,7 +885,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       Object.entries(this.memento.get<Record<string, PackageManagerId>>(MANAGER_KEY, {})),
     );
 
-    const { ambiguities } = await discoverTargets(root, [''], stored);
+    // Every directory the scan is about to read, not just the root. Asking
+    // about the root alone meant this safety property quietly evaporated in
+    // the layout most likely to need it: a monorepo whose members carry their
+    // own lockfiles. `scanDirectories` is the same computation `scanUpgrades`
+    // does, shared so the two cannot disagree about what is in scope.
+    const dirs = await scanDirectories(root);
+    const { ambiguities } = await discoverTargets(root, dirs, stored);
     if (ambiguities.length === 0) return stored;
 
     for (const ambiguity of ambiguities) {
@@ -3118,6 +3184,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       '/review': 'diff',
       '/redo': 'agent',
       '/discard': 'history',
+      '/instruction': 'info',
       '/agent': 'gear',
       '/clear': 'plus',
       '/help': 'info',
