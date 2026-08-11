@@ -8,7 +8,13 @@ import { fileURLToPath } from 'node:url';
 import type { RepoContext } from './types.js';
 import { loadConfig } from './config/load.js';
 import { GitHubClient } from './github/client.js';
-import { LocalGitProvider, WORKING_TREE, chooseManifestRange, inspectLocalRepo } from './repo/local-git.js';
+import {
+  LocalGitProvider,
+  WORKING_TREE,
+  chooseManifestRange,
+  commitWorkingTreeManifests,
+  inspectLocalRepo,
+} from './repo/local-git.js';
 import { runPipeline } from './pipeline.js';
 import { resolveBaseBranch, titleFor } from './plan/pull-request.js';
 import { renderPullRequestBody } from './report/markdown.js';
@@ -17,7 +23,15 @@ import { main as serveWebhook } from './runners/webhook.js';
 import { sampleTelemetryEvent } from './telemetry.js';
 import { createLogger, type LogLevel, type Logger } from './util/logger.js';
 import { dispatchRemainingToCopilot, runFix } from './remediation/cli-runner.js';
-import { installUpgrade, scanUpgrades, upgradeCommandFor } from './upgrade/scan.js';
+import {
+  installUpgrade,
+  reanalyzeUpgrade,
+  scanUpgrades,
+  upgradeCommandFor,
+  type UpgradeCandidate,
+  type UpgradeScanResult,
+} from './upgrade/scan.js';
+import type { DriftConfig } from './config/schema.js';
 import { describeSeverity, scanTitle, severityOf } from './upgrade/severity.js';
 import { ask } from './util/prompt.js';
 
@@ -209,12 +223,20 @@ Options for \`outdated\`:
   --repo <owner/name>         Repository label for output. Default: git remote
   --dir <path>                Local checkout to scan.    Default: cwd
   --dev                       Also check dev/optional/peer dependencies
-  --upgrade <name>             Install the recommended version for one
-                              package found by the scan (writes the
-                              manifest/lockfile locally — run \`drift
-                              analyze\`/\`fix\` afterwards)
-  --force                     With --upgrade, ignore the declared range and
-                              take the true latest, not just the safe one
+  --upgrade <selector>        Install the recommended version for one package
+                              found by the scan (writes the manifest/lockfile
+                              locally — run \`drift fix\` afterwards). The
+                              selector is the package name, or \`dir:name\`
+                              when a name is declared in more than one
+                              workspace member
+  --latest                    With --upgrade, install the true latest instead
+                              of the newest version your declared range allows.
+                              Re-runs the breaking-change analysis first, since
+                              that is a different version from the one scanned
+  --force-install             With --upgrade, pass the package manager's own
+                              force flag (\`npm install --force\`). This does
+                              NOT change which version is installed; only
+                              --latest does that. Alias: --force
   --token <token>             Optional, only to raise the public API rate
                               limit. Default: $GITHUB_TOKEN, then \`gh auth token\`
   --config <path>             Config file. Default: .github/drift.yml
@@ -507,34 +529,30 @@ async function outdatedCommand(flags: Flags): Promise<number> {
     onProgress: (progress) => logger.debug(`${progress.phase}: ${progress.detail}`),
   });
 
+  // A read-only scan may guess which manager owns an ambiguous directory and
+  // say so. `performUpgrade` refuses to guess, because that guess writes.
   for (const ambiguity of result.ambiguities) {
     logger.warn(
       `${ambiguity.dir || '.'}: multiple package managers claim ${ambiguity.ecosystem} ` +
-        `(${ambiguity.candidates.map((c) => c.manager.id).join(', ')}); using ${ambiguity.candidates[0]!.manager.id}`,
+        `(${ambiguity.candidates.map((c) => c.manager.id).join(', ')}); reading as ` +
+        `${ambiguity.candidates[0]!.manager.id}. Drift will ask before writing anything here.`,
     );
   }
 
   if (typeof flags.upgrade === 'string') {
-    const candidate = result.candidates.find((c) => c.name === flags.upgrade);
-    if (!candidate) {
-      logger.error(`${flags.upgrade} is not an outdated direct dependency in this repository.`);
-      return 1;
-    }
-    const command = upgradeCommandFor(candidate, flags.force ? 'force' : 'safe');
-    if (!command) {
-      logger.error(
-        `${candidate.packageManager} cannot pin a version from the command line. Edit ${candidate.manifestPath} ` +
-          `to require ${candidate.name} ${candidate.selected} by hand.`,
-      );
-      return 1;
-    }
-    logger.info(`Running: ${command}`);
-    await installUpgrade(workspace, candidate, flags.force ? 'force' : 'safe');
-    console.log(
-      `\nUpgraded ${candidate.name} to ${candidate.selected}. The manifest/lockfile edit is uncommitted — ` +
-        `run \`drift analyze\` or \`drift fix\` to check it for breaking changes and open a pull request.\n`,
-    );
-    return 0;
+    const candidate = selectCandidate(result.candidates, flags.upgrade, logger);
+    if (!candidate) return 1;
+    return performUpgrade({
+      workspace,
+      candidate,
+      result,
+      logger,
+      forceInstall: Boolean(flags['force-install'] ?? flags.force),
+      wantLatest: Boolean(flags.latest),
+      repo,
+      config,
+      githubToken: token || undefined,
+    });
   }
 
   if (flags.json) {
@@ -570,40 +588,218 @@ async function outdatedCommand(flags: Flags): Promise<number> {
       candidate.selected === candidate.latest
         ? `${candidate.current} → ${candidate.selected}`
         : `${candidate.current} → ${candidate.selected} (latest ${candidate.latest})`;
-    console.log(`${candidate.name} ${versionLabel}`);
+    console.log(`${candidateLabel(candidate, result.candidates)} ${versionLabel}`);
     console.log(`  ${describeSeverity(candidate)}`);
     if (candidate.summary) console.log(`  ${candidate.summary}`);
-    if (!process.stdin.isTTY) console.log(`  Run: drift outdated --upgrade ${candidate.name}`);
+    if (!process.stdin.isTTY) {
+      console.log(`  Run: drift outdated --upgrade ${selectorFor(candidate, result.candidates)}`);
+    }
     console.log();
   }
 
   if (result.candidates.length > 0 && process.stdin.isTTY) {
-    const choice = await ask(
-      'Upgrade one of these now?',
-      [...result.candidates.map((c) => c.name), 'Skip'],
-      'Skip',
-    );
-    const picked = result.candidates.find((c) => c.name === choice);
+    // Labelled, not bare names: two workspace members can both depend on
+    // `react`, and a menu with `react` twice offers no way to say which.
+    const labels = result.candidates.map((c) => candidateLabel(c, result.candidates));
+    const choice = await ask('Upgrade one of these now?', [...labels, 'Skip'], 'Skip');
+    const picked = result.candidates[labels.indexOf(choice)];
     if (picked) {
-      const command = upgradeCommandFor(picked, 'safe');
-      if (!command) {
-        logger.error(
-          `${picked.packageManager} cannot pin a version from the command line. Edit ${picked.manifestPath} ` +
-            `to require ${picked.name} ${picked.selected} by hand.`,
-        );
-        return 1;
-      }
-      logger.info(`Running: ${command}`);
-      await installUpgrade(workspace, picked, 'safe');
-      console.log(
-        `\nUpgraded ${picked.name} to ${picked.selected}. The manifest/lockfile edit is uncommitted — ` +
-          `run \`drift analyze\` or \`drift fix\` to check it for breaking changes and open a pull request.\n`,
-      );
+      return performUpgrade({
+        workspace,
+        candidate: picked,
+        result,
+        logger,
+        forceInstall: false,
+        wantLatest: false,
+        repo,
+        config,
+        githubToken: token || undefined,
+      });
     }
   }
 
   const affected = result.candidates.filter((c) => severityOf(c) === 'affected').length;
   return affected > 0 ? 1 : 0;
+}
+
+/**
+ * How a candidate is named when more than one could answer to the same name.
+ *
+ * In a monorepo `react` is not a unique identifier: `packages/web` and
+ * `packages/admin` can both declare it, at different versions, with different
+ * impact. A bare name in that repository picks whichever the scan happened to
+ * sort first, which is not a choice the developer made.
+ */
+function candidateLabel(
+  candidate: UpgradeCandidate,
+  all: readonly UpgradeCandidate[],
+): string {
+  return selectorFor(candidate, all);
+}
+
+/** The `--upgrade` argument that unambiguously identifies this candidate. */
+export function selectorFor(candidate: UpgradeCandidate, all: readonly UpgradeCandidate[]): string {
+  const ambiguous = all.filter((c) => c.name === candidate.name).length > 1;
+  if (!ambiguous) return candidate.name;
+  const scope = candidate.workspace || dirOf(candidate.manifestPath) || '.';
+  return `${scope}:${candidate.name}`;
+}
+
+function dirOf(path: string): string {
+  const cut = path.lastIndexOf('/');
+  return cut < 0 ? '' : path.slice(0, cut);
+}
+
+/**
+ * Resolve `--upgrade <selector>` to exactly one candidate.
+ *
+ * Accepts a bare name, or `dir:name` / `workspace:name` when a bare name would
+ * be ambiguous. Refuses to pick for the developer when it is: guessing which
+ * of two workspaces they meant is a write to the wrong manifest.
+ */
+export function selectCandidate(
+  candidates: readonly UpgradeCandidate[],
+  selector: string,
+  logger: Logger,
+): UpgradeCandidate | null {
+  const separator = selector.lastIndexOf(':');
+  const scope = separator > 0 ? selector.slice(0, separator) : null;
+  const name = separator > 0 ? selector.slice(separator + 1) : selector;
+
+  const byName = candidates.filter((c) => c.name === name);
+  if (byName.length === 0) {
+    logger.error(`${name} is not an outdated direct dependency in this repository.`);
+    return null;
+  }
+
+  const matches = scope
+    ? byName.filter((c) => (c.workspace || dirOf(c.manifestPath) || '.') === scope)
+    : byName;
+
+  if (matches.length === 1) return matches[0]!;
+
+  if (matches.length === 0) {
+    logger.error(
+      `${name} is not declared in ${scope}. It is declared in: ` +
+        `${byName.map((c) => selectorFor(c, candidates)).join(', ')}.`,
+    );
+    return null;
+  }
+
+  logger.error(
+    `${name} is declared in ${matches.length} places, so it is not clear which one to upgrade. ` +
+      `Name one: ${matches.map((c) => `drift outdated --upgrade ${selectorFor(c, candidates)}`).join(' | ')}`,
+  );
+  return null;
+}
+
+/**
+ * Install one candidate, having first established that Drift knows what it is
+ * about to run and where.
+ *
+ * The two refusals here are the point. A scan that has to guess which package
+ * manager owns a directory may guess, because reading is harmless. Writing is
+ * not: running `npm install` in a pnpm repository generates a second lockfile
+ * that nobody asked for and that CI will then disagree about. And `--latest`
+ * installs a version the scan did not analyse, so the analysis is redone
+ * rather than allowed to describe a different version than the one landing on
+ * disk.
+ */
+async function performUpgrade(args: {
+  workspace: string;
+  candidate: UpgradeCandidate;
+  result: UpgradeScanResult;
+  logger: Logger;
+  forceInstall: boolean;
+  wantLatest: boolean;
+  repo: RepoContext;
+  config: DriftConfig;
+  githubToken?: string;
+}): Promise<number> {
+  const { workspace, result, logger } = args;
+  let candidate = args.candidate;
+
+  const resolved = await resolveManagerForWrite(candidate, result, logger);
+  if (!resolved) return 1;
+  candidate = resolved;
+
+  if (args.wantLatest && candidate.selected !== candidate.latest) {
+    logger.info(
+      `--latest: re-checking ${candidate.name} ${candidate.current} → ${candidate.latest} ` +
+        `(the scan analysed ${candidate.selected}).`,
+    );
+    candidate = await reanalyzeUpgrade({
+      candidate,
+      version: candidate.latest,
+      root: workspace,
+      repo: args.repo,
+      config: args.config,
+      logger,
+      ...(args.githubToken ? { githubToken: args.githubToken } : {}),
+    });
+    console.log(`\n${describeSeverity(candidate)}`);
+    if (candidate.summary) console.log(`${candidate.summary}\n`);
+  }
+
+  const mode = args.forceInstall ? 'force' : 'safe';
+  const command = upgradeCommandFor(candidate, mode);
+  if (!command) {
+    logger.error(
+      `${candidate.packageManager} cannot pin a version from the command line. Edit ${candidate.manifestPath} ` +
+        `to require ${candidate.name} ${candidate.selected} by hand.`,
+    );
+    return 1;
+  }
+
+  logger.info(`Running: ${command}`);
+  await installUpgrade(workspace, candidate, mode);
+  console.log(
+    `\nUpgraded ${candidate.name} to ${candidate.selected} in ${candidate.manifestPath}. The edit is ` +
+      `uncommitted — run \`drift fix\` to check it for breaking changes, fix them, and open a pull ` +
+      `request (it analyses the uncommitted change directly), or \`drift analyze\` to just read the report.\n`,
+  );
+  return 0;
+}
+
+/**
+ * Confirm which package manager may write to this candidate's directory.
+ *
+ * Returns the candidate with `packageManager` set to a manager Drift is
+ * entitled to run, or `null` when that could not be established. A warning was
+ * never enough here: `drift outdated` warned about the ambiguity and then went
+ * ahead and used the first candidate anyway, which is exactly the "npm in a
+ * pnpm repo" failure the package-manager layer exists to prevent.
+ */
+async function resolveManagerForWrite(
+  candidate: UpgradeCandidate,
+  result: UpgradeScanResult,
+  logger: Logger,
+): Promise<UpgradeCandidate | null> {
+  const dir = candidate.workspace || dirOf(candidate.manifestPath);
+  const ambiguity = result.ambiguities.find(
+    (a) => a.dir === dir && a.ecosystem === candidate.ecosystem,
+  );
+  if (!ambiguity) return candidate;
+
+  const options = ambiguity.candidates.map((c) => c.manager.id);
+  const where = dir || 'this repository';
+
+  if (!process.stdin.isTTY) {
+    logger.error(
+      `More than one package manager claims ${candidate.ecosystem} in ${where} (${options.join(', ')}), ` +
+        `so Drift will not guess which one may write here — the wrong choice generates a second lockfile. ` +
+        `Remove the lockfile that is no longer real, or re-run interactively to choose.`,
+    );
+    return null;
+  }
+
+  const chosen = await ask(
+    `More than one package manager claims ${candidate.ecosystem} in ${where}. Which one should Drift use?`,
+    options,
+    options[0]!,
+  );
+  logger.info(`Using ${chosen} for ${where}.`);
+  return { ...candidate, packageManager: chosen as UpgradeCandidate['packageManager'] };
 }
 
 /**
@@ -643,7 +839,29 @@ async function fixCommand(flags: Flags): Promise<number> {
     return 1;
   }
 
-  const { before, after } = await resolveRange(workspace, flags, { includeWorkingTree: false });
+  // `fix` needs a real commit: it checks `after` out into an isolated
+  // worktree, and the working tree is not a ref. But refusing to look at the
+  // working tree at all is what made `drift outdated --upgrade foo && drift
+  // fix` analyse the *previous* dependency commit — the exact next command
+  // Drift recommends, ignoring the upgrade the developer had just made.
+  //
+  // So uncommitted manifest edits are materialised into a commit object first,
+  // using a scratch index that leaves the developer's tree and index untouched.
+  // An explicit range is an explicit instruction; never second-guess it.
+  const rangeGiven = typeof flags.before === 'string' || typeof flags.after === 'string';
+  const upgradeCommit = rangeGiven
+    ? null
+    : await commitWorkingTreeManifests(workspace, 'chore(deps): dependency update analysed by drift fix');
+  if (upgradeCommit) {
+    logger.info(
+      'Found uncommitted manifest changes. Analysing them as the dependency update — ' +
+        'they are committed inside the isolated worktree only; your working tree is untouched.',
+    );
+  }
+
+  const { before, after } = upgradeCommit
+    ? { before: (await gitRev(workspace, 'HEAD')) ?? `${upgradeCommit}^`, after: upgradeCommit }
+    : await resolveRange(workspace, flags, { includeWorkingTree: false });
   const branch = (await gitRev(workspace, '--abbrev-ref HEAD')) ?? 'main';
 
   const repo: RepoContext = { owner, repo: repoName, baseBranch: branch, beforeSha: before, afterSha: after, workspace };

@@ -1525,9 +1525,17 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           branched.add(candidateCtx.root);
         }
 
-        const target = candidate.selected;
+        // "Upgrade to <latest>" means install `latest`; the ordinary Upgrade
+        // means install `selected`. This read `candidate.selected` for both,
+        // which made the comparison below dead code and the force prompt a
+        // lie: the dialog asked to install past the declared range, and then
+        // installed the in-range version with `--force` bolted on.
+        const target = mode === 'force' ? candidate.latest : candidate.selected;
         let current = candidate;
 
+        // A different version is a different analysis. The evidence on screen
+        // was gathered for `selected`, and presenting it as if it described
+        // `latest` is the same category of claim Drift exists to stop making.
         if (target !== candidate.selected) {
           step.progress('Re-checking evidence', `${candidate.name}@${target}`);
           current = await reanalyzeUpgrade({
