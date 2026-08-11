@@ -249,6 +249,86 @@ export function parseSlug(remote: string | null): string | null {
  * at?" without being told. Opening a repository mid-work, the interesting
  * range is rarely `HEAD^..HEAD` — it is whatever commit last moved a manifest.
  */
+/**
+ * Turn uncommitted manifest edits into a real commit, without touching
+ * anything the developer can see.
+ *
+ * `drift outdated --upgrade` leaves exactly the state `npm install pkg@version`
+ * would: an edited manifest and lockfile, uncommitted. `analyze` reads that
+ * happily, because it can diff against the working tree. `fix` cannot — it
+ * checks `after` out into an isolated worktree, and the working tree is not a
+ * ref. So the command Drift recommended after an upgrade would analyse the
+ * *previous* dependency commit and report on a version the developer had
+ * already moved off.
+ *
+ * This closes that gap by writing a commit object whose tree is HEAD plus the
+ * manifest changes, and nothing else. It uses a scratch index file, so the
+ * developer's index, working tree, branches, and stash are all untouched — the
+ * commit is created, handed to the worktree, and only ever reachable from the
+ * fix branch. Unrelated work in progress is deliberately excluded: only paths
+ * Drift recognises as manifests are staged, so a half-finished refactor
+ * sitting in the same tree is never swept into a dependency commit.
+ *
+ * Returns `null` when there is nothing uncommitted to capture.
+ */
+export async function commitWorkingTreeManifests(
+  cwd: string,
+  message: string,
+): Promise<string | null> {
+  const { mkdtemp, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+
+  const git = async (args: string[], env?: NodeJS.ProcessEnv): Promise<string | null> => {
+    try {
+      const { stdout } = await run('git', args, {
+        cwd,
+        windowsHide: true,
+        maxBuffer: 32 * 1024 * 1024,
+        ...(env ? { env: { ...process.env, ...env } } : {}),
+      });
+      return stdout;
+    } catch {
+      return null;
+    }
+  };
+
+  const status = await git(['status', '--porcelain']);
+  if (!status) return null;
+
+  const dirtyManifests = status
+    .split('\n')
+    .map((line) => line.slice(3).trim())
+    .filter((path) => path && isManifestPath(path));
+  if (dirtyManifests.length === 0) return null;
+
+  const head = (await git(['rev-parse', 'HEAD']))?.trim();
+  if (!head) return null;
+
+  const dir = await mkdtemp(join(tmpdir(), 'drift-index-'));
+  const indexFile = join(dir, 'index');
+  const env = { GIT_INDEX_FILE: indexFile };
+
+  try {
+    if ((await git(['read-tree', 'HEAD'], env)) === null) return null;
+    // `--all` so a manifest deleted in the working tree is recorded as deleted
+    // rather than silently kept from HEAD.
+    if ((await git(['add', '--all', '--', ...dirtyManifests], env)) === null) return null;
+
+    const tree = (await git(['write-tree'], env))?.trim();
+    if (!tree) return null;
+
+    // Identical tree means the edits cancelled out; there is no commit to make.
+    const headTree = (await git(['rev-parse', 'HEAD^{tree}']))?.trim();
+    if (tree === headTree) return null;
+
+    const sha = (await git(['commit-tree', tree, '-p', head, '-m', message]))?.trim();
+    return sha || null;
+  } finally {
+    await rm(dir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
 export async function lastCommitTouching(
   cwd: string,
   paths: readonly string[],
