@@ -45,6 +45,14 @@ maxAutoRisk: low   # only let Drift act unattended on the boring cases
 
 Glob patterns. Pushes to other branches are ignored.
 
+This is the single source of truth, and the shipped workflow is deliberately
+*not* filtered by branch so that it can be. The workflow used to subscribe to
+`branches: [main]` as well, which meant a repository that set
+`watchBranches: [develop]` was configured for a branch its workflow would never
+start on — and nothing anywhere said so. GitHub starts the job on any push that
+touches a dependency file; the Action then checks this setting and exits early
+with a message naming the branch when it does not match.
+
 ---
 
 ## Selection

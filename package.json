@@ -44,7 +44,9 @@
     "eval:deterministic": "npm run build && node --experimental-strip-types eval/src/run.ts --ci",
     "verify:action-bundle": "node scripts/verify-action-bundle.mjs",
     "smoke:packed-cli": "node scripts/smoke-test-packed-cli.mjs",
-    "release:check": "node scripts/release-check.mjs"
+    "release:check": "node scripts/release-check.mjs",
+    "build:workflow": "npm run build && node scripts/build-workflow.mjs",
+    "verify:workflow": "npm run build && node scripts/build-workflow.mjs --check"
   },
   "dependencies": {
     "@octokit/rest": "^22.0.1",

@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { RefRange, RepoProvider } from './provider.js';
 import { isManifestPath } from '../detect/index.js';
+import { DEPENDENCY_FILE_GLOBS } from '../detect/manifest-globs.js';
 
 const run = promisify(execFile);
 
@@ -78,45 +79,17 @@ export class LocalGitProvider implements RepoProvider {
   }
 }
 
-/** Every manifest filename Drift knows how to parse, for git pathspecs. */
-export const MANIFEST_GLOBS = [
-  'package.json',
-  'package-lock.json',
-  'yarn.lock',
-  'pnpm-lock.yaml',
-  'requirements*.txt',
-  'pyproject.toml',
-  'poetry.lock',
-  'Pipfile',
-  'go.mod',
-  'Cargo.toml',
-  'pom.xml',
-  'build.gradle',
-  'build.gradle.kts',
-  'Gemfile',
-  'Gemfile.lock',
-  '**/*.csproj',
-  '**/*.fsproj',
-  '**/*.vbproj',
-  '**/Directory.Packages.props',
-  '**/packages.config',
-  '**/packages.lock.json',
-  '**/composer.json',
-  '**/composer.lock',
-  '**/mix.exs',
-  '**/mix.lock',
-  '**/rebar.config',
-  '**/pubspec.yaml',
-  '**/pubspec.yml',
-  '**/pubspec.lock',
-  '**/Package.swift',
-  '**/Package@swift-*.swift',
-  '**/Podfile',
-  '**/Podfile.lock',
-  '**/dune-project',
-  '**/*.opam',
-  '**/build.sbt',
-];
+/**
+ * Manifest patterns as git pathspecs.
+ *
+ * Re-exported from the one registry rather than listed again here. This was a
+ * second hand-written copy, and it had fallen behind the first: no
+ * `npm-shrinkwrap.json`, no `bun.lock`, no Gradle version catalog, no
+ * `*.gemspec` — so `lastCommitTouching` could not find a dependency commit that
+ * only moved one of those, and `analyze` reported "nothing changed" on a
+ * repository where something plainly had.
+ */
+export const MANIFEST_GLOBS = DEPENDENCY_FILE_GLOBS;
 
 /**
  * Work out which commit range to analyse from a local checkout, with no range
