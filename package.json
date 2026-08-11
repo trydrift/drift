@@ -46,7 +46,8 @@
     "smoke:packed-cli": "node scripts/smoke-test-packed-cli.mjs",
     "release:check": "node scripts/release-check.mjs",
     "build:workflow": "npm run build && node scripts/build-workflow.mjs",
-    "verify:workflow": "npm run build && node scripts/build-workflow.mjs --check"
+    "verify:workflow": "npm run build && node scripts/build-workflow.mjs --check",
+    "check:docs": "node scripts/check-docs.mjs"
   },
   "dependencies": {
     "@octokit/rest": "^22.0.1",

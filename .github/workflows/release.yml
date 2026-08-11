@@ -65,6 +65,13 @@ jobs:
       - name: Verify the Action bundle (rebuild, staleness, self-containment, bundled SDK, Node 20)
         run: npm run verify:action-bundle
 
+      # Identity strings, invented CLI commands, invented extension identifiers,
+      # and any wording that sells an unchecked result as a pass. The README
+      # advertised a `drift.pullRequest` command that never existed; a comment
+      # could not have caught that, so this does.
+      - name: Verify the READMEs and docs against the code
+        run: npm run check:docs
+
       # The shipped workflow's trigger paths are generated from the manifest
       # registry; a stale committed copy means the Action silently stops
       # starting on files Drift supports.

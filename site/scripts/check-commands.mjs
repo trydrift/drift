@@ -15,20 +15,86 @@
  * exists.
  */
 
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..');
+const siteSrc = join(here, '..', 'src');
 
 /** The `args` strings from the site's animated terminal. */
-async function siteCommands() {
-  const source = await readFile(join(here, '..', 'src', 'components', 'terminal.tsx'), 'utf8');
+async function terminalCommands() {
+  const source = await readFile(join(siteSrc, 'components', 'terminal.tsx'), 'utf8');
   const block = /const COMMANDS: Command\[\] = \[([\s\S]*?)\];/.exec(source);
   if (!block) throw new Error('Could not find the COMMANDS list in terminal.tsx');
 
   return [...block[1].matchAll(/args:\s*"([^"]+)"/g)].map((match) => match[1].split(/\s+/)[0]);
+}
+
+/** Every source file the site's copy can live in. */
+async function siteSources() {
+  const files = [];
+
+  const walk = async (dir) => {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        await walk(path);
+        continue;
+      }
+      // `.json` recordings are skipped: they are captured output, a record of
+      // what a real run printed, not copy anyone can fix by editing it.
+      if (/\.(tsx?|mdx?)$/.test(entry.name)) files.push(path);
+    }
+  };
+
+  await walk(siteSrc);
+  return files;
+}
+
+/**
+ * Text the page renders as a command rather than as prose.
+ *
+ * The distinction matters because `drift` is also an English verb, and this
+ * codebase uses it as one ("a chance to drift a few frames out"). Matching
+ * bare words would flag that sentence and teach everyone to ignore the check.
+ * So only text the site has itself marked as code counts: a backtick span, a
+ * `<code>` element, or a string literal that begins with the binary's name.
+ */
+function commandLikeText(source) {
+  const snippets = [];
+  for (const pattern of [
+    /`([^`\n]*)`/g,
+    /<code[^>]*>([^<]*)<\/code>/g,
+    /["']((?:\$ )?drift [^"'\n]*)["']/g,
+  ]) {
+    for (const match of source.matchAll(pattern)) snippets.push(match[1]);
+  }
+  return snippets;
+}
+
+/**
+ * Every `drift <something>` the site presents as a runnable command.
+ *
+ * The original check guarded one array in `terminal.tsx`, because that array
+ * was where the invented command had been found. But copy moves: a command
+ * named in a hero, a card, or a caption is exactly as public a claim as one in
+ * the replay, and would have gone unchecked.
+ */
+async function writtenCommands() {
+  const found = new Map();
+
+  for (const path of await siteSources()) {
+    const source = await readFile(path, 'utf8');
+    for (const snippet of commandLikeText(source)) {
+      // `/drift apply` is the Action's issue comment, not a CLI command.
+      const match = /^(?:\$ )?drift ([a-z][a-z-]*)/.exec(snippet.trim());
+      if (match && !found.has(match[1])) found.set(match[1], path);
+    }
+  }
+
+  return found;
 }
 
 /**
@@ -55,7 +121,50 @@ async function cliCommands() {
   return found;
 }
 
-const site = await siteCommands();
+/**
+ * Every `drift.*` identifier the extension actually contributes.
+ *
+ * The root README advertised a `drift.pullRequest` command; no such command
+ * has ever existed. An identifier is the most checkable claim documentation
+ * can make — it either appears in the manifest or it does not — so there is no
+ * excuse for one going stale.
+ */
+async function extensionIdentifiers() {
+  const manifest = JSON.parse(
+    await readFile(join(repoRoot, 'extension', 'package.json'), 'utf8'),
+  );
+  return new Set([
+    ...(manifest.contributes?.commands ?? []).map((entry) => entry.command),
+    ...Object.keys(manifest.contributes?.configuration?.properties ?? {}),
+    ...(manifest.contributes?.views?.drift ?? []).map((entry) => entry.id),
+    ...(manifest.contributes?.walkthroughs ?? []).map((entry) => entry.id),
+  ]);
+}
+
+/**
+ * `drift.<something>` references written into the site's copy.
+ *
+ * `drift.yml` is a config file and `drift.drift` is the Marketplace item id —
+ * neither is an identifier the manifest declares, and both are correct where
+ * they appear, so they are excluded by shape rather than by an allowlist that
+ * would have to grow.
+ */
+async function referencedIdentifiers() {
+  const found = new Map();
+
+  for (const path of await siteSources()) {
+    const source = await readFile(path, 'utf8');
+    for (const match of source.matchAll(/\bdrift\.[a-zA-Z][a-zA-Z0-9]*(?:\.[a-zA-Z][a-zA-Z0-9]*)*/g)) {
+      const id = match[0];
+      if (/\.(yml|yaml|json|js|ts|tsx|md)$/.test(id)) continue;
+      if (id === 'drift.drift') continue;
+      if (!found.has(id)) found.set(id, path);
+    }
+  }
+
+  return found;
+}
+
 const cli = await cliCommands();
 
 if (cli.size === 0) {
@@ -63,16 +172,39 @@ if (cli.size === 0) {
   process.exit(1);
 }
 
-const invented = site.filter((command) => !cli.has(command));
+const failures = [];
 
+const terminal = await terminalCommands();
+const written = await writtenCommands();
+const shown = new Map(written);
+for (const command of terminal) if (!shown.has(command)) shown.set(command, 'terminal.tsx');
+
+const invented = [...shown].filter(([command]) => !cli.has(command));
 if (invented.length > 0) {
-  console.error(
-    `check-commands: the site advertises ${invented.length} command(s) the CLI does not have: ` +
-      `${invented.join(', ')}.\n` +
-      `The CLI's usage text lists: ${[...cli].sort().join(', ')}.\n` +
-      `Fix site/src/components/terminal.tsx, or add the command to the CLI.`,
+  failures.push(
+    `The site advertises ${invented.length} CLI command(s) that do not exist:\n` +
+      invented.map(([command, where]) => `  drift ${command}  (${where})`).join('\n') +
+      `\nThe CLI's usage text lists: ${[...cli].sort().join(', ')}.`,
   );
+}
+
+const contributed = await extensionIdentifiers();
+const referenced = await referencedIdentifiers();
+const missing = [...referenced].filter(([id]) => !contributed.has(id));
+if (missing.length > 0) {
+  failures.push(
+    `The site names ${missing.length} extension identifier(s) the manifest does not declare:\n` +
+      missing.map(([id, where]) => `  ${id}  (${where})`).join('\n') +
+      `\nCheck extension/package.json's contributes block.`,
+  );
+}
+
+if (failures.length > 0) {
+  console.error(`check-commands:\n\n${failures.join('\n\n')}\n`);
   process.exit(1);
 }
 
-console.log(`check-commands: all ${site.length} command(s) shown on the site exist in the CLI.`);
+console.log(
+  `check-commands: all ${shown.size} CLI command(s) and ${referenced.size} extension identifier(s) ` +
+    `shown on the site exist.`,
+);
