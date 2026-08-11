@@ -10,7 +10,7 @@ import { resolveBaseBranch } from '../../../src/plan/pull-request.js';
 import type { RevisionRequest } from '../agents/types.js';
 import { renderPullRequestBody } from '../../../src/report/markdown.js';
 import { inspectLocalRepo, WORKING_TREE } from '../../../src/repo/local-git.js';
-import { DriftConfigSchema, type DriftConfig } from '../../../src/config/schema.js';
+import { DriftConfigSchema, opensPullRequestAsDraft, type DriftConfig } from '../../../src/config/schema.js';
 import { loadWorkspaceConfig, runAnalysis } from '../analyze.js';
 import { envWithShellPath } from '../shell-path.js';
 import { runFix, type FixResult } from '../fix.js';
@@ -1819,7 +1819,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         explicit<'branched-from' | 'default-branch'>('pullRequest.base') ??
         fromConfig?.base ??
         'branched-from',
-      draft: explicit<boolean>('pullRequest.draft') ?? fromConfig?.draft ?? false,
+      // Through the shared resolver once drift.yml is in play, so the panel and
+      // the Action agree about the deprecated `remediation.draftPr` spelling
+      // rather than each applying its own precedence.
+      draft:
+        explicit<boolean>('pullRequest.draft') ??
+        (config ? opensPullRequestAsDraft(config) : true),
     };
   }
 

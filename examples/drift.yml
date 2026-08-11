@@ -29,13 +29,40 @@ watchBranches: [main, master, develop]
 # What to analyse
 # ---------------------------------------------------------------------------
 
-ecosystems: [npm, pypi, go, cargo, maven, rubygems]
+# Every ecosystem Drift can detect, which is also the default — so this line
+# exists to show you the names, not to change anything. Delete it and nothing
+# happens; narrow it and Drift stops looking at the ones you removed.
+#
+# It used to read `[npm, pypi, go, cargo, maven, rubygems]` under a heading
+# promising every value here was the default. Copying the recommended config
+# therefore switched off ten ecosystems, silently, and made the product worse
+# than not configuring it at all.
+ecosystems:
+  [
+    npm,
+    pypi,
+    go,
+    cargo,
+    maven,
+    rubygems,
+    nuget,
+    packagist,
+    hex,
+    pub,
+    swift,
+    cocoapods,
+    opam,
+    conan,
+    vcpkg,
+    arduino,
+  ]
 
 triggerOn:
   major: true
   minor: true
-  # Patch bumps break consumers ~5% of the time in practice, but enabling this
-  # is noisy. Turn it on if you've been burned.
+  # Patch releases do sometimes break consumers, but they are a large majority
+  # of all dependency churn, so analysing them is mostly noise. Turn it on if
+  # you have been burned.
   patch: false
   # Lockfile-only moves you didn't ask for. Off by default because transitive
   # churn is constant and rarely actionable.
@@ -119,7 +146,10 @@ remediation:
   commitGranularity: per-breaking-change
 
   branchPrefix: 'drift/'
-  draftPr: true
+
+  # `remediation.draftPr` used to live here. It is deprecated in favour of
+  # `pullRequest.draft` below, which is the one setting that decides this now.
+  # An existing config that still sets it keeps working.
 
   # Optional model hint for the Copilot agent.
   # model: ""
@@ -137,6 +167,41 @@ remediation:
   # can select a found recipe, since it cannot prompt; the CLI and VS Code
   # extension still ask before using one either way.
   communityRecipes: false
+
+# ---------------------------------------------------------------------------
+# How the pull request gets opened
+# ---------------------------------------------------------------------------
+
+# Every value here is commented out because every value here is already the
+# default. Uncomment the ones you want to change.
+#
+# pullRequest:
+#   # Open a pull request once the branch is pushed. Drift never merges it.
+#   enabled: true
+#
+#   # `ask` confirms the branch name and title first, in the CLI and the panel.
+#   # The Action ignores this and proceeds; there is nobody there to ask.
+#   confirm: ask
+#
+#   # `branched-from` targets whatever the work started from, which is right on
+#   # any team that does not develop directly on its default branch.
+#   base: branched-from
+#
+#   # Open as a draft for a human to promote. This is the only setting that
+#   # decides it — the old `remediation.draftPr` is deprecated and is consulted
+#   # only when this is unset.
+#   draft: true
+#
+#   labels: []
+#   reviewers: []
+#
+#   # Placeholders: {prefix} {summary} {name} {from} {to} {count} {date}
+#   branchTemplate: '{prefix}upgrade-{summary}-{date}'
+#   titleTemplate: 'chore(deps): upgrade {summary}'
+#
+#   # Credit Drift as a co-author. You stay the author: you chose the upgrade
+#   # and reviewed the diff.
+#   coAuthor: true
 
 # ---------------------------------------------------------------------------
 # Optional LLM assistance

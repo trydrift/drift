@@ -626,7 +626,10 @@ function describeSemver(change: DependencyChange): string | null {
     );
   } else if (change.bump === 'minor') {
     notes.push(
-      `Minor bump ${change.from} → ${change.to}. Should be additive, but ~5% of npm minor/patch releases break consumers in practice.`,
+      // No figure. This string is *evidence* a developer reads next to a
+      // finding, and an unsourced statistic presented as evidence is the one
+      // thing this pipeline is built not to produce.
+      `Minor bump ${change.from} → ${change.to}. Semver says this should be additive, which is a convention rather than a guarantee — minor releases do break consumers, so the version number alone is not evidence either way.`,
     );
   } else if (change.bump === 'patch') {
     notes.push(`Patch bump ${change.from} → ${change.to}. Breakage here is usually accidental.`);
