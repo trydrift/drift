@@ -24,6 +24,23 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: npm
 
+      # The Action is declared `using: node20`, which is not the version the
+      # rest of this job runs on. `verify:action-bundle` executes the shipped
+      # bundle against this binary, because a bundle that works on 22 is not
+      # evidence it works on the runtime GitHub will actually use.
+      - name: Install Node 20 for the Action runtime check
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Record the Node 20 binary
+        run: echo "DRIFT_NODE20=$(which node)" >> "$GITHUB_ENV"
+
+      # Restore the job's own Node version; the step above left 20 on PATH.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
       - run: npm ci
 
       - name: Typecheck
@@ -62,7 +79,7 @@ jobs:
       # node_modules to fall back on inside a real Action run — is statically
       # bundled, not just referenced. Shared with release.yml via the same
       # script so the two checks cannot drift apart.
-      - name: Verify the Action bundle (rebuild, staleness, self-containment, bundled SDK)
+      - name: Verify the Action bundle (rebuild, staleness, self-containment, bundled SDK, Node 20)
         run: npm run verify:action-bundle
 
       - name: Verify the CLI runs from source
@@ -87,6 +104,12 @@ jobs:
       - name: Run the deterministic evaluation harness
         run: npm run eval:deterministic
 
+      # The workflow's trigger paths are generated from Drift's own manifest
+      # registry. A hand-edit here means the Action stops starting on files
+      # Drift can parse, which nothing else would report.
+      - name: Verify the example workflow matches the manifest registry
+        run: npm run verify:workflow
+
       - name: Verify the example config parses
         run: |
           node -e "
@@ -96,6 +119,31 @@ jobs:
             if (problems.length) { console.error(problems); process.exit(1); }
             console.log('examples/drift.yml is valid');
           "
+
+  # The site was outside every gate, which is exactly how it went on
+  # advertising `drift audit` for a day after the command was deleted. A
+  # production build also runs `check-commands.mjs`, which fails if the page
+  # names a CLI command that does not exist.
+  site:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # The site's sync scripts read the root build's generated data.
+      - run: npm ci && npm run build
+
+      - name: Build the site
+        working-directory: site
+        run: |
+          npm ci
+          npm run typecheck
+          npm run build
 
   # Drift analysing its own dependency changes. The tool should survive being
   # pointed at itself, and this is the cheapest way to find out when it doesn't.

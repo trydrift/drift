@@ -23,7 +23,8 @@ function sh(cmd, args, opts = {}) {
 step('root: typecheck', () => sh('npm', ['run', 'typecheck']));
 step('root: tests (build + test/*.test.ts)', () => sh('npm', ['test']));
 step('root: deterministic evaluation harness', () => sh('npm', ['run', 'eval:deterministic']));
-step('action: rebuild, staleness, self-containment, SDK bundling', () => sh('npm', ['run', 'verify:action-bundle']));
+step('action: rebuild, staleness, self-containment, SDK bundling, Node 20 run', () =>
+  sh('npm', ['run', 'verify:action-bundle']));
 
 step('extension: install, typecheck, test, build, package', () => {
   sh('npm', ['ci'], { cwd: `${repoRoot}/extension` });
@@ -34,6 +35,15 @@ step('extension: install, typecheck, test, build, package', () => {
 });
 
 step('cli: npm pack + install into a clean directory + smoke test', () => sh('npm', ['run', 'smoke:packed-cli']));
+
+step('site: production build (catches copy that outlived the feature)', () => {
+  sh('npm', ['ci'], { cwd: `${repoRoot}/site` });
+  sh('npm', ['run', 'typecheck'], { cwd: `${repoRoot}/site` });
+  sh('npm', ['run', 'build'], { cwd: `${repoRoot}/site` });
+});
+
+step('workflow: the committed example matches the manifest registry', () =>
+  sh('npm', ['run', 'verify:workflow']));
 
 step('docs: no stale identity references', () => {
   const offenders = [

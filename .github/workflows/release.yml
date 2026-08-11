@@ -34,6 +34,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      # The Action declares `using: node20`. `verify:action-bundle` runs the
+      # shipped bundle against this binary, because publishing an Action that
+      # only works on 22 fails in the user's repository, not here.
+      - name: Install Node 20 for the Action runtime check
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Record the Node 20 binary
+        run: echo "DRIFT_NODE20=$(which node)" >> "$GITHUB_ENV"
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -52,8 +62,23 @@ jobs:
       # Anthropic SDK is statically bundled — the same check ci.yml runs on
       # every PR, invoked here through the same script so the two cannot
       # drift apart.
-      - name: Verify the Action bundle (rebuild, staleness, self-containment, bundled SDK)
+      - name: Verify the Action bundle (rebuild, staleness, self-containment, bundled SDK, Node 20)
         run: npm run verify:action-bundle
+
+      # The shipped workflow's trigger paths are generated from the manifest
+      # registry; a stale committed copy means the Action silently stops
+      # starting on files Drift supports.
+      - name: Verify the example workflow matches the manifest registry
+        run: npm run verify:workflow
+
+      # The site is a release artifact too. It was outside every gate, which is
+      # how it kept advertising a command that had been deleted.
+      - name: Build the site
+        working-directory: site
+        run: |
+          npm ci
+          npm run typecheck
+          npm run build
 
       - name: Extension — install, typecheck, test, build, package
         working-directory: extension
