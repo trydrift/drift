@@ -509,7 +509,7 @@ function extractJsImports(content: string): ImportRecord[] {
   const lineStarts = lineStartOffsets(content);
   const lineOf = (offset: number): number => lineOfOffset(lineStarts, offset);
   const staticImport =
-    /\bimport\s+(?!\()(?:(?:type\s+)?([\w$]+)\s*,\s*)?(?:type\s+)?(?:\{([^}]+)\}|\*\s+as\s+([\w$]+)|([\w$]+))?\s+from\s+['"]([^'"]+)['"]|\bimport\s+['"]([^'"]+)['"]/g;
+    /\bimport\s+(?!\()(?:(?:type\s+)?([\w$]+)\s*,\s*)?(?:type\s+)?(?:\{([^}]+)\}|\*\s+as\s+([\w$]+)|([\w$]+))\s+from\s+['"]([^'"]+)['"]|\bimport\s+['"]([^'"]+)['"]/g;
 
   for (const match of content.matchAll(staticImport)) {
     const specifier = match[5] ?? match[6];
@@ -1563,7 +1563,7 @@ function extractUnitsByPattern(content: string, language: Language): CodeUnit[] 
         name: match[1],
         kind,
         line: i + 1,
-        summary: collapse(line.replace(/[{:]\s*$/, '').replace(/\s+$/, '')),
+        summary: collapse(line.replace(/[{:]\s*$/, '').trimEnd()),
         indent: raw.length - raw.trimStart().length,
       });
       break;
