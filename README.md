@@ -1,5 +1,7 @@
 # Drift
 
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/trydrift/drift/badge)](https://scorecard.dev/viewer/?uri=github.com/trydrift/drift)
+
 **Your dependency updated. Did it break your code? Drift finds out, shows the evidence, and prepares the fix.**
 
 Drift watches dependency changes in your repositories, works out which upstream
@@ -109,6 +111,20 @@ Applying a plan writes a branch and dispatches a coding agent, so it requires
 `write`, `maintain`, or `admin` permission — and Drift re-verifies that the plan
 it is about to run is byte-for-byte the one recorded on the issue before it acts.
 See [trust and safety](docs/trust-and-safety.md#an-unauthorized-user-comments-drift-apply).
+
+### 5. (Optional) See it in the Security tab too
+
+Every plan — breaking or not — can also be uploaded as a code scanning alert,
+one per affected package, with the same evidence and fix a pull request would
+carry: which advisories it closes, where the code that breaks lives (including
+which workspace, in a monorepo), and either the exact command for a safe
+upgrade or the deterministic fix Drift will make once approved. On by default;
+turn it off with `codeScanning.enabled: false`.
+
+To also get alerted about dependencies nobody has bumped yet — not just what
+changed in the last push — copy
+[`examples/workflows/drift-outdated.yml`](examples/workflows/drift-outdated.yml)
+and set `outdated.enabled: true`. See [configuration.md](docs/configuration.md#code-scanning).
 
 ---
 
