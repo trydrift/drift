@@ -57,12 +57,22 @@ export function dependencyEcosystemKey(change: Pick<DependencyChange, 'name' | '
   return `${change.ecosystem} ${dependencyKey(change)}`;
 }
 
+/**
+ * Strip leading/trailing dashes without an unanchored `-+$`-style regex: a
+ * trailing quantifier with no `^` counterpart forces the engine to retry the
+ * match at every position, which is quadratic on a long non-terminal run of
+ * the trimmed character.
+ */
+function trimDashes(value: string): string {
+  let start = 0;
+  let end = value.length;
+  while (start < end && value.charCodeAt(start) === 45 /* '-' */) start++;
+  while (end > start && value.charCodeAt(end - 1) === 45 /* '-' */) end--;
+  return value.slice(start, end);
+}
+
 /** Lowercase, hyphenated, filesystem- and git-ref-safe slug. */
 export function slugify(input: string, maxLength = 40): string {
-  const slug = input
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+/, '')
-    .replace(/-+$/, '');
-  return slug.slice(0, maxLength).replace(/-+$/, '') || 'change';
+  const slug = trimDashes(input.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+  return trimDashes(slug.slice(0, maxLength)) || 'change';
 }
