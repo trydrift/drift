@@ -1,3 +1,4 @@
+import { gzipSync } from 'node:zlib';
 import { Octokit } from '@octokit/rest';
 import type { RepoContext } from '../types.js';
 import type { Logger } from '../util/logger.js';
@@ -579,6 +580,49 @@ export class GitHubClient {
       // Check runs need a GitHub App token; the Action's GITHUB_TOKEN cannot
       // always create them. This is cosmetic, so a failure is not fatal.
       this.logger.debug(`Could not create check run: ${(err as Error).message}`);
+    }
+  }
+
+  /**
+   * Upload a SARIF log to the repository's code scanning dashboard, so
+   * Drift's findings show up as alerts next to CodeQL's and Scorecard's.
+   *
+   * Requires the workflow to grant `security-events: write`; a token without
+   * it gets a 403, logged here as a warning that names the missing
+   * permission rather than a stack trace, since a repository that never
+   * added it is a normal, unremarkable state — not a bug in Drift.
+   *
+   * `ref` must be a fully-qualified ref (`refs/heads/main`), which is what
+   * distinguishes this alert set from the same commit analysed on a
+   * different branch — GitHub keys code scanning results by `(ref,
+   * commit_sha)`, not by commit alone.
+   */
+  async uploadSarif(
+    repo: RepoContext,
+    params: { sarif: Record<string, unknown>; commitSha: string; ref: string },
+  ): Promise<boolean> {
+    try {
+      const gzipped = gzipSync(Buffer.from(JSON.stringify(params.sarif), 'utf8'));
+      await this.octokit.codeScanning.uploadSarif({
+        owner: repo.owner,
+        repo: repo.repo,
+        commit_sha: params.commitSha,
+        ref: params.ref,
+        sarif: gzipped.toString('base64'),
+      });
+      this.logger.info('Uploaded SARIF results to code scanning.');
+      return true;
+    } catch (err) {
+      const status = (err as { status?: number })?.status;
+      if (status === 403) {
+        this.logger.warn(
+          'Could not upload code scanning results: the token is missing `security-events: write`. ' +
+            'Add it to the workflow job\'s `permissions` to enable Drift\'s code scanning alerts.',
+        );
+      } else {
+        this.logger.warn(`Could not upload code scanning results: ${(err as Error).message}`);
+      }
+      return false;
     }
   }
 
