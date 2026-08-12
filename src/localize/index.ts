@@ -696,6 +696,12 @@ function searchFiles(
         if (hit && isAtomLiteral(searchable, hit.index, candidate.language)) continue;
 
         const unit = fileIndex ? unitAtLine(fileIndex, i + 1) : undefined;
+        // A member access (`x.symbol`) whose receiver is not something this
+        // file provably bound from the dependency. `hit` is absent only for
+        // the call-opens-on-next-line fallback, where there is no match index
+        // on this line to read a receiver from.
+        const receiver = hit ? receiverOf(searchable, hit.index) : undefined;
+        const unboundReceiver = receiver !== undefined && !importedNames.has(receiver) && !importedNames.has('*');
 
         sites.push({
           breakingChangeId: change.id,
@@ -704,7 +710,7 @@ function searchFiles(
           excerpt: line.trim().slice(0, 200),
           enclosingSymbol: unit?.name,
           matchedSymbol: symbol,
-          confidence: confidenceFor(symbol, importedNames, importsDependency, indirect, inherited?.inherited),
+          confidence: confidenceFor(symbol, importedNames, importsDependency, indirect, inherited?.inherited, unboundReceiver),
         });
       }
     }
@@ -852,12 +858,17 @@ function qualifiedByAnother(
   foreignNames: ReadonlySet<string>,
   locallyDefined: ReadonlySet<string>,
 ): boolean {
-  const before = line.slice(0, at);
-  const receiver = /([A-Za-z_$][\w$]*)\s*(?:\.|::)\s*$/.exec(before)?.[1];
+  const receiver = receiverOf(line, at);
   if (!receiver) return false;
   // A receiver this file bound from *this* dependency is the opposite signal.
   if (importedNames.has(receiver) || importedNames.has('*')) return false;
   return foreignNames.has(receiver) || locallyDefined.has(receiver);
+}
+
+/** The name immediately before `.` or `::` at a match position, if any. */
+function receiverOf(line: string, at: number): string | undefined {
+  const before = line.slice(0, at);
+  return /([A-Za-z_$][\w$]*)\s*(?:\.|::)\s*$/.exec(before)?.[1];
 }
 
 /**
@@ -968,6 +979,7 @@ function confidenceFor(
   importsDependency: boolean,
   indirect: boolean,
   inherited: ReadonlySet<string> | undefined,
+  unboundReceiver: boolean,
 ): Confidence {
   const root = symbol.split('.')[0] ?? symbol;
 
@@ -983,6 +995,14 @@ function confidenceFor(
   if (importedNames.has(symbol) || importedNames.has(root) || importedNames.has('*')) {
     return 'high';
   }
+
+  // A member access on a receiver this file did not bind from the dependency
+  // — `dirs.find(...)` in a file that merely happens to import `zod` too —
+  // is not evidence of dependency usage, whatever `importsDependency` says.
+  // Importing the package at all does not make every generic method name
+  // (`find`, `flatten`, `omit`, ...) elsewhere in the file a use of it.
+  if (unboundReceiver) return 'low';
+
   return importsDependency ? 'medium' : 'low';
 }
 
