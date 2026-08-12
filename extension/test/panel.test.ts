@@ -17,6 +17,17 @@ import type { RemediationPlan } from '../../src/types.js';
  * must never inline unescaped content from a changelog.
  */
 
+/** Strips <style>...</style> blocks, re-applying until stable so a crafted overlap can't survive one pass. */
+function stripStyleBlocks(html: string): string {
+  let stripped = html;
+  let previous: string;
+  do {
+    previous = stripped;
+    stripped = stripped.replace(/<style[\s\S]*?<\/style>/gi, '');
+  } while (stripped !== previous);
+  return stripped;
+}
+
 function candidate(over: Partial<UpgradeCandidate> = {}): UpgradeCandidate {
   return {
     id: 'lodash@4.17.21->5.0.0',
@@ -1017,7 +1028,7 @@ test('a single-package repository carries no workspace label', () => {
     }),
   );
 
-  assert.ok(!/pkg-workspace/.test(html.replace(/<style[\s\S]*?<\/style>/g, '')));
+  assert.ok(!/pkg-workspace/.test(stripStyleBlocks(html)));
 });
 
 test('a scan spanning more than one repository tags each row with its repository', () => {
@@ -1052,7 +1063,7 @@ test('a single-repository result carries no repository label even when repoRoot 
     }),
   );
 
-  assert.ok(!/pkg-repo/.test(html.replace(/<style[\s\S]*?<\/style>/g, '')));
+  assert.ok(!/pkg-repo/.test(stripStyleBlocks(html)));
 });
 
 /**
