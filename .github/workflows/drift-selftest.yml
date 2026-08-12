@@ -28,7 +28,7 @@ on:
         description: 'diff = analyse the push · outdated = scan every installed dependency'
         type: choice
         options: [diff, outdated]
-        default: diff
+        default: outdated
 
   push:
     branches: [main]
@@ -79,7 +79,7 @@ jobs:
           copilot-token: ${{ secrets.DRIFT_COPILOT_TOKEN }}
           dry-run: ${{ inputs.dry-run || 'true' }}
           mode: ${{ inputs.mode || 'approve' }}
-          scan-mode: ${{ inputs.scan-mode || 'diff' }}
+          scan-mode: ${{ inputs.scan-mode || 'outdated' }}
           log-level: debug
 
       - name: Result
