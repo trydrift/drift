@@ -7,7 +7,7 @@ import { GitHubClient } from '../github/client.js';
 import { runPipeline } from '../pipeline.js';
 import { renderPullRequestBody } from '../report/markdown.js';
 import { buildSarifLog, findingsFromCandidates, findingsFromPlan, type SarifFinding } from '../report/sarif.js';
-import { scanUpgrades } from '../upgrade/scan.js';
+import { scanUpgrades, type UpgradeCandidate } from '../upgrade/scan.js';
 import { createLogger, type Logger, type LogLevel } from '../util/logger.js';
 import { matchesAny } from '../util/glob.js';
 import { applyApproval } from '../approval/apply.js';
@@ -129,6 +129,7 @@ export async function runAction(): Promise<number> {
         findings: findingsFromPlan(result.plan, {
           includeInformational: effectiveConfig.codeScanning.includeInformational,
         }),
+        category: 'drift/diff',
       });
     }
 
@@ -154,10 +155,15 @@ export async function runAction(): Promise<number> {
 }
 
 /**
- * Upload every finding to the repository's code scanning dashboard, one
- * alert per package. Shared by the push-triggered pipeline and the scheduled
- * outdated-dependency scan, since both ultimately produce the same
- * `SarifFinding[]` shape — see `report/sarif.ts`.
+ * Upload every finding to the repository's code scanning dashboard. Shared
+ * by the push-triggered pipeline and the scheduled outdated-dependency scan,
+ * since both ultimately produce the same `SarifFinding[]` shape — see
+ * `report/sarif.ts`.
+ *
+ * `category` separates the two result sets (`drift/diff` vs `drift/outdated`)
+ * in GitHub's `runAutomationDetails.id`. Without it, the newest upload from
+ * either mode would be treated as the authoritative replacement for the
+ * other's findings too, incorrectly marking them fixed.
  */
 async function uploadCodeScanning(args: {
   repo: RepoContext;
@@ -165,8 +171,9 @@ async function uploadCodeScanning(args: {
   github: GitHubClient;
   logger: Logger;
   findings: SarifFinding[];
+  category: 'drift/diff' | 'drift/outdated';
 }): Promise<void> {
-  const { repo, config, github, logger, findings } = args;
+  const { repo, config, github, logger, findings, category } = args;
   if (!config.codeScanning.enabled) return;
   if (findings.length === 0) {
     logger.debug('No code scanning findings to upload.');
@@ -175,7 +182,7 @@ async function uploadCodeScanning(args: {
 
   logger.info(`Uploading ${findings.length} code scanning finding(s).`);
   await github.uploadSarif(repo, {
-    sarif: buildSarifLog(findings),
+    sarif: buildSarifLog(findings, category),
     commitSha: repo.afterSha,
     ref: `refs/heads/${repo.baseBranch}`,
   });
@@ -231,7 +238,7 @@ async function runOutdatedScan(
       includeInformational: config.codeScanning.includeInformational,
     });
 
-    await uploadCodeScanning({ repo, config, github, logger, findings });
+    await uploadCodeScanning({ repo, config, github, logger, findings, category: 'drift/outdated' });
 
     const summary =
       `Checked ${scan.checked} dependenc${scan.checked === 1 ? 'y' : 'ies'}: ${scan.upToDate} up to date, ` +
@@ -244,8 +251,9 @@ async function runOutdatedScan(
     await writeJobSummary(
       `### Drift: outdated dependency scan\n\n${summary}\n\n` +
         (findings.length > 0
-          ? `${findings.length} finding(s) uploaded to the Security tab, each with evidence and a fix.`
-          : 'Nothing to alert on.'),
+          ? `${findings.length} finding(s) uploaded to the Security tab, each with a specific breaking change, its location, and a fix.\n\n`
+          : 'Nothing rose to a Security tab alert.\n\n') +
+        renderOutdatedTable(scan.candidates),
     );
 
     return 0;
@@ -255,6 +263,32 @@ async function runOutdatedScan(
     await writeOutputs({ status: 'failed' }, `Outdated-dependency scan failed: ${(err as Error).message}`);
     return 1;
   }
+}
+
+/**
+ * A per-dependency table for the job summary: what's outdated, what would
+ * break, how much of it actually reaches this repository, and the risk.
+ *
+ * This is where the detail that `findingsFromCandidates` deliberately keeps
+ * out of the Security tab belongs instead — the full upstream breaking-change
+ * count for a package with nothing locally affected is useful context for a
+ * human skimming the summary, not a reason to open an alert nobody can act
+ * on. See `report/sarif.ts` for that split.
+ */
+function renderOutdatedTable(candidates: readonly UpgradeCandidate[]): string {
+  if (candidates.length === 0) return '';
+
+  const rows = candidates.map((c) => {
+    const version = c.selected === c.latest ? `${c.current} → ${c.selected}` : `${c.current} → ${c.selected} (latest ${c.latest})`;
+    const impact = c.breakingCount > 0 ? `${c.impactCount} site(s) in ${c.impactFiles} file(s)` : '—';
+    return `| ${c.name} | ${version} | ${c.breakingCount} | ${impact} | ${c.risk} |`;
+  });
+
+  return [
+    '| Package | Version | Upstream breaking changes | Locally affected | Risk |',
+    '| --- | --- | --- | --- | --- |',
+    ...rows,
+  ].join('\n');
 }
 
 function readInputs(): ActionInputs {

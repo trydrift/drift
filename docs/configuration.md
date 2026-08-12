@@ -219,32 +219,43 @@ shape before wiring a collector.
 
 ## Code scanning
 
-Every plan Drift produces — whether or not it found anything breaking — can
-also be rendered as [SARIF](https://sarif.readthedocs.io) and uploaded to the
-repository's code scanning dashboard, so Drift's findings sit next to
-CodeQL's and Scorecard's rather than only in a pull request or an approval
-issue. One alert per affected package, never one per breaking change or per
-advisory: a package with three breaking changes and two resolved advisories
-is one alert with all five, listing every location any of its breaking
-changes reach — the same unit a developer actually decides about, and not
-the flood an early version of this produced (zod 3 -> 4 alone found 347
-individually-true breaking changes against this project, nearly all of them
-unreachable from any file here).
+Every plan Drift produces can also be rendered as
+[SARIF](https://sarif.readthedocs.io) and uploaded to the repository's code
+scanning dashboard, so Drift's findings sit next to CodeQL's and Scorecard's
+rather than only in a pull request or an approval issue. The unit of an
+alert is one *locally actionable* finding, not one package: a breaking
+change becomes an alert only when it has at least one impact site — code in
+this repository that actually calls the affected symbol. An upstream change
+that touches nothing here never reaches the Security tab at all (an early
+version of this alerted on every upstream change regardless of local impact;
+zod 3 -> 4 alone found 347 individually-true breaking changes against this
+project, and reachable code here used exactly one of them). The full
+upstream count is still visible — in the job summary for a scheduled scan,
+and in the pull request body for a push — it just isn't a Security alert.
 
-Each alert carries what the extension's inline diagnostics carry — the
+Each alert is anchored to the highest-confidence call site as its primary
+location, with every other site the same change reaches listed as a related
+location. It carries what the extension's inline diagnostics carry — the
 evidence (with citations), where the finding was found (including which
 workspace member, in a monorepo), and a fix: the exact command for a safe
 upgrade, the deterministic commit Drift will make once approved, or a note to
-comment `/drift apply` on the approval issue Drift filed.
+comment `/drift apply` on the approval issue Drift filed. Severity reflects
+both dimensions of confidence: a proven upstream change (Drift computed the
+diff itself) with only a loosely-matched local call site is a warning, not
+an error — `error` is reserved for when both agree.
 
-`ruleId` (`drift/<ecosystem>/<name>`) is stable across runs for the same
-package, independent of exactly which breaking changes or advisories it
-currently has. That's what makes rescanning a *replacement*: each run
-uploads its complete current finding set for the branch it analysed, and
-GitHub's own code scanning reconciliation does the rest — a package's alert
-updates in place to the newest commit when it reappears, and closes on its
-own (marked "fixed") the first run it doesn't. Drift never needs to dismiss
-or delete an alert itself.
+`ruleId` names the *kind* of finding (`drift/removed-export`,
+`drift/vulnerability`, `drift/outdated`, ...) rather than the package it was
+found in, matching how GitHub's rule descriptors are meant to be used — a
+category that changes rarely, not one minted per dependency. Each result
+also carries a content-based fingerprint, so the same finding reconciles
+across runs even when unrelated edits shift its line number. Push-triggered
+and scheduled scans upload to separate categories, so one mode's result set
+never overwrites the other's: each uploads its complete current finding set
+for its own category, and GitHub's own code scanning reconciliation does the
+rest from there — a finding updates in place to the newest commit when it
+reappears, and closes on its own (marked "fixed") the first run it doesn't.
+Drift never needs to dismiss or delete an alert itself.
 
 Requires the workflow job to grant `security-events: write` —
 [`examples/workflows/drift.yml`](../examples/workflows/drift.yml) already
@@ -259,12 +270,14 @@ Upload findings to code scanning after every analysed push.
 
 ### `codeScanning.includeInformational`
 
-`boolean` — default **`true`**
+`boolean` — default **`false`**
 
-Also alert on a dependency move with no breaking change and a resolved or
-newly introduced advisory — the "this is safe, and here's what it buys you"
-and "this looks quiet, but read the advisory first" cases. `false` limits
-alerts to what a pull request would already contain.
+Also alert on a dependency move with no breaking change and no security
+signal — a plain "update available" with nothing to triage. Off by default:
+that belongs in the job summary, not the Security tab. `true` adds one
+low-severity alert per otherwise-quiet outdated dependency, for a team that
+wants full dependency visibility in code scanning rather than just the
+summary.
 
 ### `outdated.enabled`
 

@@ -424,12 +424,16 @@ export const DriftConfigSchema = z.object({
     .object({
       enabled: z.boolean().default(true),
       /**
-       * Alert even on findings the rest of the pipeline would not act on —
-       * a resolved or introduced advisory with no breaking change, for
-       * instance. Off would mean "only what a PR would contain", which is a
-       * real, narrower option some teams may prefer.
+       * Alert even on findings with no local impact and no security signal —
+       * a plain "update available" with nothing broken and nothing insecure.
+       * Off (the default) keeps the Security tab to things a developer can
+       * actually act on: a breaking change that reaches code here, or a
+       * vulnerability. On adds one low-severity alert per otherwise-quiet
+       * outdated dependency, which is real signal for a team that wants full
+       * dependency visibility in Code Scanning rather than just the job
+       * summary — but is noise for most.
        */
-      includeInformational: z.boolean().default(true),
+      includeInformational: z.boolean().default(false),
     })
     .default({}),
 

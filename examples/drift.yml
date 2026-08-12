@@ -207,16 +207,18 @@ remediation:
 # Code scanning alerts
 # ---------------------------------------------------------------------------
 
-# Every plan Drift produces — breaking or not — can also be uploaded as SARIF
-# to the repository's code scanning dashboard: one alert per affected package,
-# listing every location any of its breaking changes reach, carrying the same
-# evidence, location, and fix a pull request would. Needs
-# `security-events: write` on the workflow; see examples/workflows/drift.yml.
+# Every locally actionable finding Drift produces — a breaking change that
+# reaches code in this repository, or a vulnerability — can also be uploaded
+# as SARIF to the repository's code scanning dashboard: one alert per finding,
+# anchored to the exact call site, carrying the same evidence and fix a pull
+# request would. Needs `security-events: write` on the workflow; see
+# examples/workflows/drift.yml.
 codeScanning:
   enabled: true
-  # Also alert on findings that wouldn't produce a commit on their own — a
-  # resolved or newly introduced advisory with no breaking change, say.
-  includeInformational: true
+  # Also alert on a plain "update available" with nothing broken and no
+  # security signal. Off by default — that's a job-summary line, not
+  # something a developer needs to triage in the Security tab.
+  includeInformational: false
 
 # Proactive scanning of every *installed* dependency against its registry,
 # independent of any push — the same check `drift outdated` runs locally.
