@@ -69,7 +69,7 @@ export interface Note {
 
 export function Code({ lines }: { lines: readonly CodeLine[] }) {
   return (
-    <div className="overflow-x-auto bg-[var(--pre-bg)]">
+    <div className="overflow-x-auto bg-(--pre-bg)">
       <table className="w-full border-collapse font-mono text-[11px] leading-[1.8]">
         <tbody>
           {lines.map((line, index) => (

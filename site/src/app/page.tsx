@@ -1,5 +1,6 @@
 import { instrumentSerif } from "@/lib/fonts";
 import { Backdrop } from "@/components/backdrop";
+import { CopyCommand } from "@/components/copy-command";
 import { Code, GhIcon, GhPanel, type CodeLine } from "@/components/gh";
 import { Demo } from "@/components/demo";
 import { Ecosystems } from "@/components/ecosystems";
@@ -122,7 +123,9 @@ export default function Home() {
           </div>
 
           <p className="mt-4 font-mono text-xs text-muted">
-            <span className="text-faint">$</span> npm install -g @usedrift/cli
+            <CopyCommand text="npm install -g @usedrift/cli">
+              <span className="text-faint">$</span> npm install -g @usedrift/cli
+            </CopyCommand>
           </p>
 
           <p className="mt-5 font-mono text-xs text-faint">
@@ -526,12 +529,13 @@ function EntryPoint({
       <h3 className="mt-3 text-sm font-semibold text-foreground">{title}</h3>
       <div className="mt-2 flex flex-col items-start gap-1">
         {lines.map((line) => (
-          <p
+          <CopyCommand
             key={line}
-            className="inline-flex rounded-md bg-surface-hover px-2 py-1 font-mono text-[11px] text-brand-text"
+            text={line}
+            className="bg-surface-hover px-2 py-1 font-mono text-[11px] text-brand-text"
           >
             {line}
-          </p>
+          </CopyCommand>
         ))}
       </div>
       <p className="mt-3 mb-4 text-[13px] leading-relaxed text-muted">{children}</p>

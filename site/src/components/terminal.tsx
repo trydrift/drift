@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useReducer, useRef, useState } from "react";
+import { CopyCommand } from "@/components/copy-command";
 
 /**
  * The install block, typing out the CLI's actual commands.
@@ -96,10 +97,15 @@ export function Terminal() {
     <div className="mt-6">
       <div className="overflow-x-auto rounded-xl border border-border bg-(--pre-bg) p-4">
         <pre className="font-mono text-[13px] leading-relaxed text-foreground">
-          <span className="text-faint">$ </span>npm install -g @usedrift/cli{"\n"}
-          <span className="text-faint">$ </span>drift{" "}
-          <span className="text-brand-text">{shown}</span>
-          <span className="cli-cursor text-brand"> ▋</span>
+          <CopyCommand text="npm install -g @usedrift/cli">
+            <span className="text-faint">$ </span>npm install -g @usedrift/cli
+          </CopyCommand>
+          {"\n"}
+          <CopyCommand text={`drift ${command.args}`}>
+            <span className="text-faint">$ </span>drift{" "}
+            <span className="text-brand-text">{shown}</span>
+            <span className="cli-cursor text-brand"> ▋</span>
+          </CopyCommand>
         </pre>
       </div>
 

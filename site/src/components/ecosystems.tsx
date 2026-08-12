@@ -28,6 +28,19 @@ import {
  * building an iOS target needs a scheme Drift cannot infer; OCaml's module
  * names are a convention rather than a published fact. Both are on the page,
  * in the same table, in the same words the docs use.
+ *
+ * Drawn as a matrix rather than sixteen separate cards: a row is an ecosystem,
+ * a column is a stage, and a cell is one answer. That is the actual shape of
+ * the data, so laying it out any other way asked a reader to reconstruct the
+ * grid in their head — counting which green rectangle on which card lined up
+ * with which stage — instead of just seeing it.
+ *
+ * Nine stages have to fit next to a name column on a 360px phone with nothing
+ * abbreviated and nothing scrolled off-screen. Turning the stage headers on
+ * their side is what makes that arithmetic work: a vertical word is as wide as
+ * one character no matter how long it is, so nine full names cost the same
+ * horizontal space nine three-letter codes would have — and nobody has to
+ * remember what a code stood for.
  */
 
 const TIER_ORDER: readonly SupportTier[] = ["deep", "strong", "working", "limited"];
@@ -47,23 +60,11 @@ const TIER_LABEL: Record<SupportTier, string> = {
  * could not: they read as *caution* at a glance, which is the correct first
  * impression of an ecosystem where the judgement is still the developer's.
  */
-const TIER_STYLE: Record<SupportTier, { chip: string; dot: string }> = {
-  deep: {
-    chip: "border-brand/45 bg-brand-soft text-brand-text",
-    dot: "bg-brand",
-  },
-  strong: {
-    chip: "border-brand/25 bg-brand-soft/50 text-brand-text",
-    dot: "bg-brand/55",
-  },
-  working: {
-    chip: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
-    dot: "bg-amber-500/70",
-  },
-  limited: {
-    chip: "border-border bg-surface-hover text-faint",
-    dot: "bg-faint/50",
-  },
+const TIER_STYLE: Record<SupportTier, { dot: string }> = {
+  deep: { dot: "bg-brand" },
+  strong: { dot: "bg-brand/55" },
+  working: { dot: "bg-amber-500/70" },
+  limited: { dot: "bg-faint/50" },
 };
 
 const BASIS_LABEL: Record<EcosystemCapability["localizationBasis"], string> = {
@@ -92,6 +93,12 @@ const LEVEL_WORD: Record<SupportLevel, string> = {
   none: "no",
 };
 
+/** Rotated to read bottom-to-top, so the label is never truncated. */
+const VERTICAL_LABEL: React.CSSProperties = {
+  writingMode: "vertical-rl",
+  transform: "rotate(180deg)",
+};
+
 export function Ecosystems({ recorded }: { recorded: ReadonlySet<string> }) {
   const byTier = TIER_ORDER.map((tier) => ({
     tier,
@@ -107,36 +114,59 @@ export function Ecosystems({ recorded }: { recorded: ReadonlySet<string> }) {
             {TIER_LABEL[tier]}
           </span>
         ))}
-      </div>
-
-      {/* The seven bars on each card need a key, or they are decoration.
-          Naming the stages here once beats repeating them on sixteen cards,
-          and the exact sentence for any one of them is on hover. */}
-      <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10.5px] text-faint">
-        <span>each bar is a stage:</span>
-        {CAPABILITY_STAGES.map((stage, index) => (
-          <span key={stage}>
-            {index > 0 && <span className="mr-2">·</span>}
-            {STAGE_LABEL[stage]?.toLowerCase()}
-          </span>
-        ))}
-        <span className="ml-1 flex items-center gap-1.5">
+        <span className="ml-auto flex items-center gap-1.5 text-[12px] text-muted">
           <span className={cn("h-1.5 w-5 rounded-full", LEVEL_STYLE.full)} /> full
           <span className={cn("ml-1 h-1.5 w-5 rounded-full", LEVEL_STYLE.partial)} /> partial
           <span className={cn("ml-1 h-1.5 w-5 rounded-full", LEVEL_STYLE.none)} /> none
         </span>
-      </p>
+      </div>
+      <p className="mt-2 text-[11.5px] text-faint">Tap or hover a cell for the exact sentence.</p>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        {byTier.map((group) =>
-          group.rows.map((capability) => (
-            <EcosystemCard
-              key={capability.ecosystem}
-              capability={capability}
-              hasRecording={recorded.has(capability.ecosystem)}
-            />
-          )),
-        )}
+      {/* The matrix. Every column is sized to fit a phone without scrolling —
+          the overflow-x-auto is a safety net for the very narrowest devices,
+          never the intended way to read it. */}
+      <div className="mt-5 overflow-hidden rounded-2xl border border-border bg-surface/60">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-0 border-collapse text-left table-fixed">
+            <colgroup>
+              <col className="w-[6.5rem] sm:w-36 lg:w-52" />
+              {CAPABILITY_STAGES.map((stage) => (
+                <col key={stage} />
+              ))}
+            </colgroup>
+            <thead>
+              <tr className="border-b border-border">
+                <th
+                  scope="col"
+                  className="sticky left-0 z-10 border-r border-border bg-surface-hover/70 px-2 py-2 text-[10px] font-medium uppercase tracking-wide text-faint sm:px-3"
+                >
+                  Ecosystem
+                </th>
+                {CAPABILITY_STAGES.map((stage) => (
+                  <th key={stage} scope="col" className="px-0 py-1.5 text-center align-bottom">
+                    <span
+                      style={VERTICAL_LABEL}
+                      className="inline-block whitespace-nowrap text-[9px] font-medium tracking-tight text-faint sm:text-[10px]"
+                    >
+                      {STAGE_LABEL[stage]}
+                    </span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {byTier.map((group) =>
+                group.rows.map((capability) => (
+                  <EcosystemRow
+                    key={capability.ecosystem}
+                    capability={capability}
+                    hasRecording={recorded.has(capability.ecosystem)}
+                  />
+                )),
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <dl className="mt-6 grid gap-2 border-t border-border pt-5 sm:grid-cols-2">
@@ -156,7 +186,7 @@ export function Ecosystems({ recorded }: { recorded: ReadonlySet<string> }) {
   );
 }
 
-function EcosystemCard({
+function EcosystemRow({
   capability,
   hasRecording,
 }: {
@@ -166,51 +196,40 @@ function EcosystemCard({
   const style = TIER_STYLE[capability.tier];
 
   return (
-    <div className="rounded-2xl border border-border bg-surface/60 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-[13.5px] font-medium text-foreground">{capability.label}</p>
-          <p className="mt-0.5 truncate font-mono text-[10.5px] text-faint">
-            {capability.managers.join(" · ")}
-          </p>
-        </div>
-        <span
-          className={cn(
-            "shrink-0 rounded-full border px-2 py-0.5 text-[10.5px] font-medium",
-            style.chip,
-          )}
-        >
-          {TIER_LABEL[capability.tier]}
-        </span>
-      </div>
-
-      {/* Seven dots, one per stage, in pipeline order. Dense on purpose: the
-          card answers "how much of Drift do I get" before anyone reads a word,
-          and the full sentence for each stage is a hover away and written out
-          in docs/support.md. */}
-      <div className="mt-3.5 flex items-center gap-1">
-        {CAPABILITY_STAGES.map((stage) => {
-          const support = capability.support[stage];
-          if (!support) return null;
-          return (
-            <span
-              key={stage}
-              title={`${STAGE_LABEL[stage]}: ${LEVEL_WORD[support.level]}${
-                support.note ? ` — ${support.note}` : ""
-              }`}
-              className={cn("h-1.5 flex-1 rounded-full", LEVEL_STYLE[support.level])}
-            />
-          );
-        })}
-      </div>
-
-      <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11.5px] text-faint">
-        <span title={BASIS_TITLE[capability.localizationBasis]}>
-          names: {BASIS_LABEL[capability.localizationBasis]}
-        </span>
-        <span aria-hidden>·</span>
-        <span>{hasRecording ? "recorded above" : "no recording yet"}</span>
-      </p>
-    </div>
+    <tr className="group border-b border-border/60 last:border-0 even:bg-surface-hover/20 hover:bg-surface-hover/50">
+      <th
+        scope="row"
+        title={`${capability.managers.join(" · ")} · names resolved via ${
+          BASIS_LABEL[capability.localizationBasis]
+        }: ${BASIS_TITLE[capability.localizationBasis]} ${
+          hasRecording ? "Recorded above." : "No recording yet."
+        }`}
+        className="sticky left-0 z-10 border-r border-border bg-surface px-2 py-2 text-left align-middle group-even:bg-[color-mix(in_srgb,var(--surface-hover)_20%,var(--surface))] group-hover:bg-[color-mix(in_srgb,var(--surface-hover)_50%,var(--surface))] sm:px-3"
+      >
+        <p className="flex items-center gap-1.5">
+          <span className={cn("inline-block size-1.5 shrink-0 rounded-full", style.dot)} />
+          <span className="truncate text-[11.5px] font-medium text-foreground sm:text-[12.5px]">
+            {capability.label}
+          </span>
+        </p>
+      </th>
+      {CAPABILITY_STAGES.map((stage) => {
+        const support = capability.support[stage];
+        return (
+          <td key={stage} className="px-0 py-2 text-center align-middle">
+            {support ? (
+              <span
+                title={`${capability.label} · ${STAGE_LABEL[stage]}: ${LEVEL_WORD[support.level]}${
+                  support.note ? ` — ${support.note}` : ""
+                }`}
+                className={cn("mx-auto block size-2 rounded-[2px] sm:size-2.5", LEVEL_STYLE[support.level])}
+              />
+            ) : (
+              <span className="mx-auto block size-2 rounded-[2px] border border-dashed border-border/70 sm:size-2.5" />
+            )}
+          </td>
+        );
+      })}
+    </tr>
   );
 }

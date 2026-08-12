@@ -205,13 +205,13 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
                 like a failed run, which is the same category of mistake as
                 showing a gap as a pass — just in the other direction. */}
             {totals.packages === 0 ? (
-              <p className="min-w-[14rem] flex-1 text-sm text-foreground">
+              <p className="min-w-56 flex-1 text-sm text-foreground">
                 <span className="font-medium">{recording.packagesChecked}</span> direct
                 dependenc{recording.packagesChecked === 1 ? "y" : "ies"} checked ·{" "}
                 <span className="font-medium text-brand-text">every one already current</span>
               </p>
             ) : (
-              <p className="min-w-[14rem] flex-1 text-sm text-foreground">
+              <p className="min-w-56 flex-1 text-sm text-foreground">
                 <span className="font-medium">{totals.packages}</span> packages ·{" "}
                 <span className="font-medium text-brand-text">{totals.affected}</span> affect this
                 code
@@ -245,7 +245,7 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
         )}
 
         {/* Progress rail. Determinate once the scan knows its total. */}
-        <div className="mt-3 h-[3px] overflow-hidden rounded-full bg-surface-hover">
+        <div className="mt-3 h-0.75 overflow-hidden rounded-full bg-surface-hover">
           {running && (!currentEvent || currentEvent.total === 0) ? (
             <div className="indeterminate h-full w-full" />
           ) : (
@@ -278,7 +278,7 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
       </div>
 
       {/* Results */}
-      <div className="max-h-[26rem] overflow-y-auto overscroll-contain">
+      <div className="max-h-104 overflow-y-auto overscroll-contain">
         {visible.length === 0 && !done && (
           <div className="space-y-2 p-4 sm:p-5" aria-hidden>
             {[0, 1, 2, 3].map((i) => (
@@ -523,8 +523,8 @@ function PackageRow({
               {change.sites.length > 0 && (
                 // Horizontal scroll is contained here rather than on the page:
                 // a long source line must never widen the document on a phone.
-                <div className="mt-2 overflow-x-auto rounded-lg border border-border bg-[var(--pre-bg)]">
-                  <table className="w-full min-w-[22rem] border-collapse text-left font-mono text-[11px]">
+                <div className="mt-2 overflow-x-auto rounded-lg border border-border bg-(--pre-bg)">
+                  <table className="w-full min-w-88 border-collapse text-left font-mono text-[11px]">
                     <tbody>
                       {change.sites.map((site, i) => (
                         <tr key={i} className="border-b border-border/60 last:border-0">
@@ -589,11 +589,11 @@ function CodeAwareText({ text, className }: { text: string; className?: string }
             <InlineCode text={segment.text} />
           </p>
         ) : (
-          <figure key={index} className="overflow-hidden rounded-md border border-border bg-[var(--pre-bg)]">
+          <figure key={index} className="overflow-hidden rounded-md border border-border bg-(--pre-bg)">
             <figcaption className="border-b border-border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wide text-faint">
               {segment.label}
             </figcaption>
-            <pre className="overflow-x-auto whitespace-pre-wrap break-words p-2.5 font-mono text-[11px] leading-relaxed text-foreground">
+            <pre className="overflow-x-auto wrap-break-word p-2.5 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-foreground">
               <code>{segment.code}</code>
             </pre>
           </figure>

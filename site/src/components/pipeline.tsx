@@ -298,7 +298,7 @@ export function Pipeline() {
             {index < STAGES.length - 1 && (
               <span
                 aria-hidden
-                className="absolute left-[15px] top-9 bottom-[-0.75rem] w-px bg-gradient-to-b from-brand/45 to-border"
+                className="absolute left-3.75 top-9 -bottom-3 w-px bg-linear-to-b from-brand/45 to-border"
               />
             )}
 
@@ -343,7 +343,7 @@ export function Pipeline() {
       </ol>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
-        <div className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] p-5">
+        <div className="min-w-0 rounded-2xl border border-amber-500/25 bg-amber-500/6 p-5">
           <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
             When a source cannot be reached
           </h3>
@@ -369,7 +369,7 @@ export function Pipeline() {
             quiet about as on what it finds, and "we filter noise" is not a
             claim anyone can check — so these are the actual rules, each one
             shown as the line that would have been reported without it. */}
-        <div className="rounded-2xl border border-border bg-surface/50 p-5">
+        <div className="min-w-0 rounded-2xl border border-border bg-surface/50 p-5">
           <h3 className="text-sm font-semibold text-foreground">What Drift refuses to report</h3>
           <p className="mt-2 text-[13px] leading-relaxed text-muted">
             Six lines that match a changed symbol and get no comment. Every rule below exists
@@ -381,12 +381,12 @@ export function Pipeline() {
               <div key={rule.what} className={index > 0 ? "border-t border-border" : undefined}>
                 <p className="flex items-center gap-1.5 bg-surface-hover/40 px-3 py-1.5 font-mono text-[10.5px] text-faint">
                   <GhIcon icon="file" className="size-3 shrink-0" />
-                  <span className="truncate">{rule.file}</span>
+                  <span className="min-w-0 truncate">{rule.file}</span>
                   <span className="ml-auto shrink-0 text-[10px] uppercase tracking-wider">
                     no comment
                   </span>
                 </p>
-                <div className="overflow-x-auto bg-[var(--pre-bg)] px-3 py-1.5">
+                <div className="overflow-x-auto bg-(--pre-bg) px-3 py-1.5">
                   <code className="whitespace-pre font-mono text-[11.5px] text-muted/80 line-through decoration-faint/50">
                     {rule.code}
                   </code>
@@ -497,7 +497,7 @@ function EvidenceFan() {
               <p className="mt-0.5 text-[11px] font-medium text-brand-text">{source.what}</p>
               <p className="mt-2 text-[12px] leading-relaxed text-muted">{source.detail}</p>
             </div>
-            <div className="border-t border-border bg-[var(--pre-bg)] px-3 py-2">
+            <div className="border-t border-border bg-(--pre-bg) px-3 py-2">
               {source.lines.map((line) => (
                 <p
                   key={line}
