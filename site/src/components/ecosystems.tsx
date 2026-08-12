@@ -129,7 +129,7 @@ export function Ecosystems({ recorded }: { recorded: ReadonlySet<string> }) {
         <div className="overflow-x-auto">
           <table className="w-full min-w-0 border-collapse text-left table-fixed">
             <colgroup>
-              <col className="w-[6.5rem] sm:w-36 lg:w-52" />
+              <col className="w-26 sm:w-36 lg:w-52" />
               {CAPABILITY_STAGES.map((stage) => (
                 <col key={stage} />
               ))}
@@ -222,10 +222,10 @@ function EcosystemRow({
                 title={`${capability.label} · ${STAGE_LABEL[stage]}: ${LEVEL_WORD[support.level]}${
                   support.note ? ` — ${support.note}` : ""
                 }`}
-                className={cn("mx-auto block size-2 rounded-[2px] sm:size-2.5", LEVEL_STYLE[support.level])}
+                className={cn("mx-auto block size-2 rounded-xs sm:size-2.5", LEVEL_STYLE[support.level])}
               />
             ) : (
-              <span className="mx-auto block size-2 rounded-[2px] border border-dashed border-border/70 sm:size-2.5" />
+              <span className="mx-auto block size-2 rounded-xs border border-dashed border-border/70 sm:size-2.5" />
             )}
           </td>
         );
