@@ -6,6 +6,8 @@ import { loadConfig } from '../config/load.js';
 import { GitHubClient } from '../github/client.js';
 import { runPipeline } from '../pipeline.js';
 import { renderPullRequestBody } from '../report/markdown.js';
+import { buildSarifLog, findingsFromCandidates, findingsFromPlan, type SarifFinding } from '../report/sarif.js';
+import { scanUpgrades } from '../upgrade/scan.js';
 import { createLogger, type Logger, type LogLevel } from '../util/logger.js';
 import { matchesAny } from '../util/glob.js';
 import { applyApproval } from '../approval/apply.js';
@@ -30,6 +32,8 @@ interface ActionInputs {
   logLevel: LogLevel;
   workspace: string;
   configPath?: string;
+  /** `diff` (default) analyses the push; `outdated` scans every installed dependency instead. */
+  scanMode?: 'diff' | 'outdated';
 }
 
 export async function runAction(): Promise<number> {
@@ -63,7 +67,7 @@ export async function runAction(): Promise<number> {
 
   if (!repo) {
     logger.error(
-      'Could not determine the repository and commit range from the event payload. Drift supports `push`, `workflow_dispatch`, and `issue_comment` events.',
+      'Could not determine the repository and commit range from the event payload. Drift supports `push`, `workflow_dispatch`, `schedule`, and `issue_comment` events.',
     );
     return 1;
   }
@@ -77,6 +81,15 @@ export async function runAction(): Promise<number> {
   // A workflow input overrides the committed config, so a team can trial
   // `auto` from a manual run without editing a file in their repo.
   const effectiveConfig = inputs.mode ? { ...config, mode: inputs.mode } : config;
+
+  // A `schedule` trigger, or an explicit `scan-mode: outdated` on a manual
+  // dispatch, means "check every installed dependency against its registry"
+  // rather than "what changed in this push" — a different question with no
+  // commit range to diff, so it branches off before any of the range/
+  // watchBranches logic below, which does not apply to it.
+  if (eventName === 'schedule' || inputs.scanMode === 'outdated') {
+    return runOutdatedScan(repo, effectiveConfig, github, inputs, logger);
+  }
 
   if (!matchesAny(effectiveConfig.watchBranches, repo.baseBranch)) {
     logger.info(
@@ -108,6 +121,15 @@ export async function runAction(): Promise<number> {
     await writeOutputs(result.dispatch, result.summary);
     if (result.plan) {
       await writeJobSummary(renderPullRequestBody(result.plan, effectiveConfig));
+      await uploadCodeScanning({
+        repo,
+        config: effectiveConfig,
+        github,
+        logger,
+        findings: findingsFromPlan(result.plan, {
+          includeInformational: effectiveConfig.codeScanning.includeInformational,
+        }),
+      });
     }
 
     if (result.dispatch.status === 'dispatched') {
@@ -131,8 +153,113 @@ export async function runAction(): Promise<number> {
   }
 }
 
+/**
+ * Upload every finding to the repository's code scanning dashboard, one
+ * alert per package. Shared by the push-triggered pipeline and the scheduled
+ * outdated-dependency scan, since both ultimately produce the same
+ * `SarifFinding[]` shape — see `report/sarif.ts`.
+ */
+async function uploadCodeScanning(args: {
+  repo: RepoContext;
+  config: DriftConfig;
+  github: GitHubClient;
+  logger: Logger;
+  findings: SarifFinding[];
+}): Promise<void> {
+  const { repo, config, github, logger, findings } = args;
+  if (!config.codeScanning.enabled) return;
+  if (findings.length === 0) {
+    logger.debug('No code scanning findings to upload.');
+    return;
+  }
+
+  logger.info(`Uploading ${findings.length} code scanning finding(s), one per package.`);
+  await github.uploadSarif(repo, {
+    sarif: buildSarifLog(findings),
+    commitSha: repo.afterSha,
+    ref: `refs/heads/${repo.baseBranch}`,
+  });
+}
+
+/**
+ * The `schedule`-triggered path: check every installed dependency against
+ * its registry, the same way `drift outdated` does locally, and alert on
+ * whatever is outdated — safe upgrades and ones with real breaking changes
+ * alike, each carrying its own evidence and fix.
+ *
+ * Deliberately does not dispatch a branch or a Copilot task the way the
+ * push-triggered path does. A `RemediationPlan` from this scan describes
+ * what fixing the code *would* look like if this upgrade were taken — it
+ * does not, itself, bump the manifest, because that is not this scan's job:
+ * Drift only ever edits code in response to a version change that has
+ * actually landed somewhere. Dispatching a fix branch here would create one
+ * for an upgrade nobody applied yet. The alert instead carries the exact
+ * command (`drift outdated --upgrade <name>`, or the underlying package manager
+ * command) to apply it — once that commit lands and is pushed, the ordinary
+ * push-triggered pipeline above takes over exactly as it would for a human's
+ * own dependency bump.
+ */
+async function runOutdatedScan(
+  repo: RepoContext,
+  config: DriftConfig,
+  github: GitHubClient,
+  inputs: ActionInputs,
+  logger: Logger,
+): Promise<number> {
+  if (!config.outdated.enabled) {
+    logger.info('`outdated.enabled` is false in .github/drift.yml; skipping the scheduled outdated-dependency scan.');
+    return 0;
+  }
+
+  logger.info('Scanning installed dependencies against their registries...');
+
+  try {
+    const scan = await scanUpgrades({
+      root: inputs.workspace,
+      repo,
+      config,
+      logger,
+      githubToken: inputs.repoToken,
+    });
+
+    logger.info(
+      `Checked ${scan.checked} dependenc${scan.checked === 1 ? 'y' : 'ies'}: ${scan.upToDate} up to date, ` +
+        `${scan.candidates.length} outdated, ${scan.unchecked.length} could not be checked.`,
+    );
+
+    const findings = findingsFromCandidates(scan.candidates, {
+      includeInformational: config.codeScanning.includeInformational,
+    });
+
+    await uploadCodeScanning({ repo, config, github, logger, findings });
+
+    const summary =
+      `Checked ${scan.checked} dependenc${scan.checked === 1 ? 'y' : 'ies'}: ${scan.upToDate} up to date, ` +
+      `${scan.candidates.length} outdated, ${scan.unchecked.length} could not be checked.`;
+
+    // This mode never dispatches a branch or PR — see the function's doc
+    // comment for why — so `skipped` is always the right status, whether or
+    // not it found anything to alert on.
+    await writeOutputs({ status: 'skipped' }, summary);
+    await writeJobSummary(
+      `### Drift: outdated dependency scan\n\n${summary}\n\n` +
+        (findings.length > 0
+          ? `${findings.length} finding(s) uploaded to the Security tab, one per package, with evidence and a fix for each.`
+          : 'Nothing to alert on.'),
+    );
+
+    return 0;
+  } catch (err) {
+    logger.error(`Outdated-dependency scan failed: ${(err as Error).message}`);
+    logger.debug((err as Error).stack ?? '');
+    await writeOutputs({ status: 'failed' }, `Outdated-dependency scan failed: ${(err as Error).message}`);
+    return 1;
+  }
+}
+
 function readInputs(): ActionInputs {
   const mode = actionInput('mode');
+  const scanMode = actionInput('scan-mode');
   return {
     repoToken: actionInput('repo-token') ?? process.env.GITHUB_TOKEN ?? '',
     copilotToken: actionInput('copilot-token') || process.env.DRIFT_COPILOT_TOKEN || undefined,
@@ -141,6 +268,7 @@ function readInputs(): ActionInputs {
     logLevel: (actionInput('log-level') as LogLevel) || 'info',
     workspace: process.env.GITHUB_WORKSPACE ?? process.cwd(),
     configPath: actionInput('config-path') || undefined,
+    scanMode: scanMode === 'outdated' ? 'outdated' : scanMode === 'diff' ? 'diff' : undefined,
   };
 }
 
