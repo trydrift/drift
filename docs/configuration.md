@@ -83,7 +83,7 @@ turn them on; all sixteen are already on.
 | `minor` | `true` | |
 | `patch` | `false` | Breakage here is usually accidental, but real |
 | `transitive` | `false` | Lockfile-only churn is constant and rarely actionable |
-| `dev` | `false` | Dev dependencies rarely break production paths |
+| `dev` | `true` | Dev, optional, and peer dependencies still run in CI and in some consumers' hands |
 
 **`0.x` minor bumps are always analysed**, regardless of `minor`, because semver
 §4 makes them breaking.
@@ -770,7 +770,8 @@ mid-session.
 | `drift.agent.ollamaHost` / `ollamaModel` | `localhost:11434`, `qwen2.5-coder` | Local model |
 | `drift.agent.timeoutSeconds` | `600` | Per commit unit |
 | `drift.analysis.runOnStartup` | `true` | Analyse on open, and scan when the panel first opens |
-| `drift.analysis.includePatch` / `includeDev` / `includeTransitive` | `false` | Widen `/recent` analysis |
+| `drift.analysis.includePatch` / `includeTransitive` | `false` | Widen `/recent` analysis |
+| `drift.analysis.includeDev` | `true` | Also analyse dev, optional, and peer dependencies |
 | `drift.analysis.ignore` | `[]` | Package patterns to skip, added to `ignore` in `drift.yml` |
 | `drift.ui.showInlineDiagnostics` | `true` | Flag affected lines in the Problems panel |
 | `drift.logLevel` | `info` | Output channel verbosity |

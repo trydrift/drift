@@ -284,11 +284,11 @@ describe('triage', () => {
     assert.equal(actionable.length, 1, '0.x minors are breaking under semver section 4');
   });
 
-  test('skips dev dependencies unless enabled', () => {
+  test('dev dependencies are triaged by default, and can be turned off', () => {
     const dev = { ...change, kind: 'dev' as const };
-    assert.equal(triage([dev], DEFAULT_CONFIG).actionable.length, 0);
+    assert.equal(triage([dev], DEFAULT_CONFIG).actionable.length, 1);
 
-    const config = DriftConfigSchema.parse({ triggerOn: { dev: true } });
-    assert.equal(triage([dev], config).actionable.length, 1);
+    const config = DriftConfigSchema.parse({ triggerOn: { dev: false } });
+    assert.equal(triage([dev], config).actionable.length, 0);
   });
 });

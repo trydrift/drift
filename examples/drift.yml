@@ -67,8 +67,9 @@ triggerOn:
   # Lockfile-only moves you didn't ask for. Off by default because transitive
   # churn is constant and rarely actionable.
   transitive: false
-  # Dev dependencies rarely break production code paths.
-  dev: false
+  # Dev, optional, and peer dependencies still run in CI and in the hands of
+  # some consumers, so they are analysed by default alongside runtime ones.
+  dev: true
 
 # Never analyse these. Glob patterns match the package name.
 ignore: []
