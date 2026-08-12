@@ -208,9 +208,11 @@ remediation:
 # ---------------------------------------------------------------------------
 
 # Every plan Drift produces — breaking or not — can also be uploaded as SARIF
-# to the repository's code scanning dashboard: one alert per affected package,
-# carrying the same evidence, location, and fix a pull request would. Needs
-# `security-events: write` on the workflow; see examples/workflows/drift.yml.
+# to the repository's code scanning dashboard: one alert per breaking change,
+# listing every location it reaches (one per package for a move with no
+# breaking change of its own), carrying the same evidence, location, and fix
+# a pull request would. Needs `security-events: write` on the workflow; see
+# examples/workflows/drift.yml.
 codeScanning:
   enabled: true
   # Also alert on findings that wouldn't produce a commit on their own — a

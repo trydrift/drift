@@ -223,15 +223,21 @@ Every plan Drift produces — whether or not it found anything breaking — can
 also be rendered as [SARIF](https://sarif.readthedocs.io) and uploaded to the
 repository's code scanning dashboard, so Drift's findings sit next to
 CodeQL's and Scorecard's rather than only in a pull request or an approval
-issue. One alert per affected package, never one per breaking change or per
-advisory: a package with three breaking changes and two resolved advisories
-is one alert with all five, the same unit a developer actually decides about.
+issue. One alert per breaking change — never one per occurrence — listing
+every location in the repository it reaches, so "how many places does this
+touch" is answered in the alert itself rather than by re-running Drift. A
+dependency that moved with no breaking change of its own — a resolved or
+newly introduced advisory, or a plain safe bump — still gets one alert per
+*package*, since there's no breaking change to key it on.
 
 Each alert carries what the extension's inline diagnostics carry — the
 evidence (with citations), where the finding was found (including which
 workspace member, in a monorepo), and a fix: the exact command for a safe
 upgrade, the deterministic commit Drift will make once approved, or a note to
-comment `/drift apply` on the approval issue Drift filed.
+comment `/drift apply` on the approval issue Drift filed. The alert stays
+open, under the same id, until that specific breaking change is actually
+resolved — a version bump alone that leaves the change in place doesn't
+reset it.
 
 Requires the workflow job to grant `security-events: write` —
 [`examples/workflows/drift.yml`](../examples/workflows/drift.yml) already

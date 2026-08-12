@@ -51,10 +51,11 @@ const workflow = `# Drift — detect breaking dependency changes and fix them.
 #      trust what it produces.
 #
 #   3. Every plan is also uploaded to the Security tab as a code scanning
-#      alert, one per affected package, with the same evidence and fix a pull
-#      request would carry — set \`codeScanning.enabled: false\` in
-#      \`.github/drift.yml\` to turn that off. To also alert on dependencies
-#      nobody has bumped yet, see examples/workflows/drift-outdated.yml.
+#      alert — one per breaking change, listing every place it's used, with
+#      the same evidence and fix a pull request would carry — set
+#      \`codeScanning.enabled: false\` in \`.github/drift.yml\` to turn that
+#      off. To also alert on dependencies nobody has bumped yet, see
+#      examples/workflows/drift-outdated.yml.
 
 name: Drift
 
