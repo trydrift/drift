@@ -155,9 +155,8 @@ export async function runAction(): Promise<number> {
 
 /**
  * Upload every finding to the repository's code scanning dashboard, one
- * alert per breaking change (or per package, for a dependency move with no
- * breaking change of its own). Shared by the push-triggered pipeline and the
- * scheduled outdated-dependency scan, since both ultimately produce the same
+ * alert per package. Shared by the push-triggered pipeline and the scheduled
+ * outdated-dependency scan, since both ultimately produce the same
  * `SarifFinding[]` shape — see `report/sarif.ts`.
  */
 async function uploadCodeScanning(args: {
