@@ -155,8 +155,9 @@ export async function runAction(): Promise<number> {
 
 /**
  * Upload every finding to the repository's code scanning dashboard, one
- * alert per package. Shared by the push-triggered pipeline and the scheduled
- * outdated-dependency scan, since both ultimately produce the same
+ * alert per breaking change (or per package, for a dependency move with no
+ * breaking change of its own). Shared by the push-triggered pipeline and the
+ * scheduled outdated-dependency scan, since both ultimately produce the same
  * `SarifFinding[]` shape — see `report/sarif.ts`.
  */
 async function uploadCodeScanning(args: {
@@ -173,7 +174,7 @@ async function uploadCodeScanning(args: {
     return;
   }
 
-  logger.info(`Uploading ${findings.length} code scanning finding(s), one per package.`);
+  logger.info(`Uploading ${findings.length} code scanning finding(s).`);
   await github.uploadSarif(repo, {
     sarif: buildSarifLog(findings),
     commitSha: repo.afterSha,
@@ -244,7 +245,7 @@ async function runOutdatedScan(
     await writeJobSummary(
       `### Drift: outdated dependency scan\n\n${summary}\n\n` +
         (findings.length > 0
-          ? `${findings.length} finding(s) uploaded to the Security tab, one per package, with evidence and a fix for each.`
+          ? `${findings.length} finding(s) uploaded to the Security tab, each with evidence and a fix.`
           : 'Nothing to alert on.'),
     );
 
