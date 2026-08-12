@@ -194,6 +194,12 @@ function renderBreakingChanges(plan: RemediationPlan): string {
     lines.push(change.summary);
     lines.push('');
 
+    // The declaration itself, before and after — the actual evidence for the
+    // summary above, not just a link to where it can be found.
+    if (change.before && change.after && change.before !== change.after) {
+      lines.push('```diff', `- ${truncate(change.before, 300)}`, `+ ${truncate(change.after, 300)}`, '```', '');
+    }
+
     // The verdict leads, because it is the sentence a reader acts on — and
     // because it is the one place the difference between "checked and clean"
     // and "not checked" is stated in words rather than implied by a count.

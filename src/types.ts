@@ -237,6 +237,14 @@ export interface BreakingChange {
   kind: BreakingChangeKind;
   /** One-line statement of what broke. */
   summary: string;
+  /**
+   * The actual before/after declaration text, when this came from a computed
+   * diff (see `StructuredFinding`). This is the evidence itself — a reader
+   * comparing two signatures — as opposed to `citations`, which point at
+   * where to go verify it independently.
+   */
+  before?: string;
+  after?: string;
   /** What a fix must accomplish. Fed verbatim into the Copilot task. */
   remediation: string;
   /** Identifiers to search for: export names, endpoint paths, option keys. */
