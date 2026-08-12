@@ -417,13 +417,17 @@ function buildBreakingBlock(breaking: BreakingChange, sites: ImpactSite[], evide
   const related = sorted.slice(1, 1 + MAX_RELATED_LOCATIONS);
   const localConfidence = primary.confidence;
   const files = new Set(sites.map((s) => s.file));
+  const helpUri = evidenceUrlForBreaking(breaking, evidence);
 
-  const lines: string[] = [`**${ruleNameForBreaking(breaking.kind)}:** ${breaking.summary}`];
-  lines.push(
+  const lines: string[] = [
+    `**${ruleNameForBreaking(breaking.kind)}:** ${linkSymbols(breaking.summary, helpUri)}`,
+    '',
     `Upstream confidence: ${breaking.confidence}. Local confidence: ${localConfidence}` +
       (sites.length > 1 ? ` (best of ${sites.length} matches across ${files.size} file(s)).` : '.'),
-  );
-  lines.push('', `Seen at ${mdLink(primary.file, primary.line)}` + (related.length > 0 ? ', also at:' : '.'));
+  ];
+  if (helpUri) lines.push('', `Evidence: ${helpUri}`);
+  lines.push('', 'Seen at:');
+  lines.push(`- ${mdLink(primary.file, primary.line)}`);
   for (const site of related) lines.push(`- ${mdLink(site.file, site.line)}`);
 
   return {
@@ -431,8 +435,21 @@ function buildBreakingBlock(breaking: BreakingChange, sites: ImpactSite[], evide
     lines,
     primaryCandidate: { file: primary.file, line: primary.line, excerpt: primary.excerpt },
     relatedCandidates: related.map((s) => ({ file: s.file, line: s.line, excerpt: s.excerpt })),
-    helpUri: evidenceUrlForBreaking(breaking, evidence),
+    helpUri,
   };
+}
+
+/**
+ * Wraps every backtick-quoted symbol name in `text` with a markdown link to
+ * `url`, when one is known — the upstream commit, changelog, or diff that is
+ * the actual evidence for the claim being made about that symbol. Without
+ * this, the only place the evidence link appeared was `helpUri` metadata,
+ * which GitHub surfaces as a separate "show more" affordance rather than
+ * inline next to the symbol it's evidence for.
+ */
+function linkSymbols(text: string, url: string | undefined): string {
+  if (!url) return text;
+  return text.replace(/`([^`]+)`/g, (_match, symbol: string) => `[\`${symbol}\`](${url})`);
 }
 
 /**
@@ -528,6 +545,7 @@ function buildPackageFinding(args: {
   ];
   if (upstreamOnlyCount > 0) {
     header.push(
+      '',
       `${upstreamOnlyCount} additional upstream breaking ${plural(upstreamOnlyCount, 'change does', 'changes do')} not reach code in this repository and ${plural(upstreamOnlyCount, 'is', 'are')} omitted here.`,
     );
   }

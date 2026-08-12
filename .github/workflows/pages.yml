@@ -18,8 +18,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 # One deploy at a time, and never cancel one in flight: a half-published site is
 # worse than a slightly stale one.
@@ -82,6 +80,12 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    # Publishing the built artifact needs pages: write, and OIDC-based
+    # deployment needs id-token: write; scoped to this one job, which is the
+    # only one that touches Pages, rather than the whole workflow.
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
