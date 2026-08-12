@@ -13,8 +13,7 @@ on:
       - '!action/index.cjs'
       - '!action/behavioural-worker.js'
 
-permissions:
-  contents: write
+permissions: {}
 
 concurrency:
   group: update-action-bundle-main
@@ -23,6 +22,10 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
+    # Committing the rebuilt bundle needs contents: write; scoped to this one
+    # job rather than the whole workflow, matching every other workflow here.
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
