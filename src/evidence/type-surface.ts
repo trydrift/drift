@@ -741,7 +741,7 @@ function escapeRegExp(text: string): string {
 
 function collapse(text: string): string {
   return text
-    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\*(?:[^*]|\*(?!\/))*\*\//g, '')
     .replace(/\/\/[^\n]*/g, '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -776,19 +776,19 @@ function declarationEntries(content: string): ParsedDeclaration[] {
 
   collectBlockDeclarations(
     content,
-    /\b(export\s+)?(?:declare\s+)?class\s+([A-Za-z_$][\w$]*)[^{;]*\{/g,
+    /\b(export\s+)?(?:declare\s+)?class\s+([A-Za-z_$][\w$]*)(?![\w$])[^{;]*\{/g,
     'class',
     entries,
   );
   collectBlockDeclarations(
     content,
-    /\b(export\s+)?(?:declare\s+)?interface\s+([A-Za-z_$][\w$]*)[^{;]*\{/g,
+    /\b(export\s+)?(?:declare\s+)?interface\s+([A-Za-z_$][\w$]*)(?![\w$])[^{;]*\{/g,
     'interface',
     entries,
   );
   collectBlockDeclarations(
     content,
-    /\b(export\s+)?(?:declare\s+)?enum\s+([A-Za-z_$][\w$]*)[^{;]*\{/g,
+    /\b(export\s+)?(?:declare\s+)?enum\s+([A-Za-z_$][\w$]*)(?![\w$])[^{;]*\{/g,
     'enum',
     entries,
   );
