@@ -905,7 +905,7 @@ describe('no two parsers fight over the same file', () => {
     // no parser handles is a promise the code does not keep.
     for (const capability of ECOSYSTEM_CAPABILITIES) {
       for (const file of capability.files) {
-        const path = file.replace('*', 'example');
+        const path = file.replaceAll('*', 'example');
         assert.ok(
           isManifestPath(path),
           `${capability.label} advertises ${file} but no parser handles ${path}`,

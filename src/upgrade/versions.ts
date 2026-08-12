@@ -221,7 +221,7 @@ async function publishedVersions(
 
 async function npmVersions(name: string): Promise<{ latest: string | null; versions: string[] } | null> {
   const packument = await fetchJson<NpmPackument>(
-    `https://registry.npmjs.org/${encodeURIComponent(name).replace('%40', '@')}`,
+    `https://registry.npmjs.org/${encodeURIComponent(name).replaceAll('%40', '@')}`,
     { timeoutMs: 12_000 },
   );
   if (!packument) return null;

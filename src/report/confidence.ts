@@ -110,7 +110,7 @@ function topReason(score: ConfidenceScore): string {
 
 /** Pipes and newlines would break the row. */
 function escapeCell(text: string): string {
-  return text.replace(/\|/g, '\\|').replace(/\n+/g, ' ');
+  return text.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\n+/g, ' ');
 }
 
 export function renderTaxonomy(change: BreakingChange): string {

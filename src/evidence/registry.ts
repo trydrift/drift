@@ -539,7 +539,7 @@ function emptyVersionInfo(version: string): VersionInfo {
 
 async function npmVersionInfo(name: string, version: string): Promise<VersionInfo | null> {
   const data = await fetchJson<NpmPackument>(
-    `https://registry.npmjs.org/${encodeURIComponent(name).replace('%40', '@')}`,
+    `https://registry.npmjs.org/${encodeURIComponent(name).replaceAll('%40', '@')}`,
   );
   const entry = data?.versions?.[version];
   if (!entry) return null;
@@ -734,7 +734,7 @@ interface NpmPackument {
 
 async function fetchNpm(name: string, targetVersion: string | null): Promise<RegistryInfo | null> {
   const data = await fetchJson<NpmPackument>(
-    `https://registry.npmjs.org/${encodeURIComponent(name).replace('%40', '@')}`,
+    `https://registry.npmjs.org/${encodeURIComponent(name).replaceAll('%40', '@')}`,
   );
   if (!data) return null;
 
