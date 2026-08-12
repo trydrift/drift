@@ -1,0 +1,42 @@
+version: 2
+updates:
+  # Root package: the CLI, the Action, and the webhook runner.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      dev-dependencies:
+        dependency-type: development
+    labels:
+      - dependencies
+
+  - package-ecosystem: npm
+    directory: /extension
+    schedule:
+      interval: weekly
+    groups:
+      dev-dependencies:
+        dependency-type: development
+    labels:
+      - dependencies
+
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: weekly
+    groups:
+      dev-dependencies:
+        dependency-type: development
+    labels:
+      - dependencies
+
+  # Keeps the SHA-pinned `uses:` refs in .github/workflows current — the same
+  # supply-chain hygiene Scorecard's Pinned-Dependencies check rewards, kept
+  # from going stale.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels:
+      - dependencies
