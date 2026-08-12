@@ -26,7 +26,7 @@ function cleanRangeOperators(raw: string | null | undefined): string | null {
   if (v === '*' || v === 'latest' || v === '') return null;
 
   // Take the first component of a compound range: ">=2.0.0 <3.0.0" -> ">=2.0.0".
-  v = v.split(/\s*(?:\|\||,)\s*/)[0]!.trim();
+  v = v.split(/\|\||,/)[0]!.trim();
 
   // Strip leading operators *before* splitting on whitespace. Ruby writes its
   // pessimistic constraint as `~> 4.1`, with a space, so splitting first would
