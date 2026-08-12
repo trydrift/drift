@@ -188,7 +188,7 @@ export function goVersionFromWorkflow(content: string): string | null {
 export function goRemedy(requirement: GoVersionRequirement, inActions: boolean): string {
   const version = requirement.version;
   if (inActions) {
-    return `Add \`actions/setup-go\` with \`go-version: '${version}'\` to the Drift workflow, before the Drift step, to enable exported-API comparison.`;
+    return `Add \`actions/setup-go\` with \`go-version: '${version}'\` to the Drift workflow, before the Drift step, to install Go ${version} and enable exported-API comparison.`;
   }
   return `Install Go ${version} and make \`go\` available on PATH, or configure \`go-version\` in the Drift workflow, to enable exported-API comparison.`;
 }
