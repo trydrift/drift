@@ -49,7 +49,7 @@ jobs:
       pull-requests: write
       checks: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 2   # Drift diffs against the previous commit
       - uses: trydrift/drift@v0

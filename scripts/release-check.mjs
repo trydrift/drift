@@ -22,7 +22,7 @@ function sh(cmd, args, opts = {}) {
 step('root: typecheck', () => sh('npm', ['run', 'typecheck']));
 step('root: tests (build + test/*.test.ts)', () => sh('npm', ['test']));
 step('root: deterministic evaluation harness', () => sh('npm', ['run', 'eval:deterministic']));
-step('action: rebuild, staleness, self-containment, SDK bundling, Node 20 run', () =>
+step('action: rebuild, staleness, self-containment, SDK bundling, Node 24 run', () =>
   sh('npm', ['run', 'verify:action-bundle']));
 
 step('extension: install, typecheck, test, build, package', () => {

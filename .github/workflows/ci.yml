@@ -17,26 +17,26 @@ jobs:
         node: [22]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node }}
           cache: npm
 
-      # The Action is declared `using: node20`, which is not the version the
+      # The Action is declared `using: node24`, which is not the version the
       # rest of this job runs on. `verify:action-bundle` executes the shipped
       # bundle against this binary, because a bundle that works on 22 is not
       # evidence it works on the runtime GitHub will actually use.
-      - name: Install Node 20 for the Action runtime check
-        uses: actions/setup-node@v4
+      - name: Install Node 24 for the Action runtime check
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
-      - name: Record the Node 20 binary
-        run: echo "DRIFT_NODE20=$(which node)" >> "$GITHUB_ENV"
+          node-version: 24
+      - name: Record the Node 24 binary
+        run: echo "DRIFT_NODE24=$(which node)" >> "$GITHUB_ENV"
 
-      # Restore the job's own Node version; the step above left 20 on PATH.
-      - uses: actions/setup-node@v4
+      # Restore the job's own Node version; the step above left 24 on PATH.
+      - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node }}
           cache: npm
@@ -72,14 +72,14 @@ jobs:
         run: npm run package
 
       # The bundled action is committed, because GitHub Actions does not run
-      # npm install for node20 actions. A stale bundle is the classic silent
+      # npm install for node24 actions. A stale bundle is the classic silent
       # failure for this pattern: source is fixed, shipped action is not.
       # Also runs the bundle with node_modules removed (catching anything left
       # unbundled) and confirms the optional Anthropic SDK — which has no
       # node_modules to fall back on inside a real Action run — is statically
       # bundled, not just referenced. Shared with release.yml via the same
       # script so the two checks cannot drift apart.
-      - name: Verify the Action bundle (rebuild, staleness, self-containment, bundled SDK, Node 20)
+      - name: Verify the Action bundle (rebuild, staleness, self-containment, bundled SDK, Node 24)
         run: npm run verify:action-bundle
 
       - name: Verify the CLI runs from source
@@ -133,9 +133,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -157,11 +157,11 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm

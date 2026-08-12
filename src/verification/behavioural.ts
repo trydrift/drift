@@ -307,7 +307,7 @@ async function runWorker(
 
   const args = [
     // Node's permission-model flag was `--experimental-permission` through
-    // Node 20–23 (the Action's declared `node20` runtime, and the CLI's own
+    // Node 20–23 (older Action runtimes, and the CLI's own
     // `>=22.6.0` engines range, both land here) and was only renamed to
     // `--permission` in Node 24. An unrecognised flag makes the worker fail
     // to even start, so this has to match the interpreter actually running it.

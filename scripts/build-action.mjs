@@ -32,7 +32,7 @@ execFileSync(
     'src/runners/action-entry.ts',
     '--bundle',
     '--platform=node',
-    '--target=node20',
+    '--target=node24',
     '--format=cjs',
     '--minify',
     '--outfile=action/index.cjs',

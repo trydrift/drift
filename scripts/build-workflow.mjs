@@ -98,7 +98,7 @@ jobs:
 
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Drift needs the previous commit to diff manifests against, and the
           # working tree to search for affected code.

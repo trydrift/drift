@@ -30,21 +30,21 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      # The Action declares `using: node20`. `verify:action-bundle` runs the
+      # The Action declares `using: node24`. `verify:action-bundle` runs the
       # shipped bundle against this binary, because publishing an Action that
       # only works on 22 fails in the user's repository, not here.
-      - name: Install Node 20 for the Action runtime check
-        uses: actions/setup-node@v4
+      - name: Install Node 24 for the Action runtime check
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
-      - name: Record the Node 20 binary
-        run: echo "DRIFT_NODE20=$(which node)" >> "$GITHUB_ENV"
+          node-version: 24
+      - name: Record the Node 24 binary
+        run: echo "DRIFT_NODE24=$(which node)" >> "$GITHUB_ENV"
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -62,7 +62,7 @@ jobs:
       # Anthropic SDK is statically bundled — the same check ci.yml runs on
       # every PR, invoked here through the same script so the two cannot
       # drift apart.
-      - name: Verify the Action bundle (rebuild, staleness, self-containment, bundled SDK, Node 20)
+      - name: Verify the Action bundle (rebuild, staleness, self-containment, bundled SDK, Node 24)
         run: npm run verify:action-bundle
 
       # Identity strings, invented CLI commands, invented extension identifiers,
