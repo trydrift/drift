@@ -101,7 +101,7 @@ function rationale(overrides: Partial<UpgradeRationale> = {}): UpgradeRationale 
 }
 
 describe('findingsFromPlan', () => {
-  test('groups every breaking change for a package into one finding', () => {
+  test('one finding per breaking change, not per package', () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -112,13 +112,42 @@ describe('findingsFromPlan', () => {
     }) as RemediationPlan;
 
     const findings = findingsFromPlan(plan);
-    assert.equal(findings.length, 1, 'one finding per package, not per breaking change');
-    assert.equal(findings[0]!.ruleId, 'drift/npm/acme-sdk');
-    assert.equal(findings[0]!.level, 'error', 'high-confidence breaking change is an error');
-    assert.match(findings[0]!.message, /createClient.*bc_1/s);
-    assert.match(findings[0]!.message, /createClient.*bc_2/s);
-    assert.equal(findings[0]!.file, 'src/index.ts');
-    assert.equal(findings[0]!.line, 12);
+    assert.equal(findings.length, 2, 'one finding per breaking change');
+
+    const [first, second] = findings.sort((a, b) => a.ruleId.localeCompare(b.ruleId));
+    assert.equal(first!.ruleId, 'drift/npm/acme-sdk/bc_1');
+    assert.equal(second!.ruleId, 'drift/npm/acme-sdk/bc_2');
+    assert.equal(first!.level, 'error', 'high-confidence breaking change is an error');
+    assert.match(first!.message, /bc_1/);
+    assert.doesNotMatch(first!.message, /bc_2/);
+    assert.equal(first!.locations[0]!.file, 'src/index.ts');
+    assert.equal(first!.locations[0]!.line, 12);
+  });
+
+  test('a breaking change lists every location it reaches', () => {
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: [breaking('bc_1')],
+      impactSites: [
+        { ...site('bc_1'), file: 'src/a.ts', line: 1 },
+        { ...site('bc_1'), file: 'src/b.ts', line: 2 },
+        { ...site('bc_1'), file: 'src/c.ts', line: 3 },
+      ],
+    }) as RemediationPlan;
+
+    const [finding] = findingsFromPlan(plan);
+    assert.equal(finding!.locations.length, 3);
+    assert.deepEqual(
+      finding!.locations.map((l) => l.file),
+      ['src/a.ts', 'src/b.ts', 'src/c.ts'],
+    );
+    assert.match(finding!.message, /3 location\(s\) across 3 file\(s\)/);
+    assert.match(finding!.message, /src\/a\.ts:1/);
+    assert.match(finding!.message, /src\/b\.ts:2/);
+    assert.match(finding!.message, /src\/c\.ts:3/);
   });
 
   test('a resolved advisory is alerted even with no breaking change', () => {
