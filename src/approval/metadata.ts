@@ -196,8 +196,8 @@ export function findPriorDispatch(
     const digest = /<!--\s*drift-dispatched:\s*([0-9a-f]{64})\s*-->/.exec(comment.body)?.[1];
     if (digest !== planDigest) continue;
 
-    const branchName = /<!--\s*drift-dispatched-branch:(.+?)-->/.exec(comment.body)?.[1]?.trim();
-    const taskId = /<!--\s*drift-dispatched-task:(.+?)-->/.exec(comment.body)?.[1]?.trim();
+    const branchName = /<!--\s*drift-dispatched-branch:(.{1,1024}?)-->/.exec(comment.body)?.[1]?.trim();
+    const taskId = /<!--\s*drift-dispatched-task:(.{1,1024}?)-->/.exec(comment.body)?.[1]?.trim();
     const pr = /<!--\s*drift-dispatched-pr:\s*(\d+)\s*-->/.exec(comment.body)?.[1];
 
     return {
