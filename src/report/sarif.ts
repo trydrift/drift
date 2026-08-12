@@ -425,10 +425,14 @@ function buildBreakingBlock(breaking: BreakingChange, sites: ImpactSite[], evide
     `Upstream confidence: ${breaking.confidence}. Local confidence: ${localConfidence}` +
       (sites.length > 1 ? ` (best of ${sites.length} matches across ${files.size} file(s)).` : '.'),
   ];
-  if (helpUri) lines.push('', `Evidence: ${helpUri}`);
-  lines.push('', 'Seen at:');
-  lines.push(`- ${mdLink(primary.file, primary.line)}`);
-  for (const site of related) lines.push(`- ${mdLink(site.file, site.line)}`);
+  // The declaration itself, before and after — the actual evidence for the
+  // claim above. `helpUri` alone used to stand in for this and pointed at the
+  // *current* published declaration file, which shows nothing about what
+  // changed; a reader had to diff two CDN files by hand to see it.
+  if (breaking.before && breaking.after && breaking.before !== breaking.after) {
+    lines.push('', '```diff', `- ${truncate(breaking.before, 300)}`, `+ ${truncate(breaking.after, 300)}`, '```');
+  }
+  if (helpUri) lines.push('', `Declaration source: ${helpUri}`);
 
   return {
     level: levelForBreaking(breaking.confidence, localConfidence),
@@ -437,6 +441,10 @@ function buildBreakingBlock(breaking: BreakingChange, sites: ImpactSite[], evide
     relatedCandidates: related.map((s) => ({ file: s.file, line: s.line, excerpt: s.excerpt })),
     helpUri,
   };
+}
+
+function truncate(text: string, max: number): string {
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 }
 
 /**
@@ -550,10 +558,6 @@ function buildPackageFinding(args: {
     );
   }
 
-  const body = [header.join('\n'), ...blocks.map((b) => b.lines.join('\n')), fixLine(fix, hasBreaking)].join(
-    '\n\n---\n\n',
-  );
-
   const primary = blocks.find((b) => b.primaryCandidate)?.primaryCandidate ?? { file: change.manifestPath, line: 1 };
   const relatedSeen = new Set([`${primary.file}:${primary.line}`]);
   const related: SarifLocation[] = [];
@@ -568,6 +572,27 @@ function buildPackageFinding(args: {
     }
     if (related.length >= MAX_RELATED_LOCATIONS) break;
   }
+
+  // `related`'s array order is exactly the order `buildSarifLog` assigns
+  // `relatedLocations[].id` in (1-indexed) — this map lets every block spell
+  // its "Seen at" list as `[text](id)`, which GitHub renders as its own
+  // expandable code snippet in the alert body, rather than a plain hyperlink
+  // that only the primary location gets that treatment for.
+  const relatedIds = new Map(related.map((loc, i) => [`${loc.file}:${loc.line}`, i + 1]));
+  const siteLink = (loc: SarifLocation): string => {
+    const id = relatedIds.get(`${loc.file}:${loc.line}`);
+    return id !== undefined ? `[\`${loc.file}:${loc.line}\`](${id})` : mdLink(loc.file, loc.line);
+  };
+
+  const body = [
+    header.join('\n'),
+    ...blocks.map((b) => {
+      if (!b.primaryCandidate) return b.lines.join('\n');
+      const seenAt = ['Seen at:', `- ${siteLink(b.primaryCandidate)}`, ...b.relatedCandidates.map((loc) => `- ${siteLink(loc)}`)];
+      return [...b.lines, '', ...seenAt].join('\n');
+    }),
+    fixLine(fix, hasBreaking),
+  ].join('\n\n---\n\n');
 
   return {
     ruleId: `drift/${change.ecosystem}/${change.name}`,

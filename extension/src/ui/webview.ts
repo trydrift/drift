@@ -1157,6 +1157,14 @@ function renderBreak(change: BreakingChange, plan: RemediationPlan, expanded: bo
     </summary>
     <div class="break-body">
       ${change.symbols.length ? `<p class="symbols">${change.symbols.map((s) => `<code>${escapeHtml(s)}</code>`).join(' ')}</p>` : ''}
+      ${
+        // The declaration itself, before and after — the actual evidence for
+        // the summary above, scoped to just this change rather than the
+        // dependency's full evidence dump below.
+        change.before && change.after && change.before !== change.after
+          ? `<div class="markdown">${renderMarkdown(`before: ${change.before}\nafter: ${change.after}`)}</div>`
+          : ''
+      }
       <div class="fix"><b>Fix:</b> <div class="markdown fix-body">${renderMarkdown(change.remediation)}</div></div>
       ${
         sites.length
