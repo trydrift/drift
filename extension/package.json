@@ -520,8 +520,8 @@
         },
         "drift.analysis.includeDev": {
           "type": "boolean",
-          "default": false,
-          "description": "Analyse dev dependencies. They rarely break production code paths.",
+          "default": true,
+          "description": "Analyse dev, optional, and peer dependencies alongside runtime ones.",
           "order": 12
         },
         "drift.analysis.concurrency": {

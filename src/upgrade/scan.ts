@@ -227,7 +227,7 @@ export interface ScanProgress {
 
 /** How widely to look. */
 export interface ScanBreadth {
-  /** Include dev, optional and peer dependencies. */
+  /** Include dev, optional and peer dependencies. On by default. */
   includeDev: boolean;
   /** Cap on impact sites recorded per breaking change. */
   maxSites: number;
@@ -235,7 +235,7 @@ export interface ScanBreadth {
   maxPackages: number;
 }
 
-const DEFAULT_BREADTH: ScanBreadth = { includeDev: false, maxSites: 40, maxPackages: 0 };
+const DEFAULT_BREADTH: ScanBreadth = { includeDev: true, maxSites: 40, maxPackages: 0 };
 
 /**
  * Find every manifest in a set of directories and name the tool that owns it.
@@ -1135,9 +1135,10 @@ export async function directDependencies(
       ? parserFor(target.lockfilePath)?.parse(lockContent, target.lockfilePath)
       : undefined;
 
-  // Runtime dependencies are what ship, so they are always checked. The rest are
-  // opt-in: a broken test helper is a nuisance, a broken runtime import is an
-  // outage, and mixing the two dilutes the signal.
+  // Runtime dependencies are what ship, so they are always checked. Dev,
+  // optional, and peer dependencies are checked by default too — they still
+  // run in CI or in some consumers' hands — but can be excluded to look at
+  // runtime alone.
   const kinds: DependencyKind[] = includeDev
     ? ['runtime', 'dev', 'optional', 'peer']
     : ['runtime'];

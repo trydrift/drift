@@ -222,7 +222,8 @@ Usage:
 Options for \`outdated\`:
   --repo <owner/name>         Repository label for output. Default: git remote
   --dir <path>                Local checkout to scan.    Default: cwd
-  --dev                       Also check dev/optional/peer dependencies
+  --no-dev                    Skip dev/optional/peer dependencies (checked by
+                              default alongside runtime ones)
   --upgrade <selector>        Install the recommended version for one package
                               found by the scan (writes the manifest/lockfile
                               locally — run \`drift fix\` afterwards). The
@@ -525,7 +526,7 @@ async function outdatedCommand(flags: Flags): Promise<number> {
     config,
     logger,
     githubToken: token || undefined,
-    breadth: { includeDev: Boolean(flags.dev), maxSites: 40, maxPackages: 0 },
+    breadth: { includeDev: flags['no-dev'] !== true, maxSites: 40, maxPackages: 0 },
     onProgress: (progress) => logger.debug(`${progress.phase}: ${progress.detail}`),
   });
 

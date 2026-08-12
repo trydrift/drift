@@ -6,7 +6,13 @@ import { loadConfig } from '../config/load.js';
 import { GitHubClient } from '../github/client.js';
 import { runPipeline } from '../pipeline.js';
 import { renderPullRequestBody } from '../report/markdown.js';
-import { buildSarifLog, findingsFromCandidates, findingsFromPlan, type SarifFinding } from '../report/sarif.js';
+import {
+  buildSarifLog,
+  DEPENDENCY_KIND_LABELS,
+  findingsFromCandidates,
+  findingsFromPlan,
+  type SarifFinding,
+} from '../report/sarif.js';
 import { scanUpgrades, type UpgradeCandidate } from '../upgrade/scan.js';
 import { createLogger, type Logger, type LogLevel } from '../util/logger.js';
 import { matchesAny } from '../util/glob.js';
@@ -281,12 +287,12 @@ function renderOutdatedTable(candidates: readonly UpgradeCandidate[]): string {
   const rows = candidates.map((c) => {
     const version = c.selected === c.latest ? `${c.current} → ${c.selected}` : `${c.current} → ${c.selected} (latest ${c.latest})`;
     const impact = c.breakingCount > 0 ? `${c.impactCount} site(s) in ${c.impactFiles} file(s)` : '—';
-    return `| ${c.name} | ${version} | ${c.breakingCount} | ${impact} | ${c.risk} |`;
+    return `| ${c.name} | ${DEPENDENCY_KIND_LABELS[c.kind]} | ${version} | ${c.breakingCount} | ${impact} | ${c.risk} |`;
   });
 
   return [
-    '| Package | Version | Upstream breaking changes | Locally affected | Risk |',
-    '| --- | --- | --- | --- | --- |',
+    '| Package | Kind | Version | Upstream breaking changes | Locally affected | Risk |',
+    '| --- | --- | --- | --- | --- | --- |',
     ...rows,
   ].join('\n');
 }

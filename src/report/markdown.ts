@@ -20,6 +20,7 @@ import {
 } from './confidence.js';
 import { PLAN_SCHEMA_VERSION, planDigest } from '../approval/digest.js';
 import { renderApprovalMetadata } from '../approval/metadata.js';
+import { DEPENDENCY_KIND_LABELS } from './sarif.js';
 
 /**
  * The Drift Report.
@@ -118,7 +119,11 @@ function renderHeader(plan: RemediationPlan): string {
   const changes = plan.changes
     .map((c) => {
       const where = members.size > 1 ? describeMember(c) : null;
-      return `\`${c.name}\` ${c.from ?? '—'} → **${c.to ?? '—'}**${where ? ` _(in ${where})_` : ''}`;
+      // Runtime is the common case and clutters every line if labelled; the
+      // sections a reviewer doesn't expect (dev, optional, peer, transitive)
+      // are the ones worth calling out.
+      const kind = c.kind === 'runtime' ? null : DEPENDENCY_KIND_LABELS[c.kind];
+      return `\`${c.name}\`${kind ? ` _(${kind})_` : ''} ${c.from ?? '—'} → **${c.to ?? '—'}**${where ? ` _(in ${where})_` : ''}`;
     })
     .join(', ');
 

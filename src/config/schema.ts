@@ -88,8 +88,9 @@ export const DriftConfigSchema = z.object({
       patch: z.boolean().default(false),
       /** Transitive (lockfile-only) moves are noisy; off by default. */
       transitive: z.boolean().default(false),
-      /** Dev dependencies rarely break production code paths. */
-      dev: z.boolean().default(false),
+      /** Dev and optional dependencies still run in CI and in the hands of some
+       * consumers, so they are analysed by default alongside runtime ones. */
+      dev: z.boolean().default(true),
     })
     .default({}),
 
