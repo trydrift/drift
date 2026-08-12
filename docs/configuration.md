@@ -217,6 +217,63 @@ shape before wiring a collector.
 
 ---
 
+## Code scanning
+
+Every plan Drift produces — whether or not it found anything breaking — can
+also be rendered as [SARIF](https://sarif.readthedocs.io) and uploaded to the
+repository's code scanning dashboard, so Drift's findings sit next to
+CodeQL's and Scorecard's rather than only in a pull request or an approval
+issue. One alert per affected package, never one per breaking change or per
+advisory: a package with three breaking changes and two resolved advisories
+is one alert with all five, the same unit a developer actually decides about.
+
+Each alert carries what the extension's inline diagnostics carry — the
+evidence (with citations), where the finding was found (including which
+workspace member, in a monorepo), and a fix: the exact command for a safe
+upgrade, the deterministic commit Drift will make once approved, or a note to
+comment `/drift apply` on the approval issue Drift filed.
+
+Requires the workflow job to grant `security-events: write` —
+[`examples/workflows/drift.yml`](../examples/workflows/drift.yml) already
+has it. Without that permission, Drift logs a warning naming the missing
+permission and continues; nothing else about the run is affected.
+
+### `codeScanning.enabled`
+
+`boolean` — default **`true`**
+
+Upload findings to code scanning after every analysed push.
+
+### `codeScanning.includeInformational`
+
+`boolean` — default **`true`**
+
+Also alert on a dependency move with no breaking change and a resolved or
+newly introduced advisory — the "this is safe, and here's what it buys you"
+and "this looks quiet, but read the advisory first" cases. `false` limits
+alerts to what a pull request would already contain.
+
+### `outdated.enabled`
+
+`boolean` — default **`false`**
+
+Proactive scanning of every *installed* dependency against its registry,
+independent of any push — the same check `drift outdated` runs locally.
+Off by default because, unlike the rest of this config, it has no push to
+react to and needs a `schedule` trigger of its own; see
+[`examples/workflows/drift-outdated.yml`](../examples/workflows/drift-outdated.yml).
+
+Each dependency it finds becomes a code scanning alert exactly like the ones
+above. It does not open a branch or a pull request: a `RemediationPlan` from
+this scan describes what fixing the code *would* look like if the upgrade
+were taken, and dispatching that as a real commit would mean editing code for
+an upgrade nobody applied yet. The alert's fix instead names the exact
+command — `drift outdated --upgrade <name>`, or the underlying package manager command —
+that applies it; once that lands and is pushed, the ordinary push-triggered
+pipeline above takes over exactly as it would for a human's own bump.
+
+---
+
 ## Upgrade rationale
 
 Why an upgrade might be worth taking, alongside what it might cost. On by
