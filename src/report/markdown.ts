@@ -256,10 +256,10 @@ function renderCodeAwareMarkdown(text: string): string[] {
 
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim();
-    const labelledCode = /^(before|after):\s*(.*)$/i.exec(line);
+    const labelledCode = /^(before|after):(.*)$/i.exec(line);
     if (labelledCode) {
       flushParagraph();
-      out.push(`**${capitalize(labelledCode[1]!)}:**`, '', fencedCode(labelledCode[2]!), '');
+      out.push(`**${capitalize(labelledCode[1]!)}:**`, '', fencedCode(labelledCode[2]!.trimStart()), '');
       continue;
     }
 

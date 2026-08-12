@@ -62,6 +62,7 @@ export function slugify(input: string, maxLength = 40): string {
   const slug = input
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  return slug.slice(0, maxLength).replace(/-+$/g, '') || 'change';
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+  return slug.slice(0, maxLength).replace(/-+$/, '') || 'change';
 }
