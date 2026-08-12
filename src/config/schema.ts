@@ -408,6 +408,50 @@ export const DriftConfigSchema = z.object({
       apiKeyEnv: z.string().default('ANTHROPIC_API_KEY'),
     })
     .default({}),
+
+  /**
+   * GitHub code scanning alerts, one per affected package.
+   *
+   * Every run that produces a plan — whether or not anything is breaking —
+   * can also render its findings as SARIF and upload them to the repository's
+   * code scanning dashboard, so the same evidence, location, and fix Drift
+   * puts in a pull request also shows up as an alert, the way CodeQL's and
+   * Scorecard's own findings do. Requires the workflow to grant
+   * `security-events: write`; Drift logs and continues, rather than failing
+   * the run, when that permission is missing.
+   */
+  codeScanning: z
+    .object({
+      enabled: z.boolean().default(true),
+      /**
+       * Alert even on findings the rest of the pipeline would not act on —
+       * a resolved or introduced advisory with no breaking change, for
+       * instance. Off would mean "only what a PR would contain", which is a
+       * real, narrower option some teams may prefer.
+       */
+      includeInformational: z.boolean().default(true),
+    })
+    .default({}),
+
+  /**
+   * Proactive scanning of every direct dependency's *installed* version
+   * against its registry — not "what changed in this push", which is the
+   * rest of this config, but "what's available and un-taken right now".
+   *
+   * Off by default: unlike the push-triggered pipeline, this has no natural
+   * trigger of its own and needs a `schedule` added to the workflow — see
+   * `examples/workflows/drift-outdated.yml`. Once on, each outdated
+   * dependency is scanned the same way `drift outdated` scans it: an
+   * upgrade Drift can prove safe is committed directly (subject to
+   * `maxAutoRisk`, same as any other plan); one that isn't gets the same
+   * approval-issue or Copilot dispatch as a normal finding. Every dependency
+   * scanned — upgraded or not — gets a code scanning alert.
+   */
+  outdated: z
+    .object({
+      enabled: z.boolean().default(false),
+    })
+    .default({}),
 });
 
 export type DriftConfig = z.infer<typeof DriftConfigSchema>;
