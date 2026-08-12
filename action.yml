@@ -1,8 +1,6 @@
-name: 'Drift'
+name: 'Drift Dependency Guard'
 description: >-
-  Finds which dependency changes affect your code, shows the evidence, and
-  prepares a reviewable fix. Drift uses deterministic remediation first and
-  GitHub Copilot only when needed.
+  Find risky dependency upgrades and breaking changes before they reach production.
 author: 'Drift'
 
 branding:
