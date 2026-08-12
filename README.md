@@ -114,12 +114,14 @@ See [trust and safety](docs/trust-and-safety.md#an-unauthorized-user-comments-dr
 
 ### 5. (Optional) See it in the Security tab too
 
-Every plan — breaking or not — can also be uploaded as a code scanning alert,
-one per affected package, with the same evidence and fix a pull request would
-carry: which advisories it closes, where the code that breaks lives (including
-which workspace, in a monorepo), and either the exact command for a safe
-upgrade or the deterministic fix Drift will make once approved. On by default;
-turn it off with `codeScanning.enabled: false`.
+Every plan — breaking or not — can also be uploaded as a code scanning alert:
+one per breaking change, listing every place in the repository it's used, with
+the same evidence and fix a pull request would carry. A dependency move with
+no breaking change of its own — a resolved advisory, say — still gets one
+alert per package. Either way: which advisories it closes, where the code that
+breaks lives (including which workspace, in a monorepo), and either the exact
+command for a safe upgrade or the deterministic fix Drift will make once
+approved. On by default; turn it off with `codeScanning.enabled: false`.
 
 To also get alerted about dependencies nobody has bumped yet — not just what
 changed in the last push — copy
