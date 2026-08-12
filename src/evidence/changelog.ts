@@ -271,10 +271,10 @@ export function parseChangelogSections(content: string): ChangelogSection[] {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!;
-    const heading = /^(#{1,4})\s+(.*)$/.exec(line);
+    const heading = /^(#{1,4})\s(.*)$/.exec(line);
 
     if (heading) {
-      const version = extractVersion(heading[2]!);
+      const version = extractVersion(heading[2]!.trimStart());
       if (version) {
         if (current) {
           sections.push({ version: current.version, body: current.body.join('\n').trim(), line: current.line });
@@ -297,7 +297,7 @@ export function parseChangelogSections(content: string): ChangelogSection[] {
 /** Pull a semver-parseable version out of a heading, ignoring dates and links. */
 function extractVersion(heading: string): string | null {
   // Strip markdown link syntax so `## [1.2.3](url)` yields `1.2.3`.
-  const text = heading.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');
+  const text = heading.replace(/\[([^\]]{0,300})\]\([^)]{0,2000}\)/g, '$1');
   const match = /\bv?(\d+\.\d+(?:\.\d+)?(?:[-+][\w.-]+)?)\b/.exec(text);
   if (!match) return null;
   return normalizeVersion(match[1]!);
@@ -345,10 +345,10 @@ export function extractBreakingPassages(body: string): string[] {
   let sectionDepth = 0;
 
   for (const line of lines) {
-    const heading = /^(#{1,6})\s+(.*)$/.exec(line);
+    const heading = /^(#{1,6})\s(.*)$/.exec(line);
     if (heading) {
       const depth = heading[1]!.length;
-      const title = heading[2]!;
+      const title = heading[2]!.trimStart();
       if (BREAKING_HEADING.test(title)) {
         inBreakingSection = true;
         sectionDepth = depth;
