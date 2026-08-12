@@ -600,7 +600,7 @@ describe('rendered output', () => {
 
   test('the report cites its evidence', () => {
     const body = renderPullRequestBody(plan, DEFAULT_CONFIG);
-    assert.ok(body.includes('https://example.com/diff'), 'every claim links to its source');
+    assert.match(body, /https:\/\/example\.com\/diff/, 'every claim links to its source');
     assert.ok(body.includes('createClient'));
     assert.ok(body.includes('Review checklist'));
   });

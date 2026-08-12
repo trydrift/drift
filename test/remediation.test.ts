@@ -214,7 +214,7 @@ describe('live-search: trust boundary and defensive parsing', () => {
 
   test('queryCodemodRegistry matches on the dependency name and pins the returned version', async () => {
     mockFetch((url) => {
-      if (!url.includes('api.codemod.com')) return null;
+      if (new URL(url).host !== 'api.codemod.com') return null;
       return {
         status: 200,
         body: JSON.stringify({
