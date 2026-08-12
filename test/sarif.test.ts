@@ -10,13 +10,14 @@ import type { UpgradeRationale } from '../dist/rationale/types.js';
 /**
  * SARIF findings: what a repository sees in its Security tab.
  *
- * The core behavior under test: one alert per *locally actionable* breaking
- * change, not one per package and not one per upstream change. A breaking
- * change with no impact site in this repository never reaches SARIF at all —
- * that's the fix for the 347-alert flood a single outdated `zod` upgrade
- * produced in this repository (nearly all of those upstream changes touched
- * no code here). The assertions mirror the extension's inline diagnostics,
- * which are already one-marker-per-impact-site.
+ * The core behavior under test: one alert per *package*, not one per
+ * breaking change and not one per upstream change. A breaking change with
+ * no impact site in this repository is never itemized in that alert —
+ * that's the fix for the 347-alert-body flood a single outdated `zod`
+ * upgrade produced in this repository (nearly all of those upstream changes
+ * touched no code here) — but every locally-actionable breaking change and
+ * security signal a package does have folds into its one alert as its own
+ * block, listed one after another rather than merged into one paragraph.
  */
 
 const repo = {
@@ -105,7 +106,7 @@ function rationale(overrides: Partial<UpgradeRationale> = {}): UpgradeRationale 
 }
 
 describe('findingsFromPlan', () => {
-  test('one finding per breaking change that has local impact', () => {
+  test('one finding per package, folding every locally-actionable breaking change into its own block', () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -116,16 +117,17 @@ describe('findingsFromPlan', () => {
     }) as RemediationPlan;
 
     const findings = findingsFromPlan(plan);
-    assert.equal(findings.length, 2, 'one finding per breaking change, not one per package');
-    assert.equal(findings[0]!.ruleId, 'drift/removed-export', 'rule is the finding kind, not the package');
+    assert.equal(findings.length, 1, 'one finding per package, not one per breaking change');
+    assert.equal(findings[0]!.ruleId, 'drift/npm/acme-sdk', 'rule is stable per package, so a rescan replaces it');
     assert.equal(findings[0]!.level, 'error', 'high upstream confidence + high local confidence is an error');
     assert.match(findings[0]!.message, /createClient.*was removed \(bc_1\)/);
+    assert.match(findings[0]!.message, /createClient.*was removed \(bc_2\)/);
+    assert.match(findings[0]!.message, /---/, 'each breaking change is its own block, separated by a rule');
     assert.equal(findings[0]!.primaryLocation.file, 'src/index.ts');
     assert.equal(findings[0]!.primaryLocation.line, 12);
-    assert.deepEqual(findings[0]!.relatedLocations, []);
   });
 
-  test('a breaking change with no impact site produces no alert at all', () => {
+  test('a breaking change with no impact site is omitted from the alert body, not the whole alert', () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -136,8 +138,10 @@ describe('findingsFromPlan', () => {
     }) as RemediationPlan;
 
     const findings = findingsFromPlan(plan);
-    assert.equal(findings.length, 1, 'the upstream-only change is not an alert');
+    assert.equal(findings.length, 1);
     assert.match(findings[0]!.message, /bc_1/);
+    assert.doesNotMatch(findings[0]!.message, /bc_2/, 'the upstream-only change is not itemized');
+    assert.match(findings[0]!.message, /1 additional upstream breaking change/);
   });
 
   test('multiple sites for the same breaking change: one alert, one primary location, the rest related', () => {
@@ -203,7 +207,7 @@ describe('findingsFromPlan', () => {
 
     const findings = findingsFromPlan(plan);
     assert.equal(findings.length, 1);
-    assert.equal(findings[0]!.ruleId, 'drift/vulnerability');
+    assert.equal(findings[0]!.ruleId, 'drift/npm/acme-sdk');
     assert.equal(findings[0]!.level, 'note', 'resolving an advisory with nothing broken is informational');
     assert.match(findings[0]!.message, /GHSA-xxxx/);
     assert.equal(findings[0]!.helpUri, 'https://example.com/advisory');
@@ -222,7 +226,7 @@ describe('findingsFromPlan', () => {
 
     assert.equal(findingsFromPlan(plan).length, 0, 'includeInformational defaults to false');
     assert.equal(findingsFromPlan(plan, { includeInformational: true }).length, 1);
-    assert.equal(findingsFromPlan(plan, { includeInformational: true })[0]!.ruleId, 'drift/outdated');
+    assert.equal(findingsFromPlan(plan, { includeInformational: true })[0]!.ruleId, 'drift/npm/acme-sdk');
   });
 
   test('an unresolved current advisory is an error', () => {
