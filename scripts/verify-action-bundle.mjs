@@ -37,6 +37,14 @@ if (diff.status !== 0) {
 const nodeModules = `${repoRoot}/node_modules`;
 const hidden = `${repoRoot}/node_modules.hidden`;
 let hiddenAway = false;
+
+// Force the plain-text logger format regardless of whether this script is
+// itself running inside a real Actions job — otherwise, when it is (as in
+// CI), the spawned bundle inherits GITHUB_ACTIONS=true and its logger emits
+// `::error::` workflow commands instead of the `drift:error` marker checked
+// below, making this check fail in CI while passing everywhere else.
+const childEnv = { ...process.env, GITHUB_ACTIONS: 'false' };
+
 try {
   log('checking the bundle is self-contained (node_modules removed)');
   if (existsSync(nodeModules)) {
@@ -44,7 +52,7 @@ try {
     hiddenAway = true;
   }
 
-  const result = spawnSync('node', ['action/index.cjs'], { cwd: repoRoot, encoding: 'utf8' });
+  const result = spawnSync('node', ['action/index.cjs'], { cwd: repoRoot, encoding: 'utf8', env: childEnv });
   const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
 
   if (/Cannot find module|ERR_MODULE_NOT_FOUND|ERR_REQUIRE_ESM/.test(output)) {
@@ -113,7 +121,7 @@ if (!node20) {
 }
 
 log(`checking the bundle runs on Node 20 (${node20})`);
-const onNode20 = spawnSync(node20, ['action/index.cjs'], { cwd: repoRoot, encoding: 'utf8' });
+const onNode20 = spawnSync(node20, ['action/index.cjs'], { cwd: repoRoot, encoding: 'utf8', env: childEnv });
 const node20Output = `${onNode20.stdout ?? ''}${onNode20.stderr ?? ''}`;
 
 if (/SyntaxError|ERR_UNSUPPORTED|is not a function|Unexpected token/.test(node20Output)) {
