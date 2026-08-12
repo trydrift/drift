@@ -333,12 +333,12 @@ function pythonLocalImports(content: string, path: string): LocalImport[] {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!.trim();
-    const from = /^from\s+(\.[\w.]*)\s+import\s+(.+)$/.exec(line);
+    const from = /^from\s+(\.[\w.]*)\s+import\s(.+)$/.exec(line);
     if (from) {
       out.push({
         specifier: from[1]!,
         line: i + 1,
-        bindings: parsePythonImportList(from[2]!),
+        bindings: parsePythonImportList(from[2]!.trimStart()),
         reExport: isPackageInit,
       });
     }
@@ -627,7 +627,7 @@ function requireBindings(binding: string): string[] {
     .replace(/[{}]/g, '')
     .split(',')
     .flatMap((part) => {
-      const [property, local] = part.split(/\s*:\s*/).map((piece) => piece.trim());
+      const [property, local] = part.split(':').map((piece) => piece.trim());
       return [property, local].filter((name): name is string => Boolean(name));
     });
 }
@@ -643,7 +643,7 @@ function extractPythonImports(content: string, path: string): ImportRecord[] {
     const line = lines[i]!.trim();
 
     // `from pkg.sub import a, b as c`
-    const from = /^from\s+([\w.]+)\s+import\s+(.+)$/.exec(line);
+    const from = /^from\s+([\w.]+)\s+import\s(.+)$/.exec(line);
     if (from) {
       const module = from[1]!;
       // A leading dot is a relative import — internal, not a dependency.
@@ -651,7 +651,7 @@ function extractPythonImports(content: string, path: string): ImportRecord[] {
       out.push({
         specifier: module,
         packageName: module.split('.')[0]!,
-        bindings: parsePythonImportList(from[2]!),
+        bindings: parsePythonImportList(from[2]!.trimStart()),
         line: i + 1,
         reExport: forwards,
       });
@@ -659,9 +659,9 @@ function extractPythonImports(content: string, path: string): ImportRecord[] {
     }
 
     // `import pkg.sub as alias, other`
-    const plain = /^import\s+(.+)$/.exec(line);
+    const plain = /^import\s(.+)$/.exec(line);
     if (plain) {
-      for (const part of plain[1]!.split(',')) {
+      for (const part of plain[1]!.trimStart().split(',')) {
         const match = /^\s*([\w.]+)(?:\s+as\s+(\w+))?/.exec(part);
         if (!match?.[1]) continue;
         const module = match[1];
@@ -1240,7 +1240,9 @@ function extractSwiftImports(content: string): ImportRecord[] {
     const line = lines[i]!;
     if (line.trimStart().startsWith('//')) continue;
     const match =
-      /^\s*(?:@testable\s+)?import\s+(?:typealias|struct|class|enum|protocol|let|var|func\s+)?\s*([\w.]+)/.exec(line);
+      /^\s*(?:@testable\s+)?import\s+(?:(?:typealias|struct|class|enum|protocol|let|var|func)\s+)?([\w.]+)/.exec(
+        line,
+      );
     if (!match?.[1]) continue;
 
     const module = match[1].split('.')[0]!;
@@ -1561,7 +1563,7 @@ function extractUnitsByPattern(content: string, language: Language): CodeUnit[] 
         name: match[1],
         kind,
         line: i + 1,
-        summary: collapse(line.replace(/\s*[{:]\s*$/, '')),
+        summary: collapse(line.replace(/[{:]\s*$/, '').replace(/\s+$/, '')),
         indent: raw.length - raw.trimStart().length,
       });
       break;
