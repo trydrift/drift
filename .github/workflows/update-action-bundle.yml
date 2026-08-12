@@ -1,0 +1,51 @@
+name: Update Action bundle
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'action.yml'
+      - 'src/**'
+      - 'scripts/build-action.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'action/**'
+      - '!action/index.cjs'
+      - '!action/behavioural-worker.js'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-action-bundle-main
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build the action bundle
+        run: npm run build:action
+
+      - name: Commit and push action/index.cjs
+        run: |
+          if git diff --quiet -- action/index.cjs; then
+            echo "action/index.cjs is already up to date"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add action/index.cjs
+          git commit -m "chore(action): update bundled action"
+          git push origin HEAD:main
