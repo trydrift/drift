@@ -43,7 +43,7 @@ const KEYS = ['drift-schema', 'drift-plan', 'drift-plan-digest', 'drift-commit',
 type MetadataKey = (typeof KEYS)[number];
 
 /** `<!-- drift-key: value -->` on its own line. */
-const MARKER = /^[ \t]*<!--[ \t]*(drift-[a-z-]+)[ \t]*:[ \t]*(.*?)[ \t]*-->[ \t]*$/gm;
+const MARKER = /^[ \t]*<!--[ \t]*(drift-[a-z-]+)[ \t]*:(.*?)-->[ \t]*$/gm;
 
 const FULL_SHA = /^[0-9a-f]{40}$/;
 const PLAN_ID = /^plan_[0-9a-f]{10}$/;
@@ -88,7 +88,7 @@ export function parseApprovalMetadata(body: string): MetadataParseResult {
   const found = new Map<string, string[]>();
   for (const match of body.matchAll(MARKER)) {
     const key = match[1]!;
-    const value = match[2] ?? '';
+    const value = (match[2] ?? '').trim();
     const existing = found.get(key);
     if (existing) existing.push(value);
     else found.set(key, [value]);
@@ -196,8 +196,8 @@ export function findPriorDispatch(
     const digest = /<!--\s*drift-dispatched:\s*([0-9a-f]{64})\s*-->/.exec(comment.body)?.[1];
     if (digest !== planDigest) continue;
 
-    const branchName = /<!--\s*drift-dispatched-branch:\s*(.+?)\s*-->/.exec(comment.body)?.[1];
-    const taskId = /<!--\s*drift-dispatched-task:\s*(.+?)\s*-->/.exec(comment.body)?.[1];
+    const branchName = /<!--\s*drift-dispatched-branch:(.+?)-->/.exec(comment.body)?.[1]?.trim();
+    const taskId = /<!--\s*drift-dispatched-task:(.+?)-->/.exec(comment.body)?.[1]?.trim();
     const pr = /<!--\s*drift-dispatched-pr:\s*(\d+)\s*-->/.exec(comment.body)?.[1];
 
     return {
