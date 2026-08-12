@@ -4,8 +4,11 @@
 # this repository is private. Referencing a private action from a *different*
 # repository does not resolve; that needs this repo to be public.
 #
-# Trigger it by hand from the Actions tab, or let it fire when Drift's own
-# dependencies change.
+# Three ways this runs: on a push that bumps Drift's own dependencies (the
+# ordinary diff-triggered path), on a weekly schedule (the outdated-dependency
+# scan — see `scan-mode` in src/runners/action.ts, which always takes that
+# path on a `schedule` event regardless of the input below), or by hand from
+# the Actions tab with either mode.
 
 name: Drift (self-check)
 
@@ -13,20 +16,28 @@ on:
   workflow_dispatch:
     inputs:
       dry-run:
-        description: 'Analyse only — create no branches, issues, or agent tasks'
+        description: 'Analyse only — create no branches, issues, or agent tasks (diff mode only)'
         type: boolean
         default: true
       mode:
-        description: 'approve = file an issue and wait · auto = dispatch Copilot'
+        description: 'approve = file an issue and wait · auto = dispatch Copilot (diff mode only)'
         type: choice
         options: [approve, auto]
         default: approve
+      scan-mode:
+        description: 'diff = analyse the push · outdated = scan every installed dependency'
+        type: choice
+        options: [diff, outdated]
+        default: diff
 
   push:
     branches: [main]
     paths:
       - 'package.json'
       - 'package-lock.json'
+
+  schedule:
+    - cron: '0 9 * * 1'
 
 permissions: {}
 
@@ -68,6 +79,7 @@ jobs:
           copilot-token: ${{ secrets.DRIFT_COPILOT_TOKEN }}
           dry-run: ${{ inputs.dry-run || 'true' }}
           mode: ${{ inputs.mode || 'approve' }}
+          scan-mode: ${{ inputs.scan-mode || 'diff' }}
           log-level: debug
 
       - name: Result
