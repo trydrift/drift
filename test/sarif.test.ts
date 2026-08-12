@@ -10,10 +10,13 @@ import type { UpgradeRationale } from '../dist/rationale/types.js';
 /**
  * SARIF findings: what a repository sees in its Security tab.
  *
- * The assertions here mirror the extension's inline diagnostics — evidence,
- * location, and a fix, grouped one alert per package rather than one per
- * breaking change or advisory — because that grouping, and never losing the
- * fix line, is the whole point of this module.
+ * The core behavior under test: one alert per *locally actionable* breaking
+ * change, not one per package and not one per upstream change. A breaking
+ * change with no impact site in this repository never reaches SARIF at all —
+ * that's the fix for the 347-alert flood a single outdated `zod` upgrade
+ * produced in this repository (nearly all of those upstream changes touched
+ * no code here). The assertions mirror the extension's inline diagnostics,
+ * which are already one-marker-per-impact-site.
  */
 
 const repo = {
@@ -60,13 +63,14 @@ function breaking(id: string, overrides: Record<string, unknown> = {}) {
   };
 }
 
-const site = (breakingChangeId: string) => ({
+const site = (breakingChangeId: string, overrides: Record<string, unknown> = {}) => ({
   breakingChangeId,
   file: 'src/index.ts',
   line: 12,
   excerpt: 'createClient()',
   matchedSymbol: 'createClient',
   confidence: 'high' as const,
+  ...overrides,
 });
 
 const cleanSecurity = {
@@ -101,7 +105,7 @@ function rationale(overrides: Partial<UpgradeRationale> = {}): UpgradeRationale 
 }
 
 describe('findingsFromPlan', () => {
-  test('one finding per package, however many breaking changes it has', () => {
+  test('one finding per breaking change that has local impact', () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -112,35 +116,61 @@ describe('findingsFromPlan', () => {
     }) as RemediationPlan;
 
     const findings = findingsFromPlan(plan);
-    assert.equal(findings.length, 1, 'one finding per package, not per breaking change');
-    assert.equal(findings[0]!.ruleId, 'drift/npm/acme-sdk', 'stable id, independent of which breaking changes exist');
-    assert.equal(findings[0]!.level, 'error', 'high-confidence breaking change is an error');
-    assert.match(findings[0]!.message, /bc_1/);
-    assert.match(findings[0]!.message, /bc_2/);
-    assert.equal(findings[0]!.locations[0]!.file, 'src/index.ts');
-    assert.equal(findings[0]!.locations[0]!.line, 12);
+    assert.equal(findings.length, 2, 'one finding per breaking change, not one per package');
+    assert.equal(findings[0]!.ruleId, 'drift/removed-export', 'rule is the finding kind, not the package');
+    assert.equal(findings[0]!.level, 'error', 'high upstream confidence + high local confidence is an error');
+    assert.match(findings[0]!.message, /createClient.*was removed \(bc_1\)/);
+    assert.equal(findings[0]!.primaryLocation.file, 'src/index.ts');
+    assert.equal(findings[0]!.primaryLocation.line, 12);
+    assert.deepEqual(findings[0]!.relatedLocations, []);
   });
 
-  test('lists every location any of the package\'s breaking changes reach', () => {
+  test('a breaking change with no impact site produces no alert at all', () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
       changes: [dependencyChange],
       evidence,
       breakingChanges: [breaking('bc_1'), breaking('bc_2')],
+      impactSites: [site('bc_1')], // bc_2 reaches no code in this repo
+    }) as RemediationPlan;
+
+    const findings = findingsFromPlan(plan);
+    assert.equal(findings.length, 1, 'the upstream-only change is not an alert');
+    assert.match(findings[0]!.message, /bc_1/);
+  });
+
+  test('multiple sites for the same breaking change: one alert, one primary location, the rest related', () => {
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: [breaking('bc_1')],
       impactSites: [
-        { ...site('bc_1'), file: 'src/a.ts', line: 1 },
-        { ...site('bc_2'), file: 'src/b.ts', line: 2 },
+        site('bc_1', { file: 'src/a.ts', line: 1 }),
+        site('bc_1', { file: 'src/b.ts', line: 2 }),
       ],
     }) as RemediationPlan;
 
     const [finding] = findingsFromPlan(plan);
-    assert.equal(finding!.locations.length, 2);
-    assert.deepEqual(
-      finding!.locations.map((l) => l.file),
-      ['src/a.ts', 'src/b.ts'],
-    );
-    assert.match(finding!.message, /2 location\(s\) across 2 file\(s\)/);
+    assert.equal(finding!.primaryLocation.file, 'src/a.ts');
+    assert.equal(finding!.relatedLocations.length, 1);
+    assert.equal(finding!.relatedLocations[0]!.file, 'src/b.ts');
+  });
+
+  test('upstream-only confidence downgrades severity when local confidence is weaker', () => {
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: [breaking('bc_1', { confidence: 'high' })],
+      impactSites: [site('bc_1', { confidence: 'medium' })],
+    }) as RemediationPlan;
+
+    const [finding] = findingsFromPlan(plan);
+    assert.equal(finding!.level, 'warning', 'one strong signal but not two is a warning, not an error');
   });
 
   test('a resolved advisory is alerted even with no breaking change', () => {
@@ -173,12 +203,13 @@ describe('findingsFromPlan', () => {
 
     const findings = findingsFromPlan(plan);
     assert.equal(findings.length, 1);
+    assert.equal(findings[0]!.ruleId, 'drift/vulnerability');
     assert.equal(findings[0]!.level, 'note', 'resolving an advisory with nothing broken is informational');
     assert.match(findings[0]!.message, /GHSA-xxxx/);
     assert.equal(findings[0]!.helpUri, 'https://example.com/advisory');
   });
 
-  test('a plain version bump with no signal is dropped when informational findings are off', () => {
+  test('a plain version bump with no signal is dropped by default', () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -189,8 +220,9 @@ describe('findingsFromPlan', () => {
       rationale: [rationale({ security: { ...cleanSecurity, checked: false, direction: 'unknown' } })],
     }) as RemediationPlan;
 
-    assert.equal(findingsFromPlan(plan, { includeInformational: false }).length, 0);
+    assert.equal(findingsFromPlan(plan).length, 0, 'includeInformational defaults to false');
     assert.equal(findingsFromPlan(plan, { includeInformational: true }).length, 1);
+    assert.equal(findingsFromPlan(plan, { includeInformational: true })[0]!.ruleId, 'drift/outdated');
   });
 
   test('an unresolved current advisory is an error', () => {
@@ -262,12 +294,27 @@ describe('findingsFromCandidates', () => {
     }) as RemediationPlan;
 
     const candidate: UpgradeCandidate = { ...baseCandidate, plan };
-    const [finding] = findingsFromCandidates([candidate]);
+    const [finding] = findingsFromCandidates([candidate], { includeInformational: true });
 
     assert.ok(finding, 'a candidate with a plan produces a finding');
     assert.equal(plan.commits.length, 0, 'a clean candidate has nothing to commit');
     assert.ok(finding!.fix?.command, 'the fix names the exact command to run');
     assert.match(finding!.fix!.command!, /1\.2\.0/);
+  });
+
+  test('a safe candidate produces no finding when informational alerts are off', () => {
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [{ ...dependencyChange, from: '1.0.0', to: '1.2.0' }],
+      evidence: [],
+      breakingChanges: [],
+      impactSites: [],
+      rationale: [rationale({ from: '1.0.0', to: '1.2.0' })],
+    }) as RemediationPlan;
+
+    const candidate: UpgradeCandidate = { ...baseCandidate, plan };
+    assert.equal(findingsFromCandidates([candidate]).length, 0);
   });
 
   test('a candidate with no plan produces no finding', () => {
@@ -276,7 +323,7 @@ describe('findingsFromCandidates', () => {
 });
 
 describe('buildSarifLog', () => {
-  test('one rule per ruleId, one result per finding', () => {
+  test('one rule per ruleId, one result per finding, with a category and a fingerprint', () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -286,12 +333,20 @@ describe('buildSarifLog', () => {
       impactSites: [site('bc_1')],
     }) as RemediationPlan;
 
-    const log = buildSarifLog(findingsFromPlan(plan)) as {
-      runs: [{ tool: { driver: { rules: unknown[] } }; results: unknown[] }];
+    const log = buildSarifLog(findingsFromPlan(plan), 'drift/diff') as {
+      runs: [
+        {
+          tool: { driver: { rules: unknown[] } };
+          automationDetails?: { id: string };
+          results: { partialFingerprints: { primaryLocationLineHash: string } }[];
+        },
+      ];
     };
 
     assert.equal(log.runs[0]!.tool.driver.rules.length, 1);
     assert.equal(log.runs[0]!.results.length, 1);
+    assert.equal(log.runs[0]!.automationDetails?.id, 'drift/diff');
+    assert.ok(log.runs[0]!.results[0]!.partialFingerprints.primaryLocationLineHash.length > 0);
   });
 
   test('an empty finding list is still a valid, empty SARIF log', () => {

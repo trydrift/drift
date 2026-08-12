@@ -1,8 +1,17 @@
+import { createHash } from 'node:crypto';
 import { describeMember } from '../detect/workspace.js';
 import { RECOMMENDATION_LABEL } from '../rationale/assess.js';
 import type { UpgradeRationale, Vulnerability } from '../rationale/types.js';
 import { compareSeverity } from '../rationale/types.js';
-import type { BreakingChange, DependencyChange, Ecosystem, ImpactSite, RemediationPlan } from '../types.js';
+import type {
+  BreakingChange,
+  BreakingChangeKind,
+  Confidence,
+  DependencyChange,
+  Ecosystem,
+  ImpactSite,
+  RemediationPlan,
+} from '../types.js';
 import { upgradeCommandFor, type UpgradeCandidate } from '../upgrade/scan.js';
 
 /**
@@ -14,21 +23,28 @@ import { upgradeCommandFor, type UpgradeCandidate } from '../upgrade/scan.js';
  * the evidence, the location, and the fix (that's the whole plan/rationale
  * pipeline) — this only reshapes it into SARIF.
  *
- * One alert per package, not per breaking change and not per occurrence: a
- * package with three breaking changes and two resolved advisories is one
- * alert with all five, listing every location any of its breaking changes
- * reach, not five. The earlier per-breaking-change design produced 347
- * alerts for a single outdated dependency in this very repository (zod 3 ->
- * 4 is a large rewrite; nearly all of those changes touched no code here) —
- * a flood, not a report. `ruleId` is `drift/<ecosystem>/<name>`: stable
- * across runs for the same package, which is what makes rescanning a
- * *replacement* rather than an accumulation — see the note on
- * `findingsFromPlan` below.
+ * The unit of an alert is one *locally actionable* finding, not one package.
+ * A package can carry hundreds of upstream breaking changes — most upgrades
+ * touch no code in a given repository at all — and dumping every one of them
+ * into a single alert (or, worse, opening one alert per upstream change
+ * regardless of whether it reaches this repository) is what turns the
+ * Security tab into noise nobody reads. So:
  *
- * `SarifFinding` is the intermediate: dependency-shaped and framework-free, so
- * it can be built from a push-triggered `RemediationPlan` (`findingsFromPlan`)
- * or from a scheduled outdated-dependency scan (`findingsFromCandidates`) and
- * rendered by the same `buildSarifLog`.
+ *   - a breaking change becomes an alert only when it has at least one
+ *     `ImpactSite` — code in *this* repository that actually calls the
+ *     affected symbol. An upstream-only change never reaches SARIF; it is
+ *     still visible in the job summary / PR body, where the full upstream
+ *     count belongs.
+ *   - each such alert is anchored to the highest-confidence site as its
+ *     primary `location`; every other site the same change reaches rides
+ *     along as a `relatedLocation` rather than inflating `locations[]`.
+ *   - severity is upstream confidence *and* local confidence together: a
+ *     proven upstream change with no confidently-matched local call site is
+ *     a warning, not an error.
+ *   - `ruleId` names the *kind* of finding (`drift/removed-export`,
+ *     `drift/vulnerability`, ...), because that is what GitHub's rule
+ *     descriptors are for — a category that changes rarely — not the
+ *     package name, which would mint a new "rule" per dependency.
  */
 
 export type SarifLevel = 'error' | 'warning' | 'note';
@@ -51,16 +67,13 @@ export interface SarifLocation {
   excerpt?: string;
 }
 
-/** One alert: everything Drift found about a single package. */
+/** One alert: one locally actionable finding. */
 export interface SarifFinding {
   /**
-   * `drift/<ecosystem>/<name>` — stable across runs for the same package,
-   * independent of which breaking changes or advisories it currently has.
-   * That stability is what lets GitHub's own SARIF reconciliation do the
-   * work: uploading a fresh SARIF log for the same `ref` updates this rule's
-   * alert to the latest commit and finding set, and drops it entirely (marks
-   * it "fixed") the run it stops appearing — no bookkeeping of Drift's own
-   * needed to avoid piling up duplicate alerts across rescans.
+   * `drift/<finding-kind>` — the category of finding (a removed export, a
+   * signature change, a vulnerability, an outdated dependency...), not the
+   * package it was found in. Stable across every package that produces the
+   * same kind of finding, which is what a SARIF rule descriptor is for.
    */
   ruleId: string;
   /** Human-readable rule name, shown in GitHub's rule/alert-type listing. */
@@ -74,12 +87,17 @@ export interface SarifFinding {
   workspace?: string;
   workspaceLabel?: string | null;
   level: SarifLevel;
-  /** Shown as the alert's title in GitHub's UI. */
-  title: string;
-  /** The full alert body: what changed, every location it reaches, the evidence, and the fix. */
+  /**
+   * `result.message.text`. GitHub treats this as both the alert's title (its
+   * first sentence, when space is constrained) and its full body — there is
+   * no separate title field in SARIF, so the concise statement of what's
+   * wrong comes first and the supporting detail follows it.
+   */
   message: string;
-  /** At least one entry. `[0]` is the primary location GitHub anchors the alert to. */
-  locations: SarifLocation[];
+  /** The location GitHub anchors the alert to. */
+  primaryLocation: SarifLocation;
+  /** Every other place the same finding reaches. */
+  relatedLocations: SarifLocation[];
   fix?: SarifFix;
   helpUri?: string;
 }
@@ -87,11 +105,19 @@ export interface SarifFinding {
 const TOOL_NAME = 'Drift';
 const TOOL_URI = 'https://github.com/trydrift/drift';
 
-/** How many locations actually ride along in the SARIF payload, per finding. */
-const MAX_LOCATIONS_UPLOADED = 10;
+/** How many extra locations ride along as `relatedLocations`, per finding. */
+const MAX_RELATED_LOCATIONS = 9;
 
-/** Render a set of findings as a SARIF 2.1.0 log, ready to gzip and upload. */
-export function buildSarifLog(findings: readonly SarifFinding[]): Record<string, unknown> {
+/**
+ * Render a set of findings as a SARIF 2.1.0 log, ready to gzip and upload.
+ *
+ * `category` becomes `runAutomationDetails.id`. It must be distinct between
+ * the push-triggered diff scan and the scheduled outdated-dependency scan:
+ * without it, GitHub has no way to tell that an upload from one mode is not
+ * meant to replace the other's result set, and the two would fight over
+ * which findings are "current" on every run.
+ */
+export function buildSarifLog(findings: readonly SarifFinding[], category?: string): Record<string, unknown> {
   const rules = new Map<string, { id: string; name: string; helpUri?: string }>();
   for (const finding of findings) {
     if (!rules.has(finding.ruleId)) {
@@ -125,21 +151,22 @@ export function buildSarifLog(findings: readonly SarifFinding[]): Record<string,
             })),
           },
         },
+        ...(category ? { automationDetails: { id: category } } : {}),
         results: findings.map((finding) => ({
           ruleId: finding.ruleId,
           level: finding.level,
           message: { text: finding.message },
-          locations: finding.locations.map((loc) => ({
-            physicalLocation: {
-              artifactLocation: { uri: loc.file },
-              region: {
-                startLine: Math.max(1, loc.line),
-                ...(loc.excerpt ? { snippet: { text: loc.excerpt } } : {}),
-              },
-            },
-          })),
+          locations: [toSarifPhysicalLocation(finding.primaryLocation)],
+          ...(finding.relatedLocations.length > 0
+            ? {
+                relatedLocations: finding.relatedLocations.map((loc, i) => ({
+                  id: i + 1,
+                  ...toSarifPhysicalLocation(loc),
+                })),
+              }
+            : {}),
           partialFingerprints: {
-            driftFinding: finding.ruleId,
+            primaryLocationLineHash: lineHash(finding),
           },
         })),
       },
@@ -147,31 +174,53 @@ export function buildSarifLog(findings: readonly SarifFinding[]): Record<string,
   };
 }
 
+function toSarifPhysicalLocation(loc: SarifLocation): Record<string, unknown> {
+  return {
+    physicalLocation: {
+      artifactLocation: { uri: loc.file },
+      region: {
+        startLine: Math.max(1, loc.line),
+        ...(loc.excerpt ? { snippet: { text: loc.excerpt } } : {}),
+      },
+    },
+  };
+}
+
 /**
- * Findings from a push-triggered `RemediationPlan`: one alert per package
- * that moved, folding together every breaking change and every security fact
- * the rationale stage found for it.
+ * A content-based fingerprint, so the same finding reconciles across runs
+ * even when unrelated edits shift its line number by a line or two.
+ *
+ * GitHub only reads `primaryLocationLineHash` out of `partialFingerprints`
+ * for result tracking — a `ruleId`-only fingerprint (the previous approach
+ * here) is silently ignored. Uploading through the REST API directly, rather
+ * than through `github/codeql-action/upload-sarif`, means Drift does not get
+ * one generated for it automatically either.
+ */
+function lineHash(finding: SarifFinding): string {
+  const basis = `${finding.ruleId}|${finding.primaryLocation.file}|${(finding.primaryLocation.excerpt ?? '').trim()}`;
+  return createHash('sha256').update(basis).digest('hex').slice(0, 40);
+}
+
+/**
+ * Findings from a push-triggered `RemediationPlan`.
  *
  * Each run uploads the *complete* current set of findings for the ref it
  * analysed (see `uploadCodeScanning` in `runners/action.ts`) rather than an
  * incremental diff. GitHub's code scanning API is built around exactly that
  * shape: for a given `(ref, category, tool)`, the newest upload is the
- * authoritative state — a `ruleId` present in it keeps (or opens) one alert,
- * updated to the latest commit; a `ruleId` that was open before and is
- * absent from the new upload is automatically marked fixed. Because `ruleId`
- * here is `drift/<ecosystem>/<name>` — stable across runs, not derived from
- * a specific breaking change — rescanning a package naturally replaces its
- * one alert rather than accumulating a new one alongside the old.
+ * authoritative state — a finding present in it keeps (or opens) one alert,
+ * updated to the latest commit; one that was open before and is absent from
+ * the new upload is automatically marked fixed.
  */
 export function findingsFromPlan(
   plan: RemediationPlan,
   opts: { includeInformational?: boolean; fixOf?: (change: DependencyChange) => SarifFix | undefined } = {},
 ): SarifFinding[] {
-  const includeInformational = opts.includeInformational ?? true;
+  const includeInformational = opts.includeInformational ?? false;
   const findings: SarifFinding[] = [];
 
   for (const change of plan.changes) {
-    const breaking = plan.breakingChanges.filter(
+    const allBreaking = plan.breakingChanges.filter(
       (b) => b.dependency === change.name && (b.workspace ?? '') === (change.workspace ?? ''),
     );
     // `UpgradeRationale` isn't workspace-qualified — see its definition — so
@@ -180,22 +229,34 @@ export function findingsFromPlan(
     // the same limitation.
     const rationale = plan.rationale?.find((r) => r.dependency === change.name);
 
-    if (breaking.length === 0 && !hasSecuritySignal(rationale) && !includeInformational) continue;
-    if (breaking.length === 0 && !rationale) continue;
+    let emittedAnything = false;
 
-    const sites = plan.impactSites.filter((site) => breaking.some((b) => b.id === site.breakingChangeId));
-    const commit = plan.commits.find((c) => breaking.some((b) => c.breakingChangeIds.includes(b.id)));
+    for (const b of allBreaking) {
+      const sites = plan.impactSites.filter((site) => site.breakingChangeId === b.id);
+      if (sites.length === 0) continue; // upstream-only: no code here to point at.
 
-    findings.push(
-      buildFinding({
-        change,
-        breaking,
-        rationale,
-        sites,
-        evidence: plan.evidence,
-        fix: opts.fixOf?.(change) ?? fixFromCommit(commit, plan),
-      }),
-    );
+      emittedAnything = true;
+      const commit = plan.commits.find((c) => c.breakingChangeIds.includes(b.id));
+      findings.push(
+        buildBreakingFinding({
+          change,
+          breaking: b,
+          upstreamCount: allBreaking.length,
+          sites,
+          evidence: plan.evidence,
+          fix: opts.fixOf?.(change) ?? fixFromCommit(commit, plan),
+        }),
+      );
+    }
+
+    if (hasSecuritySignal(rationale)) {
+      emittedAnything = true;
+      findings.push(buildSecurityFinding({ change, rationale: rationale! }));
+    }
+
+    if (!emittedAnything && includeInformational && rationale) {
+      findings.push(buildOutdatedFinding({ change, rationale, fix: opts.fixOf?.(change) }));
+    }
   }
 
   return findings;
@@ -208,10 +269,10 @@ function hasSecuritySignal(rationale: UpgradeRationale | undefined): boolean {
 }
 
 /**
- * One finding per dependency from a proactive outdated-dependency scan (see
- * `upgrade/scan.ts`, shared with `drift outdated`) — the check that runs on a
- * schedule rather than a push, over every currently installed version rather
- * than only the ones that just moved.
+ * One dependency's worth of findings from a proactive outdated-dependency
+ * scan (see `upgrade/scan.ts`, shared with `drift outdated`) — the check
+ * that runs on a schedule rather than a push, over every currently installed
+ * version rather than only the ones that just moved.
  *
  * Each candidate already carries its own single-dependency `RemediationPlan`
  * (`scanUpgrades` builds one per package it can reach a verdict on), so this
@@ -248,69 +309,74 @@ export function findingsFromCandidates(
   return findings;
 }
 
-function buildFinding(args: {
+/** `drift/<breaking-change-kind>` — the rule for one kind of upstream change. */
+function ruleIdForBreaking(kind: BreakingChangeKind): string {
+  return `drift/${kind}`;
+}
+
+const RULE_NAMES: Record<BreakingChangeKind, string> = {
+  'removed-export': 'Removed export used in this repository',
+  'renamed-export': 'Renamed export used in this repository',
+  'moved-export': 'Export moved to a different module',
+  'signature-change': 'Call signature changed',
+  'type-change': 'Type changed in a breaking way',
+  'behaviour-change': 'Runtime behaviour changed',
+  'removed-endpoint': 'API endpoint removed',
+  'changed-endpoint': 'API endpoint changed',
+  'required-field-added': 'New required field',
+  'default-change': 'Default value changed',
+  'config-change': 'Configuration shape changed',
+  'runtime-requirement': 'Runtime requirement changed',
+  unknown: 'Unclassified breaking change',
+};
+
+function ruleNameForBreaking(kind: BreakingChangeKind): string {
+  return RULE_NAMES[kind] ?? 'Breaking change';
+}
+
+function buildBreakingFinding(args: {
   change: DependencyChange;
-  breaking: BreakingChange[];
-  rationale: UpgradeRationale | undefined;
+  breaking: BreakingChange;
+  upstreamCount: number;
   sites: ImpactSite[];
   evidence: RemediationPlan['evidence'];
   fix?: SarifFix;
 }): SarifFinding {
-  const { change, breaking, rationale, sites, evidence, fix } = args;
+  const { change, breaking, upstreamCount, sites, evidence, fix } = args;
   const memberLabel = describeMember(change);
   const versionMove = change.to ? `${change.from ?? 'none'} → ${change.to}` : 'removed';
 
-  const lines: string[] = [];
-  lines.push(`**${change.name}** (${change.ecosystem}) — ${versionMove}`);
-  lines.push(
-    memberLabel ? `Found in: \`${change.manifestPath}\` (${memberLabel})` : `Found in: \`${change.manifestPath}\``,
+  const sorted = [...sites].sort(
+    (a, b) => rank(b.confidence) - rank(a.confidence) || a.file.localeCompare(b.file) || a.line - b.line,
   );
+  const primary = sorted[0]!;
+  const related = sorted.slice(1, 1 + MAX_RELATED_LOCATIONS);
+  const localConfidence = primary.confidence;
+  const files = new Set(sites.map((s) => s.file));
 
-  if (breaking.length > 0) {
-    lines.push('', `**Breaking changes (${breaking.length}):**`);
-    for (const b of breaking) lines.push(`- ${b.summary} — confidence: ${b.confidence}`);
-
-    if (sites.length > 0) {
-      const shown = sites.slice(0, MAX_LOCATIONS_UPLOADED);
-      const files = new Set(sites.map((s) => s.file));
-      lines.push('', `**Appears in ${sites.length} location(s) across ${files.size} file(s):**`);
-      for (const s of shown) lines.push(`- \`${s.file}:${s.line}\` — \`${s.excerpt.trim()}\``);
-      if (sites.length > shown.length) lines.push(`- …and ${sites.length - shown.length} more.`);
-    } else {
-      lines.push('', 'No local usage was found to be affected by these changes.');
-    }
+  const lines: string[] = [breaking.summary];
+  lines.push(
+    '',
+    memberLabel
+      ? `**${change.name}** (${change.ecosystem}) ${versionMove} — ${memberLabel}`
+      : `**${change.name}** (${change.ecosystem}) ${versionMove}`,
+  );
+  lines.push(
+    `Upstream confidence: ${breaking.confidence}. Local confidence: ${localConfidence}` +
+      (sites.length > 1 ? ` (best of ${sites.length} matches across ${files.size} file(s)).` : '.'),
+  );
+  if (upstreamCount > 1) {
+    lines.push('', `1 of ${upstreamCount} upstream breaking changes in ${change.name} that reach code here.`);
   }
-
-  if (rationale) {
-    const sec = rationale.security;
-    if (sec.checked) {
-      if (sec.resolved.length > 0) {
-        lines.push('', `**Resolves ${sec.resolved.length} advisory/advisories if upgraded:**`);
-        for (const v of sec.resolved) lines.push(`- ${vulnerabilityLine(v)}`);
-      }
-      if (sec.introduced.length > 0) {
-        lines.push('', `**Would introduce ${sec.introduced.length} new advisory/advisories:**`);
-        for (const v of sec.introduced) lines.push(`- ${vulnerabilityLine(v)}`);
-      }
-      if (sec.current.length > 0) {
-        lines.push('', `**Currently affected by ${sec.current.length} advisory/advisory(ies) at the installed version:**`);
-        for (const v of sec.current) lines.push(`- ${vulnerabilityLine(v)}`);
-      }
-    }
-    lines.push('', `Drift's assessment: **${RECOMMENDATION_LABEL[rationale.assessment.recommendation]}**.`);
-    for (const reason of rationale.assessment.reasons) lines.push(`- ${reason}`);
+  if (related.length > 0) {
+    lines.push('', `**Also seen at:**`);
+    for (const site of related) lines.push(`- \`${site.file}:${site.line}\``);
   }
-
-  lines.push('', fixLine(fix, breaking.length > 0));
-
-  const locations: SarifLocation[] =
-    sites.length > 0
-      ? sites.slice(0, MAX_LOCATIONS_UPLOADED).map((s) => ({ file: s.file, line: s.line, excerpt: s.excerpt }))
-      : [{ file: change.manifestPath, line: 1 }];
+  lines.push('', fixLine(fix, true));
 
   return {
-    ruleId: `drift/${change.ecosystem}/${change.name}`,
-    ruleName: `${change.name}: dependency finding`,
+    ruleId: ruleIdForBreaking(breaking.kind),
+    ruleName: ruleNameForBreaking(breaking.kind),
     dependency: change.name,
     ecosystem: change.ecosystem,
     from: change.from,
@@ -318,44 +384,127 @@ function buildFinding(args: {
     manifestPath: change.manifestPath,
     workspace: change.workspace,
     workspaceLabel: memberLabel,
-    level: levelFor(breaking, rationale),
-    title: `${change.name}: ${titleFor(breaking, rationale)}`,
+    level: levelForBreaking(breaking.confidence, localConfidence),
     message: lines.join('\n'),
-    locations,
+    primaryLocation: { file: primary.file, line: primary.line, excerpt: primary.excerpt },
+    relatedLocations: related.map((s) => ({ file: s.file, line: s.line, excerpt: s.excerpt })),
     fix,
-    helpUri: evidenceUrl(breaking, rationale, evidence),
+    helpUri: evidenceUrlForBreaking(breaking, evidence),
   };
 }
 
-function titleFor(breaking: BreakingChange[], rationale: UpgradeRationale | undefined): string {
-  if (breaking.length > 0) {
-    return breaking.length === 1 ? breaking[0]!.summary : `${breaking.length} breaking changes found`;
-  }
-  const sec = rationale?.security;
-  if (sec?.checked && sec.introduced.length > 0) return 'upgrade would introduce a known vulnerability';
-  if (sec?.checked && sec.resolved.length > 0) return 'safe upgrade available, resolves a known vulnerability';
-  if (sec?.checked && sec.current.length > 0) return 'currently affected by a known vulnerability';
-  return 'dependency update available';
+/**
+ * Upstream confidence and local confidence together, not upstream alone.
+ *
+ * A proven upstream change (Drift computed the diff itself) that only
+ * loosely matches a call site in this repository is worth a warning, not an
+ * error — the error level is reserved for the case both dimensions agree.
+ */
+function levelForBreaking(upstream: Confidence, local: Confidence): SarifLevel {
+  if (upstream === 'high' && local === 'high') return 'error';
+  if (upstream === 'high' || local === 'high') return 'warning';
+  if (upstream === 'medium' && local === 'medium') return 'warning';
+  return 'note';
 }
 
-function levelFor(breaking: BreakingChange[], rationale: UpgradeRationale | undefined): SarifLevel {
-  if (breaking.some((b) => b.confidence === 'high')) return 'error';
+function rank(confidence: Confidence): number {
+  return confidence === 'high' ? 2 : confidence === 'medium' ? 1 : 0;
+}
 
-  const sec = rationale?.security;
-  if (sec?.checked) {
-    const worstCurrent = sec.current.length > 0 ? worstOf(sec.current) : undefined;
-    const worstIntroduced = sec.introduced.length > 0 ? worstOf(sec.introduced) : undefined;
-    if (worstCurrent === 'critical' || worstCurrent === 'high') return 'error';
-    if (worstIntroduced === 'critical' || worstIntroduced === 'high') return 'error';
-    if (worstCurrent || worstIntroduced) return 'warning';
+function buildSecurityFinding(args: { change: DependencyChange; rationale: UpgradeRationale }): SarifFinding {
+  const { change, rationale } = args;
+  const sec = rationale.security;
+  const memberLabel = describeMember(change);
+  const versionMove = change.to ? `${change.from ?? 'none'} → ${change.to}` : 'removed';
+
+  let title: string;
+  let level: SarifLevel;
+  const sections: string[] = [];
+
+  if (sec.current.length > 0) {
+    title = `${change.name} is currently affected by ${sec.current.length} known ${plural(sec.current.length, 'advisory', 'advisories')}`;
+    const worst = worstOf(sec.current);
+    level = worst === 'critical' || worst === 'high' ? 'error' : 'warning';
+    sections.push(['**Currently affected:**', ...sec.current.map((v) => `- ${vulnerabilityLine(v)}`)].join('\n'));
+  } else if (sec.introduced.length > 0) {
+    title = `Upgrading ${change.name} to ${change.to} would introduce ${sec.introduced.length} new known ${plural(sec.introduced.length, 'advisory', 'advisories')}`;
+    const worst = worstOf(sec.introduced);
+    level = worst === 'critical' || worst === 'high' ? 'error' : 'warning';
+  } else {
+    title = `${change.name} ${change.to} resolves ${sec.resolved.length} known ${plural(sec.resolved.length, 'advisory', 'advisories')}`;
+    level = 'note';
   }
 
-  if (breaking.some((b) => b.confidence === 'medium')) return 'warning';
-  if (breaking.length > 0) return 'note';
+  if (sec.introduced.length > 0) {
+    sections.push(['**Would introduce:**', ...sec.introduced.map((v) => `- ${vulnerabilityLine(v)}`)].join('\n'));
+  }
+  if (sec.resolved.length > 0) {
+    sections.push(['**Resolves:**', ...sec.resolved.map((v) => `- ${vulnerabilityLine(v)}`)].join('\n'));
+  }
 
-  // Rationale-only: a resolvable advisory or a plain update is informational —
-  // it costs nothing to leave open, unlike an unresolved one above.
-  return 'note';
+  const lines: string[] = [title];
+  for (const section of sections) lines.push('', section);
+  lines.push('', memberLabel ? `**${change.name}** (${change.ecosystem}) ${versionMove} — ${memberLabel}` : `**${change.name}** (${change.ecosystem}) ${versionMove}`);
+  lines.push('', `Drift's assessment: **${RECOMMENDATION_LABEL[rationale.assessment.recommendation]}**.`);
+  for (const reason of rationale.assessment.reasons) lines.push(`- ${reason}`);
+
+  return {
+    ruleId: 'drift/vulnerability',
+    ruleName: 'Dependency vulnerability',
+    dependency: change.name,
+    ecosystem: change.ecosystem,
+    from: change.from,
+    to: change.to,
+    manifestPath: change.manifestPath,
+    workspace: change.workspace,
+    workspaceLabel: memberLabel,
+    level,
+    message: lines.join('\n'),
+    primaryLocation: { file: change.manifestPath, line: 1 },
+    relatedLocations: [],
+    helpUri: sec.current[0]?.url ?? sec.introduced[0]?.url ?? sec.resolved[0]?.url,
+  };
+}
+
+function buildOutdatedFinding(args: {
+  change: DependencyChange;
+  rationale: UpgradeRationale;
+  fix?: SarifFix;
+}): SarifFinding {
+  const { change, rationale, fix } = args;
+  const memberLabel = describeMember(change);
+  const versionMove = change.to ? `${change.from ?? 'none'} → ${change.to}` : 'removed';
+
+  const lines: string[] = [
+    `${change.name} has an update available (${versionMove}), with no breaking changes or advisories found.`,
+    '',
+    memberLabel
+      ? `**${change.name}** (${change.ecosystem}) — ${memberLabel}`
+      : `**${change.name}** (${change.ecosystem})`,
+    '',
+    fixLine(fix, false),
+  ];
+
+  return {
+    ruleId: 'drift/outdated',
+    ruleName: 'Outdated dependency',
+    dependency: change.name,
+    ecosystem: change.ecosystem,
+    from: change.from,
+    to: change.to,
+    manifestPath: change.manifestPath,
+    workspace: change.workspace,
+    workspaceLabel: memberLabel,
+    level: 'note',
+    message: lines.join('\n'),
+    primaryLocation: { file: change.manifestPath, line: 1 },
+    relatedLocations: [],
+    fix,
+  };
+}
+
+function plural(count: number, singular: string, pluralForm: string): string {
+  return count === 1 ? singular : pluralForm;
 }
 
 function worstOf(vs: Vulnerability[]): Vulnerability['severity'] {
@@ -370,21 +519,10 @@ function vulnerabilityLine(v: Vulnerability): string {
   return `[${v.id}](${v.url}) (${v.severity}${fixed}): ${v.summary}`;
 }
 
-function evidenceUrl(
-  breaking: BreakingChange[],
-  rationale: UpgradeRationale | undefined,
-  evidence: RemediationPlan['evidence'],
-): string | undefined {
-  const sec = rationale?.security;
-  if (sec?.resolved[0]?.url) return sec.resolved[0].url;
-  if (sec?.introduced[0]?.url) return sec.introduced[0].url;
-  if (sec?.current[0]?.url) return sec.current[0].url;
-
-  for (const change of breaking) {
-    for (const citationId of change.citations) {
-      const url = evidence.find((e) => e.id === citationId)?.url;
-      if (url) return url;
-    }
+function evidenceUrlForBreaking(breaking: BreakingChange, evidence: RemediationPlan['evidence']): string | undefined {
+  for (const citationId of breaking.citations) {
+    const url = evidence.find((e) => e.id === citationId)?.url;
+    if (url) return url;
   }
   return undefined;
 }
