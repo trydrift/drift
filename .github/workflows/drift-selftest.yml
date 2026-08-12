@@ -28,15 +28,18 @@ on:
       - 'package.json'
       - 'package-lock.json'
 
-permissions:
-  contents: write
-  issues: write
-  pull-requests: write
-  checks: write
+permissions: {}
 
 jobs:
   selftest:
     runs-on: ubuntu-latest
+    # Drift needs to open branches/PRs, file approval issues, and (in `auto`
+    # mode) report check results — scoped to this one job, not the workflow.
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      checks: write
 
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
