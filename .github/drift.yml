@@ -1,0 +1,18 @@
+# Drift's own configuration. See examples/drift.yml for every option and its
+# default, and docs/configuration.md for the full reference.
+
+# Drift ships in `approve` mode by default; dogfooding it here means seeing
+# what it actually proposes rather than what it silently does.
+mode: approve
+
+# Code scanning is on by default, so this line changes nothing — it's here to
+# make the choice explicit for a repository that means to demonstrate it.
+codeScanning:
+  enabled: true
+  includeInformational: true
+
+# Exercises drift-outdated-selftest.yml, which otherwise has nothing to do:
+# `outdated.enabled` is Drift's own opt-in gate, independent of the workflow's
+# schedule trigger existing at all.
+outdated:
+  enabled: true
