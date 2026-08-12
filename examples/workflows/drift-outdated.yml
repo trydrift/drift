@@ -1,0 +1,63 @@
+# Drift — alert on outdated dependencies nobody has bumped yet.
+#
+# The main `drift.yml` workflow reacts to a push that changes a manifest: it
+# tells you whether the change that just landed is safe. This workflow asks a
+# different question on a schedule — "what's outdated right now, and is it
+# safe to take?" — the same check `drift outdated` runs locally, over every
+# direct dependency's installed version.
+#
+# Nothing here creates a branch or opens a pull request. Each dependency it
+# finds becomes a code scanning alert with its own evidence and fix: a safe
+# upgrade gets the exact command to run, one with real breaking changes gets
+# the same evidence a pull request would carry. Taking the fix is always a
+# separate, deliberate step — see the alert for how.
+#
+# Copy this file to `.github/workflows/drift-outdated.yml`, and set
+# `outdated.enabled: true` in `.github/drift.yml` — this workflow runs on the
+# schedule below either way, but Drift itself declines to scan until that
+# config flag is on, the same opt-in gate every other proactive Drift feature
+# uses.
+
+name: Drift (outdated dependencies)
+
+on:
+  schedule:
+    # Every Monday at 09:00 UTC. Adjust to taste — this has no relationship
+    # to how often your dependencies actually change; it's how often you want
+    # to be reminded what's available.
+    - cron: '0 9 * * 1'
+
+  # Run it on demand from the Actions tab.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write # upload code scanning alerts
+
+jobs:
+  drift-outdated:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v5
+
+      # See examples/workflows/drift.yml for why these are here and how to
+      # add the ones your repository needs.
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        continue-on-error: true
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Run Drift
+        id: drift
+        uses: trydrift/drift@v0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          scan-mode: outdated
+
+      - name: Report outcome
+        if: always()
+        run: echo "${{ steps.drift.outputs.status }}: ${{ steps.drift.outputs.summary }}"
