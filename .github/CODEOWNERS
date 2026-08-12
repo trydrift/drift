@@ -1,0 +1,9 @@
+# Default owner for the entire repository
+
+## Any pull request changing any file requires approval from this user when "Require review from Code Owners" is enabled
+
+* @RodolpheKouyoumdjian
+
+## Explicitly protect the CODEOWNERS file itself
+
+/.github/CODEOWNERS @RodolpheKouyoumdjian
