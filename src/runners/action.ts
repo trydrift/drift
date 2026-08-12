@@ -251,7 +251,7 @@ async function runOutdatedScan(
     await writeJobSummary(
       `### Drift: outdated dependency scan\n\n${summary}\n\n` +
         (findings.length > 0
-          ? `${findings.length} finding(s) uploaded to the Security tab, each with a specific breaking change, its location, and a fix.\n\n`
+          ? `${findings.length} package(s) uploaded to the Security tab, each alert listing its breaking changes, their locations, and a fix.\n\n`
           : 'Nothing rose to a Security tab alert.\n\n') +
         renderOutdatedTable(scan.candidates),
     );

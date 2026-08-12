@@ -8,6 +8,7 @@ import type {
   BreakingChangeKind,
   Confidence,
   DependencyChange,
+  DependencyKind,
   Ecosystem,
   ImpactSite,
   RemediationPlan,
@@ -23,28 +24,42 @@ import { upgradeCommandFor, type UpgradeCandidate } from '../upgrade/scan.js';
  * the evidence, the location, and the fix (that's the whole plan/rationale
  * pipeline) — this only reshapes it into SARIF.
  *
- * The unit of an alert is one *locally actionable* finding, not one package.
- * A package can carry hundreds of upstream breaking changes — most upgrades
- * touch no code in a given repository at all — and dumping every one of them
- * into a single alert (or, worse, opening one alert per upstream change
- * regardless of whether it reaches this repository) is what turns the
- * Security tab into noise nobody reads. So:
+ * The unit of an alert is one *package* — a dependency that moved, not each
+ * individual breaking change it carries. A package can still carry hundreds
+ * of upstream breaking changes — most upgrades touch no code in a given
+ * repository at all — so dumping every one of them into a single alert
+ * (or, worse, opening one alert per upstream change regardless of whether
+ * it reaches this repository) is what turns the Security tab into noise
+ * nobody reads. So:
  *
- *   - a breaking change becomes an alert only when it has at least one
- *     `ImpactSite` — code in *this* repository that actually calls the
- *     affected symbol. An upstream-only change never reaches SARIF; it is
- *     still visible in the job summary / PR body, where the full upstream
- *     count belongs.
- *   - each such alert is anchored to the highest-confidence site as its
- *     primary `location`; every other site the same change reaches rides
- *     along as a `relatedLocation` rather than inflating `locations[]`.
- *   - severity is upstream confidence *and* local confidence together: a
+ *   - a breaking change is *listed* in its package's alert only when it has
+ *     at least one `ImpactSite` — code in *this* repository that actually
+ *     calls the affected symbol. An upstream-only change never reaches
+ *     SARIF; it is still visible in the job summary / PR body, where the
+ *     full upstream count belongs, and its existence is noted with a count
+ *     inside the alert.
+ *   - every locally-actionable issue for a package — each breaking change,
+ *     plus any security signal — renders as its own block inside that one
+ *     alert, one after another and separated by a rule, rather than folded
+ *     into a single paragraph. A reader scanning the alert can tell exactly
+ *     how many distinct things are wrong and where each one is.
+ *   - the alert is anchored to the highest-confidence site among all its
+ *     blocks as its primary `location`; every other site any block reaches
+ *     rides along as a `relatedLocation` rather than inflating `locations[]`.
+ *   - severity is the worst of every block's severity, and each block's own
+ *     severity is upstream confidence *and* local confidence together: a
  *     proven upstream change with no confidently-matched local call site is
  *     a warning, not an error.
- *   - `ruleId` names the *kind* of finding (`drift/removed-export`,
- *     `drift/vulnerability`, ...), because that is what GitHub's rule
- *     descriptors are for — a category that changes rarely — not the
- *     package name, which would mint a new "rule" per dependency.
+ *   - `ruleId` is `drift/<ecosystem>/<name>` — stable across runs for the
+ *     same package, independent of which breaking changes or advisories it
+ *     currently has. That stability is what makes rescanning a *replacement*
+ *     rather than an accumulation: GitHub keeps or opens one alert per
+ *     `ruleId` from the newest upload and marks a `ruleId` absent from it
+ *     fixed, so a package alert updates in place instead of piling up.
+ *   - the message carries both a `markdown` and a `text` rendering, since
+ *     GitHub's alert body only renders formatting and links (including
+ *     jump-to-file links) from `message.markdown` — `message.text` is a
+ *     plain-text fallback for tools that don't read it.
  */
 
 export type SarifLevel = 'error' | 'warning' | 'note';
@@ -70,16 +85,18 @@ export interface SarifLocation {
 /** One alert: one locally actionable finding. */
 export interface SarifFinding {
   /**
-   * `drift/<finding-kind>` — the category of finding (a removed export, a
-   * signature change, a vulnerability, an outdated dependency...), not the
-   * package it was found in. Stable across every package that produces the
-   * same kind of finding, which is what a SARIF rule descriptor is for.
+   * `drift/<ecosystem>/<name>` — stable across runs for the same package,
+   * independent of which breaking changes or advisories it currently has.
+   * That stability is what lets GitHub's own SARIF reconciliation replace
+   * this alert in place on every rescan instead of accumulating duplicates.
    */
   ruleId: string;
   /** Human-readable rule name, shown in GitHub's rule/alert-type listing. */
   ruleName: string;
   dependency: string;
   ecosystem: Ecosystem;
+  /** `dependencies`, `devDependencies`, `optionalDependencies`, ... — which manifest section this was declared in. */
+  dependencyKind: DependencyKind;
   from: string | null;
   to: string | null;
   manifestPath: string;
@@ -88,10 +105,13 @@ export interface SarifFinding {
   workspaceLabel?: string | null;
   level: SarifLevel;
   /**
-   * `result.message.text`. GitHub treats this as both the alert's title (its
-   * first sentence, when space is constrained) and its full body — there is
-   * no separate title field in SARIF, so the concise statement of what's
-   * wrong comes first and the supporting detail follows it.
+   * Markdown source for `result.message.markdown` (GitHub renders this in
+   * the alert body — bold, links, code spans) and, stripped, for
+   * `result.message.text` (the plain-text fallback SARIF requires). GitHub
+   * treats the first sentence as the alert's title when space is
+   * constrained — there is no separate title field in SARIF — so the
+   * concise statement of what's wrong comes first and the supporting detail
+   * follows it.
    */
   message: string;
   /** The location GitHub anchors the alert to. */
@@ -155,7 +175,7 @@ export function buildSarifLog(findings: readonly SarifFinding[], category?: stri
         results: findings.map((finding) => ({
           ruleId: finding.ruleId,
           level: finding.level,
-          message: { text: finding.message },
+          message: { text: stripMarkdown(finding.message), markdown: finding.message },
           locations: [toSarifPhysicalLocation(finding.primaryLocation)],
           ...(finding.relatedLocations.length > 0
             ? {
@@ -172,6 +192,25 @@ export function buildSarifLog(findings: readonly SarifFinding[], category?: stri
       },
     ],
   };
+}
+
+/**
+ * `result.message.markdown` is what GitHub actually renders in the alert
+ * body — `result.message.text` is a required plain-text fallback for tools
+ * that don't read markdown. Rather than maintain two parallel renderings of
+ * every finding, everything above builds one markdown string and this
+ * derives the fallback from it: strip the syntax, keep the words.
+ */
+function stripMarkdown(markdown: string): string {
+  return markdown
+    .replace(/\[([^\]]*)\]\(([^)]+)\)/g, '$1 ($2)')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/`([^`]*)`/g, '$1');
+}
+
+/** A markdown link from a `file:line` reference to that line in the repo. */
+function mdLink(file: string, line: number): string {
+  return `[\`${file}:${line}\`](${file}#L${line})`;
 }
 
 function toSarifPhysicalLocation(loc: SarifLocation): Record<string, unknown> {
@@ -202,15 +241,21 @@ function lineHash(finding: SarifFinding): string {
 }
 
 /**
- * Findings from a push-triggered `RemediationPlan`.
+ * Findings from a push-triggered `RemediationPlan`: one alert per package,
+ * folding every locally-actionable breaking change and every security
+ * signal found for it into that one alert as its own block.
  *
  * Each run uploads the *complete* current set of findings for the ref it
  * analysed (see `uploadCodeScanning` in `runners/action.ts`) rather than an
  * incremental diff. GitHub's code scanning API is built around exactly that
  * shape: for a given `(ref, category, tool)`, the newest upload is the
- * authoritative state — a finding present in it keeps (or opens) one alert,
- * updated to the latest commit; one that was open before and is absent from
- * the new upload is automatically marked fixed.
+ * authoritative state — a `ruleId` present in it keeps (or opens) one alert,
+ * updated to the latest commit; a `ruleId` that was open before and is
+ * absent from the new upload is automatically marked fixed. Because
+ * `ruleId` here is `drift/<ecosystem>/<name>` — stable across runs, not
+ * derived from a specific breaking change — rescanning a package naturally
+ * replaces its one alert in place rather than accumulating a new one
+ * alongside the old.
  */
 export function findingsFromPlan(
   plan: RemediationPlan,
@@ -229,34 +274,35 @@ export function findingsFromPlan(
     // the same limitation.
     const rationale = plan.rationale?.find((r) => r.dependency === change.name);
 
-    let emittedAnything = false;
+    const blocks: FindingBlock[] = [];
+    let upstreamOnlyCount = 0;
 
-    for (const b of allBreaking) {
+    const sortedBreaking = [...allBreaking].sort((a, b) => rank(b.confidence) - rank(a.confidence));
+    for (const b of sortedBreaking) {
       const sites = plan.impactSites.filter((site) => site.breakingChangeId === b.id);
-      if (sites.length === 0) continue; // upstream-only: no code here to point at.
-
-      emittedAnything = true;
-      const commit = plan.commits.find((c) => c.breakingChangeIds.includes(b.id));
-      findings.push(
-        buildBreakingFinding({
-          change,
-          breaking: b,
-          upstreamCount: allBreaking.length,
-          sites,
-          evidence: plan.evidence,
-          fix: opts.fixOf?.(change) ?? fixFromCommit(commit, plan),
-        }),
-      );
+      if (sites.length === 0) {
+        upstreamOnlyCount++; // upstream-only: no code here to point at.
+        continue;
+      }
+      blocks.push(buildBreakingBlock(b, sites, plan.evidence));
     }
 
-    if (hasSecuritySignal(rationale)) {
-      emittedAnything = true;
-      findings.push(buildSecurityFinding({ change, rationale: rationale! }));
+    if (hasSecuritySignal(rationale)) blocks.push(buildSecurityBlock(rationale!));
+
+    if (blocks.length === 0) {
+      if (!includeInformational || !rationale) continue;
+      blocks.push(buildOutdatedBlock(change, rationale));
     }
 
-    if (!emittedAnything && includeInformational && rationale) {
-      findings.push(buildOutdatedFinding({ change, rationale, fix: opts.fixOf?.(change) }));
-    }
+    const commit = plan.commits.find((c) => allBreaking.some((b) => c.breakingChangeIds.includes(b.id)));
+    findings.push(
+      buildPackageFinding({
+        change,
+        blocks,
+        upstreamOnlyCount,
+        fix: opts.fixOf?.(change) ?? fixFromCommit(commit, plan),
+      }),
+    );
   }
 
   return findings;
@@ -309,11 +355,6 @@ export function findingsFromCandidates(
   return findings;
 }
 
-/** `drift/<breaking-change-kind>` — the rule for one kind of upstream change. */
-function ruleIdForBreaking(kind: BreakingChangeKind): string {
-  return `drift/${kind}`;
-}
-
 const RULE_NAMES: Record<BreakingChangeKind, string> = {
   'removed-export': 'Removed export used in this repository',
   'renamed-export': 'Renamed export used in this repository',
@@ -334,18 +375,41 @@ function ruleNameForBreaking(kind: BreakingChangeKind): string {
   return RULE_NAMES[kind] ?? 'Breaking change';
 }
 
-function buildBreakingFinding(args: {
-  change: DependencyChange;
-  breaking: BreakingChange;
-  upstreamCount: number;
-  sites: ImpactSite[];
-  evidence: RemediationPlan['evidence'];
-  fix?: SarifFix;
-}): SarifFinding {
-  const { change, breaking, upstreamCount, sites, evidence, fix } = args;
-  const memberLabel = describeMember(change);
-  const versionMove = change.to ? `${change.from ?? 'none'} → ${change.to}` : 'removed';
+export const DEPENDENCY_KIND_LABELS: Record<DependencyKind, string> = {
+  runtime: 'dependency',
+  dev: 'devDependency',
+  peer: 'peerDependency',
+  optional: 'optionalDependency',
+  transitive: 'transitive dependency',
+};
 
+function dependencyKindLabel(kind: DependencyKind): string {
+  return DEPENDENCY_KIND_LABELS[kind] ?? kind;
+}
+
+/**
+ * One locally-actionable issue's worth of alert content: a package's alert
+ * is the concatenation of these, each rendered on its own and separated by
+ * a rule, so a reader sees every distinct issue in turn rather than one
+ * paragraph with everything folded together.
+ */
+interface FindingBlock {
+  level: SarifLevel;
+  /** Markdown lines for this block alone; joined with `\n` by the caller. */
+  lines: string[];
+  /** The location this block would anchor an alert to, if it were its own. */
+  primaryCandidate?: SarifLocation;
+  relatedCandidates: SarifLocation[];
+  helpUri?: string;
+}
+
+const LEVEL_RANK: Record<SarifLevel, number> = { error: 2, warning: 1, note: 0 };
+
+function worstLevel(levels: readonly SarifLevel[]): SarifLevel {
+  return levels.reduce<SarifLevel>((worst, l) => (LEVEL_RANK[l] > LEVEL_RANK[worst] ? l : worst), 'note');
+}
+
+function buildBreakingBlock(breaking: BreakingChange, sites: ImpactSite[], evidence: RemediationPlan['evidence']): FindingBlock {
   const sorted = [...sites].sort(
     (a, b) => rank(b.confidence) - rank(a.confidence) || a.file.localeCompare(b.file) || a.line - b.line,
   );
@@ -354,41 +418,19 @@ function buildBreakingFinding(args: {
   const localConfidence = primary.confidence;
   const files = new Set(sites.map((s) => s.file));
 
-  const lines: string[] = [breaking.summary];
-  lines.push(
-    '',
-    memberLabel
-      ? `**${change.name}** (${change.ecosystem}) ${versionMove} — ${memberLabel}`
-      : `**${change.name}** (${change.ecosystem}) ${versionMove}`,
-  );
+  const lines: string[] = [`**${ruleNameForBreaking(breaking.kind)}:** ${breaking.summary}`];
   lines.push(
     `Upstream confidence: ${breaking.confidence}. Local confidence: ${localConfidence}` +
       (sites.length > 1 ? ` (best of ${sites.length} matches across ${files.size} file(s)).` : '.'),
   );
-  if (upstreamCount > 1) {
-    lines.push('', `1 of ${upstreamCount} upstream breaking changes in ${change.name} that reach code here.`);
-  }
-  if (related.length > 0) {
-    lines.push('', `**Also seen at:**`);
-    for (const site of related) lines.push(`- \`${site.file}:${site.line}\``);
-  }
-  lines.push('', fixLine(fix, true));
+  lines.push('', `Seen at ${mdLink(primary.file, primary.line)}` + (related.length > 0 ? ', also at:' : '.'));
+  for (const site of related) lines.push(`- ${mdLink(site.file, site.line)}`);
 
   return {
-    ruleId: ruleIdForBreaking(breaking.kind),
-    ruleName: ruleNameForBreaking(breaking.kind),
-    dependency: change.name,
-    ecosystem: change.ecosystem,
-    from: change.from,
-    to: change.to,
-    manifestPath: change.manifestPath,
-    workspace: change.workspace,
-    workspaceLabel: memberLabel,
     level: levelForBreaking(breaking.confidence, localConfidence),
-    message: lines.join('\n'),
-    primaryLocation: { file: primary.file, line: primary.line, excerpt: primary.excerpt },
-    relatedLocations: related.map((s) => ({ file: s.file, line: s.line, excerpt: s.excerpt })),
-    fix,
+    lines,
+    primaryCandidate: { file: primary.file, line: primary.line, excerpt: primary.excerpt },
+    relatedCandidates: related.map((s) => ({ file: s.file, line: s.line, excerpt: s.excerpt })),
     helpUri: evidenceUrlForBreaking(breaking, evidence),
   };
 }
@@ -411,27 +453,24 @@ function rank(confidence: Confidence): number {
   return confidence === 'high' ? 2 : confidence === 'medium' ? 1 : 0;
 }
 
-function buildSecurityFinding(args: { change: DependencyChange; rationale: UpgradeRationale }): SarifFinding {
-  const { change, rationale } = args;
+function buildSecurityBlock(rationale: UpgradeRationale): FindingBlock {
   const sec = rationale.security;
-  const memberLabel = describeMember(change);
-  const versionMove = change.to ? `${change.from ?? 'none'} → ${change.to}` : 'removed';
 
   let title: string;
   let level: SarifLevel;
   const sections: string[] = [];
 
   if (sec.current.length > 0) {
-    title = `${change.name} is currently affected by ${sec.current.length} known ${plural(sec.current.length, 'advisory', 'advisories')}`;
+    title = `Currently affected by ${sec.current.length} known ${plural(sec.current.length, 'advisory', 'advisories')}`;
     const worst = worstOf(sec.current);
     level = worst === 'critical' || worst === 'high' ? 'error' : 'warning';
     sections.push(['**Currently affected:**', ...sec.current.map((v) => `- ${vulnerabilityLine(v)}`)].join('\n'));
   } else if (sec.introduced.length > 0) {
-    title = `Upgrading ${change.name} to ${change.to} would introduce ${sec.introduced.length} new known ${plural(sec.introduced.length, 'advisory', 'advisories')}`;
+    title = `Upgrading would introduce ${sec.introduced.length} new known ${plural(sec.introduced.length, 'advisory', 'advisories')}`;
     const worst = worstOf(sec.introduced);
     level = worst === 'critical' || worst === 'high' ? 'error' : 'warning';
   } else {
-    title = `${change.name} ${change.to} resolves ${sec.resolved.length} known ${plural(sec.resolved.length, 'advisory', 'advisories')}`;
+    title = `Resolves ${sec.resolved.length} known ${plural(sec.resolved.length, 'advisory', 'advisories')}`;
     level = 'note';
   }
 
@@ -442,64 +481,93 @@ function buildSecurityFinding(args: { change: DependencyChange; rationale: Upgra
     sections.push(['**Resolves:**', ...sec.resolved.map((v) => `- ${vulnerabilityLine(v)}`)].join('\n'));
   }
 
-  const lines: string[] = [title];
+  const lines: string[] = [`**${title}**`];
   for (const section of sections) lines.push('', section);
-  lines.push('', memberLabel ? `**${change.name}** (${change.ecosystem}) ${versionMove} — ${memberLabel}` : `**${change.name}** (${change.ecosystem}) ${versionMove}`);
   lines.push('', `Drift's assessment: **${RECOMMENDATION_LABEL[rationale.assessment.recommendation]}**.`);
   for (const reason of rationale.assessment.reasons) lines.push(`- ${reason}`);
 
   return {
-    ruleId: 'drift/vulnerability',
-    ruleName: 'Dependency vulnerability',
-    dependency: change.name,
-    ecosystem: change.ecosystem,
-    from: change.from,
-    to: change.to,
-    manifestPath: change.manifestPath,
-    workspace: change.workspace,
-    workspaceLabel: memberLabel,
     level,
-    message: lines.join('\n'),
-    primaryLocation: { file: change.manifestPath, line: 1 },
-    relatedLocations: [],
+    lines,
+    relatedCandidates: [],
     helpUri: sec.current[0]?.url ?? sec.introduced[0]?.url ?? sec.resolved[0]?.url,
   };
 }
 
-function buildOutdatedFinding(args: {
+function buildOutdatedBlock(change: DependencyChange, rationale: UpgradeRationale): FindingBlock {
+  const versionMove = change.to ? `${change.from ?? 'none'} → ${change.to}` : 'removed';
+  void rationale;
+  return {
+    level: 'note',
+    lines: [`**Update available** (${versionMove}), with no breaking changes or advisories found.`],
+    relatedCandidates: [],
+  };
+}
+
+/**
+ * Fold every locally-actionable block found for one package into the single
+ * alert GitHub sees for it: the worst level and every location among them,
+ * with each block's own markdown appended in turn.
+ */
+function buildPackageFinding(args: {
   change: DependencyChange;
-  rationale: UpgradeRationale;
+  blocks: FindingBlock[];
+  upstreamOnlyCount: number;
   fix?: SarifFix;
 }): SarifFinding {
-  const { change, rationale, fix } = args;
+  const { change, blocks, upstreamOnlyCount, fix } = args;
   const memberLabel = describeMember(change);
   const versionMove = change.to ? `${change.from ?? 'none'} → ${change.to}` : 'removed';
+  const hasBreaking = blocks.some((b) => b.primaryCandidate);
 
-  const lines: string[] = [
-    `${change.name} has an update available (${versionMove}), with no breaking changes or advisories found.`,
-    '',
+  const kindLabel = dependencyKindLabel(change.kind);
+  const header: string[] = [
     memberLabel
-      ? `**${change.name}** (${change.ecosystem}) — ${memberLabel}`
-      : `**${change.name}** (${change.ecosystem})`,
-    '',
-    fixLine(fix, false),
+      ? `**${change.name}** (${change.ecosystem} ${kindLabel}) ${versionMove} — ${memberLabel}`
+      : `**${change.name}** (${change.ecosystem} ${kindLabel}) ${versionMove}`,
   ];
+  if (upstreamOnlyCount > 0) {
+    header.push(
+      `${upstreamOnlyCount} additional upstream breaking ${plural(upstreamOnlyCount, 'change does', 'changes do')} not reach code in this repository and ${plural(upstreamOnlyCount, 'is', 'are')} omitted here.`,
+    );
+  }
+
+  const body = [header.join('\n'), ...blocks.map((b) => b.lines.join('\n')), fixLine(fix, hasBreaking)].join(
+    '\n\n---\n\n',
+  );
+
+  const primary = blocks.find((b) => b.primaryCandidate)?.primaryCandidate ?? { file: change.manifestPath, line: 1 };
+  const relatedSeen = new Set([`${primary.file}:${primary.line}`]);
+  const related: SarifLocation[] = [];
+  for (const block of blocks) {
+    const candidates = block.primaryCandidate ? [block.primaryCandidate, ...block.relatedCandidates] : block.relatedCandidates;
+    for (const loc of candidates) {
+      const key = `${loc.file}:${loc.line}`;
+      if (relatedSeen.has(key)) continue;
+      relatedSeen.add(key);
+      related.push(loc);
+      if (related.length >= MAX_RELATED_LOCATIONS) break;
+    }
+    if (related.length >= MAX_RELATED_LOCATIONS) break;
+  }
 
   return {
-    ruleId: 'drift/outdated',
-    ruleName: 'Outdated dependency',
+    ruleId: `drift/${change.ecosystem}/${change.name}`,
+    ruleName: `${change.name}: dependency finding`,
     dependency: change.name,
     ecosystem: change.ecosystem,
+    dependencyKind: change.kind,
     from: change.from,
     to: change.to,
     manifestPath: change.manifestPath,
     workspace: change.workspace,
     workspaceLabel: memberLabel,
-    level: 'note',
-    message: lines.join('\n'),
-    primaryLocation: { file: change.manifestPath, line: 1 },
-    relatedLocations: [],
+    level: worstLevel(blocks.map((b) => b.level)),
+    message: body,
+    primaryLocation: primary,
+    relatedLocations: related,
     fix,
+    helpUri: blocks.find((b) => b.helpUri)?.helpUri,
   };
 }
 
