@@ -292,8 +292,8 @@ export class DriftCodeActionProvider implements vscode.CodeActionProvider {
     }
 
     if (actions.length > 0) {
-      const all = new vscode.CodeAction('Drift: fix everything', vscode.CodeActionKind.QuickFix);
-      all.command = { command: 'drift.fixAll', title: 'Fix all' };
+      const all = new vscode.CodeAction('Drift: upgrade and fix everything', vscode.CodeActionKind.QuickFix);
+      all.command = { command: 'drift.fixAll', title: 'Upgrade and fix all' };
       actions.push(all);
     }
 

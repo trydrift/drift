@@ -267,19 +267,54 @@ export async function createIssueWithGh(request: GhIssueRequest, run: GhRunner =
   try {
     await writeFile(bodyPath, request.body, 'utf8');
 
-    const args = ['issue', 'create', '--title', request.title, '--body-file', bodyPath];
-    for (const label of request.labels ?? []) args.push('--label', label);
+    const baseArgs = ['issue', 'create', '--title', request.title, '--body-file', bodyPath];
+    const labelArgs = (request.labels ?? []).flatMap((label) => ['--label', label]);
 
     try {
-      const { stdout } = await run(args, { cwd: request.cwd });
+      const { stdout } = await run([...baseArgs, ...labelArgs], { cwd: request.cwd });
       const url = issueUrlIn(stdout);
       if (url) return { kind: 'opened', number: numberIn(url), url, existing: false };
       return { kind: 'failed', message: 'The GitHub CLI did not report an issue URL.' };
     } catch (err) {
-      return { kind: 'failed', message: describe(err) };
+      const message = describe(err);
+
+      // `gh` refuses to create the issue at all when a label it was asked to
+      // apply does not exist yet in the repository — most repositories have
+      // never had a `drift` label created. The label is a courtesy, not a
+      // requirement, so the issue itself should not be lost over it.
+      if (labelArgs.length > 0 && /label\b[^\n]*not found/i.test(message)) {
+        try {
+          const { stdout } = await run(baseArgs, { cwd: request.cwd });
+          const url = issueUrlIn(stdout);
+          if (url) return { kind: 'opened', number: numberIn(url), url, existing: false };
+        } catch (retryErr) {
+          return { kind: 'failed', message: describe(retryErr) };
+        }
+      }
+
+      return { kind: 'failed', message };
     }
   } finally {
     await rm(dir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
+/**
+ * Comment on an already-filed issue — how a branch created after the fact
+ * gets linked to it, since the issue's body was already written without
+ * knowing the branch's name yet.
+ */
+export async function commentOnIssueWithGh(
+  cwd: string,
+  number: number,
+  body: string,
+  run: GhRunner = defaultRunner,
+): Promise<boolean> {
+  try {
+    await run(['issue', 'comment', String(number), '--body', body], { cwd });
+    return true;
+  } catch {
+    return false;
   }
 }
 

@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { branchNameFor, buildIssueContent, issueMarker, type IssueBranchTarget } from '../../src/actions/issue-branch.js';
 import { Git } from './git.js';
-import { createIssueWithGh } from './gh.js';
+import { commentOnIssueWithGh, createIssueWithGh } from './gh.js';
 import { remoteSlug } from './ship.js';
 
 /**
@@ -75,12 +75,12 @@ async function createIssue(
   const content = buildIssueContent(target, linkedBranch);
 
   if (!slug) {
-    void vscode.window.showWarningMessage('Drift: no GitHub remote configured — cannot file an issue.');
+    void vscode.window.showWarningMessage('Drift: no GitHub remote configured — cannot create an issue.');
     return;
   }
 
   const outcome = await vscode.window.withProgress(
-    { location: vscode.ProgressLocation.Window, title: 'Drift: filing a GitHub issue' },
+    { location: vscode.ProgressLocation.Window, title: 'Drift: creating a GitHub issue' },
     () =>
       createIssueWithGh({
         cwd: workspaceRoot,
@@ -92,18 +92,31 @@ async function createIssue(
   );
 
   if (outcome.kind === 'opened') {
+    // A branch is only offered when this call did not already link one —
+    // `action: 'both'` already put the tracking line in the body above, and
+    // asking again would be a second, redundant offer for the same thing.
+    const buttons = linkedBranch ? ['Open issue'] : ['Open issue', 'Create linked branch'];
     const choice = await vscode.window.showInformationMessage(
       outcome.existing
         ? `Drift: issue #${outcome.number} was already open — ${outcome.url}`
-        : `Drift: filed issue #${outcome.number} — ${outcome.url}`,
-      'Open issue',
+        : `Drift: created issue #${outcome.number} — ${outcome.url}`,
+      ...buttons,
     );
     if (choice === 'Open issue') await vscode.env.openExternal(vscode.Uri.parse(outcome.url));
+    if (choice === 'Create linked branch') await createLinkedBranch(git, workspaceRoot, target, outcome.number);
     return;
   }
 
   if (outcome.kind === 'failed') {
-    void vscode.window.showWarningMessage(`Drift: could not file the issue — ${outcome.message}`);
+    // A failure on the way to `gh` — a missing label, a permissions error, a
+    // network blip — is no more a dead end than `gh` being absent outright.
+    // GitHub's own prefilled "new issue" page is one click away either way.
+    const url = newIssueUrl(slug, content);
+    const choice = await vscode.window.showWarningMessage(
+      `Drift: could not create the issue — ${outcome.message}`,
+      'Open a prefilled issue on GitHub',
+    );
+    if (choice === 'Open a prefilled issue on GitHub') await vscode.env.openExternal(vscode.Uri.parse(url));
     return;
   }
 
@@ -117,6 +130,28 @@ async function createIssue(
     'Open a prefilled issue on GitHub',
   );
   if (choice === 'Open a prefilled issue on GitHub') await vscode.env.openExternal(vscode.Uri.parse(url));
+}
+
+/**
+ * The branch a created issue did not already know about, added after the
+ * fact — one click, no need to remember `git checkout -b` or come back and
+ * paste the branch name into the issue by hand.
+ */
+async function createLinkedBranch(
+  git: Git,
+  workspaceRoot: string,
+  target: IssueBranchTarget,
+  issueNumber: number,
+): Promise<void> {
+  const created = await createBranch(git, target);
+  if (!created) return;
+
+  await commentOnIssueWithGh(workspaceRoot, issueNumber, `Tracking branch: \`${created.name}\``);
+  void vscode.window.showInformationMessage(
+    created.created
+      ? `Drift: created branch ${created.name}, linked to issue #${issueNumber}.`
+      : `Drift: switched to ${created.name}, linked to issue #${issueNumber}.`,
+  );
 }
 
 function newIssueUrl(slug: string, content: { title: string; body: string; labels: string[] }): string {
