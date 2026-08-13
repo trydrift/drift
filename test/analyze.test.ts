@@ -279,6 +279,131 @@ export { objectType as object };`,
     );
   });
 
+  /**
+   * The finding that started this: Drift told a developer `z.object` had been
+   * deleted by zod 4, and dispatched an agent to replace every call site of a
+   * function that is still there. The declaration was simply never extracted —
+   * its type parameter list nests a `Record<…>`, and the pattern that read
+   * declarations stopped at the first `>`. Its neighbours, whose type
+   * parameters do not nest, came through, which is what made the wrong finding
+   * look so specific.
+   */
+  test('extracts a function whose type parameters nest', () => {
+    const api = extractExports(
+      'export declare function object<T extends Shape = Partial<Record<never, SomeType>>>(shape?: T): ZodObject<T>;',
+      'a.d.ts',
+    );
+
+    assert.ok(api.has('object'), 'a nested generic is still a declaration');
+    assert.equal(api.get('object')?.kind, 'function');
+  });
+
+  test('a constraint containing an arrow type does not end the parameter list early', () => {
+    const api = extractExports('export declare function on<T extends (event: E) => void>(handler: T): void;', 'a.d.ts');
+
+    assert.ok(api.has('on'), '`=>` inside a constraint closes nothing');
+  });
+
+  test('a nested generic that really was removed is still reported', () => {
+    const before = extractExports(
+      'export declare function object<T extends Partial<Record<never, X>>>(shape: T): Y;',
+      'a.d.ts',
+    );
+    const after = extractExports('export declare function other(): void;', 'a.d.ts');
+
+    assert.ok(
+      diffSurfaces(before, after).some((c) => c.kind === 'export-removed' && c.symbol === 'object'),
+      'seeing the declaration is what makes a real removal detectable too',
+    );
+  });
+
+  /**
+   * The other half of the same complaint. A release that grows `f()` into
+   * `f(options?)` has changed its declaration text and broken nobody, and a
+   * finding there sends an agent to read code that was already correct.
+   */
+  test('a new trailing optional parameter is not a breaking change', () => {
+    const before = extractExports('export declare function parse(input: string): Result;', 'a.d.ts');
+    const after = extractExports('export declare function parse(input: string, options?: Options): Result;', 'a.d.ts');
+
+    assert.deepEqual(diffSurfaces(before, after), [], 'a caller cannot break on an argument it never passes');
+  });
+
+  test('a required parameter that became optional is not a breaking change', () => {
+    const before = extractExports('export declare function parse(input: string): Result;', 'a.d.ts');
+    const after = extractExports('export declare function parse(input?: string): Result;', 'a.d.ts');
+
+    assert.deepEqual(diffSurfaces(before, after), []);
+  });
+
+  test('a new trailing rest parameter is not a breaking change', () => {
+    const before = extractExports('export declare function log(message: string): void;', 'a.d.ts');
+    const after = extractExports('export declare function log(message: string, ...rest: unknown[]): void;', 'a.d.ts');
+
+    assert.deepEqual(diffSurfaces(before, after), []);
+  });
+
+  test('a reordered parameter list is reported', () => {
+    const before = extractExports('export declare function f(a: A): R;', 'a.d.ts');
+    const after = extractExports('export declare function f(b: B, a: A): R;', 'a.d.ts');
+
+    assert.ok(
+      diffSurfaces(before, after).some((c) => c.kind === 'signature-changed'),
+      'every existing call now passes its argument in the wrong position',
+    );
+  });
+
+  test('an optional parameter that became required is reported', () => {
+    const before = extractExports('export declare function f(a?: A): R;', 'a.d.ts');
+    const after = extractExports('export declare function f(a: A): R;', 'a.d.ts');
+
+    assert.ok(diffSurfaces(before, after).some((c) => c.kind === 'signature-changed'));
+  });
+
+  test('a new *required* parameter is reported', () => {
+    const before = extractExports('export declare function f(a: A): R;', 'a.d.ts');
+    const after = extractExports('export declare function f(a: A, b: B): R;', 'a.d.ts');
+
+    assert.ok(diffSurfaces(before, after).some((c) => c.kind === 'signature-changed'));
+  });
+
+  test('a changed return type is reported even when every parameter survived', () => {
+    const before = extractExports('export declare function f(a: A): R;', 'a.d.ts');
+    const after = extractExports('export declare function f(a: A, b?: B): Q;', 'a.d.ts');
+
+    assert.ok(
+      diffSurfaces(before, after).some((c) => c.kind === 'signature-changed'),
+      'a caller assigns the result',
+    );
+  });
+
+  test('a changed parameter type is reported', () => {
+    const before = extractExports('export declare function f(a: A): R;', 'a.d.ts');
+    const after = extractExports('export declare function f(a: B, c?: C): R;', 'a.d.ts');
+
+    assert.ok(diffSurfaces(before, after).some((c) => c.kind === 'signature-changed'));
+  });
+
+  test('the same relaxation is recognised in const-arrow form', () => {
+    const before = extractExports('export declare const f: (a: A) => R;', 'a.d.ts');
+    const after = extractExports('export declare const f: (a: A, b?: B) => R;', 'a.d.ts');
+
+    assert.deepEqual(diffSurfaces(before, after), []);
+  });
+
+  test('an overload chain is reported rather than compared position by position', () => {
+    const before = extractExports('export declare function f(a: A): R;', 'a.d.ts');
+    const after = extractExports(
+      'export declare function f(a: A): R;\nexport declare function f(a: A, b: B): R;',
+      'a.d.ts',
+    );
+
+    assert.ok(
+      diffSurfaces(before, after).some((c) => c.kind === 'signature-changed'),
+      'guessing which overload answers which is the confidence this must not have',
+    );
+  });
+
   test('a rename pointing at another file is deferred, not guessed at', () => {
     const api = new Map();
     const aliases: { exported: string; local: string }[] = [];

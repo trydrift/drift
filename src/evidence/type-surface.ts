@@ -777,12 +777,18 @@ interface ParsedDeclaration {
 function declarationEntries(content: string): ParsedDeclaration[] {
   const entries: ParsedDeclaration[] = [];
 
-  collectSimpleDeclarations(
-    content,
-    /\b(export\s+)?(?:declare\s+)?function\s+([A-Za-z_$][\w$]*)(?:<[^>{}]*>)?\s*\(/g,
-    'function',
-    entries,
-  );
+  for (const found of functionDeclarations(content)) {
+    entries.push({
+      exported: found.exported,
+      entry: {
+        name: found.name,
+        kind: 'function',
+        signature: collapse(content.slice(found.start, declarationEndOffset(content, found.start))),
+        members: [],
+        requiredMembers: [],
+      },
+    });
+  }
   collectSimpleDeclarations(
     content,
     /\b(export\s+)?(?:declare\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\b/g,
@@ -881,9 +887,8 @@ function collectNamespaceDeclarations(
     });
   };
 
-  for (const match of direct.matchAll(/\b(?:declare\s+)?function\s+([A-Za-z_$][\w$]*)(?:<[^>{}]*>)?\s*\(/g)) {
-    const start = match.index ?? 0;
-    add(match[1]!, 'function', direct.slice(start, declarationEndOffset(direct, start)));
+  for (const found of functionDeclarations(direct)) {
+    add(found.name, 'function', direct.slice(found.start, declarationEndOffset(direct, found.start)));
   }
 
   for (const match of direct.matchAll(/\b(?:declare\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\b/g)) {
@@ -976,6 +981,75 @@ function namespaceMemberNames(body: string): string[] {
   }
 
   return [...names];
+}
+
+/**
+ * Every `function` declaration in a `.d.ts`, including the generic ones.
+ *
+ * A regex cannot do this job, and the version that tried is the reason Drift
+ * told a developer that `z.object` had been deleted from zod 4. Its type
+ * parameter list is `<T extends … = Partial<Record<never, core.SomeType>>>`,
+ * and the pattern matched it with `<[^>{}]*>` — a character class that stops
+ * dead at the first `>`, which here closes `Record<…>` and leaves `>>(`
+ * where the pattern demanded `(`. The declaration was therefore not extracted
+ * at all, so the diff saw `object` present in zod 3 and absent in zod 4 and
+ * reported a removal. Its neighbours `strictObject` and `looseObject`, whose
+ * type parameters happen not to nest, came through fine — which is what made
+ * the finding so plausible and so wrong.
+ *
+ * Nesting is a matching problem, so it is matched rather than approximated:
+ * find the name, and if a type parameter list follows, walk it to its real
+ * close before insisting on the parameter list's `(`.
+ */
+function functionDeclarations(content: string): Array<{ name: string; exported: boolean; start: number }> {
+  const found: Array<{ name: string; exported: boolean; start: number }> = [];
+  const pattern = /\b(export\s+)?(?:declare\s+)?function\s+([A-Za-z_$][\w$]*)/g;
+
+  for (const match of content.matchAll(pattern)) {
+    let at = (match.index ?? 0) + match[0].length;
+    while (at < content.length && /\s/.test(content[at]!)) at += 1;
+
+    if (content[at] === '<') {
+      const close = typeParameterEnd(content, at);
+      if (close < 0) continue;
+      at = close + 1;
+      while (at < content.length && /\s/.test(content[at]!)) at += 1;
+    }
+
+    // Without this the word `function` inside a type position — `type F =
+    // function` never appears, but `declare function` split across a comment
+    // can — would be admitted as a declaration it is not.
+    if (content[at] !== '(') continue;
+    found.push({ name: match[2]!, exported: Boolean(match[1]), start: match.index ?? 0 });
+  }
+
+  return found;
+}
+
+/**
+ * The `>` that closes the type parameter list opened at `open`.
+ *
+ * Arrow types are the reason this is not simple bracket counting: a constraint
+ * like `<T extends (x: A) => B>` contains a `>` that closes nothing, and
+ * counting it would end the list early and put the walk back into the same
+ * class of error this function exists to avoid.
+ */
+function typeParameterEnd(content: string, open: number): number {
+  let depth = 0;
+
+  for (let i = open; i < content.length; i++) {
+    const char = content[i];
+    if (char === '<') depth += 1;
+    else if (char === '>') {
+      if (content[i - 1] === '=') continue;
+      depth -= 1;
+      if (depth === 0) return i;
+    } else if (char === '(' && depth === 0) {
+      return -1;
+    }
+  }
+
+  return -1;
 }
 
 function collectSimpleDeclarations(
@@ -1220,7 +1294,12 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
       // it has "changed signature" — dozens of findings, each pointing at
       // working code, none of them true. Two declarations that differ only in
       // what their type parameters are spelled are the same declaration.
-      !alphaEquivalent(oldEntry.signature, newEntry.signature)
+      !alphaEquivalent(oldEntry.signature, newEntry.signature) &&
+      // And a call site cannot break on an argument it never passes. Growing
+      // `f()` into `f(options?)` is the most common shape of a minor release,
+      // and reporting it sends a developer to read code that was already
+      // correct. See `onlyRelaxesCallers`.
+      !onlyRelaxesCallers(oldEntry.signature, newEntry.signature)
     ) {
       changes.push({
         kind: 'signature-changed',
@@ -1233,6 +1312,153 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
   }
 
   return changes;
+}
+
+/**
+ * Does the new declaration accept everything the old one did, and only ask for
+ * less?
+ *
+ * The question a surface diff is really being asked is not "did this text
+ * change" but "can a call that compiled before stop compiling now". Those come
+ * apart constantly, and the gap is where a tool like this loses its reader: a
+ * release that grows `parse(input)` into `parse(input, options?)` has changed
+ * every signature in its file and broken nobody, but a finding says otherwise
+ * and an agent is then dispatched to fix code that was already correct. That
+ * costs tokens, and worse, it teaches the developer that Drift's findings are
+ * something to skim past.
+ *
+ * So the parameter lists are compared position by position, and the change is
+ * dismissed only when every direction of movement is one a caller cannot
+ * notice:
+ *
+ *   - a parameter that existed keeps its position and its type;
+ *   - a parameter that was required may become optional, never the reverse;
+ *   - anything genuinely new is optional, or a rest parameter.
+ *
+ * Everything else stands. `f(a)` becoming `f(b, a)` reorders what a caller
+ * already passes, and `f(a?)` becoming `f(a)` makes a call that omitted it
+ * fail — both are reported, which is the asymmetry to keep: a false positive
+ * wastes an agent run, a false negative ships a break. Anything this cannot
+ * parse confidently — overload chains, a return type that also moved — falls
+ * through to being reported.
+ */
+export function onlyRelaxesCallers(before: string, after: string): boolean {
+  // Overloads are joined with ` | ` by `extractExports`. Comparing a chain
+  // position by position would be comparing the wrong pairs, and guessing
+  // which overload answers which is exactly the confidence this must not have.
+  if (before.includes(' | declare ') || after.includes(' | declare ')) return false;
+  if (before.includes(' | export ') || after.includes(' | export ')) return false;
+
+  const old = callSignature(before);
+  const now = callSignature(after);
+  if (!old || !now) return false;
+
+  // A caller assigns the result. A different return type is a different
+  // contract even when every parameter survived untouched.
+  if (!sameType(old.returns, now.returns)) return false;
+  if (now.parameters.length < old.parameters.length) return false;
+
+  for (const [index, parameter] of old.parameters.entries()) {
+    const replacement = now.parameters[index]!;
+    if (!sameType(parameter.type, replacement.type)) return false;
+    // Required → optional loosens; optional → required breaks every call that
+    // relied on the default.
+    if (parameter.optional && !replacement.optional) return false;
+  }
+
+  return now.parameters
+    .slice(old.parameters.length)
+    .every((parameter) => parameter.optional || parameter.rest);
+}
+
+interface CallParameter {
+  optional: boolean;
+  rest: boolean;
+  type: string;
+}
+
+/**
+ * The parameter list and return type of a declaration, in either spelling.
+ *
+ * `declare function f(a): B` and `declare const f: (a) => B` are one contract
+ * to a caller — the same reason `interchangeable` exists — so both are read
+ * here rather than only the form that happens to be more common.
+ */
+function callSignature(signature: string): { parameters: CallParameter[]; returns: string } | null {
+  const open = parameterListStart(signature);
+  if (open < 0) return null;
+
+  const close = matchingParenOffset(signature, open);
+  if (close < 0) return null;
+
+  const inside = signature.slice(open + 1, close);
+  const tail = signature.slice(close + 1).trim();
+  // `): R;` for a function declaration, `) => R;` for a const arrow.
+  const returns = /^(?:=>|:)\s*([\s\S]*?)\s*;?$/.exec(tail)?.[1];
+  if (returns === undefined) return null;
+
+  const parameters: CallParameter[] = [];
+  for (const part of splitTopLevel(inside)) {
+    const text = part.trim();
+    if (!text) continue;
+
+    const declared = /^(\.\.\.)?\s*(?:readonly\s+)?([A-Za-z_$][\w$]*|\{[\s\S]*?\}|\[[\s\S]*?\])\s*(\?)?\s*:\s*([\s\S]+)$/.exec(
+      text,
+    );
+    // An untyped or destructured-without-annotation parameter gives nothing to
+    // compare; treating it as matching would be inventing agreement.
+    if (!declared) return null;
+
+    parameters.push({
+      rest: Boolean(declared[1]),
+      optional: Boolean(declared[3]) || Boolean(declared[1]),
+      type: declared[4]!,
+    });
+  }
+
+  return { parameters, returns };
+}
+
+/**
+ * Where the value parameters begin — past the type parameters, if any.
+ *
+ * `f<T extends (x: A) => B>(y: T)` has a `(` inside its constraint that opens
+ * nothing a caller passes, so the scan tracks angle depth and takes the first
+ * `(` outside it.
+ */
+function parameterListStart(signature: string): number {
+  let angle = 0;
+
+  for (let i = 0; i < signature.length; i++) {
+    const char = signature[i];
+    if (char === '<') angle += 1;
+    else if (char === '>' && signature[i - 1] !== '=') angle -= 1;
+    else if (char === '(' && angle <= 0) return i;
+  }
+
+  return -1;
+}
+
+function matchingParenOffset(content: string, open: number): number {
+  let depth = 0;
+  for (let i = open; i < content.length; i++) {
+    if (content[i] === '(') depth += 1;
+    else if (content[i] === ')') {
+      depth -= 1;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+/** Two type annotations, compared without whitespace or a trailing `undefined` union. */
+function sameType(a: string, b: string): boolean {
+  const normalize = (text: string): string =>
+    text
+      .replace(/\s+/g, '')
+      // `a?: T` and `a: T | undefined` express the same thing to a caller.
+      .replace(/\|undefined$/, '');
+  return normalize(a) === normalize(b);
 }
 
 /**
