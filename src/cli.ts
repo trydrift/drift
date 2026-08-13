@@ -471,7 +471,7 @@ async function analyzeCommand(flags: Flags): Promise<number> {
   console.log(`\n${renderPullRequestBody(result.plan, config)}\n`);
 
   if (process.stdin.isTTY && result.plan.breakingChanges.length > 0) {
-    await offerIssueBranchActions({ plan: result.plan, config, repo, github, workspace, logger });
+    await offerIssueBranchActions({ plan: result.plan, config, repo, github, workspace, logger, flags });
   }
 
   return 0;
@@ -500,8 +500,9 @@ async function offerIssueBranchActions(args: {
   github: GitHubClient;
   workspace: string;
   logger: Logger;
+  flags: Flags;
 }): Promise<void> {
-  const { plan, config, repo, github, workspace, logger } = args;
+  const { plan, config, repo, github, workspace, logger, flags } = args;
   const repoBlobUrl = `https://github.com/${repo.owner}/${repo.repo}/blob/${repo.afterSha}`;
   const targets = groupForAction(plan.breakingChanges, config.issueCreation.granularity, plan.impactSites).map(
     (target) => ({ ...target, repoBlobUrl }),
@@ -512,6 +513,8 @@ async function offerIssueBranchActions(args: {
   ];
   const options = [...order.map((action) => ACTION_LABEL[action]), 'Skip'];
 
+  let filedSomething = false;
+
   for (const target of targets) {
     const label =
       target.changes.length === 1
@@ -520,6 +523,7 @@ async function offerIssueBranchActions(args: {
     const answer = await ask(label, options, 'Skip');
     const chosen = order.find((action) => ACTION_LABEL[action] === answer);
     if (!chosen) continue;
+    filedSomething = true;
 
     if (chosen === 'issue') {
       reportIssueBranchOutcome(await createIssueForTarget(github, repo, target, logger), logger);
@@ -531,6 +535,47 @@ async function offerIssueBranchActions(args: {
       reportIssueBranchOutcome(outcome.issue, logger);
     }
   }
+
+  if (filedSomething) await offerToStartFixing({ plan, config, repo, workspace, logger, flags });
+}
+
+/**
+ * Asked once, right after the filing loop above — the same follow-up the VS
+ * Code extension's `offerBranchForIssue` asks after linking a branch. Runs
+ * the exact pipeline `drift fix` does (`fixPlanAndOpenPR`): every commit in
+ * this plan, not just the target(s) just filed, since Drift plans and
+ * dispatches fixes for the whole batch together rather than one dependency
+ * at a time.
+ */
+async function offerToStartFixing(args: {
+  plan: RemediationPlan;
+  config: DriftConfig;
+  repo: RepoContext;
+  workspace: string;
+  logger: Logger;
+  flags: Flags;
+}): Promise<void> {
+  const { plan, config, repo, workspace, logger, flags } = args;
+  const answer = await ask(
+    `Start fixing now? Drift will work through all ${plan.commits.length} commit(s) it planned, push a branch, and open a pull request.`,
+    ['Yes, start fixing', 'Not now'],
+    'Not now',
+  );
+  if (answer !== 'Yes, start fixing') return;
+
+  const token = await resolveGitHubToken(flags);
+  const ghSignedIn = token ? false : (await hasGitHubCli()) || (await tryBrowserSignIn(logger));
+  if (!token && !ghSignedIn) {
+    logger.error(
+      `Signing in to GitHub is required to push a branch and open a pull request. Run \`gh auth login\`, or set ` +
+        `GITHUB_TOKEN / pass --token. Create a token at ${CREATE_TOKEN_URL} (the "repo" scope is enough). Run ` +
+        `\`drift fix\` once you have.`,
+    );
+    return;
+  }
+
+  const code = await fixPlanAndOpenPR({ repo, plan, config, workspace, logger, flags, token });
+  if (code !== 0) logger.warn('Fixing finished with problems — see above.');
 }
 
 function reportIssueBranchOutcome(outcome: IssueBranchOutcome, logger: Logger): void {
@@ -1001,6 +1046,27 @@ async function fixCommand(flags: Flags): Promise<number> {
     : flags['no-community-recipes']
       ? false
       : undefined;
+
+  return await fixPlanAndOpenPR({ repo, plan, config, workspace, logger, flags, token, allowCommunityRecipes });
+}
+
+/**
+ * Resolve `plan` (deterministically, then via Copilot for whatever's left),
+ * push the result, and open a pull request for it. The back half of `drift
+ * fix`, factored out so `offerIssueBranchActions`'s "start fixing now?"
+ * follow-up can run the exact same pipeline instead of re-deriving it.
+ */
+async function fixPlanAndOpenPR(args: {
+  repo: RepoContext;
+  plan: RemediationPlan;
+  config: DriftConfig;
+  workspace: string;
+  logger: Logger;
+  flags: Flags;
+  token: string;
+  allowCommunityRecipes?: boolean;
+}): Promise<number> {
+  const { repo, plan, config, workspace, logger, flags, token, allowCommunityRecipes } = args;
 
   logger.info(`Fixing ${plan.commits.length} commit(s) on \`${plan.branchName}\` in an isolated worktree`);
 
