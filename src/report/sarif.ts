@@ -213,13 +213,18 @@ function mdLink(file: string, line: number): string {
   return `[\`${file}:${line}\`](${file}#L${line})`;
 }
 
+// No `region.snippet` here: GitHub renders it as a single code preview at
+// whichever location this is, and with a finding that can span dozens of
+// call sites, the "primary" one is just whichever sorted first by
+// confidence — showing its snippet alone reads as representative when it
+// isn't. The `Seen at:` link list already covers every site without
+// singling one out.
 function toSarifPhysicalLocation(loc: SarifLocation): Record<string, unknown> {
   return {
     physicalLocation: {
       artifactLocation: { uri: loc.file },
       region: {
         startLine: Math.max(1, loc.line),
-        ...(loc.excerpt ? { snippet: { text: loc.excerpt } } : {}),
       },
     },
   };
