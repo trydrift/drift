@@ -92,7 +92,7 @@ export const DriftConfigSchema = z.object({
        * consumers, so they are analysed by default alongside runtime ones. */
       dev: z.boolean().default(true),
     })
-    .default({}),
+    .prefault({}),
 
   /** Evidence-gathering knobs. */
   evidence: z
@@ -113,7 +113,7 @@ export const DriftConfigSchema = z.object({
       /** Cap on release notes fetched per dependency. */
       maxReleases: z.number().int().min(1).max(100).default(25),
     })
-    .default({}),
+    .prefault({}),
 
   /**
    * The other half of the question: why an upgrade might be worth taking.
@@ -131,7 +131,7 @@ export const DriftConfigSchema = z.object({
       /** Plain-English summary of the upstream changes between the versions. */
       summary: z.boolean().default(true),
     })
-    .default({}),
+    .prefault({}),
 
   /**
    * License policy. Off by default.
@@ -158,7 +158,7 @@ export const DriftConfigSchema = z.object({
        */
       requireDeclared: z.boolean().default(false),
     })
-    .default({}),
+    .prefault({}),
 
   /** Guardrails. These are the reason a team can leave `auto` mode on. */
   guardrails: z
@@ -206,7 +206,7 @@ export const DriftConfigSchema = z.object({
       /** Instruct the agent to leave tests semantically unchanged. */
       forbidTestWeakening: z.boolean().default(true),
     })
-    .default({}),
+    .prefault({}),
 
   /** How the fix is produced. */
   remediation: z
@@ -256,7 +256,7 @@ export const DriftConfigSchema = z.object({
           timeoutMinutes: z.number().int().min(1).max(360).default(20),
           pollIntervalSeconds: z.number().int().min(5).max(300).default(30),
         })
-        .default({}),
+        .prefault({}),
       /**
        * Allow Drift to query Codemod.com's registry and Maven Central (for
        * OpenRewrite — see `src/remediation/live-search.ts`) live, for a
@@ -277,7 +277,7 @@ export const DriftConfigSchema = z.object({
        */
       communityRecipes: z.boolean().default(false),
     })
-    .default({}),
+    .prefault({}),
 
   /** Experimental verification that compares old and new dependency behaviour. */
   verification: z
@@ -294,9 +294,9 @@ export const DriftConfigSchema = z.object({
           cpuLimit: z.number().min(0.1).max(32).default(1),
           retainArtifacts: z.boolean().default(false),
         })
-        .default({}),
+        .prefault({}),
     })
-    .default({}),
+    .prefault({}),
 
   /**
    * Privacy-preserving product telemetry.
@@ -315,7 +315,7 @@ export const DriftConfigSchema = z.object({
       rotationSalt: z.string().optional(),
       retentionDays: z.number().int().min(1).max(730).default(180),
     })
-    .default({}),
+    .prefault({}),
 
   /**
    * How the pull request gets opened.
@@ -391,7 +391,7 @@ export const DriftConfigSchema = z.object({
        */
       coAuthor: z.boolean().default(true),
     })
-    .default({}),
+    .prefault({}),
 
   /** Optional LLM-assisted evidence interpretation. */
   llm: z
@@ -408,7 +408,7 @@ export const DriftConfigSchema = z.object({
       /** Env var holding the API key. Never the key itself. */
       apiKeyEnv: z.string().default('ANTHROPIC_API_KEY'),
     })
-    .default({}),
+    .prefault({}),
 
   /**
    * GitHub code scanning alerts, one per affected package.
@@ -478,7 +478,7 @@ export const DriftConfigSchema = z.object({
        */
       createIssuesPerAlert: z.boolean().default(false),
     })
-    .default({}),
+    .prefault({}),
 
   /**
    * The one-click "file this" action offered wherever Drift shows a
@@ -523,7 +523,7 @@ export const DriftConfigSchema = z.object({
        */
       assignees: z.array(z.string()).default([]),
     })
-    .default({}),
+    .prefault({}),
 
   /**
    * Proactive scanning of every direct dependency's *installed* version
@@ -543,7 +543,7 @@ export const DriftConfigSchema = z.object({
     .object({
       enabled: z.boolean().default(false),
     })
-    .default({}),
+    .prefault({}),
 });
 
 export type DriftConfig = z.infer<typeof DriftConfigSchema>;
