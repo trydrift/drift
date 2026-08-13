@@ -4,7 +4,7 @@
   "description": "Find which dependency upgrades affect your code, see the evidence, and prepare reviewable fixes with deterministic transforms, community recipes, or your existing AI agent.",
   "version": "0.1.0",
   "publisher": "drift",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "SEE LICENSE IN LICENSE.md",
   "engines": {
     "vscode": "^1.95.0"
   },
