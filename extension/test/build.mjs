@@ -17,6 +17,9 @@ await build({
   outfile: 'dist/harness.cjs',
   alias: { vscode: './test/vscode-stub.ts' },
   logLevel: 'warning',
+  // See extension/esbuild.mjs: behavioural.ts's import.meta.url branch is
+  // dead code in CJS bundles, so this warning is a false positive.
+  logOverride: { 'empty-import-meta': 'silent' },
 });
 
 /**
@@ -35,5 +38,6 @@ for (const name of readdirSync('test').filter((f) => f.endsWith('.test.ts'))) {
     outfile: `dist/${name.replace(/\.ts$/, '.cjs')}`,
     alias: { vscode: './test/vscode-stub.ts' },
     logLevel: 'warning',
+    logOverride: { 'empty-import-meta': 'silent' },
   });
 }

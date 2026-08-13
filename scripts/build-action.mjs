@@ -35,6 +35,7 @@ execFileSync(
     '--target=node24',
     '--format=cjs',
     '--minify',
+    '--log-override:empty-import-meta=silent',
     '--outfile=action/index.cjs',
   ],
   { cwd: repoRoot, stdio: 'inherit' },
