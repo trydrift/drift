@@ -34,6 +34,9 @@ import {
 import { opensPullRequestAsDraft, type DriftConfig } from './config/schema.js';
 import { describeSeverity, scanTitle, severityOf } from './upgrade/severity.js';
 import { ask } from './util/prompt.js';
+import { createBranchForTarget, createIssueAndBranchForTarget, createIssueForTarget } from './actions/cli-actions.js';
+import { groupForAction, type IssueBranchAction, type IssueBranchOutcome } from './actions/issue-branch.js';
+import type { RemediationPlan } from './types.js';
 
 const run = promisify(execFile);
 
@@ -462,11 +465,103 @@ async function analyzeCommand(flags: Flags): Promise<number> {
 
   if (flags.json) {
     console.log(JSON.stringify(result.plan, null, 2));
-  } else {
-    console.log(`\n${renderPullRequestBody(result.plan, config)}\n`);
+    return 0;
+  }
+
+  console.log(`\n${renderPullRequestBody(result.plan, config)}\n`);
+
+  if (process.stdin.isTTY && result.plan.breakingChanges.length > 0) {
+    await offerIssueBranchActions({ plan: result.plan, config, repo, github, workspace, logger });
   }
 
   return 0;
+}
+
+const ACTION_LABEL: Record<IssueBranchAction, string> = {
+  issue: 'File a GitHub issue',
+  branch: 'Create a local branch',
+  both: 'File an issue and a branch',
+};
+
+/**
+ * The interactive side of the one-click issue/branch action: offered once
+ * per group (per package or per breaking change, per `issueCreation.
+ * granularity`) right after `analyze` prints its report, so filing a
+ * finding needs no second command. TTY-gated by the caller, and every
+ * outcome — including "no git repo here" or "no GitHub token" — is reported
+ * as a log line, never a thrown error, since a piped or scripted run must
+ * never see this prompt at all and an interactive one must never crash over
+ * a missing credential.
+ */
+async function offerIssueBranchActions(args: {
+  plan: RemediationPlan;
+  config: DriftConfig;
+  repo: RepoContext;
+  github: GitHubClient;
+  workspace: string;
+  logger: Logger;
+}): Promise<void> {
+  const { plan, config, repo, github, workspace, logger } = args;
+  const targets = groupForAction(plan.breakingChanges, config.issueCreation.granularity);
+  const order: IssueBranchAction[] = [
+    config.issueCreation.default,
+    ...(['issue', 'branch', 'both'] as const).filter((action) => action !== config.issueCreation.default),
+  ];
+  const options = [...order.map((action) => ACTION_LABEL[action]), 'Skip'];
+
+  for (const target of targets) {
+    const label =
+      target.changes.length === 1
+        ? `${target.dependency}: ${target.changes[0]!.summary}`
+        : `${target.dependency} (${target.changes.length} breaking changes)`;
+    const answer = await ask(label, options, 'Skip');
+    const chosen = order.find((action) => ACTION_LABEL[action] === answer);
+    if (!chosen) continue;
+
+    if (chosen === 'issue') {
+      reportIssueBranchOutcome(await createIssueForTarget(github, repo, target, logger), logger);
+    } else if (chosen === 'branch') {
+      reportIssueBranchOutcome(await createBranchForTarget(workspace, target, logger), logger);
+    } else {
+      const outcome = await createIssueAndBranchForTarget(github, repo, workspace, target, logger);
+      reportIssueBranchOutcome(outcome.branch, logger);
+      reportIssueBranchOutcome(outcome.issue, logger);
+    }
+  }
+}
+
+function reportIssueBranchOutcome(outcome: IssueBranchOutcome, logger: Logger): void {
+  switch (outcome.kind) {
+    case 'issue':
+      logger.info(
+        outcome.status === 'created' ? `Filed issue ${outcome.url}` : `Already filed as issue ${outcome.url}`,
+      );
+      return;
+    case 'branch':
+      logger.info(outcome.status === 'created' ? `Created branch ${outcome.name}` : `Switched to branch ${outcome.name}`);
+      return;
+    case 'unavailable':
+      logger.warn(`Skipped — ${describeUnavailable(outcome.reason)}.`);
+      return;
+    case 'failed':
+      logger.warn(`Skipped — ${outcome.message}`);
+      return;
+  }
+}
+
+function describeUnavailable(reason: Extract<IssueBranchOutcome, { kind: 'unavailable' }>['reason']): string {
+  switch (reason) {
+    case 'no-git-repo':
+      return 'not a git repository';
+    case 'no-remote':
+      return 'no git remote configured';
+    case 'gh-not-installed':
+      return 'the GitHub CLI is not installed';
+    case 'gh-not-authenticated':
+      return 'the GitHub CLI is not signed in';
+    case 'no-token':
+      return 'no GitHub token available (pass --token, set GITHUB_TOKEN, or run `gh auth login`)';
+  }
 }
 
 /**
