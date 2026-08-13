@@ -3,7 +3,7 @@ import { basename, dirname, join, relative } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import semver from 'semver';
-import { digestDiagnostics, renderDigest } from '../diagnostics-digest.js';
+import { CLEAN_TYPECHECK_MARKER, digestDiagnostics, renderDigest } from '../diagnostics-digest.js';
 import type { RemediationPlan, RepoContext } from '../../../src/types.js';
 import type { IssueBranchAction, IssueBranchTarget } from '../../../src/actions/issue-branch.js';
 import { buildPlan } from '../../../src/plan/index.js';
@@ -4217,7 +4217,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     if (outcome.status === 'passed') {
       step.done(`\`${check.label}\` passes`);
       return [
-        `\`${check.label}\` passes against the upgraded dependencies — it reports no errors at all.`,
+        `\`${check.label}\` passes against the upgraded dependencies — it ${CLEAN_TYPECHECK_MARKER}.`,
         '',
         'Treat that as a strong signal. The analysis above predicts breakage the',
         'compiler cannot see, which may mean the breakage is real but untyped',

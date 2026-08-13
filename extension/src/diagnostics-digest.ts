@@ -57,6 +57,16 @@ export interface DiagnosticGroup {
   focused: boolean;
 }
 
+/**
+ * The marker a clean typecheck leaves in the digest handed to the fix flow.
+ *
+ * Both the sentence the developer reads and the check `clearedByCompiler`
+ * makes are built from this one constant, so "the compiler said nothing is
+ * wrong" cannot come to mean two different things in two files. Rewording the
+ * prose around it is free; changing this line is a deliberate act.
+ */
+export const CLEAN_TYPECHECK_MARKER = 'reports no errors at all';
+
 export interface DiagnosticsDigest {
   /** Total parsed diagnostics, before any grouping. */
   total: number;

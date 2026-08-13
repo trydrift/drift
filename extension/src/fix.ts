@@ -18,6 +18,8 @@ import {
   type TaskActivityInput,
 } from './session.js';
 import { activityFromReport } from './agent-activity.js';
+import { CLEAN_TYPECHECK_MARKER } from './diagnostics-digest.js';
+import { taxonomyOf } from '../../src/confidence/taxonomy.js';
 import type { DriftReview } from './review/store.js';
 import { resolveAgent, type RegistryContext } from './agents/registry.js';
 import type {
@@ -462,6 +464,14 @@ async function runFixOnBranch(args: {
       state.set({ kind: 'fixing', plan, commitOrder: commit.order, detail: commit.message });
       progress.report({ message: `(${commit.order}/${plan.commits.length}) ${commit.message}` });
 
+      const cleared = clearedByCompiler(commit, plan, options.diagnostics);
+      if (cleared) {
+        options.onActivity?.(commit, { kind: 'status', title: 'Already compatible', detail: cleared });
+        options.onCommitEnd?.(commit, 'unchanged', [], cleared);
+        progress.report({ increment: step });
+        continue;
+      }
+
       // Asking before touching anything is the point of `ask` mode: at this
       // moment nothing has been written, so declining costs nothing.
       if (permission === 'ask' && options.ask) {
@@ -849,6 +859,58 @@ async function runBatchInWorktrees(args: {
 }
 
 /** A short, human-readable list of the renames a codemod would apply, for the confirm prompt. */
+/**
+ * Whether the project's own compiler has already answered this commit unit.
+ *
+ * Drift's analysis predicts breakage; a typecheck against the installed
+ * upgrade *measures* it. When the two disagree and every change in a unit is
+ * one the compiler would have caught, the compiler is right — it read the
+ * actual declarations that shipped, while the analysis compared published
+ * surfaces and reasoned about what a call site might do with them.
+ *
+ * Drift was already running that typecheck and already telling the agent to
+ * "change nothing you cannot justify". It then dispatched an agent per unit
+ * anyway, and each one spent a few thousand tokens rediscovering that the code
+ * was fine and came back "No change needed". That is the loop this closes: the
+ * question was answered before the agent was asked.
+ *
+ * Deliberately narrow. A unit is only cleared when the typecheck ran, passed
+ * with no errors at all, and *every* change under it is detectable at compile
+ * time. A behaviour change — a default that moved, a method that now throws
+ * instead of returning null — is invisible to a typecheck, and skipping those
+ * on a green compile is how a real break ships. That asymmetry is the whole
+ * design: a needless agent run costs tokens, a missed break costs production.
+ *
+ * Returns the sentence to show the developer, or null to run the agent.
+ */
+export function clearedByCompiler(
+  commit: CommitUnit,
+  plan: RemediationPlan,
+  diagnostics: string | undefined,
+): string | null {
+  if (!diagnostics?.includes(CLEAN_TYPECHECK_MARKER)) return null;
+
+  const changes = plan.changes.filter((change) => commit.breakingChangeIds.includes(change.id));
+  // No change to reason about is not evidence of safety, it is an absence of
+  // evidence, and the agent is the better answer.
+  if (changes.length === 0) return null;
+
+  const compileTime = changes.every((change) =>
+    taxonomyOf(change).detectability.some((how) => how === 'compile-time' || how === 'link-or-import'),
+  );
+  if (!compileTime) return null;
+
+  const sites = plan.impactSites.filter((site) => commit.allowedFiles.includes(site.file)).length;
+  const symbols = [...new Set(changes.flatMap((change) => change.symbols))].slice(0, 6);
+  return (
+    'Your typecheck passes against the upgraded version, and every change here' +
+    `${symbols.length > 0 ? ` — ${symbols.map((symbol) => `\`${symbol}\``).join(', ')} —` : ''}` +
+    ' is one it would have caught.' +
+    `${sites > 0 ? ` The ${sites} predicted site${sites === 1 ? '' : 's'} here compile${sites === 1 ? 's' : ''} against the new declarations.` : ''}` +
+    ' No agent was run.'
+  );
+}
+
 function renameSummary(codemod: NonNullable<CommitUnit['codemod']>): string {
   return codemod.map((t) => `\`${t.from}\` → \`${t.to}\``).join(', ');
 }
