@@ -260,6 +260,101 @@ describe('findingsFromPlan', () => {
     const [finding] = findingsFromPlan(plan);
     assert.equal(finding!.level, 'error');
   });
+
+  test('package granularity (default) never carries a snippet', () => {
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: [breaking('bc_1')],
+      impactSites: [site('bc_1')],
+    }) as RemediationPlan;
+
+    const [finding] = findingsFromPlan(plan);
+    assert.ok(!finding!.snippetOk, 'bundling many possible issues under one alert makes any one snippet arbitrary');
+  });
+
+  test('breakingChange granularity: one alert per breaking change, each with its own stable ruleId and a representative snippet', () => {
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: [breaking('bc_1'), breaking('bc_2')],
+      impactSites: [site('bc_1', { file: 'src/a.ts' }), site('bc_2', { file: 'src/b.ts' })],
+    }) as RemediationPlan;
+
+    const findings = findingsFromPlan(plan, { granularity: 'breakingChange' });
+    assert.equal(findings.length, 2, 'one alert per breaking change');
+    const ruleIds = findings.map((f) => f.ruleId);
+    assert.ok(new Set(ruleIds).size === 2, 'ruleIds are distinct');
+    for (const f of ruleIds) assert.match(f, /^drift\/npm\/acme-sdk\/bc_\d$/);
+    for (const finding of findings) assert.ok(finding.snippetOk, 'scoped to one breaking change, so its primary site is representative');
+
+    // rescanning the same plan produces the same ruleIds, so GitHub replaces each alert in place
+    const again = findingsFromPlan(plan, { granularity: 'breakingChange' });
+    assert.deepEqual(again.map((f) => f.ruleId).sort(), ruleIds.sort());
+  });
+
+  test('affectedSite granularity: one alert per call site, none carrying related locations', () => {
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: [breaking('bc_1')],
+      impactSites: [
+        site('bc_1', { file: 'src/a.ts', line: 1 }),
+        site('bc_1', { file: 'src/b.ts', line: 2 }),
+      ],
+    }) as RemediationPlan;
+
+    const findings = findingsFromPlan(plan, { granularity: 'affectedSite' });
+    assert.equal(findings.length, 2, 'one alert per call site, not per breaking change');
+    const files = findings.map((f) => f.primaryLocation.file).sort();
+    assert.deepEqual(files, ['src/a.ts', 'src/b.ts']);
+    for (const finding of findings) {
+      assert.equal(finding.relatedLocations.length, 0, 'a site alert is scoped to exactly one location');
+      assert.ok(finding.snippetOk, 'exactly one site per alert, so its snippet is never a stand-in for another');
+    }
+    assert.notEqual(findings[0]!.ruleId, findings[1]!.ruleId);
+  });
+
+  test('a security signal always gets its own single alert, regardless of granularity', () => {
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: [breaking('bc_1')],
+      impactSites: [site('bc_1')],
+      rationale: [
+        rationale({
+          security: {
+            ...cleanSecurity,
+            resolved: [
+              {
+                id: 'GHSA-xxxx',
+                aliases: [],
+                summary: 'Prototype pollution',
+                severity: 'high',
+                url: 'https://example.com/advisory',
+                fixedIn: '2.0.0',
+              },
+            ],
+          },
+        }),
+      ],
+    }) as RemediationPlan;
+
+    const findings = findingsFromPlan(plan, { granularity: 'affectedSite' });
+    // one alert per call site for the breaking change, plus exactly one for security
+    assert.equal(findings.length, 2);
+    const securityFinding = findings.find((f) => f.ruleId.endsWith('/other'));
+    assert.ok(securityFinding, 'the security block gets its own alert, suffixed distinctly from any site alert');
+    assert.match(securityFinding!.message, /Resolves 1 known advisory/);
+  });
 });
 
 describe('findingsFromCandidates', () => {

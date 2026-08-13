@@ -279,6 +279,25 @@ low-severity alert per otherwise-quiet outdated dependency, for a team that
 wants full dependency visibility in code scanning rather than just the
 summary.
 
+### `codeScanning.granularity`
+
+`'package' | 'breakingChange' | 'affectedSite'` — default **`'package'`**
+
+How findings are grouped into alerts.
+
+- `'package'` folds every breaking change and security signal for one
+  dependency into a single alert. No single call site is representative of
+  the whole alert, so no code snippet is shown — just text and a list of
+  links.
+- `'breakingChange'` opens one alert per breaking change instead, covering
+  every call site it reaches. The alert now covers one issue, so its
+  primary location's snippet is shown as a representative example.
+- `'affectedSite'` opens one alert per individual call site. There's
+  exactly one location per alert, so its snippet is a direct view of that
+  line, not a stand-in for anything else. This is the noisiest mode — one
+  breaking change reaching fifty call sites becomes fifty alerts — hence
+  not the default.
+
 ### `outdated.enabled`
 
 `boolean` — default **`false`**

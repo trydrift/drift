@@ -220,6 +220,11 @@ codeScanning:
   # security signal. Off by default — that's a job-summary line, not
   # something a developer needs to triage in the Security tab.
   includeInformational: false
+  # One alert per package (default), per breaking change, or per individual
+  # call site. Only 'breakingChange' and 'affectedSite' show a code snippet
+  # in the alert, since 'package' can bundle many call sites under one
+  # alert and no single one of them is representative.
+  granularity: package
 
 # Proactive scanning of every *installed* dependency against its registry,
 # independent of any push — the same check `drift outdated` runs locally.
