@@ -17,6 +17,10 @@ const options = {
   minify: !process.argv.includes('--watch'),
   sourcemap: process.argv.includes('--watch'),
   logLevel: 'info',
+  // `verification/behavioural.ts` guards its `import.meta.url` use behind a
+  // `typeof __dirname` check that always takes the __dirname branch in this
+  // CJS bundle — esbuild's "empty-import-meta" warning is a false positive.
+  logOverride: { 'empty-import-meta': 'silent' },
 };
 
 /**
