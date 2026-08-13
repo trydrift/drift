@@ -197,14 +197,50 @@ export class Git {
    * If the branch already exists, switches to it rather than failing — a
    * re-run of the same plan should be idempotent, and Drift's branch names are
    * derived from the analysed commit.
+   *
+   * `name` is resolved through {@link resolveNestedBranchName} first, since
+   * a name built by joining path-like segments (e.g. prefixing with the
+   * branch it's cut from) can ask git to nest a ref under another ref that
+   * already exists as a leaf — something git's ref storage refuses outright,
+   * not something a "does this exact name exist" check catches. The
+   * returned `name` is whatever was actually created/switched to, which the
+   * caller should use for anything shown to the user.
    */
-  async createBranch(name: string): Promise<{ created: boolean }> {
-    if (await this.branchExists(name)) {
-      await this.exec(['checkout', name]);
-      return { created: false };
+  async createBranch(name: string): Promise<{ created: boolean; name: string }> {
+    const resolved = await this.resolveNestedBranchName(name);
+    if (await this.branchExists(resolved)) {
+      await this.exec(['checkout', resolved]);
+      return { created: false, name: resolved };
     }
-    await this.exec(['checkout', '-b', name]);
-    return { created: true };
+    await this.exec(['checkout', '-b', resolved]);
+    return { created: true, name: resolved };
+  }
+
+  /**
+   * Git cannot create `refs/heads/a/b` while `refs/heads/a` already exists —
+   * a branch ref is stored as a file, so making it double as a directory for
+   * `a/b` fails at the storage layer with "cannot lock ref", regardless of
+   * how the caller built the name. This is the common case, not a rare one:
+   * any branch name built by prefixing with the branch it was cut from (e.g.
+   * `${currentBranch}/${rest}`) collides by construction, since the current
+   * branch is by definition an existing ref.
+   *
+   * Walks `name`'s `/`-separated path and, wherever the accumulated prefix
+   * already exists as a branch, fuses the next segment onto it with `-`
+   * instead of nesting under it — `main` + `drift/upgrade-x` becomes
+   * `main-drift/upgrade-x` rather than the unrepresentable `main/drift/upgrade-x`.
+   */
+  async resolveNestedBranchName(name: string): Promise<string> {
+    const segments = name.split('/');
+    const out: string[] = [segments[0]!];
+    for (let i = 1; i < segments.length; i++) {
+      if (await this.branchExists(out.join('/'))) {
+        out[out.length - 1] = `${out[out.length - 1]}-${segments[i]}`;
+      } else {
+        out.push(segments[i]!);
+      }
+    }
+    return out.join('/');
   }
 
   async checkout(ref: string): Promise<void> {

@@ -752,7 +752,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
               <div class="pkg-list">${affected.map((c) => renderCandidate(c, affected.length === 1, showRepo)).join('')}</div>
               ${
                 affected.length > 1
-                  ? `<div class="pkg-group-foot"><button class="primary wide" data-action="fixAll">Upgrade and fix all ${affected.length} with ${escapeHtml(vm.agentLabel)}</button><button class="ctl bordered wide" data-action="fileIssueAll" title="Create one GitHub issue per affected dependency, so the work is tracked even if nobody fixes it today">Create ${affected.length} issues</button></div>`
+                  ? `<div class="pkg-group-foot"><button class="primary wide" data-action="fixAll">Upgrade and fix all ${affected.length} with ${escapeHtml(vm.agentLabel)}</button><button class="wide" data-action="fileIssueAll" title="Create one GitHub issue per affected dependency, so the work is tracked even if nobody fixes it today">Create ${affected.length} issues</button></div>`
                   : ''
               }
             </section>`
@@ -783,7 +783,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
                 // whole group is one action, taken within the ranges already in
                 // package.json.
                 safe.length > 1
-                  ? `<div class="pkg-group-foot"><button class="wide" data-action="upgradeAll" title="Install every one of these, each within the range already in package.json">Upgrade all ${safe.length}</button><button class="ctl bordered wide" data-action="fileIssueSafe" title="File one GitHub issue per package, so each upgrade is tracked even before anyone takes it">Create ${safe.length} issues</button></div>`
+                  ? `<div class="pkg-group-foot"><button class="wide" data-action="upgradeAll" title="Install every one of these, each within the range already in package.json">Upgrade all ${safe.length}</button><button class="wide" data-action="fileIssueSafe" title="File one GitHub issue per package, so each upgrade is tracked even before anyone takes it">Create ${safe.length} issues</button></div>`
                   : ''
               }
             </details>`
@@ -883,7 +883,7 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
             ? `<button class="primary" data-action="fixPackage" data-id="${escapeAttr(candidate.id)}">Upgrade and fix ${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'}</button>`
             : ''
         }
-        <button class="ctl bordered" data-action="fileIssuePackage" data-id="${escapeAttr(candidate.id)}" title="Create a GitHub issue tracking this upgrade instead of acting on it now">Create issue</button>
+        <button data-action="fileIssuePackage" data-id="${escapeAttr(candidate.id)}" title="Create a GitHub issue tracking this upgrade instead of acting on it now">Create issue</button>
       </div>
     </div>
   </details>`;
@@ -2175,7 +2175,12 @@ button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
    never the alarm styling: the developer has a decision to make, not a failure
    to clean up. */
 .pkg-subhead.unchecked > svg.i:last-of-type { color: var(--vscode-editorWarning-foreground); }
-.pkg-group-foot { padding: 2px 10px 9px; }
+/* "Upgrade all" and "Create N issues" sit side by side, sharing the row
+   evenly, rather than each claiming the full width and stacking — a group
+   of packages usually offers both, and stacked full-width buttons buried
+   the second, lower-priority one below the fold. */
+.pkg-group-foot { display: flex; gap: 6px; padding: 2px 10px 9px; }
+.pkg-group-foot button.wide { width: auto; flex: 1 1 0; }
 .pkg { border-top: 1px solid color-mix(in srgb, var(--vscode-panel-border) 55%, transparent); }
 .pkg > summary {
   display: grid;

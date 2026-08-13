@@ -315,8 +315,15 @@ function registerCommands(
         action ??
         vscode.workspace.getConfiguration('drift').get<IssueBranchAction>('issueCreation.default', 'issue');
 
+      // `changes` is already narrowed to one dependency (or one finding), so
+      // 'package' grouping here just applies `groupForAction`'s "only file
+      // what actually reaches this repo's code" filter — it doesn't merge
+      // anything `scope: 'change'` meant to keep separate.
+      const { groupForAction } = await import('../../src/actions/issue-branch.js');
+      const target = groupForAction(changes, 'package', plan.impactSites)[0]!;
+
       const { runIssueBranchAction } = await import('./issue-actions.js');
-      await runIssueBranchAction(root, resolvedAction, { dependency: changes[0]!.dependency, changes });
+      await runIssueBranchAction(root, resolvedAction, target);
     }) as never,
   );
 }

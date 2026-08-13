@@ -4,7 +4,8 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import semver from 'semver';
 import { digestDiagnostics, renderDigest } from '../diagnostics-digest.js';
-import type { BreakingChange, RemediationPlan, RepoContext } from '../../../src/types.js';
+import type { RemediationPlan, RepoContext } from '../../../src/types.js';
+import type { IssueBranchTarget } from '../../../src/actions/issue-branch.js';
 import { buildPlan } from '../../../src/plan/index.js';
 import { resolveBaseBranch } from '../../../src/plan/pull-request.js';
 import type { RevisionRequest } from '../agents/types.js';
@@ -1614,10 +1615,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         const candidateCtx = await this.contextForCandidate(candidate, ctx);
         const branch = upgradeBranches.get(candidateCtx.root);
         if (branch?.mode === 'new' && !branched.has(candidateCtx.root)) {
-          if (!(await this.startBranch(candidateCtx.root, branch.name))) {
+          const actual = await this.startBranch(candidateCtx.root, branch.name);
+          if (actual === null) {
             installed = false;
             return;
           }
+          branch.name = actual;
           branched.add(candidateCtx.root);
         }
 
@@ -2109,8 +2112,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     let branch = current;
     if (answer === 'branch') {
       try {
-        const { created } = await git.createBranch(plan.branchName);
-        branch = plan.branchName;
+        const { created, name } = await git.createBranch(plan.branchName);
+        branch = name;
         this.session.notice(
           'info',
           created
@@ -2671,7 +2674,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     if (notInstalled.length > 0) {
       // The branch is created here rather than inside `runFix`, so the
       // manifest, the lockfile and the code changes all land together.
-      if (branch.mode === 'new' && !(await this.startBranch(ctx.root, branch.name))) return;
+      if (branch.mode === 'new') {
+        const actual = await this.startBranch(ctx.root, branch.name);
+        if (actual === null) return;
+        branch.name = actual;
+      }
       if (!(await this.upgrade(notInstalled.map((c) => c.id), 'safe', { quiet: true }))) return;
       upgraded = true;
 
@@ -2871,21 +2878,100 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       return;
     }
 
-    const byDependency = new Map<string, BreakingChange[]>();
-    for (const change of plan.breakingChanges) {
-      const list = byDependency.get(change.dependency);
-      if (list) list.push(change);
-      else byDependency.set(change.dependency, [change]);
-    }
+    // One target per dependency, filtered to the changes that actually reach
+    // this repository's code — the same rule the code-scanning alerts use
+    // (`report/sarif.ts`), so an issue never dumps a package's whole upstream
+    // changelog just because one line of it matched something here.
+    const { groupForAction, branchNameFor } = await import('../../../src/actions/issue-branch.js');
+    const targets = groupForAction(plan.breakingChanges, 'package', plan.impactSites);
 
     const action = vscode.workspace
       .getConfiguration('drift')
       .get<'issue' | 'branch' | 'both'>('issueCreation.default', 'issue');
 
     const { runIssueBranchAction } = await import('../issue-actions.js');
-    for (const [dependency, changes] of byDependency) {
-      await runIssueBranchAction(ctx.root, action, { dependency, changes });
+    for (const target of targets) {
+      let issueNumber: number | undefined;
+      let linkedBranch = false;
+
+      await runIssueBranchAction(ctx.root, action, target, {
+        onIssue: (result) => {
+          issueNumber = result.number;
+          this.session.say(
+            result.status === 'created'
+              ? `Filed issue [#${result.number}](${result.url}) for **${target.dependency}**.`
+              : `Issue [#${result.number}](${result.url}) for **${target.dependency}** was already open — not filing a duplicate.`,
+          );
+        },
+        onBranch: (result) => {
+          linkedBranch = true;
+          this.session.say(
+            `${result.status === 'created' ? 'Created' : 'Switched to'} branch \`${result.name}\`${issueNumber ? `, linked to issue #${issueNumber}` : ''}.`,
+          );
+        },
+      });
+
+      // `action: 'both'` (or the branch having failed outright) already
+      // settled the branch question one way or another — asking again would
+      // be a second, redundant prompt for the same thing `onBranch` above
+      // just reported.
+      if (issueNumber !== undefined && !linkedBranch && action === 'issue') {
+        await this.offerBranchForIssue(ctx.root, target, issueNumber, branchNameFor(target));
+      }
     }
+  }
+
+  /**
+   * Asked right after filing an issue that has no branch yet: link one now,
+   * or leave it for later. Mirrors the "Create linked branch" button on the
+   * native notification `runIssueBranchAction` already shows, but in the
+   * conversation, where a choice between a fresh branch and one that already
+   * exists can actually be offered instead of a single button.
+   */
+  private async offerBranchForIssue(
+    root: string,
+    target: IssueBranchTarget,
+    issueNumber: number,
+    proposedName: string,
+  ): Promise<void> {
+    const answer = await this.session.ask(
+      `Link a branch to issue #${issueNumber}?`,
+      [
+        {
+          label: `Create \`${proposedName}\``,
+          value: 'new',
+          description: 'A new branch, named from what is being upgraded',
+        },
+        { label: 'Use an existing branch', value: 'existing', description: 'Pick one already in this repository' },
+        { label: 'Not now', value: 'no', description: 'Leave the issue as it is' },
+      ],
+      false,
+    );
+    if (answer === '' || answer === 'no') return;
+
+    if (answer === 'new') {
+      const { linkBranchToIssue } = await import('../issue-actions.js');
+      await linkBranchToIssue(root, target, issueNumber, {
+        onBranch: (result) => {
+          this.session.say(
+            `${result.status === 'created' ? 'Created' : 'Switched to'} branch \`${result.name}\`, linked to issue #${issueNumber}.`,
+          );
+        },
+      });
+      return;
+    }
+
+    const { Git } = await import('../git.js');
+    const branches = await new Git(root).listBranches();
+    const picked = await vscode.window.showQuickPick(branches, {
+      title: `Branch to link to issue #${issueNumber}`,
+      placeHolder: 'Pick a branch already in this repository',
+    });
+    if (!picked) return;
+
+    const { linkExistingBranchToIssue } = await import('../issue-actions.js');
+    const result = await linkExistingBranchToIssue(root, picked, issueNumber);
+    if (result.ok) this.session.say(`Switched to \`${picked}\`, linked to issue #${issueNumber}.`);
   }
 
   /**
@@ -4026,6 +4112,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private async availableBranchName(root: string, proposed: string): Promise<string> {
     const { Git } = await import('../git.js');
     const git = new Git(root);
+    // Resolved first so the name shown to the user (this return value feeds
+    // straight into `chooseBranch`'s prompt) already matches what
+    // `createBranch` will actually create — a proposal like
+    // `main/drift/upgrade-x` is unrepresentable whenever `main` is the
+    // branch it's being cut from, which is always, so previewing it
+    // unresolved would show one name and create another.
+    proposed = await git.resolveNestedBranchName(proposed);
     if (!(await git.branchExists(proposed).catch(() => false))) return proposed;
 
     for (let i = 1; i <= 99; i++) {
@@ -4115,19 +4208,27 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     return renderDigest(digest, { label: check.label, rawTail: outcome.output });
   }
 
-  /** Create and check out the branch the whole change will live on. */
-  private async startBranch(root: string, name: string): Promise<boolean> {
+  /**
+   * Create and check out the branch the whole change will live on.
+   *
+   * Returns the branch actually created — `Git.createBranch` may adjust
+   * `name` to avoid an unrepresentable nested ref (see
+   * `resolveNestedBranchName`), so callers that go on to reference the
+   * branch (commit messages, PR bodies, status text) must use the returned
+   * name rather than the one they proposed. `null` on failure.
+   */
+  private async startBranch(root: string, name: string): Promise<string | null> {
     const { Git } = await import('../git.js');
     try {
-      const { created } = await new Git(root).createBranch(name);
+      const { created, name: actual } = await new Git(root).createBranch(name);
       this.session.notice(
         'info',
-        created ? `Working on a new branch, \`${name}\`.` : `Switched to the existing \`${name}\`.`,
+        created ? `Working on a new branch, \`${actual}\`.` : `Switched to the existing \`${actual}\`.`,
       );
-      return true;
+      return actual;
     } catch (err) {
       this.session.notice('error', `Could not create \`${name}\`: ${(err as Error).message}`);
-      return false;
+      return null;
     }
   }
 
