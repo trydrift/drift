@@ -217,7 +217,25 @@ function stripMarkdown(markdown: string): string {
   return markdown
     .replace(/\[([^\]]*)\]\(([^)]+)\)/g, '$1 ($2)')
     .replace(/\*\*(.*?)\*\*/g, '$1')
-    .replace(/`([^`]*)`/g, '$1');
+    .replace(/`([^`]*)`/g, '$1')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+}
+
+/**
+ * Escapes `<`, `>`, and `&` before wrapping text in a backtick code span.
+ *
+ * A plain `file:line` reference never needs this — it has none of these
+ * characters — but a TypeScript declaration does (`ZodCoercedBoolean<T>`,
+ * `RawCreateParams & {...}`), and GitHub's alert-markdown renderer reads an
+ * unescaped `<T>` inside a code span as an unrecognised HTML tag rather than
+ * literal text, which is what actually broke the before/after declaration
+ * diff: not the code span itself (plain code spans elsewhere on this page —
+ * the `Seen at:` links — render fine), but angle brackets inside one.
+ */
+function escapeForCodeSpan(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 /**
@@ -379,7 +397,7 @@ export function findingsFromPlan(
               upstreamOnlyCount: 0,
               fix,
               ruleIdSuffix: `${breaking.id}/${siteKey(site)}`,
-              ruleName: `${change.name}: ${ruleNameForBreaking(breaking.kind)}`,
+              ruleName: alertRuleName(change, breaking),
               snippetOk: true,
               repoBlobUrl,
             }),
@@ -393,7 +411,7 @@ export function findingsFromPlan(
             upstreamOnlyCount: 0,
             fix,
             ruleIdSuffix: breaking.id,
-            ruleName: `${change.name}: ${ruleNameForBreaking(breaking.kind)}`,
+            ruleName: alertRuleName(change, breaking),
             snippetOk: true,
             repoBlobUrl,
           }),
@@ -492,6 +510,22 @@ function ruleNameForBreaking(kind: BreakingChangeKind): string {
   return RULE_NAMES[kind] ?? 'Breaking change';
 }
 
+/**
+ * `<package>: <kind> (<symbol>)` rather than just `<package>: <kind>` — a
+ * package with several signature changes otherwise produces several alerts
+ * with the identical name (e.g. "zod: Call signature changed" repeated for
+ * every changed function), which is exactly as confusing in the Security
+ * tab's alert list as it sounds. `breaking.symbols` is what actually tells
+ * these apart.
+ */
+function alertRuleName(change: DependencyChange, breaking: BreakingChange): string {
+  const base = `${change.name}: ${ruleNameForBreaking(breaking.kind)}`;
+  if (breaking.symbols.length === 0) return base;
+  const shown = breaking.symbols.slice(0, 2).join(', ');
+  const more = breaking.symbols.length > 2 ? ', …' : '';
+  return `${base} (${shown}${more})`;
+}
+
 export const DEPENDENCY_KIND_LABELS: Record<DependencyKind, string> = {
   runtime: 'dependency',
   dev: 'devDependency',
@@ -534,7 +568,12 @@ function buildBreakingBlock(breaking: BreakingChange, sites: ImpactSite[], evide
   const related = sorted.slice(1, 1 + MAX_RELATED_LOCATIONS);
   const localConfidence = primary.confidence;
   const files = new Set(sites.map((s) => s.file));
-  const helpUri = evidenceUrlForBreaking(breaking, evidence);
+  const citedUri = evidenceUrlForBreaking(breaking, evidence);
+  // The cited URL is the whole declarations file — for a package like zod
+  // that's thousands of lines in one file, and pointing at line 1 of it
+  // proves nothing about *this* symbol. A text fragment scrolls the browser
+  // straight to the changed declaration instead.
+  const helpUri = citedUri ? withDeclarationFragment(citedUri, breaking) : undefined;
 
   const lines: string[] = [
     `**${ruleNameForBreaking(breaking.kind)}:** ${linkSymbols(breaking.summary, helpUri)}`,
@@ -552,7 +591,11 @@ function buildBreakingBlock(breaking: BreakingChange, sites: ImpactSite[], evide
   // there shows up as literal backticks and a literal "diff" — a plain-text
   // dump of the fence syntax rather than a code block.
   if (breaking.before && breaking.after && breaking.before !== breaking.after) {
-    lines.push('', `- \`${truncate(breaking.before, 300)}\``, `+ \`${truncate(breaking.after, 300)}\``);
+    lines.push(
+      '',
+      `- \`${escapeForCodeSpan(truncate(breaking.before, 300))}\``,
+      `+ \`${escapeForCodeSpan(truncate(breaking.after, 300))}\``,
+    );
   }
   if (helpUri) lines.push('', `Declaration source: ${helpUri}`);
 
@@ -782,6 +825,27 @@ function evidenceUrlForBreaking(breaking: BreakingChange, evidence: RemediationP
     if (url) return url;
   }
   return undefined;
+}
+
+/**
+ * Appends a browser text fragment (`#:~:text=…`) that lands the reader on
+ * the changed declaration rather than the top of the file. Chrome and Edge
+ * scroll to and highlight the first match; other browsers ignore an
+ * unrecognised fragment and simply load the page, so this is safe to add
+ * whenever there's a declaration to search for.
+ */
+function withDeclarationFragment(url: string, breaking: BreakingChange): string {
+  const snippet = declarationSnippet(breaking);
+  return snippet ? `${url}#:~:text=${encodeURIComponent(snippet)}` : url;
+}
+
+function declarationSnippet(breaking: BreakingChange): string | undefined {
+  const line = (breaking.after ?? breaking.before)
+    ?.split('\n')[0]
+    ?.trim();
+  const snippet = line || breaking.symbols[0];
+  if (!snippet) return undefined;
+  return snippet.length > 80 ? snippet.slice(0, 80) : snippet;
 }
 
 function fixFromCommit(
