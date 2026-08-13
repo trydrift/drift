@@ -1,5 +1,66 @@
+import type { RemediationPlan } from '../types.js';
 import { fetchJson, fetchText } from '../util/http.js';
+import { fetchRegistryInfo } from './registry.js';
 import { matchesVersion } from './surface/index.js';
+
+/** How many breaking changes one plan will spend a GitHub source lookup on. See `attachGitHubSources`. */
+const MAX_GITHUB_SOURCE_LOOKUPS = 12;
+
+/**
+ * Best-effort: attach a real GitHub source line to every breaking change in
+ * `plan` that actually reaches code in this repository — the ones a reader
+ * will actually see in the report.
+ *
+ * This runs *after* localization deliberately, not during evidence
+ * gathering: a computed surface diff can find hundreds of changed symbols
+ * in one package, and evidence gathering has no way yet to know which
+ * handful of those will turn out to have an impact site here. Spending the
+ * lookup budget there means spending it on symbols the report may never
+ * show — resolving zod's `setErrorMap` while never trying `boolean`, the
+ * one this repository actually calls, which is exactly what happened in
+ * practice before this was moved here. Now the resolution runs once for
+ * the plan and is spent only on breaking changes already known to matter.
+ */
+export async function attachGitHubSources(plan: RemediationPlan, token: string | undefined): Promise<RemediationPlan> {
+  if (!token) return plan;
+
+  const reachable = plan.breakingChanges.filter(
+    (b) => b.symbols.length > 0 && plan.impactSites.some((s) => s.breakingChangeId === b.id),
+  );
+  if (reachable.length === 0) return plan;
+
+  const repoCache = new Map<string, string | null>();
+  const sourceUrls = new Map<string, string>();
+  let spent = 0;
+
+  for (const breaking of reachable) {
+    if (spent >= MAX_GITHUB_SOURCE_LOOKUPS) break;
+
+    const change = plan.changes.find(
+      (c) => c.name === breaking.dependency && (c.workspace ?? '') === (breaking.workspace ?? ''),
+    );
+    if (!change?.to || change.ecosystem !== 'npm') continue;
+
+    let githubRepo = repoCache.get(change.name);
+    if (githubRepo === undefined) {
+      const info = await fetchRegistryInfo(change.name, change.ecosystem, change.to);
+      githubRepo = info?.githubRepo ?? null;
+      repoCache.set(change.name, githubRepo);
+    }
+    if (!githubRepo) continue;
+
+    spent++;
+    const hit = await resolveGitHubDeclaration(githubRepo, change.to, breaking.symbols[0]!, token);
+    if (hit) sourceUrls.set(breaking.id, hit.url);
+  }
+
+  if (sourceUrls.size === 0) return plan;
+
+  return {
+    ...plan,
+    breakingChanges: plan.breakingChanges.map((b) => (sourceUrls.has(b.id) ? { ...b, sourceUrl: sourceUrls.get(b.id) } : b)),
+  };
+}
 
 /**
  * Best-effort resolution of a changed npm export to the real TypeScript
