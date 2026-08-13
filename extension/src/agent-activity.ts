@@ -216,7 +216,7 @@ function pathIn(text: string): string | undefined {
  * unanchored `[…]` pattern also eats prose like "[1] see below", and the panel
  * would then be quietly rewriting what the agent said.
  */
-function stripAnsi(text: string): string {
+export function stripAnsi(text: string): string {
   // eslint-disable-next-line no-control-regex
   return text
     .replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/g, '')
