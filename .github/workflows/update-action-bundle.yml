@@ -11,6 +11,7 @@ on:
       - 'action/**'
       - '!action/index.cjs'
       - '!action/behavioural-worker.js'
+  workflow_dispatch: {}
 
 permissions: {}
 
