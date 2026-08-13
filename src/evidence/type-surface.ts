@@ -41,6 +41,17 @@ export interface SurfaceEntry {
    * it. Absent means the package declares the symbol itself.
    */
   via?: string;
+  /**
+   * Interfaces and classes this one inherits from.
+   *
+   * Resolved into `members` once every source has been read, because a base
+   * declared in another file is not known while this one is being parsed.
+   * Without it, the single most common refactor a growing library does —
+   * lifting shared members into a base interface — reports every lifted member
+   * as removed. One tidy-up, twenty findings, none of them true, and an agent
+   * dispatched to restore methods that are still callable.
+   */
+  extends?: string[];
 }
 
 export type SurfaceApi = Map<string, SurfaceEntry>;
@@ -124,6 +135,7 @@ export async function fetchTypeSurface(
   const aliases: ExportAlias[] = [];
   for (const source of sources) extractExports(source.content, source.path, api, aliases);
   resolveAliases(api, aliases);
+  resolveInheritedMembers(api);
 
   const ownSymbols = api.size;
   const viaDependencies =
@@ -668,7 +680,47 @@ export function extractExports(
 
   collectExportSpecifiers(content, locals, into, aliases);
   collectExportAssignments(content, locals, into);
+  // Within one file, bases are already all known. A surface assembled from
+  // several files resolves again in `fetchTypeSurface`, once every source has
+  // been read; doing it here as well is what makes `extractExports` usable on
+  // its own, which is how it is tested.
+  resolveInheritedMembers(into, locals);
   return into;
+}
+
+/**
+ * Fold each declaration's inherited members into its own list.
+ *
+ * A caller does not care which link of the chain declares `get()`; they care
+ * that `client.get()` compiles. Comparing only own-members means the most
+ * routine refactor a library can do — lifting shared members into a base —
+ * reports every one of them as removed, which is exactly the kind of confident
+ * wrongness that gets an agent dispatched to fix working code.
+ *
+ * Bases outside this surface (a type from another package, a built-in) are
+ * simply not resolved: their members were invisible before this ran and are
+ * invisible after, which is the same answer, never a worse one.
+ */
+function resolveInheritedMembers(api: SurfaceApi, extra?: SurfaceApi): void {
+  const lookup = (name: string): SurfaceEntry | undefined => api.get(name) ?? extra?.get(name);
+
+  const flatten = (entry: SurfaceEntry, seen: Set<string>): void => {
+    // A cyclic `extends` is not valid TypeScript, but a surface assembled from
+    // several files can still present one; recursing into it would hang.
+    if (!entry.extends || seen.has(entry.name)) return;
+    seen.add(entry.name);
+
+    for (const base of entry.extends) {
+      const parent = lookup(base);
+      if (!parent || parent === entry) continue;
+      flatten(parent, seen);
+
+      entry.members = [...new Set([...entry.members, ...parent.members])];
+      entry.requiredMembers = [...new Set([...entry.requiredMembers, ...parent.requiredMembers])];
+    }
+  };
+
+  for (const entry of api.values()) flatten(entry, new Set());
 }
 
 /** One `export { local as exported }` binding whose local is declared elsewhere. */
@@ -1061,17 +1113,50 @@ function collectSimpleDeclarations(
   for (const match of content.matchAll(pattern)) {
     const start = match.index ?? 0;
     const end = declarationEndOffset(content, start);
+    const declaration = content.slice(start, end);
+    // `type Options = { retries?: number }` is an interface to everyone who
+    // uses it, and reading its members is what lets the two spellings compare
+    // as one thing. It also closes a gap of its own: a member dropped from a
+    // type alias was previously invisible, because only interfaces and classes
+    // had members to diff at all.
+    const members = kind === 'type' ? aliasMembers(declaration) : [];
+
     entries.push({
       exported: Boolean(match[1]),
       entry: {
         name: match[2]!,
         kind,
-        signature: collapse(content.slice(start, end)),
-        members: [],
-        requiredMembers: [],
+        signature: collapse(declaration),
+        members: members.map((member) => member.name),
+        requiredMembers: members.filter((member) => member.required).map((member) => member.name),
       },
     });
   }
+}
+
+/**
+ * The members of a type alias whose right-hand side is an object literal.
+ *
+ * Only that shape. `type Id = string` and `type Handler = (e: E) => void` have
+ * no members, and `type A = B & C` names members this cannot see from here —
+ * claiming an empty list for those would turn every one of them into a pile of
+ * `member-removed` findings the moment anything else about them moved.
+ */
+function aliasMembers(declaration: string): Array<{ name: string; required: boolean }> {
+  const assignment = declaration.indexOf('=');
+  if (assignment < 0) return [];
+
+  const rest = declaration.slice(assignment + 1);
+  const open = rest.indexOf('{');
+  if (open < 0 || rest.slice(0, open).trim() !== '') return [];
+
+  const close = matchingBraceOffset(rest, open);
+  if (close < 0) return [];
+  // Anything after the closing brace makes this an intersection or a union,
+  // not a plain object type.
+  if (rest.slice(close + 1).replace(/;\s*$/, '').trim() !== '') return [];
+
+  return typeMembers(rest.slice(open + 1, close), false);
 }
 
 function collectBlockDeclarations(
@@ -1087,6 +1172,7 @@ function collectBlockDeclarations(
     const end = close >= 0 ? close + 1 : declarationEndOffset(content, start);
     const body = open >= 0 && close > open ? content.slice(open + 1, close) : '';
     const members = kind === 'enum' ? enumMembers(body) : typeMembers(body, kind === 'class');
+    const heritage = open >= 0 ? inheritedNames(content.slice(start, open)) : [];
 
     entries.push({
       exported: Boolean(match[1]),
@@ -1096,9 +1182,26 @@ function collectBlockDeclarations(
         signature: collapse(content.slice(start, open >= 0 ? open : end)),
         members: members.map((member) => member.name),
         requiredMembers: members.filter((member) => member.required).map((member) => member.name),
+        ...(heritage.length > 0 ? { extends: heritage } : {}),
       },
     });
   }
+}
+
+/**
+ * The bases named in an `extends`/`implements` clause, without their type
+ * arguments.
+ *
+ * `interface Client extends Base<Options>, Loggable` inherits from `Base` and
+ * `Loggable`; the argument list says how, not from what.
+ */
+function inheritedNames(header: string): string[] {
+  const clause = /\b(?:extends|implements)\s+([\s\S]+)$/.exec(header);
+  if (!clause) return [];
+
+  return splitTopLevel(clause[1]!)
+    .map((part) => /^\s*([A-Za-z_$][\w$]*)/.exec(part.replace(/\bimplements\b/g, ','))?.[1])
+    .filter((name): name is string => Boolean(name));
 }
 
 function declarationEndOffset(content: string, start: number): number {
@@ -1181,7 +1284,16 @@ function exportBindings(list: string): Array<{ exported: string; local: string }
  */
 function interchangeable(a: SurfaceKind, b: SurfaceKind): boolean {
   const callable = (kind: SurfaceKind): boolean => kind === 'variable' || kind === 'function';
-  return callable(a) && callable(b);
+  if (callable(a) && callable(b)) return true;
+
+  // `interface Options { … }` and `type Options = { … }` are the same thing to
+  // everyone who annotates a variable with it, passes one, or returns one, and
+  // libraries move between them for internal reasons — a type alias composes,
+  // an interface merges. The members are still compared, which is where a
+  // caller can actually break; whether the author wrote `interface` or `type`
+  // is not a finding about their API.
+  const shape = (kind: SurfaceKind): boolean => kind === 'interface' || kind === 'type';
+  return shape(a) && shape(b);
 }
 
 /**
@@ -1360,7 +1472,7 @@ export function onlyRelaxesCallers(before: string, after: string): boolean {
 
   for (const [index, parameter] of old.parameters.entries()) {
     const replacement = now.parameters[index]!;
-    if (!sameType(parameter.type, replacement.type)) return false;
+    if (!sameType(parameter.type, replacement.type) && !widened(parameter.type, replacement.type)) return false;
     // Required → optional loosens; optional → required breaks every call that
     // relied on the default.
     if (parameter.optional && !replacement.optional) return false;
@@ -1449,6 +1561,49 @@ function matchingParenOffset(content: string, open: number): number {
     }
   }
   return -1;
+}
+
+/**
+ * Did a parameter grow to accept everything it used to, and more?
+ *
+ * A parameter is the one position where accepting *more* is safe: `f(a: A)`
+ * becoming `f(a: A | B)` still takes every argument that compiled before.
+ * Libraries do this constantly — a function that took a string learns to take
+ * a `URL` too — and reporting it sends a developer to inspect calls that were
+ * never at risk.
+ *
+ * Only the union case, and only when the old type survives as a whole member
+ * of the new one. Deciding assignability in general is a type checker's job,
+ * and guessing at it is how a real narrowing gets waved through.
+ */
+function widened(before: string, after: string): boolean {
+  const members = splitUnion(after);
+  if (members.length < 2) return false;
+
+  const old = splitUnion(before);
+  return old.every((member) => members.some((candidate) => sameType(member, candidate)));
+}
+
+/** Split a type on `|` that is not nested inside brackets. */
+function splitUnion(type: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let current = '';
+
+  for (const character of type) {
+    if ('<([{'.includes(character)) depth += 1;
+    else if ('>)]}'.includes(character)) depth -= 1;
+
+    if (character === '|' && depth === 0) {
+      parts.push(current);
+      current = '';
+      continue;
+    }
+    current += character;
+  }
+
+  if (current.trim()) parts.push(current);
+  return parts.map((part) => part.trim()).filter(Boolean);
 }
 
 /** Two type annotations, compared without whitespace or a trailing `undefined` union. */
