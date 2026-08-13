@@ -399,8 +399,74 @@ function renderChangeGroup(
   const hasFocus = changes.some((change) => isFocusedChange(change, focus));
   return `<details class="change-group" ${open || hasFocus ? 'open' : ''}>
     <summary><span>${escapeHtml(title)}</span><small>${changes.length} breaking change${changes.length === 1 ? '' : 's'}</small></summary>
-    ${changes.map((change) => renderChangeCard(change, plan, isFocusedChange(change, focus), pendingUpgrade)).join('')}
+    ${groupByDependency(changes)
+      .map(([dependency, depChanges]) => renderPackageGroup(dependency, depChanges, plan, focus, pendingUpgrade))
+      .join('')}
   </details>`;
+}
+
+/** Preserves first-seen order, so packages appear in the order Drift found them. */
+function groupByDependency(changes: readonly BreakingChange[]): [string, BreakingChange[]][] {
+  const byDependency = new Map<string, BreakingChange[]>();
+  for (const change of changes) {
+    const list = byDependency.get(change.dependency);
+    if (list) list.push(change);
+    else byDependency.set(change.dependency, [change]);
+  }
+  return [...byDependency.entries()];
+}
+
+function renderPackageGroup(
+  dependency: string,
+  changes: readonly BreakingChange[],
+  plan: RemediationPlan,
+  focus: FocusTarget | undefined,
+  pendingUpgrade: boolean,
+): string {
+  return `<div class="package-group">
+    <div class="package-head">
+      <code class="dep">${escapeHtml(dependency)}</code>
+      <span class="muted small">${changes.length} breaking change${changes.length === 1 ? '' : 's'}</span>
+      ${renderIssueBranchButton('package', dependency)}
+    </div>
+    ${changes.map((change) => renderChangeCard(change, plan, isFocusedChange(change, focus), pendingUpgrade)).join('')}
+  </div>`;
+}
+
+const ISSUE_BRANCH_ACTION_LABEL: Record<'issue' | 'branch' | 'both', string> = {
+  issue: 'File issue',
+  branch: 'Create branch',
+  both: 'Issue + branch',
+};
+
+/**
+ * The one-click "file this" split button: a primary click runs
+ * `issueCreation.default`, and a small caret opens the other two actions —
+ * so the common case is one click and every case stays two. `scope`/`id`
+ * become `drift.fileBreakingChange`'s first two arguments; the handler
+ * looks the finding(s) back up from the current plan, so nothing about a
+ * `BreakingChange` needs to round-trip through the webview.
+ */
+function renderIssueBranchButton(scope: 'change' | 'package', id: string): string {
+  const configured = vscode.workspace
+    .getConfiguration('drift')
+    .get<'issue' | 'branch' | 'both'>('issueCreation.default', 'issue');
+  const primary = configured in ISSUE_BRANCH_ACTION_LABEL ? configured : 'issue';
+  const others = (['issue', 'branch', 'both'] as const).filter((action) => action !== primary);
+  const args = (action: 'issue' | 'branch' | 'both' | null) => escapeAttr(JSON.stringify([scope, id, action]));
+
+  return `<span class="split-action">
+    <button class="small" data-command="drift.fileBreakingChange" data-args="${args(null)}">${escapeHtml(ISSUE_BRANCH_ACTION_LABEL[primary])}</button>
+    <button class="small caret" data-menu-toggle aria-label="More filing options" title="More filing options">⌄</button>
+    <span class="split-menu" hidden>
+      ${others
+        .map(
+          (action) =>
+            `<button data-command="drift.fileBreakingChange" data-args="${args(action)}">${escapeHtml(ISSUE_BRANCH_ACTION_LABEL[action])}</button>`,
+        )
+        .join('')}
+    </span>
+  </span>`;
 }
 
 function renderChangeCard(
@@ -445,6 +511,7 @@ function renderChangeCard(
     <span class="badge ${change.confidence}">${change.confidence}</span>
     <span class="kind">${escapeHtml(change.kind)}</span>
     <code class="dep">${escapeHtml(change.dependency)}</code>
+    ${renderIssueBranchButton('change', change.id)}
   </div>
   ${renderConfidenceDetail(change)}
   <h3>${escapeHtml(displaySummary(change, plan, pendingUpgrade))}</h3>
@@ -847,6 +914,24 @@ a:hover { text-decoration: underline; color: var(--vscode-textLink-activeForegro
 .change-group .card { border-width: 0 0 1px 3px; border-radius: 0; margin: 0; }
 .change-group .card:last-child { border-bottom: 0; }
 
+.package-group + .package-group { border-top: 1px solid var(--vscode-panel-border); }
+.package-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+                background: var(--vscode-editorWidget-background); flex-wrap: wrap; }
+.package-head .dep { font-weight: 600; }
+.package-head .split-action { margin-left: auto; }
+
+.split-action { position: relative; display: inline-flex; }
+.split-action button.small { border-radius: 0; }
+.split-action button.small:first-child { border-radius: 3px 0 0 3px; }
+.split-action button.caret { border-radius: 0 3px 3px 0; border-left: none; padding: 3px 6px; }
+.split-menu { position: absolute; top: 100%; right: 0; z-index: 10; margin-top: 2px;
+              display: flex; flex-direction: column; min-width: 140px;
+              background: var(--vscode-dropdown-background); border: 1px solid var(--vscode-dropdown-border);
+              border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.25); overflow: hidden; }
+.split-menu button { border: none; border-radius: 0; background: transparent; text-align: left;
+                      padding: 6px 10px; font-size: 0.82em; color: var(--vscode-dropdown-foreground); }
+.split-menu button:hover { background: var(--vscode-list-hoverBackground); }
+
 .commits { padding-left: 20px; }
 .commits li { margin-bottom: 10px; }
 .commit-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0 12px; }
@@ -922,7 +1007,22 @@ pre { background: var(--vscode-textCodeBlock-background); padding: 10px; border-
 
 const SCRIPT = `
 const vscode = acquireVsCodeApi();
+function closeMenus() {
+  document.querySelectorAll('.split-menu').forEach((menu) => { menu.hidden = true; });
+}
 document.addEventListener('click', (event) => {
+  const toggle = event.target.closest('[data-menu-toggle]');
+  if (toggle) {
+    const menu = toggle.nextElementSibling;
+    const wasOpen = menu && !menu.hidden;
+    closeMenus();
+    if (menu) menu.hidden = wasOpen;
+    event.stopPropagation();
+    return;
+  }
+  const insideMenu = event.target.closest('.split-menu');
+  if (!insideMenu) closeMenus();
+
   const site = event.target.closest('[data-file]');
   if (site) {
     vscode.postMessage({ type: 'openFile', file: site.dataset.file, line: Number(site.dataset.line) });
@@ -935,11 +1035,16 @@ document.addEventListener('click', (event) => {
   }
   const button = event.target.closest('[data-command]');
   if (button) {
-    const arg = button.dataset.arg;
+    let args = [];
+    if (button.dataset.args !== undefined) {
+      try { args = JSON.parse(button.dataset.args); } catch { args = []; }
+    } else if (button.dataset.arg !== undefined) {
+      args = [Number(button.dataset.arg)];
+    }
     vscode.postMessage({
       type: 'command',
       command: button.dataset.command,
-      args: arg === undefined ? [] : [Number(arg)],
+      args,
     });
     return;
   }
