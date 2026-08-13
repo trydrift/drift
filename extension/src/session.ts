@@ -246,6 +246,16 @@ export interface TaskGroup {
   /** What the agent is doing right now, while this group is active. */
   note?: string;
   /**
+   * Why this group ended the way it did, in the agent's own words.
+   *
+   * Only ever set for an outcome that needs explaining. "No change needed" is
+   * the case that matters: on its own it reads as Drift quietly retracting the
+   * breakage it just reported, and the developer cannot tell a considered
+   * verdict from an agent that gave up. The agent almost always explained
+   * itself, and that explanation was being discarded.
+   */
+  reason?: string;
+  /**
    * The inspectable work log for this commit unit.
    *
    * Kept on the group, not as loose transcript messages, because the useful
@@ -263,8 +273,19 @@ export interface TaskListHandle {
   start: (groupId: string) => void;
   note: (groupId: string, text: string) => void;
   activity: (groupId: string, activity: TaskActivityInput) => void;
-  /** Close a group. Tasks whose file actually changed are ticked. */
-  finish: (groupId: string, state: TaskState, changedFiles?: readonly string[]) => void;
+  /**
+   * Close a group. Tasks whose file actually changed are ticked.
+   *
+   * `reason` is what the agent said about an outcome that needs explaining —
+   * "no change needed" with no reason behind it reads as Drift retracting its
+   * own finding and leaves the developer nothing to judge.
+   */
+  finish: (
+    groupId: string,
+    state: TaskState,
+    changedFiles?: readonly string[],
+    reason?: string,
+  ) => void;
   finishAll: (state: TaskState) => void;
 }
 
@@ -582,11 +603,16 @@ export class DriftSession {
         if (entries.length > 400) entries.shift();
         this.emitter.fire();
       },
-      finish: (groupId, state, changedFiles) => {
+      finish: (groupId, state, changedFiles, reason) => {
         const group = find(groupId);
         if (!group) return;
         group.state = state;
         group.note = undefined;
+        // The running commentary is stale the moment the group closes. A
+        // stated reason is not: it is the answer to the question the final
+        // state raises, so it is kept in its own field and given room to be
+        // read rather than ellipsised into the title row.
+        group.reason = reason?.trim() || undefined;
         const changed = new Set(changedFiles ?? []);
         for (const task of group.tasks) {
           if (state === 'failed' || state === 'skipped') {

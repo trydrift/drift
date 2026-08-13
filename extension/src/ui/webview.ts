@@ -484,8 +484,24 @@ function renderTaskGroup(group: TaskGroup, order: number, listActive: boolean): 
     <ul class="task-list">
       ${group.tasks.map(renderTask).join('')}
     </ul>
+    ${renderGroupReason(group)}
     ${renderActivity(group)}
   </details>`;
+}
+
+/**
+ * Why a commit unit ended the way it did, where the reader is already looking.
+ *
+ * "No change needed" is a verdict on a breakage Drift itself reported, and
+ * shown alone it is unreadable in both directions: the developer cannot tell
+ * whether the agent checked carefully and was right, or ran out of ideas. The
+ * answer was in the agent's final message the whole time. It goes directly
+ * under the tasks it explains, above the drawer, because a reason nobody
+ * expands is a reason nobody reads.
+ */
+function renderGroupReason(group: TaskGroup): string {
+  if (!group.reason || group.state === 'active' || group.state === 'pending') return '';
+  return `<div class="task-reason ${group.state}">${renderMarkdown(group.reason)}</div>`;
 }
 
 function renderActivity(group: TaskGroup): string {
@@ -550,7 +566,11 @@ function renderActivityItem(item: TaskActivity): string {
  */
 function renderActivityDetail(detail: string): string {
   if (looksLikeCode(detail)) {
-    return `<pre class="activity-io"><code>${escapeHtml(detail)}</code></pre>`;
+    // `activity-code`, not `activity-io`: the latter is a two-column grid whose
+    // first track is the 34px `IN`/`OUT` gutter. Reusing it for a block with no
+    // label put the code itself in that 34px column, which is why every such
+    // snippet wrapped at about three characters and was unreadable.
+    return `<pre class="activity-code"><code>${escapeHtml(detail)}</code></pre>`;
   }
   return `<div class="activity-detail">${linkify(detail)}</div>`;
 }
@@ -2752,6 +2772,19 @@ li.task.unchanged .task-label, li.task.skipped .task-label { color: var(--vscode
 .task-body { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
 .task-label { overflow-wrap: anywhere; }
 .task-detail { color: var(--vscode-descriptionForeground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The agent's verdict on this commit unit, in its own words. Set against the
+   left rule the activity drawer uses, so it reads as belonging to the group
+   above it rather than to the transcript. */
+.task-reason {
+  margin: 0 10px 8px 28px;
+  padding: 6px 0 2px 9px;
+  border-left: 1px solid color-mix(in srgb, var(--vscode-panel-border) 70%, transparent);
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+.task-reason.failed { color: var(--vscode-errorForeground); }
+.task-reason > :first-child { margin-top: 0; }
+.task-reason > :last-child { margin-bottom: 0; }
 .activity {
   margin: 0 10px 10px 28px;
   border-left: 1px solid color-mix(in srgb, var(--vscode-panel-border) 70%, transparent);
@@ -2895,6 +2928,7 @@ li.task.unchanged .task-label, li.task.skipped .task-label { color: var(--vscode
 }
 .activity-link svg.i { flex: 0 0 auto; opacity: .8; }
 .activity-io,
+.activity-code,
 .activity-diff {
   margin: 0;
   border: 1px solid var(--vscode-panel-border);
@@ -2907,6 +2941,14 @@ li.task.unchanged .task-label, li.task.skipped .task-label { color: var(--vscode
   grid-template-columns: 34px minmax(0, 1fr);
   padding: 0;
 }
+/* An unlabelled snippet gets the full width. It shares everything else with
+   .activity-io above and nothing about its column layout, which is the whole
+   distinction: reusing that rule put the code itself in the 34px label gutter,
+   so every snippet wrapped at about three characters. */
+.activity-code {
+  padding: 5px 7px;
+  overflow: auto;
+}
 .activity-io span {
   padding: 5px 7px;
   color: var(--vscode-descriptionForeground);
@@ -2915,6 +2957,11 @@ li.task.unchanged .task-label, li.task.skipped .task-label { color: var(--vscode
 .activity-io code {
   display: block;
   padding: 5px 7px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.activity-code code {
+  display: block;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }

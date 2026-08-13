@@ -1430,6 +1430,65 @@ test('agent reasoning is never titled with the stream it arrived on', () => {
   assert.ok(!/STDERR/i.test(html), 'a row was titled after a pipe');
 });
 
+/**
+ * "No change needed" on its own is Drift half-retracting a breakage it just
+ * reported. Without the reason behind it, a developer cannot tell a considered
+ * verdict from an agent that gave up — and the agent's own explanation was
+ * being discarded in favour of "Codex finished."
+ */
+test('a commit unit that changed nothing says why', () => {
+  const html = renderBody(
+    model({
+      thread: [
+        {
+          id: 't1',
+          kind: 'tasks',
+          title: 'Fixing 1 site',
+          subtitle: '1 commit.',
+          groups: [
+            {
+              id: 'c1',
+              title: 'refactor(zod): replace removed object',
+              state: 'unchanged',
+              reason: 'Both files reach `object` through the `z` namespace, which zod 4 still exports.',
+              tasks: [{ id: 'c1-0', label: 'object removed', file: 'src/a.ts', line: 1, state: 'unchanged' }],
+            },
+          ],
+        },
+      ],
+    }),
+  );
+
+  assert.match(html, /No change needed/);
+  assert.match(html, /class="task-reason/);
+  assert.match(html, /zod 4 still exports/);
+});
+
+/**
+ * `.activity-io` is a two-column grid whose first track is the 34px `IN`/`OUT`
+ * gutter. An unlabelled snippet rendered into that rule put the code itself in
+ * the 34px column, so every line wrapped at about three characters.
+ */
+test('a code snippet in the drawer is not squeezed into the label gutter', () => {
+  const html = withActivity([
+    {
+      id: 'a1',
+      kind: 'thinking',
+      title: 'Thinking',
+      detail: 'export const schema = z.object({ retries: z.number() });',
+    },
+  ]);
+
+  assert.match(html, /<pre class="activity-code">/);
+  assert.ok(
+    !/<pre class="activity-io"><code>/.test(html),
+    'an unlabelled block must not reuse the two-column rule',
+  );
+
+  const rule = /\.activity-code\s*\{[^}]*\}/.exec(renderPanel(model()))?.[0] ?? '';
+  assert.ok(!/grid-template-columns/.test(rule), 'it has no column layout of its own to be squeezed by');
+});
+
 test('the composer says where a fix will land and whether it will be committed', () => {
   const branching = renderPanel(model({ branchMode: 'new', commitMode: 'approve' }));
   assert.match(branching, /data-anchor="git"/);

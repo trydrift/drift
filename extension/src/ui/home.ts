@@ -2763,7 +2763,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           ),
         context: await this.resolveContext(ctx.root),
         onCommitStart: (commit) => tasks.start(`c${commit.order}`),
-        onCommitEnd: (commit, outcome, changed) => tasks.finish(`c${commit.order}`, outcome, changed),
+        onCommitEnd: (commit, outcome, changed, reason) =>
+          tasks.finish(`c${commit.order}`, outcome, changed, reason),
         onActivity: (commit, activity) => tasks.activity(`c${commit.order}`, activity),
         // Agent chatter belongs against the concern it is about, not in a
         // separate log the developer has to correlate by hand.

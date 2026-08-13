@@ -1,5 +1,5 @@
 import type { CommitUnit, RemediationPlan } from '../../../src/types.js';
-import type { SessionEffort } from '../session.js';
+import type { SessionEffort, TaskActivityInput } from '../session.js';
 
 /**
  * The fix-agent abstraction.
@@ -162,6 +162,19 @@ export interface FixOutcome {
 export interface AgentContext {
   /** Streams human-readable progress into the UI. */
   report: (message: string) => void;
+  /**
+   * Report one thing the agent did, already named.
+   *
+   * `report` hands over a line and lets the caller classify it, which is the
+   * right shape for an agent whose output is unstructured prose. It is the
+   * wrong shape for one whose output is not: Codex writes blocks, and only the
+   * code reading that stream knows where a block starts, that four lines of
+   * output belong under the command above them, or that a paragraph of
+   * reasoning is one event rather than six. An agent that knows says so here
+   * instead of throwing the structure away and hoping a line classifier
+   * rebuilds it.
+   */
+  activity?: (activity: TaskActivityInput) => void;
   /**
    * Put a question to the developer and wait for the answer.
    *
