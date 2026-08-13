@@ -309,6 +309,47 @@ alerts triaged and assigned like any other issue. Each issue embeds the
 alert's `ruleId` as a hidden marker, so a rescan finds the existing issue
 instead of filing a duplicate — the body itself is not updated on a rescan.
 
+## Issue creation
+
+The one-click "file this" action offered wherever Drift shows a breaking
+change — the CLI's interactive `analyze` prompt and the VS Code extension's
+report view both read this block for their default, so the two surfaces
+behave identically. Every action fails soft: no git repo, no `gh`/GitHub
+token, or a request that errors out is logged (CLI) or shown as a
+dismissable notification (extension), never a thrown error or a crashed
+session.
+
+### `issueCreation.default`
+
+`'issue' | 'branch' | 'both'` — default **`'issue'`**
+
+What the primary action does.
+
+- `'issue'` files a GitHub issue with the finding's evidence and a
+  rescan-safe hidden marker, mirroring `codeScanning.createIssuesPerAlert`'s
+  dedup behaviour — re-triggering it finds the existing issue rather than
+  filing a duplicate.
+- `'branch'` creates (or checks out, if it already exists) a local branch
+  named for the finding, with no issue filed.
+- `'both'` does both and links them: the branch name is included in the
+  issue body.
+
+The extension's report view always offers the other two choices one click
+away, in the button's dropdown, regardless of this setting.
+
+### `issueCreation.granularity`
+
+`'package' | 'change'` — default **`'package'`**
+
+What one issue/branch covers.
+
+- `'package'` bundles every breaking change for one dependency into a single
+  issue/branch — the option offered at each package's group header.
+- `'change'` scopes the action to one breaking change at a time — useful
+  when different call sites of the same upgrade need to be triaged or
+  landed separately. This is also always offered on each individual finding,
+  regardless of this setting.
+
 ### `outdated.enabled`
 
 `boolean` — default **`false`**

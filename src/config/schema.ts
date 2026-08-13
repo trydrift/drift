@@ -481,6 +481,44 @@ export const DriftConfigSchema = z.object({
     .default({}),
 
   /**
+   * The one-click "file this" action offered wherever Drift shows a
+   * breaking change — the CLI's interactive `analyze`/`outdated` prompts
+   * and the VS Code extension's report view. Both surfaces call the same
+   * shared helper (`src/actions/issue-branch.ts`) and read this block for
+   * their default, so the behaviour stays identical whichever one you use.
+   *
+   * Every action here fails soft: no git repo, no `gh`/GitHub token, or a
+   * request that errors out is logged and surfaced as a dismissable
+   * warning, never a thrown error or a crashed session.
+   */
+  issueCreation: z
+    .object({
+      /**
+       * What the primary action does. `'issue'` (the default) files a
+       * GitHub issue with the finding's evidence and a rescan-safe hidden
+       * marker, mirroring `codeScanning.createIssuesPerAlert`'s dedup
+       * behaviour so re-triggering it updates rather than duplicates.
+       * `'branch'` creates (or checks out, if it already exists) a local
+       * branch named for the finding, with no issue filed. `'both'` does
+       * both and links them: the branch name is included in the issue body.
+       */
+      default: z.enum(['issue', 'branch', 'both']).default('issue'),
+
+      /**
+       * `'package'` (the default) bundles every breaking change for one
+       * dependency into a single issue/branch — the same "one row per
+       * package" shape `codeScanning.granularity`'s `'package'` mode uses,
+       * and the option offered at each package's group header.
+       *
+       * `'change'` scopes the action to one breaking change at a time,
+       * offered on each individual finding — useful when different call
+       * sites of the same upgrade need to be triaged or landed separately.
+       */
+      granularity: z.enum(['package', 'change']).default('package'),
+    })
+    .default({}),
+
+  /**
    * Proactive scanning of every direct dependency's *installed* version
    * against its registry — not "what changed in this push", which is the
    * rest of this config, but "what's available and un-taken right now".
