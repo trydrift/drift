@@ -6,7 +6,7 @@ import {
   groupForAction,
   issueMarker,
 } from '../dist/actions/issue-branch.js';
-import type { BreakingChange } from '../dist/types.js';
+import type { BreakingChange, ImpactSite } from '../dist/types.js';
 
 /**
  * The one-click issue/branch feature's content builders — the part shared
@@ -24,6 +24,18 @@ function change(overrides: Partial<BreakingChange> = {}): BreakingChange {
     symbols: ['default'],
     confidence: 'high',
     citations: [],
+    ...overrides,
+  };
+}
+
+function site(overrides: Partial<ImpactSite> = {}): ImpactSite {
+  return {
+    breakingChangeId: 'bc_1',
+    file: 'src/index.ts',
+    line: 10,
+    excerpt: 'leftPad(str, 8)',
+    matchedSymbol: 'default',
+    confidence: 'high',
     ...overrides,
   };
 }
@@ -46,6 +58,37 @@ describe('groupForAction', () => {
     assert.equal(targets.length, 2);
     const leftPad = targets.find((t) => t.dependency === 'left-pad')!;
     assert.equal(leftPad.changes.length, 2);
+  });
+
+  test('"package" scope files only the changes that reach code in this repository', () => {
+    const changes = [
+      change({ id: 'a', dependency: 'zod' }),
+      change({ id: 'b', dependency: 'zod' }),
+      change({ id: 'c', dependency: 'zod' }), // upstream-only: no impact site below
+    ];
+    const impactSites = [site({ breakingChangeId: 'a' }), site({ breakingChangeId: 'b', line: 20 })];
+    const [target] = groupForAction(changes, 'package', impactSites);
+    assert.deepEqual(
+      target!.changes.map((c) => c.id),
+      ['a', 'b'],
+    );
+    assert.equal(target!.upstreamOnlyCount, 1);
+    assert.equal(target!.impactSites!.length, 2);
+  });
+
+  test('"package" scope falls back to the full group when nothing reaches this repository', () => {
+    const changes = [change({ id: 'a', dependency: 'zod' }), change({ id: 'b', dependency: 'zod' })];
+    const [target] = groupForAction(changes, 'package', []);
+    assert.equal(target!.changes.length, 2);
+    assert.equal(target!.upstreamOnlyCount, 0);
+  });
+
+  test('"change" scope carries each finding\'s own impact sites', () => {
+    const changes = [change({ id: 'a' }), change({ id: 'b' })];
+    const impactSites = [site({ breakingChangeId: 'a' })];
+    const targets = groupForAction(changes, 'change', impactSites);
+    assert.equal(targets.find((t) => t.changes[0]!.id === 'a')!.impactSites!.length, 1);
+    assert.equal(targets.find((t) => t.changes[0]!.id === 'b')!.impactSites!.length, 0);
   });
 });
 
@@ -92,5 +135,35 @@ describe('buildIssueContent', () => {
     const target = { dependency: 'left-pad', changes: [change()] };
     const content = buildIssueContent(target, 'drift/left-pad/bc-1');
     assert.match(content.body, /drift\/left-pad\/bc-1/);
+  });
+
+  test('leads with where it affects the repo, and links every impact site', () => {
+    const target = {
+      dependency: 'zod',
+      changes: [change({ id: 'a' })],
+      impactSites: [site({ breakingChangeId: 'a', file: 'src/schema.ts', line: 42 })],
+      repoBlobUrl: 'https://github.com/acme/widgets/blob/deadbeef',
+    };
+    const content = buildIssueContent(target);
+    assert.match(content.body, /will affect your code in 1 place across 1 file/);
+    assert.match(content.body, /\[`src\/schema\.ts:42`\]\(https:\/\/github\.com\/acme\/widgets\/blob\/deadbeef\/src\/schema\.ts#L42\)/);
+  });
+
+  test('notes upstream-only changes without dumping them into the body', () => {
+    const target = {
+      dependency: 'zod',
+      changes: [change({ id: 'a' })],
+      impactSites: [site({ breakingChangeId: 'a' })],
+      upstreamOnlyCount: 345,
+    };
+    const content = buildIssueContent(target);
+    assert.match(content.body, /345 additional upstream breaking changes do not reach code in this repository/);
+  });
+
+  test('is honest when nothing in the group reached this repository at all', () => {
+    const target = { dependency: 'zod', changes: [change({ id: 'a' }), change({ id: 'b' })], impactSites: [] };
+    const content = buildIssueContent(target);
+    assert.match(content.body, /none of them matched code in this repository/);
+    assert.doesNotMatch(content.body, /will affect your code/);
   });
 });

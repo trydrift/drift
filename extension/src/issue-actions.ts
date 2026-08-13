@@ -20,10 +20,24 @@ import { remoteSlug } from './ship.js';
 
 export type IssueBranchAction = 'issue' | 'branch' | 'both';
 
+/**
+ * A second surface for the outcome, alongside the VS Code notification this
+ * module always shows. The notification is easy to miss or dismiss without
+ * reading; a caller with a chat transcript (the main panel's `/issue`) wires
+ * this up to post the same fact — with a working link — into the
+ * conversation, where it stays scrollable-back-to instead of vanishing with
+ * the toast.
+ */
+export interface IssueBranchReport {
+  onIssue?: (result: { status: 'created' | 'existing'; number: number; url: string }) => void;
+  onBranch?: (result: { status: 'created' | 'existing'; name: string }) => void;
+}
+
 export async function runIssueBranchAction(
   workspaceRoot: string,
   action: IssueBranchAction,
   target: IssueBranchTarget,
+  report?: IssueBranchReport,
 ): Promise<void> {
   const git = new Git(workspaceRoot);
 
@@ -40,6 +54,7 @@ export async function runIssueBranchAction(
       if (action === 'branch') return;
     } else {
       branchName = outcome.name;
+      report?.onBranch?.({ status: outcome.created ? 'created' : 'existing', name: outcome.name });
       if (action === 'branch') {
         void vscode.window.showInformationMessage(
           outcome.created ? `Drift: created branch ${outcome.name}.` : `Drift: switched to branch ${outcome.name}.`,
@@ -49,15 +64,14 @@ export async function runIssueBranchAction(
   }
 
   if (action === 'issue' || action === 'both') {
-    await createIssue(git, workspaceRoot, target, branchName);
+    await createIssue(git, workspaceRoot, target, branchName, report);
   }
 }
 
 async function createBranch(git: Git, target: IssueBranchTarget): Promise<{ created: boolean; name: string } | null> {
   const name = branchNameFor(target);
   try {
-    const { created } = await git.createBranch(name);
-    return { created, name };
+    return await git.createBranch(name);
   } catch (err) {
     void vscode.window.showWarningMessage(`Drift: could not create branch ${name} — ${(err as Error).message}`);
     return null;
@@ -69,15 +83,22 @@ async function createIssue(
   workspaceRoot: string,
   target: IssueBranchTarget,
   linkedBranch: string | undefined,
+  report: IssueBranchReport | undefined,
 ): Promise<void> {
   const remote = await git.remoteUrl();
   const slug = remoteSlug(remote);
-  const content = buildIssueContent(target, linkedBranch);
 
   if (!slug) {
     void vscode.window.showWarningMessage('Drift: no GitHub remote configured — cannot create an issue.');
     return;
   }
+
+  // The impact-site links in the issue body point at this exact commit, not
+  // a branch that can move out from under them — a `#L42` link against
+  // `main` reads as wrong the moment someone pushes past that line.
+  const headSha = await git.headSha().catch(() => null);
+  const repoBlobUrl = headSha ? `https://github.com/${slug}/blob/${headSha}` : undefined;
+  const content = buildIssueContent({ ...target, repoBlobUrl }, linkedBranch);
 
   const outcome = await vscode.window.withProgress(
     { location: vscode.ProgressLocation.Window, title: 'Drift: creating a GitHub issue' },
@@ -92,6 +113,8 @@ async function createIssue(
   );
 
   if (outcome.kind === 'opened') {
+    report?.onIssue?.({ status: outcome.existing ? 'existing' : 'created', number: outcome.number, url: outcome.url });
+
     // A branch is only offered when this call did not already link one —
     // `action: 'both'` already put the tracking line in the body above, and
     // asking again would be a second, redundant offer for the same thing.
@@ -103,7 +126,7 @@ async function createIssue(
       ...buttons,
     );
     if (choice === 'Open issue') await vscode.env.openExternal(vscode.Uri.parse(outcome.url));
-    if (choice === 'Create linked branch') await createLinkedBranch(git, workspaceRoot, target, outcome.number);
+    if (choice === 'Create linked branch') await createLinkedBranch(git, workspaceRoot, target, outcome.number, report);
     return;
   }
 
@@ -142,11 +165,13 @@ async function createLinkedBranch(
   workspaceRoot: string,
   target: IssueBranchTarget,
   issueNumber: number,
+  report: IssueBranchReport | undefined,
 ): Promise<void> {
   const created = await createBranch(git, target);
   if (!created) return;
 
   await commentOnIssueWithGh(workspaceRoot, issueNumber, `Tracking branch: \`${created.name}\``);
+  report?.onBranch?.({ status: created.created ? 'created' : 'existing', name: created.name });
   void vscode.window.showInformationMessage(
     created.created
       ? `Drift: created branch ${created.name}, linked to issue #${issueNumber}.`
@@ -154,8 +179,59 @@ async function createLinkedBranch(
   );
 }
 
+/**
+ * Create (or switch to) `target`'s branch and link it to an issue already
+ * filed for the same finding(s) — the same thing the "Create linked branch"
+ * button on the issue-created notification does, exposed for a caller (the
+ * main panel's chat) that asks the same question in its own transcript
+ * instead of through that toast.
+ */
+export async function linkBranchToIssue(
+  workspaceRoot: string,
+  target: IssueBranchTarget,
+  issueNumber: number,
+  report?: IssueBranchReport,
+): Promise<void> {
+  await createLinkedBranch(new Git(workspaceRoot), workspaceRoot, target, issueNumber, report);
+}
+
+/**
+ * Switch to a branch that already exists and link it to an issue — the
+ * "already have a branch for this" half of the same offer `linkBranchToIssue`
+ * covers for "make me a new one".
+ */
+export async function linkExistingBranchToIssue(
+  workspaceRoot: string,
+  branchName: string,
+  issueNumber: number,
+): Promise<{ ok: boolean }> {
+  const git = new Git(workspaceRoot);
+  try {
+    await git.checkout(branchName);
+  } catch (err) {
+    void vscode.window.showWarningMessage(`Drift: could not switch to ${branchName} — ${(err as Error).message}`);
+    return { ok: false };
+  }
+  await commentOnIssueWithGh(workspaceRoot, issueNumber, `Tracking branch: \`${branchName}\``);
+  void vscode.window.showInformationMessage(`Drift: switched to ${branchName}, linked to issue #${issueNumber}.`);
+  return { ok: true };
+}
+
+/**
+ * A body that fits comfortably in a GraphQL `createIssue` call can still be
+ * too long once URL-encoded into a query string — GitHub's `issues/new`
+ * page silently drops the prefill (surfacing as "link not found" once the
+ * browser opens it) well before it would hit any encoded-length limit on
+ * the body alone. Trimmed further here, specifically for this fallback.
+ */
+const MAX_PREFILL_BODY_CHARS = 4000;
+
 function newIssueUrl(slug: string, content: { title: string; body: string; labels: string[] }): string {
-  const params = new URLSearchParams({ title: content.title, body: content.body });
+  const body =
+    content.body.length > MAX_PREFILL_BODY_CHARS
+      ? `${content.body.slice(0, MAX_PREFILL_BODY_CHARS)}…\n\n(truncated for this prefilled link — see the full report for details)`
+      : content.body;
+  const params = new URLSearchParams({ title: content.title, body });
   if (content.labels.length) params.set('labels', content.labels.join(','));
   return `https://github.com/${slug}/issues/new?${params.toString()}`;
 }

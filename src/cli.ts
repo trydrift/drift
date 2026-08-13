@@ -502,7 +502,10 @@ async function offerIssueBranchActions(args: {
   logger: Logger;
 }): Promise<void> {
   const { plan, config, repo, github, workspace, logger } = args;
-  const targets = groupForAction(plan.breakingChanges, config.issueCreation.granularity);
+  const repoBlobUrl = `https://github.com/${repo.owner}/${repo.repo}/blob/${repo.afterSha}`;
+  const targets = groupForAction(plan.breakingChanges, config.issueCreation.granularity, plan.impactSites).map(
+    (target) => ({ ...target, repoBlobUrl }),
+  );
   const order: IssueBranchAction[] = [
     config.issueCreation.default,
     ...(['issue', 'branch', 'both'] as const).filter((action) => action !== config.issueCreation.default),

@@ -131,7 +131,7 @@ describe('committing an upgrade', () => {
 describe('branching', () => {
   test('creates a branch and carries the working tree onto it', async () => {
     const created = await git.createBranch('drift/upgrade-react-18.3.1-to-19.2.0');
-    assert.deepEqual(created, { created: true });
+    assert.deepEqual(created, { created: true, name: 'drift/upgrade-react-18.3.1-to-19.2.0' });
     assert.equal(await git.currentBranch(), 'drift/upgrade-react-18.3.1-to-19.2.0');
     // Uncommitted work follows the checkout rather than being left behind.
     assert.deepEqual(await git.dirtyFiles(), ['src/app.ts']);
@@ -140,8 +140,48 @@ describe('branching', () => {
   test('switches to an existing branch rather than failing or clobbering it', async () => {
     await git.checkout('main');
     const again = await git.createBranch('drift/upgrade-react-18.3.1-to-19.2.0');
-    assert.deepEqual(again, { created: false });
+    assert.deepEqual(again, { created: false, name: 'drift/upgrade-react-18.3.1-to-19.2.0' });
     assert.equal(await git.currentBranch(), 'drift/upgrade-react-18.3.1-to-19.2.0');
+  });
+
+  /**
+   * The exact failure a user hit: proposing `main/drift/upgrade-...` (the
+   * current branch prefixed onto the branch name, meant to group upgrades in
+   * `git branch --list` by where they came from) can never be created as-is
+   * — `refs/heads/main` already exists as a leaf ref, so git refuses to also
+   * treat it as a directory for `refs/heads/main/drift/...`, failing with
+   * "cannot lock ref" rather than anything `branchExists` would catch ahead
+   * of time.
+   */
+  test('falls back to a flat name instead of nesting under an existing branch', async () => {
+    await git.checkout('main');
+    const result = await git.createBranch('main/drift/upgrade-zod-3.25.76-to-4.4.3');
+    assert.equal(result.created, true);
+    assert.equal(result.name, 'main-drift/upgrade-zod-3.25.76-to-4.4.3');
+    assert.equal(await git.currentBranch(), 'main-drift/upgrade-zod-3.25.76-to-4.4.3');
+  });
+
+  test('resolveNestedBranchName leaves an already-safe name untouched', async () => {
+    assert.equal(
+      await git.resolveNestedBranchName('drift/upgrade-zod-3.25.76-to-4.4.3'),
+      'drift/upgrade-zod-3.25.76-to-4.4.3',
+    );
+  });
+
+  test('resolveNestedBranchName collapses every conflicting ancestor, not just the first', async () => {
+    await git.checkout('main');
+    await git.createBranch('a');
+    await git.checkout('main');
+    await git.createBranch('a-b');
+    await git.checkout('main');
+    // Both `a` and the folded `a-b` already exist as branches, so a naive
+    // single-pass fix that only checks the first segment would still try
+    // (and fail) to nest under `a-b`.
+    const resolved = await git.resolveNestedBranchName('a/b/c');
+    assert.equal(resolved, 'a-b-c');
+    await git.checkout('main');
+    const created = await git.createBranch('a/b/c');
+    assert.equal(created.name, 'a-b-c');
   });
 });
 

@@ -248,14 +248,15 @@ async function runFixOnBranch(args: {
   // back. Branching is the default because it makes everything downstream
   // cheap to undo; staying put is only ever done because the developer said so.
   const branchMode: SessionBranchMode = options.branchMode ?? 'new';
-  const workingBranch = branchMode === 'new' ? plan.branchName : await git.currentBranch();
+  let workingBranch = branchMode === 'new' ? plan.branchName : await git.currentBranch();
 
   if (branchMode === 'new') {
     const branchResult = await git.createBranch(plan.branchName);
+    workingBranch = branchResult.name;
     progress.report({
       message: branchResult.created
-        ? `Created branch ${plan.branchName}`
-        : `Switched to existing branch ${plan.branchName}`,
+        ? `Created branch ${workingBranch}`
+        : `Switched to existing branch ${workingBranch}`,
     });
   } else {
     progress.report({ message: `Working on ${workingBranch}` });
