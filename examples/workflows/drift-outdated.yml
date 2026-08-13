@@ -29,6 +29,12 @@ on:
 
   # Run it on demand from the Actions tab.
   workflow_dispatch:
+    inputs:
+      alert-granularity:
+        description: 'How code scanning alerts are grouped. Leave blank to use codeScanning.granularity from drift.yml.'
+        type: choice
+        options: ['', package, breakingChange, affectedSite]
+        default: ''
 
 permissions:
   contents: read
@@ -57,6 +63,7 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           scan-mode: outdated
+          alert-granularity: ${{ inputs.alert-granularity }}
 
       - name: Report outcome
         if: always()
