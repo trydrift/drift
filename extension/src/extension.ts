@@ -25,6 +25,7 @@ import { vscodeWorkspaceFs } from './upgrades.js';
 import { detectWorkspaces, memberDirectories } from '../../src/detect/workspace.js';
 import type { RemediationPlan } from '../../src/types.js';
 import { discoverNestedProjects } from '../../src/detect/nested.js';
+import type { IssueBranchAction } from './issue-actions.js';
 
 /**
  * Drift for VS Code.
@@ -289,6 +290,35 @@ function registerCommands(
   register('drift.pushBranch', () => pushBranch(state));
 
   register('drift.switchRepo', () => switchRepo(state));
+
+  // The one-click "file this" action on a breaking-change row or a
+  // package's group header. `scope`/`id` name what to bundle — one finding
+  // by its id, or every finding for a dependency — and `action` is omitted
+  // for the button's primary click (the configured default) and supplied
+  // for its dropdown's other two choices.
+  register(
+    'drift.fileBreakingChange',
+    (async (scope: 'change' | 'package', id: string, action?: IssueBranchAction) => {
+      const plan = state.plan;
+      const root = state.workspaceRoot;
+      if (!plan || !root) {
+        void vscode.window.showWarningMessage('Drift: nothing to file — run analyze first.');
+        return;
+      }
+
+      const changes = plan.breakingChanges.filter((change) =>
+        scope === 'change' ? change.id === id : change.dependency === id,
+      );
+      if (changes.length === 0) return;
+
+      const resolvedAction =
+        action ??
+        vscode.workspace.getConfiguration('drift').get<IssueBranchAction>('issueCreation.default', 'issue');
+
+      const { runIssueBranchAction } = await import('./issue-actions.js');
+      await runIssueBranchAction(root, resolvedAction, { dependency: changes[0]!.dependency, changes });
+    }) as never,
+  );
 }
 
 /**
