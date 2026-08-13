@@ -2,17 +2,25 @@
 
 Please do not report security vulnerabilities through public GitHub issues.
 
-Use GitHub's private vulnerability reporting for this repository (**Security →
-Report a vulnerability**), or open a draft security advisory directly.
+Use GitHub’s private vulnerability reporting (Security → Report a vulnerability) or submit a report directly at:
 
-Include, if you can:
+<https://github.com/trydrift/drift/security/advisories/new>
 
-- the affected Drift surface (CLI, GitHub Action, webhook server, or VS Code
-  extension) and version or commit;
-- the security boundary you believe can be bypassed;
-- reproduction steps;
-- the impact you believe is possible.
+## What to include
 
-We will coordinate disclosure with you before publishing details. See
-[docs/trust-and-safety.md](docs/trust-and-safety.md) for the threat model this
-project already documents against itself.
+If possible, include:
+
+* the affected Drift surface (CLI, GitHub Action, webhook server, or VS Code extension) and version or commit;
+* the security boundary you believe can be bypassed;
+* reproduction steps;
+* the impact you believe is possible.
+
+## Response and disclosure
+
+We aim to acknowledge vulnerability reports within 7 days and coordinate disclosure with the reporter.
+
+We generally target disclosure within 90 days, depending on severity and remediation complexity.
+
+Please do not publicly disclose a vulnerability before we have had a reasonable opportunity to investigate and address it.
+
+See docs/trust-and-safety.md for the threat model Drift documents against itself.
