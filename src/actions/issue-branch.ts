@@ -145,15 +145,6 @@ function linkSymbols(text: string, url: string | undefined): string {
   return text.replace(/`([^`]+)`/g, (_match, symbol: string) => `[\`${symbol}\`](${url})`);
 }
 
-/**
- * GitHub's markdown reads an unescaped `<T>` inside a code span as an
- * unrecognised HTML tag rather than literal text — the same escaping
- * `report/sarif.ts` applies to before/after declaration diffs.
- */
-function escapeForCodeSpan(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
 /** A link to the exact repo line an impact site was found at — see `report/sarif.ts`'s `mdLink`. */
 function mdLink(site: ImpactSite, repoBlobUrl: string | undefined): string {
   const href = repoBlobUrl ? `${repoBlobUrl}/${site.file}#L${site.line}` : `${site.file}#L${site.line}`;
@@ -179,8 +170,8 @@ function changeSection(change: BreakingChange, sites: readonly ImpactSite[], rep
   if (change.before && change.after && change.before !== change.after) {
     lines.push(
       '',
-      `- \`${escapeForCodeSpan(truncate(change.before, 300))}\``,
-      `+ \`${escapeForCodeSpan(truncate(change.after, 300))}\``,
+      `- \`${truncate(change.before, 300)}\``,
+      `+ \`${truncate(change.after, 300)}\``,
     );
   }
 
@@ -188,12 +179,16 @@ function changeSection(change: BreakingChange, sites: readonly ImpactSite[], rep
 
   if (sites.length > 0) {
     const shown = sites.slice(0, MAX_SITES_LISTED);
-    const rest = sites.length - shown.length;
-    lines.push(
-      '',
-      `Used at: ${shown.map((site) => mdLink(site, repoBlobUrl)).join(', ')}` +
-        (rest > 0 ? `, and ${rest} more ${plural(rest, 'place', 'places')}` : ''),
-    );
+    const rest = sites.slice(shown.length);
+    // GitHub issue bodies render `<details>`, so the rest of the sites are
+    // one click away instead of a dead-end count with nowhere to go.
+    const tail =
+      rest.length > 0
+        ? `<details><summary>and ${rest.length} more ${plural(rest.length, 'place', 'places')}</summary>\n\n${rest
+            .map((site) => `- ${mdLink(site, repoBlobUrl)}`)
+            .join('\n')}\n\n</details>`
+        : '';
+    lines.push('', `Used at: ${shown.map((site) => mdLink(site, repoBlobUrl)).join(', ')}${tail ? `\n${tail}` : ''}`);
   }
 
   if (change.sourceUrl) lines.push('', `Source: ${change.sourceUrl}`);
@@ -250,14 +245,14 @@ export function buildIssueContent(target: IssueBranchTarget, linkedBranch?: stri
   // marker every future run depends on) even when every change doesn't.
   const budget = MAX_BODY_CHARS - intro.length - trailer.length - 20;
   const included: string[] = [];
+  const omitted: BreakingChange[] = [];
   let used = 0;
-  let omitted = 0;
   for (const change of target.changes) {
     const sites = impactSites.filter((site) => site.breakingChangeId === change.id);
     const section = changeSection(change, sites, target.repoBlobUrl);
     const cost = section.length + 4;
     if (used + cost > budget && included.length > 0) {
-      omitted++;
+      omitted.push(change);
       continue;
     }
     included.push(section);
@@ -265,8 +260,15 @@ export function buildIssueContent(target: IssueBranchTarget, linkedBranch?: stri
   }
 
   const bodyParts = [intro, ...included];
-  if (omitted > 0) {
-    bodyParts.push(`${omitted} more ${plural(omitted, 'change', 'changes')} not shown — see the full report for details.`);
+  if (omitted.length > 0) {
+    // A one-liner per omitted change, not a dead-end pointer to a report
+    // that isn't linked from here — the reader can still see what was cut.
+    const summary = omitted
+      .map((change) => `- ${linkSymbols(change.summary, change.sourceUrl)}`)
+      .join('\n');
+    bodyParts.push(
+      `<details><summary>${omitted.length} more ${plural(omitted.length, 'change', 'changes')} not shown in full</summary>\n\n${summary}\n\n</details>`,
+    );
   }
   bodyParts.push(trailer);
 

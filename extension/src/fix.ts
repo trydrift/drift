@@ -421,9 +421,19 @@ async function runFixOnBranch(args: {
     }
   }
 
+  // A cancelled run must leave `state` describing what actually happened,
+  // not the last `'fixing'` commit it was on when the token fired — that
+  // stale status is what left the status bar reading "Drift: fixing" long
+  // after the run had stopped.
+  const settleCancelled = (message: string): FixResult => {
+    if (pendingFiles > 0) state.set({ kind: 'reviewing', plan, branch: workingBranch, files: pendingFiles, warnings });
+    else state.set({ kind: 'findings', plan, at: Date.now() });
+    return { status: 'cancelled', branch: workingBranch, commits: committed, pendingFiles, warnings, message };
+  };
+
   for (const batch of batches) {
     if (token.isCancellationRequested) {
-      return { status: 'cancelled', branch: workingBranch, commits: committed, warnings, message: 'Cancelled.' };
+      return settleCancelled('Cancelled.');
     }
 
     /* ---- One commit unit, isolated in a disposable worktree ---------- */
@@ -455,14 +465,7 @@ async function runFixOnBranch(args: {
                 ['Yes, go ahead', 'Skip this one', 'Stop'],
               );
         if (/^stop/i.test(answer)) {
-          return {
-            status: 'cancelled',
-            branch: workingBranch,
-            commits: committed,
-            pendingFiles,
-            warnings,
-            message: 'Stopped before editing anything else.',
-          };
+          return settleCancelled('Stopped before editing anything else.');
         }
         if (/^skip/i.test(answer)) {
           warnings.push(`Skipped commit ${commit.order} ("${commit.message}") at your request.`);
