@@ -226,6 +226,12 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     description: 'Push if needed, then raise a pull request carrying the evidence',
   },
   {
+    name: '/issue',
+    args: '[package]',
+    title: 'File a GitHub issue',
+    description: 'File an issue for a breaking change, prefilled with the evidence Drift found',
+  },
+  {
     name: '/instruction',
     args: '<text>',
     title: 'Add a workspace instruction',
