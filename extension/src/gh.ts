@@ -216,7 +216,7 @@ function pullRequestFor(url: string, existing: boolean): PullRequest {
 }
 
 function numberIn(url: string): number {
-  return Number(/\/pull\/(\d+)/.exec(url)?.[1] ?? 0);
+  return Number(/\/(?:pull|issues)\/(\d+)/.exec(url)?.[1] ?? 0);
 }
 
 function describe(err: unknown): string {
@@ -224,4 +224,88 @@ function describe(err: unknown): string {
   const stderr = e.stderr?.trim();
   if (stderr) return stderr.split('\n').filter(Boolean).slice(-3).join(' ');
   return e.message ?? 'The GitHub CLI failed.';
+}
+
+export interface GhIssueRequest {
+  /** A directory inside the repository the issue belongs to. */
+  cwd: string;
+  title: string;
+  /** Passed as a file so no shell ever sees it, same as the PR body. */
+  body: string;
+  labels?: readonly string[];
+  /**
+   * A hidden marker already embedded in `body` — searched for first so a
+   * repeat of the same action finds the issue it already filed instead of
+   * piling up duplicates. See `src/actions/issue-branch.ts#issueMarker`.
+   */
+  marker: string;
+}
+
+export type GhIssueOutcome =
+  | { kind: 'opened'; number: number; url: string; existing: boolean }
+  | { kind: 'unavailable'; reason: 'not-installed' | 'not-authenticated' }
+  | { kind: 'failed'; message: string };
+
+/**
+ * File a GitHub issue with `gh`, or find the one already filed for the same
+ * marker. Mirrors `createPullRequestWithGh`'s shape and the same
+ * never-throw contract — a missing or signed-out `gh` is reported, not
+ * raised, since this always runs from a button click with no one watching
+ * a stack trace.
+ */
+export async function createIssueWithGh(request: GhIssueRequest, run: GhRunner = defaultRunner): Promise<GhIssueOutcome> {
+  const availability = await ghAvailability(request.cwd, run);
+  if (!availability.installed) return { kind: 'unavailable', reason: 'not-installed' };
+  if (!availability.authenticated) return { kind: 'unavailable', reason: 'not-authenticated' };
+
+  const existing = await findIssueWithGh(request.cwd, request.marker, run);
+  if (existing) return { kind: 'opened', number: existing.number, url: existing.url, existing: true };
+
+  const dir = await mkdtemp(join(tmpdir(), 'drift-issue-'));
+  const bodyPath = join(dir, 'body.md');
+
+  try {
+    await writeFile(bodyPath, request.body, 'utf8');
+
+    const args = ['issue', 'create', '--title', request.title, '--body-file', bodyPath];
+    for (const label of request.labels ?? []) args.push('--label', label);
+
+    try {
+      const { stdout } = await run(args, { cwd: request.cwd });
+      const url = issueUrlIn(stdout);
+      if (url) return { kind: 'opened', number: numberIn(url), url, existing: false };
+      return { kind: 'failed', message: 'The GitHub CLI did not report an issue URL.' };
+    } catch (err) {
+      return { kind: 'failed', message: describe(err) };
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
+/** The open issue already carrying `marker` in its body, if any. */
+async function findIssueWithGh(
+  cwd: string,
+  marker: string,
+  run: GhRunner,
+): Promise<{ number: number; url: string } | null> {
+  try {
+    const { stdout } = await run(
+      ['search', 'issues', `"${marker}"`, '--state', 'open', '--json', 'number,url', '--limit', '1'],
+      { cwd },
+    );
+    const results = JSON.parse(stdout) as Array<{ number: number; url: string }>;
+    const match = results[0];
+    return match ? { number: match.number, url: match.url } : null;
+  } catch {
+    return null;
+  }
+}
+
+function issueUrlIn(stdout: string): string | null {
+  const lines = stdout.split('\n').map((line) => line.trim()).filter(Boolean);
+  for (const line of lines.reverse()) {
+    if (/^https?:\/\/\S+\/issues\/\d+$/.test(line)) return line;
+  }
+  return null;
 }
