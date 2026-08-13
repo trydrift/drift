@@ -24,8 +24,11 @@ import { upgradeCommandFor, type UpgradeCandidate } from '../upgrade/scan.js';
  * the evidence, the location, and the fix (that's the whole plan/rationale
  * pipeline) — this only reshapes it into SARIF.
  *
- * The unit of an alert is one *package* — a dependency that moved, not each
- * individual breaking change it carries. A package can still carry hundreds
+ * The unit of an alert is, by default, one *package* — a dependency that
+ * moved, not each individual breaking change it carries (see
+ * `codeScanning.granularity` in the config schema for the two opt-in
+ * alternatives: one alert per breaking change, or one per individual call
+ * site). A package can still carry hundreds
  * of upstream breaking changes — most upgrades touch no code in a given
  * repository at all — so dumping every one of them into a single alert
  * (or, worse, opening one alert per upstream change regardless of whether
@@ -118,6 +121,15 @@ export interface SarifFinding {
   primaryLocation: SarifLocation;
   /** Every other place the same finding reaches. */
   relatedLocations: SarifLocation[];
+  /**
+   * Whether `primaryLocation`'s excerpt is safe to show as a code snippet.
+   * True only when the alert is scoped narrowly enough that one location's
+   * code is actually representative of the whole alert — see
+   * `codeScanning.granularity` in the config schema. False (the package
+   * grouping's default) omits it, since bundling many call sites under one
+   * alert makes any single snippet an arbitrary, misleading pick.
+   */
+  snippetOk?: boolean;
   fix?: SarifFix;
   helpUri?: string;
 }
@@ -176,7 +188,7 @@ export function buildSarifLog(findings: readonly SarifFinding[], category?: stri
           ruleId: finding.ruleId,
           level: finding.level,
           message: { text: stripMarkdown(finding.message), markdown: finding.message },
-          locations: [toSarifPhysicalLocation(finding.primaryLocation)],
+          locations: [toSarifPhysicalLocation(finding.primaryLocation, finding.snippetOk)],
           ...(finding.relatedLocations.length > 0
             ? {
                 relatedLocations: finding.relatedLocations.map((loc, i) => ({
@@ -213,18 +225,20 @@ function mdLink(file: string, line: number): string {
   return `[\`${file}:${line}\`](${file}#L${line})`;
 }
 
-// No `region.snippet` here: GitHub renders it as a single code preview at
-// whichever location this is, and with a finding that can span dozens of
-// call sites, the "primary" one is just whichever sorted first by
-// confidence — showing its snippet alone reads as representative when it
-// isn't. The `Seen at:` link list already covers every site without
-// singling one out.
-function toSarifPhysicalLocation(loc: SarifLocation): Record<string, unknown> {
+// `includeSnippet` defaults to false: GitHub renders `region.snippet` as a
+// single code preview at this location, and with a finding that can span
+// dozens of call sites, the "primary" one is just whichever sorted first by
+// confidence — showing its snippet alone would read as representative when
+// it isn't. Callers only pass `true` once the alert is scoped narrowly
+// enough (see `SarifFinding.snippetOk`) that one location's code actually
+// stands in for the whole alert; the `Seen at:` link list covers the rest.
+function toSarifPhysicalLocation(loc: SarifLocation, includeSnippet = false): Record<string, unknown> {
   return {
     physicalLocation: {
       artifactLocation: { uri: loc.file },
       region: {
         startLine: Math.max(1, loc.line),
+        ...(includeSnippet && loc.excerpt ? { snippet: { text: loc.excerpt } } : {}),
       },
     },
   };
@@ -245,10 +259,20 @@ function lineHash(finding: SarifFinding): string {
   return createHash('sha256').update(basis).digest('hex').slice(0, 40);
 }
 
+/** How findings are grouped into alerts. See `codeScanning.granularity` in the config schema. */
+export type AlertGranularity = 'package' | 'breakingChange' | 'affectedSite';
+
 /**
- * Findings from a push-triggered `RemediationPlan`: one alert per package,
+ * Findings from a push-triggered `RemediationPlan`.
+ *
+ * By default (`granularity: 'package'`) this is one alert per package,
  * folding every locally-actionable breaking change and every security
- * signal found for it into that one alert as its own block.
+ * signal found for it into that one alert as its own block. `'breakingChange'`
+ * and `'affectedSite'` split that single alert into one per breaking change,
+ * or one per individual call site, respectively — see `AlertGranularity` and
+ * the config schema for why a team would want either. A security or
+ * "update available" signal has no per-site notion of its own, so it always
+ * gets one alert regardless of granularity.
  *
  * Each run uploads the *complete* current set of findings for the ref it
  * analysed (see `uploadCodeScanning` in `runners/action.ts`) rather than an
@@ -257,16 +281,22 @@ function lineHash(finding: SarifFinding): string {
  * authoritative state — a `ruleId` present in it keeps (or opens) one alert,
  * updated to the latest commit; a `ruleId` that was open before and is
  * absent from the new upload is automatically marked fixed. Because
- * `ruleId` here is `drift/<ecosystem>/<name>` — stable across runs, not
- * derived from a specific breaking change — rescanning a package naturally
- * replaces its one alert in place rather than accumulating a new one
- * alongside the old.
+ * `ruleId` is built from stable, content-derived parts (the package name,
+ * and — for the finer granularities — the breaking change's own stable
+ * `id` or a hash of the site's content) rather than anything positional
+ * like a line number, rescanning replaces each alert in place rather than
+ * accumulating a new one alongside the old.
  */
 export function findingsFromPlan(
   plan: RemediationPlan,
-  opts: { includeInformational?: boolean; fixOf?: (change: DependencyChange) => SarifFix | undefined } = {},
+  opts: {
+    includeInformational?: boolean;
+    fixOf?: (change: DependencyChange) => SarifFix | undefined;
+    granularity?: AlertGranularity;
+  } = {},
 ): SarifFinding[] {
   const includeInformational = opts.includeInformational ?? false;
+  const granularity = opts.granularity ?? 'package';
   const findings: SarifFinding[] = [];
 
   for (const change of plan.changes) {
@@ -279,7 +309,7 @@ export function findingsFromPlan(
     // the same limitation.
     const rationale = plan.rationale?.find((r) => r.dependency === change.name);
 
-    const blocks: FindingBlock[] = [];
+    const breakingBlocks: { breaking: BreakingChange; block: FindingBlock }[] = [];
     let upstreamOnlyCount = 0;
 
     const sortedBreaking = [...allBreaking].sort((a, b) => rank(b.confidence) - rank(a.confidence));
@@ -289,28 +319,91 @@ export function findingsFromPlan(
         upstreamOnlyCount++; // upstream-only: no code here to point at.
         continue;
       }
-      blocks.push(buildBreakingBlock(b, sites, plan.evidence));
+      breakingBlocks.push({ breaking: b, block: buildBreakingBlock(b, sites, plan.evidence) });
     }
 
-    if (hasSecuritySignal(rationale)) blocks.push(buildSecurityBlock(rationale!));
+    const extraBlocks: FindingBlock[] = [];
+    if (hasSecuritySignal(rationale)) extraBlocks.push(buildSecurityBlock(rationale!));
 
-    if (blocks.length === 0) {
+    if (breakingBlocks.length === 0 && extraBlocks.length === 0) {
       if (!includeInformational || !rationale) continue;
-      blocks.push(buildOutdatedBlock(change, rationale));
+      extraBlocks.push(buildOutdatedBlock(change, rationale));
     }
 
     const commit = plan.commits.find((c) => allBreaking.some((b) => c.breakingChangeIds.includes(b.id)));
-    findings.push(
-      buildPackageFinding({
-        change,
-        blocks,
-        upstreamOnlyCount,
-        fix: opts.fixOf?.(change) ?? fixFromCommit(commit, plan),
-      }),
-    );
+    const fix = opts.fixOf?.(change) ?? fixFromCommit(commit, plan);
+
+    if (granularity === 'package') {
+      findings.push(
+        buildPackageFinding({
+          change,
+          blocks: [...breakingBlocks.map((x) => x.block), ...extraBlocks],
+          upstreamOnlyCount,
+          fix,
+        }),
+      );
+      continue;
+    }
+
+    // `'breakingChange'` / `'affectedSite'`: split into one alert per
+    // breaking change (optionally per site). The upstream-only count is
+    // package-level context about issues *not* in this list, so it doesn't
+    // belong on any one of these split alerts — it's dropped rather than
+    // repeated on every one of them.
+    for (const { breaking, block } of breakingBlocks) {
+      if (granularity === 'affectedSite') {
+        const sites = [block.primaryCandidate, ...block.relatedCandidates].filter(
+          (s): s is SarifLocation => s !== undefined,
+        );
+        for (const site of sites) {
+          findings.push(
+            buildPackageFinding({
+              change,
+              blocks: [{ ...block, primaryCandidate: site, relatedCandidates: [] }],
+              upstreamOnlyCount: 0,
+              fix,
+              ruleIdSuffix: `${breaking.id}/${siteKey(site)}`,
+              ruleName: `${change.name}: ${ruleNameForBreaking(breaking.kind)}`,
+              snippetOk: true,
+            }),
+          );
+        }
+      } else {
+        findings.push(
+          buildPackageFinding({
+            change,
+            blocks: [block],
+            upstreamOnlyCount: 0,
+            fix,
+            ruleIdSuffix: breaking.id,
+            ruleName: `${change.name}: ${ruleNameForBreaking(breaking.kind)}`,
+            snippetOk: true,
+          }),
+        );
+      }
+    }
+    for (const block of extraBlocks) {
+      findings.push(
+        buildPackageFinding({
+          change,
+          blocks: [block],
+          upstreamOnlyCount: 0,
+          fix,
+          ruleIdSuffix: 'other',
+        }),
+      );
+    }
   }
 
   return findings;
+}
+
+/** A short, content-derived key for one impact site — stable across line shifts, unlike its line number. */
+function siteKey(loc: SarifLocation): string {
+  return createHash('sha256')
+    .update(`${loc.file}|${(loc.excerpt ?? '').trim()}`)
+    .digest('hex')
+    .slice(0, 10);
 }
 
 function hasSecuritySignal(rationale: UpgradeRationale | undefined): boolean {
@@ -334,7 +427,7 @@ function hasSecuritySignal(rationale: UpgradeRationale | undefined): boolean {
  */
 export function findingsFromCandidates(
   candidates: readonly UpgradeCandidate[],
-  opts: { includeInformational?: boolean } = {},
+  opts: { includeInformational?: boolean; granularity?: AlertGranularity } = {},
 ): SarifFinding[] {
   const findings: SarifFinding[] = [];
 
@@ -544,8 +637,14 @@ function buildPackageFinding(args: {
   blocks: FindingBlock[];
   upstreamOnlyCount: number;
   fix?: SarifFix;
+  /** Appended to `drift/<ecosystem>/<name>` to keep split-granularity alerts distinct. */
+  ruleIdSuffix?: string;
+  /** Overrides the default generic rule name — used by the finer granularities to name the specific breaking change. */
+  ruleName?: string;
+  /** See `SarifFinding.snippetOk`. */
+  snippetOk?: boolean;
 }): SarifFinding {
-  const { change, blocks, upstreamOnlyCount, fix } = args;
+  const { change, blocks, upstreamOnlyCount, fix, ruleIdSuffix, ruleName, snippetOk } = args;
   const memberLabel = describeMember(change);
   const versionMove = change.to ? `${change.from ?? 'none'} → ${change.to}` : 'removed';
   const hasBreaking = blocks.some((b) => b.primaryCandidate);
@@ -580,9 +679,10 @@ function buildPackageFinding(args: {
 
   // `related`'s array order is exactly the order `buildSarifLog` assigns
   // `relatedLocations[].id` in (1-indexed) — this map lets every block spell
-  // its "Seen at" list as `[text](id)`, which GitHub renders as its own
-  // expandable code snippet in the alert body, rather than a plain hyperlink
-  // that only the primary location gets that treatment for.
+  // its "Seen at" list as `[text](id)`, a link GitHub resolves to that
+  // location's line in the repo (jump-to-file), same as the plain
+  // `mdLink` fallback below it uses when a site fell outside the
+  // `MAX_RELATED_LOCATIONS` cap and never got an id.
   const relatedIds = new Map(related.map((loc, i) => [`${loc.file}:${loc.line}`, i + 1]));
   const siteLink = (loc: SarifLocation): string => {
     const id = relatedIds.get(`${loc.file}:${loc.line}`);
@@ -600,8 +700,10 @@ function buildPackageFinding(args: {
   ].join('\n\n---\n\n');
 
   return {
-    ruleId: `drift/${change.ecosystem}/${change.name}`,
-    ruleName: `${change.name}: dependency finding`,
+    ruleId: ruleIdSuffix
+      ? `drift/${change.ecosystem}/${change.name}/${ruleIdSuffix}`
+      : `drift/${change.ecosystem}/${change.name}`,
+    ruleName: ruleName ?? `${change.name}: dependency finding`,
     dependency: change.name,
     ecosystem: change.ecosystem,
     dependencyKind: change.kind,
@@ -614,6 +716,7 @@ function buildPackageFinding(args: {
     message: body,
     primaryLocation: primary,
     relatedLocations: related,
+    snippetOk,
     fix,
     helpUri: blocks.find((b) => b.helpUri)?.helpUri,
   };

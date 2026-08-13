@@ -435,6 +435,33 @@ export const DriftConfigSchema = z.object({
        * summary — but is noise for most.
        */
       includeInformational: z.boolean().default(false),
+
+      /**
+       * How findings are grouped into alerts.
+       *
+       * `'package'` (the default) folds every breaking change and security
+       * signal for one dependency into a single alert, matching the "one
+       * alert per package" design this module was built around — it keeps
+       * the Security tab from growing one row per breaking change. Because
+       * one alert can bundle many call sites, no single one of them is
+       * representative, so the alert carries no code snippet — just the
+       * text and a link list of every location.
+       *
+       * `'breakingChange'` opens one alert per breaking change instead,
+       * covering every call site it reaches. The alert is scoped to a
+       * single issue now, so its primary location's snippet is shown as a
+       * representative example of that one breaking change, even though it
+       * may have reached more than one site.
+       *
+       * `'affectedSite'` goes one step further: one alert per individual
+       * call site. There is exactly one location per alert in this mode,
+       * so its snippet is never a stand-in for anything else — it's a
+       * direct view of the one line the alert is about. This is the
+       * noisiest mode by far — a single breaking change reaching fifty call
+       * sites in a large repository becomes fifty alerts — hence not the
+       * default.
+       */
+      granularity: z.enum(['package', 'breakingChange', 'affectedSite']).default('package'),
     })
     .default({}),
 
