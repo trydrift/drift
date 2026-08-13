@@ -284,6 +284,7 @@ async function requestApproval(options: DispatchOptions): Promise<DispatchResult
     title: approvalTitle(plan),
     body: renderApprovalIssue(plan, config),
     labels: [DRIFT_LABEL, `drift:risk-${plan.risk}`],
+    assignees: config.issueCreation.assignees,
   });
 
   if (!issue) {

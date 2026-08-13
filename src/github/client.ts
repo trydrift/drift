@@ -330,7 +330,7 @@ export class GitHubClient {
 
   async createIssue(
     repo: RepoContext,
-    params: { title: string; body: string; labels?: string[] },
+    params: { title: string; body: string; labels?: string[]; assignees?: string[] },
   ): Promise<{ number: number; url: string } | null> {
     try {
       const response = await this.octokit.issues.create({
@@ -339,6 +339,7 @@ export class GitHubClient {
         title: params.title,
         body: params.body,
         labels: params.labels,
+        assignees: params.assignees,
       });
       return { number: response.data.number, url: response.data.html_url };
     } catch (err) {

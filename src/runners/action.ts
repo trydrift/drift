@@ -236,6 +236,7 @@ async function createIssuesForFindings(args: {
       title: `Drift: ${finding.ruleName}`,
       body: `${finding.message}\n\n<!-- ${marker} -->`,
       labels: [DRIFT_LABEL, `drift:${finding.level}`],
+      assignees: config.issueCreation.assignees,
     });
     if (!issue) {
       logger.warn(`Could not open an issue for ${finding.ruleId}. Check that the token has \`issues: write\`.`);

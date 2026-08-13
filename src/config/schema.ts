@@ -515,6 +515,13 @@ export const DriftConfigSchema = z.object({
        * sites of the same upgrade need to be triaged or landed separately.
        */
       granularity: z.enum(['package', 'change']).default('package'),
+
+      /**
+       * GitHub usernames to assign the issue to, when the action's `default`
+       * above (or `codeScanning.createIssuesPerAlert`) files one. Empty by
+       * default — no one is assigned unless a team opts in.
+       */
+      assignees: z.array(z.string()).default([]),
     })
     .default({}),
 

@@ -82,8 +82,10 @@ const RECIPE = {
 
 function fakeGithub() {
   const calls: string[] = [];
+  const issueParams: unknown[] = [];
   return {
     calls,
+    issueParams,
     async createBranch() {
       calls.push('createBranch');
       return true;
@@ -105,8 +107,9 @@ function fakeGithub() {
     async getDefaultBranch() {
       return 'main';
     },
-    async createIssue() {
+    async createIssue(_r: unknown, params: unknown) {
       calls.push('createIssue');
+      issueParams.push(params);
       return { number: 2, url: 'https://github.com/acme/app/issues/2' };
     },
     async findOpenPlanIssue() {
@@ -196,6 +199,37 @@ describe('dispatch: deterministic remediation before an agent', () => {
       assert.equal(result.status, 'blocked');
       assert.ok(github.calls.includes('createIssue'));
       assert.ok(!github.calls.some((c) => c.startsWith('commitFiles')));
+    });
+  });
+
+  test('issueCreation.assignees is passed through to the approval issue', async () => {
+    await withWorkspace('gone();\n', async (workspace) => {
+      const config = DriftConfigSchema.parse({
+        mode: 'auto',
+        remediation: { communityRecipes: false },
+        issueCreation: { assignees: ['octocat'] },
+      });
+      const plan = buildPlan({
+        repo: { ...repo, workspace },
+        config,
+        changes: [],
+        evidence,
+        breakingChanges: [removedBreaking()] as never,
+        impactSites: [site('bc_2', 'app.ts', 'gone')] as never,
+        recipes: new Map([['bc_2', RECIPE]]) as never,
+      });
+
+      const github = fakeGithub();
+      await dispatch({
+        repo: { ...repo, workspace },
+        plan,
+        config,
+        github: github as never,
+        logger,
+      });
+
+      assert.ok(github.calls.includes('createIssue'));
+      assert.deepEqual((github.issueParams[0] as { assignees?: string[] }).assignees, ['octocat']);
     });
   });
 

@@ -350,6 +350,15 @@ What one issue/branch covers.
   landed separately. This is also always offered on each individual finding,
   regardless of this setting.
 
+### `issueCreation.assignees`
+
+`string[]` — default **`[]`**
+
+GitHub usernames to assign automatically to every issue Drift files —
+approval issues, and per-alert issues opened via
+`codeScanning.createIssuesPerAlert`. Empty by default; nobody is assigned
+unless a team opts in.
+
 ### `outdated.enabled`
 
 `boolean` — default **`false`**
