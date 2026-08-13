@@ -102,7 +102,8 @@ run time and sends it only to `api.github.com`. It is never stored anywhere else
 ### 3. (Optional) Configure
 
 Copy [`examples/drift.yml`](examples/drift.yml) to `.github/drift.yml`. Every value
-is a default, so skipping this is fine.
+is a default, so skipping this is fine. Or build one from the site's `/configure`
+page — pick your options and download a ready-to-commit `drift.yml` and workflow.
 
 ### 4. Watch it work
 
