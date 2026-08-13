@@ -123,8 +123,13 @@ describe('findingsFromPlan', () => {
     assert.match(findings[0]!.message, /createClient.*was removed \(bc_1\)/);
     assert.match(findings[0]!.message, /createClient.*was removed \(bc_2\)/);
     assert.match(findings[0]!.message, /---/, 'each breaking change is its own block, separated by a rule');
-    assert.equal(findings[0]!.primaryLocation.file, 'src/index.ts');
-    assert.equal(findings[0]!.primaryLocation.line, 12);
+    assert.equal(
+      findings[0]!.primaryLocation.file,
+      dependencyChange.manifestPath,
+      'package granularity anchors to the manifest, not one arbitrarily-chosen call site',
+    );
+    assert.equal(findings[0]!.primaryLocation.line, 1);
+    assert.match(findings[0]!.message, /Seen at.*src\/index\.ts:12/s, 'the actual call site is still listed');
   });
 
   test('a breaking change with no impact site is omitted from the alert body, not the whole alert', () => {
@@ -158,9 +163,10 @@ describe('findingsFromPlan', () => {
     }) as RemediationPlan;
 
     const [finding] = findingsFromPlan(plan);
-    assert.equal(finding!.primaryLocation.file, 'src/a.ts');
-    assert.equal(finding!.relatedLocations.length, 1);
-    assert.equal(finding!.relatedLocations[0]!.file, 'src/b.ts');
+    assert.equal(finding!.primaryLocation.file, dependencyChange.manifestPath);
+    assert.equal(finding!.relatedLocations.length, 2);
+    assert.equal(finding!.relatedLocations[0]!.file, 'src/a.ts');
+    assert.equal(finding!.relatedLocations[1]!.file, 'src/b.ts');
   });
 
   test('upstream-only confidence downgrades severity when local confidence is weaker', () => {
@@ -273,6 +279,32 @@ describe('findingsFromPlan', () => {
 
     const [finding] = findingsFromPlan(plan);
     assert.ok(!finding!.snippetOk, 'bundling many possible issues under one alert makes any one snippet arbitrary');
+  });
+
+  test('every "Seen at" link resolves to a real repo URL, including sites beyond the related-locations cap', () => {
+    // 11 breaking changes, one site each — more than MAX_RELATED_LOCATIONS
+    // (9), so some sites fall outside the numeric relatedLocations id space
+    // and must fall back to an absolute blob URL rather than a broken
+    // relative link.
+    const ids = Array.from({ length: 11 }, (_, i) => `bc_${i}`);
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: ids.map((id) => breaking(id)),
+      impactSites: ids.map((id) => site(id, { file: `src/${id}.ts`, line: 1 })),
+    }) as RemediationPlan;
+
+    const [finding] = findingsFromPlan(plan, { repoBlobUrl: 'https://github.com/acme/app/blob/deadbeef' });
+    for (const id of ids) {
+      assert.match(
+        finding!.message,
+        new RegExp(`\\[\`src/${id}\\.ts:1\`\\]\\((?:\\d+|https://github\\.com/acme/app/blob/deadbeef/src/${id}\\.ts#L1)\\)`),
+        `${id}'s site link is either a jump-to-file id or a real blob URL, never a bare relative path`,
+      );
+    }
+    assert.doesNotMatch(finding!.message, /\]\(src\//, 'no link is left as a bare relative path');
   });
 
   test('breakingChange granularity: one alert per breaking change, each with its own stable ruleId and a representative snippet', () => {

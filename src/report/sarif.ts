@@ -220,9 +220,21 @@ function stripMarkdown(markdown: string): string {
     .replace(/`([^`]*)`/g, '$1');
 }
 
-/** A markdown link from a `file:line` reference to that line in the repo. */
-function mdLink(file: string, line: number): string {
-  return `[\`${file}:${line}\`](${file}#L${line})`;
+/**
+ * A markdown link from a `file:line` reference to that line in the repo.
+ *
+ * `repoBlobUrl` is `https://github.com/<owner>/<repo>/blob/<sha>`, supplied
+ * by the caller that knows which repository and commit this alert is for
+ * (see `findingsFromPlan`/`findingsFromCandidates`). Without it there is no
+ * way to build a real URL, so this falls back to a bare relative path —
+ * which GitHub resolves against whatever page the reader is currently on
+ * (e.g. the alert page itself), producing a broken link. Every real caller
+ * passes `repoBlobUrl`; the fallback exists only for callers (tests) that
+ * don't have a repo context to give it.
+ */
+function mdLink(file: string, line: number, repoBlobUrl?: string): string {
+  const href = repoBlobUrl ? `${repoBlobUrl}/${file}#L${line}` : `${file}#L${line}`;
+  return `[\`${file}:${line}\`](${href})`;
 }
 
 // `includeSnippet` defaults to false: GitHub renders `region.snippet` as a
@@ -293,10 +305,13 @@ export function findingsFromPlan(
     includeInformational?: boolean;
     fixOf?: (change: DependencyChange) => SarifFix | undefined;
     granularity?: AlertGranularity;
+    /** `https://github.com/<owner>/<repo>/blob/<sha>` — see `mdLink`. */
+    repoBlobUrl?: string;
   } = {},
 ): SarifFinding[] {
   const includeInformational = opts.includeInformational ?? false;
   const granularity = opts.granularity ?? 'package';
+  const repoBlobUrl = opts.repoBlobUrl;
   const findings: SarifFinding[] = [];
 
   for (const change of plan.changes) {
@@ -340,6 +355,7 @@ export function findingsFromPlan(
           blocks: [...breakingBlocks.map((x) => x.block), ...extraBlocks],
           upstreamOnlyCount,
           fix,
+          repoBlobUrl,
         }),
       );
       continue;
@@ -365,6 +381,7 @@ export function findingsFromPlan(
               ruleIdSuffix: `${breaking.id}/${siteKey(site)}`,
               ruleName: `${change.name}: ${ruleNameForBreaking(breaking.kind)}`,
               snippetOk: true,
+              repoBlobUrl,
             }),
           );
         }
@@ -378,6 +395,7 @@ export function findingsFromPlan(
             ruleIdSuffix: breaking.id,
             ruleName: `${change.name}: ${ruleNameForBreaking(breaking.kind)}`,
             snippetOk: true,
+            repoBlobUrl,
           }),
         );
       }
@@ -390,6 +408,7 @@ export function findingsFromPlan(
           upstreamOnlyCount: 0,
           fix,
           ruleIdSuffix: 'other',
+          repoBlobUrl,
         }),
       );
     }
@@ -427,7 +446,7 @@ function hasSecuritySignal(rationale: UpgradeRationale | undefined): boolean {
  */
 export function findingsFromCandidates(
   candidates: readonly UpgradeCandidate[],
-  opts: { includeInformational?: boolean; granularity?: AlertGranularity } = {},
+  opts: { includeInformational?: boolean; granularity?: AlertGranularity; repoBlobUrl?: string } = {},
 ): SarifFinding[] {
   const findings: SarifFinding[] = [];
 
@@ -527,8 +546,13 @@ function buildBreakingBlock(breaking: BreakingChange, sites: ImpactSite[], evide
   // claim above. `helpUri` alone used to stand in for this and pointed at the
   // *current* published declaration file, which shows nothing about what
   // changed; a reader had to diff two CDN files by hand to see it.
+  //
+  // Inline code spans, not a fenced ```diff block: GitHub's code-scanning
+  // alert markdown only renders the inline-code subset of GFM. A fenced block
+  // there shows up as literal backticks and a literal "diff" — a plain-text
+  // dump of the fence syntax rather than a code block.
   if (breaking.before && breaking.after && breaking.before !== breaking.after) {
-    lines.push('', '```diff', `- ${truncate(breaking.before, 300)}`, `+ ${truncate(breaking.after, 300)}`, '```');
+    lines.push('', `- \`${truncate(breaking.before, 300)}\``, `+ \`${truncate(breaking.after, 300)}\``);
   }
   if (helpUri) lines.push('', `Declaration source: ${helpUri}`);
 
@@ -643,8 +667,10 @@ function buildPackageFinding(args: {
   ruleName?: string;
   /** See `SarifFinding.snippetOk`. */
   snippetOk?: boolean;
+  /** `https://github.com/<owner>/<repo>/blob/<sha>` — see `mdLink`. */
+  repoBlobUrl?: string;
 }): SarifFinding {
-  const { change, blocks, upstreamOnlyCount, fix, ruleIdSuffix, ruleName, snippetOk } = args;
+  const { change, blocks, upstreamOnlyCount, fix, ruleIdSuffix, ruleName, snippetOk, repoBlobUrl } = args;
   const memberLabel = describeMember(change);
   const versionMove = change.to ? `${change.from ?? 'none'} → ${change.to}` : 'removed';
   const hasBreaking = blocks.some((b) => b.primaryCandidate);
@@ -662,7 +688,15 @@ function buildPackageFinding(args: {
     );
   }
 
-  const primary = blocks.find((b) => b.primaryCandidate)?.primaryCandidate ?? { file: change.manifestPath, line: 1 };
+  // Anchored (and snippet-eligible) only when `snippetOk` — i.e. the alert is
+  // scoped to one breaking change or one site, so that location really is
+  // representative. Package-granularity alerts fold many call sites together;
+  // picking any one of them as "the" location would show a single arbitrary
+  // snippet as if it stood for the whole alert, so they anchor to the
+  // manifest instead and rely entirely on each block's own "Seen at" list.
+  const primary = snippetOk
+    ? (blocks.find((b) => b.primaryCandidate)?.primaryCandidate ?? { file: change.manifestPath, line: 1 })
+    : { file: change.manifestPath, line: 1 };
   const relatedSeen = new Set([`${primary.file}:${primary.line}`]);
   const related: SarifLocation[] = [];
   for (const block of blocks) {
@@ -686,15 +720,19 @@ function buildPackageFinding(args: {
   const relatedIds = new Map(related.map((loc, i) => [`${loc.file}:${loc.line}`, i + 1]));
   const siteLink = (loc: SarifLocation): string => {
     const id = relatedIds.get(`${loc.file}:${loc.line}`);
-    return id !== undefined ? `[\`${loc.file}:${loc.line}\`](${id})` : mdLink(loc.file, loc.line);
+    return id !== undefined ? `[\`${loc.file}:${loc.line}\`](${id})` : mdLink(loc.file, loc.line, repoBlobUrl);
   };
 
   const body = [
     header.join('\n'),
     ...blocks.map((b) => {
       if (!b.primaryCandidate) return b.lines.join('\n');
-      const seenAt = ['Seen at:', `- ${siteLink(b.primaryCandidate)}`, ...b.relatedCandidates.map((loc) => `- ${siteLink(loc)}`)];
-      return [...b.lines, '', ...seenAt].join('\n');
+      const seenAt = ['**Seen at:**', `- ${siteLink(b.primaryCandidate)}`, ...b.relatedCandidates.map((loc) => `- ${siteLink(loc)}`)];
+      // A blank line alone is not always enough to force GitHub's alert
+      // markdown onto a new paragraph — an extra blank line guarantees "Seen
+      // at:" starts on its own line rather than trailing the block above it
+      // (observed running on immediately after "Declaration source: <url>").
+      return [...b.lines, '', '', ...seenAt].join('\n');
     }),
     fixLine(fix, hasBreaking),
   ].join('\n\n---\n\n');

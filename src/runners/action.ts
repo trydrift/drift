@@ -140,6 +140,7 @@ export async function runAction(): Promise<number> {
       const findings = findingsFromPlan(result.plan, {
         includeInformational: effectiveConfig.codeScanning.includeInformational,
         granularity: effectiveConfig.codeScanning.granularity,
+        repoBlobUrl: `https://github.com/${repo.owner}/${repo.repo}/blob/${repo.afterSha}`,
       });
       await uploadCodeScanning({ repo, config: effectiveConfig, github, logger, findings, category: 'drift/diff' });
       await createIssuesForFindings({ repo, config: effectiveConfig, github, logger, findings });
@@ -293,6 +294,7 @@ async function runOutdatedScan(
     const findings = findingsFromCandidates(scan.candidates, {
       includeInformational: config.codeScanning.includeInformational,
       granularity: config.codeScanning.granularity,
+      repoBlobUrl: `https://github.com/${repo.owner}/${repo.repo}/blob/${repo.afterSha}`,
     });
 
     await uploadCodeScanning({ repo, config, github, logger, findings, category: 'drift/outdated' });
@@ -362,6 +364,10 @@ function readInputs(): ActionInputs {
     workspace: process.env.GITHUB_WORKSPACE ?? process.cwd(),
     configPath: actionInput('config-path') || undefined,
     scanMode: scanMode === 'outdated' ? 'outdated' : scanMode === 'diff' ? 'diff' : undefined,
+    alertGranularity:
+      alertGranularity === 'package' || alertGranularity === 'breakingChange' || alertGranularity === 'affectedSite'
+        ? alertGranularity
+        : undefined,
   };
 }
 
