@@ -113,6 +113,13 @@ export interface FixResult {
   url?: string;
   warnings: string[];
   message: string;
+  /**
+   * Why a `failed` result failed, for callers that want to offer something
+   * more useful than the message alone. `'stale-plan'` is the only reason a
+   * rescan actually resolves — the checkout moved past the commit the plan
+   * was analysed against, and re-scanning is the fix.
+   */
+  reason?: 'stale-plan';
 }
 
 export async function runFix(options: FixOptions): Promise<FixResult> {
@@ -142,7 +149,8 @@ export async function runFix(options: FixOptions): Promise<FixResult> {
   const currentHead = await git.headSha().catch(() => null);
   if (plan.headSha && plan.headSha !== WORKING_TREE && currentHead && plan.headSha !== currentHead) {
     return fail(
-      'This plan was analysed against a different commit than what is currently checked out. Re-run analysis before fixing.',
+      'This plan was analysed against a different commit than what is currently checked out.',
+      'stale-plan',
     );
   }
 
@@ -1310,8 +1318,8 @@ function driftConfig(): vscode.WorkspaceConfiguration {
   return vscode.workspace.getConfiguration('drift');
 }
 
-function fail(message: string): FixResult {
-  return { status: 'failed', commits: 0, warnings: [], message };
+function fail(message: string, reason?: FixResult['reason']): FixResult {
+  return { status: 'failed', commits: 0, warnings: [], message, ...(reason ? { reason } : {}) };
 }
 
 function empty(): FixResult {
