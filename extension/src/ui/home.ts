@@ -2612,6 +2612,18 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       if (branch.mode === 'new' && !(await this.startBranch(ctx.root, branch.name))) return;
       if (!(await this.upgrade(notInstalled.map((c) => c.id), 'safe', { quiet: true }))) return;
       upgraded = true;
+
+      // `this.upgrade()` just committed the manifest/lockfile on our behalf,
+      // moving HEAD past the commit `plan.headSha` was analysed against.
+      // `runFix`'s own guard compares `plan.headSha` against HEAD and rejects
+      // any mismatch as a stale plan — correct when the tree moved out from
+      // under the user, wrong when Drift itself just moved it one step ago.
+      // Re-pointing the plan at the commit we just made keeps that guard
+      // honest instead of false-positiving on every "fix all" that includes
+      // a not-yet-installed candidate.
+      const { Git } = await import('../git.js');
+      const headAfterUpgrade = await new Git(ctx.root).headSha().catch(() => null);
+      if (headAfterUpgrade) plan.headSha = headAfterUpgrade;
     }
 
     // The strongest evidence available, and the only kind that is measured
@@ -2722,8 +2734,17 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           return;
         case 'failed':
           tasks.finishAll('failed');
-          this.session.notice('error', result.message);
           this.output.error(result.message);
+          if (result.reason === 'stale-plan') {
+            // A dead end here just repeats the failure until someone thinks
+            // to type `/scan`. The one thing that actually resolves a stale
+            // plan is a rescan, so offer it directly instead of a bare error.
+            this.session.say(`${result.message} Rescan to pick up where things stand now.`, [
+              { label: 'Rescan', command: '/scan', primary: true },
+            ]);
+          } else {
+            this.session.notice('error', result.message);
+          }
           return;
       }
     });

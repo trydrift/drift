@@ -444,11 +444,13 @@ async function startFix(
       break;
 
     case 'failed': {
-      const choice = await vscode.window.showErrorMessage(
-        `Drift: ${result.message}`,
-        'Show log',
-        'Change agent',
-      );
+      // A stale plan only ever resolves one way — rescanning — so that is the
+      // one thing worth offering here instead of the generic recovery pair.
+      const choice =
+        result.reason === 'stale-plan'
+          ? await vscode.window.showErrorMessage(`Drift: ${result.message} Rescan to pick up where things stand now.`, 'Rescan')
+          : await vscode.window.showErrorMessage(`Drift: ${result.message}`, 'Show log', 'Change agent');
+      if (choice === 'Rescan') await vscode.commands.executeCommand('drift.scanDependencies');
       if (choice === 'Show log') output.show();
       if (choice === 'Change agent') await selectAgent(state);
       break;
