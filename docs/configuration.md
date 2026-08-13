@@ -298,6 +298,17 @@ How findings are grouped into alerts.
   breaking change reaching fifty call sites becomes fifty alerts — hence
   not the default.
 
+### `codeScanning.createIssuesPerAlert`
+
+`boolean` — default **`false`**
+
+Also open a GitHub issue for every alert, in addition to the code scanning
+upload. Off by default, since code scanning already surfaces every alert on
+the Security tab. Useful for teams that don't watch that tab, or that want
+alerts triaged and assigned like any other issue. Each issue embeds the
+alert's `ruleId` as a hidden marker, so a rescan finds the existing issue
+instead of filing a duplicate — the body itself is not updated on a rescan.
+
 ### `outdated.enabled`
 
 `boolean` — default **`false`**

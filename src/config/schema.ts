@@ -462,6 +462,21 @@ export const DriftConfigSchema = z.object({
        * default.
        */
       granularity: z.enum(['package', 'breakingChange', 'affectedSite']).default('package'),
+
+      /**
+       * Also open a GitHub issue for every alert, in addition to the code
+       * scanning upload.
+       *
+       * Off by default: code scanning already puts every alert on the
+       * Security tab, and most teams don't want the same information
+       * duplicated as issues. Teams that don't watch that tab, or that want
+       * alerts triaged and assigned the way any other issue is, can turn
+       * this on. Each issue embeds the alert's `ruleId` as a hidden marker
+       * and re-running looks that marker up before filing, so a rescan
+       * finds the existing issue rather than piling up duplicates — the
+       * same statelessness the approval-issue flow already relies on.
+       */
+      createIssuesPerAlert: z.boolean().default(false),
     })
     .default({}),
 

@@ -225,6 +225,9 @@ codeScanning:
   # in the alert, since 'package' can bundle many call sites under one
   # alert and no single one of them is representative.
   granularity: package
+  # Also file a GitHub issue for every alert. Off by default — the Security
+  # tab already has them; turn this on if your team triages via issues.
+  createIssuesPerAlert: false
 
 # Proactive scanning of every *installed* dependency against its registry,
 # independent of any push — the same check `drift outdated` runs locally.
