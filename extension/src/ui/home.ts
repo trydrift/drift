@@ -5,7 +5,7 @@ import { promisify } from 'node:util';
 import semver from 'semver';
 import { digestDiagnostics, renderDigest } from '../diagnostics-digest.js';
 import type { RemediationPlan, RepoContext } from '../../../src/types.js';
-import type { IssueBranchTarget } from '../../../src/actions/issue-branch.js';
+import type { IssueBranchAction, IssueBranchTarget } from '../../../src/actions/issue-branch.js';
 import { buildPlan } from '../../../src/plan/index.js';
 import { resolveBaseBranch } from '../../../src/plan/pull-request.js';
 import type { RevisionRequest } from '../agents/types.js';
@@ -2889,35 +2889,57 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       .getConfiguration('drift')
       .get<'issue' | 'branch' | 'both'>('issueCreation.default', 'issue');
 
-    const { runIssueBranchAction } = await import('../issue-actions.js');
     for (const target of targets) {
-      let issueNumber: number | undefined;
-      let linkedBranch = false;
+      await this.fileTargetInConversation(ctx.root, action, target, branchNameFor(target));
+    }
+  }
 
-      await runIssueBranchAction(ctx.root, action, target, {
-        onIssue: (result) => {
-          issueNumber = result.number;
-          this.session.say(
-            result.status === 'created'
-              ? `Filed issue [#${result.number}](${result.url}) for **${target.dependency}**.`
-              : `Issue [#${result.number}](${result.url}) for **${target.dependency}** was already open — not filing a duplicate.`,
-          );
-        },
-        onBranch: (result) => {
-          linkedBranch = true;
-          this.session.say(
-            `${result.status === 'created' ? 'Created' : 'Switched to'} branch \`${result.name}\`${issueNumber ? `, linked to issue #${issueNumber}` : ''}.`,
-          );
-        },
-      });
+  /**
+   * File one target's issue (and, per `drift.issueCreation.default`,
+   * branch) in this conversation, then — unless the branch question was
+   * already settled by `action` — ask it here.
+   *
+   * The report panel's per-row/per-group "File this" button reaches this
+   * too (`drift.fileBreakingChange` in `extension.ts`), so a click there
+   * behaves exactly like typing `/issue` in the same conversation: the
+   * conversation is where the follow-up ("want a branch for that?") gets
+   * asked, not a fire-and-forget notification with nowhere to continue.
+   */
+  async fileTargetInConversation(
+    root: string,
+    action: IssueBranchAction,
+    target: IssueBranchTarget,
+    proposedBranchName: string,
+  ): Promise<void> {
+    await this.reveal();
 
-      // `action: 'both'` (or the branch having failed outright) already
-      // settled the branch question one way or another — asking again would
-      // be a second, redundant prompt for the same thing `onBranch` above
-      // just reported.
-      if (issueNumber !== undefined && !linkedBranch && action === 'issue') {
-        await this.offerBranchForIssue(ctx.root, target, issueNumber, branchNameFor(target));
-      }
+    const { runIssueBranchAction } = await import('../issue-actions.js');
+    let issueNumber: number | undefined;
+    let linkedBranch = false;
+
+    await runIssueBranchAction(root, action, target, {
+      onIssue: (result) => {
+        issueNumber = result.number;
+        this.session.say(
+          result.status === 'created'
+            ? `Filed issue [#${result.number}](${result.url}) for **${target.dependency}**.`
+            : `Issue [#${result.number}](${result.url}) for **${target.dependency}** was already open — not filing a duplicate.`,
+        );
+      },
+      onBranch: (result) => {
+        linkedBranch = true;
+        this.session.say(
+          `${result.status === 'created' ? 'Created' : 'Switched to'} branch \`${result.name}\`${issueNumber ? `, linked to issue #${issueNumber}` : ''}.`,
+        );
+      },
+    });
+
+    // `action: 'both'` (or the branch having failed outright) already
+    // settled the branch question one way or another — asking again would
+    // be a second, redundant prompt for the same thing `onBranch` above
+    // just reported.
+    if (issueNumber !== undefined && !linkedBranch && action === 'issue') {
+      await this.offerBranchForIssue(root, target, issueNumber, proposedBranchName);
     }
   }
 

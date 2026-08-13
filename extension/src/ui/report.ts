@@ -1003,6 +1003,29 @@ pre { background: var(--vscode-textCodeBlock-background); padding: 10px; border-
            border-top-color: var(--vscode-progressBar-background);
            border-radius: 50%; animation: spin 0.9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* A click on a command button (file an issue, create a branch, install an
+   upgrade) round-trips through \`gh\`/git and can take a few seconds — this
+   panel re-renders by replacing the whole document when the extension host
+   answers, so nothing needs to reset the class below by hand. Without it, a
+   click that visibly does nothing is what makes someone click twice. */
+[data-command].is-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+[data-command].is-loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.6px solid var(--vscode-panel-border);
+  border-top-color: var(--vscode-progressBar-background);
+  animation: spin .8s linear infinite;
+}
 `;
 
 const SCRIPT = `
@@ -1035,12 +1058,18 @@ document.addEventListener('click', (event) => {
   }
   const button = event.target.closest('[data-command]');
   if (button) {
+    if (button.classList.contains('is-loading')) return;
     let args = [];
     if (button.dataset.args !== undefined) {
       try { args = JSON.parse(button.dataset.args); } catch { args = []; }
     } else if (button.dataset.arg !== undefined) {
       args = [Number(button.dataset.arg)];
     }
+    button.classList.add('is-loading');
+    // The panel re-renders by replacing the whole document once the host
+    // answers; if that answer never comes (a bug, a crashed command), the
+    // spinner should give up rather than sit dead forever.
+    setTimeout(() => button.classList.remove('is-loading'), 20000);
     vscode.postMessage({
       type: 'command',
       command: button.dataset.command,
