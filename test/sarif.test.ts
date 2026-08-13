@@ -329,6 +329,80 @@ describe('findingsFromPlan', () => {
     assert.deepEqual(again.map((f) => f.ruleId).sort(), ruleIds.sort());
   });
 
+  test('the declaration source link carries a text fragment to the changed declaration, not just the top of the file', () => {
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: [
+        breaking('bc_1', {
+          kind: 'signature-change',
+          before: 'declare const boolean: (params?: RawCreateParams) => ZodBoolean;',
+          after: 'declare function boolean<T = unknown>(params?: string): ZodCoercedBoolean<T>;',
+        }),
+      ],
+      impactSites: [site('bc_1')],
+    }) as RemediationPlan;
+
+    const [finding] = findingsFromPlan(plan, { granularity: 'breakingChange' });
+    assert.match(finding!.helpUri!, /^https:\/\/example\.com\/diff#:~:text=/, 'a text fragment is appended to the cited URL');
+    assert.match(
+      decodeURIComponent(finding!.helpUri!.split('#:~:text=')[1]!),
+      /declare function boolean/,
+      'the fragment targets the changed (after) declaration',
+    );
+  });
+
+  test('the before/after declaration diff escapes angle brackets so a code span cannot be mistaken for an HTML tag', () => {
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: [
+        breaking('bc_1', {
+          kind: 'signature-change',
+          before: 'declare const boolean: (params?: RawCreateParams & { coerce?: boolean }) => ZodBoolean;',
+          after: 'declare function boolean<T = unknown>(params?: string): ZodCoercedBoolean<T>;',
+        }),
+      ],
+      impactSites: [site('bc_1')],
+    }) as RemediationPlan;
+
+    const [finding] = findingsFromPlan(plan, { granularity: 'breakingChange' });
+    assert.match(finding!.message, /ZodCoercedBoolean&lt;T&gt;/, 'angle brackets are HTML-escaped inside the code span');
+    assert.doesNotMatch(finding!.message, /ZodCoercedBoolean<T>/, 'the raw, unescaped angle brackets never reach the markdown');
+
+    // The plain-text fallback (SARIF requires message.text) unescapes them
+    // back, since it is never parsed as markdown/HTML in the first place.
+    const log = buildSarifLog(findingsFromPlan(plan, { granularity: 'breakingChange' })) as {
+      runs: [{ results: [{ message: { text: string } }] }];
+    };
+    assert.match(log.runs[0].results[0]!.message.text, /ZodCoercedBoolean<T>/);
+  });
+
+  test('breakingChange granularity: rule names include the symbol, so same-kind alerts are distinguishable', () => {
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: [
+        breaking('bc_1', { symbols: ['createClient'] }),
+        breaking('bc_2', { symbols: ['closeClient'] }),
+      ],
+      impactSites: [site('bc_1', { file: 'src/a.ts' }), site('bc_2', { file: 'src/b.ts' })],
+    }) as RemediationPlan;
+
+    const findings = findingsFromPlan(plan, { granularity: 'breakingChange' });
+    const ruleNames = findings.map((f) => f.ruleName);
+    assert.ok(new Set(ruleNames).size === 2, 'rule names are distinct when the symbols differ');
+    for (const name of ruleNames) {
+      assert.match(name, /^acme-sdk: Removed export used in this repository \((createClient|closeClient)\)$/);
+    }
+  });
+
   test('affectedSite granularity: one alert per call site, none carrying related locations', () => {
     const plan = buildPlan({
       repo,
