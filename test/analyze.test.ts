@@ -404,6 +404,102 @@ export { objectType as object };`,
     );
   });
 
+  /**
+   * The loudest false positive a surface diff can produce, because one tidy-up
+   * makes N findings: a library lifts shared members into a base interface and
+   * every lifted member is reported as removed. A caller does not care which
+   * link of the chain declares `get()`, only that `client.get()` compiles.
+   */
+  test('members lifted into a base interface have not been removed', () => {
+    const before = extractExports('export interface Client { get(): void; post(): void; }', 'a.d.ts');
+    const after = extractExports(
+      'export interface Base { get(): void; post(): void; }\nexport interface Client extends Base {}',
+      'a.d.ts',
+    );
+
+    assert.deepEqual(diffSurfaces(before, after), []);
+  });
+
+  test('a member removed from the base is still removed from the derived type', () => {
+    const before = extractExports(
+      'export interface Base { get(): void; post(): void; }\nexport interface Client extends Base {}',
+      'a.d.ts',
+    );
+    const after = extractExports(
+      'export interface Base { get(): void; }\nexport interface Client extends Base {}',
+      'a.d.ts',
+    );
+
+    assert.ok(
+      diffSurfaces(before, after).some((c) => c.symbol === 'Client.post'),
+      'inheritance must not become a place breakage hides',
+    );
+  });
+
+  test('a base outside this surface costs nothing', () => {
+    const api = extractExports('export interface Client extends SomethingElsewhere { get(): void; }', 'a.d.ts');
+
+    assert.deepEqual(api.get('Client')?.members, ['get'], 'unresolved bases leave the answer unchanged');
+  });
+
+  test('an interface rewritten as a type alias is the same declaration', () => {
+    const before = extractExports('export interface Options { retries?: number; timeout: number; }', 'a.d.ts');
+    const after = extractExports('export type Options = { retries?: number; timeout: number; };', 'a.d.ts');
+
+    assert.deepEqual(diffSurfaces(before, after), [], 'which keyword the author used is not a finding about their API');
+  });
+
+  test('a type alias that lost a member is reported', () => {
+    const before = extractExports('export type Options = { a: string; b: string; };', 'a.d.ts');
+    const after = extractExports('export type Options = { a: string; };', 'a.d.ts');
+
+    assert.ok(
+      diffSurfaces(before, after).some((c) => c.kind === 'member-removed' && c.symbol === 'Options.b'),
+      'a type alias has members to lose, and losing one used to be invisible',
+    );
+  });
+
+  test('a type alias that is not an object literal claims no members', () => {
+    const api = extractExports('export type Id = string;\nexport type Both = A & B;', 'a.d.ts');
+
+    assert.deepEqual(api.get('Id')?.members, [], 'nothing to see is not the same as nothing there');
+    assert.deepEqual(api.get('Both')?.members, [], 'an intersection names members this cannot read from here');
+  });
+
+  test('a class rewritten as an interface is still reported', () => {
+    const before = extractExports('export declare class Client { get(): void; }', 'a.d.ts');
+    const after = extractExports('export interface Client { get(): void; }', 'a.d.ts');
+
+    assert.ok(
+      diffSurfaces(before, after).some((c) => c.kind === 'kind-changed'),
+      '`new Client()` and `extends Client` stop compiling',
+    );
+  });
+
+  test('a parameter that grew to accept more is not a breaking change', () => {
+    const before = extractExports('export declare function f(a: A): R;', 'a.d.ts');
+    const after = extractExports('export declare function f(a: A | B): R;', 'a.d.ts');
+
+    assert.deepEqual(diffSurfaces(before, after), [], 'a parameter is where accepting more is safe');
+  });
+
+  test('a parameter that stopped accepting one of its types is reported', () => {
+    const before = extractExports('export declare function f(a: A | B): R;', 'a.d.ts');
+    const after = extractExports('export declare function f(a: A): R;', 'a.d.ts');
+
+    assert.ok(diffSurfaces(before, after).some((c) => c.kind === 'signature-changed'));
+  });
+
+  test('a *return* type that grew is reported', () => {
+    const before = extractExports('export declare function f(): A;', 'a.d.ts');
+    const after = extractExports('export declare function f(): A | B;', 'a.d.ts');
+
+    assert.ok(
+      diffSurfaces(before, after).some((c) => c.kind === 'signature-changed'),
+      'widening is only safe on the way in; a caller assigning the result breaks',
+    );
+  });
+
   test('a rename pointing at another file is deferred, not guessed at', () => {
     const api = new Map();
     const aliases: { exported: string; local: string }[] = [];
