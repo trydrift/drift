@@ -1150,6 +1150,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     this.state.setCandidates([]);
     const step = this.session.step(
       multiRoot ? `Checking your dependencies across ${contexts.length} repositories` : 'Checking your dependencies',
+      { key: 'scan' },
     );
 
     await this.run(async (token) => {
@@ -2956,22 +2957,30 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     issueNumber: number,
     proposedName: string,
   ): Promise<void> {
+    const canFix = this.session.mode !== 'ask';
     const answer = await this.session.ask(
-      `Link a branch to issue #${issueNumber}?`,
+      `Work on issue #${issueNumber} now?`,
       [
+        canFix
+          ? {
+              label: `Create \`${proposedName}\` and start fixing`,
+              value: 'new-fix',
+              description: `A new branch, then ${this.agentLabel()} starts on it right away`,
+            }
+          : undefined,
         {
           label: `Create \`${proposedName}\``,
           value: 'new',
-          description: 'A new branch, named from what is being upgraded',
+          description: 'A new branch, named from what is being upgraded — no fix started',
         },
         { label: 'Use an existing branch', value: 'existing', description: 'Pick one already in this repository' },
         { label: 'Not now', value: 'no', description: 'Leave the issue as it is' },
-      ],
+      ].filter((option): option is NonNullable<typeof option> => option !== undefined),
       false,
     );
     if (answer === '' || answer === 'no') return;
 
-    if (answer === 'new') {
+    if (answer === 'new' || answer === 'new-fix') {
       const { linkBranchToIssue } = await import('../issue-actions.js');
       await linkBranchToIssue(root, target, issueNumber, {
         onBranch: (result) => {
@@ -2980,6 +2989,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           );
         },
       });
+      if (answer === 'new-fix') await this.fixTarget(target);
       return;
     }
 
@@ -2993,7 +3003,28 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     const { linkExistingBranchToIssue } = await import('../issue-actions.js');
     const result = await linkExistingBranchToIssue(root, picked, issueNumber);
-    if (result.ok) this.session.say(`Switched to \`${picked}\`, linked to issue #${issueNumber}.`);
+    if (!result.ok) return;
+    this.session.say(`Switched to \`${picked}\`, linked to issue #${issueNumber}.`);
+
+    if (canFix) {
+      const startFix = await this.session.ask(`Start fixing on \`${picked}\` now?`, [
+        { label: 'Yes, start fixing', value: 'yes' },
+        { label: 'Not now', value: 'no' },
+      ]);
+      if (startFix === 'yes') await this.fixTarget(target);
+    }
+  }
+
+  /** The candidates behind one issue/branch target, handed to `fix()` — matched by name, since a target only carries the dependency name, not the scan's composite candidate id. */
+  private async fixTarget(target: IssueBranchTarget): Promise<void> {
+    const ids = [...this.candidates.values()]
+      .filter((candidate) => candidate.name === target.dependency)
+      .map((candidate) => candidate.id);
+    if (ids.length === 0) {
+      this.session.say(`Nothing scanned for **${target.dependency}** in this session — run \`/scan\` first, then fix it from there.`);
+      return;
+    }
+    await this.fix(ids);
   }
 
   /**

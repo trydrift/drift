@@ -332,6 +332,14 @@ async function runFixOnBranch(args: {
 
     if (outcome.status === 'failed') {
       options.onCommitEnd?.(commit, 'failed', []);
+      // Whatever `state` was last set to inside the loop above — 'fixing',
+      // spinning — is stale the moment this run stops. Left alone, that is
+      // the bug behind a status bar reading "fixing" forever after a commit
+      // actually failed. Pending review files still need attention first;
+      // otherwise there is nothing left to review and the plan itself (still
+      // unfixed) is the honest thing to show.
+      if (pendingFiles > 0) state.set({ kind: 'reviewing', plan, branch: workingBranch, files: pendingFiles, warnings });
+      else state.set({ kind: 'findings', plan, at: Date.now() });
       return {
         status: 'failed',
         branch: workingBranch,
@@ -553,6 +561,10 @@ async function runFixOnBranch(args: {
   if (committed === 0 && pendingFiles === 0) {
     // Leave the user where they started rather than on an empty branch.
     await git.checkout(repo.branch).catch(() => undefined);
+    // Same stale-`fixing`-status bug the failed-commit path above guards
+    // against: every commit came back unchanged/skipped rather than failed,
+    // but `state` is still sitting on whichever one was active last.
+    state.set({ kind: 'findings', plan, at: Date.now() });
     return {
       status: 'nothing',
       commits: 0,

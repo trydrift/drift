@@ -126,6 +126,16 @@ function slugify(value: string): string {
  */
 const MAX_BODY_CHARS = 8000;
 
+/**
+ * GitHub's real hard cap (see `MAX_BODY_CHARS`'s comment), kept as a ceiling
+ * for the collapsed "more changes" section below. That section is
+ * `<details>`-hidden by default, so it costs nothing visually — there is no
+ * reason to fall back to a bare one-liner per change there just because the
+ * visible-by-default budget above was hit. Margin under the real 65536 is
+ * for `trailer`, which must survive intact.
+ */
+const HARD_BODY_CHARS = 60000;
+
 function truncate(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 }
@@ -153,6 +163,16 @@ function mdLink(site: ImpactSite, repoBlobUrl: string | undefined): string {
 
 const MAX_SITES_LISTED = 10;
 
+/** Drops any "Before: ..." / "After: ..." lines — see `changeSection`'s `hasDiff` branch. */
+function stripLabelledBeforeAfter(text: string): string {
+  return text
+    .split(/\r?\n/)
+    .filter((line) => !/^\s*(before|after):/i.test(line))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 /**
  * One change's worth of issue body, in the same voice as a code-scanning
  * alert (`report/sarif.ts`'s `buildBreakingBlock`): a linked summary,
@@ -167,6 +187,7 @@ const MAX_SITES_LISTED = 10;
 function changeSection(change: BreakingChange, sites: readonly ImpactSite[], repoBlobUrl: string | undefined): string {
   const lines = [`**${linkSymbols(change.summary, change.sourceUrl)}**`];
 
+  const hasDiff = Boolean(change.before && change.after && change.before !== change.after);
   if (change.before && change.after && change.before !== change.after) {
     lines.push(
       '',
@@ -175,7 +196,12 @@ function changeSection(change: BreakingChange, sites: readonly ImpactSite[], rep
     );
   }
 
-  lines.push('', truncate(change.remediation, 400));
+  // The AI's own remediation prose often restates the same before/after as a
+  // "Before: ...\nAfter: ..." pair, unformatted, right below the diff two
+  // lines up — a second, worse-rendered copy of what's already shown. Strip
+  // it rather than show the same fact twice in two different voices.
+  const remediation = hasDiff ? stripLabelledBeforeAfter(change.remediation) : change.remediation;
+  lines.push('', truncate(remediation, 400));
 
   if (sites.length > 0) {
     const shown = sites.slice(0, MAX_SITES_LISTED);
@@ -261,13 +287,35 @@ export function buildIssueContent(target: IssueBranchTarget, linkedBranch?: stri
 
   const bodyParts = [intro, ...included];
   if (omitted.length > 0) {
-    // A one-liner per omitted change, not a dead-end pointer to a report
-    // that isn't linked from here — the reader can still see what was cut.
-    const summary = omitted
-      .map((change) => `- ${linkSymbols(change.summary, change.sourceUrl)}`)
-      .join('\n');
+    // Collapsed, not diminished: the same before/after, remediation, and
+    // impact sites as the sections above — just tucked behind a click so the
+    // visible body stays short. Only the truly excessive case (bumping the
+    // real GitHub body cap even collapsed) falls back to a one-liner.
+    const detailBudget = HARD_BODY_CHARS - bodyParts.join('\n\n').length - trailer.length - 200;
+    const detailSections: string[] = [];
+    let detailUsed = 0;
+    let cutoff = omitted.length;
+    for (let i = 0; i < omitted.length; i++) {
+      const change = omitted[i]!;
+      const sites = impactSites.filter((site) => site.breakingChangeId === change.id);
+      const section = changeSection(change, sites, target.repoBlobUrl);
+      const cost = section.length + 8;
+      if (detailUsed + cost > detailBudget) {
+        cutoff = i;
+        break;
+      }
+      detailSections.push(section);
+      detailUsed += cost;
+    }
+    const remainder = omitted.slice(cutoff);
+    const remainderNote =
+      remainder.length > 0
+        ? `\n\n${remainder.length} additional ${plural(remainder.length, 'change', 'changes')} not shown, even collapsed, to stay under GitHub's body limit:\n${remainder
+            .map((change) => `- ${linkSymbols(change.summary, change.sourceUrl)}`)
+            .join('\n')}`
+        : '';
     bodyParts.push(
-      `<details><summary>${omitted.length} more ${plural(omitted.length, 'change', 'changes')} not shown in full</summary>\n\n${summary}\n\n</details>`,
+      `<details><summary>${omitted.length} more ${plural(omitted.length, 'change', 'changes')} not shown above</summary>\n\n${detailSections.join('\n\n---\n\n')}${remainderNote}\n\n</details>`,
     );
   }
   bodyParts.push(trailer);
