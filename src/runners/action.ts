@@ -12,6 +12,7 @@ import {
   DEPENDENCY_KIND_LABELS,
   findingsFromCandidates,
   findingsFromPlan,
+  type AlertGranularity,
   type SarifFinding,
 } from '../report/sarif.js';
 import { scanUpgrades, type UpgradeCandidate } from '../upgrade/scan.js';
@@ -41,6 +42,8 @@ interface ActionInputs {
   configPath?: string;
   /** `diff` (default) analyses the push; `outdated` scans every installed dependency instead. */
   scanMode?: 'diff' | 'outdated';
+  /** Overrides `codeScanning.granularity` in drift.yml. */
+  alertGranularity?: AlertGranularity;
 }
 
 export async function runAction(): Promise<number> {
@@ -87,7 +90,13 @@ export async function runAction(): Promise<number> {
 
   // A workflow input overrides the committed config, so a team can trial
   // `auto` from a manual run without editing a file in their repo.
-  const effectiveConfig = inputs.mode ? { ...config, mode: inputs.mode } : config;
+  let effectiveConfig = inputs.mode ? { ...config, mode: inputs.mode } : config;
+  if (inputs.alertGranularity) {
+    effectiveConfig = {
+      ...effectiveConfig,
+      codeScanning: { ...effectiveConfig.codeScanning, granularity: inputs.alertGranularity },
+    };
+  }
 
   // A `schedule` trigger, or an explicit `scan-mode: outdated` on a manual
   // dispatch, means "check every installed dependency against its registry"
@@ -343,6 +352,7 @@ function renderOutdatedTable(candidates: readonly UpgradeCandidate[]): string {
 function readInputs(): ActionInputs {
   const mode = actionInput('mode');
   const scanMode = actionInput('scan-mode');
+  const alertGranularity = actionInput('alert-granularity');
   return {
     repoToken: actionInput('repo-token') ?? process.env.GITHUB_TOKEN ?? '',
     copilotToken: actionInput('copilot-token') || process.env.DRIFT_COPILOT_TOKEN || undefined,

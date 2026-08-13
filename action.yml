@@ -68,6 +68,16 @@ inputs:
       Requires `outdated.enabled: true` in drift.yml.
     required: false
 
+  alert-granularity:
+    description: >-
+      How code scanning alerts are grouped: "package" (default) files one
+      alert per dependency, folding every breaking change it caused into a
+      single alert body. "breakingChange" instead opens one alert per
+      breaking change. "affectedSite" goes one step further and opens one
+      alert per individual call site affected. Overrides
+      `codeScanning.granularity` in drift.yml.
+    required: false
+
   log-level:
     description: 'debug | info | warn | error'
     required: false

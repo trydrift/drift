@@ -72,6 +72,12 @@ ${paths}
 
   # Lets you re-run Drift against the current commit from the Actions tab.
   workflow_dispatch:
+    inputs:
+      alert-granularity:
+        description: 'How code scanning alerts are grouped. Leave blank to use codeScanning.granularity from drift.yml.'
+        type: choice
+        options: ['', package, breakingChange, affectedSite]
+        default: ''
 
   # Enables the \`/drift apply\` approval flow on issues Drift files.
   #
@@ -170,6 +176,7 @@ jobs:
         with:
           repo-token: \${{ secrets.GITHUB_TOKEN }}
           copilot-token: \${{ secrets.DRIFT_COPILOT_TOKEN }}
+          alert-granularity: \${{ inputs.alert-granularity }}
 
       - name: Report outcome
         if: always()
