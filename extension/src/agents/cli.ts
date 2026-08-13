@@ -4,7 +4,7 @@ import { delimiter, dirname, join } from 'node:path';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import * as vscode from 'vscode';
-import type { SessionEffort } from '../session.js';
+import type { SessionEffort, TaskActivityInput } from '../session.js';
 import {
   buildFixPrompt,
   type AgentAvailability,
@@ -16,6 +16,7 @@ import {
   type FixTask,
 } from './types.js';
 import { envWithShellPath } from '../shell-path.js';
+import { AgentStreamReader } from './stream.js';
 
 const run = promisify(execFile);
 
@@ -358,9 +359,18 @@ export class CliFixAgent implements FixAgent {
 
       // The agent edited the tree in place. The caller diffs git to find out
       // what actually changed — more reliable than parsing agent chatter.
+      //
+      // What it *said* is a different question, and the one the panel was
+      // failing to answer. A run that ends "No change needed" with no reason
+      // is worse than no result: the developer cannot tell a correct verdict
+      // from a lazy one, and Drift has just claimed a breakage it now appears
+      // to be walking back. The agent almost always explained itself — Codex
+      // wrote three sentences about checking the installed exports — and that
+      // explanation was being dropped on the floor in favour of "Codex
+      // finished.", which tells nobody anything.
       return {
         status: 'applied',
-        message: `${this.spec.label} finished.`,
+        message: agentConclusion(stdout, stderr) ?? `${this.spec.label} finished.`,
         warnings: extractAgentWarnings(stdout),
       };
     } catch (err) {
@@ -431,6 +441,7 @@ export class CliFixAgent implements FixAgent {
 
       let stdout = '';
       let stderr = '';
+      const readers = { out: new AgentStreamReader(), err: new AgentStreamReader() };
       const started = Date.now();
       let lastOutput = Date.now();
 
@@ -461,41 +472,38 @@ export class CliFixAgent implements FixAgent {
       };
       ctx.signal.addEventListener('abort', onAbort, { once: true });
 
-      // Which pipe a line arrived on says nothing about what it means. Every
-      // one of these CLIs writes its reasoning to stderr and keeps stdout for
+      // Which pipe a line arrived on says nothing about what it *means* —
+      // these CLIs write their whole transcript to stderr and keep stdout for
       // the final answer, so labelling the panel's steps by stream produced a
-      // column of rows all called STDERR — the agent's actual thinking, filed
-      // under the least informative word available. Both pipes are reported
-      // the same way, and the reader classifies by content.
+      // column of rows all called STDERR. But the two pipes are still two
+      // documents, and a block half-read on one when a chunk arrives on the
+      // other must not be spliced with it, so each gets its own reader.
       //
-      // A `data` event is a pipe-buffering artifact, not a line: several
-      // lines of reasoning routinely arrive in the same chunk as the tool
-      // call that follows them. Reporting only the chunk's last line (as this
-      // used to) silently discarded every line before it — which is why the
-      // panel showed commands but not the reasoning that led to them. Lines
-      // are buffered per stream and each complete one is reported as it
-      // arrives; a line split across chunk boundaries is held until it closes.
-      const pending: Record<'out' | 'err', string> = { out: '', err: '' };
+      // A `data` event is a pipe-buffering artifact, not a line — and a line is
+      // not an event either. These CLIs write blocks: a keyword, then the body
+      // it introduces. A reader that stops at newlines therefore produced rows
+      // titled `exec` and `codex` with the actual work scattered between them,
+      // which is what the drawer was showing. `AgentStreamReader` holds the
+      // stream until each block closes and hands back one named event per
+      // block; see `agents/stream.ts`.
+      const emit = (events: readonly TaskActivityInput[]) => {
+        for (const event of events) {
+          if (ctx.activity) ctx.activity(event);
+          // A caller with no structured channel still gets a summary line, so
+          // nothing regresses for an agent driven from somewhere else.
+          else if (event.detail || event.input) ctx.report((event.detail ?? event.input ?? '').slice(0, 400));
+        }
+      };
       const surface = (chunk: Buffer, into: 'out' | 'err') => {
         const text = chunk.toString();
         if (into === 'out') stdout += text;
         else stderr += text;
         lastOutput = Date.now();
-
-        pending[into] += text;
-        const lines = pending[into].split('\n');
-        pending[into] = lines.pop() ?? '';
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed && !isNoise(trimmed)) ctx.report(trimmed.slice(0, 400));
-        }
+        emit(readers[into].push(text));
       };
       const flushPending = () => {
-        for (const into of ['out', 'err'] as const) {
-          const trimmed = pending[into].trim();
-          pending[into] = '';
-          if (trimmed && !isNoise(trimmed)) ctx.report(trimmed.slice(0, 400));
-        }
+        emit(readers.err.flush());
+        emit(readers.out.flush());
       };
 
       child.stdout.on('data', (chunk: Buffer) => surface(chunk, 'out'));
@@ -858,6 +866,39 @@ function summarizeCodexDoctor(text: string): string | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * What the agent concluded, in its own words.
+ *
+ * Every one of these CLIs ends by printing its answer to stdout — Codex
+ * repeats its last message there, Claude Code's `-p` mode prints only that —
+ * so stdout is read first and the transcript on stderr is the fallback for a
+ * CLI that keeps everything on one pipe.
+ *
+ * Trimmed to a few sentences because this becomes a line in the panel, not a
+ * document: the reader wants the verdict and the reason for it, and can open
+ * the drawer for the rest.
+ */
+export function agentConclusion(stdout: string, stderr: string): string | undefined {
+  const spoken = stdout.trim() || lastCodexMessage(stderr);
+  if (!spoken) return undefined;
+
+  // A CLI that printed a JSON envelope, a stack trace or its own banner is not
+  // speaking to the developer, and quoting it as the agent's conclusion would
+  // be putting words in its mouth.
+  if (/^[[{]/.test(spoken) || /^\s*at\s+\S+\s+\(/m.test(spoken)) return undefined;
+
+  const collapsed = spoken.replace(/\r/g, '').split('\n\n')[0]!.trim();
+  return collapsed.length > 600 ? `${collapsed.slice(0, 597)}…` : collapsed || undefined;
+}
+
+/** The body of the last `codex` block in a transcript, for CLIs that merge pipes. */
+function lastCodexMessage(transcript: string): string {
+  const blocks = transcript.split(/^codex\s*$/m);
+  if (blocks.length < 2) return '';
+  // Whatever follows the final `codex` keyword, up to the next block keyword.
+  return (blocks.at(-1) ?? '').split(/^(?:exec|thinking|tokens used|apply_patch)\s*$/m)[0]!.trim();
 }
 
 /** Pull anything the agent flagged as unresolved out of its transcript. */

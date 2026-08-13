@@ -101,6 +101,16 @@ export interface FixOptions {
     commit: CommitUnit,
     outcome: 'done' | 'unchanged' | 'skipped' | 'failed',
     changedFiles: readonly string[],
+    /**
+     * Why, when the answer was "nothing changed".
+     *
+     * A commit unit that ends `unchanged` is Drift half-retracting a breakage
+     * it reported, and a bare "No change needed" gives the developer no way to
+     * tell a considered verdict from an agent that gave up. The agent's own
+     * explanation is the answer, and it is one line, so it travels with the
+     * outcome rather than being left for the reader to dig out of the drawer.
+     */
+    reason?: string,
   ) => void;
 }
 
@@ -351,7 +361,7 @@ async function runFixOnBranch(args: {
     }
 
     if (outcome.status !== 'applied') {
-      options.onCommitEnd?.(commit, 'unchanged', []);
+      options.onCommitEnd?.(commit, 'unchanged', [], outcome.message);
       progress.report({ increment: step });
       return null;
     }
@@ -387,6 +397,7 @@ async function runFixOnBranch(args: {
         commit,
         files === 0 ? 'unchanged' : 'done',
         settled?.files.map((file) => file.path) ?? [],
+        files === 0 ? outcome.message : undefined,
       );
       progress.report({ increment: step, message: `${files} file(s) ready for review` });
       return null;
@@ -407,7 +418,7 @@ async function runFixOnBranch(args: {
     } else {
       // The agent ran but produced nothing inside this commit's scope.
       warnings.push(`Commit ${commit.order} ("${commit.message}") produced no changes.`);
-      options.onCommitEnd?.(commit, 'unchanged', []);
+      options.onCommitEnd?.(commit, 'unchanged', [], outcome.message);
       progress.report({ increment: step });
     }
 
@@ -1026,6 +1037,14 @@ async function applyOneCommit(args: {
         progress.report({ message: `${commit.order}: ${message}` });
         args.onLog?.(message);
         args.onActivity?.(activityFromReport(message));
+      },
+      // An agent that already knows what it did says so directly, rather than
+      // printing a line and hoping the classifier reconstructs it.
+      activity: (activity) => {
+        const line = activity.detail ?? activity.input ?? activity.title;
+        progress.report({ message: `${commit.order}: ${activity.title}` });
+        args.onLog?.(line);
+        args.onActivity?.(activity);
       },
       ask: args.ask,
       signal: controller.signal,
