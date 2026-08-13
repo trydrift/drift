@@ -557,6 +557,9 @@ async function collectDeclarationSources(
     for (const specifier of relativeReExports(resolved.content)) {
       queue.push(resolveRelative(resolved.path, specifier));
     }
+    for (const specifier of tripleSlashReferences(resolved.content)) {
+      queue.push(resolveRelative(resolved.path, specifier));
+    }
   }
 
   return sources;
@@ -574,6 +577,25 @@ export function relativeReExports(content: string): string[] {
   const out = new Set<string>();
   const pattern =
     /\bexport\s+(?:type\s+)?(?:\*(?:\s+as\s+\w+)?|\{[^}]*\})\s+from\s+['"](\.[^'"]+)['"]/g;
+  for (const match of content.matchAll(pattern)) out.add(match[1]!);
+  return [...out];
+}
+
+/**
+ * `/// <reference path="./other.d.ts" />` — the composition mechanism
+ * ambient/global declaration files use instead of `export ... from`.
+ *
+ * @types/node's own entry point is the concrete case: `index.d.ts` declares
+ * zero exports of its own and is nothing but sixty of these, selecting
+ * TypeScript-version-specific files and pulling in every builtin module.
+ * Without following them, `collectDeclarationSources` read one file, found
+ * no exports in it, and Drift reported a DefinitelyTyped package — one of
+ * the most widely depended-on packages in the npm ecosystem — as publishing
+ * no TypeScript declarations at all.
+ */
+export function tripleSlashReferences(content: string): string[] {
+  const out = new Set<string>();
+  const pattern = /\/\/\/\s*<reference\s+path=["']([^"']+)["']\s*\/>/g;
   for (const match of content.matchAll(pattern)) out.add(match[1]!);
   return [...out];
 }
