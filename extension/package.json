@@ -660,6 +660,36 @@
           "markdownDescription": "Set from the git picker in the Drift panel. Whether Drift commits on its own.\n\nOn the default, **Ask me first**, nothing enters git history until you keep it.",
           "order": 32
         },
+        "drift.issueCreation.default": {
+          "type": "string",
+          "default": "issue",
+          "enum": [
+            "issue",
+            "branch",
+            "both"
+          ],
+          "enumDescriptions": [
+            "File a GitHub issue",
+            "Create a local branch",
+            "File an issue and create a branch, linked together"
+          ],
+          "markdownDescription": "What the one-click action button on a breaking change does. The other two are always one click away in the button's dropdown.\n\nShared with the CLI's own `issueCreation.default` config field, so both surfaces offer the same default.",
+          "order": 39
+        },
+        "drift.issueCreation.granularity": {
+          "type": "string",
+          "default": "package",
+          "enum": [
+            "package",
+            "change"
+          ],
+          "enumDescriptions": [
+            "One action bundles every breaking change for a package",
+            "One action per individual breaking change"
+          ],
+          "markdownDescription": "What one issue/branch covers. **Per package** (the default) is offered on each package's group header; **per change** is offered on each individual finding regardless of this setting.",
+          "order": 40
+        },
         "drift.logLevel": {
           "type": "string",
           "default": "info",
