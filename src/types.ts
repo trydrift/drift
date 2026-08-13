@@ -147,6 +147,14 @@ export interface StructuredFinding {
   detail: string;
   before?: string;
   after?: string;
+  /**
+   * The real upstream source declaring this symbol, as a GitHub blob URL
+   * with a line number — set only when `resolveGitHubDeclaration` could
+   * confidently match a git tag to this version and find the symbol
+   * declared there. Absent (the common case) falls back to whatever
+   * published-artifact citation the evidence otherwise carries.
+   */
+  sourceUrl?: string;
 }
 
 /**
@@ -245,6 +253,13 @@ export interface BreakingChange {
    */
   before?: string;
   after?: string;
+  /**
+   * The real upstream source declaring the changed symbol, as a GitHub blob
+   * URL with a line number — see `StructuredFinding.sourceUrl`, which this
+   * is copied from. Preferred over a citation's own URL when present, since
+   * it points at the actual declaration rather than a compiled artifact.
+   */
+  sourceUrl?: string;
   /** What a fix must accomplish. Fed verbatim into the Copilot task. */
   remediation: string;
   /** Identifiers to search for: export names, endpoint paths, option keys. */

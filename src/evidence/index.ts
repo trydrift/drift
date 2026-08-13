@@ -12,6 +12,7 @@ import {
   sectionsBetween,
 } from './changelog.js';
 import { fetchRegistryInfo } from './registry.js';
+import { resolveGitHubDeclaration } from './github-source.js';
 import { fetchReleaseNotes } from './releases.js';
 import { diffSpecs, parseSpec, type OpenApiFinding } from './openapi.js';
 import {
@@ -174,7 +175,7 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
   // question here, with the weight its evidence honestly earns; when it
   // applies it is decisive.
   if (config.evidence.typeSurface) {
-    const surface = await surfaceEvidence(change, ctx);
+    const surface = await surfaceEvidence(change, ctx, registry?.githubRepo);
     if (surface) out.push(surface);
   }
 
@@ -281,7 +282,11 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
  * A surface that could not be computed is recorded on the change so the report
  * and the panel can say *why* rather than showing an absence.
  */
-async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): Promise<Evidence | null> {
+async function surfaceEvidence(
+  change: DependencyChange,
+  ctx: EvidenceContext,
+  githubRepo: string | null | undefined,
+): Promise<Evidence | null> {
   const { logger } = ctx;
   const from = change.from!;
   const to = change.to!;
@@ -347,6 +352,8 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
       return null;
     }
 
+    const sourceUrls = await resolveDeclarationSources(surface.changes, githubRepo, to, ctx.githubToken);
+
     return surfaceRecord(change, {
       changes: surface.changes,
       weight: WEIGHTS['type-surface-diff'],
@@ -354,6 +361,7 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
       url: jsdelivrDeclarationUrl(change.name, to, surface.afterEntryPath),
       beforeUrl: jsdelivrDeclarationUrl(change.name, from, surface.beforeEntryPath),
       afterUrl: jsdelivrDeclarationUrl(change.name, to, surface.afterEntryPath),
+      sourceUrls,
     });
   }
 
@@ -411,6 +419,8 @@ function surfaceRecord(
     url?: string;
     beforeUrl?: string;
     afterUrl?: string;
+    /** Per-symbol GitHub source, when `resolveDeclarationSources` found one. Keyed by `SurfaceChange.symbol`. */
+    sourceUrls?: Map<string, { url: string; line: number }>;
   },
 ): Evidence {
   const sources =
@@ -439,9 +449,45 @@ function surfaceRecord(
       detail: c.detail,
       before: c.before,
       after: c.after,
+      sourceUrl: args.sourceUrls?.get(c.symbol)?.url,
     })),
     weight: args.weight,
   };
+}
+
+/** How many symbols a single package upgrade will look up GitHub source for, per run. See `resolveGitHubDeclaration`. */
+const MAX_GITHUB_SOURCE_LOOKUPS = 8;
+
+/**
+ * Best-effort GitHub source resolution for the symbols a computed type-surface
+ * diff found changed, capped and run one at a time — `resolveGitHubDeclaration`
+ * hits GitHub's code search, which is rate-limited far more tightly than the
+ * REST API's general limit, and a package can easily have more changed
+ * symbols than are worth that cost. Every miss (no `githubRepo`, no matching
+ * tag, symbol not found) is silent; the caller falls back to the CDN
+ * declaration link, which always exists.
+ */
+async function resolveDeclarationSources(
+  changes: readonly SurfaceChange[],
+  githubRepo: string | null | undefined,
+  version: string,
+  token: string | undefined,
+): Promise<Map<string, { url: string; line: number }>> {
+  const resolved = new Map<string, { url: string; line: number }>();
+  // GitHub's code search sits behind a much tighter rate limit than the
+  // rest of the REST API, and the unauthenticated allowance (10/min, shared
+  // across everything this process does) is little more than a rounding
+  // error against it — not worth spending on a best-effort lookup that
+  // always has a working fallback. Skip entirely without a token rather
+  // than degrade into near-certain 403s.
+  if (!githubRepo || !token) return resolved;
+
+  const symbols = [...new Set(changes.map((c) => c.symbol))].slice(0, MAX_GITHUB_SOURCE_LOOKUPS);
+  for (const symbol of symbols) {
+    const hit = await resolveGitHubDeclaration(githubRepo, version, symbol, token);
+    if (hit) resolved.set(symbol, hit);
+  }
+  return resolved;
 }
 
 /**

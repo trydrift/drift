@@ -983,6 +983,7 @@ async function fixCommand(flags: Flags): Promise<number> {
     logger,
     github,
     provider: new LocalGitProvider(workspace, { before, after }),
+    githubToken: token || undefined,
     dryRun: true,
     workspace,
   });

@@ -232,7 +232,45 @@ describe('findingsFromPlan', () => {
 
     assert.equal(findingsFromPlan(plan).length, 0, 'includeInformational defaults to false');
     assert.equal(findingsFromPlan(plan, { includeInformational: true }).length, 1);
-    assert.equal(findingsFromPlan(plan, { includeInformational: true })[0]!.ruleId, 'drift/npm/acme-sdk');
+    const [finding] = findingsFromPlan(plan, { includeInformational: true });
+    assert.equal(finding!.ruleId, 'drift/npm/acme-sdk');
+    assert.equal(
+      finding!.ruleName,
+      'acme-sdk: Outdated — safe to upgrade',
+      'a package with nothing but a safe update gets a rule name that says so, not the generic "dependency finding"',
+    );
+  });
+
+  test('a package with a breaking change AND a security signal keeps the generic rule name', () => {
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [dependencyChange],
+      evidence,
+      breakingChanges: [breaking('bc_1')],
+      impactSites: [site('bc_1')],
+      rationale: [
+        rationale({
+          security: {
+            ...cleanSecurity,
+            resolved: [
+              {
+                id: 'GHSA-xxxx',
+                aliases: [],
+                summary: 'Prototype pollution',
+                severity: 'high',
+                url: 'https://example.com/advisory',
+                fixedIn: '2.0.0',
+              },
+            ],
+            direction: 'improves',
+          },
+        }),
+      ],
+    }) as RemediationPlan;
+
+    const [finding] = findingsFromPlan(plan);
+    assert.equal(finding!.ruleName, 'acme-sdk: dependency finding', 'no single short label fits more than one block');
   });
 
   test('an unresolved current advisory is an error', () => {
