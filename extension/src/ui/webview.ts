@@ -528,13 +528,42 @@ function renderActivityItem(item: TaskActivity): string {
         ${file}
         ${stat}
       </div>
-      ${item.detail ? `<div class="activity-detail">${linkify(item.detail)}</div>` : ''}
+      ${item.detail ? renderActivityDetail(item.detail) : ''}
       ${renderActivityLinks(item.links)}
       ${item.input ? renderIo('IN', item.input) : ''}
       ${item.output ? renderIo('OUT', item.output) : ''}
       ${item.lines?.length ? renderDiffPreview(item.lines) : ''}
     </div>
   </div>`;
+}
+
+/**
+ * A line of raw agent chatter is prose more often than not, but the
+ * unclassified fallback (`agent-activity.ts`'s `Thinking` bucket) also
+ * catches genuine source lines — a `rg`/`cat` result, a bundle's minified
+ * contents — that a CLI printed without announcing what it was. Rendered
+ * through `linkify` alone, those collapse into a squished proportional-font
+ * paragraph with no monospace alignment, which is what "code isn't
+ * formatted" was describing. A quick, conservative check for code-shaped
+ * punctuation routes those lines through the same monospace block real
+ * command output already gets, instead of every detail line paying for it.
+ */
+function renderActivityDetail(detail: string): string {
+  if (looksLikeCode(detail)) {
+    return `<pre class="activity-io"><code>${escapeHtml(detail)}</code></pre>`;
+  }
+  return `<div class="activity-detail">${linkify(detail)}</div>`;
+}
+
+function looksLikeCode(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+  // A grep/cat-style `123:` or `123\t` line-number prefix.
+  if (/^\d+[:\t]/.test(trimmed)) return true;
+  // Declarations and punctuation-dense lines prose doesn't produce.
+  if (/^(import|export|const|let|var|function|class|def|return|if|for|while)\b/.test(trimmed)) return true;
+  if (/[{}();]/.test(trimmed) && /[=:]/.test(trimmed)) return true;
+  return false;
 }
 
 /**

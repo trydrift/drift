@@ -161,6 +161,8 @@ export type ThreadItem =
       state: 'running' | 'done' | 'failed';
       /** Recent phase lines, newest last. Collapsed by default. */
       log: string[];
+      /** When set, a later `step()` call with the same key replaces this one instead of stacking. */
+      key?: string;
     }
   | { id: string; kind: 'packages'; headline: string; ids: string[] }
   | {
@@ -471,7 +473,14 @@ export class DriftSession {
    * which string belongs to which operation, and makes it hard to leave a step
    * spinning forever — `done()` and `fail()` are the only ways out.
    */
-  step(title: string): StepHandle {
+  step(title: string, options: { key?: string } = {}): StepHandle {
+    // A `key` marks this step as a singleton, the same rule `packages()` and
+    // `showChanges()` already follow: a rescan replaces the "Checking your
+    // dependencies" row in place rather than stacking a second one under it.
+    if (options.key) {
+      this.items = this.items.filter((item) => !(item.kind === 'step' && item.key === options.key));
+    }
+
     const id = this.nextId();
     this.push({
       id,
@@ -483,6 +492,7 @@ export class DriftSession {
       total: 0,
       state: 'running',
       log: [],
+      key: options.key,
     });
 
     const update = (patch: Partial<Extract<ThreadItem, { kind: 'step' }>>) => {
@@ -565,7 +575,11 @@ export class DriftSession {
           return;
         }
         entries.push({ ...activity, id: `${groupId}-a${entries.length + 1}` });
-        if (entries.length > 80) entries.shift();
+        // Raised from 80 now that `surface()` (`agents/cli.ts`) reports every
+        // line a chunk carries instead of just its last one — the same fix
+        // that stopped losing an agent's reasoning also means a verbose run
+        // produces more rows, and the old cap started evicting real content.
+        if (entries.length > 400) entries.shift();
         this.emitter.fire();
       },
       finish: (groupId, state, changedFiles) => {

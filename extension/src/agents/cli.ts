@@ -467,14 +467,35 @@ export class CliFixAgent implements FixAgent {
       // column of rows all called STDERR — the agent's actual thinking, filed
       // under the least informative word available. Both pipes are reported
       // the same way, and the reader classifies by content.
+      //
+      // A `data` event is a pipe-buffering artifact, not a line: several
+      // lines of reasoning routinely arrive in the same chunk as the tool
+      // call that follows them. Reporting only the chunk's last line (as this
+      // used to) silently discarded every line before it — which is why the
+      // panel showed commands but not the reasoning that led to them. Lines
+      // are buffered per stream and each complete one is reported as it
+      // arrives; a line split across chunk boundaries is held until it closes.
+      const pending: Record<'out' | 'err', string> = { out: '', err: '' };
       const surface = (chunk: Buffer, into: 'out' | 'err') => {
         const text = chunk.toString();
         if (into === 'out') stdout += text;
         else stderr += text;
         lastOutput = Date.now();
 
-        const line = text.trim().split('\n').filter(Boolean).pop();
-        if (line && !isNoise(line)) ctx.report(line.slice(0, 400));
+        pending[into] += text;
+        const lines = pending[into].split('\n');
+        pending[into] = lines.pop() ?? '';
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed && !isNoise(trimmed)) ctx.report(trimmed.slice(0, 400));
+        }
+      };
+      const flushPending = () => {
+        for (const into of ['out', 'err'] as const) {
+          const trimmed = pending[into].trim();
+          pending[into] = '';
+          if (trimmed && !isNoise(trimmed)) ctx.report(trimmed.slice(0, 400));
+        }
       };
 
       child.stdout.on('data', (chunk: Buffer) => surface(chunk, 'out'));
@@ -493,6 +514,7 @@ export class CliFixAgent implements FixAgent {
         clearTimeout(killTimer);
         clearInterval(heartbeat);
         ctx.signal.removeEventListener('abort', onAbort);
+        flushPending();
         resolve({ code: code ?? 0, stdout, stderr });
       });
 

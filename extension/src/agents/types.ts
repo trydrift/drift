@@ -302,6 +302,13 @@ export function buildFixPrompt(task: FixTask): string {
     [
       '## Rules',
       '',
+      `0. You may edit ONLY these ${task.files.length} file${task.files.length === 1 ? '' : 's'}, listed above with their`,
+      '   current contents — nothing else, including generated/bundled output,',
+      '   lockfiles, or a file you notice is *also* broken by this upgrade. This',
+      '   is enforced after you finish: an edit to any other file throws out',
+      '   this whole commit\'s work. If the real fix needs a file outside this',
+      '   list, say so and stop rather than making the edit.',
+      `   In scope: ${task.files.map((f) => f.path).join(', ')}`,
       '1. Change ONLY what is required for this specific fix. No refactoring,',
       '   renaming, reformatting, or tidying of code you happen to pass by.',
       '2. Do NOT change dependency versions in any manifest or lockfile.',
@@ -317,6 +324,13 @@ export function buildFixPrompt(task: FixTask): string {
       '   line of your reply, output nothing else, and stop. You will be asked',
       '   again with the answer. Use this sparingly; a question that the evidence',
       '   already answers wastes the developer\'s attention.',
+      '7. Drift runs this repository\'s own build, typecheck, and test commands',
+      '   itself once every commit in this run has landed. Do not run the full',
+      '   test suite, a full build, or other broad verification yourself — it',
+      '   duplicates what is about to run anyway and this is the slowest part',
+      '   of a fix. A narrow, targeted check on a file you just edited (a single',
+      '   test, a syntax check) is fine when you are unsure; a full `npm test`',
+      '   or `npm run build` is not.',
     ].join('\n'),
   );
 
