@@ -5,6 +5,7 @@ import type { DriftConfig } from '../config/schema.js';
 import { loadConfig } from '../config/load.js';
 import { GitHubClient } from '../github/client.js';
 import { runPipeline } from '../pipeline.js';
+import { DRIFT_LABEL } from '../dispatch/index.js';
 import { renderPullRequestBody } from '../report/markdown.js';
 import {
   buildSarifLog,
@@ -127,16 +128,12 @@ export async function runAction(): Promise<number> {
     await writeOutputs(result.dispatch, result.summary);
     if (result.plan) {
       await writeJobSummary(renderPullRequestBody(result.plan, effectiveConfig));
-      await uploadCodeScanning({
-        repo,
-        config: effectiveConfig,
-        github,
-        logger,
-        findings: findingsFromPlan(result.plan, {
-          includeInformational: effectiveConfig.codeScanning.includeInformational,
-        }),
-        category: 'drift/diff',
+      const findings = findingsFromPlan(result.plan, {
+        includeInformational: effectiveConfig.codeScanning.includeInformational,
+        granularity: effectiveConfig.codeScanning.granularity,
       });
+      await uploadCodeScanning({ repo, config: effectiveConfig, github, logger, findings, category: 'drift/diff' });
+      await createIssuesForFindings({ repo, config: effectiveConfig, github, logger, findings });
     }
 
     if (result.dispatch.status === 'dispatched') {
@@ -195,6 +192,50 @@ async function uploadCodeScanning(args: {
 }
 
 /**
+ * Open a GitHub issue for every finding, in addition to the code scanning
+ * upload — opt-in via `codeScanning.createIssuesPerAlert`, for teams that
+ * want alerts triaged and assigned the way any other issue is rather than
+ * only through the Security tab.
+ *
+ * Each issue embeds the finding's `ruleId` as a hidden marker and a rescan
+ * looks that marker up before filing — the same statelessness
+ * `requestApproval` already relies on for the plan-approval issue (see
+ * `dispatch/index.ts`) — so a rescan finds the existing issue rather than
+ * piling up duplicates. It does not update an existing issue's body; a
+ * finding whose content changed still keeps its original issue open.
+ */
+async function createIssuesForFindings(args: {
+  repo: RepoContext;
+  config: DriftConfig;
+  github: GitHubClient;
+  logger: Logger;
+  findings: SarifFinding[];
+}): Promise<void> {
+  const { repo, config, github, logger, findings } = args;
+  if (!config.codeScanning.createIssuesPerAlert || findings.length === 0) return;
+
+  for (const finding of findings) {
+    const marker = `drift-alert:${finding.ruleId}`;
+    const existing = await github.findOpenPlanIssue(repo, marker);
+    if (existing !== null) {
+      logger.debug(`${finding.ruleId} already filed as issue #${existing}; not duplicating`);
+      continue;
+    }
+
+    const issue = await github.createIssue(repo, {
+      title: `Drift: ${finding.ruleName}`,
+      body: `${finding.message}\n\n<!-- ${marker} -->`,
+      labels: [DRIFT_LABEL, `drift:${finding.level}`],
+    });
+    if (!issue) {
+      logger.warn(`Could not open an issue for ${finding.ruleId}. Check that the token has \`issues: write\`.`);
+      continue;
+    }
+    logger.info(`Filed ${finding.ruleId} as issue #${issue.number}`);
+  }
+}
+
+/**
  * The `schedule`-triggered path: check every installed dependency against
  * its registry, the same way `drift outdated` does locally, and alert on
  * whatever is outdated — safe upgrades and ones with real breaking changes
@@ -242,9 +283,11 @@ async function runOutdatedScan(
 
     const findings = findingsFromCandidates(scan.candidates, {
       includeInformational: config.codeScanning.includeInformational,
+      granularity: config.codeScanning.granularity,
     });
 
     await uploadCodeScanning({ repo, config, github, logger, findings, category: 'drift/outdated' });
+    await createIssuesForFindings({ repo, config, github, logger, findings });
 
     const summary =
       `Checked ${scan.checked} dependenc${scan.checked === 1 ? 'y' : 'ies'}: ${scan.upToDate} up to date, ` +
