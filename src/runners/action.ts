@@ -138,10 +138,11 @@ export async function runAction(): Promise<number> {
     await writeOutputs(result.dispatch, result.summary);
     if (result.plan) {
       await writeJobSummary(renderPullRequestBody(result.plan, effectiveConfig));
-      const findings = findingsFromPlan(result.plan, {
+      const findings = await findingsFromPlan(result.plan, {
         includeInformational: effectiveConfig.codeScanning.includeInformational,
         granularity: effectiveConfig.codeScanning.granularity,
         repoBlobUrl: `https://github.com/${repo.owner}/${repo.repo}/blob/${repo.afterSha}`,
+        githubToken: inputs.repoToken,
       });
       await uploadCodeScanning({ repo, config: effectiveConfig, github, logger, findings, category: 'drift/diff' });
       await createIssuesForFindings({ repo, config: effectiveConfig, github, logger, findings });
@@ -293,10 +294,11 @@ async function runOutdatedScan(
         `${scan.candidates.length} outdated, ${scan.unchecked.length} could not be checked.`,
     );
 
-    const findings = findingsFromCandidates(scan.candidates, {
+    const findings = await findingsFromCandidates(scan.candidates, {
       includeInformational: config.codeScanning.includeInformational,
       granularity: config.codeScanning.granularity,
       repoBlobUrl: `https://github.com/${repo.owner}/${repo.repo}/blob/${repo.afterSha}`,
+      githubToken: inputs.repoToken,
     });
 
     await uploadCodeScanning({ repo, config, github, logger, findings, category: 'drift/outdated' });

@@ -106,7 +106,7 @@ function rationale(overrides: Partial<UpgradeRationale> = {}): UpgradeRationale 
 }
 
 describe('findingsFromPlan', () => {
-  test('one finding per package, folding every locally-actionable breaking change into its own block', () => {
+  test('one finding per package, folding every locally-actionable breaking change into its own block', async () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -116,7 +116,7 @@ describe('findingsFromPlan', () => {
       impactSites: [site('bc_1'), site('bc_2')],
     }) as RemediationPlan;
 
-    const findings = findingsFromPlan(plan);
+    const findings = await findingsFromPlan(plan);
     assert.equal(findings.length, 1, 'one finding per package, not one per breaking change');
     assert.equal(findings[0]!.ruleId, 'drift/npm/acme-sdk', 'rule is stable per package, so a rescan replaces it');
     assert.equal(findings[0]!.level, 'error', 'high upstream confidence + high local confidence is an error');
@@ -132,7 +132,7 @@ describe('findingsFromPlan', () => {
     assert.match(findings[0]!.message, /Seen at.*src\/index\.ts:12/s, 'the actual call site is still listed');
   });
 
-  test('a breaking change with no impact site is omitted from the alert body, not the whole alert', () => {
+  test('a breaking change with no impact site is omitted from the alert body, not the whole alert', async () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -142,14 +142,14 @@ describe('findingsFromPlan', () => {
       impactSites: [site('bc_1')], // bc_2 reaches no code in this repo
     }) as RemediationPlan;
 
-    const findings = findingsFromPlan(plan);
+    const findings = await findingsFromPlan(plan);
     assert.equal(findings.length, 1);
     assert.match(findings[0]!.message, /bc_1/);
     assert.doesNotMatch(findings[0]!.message, /bc_2/, 'the upstream-only change is not itemized');
     assert.match(findings[0]!.message, /1 additional upstream breaking change/);
   });
 
-  test('multiple sites for the same breaking change: one alert, one primary location, the rest related', () => {
+  test('multiple sites for the same breaking change: one alert, one primary location, the rest related', async () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -162,14 +162,14 @@ describe('findingsFromPlan', () => {
       ],
     }) as RemediationPlan;
 
-    const [finding] = findingsFromPlan(plan);
+    const [finding] = await findingsFromPlan(plan);
     assert.equal(finding!.primaryLocation.file, dependencyChange.manifestPath);
     assert.equal(finding!.relatedLocations.length, 2);
     assert.equal(finding!.relatedLocations[0]!.file, 'src/a.ts');
     assert.equal(finding!.relatedLocations[1]!.file, 'src/b.ts');
   });
 
-  test('upstream-only confidence downgrades severity when local confidence is weaker', () => {
+  test('upstream-only confidence downgrades severity when local confidence is weaker', async () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -179,11 +179,11 @@ describe('findingsFromPlan', () => {
       impactSites: [site('bc_1', { confidence: 'medium' })],
     }) as RemediationPlan;
 
-    const [finding] = findingsFromPlan(plan);
+    const [finding] = await findingsFromPlan(plan);
     assert.equal(finding!.level, 'warning', 'one strong signal but not two is a warning, not an error');
   });
 
-  test('a resolved advisory is alerted even with no breaking change', () => {
+  test('a resolved advisory is alerted even with no breaking change', async () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -211,7 +211,7 @@ describe('findingsFromPlan', () => {
       ],
     }) as RemediationPlan;
 
-    const findings = findingsFromPlan(plan);
+    const findings = await findingsFromPlan(plan);
     assert.equal(findings.length, 1);
     assert.equal(findings[0]!.ruleId, 'drift/npm/acme-sdk');
     assert.equal(findings[0]!.level, 'note', 'resolving an advisory with nothing broken is informational');
@@ -219,7 +219,7 @@ describe('findingsFromPlan', () => {
     assert.equal(findings[0]!.helpUri, 'https://example.com/advisory');
   });
 
-  test('a plain version bump with no signal is dropped by default', () => {
+  test('a plain version bump with no signal is dropped by default', async () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -230,9 +230,9 @@ describe('findingsFromPlan', () => {
       rationale: [rationale({ security: { ...cleanSecurity, checked: false, direction: 'unknown' } })],
     }) as RemediationPlan;
 
-    assert.equal(findingsFromPlan(plan).length, 0, 'includeInformational defaults to false');
-    assert.equal(findingsFromPlan(plan, { includeInformational: true }).length, 1);
-    const [finding] = findingsFromPlan(plan, { includeInformational: true });
+    assert.equal((await findingsFromPlan(plan)).length, 0, 'includeInformational defaults to false');
+    assert.equal((await findingsFromPlan(plan, { includeInformational: true })).length, 1);
+    const [finding] = await findingsFromPlan(plan, { includeInformational: true });
     assert.equal(finding!.ruleId, 'drift/npm/acme-sdk');
     assert.equal(
       finding!.ruleName,
@@ -241,7 +241,7 @@ describe('findingsFromPlan', () => {
     );
   });
 
-  test('a package with a breaking change AND a security signal keeps the generic rule name', () => {
+  test('a package with a breaking change AND a security signal keeps the generic rule name', async () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -269,11 +269,11 @@ describe('findingsFromPlan', () => {
       ],
     }) as RemediationPlan;
 
-    const [finding] = findingsFromPlan(plan);
+    const [finding] = await findingsFromPlan(plan);
     assert.equal(finding!.ruleName, 'acme-sdk: dependency finding', 'no single short label fits more than one block');
   });
 
-  test('an unresolved current advisory is an error', () => {
+  test('an unresolved current advisory is an error', async () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -301,11 +301,11 @@ describe('findingsFromPlan', () => {
       ],
     }) as RemediationPlan;
 
-    const [finding] = findingsFromPlan(plan);
+    const [finding] = await findingsFromPlan(plan);
     assert.equal(finding!.level, 'error');
   });
 
-  test('package granularity (default) never carries a snippet', () => {
+  test('package granularity (default) never carries a snippet', async () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -315,11 +315,11 @@ describe('findingsFromPlan', () => {
       impactSites: [site('bc_1')],
     }) as RemediationPlan;
 
-    const [finding] = findingsFromPlan(plan);
+    const [finding] = await findingsFromPlan(plan);
     assert.ok(!finding!.snippetOk, 'bundling many possible issues under one alert makes any one snippet arbitrary');
   });
 
-  test('every "Seen at" link resolves to a real repo URL, including sites beyond the related-locations cap', () => {
+  test('every "Seen at" link resolves to a real repo URL, including sites beyond the related-locations cap', async () => {
     // 11 breaking changes, one site each — more than MAX_RELATED_LOCATIONS
     // (9), so some sites fall outside the numeric relatedLocations id space
     // and must fall back to an absolute blob URL rather than a broken
@@ -334,7 +334,7 @@ describe('findingsFromPlan', () => {
       impactSites: ids.map((id) => site(id, { file: `src/${id}.ts`, line: 1 })),
     }) as RemediationPlan;
 
-    const [finding] = findingsFromPlan(plan, { repoBlobUrl: 'https://github.com/acme/app/blob/deadbeef' });
+    const [finding] = await findingsFromPlan(plan, { repoBlobUrl: 'https://github.com/acme/app/blob/deadbeef' });
     for (const id of ids) {
       assert.match(
         finding!.message,
@@ -345,7 +345,7 @@ describe('findingsFromPlan', () => {
     assert.doesNotMatch(finding!.message, /\]\(src\//, 'no link is left as a bare relative path');
   });
 
-  test('breakingChange granularity: one alert per breaking change, each with its own stable ruleId and a representative snippet', () => {
+  test('breakingChange granularity: one alert per breaking change, each with its own stable ruleId and a representative snippet', async () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -355,7 +355,7 @@ describe('findingsFromPlan', () => {
       impactSites: [site('bc_1', { file: 'src/a.ts' }), site('bc_2', { file: 'src/b.ts' })],
     }) as RemediationPlan;
 
-    const findings = findingsFromPlan(plan, { granularity: 'breakingChange' });
+    const findings = await findingsFromPlan(plan, { granularity: 'breakingChange' });
     assert.equal(findings.length, 2, 'one alert per breaking change');
     const ruleIds = findings.map((f) => f.ruleId);
     assert.ok(new Set(ruleIds).size === 2, 'ruleIds are distinct');
@@ -363,11 +363,11 @@ describe('findingsFromPlan', () => {
     for (const finding of findings) assert.ok(finding.snippetOk, 'scoped to one breaking change, so its primary site is representative');
 
     // rescanning the same plan produces the same ruleIds, so GitHub replaces each alert in place
-    const again = findingsFromPlan(plan, { granularity: 'breakingChange' });
+    const again = await findingsFromPlan(plan, { granularity: 'breakingChange' });
     assert.deepEqual(again.map((f) => f.ruleId).sort(), ruleIds.sort());
   });
 
-  test('the declaration source link carries a text fragment to the changed declaration, not just the top of the file', () => {
+  test('the declaration source link carries a text fragment to the changed declaration, not just the top of the file', async () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -383,7 +383,7 @@ describe('findingsFromPlan', () => {
       impactSites: [site('bc_1')],
     }) as RemediationPlan;
 
-    const [finding] = findingsFromPlan(plan, { granularity: 'breakingChange' });
+    const [finding] = await findingsFromPlan(plan, { granularity: 'breakingChange' });
     assert.match(finding!.helpUri!, /^https:\/\/example\.com\/diff#:~:text=/, 'a text fragment is appended to the cited URL');
     assert.match(
       decodeURIComponent(finding!.helpUri!.split('#:~:text=')[1]!),
@@ -392,7 +392,7 @@ describe('findingsFromPlan', () => {
     );
   });
 
-  test('the before/after declaration diff escapes angle brackets so a code span cannot be mistaken for an HTML tag', () => {
+  test('the before/after declaration diff escapes angle brackets so a code span cannot be mistaken for an HTML tag', async () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -408,19 +408,19 @@ describe('findingsFromPlan', () => {
       impactSites: [site('bc_1')],
     }) as RemediationPlan;
 
-    const [finding] = findingsFromPlan(plan, { granularity: 'breakingChange' });
+    const [finding] = await findingsFromPlan(plan, { granularity: 'breakingChange' });
     assert.match(finding!.message, /ZodCoercedBoolean&lt;T&gt;/, 'angle brackets are HTML-escaped inside the code span');
     assert.doesNotMatch(finding!.message, /ZodCoercedBoolean<T>/, 'the raw, unescaped angle brackets never reach the markdown');
 
     // The plain-text fallback (SARIF requires message.text) unescapes them
     // back, since it is never parsed as markdown/HTML in the first place.
-    const log = buildSarifLog(findingsFromPlan(plan, { granularity: 'breakingChange' })) as {
+    const log = buildSarifLog(await findingsFromPlan(plan, { granularity: 'breakingChange' })) as {
       runs: [{ results: [{ message: { text: string } }] }];
     };
     assert.match(log.runs[0].results[0]!.message.text, /ZodCoercedBoolean<T>/);
   });
 
-  test('breakingChange granularity: rule names include the symbol, so same-kind alerts are distinguishable', () => {
+  test('breakingChange granularity: rule names include the symbol, so same-kind alerts are distinguishable', async () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -433,7 +433,7 @@ describe('findingsFromPlan', () => {
       impactSites: [site('bc_1', { file: 'src/a.ts' }), site('bc_2', { file: 'src/b.ts' })],
     }) as RemediationPlan;
 
-    const findings = findingsFromPlan(plan, { granularity: 'breakingChange' });
+    const findings = await findingsFromPlan(plan, { granularity: 'breakingChange' });
     const ruleNames = findings.map((f) => f.ruleName);
     assert.ok(new Set(ruleNames).size === 2, 'rule names are distinct when the symbols differ');
     for (const name of ruleNames) {
@@ -441,7 +441,7 @@ describe('findingsFromPlan', () => {
     }
   });
 
-  test('affectedSite granularity: one alert per call site, none carrying related locations', () => {
+  test('affectedSite granularity: one alert per call site, none carrying related locations', async () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -454,7 +454,7 @@ describe('findingsFromPlan', () => {
       ],
     }) as RemediationPlan;
 
-    const findings = findingsFromPlan(plan, { granularity: 'affectedSite' });
+    const findings = await findingsFromPlan(plan, { granularity: 'affectedSite' });
     assert.equal(findings.length, 2, 'one alert per call site, not per breaking change');
     const files = findings.map((f) => f.primaryLocation.file).sort();
     assert.deepEqual(files, ['src/a.ts', 'src/b.ts']);
@@ -465,7 +465,7 @@ describe('findingsFromPlan', () => {
     assert.notEqual(findings[0]!.ruleId, findings[1]!.ruleId);
   });
 
-  test('a security signal always gets its own single alert, regardless of granularity', () => {
+  test('a security signal always gets its own single alert, regardless of granularity', async () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -492,7 +492,7 @@ describe('findingsFromPlan', () => {
       ],
     }) as RemediationPlan;
 
-    const findings = findingsFromPlan(plan, { granularity: 'affectedSite' });
+    const findings = await findingsFromPlan(plan, { granularity: 'affectedSite' });
     // one alert per call site for the breaking change, plus exactly one for security
     assert.equal(findings.length, 2);
     const securityFinding = findings.find((f) => f.ruleId.endsWith('/other'));
@@ -525,7 +525,7 @@ describe('findingsFromCandidates', () => {
     toolRequests: [],
   };
 
-  test('a safe candidate with no commits gets the exact upgrade command as its fix', () => {
+  test('a safe candidate with no commits gets the exact upgrade command as its fix', async () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -537,7 +537,7 @@ describe('findingsFromCandidates', () => {
     }) as RemediationPlan;
 
     const candidate: UpgradeCandidate = { ...baseCandidate, plan };
-    const [finding] = findingsFromCandidates([candidate], { includeInformational: true });
+    const [finding] = await findingsFromCandidates([candidate], { includeInformational: true });
 
     assert.ok(finding, 'a candidate with a plan produces a finding');
     assert.equal(plan.commits.length, 0, 'a clean candidate has nothing to commit');
@@ -545,7 +545,7 @@ describe('findingsFromCandidates', () => {
     assert.match(finding!.fix!.command!, /1\.2\.0/);
   });
 
-  test('a safe candidate produces no finding when informational alerts are off', () => {
+  test('a safe candidate produces no finding when informational alerts are off', async () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -557,16 +557,16 @@ describe('findingsFromCandidates', () => {
     }) as RemediationPlan;
 
     const candidate: UpgradeCandidate = { ...baseCandidate, plan };
-    assert.equal(findingsFromCandidates([candidate]).length, 0);
+    assert.equal((await findingsFromCandidates([candidate])).length, 0);
   });
 
-  test('a candidate with no plan produces no finding', () => {
-    assert.equal(findingsFromCandidates([{ ...baseCandidate }]).length, 0);
+  test('a candidate with no plan produces no finding', async () => {
+    assert.equal((await findingsFromCandidates([{ ...baseCandidate }])).length, 0);
   });
 });
 
 describe('buildSarifLog', () => {
-  test('one rule per ruleId, one result per finding, with a category and a fingerprint', () => {
+  test('one rule per ruleId, one result per finding, with a category and a fingerprint', async () => {
     const plan = buildPlan({
       repo,
       config: DEFAULT_CONFIG,
@@ -576,7 +576,7 @@ describe('buildSarifLog', () => {
       impactSites: [site('bc_1')],
     }) as RemediationPlan;
 
-    const log = buildSarifLog(findingsFromPlan(plan), 'drift/diff') as {
+    const log = buildSarifLog(await findingsFromPlan(plan), 'drift/diff') as {
       runs: [
         {
           tool: { driver: { rules: unknown[] } };
@@ -592,7 +592,7 @@ describe('buildSarifLog', () => {
     assert.ok(log.runs[0]!.results[0]!.partialFingerprints.primaryLocationLineHash.length > 0);
   });
 
-  test('an empty finding list is still a valid, empty SARIF log', () => {
+  test('an empty finding list is still a valid, empty SARIF log', async () => {
     const log = buildSarifLog([]) as { runs: [{ results: unknown[] }] };
     assert.equal(log.runs[0]!.results.length, 0);
   });

@@ -14,6 +14,7 @@ import type {
   RemediationPlan,
 } from '../types.js';
 import { upgradeCommandFor, type UpgradeCandidate } from '../upgrade/scan.js';
+import { attachGitHubSources } from '../evidence/github-source.js';
 
 /**
  * Turning a Drift plan into GitHub code scanning alerts.
@@ -317,7 +318,7 @@ export type AlertGranularity = 'package' | 'breakingChange' | 'affectedSite';
  * like a line number, rescanning replaces each alert in place rather than
  * accumulating a new one alongside the old.
  */
-export function findingsFromPlan(
+export async function findingsFromPlan(
   plan: RemediationPlan,
   opts: {
     includeInformational?: boolean;
@@ -325,12 +326,15 @@ export function findingsFromPlan(
     granularity?: AlertGranularity;
     /** `https://github.com/<owner>/<repo>/blob/<sha>` — see `mdLink`. */
     repoBlobUrl?: string;
+    /** Raises GitHub's rate limit and enables real source-line links — see `attachGitHubSources`. */
+    githubToken?: string;
   } = {},
-): SarifFinding[] {
+): Promise<SarifFinding[]> {
   const includeInformational = opts.includeInformational ?? false;
   const granularity = opts.granularity ?? 'package';
   const repoBlobUrl = opts.repoBlobUrl;
   const findings: SarifFinding[] = [];
+  plan = await attachGitHubSources(plan, opts.githubToken);
 
   for (const change of plan.changes) {
     const allBreaking = plan.breakingChanges.filter(
@@ -470,10 +474,16 @@ function hasSecuritySignal(rationale: UpgradeRationale | undefined): boolean {
  * `findingsFromPlan` would describe on its own. The exact upgrade command
  * fills that gap, so "safe to upgrade" alerts still say what to run.
  */
-export function findingsFromCandidates(
+export async function findingsFromCandidates(
   candidates: readonly UpgradeCandidate[],
-  opts: { includeInformational?: boolean; granularity?: AlertGranularity; repoBlobUrl?: string } = {},
-): SarifFinding[] {
+  opts: {
+    includeInformational?: boolean;
+    granularity?: AlertGranularity;
+    repoBlobUrl?: string;
+    /** Raises GitHub's rate limit and enables real source-line links — see `attachGitHubSources`. */
+    githubToken?: string;
+  } = {},
+): Promise<SarifFinding[]> {
   const findings: SarifFinding[] = [];
 
   for (const candidate of candidates) {
@@ -492,7 +502,7 @@ export function findingsFromCandidates(
       };
     };
 
-    findings.push(...findingsFromPlan(candidate.plan, { ...opts, fixOf }));
+    findings.push(...(await findingsFromPlan(candidate.plan, { ...opts, fixOf })));
   }
 
   return findings;

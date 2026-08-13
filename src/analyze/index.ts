@@ -114,7 +114,6 @@ function fromComputedEvidence(record: Evidence): BreakingChange[] {
     summary: finding.detail,
     before: finding.before,
     after: finding.after,
-    sourceUrl: finding.sourceUrl,
     remediation: remediationForFinding(finding, record.dependency),
     symbols: symbolsFromFinding(finding),
     // Provisional; `scoreUpstream` decides the real value once citations are
