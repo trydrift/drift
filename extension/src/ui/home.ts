@@ -2181,6 +2181,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         ...(canOpenPr
           ? [{ label: 'Push and open a pull request', value: 'pr', description: `${branch} → ${base}` }]
           : []),
+        // `resolveBaseBranch` guesses from the reflog and the remote's default —
+        // right for a feature branch, wrong the moment someone is stacking work
+        // on top of another branch rather than merging straight back to main.
+        ...(slug ? [{ label: 'Choose a different base branch', value: 'pr-other', description: 'Pick where the pull request lands' }] : []),
         { label: 'Push only', value: 'push', description: 'Send the branch, open the PR yourself' },
         { label: 'Not yet', value: 'no', description: 'The commit stays local' },
       ],
@@ -2190,6 +2194,27 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     if (answer === 'no' || answer === '') {
       this.session.notice('info', `Kept local. Say \`/push\` when you want \`${branch}\` on the remote.`);
       return;
+    }
+
+    let chosenBase = base;
+    let baseReason = resolved?.reason;
+    if (answer === 'pr-other') {
+      const branches = (await git.listBranches()).filter((name) => name !== branch);
+      if (branches.length === 0) {
+        this.session.notice('warn', 'There is no other local branch to target — pushing only.');
+      } else {
+        const picked = await this.session.ask(
+          `Which branch should \`${branch}\` merge into?`,
+          branches.map((name) => ({ label: name, value: name })),
+          false,
+        );
+        if (!picked) {
+          this.session.notice('info', `Kept local. Say \`/push\` when you want \`${branch}\` on the remote.`);
+          return;
+        }
+        chosenBase = picked;
+        baseReason = undefined;
+      }
     }
 
     const step = this.session.step(`Pushing ${branch}`);
@@ -2206,8 +2231,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       return;
     }
 
-    if (answer !== 'pr' || !slug || !base) {
-      const url = compareUrl(remote, base ?? 'main', branch);
+    if ((answer !== 'pr' && answer !== 'pr-other') || !slug || !chosenBase) {
+      const url = compareUrl(remote, chosenBase ?? 'main', branch);
       this.session.say(
         url
           ? `\`${branch}\` is on the remote. [Open a pull request](${url}) when you are ready.`
@@ -2219,11 +2244,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     await this.createPullRequest({
       slug,
       remote,
-      base,
+      base: chosenBase,
       branch,
       root,
       plan,
-      ...(resolved?.reason ? { baseReason: resolved.reason } : {}),
+      ...(baseReason ? { baseReason } : {}),
       confirm: prSettings.confirm,
       ...(prSettings.draft ? { draft: true } : {}),
       labels: prSettings.labels,

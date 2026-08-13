@@ -282,6 +282,21 @@ export class Git {
   }
 
   /**
+   * Every local branch, current one first.
+   *
+   * Used where a caller needs to offer a real choice of target branch rather
+   * than the auto-resolved one — the branch the developer actually wants to
+   * land on is not always the one `resolveBaseBranch` guesses.
+   */
+  async listBranches(): Promise<string[]> {
+    const out = (await this.tryExec(['for-each-ref', '--format=%(refname:short)', 'refs/heads/'])) ?? '';
+    const names = out.split('\n').map((line) => line.trim()).filter(Boolean);
+    const current = await this.currentBranch().catch(() => null);
+    if (!current) return names;
+    return [current, ...names.filter((name) => name !== current)];
+  }
+
+  /**
    * The branch a pull request should target.
    *
    * `origin/HEAD` is the remote's own answer and the only authoritative one, but
