@@ -598,33 +598,63 @@ export class GitHubClient {
    * different branch — GitHub keys code scanning results by `(ref,
    * commit_sha)`, not by commit alone.
    */
+  /**
+   * A `500` here is usually GitHub's own upload endpoint hiccuping, not a
+   * problem with the payload (verified by hand: a SARIF file GitHub had just
+   * rejected with a `500` uploaded and processed cleanly seconds later, no
+   * changes made). A transient `5xx` or network error is worth a couple of
+   * retries before giving up; a `403` or other `4xx` is not — the payload or
+   * the token won't be any different on the next attempt.
+   */
   async uploadSarif(
     repo: RepoContext,
     params: { sarif: Record<string, unknown>; commitSha: string; ref: string },
   ): Promise<boolean> {
-    try {
-      const gzipped = gzipSync(Buffer.from(JSON.stringify(params.sarif), 'utf8'));
-      await this.octokit.codeScanning.uploadSarif({
-        owner: repo.owner,
-        repo: repo.repo,
-        commit_sha: params.commitSha,
-        ref: params.ref,
-        sarif: gzipped.toString('base64'),
-      });
-      this.logger.info('Uploaded SARIF results to code scanning.');
-      return true;
-    } catch (err) {
-      const status = (err as { status?: number })?.status;
-      if (status === 403) {
-        this.logger.warn(
-          'Could not upload code scanning results: the token is missing `security-events: write`. ' +
-            'Add it to the workflow job\'s `permissions` to enable Drift\'s code scanning alerts.',
+    const gzipped = gzipSync(Buffer.from(JSON.stringify(params.sarif), 'utf8'));
+    const maxAttempts = 3;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        await this.octokit.codeScanning.uploadSarif({
+          owner: repo.owner,
+          repo: repo.repo,
+          commit_sha: params.commitSha,
+          ref: params.ref,
+          sarif: gzipped.toString('base64'),
+        });
+        this.logger.info('Uploaded SARIF results to code scanning.');
+        return true;
+      } catch (err) {
+        const status = (err as { status?: number })?.status;
+        if (status === 403) {
+          this.logger.warn(
+            'Could not upload code scanning results: the token is missing `security-events: write`. ' +
+              'Add it to the workflow job\'s `permissions` to enable Drift\'s code scanning alerts.',
+          );
+          return false;
+        }
+
+        const retryable = status === undefined || status >= 500;
+        if (retryable && attempt < maxAttempts) {
+          const delayMs = 500 * 2 ** (attempt - 1);
+          this.logger.warn(
+            `Code scanning upload failed (attempt ${attempt}/${maxAttempts}${status ? `, HTTP ${status}` : ''}); retrying in ${delayMs}ms.`,
+          );
+          await sleep(delayMs);
+          continue;
+        }
+
+        // `error`, not `warn`: this is the last attempt, findings that exist
+        // are simply not visible in the Security tab, and a warning-level
+        // annotation is easy to miss in a run that otherwise reports success.
+        this.logger.error(
+          `Could not upload code scanning results after ${attempt} attempt${attempt === 1 ? '' : 's'}: ` +
+            `${(err as Error).message || `HTTP ${status ?? 'unknown'}`}.`,
         );
-      } else {
-        this.logger.warn(`Could not upload code scanning results: ${(err as Error).message}`);
+        return false;
       }
-      return false;
     }
+    return false;
   }
 
   async findPullRequestForBranch(repo: RepoContext, branchName: string): Promise<{ number: number; url: string } | null> {
@@ -773,6 +803,10 @@ export class GitHubClient {
   get rest(): Octokit {
     return this.octokit;
   }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function isNotFound(err: unknown): boolean {
