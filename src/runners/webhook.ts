@@ -235,6 +235,7 @@ async function handlePush(
     logger,
     github,
     copilotToken: options.copilotToken,
+    githubToken: options.repoToken,
     dryRun: options.dryRun,
     // No workspace: localization is unavailable here, and the pipeline warns.
     workspace: undefined,

@@ -127,6 +127,7 @@ export async function runAction(): Promise<number> {
       logger,
       github,
       copilotToken: inputs.copilotToken,
+      githubToken: inputs.repoToken,
       dryRun: inputs.dryRun,
       // Never approved on this path. Approval arrives only through
       // `issue_comment`, and only after `applyApproval` has verified it.

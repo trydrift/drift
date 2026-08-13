@@ -367,13 +367,20 @@ export function findingsFromPlan(
     const fix = opts.fixOf?.(change) ?? fixFromCommit(commit, plan);
 
     if (granularity === 'package') {
+      const blocks = [...breakingBlocks.map((x) => x.block), ...extraBlocks];
       findings.push(
         buildPackageFinding({
           change,
-          blocks: [...breakingBlocks.map((x) => x.block), ...extraBlocks],
+          blocks,
           upstreamOnlyCount,
           fix,
           repoBlobUrl,
+          // Only when the finding is exactly one block with something to
+          // say about itself — several breaking changes (or a breaking
+          // change alongside a security signal) have no single good short
+          // label, so those keep the generic "dependency finding" name.
+          ruleName:
+            blocks.length === 1 && blocks[0]!.ruleNameSuffix ? `${change.name}: ${blocks[0]!.ruleNameSuffix}` : undefined,
         }),
       );
       continue;
@@ -426,6 +433,7 @@ export function findingsFromPlan(
           upstreamOnlyCount: 0,
           fix,
           ruleIdSuffix: 'other',
+          ruleName: block.ruleNameSuffix ? `${change.name}: ${block.ruleNameSuffix}` : undefined,
           repoBlobUrl,
         }),
       );
@@ -552,6 +560,14 @@ interface FindingBlock {
   primaryCandidate?: SarifLocation;
   relatedCandidates: SarifLocation[];
   helpUri?: string;
+  /**
+   * A short, human-readable label for what this block is — "Outdated —
+   * safe to upgrade", "Resolves 1 known advisory" — used as the rule name
+   * when a finding turns out to be exactly this one block and nothing
+   * else, so the Security tab's alert list says what kind of alert this is
+   * rather than the generic "dependency finding" for every alert alike.
+   */
+  ruleNameSuffix?: string;
 }
 
 const LEVEL_RANK: Record<SarifLevel, number> = { error: 2, warning: 1, note: 0 };
@@ -568,12 +584,14 @@ function buildBreakingBlock(breaking: BreakingChange, sites: ImpactSite[], evide
   const related = sorted.slice(1, 1 + MAX_RELATED_LOCATIONS);
   const localConfidence = primary.confidence;
   const files = new Set(sites.map((s) => s.file));
+  // `sourceUrl` is the real GitHub declaration — a genuine `#L<line>` link
+  // into the actual TypeScript source, found by `resolveGitHubDeclaration`
+  // matching a git tag to this version and locating the symbol there. Only
+  // set when that succeeded; falls back to the cited (compiled, CDN)
+  // declaration file otherwise, with a text fragment standing in for a real
+  // line number since a bundled `.d.ts` doesn't have one worth trusting.
   const citedUri = evidenceUrlForBreaking(breaking, evidence);
-  // The cited URL is the whole declarations file — for a package like zod
-  // that's thousands of lines in one file, and pointing at line 1 of it
-  // proves nothing about *this* symbol. A text fragment scrolls the browser
-  // straight to the changed declaration instead.
-  const helpUri = citedUri ? withDeclarationFragment(citedUri, breaking) : undefined;
+  const helpUri = breaking.sourceUrl ?? (citedUri ? withDeclarationFragment(citedUri, breaking) : undefined);
 
   const lines: string[] = [
     `**${ruleNameForBreaking(breaking.kind)}:** ${linkSymbols(breaking.summary, helpUri)}`,
@@ -597,7 +615,9 @@ function buildBreakingBlock(breaking: BreakingChange, sites: ImpactSite[], evide
       `+ \`${escapeForCodeSpan(truncate(breaking.after, 300))}\``,
     );
   }
-  if (helpUri) lines.push('', `Declaration source: ${helpUri}`);
+  if (helpUri) {
+    lines.push('', `${breaking.sourceUrl ? 'GitHub source' : 'Declaration source'}: ${helpUri}`);
+  }
 
   return {
     level: levelForBreaking(breaking.confidence, localConfidence),
@@ -681,6 +701,7 @@ function buildSecurityBlock(rationale: UpgradeRationale): FindingBlock {
     lines,
     relatedCandidates: [],
     helpUri: sec.current[0]?.url ?? sec.introduced[0]?.url ?? sec.resolved[0]?.url,
+    ruleNameSuffix: title,
   };
 }
 
@@ -691,6 +712,7 @@ function buildOutdatedBlock(change: DependencyChange, rationale: UpgradeRational
     level: 'note',
     lines: [`**Update available** (${versionMove}), with no breaking changes or advisories found.`],
     relatedCandidates: [],
+    ruleNameSuffix: 'Outdated — safe to upgrade',
   };
 }
 
