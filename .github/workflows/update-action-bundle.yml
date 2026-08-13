@@ -22,10 +22,13 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    # Committing the rebuilt bundle needs contents: write; scoped to this one
-    # job rather than the whole workflow, matching every other workflow here.
+    # Opening the PR needs contents: write (push the branch) and
+    # pull-requests: write; scoped to this one job rather than the whole
+    # workflow, matching every other workflow here. main requires a reviewed
+    # PR, so this proposes the rebuilt bundle instead of pushing to main.
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -40,15 +43,12 @@ jobs:
       - name: Build the action bundle
         run: npm run build:action
 
-      - name: Commit and push action/index.cjs
-        run: |
-          if git diff --quiet -- action/index.cjs; then
-            echo "action/index.cjs is already up to date"
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add action/index.cjs
-          git commit -m "chore(action): update bundled action"
-          git push origin HEAD:main
+      - name: Open a PR with the rebuilt bundle
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
+        with:
+          commit-message: "chore(action): update bundled action"
+          title: "chore(action): update bundled action"
+          body: Automated rebuild of `action/index.cjs` from the latest `action.yml`/`src/**` changes on `main`.
+          branch: update-action-bundle
+          delete-branch: true
+          add-paths: action/index.cjs
