@@ -4,7 +4,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import semver from 'semver';
 import { digestDiagnostics, renderDigest } from '../diagnostics-digest.js';
-import type { RemediationPlan, RepoContext } from '../../../src/types.js';
+import type { BreakingChange, RemediationPlan, RepoContext } from '../../../src/types.js';
 import { buildPlan } from '../../../src/plan/index.js';
 import { resolveBaseBranch } from '../../../src/plan/pull-request.js';
 import type { RevisionRequest } from '../agents/types.js';
@@ -535,7 +535,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         await this.scan();
         return;
       case 'upgradeAll':
-        await this.upgrade(this.safeIds(), 'safe');
+        // Installed candidates drop off the list as they land, but that only
+        // reflects what Drift already knew about — it does not check whether
+        // anything moved again meanwhile. Rescanning here, in the same
+        // transcript, is how "what's left" stays trustworthy after a batch
+        // of upgrades instead of requiring the user to ask for it by hand.
+        if (await this.upgrade(this.safeIds(), 'safe')) await this.scan();
         return;
       case 'stop':
         if (!this.cancellable) {
@@ -677,6 +682,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       case '/pull-request':
         await this.openPullRequestForBranch();
         return;
+      case '/issue':
+        await this.fileIssue(argument ? this.idsMatching(argument) : this.affectedIds());
+        return;
       case '/review':
         this.showReview();
         return;
@@ -736,6 +744,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // pull-request path pushes on the way through.
     if (/\b(pull request|pr)\b/.test(lower)) {
       await this.openPullRequestForBranch();
+      return;
+    }
+    if (/\bissue\b/.test(lower)) {
+      await this.fileIssue(this.affectedIds());
       return;
     }
     if (/\b(commit|branch|stage)\b/.test(lower)) {
@@ -858,7 +870,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         '',
         '**Git**',
         '',
-        'When an upgrade lands, Drift offers to put it on a branch, commit it with a message that carries the evidence, push it, and open a pull request whose description says what changed upstream and what it touches here. Every step asks first, and you can stop at any of them — `/commit`, `/push` and `/pr` pick the flow back up later.',
+        'When an upgrade lands, Drift offers to put it on a branch, commit it with a message that carries the evidence, push it, and open a pull request whose description says what changed upstream and what it touches here. Every step asks first, and you can stop at any of them — `/commit`, `/push` and `/pr` pick the flow back up later. If a breaking change is not worth fixing right now, `/issue` files it on GitHub instead, prefilled with the same evidence.',
         '',
         'The commit only ever contains the manifests and lockfiles the upgrade changed, so unfinished work elsewhere in your tree stays yours. Drift never force-pushes, never rewrites history, and never commits to your default branch without you choosing it.',
       ].join('\n'),
@@ -1708,6 +1720,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
               hint: 'Runs your typecheck first, then hands the real errors to the agent with the evidence',
             },
             { label: 'Review the changes', command: '/review' },
+            { label: 'File a GitHub issue instead', command: '/issue' },
           ],
         );
       }
@@ -2762,6 +2775,59 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     } else if (outcome.status === 'committed') {
       await this.offerVerification(ctx.root, memberDirsOf(plan));
       await this.offerToShipFix(outcome.branch);
+      // The fix landed on a real commit, so what remains to be scanned has
+      // changed — rescan in this same transcript so "what's left" reflects
+      // it, instead of leaving the last-known candidate list stale.
+      await this.scan();
+    }
+  }
+
+  /**
+   * File a GitHub issue for one or more breaking changes.
+   *
+   * The same content builders and `gh` plumbing the report panel's per-row
+   * "File issue" button already drives (`extension/src/issue-actions.ts`),
+   * reached here from `/issue` and from the "Fix them with an agent" /
+   * "Review the changes" offer — the main panel never offered filing an
+   * issue at all, even though the capability has existed since the report
+   * panel got it.
+   */
+  private async fileIssue(ids: readonly string[]): Promise<void> {
+    if (this.busy) {
+      this.session.notice('info', this.busyMessage());
+      return;
+    }
+
+    const ctx = await this.context();
+    if (!ctx) {
+      this.session.notice('warn', 'Open a git repository to file an issue.');
+      return;
+    }
+
+    const candidates = ids
+      .map((id) => this.candidates.get(id))
+      .filter((c): c is UpgradeCandidate => Boolean(c?.plan));
+
+    const plan =
+      candidates.length > 0
+        ? combinePlans(ctx.repo, ctx.config, candidates.map((c) => c.plan!))
+        : this.state.plan;
+
+    if (!plan || plan.breakingChanges.length === 0) {
+      this.session.say('Nothing to file — no breaking change touches this repository yet. Run `/scan` first.');
+      return;
+    }
+
+    const byDependency = new Map<string, BreakingChange[]>();
+    for (const change of plan.breakingChanges) {
+      const list = byDependency.get(change.dependency);
+      if (list) list.push(change);
+      else byDependency.set(change.dependency, [change]);
+    }
+
+    const { runIssueBranchAction } = await import('../issue-actions.js');
+    for (const [dependency, changes] of byDependency) {
+      await runIssueBranchAction(ctx.root, 'issue', { dependency, changes });
     }
   }
 
