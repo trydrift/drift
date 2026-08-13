@@ -29,6 +29,11 @@ on:
         type: choice
         options: [diff, outdated]
         default: outdated
+      alert-granularity:
+        description: 'How code scanning alerts are grouped. Leave blank to use codeScanning.granularity from drift.yml.'
+        type: choice
+        options: ['', package, breakingChange, affectedSite]
+        default: ''
 
   push:
     branches: [main]
@@ -80,6 +85,7 @@ jobs:
           dry-run: ${{ inputs.dry-run || 'true' }}
           mode: ${{ inputs.mode || 'approve' }}
           scan-mode: ${{ inputs.scan-mode || 'outdated' }}
+          alert-granularity: ${{ inputs.alert-granularity }}
           log-level: debug
 
       - name: Result
