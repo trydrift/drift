@@ -233,6 +233,21 @@ const GENERIC_LEAF_NAMES = new Set([
   'args', 'body', 'config', 'content', 'context', 'data', 'error', 'file',
   'header', 'headers', 'host', 'id', 'key', 'name', 'options', 'params', 'path',
   'port', 'result', 'root', 'status', 'text', 'type', 'url', 'value', 'values',
+  // Keywords and conjunctions, in JS/TS, Python, and Ruby alike. A leaf named
+  // `for` or `and` is never a real API — it is a `for` loop or the word "and"
+  // in a sentence — but nothing above catches it: it is neither a dunder nor
+  // a plausible method or local-variable name. `ts.server.protocol.for` and
+  // `ts.server.protocol.and` (both TypeScript-internal types, not values)
+  // reached this bare-leaf fallback and matched every loop and every "and" in
+  // prose across an unrelated file before this existed.
+  'and', 'or', 'not', 'if', 'elif', 'else', 'for', 'while', 'do', 'in', 'of',
+  'as', 'with', 'from', 'to', 'try', 'catch', 'finally', 'throw',
+  'raise', 'except', 'switch', 'case', 'break', 'continue', 'return', 'yield',
+  'class', 'def', 'function', 'lambda', 'const', 'let', 'var', 'this', 'self',
+  'super', 'null', 'nil', 'none', 'true', 'false', 'async', 'await', 'typeof',
+  'instanceof', 'void', 'enum', 'interface', 'extends', 'implements',
+  'export', 'import', 'static', 'public', 'private', 'protected', 'default',
+  'pass', 'then',
 ]);
 
 function fromProseEvidence(record: Evidence, dependency: string, workspace: string | undefined): BreakingChange[] {
