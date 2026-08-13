@@ -2,7 +2,6 @@ name: Update Action bundle
 
 on:
   push:
-    branches-ignore: [main]
     paths:
       - 'action.yml'
       - 'src/**'
@@ -24,10 +23,11 @@ jobs:
     runs-on: ubuntu-latest
     # Committing the rebuilt bundle needs contents: write; scoped to this one
     # job rather than the whole workflow, matching every other workflow here.
-    # This only ever runs on non-main branches (main requires a reviewed PR),
-    # so pushing straight back onto the branch that triggered the run is fine.
+    # main requires a reviewed PR, so pushing there goes through a PR instead
+    # of a direct commit; every other branch gets pushed to directly.
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -43,6 +43,7 @@ jobs:
         run: npm run build:action
 
       - name: Commit and push action/index.cjs
+        if: github.ref_name != 'main'
         run: |
           if git diff --quiet -- action/index.cjs; then
             echo "action/index.cjs is already up to date"
@@ -54,3 +55,14 @@ jobs:
           git add action/index.cjs
           git commit -m "chore(action): update bundled action"
           git push origin HEAD:${{ github.ref_name }}
+
+      - name: Open a PR with the rebuilt bundle
+        if: github.ref_name == 'main'
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
+        with:
+          commit-message: "chore(action): update bundled action"
+          title: "chore(action): update bundled action"
+          body: Automated rebuild of `action/index.cjs` from the latest `action.yml`/`src/**` changes on `main`.
+          branch: update-action-bundle
+          delete-branch: true
+          add-paths: action/index.cjs
