@@ -29,9 +29,12 @@ jobs:
   release:
     runs-on: ubuntu-latest
     # `gh release create` and moving the floating v0 tag both need contents:
-    # write; scoped to this one job rather than the whole workflow.
+    # write; scoped to this one job rather than the whole workflow. id-token:
+    # write is for `npm publish --provenance`, which needs to mint an OIDC
+    # token to get the package's Sigstore-signed provenance attestation.
     permissions:
       contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -113,7 +116,7 @@ jobs:
       # ---- Publish phase: each step here is a public, irreversible action. ----
 
       - name: Publish CLI to npm
-        run: npm publish --access public
+        run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
