@@ -62,6 +62,12 @@ export default function Home() {
             Action
           </a>
           <a
+            href="/configure/"
+            className="hidden rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:block"
+          >
+            Configure
+          </a>
+          <a
             href={GITHUB}
             target="_blank"
             rel="noreferrer"
@@ -348,7 +354,8 @@ export default function Home() {
               action={{ label: "Copy the example workflow", href: `${GITHUB}/blob/main/examples/workflows/drift.yml`, external: true }}
             >
               Checks first, approval next, pull request only after you allow it.{" "}
-              <a href="#action" className="text-brand-text underline decoration-dotted underline-offset-2">See the run.</a>
+              <a href="#action" className="text-brand-text underline decoration-dotted underline-offset-2">See the run.</a>{" "}
+              Or <a href="/configure/" className="text-brand-text underline decoration-dotted underline-offset-2">build your own drift.yml</a>.
             </EntryPoint>
           </div>
 

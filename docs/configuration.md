@@ -11,7 +11,9 @@ Searched in order: `.github/drift.yml`, `.github/drift.yaml`, `drift.yml`,
 output and falls back to defaults — which are the safe, approval-required
 settings.
 
-A copy-paste starting point: [`examples/drift.yml`](../examples/drift.yml).
+A copy-paste starting point: [`examples/drift.yml`](../examples/drift.yml). Or pick
+your options on the site's `/configure` page (built from [`site/src/app/configure`](../site/src/app/configure))
+and download a ready-to-commit `drift.yml` and workflow file.
 
 ---
 
