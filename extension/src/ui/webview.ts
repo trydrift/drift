@@ -2071,6 +2071,28 @@ button.wide { width: 100%; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Clicked button gets the spinner immediately, before the extension has had
+   a chance to answer — a click that visibly did nothing is what makes people
+   click twice and fire the same action again. */
+button[data-action].is-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+button[data-action].is-loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.6px solid var(--vscode-panel-border);
+  border-top-color: var(--vscode-progressBar-background);
+  animation: spin .8s linear infinite;
+}
+button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
+
 /* Questions ------------------------------------------------------- */
 .question.open { border-left: 2px solid var(--vscode-focusBorder); padding-left: 8px; }
 .options { display: flex; flex-direction: column; gap: 5px; margin: 8px 0 0 20px; }
@@ -3375,6 +3397,42 @@ function previewSlider(slider) {
 /* Events                                                              */
 /* ------------------------------------------------------------------ */
 
+// Actions that answer locally or navigate away instantly — no round trip to
+// the extension host worth locking the UI over, and \`stop\` has to stay live
+// precisely because something else is already pending.
+const LOCAL_ACTIONS = new Set([
+  'slider', 'submit', 'complete', 'openMenu', 'openUrl', 'openFile', 'openDiff', 'selectVersion', 'pickVersion', 'stop',
+]);
+
+// True from the moment a server-bound action is clicked until the next
+// \`render\` message replaces the DOM (or a timeout gives up on waiting for
+// one). A click that visibly did nothing — because the extension host took a
+// moment to respond — is what makes someone click twice, firing the same
+// scan or fix a second time. Locking every action button the instant one is
+// clicked, and putting a spinner on the one that was, closes that gap.
+let actionPending = false;
+let actionPendingTimeout = null;
+
+function lockActions(clicked) {
+  actionPending = true;
+  document.querySelectorAll('button[data-action]').forEach((btn) => {
+    if (btn.dataset.action !== 'stop') btn.disabled = true;
+  });
+  if (clicked instanceof HTMLButtonElement) clicked.classList.add('is-loading');
+  clearTimeout(actionPendingTimeout);
+  // A render normally arrives within a second or two; if the host never
+  // answers (a bug, a crashed run), buttons stuck disabled forever would be
+  // worse than the double-click this is meant to prevent.
+  actionPendingTimeout = setTimeout(unlockActions, 20000);
+}
+
+function unlockActions() {
+  actionPending = false;
+  clearTimeout(actionPendingTimeout);
+  document.querySelectorAll('button[data-action].is-loading').forEach((btn) => btn.classList.remove('is-loading'));
+  document.querySelectorAll('button[data-action]:disabled').forEach((btn) => { btn.disabled = false; });
+}
+
 document.addEventListener('click', (event) => {
   const target = event.target.closest('[data-action]');
 
@@ -3390,6 +3448,12 @@ document.addEventListener('click', (event) => {
   // The dial handles its own events; a click on it is a drag, not a command.
   if (action === 'slider') return;
 
+  // A second click on a server-bound action while the first is still in
+  // flight is a double-fire, not a new request — the buttons should already
+  // be disabled, but a click that lands in the same tick as the disable can
+  // still slip through.
+  if (actionPending && !LOCAL_ACTIONS.has(action)) return;
+
   if (action === 'submit') { send(); return; }
   if (action === 'complete') { complete(target.dataset.command); return; }
   if (action === 'openMenu') {
@@ -3401,13 +3465,17 @@ document.addEventListener('click', (event) => {
   }
   if (action === 'menu') {
     closeMenu(true);
+    lockActions(target);
     vscode.postMessage({ type: 'menu', id: target.dataset.id });
     return;
   }
   if (action === 'run') {
+    lockActions(target);
     vscode.postMessage({ type: 'submit', text: target.dataset.command });
     return;
   }
+
+  if (!LOCAL_ACTIONS.has(action)) lockActions(target);
 
   vscode.postMessage({
     type: action,
@@ -3428,6 +3496,7 @@ window.addEventListener('message', (event) => {
   const data = event.data;
 
   if (data?.type === 'render') {
+    unlockActions();
     capture();
     root.innerHTML = data.body;
     mount();
