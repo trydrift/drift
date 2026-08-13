@@ -213,51 +213,6 @@ function mdLink(file: string, line: number): string {
   return `[\`${file}:${line}\`](${file}#L${line})`;
 }
 
-const LANGUAGE_BY_EXTENSION: Record<string, string> = {
-  ts: 'ts',
-  tsx: 'tsx',
-  js: 'js',
-  jsx: 'jsx',
-  mjs: 'js',
-  cjs: 'js',
-  py: 'python',
-  rb: 'ruby',
-  go: 'go',
-  rs: 'rust',
-  java: 'java',
-  kt: 'kotlin',
-  cs: 'csharp',
-  php: 'php',
-  c: 'c',
-  h: 'c',
-  cpp: 'cpp',
-  hpp: 'cpp',
-  swift: 'swift',
-  scala: 'scala',
-  json: 'json',
-  yml: 'yaml',
-  yaml: 'yaml',
-};
-
-function languageForFile(file: string): string {
-  const ext = file.split('.').pop()?.toLowerCase();
-  return (ext && LANGUAGE_BY_EXTENSION[ext]) ?? '';
-}
-
-/**
- * One occurrence, rendered as its own fenced code snippet rather than a bare
- * link — GitHub only turns a `relatedLocations` reference into an inline
- * snippet for the alert's single primary location; every other site a link
- * jumps you to is just a hyperlink with nothing shown in the alert body
- * itself. Embedding the excerpt directly in the markdown is the only way to
- * show what's actually at each occurrence without leaving the alert.
- */
-function siteSnippet(loc: SarifLocation, linkId: number | undefined): string {
-  const label = linkId !== undefined ? `[\`${loc.file}:${loc.line}\`](${linkId})` : mdLink(loc.file, loc.line);
-  if (!loc.excerpt) return label;
-  return `${label}\n\`\`\`${languageForFile(loc.file)}\n${loc.excerpt}\n\`\`\``;
-}
-
 function toSarifPhysicalLocation(loc: SarifLocation): Record<string, unknown> {
   return {
     physicalLocation: {
@@ -619,23 +574,22 @@ function buildPackageFinding(args: {
   }
 
   // `related`'s array order is exactly the order `buildSarifLog` assigns
-  // `relatedLocations[].id` in (1-indexed) — this map lets every occurrence's
-  // label still deep-link to that id (GitHub's jump-to-file affordance) while
-  // the fenced snippet below it, built from the site's own excerpt, is what
-  // actually shows the code inline instead of making a reader click through.
+  // `relatedLocations[].id` in (1-indexed) — this map lets every block spell
+  // its "Seen at" list as `[text](id)`, which GitHub renders as its own
+  // expandable code snippet in the alert body, rather than a plain hyperlink
+  // that only the primary location gets that treatment for.
   const relatedIds = new Map(related.map((loc, i) => [`${loc.file}:${loc.line}`, i + 1]));
-  const linkIdFor = (loc: SarifLocation): number | undefined => relatedIds.get(`${loc.file}:${loc.line}`);
+  const siteLink = (loc: SarifLocation): string => {
+    const id = relatedIds.get(`${loc.file}:${loc.line}`);
+    return id !== undefined ? `[\`${loc.file}:${loc.line}\`](${id})` : mdLink(loc.file, loc.line);
+  };
 
   const body = [
     header.join('\n'),
     ...blocks.map((b) => {
       if (!b.primaryCandidate) return b.lines.join('\n');
-      const seenAt = [
-        'Seen at:',
-        siteSnippet(b.primaryCandidate, linkIdFor(b.primaryCandidate)),
-        ...b.relatedCandidates.map((loc) => siteSnippet(loc, linkIdFor(loc))),
-      ];
-      return [...b.lines, '', seenAt.join('\n\n')].join('\n');
+      const seenAt = ['Seen at:', `- ${siteLink(b.primaryCandidate)}`, ...b.relatedCandidates.map((loc) => `- ${siteLink(loc)}`)];
+      return [...b.lines, '', ...seenAt].join('\n');
     }),
     fixLine(fix, hasBreaking),
   ].join('\n\n---\n\n');
