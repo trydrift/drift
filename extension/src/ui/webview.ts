@@ -3487,6 +3487,15 @@ document.addEventListener('click', (event) => {
     return;
   }
 
+  // \`stop\` stays out of \`lockActions\` — the rest of the UI must not lock,
+  // since the run it is cancelling is what is already holding it busy — but
+  // the click still needs to look like it did something immediately, or a
+  // stop that takes a moment to land reads as a stop that did not register.
+  if (action === 'stop' && target instanceof HTMLButtonElement) {
+    target.classList.add('is-loading');
+    target.disabled = true;
+  }
+
   if (!LOCAL_ACTIONS.has(action)) lockActions(target);
 
   vscode.postMessage({

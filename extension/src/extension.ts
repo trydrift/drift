@@ -319,11 +319,13 @@ function registerCommands(
       // 'package' grouping here just applies `groupForAction`'s "only file
       // what actually reaches this repo's code" filter — it doesn't merge
       // anything `scope: 'change'` meant to keep separate.
-      const { groupForAction } = await import('../../src/actions/issue-branch.js');
+      const { groupForAction, branchNameFor } = await import('../../src/actions/issue-branch.js');
       const target = groupForAction(changes, 'package', plan.impactSites)[0]!;
 
-      const { runIssueBranchAction } = await import('./issue-actions.js');
-      await runIssueBranchAction(root, resolvedAction, target);
+      // Routed through the conversation, not a bare `runIssueBranchAction`
+      // call — that's what lets Drift ask the branch follow-up question
+      // right here instead of leaving a filed issue with no next step.
+      await home.fileTargetInConversation(root, resolvedAction, target, branchNameFor(target));
     }) as never,
   );
 }

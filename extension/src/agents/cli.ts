@@ -449,7 +449,16 @@ export class CliFixAgent implements FixAgent {
         );
       }, 15_000);
 
-      const onAbort = () => child.kill('SIGTERM');
+      // SIGTERM asks; it does not compel. A CLI mid-cleanup (or one that
+      // simply ignores the signal) can sit past it indefinitely, which is
+      // what turned "stop" into a button that looked broken — escalating to
+      // SIGKILL after a short grace period bounds the wait instead of
+      // leaving it open-ended.
+      let killTimer: NodeJS.Timeout | undefined;
+      const onAbort = () => {
+        child.kill('SIGTERM');
+        killTimer = setTimeout(() => child.kill('SIGKILL'), 3000);
+      };
       ctx.signal.addEventListener('abort', onAbort, { once: true });
 
       // Which pipe a line arrived on says nothing about what it means. Every
@@ -473,6 +482,7 @@ export class CliFixAgent implements FixAgent {
 
       child.on('error', (err) => {
         clearTimeout(timer);
+        clearTimeout(killTimer);
         clearInterval(heartbeat);
         ctx.signal.removeEventListener('abort', onAbort);
         reject(err);
@@ -480,6 +490,7 @@ export class CliFixAgent implements FixAgent {
 
       child.on('close', (code) => {
         clearTimeout(timer);
+        clearTimeout(killTimer);
         clearInterval(heartbeat);
         ctx.signal.removeEventListener('abort', onAbort);
         resolve({ code: code ?? 0, stdout, stderr });

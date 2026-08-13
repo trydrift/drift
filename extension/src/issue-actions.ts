@@ -229,7 +229,7 @@ const MAX_PREFILL_BODY_CHARS = 4000;
 function newIssueUrl(slug: string, content: { title: string; body: string; labels: string[] }): string {
   const body =
     content.body.length > MAX_PREFILL_BODY_CHARS
-      ? `${content.body.slice(0, MAX_PREFILL_BODY_CHARS)}…\n\n(truncated for this prefilled link — see the full report for details)`
+      ? `${content.body.slice(0, MAX_PREFILL_BODY_CHARS)}…\n\n(truncated to fit this prefilled link — open Drift's report in the editor for the rest)`
       : content.body;
   const params = new URLSearchParams({ title: content.title, body });
   if (content.labels.length) params.set('labels', content.labels.join(','));
