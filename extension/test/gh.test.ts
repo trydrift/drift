@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { createPullRequestWithGh, ghAvailability, type GhRunner } from '../src/gh.js';
+import { createIssueWithGh, createPullRequestWithGh, ghAvailability, type GhRunner } from '../src/gh.js';
 import { compareUrl } from '../src/ship.js';
 
 /**
@@ -264,6 +264,75 @@ describe('falling back', () => {
       }),
     );
     assert.equal(outcome.kind, 'failed');
+  });
+});
+
+describe('creating an issue', () => {
+  test('drops labels and retries when the repository has none of them yet', async () => {
+    const calls: Recorded[] = [];
+    const outcome = await createIssueWithGh(
+      {
+        cwd: '/repo',
+        title: 'Drift: react — a breaking change',
+        body: 'body',
+        labels: ['drift', 'drift:react'],
+        marker: 'drift-issue:react:abc',
+      },
+      runner(
+        {
+          '--version': ok,
+          'auth status': ok,
+          'search issues': async () => ({ stdout: '[]' }),
+          'issue create': async (args) => {
+            if (args.includes('--label')) {
+              throw Object.assign(new Error('exit 1'), {
+                stderr: "could not add label: 'drift' not found",
+              });
+            }
+            return { stdout: 'https://github.com/acme/repo/issues/42\n' };
+          },
+        },
+        calls,
+      ),
+    );
+
+    assert.deepEqual(outcome, {
+      kind: 'opened',
+      number: 42,
+      url: 'https://github.com/acme/repo/issues/42',
+      existing: false,
+    });
+
+    const issueCalls = calls.filter((c) => c.args[0] === 'issue' && c.args[1] === 'create');
+    assert.equal(issueCalls.length, 2, 'retries once, without labels');
+    assert.ok(issueCalls[0]!.args.includes('--label'), 'first attempt asks for the labels');
+    assert.ok(!issueCalls[1]!.args.includes('--label'), 'retry drops them rather than failing the issue');
+  });
+
+  test('a failure unrelated to labels is not retried', async () => {
+    const calls: Recorded[] = [];
+    const outcome = await createIssueWithGh(
+      {
+        cwd: '/repo',
+        title: 'Drift: react — a breaking change',
+        body: 'body',
+        labels: ['drift'],
+        marker: 'drift-issue:react:abc',
+      },
+      runner(
+        {
+          '--version': ok,
+          'auth status': ok,
+          'search issues': async () => ({ stdout: '[]' }),
+          'issue create': fails,
+        },
+        calls,
+      ),
+    );
+
+    assert.equal(outcome.kind, 'failed');
+    const issueCalls = calls.filter((c) => c.args[0] === 'issue' && c.args[1] === 'create');
+    assert.equal(issueCalls.length, 1, 'no retry for an error that has nothing to do with labels');
   });
 });
 

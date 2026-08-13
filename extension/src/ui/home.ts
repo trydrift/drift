@@ -127,6 +127,9 @@ type Incoming =
   | { type: 'upgrade'; id: string; mode: 'safe' | 'force' }
   | { type: 'fixPackage'; id: string }
   | { type: 'fixAll' }
+  | { type: 'fileIssuePackage'; id: string }
+  | { type: 'fileIssueAll' }
+  | { type: 'fileIssueSafe' }
   | { type: 'keepFile' | 'undoFile'; path: string }
   | { type: 'keepGroup' | 'undoGroup' | 'retryCommit'; order: number }
   | { type: 'keepAll' | 'undoAll' };
@@ -594,6 +597,15 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         return;
       case 'fixAll':
         await this.fix(this.affectedIds());
+        return;
+      case 'fileIssuePackage':
+        await this.fileIssue([message.id]);
+        return;
+      case 'fileIssueAll':
+        await this.fileIssue(this.affectedIds());
+        return;
+      case 'fileIssueSafe':
+        await this.fileIssue(this.safeIds());
         return;
       case 'keepFile':
         await this.review.keepFile(message.path);
@@ -1578,7 +1590,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       for (const [root, group] of byRoot) {
         const proposed = await this.availableBranchName(
           root,
-          upgradeBranchName(group, { prefix: this.branchPrefix(contexts.get(root)?.config ?? ctx.config) }),
+          upgradeBranchName(group, { prefix: await this.branchPrefix(root, contexts.get(root)?.config ?? ctx.config) }),
         );
         const branch = await this.chooseBranch(root, proposed, {
           reason:
@@ -1780,13 +1792,21 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
    * of intent. Absent one, the repository's own `.github/drift.yml` already
    * names the prefix its cloud fixes use, and a branch made in the panel should
    * look like a branch made anywhere else in the same repository.
+   *
+   * Led by the branch this is being cut from. `git branch --list` reads as a
+   * flat namespace otherwise, and six repos in it makes it hard to tell which
+   * `drift/upgrade-...` came off `main` and which came off a release branch —
+   * the source branch answers that before the rest of the name has to.
    */
-  private branchPrefix(config?: DriftConfig): string {
+  private async branchPrefix(root: string, config?: DriftConfig): Promise<string> {
     const setting = vscode.workspace.getConfiguration('drift').inspect<string>('git.branchPrefix');
     const explicit =
       setting?.workspaceFolderValue ?? setting?.workspaceValue ?? setting?.globalValue;
-    const chosen = explicit ?? config?.remediation.branchPrefix ?? 'drift';
-    return chosen.replace(/\/+$/, '') || 'drift';
+    const chosen = (explicit ?? config?.remediation.branchPrefix ?? 'drift').replace(/\/+$/, '') || 'drift';
+
+    const { Git } = await import('../git.js');
+    const source = await new Git(root).currentBranch().catch(() => null);
+    return source && source !== 'HEAD' ? `${source}/${chosen}` : chosen;
   }
 
   /**
@@ -1881,7 +1901,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
       await this.ship(root, {
         paths,
-        branchName: upgradeBranchName(group, { prefix: this.branchPrefix(ctx.config) }),
+        branchName: upgradeBranchName(group, { prefix: await this.branchPrefix(root, ctx.config) }),
         message: upgradeCommitMessage(group),
         prBody: pullRequestBody(group),
         summary:
@@ -1967,7 +1987,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     const plan = this.state.plan;
     await this.ship(ctx.root, {
       paths,
-      branchName: plan?.branchName ?? `${this.branchPrefix(ctx.config)}/changes-${new Date().toISOString().slice(0, 10)}`,
+      branchName: plan?.branchName ?? `${await this.branchPrefix(ctx.root, ctx.config)}/changes-${new Date().toISOString().slice(0, 10)}`,
       message: {
         subject: plan?.commits[0]?.message ?? 'chore: apply Drift changes',
         body: paths.map((path) => `- ${path}`).join('\n'),
@@ -2011,7 +2031,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     await this.ship(ctx.root, {
       paths,
-      branchName: `${this.branchPrefix(ctx.config)}/dependencies-${new Date().toISOString().slice(0, 10)}`,
+      branchName: `${await this.branchPrefix(ctx.root, ctx.config)}/dependencies-${new Date().toISOString().slice(0, 10)}`,
       message: {
         subject: 'chore(deps): update dependencies',
         body: paths.map((path) => `- ${path}`).join('\n'),
@@ -2629,7 +2649,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // Deliberately first: the upgrade writes a manifest and a lockfile, and
     // those belong on the same branch as the code changes that go with them.
     // Branching afterwards would leave half the change behind.
-    const proposedBranch = await this.availableBranchName(ctx.root, plan.branchName);
+    const { Git } = await import('../git.js');
+    const sourceBranch = await new Git(ctx.root).currentBranch().catch(() => null);
+    const prefixedBranchName =
+      sourceBranch && sourceBranch !== 'HEAD' ? `${sourceBranch}/${plan.branchName}` : plan.branchName;
+    const proposedBranch = await this.availableBranchName(ctx.root, prefixedBranchName);
     const branch = await this.chooseBranch(ctx.root, proposedBranch);
     if (branch === null) return;
 
@@ -2808,14 +2832,18 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   }
 
   /**
-   * File a GitHub issue for one or more breaking changes.
+   * Create a GitHub issue for one or more breaking changes.
    *
    * The same content builders and `gh` plumbing the report panel's per-row
-   * "File issue" button already drives (`extension/src/issue-actions.ts`),
+   * "Create issue" button already drives (`extension/src/issue-actions.ts`),
    * reached here from `/issue` and from the "Fix them with an agent" /
-   * "Review the changes" offer — the main panel never offered filing an
-   * issue at all, even though the capability has existed since the report
-   * panel got it.
+   * "Review the changes" offer — the main panel never offered this at all,
+   * even though the capability has existed since the report panel got it.
+   *
+   * Respects `drift.issueCreation.default`, the same setting the report
+   * panel's dropdown and the CLI both read — a developer who has already
+   * said they want issue *and* branch together gets that here too, instead
+   * of the panel silently narrowing it to just the issue.
    */
   private async fileIssue(ids: readonly string[]): Promise<void> {
     if (this.busy) {
@@ -2825,7 +2853,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     const ctx = await this.context();
     if (!ctx) {
-      this.session.notice('warn', 'Open a git repository to file an issue.');
+      this.session.notice('warn', 'Open a git repository to create an issue.');
       return;
     }
 
@@ -2850,9 +2878,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       else byDependency.set(change.dependency, [change]);
     }
 
+    const action = vscode.workspace
+      .getConfiguration('drift')
+      .get<'issue' | 'branch' | 'both'>('issueCreation.default', 'issue');
+
     const { runIssueBranchAction } = await import('../issue-actions.js');
     for (const [dependency, changes] of byDependency) {
-      await runIssueBranchAction(ctx.root, 'issue', { dependency, changes });
+      await runIssueBranchAction(ctx.root, action, { dependency, changes });
     }
   }
 

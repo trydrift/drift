@@ -542,7 +542,7 @@ function renderCommits(plan: RemediationPlan): string {
   <h2>Planned commits</h2>
   <p class="muted">One commit per concern, so you can review, approve, or revert each independently.</p>
   <div class="commit-actions">
-    <button class="primary" data-command="drift.fixAll">Fix all planned commits</button>
+    <button class="primary" data-command="drift.fixAll">Upgrade and fix all planned commits</button>
     <div class="choice">
       <span>Branch</span>
       <button class="small ${branchMode === 'new' ? 'selected' : ''}" data-setting="git.branchMode" data-value="new">New branch</button>

@@ -228,8 +228,8 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
   {
     name: '/issue',
     args: '[package]',
-    title: 'File a GitHub issue',
-    description: 'File an issue for a breaking change, prefilled with the evidence Drift found',
+    title: 'Create a GitHub issue',
+    description: 'Create an issue for a breaking change, prefilled with the evidence Drift found',
   },
   {
     name: '/instruction',
@@ -752,7 +752,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
               <div class="pkg-list">${affected.map((c) => renderCandidate(c, affected.length === 1, showRepo)).join('')}</div>
               ${
                 affected.length > 1
-                  ? `<div class="pkg-group-foot"><button class="primary wide" data-action="fixAll">Fix all ${affected.length} with ${escapeHtml(vm.agentLabel)}</button></div>`
+                  ? `<div class="pkg-group-foot"><button class="primary wide" data-action="fixAll">Upgrade and fix all ${affected.length} with ${escapeHtml(vm.agentLabel)}</button><button class="ctl bordered wide" data-action="fileIssueAll" title="Create one GitHub issue per affected dependency, so the work is tracked even if nobody fixes it today">Create ${affected.length} issues</button></div>`
                   : ''
               }
             </section>`
@@ -783,7 +783,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
                 // whole group is one action, taken within the ranges already in
                 // package.json.
                 safe.length > 1
-                  ? `<div class="pkg-group-foot"><button class="wide" data-action="upgradeAll" title="Install every one of these, each within the range already in package.json">Upgrade all ${safe.length}</button></div>`
+                  ? `<div class="pkg-group-foot"><button class="wide" data-action="upgradeAll" title="Install every one of these, each within the range already in package.json">Upgrade all ${safe.length}</button><button class="ctl bordered wide" data-action="fileIssueSafe" title="File one GitHub issue per package, so each upgrade is tracked even before anyone takes it">Create ${safe.length} issues</button></div>`
                   : ''
               }
             </details>`
@@ -880,9 +880,10 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
         ${renderUpgradeActions(candidate)}
         ${
           candidate.impactCount > 0
-            ? `<button class="primary" data-action="fixPackage" data-id="${escapeAttr(candidate.id)}">Fix ${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'}</button>`
+            ? `<button class="primary" data-action="fixPackage" data-id="${escapeAttr(candidate.id)}">Upgrade and fix ${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'}</button>`
             : ''
         }
+        <button class="ctl bordered" data-action="fileIssuePackage" data-id="${escapeAttr(candidate.id)}" title="Create a GitHub issue tracking this upgrade instead of acting on it now">Create issue</button>
       </div>
     </div>
   </details>`;
@@ -2457,7 +2458,13 @@ button.command {
   padding: 3px 6px;
   border-radius: 4px;
   white-space: nowrap;
-  overflow: hidden;
+  /* Not overflow: hidden here — each child already clips its own text (the
+     row itself is nowrap, and the description has its own ellipsis).
+     overflow: hidden on this flex row, combined with baseline alignment and
+     children of different font sizes, made Chromium compute an auto height
+     shorter than either child's own line height — every row rendered a
+     couple of pixels tall with the text clipped off top and bottom,
+     unreadable regardless of panel width. */
 }
 button.command[hidden] { display: none; }
 button.command:hover, button.command.active { background: var(--vscode-list-activeSelectionBackground); color: var(--vscode-list-activeSelectionForeground); }
