@@ -1,0 +1,124 @@
+import type { RemediationPlan } from '../types.js';
+import { taxonomyOf } from '../confidence/taxonomy.js';
+import type { UpgradeVerification } from './upgrade-probe.js';
+
+/**
+ * Reconciling what Drift predicted with what the toolchain measured.
+ *
+ * These two disagree constantly, and the disagreement used to be resolved late
+ * and badly: the prediction was reported, someone acted on it, and only then did
+ * a check against the installed version reveal there had never been anything to
+ * fix. The probe moves the measurement ahead of the report; this decides what it
+ * means, in one place, so the scan, the CLI, and the Action cannot drift into
+ * three different readings of the same green build.
+ *
+ * The rule is asymmetric, and the asymmetry is the point:
+ *
+ * - A **passing** check disproves only what a compiler can see. A signature that
+ *   moved, an export that vanished, a type that narrowed — if the project builds
+ *   against the real declarations, those predictions were wrong and are dropped.
+ *   A behavioural change is invisible to a compiler, so a green build says
+ *   nothing about it and it survives untouched. Skipping those on a green build
+ *   is how a real break ships.
+ * - A **failing** check proves breakage outright, whether or not Drift predicted
+ *   it, and its output is attached so the fix stage and the filed issue both
+ *   quote what actually broke instead of re-deriving it.
+ */
+
+/** The predicted change kinds a compiler is capable of contradicting. */
+export function provableByCompiler(change: Parameters<typeof taxonomyOf>[0]): boolean {
+  return taxonomyOf(change).detectability.some((how) => how === 'compile-time' || how === 'link-or-import');
+}
+
+/**
+ * Fold a probe result into a plan.
+ *
+ * Returns a new plan; the input is not modified, so a caller holding the
+ * unverified version for comparison still has it.
+ */
+export function applyVerificationToPlan(
+  plan: RemediationPlan,
+  verification: UpgradeVerification,
+): RemediationPlan {
+  if (verification.status !== 'passed') return { ...plan, verification };
+
+  const cleared = new Set(plan.breakingChanges.filter(provableByCompiler).map((change) => change.id));
+  if (cleared.size === 0) return { ...plan, verification };
+
+  return prunePlan(plan, cleared, verification);
+}
+
+/**
+ * Remove every trace of the disproved changes from a plan.
+ *
+ * Everything downstream of a breaking change goes with it — its impact sites,
+ * the commit units built to fix them, and the edges those units carry. A plan
+ * that kept an empty commit unit around would put a card in front of someone
+ * with nothing to do in it, which is the "flagged and then walked back"
+ * experience this whole design exists to remove.
+ *
+ * Evidence is deliberately kept. It records what the *upstream project*
+ * published, which is still true — the compiler proved this repository is not
+ * affected by it, not that it never happened.
+ */
+function prunePlan(
+  plan: RemediationPlan,
+  cleared: ReadonlySet<string>,
+  verification: UpgradeVerification,
+): RemediationPlan {
+  const breakingChanges = plan.breakingChanges.filter((change) => !cleared.has(change.id));
+  const impactSites = plan.impactSites.filter((site) => !cleared.has(site.breakingChangeId));
+
+  const commits = plan.commits
+    .map((commit) => ({
+      ...commit,
+      breakingChangeIds: commit.breakingChangeIds.filter((id) => !cleared.has(id)),
+    }))
+    .filter((commit) => commit.breakingChangeIds.length > 0);
+
+  const kept = new Set(commits.map((commit) => commit.id));
+
+  return {
+    ...plan,
+    breakingChanges,
+    impactSites,
+    verification,
+    planEdges: plan.planEdges.filter((edge) => kept.has(edge.from) && kept.has(edge.to)),
+    commits: commits.map((commit) => ({
+      ...commit,
+      dependsOn: commit.dependsOn.filter((id) => kept.has(id)),
+      dependencyReasons: commit.dependencyReasons.filter((edge) => kept.has(edge.from) && kept.has(edge.to)),
+    })),
+  };
+}
+
+/**
+ * One line stating what was measured, for a panel row, a log, or an issue body.
+ *
+ * Written to be readable on its own: whoever sees this may never see the checks
+ * list it summarizes.
+ */
+export function describeVerification(verification: UpgradeVerification): string {
+  const ran = verification.checks
+    .filter((check) => check.status === 'passed' || check.status === 'failed')
+    .map((check) => `\`${check.label}\``);
+
+  if (verification.status === 'passed') {
+    return ran.length > 0
+      ? `${ran.join(', ')} ${ran.length === 1 ? 'passes' : 'pass'} with this upgrade installed.`
+      : 'This upgrade was installed and the project still checks out clean.';
+  }
+
+  if (verification.status === 'failed') {
+    const failing = verification.checks
+      .filter((check) => check.status === 'failed')
+      .map((check) => `\`${check.label}\``);
+    const where =
+      verification.failedFiles.length > 0
+        ? ` in ${verification.failedFiles.length} file${verification.failedFiles.length === 1 ? '' : 's'}`
+        : '';
+    return `${failing.join(', ')} fails with this upgrade installed${where} — measured, not predicted.`;
+  }
+
+  return verification.reason ?? 'This upgrade was not tested.';
+}
