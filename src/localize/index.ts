@@ -4,6 +4,7 @@ import { importKeys, unitAtLine, type FileIndex, type ImportRecord, type RepoInd
 import { isRuntimeConfigPath, type SourceFile } from '../index/walk.js';
 import { withinMember } from '../detect/workspace.js';
 import { moduleMapKey, type ModuleMaps } from './modules.js';
+import { acceptsCallOfArity, callCannotResolveTo } from '../evidence/type-surface.js';
 
 /**
  * Localization: where does this breaking change actually bite?
@@ -695,6 +696,13 @@ function searchFiles(
         }
         if (hit && isAtomLiteral(searchable, hit.index, candidate.language)) continue;
 
+        // The compiler's answer, reached without a compiler: this call passes
+        // arguments the new signature still accepts, in positions whose type
+        // did not move. Nothing here has anything to change, so it is not a
+        // site. See `acceptsCallOfArity` for why a call is only exposed to the
+        // parameters it actually fills.
+        if (invocationOnly && unaffectedByTheNewSignature(change, masked, i, hit)) continue;
+
         const unit = fileIndex ? unitAtLine(fileIndex, i + 1) : undefined;
         // A member access (`x.symbol`) whose receiver is not something this
         // file provably bound from the dependency. `hit` is absent only for
@@ -813,6 +821,110 @@ function invocationMatcherFor(symbol: string): RegExp | null {
       `|(?<![\\w$])<${escaped}(?![\\w$])`,
   );
 }
+
+/**
+ * Does the new signature still accept this exact call?
+ *
+ * The surface diff already asks whether a signature change is safe for every
+ * caller and reports it when it is not. That is the right default with no call
+ * sites in front of it, but it is answered again here with one in hand, where
+ * the question is narrower and the answer is often no change at all: a call is
+ * only exposed to the parameters it actually fills.
+ *
+ * This is what stopped a zod 3 → 4 upgrade reporting 81 sites of
+ * `z.string()`, `z.boolean()` and `z.number()`. Those pass nothing, both
+ * declarations accept nothing, and both return the same type — so every one of
+ * them compiled before and compiles after, and each was being handed to an
+ * agent that spent tokens rediscovering exactly that.
+ */
+function unaffectedByTheNewSignature(
+  change: BreakingChange,
+  masked: readonly string[],
+  line: number,
+  hit: RegExpExecArray | null,
+): boolean {
+  if (!change.before || !change.after) return false;
+  // Only the plain-call spelling is read. JSX passes its props as an element,
+  // and the `callOpensOnNextLine` fallback has no match index to start from —
+  // neither gives a paren to count from, and inventing one would be guessing.
+  if (!hit || !hit[0].endsWith('(')) return false;
+
+  const open = hit.index + hit[0].length - 1;
+  const arity = callArity(masked, line, open);
+  if (arity === null) return false;
+
+  // Two ways a call site has nothing to do with a changed signature: the new
+  // declaration still accepts it, or the old one never did — the latter being
+  // a name this file shares with the dependency's symbol rather than a use of
+  // it. See `acceptsCallOfArity` and `callCannotResolveTo`.
+  return (
+    acceptsCallOfArity(change.before, change.after, arity) || callCannotResolveTo(change.before, arity)
+  );
+}
+
+/**
+ * How many arguments this call actually passes, or null when that cannot be
+ * read with confidence.
+ *
+ * Only ever used to *suppress* a finding, so every ambiguity resolves to null
+ * and leaves the site reported. An argument list that runs off the end of the
+ * window, nests unevenly, or contains punctuation this cannot account for is
+ * exactly the case where a guess would be a missed break.
+ *
+ * `masked` has comments stripped and string contents blanked, so a paren or a
+ * comma inside a literal is already gone by the time this counts them.
+ */
+function callArity(masked: readonly string[], line: number, open: number): number | null {
+  let depth = 0;
+  let commas = 0;
+  let content = false;
+
+  for (let i = line; i < masked.length && i < line + ARGUMENT_LIST_WINDOW; i++) {
+    const text = masked[i]!;
+    for (let column = i === line ? open : 0; column < text.length; column++) {
+      const char = text[column]!;
+
+      if (char === '(' || char === '[' || char === '{') {
+        depth += 1;
+        if (depth > 1) content = true;
+        continue;
+      }
+
+      if (char === ')' || char === ']' || char === '}') {
+        depth -= 1;
+        if (depth < 0) return null;
+        if (depth === 0) {
+          // A bracket that closed the argument list must be the paren that
+          // opened it; anything else means the scan lost its place.
+          if (char !== ')') return null;
+          return content ? commas + 1 : 0;
+        }
+        continue;
+      }
+
+      if (depth === 1 && char === ',') {
+        commas += 1;
+        content = true;
+        continue;
+      }
+
+      // A backtick opens a template literal, whose `${}` interpolations the
+      // masking does not blank — the punctuation inside them would be counted
+      // as if it were part of the argument list.
+      if (char === '`') return null;
+      if (!/\s/.test(char)) content = true;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * How far an argument list may run before this stops trying to read it. A
+ * genuinely long call is rare; a scan that has lost its place is not, and the
+ * cost of continuing is a wrong count on a line nobody asked about.
+ */
+const ARGUMENT_LIST_WINDOW = 200;
 
 /** `foo(` split across two lines by a formatter is still `foo(`. */
 function callOpensOnNextLine(symbol: string, line: string, next: string | undefined): boolean {

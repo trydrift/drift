@@ -1204,14 +1204,58 @@ function inheritedNames(header: string): string[] {
     .filter((name): name is string => Boolean(name));
 }
 
+/**
+ * Where a declaration ends — the terminating `;`, or the close of the body it
+ * opens.
+ *
+ * The distinction that matters is which `{` opens a *body*. Only one at the
+ * top level of the declaration does: `interface X {`, `class C {`, `enum E {`.
+ * A brace nested inside a parameter list, an index signature, or a type
+ * argument is part of a type annotation, and the declaration continues past
+ * its close.
+ *
+ * Reading the first `{` as a body regardless of nesting is what truncated
+ * every declaration whose parameters contain an inline object type. zod 3
+ * declares `declare const string: (params?: RawCreateParams & { coerce?:
+ * true; }) => ZodString;`, whose first `{` is two levels in and whose first
+ * `;` is inside it — so the declaration was cut at that brace, losing `) =>
+ * ZodString` and with it the entire return type and the closing paren. A
+ * signature that stops mid-type cannot be parsed by `callSignature`, so
+ * `onlyRelaxesCallers` had nothing to compare and every such symbol was
+ * reported as a signature change against call sites that were already
+ * correct.
+ */
 function declarationEndOffset(content: string, start: number): number {
-  const semicolon = content.indexOf(';', start);
-  const brace = content.indexOf('{', start);
-  if (brace >= 0 && (semicolon < 0 || brace < semicolon)) {
-    const close = matchingBraceOffset(content, brace);
-    return close >= 0 ? close + 1 : content.length;
+  let paren = 0;
+  let bracket = 0;
+  let brace = 0;
+  let angle = 0;
+
+  for (let i = start; i < content.length; i++) {
+    const char = content[i];
+
+    if (char === '(') paren += 1;
+    else if (char === ')') paren -= 1;
+    else if (char === '[') bracket += 1;
+    else if (char === ']') bracket -= 1;
+    else if (char === '<') angle += 1;
+    // `=>` is an arrow, not the close of a type-argument list — the same rule
+    // `parameterListStart` follows. Angle depth never goes negative, because a
+    // stray `>` is far more likely to be a comparison than an unbalanced list.
+    else if (char === '>' && content[i - 1] !== '=') angle = Math.max(0, angle - 1);
+    else if (char === '{') {
+      if (paren === 0 && bracket === 0 && brace === 0 && angle === 0) {
+        const close = matchingBraceOffset(content, i);
+        return close >= 0 ? close + 1 : content.length;
+      }
+      brace += 1;
+    } else if (char === '}') brace -= 1;
+    else if (char === ';' && paren <= 0 && bracket <= 0 && brace <= 0 && angle <= 0) {
+      return i + 1;
+    }
   }
-  return semicolon >= 0 ? semicolon + 1 : content.length;
+
+  return content.length;
 }
 
 function matchingBraceOffset(content: string, open: number): number {
@@ -1483,6 +1527,113 @@ export function onlyRelaxesCallers(before: string, after: string): boolean {
     .every((parameter) => parameter.optional || parameter.rest);
 }
 
+/**
+ * Can a call that passes exactly `arity` positional arguments still compile?
+ *
+ * `onlyRelaxesCallers` asks whether a signature change is safe for *every*
+ * caller, and answers no the moment any parameter's type moves. That is the
+ * right answer for the surface diff, which has no callers in front of it. It
+ * is the wrong answer once a specific call site is in hand, because a call is
+ * only exposed to the parameters it actually fills: `z.string()` passes
+ * nothing, so `params` changing from `RawCreateParams & {…}` to `string |
+ * $ZodStringParams` cannot reach it. Reporting that line asks a developer to
+ * go and look at code with nothing in it to change.
+ *
+ * So this asks the narrower, per-site question. A call survives when some new
+ * overload accepts that many arguments with the same return type, and every
+ * position the call actually fills is unchanged or widened. Positions the call
+ * leaves empty are not examined — there is no argument there to be wrong.
+ *
+ * Deliberately conservative in the same direction as everything else here. It
+ * proves nothing about a call whose old declaration could not be parsed, or
+ * that no old overload accepted in the first place, and it does not try to
+ * decide assignability between two type expressions that merely look related —
+ * `ZodTypeAny` to `core.SomeType` is a question for a type checker, and
+ * guessing at it is how a real break ships.
+ */
+export function acceptsCallOfArity(before: string, after: string, arity: number): boolean {
+  if (arity < 0) return false;
+
+  const olds = overloadChain(before).map(callSignature).filter((s): s is CallShape => s !== null);
+  const news = overloadChain(after).map(callSignature).filter((s): s is CallShape => s !== null);
+  if (olds.length === 0 || news.length === 0) return false;
+
+  const accepting = olds.filter((shape) => admitsArity(shape, arity));
+  // The call did not resolve against the old declaration either, so whatever
+  // this line is, this change is not the reason to look at it.
+  if (accepting.length === 0) return false;
+
+  return accepting.every((old) =>
+    news.some((now) => {
+      if (!admitsArity(now, arity)) return false;
+      if (!sameType(old.returns, now.returns)) return false;
+
+      for (let index = 0; index < arity; index++) {
+        const parameter = old.parameters[index];
+        const replacement = now.parameters[index];
+        // A rest parameter absorbs the position; its element type is not
+        // compared, so it proves nothing and the call is left reported.
+        if (!parameter || !replacement) return false;
+        if (parameter.rest || replacement.rest) return false;
+        if (!sameType(parameter.type, replacement.type) && !widened(parameter.type, replacement.type)) return false;
+      }
+
+      return true;
+    }),
+  );
+}
+
+/**
+ * Could a call passing `arity` arguments ever have resolved to this
+ * declaration?
+ *
+ * When no overload of the *old* declaration accepts that many arguments, this
+ * line was never calling it. Overwhelmingly that means a name collision the
+ * text search cannot see through: `z.string().optional()` is a method on the
+ * schema object, and `z.optional(type)` is the free function that shares its
+ * name and requires an argument. Reporting the method as a site of the
+ * function's signature change points a developer at a line that has nothing to
+ * do with the finding.
+ *
+ * The only other reading is that the call was already failing to compile
+ * before the upgrade, which this change is likewise not the reason to look at.
+ *
+ * Requires a parseable old declaration. An alias like `declare const enum:
+ * typeof createZodEnum` yields no call signature to test an arity against, and
+ * an absence of evidence is not evidence of a mismatch.
+ */
+export function callCannotResolveTo(before: string, arity: number): boolean {
+  if (arity < 0) return false;
+
+  const olds = overloadChain(before).map(callSignature).filter((s): s is CallShape => s !== null);
+  if (olds.length === 0) return false;
+
+  return !olds.some((shape) => admitsArity(shape, arity));
+}
+
+/** Can this signature be called with exactly `arity` positional arguments? */
+function admitsArity(shape: CallShape, arity: number): boolean {
+  const required = shape.parameters.filter((parameter) => !parameter.optional && !parameter.rest).length;
+  if (arity < required) return false;
+  return shape.parameters.some((parameter) => parameter.rest) || arity <= shape.parameters.length;
+}
+
+/**
+ * Split the chain `extractExports` joins with ` | ` back into declarations.
+ *
+ * Only a separator that begins a new declaration counts. A bare ` | ` is far
+ * more often a union inside a parameter type — `params?: string | $ZodParams`
+ * — and splitting on those would cut signatures in half.
+ */
+function overloadChain(signature: string): string[] {
+  return signature
+    .split(/ \| (?=(?:export\s+)?declare\b)/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+type CallShape = { parameters: CallParameter[]; returns: string };
+
 interface CallParameter {
   optional: boolean;
   rest: boolean;
@@ -1496,7 +1647,7 @@ interface CallParameter {
  * to a caller — the same reason `interchangeable` exists — so both are read
  * here rather than only the form that happens to be more common.
  */
-function callSignature(signature: string): { parameters: CallParameter[]; returns: string } | null {
+function callSignature(signature: string): CallShape | null {
   const open = parameterListStart(signature);
   if (open < 0) return null;
 

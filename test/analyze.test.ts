@@ -2,7 +2,12 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { analyze, matchProse } from '../dist/analyze/index.js';
 import { diffSpecs } from '../dist/evidence/openapi.js';
-import { diffSurfaces, extractExports } from '../dist/evidence/type-surface.js';
+import {
+  acceptsCallOfArity,
+  callCannotResolveTo,
+  diffSurfaces,
+  extractExports,
+} from '../dist/evidence/type-surface.js';
 import { extractBreakingPassages, parseChangelogSections, sectionsBetween } from '../dist/evidence/changelog.js';
 import { DEFAULT_CONFIG } from '../dist/config/schema.js';
 import { createLogger } from '../dist/util/logger.js';
@@ -302,6 +307,116 @@ export { objectType as object };`,
     const api = extractExports('export declare function on<T extends (event: E) => void>(handler: T): void;', 'a.d.ts');
 
     assert.ok(api.has('on'), '`=>` inside a constraint closes nothing');
+  });
+
+  /**
+   * The truncation behind an entire zod 3 → 4 report. zod 3 spells its
+   * factories `(params?: RawCreateParams & { coerce?: true; }) => ZodString`,
+   * whose first `{` is nested two levels in and whose first `;` is inside it.
+   * Reading that brace as the declaration's body cut the signature off before
+   * its return type, and a signature that stops mid-type cannot be compared —
+   * so every one of those symbols was reported as changed against call sites
+   * that were already correct.
+   */
+  test('an inline object type inside a parameter list does not end the declaration', () => {
+    const api = extractExports(
+      'export declare const string: (params?: RawCreateParams & { coerce?: true; }) => ZodString;',
+      'a.d.ts',
+    );
+
+    const signature = api.get('string')?.signature ?? '';
+    assert.ok(signature.includes('=> ZodString'), `the return type survives: ${signature}`);
+    assert.ok(signature.trimEnd().endsWith(';'), 'the declaration runs to its own terminator');
+  });
+
+  test('a body-opening brace still ends the declaration it belongs to', () => {
+    const api = extractExports(
+      'export interface Options { retries?: number; timeout?: number; }\nexport declare function go(): void;',
+      'a.d.ts',
+    );
+
+    assert.deepEqual(api.get('Options')?.members, ['retries', 'timeout'], 'the body is still read as a body');
+    assert.ok(api.has('go'), 'and it does not swallow the declaration after it');
+  });
+
+  /**
+   * A call is only exposed to the parameters it actually fills. zod moved
+   * `params` from `RawCreateParams & {…}` to `string | $ZodStringParams` and
+   * grew a chain of overloads around it, and none of that can reach
+   * `z.string()`, which passes nothing.
+   */
+  describe('per-call-site signature compatibility', () => {
+    const zod3String = 'declare const string: (params?: RawCreateParams & { coerce?: true; }) => ZodString;';
+    const zod4String =
+      'export declare function string(params?: string | core.$ZodStringParams): ZodString;' +
+      ' | export declare function string<T extends string>(params?: string): core.$ZodType<T, T>;';
+
+    test('a zero-argument call survives a change to an optional parameter', () => {
+      assert.equal(acceptsCallOfArity(zod3String, zod4String, 0), true);
+    });
+
+    test('an overload chain is split on declarations, not on union bars', () => {
+      assert.equal(
+        acceptsCallOfArity(
+          'declare const f: (a?: string | number) => R;',
+          'export declare function f(a?: string | number | boolean): R;',
+          0,
+        ),
+        true,
+        'a `|` inside a parameter type must not be read as an overload separator',
+      );
+    });
+
+    test('a call that fills a moved parameter is still reported', () => {
+      assert.equal(
+        acceptsCallOfArity(
+          'declare const array: <El extends ZodTypeAny>(schema: El) => ZodArray<El>;',
+          'export declare function array<T extends core.SomeType>(element: T): ZodArray<T>;',
+          1,
+        ),
+        false,
+        'whether ZodTypeAny and core.SomeType agree is a question for a type checker',
+      );
+    });
+
+    test('a changed return type is not excused by an empty argument list', () => {
+      assert.equal(
+        acceptsCallOfArity('declare const f: () => Old;', 'export declare function f(): New;', 0),
+        false,
+      );
+    });
+
+    test('an optional parameter that became required still breaks the call that omitted it', () => {
+      assert.equal(
+        acceptsCallOfArity('declare const f: (a?: X) => R;', 'export declare function f(a: X): R;', 0),
+        false,
+      );
+    });
+
+    /**
+     * `z.string().optional()` is a method on the schema; `z.optional(type)` is
+     * the free function that shares its name and requires an argument. A call
+     * passing nothing never resolved to the function, so a change to the
+     * function's signature is not a reason to look at that line.
+     */
+    test('a call the old declaration could never accept is not a site of its change', () => {
+      assert.equal(
+        callCannotResolveTo('declare const optional: <Inner>(type: Inner, params?: P) => ZodOptional<Inner>;', 0),
+        true,
+      );
+    });
+
+    test('a call the old declaration did accept is left alone', () => {
+      assert.equal(
+        callCannotResolveTo('declare const optional: <Inner>(type: Inner, params?: P) => ZodOptional<Inner>;', 1),
+        false,
+      );
+    });
+
+    test('an unparseable declaration proves nothing either way', () => {
+      assert.equal(callCannotResolveTo('declare const enum: typeof createZodEnum;', 0), false);
+      assert.equal(acceptsCallOfArity('declare const enum: typeof createZodEnum;', 'export declare function e(): R;', 0), false);
+    });
   });
 
   test('a nested generic that really was removed is still reported', () => {
