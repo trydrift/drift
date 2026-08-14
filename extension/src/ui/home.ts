@@ -2736,7 +2736,15 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       this.state.set({ kind: 'findings', plan, at: Date.now() });
       this.session.say(
         clearedCount > 0
-          ? `Your typecheck against the upgraded version already passes — every predicted concern here was one it would have caught. No fix was needed.`
+          ? // Says which stage got it wrong, rather than only that something
+            // was. The scan tests every upgrade in a worktree before reporting
+            // it, so reaching this point at all means that test did not happen
+            // or did not agree — and a developer who was just shown a count
+            // that evaporated is owed which of the two it was.
+            `Your typecheck against the upgraded version already passes — every predicted concern here was one it would have caught, so no fix was needed.` +
+              (plan.verification
+                ? ` The scan reached the same conclusion (${plan.verification.status}); these concerns should not have been shown as outstanding.`
+                : ` The scan did not verify this upgrade, so it could only show you the prediction — see the Drift output channel for why.`)
           : 'Nothing left to fix.',
       );
       return;

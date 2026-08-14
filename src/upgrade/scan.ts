@@ -45,7 +45,7 @@ import { compareSeverity, describeSeverity, severityOf, type UpgradeSeverity } f
 import { lookupVersions, versionSourceLabel } from './versions.js';
 import { probeUpgrades, type ProbeTarget, type UpgradeVerification } from '../verification/upgrade-probe.js';
 import type { CheckKind } from '../detect/checks.js';
-import { applyVerification } from './verification.js';
+import { applyVerification, describeVerification } from './verification.js';
 
 const run = promisify(execFile);
 
@@ -580,11 +580,13 @@ export async function scanUpgrades(args: {
     });
 
     candidates.push(candidate);
-    // Held back when the upgrade is about to be tested for real. A candidate
-    // released here is a prediction, and releasing it would put a concern in
-    // front of someone that the probe may be about to withdraw — the exact
-    // "flagged, then walked back" sequence verification exists to end.
-    if (!verify.enabled) onCandidate?.(candidate);
+    // Released immediately, but marked `checking` while the upgrade is about to
+    // be tested for real. Holding it back entirely left a package invisible for
+    // as long as its install took; releasing it as-is presented a prediction the
+    // probe may be about to withdraw as though it were the answer. `checking` is
+    // the honest third option — here is what we suspect, we are not finished —
+    // and it is the same status the row already uses while a re-check runs.
+    onCandidate?.(verify.enabled ? { ...candidate, status: 'checking' } : candidate);
     done += 1;
     report(
       severityOf(candidate) === 'affected' ? 'Needs your attention' : 'Checked',
@@ -679,6 +681,18 @@ async function verifyCandidates(args: {
       const verified = applyVerification(candidate, verification);
       const at = args.candidates.indexOf(candidate);
       if (at >= 0) args.candidates[at] = verified;
+
+      // Always logged, never only on failure. A verification that quietly did
+      // not happen is indistinguishable from one that passed, right up until
+      // the fix stage contradicts the row — which is exactly the confusion this
+      // whole feature exists to remove, so the reason is on the record whether
+      // or not anyone is watching a panel.
+      const dropped = (candidate.plan?.breakingChanges.length ?? 0) - (verified.plan?.breakingChanges.length ?? 0);
+      args.logger.info(
+        `${target.name}@${target.selected}: ${describeVerification(verification)}` +
+          (dropped > 0 ? ` ${dropped} predicted finding(s) dropped as disproved.` : ''),
+      );
+
       args.onCandidate?.(verified);
     },
   });
