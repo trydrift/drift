@@ -736,3 +736,127 @@ end`,
     assert.equal(sites.length, 1, 'a paren rule would go silent on Ruby');
   });
 });
+
+/**
+ * The zod 3 → 4 report, end to end.
+ *
+ * A surface diff has no call sites in front of it, so it reports a moved
+ * parameter for every caller. With a call site in hand the question is
+ * narrower — a call is only exposed to the parameters it actually fills — and
+ * for the majority of what that upgrade flagged the answer is that there was
+ * never anything to change. Those sites reached the developer as flagged
+ * concerns and then an agent, which spent tokens concluding "no change
+ * needed"; the point of these is that they are never flagged at all.
+ */
+describe('a call site the new signature still accepts', () => {
+  const change = (symbol: string, before: string, after: string) => ({
+    id: `bc-${symbol}`,
+    dependency: 'acme-schema',
+    kind: 'signature-change' as const,
+    summary: `The signature of \`${symbol}\` changed.`,
+    remediation: 'Update every call site to match the new signature.',
+    symbols: [symbol],
+    confidence: 'high' as const,
+    citations: ['e1'],
+    before,
+    after,
+  });
+
+  const localizeIn = (changes: ReturnType<typeof change>[], content: string) => {
+    const files = [file('src/schema.ts', 'typescript', content)];
+    return localize(changes, [dep('acme-schema', 'npm')], buildIndex(files), files, { logger });
+  };
+
+  const stringChange = change(
+    'string',
+    'declare const string: (params?: RawCreateParams & { coerce?: true; }) => ZodString;',
+    'export declare function string(params?: string | core.$ZodStringParams): ZodString;',
+  );
+
+  test('a zero-argument call is not a site of a change to an optional parameter', () => {
+    const sites = localizeIn(
+      [stringChange],
+      `import { z } from 'acme-schema';
+
+export const schema = z.object({
+  name: z.string(),
+  note: z.string(),
+});`,
+    );
+
+    assert.equal(sites.length, 0, 'z.string() passes nothing the new parameter type can reach');
+  });
+
+  test('a call that fills the moved parameter is still reported', () => {
+    const sites = localizeIn(
+      [
+        change(
+          'array',
+          'declare const array: <El extends ZodTypeAny>(schema: El) => ZodArray<El>;',
+          'export declare function array<T extends core.SomeType>(element: T): ZodArray<T>;',
+        ),
+      ],
+      `import { z } from 'acme-schema';
+
+export const many = z.array(z.string());`,
+    );
+
+    assert.equal(sites.length, 1, 'an argument really is passed into the parameter that moved');
+  });
+
+  /**
+   * `.optional()` is a method on the schema object. The free function
+   * `z.optional(type)` requires an argument, so a call passing none was never
+   * calling it, whatever the two share as a name.
+   */
+  test('a method that shares a name with the changed function is not a site', () => {
+    const sites = localizeIn(
+      [
+        change(
+          'optional',
+          'declare const optional: <Inner extends ZodTypeAny>(type: Inner) => ZodOptional<Inner>;',
+          'export declare function optional<T extends core.SomeType>(innerType: T): ZodOptional<T>;',
+        ),
+      ],
+      `import { z } from 'acme-schema';
+
+export const schema = z.object({
+  note: z.string().optional(),
+});`,
+    );
+
+    assert.equal(sites.length, 0, 'z.string().optional() is not z.optional(...)');
+  });
+
+  test('a multi-line argument list is counted as the one argument it is', () => {
+    const sites = localizeIn(
+      [
+        change(
+          'object',
+          'declare const object: <Shape extends ZodRawShape>(shape: Shape) => ZodObject<Shape>;',
+          'export declare function object<T extends core.$ZodLooseShape>(shape?: T): ZodObject<T, core.$strip>;',
+        ),
+      ],
+      `import { z } from 'acme-schema';
+
+export const schema = z.object({
+  name: z.string(),
+  count: z.number(),
+});`,
+    );
+
+    assert.equal(sites.length, 1, 'a shape spanning several lines is still one filled parameter');
+  });
+
+  test('a change with no declaration text behind it is reported as before', () => {
+    const { before: _before, after: _after, ...textless } = stringChange;
+    const sites = localizeIn(
+      [textless as typeof stringChange],
+      `import { z } from 'acme-schema';
+
+export const name = z.string();`,
+    );
+
+    assert.equal(sites.length, 1, 'nothing to compare means nothing is dismissed');
+  });
+});
