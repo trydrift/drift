@@ -21,12 +21,12 @@ describe('crediting Drift on a commit', () => {
     const message = attributedMessage('chore(deps): upgrade zod to 4.0.0', 'It was fine.');
 
     assert.match(message, /^chore\(deps\): upgrade zod to 4\.0\.0\n\nIt was fine\.\n\n/);
-    assert.ok(message.endsWith('Co-authored-by: Drift <drift@users.noreply.github.com>'));
+    assert.ok(message.endsWith('Co-authored-by: Drift <trydrift@users.noreply.github.com>'));
   });
 
   test('a trailer must be its own last paragraph, or git ignores it', () => {
     const message = attributedMessage('subject only');
-    assert.equal(message, 'subject only\n\nCo-authored-by: Drift <drift@users.noreply.github.com>');
+    assert.equal(message, 'subject only\n\nCo-authored-by: Drift <trydrift@users.noreply.github.com>');
   });
 
   test('never accumulates the same trailer twice', () => {
@@ -45,12 +45,12 @@ describe('crediting Drift on a commit', () => {
 
     assert.equal(
       message,
-      'subject\n\nbody\n\nSigned-off-by: A <a@example.com>\nCo-authored-by: Drift <drift@users.noreply.github.com>',
+      'subject\n\nbody\n\nSigned-off-by: A <a@example.com>\nCo-authored-by: Drift <trydrift@users.noreply.github.com>',
     );
   });
 
   test('matches an existing trailer case-insensitively, as git does', () => {
-    const message = withTrailers('subject\n\nco-authored-by: Drift <drift@users.noreply.github.com>', [
+    const message = withTrailers('subject\n\nco-authored-by: Drift <trydrift@users.noreply.github.com>', [
       coAuthorTrailer(DRIFT_COAUTHOR),
     ]);
     assert.equal(message.match(/co-authored-by/gi)?.length, 1);
