@@ -122,6 +122,40 @@ describe('security assessment', () => {
     assert.deepEqual(result.current, []);
   });
 
+  test('an empty answer is no advisories, not a failed lookup', async () => {
+    // What OSV actually returns for a package with a clean record: HTTP 200
+    // and `{}`. Reading that as unreachable turned every clean package into
+    // "effect on known vulnerabilities is unknown".
+    const result = await assessSecurity('pkg', 'npm', '1.0.0', '2.0.0', { fetch: async () => ({}) });
+
+    assert.equal(result.checked, true, 'a 200 with no vulns is an answer');
+    assert.equal(result.direction, 'preserves');
+    assert.deepEqual(result.current, []);
+  });
+
+  test('a failed lookup carries why, so a timeout is not reported as a firewall', async () => {
+    const result = await assessSecurity('pkg', 'npm', '1.0.0', '2.0.0', {
+      fetch: async () => ({ osvFailure: 'OSV rate-limited this scan (HTTP 429)' }),
+    });
+
+    assert.equal(result.checked, false);
+    assert.match(result.reason ?? '', /429/);
+  });
+
+  test('an ecosystem OSV has no coverage for says so, rather than blaming the network', async () => {
+    let called = false;
+    const result = await assessSecurity('x', 'cocoapods', '1', '2', {
+      fetch: async () => {
+        called = true;
+        return null;
+      },
+    });
+
+    assert.equal(called, false, 'nothing is queried, so nothing can have failed');
+    assert.equal(result.checked, false);
+    assert.match(result.reason ?? '', /no advisory coverage for cocoapods/);
+  });
+
   test('an ecosystem OSV does not index is not queried', async () => {
     let called = false;
     await assessSecurity('x', 'maven', '1', '2', {
