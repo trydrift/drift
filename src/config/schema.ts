@@ -566,13 +566,20 @@ export const DriftConfigSchema = z.object({
       /**
        * Which of the project's checks to run.
        *
-       * Tests are off by default rather than unavailable: they are the slowest
-       * of the three by an order of magnitude, and a test that fails for its
-       * own reasons would be reported as an upgrade breaking the project. A
-       * repository whose suite is fast and trustworthy can add `'test'` here
-       * and get the strongest signal available.
+       * All three by default, and the tests are the reason this is worth the
+       * time. A compiler settles signatures and nothing else: a default that
+       * moved, a method that now throws where it used to return null, a parser
+       * that got stricter about the same input — every one of those typechecks
+       * clean and breaks in production. The test suite is the only thing in a
+       * repository that has an opinion about them.
+       *
+       * A suite that is already failing before the upgrade is applied is
+       * excluded from the verdict rather than blamed on it (see the baseline
+       * pass in `verification/upgrade-probe.ts`), so a red or flaky project
+       * degrades to typecheck-and-build instead of reporting nonsense. Drop
+       * `'test'` here for a suite too slow to sit through.
        */
-      checks: z.array(z.enum(['typecheck', 'build', 'test'])).default(['typecheck', 'build']),
+      checks: z.array(z.enum(['typecheck', 'build', 'test'])).default(['typecheck', 'build', 'test']),
 
       /** Per-command ceiling, covering both the install and each check. */
       timeoutMs: z.number().int().positive().default(15 * 60_000),

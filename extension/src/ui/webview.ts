@@ -904,6 +904,7 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
 
     <div class="pkg-body">
       <p class="verdict-long">${escapeHtml(candidate.error ?? candidate.summary)}</p>
+      ${renderVerification(candidate)}
       ${renderRationale(candidate)}
       ${renderGaps(candidate)}
 
@@ -926,13 +927,22 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
       ${candidate.plan ? renderCandidateDetail(candidate, candidate.plan) : ''}
 
       <div class="pkg-actions">
-        ${renderUpgradeActions(candidate)}
+        ${
+          // Nothing to press while the upgrade is still being tested. Every one
+          // of these buttons acts on a conclusion that is a few seconds away
+          // from being replaced, and "Upgrade and fix 61 sites" on a row whose
+          // verification is about to withdraw all 61 is the exact sequence that
+          // made a developer stop trusting the number.
+          busy
+            ? ''
+            : `${renderUpgradeActions(candidate)}
         ${
           candidate.impactCount > 0
             ? `<button class="primary" data-action="fixPackage" data-id="${escapeAttr(candidate.id)}">Upgrade and fix ${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'}</button>`
             : ''
         }
-        <button data-action="fileIssuePackage" data-id="${escapeAttr(candidate.id)}" title="Create a GitHub issue tracking this upgrade instead of acting on it now">Create issue</button>
+        <button data-action="fileIssuePackage" data-id="${escapeAttr(candidate.id)}" title="Create a GitHub issue tracking this upgrade instead of acting on it now">Create issue</button>`
+        }
       </div>
     </div>
   </details>`;
@@ -1140,6 +1150,42 @@ function renderFacts(
       .map((item) => `<li>${typeof item === 'string' ? escapeHtml(item) : item.html}</li>`)
       .join('')}${rest > 0 ? `<li class="hint">…and ${rest} more</li>` : ''}</ul>
   </div>`;
+}
+
+/**
+ * What the project's own toolchain said about this upgrade.
+ *
+ * The single most important line on the card, because it is the only one that
+ * was measured rather than predicted — Drift installed this version in a
+ * throwaway worktree and ran the repository's typecheck, build and tests
+ * against it.
+ *
+ * A skip is stated as loudly as a pass. The failure this exists to prevent is
+ * a row that quietly shows unverified predictions as though they were checked,
+ * and then gets contradicted the moment someone presses Fix.
+ */
+function renderVerification(candidate: UpgradeCandidate): string {
+  if (candidate.status === 'checking') {
+    return `<p class="verification pending">${ICON_ALERT}<span>Installing this version and running your checks against it. The findings below are predictions until that finishes.</span></p>`;
+  }
+
+  const verification = candidate.verification;
+  if (!verification) return '';
+
+  const ran = verification.checks
+    .filter((check) => check.status === 'passed' || check.status === 'failed')
+    .map((check) => `<code>${escapeHtml(check.label)}</code> ${check.status}`)
+    .join(' · ');
+
+  if (verification.status === 'passed') {
+    return `<p class="verification passed"><span>Verified against your project: ${ran}. Anything a compiler could have caught has been ruled out — what remains, if anything, is behaviour no check can see.</span></p>`;
+  }
+
+  if (verification.status === 'failed') {
+    return `<p class="verification failed">${ICON_ALERT}<span>This upgrade breaks your project: ${ran}. Measured, not predicted.</span></p>`;
+  }
+
+  return `<p class="verification skipped">${ICON_ALERT}<span>Not verified — ${escapeHtml(verification.reason ?? 'Drift could not test this upgrade.')} The findings below are predictions.</span></p>`;
 }
 
 function renderGaps(candidate: UpgradeCandidate): string {
@@ -2288,6 +2334,14 @@ button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
 .rationale ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .rationale li { font-size: 11px; color: var(--vscode-descriptionForeground); }
 
+.verification { display: flex; gap: 6px; align-items: flex-start; margin: 0 0 8px; font-size: 11px; line-height: 1.45; }
+.verification svg.i { flex: none; margin-top: 2px; }
+.verification code { font-size: 10px; opacity: 0.85; }
+.verification.passed { color: var(--vscode-descriptionForeground); }
+.verification.failed { color: var(--vscode-editorError-foreground); }
+.verification.failed svg.i { color: var(--vscode-editorError-foreground); }
+.verification.skipped, .verification.pending { color: var(--vscode-descriptionForeground); }
+.verification.skipped svg.i, .verification.pending svg.i { color: var(--vscode-editorWarning-foreground); }
 .gaps { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .gaps li { display: flex; gap: 6px; align-items: flex-start; font-size: 11px; color: var(--vscode-descriptionForeground); }
 .gaps svg.i { flex: none; margin-top: 2px; color: var(--vscode-editorWarning-foreground); }
