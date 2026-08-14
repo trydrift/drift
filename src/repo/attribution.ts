@@ -26,7 +26,7 @@ export interface Author {
  */
 export const DRIFT_COAUTHOR: Author = {
   name: 'Drift',
-  email: 'drift@users.noreply.github.com',
+  email: 'trydrift@users.noreply.github.com',
 };
 
 /** `Co-authored-by: Name <email>` for one author. */
