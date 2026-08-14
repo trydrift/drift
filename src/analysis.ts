@@ -1,4 +1,5 @@
-import type { DependencyChange, ImpactSite, RemediationPlan, RepoContext } from './types.js';
+import { join } from 'node:path';
+import type { DependencyChange, Ecosystem, ImpactSite, RemediationPlan, RepoContext } from './types.js';
 import type { DriftConfig } from './config/schema.js';
 import type { Logger } from './util/logger.js';
 import type { RepoProvider } from './repo/provider.js';
@@ -26,6 +27,10 @@ import type { SurfaceAddition, SurfaceUnavailable } from './evidence/surface/typ
 import type { AnalysisGap, CheckedSurface, VerificationOutcome } from './confidence/types.js';
 import { behaviouralFindingKind, runBehaviouralVerification } from './verification/behavioural.js';
 import { fetchedPackageEnvironment } from './verification/environment.js';
+import { probeDependencyChange } from './verification/upgrade-probe.js';
+import { applyVerificationToPlan, describeVerification } from './verification/apply.js';
+import { detectPackageManagers, type PackageManagerId } from './detect/package-manager.js';
+import type { CheckKind } from './detect/checks.js';
 import { dependencyEcosystemKey } from './util/id.js';
 import { mapWithConcurrency } from './util/http.js';
 
@@ -464,15 +469,83 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   // describe the probing run itself (disabled, unresolvable version, sandbox
   // unavailable), not a property `collectGaps` could derive from its own
   // inputs, and they never block automatic execution on their own.
-  const finalPlan = behaviouralGaps.length > 0 ? { ...plan, gaps: [...plan.gaps, ...behaviouralGaps] } : plan;
+  const withGaps = behaviouralGaps.length > 0 ? { ...plan, gaps: [...plan.gaps, ...behaviouralGaps] } : plan;
 
+  // The last word, and the only measured one. Everything above predicts what
+  // this change will do to this repository by reading what the dependency
+  // published; this installs it and asks the project's own compiler. Where they
+  // disagree about something a compiler can see, the compiler is right — it
+  // read the declarations that actually shipped.
+  const finalPlan = await verifyPlan(withGaps, {
+    ...options,
+    ...(workspace ? { workspace } : {}),
+    progress,
+  });
+
+  // Read off the verified plan, not the predicted one. A summary counting
+  // findings that verification has just disproved is the same wrong sentence
+  // this whole stage exists to stop printing.
   return {
     plan: finalPlan,
     summary:
-      plan.commits.length > 0
-        ? `${plan.breakingChanges.length} breaking change(s), ${new Set(plan.impactSites.map((s) => s.file)).size} file(s) affected`
+      finalPlan.commits.length > 0
+        ? `${finalPlan.breakingChanges.length} breaking change(s), ${new Set(finalPlan.impactSites.map((s) => s.file)).size} file(s) affected`
         : 'No code in this repository is affected by these dependency changes.',
   };
+}
+
+/**
+ * Install the change and run the project's own checks against it.
+ *
+ * Off when there is no local checkout to run in — a webhook analysing a
+ * repository it has never cloned can only predict, and says so by leaving
+ * `plan.verification` absent rather than implying a pass.
+ *
+ * Never throws and never blocks: a failure to verify downgrades the plan to
+ * what it already was, which is a prediction, and records why.
+ */
+async function verifyPlan(
+  plan: RemediationPlan,
+  options: AnalysisOptions & { workspace?: string; progress: (stage: AnalysisStage, detail: string) => void },
+): Promise<RemediationPlan> {
+  const { repo, config, workspace } = options;
+  if (!config.verify.enabled || !workspace || plan.changes.length === 0) return plan;
+
+  const change = plan.changes[0]!;
+  const dir = change.workspace ?? '';
+  const manager = await managerFor(workspace, dir, change.ecosystem);
+  if (!manager) return plan;
+
+  options.progress('verify', `Installing the change and running ${config.verify.checks.join(', ')}`);
+
+  const verification = await probeDependencyChange({
+    workspace,
+    dir,
+    packageManager: manager,
+    afterSha: repo.afterSha,
+    ...(repo.beforeSha ? { beforeSha: repo.beforeSha } : {}),
+    kinds: config.verify.checks as CheckKind[],
+    timeoutMs: config.verify.timeoutMs,
+    logger: options.logger,
+    ...(options.env ? { env: options.env } : {}),
+    onProgress: ({ phase, detail }) => options.progress('verify', `${phase}: ${detail}`),
+  });
+
+  options.logger.info(`Verification: ${describeVerification(verification)}`);
+  return applyVerificationToPlan(plan, verification);
+}
+
+/** Which tool owns `dir`, for the ecosystem that actually changed. */
+async function managerFor(
+  workspace: string,
+  dir: string,
+  ecosystem: Ecosystem,
+): Promise<PackageManagerId | null> {
+  const fs = nodeWorkspaceFs();
+  const entries = await fs.readDirectory(dir ? join(workspace, dir) : workspace);
+  if (entries.length === 0) return null;
+  const detected = detectPackageManagers({ entries }).find((d) => d.manager.ecosystem === ecosystem);
+  return detected?.manager.id ?? null;
 }
 
 /**

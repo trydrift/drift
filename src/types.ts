@@ -24,6 +24,7 @@ import type { UpgradeRationale } from './rationale/types.js';
 import type { ChangeTaxonomy } from './confidence/taxonomy.js';
 import type { AnalysisGap, CheckedSurface, ConfidenceAssessment } from './confidence/types.js';
 import type { CommunityRecipeCandidate } from './remediation/types.js';
+import type { UpgradeVerification } from './verification/upgrade-probe.js';
 
 export type { UpgradeRationale };
 
@@ -486,6 +487,17 @@ export interface RemediationPlan {
    * opposite things.
    */
   checkedSurfaces: CheckedSurface[];
+  /**
+   * What the project's own toolchain said when this upgrade was actually
+   * installed and checked, in a throwaway worktree, before any of this was
+   * reported.
+   *
+   * The only measured claim in a plan otherwise made of predictions, which is
+   * why consumers should prefer it wherever the two disagree. Absent when
+   * verification was switched off or the repository offered no check to run —
+   * never a silent "it passed".
+   */
+  verification?: UpgradeVerification;
   /** Reasons Drift refused to proceed automatically, if any. */
   blockers: string[];
   /** Non-fatal caveats surfaced to the reviewer. */
