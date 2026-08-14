@@ -544,6 +544,40 @@ export const DriftConfigSchema = z.object({
       enabled: z.boolean().default(false),
     })
     .prefault({}),
+
+  /**
+   * Test each upgrade before reporting it.
+   *
+   * Drift predicts breakage by diffing published type surfaces, which is cheap
+   * and imperfect: it sees a parameter move and reports every call site, when
+   * the new signature still accepts most of them. With this on, every candidate
+   * is installed in a throwaway git worktree — never the developer's checkout —
+   * and the project's own checks are run against it, before the candidate is
+   * reported at all. Predictions the compiler contradicts are dropped rather
+   * than shown and later withdrawn, and breakage no prediction saw is caught.
+   *
+   * It costs an install and a check run per candidate, which is the trade being
+   * made deliberately: a scan takes longer, and what it says is true.
+   */
+  verify: z
+    .object({
+      enabled: z.boolean().default(true),
+
+      /**
+       * Which of the project's checks to run.
+       *
+       * Tests are off by default rather than unavailable: they are the slowest
+       * of the three by an order of magnitude, and a test that fails for its
+       * own reasons would be reported as an upgrade breaking the project. A
+       * repository whose suite is fast and trustworthy can add `'test'` here
+       * and get the strongest signal available.
+       */
+      checks: z.array(z.enum(['typecheck', 'build', 'test'])).default(['typecheck', 'build']),
+
+      /** Per-command ceiling, covering both the install and each check. */
+      timeoutMs: z.number().int().positive().default(15 * 60_000),
+    })
+    .prefault({}),
 });
 
 export type DriftConfig = z.infer<typeof DriftConfigSchema>;

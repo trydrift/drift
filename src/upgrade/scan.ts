@@ -43,6 +43,9 @@ import { buildPlan } from '../plan/index.js';
 import { dependencyEcosystemKey } from '../util/id.js';
 import { compareSeverity, describeSeverity, severityOf, type UpgradeSeverity } from './severity.js';
 import { lookupVersions, versionSourceLabel } from './versions.js';
+import { probeUpgrades, type ProbeTarget, type UpgradeVerification } from '../verification/upgrade-probe.js';
+import type { CheckKind } from '../detect/checks.js';
+import { applyVerification } from './verification.js';
 
 const run = promisify(execFile);
 
@@ -123,6 +126,16 @@ export interface UpgradeCandidate {
    * reaching into the rationale object.
    */
   recommendation?: string;
+  /**
+   * What happened when this upgrade was actually installed and checked.
+   *
+   * The scan tests every candidate in a throwaway worktree before reporting it,
+   * so what a developer is shown has already survived their own typecheck and
+   * build. Absent when verification was switched off; `skipped` with a reason
+   * when it could not run. Never inferred — a candidate with no `verification`
+   * has not been measured, and a caller must not read that as "it passed".
+   */
+  verification?: UpgradeVerification;
   plan?: RemediationPlan;
   error?: string;
 }
@@ -397,12 +410,25 @@ export async function scanUpgrades(args: {
   env?: NodeJS.ProcessEnv;
   /** Packages checked in parallel. Defaults to 8, clamped to [1, 16]. */
   concurrency?: number;
+  /**
+   * Install each candidate in a throwaway worktree and run the project's own
+   * checks against it before reporting it. Defaults to `config.verify`.
+   *
+   * A caller passing `enabled: false` gets the old behaviour — predictions,
+   * unverified — and should be able to say why.
+   */
+  verify?: { enabled?: boolean; checks?: readonly CheckKind[]; timeoutMs?: number };
 }): Promise<UpgradeScanResult> {
   const { root, repo, config, logger, githubToken, onProgress, onCandidate, token, repoLabel } = args;
   const breadth = args.breadth ?? DEFAULT_BREADTH;
   const fs = args.fs ?? nodeWorkspaceFs();
   const env = args.env ?? process.env;
   const concurrency = Math.max(1, Math.min(16, Math.floor(args.concurrency ?? 8) || 8));
+  const verify = {
+    enabled: args.verify?.enabled ?? config.verify.enabled,
+    checks: args.verify?.checks ?? (config.verify.checks as readonly CheckKind[]),
+    timeoutMs: args.verify?.timeoutMs ?? config.verify.timeoutMs,
+  };
 
   const report = (phase: string, detail: string, done = 0, total = 0) =>
     onProgress?.({ phase, detail, done, total });
@@ -554,7 +580,11 @@ export async function scanUpgrades(args: {
     });
 
     candidates.push(candidate);
-    onCandidate?.(candidate);
+    // Held back when the upgrade is about to be tested for real. A candidate
+    // released here is a prediction, and releasing it would put a concern in
+    // front of someone that the probe may be about to withdraw — the exact
+    // "flagged, then walked back" sequence verification exists to end.
+    if (!verify.enabled) onCandidate?.(candidate);
     done += 1;
     report(
       severityOf(candidate) === 'affected' ? 'Needs your attention' : 'Checked',
@@ -563,6 +593,20 @@ export async function scanUpgrades(args: {
       deps.length,
     );
   });
+
+  if (verify.enabled && candidates.length > 0 && !token?.isCancellationRequested) {
+    await verifyCandidates({
+      root,
+      candidates,
+      checks: verify.checks,
+      timeoutMs: verify.timeoutMs,
+      env,
+      logger,
+      ...(token ? { token } : {}),
+      onProgress: (progress) => onProgress?.(progress),
+      onCandidate,
+    });
+  }
 
   return {
     candidates: candidates.sort(compareCandidates),
@@ -574,6 +618,70 @@ export async function scanUpgrades(args: {
     ambiguities,
     nestedGitRepos,
   };
+}
+
+/**
+ * Install every candidate for real and let the project's own toolchain rule on
+ * it, rewriting the candidate list in place with what was measured.
+ *
+ * Runs after the whole analysis rather than inside it: the analysis is network
+ * -bound and parallel, this is disk- and CPU-bound and serial, and interleaving
+ * them would have sixteen `npm install`s fighting over one machine.
+ *
+ * Every candidate is released to `onCandidate` here — verified, disproved, or
+ * skipped with a reason — because this is the first moment any of them is a
+ * statement about this repository rather than a guess about it.
+ */
+async function verifyCandidates(args: {
+  root: string;
+  candidates: UpgradeCandidate[];
+  checks: readonly CheckKind[];
+  timeoutMs: number;
+  env: NodeJS.ProcessEnv;
+  logger: Logger;
+  token?: { isCancellationRequested: boolean };
+  onProgress?: (progress: ScanProgress) => void;
+  onCandidate?: (candidate: UpgradeCandidate) => void;
+}): Promise<void> {
+  const byId = new Map(args.candidates.map((candidate) => [candidate.id, candidate]));
+
+  const targets: ProbeTarget[] = args.candidates.map((candidate) => ({
+    id: candidate.id,
+    name: candidate.name,
+    current: candidate.current,
+    selected: candidate.selected,
+    manifestPath: candidate.manifestPath,
+    packageManager: candidate.packageManager,
+    // The worktree, never `args.root`. `installUpgrade` writes a manifest and
+    // runs a package manager, and the whole point of this phase is that neither
+    // happens where someone is working.
+    install: (checkout) => installUpgrade(checkout, candidate, 'safe', args.env),
+  }));
+
+  await probeUpgrades({
+    root: args.root,
+    targets,
+    kinds: args.checks,
+    env: args.env,
+    logger: args.logger,
+    timeoutMs: args.timeoutMs,
+    ...(args.token ? { token: args.token } : {}),
+    onProgress: (progress) =>
+      args.onProgress?.({
+        phase: progress.phase,
+        detail: progress.detail,
+        done: progress.done,
+        total: progress.total,
+      }),
+    onVerified: (target, verification) => {
+      const candidate = byId.get(target.id);
+      if (!candidate) return;
+      const verified = applyVerification(candidate, verification);
+      const at = args.candidates.indexOf(candidate);
+      if (at >= 0) args.candidates[at] = verified;
+      args.onCandidate?.(verified);
+    },
+  });
 }
 
 /** Run `worker` over `items`, at most `limit` in flight, preserving no order. */

@@ -89,6 +89,20 @@ export interface PackageManager {
    */
   upgrade(target: UpgradeTarget): Command | null;
   /**
+   * Bring installed dependencies in line with what the manifest declares,
+   * changing no versions.
+   *
+   * What you run in a fresh checkout before anything will compile. Drift needs
+   * it to test an upgrade in a throwaway worktree: git gives it the manifest
+   * and the lockfile, and nothing else — no `node_modules`, no virtualenv — so
+   * a typecheck there fails on every import until this has run.
+   *
+   * Absent where the ecosystem's own build resolves dependencies as part of
+   * compiling (Go, Cargo, Gradle), which makes a separate restore step
+   * redundant rather than missing.
+   */
+  install?: Command;
+  /**
    * Rewrite a manifest's text so it declares `target`'s exact version.
    *
    * Present only where `upgrade`'s command resolves against whatever
@@ -141,6 +155,7 @@ const MANAGERS: readonly PackageManager[] = [
     manifests: ['package.json'],
     lockfiles: ['package-lock.json', 'npm-shrinkwrap.json'],
     outdated: { command: 'npm', args: ['outdated', '--json'] },
+    install: { command: 'npm', args: ['install'] },
     upgrade: ({ name, version, kind }) => ({
       command: 'npm',
       args: ['install', `${name}@${version}`, ...npmFlags(kind, '--save-dev', '--save-optional')],
@@ -153,6 +168,7 @@ const MANAGERS: readonly PackageManager[] = [
     manifests: ['package.json'],
     lockfiles: ['pnpm-lock.yaml'],
     outdated: { command: 'pnpm', args: ['outdated'] },
+    install: { command: 'pnpm', args: ['install'] },
     // `pnpm add` rather than `pnpm update`: only `add` writes an exact chosen
     // version back into the manifest section it came from.
     upgrade: ({ name, version, kind }) => ({
@@ -167,6 +183,7 @@ const MANAGERS: readonly PackageManager[] = [
     manifests: ['package.json'],
     lockfiles: ['yarn.lock'],
     outdated: null,
+    install: { command: 'yarn', args: ['install'] },
     upgrade: ({ name, version }) => ({ command: 'yarn', args: ['up', `${name}@${version}`] }),
   },
   {
@@ -176,6 +193,7 @@ const MANAGERS: readonly PackageManager[] = [
     manifests: ['package.json'],
     lockfiles: ['yarn.lock'],
     outdated: { command: 'yarn', args: ['outdated', '--json'] },
+    install: { command: 'yarn', args: ['install'] },
     upgrade: ({ name, version }) => ({
       command: 'yarn',
       args: ['upgrade', `${name}@${version}`],
@@ -188,6 +206,7 @@ const MANAGERS: readonly PackageManager[] = [
     manifests: ['package.json'],
     lockfiles: ['bun.lock', 'bun.lockb'],
     outdated: { command: 'bun', args: ['outdated'] },
+    install: { command: 'bun', args: ['install'] },
     upgrade: ({ name, version, kind }) => ({
       command: 'bun',
       args: ['add', `${name}@${version}`, ...npmFlags(kind, '--dev', '--optional')],
@@ -200,6 +219,7 @@ const MANAGERS: readonly PackageManager[] = [
     manifests: ['pyproject.toml'],
     lockfiles: ['uv.lock'],
     outdated: { command: 'uv', args: ['pip', 'list', '--outdated', '--format', 'json'] },
+    install: { command: 'uv', args: ['sync'] },
     upgrade: ({ name, version, kind }) => ({
       command: 'uv',
       args: ['add', `${name}==${version}`, ...(kind === 'dev' ? ['--dev'] : [])],
@@ -212,6 +232,7 @@ const MANAGERS: readonly PackageManager[] = [
     manifests: ['pyproject.toml'],
     lockfiles: ['poetry.lock'],
     outdated: { command: 'poetry', args: ['show', '--outdated'] },
+    install: { command: 'poetry', args: ['install'] },
     upgrade: ({ name, version, kind }) => ({
       command: 'poetry',
       args: ['add', `${name}==${version}`, ...(kind === 'dev' ? ['--group', 'dev'] : [])],
@@ -275,6 +296,7 @@ const MANAGERS: readonly PackageManager[] = [
     manifests: ['Gemfile'],
     lockfiles: ['Gemfile.lock'],
     outdated: { command: 'bundle', args: ['outdated'] },
+    install: { command: 'bundle', args: ['install'] },
     // Bundler resolves against the Gemfile's constraint; it has no flag that
     // pins a version without editing the Gemfile first, so `rewriteManifest`
     // does that and this then re-resolves the lockfile against it.
@@ -332,6 +354,7 @@ const MANAGERS: readonly PackageManager[] = [
     manifestPattern: /\.(cs|fs|vb)proj$/i,
     lockfiles: ['packages.lock.json'],
     outdated: { command: 'dotnet', args: ['list', 'package', '--outdated'] },
+    install: { command: 'dotnet', args: ['restore'] },
     upgrade: ({ name, version }) => ({
       command: 'dotnet',
       args: ['add', 'package', name, '--version', version],
@@ -344,6 +367,7 @@ const MANAGERS: readonly PackageManager[] = [
     manifests: ['composer.json'],
     lockfiles: ['composer.lock'],
     outdated: { command: 'composer', args: ['outdated', '--format=json'] },
+    install: { command: 'composer', args: ['install'] },
     upgrade: ({ name, version, kind }) => ({
       command: 'composer',
       args: ['require', `${name}:${version}`, ...(kind === 'dev' ? ['--dev'] : [])],
@@ -356,6 +380,7 @@ const MANAGERS: readonly PackageManager[] = [
     manifests: ['mix.exs'],
     lockfiles: ['mix.lock'],
     outdated: { command: 'mix', args: ['hex.outdated'] },
+    install: { command: 'mix', args: ['deps.get'] },
     // `mix deps.update` resolves against the constraint in mix.exs rather than
     // taking a version, so `rewriteManifest` edits that constraint first.
     upgrade: ({ name }) => ({ command: 'mix', args: ['deps.update', name] }),
@@ -368,6 +393,7 @@ const MANAGERS: readonly PackageManager[] = [
     manifests: ['rebar.config'],
     lockfiles: ['rebar.lock'],
     outdated: null,
+    install: { command: 'rebar3', args: ['get-deps'] },
     // Like Mix, `rebar3 upgrade` resolves against rebar.config's own
     // requirement rather than taking one on the command line.
     upgrade: ({ name }) => ({ command: 'rebar3', args: ['upgrade', name] }),
@@ -380,6 +406,7 @@ const MANAGERS: readonly PackageManager[] = [
     manifests: ['pubspec.yaml'],
     lockfiles: ['pubspec.lock'],
     outdated: { command: 'flutter', args: ['pub', 'outdated'] },
+    install: { command: 'flutter', args: ['pub', 'get'] },
     upgrade: ({ name, version }) => ({
       command: 'flutter',
       args: ['pub', 'add', `${name}:${version}`],
@@ -392,6 +419,7 @@ const MANAGERS: readonly PackageManager[] = [
     manifests: ['pubspec.yaml'],
     lockfiles: ['pubspec.lock'],
     outdated: { command: 'dart', args: ['pub', 'outdated'] },
+    install: { command: 'dart', args: ['pub', 'get'] },
     upgrade: ({ name, version, kind }) => ({
       command: 'dart',
       args: ['pub', 'add', ...(kind === 'dev' ? ['dev:'] : []), `${name}:${version}`],
@@ -415,6 +443,7 @@ const MANAGERS: readonly PackageManager[] = [
     manifests: ['Podfile'],
     lockfiles: ['Podfile.lock'],
     outdated: { command: 'pod', args: ['outdated'] },
+    install: { command: 'pod', args: ['install'] },
     // `pod update` honours the Podfile's constraint, so the constraint is what
     // `rewriteManifest` edits; this then re-resolves the lockfile against it.
     upgrade: ({ name }) => ({ command: 'pod', args: ['update', name] }),
