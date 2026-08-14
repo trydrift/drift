@@ -94,7 +94,10 @@ export function renderOne(rationale: UpgradeRationale): string {
 
 function renderSecurity(security: SecurityAssessment): string {
   if (!security.checked) {
-    return '**Security**\n\nThe OSV advisory database could not be reached, so this upgrade\'s effect on known vulnerabilities is unknown.';
+    return `**Security**\n\n${
+      security.reason ??
+      'The OSV advisory database could not be reached, so this upgrade\'s effect on known vulnerabilities is unknown.'
+    }`;
   }
 
   const lines: string[] = ['**Security**', ''];

@@ -111,7 +111,13 @@ export async function assessSecurity(
   options: OsvOptions = {},
 ): Promise<SecurityAssessment> {
   const osvEcosystem = OSV_ECOSYSTEM[ecosystem];
-  if (!osvEcosystem) return unchecked();
+  // Not a failure and never reported as one: OSV genuinely has no ecosystem for
+  // these, so there was nothing to reach.
+  if (!osvEcosystem) {
+    return unchecked(
+      `OSV has no advisory coverage for ${ecosystem} packages, so this upgrade's effect on known vulnerabilities could not be looked up.`,
+    );
+  }
 
   const query = options.fetch ?? defaultFetch;
 
@@ -121,8 +127,16 @@ export async function assessSecurity(
   ]);
 
   // A network failure is not an all-clear. Both sides must have answered for
-  // the comparison between them to mean anything.
-  if (currentRaw === null || targetRaw === null) return unchecked();
+  // the comparison between them to mean anything — an empty `{}` body is an
+  // answer, and means this version has no advisories.
+  const failure = [currentRaw, targetRaw].find((raw) => raw === null || isOsvFailure(raw));
+  if (failure !== undefined) {
+    return unchecked(
+      isOsvFailure(failure)
+        ? `${failure.osvFailure}, so this upgrade's effect on known vulnerabilities is unknown.`
+        : `The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.`,
+    );
+  }
 
   const current = readVulnerabilities(currentRaw, from);
   const target = readVulnerabilities(targetRaw, to);
@@ -168,9 +182,10 @@ function describeDirection(
   return 'preserves';
 }
 
-function unchecked(): SecurityAssessment {
+export function unchecked(reason?: string): SecurityAssessment {
   return {
     checked: false,
+    ...(reason ? { reason } : {}),
     current: [],
     target: [],
     resolved: [],
@@ -400,9 +415,28 @@ function firstSentence(text: string): string {
  * evidence fetch: an unreachable OSV degrades the assessment to "not checked"
  * and must never fail a scan.
  */
+const OSV_TIMEOUT_MS = 10_000;
+
+/**
+ * A failed lookup, carrying why.
+ *
+ * A bare `null` was indistinguishable between a timeout, a 429, and a DNS
+ * failure, so every one of them was reported to the developer as "could not be
+ * reached" — which sends someone hunting for a firewall when the real answer
+ * was that OSV rate-limited a burst. Injected fetches may still return plain
+ * `null`; that is still a failure, just an unexplained one.
+ */
+export interface OsvFailure {
+  osvFailure: string;
+}
+
+export function isOsvFailure(raw: unknown): raw is OsvFailure {
+  return typeof raw === 'object' && raw !== null && 'osvFailure' in raw;
+}
+
 const defaultFetch: OsvFetch = async (url, body) => {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10_000);
+  const timer = setTimeout(() => controller.abort(), OSV_TIMEOUT_MS);
   try {
     const response = await fetch(url, {
       method: 'POST',
@@ -413,10 +447,25 @@ const defaultFetch: OsvFetch = async (url, body) => {
       },
       body: JSON.stringify(body),
     });
-    if (!response.ok) return null;
+    if (!response.ok) {
+      // 429 is the one worth naming outright: it is self-inflicted, it comes
+      // and goes with how many packages a scan looks at, and it is the only
+      // one the developer can do something about by scanning less at once.
+      return {
+        osvFailure:
+          response.status === 429
+            ? 'OSV rate-limited this scan (HTTP 429). Lowering `drift.analysis.concurrency` will fetch fewer advisories at once.'
+            : `OSV answered HTTP ${response.status} ${response.statusText}`.trim(),
+      };
+    }
     return (await response.json()) as unknown;
-  } catch {
-    return null;
+  } catch (err) {
+    return {
+      osvFailure:
+        (err as Error)?.name === 'AbortError' || (err as Error)?.name === 'TimeoutError'
+          ? `OSV did not answer within ${OSV_TIMEOUT_MS / 1000}s`
+          : `OSV could not be reached (${(err as Error)?.message ?? 'network error'})`,
+    };
   } finally {
     clearTimeout(timer);
   }

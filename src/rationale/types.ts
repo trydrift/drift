@@ -39,8 +39,19 @@ export interface Vulnerability {
 export type SecurityDirection = 'improves' | 'preserves' | 'worsens' | 'mixed' | 'unknown';
 
 export interface SecurityAssessment {
-  /** False when OSV could not be reached. Absence of data is never safety. */
+  /** False when nothing was looked up. Absence of data is never safety. */
   checked: boolean;
+  /**
+   * Why nothing was looked up, in the developer's words.
+   *
+   * Present whenever `checked` is false, and it exists because "could not be
+   * reached" was being said in three unrelated situations: the query was
+   * switched off in config, the ecosystem has no OSV coverage at all, and the
+   * request actually failed. Only the third is a network problem, and a
+   * developer told the wrong one either goes looking for a firewall that isn't
+   * there or ignores a real outage.
+   */
+  reason?: string;
   /** Advisories affecting the installed version. */
   current: Vulnerability[];
   /** Advisories affecting the target version. */
