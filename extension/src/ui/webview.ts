@@ -419,9 +419,14 @@ function renderStep(item: Extract<ThreadItem, { kind: 'step' }>): string {
     </div>
     ${item.total > 0 ? `<div class="bar"><span style="width:${pct}%"></span></div>` : ''}
     ${
+      // Every line the step holds, not the last 60 of them. The summary right
+      // above this counts the whole log, so truncating here promised "184
+      // steps" and delivered 60 — and the ones it dropped were the early ones,
+      // which is where a scan says what it decided to look at. Anything that
+      // needs bounding is bounded where the log is written, not where it is
+      // read, so the count and the list cannot disagree again.
       item.log.length > 1
         ? `<details class="log" data-key="log:${escapeAttr(item.id)}"><summary>${item.log.length} step${item.log.length === 1 ? '' : 's'}</summary><ol>${item.log
-            .slice(-60)
             .map((line) => `<li>${escapeHtml(line)}</li>`)
             .join('')}</ol></details>`
         : ''
