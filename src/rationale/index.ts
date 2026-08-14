@@ -11,12 +11,12 @@ import {
 } from '../evidence/registry.js';
 import { mapWithConcurrency } from '../util/http.js';
 import { dependencyEcosystemKey } from '../util/id.js';
-import { assessSecurity, unchecked, type OsvOptions } from './osv.js';
+import { assessSecurity, assessSecurityBatch, unchecked, type OsvOptions, type SecurityLookup } from './osv.js';
 import { assessMaintenance } from './maintenance.js';
 import { assessLicense } from './license.js';
 import { describeAdditions, improvementsFrom, summarizeRelease } from './summary.js';
 import { assessUpgrade } from './assess.js';
-import type { UpgradeRationale } from './types.js';
+import type { SecurityAssessment, UpgradeRationale } from './types.js';
 
 /**
  * Stage 3b — why this upgrade might be worth taking.
@@ -45,6 +45,8 @@ export interface RationaleContext {
   surfaceGaps?: Map<string, SurfaceUnavailable>;
   /** Prose documents that were actually read, keyed by `dependencyEcosystemKey` when available. */
   prose?: Map<string, ProseSource[]>;
+  /** Precomputed security assessments, keyed by the exact upgrade object. */
+  security?: Map<DependencyChange, SecurityAssessment>;
 }
 
 export interface RationaleInput {
@@ -59,10 +61,22 @@ export async function buildRationale(
   ctx: RationaleContext,
 ): Promise<UpgradeRationale[]> {
   const upgrades = input.changes.filter((change) => change.from && change.to);
+  const lookups: SecurityLookup[] = upgrades.map((change) => ({
+    name: change.name,
+    ecosystem: change.ecosystem,
+    from: change.from!,
+    to: change.to!,
+  }));
+  const security = ctx.config.rationale.security
+    ? await assessSecurityBatch(lookups, ctx.osv ?? {})
+    : undefined;
+  const securityByChange = security
+    ? new Map(upgrades.map((change, index) => [change, security.get(lookups[index]!)!]))
+    : undefined;
 
   return mapWithConcurrency(upgrades, 4, async (change) => {
     try {
-      return await rationaleFor(change, input, ctx);
+      return await rationaleFor(change, input, { ...ctx, security: securityByChange });
     } catch (err) {
       // A crash here is a bug in Drift, not a fact about the dependency — and
       // it must not cost the developer the analysis of the other thirty.
@@ -92,7 +106,7 @@ async function rationaleFor(
   ]);
 
   const security = config.rationale.security
-    ? await assessSecurity(change.name, change.ecosystem, from, to, ctx.osv ?? {})
+    ? (ctx.security?.get(change) ?? (await assessSecurity(change.name, change.ecosystem, from, to, ctx.osv ?? {})))
     : // Switched off, not unreachable. Saying "could not be reached" here sent
       // developers looking for a network problem behind their own setting.
       unchecked(
@@ -337,7 +351,7 @@ function degraded(change: DependencyChange, reason: string): UpgradeRationale {
 }
 
 export * from './types.js';
-export { assessSecurity, mergeAliases, cvssBaseScore } from './osv.js';
+export { assessSecurity, assessSecurityBatch, mergeAliases, cvssBaseScore } from './osv.js';
 export { assessMaintenance, describeAge, raisesMinimum } from './maintenance.js';
 export { assessLicense, isAllowed } from './license.js';
 export { summarizeRelease, classify, bulletLines, improvementsFrom, describeAdditions } from './summary.js';

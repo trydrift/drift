@@ -25,6 +25,8 @@ import type {
  */
 
 const OSV_QUERY = 'https://api.osv.dev/v1/query';
+const OSV_QUERY_BATCH = 'https://api.osv.dev/v1/querybatch';
+const OSV_VULN = 'https://api.osv.dev/v1/vulns';
 
 /** OSV's ecosystem names. Not ours, and not guessable — they are enumerated. */
 const OSV_ECOSYSTEM: Record<Ecosystem, string | null> = {
@@ -90,9 +92,24 @@ interface OsvVuln {
 
 /** Injected by tests. Production always uses `fetchJson`. */
 export type OsvFetch = (url: string, body: unknown) => Promise<unknown | null>;
+export type OsvBatchFetch = (queries: readonly OsvQuery[]) => Promise<readonly (unknown | null)[] | OsvFailure>;
 
 export interface OsvOptions {
   fetch?: OsvFetch;
+  batchFetch?: OsvBatchFetch;
+}
+
+export interface OsvQuery {
+  version: string;
+  package: { name: string; ecosystem: string };
+  page_token?: string;
+}
+
+export interface SecurityLookup {
+  name: string;
+  ecosystem: Ecosystem;
+  from: string;
+  to: string;
 }
 
 /**
@@ -122,17 +139,100 @@ export async function assessSecurity(
   const query = options.fetch ?? defaultFetch;
 
   const [currentRaw, targetRaw] = await Promise.all([
-    query(OSV_QUERY, { version: from, package: { name, ecosystem: osvEcosystem } }),
-    query(OSV_QUERY, { version: to, package: { name, ecosystem: osvEcosystem } }),
+    query(OSV_QUERY, osvQuery(name, osvEcosystem, from)),
+    query(OSV_QUERY, osvQuery(name, osvEcosystem, to)),
   ]);
 
+  return compareSecurityResponses(currentRaw, targetRaw, from, to);
+}
+
+/**
+ * Query OSV for a group of upgrades in one request.
+ *
+ * OSV provides `/v1/querybatch` for this exact shape. Each dependency still
+ * needs two questions — the installed version and the candidate version — but
+ * batching turns a large rationale run from dozens of independent requests into
+ * one small POST.
+ */
+export async function assessSecurityBatch(
+  lookups: readonly SecurityLookup[],
+  options: OsvOptions = {},
+): Promise<Map<SecurityLookup, SecurityAssessment>> {
+  const out = new Map<SecurityLookup, SecurityAssessment>();
+  const covered: { lookup: SecurityLookup; osvEcosystem: string }[] = [];
+
+  for (const lookup of lookups) {
+    const osvEcosystem = OSV_ECOSYSTEM[lookup.ecosystem];
+    if (!osvEcosystem) {
+      out.set(
+        lookup,
+        unchecked(
+          `OSV has no advisory coverage for ${lookup.ecosystem} packages, so this upgrade's effect on known vulnerabilities could not be looked up.`,
+        ),
+      );
+    } else {
+      covered.push({ lookup, osvEcosystem });
+    }
+  }
+
+  if (covered.length === 0) return out;
+
+  if (covered.length === 1 && !options.batchFetch) {
+    const { lookup } = covered[0]!;
+    out.set(lookup, await assessSecurity(lookup.name, lookup.ecosystem, lookup.from, lookup.to, options));
+    return out;
+  }
+
+  if (options.fetch && !options.batchFetch) {
+    const assessed = await Promise.all(
+      covered.map(({ lookup }) => assessSecurity(lookup.name, lookup.ecosystem, lookup.from, lookup.to, options)),
+    );
+    covered.forEach(({ lookup }, index) => out.set(lookup, assessed[index]!));
+    return out;
+  }
+
+  const queries = covered.flatMap(({ lookup, osvEcosystem }) => [
+    osvQuery(lookup.name, osvEcosystem, lookup.from),
+    osvQuery(lookup.name, osvEcosystem, lookup.to),
+  ]);
+  const batchFetch = options.batchFetch ?? defaultBatchFetch;
+  const responses = await batchFetch(queries);
+
+  if (isOsvFailure(responses)) {
+    for (const { lookup } of covered) {
+      out.set(
+        lookup,
+        unchecked(`${responses.osvFailure}, so this upgrade's effect on known vulnerabilities is unknown.`),
+      );
+    }
+    return out;
+  }
+
+  for (let i = 0; i < covered.length; i += 1) {
+    const currentRaw = responses[i * 2];
+    const targetRaw = responses[i * 2 + 1];
+    out.set(
+      covered[i]!.lookup,
+      compareSecurityResponses(currentRaw, targetRaw, covered[i]!.lookup.from, covered[i]!.lookup.to),
+    );
+  }
+
+  return out;
+}
+
+function compareSecurityResponses(
+  currentRaw: unknown | null | undefined,
+  targetRaw: unknown | null | undefined,
+  from: string,
+  to: string,
+): SecurityAssessment {
   // A network failure is not an all-clear. Both sides must have answered for
   // the comparison between them to mean anything — an empty `{}` body is an
   // answer, and means this version has no advisories.
-  const failure = [currentRaw, targetRaw].find((raw) => raw === null || isOsvFailure(raw));
-  if (failure !== undefined) {
+  const failure = [currentRaw, targetRaw].find(isOsvFailure);
+  if (currentRaw == null || targetRaw == null || failure) {
     return unchecked(
-      isOsvFailure(failure)
+      failure
         ? `${failure.osvFailure}, so this upgrade's effect on known vulnerabilities is unknown.`
         : `The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.`,
     );
@@ -154,6 +254,10 @@ export async function assessSecurity(
     carried,
     direction: describeDirection(resolved, introduced),
   };
+}
+
+function osvQuery(name: string, ecosystem: string, version: string): OsvQuery {
+  return { version, package: { name, ecosystem } };
 }
 
 /**
@@ -411,11 +515,13 @@ function firstSentence(text: string): string {
 /**
  * OSV takes a POST body, which the shared `fetchJson` helper does not do.
  *
- * Failures resolve to `null` rather than throwing, matching every other
- * evidence fetch: an unreachable OSV degrades the assessment to "not checked"
- * and must never fail a scan.
+ * Failures resolve to a typed failure rather than throwing, matching every
+ * other evidence fetch: an unreachable OSV degrades the assessment to "not
+ * checked" and must never fail a scan.
  */
 const OSV_TIMEOUT_MS = 10_000;
+const OSV_RETRIES = 2;
+const OSV_BACKOFF_MS = 200;
 
 /**
  * A failed lookup, carrying why.
@@ -428,6 +534,7 @@ const OSV_TIMEOUT_MS = 10_000;
  */
 export interface OsvFailure {
   osvFailure: string;
+  transient?: boolean;
 }
 
 export function isOsvFailure(raw: unknown): raw is OsvFailure {
@@ -435,17 +542,96 @@ export function isOsvFailure(raw: unknown): raw is OsvFailure {
 }
 
 const defaultFetch: OsvFetch = async (url, body) => {
+  return requestOsvPost(url, body);
+};
+
+const defaultBatchFetch: OsvBatchFetch = async (queries) => {
+  const results: { vulns: OsvVuln[] }[] = Array.from({ length: queries.length }, () => ({ vulns: [] }));
+  let pending = queries.map((query, index) => ({ query, index }));
+
+  while (pending.length > 0) {
+    const raw = await requestOsvPost(OSV_QUERY_BATCH, { queries: pending.map((item) => item.query) });
+    if (isOsvFailure(raw)) return raw;
+
+    const page = (raw as { results?: ({ vulns?: OsvVuln[]; next_page_token?: string } | null)[] } | null)?.results;
+    if (!Array.isArray(page) || page.length !== pending.length) {
+      return { osvFailure: 'OSV returned a malformed batch response' };
+    }
+
+    const next: typeof pending = [];
+    for (let i = 0; i < page.length; i += 1) {
+      const item = pending[i]!;
+      const pageResult = page[i] ?? {};
+      results[item.index]!.vulns.push(...((pageResult.vulns ?? []).filter((v): v is OsvVuln => Boolean(v?.id))));
+      if (pageResult.next_page_token) {
+        next.push({ index: item.index, query: { ...item.query, page_token: pageResult.next_page_token } });
+      }
+    }
+    pending = next;
+  }
+
+  const details = await fetchVulnerabilityDetails(results.flatMap((result) => result.vulns));
+  if (isOsvFailure(details)) return details;
+
+  return results.map((result) => ({
+    vulns: result.vulns.map((vuln) => details.get(vuln.id!) ?? vuln),
+  }));
+};
+
+async function fetchVulnerabilityDetails(vulns: readonly OsvVuln[]): Promise<Map<string, OsvVuln> | OsvFailure> {
+  const ids = [...new Set(vulns.map((vuln) => vuln.id).filter((id): id is string => Boolean(id)))];
+  const details = await Promise.all(
+    ids.map(async (id): Promise<[string, OsvVuln] | OsvFailure> => {
+      const raw = await requestOsvGet(`${OSV_VULN}/${encodeURIComponent(id)}`);
+      if (isOsvFailure(raw)) return raw;
+      return [id, raw as OsvVuln];
+    }),
+  );
+
+  const failure = details.find(isOsvFailure);
+  if (failure) return failure;
+
+  return new Map(details as [string, OsvVuln][]);
+}
+
+async function requestOsvPost(url: string, body: unknown): Promise<unknown | OsvFailure> {
+  return requestOsvJson(url, { method: 'POST', body: JSON.stringify(body) });
+}
+
+async function requestOsvGet(url: string): Promise<unknown | OsvFailure> {
+  return requestOsvJson(url, { method: 'GET' });
+}
+
+async function requestOsvJson(
+  url: string,
+  init: { method: 'GET' } | { method: 'POST'; body: string },
+): Promise<unknown | OsvFailure> {
+  let lastFailure: OsvFailure | null = null;
+  for (let attempt = 0; attempt <= OSV_RETRIES; attempt += 1) {
+    const result = await requestOsvJsonOnce(url, init);
+    if (!isOsvFailure(result) || !result.transient || attempt === OSV_RETRIES) return result;
+
+    lastFailure = result;
+    await sleep(OSV_BACKOFF_MS * 2 ** attempt);
+  }
+  return lastFailure ?? { osvFailure: 'OSV could not be reached (network error)' };
+}
+
+async function requestOsvJsonOnce(
+  url: string,
+  init: { method: 'GET' } | { method: 'POST'; body: string },
+): Promise<unknown | OsvFailure> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), OSV_TIMEOUT_MS);
   try {
     const response = await fetch(url, {
-      method: 'POST',
+      method: init.method,
       signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
         'User-Agent': 'drift-bot/0.1 (+https://github.com/trydrift/drift)',
       },
-      body: JSON.stringify(body),
+      ...(init.method === 'POST' ? { body: init.body } : {}),
     });
     if (!response.ok) {
       // 429 is the one worth naming outright: it is self-inflicted, it comes
@@ -456,19 +642,47 @@ const defaultFetch: OsvFetch = async (url, body) => {
           response.status === 429
             ? 'OSV rate-limited this scan (HTTP 429). Lowering `drift.analysis.concurrency` will fetch fewer advisories at once.'
             : `OSV answered HTTP ${response.status} ${response.statusText}`.trim(),
+        transient: response.status === 408 || response.status === 429 || response.status >= 500,
       };
     }
     return (await response.json()) as unknown;
   } catch (err) {
+    const error = err as Error;
+    const timedOut = error?.name === 'AbortError' || error?.name === 'TimeoutError';
     return {
-      osvFailure:
-        (err as Error)?.name === 'AbortError' || (err as Error)?.name === 'TimeoutError'
-          ? `OSV did not answer within ${OSV_TIMEOUT_MS / 1000}s`
-          : `OSV could not be reached (${(err as Error)?.message ?? 'network error'})`,
+      osvFailure: timedOut
+        ? `OSV did not answer within ${OSV_TIMEOUT_MS / 1000}s${causeSuffix(error)}`
+        : `OSV could not be reached (${errorMessageWithCause(error)})`,
+      transient: true,
     };
   } finally {
     clearTimeout(timer);
   }
-};
+}
+
+function errorMessageWithCause(err: Error | null | undefined): string {
+  const message = err?.message || 'network error';
+  return `${message}${causeSuffix(err)}`;
+}
+
+function causeSuffix(err: Error | null | undefined): string {
+  const cause = (err as { cause?: unknown } | null | undefined)?.cause;
+  if (cause === undefined || cause === null) return '';
+  return `; cause: ${describeCause(cause)}`;
+}
+
+function describeCause(cause: unknown): string {
+  if (cause instanceof Error) return cause.message || cause.name;
+  if (typeof cause === 'string') return cause;
+  try {
+    return JSON.stringify(cause);
+  } catch {
+    return String(cause);
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export { OSV_ECOSYSTEM };
