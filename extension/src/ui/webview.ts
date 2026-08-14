@@ -17,6 +17,7 @@ import { describeSeverity, severityOf, type UpgradeSeverity } from '../severity.
 import type { ReviewGroup, ReviewTotals } from '../review/store.js';
 import type { BreakingChange, Evidence, RemediationPlan } from '../../../src/types.js';
 import type { Vulnerability } from '../../../src/rationale/types.js';
+import type { CheckOutcome } from '../../../src/verification/checks.js';
 
 /**
  * The panel's markup.
@@ -1225,10 +1226,35 @@ function renderVerification(candidate: UpgradeCandidate): string {
   }
 
   if (verification.status === 'failed') {
-    return `<p class="verification failed">${ICON_ALERT}<span>This upgrade breaks your project: ${ran}. Measured, not predicted.</span></p>`;
+    return `<p class="verification failed">${ICON_ALERT}<span>This upgrade breaks your project: ${ran}. Measured, not predicted.</span></p>
+    ${renderVerificationDiagnostics(candidate.id, verification.checks)}`;
   }
 
   return `<p class="verification skipped">${ICON_ALERT}<span>Not verified — ${escapeHtml(verification.reason ?? 'Drift could not test this upgrade.')} The findings below are predictions.</span></p>`;
+}
+
+/**
+ * The command and its actual output, for the checks that failed.
+ *
+ * `renderVerification`'s summary line names which check failed, not why —
+ * that reads as Drift's opinion. Whether a build genuinely broke or just
+ * failed to run in the throwaway worktree (a missing gitignored file it
+ * needs, say) is a question the reader can only answer by seeing what the
+ * command actually printed, the same as if they had run it themselves.
+ */
+function renderVerificationDiagnostics(candidateId: string, checks: readonly CheckOutcome[]): string {
+  const failing = checks.filter((check) => check.status === 'failed');
+  if (failing.length === 0) return '';
+
+  return `<details class="sub" data-key="verify-diagnostics:${escapeAttr(candidateId)}">
+    <summary>Command output</summary>
+    ${failing
+      .map(
+        (check) =>
+          `<pre class="activity-io"><span>$ ${escapeHtml(check.label)}</span><code>${escapeHtml(check.output.trim() || '(no output captured)')}</code></pre>`,
+      )
+      .join('')}
+  </details>`;
 }
 
 function renderGaps(candidate: UpgradeCandidate): string {

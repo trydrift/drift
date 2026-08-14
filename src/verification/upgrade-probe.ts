@@ -203,6 +203,19 @@ async function probeGroup(
     return;
   }
 
+  if (worktree.copiedFiles.length > 0) {
+    hooks.report(
+      'Preparing a test checkout',
+      `carried over ${worktree.copiedFiles.length} gitignored file${worktree.copiedFiles.length === 1 ? '' : 's'} not tracked by git: ${worktree.copiedFiles.join(', ')}`,
+    );
+  }
+  if (worktree.oversizedFiles.length > 0) {
+    hooks.report(
+      'Preparing a test checkout',
+      `skipped ${worktree.oversizedFiles.length} gitignored file${worktree.oversizedFiles.length === 1 ? '' : 's'} too large to carry over automatically, which may make a check fail for a reason unrelated to this upgrade: ${worktree.oversizedFiles.join(', ')}`,
+    );
+  }
+
   try {
     // Detected in the worktree rather than in the developer's checkout, because
     // that is where they will run. Reading the open tree would offer a script
@@ -577,9 +590,18 @@ function verdictFrom(outcomes: readonly CheckOutcome[]): UpgradeVerification {
  * failure mode `unchecked` exists to prevent.
  */
 function describeUnusableBaseline(baseline: readonly CheckOutcome[]): string {
-  const failing = baseline.filter((outcome) => outcome.status === 'failed').map((outcome) => outcome.label);
+  const failing = baseline.filter((outcome) => outcome.status === 'failed');
   if (failing.length > 0) {
-    return `\`${failing.join('`, `')}\` already fails on this commit before any upgrade is applied, so a failure afterwards would prove nothing.`;
+    const labels = failing.map((outcome) => outcome.label);
+    // The label alone ("`build` already fails") tells a developer that
+    // something is wrong and nothing about what — which, for a check that
+    // passes in their own terminal, reads as Drift being wrong rather than
+    // as a real difference between their checkout and the worktree's. The
+    // command and its actual output are what let them tell those apart.
+    const detail = failing
+      .map((outcome) => `$ ${outcome.label}\n${outcome.output.trim() || '(no output captured)'}`)
+      .join('\n\n');
+    return `\`${labels.join('`, `')}\` already fails on this commit before any upgrade is applied, so a failure afterwards would prove nothing.\n\n${detail}`;
   }
   const reason = baseline.find((outcome) => outcome.reason)?.reason;
   return reason ?? 'None of the project’s checks could be run in a clean checkout.';
