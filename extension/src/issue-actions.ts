@@ -115,18 +115,19 @@ async function createIssue(
   if (outcome.kind === 'opened') {
     report?.onIssue?.({ status: outcome.existing ? 'existing' : 'created', number: outcome.number, url: outcome.url });
 
-    // A branch is only offered when this call did not already link one —
-    // `action: 'both'` already put the tracking line in the body above, and
-    // asking again would be a second, redundant offer for the same thing.
-    const buttons = linkedBranch ? ['Open issue'] : ['Open issue', 'Create linked branch'];
+    // Whether to link a branch is asked inline in the conversation panel
+    // (`Home.offerBranchForIssue`), not here — a toast button can only ever
+    // offer "create one now", where the panel can offer a real choice
+    // (new branch vs. an existing one vs. not now). Duplicating that as a
+    // button on this notification would just be the same question asked
+    // twice.
     const choice = await vscode.window.showInformationMessage(
       outcome.existing
         ? `Drift: issue #${outcome.number} was already open — ${outcome.url}`
         : `Drift: created issue #${outcome.number} — ${outcome.url}`,
-      ...buttons,
+      'Open issue',
     );
     if (choice === 'Open issue') await vscode.env.openExternal(vscode.Uri.parse(outcome.url));
-    if (choice === 'Create linked branch') await createLinkedBranch(git, workspaceRoot, target, outcome.number, report);
     return;
   }
 
@@ -181,10 +182,9 @@ async function createLinkedBranch(
 
 /**
  * Create (or switch to) `target`'s branch and link it to an issue already
- * filed for the same finding(s) — the same thing the "Create linked branch"
- * button on the issue-created notification does, exposed for a caller (the
- * main panel's chat) that asks the same question in its own transcript
- * instead of through that toast.
+ * filed for the same finding(s) — what `Home.offerBranchForIssue` calls once
+ * the developer answers "yes" to the inline panel question asked right after
+ * filing.
  */
 export async function linkBranchToIssue(
   workspaceRoot: string,
