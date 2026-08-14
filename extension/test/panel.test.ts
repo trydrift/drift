@@ -1132,6 +1132,59 @@ test('the panel shows what an upgrade buys, not only what it costs', () => {
   assert.match(html, /class="rationale bad"/);
 });
 
+test('overflow security advisories are expandable', () => {
+  const c = candidate({
+    name: 'axios',
+    current: '2.40.0',
+    selected: '2.70.2',
+    latest: '2.70.2',
+    breakingCount: 0,
+    impactCount: 0,
+    impactFiles: 0,
+    gaps: [],
+    recommendation: 'upgrade-recommended',
+    rationale: {
+      dependency: 'axios',
+      from: '2.40.0',
+      to: '2.70.2',
+      security: {
+        checked: true,
+        current: [],
+        target: [],
+        resolved: [
+          { id: 'GHSA-2crg-3p73-43xp', aliases: ['CVE-2026-40073'], summary: 'First advisory.', severity: 'high', url: 'https://example.test/1', fixedIn: '2.57.1' },
+          { id: 'GHSA-j62c-4x62-9r35', aliases: ['CVE-2025-67647'], summary: 'Second advisory.', severity: 'high', url: 'https://example.test/2', fixedIn: '2.49.5' },
+          { id: 'GHSA-29g2-3rmr-qm68', aliases: ['CVE-2026-66062'], summary: 'Third advisory.', severity: 'medium', url: 'https://example.test/3', fixedIn: '2.70.2' },
+          { id: 'GHSA-3f6h-2hrp-w5wx', aliases: ['CVE-2026-40074'], summary: 'Fourth advisory.', severity: 'medium', url: 'https://example.test/4', fixedIn: '2.57.1' },
+          { id: 'GHSA-866w-xmhq-wj7x', aliases: [], summary: 'Fifth advisory.', severity: 'medium', url: 'https://example.test/5', fixedIn: '2.69.1' },
+          { id: 'GHSA-hidden-hidden-0000', aliases: ['CVE-2026-00000'], summary: 'Hidden advisory.', severity: 'low', url: 'https://example.test/6', fixedIn: '2.70.2' },
+        ],
+        introduced: [],
+        carried: [],
+        direction: 'improves',
+      },
+      maintenance: { facts: [] },
+      improvements: [],
+      license: { verdict: 'ok', statement: '', introduced: [] },
+      summary: { changes: [], unrelated: 0 },
+      assessment: { recommendation: 'upgrade-recommended', reasons: [], confidence: 'high', confidenceBasis: '' },
+      gaps: [],
+    },
+  });
+
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'i1', kind: 'packages', headline: 'One upgrade available.', ids: [c.id] }],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  assert.match(html, /Fixes 6 known vulnerabilities/);
+  assert.match(html, /<details class="fact-more" data-key="facts:good:Fixes 6 known vulnerabilities:[^"]+">\s*<summary>…and 1 more<\/summary>/);
+  assert.match(html, /GHSA-hidden-hidden-0000<\/a> — low, first fixed in 2\.70\.2/);
+  assert.match(html, /data-action="openUrl" data-url="https:\/\/example\.test\/6"/);
+});
+
 test('a compared API with no changelog is checked, not unverified', () => {
   // The gap is real — there is no changelog — but the exported API was compared
   // symbol by symbol and found unchanged. Counting the gap alone would bury a
