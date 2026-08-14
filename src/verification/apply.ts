@@ -166,14 +166,21 @@ export function describeVerification(verification: UpgradeVerification): string 
   }
 
   if (verification.status === 'failed') {
-    const failing = verification.checks
-      .filter((check) => check.status === 'failed')
-      .map((check) => `\`${check.label}\``);
+    const failingChecks = verification.checks.filter((check) => check.status === 'failed');
+    const failing = failingChecks.map((check) => `\`${check.label}\``);
     const where =
       verification.failedFiles.length > 0
         ? ` in ${verification.failedFiles.length} file${verification.failedFiles.length === 1 ? '' : 's'}`
         : '';
-    return `${failing.join(', ')} fails with this upgrade installed${where} — measured, not predicted.`;
+    const summary = `${failing.join(', ')} fails with this upgrade installed${where} — measured, not predicted.`;
+
+    // The command and its output, not just its label: a reader deciding
+    // whether to trust this verdict needs to see what actually ran and what
+    // it said, the same way they would if they had run it themselves.
+    const detail = failingChecks
+      .map((check) => `$ ${check.label}\n${check.output.trim() || '(no output captured)'}`)
+      .join('\n\n');
+    return detail ? `${summary}\n\n${detail}` : summary;
   }
 
   return verification.reason ?? 'This upgrade was not tested.';

@@ -1,5 +1,5 @@
-import { rm } from 'node:fs/promises';
-import { join } from 'node:path';
+import { copyFile, mkdir, rm, stat } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
 import { execCommand, type Exec } from '../util/exec.js';
 
 /**
@@ -21,6 +21,21 @@ import { execCommand, type Exec } from '../util/exec.js';
 export interface Worktree {
   /** Absolute path of the checkout. */
   path: string;
+  /**
+   * Repo-relative paths of gitignored files carried over from `root` — the
+   * same files a `build` run in the developer's own checkout would see.
+   * Empty when `copyIgnoredFiles` was off or there was nothing gitignored
+   * outside the usual regenerable directories.
+   */
+  copiedFiles: readonly string[];
+  /**
+   * Gitignored files that qualified for copying but were skipped for being
+   * larger than {@link MAX_COPY_BYTES}. Reported rather than silently
+   * dropped: a build that still fails in the worktree because of one of
+   * these should say so, not repeat the same unexplained failure this
+   * feature exists to prevent.
+   */
+  oversizedFiles: readonly string[];
   /** Remove it. Safe to call more than once, and never throws. */
   dispose(): Promise<void>;
 }
@@ -31,6 +46,13 @@ export interface WorktreeOptions {
   /** Runs the git commands. Injected by tests. */
   exec?: Exec;
   env?: NodeJS.ProcessEnv;
+  /**
+   * Carry over gitignored files from `root`, e.g. generated code a build
+   * step expects to already exist. On by default — see
+   * {@link copyIgnoredSourceFiles}. Set `false` for work that means to
+   * measure the commit exactly as checked in, with nothing local added.
+   */
+  copyIgnoredFiles?: boolean;
 }
 
 /**
@@ -77,9 +99,16 @@ export async function createWorktree(
     );
   }
 
+  const { copied, oversized } =
+    options.copyIgnoredFiles === false
+      ? { copied: [], oversized: [] }
+      : await copyIgnoredSourceFiles(root, path, exec, env);
+
   let disposed = false;
   return {
     path,
+    copiedFiles: copied,
+    oversizedFiles: oversized,
     async dispose() {
       if (disposed) return;
       disposed = true;
@@ -111,6 +140,110 @@ export async function withWorktree<T>(
   } finally {
     await worktree.dispose();
   }
+}
+
+/**
+ * Directory segments that mark a gitignored path as regenerable rather than a
+ * checked-in input: caches, dependency trees, and build output a fresh
+ * install or build step recreates on its own. Never worth carrying into a
+ * worktree, and often too large to try.
+ */
+const REGENERABLE_SEGMENTS = new Set([
+  'node_modules',
+  '.git',
+  'dist',
+  'build',
+  'out',
+  '.next',
+  '.nuxt',
+  '.output',
+  '.svelte-kit',
+  '.cache',
+  '.parcel-cache',
+  '.turbo',
+  '.angular',
+  'coverage',
+  'target',
+  'vendor',
+  '.venv',
+  'venv',
+  '__pycache__',
+  '.pytest_cache',
+  '.gradle',
+  '.idea',
+  '.vscode',
+  'tmp',
+  '.tmp',
+]);
+
+/**
+ * Ignored files this large are copied output or data, not the kind of small
+ * hand-generated source a build reads as an input — and copying one this size
+ * on every worktree would make the feature cost more than the failure it
+ * prevents. Reported rather than silently skipped, in case it's wrong for a
+ * given repository.
+ */
+const MAX_COPY_BYTES = 25 * 1024 * 1024;
+
+/**
+ * Carry gitignored-but-locally-necessary files from `root` into a fresh
+ * worktree.
+ *
+ * A worktree is `git worktree add`'s checkout: tracked files only. Most
+ * repositories are fine with that — `npm install` and a build step rebuild
+ * everything gitignored from scratch. Some are not: a codegen step run once
+ * and committed nowhere, whose output is `.gitignore`d because it is
+ * derived, but which the build reads as if it were source. Without it, every
+ * check in the worktree fails the same way a fresh clone would, and Drift
+ * reports the whole project as unbuildable rather than saying nothing about
+ * the upgrade at all.
+ *
+ * There is no manifest of which gitignored files are like this, so this
+ * copies what the developer's own `npm run build` already sees: everything
+ * `git` reports as ignored, minus the directories a fresh install or build
+ * regenerates on its own ({@link REGENERABLE_SEGMENTS}). An earlier version
+ * of this tried to guess relevance by grepping tracked source for each
+ * file's name, which is exactly backwards — it can miss a file referenced
+ * indirectly (a dynamic import, a path built at runtime) and silently
+ * reproduce the very failure this exists to prevent. Copying everything the
+ * denylist doesn't rule out has no such blind spot.
+ */
+export async function copyIgnoredSourceFiles(
+  root: string,
+  worktreePath: string,
+  exec: Exec,
+  env: NodeJS.ProcessEnv,
+  /** Overridable by tests; production callers get {@link MAX_COPY_BYTES}. */
+  maxBytes: number = MAX_COPY_BYTES,
+): Promise<{ copied: string[]; oversized: string[] }> {
+  const listed = await exec('git', ['ls-files', '--others', '--ignored', '--exclude-standard', '-z'], {
+    cwd: root,
+    env,
+  });
+  if (listed.code !== 0 || !listed.stdout) return { copied: [], oversized: [] };
+
+  const candidates = listed.stdout
+    .split('\0')
+    .filter((rel) => rel.length > 0 && !rel.split('/').some((segment) => REGENERABLE_SEGMENTS.has(segment)));
+
+  const copied: string[] = [];
+  const oversized: string[] = [];
+  for (const rel of candidates) {
+    const source = join(root, rel);
+    const info = await stat(source).catch(() => null);
+    if (!info || !info.isFile()) continue;
+    if (info.size > maxBytes) {
+      oversized.push(rel);
+      continue;
+    }
+
+    const destination = join(worktreePath, rel);
+    await mkdir(dirname(destination), { recursive: true });
+    await copyFile(source, destination).catch(() => undefined);
+    copied.push(rel);
+  }
+
+  return { copied, oversized };
 }
 
 /** Directory-safe, collision-resistant enough for one label per scan. */

@@ -183,13 +183,19 @@ describe('probing an upgrade before reporting it', () => {
     );
   });
 
-  test('a check that was already red before the upgrade is not blamed on it', async () => {
+  test('a check that was already red before the upgrade is not blamed on it, and says why', async () => {
     const { exec } = recorder({ 'npm run typecheck': 2, 'npm run build': 2 });
     const results = await probeUpgrades({ root, targets: [target('zod')], exec, fs });
     const verification = results.get('t-zod');
 
     assert.equal(verification?.status, 'skipped');
     assert.match(verification?.reason ?? '', /already fails on this commit/);
+    // A baseline that fails for a reason specific to the worktree (a missing
+    // gitignored file the build needs, say) must not read as a bare "build
+    // failed" — the compiler's own output has to be there to tell the two
+    // apart.
+    assert.match(verification?.reason ?? '', /\$ npm run typecheck/);
+    assert.match(verification?.reason ?? '', /TS2554/);
   });
 
   test('a project with no checks is skipped with a reason, never reported as passing', async () => {
