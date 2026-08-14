@@ -533,7 +533,13 @@ export class DriftSession {
         const line = detail ? `${phase} — ${detail}` : phase;
         if (item.log[item.log.length - 1] !== line) {
           item.log.push(line);
-          if (item.log.length > 200) item.log.shift();
+          // A scan writes a line per phase per package, so 200 evicted real
+          // content on any repository big enough to want the log — and it
+          // evicted it silently, from the front, where the scan says what it
+          // decided to look at. This is a runaway guard on a panel that is
+          // never redrawn from scratch, not a display budget: no realistic
+          // scan reaches it, and the renderer shows everything below it.
+          if (item.log.length > 5000) item.log.shift();
         }
         update({ phase, detail, done, total });
       },
