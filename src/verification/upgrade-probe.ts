@@ -89,9 +89,11 @@ export interface ProbeOptions {
   /**
    * Which of the project's checks to run.
    *
-   * Typecheck and build by default. Tests are excluded unless asked for: they
-   * are the slowest by an order of magnitude, and a test that fails for its own
-   * reasons would be read as an upgrade breaking the project.
+   * Typecheck, build, and tests. The tests are not optional garnish: a compiler
+   * proves things about signatures and nothing about behaviour, so a default
+   * that moved or a method that now throws passes every static check and breaks
+   * at runtime. A suite already failing at baseline is dropped from the verdict
+   * rather than blamed on the upgrade.
    */
   kinds?: readonly CheckKind[];
   env?: NodeJS.ProcessEnv;
@@ -106,7 +108,7 @@ export interface ProbeOptions {
   onVerified?: (target: ProbeTarget, verification: UpgradeVerification) => void;
 }
 
-const DEFAULT_KINDS: readonly CheckKind[] = ['typecheck', 'build'];
+const DEFAULT_KINDS: readonly CheckKind[] = ['typecheck', 'build', 'test'];
 
 /**
  * Install and check every target, and report what actually happened.

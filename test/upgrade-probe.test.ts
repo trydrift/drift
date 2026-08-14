@@ -126,6 +126,63 @@ describe('probing an upgrade before reporting it', () => {
     assert.deepEqual(verification?.failedFiles, ['src/app.ts']);
   });
 
+  test('catches runtime breakage a typecheck cannot see', async () => {
+    // The case a compiler is structurally unable to answer: a default that
+    // moved, a method that now throws where it returned null. Types are
+    // unchanged, so `npm run typecheck` is green and always will be — the test
+    // suite is the only thing in the repository with an opinion.
+    const runnable = {
+      readFile: async () =>
+        JSON.stringify({ name: 'app', scripts: { typecheck: 'tsc --noEmit', test: 'node --test' } }),
+      readDirectory: async () => ['package.json', 'package-lock.json'],
+      isDirectory: async () => true,
+    };
+
+    let seenTests = 0;
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      if (line === 'npm test') {
+        seenTests += 1;
+        if (seenTests > 1) {
+          return { code: 1, stdout: 'test/parse.test.js:12 AssertionError: expected null, got throw', stderr: '' };
+        }
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+
+    const results = await probeUpgrades({ root, targets: [target('zod')], exec, fs: runnable });
+    const verification = results.get('t-zod');
+
+    assert.equal(verification?.status, 'failed', 'a green typecheck does not make a broken upgrade safe');
+    assert.match(verification?.diagnostics ?? '', /AssertionError/);
+    assert.ok(
+      verification?.checks.some((check) => check.label === 'npm run typecheck' && check.status === 'passed'),
+      'and the typecheck really did pass — that is the point',
+    );
+  });
+
+  test('a suite already failing before the upgrade still leaves the compiler checks usable', async () => {
+    const runnable = {
+      readFile: async () =>
+        JSON.stringify({ name: 'app', scripts: { typecheck: 'tsc --noEmit', test: 'node --test' } }),
+      readDirectory: async () => ['package.json', 'package-lock.json'],
+      isDirectory: async () => true,
+    };
+
+    // Red before anything is touched: excluded from the verdict rather than
+    // reported as this upgrade's fault.
+    const { exec } = recorder({ 'npm test': 1 });
+    const results = await probeUpgrades({ root, targets: [target('zod')], exec, fs: runnable });
+    const verification = results.get('t-zod');
+
+    assert.equal(verification?.status, 'passed');
+    assert.deepEqual(
+      verification?.checks.map((check) => check.label),
+      ['npm run typecheck'],
+      'the flaky suite is dropped, the typecheck still counts',
+    );
+  });
+
   test('a check that was already red before the upgrade is not blamed on it', async () => {
     const { exec } = recorder({ 'npm run typecheck': 2, 'npm run build': 2 });
     const results = await probeUpgrades({ root, targets: [target('zod')], exec, fs });
