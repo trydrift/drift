@@ -46,12 +46,25 @@ const BLOCK_HEADERS = new Map<string, BlockKind>([
   ['error', 'error'],
 ]);
 
-type BlockKind = 'thinking' | 'message' | 'exec' | 'patch' | 'prompt' | 'tokens' | 'diff' | 'error';
+type BlockKind = 'thinking' | 'message' | 'exec' | 'patch' | 'prompt' | 'tokens' | 'diff' | 'error' | 'result';
 
 interface Block {
   kind: BlockKind;
   lines: string[];
+  /** For a result block: `succeeded`, `failed`, or `exited`. */
+  status?: string;
 }
+
+/**
+ * A command's result, which arrives as its own block some time later.
+ *
+ * Codex dispatches several commands at once and prints each result when it
+ * finishes, so results are in completion order and carry no id tying them back
+ * to a command. There is no honest way to pair them in general — the first
+ * capture of this made exactly that mistake, and filed a `tsconfig*` glob
+ * failure under a `sed package.json` that had succeeded.
+ */
+const RESULT = /^\s+(succeeded|failed|exited(?:\s+\d+)?)\s+(?:\w+\s+)?in\s+[\d.]+m?s:\s*$/i;
 
 export class AgentStreamReader {
   private pending = '';
@@ -66,6 +79,14 @@ export class AgentStreamReader {
 
   /** Whether this stream ever looked block-structured. */
   private structured = false;
+
+  /**
+   * Commands printed but not yet resolved.
+   *
+   * Codex dispatches in parallel, so more than one can be in flight; when that
+   * happens no result is attributed to any of them.
+   */
+  private outstanding: TaskActivityInput[] = [];
 
   push(text: string): TaskActivityInput[] {
     this.pending += text;
@@ -85,6 +106,7 @@ export class AgentStreamReader {
       this.pending = '';
     }
     out.push(...this.close());
+    out.push(...this.drain());
     return out;
   }
 
@@ -103,6 +125,17 @@ export class AgentStreamReader {
 
   private line(raw: string): TaskActivityInput[] {
     const text = stripAnsi(raw).replace(/\s+$/, '');
+
+    // A result opens a block of its own. It is indented, which is how it is
+    // told apart from a command line, and it closes whatever came before.
+    const result = RESULT.exec(text);
+    if (result) {
+      this.structured = true;
+      const closed = this.close();
+      this.block = { kind: 'result', lines: [], status: result[1]!.toLowerCase() };
+      return closed;
+    }
+
     const header = BLOCK_HEADERS.get(text.trim().toLowerCase());
 
     if (header && text === text.trimStart()) {
@@ -124,6 +157,43 @@ export class AgentStreamReader {
     return [activityFromReport(text)];
   }
 
+  /**
+   * A result, attached to its command only when that attachment is certain.
+   *
+   * Exactly one command outstanding is the sequential case, and there the
+   * pairing is not a guess. With several in flight, Codex prints results in
+   * completion order with nothing tying them back, so the result stands on its
+   * own row instead of being filed under whichever command happens to be
+   * first. A row that says less is recoverable; a row that says something
+   * false about which command produced which error is not.
+   */
+  private result(body: string, status: string): TaskActivityInput[] {
+    const failed = status !== 'succeeded';
+
+    if (this.outstanding.length === 1) {
+      const command = this.outstanding.pop()!;
+      return [
+        {
+          ...command,
+          ...(failed ? { title: `${command.title} failed` } : {}),
+          ...(body ? { output: body.slice(0, 4000) } : {}),
+        },
+      ];
+    }
+
+    return [
+      ...this.drain(),
+      { kind: failed ? 'status' : 'bash', title: failed ? 'Command failed' : 'Output', output: body.slice(0, 4000) },
+    ];
+  }
+
+  /** Emit every command still waiting for a result it can no longer be matched to. */
+  private drain(): TaskActivityInput[] {
+    const pending = this.outstanding;
+    this.outstanding = [];
+    return pending;
+  }
+
   private close(): TaskActivityInput[] {
     const block = this.block;
     this.block = null;
@@ -132,26 +202,46 @@ export class AgentStreamReader {
     const body = block.lines.join('\n').trim();
     if (!body) return [];
 
+    // A command is held back only until the next thing happens. Anything that
+    // is not its result ends the wait, so rows still appear in the order the
+    // agent produced them.
     switch (block.kind) {
+      case 'exec':
+        this.outstanding.push(execActivity(body));
+        return [];
+      case 'result':
+        return this.result(body, block.status ?? 'succeeded');
+      default:
+        return [...this.drain(), ...this.narration(block.kind, body)];
+    }
+  }
+
+  private narration(kind: BlockKind, body: string): TaskActivityInput[] {
+    switch (kind) {
       // The prompt is Drift's own text read back, and the token count is
       // billing, not work. Neither belongs in a log of what happened to the
       // repository.
       case 'prompt':
       case 'tokens':
         return [];
+      // The agent talking: what it is about to do, and at the end, what it
+      // concluded. Which one this is cannot be known until the stream ends, so
+      // every such block is narration here and the last is picked out
+      // afterwards by `finalAnswer` — that is what the run reports and what
+      // the panel shows as the verdict.
       case 'message':
         this.last = body;
-        return [{ kind: 'thinking', title: 'Response', detail: body }];
+        return [{ kind: 'thinking', title: 'Thinking', detail: body }];
       case 'thinking':
         return [thinkingActivity(body)];
-      case 'exec':
-        return [execActivity(body)];
       case 'patch':
         return [{ kind: 'edit', title: 'Edit', detail: firstLine(body), input: body }];
       case 'diff':
         return [{ kind: 'edit', title: 'Changes', input: body }];
       case 'error':
         return [{ kind: 'status', title: 'Error', detail: body }];
+      default:
+        return [];
     }
   }
 }
@@ -191,17 +281,8 @@ export function execActivity(body: string): TaskActivityInput {
   const [first = '', ...rest] = body.split('\n');
   // `<command> in <cwd>`, where the cwd is the workspace the panel is already
   // showing. It is the same path on every row and worth none of the width.
-  const command = unwrapShell(first.replace(/\s+in\s+\/\S*$/, '').trim());
-  const output = rest.join('\n').replace(/^\s*(succeeded|failed|exited)\b[^\n]*\n?/i, '').trim();
-  const failed = /^\s*(failed|exited with)\b/im.test(rest.join('\n'));
-
-  const named = namedCommand(command);
-  return {
-    ...named,
-    ...(failed ? { title: `${named.title} failed` } : {}),
-    input: command,
-    ...(output ? { output: output.slice(0, 4000) } : {}),
-  };
+  const command = unwrapShell(`${first}\n${rest.join('\n')}`.replace(/\s+in\s+\/\S*\s*$/, '').trim());
+  return { ...namedCommand(command), input: command };
 }
 
 /** What a shell command amounts to, in the reader's terms. */

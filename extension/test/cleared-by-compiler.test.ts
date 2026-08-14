@@ -56,7 +56,7 @@ function planWith(detectability: ChangeDetectability[]): { plan: RemediationPlan
   } as unknown as CommitUnit;
 
   const plan = {
-    changes: [change],
+    breakingChanges: [change],
     commits: [commit],
     impactSites: [
       { file: 'src/schema.ts', line: 4, symbol: 'array' },
@@ -90,10 +90,10 @@ describe('not running an agent the compiler already answered', () => {
 
   test('one runtime change in the unit keeps the whole unit', () => {
     const { plan, commit } = planWith(['compile-time']);
-    plan.changes.push({
-      ...plan.changes[0]!,
+    plan.breakingChanges.push({
+      ...plan.breakingChanges[0]!,
       id: 'bc2',
-      taxonomy: { ...plan.changes[0]!.taxonomy!, detectability: ['test-time'] },
+      taxonomy: { ...plan.breakingChanges[0]!.taxonomy!, detectability: ['test-time'] },
     });
     commit.breakingChangeIds.push('bc2');
 
