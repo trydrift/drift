@@ -1,11 +1,18 @@
 /**
  * Who gets credit for a commit Drift made.
  *
- * Drift edits code. Git's answer to "a change with more than one author" is the
- * `Co-authored-by` trailer, which GitHub renders on the commit and which
- * `git log` and `git shortlog` already understand — so a repository can see at
- * a glance which commits a tool participated in, without Drift inventing its
- * own convention or hiding behind the developer's name.
+ * Drift edits code, but it is not a contributor with its own GitHub account —
+ * it acts for the org that publishes it. `Co-authored-by` is the wrong trailer
+ * for that: GitHub resolves that email to whichever account happens to own it,
+ * which once meant a stranger who had claimed the `drift` username got credited
+ * on every commit this tool touched. `On-behalf-of` says the same thing without
+ * asking GitHub to guess an identity — it is a real trailer convention (used by
+ * Debian and Gerrit tooling), `git log`/`git interpret-trailers` read it like
+ * any other trailer, GitHub just doesn't try to attach an avatar to it.
+ *
+ * Any coding agent that actually produced an edit is a different case — it has
+ * no email a GitHub account could plausibly claim, so it still gets a normal
+ * `Co-authored-by` trailer.
  *
  * The trailer is added, never substituted. The human stays the author: they
  * chose the upgrade, reviewed the diff, and pressed the button. Rewriting
@@ -17,21 +24,20 @@ export interface Author {
   email: string;
 }
 
-/**
- * Drift's identity in a commit trailer.
- *
- * The `users.noreply.github.com` domain is the convention GitHub reserves for
- * addresses that must not receive mail, which is exactly right for a tool: the
- * trailer is an attribution, not a contact.
- */
-export const DRIFT_COAUTHOR: Author = {
+/** The org this tool acts on behalf of, credited on every commit it makes. */
+export const DRIFT_ATTRIBUTION: Author = {
   name: 'Drift',
-  email: 'trydrift@users.noreply.github.com',
+  email: 'trydrift@outlook.com',
 };
 
 /** `Co-authored-by: Name <email>` for one author. */
 export function coAuthorTrailer(author: Author): string {
   return `Co-authored-by: ${author.name} <${author.email}>`;
+}
+
+/** `On-behalf-of: Name <email>` — attribution GitHub will not try to link to an account. */
+export function onBehalfOfTrailer(author: Author): string {
+  return `On-behalf-of: ${author.name} <${author.email}>`;
 }
 
 /**
@@ -77,12 +83,14 @@ export function withTrailers(message: string, trailers: readonly string[]): stri
 }
 
 /**
- * A commit message with Drift credited as a co-author.
+ * A commit message with Drift credited on behalf of its org, plus anyone else
+ * who contributed.
  *
  * The single entry point every surface uses — the CLI, the GitHub Action, and
  * the extension — so that attribution cannot be present in one and missing in
- * another. `extra` carries anything a caller wants alongside it, such as the
- * coding agent that actually produced an edit.
+ * another. `coAuthors` carries anything a caller wants credited alongside
+ * Drift, such as the coding agent that actually produced an edit; those get a
+ * normal `Co-authored-by` trailer since, unlike Drift, they are not the org.
  */
 export function attributedMessage(
   subject: string,
@@ -92,6 +100,6 @@ export function attributedMessage(
   const base = body.trim() ? `${subject.trim()}\n\n${body.trim()}` : subject.trim();
   if (options.enabled === false) return base;
 
-  const authors = options.coAuthors ?? [DRIFT_COAUTHOR];
-  return withTrailers(base, authors.map(coAuthorTrailer));
+  const trailers = [onBehalfOfTrailer(DRIFT_ATTRIBUTION), ...(options.coAuthors ?? []).map(coAuthorTrailer)];
+  return withTrailers(base, trailers);
 }

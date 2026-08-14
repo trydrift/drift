@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildFixPrompt } from '../src/agents/types.js';
-import { attributedMessage, withTrailers, DRIFT_COAUTHOR, coAuthorTrailer } from '../../src/repo/attribution.js';
+import { attributedMessage, withTrailers, DRIFT_ATTRIBUTION, onBehalfOfTrailer } from '../../src/repo/attribution.js';
 import type { FixTask } from '../src/agents/types.js';
 import type { CommitUnit, RemediationPlan } from '../../src/types.js';
 
@@ -149,11 +149,11 @@ describe('crediting Drift, from the extension', () => {
     // Both surfaces go through one module, so a commit made from the panel and
     // one made by the Action are attributed identically.
     const message = attributedMessage('chore(deps): upgrade zod to 4.0.0', 'body');
-    assert.ok(message.endsWith(coAuthorTrailer(DRIFT_COAUTHOR)));
+    assert.ok(message.endsWith(onBehalfOfTrailer(DRIFT_ATTRIBUTION)));
   });
 
   test('a second pass does not add a second trailer', () => {
     const once = attributedMessage('subject', 'body');
-    assert.equal(withTrailers(once, [coAuthorTrailer(DRIFT_COAUTHOR)]), once);
+    assert.equal(withTrailers(once, [onBehalfOfTrailer(DRIFT_ATTRIBUTION)]), once);
   });
 });

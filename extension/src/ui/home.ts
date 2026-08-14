@@ -4781,7 +4781,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       step.progress('Creating baseline commit', 'Current files before Drift changes anything');
       await git.commitAll('chore: baseline before Drift', '', {
         allowEmpty: true,
-        identity: { name: 'Drift', email: 'trydrift@users.noreply.github.com' },
+        identity: { name: 'Drift', email: 'trydrift@outlook.com' },
         // No co-author trailer here. This commit captures the user's *existing*
         // files before Drift has changed anything, so crediting Drift as a
         // co-author of it would claim authorship of work it did not touch.

@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import {
   attributedMessage,
   coAuthorTrailer,
+  onBehalfOfTrailer,
   withTrailers,
-  DRIFT_COAUTHOR,
+  DRIFT_ATTRIBUTION,
 } from '../dist/repo/attribution.js';
 import {
   branchNameFor,
@@ -15,24 +16,26 @@ import {
 import { DEFAULT_CONFIG } from '../dist/config/schema.js';
 
 describe('crediting Drift on a commit', () => {
-  test('adds a co-author trailer, keeping the human as the author', () => {
+  test('adds an on-behalf-of trailer, keeping the human as the author', () => {
     // The developer chose the upgrade, reviewed the diff, and pressed the
     // button. Rewriting authorship to a tool would misattribute their decision.
+    // Drift itself gets `On-behalf-of`, not `Co-authored-by` — it has no GitHub
+    // account of its own for that trailer to resolve to.
     const message = attributedMessage('chore(deps): upgrade zod to 4.0.0', 'It was fine.');
 
     assert.match(message, /^chore\(deps\): upgrade zod to 4\.0\.0\n\nIt was fine\.\n\n/);
-    assert.ok(message.endsWith('Co-authored-by: Drift <trydrift@users.noreply.github.com>'));
+    assert.ok(message.endsWith('On-behalf-of: Drift <trydrift@outlook.com>'));
   });
 
   test('a trailer must be its own last paragraph, or git ignores it', () => {
     const message = attributedMessage('subject only');
-    assert.equal(message, 'subject only\n\nCo-authored-by: Drift <trydrift@users.noreply.github.com>');
+    assert.equal(message, 'subject only\n\nOn-behalf-of: Drift <trydrift@outlook.com>');
   });
 
   test('never accumulates the same trailer twice', () => {
     // Re-running an upgrade on a branch that already has one is ordinary.
     const once = attributedMessage('subject', 'body');
-    const twice = withTrailers(once, [coAuthorTrailer(DRIFT_COAUTHOR)]);
+    const twice = withTrailers(once, [onBehalfOfTrailer(DRIFT_ATTRIBUTION)]);
     assert.equal(once, twice);
   });
 
@@ -40,20 +43,20 @@ describe('crediting Drift on a commit', () => {
     // Two trailer paragraphs mean git only reads the last, which would silently
     // drop whatever the first one said.
     const message = withTrailers('subject\n\nbody\n\nSigned-off-by: A <a@example.com>', [
-      coAuthorTrailer(DRIFT_COAUTHOR),
+      onBehalfOfTrailer(DRIFT_ATTRIBUTION),
     ]);
 
     assert.equal(
       message,
-      'subject\n\nbody\n\nSigned-off-by: A <a@example.com>\nCo-authored-by: Drift <trydrift@users.noreply.github.com>',
+      'subject\n\nbody\n\nSigned-off-by: A <a@example.com>\nOn-behalf-of: Drift <trydrift@outlook.com>',
     );
   });
 
   test('matches an existing trailer case-insensitively, as git does', () => {
-    const message = withTrailers('subject\n\nco-authored-by: Drift <trydrift@users.noreply.github.com>', [
-      coAuthorTrailer(DRIFT_COAUTHOR),
+    const message = withTrailers('subject\n\non-behalf-of: Drift <trydrift@outlook.com>', [
+      onBehalfOfTrailer(DRIFT_ATTRIBUTION),
     ]);
-    assert.equal(message.match(/co-authored-by/gi)?.length, 1);
+    assert.equal(message.match(/on-behalf-of/gi)?.length, 1);
   });
 
   test('can be switched off, for a repository that lints trailers', () => {
@@ -62,11 +65,11 @@ describe('crediting Drift on a commit', () => {
     assert.equal(attributedMessage('subject', 'body', { enabled: false }), 'subject\n\nbody');
   });
 
-  test('credits several authors when more than one contributed', () => {
+  test('credits an agent as co-author alongside Drift on behalf of the org', () => {
     const message = attributedMessage('subject', '', {
-      coAuthors: [DRIFT_COAUTHOR, { name: 'Agent', email: 'agent@example.com' }],
+      coAuthors: [{ name: 'Agent', email: 'agent@example.com' }],
     });
-    assert.match(message, /Co-authored-by: Drift <.*>\nCo-authored-by: Agent <agent@example\.com>$/);
+    assert.match(message, /On-behalf-of: Drift <.*>\nCo-authored-by: Agent <agent@example\.com>$/);
   });
 });
 
