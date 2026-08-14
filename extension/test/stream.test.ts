@@ -106,11 +106,12 @@ describe('reading a block-structured agent stream', () => {
   });
 
   test("the agent's answer arrives whole", () => {
-    const { events } = read(CODEX_TRANSCRIPT);
-    const answer = events.find((e) => e.title === 'Response');
+    const { events, reader } = read(CODEX_TRANSCRIPT);
+    const answer = events.find((e) => e.detail?.includes('greet(name)'));
 
     assert.ok(answer, 'the conclusion is an event');
-    assert.ok(answer!.detail?.includes('greet(name)'), 'in one piece, not split at newlines');
+    assert.ok(!answer!.detail?.includes('\n\n'), 'in one piece, not split at newlines');
+    assert.match(reader.finalAnswer() ?? '', /greet\(name\)/, 'and is what the run reports as its verdict');
   });
 
   test('a chunk boundary in the middle of a block changes nothing', () => {
@@ -124,6 +125,49 @@ describe('reading a block-structured agent stream', () => {
     split.push(...reader.flush());
 
     assert.deepEqual(split, whole, 'pipe buffering is not a fact about the agent');
+  });
+
+  /**
+   * Codex dispatches several commands at once and prints each result when it
+   * finishes, in completion order, with nothing tying a result back to the
+   * command that produced it. The first capture of this made exactly that
+   * mistake: a `tsconfig*` glob failure was filed under a `sed package.json`
+   * that had succeeded. A row that says less is recoverable; a row that says
+   * something false about which command failed is not.
+   */
+  test('parallel results are never filed under the wrong command', () => {
+    const { events } = read(
+      [
+        'exec',
+        '/bin/zsh -lc "sed -n \'1,20p\' a.json" in /repo',
+        'exec',
+        '/bin/zsh -lc "ls missing*" in /repo',
+        ' exited 1 in 20ms:',
+        'no matches found: missing*',
+        ' succeeded in 30ms:',
+        '{ "name": "demo" }',
+        '',
+      ].join('\n'),
+    );
+
+    const read1 = events.find((e) => e.input?.includes('sed'));
+    assert.ok(read1, 'both commands are still reported');
+    assert.equal(read1!.output, undefined, 'and neither claims an output it cannot be shown to own');
+    assert.ok(
+      !events.some((e) => e.input?.includes('sed') && /no matches found/.test(e.output ?? '')),
+      "the failing glob was filed under the command that succeeded",
+    );
+    assert.ok(
+      events.some((e) => /no matches found/.test(e.output ?? '')),
+      'the result is still shown, just not attributed',
+    );
+  });
+
+  test('a single outstanding command does take its result', () => {
+    const { events } = read('exec\n/bin/zsh -lc "ls" in /repo\n succeeded in 10ms:\na.js\n');
+    const command = events.find((e) => e.input === 'ls');
+
+    assert.equal(command?.output, 'a.js', 'the sequential case is not a guess');
   });
 
   test('an agent with no block structure still gets a row per line', () => {
@@ -159,8 +203,11 @@ describe('naming what a command actually did', () => {
   });
 
   test('a failed command says so in its title', () => {
-    const activity = execActivity(`/bin/zsh -lc "npm test" in /repo\n failed in 900ms:\n1 failing`);
-    assert.match(activity.title, /failed/);
+    const { events } = read('exec\n/bin/zsh -lc "npm test" in /repo\n failed in 900ms:\n1 failing\n');
+    const command = events.find((e) => e.input === 'npm test');
+
+    assert.match(command?.title ?? '', /failed/);
+    assert.match(command?.output ?? '', /1 failing/);
   });
 
   test('the workspace path is not repeated on every row', () => {
@@ -177,23 +224,33 @@ describe("reporting what the agent concluded", () => {
   test("the agent's answer is the result, not the fact that it exited", () => {
     const conclusion = agentConclusion(
       'No code changes were made. Both files use `z.object` via the namespace import, which zod 4 still exports.\n',
-      '',
     );
 
     assert.match(conclusion ?? '', /zod 4 still exports/);
   });
 
-  test('a transcript on one pipe is still read for the last thing said', () => {
-    const conclusion = agentConclusion('', CODEX_TRANSCRIPT);
+  test('a CLI that says nothing on stdout falls back to what the reader heard', () => {
+    const { reader } = read(CODEX_TRANSCRIPT);
+    const conclusion = agentConclusion('', reader.finalAnswer());
+
     assert.match(conclusion ?? '', /greet\(name\)/);
   });
 
+  test('the verdict keeps the checks that back it up', () => {
+    const conclusion = agentConclusion(
+      'Verified src/schema.ts: `z.array(z.string())` still matches zod 4.\n\nChecks run:\n- runtime parse succeeds\n',
+      undefined,
+    );
+
+    assert.match(conclusion ?? '', /Checks run/, 'the second paragraph is what makes the first believable');
+  });
+
   test('a machine envelope is not quoted as if the agent said it', () => {
-    assert.equal(agentConclusion('{"error":{"message":"bad request"}}', ''), undefined);
-    assert.equal(agentConclusion('TypeError: x\n    at run (/a/b.js:1:1)', ''), undefined);
+    assert.equal(agentConclusion('{"error":{"message":"bad request"}}'), undefined);
+    assert.equal(agentConclusion('TypeError: x\n    at run (/a/b.js:1:1)'), undefined);
   });
 
   test('an agent that said nothing gets no invented conclusion', () => {
-    assert.equal(agentConclusion('   \n', ''), undefined);
+    assert.equal(agentConclusion('   \n'), undefined);
   });
 });
