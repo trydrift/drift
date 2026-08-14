@@ -93,6 +93,55 @@ function prunePlan(
 }
 
 /**
+ * One verdict for a plan assembled from several candidates' plans.
+ *
+ * Combining plans used to drop verification on the floor, and the cost of that
+ * was paid by the developer: every "fix" over a scanned candidate — even a
+ * single one, because that path combines too — arrived at the fix stage with no
+ * record of having been measured. The compiler then cleared the predictions the
+ * probe had already cleared, and the only thing left to tell them why was a log.
+ *
+ * The merge is pessimistic on purpose. A pass is only a pass if every part
+ * passed; anything unmeasured makes the whole thing unmeasured, because a plan
+ * that is half-verified must not be described as verified.
+ */
+export function combineVerifications(
+  parts: readonly (UpgradeVerification | undefined)[],
+): UpgradeVerification | undefined {
+  if (parts.length === 0 || parts.every((part) => !part)) return undefined;
+
+  const present = parts.filter((part): part is UpgradeVerification => Boolean(part));
+  const checks = present.flatMap((part) => part.checks);
+
+  const failed = present.filter((part) => part.status === 'failed');
+  if (failed.length > 0) {
+    return {
+      status: 'failed',
+      checks,
+      diagnostics: failed
+        .map((part) => part.diagnostics)
+        .filter((text): text is string => Boolean(text))
+        .join('\n\n'),
+      failedFiles: [...new Set(failed.flatMap((part) => part.failedFiles))],
+    };
+  }
+
+  // Missing counts as unmeasured, not as passing: `parts` carries one entry per
+  // plan, so an absent verification is a candidate nobody checked.
+  const unmeasured = parts.filter((part) => !part || part.status === 'skipped');
+  if (unmeasured.length > 0) {
+    const reasons = [
+      ...new Set(
+        unmeasured.map((part) => part?.reason ?? 'One of these upgrades was not tested, and no reason was recorded.'),
+      ),
+    ];
+    return { status: 'skipped', reason: reasons.join(' '), checks, failedFiles: [] };
+  }
+
+  return { status: 'passed', checks, failedFiles: [] };
+}
+
+/**
  * One line stating what was measured, for a panel row, a log, or an issue body.
  *
  * Written to be readable on its own: whoever sees this may never see the checks
@@ -104,9 +153,16 @@ export function describeVerification(verification: UpgradeVerification): string 
     .map((check) => `\`${check.label}\``);
 
   if (verification.status === 'passed') {
+    // Stated whenever it applies, because it is the difference between "this
+    // upgrade is fine" and "this set of upgrades is fine", and only the reader
+    // knows whether they are about to take one or all of them.
+    const alongside =
+      verification.measuredWith && verification.measuredWith > 1
+        ? ` (measured with ${verification.measuredWith - 1} other upgrade${verification.measuredWith === 2 ? '' : 's'} from the same manifest installed alongside it)`
+        : '';
     return ran.length > 0
-      ? `${ran.join(', ')} ${ran.length === 1 ? 'passes' : 'pass'} with this upgrade installed.`
-      : 'This upgrade was installed and the project still checks out clean.';
+      ? `${ran.join(', ')} ${ran.length === 1 ? 'passes' : 'pass'} with this upgrade installed${alongside}.`
+      : `This upgrade was installed and the project still checks out clean${alongside}.`;
   }
 
   if (verification.status === 'failed') {

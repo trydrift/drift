@@ -22,9 +22,16 @@ export function applyVerification(
   verification: UpgradeVerification,
 ): UpgradeCandidate {
   const verified: UpgradeCandidate = { ...candidate, verification };
-  if (!verified.plan || verification.status === 'skipped') return verified;
+  if (!verified.plan) return verified;
 
+  // Recorded on the plan even when nothing was measured, and *especially* then.
+  // A skipped verification carries the reason it was skipped, and the plan is
+  // what travels to the fix stage and the filed issue — so leaving it off meant
+  // every consumer downstream could see that predictions were unverified but
+  // not why, and had nowhere to send the developer except a log. The status
+  // still gates the pruning below: only a pass may drop a prediction.
   verified.plan = applyVerificationToPlan(verified.plan, verification);
+  if (verification.status === 'skipped') return verified;
 
   // The row's own numbers, re-derived rather than adjusted: they are what
   // `severityOf` reads, so a count left stale here would show an "affected"

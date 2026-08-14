@@ -626,7 +626,10 @@ test('every disclosure carries a key, so re-rendering cannot collapse it', () =>
     assert.match(tag[0], /data-key="/, `a <details> has no key: ${tag[0]}`);
   }
   assert.match(html, /data-key="log:s1"/);
-  assert.match(html, /data-key="pkg:lodash"/);
+  // Keyed by manifest as well as name, so the same package declared in two
+  // manifests gets two independently remembered rows rather than one shared
+  // open/closed state that makes the list look like it duplicated a row.
+  assert.match(html, /data-key="pkg:package\.json#lodash"/);
 });
 
 test('an open question renders its options and no answer', () => {
