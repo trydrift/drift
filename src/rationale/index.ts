@@ -11,7 +11,7 @@ import {
 } from '../evidence/registry.js';
 import { mapWithConcurrency } from '../util/http.js';
 import { dependencyEcosystemKey } from '../util/id.js';
-import { assessSecurity, type OsvOptions } from './osv.js';
+import { assessSecurity, unchecked, type OsvOptions } from './osv.js';
 import { assessMaintenance } from './maintenance.js';
 import { assessLicense } from './license.js';
 import { describeAdditions, improvementsFrom, summarizeRelease } from './summary.js';
@@ -93,7 +93,11 @@ async function rationaleFor(
 
   const security = config.rationale.security
     ? await assessSecurity(change.name, change.ecosystem, from, to, ctx.osv ?? {})
-    : { checked: false, current: [], target: [], resolved: [], introduced: [], carried: [], direction: 'unknown' as const };
+    : // Switched off, not unreachable. Saying "could not be reached" here sent
+      // developers looking for a network problem behind their own setting.
+      unchecked(
+        'Advisory lookup is switched off for this repository (`rationale.security`), so this upgrade’s effect on known vulnerabilities was not checked.',
+      );
 
   const maintenance = config.rationale.maintenance
     ? assessMaintenance({
@@ -256,7 +260,8 @@ function collectGaps(
 
   if (!sources.security.checked) {
     gaps.push(
-      'The OSV advisory database could not be reached, so this upgrade\'s effect on known vulnerabilities is unknown.',
+      sources.security.reason ??
+        'The OSV advisory database could not be reached, so this upgrade\'s effect on known vulnerabilities is unknown.',
     );
   }
 
