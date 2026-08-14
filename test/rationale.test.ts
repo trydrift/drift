@@ -4,6 +4,7 @@ import {
   assessLicense,
   assessMaintenance,
   assessSecurity,
+  assessSecurityBatch,
   assessUpgrade,
   bulletLines,
   buildRationale,
@@ -140,6 +141,32 @@ describe('security assessment', () => {
 
     assert.equal(result.checked, false);
     assert.match(result.reason ?? '', /429/);
+  });
+
+  test('batch lookup preserves query order across multiple upgrades', async () => {
+    const first = { name: 'pkg', ecosystem: 'npm' as const, from: '1.0.0', to: '2.0.0' };
+    const second = { name: 'lib', ecosystem: 'pypi' as const, from: '3.0.0', to: '4.0.0' };
+    const calls: unknown[][] = [];
+
+    const result = await assessSecurityBatch([first, second], {
+      batchFetch: async (queries) => {
+        calls.push([...queries]);
+        return [
+          osvResponse([vuln('GHSA-fixed', '2.0.0')]),
+          osvResponse([]),
+          osvResponse([]),
+          osvResponse([vuln('GHSA-new', '9.0.0')]),
+        ];
+      },
+    });
+
+    assert.equal(calls.length, 1);
+    assert.deepEqual(
+      calls[0]!.map((query) => (query as { package: { name: string }; version: string }).package.name),
+      ['pkg', 'pkg', 'lib', 'lib'],
+    );
+    assert.deepEqual(result.get(first)!.resolved.map((v) => v.id), ['GHSA-fixed']);
+    assert.deepEqual(result.get(second)!.introduced.map((v) => v.id), ['GHSA-new']);
   });
 
   test('an ecosystem OSV has no coverage for says so, rather than blaming the network', async () => {
@@ -677,6 +704,17 @@ describe('assembling the rationale', () => {
 
   const noNetwork = { fetch: async () => null };
 
+  const osvResponse = (vulns: Record<string, unknown>[]) => ({ vulns });
+
+  const vuln = (id: string, fixed: string, over: Record<string, unknown> = {}) => ({
+    id,
+    summary: `${id} summary.`,
+    database_specific: { severity: 'HIGH' },
+    affected: [{ ranges: [{ type: 'SEMVER', events: [{ introduced: '0' }, { fixed }] }] }],
+    references: [{ type: 'ADVISORY', url: `https://example.test/${id}` }],
+    ...over,
+  });
+
   test('a failure is stated once, with its remedy attached rather than repeated', async () => {
     const surfaceGaps = new Map([
       [
@@ -780,6 +818,39 @@ describe('assembling the rationale', () => {
 
     assert.equal(rationale!.assessment.recommendation, 'insufficient-evidence');
     assert.ok(rationale!.gaps.some((g) => /OSV advisory database could not be reached/.test(g)));
+  });
+
+  test('multiple upgrades use the OSV batch seam once', async () => {
+    let batchCalls = 0;
+    let singleCalls = 0;
+    const other = { ...change, name: 'other', from: '3.0.0', to: '4.0.0' };
+
+    const rationales = await buildRationale(
+      { changes: [change, other], evidence: [], breakingChanges: [], impactSites: [] },
+      {
+        config,
+        logger,
+        osv: {
+          fetch: async () => {
+            singleCalls += 1;
+            return null;
+          },
+          batchFetch: async (queries) => {
+            batchCalls += 1;
+            assert.equal(queries.length, 4);
+            return queries.map((query) =>
+              query.package.name === 'pkg' && query.version === '1.0.0'
+                ? osvResponse([vuln('GHSA-fixed', '2.0.0')])
+                : osvResponse([]),
+            );
+          },
+        },
+      },
+    );
+
+    assert.equal(batchCalls, 1);
+    assert.equal(singleCalls, 0);
+    assert.deepEqual(rationales.find((r) => r.dependency === 'pkg')!.security.resolved.map((v) => v.id), ['GHSA-fixed']);
   });
 
   test('switching a source off leaves it unchecked rather than clean', async () => {
