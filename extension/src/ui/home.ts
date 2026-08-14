@@ -14,7 +14,7 @@ import { inspectLocalRepo, WORKING_TREE } from '../../../src/repo/local-git.js';
 import { DriftConfigSchema, opensPullRequestAsDraft, type DriftConfig } from '../../../src/config/schema.js';
 import { loadWorkspaceConfig, runAnalysis } from '../analyze.js';
 import { envWithShellPath } from '../shell-path.js';
-import { runFix, type FixResult } from '../fix.js';
+import { clearedByCompiler, runFix, type FixResult } from '../fix.js';
 import type { DriftState, RepoRoot } from '../state.js';
 import type { NestedProject } from '../../../src/detect/nested.js';
 import {
@@ -2704,6 +2704,44 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       ? await this.gatherDiagnostics(ctx.root, plan)
       : undefined;
 
+    // A commit the compiler has already cleared is not a concern with an
+    // outcome pending, it is a predicted break the compiler just disproved.
+    // Filtering it out here — before a single card is built — means it never
+    // reads as something Drift flagged and then walked back; it was never
+    // flagged. `runFix` still has `clearedByCompiler` of its own for commits
+    // that arrive some other way (no `diagnostics` here, e.g. an existing
+    // branch that skipped the upgrade step above), so this is additive, not
+    // a replacement.
+    let clearedCount = 0;
+    if (diagnostics) {
+      const remaining: typeof plan.commits = [];
+      const cleared: typeof plan.commits = [];
+      for (const commit of plan.commits) {
+        if (clearedByCompiler(commit, plan, diagnostics)) cleared.push(commit);
+        else remaining.push(commit);
+      }
+      if (cleared.length > 0) {
+        plan.commits = remaining;
+        plan.impactSites = plan.impactSites.filter(
+          (site) =>
+            !cleared.some(
+              (commit) => commit.files.includes(site.file) && commit.breakingChangeIds.includes(site.breakingChangeId),
+            ),
+        );
+        clearedCount = cleared.length;
+      }
+    }
+
+    if (plan.commits.length === 0) {
+      this.state.set({ kind: 'findings', plan, at: Date.now() });
+      this.session.say(
+        clearedCount > 0
+          ? `Your typecheck against the upgraded version already passes — every predicted concern here was one it would have caught. No fix was needed.`
+          : 'Nothing left to fix.',
+      );
+      return;
+    }
+
     const branchMode: SessionBranchMode = upgraded || branch.mode === 'current' ? 'current' : 'new';
     if (branchMode === 'new') plan.branchName = branch.name;
 
@@ -2720,7 +2758,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         ? `on a new branch, \`${plan.branchName}\``
         : 'on the branch you are on';
     const evidence = diagnostics
-      ? ' Your typecheck ran first, and its errors go to the agent with the changelog evidence.'
+      ? ' Your typecheck ran first, and its errors go to the agent with the changelog evidence.' +
+        (clearedCount > 0
+          ? ` ${clearedCount} other concern${clearedCount === 1 ? '' : 's'} already passed it and needed no fix.`
+          : '')
       : '';
     const committing =
       commitMode === 'auto'
@@ -2947,10 +2988,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
   /**
    * Asked right after filing an issue that has no branch yet: link one now,
-   * or leave it for later. Mirrors the "Create linked branch" button on the
-   * native notification `runIssueBranchAction` already shows, but in the
-   * conversation, where a choice between a fresh branch and one that already
-   * exists can actually be offered instead of a single button.
+   * or leave it for later. This is the only place that question is asked —
+   * `runIssueBranchAction`'s own notification no longer offers it, so a
+   * choice between a fresh branch and one that already exists can be
+   * offered here instead of being a single toast button.
    */
   private async offerBranchForIssue(
     root: string,
