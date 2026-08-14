@@ -23,6 +23,7 @@ import {
 import {
   detectWorkspaces,
   memberDirectories,
+  memberName,
   nodeWorkspaceFs,
   type WorkspaceFs,
   type WorkspaceLayout,
@@ -477,6 +478,22 @@ export async function scanUpgrades(args: {
     for (const member of layout.members) if (member.name) memberNames.set(member.dir, member.name);
   }
 
+  // Every *other* directory the scan is about to read, named from its own
+  // manifest. A declared workspace member arrives with a name; the repository
+  // root and an undeclared sibling package do not, and without this they were
+  // the rows with no label on them — so a checkout with a root `package.json`
+  // and an `extension/package.json` showed `zod` twice, once tagged
+  // `extension` and once tagged nothing at all, with no way to tell which was
+  // which or why the same package appeared to be listed twice.
+  for (const target of targets) {
+    if (memberNames.has(target.dir)) continue;
+    const manifest = target.manifestPath.includes('/')
+      ? target.manifestPath.slice(target.manifestPath.lastIndexOf('/') + 1)
+      : target.manifestPath;
+    const name = await memberName(root, fs, target.dir, manifest, target.manager.ecosystem).catch(() => null);
+    if (name) memberNames.set(target.dir, name);
+  }
+
   const enabled = new Set(config.ecosystems);
   const multiPackage = new Set(targets.map((t) => t.dir)).size > 1;
   const all: ScanDependency[] = [];
@@ -573,7 +590,10 @@ export async function scanUpgrades(args: {
       env,
       maxSites: breadth.maxSites,
       member: multiPackage ? dep.target.dir : undefined,
-      memberName: memberNames.get(dep.target.dir),
+      // Paired with `member` above: a name without a directory would put a
+      // label on every row of a single-package repository, which is one more
+      // thing to read past on every line and never varies.
+      memberName: multiPackage ? memberNames.get(dep.target.dir) : undefined,
       repoRoot: repoLabel ? root : undefined,
       repoLabel,
       onProgress: (phase, detail) => report(phase, detail, done, deps.length),

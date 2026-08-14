@@ -61,6 +61,17 @@ export interface UpgradeVerification {
   diagnostics?: string;
   /** Repo-relative files named by the failing output, best effort. */
   failedFiles: string[];
+  /**
+   * How many upgrades were installed together when this was measured.
+   *
+   * Absent, or `1`, means this upgrade was the only thing applied and the
+   * verdict is about it alone. Anything higher means the verdict came from the
+   * combined pass in `probeGroup`, where one green run clears the whole batch.
+   * That is worth stating rather than hiding: it is a true statement about
+   * taking these upgrades together — which is what "upgrade all" does — and a
+   * very slightly weaker one about taking this upgrade by itself.
+   */
+  measuredWith?: number;
 }
 
 /** One upgrade to test, decoupled from the scan's own candidate shape. */
@@ -158,9 +169,19 @@ interface GroupHooks {
 /**
  * Every candidate sharing one manifest, tested in one worktree.
  *
- * Serial by design, and not only to bound the cost: two upgrades installed into
- * one checkout at the same time would each be measured against the other, and a
- * failure could not be attributed to either.
+ * The cost that matters here is the check run, not the install: a typecheck, a
+ * build and a suite, per candidate, is minutes of a developer's scan multiplied
+ * by every dependency in the manifest. So the group is measured the cheap way
+ * first — install all of them, run the checks once — and a green result settles
+ * every candidate in the batch at once.
+ *
+ * The expensive one-at-a-time pass still exists and still does the real work,
+ * but only when it has something to answer: two upgrades in one checkout cannot
+ * be told apart when the checks go red, so a failing (or uninstallable) batch
+ * falls back to attributing each candidate on its own. Repositories where most
+ * upgrades are clean — which is most repositories — pay one check run instead of
+ * one per package, and the ones that are actually broken pay what they did
+ * before, plus a batch pass that told us where to look.
  */
 async function probeGroup(
   options: ProbeOptions,
@@ -246,41 +267,126 @@ async function probeGroup(
       return;
     }
 
+    const pass: GroupPass = {
+      exec,
+      env,
+      dir,
+      root: worktree.path,
+      usable,
+      install: manager?.install,
+      ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
+      ...(options.token ? { token: options.token } : {}),
+    };
+
+    // The cheap answer first. Only worth attempting for more than one candidate
+    // — a single upgrade is already its own attribution — and only conclusive
+    // when it comes back green.
+    if (targets.length > 1 && (await probeTogether(pass, targets, hooks))) return;
+
     for (const target of targets) {
-      if (options.token?.isCancellationRequested) {
+      if (pass.token?.isCancellationRequested) {
         hooks.settle(target, cancelled());
         continue;
       }
 
       hooks.report(`Testing ${target.name}@${target.selected}`, `installing into the test checkout`);
       try {
-        await target.install(worktree.path);
+        await target.install(pass.root);
       } catch (err) {
         hooks.settle(
           target,
           skipped(`${target.name}@${target.selected} could not be installed, so it could not be tested. ${messageOf(err)}`),
         );
-        await resetWorktree(worktree.path, exec, env, manager?.install, dir, options.timeoutMs);
+        await resetWorktree(pass);
         continue;
       }
 
       hooks.report(`Testing ${target.name}@${target.selected}`, usable.map((check) => check.label).join(', '));
-      const outcomes = await runChecks({
-        root: worktree.path,
-        dir,
-        checks: usable,
-        env,
-        exec,
-        ...(options.token ? { token: options.token } : {}),
-        ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
-      });
-
-      hooks.settle(target, verdictFrom(outcomes));
-      await resetWorktree(worktree.path, exec, env, manager?.install, dir, options.timeoutMs);
+      hooks.settle(target, verdictFrom(await runPass(pass)));
+      await resetWorktree(pass);
     }
   } finally {
     await worktree.dispose();
   }
+}
+
+/** Everything a pass over the prepared worktree needs, gathered once. */
+interface GroupPass {
+  exec: Exec;
+  env: NodeJS.ProcessEnv;
+  /** Member directory the checks and installs run in. `''` is the root. */
+  dir: string;
+  /** The worktree, never the developer's checkout. */
+  root: string;
+  /** Checks that passed at baseline, so a failure here is one an upgrade caused. */
+  usable: readonly LocalCheck[];
+  install: { command: string; args: string[] } | undefined;
+  timeoutMs?: number;
+  token?: CancelSignal;
+}
+
+/**
+ * Install the whole group and check it once.
+ *
+ * Returns `true` only when every candidate was settled from this pass, which is
+ * exactly when the combined run came back green: nothing failed, so nothing in
+ * the batch broke anything, so each of them individually did not either. Any
+ * other outcome — an install that would not resolve, a red check, a
+ * cancellation — leaves every candidate unsettled and returns `false`, and the
+ * caller attributes them one at a time. A failure here is deliberately *not*
+ * reported: it says something in this batch is broken without saying what, and
+ * naming the wrong package is worse than taking longer to name the right one.
+ *
+ * The worktree is put back either way, so the caller's serial pass starts from
+ * the same clean baseline it would have had.
+ */
+async function probeTogether(
+  pass: GroupPass,
+  targets: readonly ProbeTarget[],
+  hooks: GroupHooks,
+): Promise<boolean> {
+  hooks.report(
+    `Testing ${targets.length} upgrades together`,
+    targets.map((target) => `${target.name}@${target.selected}`).join(', '),
+  );
+
+  let installed = true;
+  for (const target of targets) {
+    if (pass.token?.isCancellationRequested) return false;
+    try {
+      await target.install(pass.root);
+    } catch {
+      // Which one failed does not matter: the serial pass is about to install
+      // each of them on its own and will report the real reason against the
+      // candidate it actually belongs to.
+      installed = false;
+      break;
+    }
+  }
+
+  const outcomes = installed && !pass.token?.isCancellationRequested ? await runPass(pass) : [];
+  const green = outcomes.length > 0 && outcomes.every((outcome) => outcome.status === 'passed');
+
+  await resetWorktree(pass);
+  if (!green) return false;
+
+  for (const target of targets) {
+    hooks.settle(target, { ...verdictFrom(outcomes), measuredWith: targets.length });
+  }
+  return true;
+}
+
+/** The group's usable checks, run against whatever is installed right now. */
+function runPass(pass: GroupPass): Promise<CheckOutcome[]> {
+  return runChecks({
+    root: pass.root,
+    dir: pass.dir,
+    checks: pass.usable,
+    env: pass.env,
+    exec: pass.exec,
+    ...(pass.token ? { token: pass.token } : {}),
+    ...(pass.timeoutMs ? { timeoutMs: pass.timeoutMs } : {}),
+  });
 }
 
 const DEFAULT_INSTALL_TIMEOUT_MS = 15 * 60_000;
@@ -414,21 +520,16 @@ function short(sha: string): string {
  * design exists to avoid — so the manager's own restore command is what
  * reconciles the installed tree with the manifest that has just been reverted.
  */
-async function resetWorktree(
-  path: string,
-  exec: Exec,
-  env: NodeJS.ProcessEnv,
-  install: { command: string; args: string[] } | undefined,
-  dir: string,
-  timeoutMs: number | undefined,
-): Promise<void> {
-  await exec('git', ['checkout', '--', '.'], { cwd: path, env }).catch(() => undefined);
-  if (!install) return;
-  await exec(install.command, install.args, {
-    cwd: dir ? `${path}/${dir}` : path,
-    env,
-    timeoutMs: timeoutMs ?? DEFAULT_INSTALL_TIMEOUT_MS,
-  }).catch(() => undefined);
+async function resetWorktree(pass: GroupPass): Promise<void> {
+  await pass.exec('git', ['checkout', '--', '.'], { cwd: pass.root, env: pass.env }).catch(() => undefined);
+  if (!pass.install) return;
+  await pass
+    .exec(pass.install.command, pass.install.args, {
+      cwd: pass.dir ? `${pass.root}/${pass.dir}` : pass.root,
+      env: pass.env,
+      timeoutMs: pass.timeoutMs ?? DEFAULT_INSTALL_TIMEOUT_MS,
+    })
+    .catch(() => undefined);
 }
 
 /**

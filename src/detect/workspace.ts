@@ -420,7 +420,16 @@ export async function expandPattern(
   return found;
 }
 
-async function memberName(
+/**
+ * The name a package declares for itself, or `null` if it declares none.
+ *
+ * Exported because a formal workspace declaration is not the only thing that
+ * produces more than one package in a checkout — an undeclared sibling
+ * directory does too, and so does the root package sitting above one. Those
+ * have names in their manifests exactly like a declared member does; they were
+ * simply never asked, which left the scan labelling some rows and not others.
+ */
+export async function memberName(
   root: string,
   fs: WorkspaceFs,
   dir: string,

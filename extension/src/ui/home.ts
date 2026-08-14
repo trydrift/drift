@@ -7,6 +7,7 @@ import { CLEAN_TYPECHECK_MARKER, digestDiagnostics, renderDigest } from '../diag
 import type { RemediationPlan, RepoContext } from '../../../src/types.js';
 import type { IssueBranchAction, IssueBranchTarget } from '../../../src/actions/issue-branch.js';
 import { buildPlan } from '../../../src/plan/index.js';
+import { combineVerifications } from '../../../src/verification/apply.js';
 import { resolveBaseBranch } from '../../../src/plan/pull-request.js';
 import type { RevisionRequest } from '../agents/types.js';
 import { renderPullRequestBody } from '../../../src/report/markdown.js';
@@ -1195,7 +1196,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
               step.progress(repoLabel ? `${repoLabel}: ${phase}` : phase, detail, done, total),
             onCandidate: (candidate) => {
               this.candidates.set(candidate.id, candidate);
-              found.push(candidate);
+              // Replaced, never appended twice. Each candidate is now published
+              // at least twice — once as `checking` the moment its analysis
+              // lands, then again with the verdict the probe measured — and
+              // pushing both put every package in the list a second time, so a
+              // root-plus-`extension/` checkout appeared to hold four `zod`s
+              // instead of two. The map above was always keyed by id and always
+              // correct; this array was the one counting duplicates.
+              const at = found.findIndex((existing) => existing.id === candidate.id);
+              if (at >= 0) found[at] = candidate;
+              else found.push(candidate);
               // Fill the list in as results arrive rather than after the whole
               // sweep; a partial answer now beats a complete one in a minute.
               this.session.updatePackages(
@@ -2740,11 +2750,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
             // was. The scan tests every upgrade in a worktree before reporting
             // it, so reaching this point at all means that test did not happen
             // or did not agree — and a developer who was just shown a count
-            // that evaporated is owed which of the two it was.
+            // that evaporated is owed which of the two it was, here, in the
+            // panel they are already looking at. Sending them to a log to find
+            // out why the thing in front of them was wrong is not an answer.
             `Your typecheck against the upgraded version already passes — every predicted concern here was one it would have caught, so no fix was needed.` +
-              (plan.verification
-                ? ` The scan reached the same conclusion (${plan.verification.status}); these concerns should not have been shown as outstanding.`
-                : ` The scan did not verify this upgrade, so it could only show you the prediction — see the Drift output channel for why.`)
+              whyPredictionsSurvived(plan.verification)
           : 'Nothing left to fix.',
       );
       return;
@@ -5245,6 +5255,26 @@ function manifestName(candidate: UpgradeCandidate): string {
 }
 
 /**
+ * Why a concern the compiler just cleared was shown as outstanding at all.
+ *
+ * The scan installs every upgrade and runs the project's checks before it
+ * reports anything, so predictions reaching the fix stage un-withdrawn means
+ * that measurement did not happen — and the reason it did not is on the
+ * verification the scan attached to the plan. Said here in full: it is a
+ * complete sentence written for a developer (`upgrade-probe.ts` builds it that
+ * way), and it is the only thing that explains a count that just evaporated.
+ */
+function whyPredictionsSurvived(verification: RemediationPlan['verification']): string {
+  if (!verification) {
+    return ' Verification was switched off for this scan, so what you were shown was a prediction rather than a measurement.';
+  }
+  if (verification.status === 'skipped') {
+    return ` The scan could not test this upgrade, so it could only show you the prediction: ${verification.reason ?? 'no reason was recorded.'}`;
+  }
+  return ` The scan reached the same conclusion (${verification.status}); these concerns should not have been shown as outstanding.`;
+}
+
+/**
  * One finished check, as a line in the step's log.
  *
  * The log is the answer to "is it still going?" — every check that has settled
@@ -5352,7 +5382,7 @@ function headline(
 }
 
 function combinePlans(repo: RepoContext, config: DriftConfig, plans: RemediationPlan[]): RemediationPlan {
-  return buildPlan({
+  const combined = buildPlan({
     repo,
     config,
     changes: plans.flatMap((p) => p.changes),
@@ -5360,4 +5390,12 @@ function combinePlans(repo: RepoContext, config: DriftConfig, plans: Remediation
     breakingChanges: plans.flatMap((p) => p.breakingChanges),
     impactSites: plans.flatMap((p) => p.impactSites),
   });
+
+  // `buildPlan` builds from changes and sites, so anything measured *about*
+  // those plans is lost unless it is carried across explicitly — and this is
+  // the path every fix takes, including a fix over a single candidate. Dropping
+  // it here is what made a scan that had verified an upgrade arrive at the fix
+  // stage looking like a scan that never ran a check at all.
+  const verification = combineVerifications(plans.map((p) => p.verification));
+  return verification ? { ...combined, verification } : combined;
 }

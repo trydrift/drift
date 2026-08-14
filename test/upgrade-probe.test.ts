@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { probeUpgrades, probeDependencyChange, filesNamedIn } from '../dist/verification/upgrade-probe.js';
-import { applyVerificationToPlan, describeVerification } from '../dist/verification/apply.js';
+import { applyVerificationToPlan, combineVerifications, describeVerification } from '../dist/verification/apply.js';
 
 /**
  * The probe installs each upgrade in a throwaway worktree and runs the
@@ -239,6 +239,82 @@ describe('probing an upgrade before reporting it', () => {
     );
   });
 
+  test('a clean group is settled by one combined check run, not one per candidate', async () => {
+    const { exec, lines } = recorder();
+    const results = await probeUpgrades({
+      root,
+      targets: [target('zod'), target('react'), target('vite')],
+      exec,
+      fs,
+    });
+
+    for (const id of ['t-zod', 't-react', 't-vite']) {
+      assert.equal(results.get(id)?.status, 'passed', `${id} is settled by the combined pass`);
+      assert.equal(results.get(id)?.measuredWith, 3, `${id} says what it was measured alongside`);
+    }
+
+    // Baseline once, then the batch once. The old shape ran the pair per
+    // candidate, which is what made a scan cost a check run per dependency.
+    assert.equal(
+      lines().filter((line) => line === 'npm run typecheck').length,
+      2,
+      'baseline plus one combined run, not one run per candidate',
+    );
+  });
+
+  test('a red group is re-measured one candidate at a time, so the blame lands on the right one', async () => {
+    // The batch goes red and cannot say which of the three did it. Only `react`
+    // actually breaks, and only after it is installed on its own can that be
+    // established — so the other two must still come back clean.
+    let installed = '';
+    const failing = (name: string) => ({
+      ...target(name),
+      install: async () => {
+        installed = installed ? `${installed}+${name}` : name;
+      },
+    });
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      const broken = line === 'npm run typecheck' && installed.includes('react');
+      return {
+        code: broken ? 1 : 0,
+        stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '',
+        stderr: broken ? 'src/app.ts(3,11): error TS2554: Expected 1 arguments, but got 2.' : '',
+        ...(command === 'git' && args[0] === 'checkout' ? {} : {}),
+      };
+    };
+    // `git checkout -- .` is what puts the tree back; the fake tracks that by
+    // clearing what it believes is installed.
+    const resetting = async (command: string, args: readonly string[], options?: { cwd?: string }) => {
+      if (command === 'git' && args[0] === 'checkout') installed = '';
+      return exec(command, args, options as never);
+    };
+
+    const results = await probeUpgrades({
+      root,
+      targets: [failing('zod'), failing('react'), failing('vite')],
+      exec: resetting as never,
+      fs,
+    });
+
+    assert.equal(results.get('t-react')?.status, 'failed', 'the package that actually breaks is named');
+    assert.equal(results.get('t-zod')?.status, 'passed', 'an innocent candidate is not blamed for the batch');
+    assert.equal(results.get('t-vite')?.status, 'passed', 'an innocent candidate is not blamed for the batch');
+    assert.equal(
+      results.get('t-zod')?.measuredWith,
+      undefined,
+      'a verdict reached alone does not claim to have been measured alongside anything',
+    );
+  });
+
+  test('a single candidate is never described as measured alongside others', async () => {
+    const { exec } = recorder();
+    const results = await probeUpgrades({ root, targets: [target('zod')], exec, fs });
+
+    assert.equal(results.get('t-zod')?.status, 'passed');
+    assert.equal(results.get('t-zod')?.measuredWith, undefined);
+  });
+
   test('cancelling stops the run and says so', async () => {
     const { exec } = recorder();
     const token = { isCancellationRequested: true };
@@ -374,5 +450,52 @@ describe('what a measurement does to a plan', () => {
     assert.equal(verified.breakingChanges.length, 2);
     assert.equal(verified.verification?.reason, 'No checks to run.');
     assert.equal(describeVerification(skipped), 'No checks to run.');
+  });
+});
+
+describe('one verdict for a plan built from several', () => {
+  const passed = (label: string) => ({
+    status: 'passed' as const,
+    checks: [{ kind: 'typecheck' as const, label, status: 'passed' as const, durationMs: 1, output: '' }],
+    failedFiles: [],
+  });
+  const failed = {
+    status: 'failed' as const,
+    checks: [{ kind: 'typecheck' as const, label: 'tsc', status: 'failed' as const, durationMs: 1, output: 'boom' }],
+    diagnostics: 'src/a.ts(1,1): error TS2554',
+    failedFiles: ['src/a.ts'],
+  };
+  const skipped = { status: 'skipped' as const, reason: 'No checks to run.', checks: [], failedFiles: [] };
+
+  test('all passed is passed, and the checks that proved it are kept', () => {
+    const combined = combineVerifications([passed('tsc'), passed('build')]);
+    assert.equal(combined?.status, 'passed');
+    assert.equal(combined?.checks.length, 2);
+  });
+
+  test('any failure condemns the whole plan and carries its output', () => {
+    const combined = combineVerifications([passed('tsc'), failed]);
+    assert.equal(combined?.status, 'failed');
+    assert.deepEqual(combined?.failedFiles, ['src/a.ts']);
+    assert.match(combined?.diagnostics ?? '', /TS2554/);
+  });
+
+  test('a part nobody measured makes the whole plan unmeasured, with the reason', () => {
+    const combined = combineVerifications([passed('tsc'), skipped]);
+    assert.equal(combined?.status, 'skipped', 'half-verified is not verified');
+    assert.match(combined?.reason ?? '', /No checks to run\./);
+  });
+
+  test('a missing verification counts as unmeasured, not as a pass', () => {
+    // The bug this exists for: a plan assembled from candidates dropped
+    // verification entirely, so a scan that had measured an upgrade reached the
+    // fix stage looking like one that had never run a check.
+    const combined = combineVerifications([passed('tsc'), undefined]);
+    assert.equal(combined?.status, 'skipped');
+  });
+
+  test('nothing measured anywhere stays undefined, so nothing claims otherwise', () => {
+    assert.equal(combineVerifications([undefined, undefined]), undefined);
+    assert.equal(combineVerifications([]), undefined);
   });
 });

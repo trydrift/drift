@@ -874,7 +874,15 @@ function renderStale(stale: StaleHint): string {
  */
 function workspaceTag(candidate: UpgradeCandidate, showRepo: boolean): string {
   const repo = showRepo ? (candidate.repoLabel ?? null) : null;
-  const member = candidate.workspaceName ?? candidate.workspace ?? null;
+  // `workspace` is `''` for the root package, which is a real answer and not a
+  // missing one — so it is tested against `undefined`, not for truthiness. The
+  // old check treated the root as unlabelled, which is what made one of the two
+  // `zod` rows in a root-plus-`extension/` checkout carry no tag: the scan knew
+  // perfectly well where it came from and the row declined to say.
+  const member =
+    candidate.workspace === undefined
+      ? null
+      : (candidate.workspaceName ?? (candidate.workspace === '' ? 'repository root' : candidate.workspace));
   if (!repo && !member) return '';
 
   const repoTag = repo
@@ -891,7 +899,12 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
   const busy = candidate.status === 'checking' || candidate.status === 'upgrading';
   const target = versionLabel(candidate, candidate.selected);
 
-  return `<details class="pkg ${severity}" data-key="pkg:${escapeAttr(candidate.name)}" ${open ? 'open' : ''}>
+  // Keyed by the manifest as well as the name. One package can legitimately
+  // appear once per manifest that declares it, and keying on the name alone
+  // made those rows share a single remembered open/closed state — so opening
+  // the root's `zod` also opened `extension/`'s, which reads as the list having
+  // duplicated a row rather than as two packages that genuinely both exist.
+  return `<details class="pkg ${severity}" data-key="pkg:${escapeAttr(`${candidate.manifestPath}#${candidate.name}`)}" ${open ? 'open' : ''}>
     <summary>
       <span class="dot ${severity}"></span>
       <span class="pkg-name">
