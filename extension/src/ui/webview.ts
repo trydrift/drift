@@ -1160,14 +1160,39 @@ function renderFacts(
   if (items.length === 0) return '';
   const MAX = 5;
   const shown = items.slice(0, MAX);
-  const rest = items.length - shown.length;
+  const hidden = items.slice(MAX);
 
   return `<div class="rationale ${tone}">
     <span class="rationale-heading">${escapeHtml(heading)}</span>
     <ul>${shown
-      .map((item) => `<li>${typeof item === 'string' ? escapeHtml(item) : item.html}</li>`)
-      .join('')}${rest > 0 ? `<li class="hint">…and ${rest} more</li>` : ''}</ul>
+      .map((item) => `<li>${renderFactItem(item)}</li>`)
+      .join('')}${hidden.length > 0 ? renderMoreFacts(tone, heading, hidden) : ''}</ul>
   </div>`;
+}
+
+function renderFactItem(item: string | { html: string }): string {
+  return typeof item === 'string' ? escapeHtml(item) : item.html;
+}
+
+function renderMoreFacts(
+  tone: 'good' | 'bad' | 'neutral',
+  heading: string,
+  items: readonly (string | { html: string })[],
+): string {
+  const fingerprint = items.map((item) => (typeof item === 'string' ? item : item.html)).join('\n');
+  return `<li class="hint"><details class="fact-more" data-key="facts:${escapeAttr(tone)}:${escapeAttr(heading)}:${stableHash(fingerprint)}">
+    <summary>…and ${items.length} more</summary>
+    <ul>${items.map((item) => `<li>${renderFactItem(item)}</li>`).join('')}</ul>
+  </details></li>`;
+}
+
+function stableHash(text: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < text.length; i += 1) {
+    hash ^= text.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
 }
 
 /**
@@ -2351,6 +2376,8 @@ button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
 .rationale-heading { display: block; font-size: 11px; font-weight: 600; margin-bottom: 3px; }
 .rationale ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .rationale li { font-size: 11px; color: var(--vscode-descriptionForeground); }
+.fact-more > summary { cursor: pointer; width: fit-content; }
+.fact-more > ul { margin-top: 2px; padding-left: 8px; }
 
 .verification { display: flex; gap: 6px; align-items: flex-start; margin: 0 0 8px; font-size: 11px; line-height: 1.45; }
 .verification svg.i { flex: none; margin-top: 2px; }
