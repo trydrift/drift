@@ -890,7 +890,7 @@ export function clearedByCompiler(
 ): string | null {
   if (!diagnostics?.includes(CLEAN_TYPECHECK_MARKER)) return null;
 
-  const changes = plan.changes.filter((change) => commit.breakingChangeIds.includes(change.id));
+  const changes = plan.breakingChanges.filter((change) => commit.breakingChangeIds.includes(change.id));
   // No change to reason about is not evidence of safety, it is an absence of
   // evidence, and the agent is the better answer.
   if (changes.length === 0) return null;

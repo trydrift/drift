@@ -346,7 +346,7 @@ export class CliFixAgent implements FixAgent {
     ctx.report(`$ ${displayCommand(command, args)}\n# cwd: ${task.workspaceRoot}`);
 
     try {
-      const { code, stdout, stderr } = await this.exec(command, args, prompt, task.workspaceRoot, ctx);
+      const { code, stdout, stderr, spoken } = await this.exec(command, args, prompt, task.workspaceRoot, ctx);
 
       if (ctx.signal.aborted) return { status: 'failed', message: 'Cancelled.' };
 
@@ -370,7 +370,7 @@ export class CliFixAgent implements FixAgent {
       // finished.", which tells nobody anything.
       return {
         status: 'applied',
-        message: agentConclusion(stdout, stderr) ?? `${this.spec.label} finished.`,
+        message: agentConclusion(stdout, spoken) ?? `${this.spec.label} finished.`,
         warnings: extractAgentWarnings(stdout),
       };
     } catch (err) {
@@ -429,7 +429,7 @@ export class CliFixAgent implements FixAgent {
     prompt: string,
     cwd: string,
     ctx: AgentContext,
-  ): Promise<{ code: number; stdout: string; stderr: string }> {
+  ): Promise<{ code: number; stdout: string; stderr: string; spoken?: string }> {
     const shellEnv = await envWithShellPath();
     const path = withCommandDir(command, shellEnv.PATH ?? '');
     return new Promise((resolve, reject) => {
@@ -523,7 +523,11 @@ export class CliFixAgent implements FixAgent {
         clearInterval(heartbeat);
         ctx.signal.removeEventListener('abort', onAbort);
         flushPending();
-        resolve({ code: code ?? 0, stdout, stderr });
+        // The last thing the agent said in its own voice, for a CLI that keeps
+        // its transcript on stderr and prints nothing conclusive to stdout.
+        // Read off the reader that already parsed those blocks, rather than
+        // parsing the same text a second time to a second set of rules.
+        resolve({ code: code ?? 0, stdout, stderr, spoken: readers.err.finalAnswer() ?? readers.out.finalAnswer() });
       });
 
       if (this.spec.promptOnStdin) {
@@ -880,8 +884,8 @@ function summarizeCodexDoctor(text: string): string | null {
  * document: the reader wants the verdict and the reason for it, and can open
  * the drawer for the rest.
  */
-export function agentConclusion(stdout: string, stderr: string): string | undefined {
-  const spoken = stdout.trim() || lastCodexMessage(stderr);
+export function agentConclusion(stdout: string, transcriptAnswer?: string): string | undefined {
+  const spoken = stdout.trim() || (transcriptAnswer ?? '').trim();
   if (!spoken) return undefined;
 
   // A CLI that printed a JSON envelope, a stack trace or its own banner is not
@@ -889,16 +893,12 @@ export function agentConclusion(stdout: string, stderr: string): string | undefi
   // be putting words in its mouth.
   if (/^[[{]/.test(spoken) || /^\s*at\s+\S+\s+\(/m.test(spoken)) return undefined;
 
-  const collapsed = spoken.replace(/\r/g, '').split('\n\n')[0]!.trim();
-  return collapsed.length > 600 ? `${collapsed.slice(0, 597)}…` : collapsed || undefined;
-}
-
-/** The body of the last `codex` block in a transcript, for CLIs that merge pipes. */
-function lastCodexMessage(transcript: string): string {
-  const blocks = transcript.split(/^codex\s*$/m);
-  if (blocks.length < 2) return '';
-  // Whatever follows the final `codex` keyword, up to the next block keyword.
-  return (blocks.at(-1) ?? '').split(/^(?:exec|thinking|tokens used|apply_patch)\s*$/m)[0]!.trim();
+  // Kept whole rather than cut at the first paragraph. The agent's verdict and
+  // the checks it ran to reach it are usually separate paragraphs, and the
+  // second is what makes the first worth believing — this is rendered as
+  // markdown in its own block, so it has the room.
+  const collapsed = spoken.replace(/\r/g, '').trim();
+  return collapsed.length > 1200 ? `${collapsed.slice(0, 1197)}…` : collapsed || undefined;
 }
 
 /** Pull anything the agent flagged as unresolved out of its transcript. */
