@@ -1277,7 +1277,7 @@ function renderVerificationDiagnostics(candidateId: string, checks: readonly Che
 function renderGaps(candidate: UpgradeCandidate): string {
   if (!candidate.gaps?.length) return '';
   return `<ul class="gaps">${candidate.gaps
-    .map((gap) => `<li>${ICON_ALERT}<span>${escapeHtml(gap)}</span></li>`)
+    .map((gap) => `<li>${ICON_ALERT}<span>${inlineMarkdown(gap, {})}</span></li>`)
     .join('')}</ul>${renderToolRequests(candidate)}`;
 }
 
