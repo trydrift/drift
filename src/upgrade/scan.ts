@@ -461,8 +461,17 @@ export async function scanUpgrades(args: {
     timeoutMs: args.verify?.timeoutMs ?? config.verify.timeoutMs,
   };
 
-  const report = (phase: string, detail: string, done = 0, total = 0) =>
+  // Timed the same way `analyzeRepository`'s stages are: not for `onProgress`,
+  // which callers already render as-is, but so a slow scan's time can be
+  // attributed to a phase (registry lookups vs. localization vs. the
+  // install-and-check probe) instead of guessed at.
+  let phaseStarted = Date.now();
+  const report = (phase: string, detail: string, done = 0, total = 0) => {
+    const now = Date.now();
+    logger.debug(`${phase} (+${now - phaseStarted}ms): ${detail}`);
+    phaseStarted = now;
     onProgress?.({ phase, detail, done, total });
+  };
 
   report('Looking for manifests', root);
   // A monorepo is many packages sharing a checkout. Each member is scanned as
@@ -655,7 +664,7 @@ export async function scanUpgrades(args: {
       env,
       logger,
       ...(token ? { token } : {}),
-      onProgress: (progress) => onProgress?.(progress),
+      onProgress: (progress) => report(progress.phase, progress.detail, progress.done, progress.total),
       onCandidate,
     });
   }

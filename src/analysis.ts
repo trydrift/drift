@@ -82,8 +82,20 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   const { repo, config, logger, provider, githubToken, onProgress } = options;
   const workspace = options.workspace ?? repo.workspace;
 
+  // Logged, not surfaced through `onProgress`: this is for someone deciding
+  // where a slow scan's time actually goes — registry calls, localization,
+  // the install-and-check probe — not for a caller's progress bar, which
+  // wants the stage name and detail exactly as before. `stageStarted` resets
+  // on every call rather than only tracking the previous stage's *own*
+  // duration, because a stage can log more than once (`verify` reports every
+  // phase of the probe) and each of those sub-updates deserves its own
+  // interval instead of being folded into one number that hides which part
+  // was actually slow.
+  let stageStarted = Date.now();
   const progress = (stage: AnalysisStage, detail: string) => {
-    logger.debug(`${stage}: ${detail}`);
+    const now = Date.now();
+    logger.debug(`${stage} (+${now - stageStarted}ms): ${detail}`);
+    stageStarted = now;
     onProgress?.(stage, detail);
   };
 
