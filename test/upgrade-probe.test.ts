@@ -313,6 +313,53 @@ describe('probing an upgrade before reporting it', () => {
     );
   });
 
+  test('a worktree that fails to reset is not reused for the next candidate in a group', async () => {
+    // `git checkout -- .` succeeds the first time (letting the batch attempt,
+    // which fails to install at all, fall through to the serial pass) and
+    // fails every time after — a real reset command that runs and returns
+    // nonzero, not a missing one. The old code read that as success (only a
+    // thrown exec was ever caught) and moved straight on to install the next
+    // candidate on top of whatever the first one left behind.
+    let installedCount = 0;
+    let checkoutCalls = 0;
+    const failedBatchInstallOnce = new Set<string>();
+    const failing = (name: string) => ({
+      ...target(name),
+      install: async () => {
+        if (name === 'zod' && !failedBatchInstallOnce.has(name)) {
+          failedBatchInstallOnce.add(name);
+          throw new Error('batch install fails, forcing the serial fallback');
+        }
+        installedCount += 1;
+      },
+    });
+    const exec = async (command: string, args: readonly string[]) => {
+      if (command === 'git' && args[0] === 'checkout') {
+        checkoutCalls += 1;
+        return checkoutCalls === 1 ? { code: 0, stdout: '', stderr: '' } : { code: 1, stdout: '', stderr: 'conflict' };
+      }
+      return {
+        code: 0,
+        stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '',
+        stderr: '',
+      };
+    };
+
+    const results = await probeUpgrades({
+      root,
+      targets: [failing('zod'), failing('react'), failing('vite')],
+      exec,
+      fs,
+    });
+
+    assert.equal(results.get('t-zod')?.status, 'passed', 'the first candidate is still tested and settled');
+    assert.equal(installedCount, 1, 'nothing after the failed reset is installed on the contaminated tree');
+    assert.equal(results.get('t-react')?.status, 'skipped');
+    assert.match(results.get('t-react')?.reason ?? '', /could not be reset/);
+    assert.equal(results.get('t-vite')?.status, 'skipped');
+    assert.match(results.get('t-vite')?.reason ?? '', /could not be reset/);
+  });
+
   test('a single candidate is never described as measured alongside others', async () => {
     const { exec } = recorder();
     const results = await probeUpgrades({ root, targets: [target('zod')], exec, fs });

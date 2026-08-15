@@ -296,7 +296,7 @@ async function probeGroup(
     // when it comes back green.
     if (targets.length > 1 && (await probeTogether(pass, targets, hooks))) return;
 
-    for (const target of targets) {
+    for (const [index, target] of targets.entries()) {
       if (pass.token?.isCancellationRequested) {
         hooks.settle(target, cancelled());
         continue;
@@ -310,13 +310,19 @@ async function probeGroup(
           target,
           skipped(`${target.name}@${target.selected} could not be installed, so it could not be tested. ${messageOf(err)}`),
         );
-        await resetWorktree(pass);
+        if (!(await resetWorktree(pass))) {
+          settleRemainingAsContaminated(targets, index + 1, hooks);
+          break;
+        }
         continue;
       }
 
       hooks.report(`Testing ${target.name}@${target.selected}`, usable.map((check) => check.label).join(', '));
       hooks.settle(target, verdictFrom(await runPass(pass)));
-      await resetWorktree(pass);
+      if (!(await resetWorktree(pass))) {
+        settleRemainingAsContaminated(targets, index + 1, hooks);
+        break;
+      }
     }
   } finally {
     await worktree.dispose();
@@ -380,13 +386,33 @@ async function probeTogether(
   const outcomes = installed && !pass.token?.isCancellationRequested ? await runPass(pass) : [];
   const green = outcomes.length > 0 && outcomes.every((outcome) => outcome.status === 'passed');
 
-  await resetWorktree(pass);
-  if (!green) return false;
-
-  for (const target of targets) {
-    hooks.settle(target, { ...verdictFrom(outcomes), measuredWith: targets.length });
+  const resetOk = await resetWorktree(pass);
+  if (green) {
+    for (const target of targets) hooks.settle(target, { ...verdictFrom(outcomes), measuredWith: targets.length });
+    return true;
   }
-  return true;
+
+  // The batch was red (or never installed), so the caller's serial pass is
+  // about to reuse this same worktree to attribute the failure to one
+  // candidate at a time. If the reset back to a clean checkout did not
+  // actually succeed, that worktree still carries whatever this batch
+  // installed — a serial pass on top of it would test each candidate
+  // alongside residue from every other one, exactly the cross-contamination
+  // a throwaway worktree exists to prevent. Settling every target here,
+  // instead of falling through, keeps that dirty tree from being reused.
+  if (!resetOk) {
+    for (const target of targets) {
+      hooks.settle(
+        target,
+        skipped(
+          'The test checkout could not be reset to a clean state after testing these upgrades together, so they could not be attributed individually.',
+        ),
+      );
+    }
+    return true;
+  }
+
+  return false;
 }
 
 /** The group's usable checks, run against whatever is installed right now. */
@@ -580,16 +606,48 @@ function short(sha: string): string {
  * design exists to avoid — so the manager's own restore command is what
  * reconciles the installed tree with the manifest that has just been reverted.
  */
-async function resetWorktree(pass: GroupPass): Promise<void> {
-  await pass.exec('git', ['checkout', '--', '.'], { cwd: pass.root, env: pass.env }).catch(() => undefined);
-  if (!pass.install) return;
-  await pass
+/**
+ * Put the worktree back, and say whether it actually worked.
+ *
+ * `Exec` resolves with a nonzero `code` on failure rather than rejecting, so
+ * the old `.catch(() => undefined)` here only ever caught the rare case of
+ * the command not existing at all — an ordinary failed `git checkout` (a
+ * merge conflict with whatever the install just wrote, a permissions error)
+ * returned normally and was read as success. The next candidate would then
+ * install on top of whatever the previous one left behind. Both steps must
+ * report a real zero exit for the worktree to count as clean.
+ */
+async function resetWorktree(pass: GroupPass): Promise<boolean> {
+  const checkout = await pass
+    .exec('git', ['checkout', '--', '.'], { cwd: pass.root, env: pass.env })
+    .catch(() => ({ code: 1 }) as Awaited<ReturnType<Exec>>);
+  if (checkout.code !== 0) return false;
+  if (!pass.install) return true;
+
+  const restored = await pass
     .exec(pass.install.command, pass.install.args, {
       cwd: pass.dir ? `${pass.root}/${pass.dir}` : pass.root,
       env: pass.env,
       timeoutMs: pass.timeoutMs ?? DEFAULT_INSTALL_TIMEOUT_MS,
     })
-    .catch(() => undefined);
+    .catch(() => ({ code: 1 }) as Awaited<ReturnType<Exec>>);
+  return restored.code === 0;
+}
+
+/** Settle every not-yet-tested target in a group once its worktree can no longer be trusted. */
+function settleRemainingAsContaminated(
+  targets: readonly ProbeTarget[],
+  fromIndex: number,
+  hooks: GroupHooks,
+): void {
+  for (const target of targets.slice(fromIndex)) {
+    hooks.settle(
+      target,
+      skipped(
+        'The test checkout could not be reset to a clean state after testing an earlier upgrade in this group, so testing stopped rather than risk attributing one candidate’s breakage to another.',
+      ),
+    );
+  }
 }
 
 /**
