@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { instrumentSerif } from "@/lib/fonts";
 import { Backdrop } from "@/components/backdrop";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -25,16 +26,16 @@ export default function Configure() {
       <Backdrop />
 
       <header className="relative z-10 mx-auto flex max-w-5xl items-center gap-3 px-5 py-5 sm:px-8">
-        <a href="/" className={`${instrumentSerif.className} text-2xl text-landing`}>
+        <Link href="/" className={`${instrumentSerif.className} text-2xl text-landing`}>
           Drift
-        </a>
+        </Link>
         <nav className="ml-auto flex items-center gap-1 sm:gap-2">
-          <a
+          <Link
             href="/#action"
             className="hidden rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:block"
           >
             Action
-          </a>
+          </Link>
           <a
             href={`${GITHUB}/blob/main/docs/configuration.md`}
             target="_blank"
@@ -66,9 +67,9 @@ export default function Configure() {
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
             Every option starts at Drift&rsquo;s own default, so leaving it all alone gets you the
             zero-config install from the{" "}
-            <a href="/#action" className="text-brand-text underline decoration-dotted underline-offset-2">
+            <Link href="/#action" className="text-brand-text underline decoration-dotted underline-offset-2">
               main page
-            </a>
+            </Link>
             . Change what you need, then copy or download the result into{" "}
             <code className="font-mono text-[12.5px] text-brand-text">.github/</code> — see the{" "}
             <a
@@ -92,9 +93,9 @@ export default function Configure() {
           <a href={GITHUB} target="_blank" rel="noreferrer" className="transition-colors hover:text-foreground">
             GitHub
           </a>
-          <a href="/" className="transition-colors hover:text-foreground">
+          <Link href="/" className="transition-colors hover:text-foreground">
             Home
-          </a>
+          </Link>
         </div>
       </footer>
     </div>

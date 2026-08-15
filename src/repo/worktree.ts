@@ -1,5 +1,6 @@
-import { copyFile, mkdir, rm, stat } from 'node:fs/promises';
-import { dirname, isAbsolute, join } from 'node:path';
+import { cp, copyFile, mkdir, rm, stat } from 'node:fs/promises';
+import { dirname, isAbsolute, join, relative, sep } from 'node:path';
+import { tmpdir } from 'node:os';
 import { randomBytes } from 'node:crypto';
 import { execCommand, type Exec } from '../util/exec.js';
 
@@ -107,9 +108,19 @@ export interface WorktreeOptions {
  * committed to, and a named branch would show up in the developer's branch list
  * as something they might reasonably try to merge.
  *
- * Throws when git will not produce one — no repository, a corrupt index, a
- * commit that does not resolve. A caller that can degrade should catch and say
- * what it could not verify rather than failing the whole scan.
+ * Throws when git will not produce one and the caller asked for a specific
+ * commit-ish — a corrupt index, a commit that does not resolve, or no
+ * repository at all when {@link WorktreeOptions.at} names something other
+ * than `HEAD`. When `root` is not a git repository and no specific commit
+ * was requested (the default, `HEAD` — "whatever is on disk right now"),
+ * this falls back to a plain recursive copy into a temp directory instead:
+ * a candidate verified from a local checkout is as often a directory nobody
+ * has run `git init` in yet as it is a repository, and skipping verification
+ * entirely there would silently let every finding through unverified. The
+ * copy applies the same regenerable-directory and secret-shaped denylists as
+ * the gitignored-file carry-over below, since there is no git to ask what's
+ * tracked. A caller that can degrade should still catch and say what it
+ * could not verify rather than failing the whole scan.
  */
 export async function createWorktree(
   root: string,
@@ -122,7 +133,12 @@ export async function createWorktree(
 
   const common = await exec('git', ['rev-parse', '--git-common-dir'], { cwd: root, env });
   if (common.code !== 0) {
-    throw new Error(`\`${root}\` is not a git repository, so there is nowhere safe to test an upgrade.`);
+    if (options.at !== undefined && options.at !== 'HEAD') {
+      throw new Error(
+        `\`${root}\` is not a git repository, so \`${options.at}\` cannot be checked out to test an upgrade.`,
+      );
+    }
+    return createFallbackCheckout(root, label, options.runId ?? DEFAULT_RUN_ID);
   }
 
   // `--git-common-dir` is relative to `root` for an ordinary checkout (`.git`),
@@ -181,6 +197,63 @@ export async function createWorktree(
       await exec('git', ['worktree', 'remove', '--force', path], { cwd: root, env }).catch(() => undefined);
       await rm(path, { recursive: true, force: true }).catch(() => undefined);
       await exec('git', ['worktree', 'prune'], { cwd: root, env }).catch(() => undefined);
+    },
+  };
+}
+
+/**
+ * The non-git twin of {@link createWorktree}: a plain recursive copy of
+ * `root` into a temp directory, for a candidate directory that has never
+ * been `git init`'d. There is no index to ask what's tracked, so this copies
+ * everything except the directories a fresh install or build regenerates on
+ * its own ({@link REGENERABLE_SEGMENTS}) and anything secret-shaped
+ * ({@link SENSITIVE_PATTERNS}, reported the same way a git-backed worktree
+ * reports the gitignored files it declined to carry over). Never throws —
+ * a failed copy is reported to the caller as a normal `Error`, the same as a
+ * failed `git worktree add`.
+ */
+async function createFallbackCheckout(root: string, label: string, runId: string): Promise<Worktree> {
+  const path = join(tmpdir(), 'drift-worktrees', sanitize(runId), sanitize(label));
+
+  await rm(path, { recursive: true, force: true }).catch(() => undefined);
+  await mkdir(path, { recursive: true });
+
+  const skippedSecrets: string[] = [];
+  try {
+    await cp(root, path, {
+      recursive: true,
+      filter: (source) => {
+        const rel = relative(root, source);
+        if (rel === '') return true;
+        const relPosix = rel.split(sep).join('/');
+        if (rel.split(sep).some((segment) => REGENERABLE_SEGMENTS.has(segment))) return false;
+        if (isSensitivePath(relPosix)) {
+          skippedSecrets.push(relPosix);
+          return false;
+        }
+        return true;
+      },
+    });
+  } catch (err) {
+    await rm(path, { recursive: true, force: true }).catch(() => undefined);
+    throw new Error(
+      `Could not copy \`${root}\` into a temp checkout to test an upgrade: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+
+  let disposed = false;
+  return {
+    path,
+    copiedFiles: [],
+    copiedRules: [],
+    oversizedFiles: [],
+    oversizedRules: [],
+    skippedSecrets: skippedSecrets.sort(),
+    skippedSecretRules: [],
+    async dispose() {
+      if (disposed) return;
+      disposed = true;
+      await rm(path, { recursive: true, force: true }).catch(() => undefined);
     },
   };
 }

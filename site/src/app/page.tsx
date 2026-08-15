@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { instrumentSerif } from "@/lib/fonts";
 import { Backdrop } from "@/components/backdrop";
 import { CopyCommand } from "@/components/copy-command";
@@ -61,12 +62,12 @@ export default function Home() {
           >
             Action
           </a>
-          <a
+          <Link
             href="/configure/"
             className="hidden rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:block"
           >
             Configure
-          </a>
+          </Link>
           <a
             href={GITHUB}
             target="_blank"
@@ -347,7 +348,7 @@ export default function Home() {
             >
               Checks first, approval next, pull request only after you allow it.{" "}
               <a href="#action" className="text-brand-text underline decoration-dotted underline-offset-2">See the run.</a>{" "}
-              Or <a href="/configure/" className="text-brand-text underline decoration-dotted underline-offset-2">build your own drift.yml</a>.
+              Or <Link href="/configure/" className="text-brand-text underline decoration-dotted underline-offset-2">build your own drift.yml</Link>.
             </EntryPoint>
           </div>
 

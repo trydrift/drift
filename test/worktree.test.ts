@@ -272,3 +272,67 @@ describe('where a worktree is put', () => {
     }
   });
 });
+
+/** A fake `git` that fails `rev-parse --git-common-dir`, as it does outside any repository. */
+function fakeNonGit() {
+  return async (_command: string, args: readonly string[]) => {
+    if (args[0] === 'rev-parse' && args[1] === '--git-common-dir') {
+      return { code: 128, stdout: '', stderr: 'fatal: not a git repository' };
+    }
+    return { code: 0, stdout: '', stderr: '' };
+  };
+}
+
+describe('verifying a directory that has never been git init\'d', () => {
+  test('falls back to a plain copy instead of throwing, when no specific commit was requested', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'drift-worktree-nongit-'));
+    try {
+      await mkdir(join(root, 'src'), { recursive: true });
+      await writeFile(join(root, 'src', 'index.ts'), 'export const x = 1;');
+
+      const worktree = await createWorktree(root, 'probe-root', { exec: fakeNonGit() as never, runId: 'r1' });
+      try {
+        const contents = await readFile(join(worktree.path, 'src', 'index.ts'), 'utf8');
+        assert.equal(contents, 'export const x = 1;');
+      } finally {
+        await worktree.dispose();
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  test('still throws when a specific commit was requested, since there is nothing to check out', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'drift-worktree-nongit-'));
+    try {
+      await assert.rejects(
+        createWorktree(root, 'change-abc123', { at: 'abc123', exec: fakeNonGit() as never, runId: 'r1' }),
+      );
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  test('never copies regenerable directories or secret-shaped files into the fallback checkout', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'drift-worktree-nongit-'));
+    try {
+      await mkdir(join(root, 'node_modules', 'left-pad'), { recursive: true });
+      await writeFile(join(root, 'node_modules', 'left-pad', 'index.js'), 'module.exports = {};');
+      await writeFile(join(root, '.env'), 'SECRET=1');
+      await writeFile(join(root, 'package.json'), '{}');
+
+      const worktree = await createWorktree(root, 'probe-root', { exec: fakeNonGit() as never, runId: 'r1' });
+      try {
+        await assert.rejects(readFile(join(worktree.path, 'node_modules', 'left-pad', 'index.js')));
+        await assert.rejects(readFile(join(worktree.path, '.env')));
+        const pkg = await readFile(join(worktree.path, 'package.json'), 'utf8');
+        assert.equal(pkg, '{}');
+        assert.deepEqual(worktree.skippedSecrets, ['.env']);
+      } finally {
+        await worktree.dispose();
+      }
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});
