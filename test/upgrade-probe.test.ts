@@ -376,6 +376,26 @@ describe('probing an upgrade before reporting it', () => {
     assert.equal(results.get('t-zod')?.status, 'skipped');
     assert.match(results.get('t-zod')?.reason ?? '', /Cancelled/);
   });
+
+  test('independent manifest groups are each settled correctly, run concurrently', async () => {
+    const { exec, calls } = recorder();
+    const results = await probeUpgrades({
+      root,
+      targets: [
+        { ...target('zod'), manifestPath: 'package.json' },
+        { ...target('react'), manifestPath: 'packages/web/package.json' },
+      ],
+      exec,
+      fs,
+    });
+
+    assert.equal(results.get('t-zod')?.status, 'passed');
+    assert.equal(results.get('t-react')?.status, 'passed');
+    // One worktree per manifest group — concurrency does not change how many
+    // are made, only whether the loop over them awaits one at a time.
+    const added = calls.filter((c) => c.command === 'git' && c.args[0] === 'worktree' && c.args[1] === 'add');
+    assert.equal(added.length, 2, 'one worktree per manifest group');
+  });
 });
 
 describe('verifying a dependency change that already landed', () => {

@@ -3,6 +3,7 @@ import { packageManagerById, type PackageManagerId } from '../detect/package-man
 import { nodeWorkspaceFs, type WorkspaceFs } from '../detect/workspace.js';
 import { createWorktree } from '../repo/worktree.js';
 import { execCommand, type Exec } from '../util/exec.js';
+import { mapWithConcurrency } from '../util/http.js';
 import type { Logger } from '../util/logger.js';
 import {
   availableChecks,
@@ -114,6 +115,18 @@ export interface ProbeOptions {
   token?: CancelSignal;
   /** Per-check timeout. */
   timeoutMs?: number;
+  /**
+   * How many manifest groups to install and check at once.
+   *
+   * Each group already gets its own worktree, so groups share nothing —
+   * `packages/web`'s install and `packages/api`'s install were only ever
+   * serialized because the loop over them was, not because anything
+   * required it. `3` by default: git worktree operations briefly lock
+   * shared repository state, so unbounded concurrency trades a slow scan
+   * for a flaky one on a large monorepo without buying much beyond a
+   * handful of manifests running at once.
+   */
+  concurrency?: number;
   onProgress?: (progress: ProbeProgress) => void;
   /** Called as each target is settled, so a caller can release it one at a time. */
   onVerified?: (target: ProbeTarget, verification: UpgradeVerification) => void;
@@ -138,14 +151,20 @@ export async function probeUpgrades(options: ProbeOptions): Promise<Map<string, 
 
   if (options.targets.length === 0) return results;
 
-  const groups = groupByManifest(options.targets);
+  const groups = [...groupByManifest(options.targets)];
   let done = 0;
   const total = options.targets.length;
 
-  for (const [manifestPath, targets] of groups) {
+  // Each group gets its own worktree and shares nothing with the others, so
+  // nothing about correctness requires running them one at a time — only the
+  // loop used to. Bounded rather than unbounded: git worktree operations
+  // briefly lock shared repository state, so a monorepo with many manifests
+  // benefits from running several at once without every group racing for the
+  // same lock simultaneously.
+  await mapWithConcurrency(groups, Math.max(1, options.concurrency ?? DEFAULT_GROUP_CONCURRENCY), async ([manifestPath, targets]) => {
     if (options.token?.isCancellationRequested) {
       for (const target of targets) settle(target, cancelled());
-      continue;
+      return;
     }
 
     const dir = memberDirOf(manifestPath);
@@ -156,10 +175,12 @@ export async function probeUpgrades(options: ProbeOptions): Promise<Map<string, 
         settle(target, verification);
       },
     });
-  }
+  });
 
   return results;
 }
+
+const DEFAULT_GROUP_CONCURRENCY = 3;
 
 interface GroupHooks {
   report(phase: string, detail: string): void;
