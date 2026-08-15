@@ -382,13 +382,14 @@ pipeline above takes over exactly as it would for a human's own bump.
 
 ### `tools.autoInstall`
 
-`boolean` — default **`false`**
+`boolean` — default **`true`**
 
 Install a missing Drift-owned helper analyzer (`cargo-public-api`, `japicmp`)
 the moment a scan needs it, instead of reporting the gap and waiting for a
-second, manual pass. Off by default: unlike `verify`, which only ever installs
-into a throwaway worktree, this reaches outside the project and installs a
-binary globally via `cargo`/`brew`.
+second, manual pass. On by default — these are known, named commands Drift
+runs on its own behalf, not arbitrary code. Set to `false` if you don't want
+a scan installing global toolchain binaries via `cargo`/`brew` as a side
+effect.
 
 ---
 

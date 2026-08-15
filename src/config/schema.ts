@@ -555,18 +555,17 @@ export const DriftConfigSchema = z.object({
    * Drift-owned helper analyzers (`cargo-public-api`, `japicmp`) that a
    * computed surface diff needs but does not ship.
    *
-   * Off by default: installing a toolchain-specific binary is a machine
-   * change, not just a slower scan, so it stays opt-in the same way `verify`
-   * running a candidate's own build is opt-in — except this defaults closed
-   * rather than open, since unlike `verify` it reaches outside the project's
-   * own worktree (a global `cargo install`/`go install`, not a throwaway one).
-   * With this on, a missing helper is installed inline the first time a scan
-   * needs it, instead of surfacing a gap that only a second, manual pass can
-   * close.
+   * On by default: these are Drift's own known-safe commands (a `cargo
+   * install`/`brew install` of a named helper, never arbitrary code), and
+   * without them a whole ecosystem's evidence silently degrades to prose. A
+   * missing helper is installed inline the first time a scan needs it,
+   * instead of surfacing a gap that only a second, manual pass can close.
+   * Set to `false` for an environment where installing global toolchain
+   * binaries as a side effect of a scan is unwanted.
    */
   tools: z
     .object({
-      autoInstall: z.boolean().default(false),
+      autoInstall: z.boolean().default(true),
     })
     .prefault({}),
 
