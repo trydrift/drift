@@ -247,15 +247,38 @@ Mitigations:
   `repo-token`/`copilot-token` to a JavaScript action), and anything matching
   a token/secret/key/credential pattern. A compromised package cannot read
   what was never there. See `scrubEnv` in `verification/upgrade-probe.ts`.
+- **Secrets are never carried into the worktree, either.** A worktree needs
+  gitignored files a build genuinely reads as input — hand-generated source
+  that was never committed — so it used to copy every gitignored file
+  outside a denylist of regenerable directories (`node_modules`, `dist`, …).
+  That copied `.env`, private keys, `.npmrc` registry tokens, and cloud
+  credentials JSON straight into a directory about to run the candidate's
+  own scripts. Filenames matching a sensitive-shape denylist (`.env*`,
+  `*.pem`, anything with "credentials" in the name, …) are now never copied,
+  regardless of any other setting. A project that genuinely needs specific
+  gitignored generated source carried in states so explicitly via
+  `verify.generatedSourceGlobs` in `drift.yml`, rather than getting
+  everything gitignored by default. See `SENSITIVE_PATTERNS` in
+  `repo/worktree.ts`.
+- **The Action's checkout should not persist a push-capable credential in
+  the first place.** Drift commits its own codemod output through the
+  GitHub API (`commitFiles` in `github/client.ts`), never a local `git
+  push`, so it never needs the credential `actions/checkout` leaves in the
+  runner's git config by default. Set `persist-credentials: false` on the
+  checkout step (see the example workflows) so there is no such credential
+  for a compromised candidate to find on disk in the first place, worktree
+  or not.
 
-Residual risk: the worktree protects files and the scrubbed environment
-protects credentials, but the process still runs on the same host as
-everything else in the job, with whatever ambient access that implies —
-network egress, the filesystem outside the worktree, other processes. A
-sufficiently determined malicious package could still attempt to exfiltrate
-over the network or attack the host directly. Treat verification as narrowing
-the blast radius, not eliminating it; a secretless, network-isolated sandbox
-would close more of this gap than a scrubbed environment variable list can.
+Residual risk: the worktree protects files, the scrubbed environment and the
+secrets denylist protect credentials Drift knows about, but the process
+still runs on the same host as everything else in the job, with whatever
+ambient access that implies — network egress, the filesystem outside the
+worktree, other processes, and any secret neither the environment scrub nor
+the filename denylist recognizes. A sufficiently determined malicious
+package could still attempt to exfiltrate over the network or attack the
+host directly. Treat verification as narrowing the blast radius, not
+eliminating it; a secretless, network-isolated sandbox would close more of
+this gap than a scrubbed environment and a filename denylist can.
 
 ### A compromised Drift release
 

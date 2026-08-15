@@ -47,6 +47,12 @@ jobs:
     steps:
       - name: Check out the repository
         uses: actions/checkout@v5
+        with:
+          # This job never pushes; verification does install each candidate
+          # upgrade's own (untrusted) code in a throwaway worktree, so a
+          # push-capable credential left in the runner's git config is not
+          # something this job needs — see docs/trust-and-safety.md.
+          persist-credentials: false
 
       # See examples/workflows/drift.yml for why these are here and how to
       # add the ones your repository needs.

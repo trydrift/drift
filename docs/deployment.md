@@ -52,6 +52,11 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 2   # Drift diffs against the previous commit
+          # Drift commits through the GitHub API, not a local `git push`, and
+          # verification installs each candidate upgrade's own untrusted code
+          # in a throwaway worktree — see docs/trust-and-safety.md. Neither
+          # needs a push-capable credential left in the runner's git config.
+          persist-credentials: false
       - uses: trydrift/drift@v0
         with:
           copilot-token: ${{ secrets.DRIFT_COPILOT_TOKEN }}

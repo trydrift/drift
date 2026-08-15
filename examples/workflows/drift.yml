@@ -150,6 +150,13 @@ jobs:
           # the working tree, and skips localization (saying so in the report)
           # rather than reporting impact sites from the wrong tree.
           fetch-depth: 2
+          # Drift commits its own codemod output through the GitHub API, not a
+          # local `git push`, so a push-capable credential left in the runner's
+          # git config is not something Drift ever needs. Verification also
+          # installs each candidate upgrade's own (untrusted) code in a
+          # throwaway worktree — see docs/trust-and-safety.md — and a
+          # credential that doesn't exist there can't be exfiltrated from it.
+          persist-credentials: false
 
       # ----------------------------------------------------------------------
       # Toolchains.
