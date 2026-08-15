@@ -145,7 +145,7 @@ export async function runAction(): Promise<number> {
         githubToken: inputs.repoToken,
       });
       await uploadCodeScanning({ repo, config: effectiveConfig, github, logger, findings, category: 'drift/diff' });
-      await createIssuesForFindings({ repo, config: effectiveConfig, github, logger, findings });
+      await createIssuesForFindings({ repo, config: effectiveConfig, github, logger, findings, category: 'drift/diff' });
     }
 
     if (result.dispatch.status === 'dispatched') {
@@ -190,12 +190,19 @@ async function uploadCodeScanning(args: {
 }): Promise<void> {
   const { repo, config, github, logger, findings, category } = args;
   if (!config.codeScanning.enabled) return;
-  if (findings.length === 0) {
-    logger.debug('No code scanning findings to upload.');
-    return;
-  }
 
-  logger.info(`Uploading ${findings.length} code scanning finding(s).`);
+  // An empty result is still uploaded. GitHub treats each `category` as a
+  // replacement set for the same tool: a prior run that found `zod` and a
+  // later one that finds nothing are two different analyses, and only
+  // uploading the second one tells Code Scanning the earlier alert is gone.
+  // Skipping the upload here left last week's finding sitting open forever —
+  // exactly the "rescanning retires findings that stop reappearing" claim the
+  // README makes, silently not happening on the one run where it mattered.
+  logger.info(
+    findings.length > 0
+      ? `Uploading ${findings.length} code scanning finding(s).`
+      : 'Uploading an empty code scanning result to retire any alerts that no longer reproduce.',
+  );
   await github.uploadSarif(repo, {
     sarif: buildSarifLog(findings, category),
     commitSha: repo.afterSha,
@@ -213,30 +220,56 @@ async function uploadCodeScanning(args: {
  * looks that marker up before filing — the same statelessness
  * `requestApproval` already relies on for the plan-approval issue (see
  * `dispatch/index.ts`) — so a rescan finds the existing issue rather than
- * piling up duplicates. It does not update an existing issue's body; a
- * finding whose content changed still keeps its original issue open.
+ * piling up duplicates. A rescan also reconciles what it finds against what
+ * is already open: an existing issue whose body no longer matches the
+ * current finding (new evidence, a moved location, a changed severity label)
+ * is brought up to date rather than left stating what a previous run saw,
+ * and an issue whose marker no longer appears among this run's findings is
+ * closed with a note — the same "stops reappearing, gets retired" guarantee
+ * the SARIF upload gives the Security tab, extended to the Issues view.
+ *
+ * `category` scopes both the marker and the reconciliation to one caller:
+ * the push-triggered pipeline and the scheduled outdated scan can flag the
+ * same package (`ruleId` is `drift/<ecosystem>/<name>`, independent of which
+ * mode found it) for two different reasons — "this landed and broke code"
+ * versus "this is available and would". Without the category in the marker,
+ * running one mode's reconciliation would close an issue the other mode
+ * opened, because its own smaller finding set would not contain a marker
+ * that was never its own to begin with.
  */
-async function createIssuesForFindings(args: {
+export async function createIssuesForFindings(args: {
   repo: RepoContext;
   config: DriftConfig;
   github: GitHubClient;
   logger: Logger;
   findings: SarifFinding[];
+  category: 'drift/diff' | 'drift/outdated';
 }): Promise<void> {
-  const { repo, config, github, logger, findings } = args;
-  if (!config.codeScanning.createIssuesPerAlert || findings.length === 0) return;
+  const { repo, config, github, logger, findings, category } = args;
+  if (!config.codeScanning.createIssuesPerAlert) return;
+
+  const seenMarkers = new Set<string>();
 
   for (const finding of findings) {
-    const marker = `drift-alert:${finding.ruleId}`;
+    const marker = `drift-alert:${category}:${finding.ruleId}`;
+    seenMarkers.add(marker);
+    const body = `${finding.message}\n\n<!-- ${marker} -->`;
     const existing = await github.findOpenPlanIssue(repo, marker);
+
     if (existing !== null) {
-      logger.debug(`${finding.ruleId} already filed as issue #${existing}; not duplicating`);
+      const current = await github.getIssue(repo, existing);
+      if (current && current.body !== body) {
+        await github.updateIssueBody(repo, existing, body);
+        logger.info(`Updated issue #${existing} for ${finding.ruleId}: the finding's evidence changed`);
+      } else {
+        logger.debug(`${finding.ruleId} already filed as issue #${existing}; nothing changed`);
+      }
       continue;
     }
 
     const issue = await github.createIssue(repo, {
       title: `Drift: ${finding.ruleName}`,
-      body: `${finding.message}\n\n<!-- ${marker} -->`,
+      body,
       labels: [DRIFT_LABEL, `drift:${finding.level}`],
       assignees: config.issueCreation.assignees,
     });
@@ -245,6 +278,14 @@ async function createIssuesForFindings(args: {
       continue;
     }
     logger.info(`Filed ${finding.ruleId} as issue #${issue.number}`);
+  }
+
+  const stillOpen = await github.findOpenAlertIssues(repo);
+  const ownPrefix = `drift-alert:${category}:`;
+  for (const { number, marker } of stillOpen) {
+    if (!marker.startsWith(ownPrefix) || seenMarkers.has(marker)) continue;
+    await github.closeIssue(repo, number, 'This finding no longer reproduces on the latest scan. Closing.');
+    logger.info(`Closed issue #${number}: ${marker} no longer reproduces`);
   }
 }
 
@@ -302,7 +343,7 @@ async function runOutdatedScan(
     });
 
     await uploadCodeScanning({ repo, config, github, logger, findings, category: 'drift/outdated' });
-    await createIssuesForFindings({ repo, config, github, logger, findings });
+    await createIssuesForFindings({ repo, config, github, logger, findings, category: 'drift/outdated' });
 
     const summary =
       `Checked ${scan.checked} dependenc${scan.checked === 1 ? 'y' : 'ies'}: ${scan.upToDate} up to date, ` +

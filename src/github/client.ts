@@ -5,6 +5,11 @@ import type { Logger } from '../util/logger.js';
 import type { RepoProvider } from '../repo/provider.js';
 import type { RepoPermission } from '../approval/authorize.js';
 
+// Mirrors `DRIFT_LABEL` in `dispatch/index.ts`. Not imported from there:
+// dispatch already imports this module for the `GitHubClient` type, and a
+// label string is not worth a cycle.
+const DRIFT_LABEL = 'drift';
+
 /**
  * GitHub API access.
  *
@@ -550,6 +555,49 @@ export class GitHubClient {
       return response.data.items[0]?.number ?? null;
     } catch {
       return null;
+    }
+  }
+
+  /**
+   * Every open issue Drift has filed for a code-scanning alert, with the
+   * hidden marker it embedded in the body.
+   *
+   * This is what lets a rescan tell "still open, not mentioned this run" from
+   * "still affected": without enumerating what is currently open, there is no
+   * way to notice that a finding disappeared and its issue should close.
+   */
+  async findOpenAlertIssues(repo: RepoContext): Promise<{ number: number; marker: string }[]> {
+    try {
+      const response = await this.octokit.search.issuesAndPullRequests({
+        q: `repo:${repo.owner}/${repo.repo} is:issue is:open label:${DRIFT_LABEL} "drift-alert:"`,
+        per_page: 100,
+      });
+      const found: { number: number; marker: string }[] = [];
+      for (const item of response.data.items) {
+        const match = /<!--\s*(drift-alert:\S+)\s*-->/.exec(item.body ?? '');
+        if (match) found.push({ number: item.number, marker: match[1]! });
+      }
+      return found;
+    } catch {
+      return [];
+    }
+  }
+
+  async updateIssueBody(repo: RepoContext, issueNumber: number, body: string): Promise<void> {
+    try {
+      await this.octokit.issues.update({ owner: repo.owner, repo: repo.repo, issue_number: issueNumber, body });
+    } catch (err) {
+      this.logger.warn(`Could not update issue #${issueNumber}: ${(err as Error).message}`);
+    }
+  }
+
+  /** Close an issue Drift filed, optionally saying why before closing it. */
+  async closeIssue(repo: RepoContext, issueNumber: number, comment?: string): Promise<void> {
+    try {
+      if (comment) await this.commentOnIssue(repo, issueNumber, comment);
+      await this.octokit.issues.update({ owner: repo.owner, repo: repo.repo, issue_number: issueNumber, state: 'closed' });
+    } catch (err) {
+      this.logger.warn(`Could not close issue #${issueNumber}: ${(err as Error).message}`);
     }
   }
 
