@@ -12,6 +12,9 @@ import { detectChecks } from '../dist/detect/checks.js';
 const labels = (manager: string, manifest: string | null) =>
   detectChecks(manager as never, manifest).map((c) => c.label);
 
+const capabilities = (manager: string, manifest: string | null) =>
+  detectChecks(manager as never, manifest).map((c) => [c.kind, c.compileCapable] as const);
+
 describe('node projects declare their own checks', () => {
   const manifest = JSON.stringify({
     scripts: { typecheck: 'tsc --noEmit', test: 'node --test', build: 'tsc', lint: 'eslint .' },
@@ -36,6 +39,71 @@ describe('node projects declare their own checks', () => {
     assert.deepEqual(labels('pnpm', manifest), ['pnpm run typecheck', 'pnpm test', 'pnpm run build']);
     assert.deepEqual(labels('yarn', manifest), ['yarn typecheck', 'yarn test', 'yarn build']);
     assert.deepEqual(labels('bun', manifest), ['bun run typecheck', 'bun test', 'bun run build']);
+  });
+});
+
+describe('a check can only clear compiler-provable findings if it actually compiles', () => {
+  test('a "typecheck"- or "check"-named script that runs tsc is compile-capable', () => {
+    const manifest = JSON.stringify({ scripts: { typecheck: 'tsc --noEmit' } });
+    assert.deepEqual(capabilities('npm', manifest), [['typecheck', true]]);
+  });
+
+  test('a "check"-named script that is actually a linter is not compile-capable', () => {
+    // The bug this exists for: `SCRIPT_NAMES.typecheck` includes `check`, so
+    // `"check": "eslint ."` used to be trusted to clear a signature change it
+    // never looked at.
+    const manifest = JSON.stringify({ scripts: { check: 'eslint .' } });
+    assert.deepEqual(capabilities('npm', manifest), [['typecheck', false]]);
+  });
+
+  test('a "build"-named script that just bundles is not compile-capable', () => {
+    const manifest = JSON.stringify({ scripts: { build: 'vite build' } });
+    assert.deepEqual(capabilities('npm', manifest), [['build', false]]);
+  });
+
+  test('a "build"-named script that runs tsc is compile-capable', () => {
+    const manifest = JSON.stringify({ scripts: { build: 'tsc -p tsconfig.json' } });
+    assert.deepEqual(capabilities('npm', manifest), [['build', true]]);
+  });
+
+  test('recognizes vue-tsc and svelte-check, run directly or through npx', () => {
+    assert.deepEqual(capabilities('npm', JSON.stringify({ scripts: { typecheck: 'vue-tsc --noEmit' } })), [
+      ['typecheck', true],
+    ]);
+    assert.deepEqual(capabilities('npm', JSON.stringify({ scripts: { typecheck: 'svelte-check' } })), [
+      ['typecheck', true],
+    ]);
+    assert.deepEqual(capabilities('npm', JSON.stringify({ scripts: { typecheck: 'npx tsc --noEmit' } })), [
+      ['typecheck', true],
+    ]);
+  });
+
+  test('a compiler chained after another command still counts', () => {
+    const manifest = JSON.stringify({ scripts: { build: 'rimraf dist && tsc -p tsconfig.build.json' } });
+    assert.deepEqual(capabilities('npm', manifest), [['build', true]]);
+  });
+
+  test('a test script is never treated as compile-capable, even when it happens to run tsc', () => {
+    const manifest = JSON.stringify({ scripts: { test: 'tsc --noEmit && jest' } });
+    assert.deepEqual(capabilities('npm', manifest), [['test', false]]);
+  });
+
+  test('every hardcoded, non-Node toolchain check states its capability explicitly', () => {
+    assert.deepEqual(capabilities('cargo', null), [
+      ['typecheck', true],
+      ['test', false],
+      ['build', true],
+    ]);
+    assert.deepEqual(capabilities('go', null), [
+      ['typecheck', true],
+      ['test', false],
+      ['build', true],
+    ]);
+  });
+
+  test('C/C++ has no separate typecheck, so its build step is the compile-capable one', () => {
+    assert.deepEqual(capabilities('conan', null), [['build', true]]);
+    assert.deepEqual(capabilities('vcpkg', null), [['build', true]]);
   });
 });
 

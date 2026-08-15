@@ -25,6 +25,21 @@ export interface LocalCheck {
   command: Command;
   /** Where Drift found it, so the offer can be justified. */
   source: string;
+  /**
+   * Whether a pass of this specific check proves the compiler saw the real
+   * declarations — able to disprove a signature change, a removed export, a
+   * narrowed type.
+   *
+   * `kind` alone used to stand in for this, but `kind` is a naming bucket
+   * (`typecheck`, `build`), and for Node a name is only ever a guess at what
+   * the script actually runs: `"check": "eslint ."` lands in the `typecheck`
+   * bucket by name and checks nothing a compiler would. Every check Drift
+   * builds itself (`cargo check`, `go build`, `mvn test-compile`, …) is a
+   * known, literal command, so its capability is a fact Drift already has;
+   * only the Node path, where the command comes from a project's own script
+   * body, has to actually look at what that body invokes.
+   */
+  compileCapable: boolean;
 }
 
 /**
@@ -70,13 +85,13 @@ function checksFor(manager: PackageManagerId, manifest: string | null): LocalChe
       return [
         check('typecheck', { command: 'cargo', args: ['check'] }, 'the Cargo toolchain'),
         check('test', { command: 'cargo', args: ['test'] }, 'the Cargo toolchain'),
-        check('build', { command: 'cargo', args: ['build'] }, 'the Cargo toolchain'),
+        check('build', { command: 'cargo', args: ['build'] }, 'the Cargo toolchain', true),
       ];
     case 'go':
       return [
         check('typecheck', { command: 'go', args: ['vet', './...'] }, 'the Go toolchain'),
         check('test', { command: 'go', args: ['test', './...'] }, 'the Go toolchain'),
-        check('build', { command: 'go', args: ['build', './...'] }, 'the Go toolchain'),
+        check('build', { command: 'go', args: ['build', './...'] }, 'the Go toolchain', true),
       ];
     case 'poetry':
     case 'uv':
@@ -88,13 +103,13 @@ function checksFor(manager: PackageManagerId, manifest: string | null): LocalChe
       return [
         check('typecheck', { command: 'mvn', args: ['-q', 'test-compile'] }, 'Maven'),
         check('test', { command: 'mvn', args: ['-q', 'test'] }, 'Maven'),
-        check('build', { command: 'mvn', args: ['-q', 'package', '-DskipTests'] }, 'Maven'),
+        check('build', { command: 'mvn', args: ['-q', 'package', '-DskipTests'] }, 'Maven', true),
       ];
     case 'gradle':
       return [
         check('typecheck', { command: 'gradle', args: ['compileTestJava'] }, 'Gradle'),
         check('test', { command: 'gradle', args: ['test'] }, 'Gradle'),
-        check('build', { command: 'gradle', args: ['build', '-x', 'test'] }, 'Gradle'),
+        check('build', { command: 'gradle', args: ['build', '-x', 'test'] }, 'Gradle', true),
       ];
     case 'sbt':
       return [
@@ -102,13 +117,13 @@ function checksFor(manager: PackageManagerId, manifest: string | null): LocalChe
         // which is the closest thing sbt has to a typecheck-only pass.
         check('typecheck', { command: 'sbt', args: ['Test/compile'] }, 'sbt'),
         check('test', { command: 'sbt', args: ['test'] }, 'sbt'),
-        check('build', { command: 'sbt', args: ['package'] }, 'sbt'),
+        check('build', { command: 'sbt', args: ['package'] }, 'sbt', true),
       ];
     case 'dotnet':
       return [
         check('typecheck', { command: 'dotnet', args: ['build', '--nologo'] }, 'the .NET SDK'),
         check('test', { command: 'dotnet', args: ['test', '--nologo'] }, 'the .NET SDK'),
-        check('build', { command: 'dotnet', args: ['publish', '--nologo'] }, 'the .NET SDK'),
+        check('build', { command: 'dotnet', args: ['publish', '--nologo'] }, 'the .NET SDK', true),
       ];
     case 'composer':
       return composerChecks(manifest);
@@ -120,7 +135,7 @@ function checksFor(manager: PackageManagerId, manifest: string | null): LocalChe
         // a dependency upgrade causes.
         check('typecheck', { command: 'mix', args: ['compile', '--warnings-as-errors'] }, 'Mix'),
         check('test', { command: 'mix', args: ['test'] }, 'Mix'),
-        check('build', { command: 'mix', args: ['compile'] }, 'Mix'),
+        check('build', { command: 'mix', args: ['compile'] }, 'Mix', true),
       ];
     case 'rebar':
       return [
@@ -152,7 +167,7 @@ function checksFor(manager: PackageManagerId, manifest: string | null): LocalChe
       return [
         check('typecheck', { command: 'dune', args: ['build', '@check'] }, 'dune'),
         check('test', { command: 'dune', args: ['runtest'] }, 'dune'),
-        check('build', { command: 'dune', args: ['build'] }, 'dune'),
+        check('build', { command: 'dune', args: ['build'] }, 'dune', true),
       ];
     case 'conan':
     case 'vcpkg':
@@ -171,6 +186,7 @@ function checksFor(manager: PackageManagerId, manifest: string | null): LocalChe
             ? { command: 'conan', args: ['build', '.'] }
             : { command: 'cmake', args: ['--build', 'build'] },
           manager === 'conan' ? 'Conan' : 'CMake',
+          true,
         ),
       ];
     case 'arduino-cli':
@@ -179,11 +195,12 @@ function checksFor(manager: PackageManagerId, manifest: string | null): LocalChe
           'build',
           { command: 'arduino-cli', args: ['compile', '--warnings', 'all'] },
           'Arduino CLI',
+          true,
         ),
       ];
     case 'platformio':
       return [
-        check('build', { command: 'pio', args: ['run'] }, 'PlatformIO'),
+        check('build', { command: 'pio', args: ['run'] }, 'PlatformIO', true),
         check('test', { command: 'pio', args: ['test'] }, 'PlatformIO'),
       ];
   }
@@ -256,10 +273,47 @@ function nodeScripts(manager: PackageManagerId, manifest: string | null): LocalC
           ? [name]
           : ['run', name];
 
-    out.push(check(kind, { command: runner, args }, `\`scripts.${name}\` in package.json`));
+    out.push(
+      check(
+        kind,
+        { command: runner, args },
+        `\`scripts.${name}\` in package.json`,
+        kind !== 'test' && nodeCompileCapable(scripts[name]!),
+      ),
+    );
   }
 
   return out;
+}
+
+/**
+ * The known TypeScript-family compiler frontends a Node script might invoke.
+ * Deliberately short: a name missing from this list is a false negative (the
+ * check still runs and can still fail the upgrade), while a name wrongly
+ * added would be a false positive that erases a real finding — the failure
+ * mode this whole feature exists to prevent.
+ */
+const NODE_COMPILERS = new Set(['tsc', 'vue-tsc', 'svelte-check']);
+
+/**
+ * Whether a Node script's own command line — not its name in `package.json`
+ * — actually invokes a compiler that would surface a signature change, a
+ * removed export, or a narrowed type.
+ *
+ * A `typecheck`-named script that runs `eslint .`, or a `build`-named script
+ * that runs `vite build` (esbuild strips types without checking them), tells
+ * a reviewer nothing a compiler would. Only the literal command matters, so
+ * this reads the script body itself rather than trusting the name it was
+ * filed under.
+ */
+function nodeCompileCapable(scriptBody: string): boolean {
+  return scriptBody.split(/&&|\|\||;/).some((segment) => {
+    const tokens = segment.trim().split(/\s+/).filter(Boolean);
+    let i = 0;
+    while (tokens[i] && /^[\w.]+=/.test(tokens[i]!)) i += 1; // skip `FOO=bar tsc`
+    if (tokens[i] === 'npx') i += 1;
+    return tokens[i] !== undefined && NODE_COMPILERS.has(tokens[i]!);
+  });
 }
 
 function pythonChecks(manager: PackageManagerId, manifest: string | null): LocalCheck[] {
@@ -302,6 +356,12 @@ function rubyChecks(manifest: string | null): LocalCheck[] {
   return out;
 }
 
-function check(kind: CheckKind, command: Command, source: string): LocalCheck {
-  return { kind, label: [command.command, ...command.args].join(' '), command, source };
+function check(
+  kind: CheckKind,
+  command: Command,
+  source: string,
+  /** Defaults to the `typecheck` bucket: every other hardcoded (non-Node) check is a literal, known toolchain command, so the default is correct except where overridden above for a `build` step that is itself the compiler. */
+  compileCapable: boolean = kind === 'typecheck',
+): LocalCheck {
+  return { kind, label: [command.command, ...command.args].join(' '), command, source, compileCapable };
 }

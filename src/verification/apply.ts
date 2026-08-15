@@ -1,6 +1,5 @@
 import type { RemediationPlan } from '../types.js';
 import { taxonomyOf } from '../confidence/taxonomy.js';
-import type { CheckOutcome } from './checks.js';
 import type { UpgradeVerification } from './upgrade-probe.js';
 
 /**
@@ -58,7 +57,7 @@ export function applyVerificationToPlan(
   // this, a project whose only green check is `test` (or a `build` script that
   // just bundles, never type-checks) would have real compiler-provable
   // breakage erased by a check that never looked at types at all.
-  if (!verification.checks.some((check) => check.status === 'passed' && isCompileCapable(check.kind))) {
+  if (!verification.checks.some((check) => check.status === 'passed' && check.compileCapable)) {
     return { ...plan, verification };
   }
 
@@ -83,11 +82,6 @@ export function applyVerificationToPlan(
   if (cleared.size === 0) return { ...plan, verification };
 
   return prunePlan(plan, cleared, verification);
-}
-
-/** Check kinds able to observe a compiler's own view of the declarations. */
-function isCompileCapable(kind: CheckOutcome['kind']): boolean {
-  return kind === 'typecheck' || kind === 'build';
 }
 
 /**

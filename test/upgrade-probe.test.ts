@@ -503,7 +503,16 @@ describe('what a measurement does to a plan', () => {
 
   const passed = {
     status: 'passed' as const,
-    checks: [{ kind: 'typecheck' as const, label: 'tsc --noEmit', status: 'passed' as const, durationMs: 1, output: '' }],
+    checks: [
+      {
+        kind: 'typecheck' as const,
+        label: 'tsc --noEmit',
+        compileCapable: true,
+        status: 'passed' as const,
+        durationMs: 1,
+        output: '',
+      },
+    ],
     failedFiles: [],
   };
 
@@ -565,6 +574,22 @@ describe('what a measurement does to a plan', () => {
     };
     const verified = applyVerificationToPlan(plan(), testOnly);
     assert.equal(verified.breakingChanges.length, 2, 'nothing is dropped without a compile-capable check passing');
+  });
+
+  test('a green "check" script that is actually a linter cannot clear a compiler-provable finding', () => {
+    // `"check": "eslint ."` lands in the `typecheck` kind by name — SCRIPT_NAMES
+    // matches the property name, not what it runs — but eslint never sees a
+    // signature or an export. Only `compileCapable` (computed from the actual
+    // command, not the kind bucket) may license clearing a finding.
+    const lintNamedCheck = {
+      status: 'passed' as const,
+      checks: [
+        { kind: 'typecheck' as const, label: 'npm run check', compileCapable: false, status: 'passed' as const, durationMs: 1, output: '' },
+      ],
+      failedFiles: [],
+    };
+    const verified = applyVerificationToPlan(plan(), lintNamedCheck);
+    assert.equal(verified.breakingChanges.length, 2, 'a passing lint cannot disprove a signature or export change');
   });
 
   test('a batch pass over several upgrades together does not clear any one of their predictions', () => {

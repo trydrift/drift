@@ -25,6 +25,8 @@ export type CheckStatus = 'passed' | 'failed' | 'cancelled' | 'not-run';
 export interface CheckOutcome {
   kind: CheckKind;
   label: string;
+  /** Whether a pass of this specific check can disprove a compiler-provable finding. See {@link LocalCheck.compileCapable}. */
+  compileCapable: boolean;
   status: CheckStatus;
   /** Milliseconds the command took. */
   durationMs: number;
@@ -140,6 +142,7 @@ export async function runChecks(options: RunChecksOptions): Promise<CheckOutcome
         record(options, index, {
           kind: check.kind,
           label: check.label,
+          compileCapable: check.compileCapable,
           status: 'cancelled',
           durationMs: 0,
           output: '',
@@ -164,6 +167,7 @@ export async function runChecks(options: RunChecksOptions): Promise<CheckOutcome
         record(options, index, {
           kind: check.kind,
           label: check.label,
+          compileCapable: check.compileCapable,
           status: 'not-run',
           durationMs,
           output: '',
@@ -179,6 +183,7 @@ export async function runChecks(options: RunChecksOptions): Promise<CheckOutcome
       record(options, index, {
         kind: check.kind,
         label: check.label,
+        compileCapable: check.compileCapable,
         status: result.code === 0 ? 'passed' : 'failed',
         durationMs,
         // The end of the output is where the failure is. A hundred lines of
