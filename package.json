@@ -2,7 +2,7 @@
   "name": "@usedrift/cli",
   "version": "0.1.0",
   "description": "Find which dependency upgrades affect your code, show the evidence, and prepare reviewable fixes from the command line.",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "SEE LICENSE IN LICENSE.md",
   "type": "module",
   "repository": {
     "type": "git",
