@@ -34,6 +34,17 @@ const PUBLIC_API_INSTALL = {
   args: ['install', 'cargo-public-api', '--locked'],
 } as const;
 const PUBLIC_API_REMEDY = 'Drift can install the missing `cargo-public-api` helper for you after approval.';
+const NIGHTLY_INSTALL = {
+  id: 'rustup-nightly',
+  label: 'Install the Rust nightly toolchain',
+  command: 'rustup',
+  args: ['toolchain', 'install', 'nightly', '--profile', 'minimal'],
+} as const;
+// `cargo public-api` reads rustdoc's unstable `-Z unstable-options --output-format json`,
+// which only nightly rustc emits, so the nightly toolchain is a hard requirement of the
+// tool itself, not of the crate being probed.
+const NIGHTLY_REMEDY =
+  'Drift can install the Rust nightly toolchain for you after approval, or run `rustup toolchain install nightly` yourself.';
 
 export const rustSurface: SurfaceProvider = {
   ecosystem: 'cargo',
@@ -62,6 +73,26 @@ export const rustSurface: SurfaceProvider = {
           PUBLIC_API_REMEDY,
           PUBLIC_API_INSTALL,
         );
+      }
+    }
+
+    if (await commandWorks(request.exec, 'rustup', ['--version'], request.env)) {
+      // Only rustup-managed installs can be checked/fixed here; a nightly toolchain
+      // installed some other way (e.g. a distro package) is invisible to `rustup` but
+      // still works, so its absence is not treated as a failure on its own.
+      if (!(await nightlyAvailable(request.exec, request.env))) {
+        const installed =
+          (await tryAutoInstall(request, NIGHTLY_INSTALL)) &&
+          (await nightlyAvailable(request.exec, request.env));
+        if (!installed) {
+          return unavailable(
+            TOOL,
+            'tool-missing',
+            `\`cargo public-api\` needs the Rust nightly toolchain to read rustdoc's JSON output, and it is not installed. ${request.name}'s public API could not be compared directly.`,
+            NIGHTLY_REMEDY,
+            NIGHTLY_INSTALL,
+          );
+        }
       }
     }
 
@@ -106,15 +137,27 @@ async function surfaceOf(request: SurfaceRequest, version: string): Promise<Surf
     // A crate that cannot be resolved at all is a different fact from one that
     // fails to build, and a developer acts on them differently.
     const missing = /could not find|no matching package|failed to select a version/i.test(result.stderr);
+    // Caught proactively in `compute` when rustup is present; this is the fallback for
+    // rustup being absent or the check having raced an uninstall, so the developer still
+    // gets an actionable message instead of raw rustup stderr.
+    const nightlyMissing = /toolchain '[^']*nightly[^']*' is not installed/i.test(result.stderr);
     return {
       ok: false,
-      failure: unavailable(
-        TOOL,
-        missing ? 'version-unavailable' : 'toolchain-failed',
-        missing
-          ? `crates.io has no ${request.name} ${version}; it may have been yanked, or the crate may be private.`
-          : `\`cargo public-api\` failed on ${request.name} ${version}: ${firstLine(result.stderr)}`,
-      ),
+      failure: nightlyMissing
+        ? unavailable(
+            TOOL,
+            'tool-missing',
+            `\`cargo public-api\` needs the Rust nightly toolchain to read rustdoc's JSON output, and it is not installed.`,
+            NIGHTLY_REMEDY,
+            NIGHTLY_INSTALL,
+          )
+        : unavailable(
+            TOOL,
+            missing ? 'version-unavailable' : 'toolchain-failed',
+            missing
+              ? `crates.io has no ${request.name} ${version}; it may have been yanked, or the crate may be private.`
+              : `\`cargo public-api\` failed on ${request.name} ${version}: ${firstLine(result.stderr)}`,
+          ),
     };
   }
 
@@ -232,6 +275,10 @@ function escapeToml(value: string): string {
 
 function firstLine(text: string): string {
   return text.split('\n').find((line) => line.trim().length > 0)?.trim() ?? 'no output';
+}
+
+async function nightlyAvailable(exec: Exec, env?: NodeJS.ProcessEnv): Promise<boolean> {
+  return commandWorks(exec, 'rustup', ['run', 'nightly', 'rustc', '--version'], env);
 }
 
 async function commandWorks(

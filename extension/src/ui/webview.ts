@@ -937,7 +937,7 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
     </summary>
 
     <div class="pkg-body">
-      <p class="verdict-long">${escapeHtml(candidate.error ?? candidate.summary)}</p>
+      <p class="verdict-long">${inlineMarkdown(candidate.error ?? candidate.summary, {})}</p>
       ${renderVerification(candidate)}
       ${renderRationale(candidate)}
       ${renderGaps(candidate)}
@@ -1298,6 +1298,9 @@ function toolRequestReason(id: string): string {
   }
   if (id === 'japicmp') {
     return 'Optional helper: lets Drift compare published JVM APIs instead of relying on changelog and semver evidence alone.';
+  }
+  if (id === 'rustup-nightly') {
+    return 'Optional helper: `cargo public-api` needs the Rust nightly toolchain to read rustdoc\'s JSON output.';
   }
   return 'Optional helper: lets Drift gather stronger evidence for this upgrade.';
 }

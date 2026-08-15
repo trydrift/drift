@@ -54,7 +54,7 @@ export interface SurfaceUnavailable {
 
 export interface ToolInstallRequest {
   /** Stable id understood by the extension host. */
-  id: 'cargo-public-api' | 'japicmp';
+  id: 'cargo-public-api' | 'japicmp' | 'rustup-nightly';
   /** Short button label. */
   label: string;
   /** Command line to run after approval. Always argv, never shell text. */
@@ -143,6 +143,20 @@ export interface SurfaceProvider {
 }
 
 /**
+ * One install per tool id, shared by every concurrent caller.
+ *
+ * A scan checks several dependencies in parallel (see `inParallel` in
+ * `upgrade/scan.ts`), and two Rust crates in the same scan both find nightly
+ * missing at the same moment. Without this, each would shell out to its own
+ * `rustup toolchain install nightly`, and rustup's shared download cache
+ * (`~/.rustup/downloads`) is not safe for concurrent invocations: one process
+ * renames a partial download out from under another mid-write, which fails
+ * with an ENOENT ("could not rename downloaded file... No such file or
+ * directory") rather than a meaningful conflict error.
+ */
+const inFlightInstalls = new Map<string, Promise<boolean>>();
+
+/**
  * Installs a Drift-owned helper inline, when the caller has opted in.
  *
  * Returns whether the install succeeded, so a provider can retry its own
@@ -155,6 +169,18 @@ export async function tryAutoInstall(
   install: ToolInstallRequest,
 ): Promise<boolean> {
   if (!request.autoInstall) return false;
+
+  const existing = inFlightInstalls.get(install.id);
+  if (existing) return existing;
+
+  const attempt = runInstall(request, install).finally(() => {
+    inFlightInstalls.delete(install.id);
+  });
+  inFlightInstalls.set(install.id, attempt);
+  return attempt;
+}
+
+async function runInstall(request: SurfaceRequest, install: ToolInstallRequest): Promise<boolean> {
   request.logger.info(`Installing ${install.label.replace(/^Install\s+/i, '')}...`);
   const result = await request.exec(install.command, install.args, {
     ...(request.env ? { env: request.env } : {}),

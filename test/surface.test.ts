@@ -438,9 +438,11 @@ describe('when a surface cannot be computed', () => {
   test('uses the supplied environment for every cargo command', async () => {
     const env = { ...process.env, PATH: '/drift/cargo/bin' };
     const seen: string[] = [];
-    const exec = async (_command: string, args: readonly string[], options?: { env?: NodeJS.ProcessEnv }) => {
+    const exec = async (command: string, args: readonly string[], options?: { env?: NodeJS.ProcessEnv }) => {
       assert.equal(options?.env?.PATH, '/drift/cargo/bin');
-      seen.push(args.join(' '));
+      seen.push(`${command} ${args.join(' ')}`);
+      if (command === 'rustup' && args.join(' ') === '--version') return { code: 0, stdout: 'rustup 1.27.1', stderr: '' };
+      if (command === 'rustup') return { code: 0, stdout: 'rustc 1.91.0-nightly', stderr: '' };
       if (args[0] === '--version') return { code: 0, stdout: 'cargo 1.91.1', stderr: '' };
       if (args[0] === 'public-api' && args[1] === '--version') {
         return { code: 0, stdout: 'cargo-public-api 0.50.0', stderr: '' };
@@ -451,7 +453,63 @@ describe('when a surface cannot be computed', () => {
     const outcome = await computeSurfaceDiff(change(), { logger, exec, env });
 
     assert.equal(outcome.available, true);
-    assert.deepEqual(seen, ['--version', 'public-api --version', 'public-api --simplified --package serde', 'public-api --simplified --package serde']);
+    assert.deepEqual(seen, [
+      'cargo --version',
+      'cargo public-api --version',
+      'rustup --version',
+      'rustup run nightly rustc --version',
+      'cargo public-api --simplified --package serde',
+      'cargo public-api --simplified --package serde',
+    ]);
+  });
+
+  test('a missing nightly toolchain is offered as an install, distinct from a missing cargo-public-api', async () => {
+    const exec = async (command: string, args: readonly string[]) => {
+      if (command === 'rustup' && args.join(' ') === '--version') return { code: 0, stdout: 'rustup 1.27.1', stderr: '' };
+      if (command === 'rustup') return { code: 1, stdout: '', stderr: "error: toolchain 'nightly-x86_64-apple-darwin' is not installed" };
+      if (args[0] === '--version') return { code: 0, stdout: 'cargo 1.91.1', stderr: '' };
+      if (args[0] === 'public-api' && args[1] === '--version') {
+        return { code: 0, stdout: 'cargo-public-api 0.50.0', stderr: '' };
+      }
+      return { code: 0, stdout: '', stderr: '' };
+    };
+
+    const outcome = await computeSurfaceDiff(change(), { logger, exec });
+
+    assert.equal(outcome.available, false);
+    if (outcome.available) return;
+    assert.equal(outcome.reason, 'tool-missing');
+    assert.match(outcome.detail, /nightly/);
+    assert.match(outcome.remedy ?? '', /nightly/);
+    assert.deepEqual(outcome.install, {
+      id: 'rustup-nightly',
+      label: 'Install the Rust nightly toolchain',
+      command: 'rustup',
+      args: ['toolchain', 'install', 'nightly', '--profile', 'minimal'],
+    });
+  });
+
+  test('when rustup itself is absent, a nightly-related cargo public-api failure is still named', async () => {
+    const exec = async (command: string, args: readonly string[]) => {
+      if (command === 'rustup') return { code: 1, stdout: '', stderr: '', failure: 'not-found' as const };
+      if (args[0] === '--version') return { code: 0, stdout: 'cargo 1.91.1', stderr: '' };
+      if (args[0] === 'public-api' && args[1] === '--version') {
+        return { code: 0, stdout: 'cargo-public-api 0.50.0', stderr: '' };
+      }
+      return {
+        code: 101,
+        stdout: '',
+        stderr: "error: toolchain 'nightly-x86_64-apple-darwin' is not installed",
+      };
+    };
+
+    const outcome = await computeSurfaceDiff(change(), { logger, exec });
+
+    assert.equal(outcome.available, false);
+    if (outcome.available) return;
+    assert.equal(outcome.reason, 'tool-missing');
+    assert.match(outcome.detail, /nightly/);
+    assert.deepEqual(outcome.install?.id, 'rustup-nightly');
   });
 
   test('ecosystems with no computed surface say so plainly', async () => {

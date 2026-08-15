@@ -773,6 +773,60 @@ test('evidence content from a third party is escaped, not injected', () => {
   assert.match(html, /&lt;img src=x/);
 });
 
+test('a markdown link folded into the one-line verdict renders as a link, not literal brackets', () => {
+  // `summarize()` folds rationale gap text (which can carry `[label](url)` links,
+  // e.g. release-notes citations) straight into `candidate.summary` when there is
+  // nothing else to report. The same sentence renders as a link further down via
+  // renderGaps(), so verdict-long must match rather than showing raw markdown.
+  const c = candidate({
+    summary:
+      'Safe to upgrade. Drift read 1 set of release notes ([svelte-check@4.7.6 release notes](https://example.test/notes)) and found nothing that announces a breaking change.',
+  });
+
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'i1', kind: 'packages', headline: 'One upgrade available.', ids: [c.id] }],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  assert.match(html, /<a data-action="openUrl" data-url="https:\/\/example\.test\/notes">svelte-check@4\.7\.6 release notes<\/a>/);
+  assert.ok(!html.includes('[svelte-check@4.7.6 release notes]'), 'raw markdown link syntax must not survive rendering');
+});
+
+test('the nightly-toolchain install request is offered with a clear reason', () => {
+  const c = candidate({
+    name: 'serde',
+    ecosystem: 'cargo',
+    packageManager: 'cargo',
+    gaps: ['`cargo public-api` needs the Rust nightly toolchain to read rustdoc\'s JSON output, and it is not installed.'],
+    breakingCount: 0,
+    impactCount: 0,
+    impactFiles: 0,
+    recommendation: 'insufficient-evidence',
+    toolRequests: [
+      {
+        id: 'rustup-nightly',
+        label: 'Install the Rust nightly toolchain',
+        command: 'rustup',
+        args: ['toolchain', 'install', 'nightly', '--profile', 'minimal'],
+      },
+    ],
+  });
+
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'i1', kind: 'packages', headline: 'One upgrade available.', ids: [c.id] }],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  assert.match(html, /data-action="installTool"/);
+  assert.match(html, /data-value="rustup-nightly"/);
+  assert.match(html, /Install the Rust nightly toolchain/);
+  assert.match(html, /needs the Rust nightly toolchain/);
+});
+
 test('attachment chips render with a remove button', () => {
   const html = renderPanel(
     model({ attachments: [{ kind: 'file', label: 'src/http.ts', value: 'src/http.ts' }] }),
