@@ -264,7 +264,7 @@ export const RECOMMENDATION_LABEL: Record<Recommendation, string> = {
   'safe-to-upgrade': 'Safe to upgrade',
   'upgrade-recommended': 'Upgrade recommended',
   'upgrade-after-review': 'Upgrade after review',
-  'manual-migration-required': 'Manual migration required',
+  'manual-migration-required': 'Migration required',
   'insufficient-evidence': 'Insufficient evidence',
   'do-not-upgrade-yet': 'Do not upgrade yet',
 };
