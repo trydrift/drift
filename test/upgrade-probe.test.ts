@@ -500,6 +500,17 @@ describe('what a measurement does to a plan', () => {
     assert.equal(verified.breakingChanges.length, 2, 'nothing is dropped without a compile-capable check passing');
   });
 
+  test('a batch pass over several upgrades together does not clear any one of their predictions', () => {
+    // Dependencies can compensate for each other, so a green run over a whole
+    // group only proves the group is safe together — not that this candidate
+    // is safe alone. `measuredWith > 1` must not license pruning even though
+    // the check that ran is compiler-capable.
+    const batch = { ...passed, measuredWith: 3 };
+    const verified = applyVerificationToPlan(plan(), batch);
+    assert.equal(verified.breakingChanges.length, 2, 'nothing is pruned on the strength of a batched pass');
+    assert.equal(verified.verification, batch, 'the batch result is still recorded');
+  });
+
   test('verification is only applied within the workspace it actually checked', () => {
     const twoWorkspaces = {
       ...plan(),

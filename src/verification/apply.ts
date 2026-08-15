@@ -62,6 +62,18 @@ export function applyVerificationToPlan(
     return { ...plan, verification };
   }
 
+  // A green run over several upgrades installed together proves the batch is
+  // safe together, not that any one of them is safe alone: dependencies can
+  // compensate for each other (a framework and its adapter, a runtime and its
+  // type definitions), so `A@2 + B@2` passing says nothing about `A@2` on its
+  // own. `measuredWith > 1` marks exactly that case — the display keeps
+  // saying "passed", which is a true statement about the batch, but nothing
+  // gets pruned on the strength of it. Only a pass measured for this
+  // candidate alone may clear its predictions.
+  if (verification.measuredWith && verification.measuredWith > 1) {
+    return { ...plan, verification };
+  }
+
   const inScope = (change: RemediationPlan['breakingChanges'][number]) =>
     workspace === undefined || (change.workspace ?? '') === workspace;
 
