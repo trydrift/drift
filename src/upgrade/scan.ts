@@ -44,7 +44,7 @@ import { buildPlan } from '../plan/index.js';
 import { dependencyEcosystemKey } from '../util/id.js';
 import { compareSeverity, describeSeverity, severityOf, type UpgradeSeverity } from './severity.js';
 import { lookupVersions, versionSourceLabel } from './versions.js';
-import { probeUpgrades, type ProbeTarget, type UpgradeVerification } from '../verification/upgrade-probe.js';
+import { probeUpgrades, scrubEnv, type ProbeTarget, type UpgradeVerification } from '../verification/upgrade-probe.js';
 import type { CheckKind } from '../detect/checks.js';
 import { applyVerification, describeVerification } from './verification.js';
 
@@ -676,8 +676,11 @@ async function verifyCandidates(args: {
     packageManager: candidate.packageManager,
     // The worktree, never `args.root`. `installUpgrade` writes a manifest and
     // runs a package manager, and the whole point of this phase is that neither
-    // happens where someone is working.
-    install: (checkout) => installUpgrade(checkout, candidate, 'safe', args.env),
+    // happens where someone is working. The env is scrubbed of credentials
+    // here too: this install runs a version of `candidate` nobody has vetted
+    // yet, and its package-manager lifecycle scripts should not find Drift's
+    // own tokens sitting in the environment.
+    install: (checkout) => installUpgrade(checkout, candidate, 'safe', scrubEnv(args.env)),
   }));
 
   await probeUpgrades({

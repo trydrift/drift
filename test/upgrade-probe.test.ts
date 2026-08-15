@@ -409,7 +409,11 @@ describe('what a measurement does to a plan', () => {
     createdAt: new Date().toISOString(),
   });
 
-  const passed = { status: 'passed' as const, checks: [], failedFiles: [] };
+  const passed = {
+    status: 'passed' as const,
+    checks: [{ kind: 'typecheck' as const, label: 'tsc --noEmit', status: 'passed' as const, durationMs: 1, output: '' }],
+    failedFiles: [],
+  };
 
   test('a green build drops what a compiler could have caught', () => {
     const verified = applyVerificationToPlan(plan(), passed);
@@ -456,6 +460,39 @@ describe('what a measurement does to a plan', () => {
     assert.equal(verified.breakingChanges.length, 2);
     assert.equal(verified.verification?.reason, 'No checks to run.');
     assert.equal(describeVerification(skipped), 'No checks to run.');
+  });
+
+  test('a passing test suite alone cannot clear a compiler-provable finding', () => {
+    // Only `test` ran. A green suite proves nothing about a signature or an
+    // export — that requires a typecheck or a build, neither of which ran
+    // here — so nothing a compiler could have caught should be dropped.
+    const testOnly = {
+      status: 'passed' as const,
+      checks: [{ kind: 'test' as const, label: 'npm test', status: 'passed' as const, durationMs: 1, output: '' }],
+      failedFiles: [],
+    };
+    const verified = applyVerificationToPlan(plan(), testOnly);
+    assert.equal(verified.breakingChanges.length, 2, 'nothing is dropped without a compile-capable check passing');
+  });
+
+  test('verification is only applied within the workspace it actually checked', () => {
+    const twoWorkspaces = {
+      ...plan(),
+      breakingChanges: [
+        { ...change('web-export-removed', 'removed-export'), workspace: 'packages/web' },
+        { ...change('api-export-removed', 'removed-export'), workspace: 'packages/api' },
+      ],
+    };
+    // Both findings are compiler-provable, but only `packages/web` was
+    // actually installed and checked. A green result for it must not clear
+    // the finding that lives in `packages/api`, which this pass never
+    // touched.
+    const verified = applyVerificationToPlan(twoWorkspaces, passed, 'packages/web');
+    assert.deepEqual(
+      verified.breakingChanges.map((c) => c.id),
+      ['api-export-removed'],
+      'only the finding in the verified workspace is cleared',
+    );
   });
 });
 

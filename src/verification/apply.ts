@@ -1,5 +1,6 @@
 import type { RemediationPlan } from '../types.js';
 import { taxonomyOf } from '../confidence/taxonomy.js';
+import type { CheckOutcome } from './checks.js';
 import type { UpgradeVerification } from './upgrade-probe.js';
 
 /**
@@ -35,17 +36,46 @@ export function provableByCompiler(change: Parameters<typeof taxonomyOf>[0]): bo
  *
  * Returns a new plan; the input is not modified, so a caller holding the
  * unverified version for comparison still has it.
+ *
+ * `workspace` scopes a pass to one workspace member — pass it whenever the
+ * probe only actually installed and checked that member, which is every
+ * multi-package repository. Without it, a green result from `packages/web`
+ * would be free to clear a compiler-provable finding that lives in
+ * `packages/api`, a package the probe never touched. Omit it only for a
+ * verification that genuinely covers the whole plan (a single-package repo,
+ * or a result already combined across every member with `combineVerifications`).
  */
 export function applyVerificationToPlan(
   plan: RemediationPlan,
   verification: UpgradeVerification,
+  workspace?: string,
 ): RemediationPlan {
   if (verification.status !== 'passed') return { ...plan, verification };
 
-  const cleared = new Set(plan.breakingChanges.filter(provableByCompiler).map((change) => change.id));
+  // A passing test suite proves nothing about a signature or an export: only a
+  // check capable of seeing the declarations — a typecheck, or a build stage
+  // that compiles them — can disprove a compiler-provable prediction. Without
+  // this, a project whose only green check is `test` (or a `build` script that
+  // just bundles, never type-checks) would have real compiler-provable
+  // breakage erased by a check that never looked at types at all.
+  if (!verification.checks.some((check) => check.status === 'passed' && isCompileCapable(check.kind))) {
+    return { ...plan, verification };
+  }
+
+  const inScope = (change: RemediationPlan['breakingChanges'][number]) =>
+    workspace === undefined || (change.workspace ?? '') === workspace;
+
+  const cleared = new Set(
+    plan.breakingChanges.filter((change) => inScope(change) && provableByCompiler(change)).map((change) => change.id),
+  );
   if (cleared.size === 0) return { ...plan, verification };
 
   return prunePlan(plan, cleared, verification);
+}
+
+/** Check kinds able to observe a compiler's own view of the declarations. */
+function isCompileCapable(kind: CheckOutcome['kind']): boolean {
+  return kind === 'typecheck' || kind === 'build';
 }
 
 /**

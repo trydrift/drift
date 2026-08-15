@@ -27,8 +27,8 @@ import type { SurfaceAddition, SurfaceUnavailable } from './evidence/surface/typ
 import type { AnalysisGap, CheckedSurface, VerificationOutcome } from './confidence/types.js';
 import { behaviouralFindingKind, runBehaviouralVerification } from './verification/behavioural.js';
 import { fetchedPackageEnvironment } from './verification/environment.js';
-import { probeDependencyChange } from './verification/upgrade-probe.js';
-import { applyVerificationToPlan, describeVerification } from './verification/apply.js';
+import { probeDependencyChange, type UpgradeVerification } from './verification/upgrade-probe.js';
+import { applyVerificationToPlan, combineVerifications, describeVerification } from './verification/apply.js';
 import { detectPackageManagers, type PackageManagerId } from './detect/package-manager.js';
 import type { CheckKind } from './detect/checks.js';
 import { dependencyEcosystemKey } from './util/id.js';
@@ -490,7 +490,9 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     summary:
       finalPlan.commits.length > 0
         ? `${finalPlan.breakingChanges.length} breaking change(s), ${new Set(finalPlan.impactSites.map((s) => s.file)).size} file(s) affected`
-        : 'No code in this repository is affected by these dependency changes.',
+        : finalPlan.blockers.length > 0
+          ? `Could not establish whether this repository is affected: ${finalPlan.blockers[0]}`
+          : 'No code in this repository is affected by these dependency changes.',
   };
 }
 
@@ -511,28 +513,73 @@ async function verifyPlan(
   const { repo, config, workspace } = options;
   if (!config.verify.enabled || !workspace || plan.changes.length === 0) return plan;
 
-  const change = plan.changes[0]!;
-  const dir = change.workspace ?? '';
-  const manager = await managerFor(workspace, dir, change.ecosystem);
-  if (!manager) return plan;
+  // One group per workspace member that actually changed, not one probe for
+  // the whole commit. A commit that bumps `packages/web` and `packages/api`
+  // together only ever installed and checked whichever one the old logic
+  // picked first — the other package's compiler-provable findings would be
+  // cleared, or its failure attributed, by a check that never ran against it.
+  const groups = new Map<string, DependencyChange[]>();
+  for (const change of plan.changes) {
+    const dir = change.workspace ?? '';
+    const existing = groups.get(dir);
+    if (existing) existing.push(change);
+    else groups.set(dir, [change]);
+  }
 
-  options.progress('verify', `Installing the change and running ${config.verify.checks.join(', ')}`);
+  let verifiedPlan = plan;
+  const parts: (UpgradeVerification | undefined)[] = [];
+  const failedGroups: string[] = [];
 
-  const verification = await probeDependencyChange({
-    workspace,
-    dir,
-    packageManager: manager,
-    afterSha: repo.afterSha,
-    ...(repo.beforeSha ? { beforeSha: repo.beforeSha } : {}),
-    kinds: config.verify.checks as CheckKind[],
-    timeoutMs: config.verify.timeoutMs,
-    logger: options.logger,
-    ...(options.env ? { env: options.env } : {}),
-    onProgress: ({ phase, detail }) => options.progress('verify', `${phase}: ${detail}`),
-  });
+  for (const [dir, changes] of groups) {
+    const manager = await managerFor(workspace, dir, changes[0]!.ecosystem);
+    if (!manager) continue;
 
-  options.logger.info(`Verification: ${describeVerification(verification)}`);
-  return applyVerificationToPlan(plan, verification);
+    options.progress(
+      'verify',
+      `Installing the change in ${dir || 'the repository root'} and running ${config.verify.checks.join(', ')}`,
+    );
+
+    const verification = await probeDependencyChange({
+      workspace,
+      dir,
+      packageManager: manager,
+      afterSha: repo.afterSha,
+      ...(repo.beforeSha ? { beforeSha: repo.beforeSha } : {}),
+      kinds: config.verify.checks as CheckKind[],
+      timeoutMs: config.verify.timeoutMs,
+      logger: options.logger,
+      ...(options.env ? { env: options.env } : {}),
+      onProgress: ({ phase, detail }) => options.progress('verify', `${phase}: ${detail}`),
+    });
+
+    options.logger.info(`Verification (${dir || 'root'}): ${describeVerification(verification)}`);
+    parts.push(verification);
+    if (verification.status === 'failed') failedGroups.push(dir || 'the repository root');
+    verifiedPlan = applyVerificationToPlan(verifiedPlan, verification, dir);
+  }
+
+  const combined = combineVerifications(parts);
+  if (combined) verifiedPlan = { ...verifiedPlan, verification: combined };
+
+  // A verification failure is evidence of real breakage even where static
+  // analysis predicted none — the exact case a green build was supposed to
+  // rule out. Without a blocker, a plan with zero predicted commits reports
+  // as "not affected" and dispatch treats that as a reason to do nothing,
+  // silently discarding a measured failure. Recorded as a blocker rather than
+  // folded into the prediction list because nothing here identifies a
+  // specific breaking change to attach it to — only that the project's own
+  // checks stopped passing.
+  if (failedGroups.length > 0) {
+    verifiedPlan = {
+      ...verifiedPlan,
+      blockers: [
+        ...verifiedPlan.blockers,
+        `The project's own checks failed after this change was applied in ${failedGroups.join(', ')}, which static analysis did not predict. See the verification output for what broke.`,
+      ],
+    };
+  }
+
+  return verifiedPlan;
 }
 
 /** Which tool owns `dir`, for the ecosystem that actually changed. */

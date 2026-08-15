@@ -190,7 +190,7 @@ async function probeGroup(
   hooks: GroupHooks,
 ): Promise<void> {
   const exec = options.exec ?? execCommand;
-  const env = options.env ?? process.env;
+  const env = scrubEnv(options.env ?? process.env);
   const kinds = options.kinds ?? DEFAULT_KINDS;
 
   hooks.report('Preparing a test checkout', `${targets.length} upgrade${targets.length === 1 ? '' : 's'} to try`);
@@ -441,7 +441,7 @@ export interface ChangeProbeOptions {
  */
 export async function probeDependencyChange(options: ChangeProbeOptions): Promise<UpgradeVerification> {
   const exec = options.exec ?? execCommand;
-  const env = options.env ?? process.env;
+  const env = scrubEnv(options.env ?? process.env);
   const dir = options.dir ?? '';
   const after = await checkAt(options, options.afterSha, exec, env, 'with the change');
   if (after.status !== 'failed' || !options.beforeSha) return after;
@@ -651,4 +651,30 @@ function cancelled(): UpgradeVerification {
 
 function messageOf(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
+}
+
+/**
+ * Strip credentials before a candidate dependency's install/build/test
+ * scripts run.
+ *
+ * This is the one place in the scan where code Drift did not choose —
+ * whatever a newly-published version's lifecycle scripts, or the project's
+ * own build, decide to run — executes with real permission to do so. The
+ * worktree keeps that code off the developer's working tree, but does nothing
+ * about the process's environment: left alone, it inherits every credential
+ * Drift itself was given, including the GitHub token and, in the Action, the
+ * `repo-token`/`copilot-token` inputs GitHub exposes as `INPUT_*` variables.
+ * A compromised package version could read and exfiltrate those before a
+ * human ever chose to install it. Only variables that look like a secret are
+ * removed — `PATH`, proxy settings, and everything else a package manager or
+ * compiler legitimately needs stay put.
+ */
+export function scrubEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  const SENSITIVE = /token|secret|password|passwd|credential|api[_-]?key|private[_-]?key|_key$/i;
+  const scrubbed: NodeJS.ProcessEnv = {};
+  for (const [key, value] of Object.entries(env)) {
+    if (key.startsWith('INPUT_') || key === 'GITHUB_TOKEN' || SENSITIVE.test(key)) continue;
+    scrubbed[key] = value;
+  }
+  return scrubbed;
 }
