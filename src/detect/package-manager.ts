@@ -141,9 +141,19 @@ export interface DirectoryListing {
   read?: (name: string) => string | null;
 }
 
-const npmFlags = (kind: DependencyKind, dev: string, optional: string): string[] => {
+/**
+ * Which flag keeps an upgrade in the manifest section it was already
+ * declared in.
+ *
+ * Every npm-ecosystem manager defaults to writing `dependencies`, so a
+ * `peer` upgrade with no flag at all silently moves the entry Drift was
+ * asked to bump out of `peerDependencies` — a different guarantee to the
+ * consumers of this package, not a version bump.
+ */
+const npmFlags = (kind: DependencyKind, dev: string, optional: string, peer?: string): string[] => {
   if (kind === 'dev') return [dev];
   if (kind === 'optional') return [optional];
+  if (kind === 'peer' && peer) return [peer];
   return [];
 };
 
@@ -158,7 +168,7 @@ const MANAGERS: readonly PackageManager[] = [
     install: { command: 'npm', args: ['install'] },
     upgrade: ({ name, version, kind }) => ({
       command: 'npm',
-      args: ['install', `${name}@${version}`, ...npmFlags(kind, '--save-dev', '--save-optional')],
+      args: ['install', `${name}@${version}`, ...npmFlags(kind, '--save-dev', '--save-optional', '--save-peer')],
     }),
   },
   {
@@ -173,7 +183,7 @@ const MANAGERS: readonly PackageManager[] = [
     // version back into the manifest section it came from.
     upgrade: ({ name, version, kind }) => ({
       command: 'pnpm',
-      args: ['add', `${name}@${version}`, ...npmFlags(kind, '--save-dev', '--save-optional')],
+      args: ['add', `${name}@${version}`, ...npmFlags(kind, '--save-dev', '--save-optional', '--save-peer')],
     }),
   },
   {
@@ -184,7 +194,19 @@ const MANAGERS: readonly PackageManager[] = [
     lockfiles: ['yarn.lock'],
     outdated: null,
     install: { command: 'yarn', args: ['install'] },
-    upgrade: ({ name, version }) => ({ command: 'yarn', args: ['up', `${name}@${version}`] }),
+    // `yarn add`, not `yarn up`: berry documents `up` as operating across the
+    // whole project — every workspace that depends on the package moves
+    // together, and it explicitly does not touch `peerDependencies`. That is
+    // the right tool for "bump this everywhere", which is not what testing
+    // one candidate against one workspace needs. `add`, run with `cwd` set to
+    // the member directory (as every caller here does — see
+    // `installUpgrade`), resolves to that one workspace the same way `npm
+    // install` and `pnpm add` already do, and respects `--peer` like the rest
+    // of the family.
+    upgrade: ({ name, version, kind }) => ({
+      command: 'yarn',
+      args: ['add', `${name}@${version}`, ...npmFlags(kind, '--dev', '--optional', '--peer')],
+    }),
   },
   {
     id: 'yarn',
@@ -209,7 +231,7 @@ const MANAGERS: readonly PackageManager[] = [
     install: { command: 'bun', args: ['install'] },
     upgrade: ({ name, version, kind }) => ({
       command: 'bun',
-      args: ['add', `${name}@${version}`, ...npmFlags(kind, '--dev', '--optional')],
+      args: ['add', `${name}@${version}`, ...npmFlags(kind, '--dev', '--optional', '--peer')],
     }),
   },
   {

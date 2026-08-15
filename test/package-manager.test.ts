@@ -89,7 +89,10 @@ describe('upgrade commands', () => {
     assert.equal(describeCommand(upgrade('npm')!), 'npm install left-pad@2.0.0');
     assert.equal(describeCommand(upgrade('pnpm')!), 'pnpm add left-pad@2.0.0');
     assert.equal(describeCommand(upgrade('yarn')!), 'yarn upgrade left-pad@2.0.0');
-    assert.equal(describeCommand(upgrade('yarn-berry')!), 'yarn up left-pad@2.0.0');
+    // `add`, not `up`: berry's `up` moves every workspace that depends on the
+    // package at once and does not touch peerDependencies, which is the wrong
+    // tool for testing one candidate against one workspace.
+    assert.equal(describeCommand(upgrade('yarn-berry')!), 'yarn add left-pad@2.0.0');
     assert.equal(describeCommand(upgrade('bun')!), 'bun add left-pad@2.0.0');
     assert.equal(describeCommand(upgrade('poetry')!), 'poetry add left-pad==2.0.0');
     assert.equal(describeCommand(upgrade('uv')!), 'uv add left-pad==2.0.0');
@@ -98,10 +101,27 @@ describe('upgrade commands', () => {
     assert.equal(describeCommand(upgrade('bundler')!), 'bundle update left-pad --conservative');
   });
 
-  test('keeps the dependency section the package came from', () => {
+  test('keeps the dependency section the package came from, for every npm-ecosystem manager and kind', () => {
+    for (const id of ['npm', 'pnpm', 'yarn-berry', 'bun']) {
+      assert.equal(describeCommand(upgrade(id, 'runtime')!), `${describeCommand(upgrade(id)!)}`, `${id}: runtime adds no flag`);
+    }
+
     assert.equal(describeCommand(upgrade('npm', 'dev')!), 'npm install left-pad@2.0.0 --save-dev');
     assert.equal(describeCommand(upgrade('npm', 'optional')!), 'npm install left-pad@2.0.0 --save-optional');
+    assert.equal(describeCommand(upgrade('npm', 'peer')!), 'npm install left-pad@2.0.0 --save-peer');
+
+    assert.equal(describeCommand(upgrade('pnpm', 'dev')!), 'pnpm add left-pad@2.0.0 --save-dev');
+    assert.equal(describeCommand(upgrade('pnpm', 'optional')!), 'pnpm add left-pad@2.0.0 --save-optional');
+    assert.equal(describeCommand(upgrade('pnpm', 'peer')!), 'pnpm add left-pad@2.0.0 --save-peer');
+
+    assert.equal(describeCommand(upgrade('yarn-berry', 'dev')!), 'yarn add left-pad@2.0.0 --dev');
+    assert.equal(describeCommand(upgrade('yarn-berry', 'optional')!), 'yarn add left-pad@2.0.0 --optional');
+    assert.equal(describeCommand(upgrade('yarn-berry', 'peer')!), 'yarn add left-pad@2.0.0 --peer');
+
     assert.equal(describeCommand(upgrade('bun', 'dev')!), 'bun add left-pad@2.0.0 --dev');
+    assert.equal(describeCommand(upgrade('bun', 'optional')!), 'bun add left-pad@2.0.0 --optional');
+    assert.equal(describeCommand(upgrade('bun', 'peer')!), 'bun add left-pad@2.0.0 --peer');
+
     assert.equal(describeCommand(upgrade('poetry', 'dev')!), 'poetry add left-pad==2.0.0 --group dev');
     assert.equal(describeCommand(upgrade('uv', 'dev')!), 'uv add left-pad==2.0.0 --dev');
   });
