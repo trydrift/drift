@@ -1,0 +1,64 @@
+name: Update workflow example
+
+on:
+  push:
+    paths:
+      - 'src/detect/manifest-globs.ts'
+      - 'scripts/build-workflow.mjs'
+      - 'examples/workflows/drift.yml'
+  workflow_dispatch: {}
+
+permissions: {}
+
+concurrency:
+  group: update-workflow-example-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    # Committing the regenerated example needs contents: write; scoped to this
+    # one job rather than the whole workflow, matching every other workflow
+    # here. main requires a reviewed PR, so pushing there goes through a PR
+    # instead of a direct commit; every other branch gets pushed to directly.
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Regenerate examples/workflows/drift.yml
+        run: npm run build:workflow
+
+      - name: Commit and push examples/workflows/drift.yml
+        if: github.ref_name != 'main'
+        run: |
+          if git diff --quiet -- examples/workflows/drift.yml; then
+            echo "examples/workflows/drift.yml is already up to date"
+            exit 0
+          fi
+
+          git config user.name "$(git log -1 --format='%an')"
+          git config user.email "$(git log -1 --format='%ae')"
+          git add examples/workflows/drift.yml
+          git commit -m "chore(workflow): update generated example"
+          git push origin HEAD:${{ github.ref_name }}
+
+      - name: Open a PR with the regenerated example
+        if: github.ref_name == 'main'
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
+        with:
+          commit-message: "chore(workflow): update generated example"
+          title: "chore(workflow): update generated example"
+          body: Automated regeneration of `examples/workflows/drift.yml` from the latest manifest registry on `main`.
+          branch: update-workflow-example
+          delete-branch: true
+          add-paths: examples/workflows/drift.yml

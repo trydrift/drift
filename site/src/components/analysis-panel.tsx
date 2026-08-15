@@ -34,6 +34,7 @@ import { REPLAY_SPEEDS, type ReplaySpeed, usePlayer } from "./use-player";
 
 const VERDICT_STYLE: Record<UpgradeSeverity, string> = {
   affected: "border-brand/45 bg-brand-soft text-brand-text",
+  "verification-failed": "border-brand/45 bg-brand-soft text-brand-text",
   "upstream-only": "border-border bg-surface-hover text-muted",
   unchecked: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
   clean: "border-border bg-surface-hover text-faint",
@@ -43,6 +44,7 @@ const VERDICT_STYLE: Record<UpgradeSeverity, string> = {
 /** The short form for the pill. `describeSeverity` writes the long one. */
 const VERDICT_PILL: Record<UpgradeSeverity, string> = {
   affected: "Affects You",
+  "verification-failed": "Checks Failed",
   "upstream-only": "None Used Here",
   unchecked: "Not Verified",
   clean: "Safe",

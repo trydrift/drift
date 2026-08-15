@@ -18,7 +18,7 @@
  * layer can use it and so the whole panel stays testable in plain Node.
  */
 
-export type UpgradeSeverity = 'affected' | 'upstream-only' | 'unchecked' | 'clean' | 'error';
+export type UpgradeSeverity = 'affected' | 'verification-failed' | 'upstream-only' | 'unchecked' | 'clean' | 'error';
 
 /** The parts of an upgrade candidate that decide its severity. */
 export interface SeverityInput {
@@ -41,6 +41,21 @@ export interface SeverityInput {
    * that as "not verified" would bury a real result under a missing one.
    */
   recommendation?: string;
+  /**
+   * The result of actually installing this upgrade and running the project's
+   * own checks against it, when that was done.
+   *
+   * A `'failed'` verification is measured evidence that this upgrade breaks
+   * the project, even when static analysis found zero impact sites to point
+   * at — a compiler or test runner sees things a source-level diff cannot
+   * (dynamic dispatch, config-driven behaviour, a peer dependency mismatch).
+   * That must never be read as `'clean'` or `'upstream-only'`, both of which
+   * tell the developer this is safe.
+   */
+  verification?: {
+    status: string;
+    checks?: readonly { label: string; status: string }[];
+  };
 }
 
 /**
@@ -57,6 +72,10 @@ export interface SeverityInput {
 export function severityOf(candidate: SeverityInput): UpgradeSeverity {
   if (candidate.status === 'error') return 'error';
   if (candidate.impactCount > 0) return 'affected';
+  // Static analysis found nothing to point at, but the project's own toolchain
+  // — running for real, not predicting — disagrees. That is a stronger signal
+  // than a clean diff and must outrank it, not be silently absorbed by it.
+  if (candidate.verification?.status === 'failed') return 'verification-failed';
   if (candidate.breakingCount > 0) return 'upstream-only';
 
   // The assessment ran and concluded that nothing could be read. That is the
@@ -84,6 +103,14 @@ export function describeSeverity(candidate: SeverityInput): string {
       const files = candidate.impactFiles;
       return `Affects your code · ${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'} in ${files} file${files === 1 ? '' : 's'}`;
     }
+    case 'verification-failed': {
+      const failing = (candidate.verification?.checks ?? [])
+        .filter((check) => check.status === 'failed')
+        .map((check) => check.label);
+      return failing.length > 0
+        ? `Its own checks failed · ${failing.join(', ')} failed with this upgrade installed — measured, not predicted`
+        : "Its own checks failed · this upgrade broke the project's own checks — measured, not predicted";
+    }
     case 'upstream-only':
       return `Safe for your code · ${candidate.breakingCount} upstream change${candidate.breakingCount === 1 ? '' : 's'}, none used here`;
     case 'unchecked':
@@ -105,7 +132,14 @@ export function describeSeverity(candidate: SeverityInput): string {
  * list next to the genuinely safe ones is how one gets installed by accident.
  */
 export function compareSeverity(a: SeverityInput, b: SeverityInput): number {
-  const rank = { affected: 0, error: 1, 'upstream-only': 2, unchecked: 3, clean: 4 } as const;
+  const rank = {
+    affected: 0,
+    'verification-failed': 1,
+    error: 2,
+    'upstream-only': 3,
+    unchecked: 4,
+    clean: 5,
+  } as const;
   return rank[severityOf(a)] - rank[severityOf(b)];
 }
 
@@ -145,10 +179,15 @@ export function scanTitle(
   }
 
   const affected = candidates.filter((c) => severityOf(c) === 'affected').length;
+  // A failed verification has no located impact site, but it is still a real
+  // reason this upgrade affects the repo — a title that only counted
+  // `affected` would report "all safe" over a build Drift just watched fail.
+  const verificationFailed = candidates.filter((c) => severityOf(c) === 'verification-failed').length;
   const unchecked = candidates.filter((c) => severityOf(c) === 'unchecked').length + unlooked;
   const total = candidates.length;
 
-  if (affected > 0) return `Scan — ${affected} of ${total} affect this repo`;
+  const urgent = affected + verificationFailed;
+  if (urgent > 0) return `Scan — ${urgent} of ${total} affect this repo`;
   // Kept distinct from "all safe" for the same reason the verdict is: a run
   // that could not check something did not find it safe, and a title that
   // says otherwise is the claim Drift exists to stop making.
