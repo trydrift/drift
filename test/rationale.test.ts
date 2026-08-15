@@ -810,7 +810,7 @@ describe('assembling the rationale', () => {
     assert.equal(rationale!.gaps.some((gap) => /found nothing.*announces a breaking change/.test(gap)), false);
   });
 
-  test('many release notes link the first few and count the rest, instead of naming none', async () => {
+  test('many release notes link every one of them, instead of collapsing the rest into an unlinked count', async () => {
     const key = 'npm pkg';
     const releases = Array.from({ length: 5 }, (_, i) => ({
       kind: 'github-release' as const,
@@ -828,8 +828,8 @@ describe('assembling the rationale', () => {
     const stated = rationale!.gaps.find((g) => /release notes/i.test(g))!;
     assert.match(stated, /\[v2\.0\.0 release notes\]\(https:\/\/github\.com\/o\/pkg\/releases\/tag\/v2\.0\.0\)/);
     assert.match(stated, /\[v2\.0\.2 release notes\]/);
-    assert.doesNotMatch(stated, /v2\.0\.4 release notes/, 'the fourth and fifth collapse into a count, not a link');
-    assert.match(stated, /and 2 more/);
+    assert.match(stated, /\[v2\.0\.4 release notes\]/, 'the fifth is still a link, not a dead-end count');
+    assert.doesNotMatch(stated, /and \d+ more/, 'nothing is hidden behind an unlinked count anymore');
   });
 
   test('an unreadable dependency is insufficient evidence, and says so', async () => {
