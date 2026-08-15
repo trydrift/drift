@@ -152,9 +152,15 @@ writes anything.
 
 No token, and no account. `analyze` reads your local checkout directly and
 fetches public release notes, changelogs and registry metadata anonymously.
-`drift outdated` is the same: read-only, and tokenless. A credential is worth
-setting only if you hit GitHub's anonymous API rate limit mid-scan, in which
-case Drift picks one up on its own from `$GITHUB_TOKEN` or a signed-in `gh`:
+`drift outdated` is the same: read-only against your working tree, and
+tokenless. ("Read-only" is about your checkout and GitHub, not about the
+machine: verification, on by default, installs each candidate and runs your
+project's own build/typecheck/test in a disposable worktree before reporting
+it — never in the checkout you're looking at. See
+[trust-and-safety.md](docs/trust-and-safety.md#a-compromised-candidate-dependency-during-verification).)
+A credential is worth setting only if you hit GitHub's anonymous API rate
+limit mid-scan, in which case Drift picks one up on its own from
+`$GITHUB_TOKEN` or a signed-in `gh`:
 
 ```bash
 export GITHUB_TOKEN=ghp_...   # optional — only raises the API rate limit
@@ -214,7 +220,7 @@ They don't behave identically. What each surface actually does:
 
 | Capability | VS Code | CLI | GitHub Action |
 | --- | --- | --- | --- |
-| Scan for available upgrades | Yes (`/scan`) | Yes (`drift outdated`) | No — it runs on a dependency change, not on a schedule |
+| Scan for available upgrades | Yes (`/scan`) | Yes (`drift outdated`) | Yes — on a `schedule` trigger, or `scan-mode: outdated` on manual dispatch; see [`examples/workflows/drift-outdated.yml`](examples/workflows/drift-outdated.yml) |
 | Analyse a dependency change that already happened | Yes | Yes (`drift analyze`) | Yes |
 | Evidence / localization | Yes | Yes | Yes |
 | Deterministic remediation | Yes | Yes (`drift fix`) | Yes |

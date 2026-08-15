@@ -619,11 +619,20 @@ function describeUnavailable(reason: Extract<IssueBranchOutcome, { kind: 'unavai
  * runs, over `src/upgrade/scan.ts`, shared so both surfaces find the same
  * upgrades and reach the same verdict on each one.
  *
- * Read-only, like `analyze`: nothing here edits a manifest or installs
- * anything. `drift outdated --upgrade <name>` is the one exception, and even
- * that only writes the manifest/lockfile locally — the same uncommitted edit
+ * Read-only against *this* working tree, like `analyze`: nothing here edits
+ * a manifest or installs anything in the checkout the developer is looking
+ * at. `drift outdated --upgrade <name>` is the one exception, and even that
+ * only writes the manifest/lockfile locally — the same uncommitted edit
  * `npm install <pkg>@<version>` would leave, which `analyze`/`fix` already
  * know how to pick up via their own working-tree detection.
+ *
+ * That is no longer the whole story, though: verification is on by default
+ * (`verify.enabled`), and it installs each candidate — and runs the
+ * project's own build/typecheck/test — in a disposable git worktree, never
+ * in this one. A scan is still safe to run without asking, but it is not
+ * side-effect-free on the machine: it does execute code the developer has
+ * not chosen to install yet. See `verification/upgrade-probe.ts` for what
+ * that worktree does and does not have access to.
  */
 async function outdatedCommand(flags: Flags): Promise<number> {
   const logLevel = (typeof flags['log-level'] === 'string' ? flags['log-level'] : 'info') as LogLevel;

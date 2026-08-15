@@ -116,7 +116,11 @@ drift analyze --repo owner/name --before <sha> --after <sha> --dir ./path --json
 ```
 
 `drift outdated` scans every direct dependency for a newer version — same
-read-only rules. When you're ready to act:
+read-only rules for your checkout and GitHub. Verification (on by default)
+does install each candidate and run your project's own checks in a
+disposable worktree before reporting it, never in the checkout itself — see
+[trust-and-safety.md](trust-and-safety.md#a-compromised-candidate-dependency-during-verification).
+When you're ready to act:
 
 ```
 drift fix   # analyse, apply what it can, push a branch, and open a pull request

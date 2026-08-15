@@ -224,6 +224,39 @@ Action deployment there is no Drift infrastructure.
 
 Rotate by replacing the secret. Nothing to purge, because nothing is stored.
 
+### A compromised candidate dependency, during verification
+
+**Real, and distinct from the changelog-injection threat above** — that one is
+about attacker-controlled *text* reaching an agent prompt; this one is about
+attacker-controlled *code* actually running. Verification (`verify.enabled`,
+on by default) installs each candidate upgrade into a disposable git worktree
+and runs the project's own install/build/typecheck/test against it, before a
+developer has chosen to take that upgrade. A malicious version published to a
+registry can ship package-manager lifecycle scripts (`postinstall` and
+friends) or code reached by the project's own test suite, and that code runs
+with whatever the verification process itself can see.
+
+Mitigations:
+
+- **The worktree, not the developer's checkout.** File-level changes a
+  malicious install makes are confined to a throwaway directory that is
+  disposed of after the check, win or lose.
+- **A scrubbed environment.** Verification's child processes run with
+  credentials stripped from the environment before anything is installed —
+  `GITHUB_TOKEN`, the Action's `INPUT_*` inputs (which is how GitHub exposes
+  `repo-token`/`copilot-token` to a JavaScript action), and anything matching
+  a token/secret/key/credential pattern. A compromised package cannot read
+  what was never there. See `scrubEnv` in `verification/upgrade-probe.ts`.
+
+Residual risk: the worktree protects files and the scrubbed environment
+protects credentials, but the process still runs on the same host as
+everything else in the job, with whatever ambient access that implies —
+network egress, the filesystem outside the worktree, other processes. A
+sufficiently determined malicious package could still attempt to exfiltrate
+over the network or attack the host directly. Treat verification as narrowing
+the blast radius, not eliminating it; a secretless, network-isolated sandbox
+would close more of this gap than a scrubbed environment variable list can.
+
 ### A compromised Drift release
 
 You'd be running our code in your CI. Standard mitigations apply: pin to a commit

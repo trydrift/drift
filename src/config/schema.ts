@@ -533,11 +533,17 @@ export const DriftConfigSchema = z.object({
    * Off by default: unlike the push-triggered pipeline, this has no natural
    * trigger of its own and needs a `schedule` added to the workflow — see
    * `examples/workflows/drift-outdated.yml`. Once on, each outdated
-   * dependency is scanned the same way `drift outdated` scans it: an
-   * upgrade Drift can prove safe is committed directly (subject to
-   * `maxAutoRisk`, same as any other plan); one that isn't gets the same
-   * approval-issue or Copilot dispatch as a normal finding. Every dependency
-   * scanned — upgraded or not — gets a code scanning alert.
+   * dependency is scanned the same way `drift outdated` scans it, and every
+   * dependency scanned — upgraded or not, breaking or not — gets a code
+   * scanning alert (and, if `codeScanning.createIssuesPerAlert` is on, an
+   * issue) carrying the exact command to apply it. This mode never commits,
+   * dispatches a branch, or opens a PR itself, even for an upgrade it can
+   * prove safe: Drift only ever edits code in response to a version change
+   * that has actually landed somewhere, and nothing has landed yet for a
+   * dependency this scan merely noticed is available. Once the reported
+   * command is run and the resulting commit is pushed, the ordinary
+   * push-triggered pipeline takes over exactly as it would for any other
+   * dependency bump — see `runOutdatedScan` in `runners/action.ts`.
    */
   outdated: z
     .object({
