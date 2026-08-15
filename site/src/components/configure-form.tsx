@@ -48,7 +48,7 @@ export function ConfigureForm({
         </Field>
 
         {opts.mode === "auto" && (
-          <Field label="Max auto risk" hint="Anything riskier falls back to an approval request.">
+          <Field label="Max Auto Risk" hint="Anything riskier falls back to an approval request.">
             <Select
               value={opts.maxAutoRisk}
               onChange={(v) => set("maxAutoRisk", v as ConfigureOptions["maxAutoRisk"])}
@@ -57,17 +57,17 @@ export function ConfigureForm({
           </Field>
         )}
 
-        <Field label="Watch branches" hint="Comma-separated. Pushes elsewhere are ignored.">
+        <Field label="Watch Branches" hint="Comma-separated. Pushes elsewhere are ignored.">
           <TextList value={opts.watchBranches} onChange={(v) => set("watchBranches", v)} placeholder="main, master" />
         </Field>
 
-        <Field label="Code scanning" hint="Upload findings to the Security tab.">
+        <Field label="Code Scanning" hint="Upload findings to the Security tab.">
           <Toggle checked={opts.codeScanningEnabled} onChange={(v) => set("codeScanningEnabled", v)} label="Enabled" />
         </Field>
 
         {opts.codeScanningEnabled && (
           <>
-            <Field label="Alert granularity" hint="How findings are grouped into alerts.">
+            <Field label="Alert Granularity" hint="How findings are grouped into alerts.">
               <Select
                 value={opts.granularity}
                 onChange={(v) => set("granularity", v as ConfigureOptions["granularity"])}
@@ -91,7 +91,7 @@ export function ConfigureForm({
           </>
         )}
 
-        <Field label="Issue creation" hint="The one-click action offered by the CLI and VS Code extension.">
+        <Field label="Issue Creation" hint="The one-click action offered by the CLI and VS Code extension.">
           <div className="flex flex-col gap-3">
             <Select
               value={opts.issueDefault}
@@ -111,7 +111,7 @@ export function ConfigureForm({
           </div>
         </Field>
 
-        <Field label="Pull requests" hint="Applied to every pull request Drift opens.">
+        <Field label="Pull Requests" hint="Applied to every pull request Drift opens.">
           <div className="flex flex-col gap-3">
             <TextList value={opts.prLabels} onChange={(v) => set("prLabels", v)} placeholder="Labels, comma-separated" />
             <TextList
@@ -123,7 +123,7 @@ export function ConfigureForm({
           </div>
         </Field>
 
-        <Field label="Outdated-dependency scan" hint="Weekly scan of every installed version, not just what a push bumped.">
+        <Field label="Outdated-Dependency Scan" hint="Weekly scan of every installed version, not just what a push bumped.">
           <Toggle checked={opts.outdatedEnabled} onChange={(v) => set("outdatedEnabled", v)} label="Enabled" />
         </Field>
 

@@ -115,9 +115,9 @@ export function Ecosystems({ recorded }: { recorded: ReadonlySet<string> }) {
           </span>
         ))}
         <span className="ml-auto flex items-center gap-1.5 text-[12px] text-muted">
-          <span className={cn("h-1.5 w-5 rounded-full", LEVEL_STYLE.full)} /> full
-          <span className={cn("ml-1 h-1.5 w-5 rounded-full", LEVEL_STYLE.partial)} /> partial
-          <span className={cn("ml-1 h-1.5 w-5 rounded-full", LEVEL_STYLE.none)} /> none
+          <span className={cn("h-1.5 w-5 rounded-full", LEVEL_STYLE.full)} /> Full
+          <span className={cn("ml-1 h-1.5 w-5 rounded-full", LEVEL_STYLE.partial)} /> Partial
+          <span className={cn("ml-1 h-1.5 w-5 rounded-full", LEVEL_STYLE.none)} /> None
         </span>
       </div>
       <p className="mt-2 text-[11.5px] text-faint">Tap or hover a cell for the exact sentence.</p>

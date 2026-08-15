@@ -5,9 +5,9 @@
   "language": "Swift",
   "repo": "https://github.com/layoutBox/FlexLayout",
   "blurb": "A Swift flexbox layout library, with the Podfile that pins its pods.",
-  "capturedAt": "2026-08-10T17:32:19.092Z",
+  "capturedAt": "2026-08-15T00:52:58.880Z",
   "commit": "b1fcc81828e4b735c79d4c3fac35ef0754be0060",
-  "durationMs": 5826,
+  "durationMs": 29111,
   "packagesChecked": 5,
   "manifests": [
     "Package.swift",
@@ -16,196 +16,322 @@
   "nestedGitRepos": [],
   "events": [
     {
-      "at": 5147,
+      "at": 1411,
       "phase": "Looking for manifests",
       "detail": "layoutBox/FlexLayout",
       "done": 0,
       "total": 0
     },
     {
-      "at": 5172,
+      "at": 1422,
       "phase": "Reading manifest",
       "detail": "Package.swift",
       "done": 0,
       "total": 0
     },
     {
-      "at": 5174,
+      "at": 1422,
       "phase": "Reading manifest",
       "detail": "Podfile",
       "done": 0,
       "total": 0
     },
     {
-      "at": 5175,
+      "at": 1423,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 5
     },
     {
-      "at": 5293,
+      "at": 1459,
       "phase": "Indexing your code",
       "detail": "59 files indexed · 5 direct dependencies to check",
       "done": 0,
       "total": 5
     },
     {
-      "at": 5294,
-      "phase": "Checking the the package’s git repository",
+      "at": 1459,
+      "phase": "Checking the package’s git tags",
       "detail": "facebook/yoga (installed 3.2.1)",
       "done": 0,
       "total": 5
     },
     {
-      "at": 5294,
-      "phase": "Checking the CocoaPods Trunk",
+      "at": 1459,
+      "phase": "Checking CocoaPods Trunk",
       "detail": "Yoga (installed 3.2.1)",
       "done": 0,
       "total": 5
     },
     {
-      "at": 5297,
-      "phase": "Checking the CocoaPods Trunk",
+      "at": 1459,
+      "phase": "Checking CocoaPods Trunk",
       "detail": "FlexLayout (installed 2.2.1)",
       "done": 0,
       "total": 5
     },
     {
-      "at": 5297,
-      "phase": "Checking the CocoaPods Trunk",
+      "at": 1459,
+      "phase": "Checking CocoaPods Trunk",
       "detail": "PinLayout (installed 1.10.5)",
       "done": 0,
       "total": 5
     },
     {
-      "at": 5297,
-      "phase": "Checking the CocoaPods Trunk",
+      "at": 1459,
+      "phase": "Checking CocoaPods Trunk",
       "detail": "SwiftLint (installed 0.55.1)",
       "done": 0,
       "total": 5
     },
     {
-      "at": 5297,
+      "at": 1945,
       "phase": "Up to date",
-      "detail": "facebook/yoga@3.2.1",
+      "detail": "Yoga@3.2.1",
       "done": 1,
       "total": 5
     },
     {
-      "at": 5302,
-      "phase": "Up to date",
-      "detail": "Yoga@3.2.1",
-      "done": 2,
-      "total": 5
-    },
-    {
-      "at": 5303,
+      "at": 2076,
       "phase": "Reading release notes and changelog",
-      "detail": "PinLayout 1.10.5 → 1.10.6",
-      "done": 2,
+      "detail": "facebook/yoga 3.2.1 → 2016.12.26",
+      "done": 1,
       "total": 5
     },
     {
-      "at": 5303,
-      "phase": "Comparing the public API surface",
-      "detail": "PinLayout 1.10.5 → 1.10.6 · 1 evidence source",
-      "done": 2,
-      "total": 5
-    },
-    {
-      "at": 5304,
-      "phase": "No breaking changes to look for",
-      "detail": "PinLayout 1.10.5 → 1.10.6",
-      "done": 2,
-      "total": 5
-    },
-    {
-      "at": 5304,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "PinLayout 1.10.5 → 1.10.6",
-      "done": 2,
-      "total": 5
-    },
-    {
-      "at": 5306,
-      "phase": "Checked",
-      "detail": "PinLayout 1.10.5 → 1.10.6 · not verified · drift found nothing it could check this version against",
-      "done": 3,
-      "total": 5
-    },
-    {
-      "at": 5307,
-      "phase": "Reading release notes and changelog",
-      "detail": "FlexLayout 2.2.1 → 2.2.3",
-      "done": 3,
-      "total": 5
-    },
-    {
-      "at": 5308,
-      "phase": "Comparing the public API surface",
-      "detail": "FlexLayout 2.2.1 → 2.2.3 · 1 evidence source",
-      "done": 3,
-      "total": 5
-    },
-    {
-      "at": 5308,
-      "phase": "No breaking changes to look for",
-      "detail": "FlexLayout 2.2.1 → 2.2.3",
-      "done": 3,
-      "total": 5
-    },
-    {
-      "at": 5308,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "FlexLayout 2.2.1 → 2.2.3",
-      "done": 3,
-      "total": 5
-    },
-    {
-      "at": 5309,
-      "phase": "Checked",
-      "detail": "FlexLayout 2.2.1 → 2.2.3 · not verified · drift found nothing it could check this version against",
-      "done": 4,
-      "total": 5
-    },
-    {
-      "at": 5311,
+      "at": 2169,
       "phase": "Reading release notes and changelog",
       "detail": "SwiftLint 0.55.1 → 0.65.0",
-      "done": 4,
+      "done": 1,
       "total": 5
     },
     {
-      "at": 5311,
+      "at": 2169,
       "phase": "Comparing the public API surface",
       "detail": "SwiftLint 0.55.1 → 0.65.0 · 1 evidence source",
-      "done": 4,
+      "done": 1,
       "total": 5
     },
     {
-      "at": 5311,
+      "at": 2169,
       "phase": "No breaking changes to look for",
       "detail": "SwiftLint 0.55.1 → 0.65.0",
-      "done": 4,
+      "done": 1,
       "total": 5
     },
     {
-      "at": 5311,
+      "at": 2169,
       "phase": "Weighing what this upgrade is worth",
       "detail": "SwiftLint 0.55.1 → 0.65.0",
+      "done": 1,
+      "total": 5
+    },
+    {
+      "at": 2172,
+      "phase": "Checked",
+      "detail": "SwiftLint 0.55.1 → 0.65.0 · not verified · drift found nothing it could check this version against",
+      "done": 2,
+      "total": 5
+    },
+    {
+      "at": 2182,
+      "phase": "Reading release notes and changelog",
+      "detail": "FlexLayout 2.2.1 → 2.2.3",
+      "done": 2,
+      "total": 5
+    },
+    {
+      "at": 2182,
+      "phase": "Comparing the public API surface",
+      "detail": "FlexLayout 2.2.1 → 2.2.3 · 1 evidence source",
+      "done": 2,
+      "total": 5
+    },
+    {
+      "at": 2182,
+      "phase": "No breaking changes to look for",
+      "detail": "FlexLayout 2.2.1 → 2.2.3",
+      "done": 2,
+      "total": 5
+    },
+    {
+      "at": 2183,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "FlexLayout 2.2.1 → 2.2.3",
+      "done": 2,
+      "total": 5
+    },
+    {
+      "at": 2185,
+      "phase": "Checked",
+      "detail": "FlexLayout 2.2.1 → 2.2.3 · not verified · drift found nothing it could check this version against",
+      "done": 3,
+      "total": 5
+    },
+    {
+      "at": 2216,
+      "phase": "Reading release notes and changelog",
+      "detail": "PinLayout 1.10.5 → 1.10.6",
+      "done": 3,
+      "total": 5
+    },
+    {
+      "at": 2216,
+      "phase": "Comparing the public API surface",
+      "detail": "PinLayout 1.10.5 → 1.10.6 · 1 evidence source",
+      "done": 3,
+      "total": 5
+    },
+    {
+      "at": 2216,
+      "phase": "No breaking changes to look for",
+      "detail": "PinLayout 1.10.5 → 1.10.6",
+      "done": 3,
+      "total": 5
+    },
+    {
+      "at": 2216,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "PinLayout 1.10.5 → 1.10.6",
+      "done": 3,
+      "total": 5
+    },
+    {
+      "at": 2218,
+      "phase": "Checked",
+      "detail": "PinLayout 1.10.5 → 1.10.6 · not verified · drift found nothing it could check this version against",
       "done": 4,
       "total": 5
     },
     {
-      "at": 5311,
+      "at": 6763,
+      "phase": "Comparing the public API surface",
+      "detail": "facebook/yoga 3.2.1 → 2016.12.26 · 1 evidence source",
+      "done": 4,
+      "total": 5
+    },
+    {
+      "at": 6763,
+      "phase": "No breaking changes to look for",
+      "detail": "facebook/yoga 3.2.1 → 2016.12.26",
+      "done": 4,
+      "total": 5
+    },
+    {
+      "at": 6763,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "facebook/yoga 3.2.1 → 2016.12.26",
+      "done": 4,
+      "total": 5
+    },
+    {
+      "at": 7852,
       "phase": "Checked",
-      "detail": "SwiftLint 0.55.1 → 0.65.0 · not verified · drift found nothing it could check this version against",
+      "detail": "facebook/yoga 3.2.1 → 2016.12.26 · safe for your code · no breaking changes found",
       "done": 5,
       "total": 5
+    },
+    {
+      "at": 7852,
+      "phase": "Preparing a test checkout",
+      "detail": "3 upgrades to try",
+      "done": 0,
+      "total": 4
+    },
+    {
+      "at": 8179,
+      "phase": "Installing dependencies",
+      "detail": "`pod install`",
+      "done": 0,
+      "total": 4
+    },
+    {
+      "at": 10426,
+      "phase": "Preparing a test checkout",
+      "detail": "1 upgrade to try",
+      "done": 3,
+      "total": 4
+    },
+    {
+      "at": 10820,
+      "phase": "Checking the project as it is",
+      "detail": "swift build, swift test",
+      "done": 3,
+      "total": 4
     }
   ],
   "candidates": [
+    {
+      "name": "facebook/yoga",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "3.2.1",
+      "latest": "2016.12.26",
+      "selected": "2016.12.26",
+      "safeLatest": null,
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for facebook/yoga 2016.12.26.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for facebook/yoga 2016.12.26."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "facebook/yoga",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "3.2.1",
+      "latest": "2016.12.26",
+      "selected": "2016.12.26",
+      "safeLatest": null,
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for facebook/yoga 2016.12.26.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for facebook/yoga 2016.12.26."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "FlexLayout",
+      "ecosystem": "cocoapods",
+      "manifestPath": "Podfile",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "2.2.1",
+      "latest": "2.2.3",
+      "selected": "2.2.3",
+      "safeLatest": "2.2.3",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Insufficient evidence. Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for FlexLayout 2.2.3, and no source repository could be resolved for it. OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
+      "recommendation": "insufficient-evidence",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for FlexLayout 2.2.3, and no source repository could be resolved for it.",
+        "OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up."
+      ],
+      "breaking": []
+    },
     {
       "name": "FlexLayout",
       "ecosystem": "cocoapods",
@@ -218,7 +344,7 @@
       "safeLatest": "2.2.3",
       "status": "clean",
       "risk": "none",
-      "summary": "Insufficient evidence. Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for FlexLayout 2.2.3, and no source repository could be resolved for it. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "summary": "Insufficient evidence. Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for FlexLayout 2.2.3, and no source repository could be resolved for it. OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
       "breakingCount": 0,
       "impactCount": 0,
@@ -226,7 +352,31 @@
       "evidenceCount": 1,
       "gaps": [
         "Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for FlexLayout 2.2.3, and no source repository could be resolved for it.",
-        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+        "OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "PinLayout",
+      "ecosystem": "cocoapods",
+      "manifestPath": "Podfile",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.10.5",
+      "latest": "1.10.6",
+      "selected": "1.10.6",
+      "safeLatest": "1.10.6",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Insufficient evidence. Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for PinLayout 1.10.6, and no source repository could be resolved for it. OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
+      "recommendation": "insufficient-evidence",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for PinLayout 1.10.6, and no source repository could be resolved for it.",
+        "OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up."
       ],
       "breaking": []
     },
@@ -242,7 +392,7 @@
       "safeLatest": "1.10.6",
       "status": "clean",
       "risk": "none",
-      "summary": "Insufficient evidence. Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for PinLayout 1.10.6, and no source repository could be resolved for it. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "summary": "Insufficient evidence. Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for PinLayout 1.10.6, and no source repository could be resolved for it. OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
       "breakingCount": 0,
       "impactCount": 0,
@@ -250,7 +400,31 @@
       "evidenceCount": 1,
       "gaps": [
         "Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for PinLayout 1.10.6, and no source repository could be resolved for it.",
-        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+        "OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "SwiftLint",
+      "ecosystem": "cocoapods",
+      "manifestPath": "Podfile",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "0.55.1",
+      "latest": "0.65.0",
+      "selected": "0.65.0",
+      "safeLatest": null,
+      "status": "checking",
+      "risk": "none",
+      "summary": "Insufficient evidence. Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for SwiftLint 0.65.0, and no source repository could be resolved for it. OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
+      "recommendation": "insufficient-evidence",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for SwiftLint 0.65.0, and no source repository could be resolved for it.",
+        "OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up."
       ],
       "breaking": []
     },
@@ -266,7 +440,7 @@
       "safeLatest": null,
       "status": "clean",
       "risk": "none",
-      "summary": "Insufficient evidence. Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for SwiftLint 0.65.0, and no source repository could be resolved for it. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "summary": "Insufficient evidence. Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for SwiftLint 0.65.0, and no source repository could be resolved for it. OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
       "breakingCount": 0,
       "impactCount": 0,
@@ -274,7 +448,7 @@
       "evidenceCount": 1,
       "gaps": [
         "Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for SwiftLint 0.65.0, and no source repository could be resolved for it.",
-        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+        "OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up."
       ],
       "breaking": []
     }

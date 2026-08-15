@@ -5,9 +5,9 @@
   "language": "PHP",
   "repo": "https://github.com/guzzle/guzzle",
   "blurb": "PHP's HTTP client, and a dependency of a large share of the ecosystem.",
-  "capturedAt": "2026-08-10T17:31:15.838Z",
+  "capturedAt": "2026-08-15T00:43:35.336Z",
   "commit": "d1cbca76970939a9c2ced55b1e25ea26f34fc773",
-  "durationMs": 7279,
+  "durationMs": 8176,
   "packagesChecked": 10,
   "manifests": [
     "composer.json",
@@ -18,399 +18,450 @@
   "nestedGitRepos": [],
   "events": [
     {
-      "at": 1974,
+      "at": 1457,
       "phase": "Looking for manifests",
       "detail": "guzzle/guzzle",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1981,
+      "at": 1461,
       "phase": "Reading the workspace",
       "detail": "4 packages · undeclared",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1981,
+      "at": 1464,
       "phase": "Reading manifest",
       "detail": "composer.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1983,
+      "at": 1467,
       "phase": "Reading manifest",
       "detail": "vendor-bin/composer-normalize/composer.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1983,
+      "at": 1468,
       "phase": "Reading manifest",
       "detail": "vendor-bin/php-cs-fixer/composer.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1984,
+      "at": 1468,
       "phase": "Reading manifest",
       "detail": "vendor-bin/phpstan/composer.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1984,
+      "at": 1469,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 10
     },
     {
-      "at": 2201,
+      "at": 1580,
       "phase": "Indexing your code",
       "detail": "135 files indexed · 10 direct dependencies to check",
       "done": 0,
       "total": 10
     },
     {
-      "at": 2201,
-      "phase": "Checking the Packagist",
+      "at": 1580,
+      "phase": "Checking Packagist",
       "detail": "guzzlehttp/promises (installed 3.0.1)",
       "done": 0,
       "total": 10
     },
     {
-      "at": 2201,
-      "phase": "Checking the Packagist",
+      "at": 1581,
+      "phase": "Checking Packagist",
       "detail": "guzzlehttp/psr7 (installed 3.0.0)",
       "done": 0,
       "total": 10
     },
     {
-      "at": 2202,
-      "phase": "Checking the Packagist",
+      "at": 1581,
+      "phase": "Checking Packagist",
       "detail": "psr/http-client (installed 1.0.0)",
       "done": 0,
       "total": 10
     },
     {
-      "at": 2202,
-      "phase": "Checking the Packagist",
+      "at": 1581,
+      "phase": "Checking Packagist",
       "detail": "psr/http-factory (installed 1.0.0)",
       "done": 0,
       "total": 10
     },
     {
-      "at": 2202,
-      "phase": "Checking the Packagist",
+      "at": 1581,
+      "phase": "Checking Packagist",
       "detail": "symfony/polyfill-php80 (installed 1.25.0)",
       "done": 0,
       "total": 10
     },
     {
-      "at": 2202,
-      "phase": "Checking the Packagist",
+      "at": 1581,
+      "phase": "Checking Packagist",
       "detail": "symfony/polyfill-php82 (installed 1.27.0)",
       "done": 0,
       "total": 10
     },
     {
-      "at": 2202,
-      "phase": "Checking the Packagist",
+      "at": 1581,
+      "phase": "Checking Packagist",
       "detail": "ergebnis/composer-normalize (installed 2.52.0)",
       "done": 0,
       "total": 10
     },
     {
-      "at": 2202,
-      "phase": "Checking the Packagist",
+      "at": 1581,
+      "phase": "Checking Packagist",
       "detail": "friendsofphp/php-cs-fixer (installed 3.95.2)",
       "done": 0,
       "total": 10
     },
     {
-      "at": 2206,
+      "at": 1779,
       "phase": "Up to date",
       "detail": "guzzlehttp/psr7@3.0.0",
       "done": 1,
       "total": 10
     },
     {
-      "at": 2206,
-      "phase": "Checking the Packagist",
+      "at": 1779,
+      "phase": "Checking Packagist",
       "detail": "phpstan/phpstan (installed 2.1.55)",
       "done": 1,
       "total": 10
     },
     {
-      "at": 2208,
-      "phase": "Up to date",
-      "detail": "guzzlehttp/promises@3.0.1",
+      "at": 1828,
+      "phase": "Reading release notes and changelog",
+      "detail": "phpstan/phpstan 2.1.55 → 2.2.8",
+      "done": 1,
+      "total": 10
+    },
+    {
+      "at": 1829,
+      "phase": "Comparing the public API surface",
+      "detail": "phpstan/phpstan 2.1.55 → 2.2.8 · 1 evidence source",
+      "done": 1,
+      "total": 10
+    },
+    {
+      "at": 1829,
+      "phase": "No breaking changes to look for",
+      "detail": "phpstan/phpstan 2.1.55 → 2.2.8",
+      "done": 1,
+      "total": 10
+    },
+    {
+      "at": 1829,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "phpstan/phpstan 2.1.55 → 2.2.8",
+      "done": 1,
+      "total": 10
+    },
+    {
+      "at": 2073,
+      "phase": "Checked",
+      "detail": "phpstan/phpstan 2.1.55 → 2.2.8 · safe for your code · no breaking changes found",
       "done": 2,
       "total": 10
     },
     {
-      "at": 2208,
-      "phase": "Checking the Packagist",
+      "at": 2073,
+      "phase": "Checking Packagist",
       "detail": "phpstan/phpstan-deprecation-rules (installed 2.0.4)",
       "done": 2,
       "total": 10
     },
     {
-      "at": 2208,
+      "at": 2102,
+      "phase": "Reading release notes and changelog",
+      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
+      "done": 2,
+      "total": 10
+    },
+    {
+      "at": 2105,
+      "phase": "Reading release notes and changelog",
+      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
+      "done": 2,
+      "total": 10
+    },
+    {
+      "at": 2122,
+      "phase": "Reading release notes and changelog",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
+      "done": 2,
+      "total": 10
+    },
+    {
+      "at": 2126,
       "phase": "Reading release notes and changelog",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
       "done": 2,
       "total": 10
     },
     {
-      "at": 2211,
-      "phase": "Up to date",
-      "detail": "ergebnis/composer-normalize@2.52.0",
-      "done": 3,
-      "total": 10
-    },
-    {
-      "at": 2212,
+      "at": 2126,
       "phase": "Reading release notes and changelog",
       "detail": "psr/http-client 1.0.0 → 1.0.3",
+      "done": 2,
+      "total": 10
+    },
+    {
+      "at": 2130,
+      "phase": "Up to date",
+      "detail": "guzzlehttp/promises@3.0.1",
       "done": 3,
       "total": 10
     },
     {
-      "at": 2213,
-      "phase": "Reading release notes and changelog",
-      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
-      "done": 3,
-      "total": 10
-    },
-    {
-      "at": 2214,
-      "phase": "Reading release notes and changelog",
-      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
-      "done": 3,
-      "total": 10
-    },
-    {
-      "at": 2225,
+      "at": 2165,
       "phase": "Reading release notes and changelog",
       "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.18",
       "done": 3,
       "total": 10
     },
     {
-      "at": 2239,
-      "phase": "Reading release notes and changelog",
-      "detail": "phpstan/phpstan 2.1.55 → 2.2.8",
-      "done": 3,
-      "total": 10
-    },
-    {
-      "at": 2239,
-      "phase": "Comparing the public API surface",
-      "detail": "phpstan/phpstan 2.1.55 → 2.2.8 · 1 evidence source",
-      "done": 3,
-      "total": 10
-    },
-    {
-      "at": 2239,
-      "phase": "No breaking changes to look for",
-      "detail": "phpstan/phpstan 2.1.55 → 2.2.8",
-      "done": 3,
-      "total": 10
-    },
-    {
-      "at": 2239,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "phpstan/phpstan 2.1.55 → 2.2.8",
-      "done": 3,
-      "total": 10
-    },
-    {
-      "at": 2245,
-      "phase": "Reading release notes and changelog",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
-      "done": 3,
-      "total": 10
-    },
-    {
-      "at": 2577,
-      "phase": "Checked",
-      "detail": "phpstan/phpstan 2.1.55 → 2.2.8 · safe for your code · no breaking changes found",
+      "at": 2176,
+      "phase": "Up to date",
+      "detail": "ergebnis/composer-normalize@2.52.0",
       "done": 4,
       "total": 10
     },
     {
-      "at": 5449,
-      "phase": "Comparing the public API surface",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.18 · 1 evidence source",
-      "done": 4,
-      "total": 10
-    },
-    {
-      "at": 5449,
-      "phase": "No breaking changes to look for",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.18",
-      "done": 4,
-      "total": 10
-    },
-    {
-      "at": 5449,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.18",
-      "done": 4,
-      "total": 10
-    },
-    {
-      "at": 5570,
+      "at": 5428,
       "phase": "Comparing the public API surface",
       "detail": "psr/http-client 1.0.0 → 1.0.3 · 1 evidence source",
       "done": 4,
       "total": 10
     },
     {
-      "at": 5570,
+      "at": 5428,
       "phase": "No breaking changes to look for",
       "detail": "psr/http-client 1.0.0 → 1.0.3",
       "done": 4,
       "total": 10
     },
     {
-      "at": 5570,
+      "at": 5429,
       "phase": "Weighing what this upgrade is worth",
       "detail": "psr/http-client 1.0.0 → 1.0.3",
       "done": 4,
       "total": 10
     },
     {
-      "at": 5612,
+      "at": 5815,
+      "phase": "Comparing the public API surface",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.18 · 1 evidence source",
+      "done": 4,
+      "total": 10
+    },
+    {
+      "at": 5815,
+      "phase": "No breaking changes to look for",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.18",
+      "done": 4,
+      "total": 10
+    },
+    {
+      "at": 5815,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.18",
+      "done": 4,
+      "total": 10
+    },
+    {
+      "at": 5886,
       "phase": "Checked",
-      "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.18 · safe for your code · no breaking changes found",
+      "detail": "psr/http-client 1.0.0 → 1.0.3 · safe for your code · no breaking changes found",
       "done": 5,
       "total": 10
     },
     {
-      "at": 5833,
-      "phase": "Checked",
-      "detail": "psr/http-client 1.0.0 → 1.0.3 · safe for your code · no breaking changes found",
-      "done": 6,
-      "total": 10
-    },
-    {
-      "at": 6565,
+      "at": 6150,
       "phase": "Comparing the public API surface",
       "detail": "psr/http-factory 1.0.0 → 1.1.0 · 1 evidence source",
-      "done": 6,
+      "done": 5,
       "total": 10
     },
     {
-      "at": 6565,
+      "at": 6150,
       "phase": "No breaking changes to look for",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
-      "done": 6,
+      "done": 5,
       "total": 10
     },
     {
-      "at": 6565,
+      "at": 6150,
       "phase": "Weighing what this upgrade is worth",
       "detail": "psr/http-factory 1.0.0 → 1.1.0",
+      "done": 5,
+      "total": 10
+    },
+    {
+      "at": 6230,
+      "phase": "Comparing the public API surface",
+      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1 · 1 evidence source",
+      "done": 5,
+      "total": 10
+    },
+    {
+      "at": 6230,
+      "phase": "No breaking changes to look for",
+      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
+      "done": 5,
+      "total": 10
+    },
+    {
+      "at": 6230,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
+      "done": 5,
+      "total": 10
+    },
+    {
+      "at": 6236,
+      "phase": "Checked",
+      "detail": "friendsofphp/php-cs-fixer 3.95.2 → 3.95.18 · safe for your code · no breaking changes found",
       "done": 6,
       "total": 10
     },
     {
-      "at": 6715,
+      "at": 6410,
+      "phase": "Comparing the public API surface",
+      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0 · 1 evidence source",
+      "done": 6,
+      "total": 10
+    },
+    {
+      "at": 6410,
+      "phase": "No breaking changes to look for",
+      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
+      "done": 6,
+      "total": 10
+    },
+    {
+      "at": 6410,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
+      "done": 6,
+      "total": 10
+    },
+    {
+      "at": 6560,
       "phase": "Checked",
       "detail": "psr/http-factory 1.0.0 → 1.1.0 · safe for your code · no breaking changes found",
       "done": 7,
       "total": 10
     },
     {
-      "at": 6745,
-      "phase": "Comparing the public API surface",
-      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0 · 1 evidence source",
-      "done": 7,
-      "total": 10
-    },
-    {
-      "at": 6745,
-      "phase": "No breaking changes to look for",
-      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
-      "done": 7,
-      "total": 10
-    },
-    {
-      "at": 6745,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0",
-      "done": 7,
-      "total": 10
-    },
-    {
-      "at": 6925,
-      "phase": "Comparing the public API surface",
-      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1 · 1 evidence source",
-      "done": 7,
-      "total": 10
-    },
-    {
-      "at": 6925,
-      "phase": "No breaking changes to look for",
-      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
-      "done": 7,
-      "total": 10
-    },
-    {
-      "at": 6925,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1",
-      "done": 7,
-      "total": 10
-    },
-    {
-      "at": 6937,
+      "at": 6647,
       "phase": "Comparing the public API surface",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5 · 1 evidence source",
       "done": 7,
       "total": 10
     },
     {
-      "at": 6937,
+      "at": 6647,
       "phase": "No breaking changes to look for",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 7,
       "total": 10
     },
     {
-      "at": 6937,
+      "at": 6647,
       "phase": "Weighing what this upgrade is worth",
       "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5",
       "done": 7,
       "total": 10
     },
     {
-      "at": 6938,
+      "at": 6753,
       "phase": "Checked",
-      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0 · safe for your code · no breaking changes found",
+      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1 · safe for your code · no breaking changes found",
       "done": 8,
       "total": 10
     },
     {
-      "at": 7100,
+      "at": 6924,
       "phase": "Checked",
-      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5 · safe for your code · no breaking changes found",
+      "detail": "symfony/polyfill-php80 1.25.0 → 1.37.0 · safe for your code · no breaking changes found",
       "done": 9,
       "total": 10
     },
     {
-      "at": 7115,
+      "at": 7042,
       "phase": "Checked",
-      "detail": "symfony/polyfill-php82 1.27.0 → 1.38.1 · safe for your code · no breaking changes found",
+      "detail": "phpstan/phpstan-deprecation-rules 2.0.4 → 2.0.5 · safe for your code · no breaking changes found",
       "done": 10,
       "total": 10
+    },
+    {
+      "at": 7042,
+      "phase": "Preparing a test checkout",
+      "detail": "2 upgrades to try",
+      "done": 0,
+      "total": 7
+    },
+    {
+      "at": 7408,
+      "phase": "Preparing a test checkout",
+      "detail": "4 upgrades to try",
+      "done": 2,
+      "total": 7
+    },
+    {
+      "at": 7673,
+      "phase": "Installing dependencies",
+      "detail": "`composer install`",
+      "done": 2,
+      "total": 7
+    },
+    {
+      "at": 7779,
+      "phase": "Preparing a test checkout",
+      "detail": "1 upgrade to try",
+      "done": 6,
+      "total": 7
     }
   ],
   "candidates": [
+    {
+      "name": "friendsofphp/php-cs-fixer",
+      "ecosystem": "packagist",
+      "manifestPath": "vendor-bin/php-cs-fixer/composer.json",
+      "workspace": "vendor-bin/php-cs-fixer",
+      "workspaceName": null,
+      "current": "3.95.2",
+      "latest": "3.95.18",
+      "selected": "3.95.18",
+      "safeLatest": "3.95.18",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 16 sets of release notes and the changelog for friendsofphp/php-cs-fixer 3.95.18 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 16 sets of release notes and the changelog for friendsofphp/php-cs-fixer 3.95.18 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
     {
       "name": "friendsofphp/php-cs-fixer",
       "ecosystem": "packagist",
@@ -431,6 +482,29 @@
       "evidenceCount": 1,
       "gaps": [
         "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 16 sets of release notes and the changelog for friendsofphp/php-cs-fixer 3.95.18 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "phpstan/phpstan",
+      "ecosystem": "packagist",
+      "manifestPath": "vendor-bin/phpstan/composer.json",
+      "workspace": "vendor-bin/phpstan",
+      "workspaceName": null,
+      "current": "2.1.55",
+      "latest": "2.2.8",
+      "selected": "2.2.8",
+      "safeLatest": "2.2.8",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for phpstan/phpstan 2.2.8, and no source repository could be resolved for it.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for phpstan/phpstan 2.2.8, and no source repository could be resolved for it."
       ],
       "breaking": []
     },
@@ -467,6 +541,29 @@
       "latest": "2.0.5",
       "selected": "2.0.5",
       "safeLatest": "2.0.5",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read the release notes for phpstan/phpstan-deprecation-rules 2.0.5 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read the release notes for phpstan/phpstan-deprecation-rules 2.0.5 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "phpstan/phpstan-deprecation-rules",
+      "ecosystem": "packagist",
+      "manifestPath": "vendor-bin/phpstan/composer.json",
+      "workspace": "vendor-bin/phpstan",
+      "workspaceName": null,
+      "current": "2.0.4",
+      "latest": "2.0.5",
+      "selected": "2.0.5",
+      "safeLatest": "2.0.5",
       "status": "clean",
       "risk": "none",
       "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read the release notes for phpstan/phpstan-deprecation-rules 2.0.5 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
@@ -477,6 +574,29 @@
       "evidenceCount": 1,
       "gaps": [
         "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read the release notes for phpstan/phpstan-deprecation-rules 2.0.5 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "psr/http-client",
+      "ecosystem": "packagist",
+      "manifestPath": "composer.json",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.0.0",
+      "latest": "1.0.3",
+      "selected": "1.0.3",
+      "safeLatest": "1.0.3",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes and the changelog for psr/http-client 1.0.3 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes and the changelog for psr/http-client 1.0.3 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
       "breaking": []
     },
@@ -513,6 +633,29 @@
       "latest": "1.1.0",
       "selected": "1.1.0",
       "safeLatest": "1.1.0",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 2 sets of release notes for psr/http-factory 1.1.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 2 sets of release notes for psr/http-factory 1.1.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "psr/http-factory",
+      "ecosystem": "packagist",
+      "manifestPath": "composer.json",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.0.0",
+      "latest": "1.1.0",
+      "selected": "1.1.0",
+      "safeLatest": "1.1.0",
       "status": "clean",
       "risk": "none",
       "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 2 sets of release notes for psr/http-factory 1.1.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
@@ -536,6 +679,29 @@
       "latest": "1.37.0",
       "selected": "1.37.0",
       "safeLatest": "1.37.0",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 4 sets of release notes for symfony/polyfill-php80 1.37.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 4 sets of release notes for symfony/polyfill-php80 1.37.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "symfony/polyfill-php80",
+      "ecosystem": "packagist",
+      "manifestPath": "composer.json",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.25.0",
+      "latest": "1.37.0",
+      "selected": "1.37.0",
+      "safeLatest": "1.37.0",
       "status": "clean",
       "risk": "none",
       "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 4 sets of release notes for symfony/polyfill-php80 1.37.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
@@ -546,6 +712,29 @@
       "evidenceCount": 1,
       "gaps": [
         "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 4 sets of release notes for symfony/polyfill-php80 1.37.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "symfony/polyfill-php82",
+      "ecosystem": "packagist",
+      "manifestPath": "composer.json",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.27.0",
+      "latest": "1.38.1",
+      "selected": "1.38.1",
+      "safeLatest": "1.38.1",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 5 sets of release notes for symfony/polyfill-php82 1.38.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for packagist; this upgrade rests on prose evidence alone. Drift read 5 sets of release notes for symfony/polyfill-php82 1.38.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
       "breaking": []
     },

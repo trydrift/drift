@@ -5,9 +5,9 @@
   "language": "Swift",
   "repo": "https://github.com/pointfreeco/swift-composable-architecture",
   "blurb": "The state-management library much of the Swift app ecosystem builds on.",
-  "capturedAt": "2026-08-10T15:53:12.581Z",
+  "capturedAt": "2026-08-15T00:52:29.766Z",
   "commit": "269d6457986d163557ea2601275b1117e4dee3c0",
-  "durationMs": 15417,
+  "durationMs": 497608,
   "packagesChecked": 17,
   "manifests": [
     "Package.swift",
@@ -15,413 +15,1348 @@
     "Examples/Package.swift",
     "Examples/TicTacToe/tic-tac-toe/Package.swift"
   ],
+  "nestedGitRepos": [],
   "events": [
     {
-      "at": 6732,
+      "at": 3438,
       "phase": "Looking for manifests",
       "detail": "pointfreeco/swift-composable-architecture",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6761,
+      "at": 3465,
       "phase": "Reading the workspace",
       "detail": "4 packages · undeclared",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6762,
+      "at": 3466,
       "phase": "Reading manifest",
       "detail": "Package.swift",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6764,
+      "at": 3468,
       "phase": "Reading manifest",
       "detail": "Benchmarks/Package.swift",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6764,
+      "at": 3468,
       "phase": "Reading manifest",
       "detail": "Examples/Package.swift",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6764,
+      "at": 3469,
       "phase": "Reading manifest",
       "detail": "Examples/TicTacToe/tic-tac-toe/Package.swift",
       "done": 0,
       "total": 0
     },
     {
-      "at": 6764,
+      "at": 3469,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 17
     },
     {
-      "at": 7024,
+      "at": 3730,
       "phase": "Indexing your code",
       "detail": "799 files indexed · 17 direct dependencies to check",
       "done": 0,
       "total": 17
     },
     {
-      "at": 7024,
-      "phase": "Checking the the package’s git repository",
+      "at": 3730,
+      "phase": "Checking the package’s git tags",
       "detail": "apple/swift-collections (installed 1.6.0)",
       "done": 0,
       "total": 17
     },
     {
-      "at": 7024,
-      "phase": "Checking the the package’s git repository",
+      "at": 3730,
+      "phase": "Checking the package’s git tags",
       "detail": "pointfreeco/combine-schedulers (installed 1.2.0)",
       "done": 0,
       "total": 17
     },
     {
-      "at": 7024,
-      "phase": "Checking the the package’s git repository",
+      "at": 3730,
+      "phase": "Checking the package’s git tags",
       "detail": "pointfreeco/swift-case-paths (installed 1.7.3)",
       "done": 0,
       "total": 17
     },
     {
-      "at": 7024,
-      "phase": "Checking the the package’s git repository",
+      "at": 3730,
+      "phase": "Checking the package’s git tags",
       "detail": "pointfreeco/swift-clocks (installed 1.0.6)",
       "done": 0,
       "total": 17
     },
     {
-      "at": 7024,
-      "phase": "Checking the the package’s git repository",
+      "at": 3730,
+      "phase": "Checking the package’s git tags",
       "detail": "pointfreeco/swift-concurrency-extras (installed 1.4.0)",
       "done": 0,
       "total": 17
     },
     {
-      "at": 7024,
-      "phase": "Checking the the package’s git repository",
+      "at": 3730,
+      "phase": "Checking the package’s git tags",
       "detail": "pointfreeco/swift-custom-dump (installed 1.6.0)",
       "done": 0,
       "total": 17
     },
     {
-      "at": 7024,
-      "phase": "Checking the the package’s git repository",
+      "at": 3730,
+      "phase": "Checking the package’s git tags",
       "detail": "pointfreeco/swift-dependencies (installed 1.13.0)",
       "done": 0,
       "total": 17
     },
     {
-      "at": 7024,
-      "phase": "Checking the the package’s git repository",
+      "at": 3730,
+      "phase": "Checking the package’s git tags",
       "detail": "pointfreeco/swift-identified-collections (installed 1.1.1)",
       "done": 0,
       "total": 17
     },
     {
-      "at": 7024,
+      "at": 4030,
+      "phase": "Reading release notes and changelog",
+      "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 4034,
+      "phase": "Reading release notes and changelog",
+      "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1",
+      "done": 0,
+      "total": 17
+    },
+    {
+      "at": 4049,
       "phase": "Up to date",
-      "detail": "apple/swift-collections@1.6.0",
+      "detail": "pointfreeco/combine-schedulers@1.2.0",
       "done": 1,
       "total": 17
     },
     {
-      "at": 7024,
+      "at": 4049,
+      "phase": "Checking the package’s git tags",
+      "detail": "pointfreeco/swift-macro-testing (installed 0.6.5)",
+      "done": 1,
+      "total": 17
+    },
+    {
+      "at": 4058,
+      "phase": "Reading release notes and changelog",
+      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.15.0",
+      "done": 1,
+      "total": 17
+    },
+    {
+      "at": 4071,
       "phase": "Up to date",
-      "detail": "pointfreeco/combine-schedulers@1.2.0",
+      "detail": "pointfreeco/swift-identified-collections@1.1.1",
       "done": 2,
       "total": 17
     },
     {
-      "at": 7024,
+      "at": 4071,
+      "phase": "Checking the package’s git tags",
+      "detail": "pointfreeco/swift-navigation (installed 2.8.0)",
+      "done": 2,
+      "total": 17
+    },
+    {
+      "at": 4072,
       "phase": "Up to date",
-      "detail": "pointfreeco/swift-case-paths@1.7.3",
+      "detail": "apple/swift-collections@1.6.0",
       "done": 3,
       "total": 17
     },
     {
-      "at": 7024,
+      "at": 4072,
+      "phase": "Checking the package’s git tags",
+      "detail": "pointfreeco/swift-perception (installed 2.0.10)",
+      "done": 3,
+      "total": 17
+    },
+    {
+      "at": 4101,
+      "phase": "Reading release notes and changelog",
+      "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0",
+      "done": 3,
+      "total": 17
+    },
+    {
+      "at": 4150,
+      "phase": "Reading release notes and changelog",
+      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.1",
+      "done": 3,
+      "total": 17
+    },
+    {
+      "at": 4280,
       "phase": "Up to date",
-      "detail": "pointfreeco/swift-clocks@1.0.6",
+      "detail": "pointfreeco/swift-macro-testing@0.6.5",
       "done": 4,
       "total": 17
     },
     {
-      "at": 7024,
-      "phase": "Up to date",
-      "detail": "pointfreeco/swift-concurrency-extras@1.4.0",
+      "at": 4280,
+      "phase": "Checking the package’s git tags",
+      "detail": "pointfreeco/swift-sharing (installed 2.8.1)",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 4307,
+      "phase": "Reading release notes and changelog",
+      "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 4350,
+      "phase": "Reading release notes and changelog",
+      "detail": "pointfreeco/swift-perception 2.0.10 → 2.0.11",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 4603,
+      "phase": "Reading release notes and changelog",
+      "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9441,
+      "phase": "Comparing the public API surface",
+      "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0 · 1 evidence source",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9441,
+      "phase": "No breaking changes to look for",
+      "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9441,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9528,
+      "phase": "Comparing the public API surface",
+      "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0 · 1 evidence source",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9528,
+      "phase": "No breaking changes to look for",
+      "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9528,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9543,
+      "phase": "Comparing the public API surface",
+      "detail": "pointfreeco/swift-perception 2.0.10 → 2.0.11 · 1 evidence source",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9543,
+      "phase": "No breaking changes to look for",
+      "detail": "pointfreeco/swift-perception 2.0.10 → 2.0.11",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9544,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pointfreeco/swift-perception 2.0.10 → 2.0.11",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9639,
+      "phase": "Comparing the public API surface",
+      "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1 · 1 evidence source",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9639,
+      "phase": "No breaking changes to look for",
+      "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9639,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9641,
+      "phase": "Comparing the public API surface",
+      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.1 · 1 evidence source",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9641,
+      "phase": "No breaking changes to look for",
+      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.1",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9641,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.1",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9747,
+      "phase": "Comparing the public API surface",
+      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.15.0 · 1 evidence source",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9747,
+      "phase": "No breaking changes to look for",
+      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.15.0",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9747,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.15.0",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9748,
+      "phase": "Comparing the public API surface",
+      "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1 · 1 evidence source",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9748,
+      "phase": "No breaking changes to look for",
+      "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9748,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9915,
+      "phase": "Comparing the public API surface",
+      "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0 · 3 evidence sources",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9915,
+      "phase": "Searching your code for 1 breaking change",
+      "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 9996,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0",
+      "done": 4,
+      "total": 17
+    },
+    {
+      "at": 10166,
+      "phase": "Checked",
+      "detail": "pointfreeco/swift-clocks 1.0.6 → 1.1.0 · safe for your code · no breaking changes found",
       "done": 5,
       "total": 17
     },
     {
-      "at": 7024,
-      "phase": "Up to date",
-      "detail": "pointfreeco/swift-custom-dump@1.6.0",
+      "at": 10166,
+      "phase": "Checking the package’s git tags",
+      "detail": "pointfreeco/xctest-dynamic-overlay (installed 1.9.0)",
+      "done": 5,
+      "total": 17
+    },
+    {
+      "at": 10268,
+      "phase": "Checked",
+      "detail": "pointfreeco/swift-custom-dump 1.6.0 → 1.7.0 · safe for your code · no breaking changes found",
       "done": 6,
       "total": 17
     },
     {
-      "at": 7024,
-      "phase": "Up to date",
-      "detail": "pointfreeco/swift-dependencies@1.13.0",
+      "at": 10268,
+      "phase": "Checking the package’s git tags",
+      "detail": "swiftlang/swift-docc-plugin (installed 1.5.0)",
+      "done": 6,
+      "total": 17
+    },
+    {
+      "at": 10323,
+      "phase": "Reading release notes and changelog",
+      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.11.0",
+      "done": 6,
+      "total": 17
+    },
+    {
+      "at": 10379,
+      "phase": "Checked",
+      "detail": "pointfreeco/swift-dependencies 1.13.0 → 1.15.0 · safe for your code · no breaking changes found",
       "done": 7,
       "total": 17
     },
     {
-      "at": 7024,
-      "phase": "Up to date",
-      "detail": "pointfreeco/swift-identified-collections@1.1.1",
-      "done": 8,
-      "total": 17
-    },
-    {
-      "at": 7024,
-      "phase": "Checking the the package’s git repository",
-      "detail": "pointfreeco/swift-macro-testing (installed 0.6.5)",
-      "done": 8,
-      "total": 17
-    },
-    {
-      "at": 7024,
-      "phase": "Checking the the package’s git repository",
-      "detail": "pointfreeco/swift-navigation (installed 2.8.0)",
-      "done": 8,
-      "total": 17
-    },
-    {
-      "at": 7024,
-      "phase": "Checking the the package’s git repository",
-      "detail": "pointfreeco/swift-perception (installed 2.0.10)",
-      "done": 8,
-      "total": 17
-    },
-    {
-      "at": 7024,
-      "phase": "Checking the the package’s git repository",
-      "detail": "pointfreeco/swift-sharing (installed 2.8.1)",
-      "done": 8,
-      "total": 17
-    },
-    {
-      "at": 7024,
-      "phase": "Checking the the package’s git repository",
-      "detail": "pointfreeco/xctest-dynamic-overlay (installed 1.9.0)",
-      "done": 8,
-      "total": 17
-    },
-    {
-      "at": 7024,
-      "phase": "Checking the the package’s git repository",
-      "detail": "swiftlang/swift-docc-plugin (installed 1.5.0)",
-      "done": 8,
-      "total": 17
-    },
-    {
-      "at": 7024,
-      "phase": "Checking the the package’s git repository",
+      "at": 10379,
+      "phase": "Checking the package’s git tags",
       "detail": "swiftlang/swift-syntax (installed 603.0.2)",
+      "done": 7,
+      "total": 17
+    },
+    {
+      "at": 10382,
+      "phase": "Checked",
+      "detail": "pointfreeco/swift-concurrency-extras 1.4.0 → 1.4.1 · safe for your code · no breaking changes found",
       "done": 8,
       "total": 17
     },
     {
-      "at": 7024,
-      "phase": "Checking the the package’s git repository",
+      "at": 10382,
+      "phase": "Checking the package’s git tags",
       "detail": "ordo-one/package-benchmark (installed 1.25.0)",
       "done": 8,
       "total": 17
     },
     {
-      "at": 7025,
-      "phase": "Up to date",
-      "detail": "pointfreeco/swift-macro-testing@0.6.5",
+      "at": 10403,
+      "phase": "Checked",
+      "detail": "pointfreeco/swift-perception 2.0.10 → 2.0.11 · safe for your code · no breaking changes found",
       "done": 9,
       "total": 17
     },
     {
-      "at": 7025,
-      "phase": "Up to date",
-      "detail": "pointfreeco/swift-navigation@2.8.0",
+      "at": 10403,
+      "phase": "Checking the package’s git tags",
+      "detail": "pointfreeco/swift-dependencies (installed 1.0.0)",
+      "done": 9,
+      "total": 17
+    },
+    {
+      "at": 10403,
+      "phase": "Reading release notes and changelog",
+      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.15.0",
+      "done": 9,
+      "total": 17
+    },
+    {
+      "at": 10404,
+      "phase": "Comparing the public API surface",
+      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.15.0 · 4 evidence sources",
+      "done": 9,
+      "total": 17
+    },
+    {
+      "at": 10404,
+      "phase": "No breaking changes to look for",
+      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.15.0",
+      "done": 9,
+      "total": 17
+    },
+    {
+      "at": 10404,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.15.0",
+      "done": 9,
+      "total": 17
+    },
+    {
+      "at": 10416,
+      "phase": "Checked",
+      "detail": "pointfreeco/swift-sharing 2.8.1 → 2.9.1 · safe for your code · no breaking changes found",
       "done": 10,
       "total": 17
     },
     {
-      "at": 7025,
-      "phase": "Up to date",
-      "detail": "pointfreeco/swift-perception@2.0.10",
+      "at": 10456,
+      "phase": "Checked",
+      "detail": "pointfreeco/swift-case-paths 1.7.3 → 1.9.1 · safe for your code · no breaking changes found",
       "done": 11,
       "total": 17
     },
     {
-      "at": 7025,
+      "at": 10464,
       "phase": "Up to date",
-      "detail": "pointfreeco/swift-sharing@2.8.1",
+      "detail": "swiftlang/swift-docc-plugin@1.5.0",
       "done": 12,
       "total": 17
     },
     {
-      "at": 7025,
-      "phase": "Up to date",
-      "detail": "pointfreeco/xctest-dynamic-overlay@1.9.0",
+      "at": 10591,
+      "phase": "Checked",
+      "detail": "pointfreeco/swift-dependencies 1.0.0 → 1.15.0 · safe for your code · no breaking changes found",
       "done": 13,
       "total": 17
     },
     {
-      "at": 7025,
-      "phase": "Up to date",
-      "detail": "swiftlang/swift-docc-plugin@1.5.0",
+      "at": 10596,
+      "phase": "Reading release notes and changelog",
+      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
+      "done": 13,
+      "total": 17
+    },
+    {
+      "at": 10648,
+      "phase": "Checked",
+      "detail": "pointfreeco/swift-navigation 2.8.0 → 2.11.0 · safe for your code · 1 upstream change, none used here",
       "done": 14,
       "total": 17
     },
     {
-      "at": 7025,
-      "phase": "Up to date",
-      "detail": "swiftlang/swift-syntax@603.0.2",
+      "at": 10708,
+      "phase": "Reading release notes and changelog",
+      "detail": "ordo-one/package-benchmark 1.25.0 → 1.36.2",
+      "done": 14,
+      "total": 17
+    },
+    {
+      "at": 14765,
+      "phase": "Comparing the public API surface",
+      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.11.0 · 1 evidence source",
+      "done": 14,
+      "total": 17
+    },
+    {
+      "at": 14765,
+      "phase": "No breaking changes to look for",
+      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.11.0",
+      "done": 14,
+      "total": 17
+    },
+    {
+      "at": 14765,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.11.0",
+      "done": 14,
+      "total": 17
+    },
+    {
+      "at": 15414,
+      "phase": "Comparing the public API surface",
+      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0 · 1 evidence source",
+      "done": 14,
+      "total": 17
+    },
+    {
+      "at": 15414,
+      "phase": "No breaking changes to look for",
+      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
+      "done": 14,
+      "total": 17
+    },
+    {
+      "at": 15414,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0",
+      "done": 14,
+      "total": 17
+    },
+    {
+      "at": 15423,
+      "phase": "Checked",
+      "detail": "pointfreeco/xctest-dynamic-overlay 1.9.0 → 1.11.0 · safe for your code · no breaking changes found",
       "done": 15,
       "total": 17
     },
     {
-      "at": 7025,
-      "phase": "Up to date",
-      "detail": "ordo-one/package-benchmark@1.25.0",
+      "at": 15682,
+      "phase": "Comparing the public API surface",
+      "detail": "ordo-one/package-benchmark 1.25.0 → 1.36.2 · 1 evidence source",
+      "done": 15,
+      "total": 17
+    },
+    {
+      "at": 15682,
+      "phase": "No breaking changes to look for",
+      "detail": "ordo-one/package-benchmark 1.25.0 → 1.36.2",
+      "done": 15,
+      "total": 17
+    },
+    {
+      "at": 15682,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "ordo-one/package-benchmark 1.25.0 → 1.36.2",
+      "done": 15,
+      "total": 17
+    },
+    {
+      "at": 15871,
+      "phase": "Checked",
+      "detail": "swiftlang/swift-syntax 603.0.2 → 2026.0.0 · safe for your code · no breaking changes found",
       "done": 16,
       "total": 17
     },
     {
-      "at": 7025,
-      "phase": "Checking the the package’s git repository",
-      "detail": "pointfreeco/swift-dependencies (installed 1.0.0)",
-      "done": 16,
-      "total": 17
-    },
-    {
-      "at": 7025,
-      "phase": "Up to date",
-      "detail": "pointfreeco/swift-dependencies@1.0.0",
+      "at": 16374,
+      "phase": "Checked",
+      "detail": "ordo-one/package-benchmark 1.25.0 → 1.36.2 · safe for your code · no breaking changes found",
       "done": 17,
       "total": 17
     },
     {
-      "at": 7901,
-      "phase": "Auditing installed versions",
-      "detail": "apple/swift-collections 1.1.0 → 1.6.0 (installed)",
+      "at": 16374,
+      "phase": "Preparing a test checkout",
+      "detail": "10 upgrades to try",
       "done": 0,
-      "total": 17
+      "total": 12
     },
     {
-      "at": 7901,
-      "phase": "Auditing installed versions",
-      "detail": "pointfreeco/combine-schedulers 1.0.2 → 1.2.0 (installed)",
+      "at": 17022,
+      "phase": "Checking the project as it is",
+      "detail": "swift build, swift test",
       "done": 0,
-      "total": 17
+      "total": 12
     },
     {
-      "at": 7901,
-      "phase": "Auditing installed versions",
-      "detail": "pointfreeco/swift-case-paths 1.5.4 → 1.7.3 (installed)",
+      "at": 455796,
+      "phase": "Testing 10 upgrades together",
+      "detail": "pointfreeco/swift-clocks@1.1.0, pointfreeco/swift-custom-dump@1.7.0, pointfreeco/swift-dependencies@1.15.0, pointfreeco/swift-concurrency-extras@1.4.1, pointfreeco/swift-perception@2.0.11, pointfreeco/swift-sharing@2.9.1, pointfreeco/swift-case-paths@1.9.1, pointfreeco/swift-navigation@2.11.0, pointfreeco/xctest-dynamic-overlay@1.11.0, swiftlang/swift-syntax@2026.0.0",
       "done": 0,
-      "total": 17
+      "total": 12
     },
     {
-      "at": 7901,
-      "phase": "Auditing installed versions",
-      "detail": "pointfreeco/swift-clocks 1.0.4 → 1.0.6 (installed)",
+      "at": 455864,
+      "phase": "Testing pointfreeco/swift-clocks@1.1.0",
+      "detail": "installing into the test checkout",
       "done": 0,
-      "total": 17
+      "total": 12
     },
     {
-      "at": 7901,
-      "phase": "Auditing installed versions",
-      "detail": "pointfreeco/swift-concurrency-extras 1.2.0 → 1.4.0 (installed)",
-      "done": 0,
-      "total": 17
+      "at": 455913,
+      "phase": "Testing pointfreeco/swift-custom-dump@1.7.0",
+      "detail": "installing into the test checkout",
+      "done": 1,
+      "total": 12
     },
     {
-      "at": 7901,
-      "phase": "Auditing installed versions",
-      "detail": "pointfreeco/swift-custom-dump 1.3.2 → 1.6.0 (installed)",
-      "done": 0,
-      "total": 17
-    },
-    {
-      "at": 7901,
-      "phase": "Auditing installed versions",
-      "detail": "pointfreeco/swift-dependencies 1.4.0 → 1.13.0 (installed)",
-      "done": 0,
-      "total": 17
-    },
-    {
-      "at": 7901,
-      "phase": "Auditing installed versions",
-      "detail": "pointfreeco/swift-identified-collections 1.1.0 → 1.1.1 (installed)",
-      "done": 0,
-      "total": 17
-    },
-    {
-      "at": 11110,
-      "phase": "Auditing installed versions",
-      "detail": "pointfreeco/swift-macro-testing 0.2.0 → 0.6.5 (installed)",
+      "at": 455960,
+      "phase": "Testing pointfreeco/swift-dependencies@1.15.0",
+      "detail": "installing into the test checkout",
       "done": 2,
-      "total": 17
+      "total": 12
     },
     {
-      "at": 11136,
-      "phase": "Auditing installed versions",
-      "detail": "pointfreeco/swift-navigation 2.7.0 → 2.8.0 (installed)",
+      "at": 456007,
+      "phase": "Testing pointfreeco/swift-concurrency-extras@1.4.1",
+      "detail": "installing into the test checkout",
+      "done": 3,
+      "total": 12
+    },
+    {
+      "at": 456055,
+      "phase": "Testing pointfreeco/swift-perception@2.0.11",
+      "detail": "installing into the test checkout",
       "done": 4,
-      "total": 17
+      "total": 12
     },
     {
-      "at": 11314,
-      "phase": "Auditing installed versions",
-      "detail": "pointfreeco/swift-perception 1.3.4 → 2.0.10 (installed)",
+      "at": 456102,
+      "phase": "Testing pointfreeco/swift-sharing@2.9.1",
+      "detail": "installing into the test checkout",
+      "done": 5,
+      "total": 12
+    },
+    {
+      "at": 456149,
+      "phase": "Testing pointfreeco/swift-case-paths@1.9.1",
+      "detail": "installing into the test checkout",
       "done": 6,
-      "total": 17
+      "total": 12
     },
     {
-      "at": 11327,
-      "phase": "Auditing installed versions",
-      "detail": "pointfreeco/swift-sharing 1.0.0 → 2.8.1 (installed)",
+      "at": 456196,
+      "phase": "Testing pointfreeco/swift-navigation@2.11.0",
+      "detail": "installing into the test checkout",
+      "done": 7,
+      "total": 12
+    },
+    {
+      "at": 456244,
+      "phase": "Testing pointfreeco/xctest-dynamic-overlay@1.11.0",
+      "detail": "installing into the test checkout",
       "done": 8,
-      "total": 17
+      "total": 12
     },
     {
-      "at": 11385,
-      "phase": "Auditing installed versions",
-      "detail": "pointfreeco/xctest-dynamic-overlay 1.3.0 → 1.9.0 (installed)",
+      "at": 456292,
+      "phase": "Testing swiftlang/swift-syntax@2026.0.0",
+      "detail": "installing into the test checkout",
       "done": 9,
-      "total": 17
+      "total": 12
     },
     {
-      "at": 11406,
-      "phase": "Auditing installed versions",
-      "detail": "swiftlang/swift-docc-plugin 1.0.0 → 1.5.0 (installed)",
+      "at": 459565,
+      "phase": "Preparing a test checkout",
+      "detail": "1 upgrade to try",
+      "done": 10,
+      "total": 12
+    },
+    {
+      "at": 460314,
+      "phase": "Checking the project as it is",
+      "detail": "swift build, swift test",
+      "done": 10,
+      "total": 12
+    },
+    {
+      "at": 492461,
+      "phase": "Preparing a test checkout",
+      "detail": "1 upgrade to try",
       "done": 11,
-      "total": 17
+      "total": 12
     },
     {
-      "at": 11449,
-      "phase": "Auditing installed versions",
-      "detail": "swiftlang/swift-syntax 509.0.0 → 603.0.2 (installed)",
-      "done": 13,
-      "total": 17
-    },
-    {
-      "at": 11585,
-      "phase": "Auditing installed versions",
-      "detail": "ordo-one/package-benchmark 1.4.0 → 1.25.0 (installed)",
-      "done": 15,
-      "total": 17
+      "at": 493114,
+      "phase": "Checking the project as it is",
+      "detail": "swift build, swift test",
+      "done": 11,
+      "total": 12
     }
   ],
-  "candidates": []
+  "candidates": [
+    {
+      "name": "pointfreeco/swift-navigation",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "2.8.0",
+      "latest": "2.11.0",
+      "selected": "2.11.0",
+      "safeLatest": "2.11.0",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. 1 upstream breaking change, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 1,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 3,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone."
+      ],
+      "breaking": [
+        {
+          "kind": "behaviour-change",
+          "summary": "`CasePaths` no longer gates `@UITransactionEntry` macro (https://github",
+          "remediation": "Behaviour changed: `CasePaths` no longer gates `@UITransactionEntry` macro (https://github. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
+          "confidence": "medium",
+          "symbols": [
+            "CasePaths"
+          ],
+          "evidence": [
+            {
+              "source": "github-release",
+              "title": "pointfreeco/swift-navigation 2.10.0 release notes",
+              "url": "https://github.com/pointfreeco/swift-navigation/releases/tag/2.10.0",
+              "locator": null
+            }
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "pointfreeco/swift-navigation",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "2.8.0",
+      "latest": "2.11.0",
+      "selected": "2.11.0",
+      "safeLatest": "2.11.0",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Safe to upgrade. 1 upstream breaking change, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 1,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 3,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone."
+      ],
+      "breaking": [
+        {
+          "kind": "behaviour-change",
+          "summary": "`CasePaths` no longer gates `@UITransactionEntry` macro (https://github",
+          "remediation": "Behaviour changed: `CasePaths` no longer gates `@UITransactionEntry` macro (https://github. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
+          "confidence": "medium",
+          "symbols": [
+            "CasePaths"
+          ],
+          "evidence": [
+            {
+              "source": "github-release",
+              "title": "pointfreeco/swift-navigation 2.10.0 release notes",
+              "url": "https://github.com/pointfreeco/swift-navigation/releases/tag/2.10.0",
+              "locator": null
+            }
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "ordo-one/package-benchmark",
+      "ecosystem": "swift",
+      "manifestPath": "Benchmarks/Package.swift",
+      "workspace": "Benchmarks",
+      "workspaceName": null,
+      "current": "1.25.0",
+      "latest": "1.36.2",
+      "selected": "1.36.2",
+      "safeLatest": "1.36.2",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 25 sets of release notes for ordo-one/package-benchmark 1.36.2 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 25 sets of release notes for ordo-one/package-benchmark 1.36.2 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "ordo-one/package-benchmark",
+      "ecosystem": "swift",
+      "manifestPath": "Benchmarks/Package.swift",
+      "workspace": "Benchmarks",
+      "workspaceName": null,
+      "current": "1.25.0",
+      "latest": "1.36.2",
+      "selected": "1.36.2",
+      "safeLatest": "1.36.2",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 25 sets of release notes for ordo-one/package-benchmark 1.36.2 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 25 sets of release notes for ordo-one/package-benchmark 1.36.2 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "pointfreeco/swift-case-paths",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.7.3",
+      "latest": "1.9.1",
+      "selected": "1.9.1",
+      "safeLatest": "1.9.1",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes for pointfreeco/swift-case-paths 1.9.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes for pointfreeco/swift-case-paths 1.9.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "pointfreeco/swift-case-paths",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.7.3",
+      "latest": "1.9.1",
+      "selected": "1.9.1",
+      "safeLatest": "1.9.1",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes for pointfreeco/swift-case-paths 1.9.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes for pointfreeco/swift-case-paths 1.9.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "pointfreeco/swift-clocks",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.0.6",
+      "latest": "1.1.0",
+      "selected": "1.1.0",
+      "safeLatest": "1.1.0",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read the release notes for pointfreeco/swift-clocks 1.1.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read the release notes for pointfreeco/swift-clocks 1.1.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "pointfreeco/swift-clocks",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.0.6",
+      "latest": "1.1.0",
+      "selected": "1.1.0",
+      "safeLatest": "1.1.0",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read the release notes for pointfreeco/swift-clocks 1.1.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read the release notes for pointfreeco/swift-clocks 1.1.0 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "pointfreeco/swift-concurrency-extras",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.4.0",
+      "latest": "1.4.1",
+      "selected": "1.4.1",
+      "safeLatest": "1.4.1",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read the release notes for pointfreeco/swift-concurrency-extras 1.4.1 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read the release notes for pointfreeco/swift-concurrency-extras 1.4.1 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "pointfreeco/swift-concurrency-extras",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.4.0",
+      "latest": "1.4.1",
+      "selected": "1.4.1",
+      "safeLatest": "1.4.1",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read the release notes for pointfreeco/swift-concurrency-extras 1.4.1 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read the release notes for pointfreeco/swift-concurrency-extras 1.4.1 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "pointfreeco/swift-custom-dump",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.6.0",
+      "latest": "1.7.0",
+      "selected": "1.7.0",
+      "safeLatest": "1.7.0",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 2 sets of release notes for pointfreeco/swift-custom-dump 1.7.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 2 sets of release notes for pointfreeco/swift-custom-dump 1.7.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "pointfreeco/swift-custom-dump",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.6.0",
+      "latest": "1.7.0",
+      "selected": "1.7.0",
+      "safeLatest": "1.7.0",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 2 sets of release notes for pointfreeco/swift-custom-dump 1.7.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 2 sets of release notes for pointfreeco/swift-custom-dump 1.7.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "pointfreeco/swift-dependencies",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.13.0",
+      "latest": "1.15.0",
+      "selected": "1.15.0",
+      "safeLatest": "1.15.0",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 4 sets of release notes for pointfreeco/swift-dependencies 1.15.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 4 sets of release notes for pointfreeco/swift-dependencies 1.15.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "pointfreeco/swift-dependencies",
+      "ecosystem": "swift",
+      "manifestPath": "Examples/TicTacToe/tic-tac-toe/Package.swift",
+      "workspace": "Examples/TicTacToe/tic-tac-toe",
+      "workspaceName": null,
+      "current": "1.0.0",
+      "latest": "1.15.0",
+      "selected": "1.15.0",
+      "safeLatest": "1.15.0",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 4,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "pointfreeco/swift-dependencies",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.13.0",
+      "latest": "1.15.0",
+      "selected": "1.15.0",
+      "safeLatest": "1.15.0",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 4 sets of release notes for pointfreeco/swift-dependencies 1.15.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 4 sets of release notes for pointfreeco/swift-dependencies 1.15.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "pointfreeco/swift-dependencies",
+      "ecosystem": "swift",
+      "manifestPath": "Examples/TicTacToe/tic-tac-toe/Package.swift",
+      "workspace": "Examples/TicTacToe/tic-tac-toe",
+      "workspaceName": null,
+      "current": "1.0.0",
+      "latest": "1.15.0",
+      "selected": "1.15.0",
+      "safeLatest": "1.15.0",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 4,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "pointfreeco/swift-perception",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "2.0.10",
+      "latest": "2.0.11",
+      "selected": "2.0.11",
+      "safeLatest": "2.0.11",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read the release notes for pointfreeco/swift-perception 2.0.11 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read the release notes for pointfreeco/swift-perception 2.0.11 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "pointfreeco/swift-perception",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "2.0.10",
+      "latest": "2.0.11",
+      "selected": "2.0.11",
+      "safeLatest": "2.0.11",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read the release notes for pointfreeco/swift-perception 2.0.11 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read the release notes for pointfreeco/swift-perception 2.0.11 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "pointfreeco/swift-sharing",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "2.8.1",
+      "latest": "2.9.1",
+      "selected": "2.9.1",
+      "safeLatest": "2.9.1",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes for pointfreeco/swift-sharing 2.9.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes for pointfreeco/swift-sharing 2.9.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "pointfreeco/swift-sharing",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "2.8.1",
+      "latest": "2.9.1",
+      "selected": "2.9.1",
+      "safeLatest": "2.9.1",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes for pointfreeco/swift-sharing 2.9.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 3 sets of release notes for pointfreeco/swift-sharing 2.9.1 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "pointfreeco/xctest-dynamic-overlay",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.9.0",
+      "latest": "1.11.0",
+      "selected": "1.11.0",
+      "safeLatest": "1.11.0",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for pointfreeco/xctest-dynamic-overlay 1.11.0.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for pointfreeco/xctest-dynamic-overlay 1.11.0."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "pointfreeco/xctest-dynamic-overlay",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.9.0",
+      "latest": "1.11.0",
+      "selected": "1.11.0",
+      "safeLatest": "1.11.0",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for pointfreeco/xctest-dynamic-overlay 1.11.0.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for pointfreeco/xctest-dynamic-overlay 1.11.0."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "swiftlang/swift-syntax",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "603.0.2",
+      "latest": "2026.0.0",
+      "selected": "2026.0.0",
+      "safeLatest": null,
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 8 sets of release notes for swiftlang/swift-syntax 2026.0.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 8 sets of release notes for swiftlang/swift-syntax 2026.0.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "swiftlang/swift-syntax",
+      "ecosystem": "swift",
+      "manifestPath": "Package.swift",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "603.0.2",
+      "latest": "2026.0.0",
+      "selected": "2026.0.0",
+      "safeLatest": null,
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 8 sets of release notes for swiftlang/swift-syntax 2026.0.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. Drift read 8 sets of release notes for swiftlang/swift-syntax 2026.0.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
+      ],
+      "breaking": []
+    }
+  ]
 }

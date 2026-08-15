@@ -94,10 +94,10 @@ const SITE_FILES = [
 const STAGES: Stage[] = [
   {
     n: 1,
-    title: "Read what moved",
+    title: "Read What Moved",
     lead: "Manifests and lockfiles, not guesses.",
     detail:
-      "Drift parses the manifest with the same parser for every surface, then consults the lockfile to sharpen the installed version — a range says what is permitted, not what is on disk. Workspace members are read as separate packages, because a bump in one is a fact about that one.",
+      "Drift parses the manifest, then checks the lockfile for the version actually installed — a range only says what's permitted. Workspace members are read as separate packages, since a bump in one is a fact about that one.",
     chips: [
       "package.json",
       "go.mod",
@@ -118,26 +118,26 @@ const STAGES: Stage[] = [
   },
   {
     n: 2,
-    title: "Gather evidence",
+    title: "Gather Evidence",
     lead: "Three independent sources, each with a link you can open.",
     detail:
-      "Every record carries a URL or a local locator. This is the difference between Drift and asking a model what it remembers about a library.",
+      "Every record carries a URL or a local locator — the difference between Drift and asking a model what it remembers about a library.",
     artefact: <EvidenceFan />,
   },
   {
     n: 3,
-    title: "Decide what breaks",
+    title: "Decide What Breaks",
     lead: "A finding without a citation is not a finding.",
     detail:
-      "Computed diffs already know which symbol changed and how, so the analyser reads structure rather than re-parsing its own prose. Changelog lines go through explicit rules that recognise a removal or a rename and name the symbol. Every breaking change points back at the evidence that justified it, and anything that could not be established is recorded as a gap.",
+      "Computed diffs already know which symbol changed and how, so Drift reads structure rather than prose. Changelog lines go through rules that recognize a removal or a rename. Every breaking change points back at the evidence that justified it, and anything it couldn't establish is recorded as a gap.",
     artefact: <FindingCard />,
   },
   {
     n: 4,
-    title: "Find it in your code",
+    title: "Find It in Your Code",
     lead: "Only the files that import it are searched.",
     detail:
-      "The import graph is the precision lever: a file that never imports w3lib cannot be broken by a w3lib change, however often the word url appears in it. Within those files Drift matches the symbols the evidence named — skipping comments and string literals, so a word in a docstring is never mistaken for a call. Each site gets its own confidence, highest when the file provably bound that symbol from that import.",
+      "A file that never imports w3lib can't be broken by a w3lib change, however often the word url appears in it. Within files that do, Drift matches the symbols the evidence named — skipping comments and strings, so a word in a docstring is never mistaken for a call. Each site gets its own confidence, highest when the file provably bound that symbol from that import.",
     chips: ["import graph", "#include graph", "AST-aligned index", "per-site confidence"],
     artefact: (
       <GhPanel icon="search" name="symbol: safe_url_string" meta="25 results · 10 files">
@@ -157,10 +157,10 @@ const STAGES: Stage[] = [
   },
   {
     n: 5,
-    title: "Plan, then fix",
+    title: "Plan, Then Fix",
     lead: "One commit per concern, in dependency order.",
     detail:
-      "Drift never produces a single 'upgrade everything' commit — a reviewer has to be able to read, approve or revert one piece at a time, and git bisect has to stay meaningful. Each unit is resolved by a deterministic codemod where one exists, then a version-pinned community recipe, then an AI agent. Never silently, and always in that order.",
+      "Never one 'upgrade everything' commit — a reviewer has to read, approve, or revert one piece at a time, and git bisect has to stay meaningful. Each change is resolved by a deterministic codemod where one exists, then a version-pinned community recipe, then an AI agent. Never silently, and always in that order.",
     artefact: (
       <GhPanel icon="commit" name="drift/upgrade-w3lib" meta="3 commits">
         <div className="divide-y divide-border">
@@ -191,21 +191,21 @@ const SOURCES = [
     title: "Registry metadata",
     what: "The package's own index entry",
     detail:
-      "Deprecation notices, yanked releases, publish dates, the maintainer's own 'latest' tag, and known advisories from OSV for both the old version and the new one.",
+      "Deprecation notices, yanked releases, publish dates, the maintainer's own 'latest' tag, and known advisories from OSV for both versions.",
     lines: ["GET pypi.org/pypi/w3lib/json", "GET api.osv.dev/v1/query  ← both versions"],
   },
   {
     title: "Release notes & changelog",
     what: "What the maintainers said changed",
     detail:
-      "Every GitHub release between the two versions, the repository's CHANGELOG, and any migration guide it points to. Read as prose, matched by explicit rules rather than by a model's recollection.",
+      "Every GitHub release between the two versions, the CHANGELOG, and any migration guide it points to — matched by explicit rules, not a model's recollection.",
     lines: ["GET api.github.com/repos/scrapy/w3lib/releases", "GET raw…/w3lib/master/CHANGELOG.rst"],
   },
   {
     title: "Computed API surface",
     what: "What actually changed, whatever they said",
     detail:
-      "Both versions are fetched and their public surfaces compared symbol by symbol — nothing is installed and no build script of theirs is ever run. This is the strongest signal Drift has, and the only one that catches a break nobody wrote down.",
+      "Both versions are fetched and their public surfaces compared symbol by symbol — nothing is installed, no build script runs. Drift's strongest signal, and the only one that catches a break nobody wrote down.",
     lines: [".d.ts · Go AST · rustdoc JSON", "japicmp · ECMA-335 · C headers · stubs"],
   },
 ];
@@ -279,14 +279,14 @@ export function Pipeline() {
   return (
     <section id="how" className="scroll-mt-8 pt-16 sm:pt-24">
       <h2 className={`${instrumentSerif.className} text-2xl text-landing sm:text-3xl`}>
-        How a finding gets made
+        How a Finding Gets Made
       </h2>
       <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-        Five stages, each one independently checkable — followed here by the artefact it produces.
-        The example is a real one: <code className="font-mono text-[13px] text-brand-text">w3lib</code>{" "}
-        1.17.0 → 2.4.1 in Scrapy, from the recording above. And the rules that keep Drift{" "}
-        <em className="not-italic text-foreground">quiet</em> are written out below the pipeline,
-        because those are the ones you cannot verify by reading a finding.
+        Five stages, each independently checkable, with the artefact it produces. The example is
+        real: <code className="font-mono text-[13px] text-brand-text">w3lib</code>{" "}
+        1.17.0 → 2.4.1 in Scrapy, from the recording above. The rules that keep Drift{" "}
+        <em className="not-italic text-foreground">quiet</em> are below the pipeline — the part you
+        can&rsquo;t verify just by reading a finding.
       </p>
 
       <ol className="mt-8 space-y-3">
@@ -345,14 +345,13 @@ export function Pipeline() {
       <div className="mt-6 grid gap-4 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
         <div className="min-w-0 rounded-2xl border border-amber-500/25 bg-amber-500/6 p-5">
           <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-            When a source cannot be reached
+            When a Source Can&rsquo;t Be Reached
           </h3>
           <p className="mt-2 text-[13px] leading-relaxed text-muted">
-            It is recorded as a gap and the package is reported as{" "}
+            It&rsquo;s recorded as a gap and the package is reported as{" "}
             <span className="font-medium text-foreground">not verified</span> — never as clean. Zero
-            findings from a complete check and zero findings from a check that never happened are
-            different facts, and a developer needs to be told which one they have. This is the whole
-            reason the third verdict exists.
+            findings from a complete check and zero findings from a check that never ran are
+            different facts, and you need to know which one you have.
           </p>
           <div className="mt-4 overflow-hidden rounded-xl border border-border bg-surface">
             <div className="flex items-center gap-2 border-b border-border bg-surface-hover/50 px-3 py-2">
@@ -370,10 +369,10 @@ export function Pipeline() {
             claim anyone can check — so these are the actual rules, each one
             shown as the line that would have been reported without it. */}
         <div className="min-w-0 rounded-2xl border border-border bg-surface/50 p-5">
-          <h3 className="text-sm font-semibold text-foreground">What Drift refuses to report</h3>
+          <h3 className="text-sm font-semibold text-foreground">What Drift Refuses to Report</h3>
           <p className="mt-2 text-[13px] leading-relaxed text-muted">
-            Six lines that match a changed symbol and get no comment. Every rule below exists
-            because a real run produced the wrong answer without it.
+            Six lines that match a changed symbol and get no comment — each rule exists because a
+            real run got it wrong without it.
           </p>
 
           <div className="mt-4 overflow-hidden rounded-xl border border-border bg-surface">
@@ -402,12 +401,12 @@ export function Pipeline() {
 
       <div className="mt-4 rounded-2xl border border-border bg-surface/50 p-5">
         <h3 className="text-sm font-semibold text-foreground">
-          What the confidence on a finding means
+          What the Confidence on a Finding Means
         </h3>
         <p className="mt-2 max-w-3xl text-[13px] leading-relaxed text-muted">
           Two separate questions, never merged into one number. <em className="not-italic text-foreground">Did
-          this change happen upstream?</em> is answered by the evidence — a computed surface diff
-          starts high, prose starts medium, and two independent sources agreeing promotes it.{" "}
+          this happen upstream?</em> is answered by the evidence — a computed diff starts high,
+          prose starts medium, and agreement between sources promotes it.{" "}
           <em className="not-italic text-foreground">Does it land here?</em> is answered per line.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -421,9 +420,8 @@ export function Pipeline() {
           ))}
         </div>
         <p className="mt-3 max-w-3xl text-[12px] leading-relaxed text-muted">
-          A finding produced by the optional AI pass is capped at medium by construction, so it can
-          never on its own clear the bar to open a pull request. It assists recall; it does not get
-          a vote.
+          AI-pass findings are capped at medium by construction, so they can never alone clear the
+          bar to open a pull request. They assist recall — they don&rsquo;t get a vote.
         </p>
       </div>
     </section>
@@ -449,8 +447,8 @@ function FindingCard() {
           The signature of <code className="font-mono">url.safe_url_string</code> changed.
         </p>
         <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
-          Update every call site to match the new signature exactly. Pay attention to argument
-          order, argument count, and whether an options object replaced positional arguments.
+          Update every call site to match the new signature — check argument order, count, and
+          whether an options object replaced positional arguments.
         </p>
       </div>
       <Code lines={SURFACE_DIFF} />
@@ -513,10 +511,9 @@ function EvidenceFan() {
       </div>
 
       <p className="mt-3 text-[12px] leading-relaxed text-muted">
-        Sources are independent on purpose. A maintainer who forgets to write a changelog entry is
-        caught by the surface diff; a behaviour change with no signature change is caught by the
-        changelog. Agreement between two raises confidence, and disagreement is reported rather than
-        resolved by picking a favourite.
+        Sources are independent on purpose. A missing changelog entry is caught by the surface
+        diff; a behavior change with no signature change is caught by the changelog. Agreement
+        raises confidence, and disagreement is reported rather than resolved by picking a favorite.
       </p>
     </div>
   );

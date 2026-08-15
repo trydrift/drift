@@ -5,9 +5,9 @@
   "language": "C++",
   "repo": "https://github.com/esphome/esphome",
   "blurb": "The firmware behind most ESP32 and ESP8266 home-automation devices.",
-  "capturedAt": "2026-08-10T17:30:48.835Z",
-  "commit": "2184ec292828be5a03e068fc809d785bc1ac43ad",
-  "durationMs": 43176,
+  "capturedAt": "2026-08-15T00:39:46.789Z",
+  "commit": "e5224e22ae1fd07a284794690db68544f76f1b0c",
+  "durationMs": 41395,
   "packagesChecked": 25,
   "manifests": [
     "pyproject.toml",
@@ -18,665 +18,866 @@
   "nestedGitRepos": [],
   "events": [
     {
-      "at": 8704,
+      "at": 6654,
       "phase": "Looking for manifests",
       "detail": "esphome/esphome",
       "done": 0,
       "total": 0
     },
     {
-      "at": 8952,
+      "at": 7228,
       "phase": "Reading the workspace",
       "detail": "3 packages · undeclared",
       "done": 0,
       "total": 0
     },
     {
-      "at": 8953,
+      "at": 7229,
       "phase": "Reading manifest",
       "detail": "pyproject.toml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 8954,
+      "at": 7230,
       "phase": "Reading manifest",
       "detail": "platformio.ini",
       "done": 0,
       "total": 0
     },
     {
-      "at": 8955,
+      "at": 7234,
       "phase": "Reading manifest",
       "detail": ".github/scripts/auto-label-pr/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 8955,
+      "at": 7234,
       "phase": "Reading manifest",
       "detail": "esphome/components/nrf52/requirements.txt",
       "done": 0,
       "total": 0
     },
     {
-      "at": 8956,
+      "at": 7234,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 25
     },
     {
-      "at": 11582,
+      "at": 9401,
       "phase": "Indexing your code",
       "detail": "5000 files indexed · 25 direct dependencies to check",
       "done": 0,
       "total": 25
     },
     {
-      "at": 11583,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 9401,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "qr-code-generator-library (installed 1.7.0)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 11583,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 9404,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "arduino-MLX90393 (installed 1.0.2)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 11583,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 9405,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "HaierProtocol (installed 0.9.31)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 11583,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 9405,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "dsmr_parser (installed 1.9.0)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 11583,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 9405,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "noise-c (installed 0.1.11)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 11583,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 9405,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "Improv (installed 1.2.6)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 11583,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 9405,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "pngle (installed 1.1.0)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 11583,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 9405,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "googletest (installed 1.15.2)",
       "done": 0,
       "total": 25
     },
     {
-      "at": 11691,
+      "at": 11135,
       "phase": "Reading release notes and changelog",
       "detail": "HaierProtocol 0.9.31 → 0.9.32",
       "done": 0,
       "total": 25
     },
     {
-      "at": 11691,
+      "at": 11135,
       "phase": "Up to date",
       "detail": "pngle@1.1.0",
       "done": 1,
       "total": 25
     },
     {
-      "at": 11691,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 11135,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "AsyncMqttClient-esphome (installed 2.0.0)",
       "done": 1,
       "total": 25
     },
     {
-      "at": 11704,
+      "at": 11814,
       "phase": "Up to date",
-      "detail": "qr-code-generator-library@1.7.0",
+      "detail": "arduino-MLX90393@1.0.2",
       "done": 2,
       "total": 25
     },
     {
-      "at": 11704,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 11814,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "TM1651 (installed 1.0.1)",
       "done": 2,
       "total": 25
     },
     {
-      "at": 11705,
+      "at": 11843,
+      "phase": "Reading release notes and changelog",
+      "detail": "noise-c 0.1.11 → 0.1.15",
+      "done": 2,
+      "total": 25
+    },
+    {
+      "at": 11871,
       "phase": "Up to date",
-      "detail": "arduino-MLX90393@1.0.2",
+      "detail": "qr-code-generator-library@1.7.0",
       "done": 3,
       "total": 25
     },
     {
-      "at": 11705,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 11871,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "HeatpumpIR (installed 1.0.42)",
       "done": 3,
       "total": 25
     },
     {
-      "at": 11705,
+      "at": 11871,
       "phase": "Up to date",
       "detail": "HeatpumpIR@1.0.42",
       "done": 4,
       "total": 25
     },
     {
-      "at": 11705,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 11871,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "dlms_parser (installed 1.1.0)",
       "done": 4,
       "total": 25
     },
     {
-      "at": 11705,
+      "at": 11901,
+      "phase": "Reading release notes and changelog",
+      "detail": "dsmr_parser 1.9.0 → 1.10.0",
+      "done": 4,
+      "total": 25
+    },
+    {
+      "at": 11935,
       "phase": "Up to date",
       "detail": "Improv@1.2.6",
       "done": 5,
       "total": 25
     },
     {
-      "at": 11705,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 11935,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "ArduinoJson (installed 7.4.3)",
       "done": 5,
       "total": 25
     },
     {
-      "at": 11705,
+      "at": 11936,
       "phase": "Up to date",
       "detail": "ArduinoJson@7.4.3",
       "done": 6,
       "total": 25
     },
     {
-      "at": 11705,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 11936,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "lvgl (installed 9.5.0)",
       "done": 6,
       "total": 25
     },
     {
-      "at": 11706,
+      "at": 11936,
       "phase": "Up to date",
       "detail": "lvgl@9.5.0",
       "done": 7,
       "total": 25
     },
     {
-      "at": 11706,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 11936,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "FastLED (installed 3.9.16)",
       "done": 7,
       "total": 25
     },
     {
-      "at": 11706,
+      "at": 11936,
       "phase": "Reading release notes and changelog",
       "detail": "FastLED 3.9.16 → 3.10.5",
       "done": 7,
       "total": 25
     },
     {
-      "at": 11706,
-      "phase": "Reading release notes and changelog",
-      "detail": "dsmr_parser 1.9.0 → 1.10.0",
-      "done": 7,
-      "total": 25
-    },
-    {
-      "at": 11707,
-      "phase": "Reading release notes and changelog",
-      "detail": "googletest 1.15.2 → 1.17.0",
-      "done": 7,
-      "total": 25
-    },
-    {
-      "at": 11710,
-      "phase": "Reading release notes and changelog",
-      "detail": "noise-c 0.1.11 → 0.1.13",
-      "done": 7,
-      "total": 25
-    },
-    {
-      "at": 11711,
+      "at": 11982,
       "phase": "Reading release notes and changelog",
       "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0",
       "done": 7,
       "total": 25
     },
     {
-      "at": 11721,
+      "at": 12033,
+      "phase": "Reading release notes and changelog",
+      "detail": "googletest 1.15.2 → 1.17.0",
+      "done": 7,
+      "total": 25
+    },
+    {
+      "at": 12181,
       "phase": "Up to date",
       "detail": "TM1651@1.0.1",
       "done": 8,
       "total": 25
     },
     {
-      "at": 11721,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 12181,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "ESPAsyncTCP (installed 2.0.0)",
       "done": 8,
       "total": 25
     },
     {
-      "at": 11721,
+      "at": 12181,
       "phase": "Up to date",
       "detail": "ESPAsyncTCP@2.0.0",
       "done": 9,
       "total": 25
     },
     {
-      "at": 11721,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 12181,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "ESPAsyncWebServer (installed 3.9.6)",
       "done": 9,
       "total": 25
     },
     {
-      "at": 11721,
+      "at": 12181,
       "phase": "Up to date",
       "detail": "ESPAsyncWebServer@3.9.6",
       "done": 10,
       "total": 25
     },
     {
-      "at": 11721,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 12181,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "NeoPixelBus (installed 2.8.0)",
       "done": 10,
       "total": 25
     },
     {
-      "at": 11721,
+      "at": 12227,
       "phase": "Reading release notes and changelog",
       "detail": "dlms_parser 1.1.0 → 2.1.0",
       "done": 10,
       "total": 25
     },
     {
-      "at": 11724,
+      "at": 12495,
       "phase": "Reading release notes and changelog",
       "detail": "NeoPixelBus 2.8.0 → 2.8.4",
       "done": 10,
       "total": 25
     },
     {
-      "at": 19059,
+      "at": 18286,
       "phase": "Comparing the public API surface",
       "detail": "HaierProtocol 0.9.31 → 0.9.32 · 1 evidence source",
       "done": 10,
       "total": 25
     },
     {
-      "at": 19059,
+      "at": 18286,
       "phase": "No breaking changes to look for",
       "detail": "HaierProtocol 0.9.31 → 0.9.32",
       "done": 10,
       "total": 25
     },
     {
-      "at": 19062,
+      "at": 18289,
       "phase": "Weighing what this upgrade is worth",
       "detail": "HaierProtocol 0.9.31 → 0.9.32",
       "done": 10,
       "total": 25
     },
     {
-      "at": 19065,
+      "at": 18494,
       "phase": "Checked",
       "detail": "HaierProtocol 0.9.31 → 0.9.32 · safe for your code · no breaking changes found",
       "done": 11,
       "total": 25
     },
     {
-      "at": 19065,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 18494,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "esp_wireguard (installed 0.4.5)",
       "done": 11,
       "total": 25
     },
     {
-      "at": 19067,
+      "at": 19025,
       "phase": "Up to date",
       "detail": "esp_wireguard@0.4.5",
       "done": 12,
       "total": 25
     },
     {
-      "at": 19068,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 19025,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "ESP32-audioI2S (installed 2.3.0)",
       "done": 12,
       "total": 25
     },
     {
-      "at": 19070,
+      "at": 19352,
       "phase": "Up to date",
       "detail": "ESP32-audioI2S@2.3.0",
       "done": 13,
       "total": 25
     },
     {
-      "at": 19070,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 19352,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "RPAsyncTCP (installed 1.3.2)",
       "done": 13,
       "total": 25
     },
     {
-      "at": 19070,
+      "at": 19352,
       "phase": "Up to date",
       "detail": "RPAsyncTCP@1.3.2",
       "done": 14,
       "total": 25
     },
     {
-      "at": 19070,
-      "phase": "Checking the the Arduino Library Manager",
+      "at": 19352,
+      "phase": "Checking the Arduino Library Manager",
       "detail": "AsyncTCP (installed 3.4.5)",
       "done": 14,
       "total": 25
     },
     {
-      "at": 19070,
+      "at": 19352,
       "phase": "Up to date",
       "detail": "AsyncTCP@3.4.5",
       "done": 15,
       "total": 25
     },
     {
-      "at": 19070,
-      "phase": "Checking the PyPI",
+      "at": 19352,
+      "phase": "Checking PyPI",
       "detail": "west (installed 1.5.0)",
       "done": 15,
       "total": 25
     },
     {
-      "at": 19075,
+      "at": 19379,
+      "phase": "Comparing the public API surface",
+      "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0 · 1 evidence source",
+      "done": 15,
+      "total": 25
+    },
+    {
+      "at": 19379,
+      "phase": "No breaking changes to look for",
+      "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0",
+      "done": 15,
+      "total": 25
+    },
+    {
+      "at": 19382,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0",
+      "done": 15,
+      "total": 25
+    },
+    {
+      "at": 19465,
       "phase": "Up to date",
       "detail": "west@1.5.0",
       "done": 16,
       "total": 25
     },
     {
-      "at": 19075,
-      "phase": "Checking the PyPI",
+      "at": 19465,
+      "phase": "Checking PyPI",
       "detail": "ninja (installed 1.13.0)",
       "done": 16,
       "total": 25
     },
     {
-      "at": 19080,
+      "at": 19478,
+      "phase": "Comparing the public API surface",
+      "detail": "NeoPixelBus 2.8.0 → 2.8.4 · 1 evidence source",
+      "done": 16,
+      "total": 25
+    },
+    {
+      "at": 19478,
+      "phase": "No breaking changes to look for",
+      "detail": "NeoPixelBus 2.8.0 → 2.8.4",
+      "done": 16,
+      "total": 25
+    },
+    {
+      "at": 19481,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "NeoPixelBus 2.8.0 → 2.8.4",
+      "done": 16,
+      "total": 25
+    },
+    {
+      "at": 19508,
+      "phase": "Comparing the public API surface",
+      "detail": "noise-c 0.1.11 → 0.1.15 · 1 evidence source",
+      "done": 16,
+      "total": 25
+    },
+    {
+      "at": 19508,
+      "phase": "No breaking changes to look for",
+      "detail": "noise-c 0.1.11 → 0.1.15",
+      "done": 16,
+      "total": 25
+    },
+    {
+      "at": 19511,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "noise-c 0.1.11 → 0.1.15",
+      "done": 16,
+      "total": 25
+    },
+    {
+      "at": 19523,
+      "phase": "Comparing the public API surface",
+      "detail": "googletest 1.15.2 → 1.17.0 · 3 evidence sources",
+      "done": 16,
+      "total": 25
+    },
+    {
+      "at": 19525,
+      "phase": "Searching your code for 10 breaking changes",
+      "detail": "googletest 1.15.2 → 1.17.0",
+      "done": 16,
+      "total": 25
+    },
+    {
+      "at": 19533,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "googletest 1.15.2 → 1.17.0",
+      "done": 16,
+      "total": 25
+    },
+    {
+      "at": 19547,
       "phase": "Up to date",
       "detail": "ninja@1.13.0",
       "done": 17,
       "total": 25
     },
     {
-      "at": 19080,
-      "phase": "Checking the PyPI",
+      "at": 19547,
+      "phase": "Checking PyPI",
       "detail": "cmake (installed 4.3.2)",
       "done": 17,
       "total": 25
     },
     {
-      "at": 19097,
+      "at": 19620,
       "phase": "Reading release notes and changelog",
       "detail": "cmake 4.3.2 → 4.4.2",
       "done": 17,
       "total": 25
     },
     {
-      "at": 20014,
-      "phase": "Comparing the public API surface",
-      "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0 · 1 evidence source",
-      "done": 17,
-      "total": 25
-    },
-    {
-      "at": 20014,
-      "phase": "No breaking changes to look for",
-      "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0",
-      "done": 17,
-      "total": 25
-    },
-    {
-      "at": 20017,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0",
-      "done": 17,
-      "total": 25
-    },
-    {
-      "at": 20019,
+      "at": 19661,
       "phase": "Checked",
       "detail": "AsyncMqttClient-esphome 2.0.0 → 2.1.0 · safe for your code · no breaking changes found",
       "done": 18,
       "total": 25
     },
     {
-      "at": 20034,
+      "at": 19712,
       "phase": "Comparing the public API surface",
-      "detail": "NeoPixelBus 2.8.0 → 2.8.4 · 1 evidence source",
+      "detail": "dlms_parser 1.1.0 → 2.1.0 · 2 evidence sources",
       "done": 18,
       "total": 25
     },
     {
-      "at": 20034,
-      "phase": "No breaking changes to look for",
-      "detail": "NeoPixelBus 2.8.0 → 2.8.4",
+      "at": 19716,
+      "phase": "Searching your code for 43 breaking changes",
+      "detail": "dlms_parser 1.1.0 → 2.1.0",
       "done": 18,
       "total": 25
     },
     {
-      "at": 20037,
+      "at": 19809,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "NeoPixelBus 2.8.0 → 2.8.4",
+      "detail": "dlms_parser 1.1.0 → 2.1.0",
       "done": 18,
       "total": 25
     },
     {
-      "at": 20038,
+      "at": 19817,
       "phase": "Checked",
       "detail": "NeoPixelBus 2.8.0 → 2.8.4 · safe for your code · no breaking changes found",
       "done": 19,
       "total": 25
     },
     {
-      "at": 20265,
-      "phase": "Comparing the public API surface",
-      "detail": "noise-c 0.1.11 → 0.1.13 · 1 evidence source",
-      "done": 19,
-      "total": 25
-    },
-    {
-      "at": 20265,
-      "phase": "No breaking changes to look for",
-      "detail": "noise-c 0.1.11 → 0.1.13",
-      "done": 19,
-      "total": 25
-    },
-    {
-      "at": 20268,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "noise-c 0.1.11 → 0.1.13",
-      "done": 19,
-      "total": 25
-    },
-    {
-      "at": 20269,
-      "phase": "Checked",
-      "detail": "noise-c 0.1.11 → 0.1.13 · safe for your code · no breaking changes found",
-      "done": 20,
-      "total": 25
-    },
-    {
-      "at": 20276,
-      "phase": "Comparing the public API surface",
-      "detail": "dlms_parser 1.1.0 → 2.1.0 · 2 evidence sources",
-      "done": 20,
-      "total": 25
-    },
-    {
-      "at": 20283,
-      "phase": "Searching your code for 43 breaking changes",
-      "detail": "dlms_parser 1.1.0 → 2.1.0",
-      "done": 20,
-      "total": 25
-    },
-    {
-      "at": 20410,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "dlms_parser 1.1.0 → 2.1.0",
-      "done": 20,
-      "total": 25
-    },
-    {
-      "at": 20424,
-      "phase": "Needs your attention",
-      "detail": "dlms_parser 1.1.0 → 2.1.0 · affects your code · 4 sites in 1 file",
-      "done": 21,
-      "total": 25
-    },
-    {
-      "at": 20927,
-      "phase": "Comparing the public API surface",
-      "detail": "googletest 1.15.2 → 1.17.0 · 3 evidence sources",
-      "done": 21,
-      "total": 25
-    },
-    {
-      "at": 20928,
-      "phase": "Searching your code for 10 breaking changes",
-      "detail": "googletest 1.15.2 → 1.17.0",
-      "done": 21,
-      "total": 25
-    },
-    {
-      "at": 20940,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "googletest 1.15.2 → 1.17.0",
-      "done": 21,
-      "total": 25
-    },
-    {
-      "at": 20942,
+      "at": 19918,
       "phase": "Checked",
       "detail": "googletest 1.15.2 → 1.17.0 · safe for your code · 10 upstream changes, none used here",
+      "done": 20,
+      "total": 25
+    },
+    {
+      "at": 20104,
+      "phase": "Checked",
+      "detail": "noise-c 0.1.11 → 0.1.15 · safe for your code · no breaking changes found",
+      "done": 21,
+      "total": 25
+    },
+    {
+      "at": 20112,
+      "phase": "Needs your attention",
+      "detail": "dlms_parser 1.1.0 → 2.1.0 · affects your code · 4 sites in 1 file",
       "done": 22,
       "total": 25
     },
     {
-      "at": 21866,
+      "at": 20195,
       "phase": "Comparing the public API surface",
       "detail": "FastLED 3.9.16 → 3.10.5 · 5 evidence sources",
       "done": 22,
       "total": 25
     },
     {
-      "at": 21991,
+      "at": 20316,
       "phase": "Searching your code for 634 breaking changes",
       "detail": "FastLED 3.9.16 → 3.10.5",
       "done": 22,
       "total": 25
     },
     {
-      "at": 23133,
+      "at": 21365,
       "phase": "Weighing what this upgrade is worth",
       "detail": "FastLED 3.9.16 → 3.10.5",
       "done": 22,
       "total": 25
     },
     {
-      "at": 23267,
+      "at": 21764,
       "phase": "Needs your attention",
       "detail": "FastLED 3.9.16 → 3.10.5 · affects your code · 29 sites in 2 files",
       "done": 23,
       "total": 25
     },
     {
-      "at": 24479,
+      "at": 22341,
       "phase": "Comparing the public API surface",
       "detail": "dsmr_parser 1.9.0 → 1.10.0 · 1 evidence source",
       "done": 23,
       "total": 25
     },
     {
-      "at": 24479,
+      "at": 22341,
       "phase": "No breaking changes to look for",
       "detail": "dsmr_parser 1.9.0 → 1.10.0",
       "done": 23,
       "total": 25
     },
     {
-      "at": 24482,
+      "at": 22343,
       "phase": "Weighing what this upgrade is worth",
       "detail": "dsmr_parser 1.9.0 → 1.10.0",
       "done": 23,
       "total": 25
     },
     {
-      "at": 24483,
+      "at": 22662,
       "phase": "Checked",
       "detail": "dsmr_parser 1.9.0 → 1.10.0 · safe for your code · no breaking changes found",
       "done": 24,
       "total": 25
     },
     {
-      "at": 24711,
+      "at": 25905,
       "phase": "Comparing the public API surface",
       "detail": "cmake 4.3.2 → 4.4.2 · 2 evidence sources",
       "done": 24,
       "total": 25
     },
     {
-      "at": 24712,
+      "at": 25906,
       "phase": "Searching your code for 11 breaking changes",
       "detail": "cmake 4.3.2 → 4.4.2",
       "done": 24,
       "total": 25
     },
     {
-      "at": 32173,
+      "at": 30800,
       "phase": "Weighing what this upgrade is worth",
       "detail": "cmake 4.3.2 → 4.4.2",
       "done": 24,
       "total": 25
     },
     {
-      "at": 32430,
+      "at": 31504,
       "phase": "Checked",
       "detail": "cmake 4.3.2 → 4.4.2 · safe for your code · 11 upstream changes, none used here",
       "done": 25,
       "total": 25
+    },
+    {
+      "at": 31504,
+      "phase": "Preparing a test checkout",
+      "detail": "8 upgrades to try",
+      "done": 0,
+      "total": 9
+    },
+    {
+      "at": 34287,
+      "phase": "Checking the project as it is",
+      "detail": "uv run pytest, poetry run pytest, pio test, pio run",
+      "done": 0,
+      "total": 9
+    },
+    {
+      "at": 36029,
+      "phase": "Preparing a test checkout",
+      "detail": "1 upgrade to try",
+      "done": 8,
+      "total": 9
     }
   ],
   "candidates": [
+    {
+      "name": "FastLED",
+      "ecosystem": "arduino",
+      "manifestPath": "platformio.ini",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "3.9.16",
+      "latest": "3.10.5",
+      "selected": "3.10.5",
+      "safeLatest": "3.10.5",
+      "status": "checking",
+      "risk": "medium",
+      "summary": "Manual migration required. 29 places in this repository use an API that FastLED changed.",
+      "recommendation": "manual-migration-required",
+      "breakingCount": 634,
+      "impactCount": 29,
+      "impactFiles": 2,
+      "evidenceCount": 5,
+      "gaps": [
+        "OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up."
+      ],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`CLEDController.CLEDController` was removed.",
+          "remediation": "The member `CLEDController.CLEDController` no longer exists in `FastLED`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "symbols": [
+            "CLEDController.CLEDController",
+            "CLEDController"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "634 API surface change(s) in FastLED",
+              "url": null,
+              "locator": "FastLED 3.9.16 → 3.10.5 (public headers) · computed by header diff"
+            }
+          ],
+          "sites": [
+            {
+              "file": "esphome/components/fastled_base/fastled_light.h",
+              "line": 23,
+              "excerpt": "CLEDController *get_controller() const { return this->controller_; }",
+              "matchedSymbol": "CLEDController",
+              "confidence": "medium"
+            },
+            {
+              "file": "esphome/components/fastled_base/fastled_light.h",
+              "line": 31,
+              "excerpt": "CLEDController &add_leds(CLEDController *controller, int num_leds) {",
+              "matchedSymbol": "CLEDController",
+              "confidence": "medium"
+            },
+            {
+              "file": "esphome/components/fastled_base/fastled_light.h",
+              "line": 43,
+              "excerpt": "CLEDController &add_leds(int num_leds) {",
+              "matchedSymbol": "CLEDController",
+              "confidence": "medium"
+            },
+            {
+              "file": "esphome/components/fastled_base/fastled_light.h",
+              "line": 77,
+              "excerpt": "template<ESPIChipsets CHIPSET, uint8_t DATA_PIN, uint8_t CLOCK_PIN> CLEDController &add_leds(int num_leds) {",
+              "matchedSymbol": "CLEDController",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`UISlider.uint8_t` was removed.",
+          "remediation": "The member `UISlider.uint8_t` no longer exists in `FastLED`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "symbols": [
+            "UISlider.uint8_t",
+            "uint8_t"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "634 API surface change(s) in FastLED",
+              "url": null,
+              "locator": "FastLED 3.9.16 → 3.10.5 (public headers) · computed by header diff"
+            }
+          ],
+          "sites": [
+            {
+              "file": "esphome/components/fastled_base/fastled_light.h",
+              "line": 42,
+              "excerpt": "template<ESPIChipsets CHIPSET, uint8_t DATA_PIN, uint8_t CLOCK_PIN, EOrder RGB_ORDER, uint32_t SPI_DATA_RATE>",
+              "matchedSymbol": "uint8_t",
+              "confidence": "medium"
+            },
+            {
+              "file": "esphome/components/fastled_base/fastled_light.h",
+              "line": 77,
+              "excerpt": "template<ESPIChipsets CHIPSET, uint8_t DATA_PIN, uint8_t CLOCK_PIN> CLEDController &add_leds(int num_leds) {",
+              "matchedSymbol": "uint8_t",
+              "confidence": "medium"
+            },
+            {
+              "file": "esphome/components/fastled_base/fastled_light.h",
+              "line": 111,
+              "excerpt": "template<ESPIChipsets CHIPSET, uint8_t DATA_PIN, uint8_t CLOCK_PIN, EOrder RGB_ORDER>",
+              "matchedSymbol": "uint8_t",
+              "confidence": "medium"
+            },
+            {
+              "file": "esphome/components/fastled_base/fastled_light.h",
+              "line": 146,
+              "excerpt": "template<template<uint8_t DATA_PIN, EOrder RGB_ORDER> class CHIPSET, uint8_t DATA_PIN, EOrder RGB_ORDER>",
+              "matchedSymbol": "uint8_t",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "kind": "type-change",
+          "summary": "`size` changed from a function to a type.",
+          "remediation": "`size` changed form (for example class to function, or interface to type alias). Update declarations, `new` expressions, and type positions accordingly.",
+          "confidence": "high",
+          "symbols": [
+            "size"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "634 API surface change(s) in FastLED",
+              "url": null,
+              "locator": "FastLED 3.9.16 → 3.10.5 (public headers) · computed by header diff"
+            }
+          ],
+          "sites": [
+            {
+              "file": "esphome/components/fastled_base/fastled_light.h",
+              "line": 25,
+              "excerpt": "inline int32_t size() const override { return this->num_leds_; }",
+              "matchedSymbol": "size",
+              "confidence": "medium"
+            },
+            {
+              "file": "esphome/components/fastled_base/fastled_light.h",
+              "line": 219,
+              "excerpt": "for (int i = 0; i < this->size(); i++)",
+              "matchedSymbol": "size",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`CLEDController.showLeds` was removed.",
+          "remediation": "The member `CLEDController.showLeds` no longer exists in `FastLED`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "symbols": [
+            "CLEDController.showLeds",
+            "showLeds"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "634 API surface change(s) in FastLED",
+              "url": null,
+              "locator": "FastLED 3.9.16 → 3.10.5 (public headers) · computed by header diff"
+            }
+          ],
+          "sites": [
+            {
+              "file": "esphome/components/fastled_base/fastled_light.cpp",
+              "line": 38,
+              "excerpt": "this->controller_->showLeds(this->state_parent_->current_values.get_brightness() * 255);",
+              "matchedSymbol": "showLeds",
+              "confidence": "low"
+            }
+          ]
+        }
+      ]
+    },
     {
       "name": "FastLED",
       "ecosystem": "arduino",
@@ -696,7 +897,7 @@
       "impactFiles": 2,
       "evidenceCount": 5,
       "gaps": [
-        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+        "OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up."
       ],
       "breaking": [
         {
@@ -867,6 +1068,132 @@
       "latest": "2.1.0",
       "selected": "2.1.0",
       "safeLatest": null,
+      "status": "checking",
+      "risk": "medium",
+      "summary": "Manual migration required. 4 places in this repository use an API that dlms_parser changed.",
+      "recommendation": "manual-migration-required",
+      "breakingCount": 43,
+      "impactCount": 4,
+      "impactFiles": 1,
+      "evidenceCount": 2,
+      "gaps": [
+        "OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up."
+      ],
+      "breaking": [
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `register_pattern` changed.",
+          "remediation": "The signature of `register_pattern` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: void register_pattern(const char*, const char*, int)\n  after:  void register_pattern(const char*, const char*, int, ObisId)",
+          "confidence": "high",
+          "symbols": [
+            "register_pattern"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "43 API surface change(s) in dlms_parser",
+              "url": null,
+              "locator": "dlms_parser 1.1.0 → 2.1.0 (public headers) · computed by header diff"
+            }
+          ],
+          "sites": [
+            {
+              "file": "esphome/components/dlms_meter/dlms_meter.cpp",
+              "line": 75,
+              "excerpt": "this->parser_.register_pattern(pattern.name->c_str(), pattern.pattern.c_str(), pattern.priority,",
+              "matchedSymbol": "register_pattern",
+              "confidence": "low"
+            },
+            {
+              "file": "esphome/components/dlms_meter/dlms_meter.cpp",
+              "line": 78,
+              "excerpt": "this->parser_.register_pattern(pattern.name->c_str(), pattern.pattern.c_str(), pattern.priority);",
+              "matchedSymbol": "register_pattern",
+              "confidence": "low"
+            },
+            {
+              "file": "esphome/components/dlms_meter/dlms_meter.cpp",
+              "line": 80,
+              "excerpt": "this->parser_.register_pattern(pattern.pattern.c_str());",
+              "matchedSymbol": "register_pattern",
+              "confidence": "low"
+            }
+          ]
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `parse` changed.",
+          "remediation": "The signature of `parse` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: ParseResult parse(std::span<const uint8_t>, DlmsDataCallback)\n  after:  ParseResult parse(std::span<const uint8_t>)",
+          "confidence": "high",
+          "symbols": [
+            "parse"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "43 API surface change(s) in dlms_parser",
+              "url": null,
+              "locator": "dlms_parser 1.1.0 → 2.1.0 (public headers) · computed by header diff"
+            }
+          ],
+          "sites": [
+            {
+              "file": "esphome/components/dlms_meter/dlms_meter.cpp",
+              "line": 173,
+              "excerpt": "this->parser_.parse({this->rx_buffer_.data(), this->bytes_accumulated_}, callback);",
+              "matchedSymbol": "parse",
+              "confidence": "low"
+            }
+          ]
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`AxdrPatternStep` is no longer exported (was a interface).",
+          "remediation": "Every use of `AxdrPatternStep` from `dlms_parser` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `AxdrPatternStep` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "AxdrPatternStep"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "43 API surface change(s) in dlms_parser",
+              "url": null,
+              "locator": "dlms_parser 1.1.0 → 2.1.0 (public headers) · computed by header diff"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`AxdrDescriptorPattern` is no longer exported (was a interface).",
+          "remediation": "Every use of `AxdrDescriptorPattern` from `dlms_parser` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `AxdrDescriptorPattern` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "AxdrDescriptorPattern"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "43 API surface change(s) in dlms_parser",
+              "url": null,
+              "locator": "dlms_parser 1.1.0 → 2.1.0 (public headers) · computed by header diff"
+            }
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "dlms_parser",
+      "ecosystem": "arduino",
+      "manifestPath": "platformio.ini",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.1.0",
+      "latest": "2.1.0",
+      "selected": "2.1.0",
+      "safeLatest": null,
       "status": "ready",
       "risk": "medium",
       "summary": "Manual migration required. 4 places in this repository use an API that dlms_parser changed.",
@@ -876,7 +1203,7 @@
       "impactFiles": 1,
       "evidenceCount": 2,
       "gaps": [
-        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+        "OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up."
       ],
       "breaking": [
         {
@@ -993,6 +1320,104 @@
       "latest": "4.4.2",
       "selected": "4.4.2",
       "safeLatest": "4.4.2",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. 11 upstream breaking changes, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 11,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`conf.blockdiag_antialias` is no longer exported (was a variable).",
+          "remediation": "Every use of `conf.blockdiag_antialias` from `cmake` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `conf.blockdiag_antialias` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "conf.blockdiag_antialias",
+            "blockdiag_antialias"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "11 API surface change(s) in cmake",
+              "url": null,
+              "locator": "cmake 4.3.2 → 4.4.2 (public symbols, best-effort) · computed by python ast"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`conf.latex_documents` is no longer exported (was a variable).",
+          "remediation": "Every use of `conf.latex_documents` from `cmake` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `conf.latex_documents` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "conf.latex_documents",
+            "latex_documents"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "11 API surface change(s) in cmake",
+              "url": null,
+              "locator": "cmake 4.3.2 → 4.4.2 (public symbols, best-effort) · computed by python ast"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`conf.latex_elements` is no longer exported (was a variable).",
+          "remediation": "Every use of `conf.latex_elements` from `cmake` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `conf.latex_elements` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "conf.latex_elements",
+            "latex_elements"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "11 API surface change(s) in cmake",
+              "url": null,
+              "locator": "cmake 4.3.2 → 4.4.2 (public symbols, best-effort) · computed by python ast"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`conf.main_doc` is no longer exported (was a variable).",
+          "remediation": "Every use of `conf.main_doc` from `cmake` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `conf.main_doc` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "symbols": [
+            "conf.main_doc",
+            "main_doc"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "11 API surface change(s) in cmake",
+              "url": null,
+              "locator": "cmake 4.3.2 → 4.4.2 (public symbols, best-effort) · computed by python ast"
+            }
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "cmake",
+      "ecosystem": "pypi",
+      "manifestPath": "esphome/components/nrf52/requirements.txt",
+      "workspace": "esphome/components/nrf52",
+      "workspaceName": null,
+      "current": "4.3.2",
+      "latest": "4.4.2",
+      "selected": "4.4.2",
+      "safeLatest": "4.4.2",
       "status": "ready",
       "risk": "none",
       "summary": "Safe to upgrade. 11 upstream breaking changes, none of which this repository uses.",
@@ -1091,6 +1516,102 @@
       "latest": "1.17.0",
       "selected": "1.17.0",
       "safeLatest": "1.17.0",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. 10 upstream breaking changes, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 10,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 3,
+      "gaps": [
+        "OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up."
+      ],
+      "breaking": [
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `ACTION` changed.",
+          "remediation": "The signature of `ACTION` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: #define ACTION(name) class name##Action { public: explicit name##Action() noexcept {} name##Action(const name##Action&) noexcept {} template <typename F> operator ::testing::Action<F>() const { return ::testing::internal::MakeAction<F, gmock_Impl>(); } private: class gmock_Impl { public: template <typename function_type, typename return_type, typename args_type, GMOCK_ACTION_TEMPLATE_ARGS_NAMES_> return_type gmock_PerformImpl(GMOCK_ACTION_ARG_TYPES_AND_NAMES_) const; }; }; inline name##Action name() GTEST_MUST_USE_RESULT_; inline name##Action name() { return name##Action(); } template <typename function_type, typename return_type, typename args_type, GMOCK_ACTION_TEMPLATE_ARGS_NAMES_> return_type name##Action::gmock_Impl::gmock_PerformImpl( GMOCK_ACTION_ARG_TYPES_AND_NAMES_UNUSED_) const\n  after:  #define ACTION(name) class name##Action { public: explicit name##Action() noexcept {} name##Action(const name##Action&) noexcept {} template <typename F> operator ::testing::Action<F>() const { return ::testing::internal::MakeAction<F, gmock_Impl>(); } private: class gmock_Impl { public: template <typename function_type, typename return_type, typename args_type, GMOCK_ACTION_TEMPLATE_ARGS_NAMES_> return_type gmock_PerformImpl(GMOCK_ACTION_ARG_TYPES_AND_NAMES_) const; }; }; [[nodiscard]] inline name##Action name(); inline name##Action name() { return name##Action(); } template <typename function_type, typename return_type, typename args_type, GMOCK_ACTION_TEMPLATE_ARGS_NAMES_> return_type name##Action::gmock_Impl::gmock_PerformImpl( GMOCK_ACTION_ARG_TYPES_AND_NAMES_UNUSED_) const",
+          "confidence": "high",
+          "symbols": [
+            "ACTION"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "10 API surface change(s) in googletest",
+              "url": null,
+              "locator": "googletest 1.15.2 → 1.17.0 (public headers) · computed by header diff"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `MATCHER` changed.",
+          "remediation": "The signature of `MATCHER` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: #define MATCHER(name, description) class name##Matcher : public ::testing::internal::MatcherBaseImpl<name##Matcher> { public: template <typename arg_type> class gmock_Impl : public ::testing::MatcherInterface<const arg_type&> { public: gmock_Impl() {} bool MatchAndExplain( const arg_type& arg, ::testing::MatchResultListener* result_listener) const override; void DescribeTo(::std::ostream* gmock_os) const override { *gmock_os << FormatDescription(false); } void DescribeNegationTo(::std::ostream* gmock_os) const override { *gmock_os << FormatDescription(true); } private: ::std::string FormatDescription(bool negation) const { ::std::string gmock_description = (description); if (!gmock_description.empty()) { return gmock_description; } return ::testing::internal::FormatMatcherDescription(negation, #name, {}, {}); } }; }; inline name##Matcher GMOCK_INTERNAL_WARNING_PUSH() GMOCK_INTERNAL_WARNING_CLANG(ignored, \"-Wunused-function\") GMOCK_INTERNAL_WARNING_CLANG(ignored, \"-Wunused-member-function\") name GMOCK_INTERNAL_WARNING_POP()() { return {}; } template <typename arg_type> bool name##Matcher::gmock_Impl<arg_type>::MatchAndExplain( const arg_type& arg, GTEST_INTERNAL_ATTRIBUTE_MAYBE_UNUSED ::testing::MatchResultListener* result_listener) const\n  after:  #define MATCHER(name, description) class name##Matcher : public ::testing::internal::MatcherBaseImpl<name##Matcher> { public: template <typename arg_type> class gmock_Impl : public ::testing::MatcherInterface<const arg_type&> { public: gmock_Impl() {} bool MatchAndExplain( const arg_type& arg, ::testing::MatchResultListener* result_listener) const override; void DescribeTo(::std::ostream* gmock_os) const override { *gmock_os << FormatDescription(false); } void DescribeNegationTo(::std::ostream* gmock_os) const override { *gmock_os << FormatDescription(true); } private: ::std::string FormatDescription(bool negation) const { ::std::string gmock_description = (description); if (!gmock_description.empty()) { return gmock_description; } return ::testing::internal::FormatMatcherDescription(negation, #name, {}, {}); } }; }; inline name##Matcher GMOCK_INTERNAL_WARNING_PUSH() GMOCK_INTERNAL_WARNING_CLANG(ignored, \"-Wunused-function\") GMOCK_INTERNAL_WARNING_CLANG(ignored, \"-Wunused-member-function\") name GMOCK_INTERNAL_WARNING_POP()() { return {}; } template <typename arg_type> bool name##Matcher::gmock_Impl<arg_type>::MatchAndExplain( const arg_type& arg, [[maybe_unused]] ::testing::MatchResultListener* result_listener) const",
+          "confidence": "high",
+          "symbols": [
+            "MATCHER"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "10 API surface change(s) in googletest",
+              "url": null,
+              "locator": "googletest 1.15.2 → 1.17.0 (public headers) · computed by header diff"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `GMOCK_INTERNAL_MATCHER` changed.",
+          "remediation": "The signature of `GMOCK_INTERNAL_MATCHER` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: #define GMOCK_INTERNAL_MATCHER(name, full_name, description, arg_names, args) template <GMOCK_INTERNAL_MATCHER_TEMPLATE_PARAMS(args)> class full_name : public ::testing::internal::MatcherBaseImpl< full_name<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)>> { public: using full_name::MatcherBaseImpl::MatcherBaseImpl; template <typename arg_type> class gmock_Impl : public ::testing::MatcherInterface<const arg_type&> { public: explicit gmock_Impl(GMOCK_INTERNAL_MATCHER_FUNCTION_ARGS(args)) : GMOCK_INTERNAL_MATCHER_FORWARD_ARGS(args) {} bool MatchAndExplain( const arg_type& arg, ::testing::MatchResultListener* result_listener) const override; void DescribeTo(::std::ostream* gmock_os) const override { *gmock_os << FormatDescription(false); } void DescribeNegationTo(::std::ostream* gmock_os) const override { *gmock_os << FormatDescription(true); } GMOCK_INTERNAL_MATCHER_MEMBERS(args) private: ::std::string FormatDescription(bool negation) const { ::std::string gmock_description; gmock_description = (description); if (!gmock_description.empty()) { return gmock_description; } return ::testing::internal::FormatMatcherDescription( negation, #name, {GMOCK_PP_REMOVE_PARENS(arg_names)}, ::testing::internal::UniversalTersePrintTupleFieldsToStrings( ::std::tuple<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)>( GMOCK_INTERNAL_MATCHER_MEMBERS_USAGE(args)))); } }; }; template <GMOCK_INTERNAL_MATCHER_TEMPLATE_PARAMS(args)> inline full_name<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)> name( GMOCK_INTERNAL_MATCHER_FUNCTION_ARGS(args)) { return full_name<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)>( GMOCK_INTERNAL_MATCHER_ARGS_USAGE(args)); } template <GMOCK_INTERNAL_MATCHER_TEMPLATE_PARAMS(args)> template <typename arg_type> bool full_name<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)>:: gmock_Impl<arg_type>::MatchAndExplain( const arg_type& arg, GTEST_INTERNAL_ATTRIBUTE_MAYBE_UNUSED ::testing:: MatchResultListener* result_listener) const\n  after:  #define GMOCK_INTERNAL_MATCHER(name, full_name, description, arg_names, args) template <GMOCK_INTERNAL_MATCHER_TEMPLATE_PARAMS(args)> class full_name : public ::testing::internal::MatcherBaseImpl< full_name<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)>> { public: using full_name::MatcherBaseImpl::MatcherBaseImpl; template <typename arg_type> class gmock_Impl : public ::testing::MatcherInterface<const arg_type&> { public: explicit gmock_Impl(GMOCK_INTERNAL_MATCHER_FUNCTION_ARGS(args)) : GMOCK_INTERNAL_MATCHER_FORWARD_ARGS(args) {} bool MatchAndExplain( const arg_type& arg, ::testing::MatchResultListener* result_listener) const override; void DescribeTo(::std::ostream* gmock_os) const override { *gmock_os << FormatDescription(false); } void DescribeNegationTo(::std::ostream* gmock_os) const override { *gmock_os << FormatDescription(true); } GMOCK_INTERNAL_MATCHER_MEMBERS(args) private: ::std::string FormatDescription(bool negation) const { ::std::string gmock_description; gmock_description = (description); if (!gmock_description.empty()) { return gmock_description; } return ::testing::internal::FormatMatcherDescription( negation, #name, {GMOCK_PP_REMOVE_PARENS(arg_names)}, ::testing::internal::UniversalTersePrintTupleFieldsToStrings( ::std::tuple<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)>( GMOCK_INTERNAL_MATCHER_MEMBERS_USAGE(args)))); } }; }; template <GMOCK_INTERNAL_MATCHER_TEMPLATE_PARAMS(args)> inline full_name<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)> name( GMOCK_INTERNAL_MATCHER_FUNCTION_ARGS(args)) { return full_name<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)>( GMOCK_INTERNAL_MATCHER_ARGS_USAGE(args)); } template <GMOCK_INTERNAL_MATCHER_TEMPLATE_PARAMS(args)> template <typename arg_type> bool full_name<GMOCK_INTERNAL_MATCHER_TYPE_PARAMS(args)>:: gmock_Impl<arg_type>::MatchAndExplain( const arg_type& arg, [[maybe_unused]] ::testing::MatchResultListener* result_listener) const",
+          "confidence": "high",
+          "symbols": [
+            "GMOCK_INTERNAL_MATCHER"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "10 API surface change(s) in googletest",
+              "url": null,
+              "locator": "googletest 1.15.2 → 1.17.0 (public headers) · computed by header diff"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `ACTION_TEMPLATE` changed.",
+          "remediation": "The signature of `ACTION_TEMPLATE` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: #define ACTION_TEMPLATE(name, template_params, value_params) template <GMOCK_INTERNAL_DECL_##template_params GMOCK_INTERNAL_DECL_TYPE_##value_params> class GMOCK_ACTION_CLASS_(name, value_params) { public: explicit GMOCK_ACTION_CLASS_(name, value_params)( GMOCK_INTERNAL_DECL_##value_params) GMOCK_PP_IF(GMOCK_PP_IS_EMPTY(GMOCK_INTERNAL_COUNT_##value_params), = default; , : impl_(std::make_shared<gmock_Impl>( GMOCK_INTERNAL_LIST_##value_params)){}) GMOCK_ACTION_CLASS_(name, value_params)(const GMOCK_ACTION_CLASS_( name, value_params) &) noexcept GMOCK_INTERNAL_DEFN_COPY_ ##value_params GMOCK_ACTION_CLASS_(name, value_params)(GMOCK_ACTION_CLASS_( name, value_params) &&) noexcept GMOCK_INTERNAL_DEFN_COPY_ ##value_params template <typename F> operator ::testing::Action<F>() const { return GMOCK_PP_IF( GMOCK_PP_IS_EMPTY(GMOCK_INTERNAL_COUNT_##value_params), (::testing::internal::MakeAction<F, gmock_Impl>()), (::testing::internal::MakeAction<F>(impl_))); } private: class gmock_Impl { public: explicit gmock_Impl GMOCK_INTERNAL_INIT_##value_params {} template <typename function_type, typename return_type, typename args_type, GMOCK_ACTION_TEMPLATE_ARGS_NAMES_> return_type gmock_PerformImpl(GMOCK_ACTION_ARG_TYPES_AND_NAMES_) const; GMOCK_INTERNAL_DEFN_##value_params }; GMOCK_PP_IF(GMOCK_PP_IS_EMPTY(GMOCK_INTERNAL_COUNT_##value_params), , std::shared_ptr<const gmock_Impl> impl_;) }; template <GMOCK_INTERNAL_DECL_##template_params GMOCK_INTERNAL_DECL_TYPE_##value_params> GMOCK_ACTION_CLASS_( name, value_params)<GMOCK_INTERNAL_LIST_##template_params GMOCK_INTERNAL_LIST_TYPE_##value_params> name(GMOCK_INTERNAL_DECL_##value_params) GTEST_MUST_USE_RESULT_; template <GMOCK_INTERNAL_DECL_##template_params GMOCK_INTERNAL_DECL_TYPE_##value_params> inline GMOCK_ACTION_CLASS_( name, value_params)<GMOCK_INTERNAL_LIST_##template_params GMOCK_INTERNAL_LIST_TYPE_##value_params> name(GMOCK_INTERNAL_DECL_##value_params) { return GMOCK_ACTION_CLASS_( name, value_params)<GMOCK_INTERNAL_LIST_##template_params GMOCK_INTERNAL_LIST_TYPE_##value_params>( GMOCK_INTERNAL_LIST_##value_params); } template <GMOCK_INTERNAL_DECL_##template_params GMOCK_INTERNAL_DECL_TYPE_##value_params> template <typename function_type, typename return_type, typename args_type, GMOCK_ACTION_TEMPLATE_ARGS_NAMES_> return_type GMOCK_ACTION_CLASS_( name, value_params)<GMOCK_INTERNAL_LIST_##template_params GMOCK_INTERNAL_LIST_TYPE_##value_params>:: gmock_Impl::gmock_PerformImpl(GMOCK_ACTION_ARG_TYPES_AND_NAMES_UNUSED_) const\n  after:  #define ACTION_TEMPLATE(name, template_params, value_params) template <GMOCK_INTERNAL_DECL_##template_params GMOCK_INTERNAL_DECL_TYPE_##value_params> class GMOCK_ACTION_CLASS_(name, value_params) { public: explicit GMOCK_ACTION_CLASS_(name, value_params)( GMOCK_INTERNAL_DECL_##value_params) GMOCK_PP_IF(GMOCK_PP_IS_EMPTY(GMOCK_INTERNAL_COUNT_##value_params), = default; , : impl_(std::make_shared<gmock_Impl>( GMOCK_INTERNAL_LIST_##value_params)){}) GMOCK_ACTION_CLASS_(name, value_params)(const GMOCK_ACTION_CLASS_( name, value_params) &) noexcept GMOCK_INTERNAL_DEFN_COPY_ ##value_params GMOCK_ACTION_CLASS_(name, value_params)(GMOCK_ACTION_CLASS_( name, value_params) &&) noexcept GMOCK_INTERNAL_DEFN_COPY_ ##value_params template <typename F> operator ::testing::Action<F>() const { return GMOCK_PP_IF( GMOCK_PP_IS_EMPTY(GMOCK_INTERNAL_COUNT_##value_params), (::testing::internal::MakeAction<F, gmock_Impl>()), (::testing::internal::MakeAction<F>(impl_))); } private: class gmock_Impl { public: explicit gmock_Impl GMOCK_INTERNAL_INIT_##value_params {} template <typename function_type, typename return_type, typename args_type, GMOCK_ACTION_TEMPLATE_ARGS_NAMES_> return_type gmock_PerformImpl(GMOCK_ACTION_ARG_TYPES_AND_NAMES_) const; GMOCK_INTERNAL_DEFN_##value_params }; GMOCK_PP_IF(GMOCK_PP_IS_EMPTY(GMOCK_INTERNAL_COUNT_##value_params), , std::shared_ptr<const gmock_Impl> impl_;) }; template <GMOCK_INTERNAL_DECL_##template_params GMOCK_INTERNAL_DECL_TYPE_##value_params> [[nodiscard]] GMOCK_ACTION_CLASS_( name, value_params)<GMOCK_INTERNAL_LIST_##template_params GMOCK_INTERNAL_LIST_TYPE_##value_params> name(GMOCK_INTERNAL_DECL_##value_params); template <GMOCK_INTERNAL_DECL_##template_params GMOCK_INTERNAL_DECL_TYPE_##value_params> inline GMOCK_ACTION_CLASS_( name, value_params)<GMOCK_INTERNAL_LIST_##template_params GMOCK_INTERNAL_LIST_TYPE_##value_params> name(GMOCK_INTERNAL_DECL_##value_params) { return GMOCK_ACTION_CLASS_( name, value_params)<GMOCK_INTERNAL_LIST_##template_params GMOCK_INTERNAL_LIST_TYPE_##value_params>( GMOCK_INTERNAL_LIST_##value_params); } template <GMOCK_INTERNAL_DECL_##template_params GMOCK_INTERNAL_DECL_TYPE_##value_params> template <typename function_type, typename return_type, typename args_type, GMOCK_ACTION_TEMPLATE_ARGS_NAMES_> return_type GMOCK_ACTION_CLASS_( name, value_params)<GMOCK_INTERNAL_LIST_##template_params GMOCK_INTERNAL_LIST_TYPE_##value_params>:: gmock_Impl::gmock_PerformImpl(GMOCK_ACTION_ARG_TYPES_AND_NAMES_UNUSED_) const",
+          "confidence": "high",
+          "symbols": [
+            "ACTION_TEMPLATE"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "10 API surface change(s) in googletest",
+              "url": null,
+              "locator": "googletest 1.15.2 → 1.17.0 (public headers) · computed by header diff"
+            }
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "googletest",
+      "ecosystem": "arduino",
+      "manifestPath": "platformio.ini",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.15.2",
+      "latest": "1.17.0",
+      "selected": "1.17.0",
+      "safeLatest": "1.17.0",
       "status": "ready",
       "risk": "none",
       "summary": "Safe to upgrade. 10 upstream breaking changes, none of which this repository uses.",
@@ -1100,7 +1621,7 @@
       "impactFiles": 0,
       "evidenceCount": 3,
       "gaps": [
-        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+        "OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up."
       ],
       "breaking": [
         {
@@ -1187,16 +1708,62 @@
       "latest": "2.1.0",
       "selected": "2.1.0",
       "safeLatest": "2.1.0",
-      "status": "clean",
+      "status": "checking",
       "risk": "none",
-      "summary": "Safe to upgrade. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "summary": "Safe to upgrade. OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+        "OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "AsyncMqttClient-esphome",
+      "ecosystem": "arduino",
+      "manifestPath": "platformio.ini",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "2.0.0",
+      "latest": "2.1.0",
+      "selected": "2.1.0",
+      "safeLatest": "2.1.0",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "dsmr_parser",
+      "ecosystem": "arduino",
+      "manifestPath": "platformio.ini",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "1.9.0",
+      "latest": "1.10.0",
+      "selected": "1.10.0",
+      "safeLatest": "1.10.0",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up."
       ],
       "breaking": []
     },
@@ -1212,14 +1779,38 @@
       "safeLatest": "1.10.0",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "summary": "Safe to upgrade. OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+        "OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "HaierProtocol",
+      "ecosystem": "arduino",
+      "manifestPath": "platformio.ini",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "0.9.31",
+      "latest": "0.9.32",
+      "selected": "0.9.32",
+      "safeLatest": "0.9.32",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. No source archive is published for HaierProtocol 0.9.31 in the Arduino Library Manager, so its headers could not be read. Drift read the release notes for HaierProtocol 0.9.32 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "No source archive is published for HaierProtocol 0.9.31 in the Arduino Library Manager, so its headers could not be read. Drift read the release notes for HaierProtocol 0.9.32 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
+        "OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up."
       ],
       "breaking": []
     },
@@ -1235,7 +1826,7 @@
       "safeLatest": "0.9.32",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. No source archive is published for HaierProtocol 0.9.31 in the Arduino Library Manager, so its headers could not be read. Drift read the release notes for HaierProtocol 0.9.32 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "summary": "Safe to upgrade. No source archive is published for HaierProtocol 0.9.31 in the Arduino Library Manager, so its headers could not be read. Drift read the release notes for HaierProtocol 0.9.32 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke. OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
@@ -1243,7 +1834,30 @@
       "evidenceCount": 1,
       "gaps": [
         "No source archive is published for HaierProtocol 0.9.31 in the Arduino Library Manager, so its headers could not be read. Drift read the release notes for HaierProtocol 0.9.32 and found nothing in it that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
-        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+        "OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "NeoPixelBus",
+      "ecosystem": "arduino",
+      "manifestPath": "platformio.ini",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "2.8.0",
+      "latest": "2.8.4",
+      "selected": "2.8.4",
+      "safeLatest": "2.8.4",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up."
       ],
       "breaking": []
     },
@@ -1259,14 +1873,14 @@
       "safeLatest": "2.8.4",
       "status": "clean",
       "risk": "none",
-      "summary": "Safe to upgrade. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "summary": "Safe to upgrade. OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+        "OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up."
       ],
       "breaking": []
     },
@@ -1277,19 +1891,42 @@
       "workspace": "",
       "workspaceName": null,
       "current": "0.1.11",
-      "latest": "0.1.13",
-      "selected": "0.1.13",
-      "safeLatest": "0.1.13",
-      "status": "clean",
+      "latest": "0.1.15",
+      "selected": "0.1.15",
+      "safeLatest": "0.1.15",
+      "status": "checking",
       "risk": "none",
-      "summary": "Safe to upgrade. The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown.",
+      "summary": "Safe to upgrade. OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "The OSV advisory database could not be reached, so this upgrade's effect on known vulnerabilities is unknown."
+        "OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up."
+      ],
+      "breaking": []
+    },
+    {
+      "name": "noise-c",
+      "ecosystem": "arduino",
+      "manifestPath": "platformio.ini",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "0.1.11",
+      "latest": "0.1.15",
+      "selected": "0.1.15",
+      "safeLatest": "0.1.15",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [
+        "OSV has no advisory coverage for arduino packages, so this upgrade's effect on known vulnerabilities could not be looked up."
       ],
       "breaking": []
     }

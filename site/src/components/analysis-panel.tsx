@@ -42,11 +42,11 @@ const VERDICT_STYLE: Record<UpgradeSeverity, string> = {
 
 /** The short form for the pill. `describeSeverity` writes the long one. */
 const VERDICT_PILL: Record<UpgradeSeverity, string> = {
-  affected: "Affects you",
-  "upstream-only": "None used here",
-  unchecked: "Not verified",
+  affected: "Affects You",
+  "upstream-only": "None Used Here",
+  unchecked: "Not Verified",
   clean: "Safe",
-  error: "Could not check",
+  error: "Could Not Check",
 };
 
 const CONFIDENCE_STYLE: Record<ImpactSite["confidence"], string> = {
@@ -270,7 +270,7 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
             In your editor this installs selected upgrades, opens a branch when fixes are needed,
             and hands affected code to your agent — one commit per concern.{" "}
             <a href="#install" className="font-medium text-brand-text underline underline-offset-2">
-              Run it on your own repository
+              Run It on Your Own Repository
             </a>{" "}
             to see it act; this page is a recording, so there is nothing here to change.
           </p>

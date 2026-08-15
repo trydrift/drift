@@ -41,7 +41,7 @@ export default function Configure() {
             rel="noreferrer"
             className="hidden rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:block"
           >
-            Full config reference
+            Full Config Reference
           </a>
           <a
             href={GITHUB}
@@ -64,8 +64,8 @@ export default function Configure() {
             Build your <code className="font-mono text-2xl text-brand-text sm:text-3xl">drift.yml</code>
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-            Every option here starts at Drift&rsquo;s own default, so leaving everything alone gets you the
-            same zero-config install described on the{" "}
+            Every option starts at Drift&rsquo;s own default, so leaving it all alone gets you the
+            zero-config install from the{" "}
             <a href="/#action" className="text-brand-text underline decoration-dotted underline-offset-2">
               main page
             </a>
@@ -79,7 +79,7 @@ export default function Configure() {
             >
               full configuration reference
             </a>{" "}
-            for every field not covered below.
+            for fields not covered below.
           </p>
 
           <ConfigureForm workflowTemplate={WORKFLOW_TEMPLATE} outdatedTemplate={OUTDATED_WORKFLOW_TEMPLATE} />

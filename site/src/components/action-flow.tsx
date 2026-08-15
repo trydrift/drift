@@ -37,9 +37,8 @@ interface Step {
 
 const STEPS: Step[] = [
   {
-    title: "Set up job",
-    detail:
-      "The workflow triggers on manifests and lockfiles only, so it does not start on every push and do nothing.",
+    title: "Set Up Job",
+    detail: "Triggers only on manifest and lockfile changes, not every push.",
     log: [
       "on: push",
       "paths: **/package.json, **/go.mod, **/vcpkg.json, …",
@@ -59,23 +58,23 @@ const STEPS: Step[] = [
     took: "48s",
   },
   {
-    title: "Post the check run",
+    title: "Post the Check Run",
     detail:
-      "Affected, upstream-only, or clean, with the count of files. It is a check, so it shows up where reviewers already look.",
+      "Affected, upstream-only, or clean, with a file count — posted as a check, right where reviewers already look.",
     log: ["drift / analyze — affected", "3 files · 13 upstream changes · 0 gaps"],
     took: "1s",
   },
   {
-    title: "Ask before acting",
+    title: "Ask Before Acting",
     detail:
       "A fresh install files an approval issue containing the plan and waits for a human to comment /drift apply. Autonomy is opt-in, per repository.",
     log: ["mode: approve", "opened issue #482 — “Upgrade plan: w3lib 1.17.0 → 2.4.1”", "waiting for /drift apply"],
     took: "1s",
   },
   {
-    title: "Verify the approval",
+    title: "Verify the Approval",
     detail:
-      "A human comments /drift apply. Drift re-checks the comment before acting on it rather than trusting it — every check fails closed.",
+      "A human comments /drift apply. Drift re-verifies before acting on it — every check fails closed.",
     log: [
       "commenter: write permission ✓",
       "plan digest: matches issue #482 ✓",
@@ -84,7 +83,7 @@ const STEPS: Step[] = [
     took: "1s",
   },
   {
-    title: "Open the pull request",
+    title: "Open the Pull Request",
     detail:
       "One commit per concern, in dependency order, each resolved by a deterministic codemod, then a version-pinned community recipe, then an agent — never silently, and always in that order.",
     log: ["3 commits · codemod → recipe → agent", "every claim cites the evidence it came from"],
@@ -134,7 +133,7 @@ export function ActionFlow() {
             <GhIcon icon={finished ? "check" : "play"} className="size-3.5" />
           </span>
           <span className="truncate text-[13px] font-semibold text-foreground">
-            Analyse dependency changes
+            Analyze Dependency Changes
           </span>
           {finished && playing ? (
             <button

@@ -47,7 +47,7 @@ export default function Home() {
             href="#how"
             className="rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
           >
-            How it works
+            How It Works
           </a>
           <a
             href="#ecosystems"
@@ -93,11 +93,10 @@ export default function Home() {
             Drift says which three break your code.
           </h1>
           <p className="mt-5 max-w-2xl text-[15px] leading-relaxed text-muted sm:text-base">
-            Drift works out what changed upstream using computed API surfaces where available and
-            citable release evidence everywhere else, then searches{" "}
+            Drift checks what changed upstream, then searches{" "}
             <em className="not-italic text-foreground">your</em> repository for the exact lines
-            that use it. Every claim carries a citation you can open, and anything it could not
-            check is reported as a gap rather than softened into a pass.
+            that use it. Every claim links to its evidence, and anything it can&rsquo;t verify is
+            flagged as a gap — never softened into a pass.
           </p>
 
           {/* Installing is the primary action. The demo below is what convinces
@@ -116,7 +115,7 @@ export default function Home() {
               href="#demo"
               className="rounded-full border border-border bg-surface px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
             >
-              Watch a real analysis
+              Watch a Real Analysis
             </a>
             <a
               href={GITHUB}
@@ -146,13 +145,12 @@ export default function Home() {
           <h2
             className={`${instrumentSerif.className} text-2xl text-landing sm:text-3xl`}
           >
-            Not a mock-up. A recording.
+            Not a Mock-Up. A Recording.
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-            Drift clones repositories, calls registries and runs package managers, so it cannot run
-            in a browser. Instead each of these is a real run against a real project, captured with
-            every progress event and the timestamp it happened at — replayed here at its original
-            cadence. The commit is linked; go and check it.
+            Drift clones repos, calls registries, and runs package managers — none of that works in
+            a browser. So each panel below is a recording of a real run against a real project,
+            replayed here at its original pace. The commit is linked; go check it.
           </p>
 
           <div className="mt-7">
@@ -166,16 +164,13 @@ export default function Home() {
             <span className="text-faint">//</span> sixteen ecosystems, graded
           </p>
           <h2 className={`${instrumentSerif.className} mt-3 text-2xl text-landing sm:text-3xl`}>
-            How far Drift gets, per ecosystem
+            How Far Drift Gets, per Ecosystem
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-            Every one of these has a recording above, including the ones where Drift can do less.
-            The grade is computed from the same table the CLI consults before it runs a stage —
-            nobody types a colour in here, so an ecosystem that loses a capability loses its
-            badge on the next build. Three things decide it: whether Drift computes the API diff
-            from what was actually published, whether the module names it searches for come from
-            the package rather than from a guess, and whether it can run the ecosystem&rsquo;s own
-            build and tests over its work.
+            Every ecosystem below has a recording above, including the ones where Drift does less.
+            The grade is computed, not hand-typed, from three things: whether Drift can diff the
+            real API, whether it resolves module names from the package itself rather than a
+            guess, and whether it can run the ecosystem&rsquo;s own build and tests.
           </p>
 
           <div className="mt-7">
@@ -183,8 +178,7 @@ export default function Home() {
           </div>
 
           <p className="mt-6 text-[13px] text-muted">
-            The full matrix — seven stages per ecosystem, each with the sentence saying exactly
-            what it does and does not cover — is in{" "}
+            The full breakdown, stage by stage, is in{" "}
             <a
               href={`${GITHUB}/blob/main/docs/support.md`}
               target="_blank"
@@ -202,7 +196,7 @@ export default function Home() {
           <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
             <div>
               <h2 className={`${instrumentSerif.className} text-2xl text-landing sm:text-3xl`}>
-                The number that matters is the small one
+                The Number That Matters Is the Small One
               </h2>
               <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted">
                 Drift separates upstream noise from code you actually own. The report is allowed to
@@ -215,19 +209,19 @@ export default function Home() {
               <OutcomeCard
                 icon="quiet"
                 metric={String(proof.clean)}
-                label="safe here"
+                label="Safe Here"
                 detail="Upstream changed; your repository does not call the changed surface."
               />
               <OutcomeCard
                 icon="target"
                 metric={String(proof.affected)}
-                label="need attention"
+                label="Need Attention"
                 detail={`${proof.sites} exact call site${proof.sites === 1 ? "" : "s"} linked to files and lines.`}
               />
               <OutcomeCard
                 icon="gap"
                 metric={String(proof.unchecked)}
-                label="not verified"
+                label="Not Verified"
                 detail="Missing evidence is shown as a gap, not softened into a pass."
               />
             </div>
@@ -242,20 +236,19 @@ export default function Home() {
             <span className="text-faint">//</span> on every dependency change
           </p>
           <h2 className={`${instrumentSerif.className} mt-3 text-2xl text-landing sm:text-3xl`}>
-            The same analysis, running without you
+            The Same Analysis, Running Without You
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-            The Action is the only surface where Drift acts while nobody is watching, so what it is
-            allowed to do is worth knowing before you enable it. Out of the box it opens no pull
-            request: it analyses, posts a check, files an issue with the plan, and waits for someone
-            to say yes. Autonomy is a setting you turn on per repository, and every guardrail
-            downgrades an automatic run to an approval request rather than dropping it.
+            The Action is the only surface where Drift runs unattended, so here&rsquo;s exactly what
+            it&rsquo;s allowed to do. By default it opens no pull request — it analyzes, posts a
+            check, files an issue with the plan, and waits for a yes. Autonomy is opt-in per
+            repository, and every guardrail downgrades a run to an approval request instead of
+            skipping it.
           </p>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-            It is the same pipeline, which is not quite the same as the same result: Drift&rsquo;s
-            strongest evidence in some ecosystems needs that ecosystem&rsquo;s toolchain on the
-            runner. Where it is missing, Drift falls back to release notes and says so in the
-            report rather than quietly reporting less. The shipped workflow sets up Go and carries
+            It&rsquo;s the same pipeline, but not always the same result: Drift&rsquo;s strongest
+            evidence needs that ecosystem&rsquo;s toolchain on the runner. Where it&rsquo;s missing,
+            Drift falls back to release notes and says so. The shipped workflow sets up Go, with
             commented-out steps for the rest.
           </p>
 
@@ -303,14 +296,13 @@ export default function Home() {
               <div className="rounded-2xl border border-border bg-surface/50 p-5">
                 <p className="text-[13px] leading-relaxed text-muted">
                   <strong className="font-medium text-foreground">
-                    Copilot is only needed for fixes Drift can&rsquo;t resolve itself.
+                    Copilot is only needed for fixes Drift can&rsquo;t resolve on its own.
                   </strong>{" "}
                   The built-in <code className="font-mono text-[11.5px] text-brand-text">GITHUB_TOKEN</code>{" "}
-                  covers everything else. Without a Copilot token, Drift still analyzes the change
-                  and applies deterministic remediation; if anything remains that needs an agent, it
-                  stops and asks instead of guessing. Add{" "}
-                  <code className="font-mono text-[11.5px] text-brand-text">copilot-token</code> only
-                  if you want agent fallback for the fixes Drift can&rsquo;t resolve itself.
+                  covers everything else. Without it, Drift still analyzes and applies deterministic
+                  fixes — anything left over, it stops and asks instead of guessing. Add{" "}
+                  <code className="font-mono text-[11.5px] text-brand-text">copilot-token</code> for
+                  agent fallback on the rest.
                 </p>
                 <p className="mt-3 text-[13px] leading-relaxed text-muted">
                   <strong className="font-medium text-foreground">Not ready for Drift to make changes?</strong>{" "}
@@ -326,7 +318,7 @@ export default function Home() {
         {/* ── Get it ──────────────────────────────────────────────────── */}
         <section id="install" className="scroll-mt-8 pt-16 sm:pt-24">
           <h2 className={`${instrumentSerif.className} text-2xl text-landing sm:text-3xl`}>
-            Three ways in
+            Three Ways In
           </h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
             <EntryPoint
@@ -335,23 +327,23 @@ export default function Home() {
               command="Drift for VS Code"
               action={{ label: "Install from the Marketplace", href: MARKETPLACE, external: true }}
             >
-              Affected lines inline, with the upstream change that caused each one.
-              Nothing to configure: open a repository and it starts.
+              Affected lines inline, each linked to the upstream change that caused it. Nothing to
+              configure — open a repo and it starts.
             </EntryPoint>
             <EntryPoint
               icon="terminal"
               title="CLI"
               commands={["npm install -g @usedrift/cli", "drift analyze"]}
-              action={{ label: "Read the CLI docs", href: `${GITHUB}#try-it-with-zero-permissions`, external: true }}
+              action={{ label: "Read the CLI Docs", href: `${GITHUB}#try-it-with-zero-permissions`, external: true }}
             >
               Full report against your working tree. <code className="font-mono text-brand-text">analyze</code> writes
-              nothing and needs no token — it is the safe first command.
+              nothing and needs no token — the safe first command.
             </EntryPoint>
             <EntryPoint
               icon="action"
               title="GitHub Action"
               command="uses: trydrift/drift@v0"
-              action={{ label: "Copy the example workflow", href: `${GITHUB}/blob/main/examples/workflows/drift.yml`, external: true }}
+              action={{ label: "Copy the Example Workflow", href: `${GITHUB}/blob/main/examples/workflows/drift.yml`, external: true }}
             >
               Checks first, approval next, pull request only after you allow it.{" "}
               <a href="#action" className="text-brand-text underline decoration-dotted underline-offset-2">See the run.</a>{" "}
@@ -443,9 +435,9 @@ function ProofStrip({ proof }: { proof: ProofSummary }) {
 function VerdictStack({ proof }: { proof: ProofSummary }) {
   const total = Math.max(1, proof.clean + proof.affected + proof.unchecked);
   const lanes = [
-    { label: "Safe here", value: proof.clean, className: "bg-brand" },
-    { label: "Affects you", value: proof.affected, className: "bg-rose-600" },
-    { label: "Not verified", value: proof.unchecked, className: "bg-amber-500" },
+    { label: "Safe Here", value: proof.clean, className: "bg-brand" },
+    { label: "Affects You", value: proof.affected, className: "bg-rose-600" },
+    { label: "Not Verified", value: proof.unchecked, className: "bg-amber-500" },
   ];
 
   return (
