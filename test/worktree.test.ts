@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { copyIgnoredSourceFiles } from '../dist/repo/worktree.js';
+import { copyIgnoredSourceFiles, gitignoreRules } from '../dist/repo/worktree.js';
 
 /**
  * A worktree is `git worktree add`'s checkout: tracked files only. A project
@@ -82,5 +82,42 @@ describe('carrying gitignored source into a worktree', () => {
       await rm(root, { recursive: true, force: true });
       await rm(worktree, { recursive: true, force: true });
     }
+  });
+});
+
+describe('naming the .gitignore rule behind a carried-over file', () => {
+  test('reduces many matching files to the one deduplicated rule that covers them', async () => {
+    // A single `dist/` rule can match hundreds of files. The report should
+    // name the rule once, not repeat it per file.
+    const exec = async (_command: string, args: readonly string[]) => {
+      if (args[0] === 'check-ignore') {
+        const paths = args.slice(args.indexOf('--') + 1);
+        const stdout = paths.map((p) => `.gitignore:1:dist/\t${p}`).join('\n');
+        return { code: 0, stdout: stdout ? `${stdout}\n` : '', stderr: '' };
+      }
+      return { code: 0, stdout: '', stderr: '' };
+    };
+
+    const rules = await gitignoreRules('/repo', ['dist/a.js', 'dist/b.js'], exec as never, {});
+    assert.deepEqual(rules, ['.gitignore:1:dist/']);
+  });
+
+  test('names rules from a nested .gitignore by their path from the repo root', async () => {
+    const exec = async (_command: string, args: readonly string[]) => {
+      if (args[0] === 'check-ignore') {
+        return { code: 0, stdout: 'packages/app/.gitignore:3:*.generated.ts\tpackages/app/src/x.generated.ts\n', stderr: '' };
+      }
+      return { code: 0, stdout: '', stderr: '' };
+    };
+
+    const rules = await gitignoreRules('/repo', ['packages/app/src/x.generated.ts'], exec as never, {});
+    assert.deepEqual(rules, ['packages/app/.gitignore:3:*.generated.ts']);
+  });
+
+  test('returns nothing for an empty file list without shelling out', async () => {
+    const rules = await gitignoreRules('/repo', [], (() => {
+      throw new Error('should not be called');
+    }) as never, {});
+    assert.deepEqual(rules, []);
   });
 });

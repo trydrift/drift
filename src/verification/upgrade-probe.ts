@@ -227,13 +227,13 @@ async function probeGroup(
   if (worktree.copiedFiles.length > 0) {
     hooks.report(
       'Preparing a test checkout',
-      `carried over ${worktree.copiedFiles.length} gitignored file${worktree.copiedFiles.length === 1 ? '' : 's'} not tracked by git: ${worktree.copiedFiles.join(', ')}`,
+      `carried over ${worktree.copiedFiles.length} gitignored file${worktree.copiedFiles.length === 1 ? '' : 's'} not tracked by git, matching: ${worktree.copiedRules.join(', ')}`,
     );
   }
   if (worktree.oversizedFiles.length > 0) {
     hooks.report(
       'Preparing a test checkout',
-      `skipped ${worktree.oversizedFiles.length} gitignored file${worktree.oversizedFiles.length === 1 ? '' : 's'} too large to carry over automatically, which may make a check fail for a reason unrelated to this upgrade: ${worktree.oversizedFiles.join(', ')}`,
+      `skipped ${worktree.oversizedFiles.length} gitignored file${worktree.oversizedFiles.length === 1 ? '' : 's'} too large to carry over automatically, which may make a check fail for a reason unrelated to this upgrade, matching: ${worktree.oversizedRules.join(', ')}`,
     );
   }
 

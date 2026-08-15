@@ -29,6 +29,14 @@ export interface Worktree {
    */
   copiedFiles: readonly string[];
   /**
+   * The `.gitignore` rules that matched {@link copiedFiles}, deduplicated and
+   * formatted as `<path to the .gitignore, from repo root>:<line>:<pattern>`
+   * — what a reader needs to find and, if wrong, adjust the rule, without
+   * scrolling past a file-by-file dump that is often mostly noise (a single
+   * `dist/` rule can match hundreds of files).
+   */
+  copiedRules: readonly string[];
+  /**
    * Gitignored files that qualified for copying but were skipped for being
    * larger than {@link MAX_COPY_BYTES}. Reported rather than silently
    * dropped: a build that still fails in the worktree because of one of
@@ -36,6 +44,8 @@ export interface Worktree {
    * feature exists to prevent.
    */
   oversizedFiles: readonly string[];
+  /** The `.gitignore` rules that matched {@link oversizedFiles}, same format as {@link copiedRules}. */
+  oversizedRules: readonly string[];
   /** Remove it. Safe to call more than once, and never throws. */
   dispose(): Promise<void>;
 }
@@ -103,12 +113,18 @@ export async function createWorktree(
     options.copyIgnoredFiles === false
       ? { copied: [], oversized: [] }
       : await copyIgnoredSourceFiles(root, path, exec, env);
+  const [copiedRules, oversizedRules] = await Promise.all([
+    gitignoreRules(root, copied, exec, env),
+    gitignoreRules(root, oversized, exec, env),
+  ]);
 
   let disposed = false;
   return {
     path,
     copiedFiles: copied,
+    copiedRules,
     oversizedFiles: oversized,
+    oversizedRules,
     async dispose() {
       if (disposed) return;
       disposed = true;
@@ -244,6 +260,51 @@ export async function copyIgnoredSourceFiles(
   }
 
   return { copied, oversized };
+}
+
+/**
+ * Batch size for `git check-ignore` invocations. Comfortably under any
+ * platform's argv limit even for a repository with thousands of gitignored
+ * files, while keeping the number of process spawns small.
+ */
+const CHECK_IGNORE_BATCH_SIZE = 200;
+
+/**
+ * Look up which `.gitignore` rule matches each of `paths`, and reduce that to
+ * the distinct rules involved.
+ *
+ * A worktree report that lists every carried-over file is often just a
+ * restatement of one rule (`dist/` alone can cover hundreds of files) — not
+ * useful for a developer deciding whether the copy was the right call. The
+ * rule itself, and where it lives, is what they'd need to change the
+ * behavior; `git check-ignore -v` already knows both.
+ */
+export async function gitignoreRules(
+  root: string,
+  paths: readonly string[],
+  exec: Exec,
+  env: NodeJS.ProcessEnv,
+): Promise<string[]> {
+  if (paths.length === 0) return [];
+
+  const rules = new Set<string>();
+  for (let i = 0; i < paths.length; i += CHECK_IGNORE_BATCH_SIZE) {
+    const batch = paths.slice(i, i + CHECK_IGNORE_BATCH_SIZE);
+    const result = await exec('git', ['check-ignore', '-v', '--', ...batch], { cwd: root, env });
+    // Exit code 1 just means "some of these aren't ignored", which cannot
+    // happen here since every path came from `git ls-files --ignored`
+    // itself — but a stale worktree or a race with the developer's own edits
+    // could still make it so, and the rule lookup is best-effort either way.
+    if (!result.stdout) continue;
+    for (const line of result.stdout.split('\n')) {
+      if (!line) continue;
+      const tab = line.indexOf('\t');
+      if (tab === -1) continue;
+      rules.add(line.slice(0, tab));
+    }
+  }
+
+  return [...rules].sort();
 }
 
 /** Directory-safe, collision-resistant enough for one label per scan. */
