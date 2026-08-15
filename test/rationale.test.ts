@@ -774,7 +774,7 @@ describe('assembling the rationale', () => {
     // read what was published and simply found nothing alarming in it.
     assert.doesNotMatch(stated, /No release notes, changelog, or migration guide was reachable/);
     assert.match(stated, /Drift read/);
-    assert.match(stated, /the changelog and the migration guide/);
+    assert.match(stated, /the changelog \(\[CHANGELOG-v2\.0\.0\.md\]\(https:\/\/github\.com\/o\/pkg\/blob\/main\/CHANGELOG-v2\.0\.0\.md\)\) and the migration guide \(\[MIGRATION-GUIDE\.md\]\(https:\/\/github\.com\/o\/pkg\/blob\/main\/MIGRATION-GUIDE\.md\)\)/);
   });
 
   test('a clean computed surface diff suppresses the prose-only caveat', async () => {
@@ -808,6 +808,28 @@ describe('assembling the rationale', () => {
     assert.equal(rationale!.assessment.confidence, 'high');
     assert.doesNotMatch(rationale!.assessment.reasons.join(' '), /weaker than a clean API comparison/);
     assert.equal(rationale!.gaps.some((gap) => /found nothing.*announces a breaking change/.test(gap)), false);
+  });
+
+  test('many release notes link the first few and count the rest, instead of naming none', async () => {
+    const key = 'npm pkg';
+    const releases = Array.from({ length: 5 }, (_, i) => ({
+      kind: 'github-release' as const,
+      label: `v2.0.${i} release notes`,
+      url: `https://github.com/o/pkg/releases/tag/v2.0.${i}`,
+      breaking: false,
+    }));
+    const prose = new Map([[key, releases]]);
+
+    const [rationale] = await buildRationale(
+      { changes: [change], evidence: [], breakingChanges: [], impactSites: [] },
+      { config, logger, osv: noNetwork, prose },
+    );
+
+    const stated = rationale!.gaps.find((g) => /release notes/i.test(g))!;
+    assert.match(stated, /\[v2\.0\.0 release notes\]\(https:\/\/github\.com\/o\/pkg\/releases\/tag\/v2\.0\.0\)/);
+    assert.match(stated, /\[v2\.0\.2 release notes\]/);
+    assert.doesNotMatch(stated, /v2\.0\.4 release notes/, 'the fourth and fifth collapse into a count, not a link');
+    assert.match(stated, /and 2 more/);
   });
 
   test('an unreadable dependency is insufficient evidence, and says so', async () => {

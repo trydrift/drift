@@ -282,28 +282,48 @@ function collectGaps(
   return dedupe(gaps);
 }
 
+/** Per document kind, how many of that kind get their own inline link before the rest collapse into a count. */
+const MAX_LINKED_PER_KIND = 3;
+
+const KIND_NOUN: Record<ProseSource['kind'], { one: string; many: string }> = {
+  'github-release': { one: 'the release notes', many: 'sets of release notes' },
+  changelog: { one: 'the changelog', many: 'changelog files' },
+  'migration-guide': { one: 'the migration guide', many: 'migration guides' },
+};
+
 /**
- * Name what was read, in the developer's terms.
- *
- * Counts rather than a list of filenames: "9 release notes and a changelog" is
- * the fact that changes the reader's confidence, and the documents themselves
- * are one expand away under "Evidence Drift read".
+ * Name what was read, in the developer's terms — and link to it. "Drift read
+ * a changelog" is a claim a reader has no way to check; every `ProseSource`
+ * already carries the URL Drift actually fetched, so this puts it in the
+ * sentence instead of leaving it to sit unused on the object.
  */
 function describeSources(prose: readonly ProseSource[]): string {
-  const count = (kind: ProseSource['kind']): number => prose.filter((p) => p.kind === kind).length;
+  const byKind = (kind: ProseSource['kind']): ProseSource[] => prose.filter((p) => p.kind === kind);
 
   const parts: string[] = [];
-  const releases = count('github-release');
-  const changelogs = count('changelog');
-  const guides = count('migration-guide');
+  for (const kind of ['github-release', 'changelog', 'migration-guide'] as const) {
+    const items = byKind(kind);
+    if (items.length === 0) continue;
+    const noun = KIND_NOUN[kind];
 
-  if (releases > 0) parts.push(releases === 1 ? 'the release notes' : `${releases} sets of release notes`);
-  if (changelogs > 0) parts.push(changelogs === 1 ? 'the changelog' : `${changelogs} changelog files`);
-  if (guides > 0) parts.push(guides === 1 ? 'the migration guide' : `${guides} migration guides`);
+    if (items.length === 1) {
+      parts.push(`${noun.one} (${mdLink(items[0]!)})`);
+      continue;
+    }
+
+    const linked = items.slice(0, MAX_LINKED_PER_KIND).map(mdLink);
+    const rest = items.length - linked.length;
+    const links = rest > 0 ? `${linked.join(', ')}, and ${rest} more` : linked.join(', ');
+    parts.push(`${items.length} ${noun.many} (${links})`);
+  }
 
   if (parts.length === 0) return 'the published release prose';
   if (parts.length === 1) return parts[0]!;
   return `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}`;
+}
+
+function mdLink(source: ProseSource): string {
+  return `[${source.label}](${source.url})`;
 }
 
 function dedupe(gaps: readonly string[]): string[] {
