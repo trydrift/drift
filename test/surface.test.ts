@@ -431,7 +431,7 @@ describe('when a surface cannot be computed', () => {
       id: 'cargo-public-api',
       label: 'Install cargo-public-api',
       command: 'cargo',
-      args: ['install', 'cargo-public-api'],
+      args: ['install', 'cargo-public-api', '--locked'],
     });
   });
 

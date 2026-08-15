@@ -29,7 +29,9 @@ const PUBLIC_API_INSTALL = {
   id: 'cargo-public-api',
   label: 'Install cargo-public-api',
   command: 'cargo',
-  args: ['install', 'cargo-public-api'],
+  // --locked pins to the published lockfile so an unrelated dependency bump
+  // (e.g. cargo-util raising its MSRV) can't break installs on older rustc.
+  args: ['install', 'cargo-public-api', '--locked'],
 } as const;
 const PUBLIC_API_REMEDY = 'Drift can install the missing `cargo-public-api` helper for you after approval.';
 
