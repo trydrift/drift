@@ -287,7 +287,14 @@ export async function discoverTargets(
     if (detected.length === 0) continue;
 
     for (const ambiguity of packageManagerAmbiguities(detected)) {
-      const chosen = preferences.get(ambiguityKey(dir, ambiguity.ecosystem)) ?? rootDefaults.get(ambiguity.ecosystem);
+      // `rootDefaults` describes the root's own manager, for a *member*
+      // directory with no lockfile of its own to inherit. Falling back to it
+      // for the root directory itself is circular — `rootDefaults` is derived
+      // from this same directory — and let an ambiguous root (both a
+      // `package-lock.json` and a `pnpm-lock.yaml` at the top level, say)
+      // silently resolve to whichever lockfile-backed manager happened to be
+      // detected last, instead of being reported as the ambiguity it is.
+      const chosen = preferences.get(ambiguityKey(dir, ambiguity.ecosystem)) ?? (dir ? rootDefaults.get(ambiguity.ecosystem) : undefined);
       if (!chosen) ambiguities.push({ ...ambiguity, dir });
     }
 
