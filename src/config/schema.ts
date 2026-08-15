@@ -589,6 +589,25 @@ export const DriftConfigSchema = z.object({
 
       /** Per-command ceiling, covering both the install and each check. */
       timeoutMs: z.number().int().positive().default(15 * 60_000),
+
+      /**
+       * Gitignored paths (glob patterns, repo-relative) to carry into a
+       * verification worktree even though they are not tracked by git —
+       * hand-generated source a build reads as an input but that was never
+       * committed. `**` matches across directories, `*` and `?` do not.
+       *
+       * Empty by default. Drift used to copy every gitignored file outside a
+       * denylist of regenerable directories (`node_modules`, `dist`, …) —
+       * which also copied `.env`, private keys, and credentials files
+       * straight into a directory about to run an upgrade candidate's own
+       * install/build/test scripts. Sensitive filenames are now excluded
+       * unconditionally regardless of this setting (see
+       * `SENSITIVE_PATTERNS` in `src/repo/worktree.ts`), but the safer
+       * default is to copy nothing unless a project says what it actually
+       * needs — explicit and auditable, rather than "everything that isn't
+       * obviously a secret".
+       */
+      generatedSourceGlobs: z.array(z.string()).default([]),
     })
     .prefault({}),
 });

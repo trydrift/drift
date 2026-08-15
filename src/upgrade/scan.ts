@@ -448,7 +448,12 @@ export async function scanUpgrades(args: {
    * A caller passing `enabled: false` gets the old behaviour — predictions,
    * unverified — and should be able to say why.
    */
-  verify?: { enabled?: boolean; checks?: readonly CheckKind[]; timeoutMs?: number };
+  verify?: {
+    enabled?: boolean;
+    checks?: readonly CheckKind[];
+    timeoutMs?: number;
+    generatedSourceGlobs?: readonly string[];
+  };
 }): Promise<UpgradeScanResult> {
   const { root, repo, config, logger, githubToken, onProgress, onCandidate, token, repoLabel } = args;
   const breadth = args.breadth ?? DEFAULT_BREADTH;
@@ -459,6 +464,7 @@ export async function scanUpgrades(args: {
     enabled: args.verify?.enabled ?? config.verify.enabled,
     checks: args.verify?.checks ?? (config.verify.checks as readonly CheckKind[]),
     timeoutMs: args.verify?.timeoutMs ?? config.verify.timeoutMs,
+    generatedSourceGlobs: args.verify?.generatedSourceGlobs ?? config.verify.generatedSourceGlobs,
   };
 
   // Timed the same way `analyzeRepository`'s stages are: not for `onProgress`,
@@ -661,6 +667,7 @@ export async function scanUpgrades(args: {
       candidates,
       checks: verify.checks,
       timeoutMs: verify.timeoutMs,
+      generatedSourceGlobs: verify.generatedSourceGlobs,
       env,
       logger,
       ...(token ? { token } : {}),
@@ -698,6 +705,8 @@ async function verifyCandidates(args: {
   candidates: UpgradeCandidate[];
   checks: readonly CheckKind[];
   timeoutMs: number;
+  /** See {@link WorktreeOptions.allowedGlobs} — `config.verify.generatedSourceGlobs`. */
+  generatedSourceGlobs?: readonly string[];
   env: NodeJS.ProcessEnv;
   logger: Logger;
   token?: { isCancellationRequested: boolean };
@@ -729,6 +738,7 @@ async function verifyCandidates(args: {
     env: args.env,
     logger: args.logger,
     timeoutMs: args.timeoutMs,
+    ...(args.generatedSourceGlobs ? { allowedGlobs: args.generatedSourceGlobs } : {}),
     ...(args.token ? { token: args.token } : {}),
     onProgress: (progress) =>
       args.onProgress?.({

@@ -559,6 +559,9 @@ async function verifyPlan(
       ...(repo.beforeSha ? { beforeSha: repo.beforeSha } : {}),
       kinds: config.verify.checks as CheckKind[],
       timeoutMs: config.verify.timeoutMs,
+      ...(config.verify.generatedSourceGlobs.length > 0
+        ? { allowedGlobs: config.verify.generatedSourceGlobs }
+        : {}),
       logger: options.logger,
       ...(options.env ? { env: options.env } : {}),
       onProgress: ({ phase, detail }) => options.progress('verify', `${phase}: ${detail}`),

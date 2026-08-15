@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { copyIgnoredSourceFiles, gitignoreRules } from '../dist/repo/worktree.js';
+import { copyIgnoredSourceFiles, gitignoreRules, createWorktree } from '../dist/repo/worktree.js';
 
 /**
  * A worktree is `git worktree add`'s checkout: tracked files only. A project
@@ -85,6 +85,99 @@ describe('carrying gitignored source into a worktree', () => {
   });
 });
 
+describe('never copying anything secret-shaped into a worktree', () => {
+  test('.env, private keys, and credentials files are never copied, allowlist or not', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'drift-worktree-src-'));
+    const worktree = await mkdtemp(join(tmpdir(), 'drift-worktree-dst-'));
+    try {
+      const sensitive = [
+        '.env',
+        '.env.local',
+        '.npmrc',
+        '.aws/credentials',
+        'id_rsa',
+        'server.pem',
+        'service-account.json',
+        'secrets.yaml',
+      ];
+      for (const rel of sensitive) {
+        await mkdir(join(root, join(rel, '..')), { recursive: true });
+        await writeFile(join(root, rel), 'super-secret');
+      }
+
+      const exec = fakeGit(sensitive);
+      const { copied, secrets } = await copyIgnoredSourceFiles(root, worktree, exec as never, {});
+
+      assert.deepEqual(copied, [], 'nothing sensitive-shaped is ever copied');
+      assert.deepEqual(secrets.sort(), sensitive.sort());
+    } finally {
+      await rm(root, { recursive: true, force: true });
+      await rm(worktree, { recursive: true, force: true });
+    }
+  });
+
+  test('a plain generated file is unaffected by the secrets denylist', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'drift-worktree-src-'));
+    const worktree = await mkdtemp(join(tmpdir(), 'drift-worktree-dst-'));
+    try {
+      await mkdir(join(root, 'src'), { recursive: true });
+      await writeFile(join(root, 'src', 'config.generated.ts'), 'export const x = 1;');
+
+      const exec = fakeGit(['src/config.generated.ts']);
+      const { copied, secrets } = await copyIgnoredSourceFiles(root, worktree, exec as never, {});
+
+      assert.deepEqual(copied, ['src/config.generated.ts']);
+      assert.deepEqual(secrets, []);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+      await rm(worktree, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('an explicit allowlist narrows what gets copied', () => {
+  test('with an allowlist set, only matching files are copied — even non-secret ones', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'drift-worktree-src-'));
+    const worktree = await mkdtemp(join(tmpdir(), 'drift-worktree-dst-'));
+    try {
+      await mkdir(join(root, 'src', 'generated'), { recursive: true });
+      await writeFile(join(root, 'src', 'generated', 'config.ts'), 'export const config = 1;');
+      await mkdir(join(root, 'scratch'), { recursive: true });
+      await writeFile(join(root, 'scratch', 'notes.txt'), 'not named in the allowlist');
+
+      const exec = fakeGit(['src/generated/config.ts', 'scratch/notes.txt']);
+      const { copied } = await copyIgnoredSourceFiles(root, worktree, exec as never, {}, undefined, [
+        'src/generated/**',
+      ]);
+
+      assert.deepEqual(copied, ['src/generated/config.ts']);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+      await rm(worktree, { recursive: true, force: true });
+    }
+  });
+
+  test('a secret matching the allowlist is still never copied', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'drift-worktree-src-'));
+    const worktree = await mkdtemp(join(tmpdir(), 'drift-worktree-dst-'));
+    try {
+      await mkdir(join(root, 'config'), { recursive: true });
+      await writeFile(join(root, 'config', '.env'), 'SECRET=1');
+
+      const exec = fakeGit(['config/.env']);
+      const { copied, secrets } = await copyIgnoredSourceFiles(root, worktree, exec as never, {}, undefined, [
+        'config/**',
+      ]);
+
+      assert.deepEqual(copied, []);
+      assert.deepEqual(secrets, ['config/.env']);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+      await rm(worktree, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('naming the .gitignore rule behind a carried-over file', () => {
   test('reduces many matching files to the one deduplicated rule that covers them', async () => {
     // A single `dist/` rule can match hundreds of files. The report should
@@ -119,5 +212,63 @@ describe('naming the .gitignore rule behind a carried-over file', () => {
       throw new Error('should not be called');
     }) as never, {});
     assert.deepEqual(rules, []);
+  });
+});
+
+/** A fake `git` whose `rev-parse --git-common-dir` answers with a fixed value, recording every call. */
+function fakeGitRepo(commonDirOutput: string) {
+  const calls: { command: string; args: string[] }[] = [];
+  const exec = async (command: string, args: readonly string[]) => {
+    calls.push({ command, args: [...args] });
+    if (args[0] === 'rev-parse') return { code: 0, stdout: commonDirOutput, stderr: '' };
+    return { code: 0, stdout: '', stderr: '' };
+  };
+  return { calls, exec };
+}
+
+describe('where a worktree is put', () => {
+  test('an ordinary checkout resolves the relative .git dir against root', async () => {
+    const { exec } = fakeGitRepo('.git\n');
+    const worktree = await createWorktree('/repo', 'probe-root', { exec: exec as never, runId: 'r1' });
+    assert.equal(worktree.path, join('/repo', '.git', 'drift-worktrees', 'r1', 'probe-root'));
+  });
+
+  test('a linked worktree (an absolute --git-common-dir) is used as-is, never joined onto root again', async () => {
+    // This is what `git rev-parse --git-common-dir` prints when Drift itself
+    // is checked out with `git worktree add` — e.g. its own CI. Joining that
+    // absolute path onto `root` a second time used to build a path that does
+    // not exist, so verification failed everywhere except an ordinary clone.
+    const { exec } = fakeGitRepo('/main-checkout/.git\n');
+    const worktree = await createWorktree('/some/linked-worktree', 'probe-root', {
+      exec: exec as never,
+      runId: 'r1',
+    });
+    assert.equal(worktree.path, join('/main-checkout/.git', 'drift-worktrees', 'r1', 'probe-root'));
+    assert.ok(!worktree.path.includes('linked-worktree'));
+  });
+
+  test('every worktree from one call site shares a run namespace by default', async () => {
+    const { exec } = fakeGitRepo('.git\n');
+    const a = await createWorktree('/repo', 'probe-root', { exec: exec as never });
+    const b = await createWorktree('/repo', 'probe-pkg', { exec: exec as never });
+    const runSegment = (p: string) => p.split(`${join('drift-worktrees', '')}`)[1]!.split(/[\\/]/)[0];
+    assert.equal(runSegment(a.path), runSegment(b.path), 'both came from this process, so they share a namespace');
+  });
+
+  test('two different run IDs never collide on the same path', async () => {
+    const { exec } = fakeGitRepo('.git\n');
+    const a = await createWorktree('/repo', 'probe-root', { exec: exec as never, runId: 'run-a' });
+    const b = await createWorktree('/repo', 'probe-root', { exec: exec as never, runId: 'run-b' });
+    assert.notEqual(a.path, b.path);
+  });
+
+  test("the pre-add cleanup only targets this run's own namespaced path", async () => {
+    const { calls, exec } = fakeGitRepo('.git\n');
+    const worktree = await createWorktree('/repo', 'probe-root', { exec: exec as never, runId: 'run-a' });
+    const removals = calls.filter((c) => c.args[0] === 'worktree' && c.args[1] === 'remove');
+    assert.ok(removals.length > 0);
+    for (const removal of removals) {
+      assert.ok(removal.args.includes(worktree.path), "every removal names this run's own path");
+    }
   });
 });

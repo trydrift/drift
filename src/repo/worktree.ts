@@ -1,5 +1,6 @@
 import { copyFile, mkdir, rm, stat } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join } from 'node:path';
+import { randomBytes } from 'node:crypto';
 import { execCommand, type Exec } from '../util/exec.js';
 
 /**
@@ -46,6 +47,17 @@ export interface Worktree {
   oversizedFiles: readonly string[];
   /** The `.gitignore` rules that matched {@link oversizedFiles}, same format as {@link copiedRules}. */
   oversizedRules: readonly string[];
+  /**
+   * Gitignored files that matched {@link SENSITIVE_PATTERNS} and were never
+   * copied — an `.env`, a private key, an `.npmrc` with a registry token —
+   * regardless of {@link WorktreeOptions.allowedGlobs}. A worktree runs an
+   * upgrade candidate's own install/build/test scripts, which is untrusted
+   * code by the definition of the exercise; a secret sitting next to it is
+   * a secret that code can read.
+   */
+  skippedSecrets: readonly string[];
+  /** The `.gitignore` rules that matched {@link skippedSecrets}, same format as {@link copiedRules}. */
+  skippedSecretRules: readonly string[];
   /** Remove it. Safe to call more than once, and never throws. */
   dispose(): Promise<void>;
 }
@@ -61,8 +73,30 @@ export interface WorktreeOptions {
    * step expects to already exist. On by default — see
    * {@link copyIgnoredSourceFiles}. Set `false` for work that means to
    * measure the commit exactly as checked in, with nothing local added.
+   *
+   * A sensitive file (see {@link SENSITIVE_PATTERNS}) is never copied
+   * regardless of this setting.
    */
   copyIgnoredFiles?: boolean;
+  /**
+   * Restrict the gitignored files carried over to these repo-relative glob
+   * patterns (`**` crosses directories, `*` and `?` do not), instead of
+   * every gitignored file outside {@link REGENERABLE_SEGMENTS}. Unset by
+   * default, which keeps the broader auto-copy behavior — set this to make
+   * what gets carried into a worktree explicit and auditable rather than
+   * "everything that isn't obviously regenerated".
+   */
+  allowedGlobs?: readonly string[];
+  /**
+   * Namespaces this worktree's path so two concurrent Drift processes
+   * scanning the same repository never collide on, or force-remove, each
+   * other's in-progress worktree. Defaults to one value generated per
+   * process (see {@link DEFAULT_RUN_ID}) — every worktree a single scan
+   * creates shares it, so labels like `probe-root` stay unique to *this*
+   * run without every caller having to invent one. Overridable so tests can
+   * assert on a stable path.
+   */
+  runId?: string;
 }
 
 /**
@@ -91,13 +125,23 @@ export async function createWorktree(
     throw new Error(`\`${root}\` is not a git repository, so there is nowhere safe to test an upgrade.`);
   }
 
+  // `--git-common-dir` is relative to `root` for an ordinary checkout (`.git`),
+  // but a *linked* worktree — Drift itself checked out with `git worktree
+  // add`, which its own CI and contributors both do — prints the absolute
+  // path of the main checkout's real `.git` directory instead. Joining that
+  // absolute path onto `root` again silently produced a nonsense nested path
+  // instead of erroring, so verification worked everywhere except from the
+  // one checkout shape this whole module exists to create.
   const gitDir = common.stdout.trim() || '.git';
-  const path = join(root, gitDir, 'drift-worktrees', sanitize(label));
+  const commonDir = isAbsolute(gitDir) ? gitDir : join(root, gitDir);
+  const runId = options.runId ?? DEFAULT_RUN_ID;
+  const path = join(commonDir, 'drift-worktrees', sanitize(runId), sanitize(label));
 
   // A previous run that was killed rather than finished leaves both a directory
   // and a registration behind, and `worktree add` refuses either. Clearing both
   // before adding is what makes an interrupted scan recoverable without the
-  // developer being told to run `git worktree prune` by hand.
+  // developer being told to run `git worktree prune` by hand. Scoped to this
+  // run's own namespaced path, never another run's — see `runId` above.
   await exec('git', ['worktree', 'remove', '--force', path], { cwd: root, env });
   await rm(path, { recursive: true, force: true }).catch(() => undefined);
   await exec('git', ['worktree', 'prune'], { cwd: root, env });
@@ -109,13 +153,14 @@ export async function createWorktree(
     );
   }
 
-  const { copied, oversized } =
+  const { copied, oversized, secrets } =
     options.copyIgnoredFiles === false
-      ? { copied: [], oversized: [] }
-      : await copyIgnoredSourceFiles(root, path, exec, env);
-  const [copiedRules, oversizedRules] = await Promise.all([
+      ? { copied: [], oversized: [], secrets: [] }
+      : await copyIgnoredSourceFiles(root, path, exec, env, undefined, options.allowedGlobs);
+  const [copiedRules, oversizedRules, skippedSecretRules] = await Promise.all([
     gitignoreRules(root, copied, exec, env),
     gitignoreRules(root, oversized, exec, env),
+    gitignoreRules(root, secrets, exec, env),
   ]);
 
   let disposed = false;
@@ -125,6 +170,8 @@ export async function createWorktree(
     copiedRules,
     oversizedFiles: oversized,
     oversizedRules,
+    skippedSecrets: secrets,
+    skippedSecretRules,
     async dispose() {
       if (disposed) return;
       disposed = true;
@@ -137,6 +184,15 @@ export async function createWorktree(
     },
   };
 }
+
+/**
+ * One namespace per process, so every worktree a single `drift` invocation
+ * creates shares it. Two concurrent invocations — two terminals, a scan
+ * racing a `drift fix`, two CI jobs on the same self-hosted runner's
+ * checkout — get different namespaces and therefore different paths, so
+ * neither can force-remove a worktree the other is still using.
+ */
+const DEFAULT_RUN_ID = `${process.pid}-${randomBytes(4).toString('hex')}`;
 
 /**
  * Run `work` in a fresh worktree and remove it afterwards, whatever happens.
@@ -202,6 +258,69 @@ const REGENERABLE_SEGMENTS = new Set([
 const MAX_COPY_BYTES = 25 * 1024 * 1024;
 
 /**
+ * Filenames and extensions never carried into a worktree, whatever else is
+ * configured to be copied — a worktree exists to run an upgrade candidate's
+ * own install/build/test scripts, and those scripts are, by definition,
+ * code nobody has reviewed yet. Matched against the path's basename and
+ * against the full repo-relative path, case-insensitively.
+ *
+ * Deliberately a denylist of *shapes* (`.env*`, `*.pem`, anything with
+ * "credentials" in the name) rather than an attempt to enumerate every tool
+ * that might drop a secret on disk — new secret-shaped files show up faster
+ * than this list could be kept exhaustive, and a false positive here costs
+ * nothing (the file simply isn't copied) where a false negative costs a
+ * leaked token.
+ */
+const SENSITIVE_PATTERNS: readonly RegExp[] = [
+  /(^|\/)\.env(\..*)?$/i,
+  /(^|\/)\.npmrc$/i,
+  /(^|\/)\.yarnrc(\.yml)?$/i,
+  /(^|\/)\.netrc$/i,
+  /(^|\/)\.pgpass$/i,
+  /(^|\/)\.git-credentials$/i,
+  /(^|\/)\.dockercfg$/i,
+  /(^|\/)\.docker\/config\.json$/i,
+  /(^|\/)id_(rsa|dsa|ecdsa|ed25519)(\.pub)?$/i,
+  /\.(pem|key|p12|pfx|jks|keystore|ppk)$/i,
+  /(^|\/)(\.aws\/credentials|\.aws\/config)$/i,
+  /(^|\/)application_default_credentials\.json$/i,
+  /(service[-_]?account|credentials?|secrets?)[^/]*\.(json|ya?ml|txt)$/i,
+];
+
+function isSensitivePath(rel: string): boolean {
+  return SENSITIVE_PATTERNS.some((pattern) => pattern.test(rel));
+}
+
+/**
+ * Turns a repo-relative glob (`src/generated/**`, `*.generated.ts`) into a
+ * matcher. Supports `**` (any path segments, including none), `*` (any
+ * characters within one segment), and `?` (one character within one
+ * segment) — enough for the generated-source patterns a project would
+ * actually write, without pulling in a glob dependency for it.
+ */
+function globToRegExp(glob: string): RegExp {
+  let pattern = '';
+  for (let i = 0; i < glob.length; i++) {
+    const rest = glob.slice(i);
+    if (rest.startsWith('**')) {
+      pattern += '.*';
+      i += 1;
+    } else if (glob[i] === '*') {
+      pattern += '[^/]*';
+    } else if (glob[i] === '?') {
+      pattern += '[^/]';
+    } else {
+      pattern += glob[i]!.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+    }
+  }
+  return new RegExp(`^${pattern}$`);
+}
+
+function matchesAnyGlob(rel: string, globs: readonly string[]): boolean {
+  return globs.some((glob) => globToRegExp(glob).test(rel));
+}
+
+/**
  * Carry gitignored-but-locally-necessary files from `root` into a fresh
  * worktree.
  *
@@ -214,15 +333,19 @@ const MAX_COPY_BYTES = 25 * 1024 * 1024;
  * reports the whole project as unbuildable rather than saying nothing about
  * the upgrade at all.
  *
- * There is no manifest of which gitignored files are like this, so this
- * copies what the developer's own `npm run build` already sees: everything
- * `git` reports as ignored, minus the directories a fresh install or build
- * regenerates on its own ({@link REGENERABLE_SEGMENTS}). An earlier version
- * of this tried to guess relevance by grepping tracked source for each
- * file's name, which is exactly backwards — it can miss a file referenced
- * indirectly (a dynamic import, a path built at runtime) and silently
- * reproduce the very failure this exists to prevent. Copying everything the
- * denylist doesn't rule out has no such blind spot.
+ * There is no manifest of which gitignored files are like this, so by default
+ * this copies what the developer's own `npm run build` already sees:
+ * everything `git` reports as ignored, minus the directories a fresh install
+ * or build regenerates on its own ({@link REGENERABLE_SEGMENTS}) and minus
+ * anything sensitive-shaped ({@link SENSITIVE_PATTERNS}, never copied
+ * regardless of `allowedGlobs`). An earlier version of this tried to guess
+ * relevance by grepping tracked source for each file's name, which is
+ * exactly backwards — it can miss a file referenced indirectly (a dynamic
+ * import, a path built at runtime) and silently reproduce the very failure
+ * this exists to prevent. Copying everything the denylist doesn't rule out
+ * has no such blind spot — `allowedGlobs` narrows that default down to an
+ * explicit, project-declared list instead, for a repository that would
+ * rather say exactly what it needs.
  */
 export async function copyIgnoredSourceFiles(
   root: string,
@@ -231,20 +354,35 @@ export async function copyIgnoredSourceFiles(
   env: NodeJS.ProcessEnv,
   /** Overridable by tests; production callers get {@link MAX_COPY_BYTES}. */
   maxBytes: number = MAX_COPY_BYTES,
-): Promise<{ copied: string[]; oversized: string[] }> {
+  /** See {@link WorktreeOptions.allowedGlobs}. */
+  allowedGlobs?: readonly string[],
+): Promise<{ copied: string[]; oversized: string[]; secrets: string[] }> {
   const listed = await exec('git', ['ls-files', '--others', '--ignored', '--exclude-standard', '-z'], {
     cwd: root,
     env,
   });
-  if (listed.code !== 0 || !listed.stdout) return { copied: [], oversized: [] };
+  if (listed.code !== 0 || !listed.stdout) return { copied: [], oversized: [], secrets: [] };
 
-  const candidates = listed.stdout
+  const ignored = listed.stdout
     .split('\0')
     .filter((rel) => rel.length > 0 && !rel.split('/').some((segment) => REGENERABLE_SEGMENTS.has(segment)));
 
   const copied: string[] = [];
   const oversized: string[] = [];
-  for (const rel of candidates) {
+  const secrets: string[] = [];
+  for (const rel of ignored) {
+    if (isSensitivePath(rel)) {
+      secrets.push(rel);
+      continue;
+    }
+    // With an explicit allowlist configured, only what it names is eligible —
+    // the auto-copy denylist above still applies within that, but nothing
+    // outside the allowlist is even considered. Without one, every
+    // gitignored, non-regenerable, non-sensitive file is (the long-standing
+    // default: Drift cannot know in advance which generated file a build
+    // needs, so it copies what a developer's own `npm run build` would see).
+    if (allowedGlobs && allowedGlobs.length > 0 && !matchesAnyGlob(rel, allowedGlobs)) continue;
+
     const source = join(root, rel);
     const info = await stat(source).catch(() => null);
     if (!info || !info.isFile()) continue;
@@ -259,7 +397,7 @@ export async function copyIgnoredSourceFiles(
     copied.push(rel);
   }
 
-  return { copied, oversized };
+  return { copied, oversized, secrets };
 }
 
 /**

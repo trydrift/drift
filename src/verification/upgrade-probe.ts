@@ -115,6 +115,8 @@ export interface ProbeOptions {
   token?: CancelSignal;
   /** Per-check timeout. */
   timeoutMs?: number;
+  /** See {@link WorktreeOptions.allowedGlobs} — `config.verify.generatedSourceGlobs`. */
+  allowedGlobs?: readonly string[];
   /**
    * How many manifest groups to install and check at once.
    *
@@ -218,7 +220,11 @@ async function probeGroup(
 
   let worktree;
   try {
-    worktree = await createWorktree(options.root, `probe-${dir || 'root'}`, { exec, env });
+    worktree = await createWorktree(options.root, `probe-${dir || 'root'}`, {
+      exec,
+      env,
+      ...(options.allowedGlobs ? { allowedGlobs: options.allowedGlobs } : {}),
+    });
   } catch (err) {
     for (const target of targets) hooks.settle(target, skipped(messageOf(err)));
     return;
@@ -234,6 +240,12 @@ async function probeGroup(
     hooks.report(
       'Preparing a test checkout',
       `skipped ${worktree.oversizedFiles.length} gitignored file${worktree.oversizedFiles.length === 1 ? '' : 's'} too large to carry over automatically, which may make a check fail for a reason unrelated to this upgrade, matching: ${worktree.oversizedRules.join(', ')}`,
+    );
+  }
+  if (worktree.skippedSecrets.length > 0) {
+    hooks.report(
+      'Preparing a test checkout',
+      `never copied ${worktree.skippedSecrets.length} gitignored file${worktree.skippedSecrets.length === 1 ? '' : 's'} that looked like credentials, matching: ${worktree.skippedSecretRules.join(', ')} — this may make a check fail for a reason unrelated to this upgrade; see \`verify.generatedSourceGlobs\` if the project genuinely needs one of them`,
     );
   }
 
@@ -468,6 +480,8 @@ export interface ChangeProbeOptions {
   logger?: Logger;
   token?: CancelSignal;
   timeoutMs?: number;
+  /** See {@link WorktreeOptions.allowedGlobs} — `config.verify.generatedSourceGlobs`. */
+  allowedGlobs?: readonly string[];
   onProgress?: (progress: ProbeProgress) => void;
 }
 
@@ -568,7 +582,12 @@ async function checkAt(
 
   let worktree;
   try {
-    worktree = await createWorktree(options.workspace, `change-${short(sha)}`, { at: sha, exec, env });
+    worktree = await createWorktree(options.workspace, `change-${short(sha)}`, {
+      at: sha,
+      exec,
+      env,
+      ...(options.allowedGlobs ? { allowedGlobs: options.allowedGlobs } : {}),
+    });
   } catch (err) {
     return skipped(messageOf(err));
   }
