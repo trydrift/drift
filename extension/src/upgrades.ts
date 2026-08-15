@@ -63,8 +63,37 @@ export function vscodeWorkspaceFs(): WorkspaceFs {
   };
 }
 
-function scanLogger() {
-  return createLogger(vscode.workspace.getConfiguration('drift').get('logLevel', 'info'));
+/**
+ * A scan-time logger, mirrored to the visible "Drift" output channel when one
+ * is given.
+ *
+ * `createLogger` alone writes to `console.log`, which lands in the Extension
+ * Host devtools console — somewhere no developer looks in normal use. That
+ * made a scan's own actions (installing a missing helper, a toolchain
+ * command failing) invisible: a gap that only reads as prose (e.g. "the
+ * helper is missing") gives no sign of what was actually tried, or why it
+ * didn't work. `warn`/`error` mirror there always, since either means
+ * something the developer should be able to see; `info` mirrors only for the
+ * helper-install path, which is the one case a developer watches happen.
+ */
+function scanLogger(output?: vscode.LogOutputChannel) {
+  const base = createLogger(vscode.workspace.getConfiguration('drift').get('logLevel', 'info'));
+  if (!output) return base;
+  return {
+    ...base,
+    info: (msg: string, meta?: unknown) => {
+      base.info(msg, meta);
+      if (/install/i.test(msg)) output.info(msg);
+    },
+    warn: (msg: string, meta?: unknown) => {
+      base.warn(msg, meta);
+      output.warn(msg);
+    },
+    error: (msg: string, meta?: unknown) => {
+      base.error(msg, meta);
+      output.error(msg);
+    },
+  };
 }
 
 /**
@@ -108,10 +137,11 @@ export async function scanUpgrades(args: {
   onCandidate?: (candidate: UpgradeCandidate) => void;
   token?: { isCancellationRequested: boolean };
   repoLabel?: string;
+  output?: vscode.LogOutputChannel;
 }): Promise<UpgradeScanResult> {
   return core.scanUpgrades({
     ...args,
-    logger: scanLogger(),
+    logger: scanLogger(args.output),
     fs: vscodeWorkspaceFs(),
     env: await envWithShellPath(),
     concurrency: concurrency(),
@@ -127,10 +157,11 @@ export async function reanalyzeUpgrade(args: {
   githubToken?: string;
   refreshVersions?: boolean;
   onProgress?: (phase: string, detail: string) => void;
+  output?: vscode.LogOutputChannel;
 }): Promise<UpgradeCandidate> {
   return core.reanalyzeUpgrade({
     ...args,
-    logger: scanLogger(),
+    logger: scanLogger(args.output),
     fs: vscodeWorkspaceFs(),
     env: await envWithShellPath(),
   });

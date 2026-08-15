@@ -161,11 +161,12 @@ export async function tryAutoInstall(
     timeoutMs: 10 * 60_000,
   });
   if (result.code !== 0) {
-    request.logger.debug(
+    request.logger.warn(
       `${install.label} failed: ${(result.stderr || result.stdout || 'no output').trim()}`,
     );
     return false;
   }
+  request.logger.info(`${install.label.replace(/^Install\s+/i, '')} installed.`);
   return true;
 }
 

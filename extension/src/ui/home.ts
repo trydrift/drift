@@ -1202,6 +1202,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
             root: ctx.root,
             repo: ctx.repo,
             managers,
+            output: this.output,
             // Every direct dependency, every time. What counts as a dependency
             // worth checking is a settings question — `drift.analysis.includeDev`
             // and `includePatch`, already merged into this config — and never a
@@ -1516,6 +1517,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         githubToken: await getRateLimitToken(),
         refreshVersions: options.refreshVersions,
         onProgress: (phase, detail) => step.progress(phase, detail),
+        output: this.output,
       });
 
       this.candidates.delete(id);
@@ -1681,6 +1683,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
             config: candidateCtx.config,
             githubToken: await getRateLimitToken(),
             onProgress: (phase, detail) => step.progress(phase, detail),
+            output: this.output,
           });
           this.candidates.delete(candidate.id);
         }
