@@ -161,3 +161,69 @@ describe('Gradle version catalog discovery', () => {
     });
   });
 });
+
+/**
+ * pnpm/Yarn/Bun keep one lockfile at the repository root; a workspace member
+ * usually has nothing but its own `package.json`. Detecting a member on its
+ * own therefore matches every npm-ecosystem manager equally, and used to
+ * settle on whichever sorted first in the manager table — npm — regardless of
+ * what the repository actually uses.
+ */
+describe('workspace members inherit the root package manager', () => {
+  async function withProject(
+    files: Record<string, string>,
+    fn: (root: string) => Promise<void>,
+  ): Promise<void> {
+    const root = await mkdtemp(join(tmpdir(), 'drift-workspace-manager-'));
+    try {
+      for (const [path, content] of Object.entries(files)) {
+        const full = join(root, path);
+        await mkdir(join(full, '..'), { recursive: true });
+        await writeFile(full, content, 'utf8');
+      }
+      await fn(root);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  }
+
+  test('a member with no lockfile of its own is resolved as the root’s pnpm, not npm', async () => {
+    await withProject(
+      {
+        'package.json': JSON.stringify({ name: 'root', private: true, workspaces: ['packages/*'] }),
+        'pnpm-lock.yaml': 'lockfileVersion: 9.0\n',
+        'pnpm-workspace.yaml': "packages:\n  - 'packages/*'\n",
+        'packages/api/package.json': JSON.stringify({ name: 'api', dependencies: { zod: '^3.0.0' } }),
+      },
+      async (root) => {
+        const { targets, ambiguities } = await discoverTargets(
+          root,
+          ['packages/api'],
+          new Map(),
+          nodeWorkspaceFs(),
+        );
+        const npmEcosystemTarget = targets.find((t) => t.manager.ecosystem === 'npm');
+        assert.ok(npmEcosystemTarget, 'the member should still be detected');
+        assert.equal(npmEcosystemTarget.manager.id, 'pnpm', 'the root lockfile decides, not manager-table order');
+        assert.equal(ambiguities.length, 0, 'the root default resolves it without asking');
+      },
+    );
+  });
+
+  test('a member with its own lockfile is trusted over the root', async () => {
+    await withProject(
+      {
+        'package.json': JSON.stringify({ name: 'root', private: true, workspaces: ['packages/*'] }),
+        'pnpm-lock.yaml': 'lockfileVersion: 9.0\n',
+        'pnpm-workspace.yaml': "packages:\n  - 'packages/*'\n",
+        'packages/legacy/package.json': JSON.stringify({ name: 'legacy', dependencies: { zod: '^3.0.0' } }),
+        'packages/legacy/package-lock.json': JSON.stringify({ lockfileVersion: 3 }),
+      },
+      async (root) => {
+        const { targets } = await discoverTargets(root, ['packages/legacy'], new Map(), nodeWorkspaceFs());
+        const npmEcosystemTarget = targets.find((t) => t.manager.ecosystem === 'npm');
+        assert.equal(npmEcosystemTarget?.manager.id, 'npm', 'this member genuinely opts out with its own lockfile');
+      },
+    );
+  });
+});

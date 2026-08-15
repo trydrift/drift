@@ -254,9 +254,9 @@ const DEFAULT_BREADTH: ScanBreadth = { includeDev: true, maxSites: 40, maxPackag
 /**
  * Find every manifest in a set of directories and name the tool that owns it.
  *
- * An ambiguous directory still yields a target — Drift picks the first
- * candidate so the scan (which only reads) can proceed — but the ambiguity is
- * returned alongside so the caller can ask before anything is *written*.
+ * An ambiguous directory still yields a target — Drift picks a candidate so
+ * the scan (which only reads) can proceed — but the ambiguity is returned
+ * alongside so the caller can ask before anything is *written*.
  */
 export async function discoverTargets(
   root: string,
@@ -266,6 +266,7 @@ export async function discoverTargets(
 ): Promise<{ targets: EcosystemTarget[]; ambiguities: DirectoryAmbiguity[] }> {
   const targets: EcosystemTarget[] = [];
   const ambiguities: DirectoryAmbiguity[] = [];
+  const rootDefaults = await rootManagerDefaults(root, fs);
 
   for (const dir of dirs) {
     const absolute = dir ? join(root, dir) : root;
@@ -286,11 +287,11 @@ export async function discoverTargets(
     if (detected.length === 0) continue;
 
     for (const ambiguity of packageManagerAmbiguities(detected)) {
-      const chosen = preferences.get(ambiguityKey(dir, ambiguity.ecosystem));
+      const chosen = preferences.get(ambiguityKey(dir, ambiguity.ecosystem)) ?? rootDefaults.get(ambiguity.ecosystem);
       if (!chosen) ambiguities.push({ ...ambiguity, dir });
     }
 
-    for (const entry of chooseManagers(detected, dir, preferences)) {
+    for (const entry of chooseManagers(detected, dir, preferences, rootDefaults)) {
       const manifest =
         entry.manager.manifests.find((f) => entries.includes(f)) ??
         (entry.manager.manifestPattern
@@ -343,11 +344,15 @@ async function nestedManifests(
   return found;
 }
 
-/** One manager per ecosystem per directory: the preferred one, else the first. */
+/**
+ * One manager per ecosystem per directory: the preferred one, else the
+ * repository root's own manager for that ecosystem, else the first candidate.
+ */
 function chooseManagers(
   detected: readonly DetectedPackageManager[],
   dir: string,
   preferences: ManagerPreferences,
+  rootDefaults: ReadonlyMap<Ecosystem, PackageManagerId> = new Map(),
 ): DetectedPackageManager[] {
   const taken = new Set<Ecosystem>();
   const out: DetectedPackageManager[] = [];
@@ -355,13 +360,38 @@ function chooseManagers(
   for (const ecosystem of new Set(detected.map((d) => d.manager.ecosystem))) {
     const candidates = detected.filter((d) => d.manager.ecosystem === ecosystem);
     const preferred = preferences.get(ambiguityKey(dir, ecosystem));
-    const chosen = candidates.find((c) => c.manager.id === preferred) ?? candidates[0]!;
+    // A member directory of a pnpm/Yarn/Bun workspace usually has nothing but
+    // its own `package.json` — the lockfile that actually identifies the
+    // manager lives once, at the repository root. Without this fallback an
+    // ambiguity here (no local lockfile, several npm-ecosystem managers all
+    // matching the manifest) settles on whichever sorts first in the manager
+    // table, which is npm, regardless of what the repository actually uses.
+    const chosen =
+      candidates.find((c) => c.manager.id === preferred) ??
+      candidates.find((c) => c.manager.id === rootDefaults.get(ecosystem)) ??
+      candidates[0]!;
     if (taken.has(ecosystem)) continue;
     taken.add(ecosystem);
     out.push(chosen);
   }
 
   return out;
+}
+
+/** Which manager the repository root itself uses, per ecosystem. */
+async function rootManagerDefaults(
+  root: string,
+  fs: WorkspaceFs,
+): Promise<Map<Ecosystem, PackageManagerId>> {
+  const entries = await fs.readDirectory(root);
+  const detected = detectPackageManagers({ entries, read: (name) => readFileSyncish(join(root, name)) });
+  const defaults = new Map<Ecosystem, PackageManagerId>();
+  // A lockfile-backed manager is the only trustworthy root default — an
+  // ambiguous root (several manifest-only candidates, no lockfile) has no
+  // more of an answer than the member does, so it contributes nothing rather
+  // than propagating one guess as another.
+  for (const entry of detected) if (entry.fromLockfile) defaults.set(entry.manager.ecosystem, entry.manager.id);
+  return defaults;
 }
 
 /**

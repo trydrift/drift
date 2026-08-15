@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { detectChecks, type CheckKind, type LocalCheck } from '../detect/checks.js';
-import { detectPackageManagers } from '../detect/package-manager.js';
+import { detectPackageManagers, type PackageManagerId } from '../detect/package-manager.js';
 import { nodeWorkspaceFs, type WorkspaceFs } from '../detect/workspace.js';
 import { execCommand, type Exec } from '../util/exec.js';
 
@@ -56,20 +56,37 @@ export interface CancelSignal {
  *
  * Scoped to the workspace member that owns the files in question, so a monorepo
  * runs the affected package's checks rather than the whole repository's.
+ *
+ * `preferredManager` should be the manager the probe already resolved for
+ * this directory — the one it is about to run the install with. Without it, a
+ * pnpm/Yarn/Bun workspace member (which usually has nothing but its own
+ * `package.json`, no lockfile of its own) matches every npm-ecosystem manager
+ * equally, and this would offer `npm run typecheck` *and* `pnpm run
+ * typecheck` *and* `yarn typecheck` as three separate checks — running the
+ * same script three times with tools that were never installed the way the
+ * project actually expects. Naming the manager collapses that ecosystem down
+ * to the one command that matches what was actually installed; every other
+ * ecosystem detected in the same directory (a Python project alongside a
+ * frontend, say) is untouched.
  */
 export async function availableChecks(
   root: string,
   dir = '',
   fs: WorkspaceFs = nodeWorkspaceFs(),
+  preferredManager?: PackageManagerId,
 ): Promise<LocalCheck[]> {
   const absolute = dir ? join(root, dir) : root;
   const entries = await fs.readDirectory(absolute);
   if (entries.length === 0) return [];
 
   const detected = detectPackageManagers({ entries });
-  const checks: LocalCheck[] = [];
+  const preferred = preferredManager ? detected.find((d) => d.manager.id === preferredManager) : undefined;
+  const scoped = preferred
+    ? [preferred, ...detected.filter((d) => d.manager.ecosystem !== preferred.manager.ecosystem)]
+    : detected;
 
-  for (const { manager } of detected) {
+  const checks: LocalCheck[] = [];
+  for (const { manager } of scoped) {
     const manifest = manager.manifests.find((f) => entries.includes(f));
     const content = manifest ? await fs.readFile(join(absolute, manifest)) : null;
     for (const check of detectChecks(manager.id, content)) {

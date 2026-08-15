@@ -217,13 +217,15 @@ async function probeGroup(
   }
 
   try {
+    const manager = packageManagerById(targets[0]!.packageManager);
+
     // Detected in the worktree rather than in the developer's checkout, because
     // that is where they will run. Reading the open tree would offer a script
     // that only exists in someone's unsaved edits, and miss one they have just
     // deleted without committing.
-    const wanted = (await availableChecks(worktree.path, dir, options.fs ?? nodeWorkspaceFs())).filter((check) =>
-      kinds.includes(check.kind),
-    );
+    const wanted = (
+      await availableChecks(worktree.path, dir, options.fs ?? nodeWorkspaceFs(), targets[0]!.packageManager)
+    ).filter((check) => kinds.includes(check.kind));
     if (wanted.length === 0) {
       for (const target of targets) {
         hooks.settle(
@@ -233,8 +235,6 @@ async function probeGroup(
       }
       return;
     }
-
-    const manager = packageManagerById(targets[0]!.packageManager);
 
     // A worktree is the commit and nothing else: no `node_modules`, no
     // virtualenv. Without this the very first typecheck fails on every import
@@ -527,7 +527,9 @@ async function checkAt(
   }
 
   try {
-    const checks = (await availableChecks(worktree.path, dir, options.fs ?? nodeWorkspaceFs())).filter((check) =>
+    const checks = (
+      await availableChecks(worktree.path, dir, options.fs ?? nodeWorkspaceFs(), options.packageManager)
+    ).filter((check) =>
       kinds.includes(check.kind),
     );
     if (checks.length === 0) {

@@ -582,7 +582,17 @@ async function verifyPlan(
   return verifiedPlan;
 }
 
-/** Which tool owns `dir`, for the ecosystem that actually changed. */
+/**
+ * Which tool owns `dir`, for the ecosystem that actually changed.
+ *
+ * A pnpm/Yarn/Bun workspace member usually carries nothing but its own
+ * `package.json` — the lockfile that actually names the manager lives once,
+ * at the repository root. Detecting from the member directory alone would
+ * match every npm-ecosystem manager equally and settle on whichever sorts
+ * first in the manager table (npm), regardless of what the repository
+ * actually uses. The root's lockfile-backed identity wins unless this member
+ * carries lockfile evidence of its own.
+ */
 async function managerFor(
   workspace: string,
   dir: string,
@@ -591,8 +601,20 @@ async function managerFor(
   const fs = nodeWorkspaceFs();
   const entries = await fs.readDirectory(dir ? join(workspace, dir) : workspace);
   if (entries.length === 0) return null;
-  const detected = detectPackageManagers({ entries }).find((d) => d.manager.ecosystem === ecosystem);
-  return detected?.manager.id ?? null;
+
+  const atMember = detectPackageManagers({ entries }).filter((d) => d.manager.ecosystem === ecosystem);
+  const ownLock = atMember.find((d) => d.fromLockfile);
+  if (ownLock) return ownLock.manager.id;
+
+  if (dir) {
+    const rootEntries = await fs.readDirectory(workspace);
+    const atRoot = detectPackageManagers({ entries: rootEntries }).find(
+      (d) => d.manager.ecosystem === ecosystem && d.fromLockfile,
+    );
+    if (atRoot) return atRoot.manager.id;
+  }
+
+  return atMember[0]?.manager.id ?? null;
 }
 
 /**
