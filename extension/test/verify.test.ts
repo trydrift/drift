@@ -33,6 +33,7 @@ const script = (name: string, body: string): LocalCheck => {
     label: name,
     command: { command: path, args: [] },
     source: 'a test fixture',
+    compileCapable: false,
   };
 };
 
@@ -89,6 +90,7 @@ describe('running them', () => {
           label: 'definitely-not-installed',
           command: { command: join(root, 'definitely-not-installed'), args: [] },
           source: 'a test fixture',
+          compileCapable: false,
         },
       ],
     });
@@ -185,7 +187,7 @@ describe('the one-line verdict', () => {
 
 describe('a failing check never takes the decision away', () => {
   const failing: CheckOutcome[] = [
-    { kind: 'test', label: 'npm test', status: 'failed', durationMs: 12, output: '1 failing' },
+    { kind: 'test', label: 'npm test', compileCapable: false, status: 'failed', durationMs: 12, output: '1 failing' },
   ];
 
   test('Keep still works with every check red', async () => {

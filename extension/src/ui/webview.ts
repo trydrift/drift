@@ -772,6 +772,11 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
   }
 
   const affected = candidates.filter((c) => severityOf(c) === 'affected');
+  // A failed verification has no located call site, but it is measured
+  // evidence the upgrade broke the project's own checks — closer to
+  // `affected` than to anything that could be called "safe", so it gets its
+  // own group rather than silently vanishing from every bucket below.
+  const verificationFailed = candidates.filter((c) => severityOf(c) === 'verification-failed');
   const unchecked = candidates.filter((c) => severityOf(c) === 'unchecked');
   const safe = candidates.filter(
     (c) => severityOf(c) === 'clean' || severityOf(c) === 'upstream-only',
@@ -791,6 +796,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
         <span class="card-title">${ICON_PACKAGE}<b>Packages</b></span>
         <span class="tallies">
           ${affected.length ? tally(affected.length, 'affected', 'affected') : ''}
+          ${verificationFailed.length ? tally(verificationFailed.length, 'checks failed', 'error') : ''}
           ${unchecked.length ? tally(unchecked.length, 'unverified', 'unchecked') : ''}
           ${safe.length ? tally(safe.length, 'safe', 'clean') : ''}
           ${failed.length ? tally(failed.length, 'unknown', 'error') : ''}
@@ -810,6 +816,15 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
                   ? `<div class="pkg-group-foot"><button class="primary wide" data-action="fixAll">Upgrade and fix all ${affected.length} with ${escapeHtml(vm.agentLabel)}</button><button class="wide" data-action="fileIssueAll" title="Create one GitHub issue per affected dependency, so the work is tracked even if nobody fixes it today">Create ${affected.length} issues</button></div>`
                   : ''
               }
+            </section>`
+          : ''
+      }
+
+      ${
+        verificationFailed.length
+          ? `<section class="pkg-group">
+              <h4 class="pkg-subhead error">${ICON_ALERT}<span>Its own checks failed</span><small>${verificationFailed.length}</small></h4>
+              <div class="pkg-list">${verificationFailed.map((c) => renderCandidate(c, verificationFailed.length === 1, showRepo)).join('')}</div>
             </section>`
           : ''
       }
@@ -1056,6 +1071,8 @@ function shortVerdict(candidate: UpgradeCandidate, severity: UpgradeSeverity): s
   switch (severity) {
     case 'affected':
       return `${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'} here`;
+    case 'verification-failed':
+      return 'Its checks failed';
     case 'upstream-only':
       return 'Safe here';
     case 'unchecked':
@@ -2360,7 +2377,7 @@ button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
 .pkg > summary::-webkit-details-marker { display: none; }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--vscode-testing-iconPassed); }
 .dot.affected { background: var(--vscode-editorWarning-foreground); }
-.dot.error { background: var(--vscode-editorError-foreground); }
+.dot.error, .dot.verification-failed { background: var(--vscode-editorError-foreground); }
 .dot.unchecked { background: var(--vscode-descriptionForeground); }
 .pkg-name { min-width: 0; display: flex; flex-direction: column; }
 .pkg-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

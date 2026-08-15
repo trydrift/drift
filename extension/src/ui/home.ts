@@ -65,7 +65,7 @@ import {
   type UncheckedDependency,
   type UpgradeCandidate,
 } from '../upgrades.js';
-import { scanTitle } from '../severity.js';
+import { scanTitle, compareSeverity } from '../severity.js';
 import {
   compareUrl,
   dependencyFilesIn,
@@ -1233,7 +1233,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       const ranked = found.slice().sort(bySeverity);
       step.done(
         `Checked ${checked - unlooked.length} package${checked - unlooked.length === 1 ? '' : 's'} · ` +
-          `${ranked.filter((c) => severityOf(c) === 'affected').length} need attention` +
+          `${ranked.filter((c) => severityOf(c) === 'affected' || severityOf(c) === 'verification-failed').length} need attention` +
           (unlooked.length > 0 ? ` · ${unlooked.length} could not be checked` : ''),
       );
 
@@ -5313,9 +5313,12 @@ function cleanFence(output: string): string {
   return output.replace(/```/g, '` ` `');
 }
 
+// A thin wrapper around the shared `compareSeverity`, rather than a second
+// rank table kept by hand: a duplicate here is exactly how the previous
+// version fell out of sync (no `upstream-only` entry, no way to add a new
+// severity without remembering to update both copies).
 function bySeverity(a: UpgradeCandidate, b: UpgradeCandidate): number {
-  const rank = { affected: 0, error: 1, 'upstream-only': 2, unchecked: 3, clean: 4 } as const;
-  const diff = rank[severityOf(a)] - rank[severityOf(b)];
+  const diff = compareSeverity(a, b);
   return diff !== 0 ? diff : a.name.localeCompare(b.name);
 }
 
@@ -5351,7 +5354,13 @@ function headline(
    */
   unlooked = 0,
 ): string {
-  const affected = candidates.filter((c) => severityOf(c) === 'affected').length;
+  // A failed verification has no located call site, but it is measured
+  // evidence of breakage — folded in with `affected` here so it is never
+  // counted toward `safe` below. The bug this guards against: `zod` and
+  // `typescript` were once called safe from the exact same kind of gap,
+  // just upstream of this function instead of in it.
+  const affected =
+    candidates.filter((c) => severityOf(c) === 'affected' || severityOf(c) === 'verification-failed').length;
   const unchecked = candidates.filter((c) => severityOf(c) === 'unchecked').length + unlooked;
   const safe = candidates.length - affected - (unchecked - unlooked);
   const scope = checked > 0 ? ` out of ${checked} checked` : '';

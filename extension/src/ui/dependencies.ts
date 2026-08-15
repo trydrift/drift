@@ -6,7 +6,7 @@ import { describeSeverity, severityOf, type UpgradeSeverity } from '../severity.
 import { DriftReportPanel } from './report.js';
 
 const MANIFESTS = new Set(['package.json', 'go.mod', 'Cargo.toml', 'pom.xml', 'requirements.txt', 'Gemfile']);
-const ORDER: UpgradeSeverity[] = ['affected', 'unchecked', 'clean', 'error'];
+const ORDER: UpgradeSeverity[] = ['affected', 'verification-failed', 'unchecked', 'clean', 'error'];
 
 type DependencyNode =
   | { kind: 'group'; severity: UpgradeSeverity; candidates: UpgradeCandidate[] }
@@ -253,6 +253,8 @@ function groupLabel(severity: UpgradeSeverity): string {
   switch (severity) {
     case 'affected':
       return 'Affected';
+    case 'verification-failed':
+      return "Checks failed";
     case 'unchecked':
       return 'Unchecked';
     case 'clean':
@@ -267,6 +269,8 @@ function iconFor(severity: UpgradeSeverity): string {
   switch (severity) {
     case 'affected':
       return 'warning';
+    case 'verification-failed':
+      return 'error';
     case 'unchecked':
       return 'question';
     case 'clean':

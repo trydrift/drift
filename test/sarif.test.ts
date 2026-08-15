@@ -563,6 +563,59 @@ describe('findingsFromCandidates', () => {
   test('a candidate with no plan produces no finding', async () => {
     assert.equal((await findingsFromCandidates([{ ...baseCandidate }])).length, 0);
   });
+
+  test('a failed verification produces a finding even with zero breaking changes and impact sites', async () => {
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [{ ...dependencyChange, from: '1.0.0', to: '1.2.0' }],
+      evidence: [],
+      breakingChanges: [],
+      impactSites: [],
+      rationale: [rationale({ from: '1.0.0', to: '1.2.0' })],
+    }) as RemediationPlan;
+    plan.verification = {
+      status: 'failed',
+      checks: [{ kind: 'typecheck', label: 'npm run typecheck', compileCapable: true, status: 'failed', durationMs: 1, output: 'boom' }],
+      diagnostics: 'src/a.ts(1,1): error TS2554',
+      failedFiles: ['src/a.ts'],
+    };
+
+    const candidate: UpgradeCandidate = {
+      ...baseCandidate,
+      verification: plan.verification,
+      plan,
+    };
+
+    // No `includeInformational` — this must not depend on that flag, unlike
+    // the ordinary "safe to upgrade" informational block.
+    const findings = await findingsFromCandidates([candidate]);
+    assert.equal(findings.length, 1, 'a failed verification is never silent, even with nothing else to report');
+    assert.match(findings[0]!.message, /own checks fail/i);
+    assert.match(findings[0]!.message, /npm run typecheck/);
+    assert.doesNotMatch(findings[0]!.fix?.description ?? '', /Safe to upgrade/);
+  });
+
+  test('a passing verification with nothing found is still described as safe', async () => {
+    const plan = buildPlan({
+      repo,
+      config: DEFAULT_CONFIG,
+      changes: [{ ...dependencyChange, from: '1.0.0', to: '1.2.0' }],
+      evidence: [],
+      breakingChanges: [],
+      impactSites: [],
+      rationale: [rationale({ from: '1.0.0', to: '1.2.0' })],
+    }) as RemediationPlan;
+    plan.verification = {
+      status: 'passed',
+      checks: [{ kind: 'typecheck', label: 'npm run typecheck', compileCapable: true, status: 'passed', durationMs: 1, output: '' }],
+      failedFiles: [],
+    };
+
+    const candidate: UpgradeCandidate = { ...baseCandidate, verification: plan.verification, plan };
+    const [finding] = await findingsFromCandidates([candidate], { includeInformational: true });
+    assert.match(finding!.fix?.description ?? '', /Safe to upgrade/);
+  });
 });
 
 describe('buildSarifLog', () => {

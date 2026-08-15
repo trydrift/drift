@@ -361,6 +361,13 @@ export async function findingsFromPlan(
 
     const extraBlocks: FindingBlock[] = [];
     if (hasSecuritySignal(rationale)) extraBlocks.push(buildSecurityBlock(rationale!));
+    // Measured evidence, not a prediction: the project's own check failed
+    // with this upgrade installed. Static analysis may have found nothing to
+    // point at, but that must never fall through to the "safe to upgrade"
+    // informational block below — a real, run check disagrees.
+    if (plan.verification?.status === 'failed') {
+      extraBlocks.push(buildVerificationFailureBlock(plan.verification));
+    }
 
     if (breakingBlocks.length === 0 && extraBlocks.length === 0) {
       if (!includeInformational || !rationale) continue;
@@ -495,9 +502,11 @@ export async function findingsFromCandidates(
       if (!command) return undefined;
       return {
         description:
-          candidate.breakingCount > 0
-            ? 'The upstream API changed, but no code in this repository was found to use the affected parts. Review before upgrading.'
-            : 'Safe to upgrade — no breaking changes found.',
+          candidate.verification?.status === 'failed'
+            ? "The project's own checks failed with this upgrade installed — measured, not predicted. Do not treat this as safe to upgrade without investigating."
+            : candidate.breakingCount > 0
+              ? 'The upstream API changed, but no code in this repository was found to use the affected parts. Review before upgrading.'
+              : 'Safe to upgrade — no breaking changes found.',
         command,
       };
     };
@@ -712,6 +721,35 @@ function buildSecurityBlock(rationale: UpgradeRationale): FindingBlock {
     relatedCandidates: [],
     helpUri: sec.current[0]?.url ?? sec.introduced[0]?.url ?? sec.resolved[0]?.url,
     ruleNameSuffix: title,
+  };
+}
+
+/**
+ * The project's own check failed with this upgrade installed — measured, not
+ * predicted. Drift may not know which line caused it (a static comparison
+ * found nothing to point at, or wasn't able to run at all), but "we don't
+ * know where" is not the same claim as "nothing is wrong", and this block is
+ * what keeps the two from collapsing into each other downstream.
+ */
+function buildVerificationFailureBlock(verification: NonNullable<RemediationPlan['verification']>): FindingBlock {
+  const failing = verification.checks.filter((c) => c.status === 'failed');
+  const labels = failing.map((c) => `\`${c.label}\``).join(', ');
+  const where =
+    verification.failedFiles.length > 0
+      ? ` in ${verification.failedFiles.length} file${verification.failedFiles.length === 1 ? '' : 's'}`
+      : '';
+
+  const lines: string[] = [
+    `**The project's own checks fail with this upgrade installed${where}** — measured, not predicted. Drift's static analysis found no specific call site to point at, but the upgrade should not be treated as safe.`,
+  ];
+  if (labels) lines.push('', `Failing: ${labels}`);
+  if (verification.diagnostics) lines.push('', truncate(verification.diagnostics, 4000));
+
+  return {
+    level: 'error',
+    lines,
+    relatedCandidates: [],
+    ruleNameSuffix: "Project's own checks fail with this upgrade",
   };
 }
 

@@ -735,7 +735,9 @@ async function outdatedCommand(flags: Flags): Promise<number> {
 
   if (flags.json) {
     console.log(JSON.stringify(result, null, 2));
-    return result.candidates.some((c) => severityOf(c) === 'affected') ? 1 : 0;
+    return result.candidates.some((c) => severityOf(c) === 'affected' || severityOf(c) === 'verification-failed')
+      ? 1
+      : 0;
   }
 
   if (result.checked === 0) {
@@ -796,7 +798,9 @@ async function outdatedCommand(flags: Flags): Promise<number> {
     }
   }
 
-  const affected = result.candidates.filter((c) => severityOf(c) === 'affected').length;
+  const affected = result.candidates.filter(
+    (c) => severityOf(c) === 'affected' || severityOf(c) === 'verification-failed',
+  ).length;
   return affected > 0 ? 1 : 0;
 }
 
