@@ -83,6 +83,19 @@ inputs:
     required: false
     default: 'info'
 
+  cache-dir:
+    description: >-
+      Directory to persist fetched registry metadata, changelogs, release
+      notes, and module maps in. Each of these is keyed by a URL that already
+      names an exact package version, so a hit is a fact that never goes
+      stale within its TTL. A fresh runner has nothing here on its own — pair
+      this with an `actions/cache` step that restores the directory before
+      Drift runs and saves it after, so a re-scan of an unchanged dependency
+      reads its evidence off disk instead of refetching it. Unset disables
+      disk caching (a single run still dedupes its own repeated requests
+      in memory).
+    required: false
+
 outputs:
   status:
     description: >-

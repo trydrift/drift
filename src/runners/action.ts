@@ -18,6 +18,7 @@ import {
 import { scanUpgrades, type UpgradeCandidate } from '../upgrade/scan.js';
 import { createLogger, type Logger, type LogLevel } from '../util/logger.js';
 import { matchesAny } from '../util/glob.js';
+import { configureHttpDiskCache } from '../util/http.js';
 import { applyApproval } from '../approval/apply.js';
 import { awaitTerminalState, isTerminalState } from '../dispatch/copilot.js';
 
@@ -44,11 +45,23 @@ interface ActionInputs {
   scanMode?: 'diff' | 'outdated';
   /** Overrides `codeScanning.granularity` in drift.yml. */
   alertGranularity?: AlertGranularity;
+  /**
+   * Where to persist fetched registry/changelog/module-map responses.
+   *
+   * A runner is a fresh machine every job, so this is empty on its own —
+   * it only pays off when a workflow restores it with `actions/cache` first
+   * and saves it after, at which point a re-scan of an unchanged dependency
+   * reads its evidence off disk instead of re-fetching it. Unset disables
+   * disk caching (each run still dedupes its own repeated requests
+   * in-process).
+   */
+  cacheDir?: string;
 }
 
 export async function runAction(): Promise<number> {
   const inputs = readInputs();
   const logger = createLogger(inputs.logLevel);
+  configureHttpDiskCache(inputs.cacheDir ?? null);
 
   // Fail fast rather than running the whole pipeline and dying on a 401 at the
   // very end, after the user has waited through evidence gathering.
@@ -413,6 +426,7 @@ function readInputs(): ActionInputs {
       alertGranularity === 'package' || alertGranularity === 'breakingChange' || alertGranularity === 'affectedSite'
         ? alertGranularity
         : undefined,
+    cacheDir: actionInput('cache-dir') || process.env.DRIFT_CACHE_DIR || undefined,
   };
 }
 

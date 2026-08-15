@@ -57,6 +57,20 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      # Optional, and worth it here specifically: this workflow re-checks the
+      # same dependencies on every scheduled run, and most of them won't have
+      # moved since last week. Registry metadata, changelogs, release notes
+      # and module maps are keyed by a URL that already names an exact
+      # version, so restoring this directory turns most of those into a
+      # filesystem read instead of a fetch. Drift still revalidates past its
+      # TTL rather than trusting a stale entry forever.
+      - name: Restore Drift's evidence cache
+        uses: actions/cache@v4
+        with:
+          path: .drift-cache
+          key: drift-cache-${{ github.run_id }}
+          restore-keys: drift-cache-
+
       - name: Run Drift
         id: drift
         uses: trydrift/drift@v0
@@ -64,6 +78,7 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           scan-mode: outdated
           alert-granularity: ${{ inputs.alert-granularity }}
+          cache-dir: .drift-cache
 
       - name: Report outcome
         if: always()

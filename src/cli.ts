@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { readFile } from 'node:fs/promises';
 import { realpathSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { homedir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +23,7 @@ import { runAction } from './runners/action.js';
 import { main as serveWebhook } from './runners/webhook.js';
 import { sampleTelemetryEvent } from './telemetry.js';
 import { createLogger, type LogLevel, type Logger } from './util/logger.js';
+import { configureHttpDiskCache } from './util/http.js';
 import { dispatchRemainingToCopilot, runFix } from './remediation/cli-runner.js';
 import {
   installUpgrade,
@@ -318,7 +320,30 @@ Environment:
   ANTHROPIC_API_KEY           Only if llm.enabled is true in drift.yml
 `.trim();
 
+/**
+ * Where fetched registry metadata, changelogs, release notes, and downloaded
+ * `.d.ts`/module-map artifacts are kept between runs.
+ *
+ * These are keyed by URL, and the URLs Drift fetches already name an exact
+ * version — `zod 3.25.76`'s registry entry and changelog are the same bytes
+ * on every scan that asks for them, on every machine that asks. Reusing
+ * them turns a re-scan of an unchanged dependency into a filesystem read
+ * instead of a network round trip, without changing what the scan finds:
+ * `util/http.ts` still revalidates via ETag past its TTL rather than
+ * trusting a stale entry forever.
+ *
+ * `DRIFT_CACHE_DIR` overrides the location — set it to a directory an
+ * `actions/cache` step restores to get this across separate CI runs, not
+ * just within one. `DRIFT_NO_CACHE=1` disables the disk cache entirely
+ * (the in-process cache for one run's own duplicate requests still applies).
+ */
+function defaultHttpCacheDir(): string | null {
+  if (process.env.DRIFT_NO_CACHE === '1') return null;
+  return process.env.DRIFT_CACHE_DIR || join(homedir(), '.drift', 'cache', 'http');
+}
+
 export async function main(argv: string[]): Promise<number> {
+  configureHttpDiskCache(defaultHttpCacheDir());
   const [command, ...rest] = argv;
 
   switch (command) {
