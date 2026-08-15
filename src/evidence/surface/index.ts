@@ -49,6 +49,8 @@ export interface ComputeOptions {
   timeoutMs?: number;
   /** Reads a file from the repository under analysis, by repo-relative path. */
   readRepoFile?: (path: string) => Promise<string | null>;
+  /** Install a missing helper analyzer inline instead of reporting the gap. */
+  autoInstall?: boolean;
 }
 
 const DEFAULT_TIMEOUT_MS = 180_000;
@@ -93,6 +95,7 @@ export async function computeSurfaceDiff(
       ...(options.env ? { env: options.env } : {}),
       timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
       ...(options.readRepoFile ? { readRepoFile: options.readRepoFile } : {}),
+      ...(options.autoInstall ? { autoInstall: true } : {}),
     });
   } catch (err) {
     // A provider throwing is a bug in Drift, not a fact about the dependency —

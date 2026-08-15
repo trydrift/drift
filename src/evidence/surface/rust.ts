@@ -2,7 +2,13 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Exec } from '../../util/exec.js';
 import { diffSurfaces, type SurfaceApi, type SurfaceEntry, type SurfaceKind } from '../type-surface.js';
-import { unavailable, type SurfaceProvider, type SurfaceRequest, type SurfaceOutcome } from './types.js';
+import {
+  unavailable,
+  tryAutoInstall,
+  type SurfaceProvider,
+  type SurfaceRequest,
+  type SurfaceOutcome,
+} from './types.js';
 
 /**
  * Rust public-API diffing via `cargo public-api`.
@@ -43,13 +49,18 @@ export const rustSurface: SurfaceProvider = {
     }
 
     if (!(await commandWorks(request.exec, 'cargo', ['public-api', '--version'], request.env))) {
-      return unavailable(
-        TOOL,
-        'tool-missing',
-        `Rust and Cargo are installed, but Drift's Rust API helper is missing. ${request.name}'s public API could not be compared directly.`,
-        PUBLIC_API_REMEDY,
-        PUBLIC_API_INSTALL,
-      );
+      const installed =
+        (await tryAutoInstall(request, PUBLIC_API_INSTALL)) &&
+        (await commandWorks(request.exec, 'cargo', ['public-api', '--version'], request.env));
+      if (!installed) {
+        return unavailable(
+          TOOL,
+          'tool-missing',
+          `Rust and Cargo are installed, but Drift's Rust API helper is missing. ${request.name}'s public API could not be compared directly.`,
+          PUBLIC_API_REMEDY,
+          PUBLIC_API_INSTALL,
+        );
+      }
     }
 
     const before = await surfaceOf(request, request.from);

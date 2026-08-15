@@ -2,7 +2,13 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isAvailable } from '../../util/exec.js';
 import type { SurfaceChange } from '../type-surface.js';
-import { unavailable, type SurfaceProvider, type SurfaceRequest, type SurfaceOutcome } from './types.js';
+import {
+  unavailable,
+  tryAutoInstall,
+  type SurfaceProvider,
+  type SurfaceRequest,
+  type SurfaceOutcome,
+} from './types.js';
 
 /**
  * Java binary-compatibility diffing via japicmp.
@@ -39,13 +45,18 @@ export const javaSurface: SurfaceProvider = {
     }
 
     if (!(await isAvailable(request.exec, 'japicmp', ['--help']))) {
-      return unavailable(
-        TOOL,
-        'tool-missing',
-        `Drift's Java API helper is missing, so ${request.name}'s classfile API could not be compared directly.`,
-        REMEDY,
-        INSTALL,
-      );
+      const installed =
+        (await tryAutoInstall(request, INSTALL)) &&
+        (await isAvailable(request.exec, 'japicmp', ['--help']));
+      if (!installed) {
+        return unavailable(
+          TOOL,
+          'tool-missing',
+          `Drift's Java API helper is missing, so ${request.name}'s classfile API could not be compared directly.`,
+          REMEDY,
+          INSTALL,
+        );
+      }
     }
 
     await mkdir(request.workdir, { recursive: true });

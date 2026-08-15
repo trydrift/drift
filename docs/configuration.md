@@ -380,6 +380,16 @@ command — `drift outdated --upgrade <name>`, or the underlying package manager
 that applies it; once that lands and is pushed, the ordinary push-triggered
 pipeline above takes over exactly as it would for a human's own bump.
 
+### `tools.autoInstall`
+
+`boolean` — default **`false`**
+
+Install a missing Drift-owned helper analyzer (`cargo-public-api`, `japicmp`)
+the moment a scan needs it, instead of reporting the gap and waiting for a
+second, manual pass. Off by default: unlike `verify`, which only ever installs
+into a throwaway worktree, this reaches outside the project and installs a
+binary globally via `cargo`/`brew`.
+
 ---
 
 ## Upgrade rationale

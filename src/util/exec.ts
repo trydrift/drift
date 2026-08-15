@@ -38,7 +38,7 @@ const DEFAULT_MAX_BUFFER = 32 * 1024 * 1024;
 
 export const execCommand: Exec = (command, args, options = {}) =>
   new Promise((resolve) => {
-    execFile(
+    const child = execFile(
       command,
       [...args],
       {
@@ -64,6 +64,11 @@ export const execCommand: Exec = (command, args, options = {}) =>
         });
       },
     );
+    // Nothing here ever has input to give an interactive prompt. Left open,
+    // an unattended pipe leaves a tool that stops to ask something (a package
+    // manager's "already installed, overwrite?") blocked forever instead of
+    // failing fast, since there is never a human at the other end to answer.
+    child.stdin?.end();
   });
 
 /** Is this tool on the PATH and runnable? */

@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { basename, dirname, join, relative } from 'node:path';
 import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import semver from 'semver';
 import { CLEAN_TYPECHECK_MARKER, digestDiagnostics, renderDigest } from '../diagnostics-digest.js';
 import type { RemediationPlan, RepoContext } from '../../../src/types.js';
@@ -136,7 +135,33 @@ type Incoming =
   | { type: 'keepGroup' | 'undoGroup' | 'retryCommit'; order: number }
   | { type: 'keepAll' | 'undoAll' };
 
-const runCommand = promisify(execFile);
+/**
+ * Runs a one-off helper install (`cargo install cargo-public-api`, and the
+ * like) to completion.
+ *
+ * `promisify(execFile)` was used here before, but it leaves stdin as an open,
+ * unattended pipe: a tool that stops to ask something interactive (a package
+ * manager's "already installed, overwrite?") blocks on it forever instead of
+ * failing fast, since there is never a human at the other end of this pipe to
+ * answer — which read as the installer hanging with no feedback. Closing
+ * stdin immediately makes that fail fast instead.
+ */
+function runCommand(
+  command: string,
+  args: readonly string[],
+  options: { cwd?: string; env?: NodeJS.ProcessEnv; windowsHide?: boolean; timeout?: number; maxBuffer?: number },
+): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    const child = execFile(command, [...args], { ...options, encoding: 'utf8' }, (error, stdout, stderr) => {
+      if (error) {
+        reject(Object.assign(error, { stdout, stderr }));
+        return;
+      }
+      resolve({ stdout, stderr });
+    });
+    child.stdin?.end();
+  });
+}
 
 /**
  * Directories the context picker never offers.

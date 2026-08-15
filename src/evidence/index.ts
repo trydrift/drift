@@ -362,6 +362,7 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
     exec: ctx.exec,
     env: ctx.env,
     readRepoFile: repoFileReader(ctx),
+    autoInstall: ctx.config.tools.autoInstall,
   });
   if (!outcome.available) {
     logger.debug(`No computed surface for ${change.name}: ${outcome.detail}`);

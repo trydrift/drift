@@ -547,6 +547,12 @@
           "markdownDescription": "Package name patterns to never analyse, for example `@types/*`. Added to any `ignore` list in `.github/drift.yml`.",
           "order": 15
         },
+        "drift.tools.autoInstall": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Install a missing helper analyzer (`cargo-public-api`, `japicmp`) as soon as a scan needs it, instead of asking first and requiring a second scan afterward. Off by default: this reaches outside the project, installing a binary globally via `cargo`/`brew`.",
+          "order": 16
+        },
         "drift.ui.showInlineDiagnostics": {
           "type": "boolean",
           "default": true,

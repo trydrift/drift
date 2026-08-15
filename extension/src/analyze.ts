@@ -184,6 +184,12 @@ function mergeSettings(base: DriftConfig): DriftConfig {
       customInstructions:
         settings.get<string>('fix.customInstructions', '') || base.remediation.customInstructions,
     },
+    tools: {
+      ...base.tools,
+      ...(explicitlySet(settings, 'tools.autoInstall')
+        ? { autoInstall: settings.get<boolean>('tools.autoInstall', base.tools.autoInstall) }
+        : {}),
+    },
   };
 }
 

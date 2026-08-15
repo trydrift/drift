@@ -122,6 +122,16 @@ export interface SurfaceRequest {
    * an ordinary case.
    */
   readRepoFile?: (path: string) => Promise<string | null>;
+  /**
+   * Install a missing helper inline instead of reporting the gap.
+   *
+   * Sourced from `config.tools.autoInstall`, off by default. When a provider
+   * finds its helper missing and this is set, it installs the helper itself
+   * (via {@link tryAutoInstall}) and continues the same computation — the
+   * point being that the scan that discovered the gap is the one that closes
+   * it, rather than requiring a second run after a manual install.
+   */
+  autoInstall?: boolean;
 }
 
 export interface SurfaceProvider {
@@ -130,6 +140,33 @@ export interface SurfaceProvider {
   tool: string;
   weight: number;
   compute(request: SurfaceRequest): Promise<SurfaceOutcome>;
+}
+
+/**
+ * Installs a Drift-owned helper inline, when the caller has opted in.
+ *
+ * Returns whether the install succeeded, so a provider can retry its own
+ * `commandWorks`/`isAvailable` check and fall back to the ordinary
+ * `unavailable(...)` gap on failure rather than surfacing an install error as
+ * if it were the surface diff itself.
+ */
+export async function tryAutoInstall(
+  request: SurfaceRequest,
+  install: ToolInstallRequest,
+): Promise<boolean> {
+  if (!request.autoInstall) return false;
+  request.logger.info(`Installing ${install.label.replace(/^Install\s+/i, '')}...`);
+  const result = await request.exec(install.command, install.args, {
+    ...(request.env ? { env: request.env } : {}),
+    timeoutMs: 10 * 60_000,
+  });
+  if (result.code !== 0) {
+    request.logger.debug(
+      `${install.label} failed: ${(result.stderr || result.stdout || 'no output').trim()}`,
+    );
+    return false;
+  }
+  return true;
 }
 
 export function unavailable(

@@ -552,6 +552,25 @@ export const DriftConfigSchema = z.object({
     .prefault({}),
 
   /**
+   * Drift-owned helper analyzers (`cargo-public-api`, `japicmp`) that a
+   * computed surface diff needs but does not ship.
+   *
+   * Off by default: installing a toolchain-specific binary is a machine
+   * change, not just a slower scan, so it stays opt-in the same way `verify`
+   * running a candidate's own build is opt-in — except this defaults closed
+   * rather than open, since unlike `verify` it reaches outside the project's
+   * own worktree (a global `cargo install`/`go install`, not a throwaway one).
+   * With this on, a missing helper is installed inline the first time a scan
+   * needs it, instead of surfacing a gap that only a second, manual pass can
+   * close.
+   */
+  tools: z
+    .object({
+      autoInstall: z.boolean().default(false),
+    })
+    .prefault({}),
+
+  /**
    * Test each upgrade before reporting it.
    *
    * Drift predicts breakage by diffing published type surfaces, which is cheap
