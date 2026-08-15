@@ -360,6 +360,31 @@ describe('verifying a dependency change that already landed', () => {
     const added = lines().filter((line) => line.startsWith('git worktree add'));
     assert.equal(added.length, 1, 'a clean run never checks out the base commit');
   });
+
+  test('a new regression in one check is kept even though an unrelated check was already red at baseline', async () => {
+    // `build` fails at both commits — pre-existing, not this dependency's
+    // fault. `typecheck` passes at baseline and fails after — a genuine
+    // regression. The old aggregate comparison (`before.status !== 'passed'`)
+    // would have discarded the whole result because the baseline verdict was
+    // `failed` overall; per-check comparison must keep the typecheck failure.
+    const exec = async (command, args, options = {}) => {
+      const line = [command, ...args].join(' ');
+      const atAfter = (options.cwd ?? '').includes('aaaaaaa');
+      const failing = line === 'npm run build' || (line === 'npm run typecheck' && atAfter);
+      return {
+        code: failing ? 1 : 0,
+        stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '',
+        stderr: failing ? `src/app.ts(3,11): error TS2554: ${line} broke` : '',
+      };
+    };
+
+    const verification = await probeDependencyChange({ ...base, exec, fs });
+
+    assert.equal(verification.status, 'failed');
+    assert.equal(verification.checks.filter((c) => c.status === 'failed').length, 2, 'both are reported as red');
+    assert.match(verification.diagnostics ?? '', /npm run typecheck/);
+    assert.doesNotMatch(verification.diagnostics ?? '', /npm run build/, 'the pre-existing build failure is not blamed on this dependency');
+  });
 });
 
 describe('reading a compiler’s file names', () => {

@@ -442,7 +442,6 @@ export interface ChangeProbeOptions {
 export async function probeDependencyChange(options: ChangeProbeOptions): Promise<UpgradeVerification> {
   const exec = options.exec ?? execCommand;
   const env = scrubEnv(options.env ?? process.env);
-  const dir = options.dir ?? '';
   const after = await checkAt(options, options.afterSha, exec, env, 'with the change');
   if (after.status !== 'failed' || !options.beforeSha) return after;
 
@@ -450,16 +449,62 @@ export async function probeDependencyChange(options: ChangeProbeOptions): Promis
   // dependency often adds the script that checks it, and running a check the
   // old tree never declared would report it as broken for the wrong reason.
   const before = await checkAt(options, options.beforeSha, exec, env, 'without it');
-  if (before.status !== 'passed') {
-    const alreadyRed = before.checks.filter((check) => check.status === 'failed').map((check) => check.label);
+  return reconcileAgainstBaseline(after, before, options.beforeSha);
+}
+
+/**
+ * Decide, check by check, which of `after`'s failures are new.
+ *
+ * The old rule compared one aggregate verdict to another: if the baseline was
+ * not a clean `passed`, the whole `after` failure was thrown away as
+ * inconclusive. That is wrong in both directions. A repository whose tests
+ * were already red at baseline but whose typecheck was clean would, on a
+ * dependency that broke the typecheck, have that real regression discarded
+ * because the *aggregate* baseline verdict was `failed` — even though the one
+ * check that matters here has a clean baseline of its own. The fix compares
+ * each failing check in `after` against the *same* check at baseline: it only
+ * counts as breakage this dependency caused when that check passed before and
+ * fails now.
+ */
+function reconcileAgainstBaseline(
+  after: UpgradeVerification,
+  before: UpgradeVerification,
+  beforeSha: string,
+): UpgradeVerification {
+  if (before.checks.length === 0) {
     return skipped(
-      alreadyRed.length > 0
-        ? `\`${alreadyRed.join('`, `')}\` already failed at ${short(options.beforeSha)}, before this dependency moved, so the failure afterwards proves nothing about it.`
-        : `The project could not be checked at ${short(options.beforeSha)}, so there is nothing to compare the failure against.`,
+      `The project could not be checked at ${short(beforeSha)}, so there is nothing to compare the failure against.`,
     );
   }
 
-  return after;
+  const beforeByLabel = new Map(before.checks.map((check) => [check.label, check]));
+  const genuine = after.checks.filter(
+    (check) => check.status === 'failed' && beforeByLabel.get(check.label)?.status === 'passed',
+  );
+
+  if (genuine.length === 0) {
+    const alreadyRed = [
+      ...new Set(
+        after.checks
+          .filter((check) => check.status === 'failed')
+          .map((check) => {
+            const atBaseline = beforeByLabel.get(check.label);
+            return atBaseline
+              ? `\`${check.label}\` already failed at ${short(beforeSha)}`
+              : `\`${check.label}\` has no baseline at ${short(beforeSha)} to compare against`;
+          }),
+      ),
+    ];
+    return skipped(`${alreadyRed.join('; ')}, so the failure afterwards proves nothing about this dependency.`);
+  }
+
+  const diagnostics = genuine.map((outcome) => `$ ${outcome.label}\n${outcome.fullOutput ?? outcome.output}`).join('\n\n');
+  return {
+    status: 'failed',
+    checks: after.checks,
+    diagnostics,
+    failedFiles: filesNamedIn(diagnostics),
+  };
 }
 
 /** One install-and-check pass at one commit, in a worktree of its own. */
