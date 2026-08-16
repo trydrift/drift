@@ -2407,9 +2407,26 @@ svg.i { vertical-align: -2px; flex: 0 0 auto; }
 code {
   font-family: var(--vscode-editor-font-family);
   font-size: .92em;
+  /* Explicit rather than left to inherit: a token span from \`highlightCode()\`
+     can sit inside this element and set its own colour, but plain, unhighlighted
+     code — every inline \`\` \`backtick\` \`\` span in prose — has none, and must
+     not end up reading whatever colour happened to cascade in from a container
+     that was never meant to set it. */
+  color: var(--vscode-foreground);
   background: var(--vscode-textCodeBlock-background);
   border-radius: 3px;
   padding: 1px 4px;
+  /* A long declaration quoted inline — a signature, a file path — is exactly
+     as wide as the code it quotes, and wrapping it mid-token wrecks the thing
+     being shown. \`inline-block\` is what lets a normally-inline element scroll
+     its own overflow instead of the wrap a bare \`inline\` box is stuck with;
+     \`pre\` stops the browser from collapsing that overflow back down by
+     re-wrapping it anyway. */
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  vertical-align: bottom;
+  white-space: pre;
 }
 /* Code keeps its own lines and scrolls sideways, the way the editor does.
    Wrapping a declaration mid-signature re-flows it into something that is no
@@ -2438,7 +2455,20 @@ pre {
   background: var(--vscode-textCodeBlock-background);
   border-radius: 5px;
 }
-pre code { background: none; padding: 0; font-size: inherit; }
+/* \`pre\` already owns the scrolling and the whitespace for a block of code; the
+   \`display\`/\`overflow-x\`/\`white-space\` the bare \`code\` rule above adds for a
+   standalone inline span would only fight it here — an \`inline-block\` inside
+   an already-scrolling \`pre\` adds baseline spacing at the block's edges that
+   reads as a stray gap. */
+pre code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  display: inline;
+  overflow-x: visible;
+  max-width: none;
+  vertical-align: baseline;
+}
 button {
   font: inherit;
   border: 1px solid var(--vscode-button-border, transparent);
@@ -2970,15 +3000,16 @@ ul.sites code.excerpt { font-size: 11px; color: var(--vscode-descriptionForegrou
                         white-space: pre; overflow-x: auto; min-width: 0; }
 
 /* A before/after pair is one block, full width, with its action in a header
-   row above it. Laying the button out beside the code instead squeezes the
-   declarations into whatever width is left over — which is exactly where the
-   room is needed — and leaves the two blocks visibly short of the button's
-   right edge. */
+   row above it — never beside the code itself, which would squeeze both
+   declarations into whatever width the button left over. The button sits
+   right next to the "before / after" label rather than pushed to the row's
+   far edge: a right-aligned button in a narrow sidebar (the normal width for
+   this panel) runs out of room and clips, which reads as the action having
+   vanished rather than just being laid out awkwardly. */
 .compare { margin: 8px 0; min-width: 0; }
-.compare-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.compare-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
 .compare-label { font-size: 9px; letter-spacing: .04em; text-transform: uppercase;
                  color: var(--vscode-descriptionForeground); }
-.compare-head button { margin-left: auto; }
 .evidence { display: grid; gap: 5px; margin-top: 6px; }
 .evidence > details { border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 5px 7px; }
 .evidence summary { display: flex; gap: 6px; align-items: center; cursor: pointer; overflow-wrap: anywhere; }
