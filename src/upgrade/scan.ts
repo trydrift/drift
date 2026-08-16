@@ -3,7 +3,14 @@ import { readFileSync } from 'node:fs';
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import type { DependencyChange, DependencyKind, Ecosystem, RemediationPlan, RepoContext } from '../types.js';
+import type {
+  DependencyChange,
+  DependencyKind,
+  Ecosystem,
+  ImpactSite,
+  RemediationPlan,
+  RepoContext,
+} from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
 import { classifyBump, normalizeVersion } from '../detect/version.js';
@@ -105,6 +112,14 @@ export interface UpgradeCandidate {
   impactCount: number;
   /** Distinct repository files with at least one impact site. */
   impactFiles: number;
+  /**
+   * The strongest local-impact confidence among the sites behind
+   * `impactCount` — `'none'` when there are no sites. Lets `describeSeverity`
+   * say "May affect your code" instead of "Affects your code" when the only
+   * matches are textual or wrapper-mediated, rather than an import Drift
+   * actually traced. See `SeverityInput.impactConfidence`.
+   */
+  impactConfidence: 'high' | 'medium' | 'low' | 'none';
   risk: string;
   summary: string;
   /**
@@ -1327,6 +1342,7 @@ async function analyzeUpgrade(args: {
       breakingCount: breakingChanges.length,
       impactCount: impactSites.length,
       impactFiles: new Set(impactSites.map((site) => site.file)).size,
+      impactConfidence: strongestImpactConfidence(impactSites),
       risk: plan.risk,
       summary: summarize(breakingChanges.length, impactSites.length, args.dep.name, rationale),
       // Kept even when there are findings: "two breaking changes, and the type
@@ -1347,6 +1363,7 @@ async function analyzeUpgrade(args: {
       breakingCount: 0,
       impactCount: 0,
       impactFiles: 0,
+      impactConfidence: 'none',
       risk: 'unknown',
       summary: 'Could not inspect this upgrade',
       gaps: [],
@@ -1354,6 +1371,14 @@ async function analyzeUpgrade(args: {
       error: (err as Error).message,
     };
   }
+}
+
+/** The best-supported match, so a report can hedge on the weaker ones. */
+function strongestImpactConfidence(sites: readonly ImpactSite[]): 'high' | 'medium' | 'low' | 'none' {
+  if (sites.some((s) => s.confidence === 'high')) return 'high';
+  if (sites.some((s) => s.confidence === 'medium')) return 'medium';
+  if (sites.some((s) => s.confidence === 'low')) return 'low';
+  return 'none';
 }
 
 function installRequests(gaps: ReadonlyMap<string, SurfaceUnavailable>): ToolInstallRequest[] {

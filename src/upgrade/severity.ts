@@ -48,6 +48,20 @@ export interface SeverityInput {
     status: string;
     checks?: readonly { label: string; status: string }[];
   };
+  /**
+   * The strongest local-impact confidence among the sites behind
+   * `impactCount`, when it was computed.
+   *
+   * `'affected'` used to be stated with the same certainty for a direct,
+   * imported usage and a bare textual match with no import edge — the two
+   * things `assessLocalImpact` in `confidence/calibrate.ts` deliberately
+   * scores apart. Below `'high'`, `describeSeverity` hedges to "May affect"
+   * rather than "Affects", so the wording carries the same distinction the
+   * scoring already makes. Absent (not `undefined` on purpose vs. omitted)
+   * is treated as unhedged, so callers that have not been updated to supply
+   * it keep today's wording.
+   */
+  impactConfidence?: 'high' | 'medium' | 'low' | 'none';
 }
 
 /**
@@ -93,7 +107,12 @@ export function describeSeverity(candidate: SeverityInput): string {
       return 'Could not check';
     case 'affected': {
       const files = candidate.impactFiles;
-      return `Affects your code · ${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'} in ${files} file${files === 1 ? '' : 's'}`;
+      // Hedged unless the strongest match is a direct, imported usage — a
+      // textual-only or wrapper-mediated match is real enough to surface, but
+      // not certain enough to tell someone flatly that their code is affected.
+      const verb =
+        candidate.impactConfidence && candidate.impactConfidence !== 'high' ? 'May affect' : 'Affects';
+      return `${verb} your code · ${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'} in ${files} file${files === 1 ? '' : 's'}`;
     }
     case 'verification-failed': {
       const failing = (candidate.verification?.checks ?? [])

@@ -70,3 +70,25 @@ describe('a failed verification outranks a clean-looking result', () => {
     assert.match(scanTitle(candidates), /1 of 2 affect this repo/);
   });
 });
+
+describe('impact wording is hedged to match how sure the match actually is', () => {
+  test('a high-confidence, imported match reads "Affects"', () => {
+    const candidate = { ...base, impactCount: 1, impactFiles: 1, impactConfidence: 'high' as const };
+    assert.match(describeSeverity(candidate), /^Affects your code/);
+  });
+
+  test('a medium-confidence match reads "May affect"', () => {
+    const candidate = { ...base, impactCount: 1, impactFiles: 1, impactConfidence: 'medium' as const };
+    assert.match(describeSeverity(candidate), /^May affect your code/);
+  });
+
+  test('a low-confidence, textual-only match reads "May affect"', () => {
+    const candidate = { ...base, impactCount: 1, impactFiles: 1, impactConfidence: 'low' as const };
+    assert.match(describeSeverity(candidate), /^May affect your code/);
+  });
+
+  test('no impactConfidence supplied keeps the unhedged wording, for callers not yet updated', () => {
+    const candidate = { ...base, impactCount: 1, impactFiles: 1 };
+    assert.match(describeSeverity(candidate), /^Affects your code/);
+  });
+});
