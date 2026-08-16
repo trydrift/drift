@@ -2,6 +2,7 @@ import type { DependencyChange, Evidence, EvidenceSource } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
 import { mapWithConcurrency } from '../util/http.js';
+import { matchGlob } from '../util/glob.js';
 import { stableId } from '../util/id.js';
 import { isDowngrade, isZeroVerBreaking } from '../detect/version.js';
 import {
@@ -73,6 +74,14 @@ export interface EvidenceContext {
   githubToken?: string;
   /** Reads a file from the *user's* repo at a given ref. */
   readRepoFile?: (path: string, ref: string) => Promise<string | null>;
+  /**
+   * Lists every file in the *user's* repo at a ref, or `null` if it cannot.
+   *
+   * Only needed to expand configured path patterns. `null` and `[]` are kept
+   * apart deliberately: expanding a pattern against a failed listing would
+   * match nothing, and report every contract it covers as clean.
+   */
+  listRepoFiles?: (ref: string) => Promise<string[] | null>;
   beforeSha?: string;
   afterSha?: string;
   /** Command runner for the ecosystem diffing tools. Injected by tests. */
@@ -610,11 +619,22 @@ async function gatherSpecEvidence(ctx: EvidenceContext): Promise<Evidence[]> {
   for (const provider of SPEC_PROVIDERS) {
     if (!specEnabled(provider, config)) continue;
 
-    for (const specPath of specPaths(provider, config)) {
-      // Globs are resolved by the caller's file listing where available; a
-      // literal path is the common case and is handled directly.
-      if (specPath.includes('*')) continue;
+    const resolved = await resolveSpecPaths(specPaths(provider, config), ctx);
+    for (const unresolvable of resolved.unresolvable) {
+      // A pattern that could not be expanded is a gap, not a skip. This used to
+      // `continue` silently: every contract the pattern covered went uncompared
+      // and unmentioned, which is precisely the "reported clean without being
+      // read" failure the rest of this file exists to prevent.
+      ctx.onUnavailableSpec?.(unresolvable, {
+        available: false,
+        reason: 'toolchain-failed',
+        detail: `Drift could not list the files in this repository, so the pattern \`${unresolvable}\` could not be expanded and the contracts it covers were not compared.`,
+        remedy: 'List the contract documents by literal path instead of by pattern.',
+        tool: provider.tool,
+      });
+    }
 
+    for (const specPath of resolved.paths) {
       const [before, after] = await Promise.all([
         readRepoFile(specPath, beforeSha),
         readRepoFile(specPath, afterSha),
@@ -661,6 +681,46 @@ async function gatherSpecEvidence(ctx: EvidenceContext): Promise<Evidence[]> {
   }
 
   return out;
+}
+
+/**
+ * Turn configured contract paths into concrete ones.
+ *
+ * A literal path is passed straight through — including one that does not
+ * exist, so the existing "configured but never compared" reporting still fires
+ * on a typo rather than being swallowed here as "matched nothing".
+ *
+ * A pattern is expanded against the files present *after* the change, since
+ * that is the revision whose contracts the repository is now written against.
+ * A document deleted between the two revisions is therefore not matched, which
+ * is correct: there is no "after" side to diff, and its disappearance is a
+ * change to the repository rather than to the contract.
+ */
+async function resolveSpecPaths(
+  configured: readonly string[],
+  ctx: EvidenceContext,
+): Promise<{ paths: string[]; unresolvable: string[] }> {
+  const patterns = configured.filter(isPathPattern);
+  const literals = configured.filter((path) => !isPathPattern(path));
+  if (patterns.length === 0) return { paths: literals, unresolvable: [] };
+
+  const listed = ctx.listRepoFiles && ctx.afterSha ? await ctx.listRepoFiles(ctx.afterSha) : null;
+  if (!listed) return { paths: literals, unresolvable: patterns };
+
+  const matched = new Set(literals);
+  for (const pattern of patterns) {
+    for (const file of listed) {
+      if (matchGlob(pattern, file)) matched.add(file);
+    }
+  }
+
+  // Sorted so a run is reproducible: the listing's order is git's, and a report
+  // whose findings reorder between two identical runs is hard to trust.
+  return { paths: [...matched].sort(), unresolvable: [] };
+}
+
+function isPathPattern(path: string): boolean {
+  return path.includes('*') || path.includes('?');
 }
 
 function formatSpecChanges(changes: readonly SpecChange[]): string {

@@ -184,6 +184,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     githubToken,
     ...(options.env ? { env: options.env } : {}),
     readRepoFile: (path, ref) => provider.readFile(path, ref),
+    ...(provider.listFiles ? { listRepoFiles: (ref: string) => provider.listFiles!(ref) } : {}),
     beforeSha: repo.beforeSha,
     afterSha: repo.afterSha,
     ...(workspace ? { workspaceRoot: workspace } : {}),

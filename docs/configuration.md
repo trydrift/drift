@@ -152,7 +152,20 @@ evidence:
     - "spec/partner-api.json"
 ```
 
-Literal paths only — globs are not yet resolved.
+Patterns work too, in every `*Specs` and `*Schemas` list. `*` matches within one
+path segment, `**/` matches any number of segments including none, and `?`
+matches a single character:
+
+```yaml
+evidence:
+  openapiSpecs:
+    - "spec/**/*.yaml"
+```
+
+Patterns are expanded against the files present at the *after* revision. If
+Drift cannot list the repository — a GitHub tree too large to return in full,
+for instance — the pattern is reported as a gap naming itself, never expanded
+to nothing and reported as clean.
 
 ### `evidence.protobuf` · `evidence.protobufSpecs`
 
