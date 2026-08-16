@@ -521,7 +521,9 @@ test('a running command shows what it is printing, so a long check is not a hang
           total: 9,
           state: 'running',
           log: ['Checking extension as it is — `npm run typecheck`'],
-          output: ['src/ui/home.ts', 'src/ui/webview.ts'],
+          outputs: [
+            { id: 'i1-o1', phase: 'Checking extension as it is', lines: ['src/ui/home.ts', 'src/ui/webview.ts'] },
+          ],
         },
       ],
     }),
@@ -532,6 +534,72 @@ test('a running command shows what it is printing, so a long check is not a hang
   // The phase names the command, not just "checking" — a typecheck, a build
   // and a test suite are different waits.
   assert.match(html, /npm run typecheck/);
+});
+
+/**
+ * The regression this guards: output used to be a single buffer, cleared the
+ * moment the phase changed — a typecheck's tail vanished the instant the
+ * build started, which read as the terminal "clearing and coming back" with
+ * no way to tell which step it belonged to. Every phase now keeps its own
+ * segment.
+ */
+test('a step with output from more than one phase keeps every phase, not just the newest', () => {
+  const html = renderPanel(
+    model({
+      busy: true,
+      thread: [
+        {
+          id: 'i1',
+          kind: 'step',
+          title: 'Checking your dependencies',
+          phase: 'Checking extension as it is',
+          detail: '`npm run build`',
+          done: 3,
+          total: 9,
+          state: 'running',
+          log: [],
+          outputs: [
+            { id: 'i1-o1', phase: 'Installing dependencies', lines: ['added 412 packages'] },
+            { id: 'i1-o2', phase: 'Checking extension as it is', lines: ['src/ui/home.ts(12,3): error'] },
+          ],
+        },
+      ],
+    }),
+  );
+
+  // Both segments are in the markup — only their visibility differs, and that
+  // is a client-side choice, not something the server hides.
+  assert.match(html, /added 412 packages/);
+  assert.match(html, /src\/ui\/home\.ts\(12,3\): error/);
+  // A tab per phase, plus the way back to the live one.
+  assert.match(html, /data-action="selectOutput"/);
+  assert.match(html, /class="output-tab live"/);
+});
+
+test('a single-phase step shows its output with no tab bar to switch between', () => {
+  const html = renderPanel(
+    model({
+      thread: [
+        {
+          id: 'i1',
+          kind: 'step',
+          title: 'Checking your dependencies',
+          phase: 'Installing dependencies',
+          detail: '',
+          done: 0,
+          total: 0,
+          state: 'running',
+          log: [],
+          outputs: [{ id: 'i1-o1', phase: 'Installing dependencies', lines: ['added 1 package'] }],
+        },
+      ],
+    }),
+  );
+
+  assert.match(html, /added 1 package/);
+  // The stylesheet always defines \`.output-tabs\`; what must be absent is the
+  // tab bar actually being rendered into the body.
+  assert.ok(!/<div class="output-tabs">/.test(html), 'nothing to switch between yet');
 });
 
 test('step logs leave room for double digit markers', () => {

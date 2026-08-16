@@ -409,8 +409,6 @@ function renderStep(item: Extract<ThreadItem, { kind: 'step' }>): string {
   const icon =
     item.state === 'running' ? '<span class="spinner"></span>' : item.state === 'done' ? ICON_CHECK : ICON_ERROR;
 
-  const output = item.output ?? [];
-
   return `<div class="step ${item.state}">
     <div class="step-head">
       ${icon}
@@ -422,20 +420,7 @@ function renderStep(item: Extract<ThreadItem, { kind: 'step' }>): string {
       ${item.detail ? `<span class="detail">${linkifyPaths(item.detail)}</span>` : ''}
     </div>
     ${item.total > 0 ? `<div class="bar"><span style="width:${pct}%"></span></div>` : ''}
-    ${
-      // What the running command is printing, right now. A typecheck or a test
-      // suite on a large repository is minutes long and, without this, is
-      // indistinguishable from a hang — the reason "checking" felt stuck was
-      // never that it was stuck, it was that the tool saying otherwise had
-      // nowhere to say it. Open by default while it is producing output, since
-      // a drawer nobody knows to open answers nobody's question.
-      output.length > 0
-        ? `<details class="step-output" data-key="out:${escapeAttr(item.id)}" open>
-            <summary>Output</summary>
-            <pre data-scroll="out:${escapeAttr(item.id)}"><code>${escapeHtml(output.join('\n'))}</code></pre>
-          </details>`
-        : ''
-    }
+    ${renderStepOutput(item)}
     ${
       // Every line the step holds, not the last 60 of them. The summary right
       // above this counts the whole log, so truncating here promised "184
@@ -444,12 +429,72 @@ function renderStep(item: Extract<ThreadItem, { kind: 'step' }>): string {
       // needs bounding is bounded where the log is written, not where it is
       // read, so the count and the list cannot disagree again.
       item.log.length > 1
-        ? `<details class="log" data-key="log:${escapeAttr(item.id)}"><summary>${item.log.length} step${item.log.length === 1 ? '' : 's'}</summary><ol>${item.log
+        ? `<details class="log" data-key="log:${escapeAttr(item.id)}"><summary>${item.log.length} step${item.log.length === 1 ? '' : 's'}</summary><ol data-scroll="log:${escapeAttr(item.id)}">${item.log
             .map((line) => `<li>${linkifyPaths(line)}</li>`)
             .join('')}</ol></details>`
         : ''
     }
   </div>`;
+}
+
+/** Phase tabs shown before they collapse into "…and N earlier". */
+const MAX_SHOWN_OUTPUT_TABS = 6;
+
+/**
+ * What the running command is printing, tabbed by which phase it belongs to.
+ *
+ * A typecheck or a test suite on a large repository is minutes long and,
+ * without this, is indistinguishable from a hang — the reason "checking" felt
+ * stuck was never that it was stuck, it was that the tool saying otherwise had
+ * nowhere to say it.
+ *
+ * Every segment stays in the markup; only one is visible at a time, and which
+ * one is a client-side choice (`selectOutput` in the page script, `mount()`
+ * applies it) rather than anything the host tracks — the same reason a
+ * disclosure's open/shut state lives in `ui.disclosures`. Left unset, the
+ * default is "whichever segment is newest", so a step that has not been
+ * clicked into just keeps following the run; clicking an older phase pins the
+ * view there until "Jump to latest" or a new tab is chosen.
+ */
+function renderStepOutput(item: Extract<ThreadItem, { kind: 'step' }>): string {
+  const segments = item.outputs ?? [];
+  if (segments.length === 0) return '';
+
+  const shown = segments.slice(-MAX_SHOWN_OUTPUT_TABS);
+  const hiddenCount = segments.length - shown.length;
+  const latestId = segments[segments.length - 1]!.id;
+
+  return `<div class="step-output" data-key="stepout:${escapeAttr(item.id)}">
+    ${
+      // A single segment (the overwhelmingly common case — most steps run one
+      // command, or several in strict enough sequence that only one is ever
+      // live) gets no tab bar at all: nothing to switch between yet.
+      segments.length > 1
+        ? `<div class="output-tabs">
+            ${hiddenCount > 0 ? `<span class="output-tab-more">+${hiddenCount} earlier</span>` : ''}
+            ${shown
+              .map(
+                (segment) =>
+                  `<button type="button" class="output-tab" data-action="selectOutput" data-step="${escapeAttr(item.id)}" data-seg="${escapeAttr(segment.id)}" title="${escapeAttr(segment.phase)}">${escapeHtml(truncatePhase(segment.phase))}</button>`,
+              )
+              .join('')}
+            <button type="button" class="output-tab live" data-action="selectOutput" data-step="${escapeAttr(item.id)}" data-seg="live" title="Follow the phase Drift is running right now">Live</button>
+          </div>`
+        : ''
+    }
+    ${shown
+      .map(
+        (segment) =>
+          `<pre class="${segment.id === latestId ? 'is-live' : ''}" data-step-output="${escapeAttr(item.id)}" data-seg="${escapeAttr(segment.id)}" data-scroll="out:${escapeAttr(item.id)}:${escapeAttr(segment.id)}"><code>${escapeHtml(segment.lines.join('\n'))}</code></pre>`,
+      )
+      .join('')}
+  </div>`;
+}
+
+/** A phase name, short enough to sit in a tab. The full name is the tab's title/tooltip. */
+function truncatePhase(phase: string): string {
+  const bare = phase.replace(/^Testing\s+/, '').replace(/^Checking\s+/, '');
+  return bare.length > 22 ? `${bare.slice(0, 21)}…` : bare || phase;
 }
 
 /**
@@ -2599,15 +2644,65 @@ button.wide { width: 100%; }
 .step .log a code, .step-now a code { background: none; padding: 0; font-size: inherit; }
 
 /* The running command's own output. Bounded and scrolled: this is a live
-   window onto a process, not its transcript. */
+   window onto a process, not its transcript. Every phase's segment stays in
+   the DOM at once; which one is visible is a client-side toggle (see
+   \`selectOutput\` in the page script) rather than anything re-rendered from
+   the host, so switching tabs is instant and never waits on a message
+   round trip. */
 .step-output { margin: 7px 0 0 21px; font-size: 11px; }
-.step-output summary { cursor: pointer; color: var(--vscode-descriptionForeground); }
+.output-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.output-tab-more {
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground);
+  padding: 2px 4px;
+}
+.output-tab {
+  font: inherit;
+  font-size: 10px;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 10px;
+  padding: 2px 8px;
+  background: transparent;
+  color: var(--vscode-descriptionForeground);
+  cursor: pointer;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.output-tab:hover { color: var(--vscode-foreground); border-color: var(--vscode-focusBorder); }
+/* The active tab reads as pressed, not just differently coloured — a single
+   colour shift is easy to miss at 10px next to five other pills the same
+   shape. */
+.output-tab.active {
+  background: var(--vscode-badge-background);
+  color: var(--vscode-badge-foreground);
+  border-color: transparent;
+  font-weight: 600;
+}
+.output-tab.live::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--vscode-testing-iconPassed, #2ea043);
+  margin-right: 4px;
+  vertical-align: middle;
+}
 .step-output pre {
-  margin: 5px 0 0;
+  margin: 0;
   max-height: 150px;
   font-size: 11px;
   color: var(--vscode-descriptionForeground);
 }
+.step-output pre[hidden] { display: none; }
 /* A soft fading ring rather than a hard two-tone border — the border trick
    reads as two flat arcs (one grey, one accent) chasing each other, which at
    a glance looks like a stray line spinning rather than a loading indicator.
@@ -3541,6 +3636,9 @@ const ui = {
   disclosures: {},
   /* Per-drawer scroll, keyed by \`data-scroll\`. */
   scrolls: {},
+  /* Which output segment a step's terminal is showing, keyed by step id.
+     Missing (or 'live') means "follow whichever phase is newest". */
+  stepOutputSelection: {},
   menu: { open: false, anchor: 'context', query: '' },
   /* How much of each answer has been typed out, keyed by conversation and item.
      Persisted so a re-render — of which there are many per second during a scan
@@ -3549,8 +3647,9 @@ const ui = {
 };
 
 Object.assign(ui, vscode.getState() || {});
-/* A state saved before this key existed would otherwise leave it undefined. */
+/* State saved before these keys existed would otherwise leave them undefined. */
 if (!ui.scrolls) ui.scrolls = {};
+if (!ui.stepOutputSelection) ui.stepOutputSelection = {};
 
 let input = null;
 let commands = null;
@@ -3568,6 +3667,7 @@ function save() {
     atBottom: ui.atBottom,
     disclosures: ui.disclosures,
     scrolls: ui.scrolls,
+    stepOutputSelection: ui.stepOutputSelection,
     menu: ui.menu,
     typed: ui.typed,
   });
@@ -3702,6 +3802,25 @@ function mount() {
       ui.disclosures[key] = element.open;
       save();
     });
+  }
+
+  /* Step output: which phase's segment is showing. Unset (or 'live') means
+     "whichever one is newest" and keeps following the run; picking a tab pins
+     the view to that phase until "Live" is clicked again or the step ends. */
+  for (const panel of document.querySelectorAll('.step-output')) {
+    const stepId = panel.dataset.key.replace(/^stepout:/, '');
+    const selected = ui.stepOutputSelection[stepId];
+    const panes = [...panel.querySelectorAll('[data-step-output]')];
+    const shown =
+      selected && selected !== 'live'
+        ? (panes.find((pane) => pane.dataset.seg === selected) ?? panes.find((pane) => pane.classList.contains('is-live')))
+        : panes.find((pane) => pane.classList.contains('is-live'));
+    for (const pane of panes) pane.hidden = pane !== shown;
+    for (const tab of panel.querySelectorAll('.output-tab')) {
+      const isLive = tab.classList.contains('live');
+      const active = isLive ? !selected || selected === 'live' : selected === tab.dataset.seg;
+      tab.classList.toggle('active', active);
+    }
   }
 
   /* The activity drawers scroll on their own now that they are capped, so they
@@ -4026,7 +4145,7 @@ function previewSlider(slider) {
 // precisely because something else is already pending.
 const LOCAL_ACTIONS = new Set([
   'slider', 'submit', 'complete', 'openMenu', 'openUrl', 'openFile', 'openDiff', 'openFindingDiff',
-  'selectVersion', 'pickVersion', 'stop',
+  'selectVersion', 'pickVersion', 'stop', 'selectOutput',
 ]);
 
 // True from the moment a server-bound action is clicked until the next
@@ -4072,6 +4191,28 @@ document.addEventListener('click', (event) => {
 
   // The dial handles its own events; a click on it is a drag, not a command.
   if (action === 'slider') return;
+
+  // Which phase's output a step's terminal shows is never the host's business
+  // — it does not change what happened, only which part of it is on screen —
+  // so this answers itself and re-mounts rather than round-tripping.
+  if (action === 'selectOutput') {
+    const stepId = target.dataset.step;
+    ui.stepOutputSelection[stepId] = target.dataset.seg;
+    save();
+    for (const panel of document.querySelectorAll('.step-output[data-key="stepout:' + stepId + '"]')) {
+      const panes = [...panel.querySelectorAll('[data-step-output]')];
+      const shown =
+        target.dataset.seg === 'live'
+          ? panes.find((pane) => pane.classList.contains('is-live'))
+          : panes.find((pane) => pane.dataset.seg === target.dataset.seg);
+      for (const pane of panes) pane.hidden = pane !== shown;
+      for (const tab of panel.querySelectorAll('.output-tab')) {
+        const isLive = tab.classList.contains('live');
+        tab.classList.toggle('active', isLive ? target.dataset.seg === 'live' : tab.dataset.seg === target.dataset.seg);
+      }
+    }
+    return;
+  }
 
   // A second click on a server-bound action while the first is still in
   // flight is a double-fire, not a new request — the buttons should already

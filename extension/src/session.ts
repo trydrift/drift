@@ -162,15 +162,20 @@ export type ThreadItem =
       /** Recent phase lines, newest last. Collapsed by default. */
       log: string[];
       /**
-       * What the command behind the current phase is printing, newest last.
+       * The command output produced by each phase that printed any, oldest
+       * first — a typecheck's output stays available after the build that
+       * follows it starts printing its own.
        *
-       * Cleared whenever the phase changes, because it belongs to the command
-       * being named and not to the step as a whole. This is the difference
-       * between a five-minute "Checking your dependencies" that is
-       * indistinguishable from a hang and one where a developer can open a
-       * drawer and watch `tsc` name files.
+       * Kept rather than overwritten in place: the first version of this
+       * cleared the buffer the moment the phase changed, which turned a
+       * multi-minute check into a terminal that visibly emptied itself every
+       * time the tool moved from typechecking to building to testing — indis-
+       * tinguishable, at a glance, from the run having lost its place. The
+       * panel now keeps every phase's output and lets the reader pick which
+       * one they are looking at; see `renderStep` and `selectOutput` in the
+       * webview script.
        */
-      output?: string[];
+      outputs?: StepOutputSegment[];
       /** When set, a later `step()` call with the same key replaces this one instead of stacking. */
       key?: string;
     }
@@ -191,6 +196,15 @@ export type ThreadItem =
       answer?: string;
     }
   | { id: string; kind: 'changes'; title: string };
+
+/** One phase's worth of command output, kept together so a reader can tell which step it came from. */
+export interface StepOutputSegment {
+  /** A stable identity independent of position, since old segments are evicted from the front. */
+  id: string;
+  /** The phase this output was printed under — the same string `item.phase` showed at the time. */
+  phase: string;
+  lines: string[];
+}
 
 export type TaskState = 'pending' | 'active' | 'done' | 'unchanged' | 'skipped' | 'failed';
 
@@ -533,6 +547,8 @@ export class DriftSession {
       this.emitter.fire();
     };
 
+    let segmentCounter = 0;
+
     return {
       id,
       progress: (phase, detail, done = 0, total = 0) => {
@@ -551,20 +567,35 @@ export class DriftSession {
           // scan reaches it, and the renderer shows everything below it.
           if (item.log.length > 5000) item.log.shift();
         }
-        // The previous command's output is not this one's. Keeping it would
-        // show `npm install`'s tail under a phase that says "typecheck", which
-        // is worse than showing nothing.
-        if (item.phase !== phase) item.output = undefined;
+        // A new phase gets its own output segment, opened empty and filled in
+        // by `output()` below as the command prints. The previous segment is
+        // kept, not cleared: a developer looking at "Checking as it is" while
+        // "Installing dependencies" moves on to the next phase should still be
+        // able to find the install's own output afterwards, tabbed rather than
+        // erased out from under them. Bounded the same way the log itself is —
+        // this is a scrollback, not an archive.
+        if (item.phase !== phase) {
+          segmentCounter += 1;
+          const segments = item.outputs ?? (item.outputs = []);
+          segments.push({ id: `${id}-o${segmentCounter}`, phase, lines: [] });
+          if (segments.length > MAX_STEP_OUTPUT_SEGMENTS) segments.shift();
+        }
         update({ phase, detail, done, total });
       },
       output: (chunk) => {
         const item = this.items.find((entry) => entry.id === id);
         if (!item || item.kind !== 'step') return;
 
+        // `output()` is only ever meaningful once a phase has been named, so
+        // a chunk that arrives before the first `progress()` call opens its
+        // own segment rather than being dropped.
+        const segments = item.outputs ?? (item.outputs = []);
+        const segment = segments[segments.length - 1] ?? (segments.push({ id: `${id}-o0`, phase: item.phase, lines: [] }), segments[segments.length - 1]!);
+
         // Chunks arrive on pipe boundaries, not line boundaries, so the tail
         // of the buffer is re-joined with whatever continues it rather than
         // left as a half line that never completes.
-        const lines = (item.output ?? []);
+        const lines = segment.lines;
         const pending = lines.length > 0 && !lines[lines.length - 1]!.endsWith('\n') ? lines.pop()! : '';
         const combined = pending + chunk;
         const parts = combined.split('\n');
@@ -582,15 +613,18 @@ export class DriftSession {
         // not its transcript — the full output is on the `CheckOutcome` and is
         // what the failure report quotes.
         while (lines.length > MAX_STEP_OUTPUT_LINES) lines.shift();
-        item.output = lines;
         this.emitter.fire();
       },
       // Clearing done/total here (not just flipping `state`) matters: `renderStep`
       // keys the "N / M" badge and progress bar off `total > 0` alone, so without
       // this a finished step still shows a fraction like "7 / 14" next to its
       // checkmark — read by a developer mid-glance as "still running, stuck at 7".
-      done: (phase) => update({ state: 'done', phase, detail: '', done: 0, total: 0, output: undefined }),
-      fail: (phase) => update({ state: 'failed', phase, detail: '', done: 0, total: 0, output: undefined }),
+      // `outputs` is deliberately left alone here: the segments already
+      // gathered are worth reviewing after the step finishes, and a developer
+      // reading a failed check's output is the exact moment this must not
+      // vanish.
+      done: (phase) => update({ state: 'done', phase, detail: '', done: 0, total: 0 }),
+      fail: (phase) => update({ state: 'failed', phase, detail: '', done: 0, total: 0 }),
     };
   }
 
@@ -956,19 +990,29 @@ export class DriftSession {
 export interface StepHandle {
   id: string;
   progress: (phase: string, detail: string, done?: number, total?: number) => void;
-  /** A chunk the current phase's command printed. Cleared when the phase moves on. */
+  /** A chunk the current phase's command printed. Filed under whichever phase was named by the most recent `progress()` call. */
   output: (chunk: string) => void;
   done: (phase: string) => void;
   fail: (phase: string) => void;
 }
 
 /**
- * How much of a running command's output the step keeps.
+ * How many lines of a single phase's output the step keeps.
  *
  * Enough to see a compiler working through files or a test runner naming
  * suites, and few enough that the drawer stays a glance rather than a scroll.
  */
 const MAX_STEP_OUTPUT_LINES = 200;
+
+/**
+ * How many phases' worth of output a step remembers.
+ *
+ * A scan with many manifests or many candidates can move through more phases
+ * than anyone would ever want tabs for; this keeps the oldest ones from
+ * accumulating forever while still leaving enough recent history to look back
+ * a few steps without losing the thread.
+ */
+const MAX_STEP_OUTPUT_SEGMENTS = 30;
 
 /**
  * ANSI escapes and carriage returns out, so the panel renders text rather than
