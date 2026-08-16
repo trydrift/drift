@@ -123,7 +123,11 @@ function renderHeader(plan: RemediationPlan): string {
       // sections a reviewer doesn't expect (dev, optional, peer, transitive)
       // are the ones worth calling out.
       const kind = c.kind === 'runtime' ? null : DEPENDENCY_KIND_LABELS[c.kind];
-      return `\`${c.name}\`${kind ? ` _(${kind})_` : ''} ${c.from ?? '—'} → **${c.to ?? '—'}**${where ? ` _(in ${where})_` : ''}`;
+      // The ecosystem is always named, unlike the workspace member: one run
+      // can cover several registries at once, and a package name alone does
+      // not say which of them a line belongs to.
+      const tags = [c.ecosystem, kind].filter(Boolean).join(', ');
+      return `\`${c.name}\` _(${tags})_ ${c.from ?? '—'} → **${c.to ?? '—'}**${where ? ` _(in ${where})_` : ''}`;
     })
     .join(', ');
 

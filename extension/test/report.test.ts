@@ -155,6 +155,49 @@ describe('report rendering', () => {
     assert.match(text, /render\(&lt;App \/&gt;\)/);
     assert.match(text, /old\(&lt;tag&gt;\)/);
     assert.doesNotMatch(html, /render\(<App \/>/);
+
+    // Every before/after offers the same next step, and it is scoped to this
+    // one change — not to every file that differs between the two releases.
+    assert.match(html, /data-command="drift\.openFindingDiff"/);
+    assert.doesNotMatch(html, /data-command="drift\.openVersionDiff"/);
+    // The request carries the symbol and the package, so the editor can show
+    // the change in its real surroundings rather than the declaration alone.
+    assert.match(html, /&quot;symbol&quot;:&quot;render&quot;/);
+    assert.match(html, /&quot;ecosystem&quot;:&quot;npm&quot;/);
+  });
+
+  test('names the ecosystem a package came from, not just its directory', () => {
+    const state = new DriftState();
+    state.set({ kind: 'findings', plan: plan(), at: Date.now() });
+
+    // One analysis can span several ecosystems at once, and a bare package
+    // name does not say which registry it came from.
+    assert.match(__renderForTest(state), /<span class="tag">npm<\/span>/);
+  });
+
+  test('renders a bare URL in evidence as a link', () => {
+    const state = new DriftState();
+    state.set({
+      kind: 'findings',
+      plan: plan({
+        evidence: [
+          {
+            id: 'e1',
+            source: 'type-surface-diff',
+            dependency: 'react',
+            title: 'API diff',
+            content: 'Declaration sources:\n- before: https://cdn.jsdelivr.net/npm/react@18.0.0/index.d.ts',
+            weight: 1,
+          },
+        ],
+      }),
+      at: Date.now(),
+    });
+
+    assert.match(
+      __renderForTest(state),
+      /<a data-url="https:\/\/cdn\.jsdelivr\.net\/npm\/react@18\.0\.0\/index\.d\.ts">/,
+    );
   });
 
   test('a candidateId focus renders that candidate\'s plan, not the global one', () => {

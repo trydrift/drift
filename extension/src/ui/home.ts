@@ -79,7 +79,7 @@ import {
 import { createPullRequestWithGh } from '../gh.js';
 import { Checkpoints } from '../checkpoint.js';
 import { DriftReportPanel } from './report.js';
-import { openPackageVersionDiff } from '../version-diff.js';
+import { openChangeDiff, openPackageVersionDiff, type ChangeDiffRequest } from '../version-diff.js';
 import {
   makeNonce,
   renderBody,
@@ -123,6 +123,8 @@ type Incoming =
   | { type: 'openUrl'; url: string }
   | { type: 'openDiff'; path: string }
   | { type: 'openVersionDiff'; id: string }
+  /** One finding's before/after, as JSON — see `renderDiffButton` in `webview.ts`. */
+  | { type: 'openFindingDiff'; value: string }
   | { type: 'pickVersion'; id: string }
   | { type: 'selectVersion'; id: string; version: string }
   | { type: 'recheck'; id: string }
@@ -602,6 +604,14 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       case 'openDiff':
         await vscode.commands.executeCommand('drift.openChangeDiff', message.path);
         return;
+      case 'openFindingDiff': {
+        // The payload is built by the renderer and round-trips through a data
+        // attribute, so a malformed one means the panel and the host are out
+        // of step — nothing a user can act on, and not worth an error dialog.
+        const request = parseChangeDiffRequest(message.value);
+        if (request) await openChangeDiff(request, this.output);
+        return;
+      }
       case 'openVersionDiff': {
         const candidate = this.candidates.get(message.id);
         if (!candidate) return;
@@ -5040,6 +5050,17 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
    */
   private renderTimer: ReturnType<typeof setTimeout> | null = null;
 
+  /**
+   * Repaint for a reason that has nothing to do with state.
+   *
+   * The one caller is the syntax highlighter finishing its build, or rebuilding
+   * against a theme the user just switched to: nothing about the analysis
+   * changed, but every snippet on screen is now painted in the wrong palette.
+   */
+  rerender(): void {
+    this.render();
+  }
+
   private render(): void {
     if (this.surfaces.length === 0 || this.renderTimer) return;
     this.renderTimer = setTimeout(() => {
@@ -5449,4 +5470,42 @@ function combinePlans(repo: RepoContext, config: DriftConfig, plans: Remediation
   // stage looking like a scan that never ran a check at all.
   const verification = combineVerifications(plans.map((p) => p.verification));
   return verification ? { ...combined, verification } : combined;
+}
+
+/**
+ * The before/after diff request a panel button carries, validated.
+ *
+ * The payload crosses a webview boundary as a string, so it is untrusted in
+ * shape even though the renderer on the other side is Drift's own: anything
+ * that is not a well-formed request is dropped rather than half-applied.
+ */
+function parseChangeDiffRequest(value: string | undefined): ChangeDiffRequest | null {
+  if (!value) return null;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    if (!parsed || typeof parsed !== 'object') return null;
+    const request = parsed as Record<string, unknown>;
+    if (typeof request.before !== 'string' || typeof request.after !== 'string') return null;
+    return {
+      before: request.before,
+      after: request.after,
+      title: typeof request.title === 'string' ? request.title : 'change',
+      ...(typeof request.language === 'string' ? { language: request.language } : {}),
+      ...(typeof request.symbol === 'string' ? { symbol: request.symbol } : {}),
+      ...(isSource(request.source) ? { source: request.source } : {}),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function isSource(value: unknown): value is { ecosystem: string; name: string; from: string; to: string } {
+  if (!value || typeof value !== 'object') return false;
+  const source = value as Record<string, unknown>;
+  return (
+    typeof source.ecosystem === 'string' &&
+    typeof source.name === 'string' &&
+    typeof source.from === 'string' &&
+    typeof source.to === 'string'
+  );
 }

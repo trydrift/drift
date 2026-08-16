@@ -26,7 +26,8 @@ import { detectWorkspaces, memberDirectories } from '../../src/detect/workspace.
 import type { RemediationPlan } from '../../src/types.js';
 import { discoverNestedProjects } from '../../src/detect/nested.js';
 import type { IssueBranchAction } from './issue-actions.js';
-import { openPackageVersionDiff } from './version-diff.js';
+import { openChangeDiff, openPackageVersionDiff, type ChangeDiffRequest } from './version-diff.js';
+import { onDidChangeCodeTheme, warmCodeHighlighter, watchCodeTheme } from './ui/highlight.js';
 
 /**
  * Drift for VS Code.
@@ -95,6 +96,19 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
 
   registerCommands(context, state, diagnostics, review, reviewUi, home);
+
+  // Code in the panels is tokenised against the user's own colour theme, which
+  // has to be read off disk before anything can be highlighted. The views
+  // render immediately either way and re-render once it is ready, so this is
+  // deliberately not awaited — and it re-runs whenever the theme changes.
+  context.subscriptions.push(
+    watchCodeTheme(),
+    onDidChangeCodeTheme(() => {
+      DriftReportPanel.refresh();
+      home.rerender();
+    }),
+  );
+  void warmCodeHighlighter();
 
   // Sign-in state changes what the agent picker can offer.
   context.subscriptions.push(onDidChangeGitHubAuth(() => invalidateAgentCache()));
@@ -217,6 +231,11 @@ function registerCommands(
     ((ecosystem: string, name: string, from: string, to: string) =>
       openPackageVersionDiff({ ecosystem, name, from, to, output })) as never,
   );
+  // The per-finding diff: the two sides the panel is already showing, opened
+  // in the editor's diff view and widened to the surrounding source where the
+  // package's published code can be fetched. Distinct from the command above,
+  // which diffs the whole release.
+  register('drift.openFindingDiff', ((request: ChangeDiffRequest) => openChangeDiff(request, output)) as never);
   // Whatever the checks printed, verbatim. A summary is enough to decide with;
   // a failure is not something to paraphrase.
   register('drift.showCheckOutput', ((order: number) => {

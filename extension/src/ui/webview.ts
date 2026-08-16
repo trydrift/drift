@@ -18,7 +18,7 @@ import type { ReviewGroup, ReviewTotals } from '../review/store.js';
 import type { BreakingChange, Evidence, RemediationPlan } from '../../../src/types.js';
 import type { Vulnerability } from '../../../src/rationale/types.js';
 import type { CheckOutcome } from '../../../src/verification/checks.js';
-import { highlightCode } from './highlight.js';
+import { highlightCode, languageForEcosystem } from './highlight.js';
 
 /**
  * The panel's markup.
@@ -907,15 +907,18 @@ function renderStale(stale: StaleHint): string {
 }
 
 /**
- * Which repository and which package in it this dependency belongs to.
+ * Which ecosystem, which repository, and which package in it this dependency
+ * belongs to.
  *
- * Each half is rendered only when the scan actually crossed that boundary —
- * a repository tag only once results came from more than one open root, a
- * workspace tag only once a scan crossed a package boundary within one
- * repository. In the common single-repository, single-package case, neither
- * fires: a label that never varies is one more thing to read past.
+ * The ecosystem is always shown: one scan routinely covers several at once,
+ * and `zod` on npm and a `zod` module on another registry are two different
+ * packages that a name alone does not tell apart. The other two halves are
+ * rendered only when the scan actually crossed that boundary — a repository
+ * tag only once results came from more than one open root, a workspace tag
+ * only once a scan crossed a package boundary within one repository.
  */
 function workspaceTag(candidate: UpgradeCandidate, showRepo: boolean): string {
+  const ecosystem = `<span class="pkg-ecosystem" title="${escapeAttr(candidate.ecosystem)} package, installed with ${escapeAttr(candidate.packageManager)}">${escapeHtml(candidate.ecosystem)}</span>`;
   const repo = showRepo ? (candidate.repoLabel ?? null) : null;
   // `workspace` is `''` for the root package, which is a real answer and not a
   // missing one — so it is tested against `undefined`, not for truthiness. The
@@ -926,7 +929,7 @@ function workspaceTag(candidate: UpgradeCandidate, showRepo: boolean): string {
     candidate.workspace === undefined
       ? null
       : (candidate.workspaceName ?? (candidate.workspace === '' ? 'repository root' : candidate.workspace));
-  if (!repo && !member) return '';
+  if (!repo && !member) return `<span class="pkg-tags">${ecosystem}</span>`;
 
   const repoTag = repo
     ? `<span class="pkg-workspace pkg-repo" title="Open root">${escapeHtml(repo)}</span>`
@@ -934,7 +937,10 @@ function workspaceTag(candidate: UpgradeCandidate, showRepo: boolean): string {
   const memberTag = member
     ? `<span class="pkg-workspace" title="Declared in ${escapeAttr(candidate.manifestPath)}">${escapeHtml(member)}</span>`
     : '';
-  return repoTag + memberTag;
+  // One row of tags rather than a stack: `.pkg-name` is a column, so three
+  // free-standing tags would take three lines of a summary that has to stay
+  // one glance tall.
+  return `<span class="pkg-tags">${ecosystem}${repoTag}${memberTag}</span>`;
 }
 
 function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = false): string {
@@ -1375,37 +1381,39 @@ function renderBreak(
 ): string {
   const sites = plan.impactSites.filter((site) => site.breakingChangeId === change.id);
   const evidence = plan.evidence.filter((entry) => change.citations.includes(entry.id));
+  const diff = diffContextFor(candidate, change.symbols[0]);
 
   return `<details class="break" data-key="brk:${escapeAttr(change.id)}" ${expanded ? 'open' : ''}>
     <summary>
       <span class="confidence ${change.confidence}">${escapeHtml(change.confidence)}</span>
-      <span class="break-summary">${escapeHtml(change.summary)}</span>
+      <span class="break-summary">${inlineMarkdown(change.summary, {})}</span>
     </summary>
     <div class="break-body">
       ${change.symbols.length ? `<p class="symbols">${change.symbols.map((s) => `<code>${escapeHtml(s)}</code>`).join(' ')}</p>` : ''}
       ${
         // The declaration itself, before and after — the actual evidence for
         // the summary above, scoped to just this change rather than the
-        // dependency's full evidence dump below. "See diff" answers the
-        // question a before/after pair always raises next: what else changed
-        // around it — by fetching the two published versions and opening a
-        // real diff, the same one `renderEvidence`'s semver-heuristic button
-        // opens, rather than asking the reader to go find them.
+        // dependency's full evidence dump below. "View diff" answers the
+        // question a before/after pair always raises next: show me that
+        // properly — this change, in the editor's own diff view, widened to
+        // the surrounding published source where it can be fetched. The whole
+        // release's diff is a different question, and stays on the
+        // semver-heuristic record below where it was the question being asked.
         change.before && change.after && change.before !== change.after
-          ? `<div class="before-after">
-              <div class="markdown">${renderMarkdown(`before: ${change.before}\nafter: ${change.after}`)}</div>
-              <button class="ctl bordered" data-action="openVersionDiff" data-id="${escapeAttr(candidate.id)}" title="Fetch ${escapeAttr(candidate.name)} ${escapeAttr(candidate.current)} and ${escapeAttr(candidate.selected)} and open a real diff between them">See diff</button>
-            </div>`
+          ? renderBeforeAfter(change.before, change.after, {
+              title: change.symbols[0] ?? candidate.name,
+              ...diff,
+            })
           : ''
       }
-      <div class="fix"><b>Fix:</b> <div class="markdown fix-body">${renderMarkdown(change.remediation)}</div></div>
+      <div class="fix"><b>Fix:</b> <div class="markdown fix-body">${renderMarkdown(change.remediation, { diff })}</div></div>
       ${
         sites.length
           ? `<ul class="sites">${sites
               .slice(0, 20)
               .map(
                 (site) =>
-                  `<li><a data-action="openFile" data-file="${escapeAttr(site.file)}" data-line="${site.line}"><code>${escapeHtml(site.file)}:${site.line}</code></a><code class="excerpt">${highlightCode(site.excerpt)}</code></li>`,
+                  `<li><a data-action="openFile" data-file="${escapeAttr(site.file)}" data-line="${site.line}"><code>${escapeHtml(site.file)}:${site.line}</code></a><code class="excerpt">${highlightCode(site.excerpt, diff.language)}</code></li>`,
               )
               .join('')}${sites.length > 20 ? `<li class="hint">…and ${sites.length - 20} more</li>` : ''}</ul>`
           : ''
@@ -1413,6 +1421,20 @@ function renderBreak(
       ${evidence.length ? renderEvidence(candidate, evidence) : ''}
     </div>
   </details>`;
+}
+
+/** The package coordinates any before/after under this candidate can be diffed against. */
+function diffContextFor(candidate: UpgradeCandidate, symbol?: string): DiffContext {
+  return {
+    language: languageForEcosystem(candidate.ecosystem),
+    source: {
+      ecosystem: candidate.ecosystem,
+      name: candidate.name,
+      from: candidate.current,
+      to: candidate.selected,
+    },
+    ...(symbol ? { symbol } : {}),
+  };
 }
 
 /**
@@ -1442,7 +1464,13 @@ function renderEvidence(candidate: UpgradeCandidate, evidence: readonly Evidence
                 : ''
             }
           </summary>
-          <div class="markdown quote">${renderMarkdown(entry.content, { baseUrl: entry.url })}</div>
+          <div class="markdown quote">${renderMarkdown(entry.content, {
+            ...(entry.url ? { baseUrl: entry.url } : {}),
+            // Every before/after inside this record belongs to the same
+            // package, so each pair offers the same "view diff" the findings
+            // above do.
+            diff: diffContextFor(candidate),
+          })}</div>
         </details>`,
       )
       .join('')}
@@ -1817,8 +1845,25 @@ function noticeIcon(tone: string): string {
 /* Markdown + escaping                                                 */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Where a before/after pair found in prose can be diffed to.
+ *
+ * Everything is optional because the pair itself is always enough to diff:
+ * with a package and a symbol the editor can show the change in its real
+ * surroundings, and without them it shows the two declarations, which is still
+ * the question the reader asked.
+ */
+export interface DiffContext {
+  title?: string;
+  symbol?: string;
+  language?: string;
+  source?: { ecosystem: string; name: string; from: string; to: string };
+}
+
 interface MarkdownOptions {
   baseUrl?: string;
+  /** Package context for any before/after pair inside this block of prose. */
+  diff?: DiffContext;
 }
 
 export function renderMarkdown(text: string, options: MarkdownOptions = {}): string {
@@ -1826,6 +1871,11 @@ export function renderMarkdown(text: string, options: MarkdownOptions = {}): str
   let inList = false;
   let inCode = false;
   let code: string[] = [];
+  /** The most recent prose line, which names the symbol a following pair belongs to. */
+  let lastProse = '';
+  /** A `before:` waiting for the `after:` that pairs with it. */
+  let pendingBefore: string | null = null;
+  let pendingTitle = '';
 
   const closeList = () => {
     if (!inList) return '';
@@ -1833,16 +1883,24 @@ export function renderMarkdown(text: string, options: MarkdownOptions = {}): str
     return '</ul>';
   };
 
+  /** A `before:` with no `after:` after it is still a snippet worth showing. */
+  const flushPending = () => {
+    if (pendingBefore === null) return '';
+    const only = codeFigure('before', pendingBefore, options.diff?.language);
+    pendingBefore = null;
+    return only;
+  };
+
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim();
 
     if (line.startsWith('```')) {
       if (inCode) {
-        out.push(`<pre><code>${highlightCode(code.join('\n'))}</code></pre>`);
+        out.push(`<pre><code>${highlightCode(code.join('\n'), options.diff?.language)}</code></pre>`);
         code = [];
         inCode = false;
       } else {
-        out.push(closeList());
+        out.push(flushPending(), closeList());
         inCode = true;
       }
       continue;
@@ -1854,20 +1912,43 @@ export function renderMarkdown(text: string, options: MarkdownOptions = {}): str
     }
 
     if (!line) {
-      out.push(closeList());
+      out.push(flushPending(), closeList());
       continue;
     }
 
+    // A `before:`/`after:` pair is one thing, not two: rendered together, with
+    // the button that opens exactly that change in the editor's diff view —
+    // which is what makes every before/after Drift prints, wherever it prints
+    // it, offer the same next step.
     const labelledCode = /^(before|after):\s*(.*)$/i.exec(line);
     if (labelledCode) {
+      const label = labelledCode[1]!.toLowerCase();
+      const body = labelledCode[2]!;
+      if (label === 'before') {
+        out.push(flushPending(), closeList());
+        pendingBefore = body;
+        pendingTitle = lastProse;
+        continue;
+      }
+      if (pendingBefore === null) {
+        out.push(closeList(), codeFigure('after', body, options.diff?.language));
+        continue;
+      }
       out.push(
-        closeList(),
-        `<figure class="code-compare"><figcaption>${escapeHtml(labelledCode[1]!.toLowerCase())}</figcaption><pre><code>${highlightCode(
-          labelledCode[2]!,
-        )}</code></pre></figure>`,
+        renderBeforeAfter(pendingBefore, body, {
+          ...options.diff,
+          ...(pendingTitle ? { title: pendingTitle } : {}),
+          ...(options.diff?.symbol ?? symbolIn(pendingTitle)
+            ? { symbol: options.diff?.symbol ?? symbolIn(pendingTitle)! }
+            : {}),
+        }),
       );
+      pendingBefore = null;
       continue;
     }
+
+    out.push(flushPending());
+    lastProse = line.replace(/^[-*]\s+/, '');
 
     const heading = /^(#{1,4})\s+(.+)$/.exec(line);
     if (heading) {
@@ -1888,9 +1969,62 @@ export function renderMarkdown(text: string, options: MarkdownOptions = {}): str
     out.push(closeList(), `<p>${inlineMarkdown(line, options)}</p>`);
   }
 
-  if (inCode && code.length) out.push(`<pre><code>${highlightCode(code.join('\n'))}</code></pre>`);
-  out.push(closeList());
+  if (inCode && code.length) {
+    out.push(`<pre><code>${highlightCode(code.join('\n'), options.diff?.language)}</code></pre>`);
+  }
+  out.push(flushPending(), closeList());
   return out.filter(Boolean).join('');
+}
+
+/**
+ * A before/after pair, full width, with the one action it always implies.
+ *
+ * The button sits in its own header row rather than beside the code: laying
+ * them out side by side squeezes the declarations into whatever width the
+ * button leaves over, which is exactly where they need the room.
+ */
+export function renderBeforeAfter(before: string, after: string, context: DiffContext): string {
+  return `<div class="compare">
+    <div class="compare-head">
+      <span class="compare-label">before / after</span>
+      ${renderDiffButton(before, after, context)}
+    </div>
+    ${codeFigure('before', before, context.language)}
+    ${codeFigure('after', after, context.language)}
+  </div>`;
+}
+
+function codeFigure(label: string, code: string, language: string | undefined): string {
+  return `<figure class="code-compare"><figcaption>${escapeHtml(label)}</figcaption><pre><code>${highlightCode(
+    code,
+    language,
+  )}</code></pre></figure>`;
+}
+
+/**
+ * The button that opens this one change in the editor's diff view.
+ *
+ * The whole request travels in `data-value` as JSON: the panel's click handler
+ * forwards that field verbatim, so no new plumbing is needed for a payload
+ * that is richer than an id.
+ */
+function renderDiffButton(before: string, after: string, context: DiffContext): string {
+  const request = {
+    before,
+    after,
+    title: context.title ?? context.symbol ?? context.source?.name ?? 'change',
+    ...(context.language ? { language: context.language } : {}),
+    ...(context.symbol ? { symbol: context.symbol } : {}),
+    ...(context.source ? { source: context.source } : {}),
+  };
+  return `<button class="ctl bordered" data-action="openFindingDiff" data-value="${escapeAttr(
+    JSON.stringify(request),
+  )}" title="Open just this change in the editor's diff view">View diff</button>`;
+}
+
+/** The first identifier-shaped word in a line, which is what a pair is about. */
+function symbolIn(text: string): string | null {
+  return /`([^`]+)`/.exec(text)?.[1] ?? /\b([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\b/.exec(text)?.[1] ?? null;
 }
 
 function inlineMarkdown(text: string, options: MarkdownOptions): string {
@@ -1914,10 +2048,31 @@ function inlineMarkdown(text: string, options: MarkdownOptions): string {
 }
 
 function inlineText(text: string): string {
-  return escapeHtml(text)
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/(^|\s)_([^_]+)_(?=\s|$)/g, '$1<em>$2</em>');
+  return autolink(
+    escapeHtml(text)
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/(^|\s)_([^_]+)_(?=\s|$)/g, '$1<em>$2</em>'),
+  );
+}
+
+/**
+ * Bare URLs, turned into links.
+ *
+ * Drift's own evidence writes plain URLs rather than markdown links — the
+ * declaration sources on a type-surface record, for one — and a URL rendered
+ * as unclickable text in a panel is a URL nobody follows. Runs already inside
+ * a tag are skipped so a markdown link's `href` is not re-linked inside
+ * itself. `url` is a run of already-escaped HTML, so it is safe in both the
+ * attribute and the text without a second pass of escaping (which would turn
+ * a query string's `&amp;` into `&amp;amp;`).
+ */
+function autolink(html: string): string {
+  return html.replace(
+    /(<[^>]*>)|(https?:\/\/[^\s<>"')\]]+)/g,
+    (_match, tag: string | undefined, url: string | undefined) =>
+      tag ?? `<a data-action="openUrl" data-url="${url}">${url}</a>`,
+  );
 }
 
 function resolveMarkdownHref(href: string, baseUrl: string | undefined): string | null {
@@ -2092,23 +2247,26 @@ code {
   border-radius: 3px;
   padding: 1px 4px;
 }
+/* Code keeps its own lines and scrolls sideways, the way the editor does.
+   Wrapping a declaration mid-signature re-flows it into something that is no
+   longer the code being quoted, and a block with no horizontal scroll is
+   simply cropped at the panel's edge. */
 pre {
   margin: 6px 0;
   padding: 8px;
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-width: 100%;
   max-height: 240px;
+  white-space: pre;
+  word-break: normal;
+  line-height: 1.5;
+  font-family: var(--vscode-editor-font-family);
+  font-size: var(--vscode-editor-font-size, 12px);
   background: var(--vscode-textCodeBlock-background);
   border-radius: 5px;
 }
-pre code { background: none; padding: 0; }
-/* Token colors for highlightCode() — the theme's own symbol-icon colors, so a
-   snippet picks up the same palette as the outline view and breadcrumbs
-   instead of a fixed color that only happens to suit one theme. */
-.tok-kw { color: var(--vscode-symbolIcon-keywordForeground, #c586c0); }
-.tok-str { color: var(--vscode-symbolIcon-stringForeground, #ce9178); }
-.tok-num { color: var(--vscode-symbolIcon-numberForeground, #b5cea8); }
-.tok-fn { color: var(--vscode-symbolIcon-functionForeground, #dcdcaa); }
-.tok-com { color: var(--vscode-descriptionForeground); font-style: italic; }
+pre code { background: none; padding: 0; font-size: inherit; }
 button {
   font: inherit;
   border: 1px solid var(--vscode-button-border, transparent);
@@ -2464,6 +2622,15 @@ button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
    first, and a shade more visible, so two tags on one row still read as a
    hierarchy rather than a pair of unrelated labels. */
 .pkg-repo { opacity: 0.85; border-color: var(--vscode-focusBorder); }
+/* The registry a package came from, shown on every row: one scan can span
+   several ecosystems at once, and the name alone does not say which. */
+.pkg-ecosystem {
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 0.85em; opacity: 0.8; padding: 0 4px; border-radius: 3px; margin: 1px 0;
+  background: var(--vscode-badge-background); color: var(--vscode-badge-foreground);
+  text-transform: lowercase;
+}
+.pkg-tags { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; align-self: flex-start; max-width: 100%; }
 .versions { font-size: 11px; color: var(--vscode-descriptionForeground); font-variant-numeric: tabular-nums; }
 .versions .arrow { opacity: .6; }
 .verdict {
@@ -2562,10 +2729,20 @@ button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
 .fix .markdown, .fix p { display: inline; }
 .fix .code-compare { display: block; }
 ul.sites { margin: 6px 0; padding: 0; list-style: none; display: grid; gap: 5px; }
-ul.sites li { display: grid; gap: 1px; overflow-wrap: anywhere; }
-ul.sites code.excerpt { font-size: 11px; color: var(--vscode-descriptionForeground); background: none; padding: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-.before-after { display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap; }
-.before-after .markdown { flex: 1 1 240px; min-width: 0; }
+ul.sites li { display: grid; gap: 1px; min-width: 0; }
+ul.sites code.excerpt { font-size: 11px; color: var(--vscode-descriptionForeground); background: none; padding: 0;
+                        white-space: pre; overflow-x: auto; min-width: 0; }
+
+/* A before/after pair is one block, full width, with its action in a header
+   row above it. Laying the button out beside the code instead squeezes the
+   declarations into whatever width is left over — which is exactly where the
+   room is needed — and leaves the two blocks visibly short of the button's
+   right edge. */
+.compare { margin: 8px 0; min-width: 0; }
+.compare-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.compare-label { font-size: 9px; letter-spacing: .04em; text-transform: uppercase;
+                 color: var(--vscode-descriptionForeground); }
+.compare-head button { margin-left: auto; }
 .evidence { display: grid; gap: 5px; margin-top: 6px; }
 .evidence > details { border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 5px 7px; }
 .evidence summary { display: flex; gap: 6px; align-items: center; cursor: pointer; overflow-wrap: anywhere; }
@@ -3707,7 +3884,8 @@ function previewSlider(slider) {
 // the extension host worth locking the UI over, and \`stop\` has to stay live
 // precisely because something else is already pending.
 const LOCAL_ACTIONS = new Set([
-  'slider', 'submit', 'complete', 'openMenu', 'openUrl', 'openFile', 'openDiff', 'selectVersion', 'pickVersion', 'stop',
+  'slider', 'submit', 'complete', 'openMenu', 'openUrl', 'openFile', 'openDiff', 'openFindingDiff',
+  'selectVersion', 'pickVersion', 'stop',
 ]);
 
 // True from the moment a server-bound action is clicked until the next

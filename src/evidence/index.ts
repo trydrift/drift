@@ -546,7 +546,11 @@ function jsdelivrDeclarationUrl(packageName: string, version: string, entryPath:
 function formatSurfaceChanges(changes: readonly SurfaceChange[]): string {
   const MAX = 60;
   const lines = changes.slice(0, MAX).map((c) => {
-    const parts = [`- [${c.kind}] ${c.detail}`];
+    // The kind is already carried structurally on the finding, and the detail
+    // sentence ("The signature of Drop changed.") says the same thing in words
+    // a reader does not have to decode. A raw `[signature-changed]` in front of
+    // it is machine vocabulary leaking into prose.
+    const parts = [`- ${c.detail}`];
     if (c.before && c.after) {
       parts.push(`    before: ${truncate(c.before, 200)}`);
       parts.push(`    after:  ${truncate(c.after, 200)}`);
@@ -607,7 +611,7 @@ async function gatherSpecEvidence(ctx: EvidenceContext): Promise<Evidence[]> {
 }
 
 function formatOpenApiFindings(findings: readonly OpenApiFinding[]): string {
-  return findings.map((f) => `- [${f.kind}] ${f.location} — ${f.detail}`).join('\n');
+  return findings.map((f) => `- \`${f.location}\` — ${f.detail}`).join('\n');
 }
 
 /**

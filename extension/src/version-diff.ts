@@ -1,8 +1,11 @@
 import * as vscode from 'vscode';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { execCommand, type Exec } from '../../src/util/exec.js';
 import { fetchVersionDiff, type VersionDiffFile } from '../../src/evidence/version-diff.js';
 import { envWithShellPath } from './shell-path.js';
+import { diffHunks, splitLines } from './diff.js';
+import { extensionForLanguage } from './ui/highlight.js';
 
 /**
  * The one piece of evidence Drift shows that is a claim about the package
@@ -32,6 +35,198 @@ function ensureEmptyContentProvider(): void {
 }
 
 const MAX_DIFF_FILES = 50;
+
+/* ------------------------------------------------------------------ */
+/* One change, on its own                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The diff for a *single* finding, rather than for the whole release.
+ *
+ * A before/after pair in the panel raises exactly one question — show me that,
+ * properly — and answering it by opening every file that changed between two
+ * releases buries the answer in a few hundred unrelated ones. So this opens
+ * the same two sides the panel is showing, in the editor's own diff view,
+ * where they get real syntax highlighting, real navigation, and the reader's
+ * own diff settings.
+ *
+ * Where the package's published source can be fetched, the two sides are
+ * widened from the bare declaration to the surrounding lines of the file the
+ * symbol actually lives in — the same change, with enough context around it to
+ * read. Where it cannot (an ecosystem with no fetchable source, an offline
+ * editor), the declarations themselves are still a complete answer to the
+ * question asked, so they are shown alone rather than not at all.
+ */
+export interface ChangeDiffRequest {
+  /** The declaration as it was, and as it now is. */
+  before: string;
+  after: string;
+  /** What the diff editor is titled — usually the symbol, or the package. */
+  title: string;
+  /** Shiki language id; decides the extension the two sides are named with. */
+  language?: string;
+  /** The symbol to look for when locating this change in the published source. */
+  symbol?: string;
+  /** Package coordinates, when the real source can be fetched to add context. */
+  source?: { ecosystem: string; name: string; from: string; to: string };
+}
+
+const SNIPPET_SCHEME = 'drift-change-diff';
+/** Lines of surrounding source kept on either side of the located change. */
+const CONTEXT_LINES = 12;
+/** Files read while looking for the symbol, before giving up and showing the declarations alone. */
+const MAX_SEARCHED_FILES = 400;
+
+const snippets = new Map<string, string>();
+let snippetProviderRegistered = false;
+
+function ensureSnippetProvider(): void {
+  if (snippetProviderRegistered) return;
+  snippetProviderRegistered = true;
+  vscode.workspace.registerTextDocumentContentProvider(SNIPPET_SCHEME, {
+    provideTextDocumentContent: (uri) => snippets.get(uri.path) ?? '',
+  });
+}
+
+export async function openChangeDiff(
+  request: ChangeDiffRequest,
+  output?: vscode.LogOutputChannel,
+): Promise<void> {
+  ensureSnippetProvider();
+
+  const extension = extensionForLanguage(request.language ?? 'typescript');
+  const located = request.source
+    ? await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Window,
+          title: `Drift: locating ${request.title}…`,
+        },
+        () => locateInSource(request, output),
+      )
+    : null;
+
+  const before = located?.before ?? request.before;
+  const after = located?.after ?? request.after;
+  const name = located?.path ?? `${slug(request.title)}.${extension}`;
+  const title = located ? `${request.title} — ${located.path}` : request.title;
+
+  // Keyed by content as well as name so two different findings in the same
+  // file never collide on one virtual document, and so re-opening the same
+  // finding reuses the tab it already has.
+  const beforeUri = snippetUri('before', name, before);
+  const afterUri = snippetUri('after', name, after);
+
+  await vscode.commands.executeCommand('vscode.diff', beforeUri, afterUri, title, {
+    preview: true,
+  } satisfies vscode.TextDocumentShowOptions);
+}
+
+function snippetUri(side: 'before' | 'after', name: string, content: string): vscode.Uri {
+  const path = `/${side}/${hash(content)}/${name}`;
+  snippets.set(path, content);
+  return vscode.Uri.from({ scheme: SNIPPET_SCHEME, path });
+}
+
+/**
+ * Find where this change lives in the published source, and return that region
+ * of both versions.
+ *
+ * `null` whenever the answer would be a guess: an ecosystem whose source
+ * cannot be fetched, a symbol that appears in no changed file, a network that
+ * is not there. The caller falls back to the declarations the panel already
+ * has, which are correct — just narrower.
+ */
+async function locateInSource(
+  request: ChangeDiffRequest,
+  output?: vscode.LogOutputChannel,
+): Promise<{ before: string; after: string; path: string } | null> {
+  const source = request.source;
+  const symbol = request.symbol?.trim();
+  if (!source || !symbol) return null;
+
+  try {
+    const env = await envWithShellPath();
+    const exec: Exec = (command, args, options) => execCommand(command, args, { ...options, env });
+    const result = await fetchVersionDiff({ ...source, exec });
+    if (!result.available) {
+      output?.info(`Drift: showing the declaration alone for ${request.title}: ${result.reason}`);
+      return null;
+    }
+
+    // Only files that changed on both sides can contain a before *and* an
+    // after; an added or removed file has nothing to compare the symbol
+    // against. Files whose own name mentions the symbol are tried first,
+    // which in practice is where a top-level export lives.
+    const candidates = result.files
+      .filter((file) => file.status === 'modified')
+      .sort((a, b) => Number(mentions(b.path, symbol)) - Number(mentions(a.path, symbol)))
+      .slice(0, MAX_SEARCHED_FILES);
+
+    const word = symbolPattern(symbol);
+
+    for (const file of candidates) {
+      const [beforeText, afterText] = await Promise.all([
+        readFile(join(result.beforeDir, file.path), 'utf8').catch(() => null),
+        readFile(join(result.afterDir, file.path), 'utf8').catch(() => null),
+      ]);
+      if (beforeText === null || afterText === null) continue;
+      if (!word.test(beforeText) && !word.test(afterText)) continue;
+
+      const hunk = diffHunks(beforeText, afterText).find(
+        (candidate) =>
+          candidate.baselineLines.some((line) => word.test(line)) ||
+          candidate.modifiedLines.some((line) => word.test(line)),
+      );
+      if (!hunk) continue;
+
+      return {
+        before: slice(beforeText, hunk.baselineStart, hunk.baselineEnd),
+        after: slice(afterText, hunk.start, hunk.end),
+        path: file.path,
+      };
+    }
+
+    output?.info(
+      `Drift: ${symbol} did not appear in any file that changed between ${source.name} ${source.from} and ${source.to}; showing the declaration alone.`,
+    );
+    return null;
+  } catch (err) {
+    output?.warn(`Drift: could not locate ${request.title} in the published source: ${(err as Error).message}`);
+    return null;
+  }
+}
+
+function slice(text: string, start: number, end: number): string {
+  const lines = splitLines(text);
+  return lines.slice(Math.max(0, start - CONTEXT_LINES), Math.min(lines.length, end + CONTEXT_LINES)).join('\n');
+}
+
+/** The symbol as a whole word — `Drop` must not match `Dropdown`. */
+function symbolPattern(symbol: string): RegExp {
+  const bare = symbol.split(/[.#:]/).pop() ?? symbol;
+  return new RegExp(`(^|[^\\w$])${bare.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\w$])`);
+}
+
+function mentions(path: string, symbol: string): boolean {
+  const bare = (symbol.split(/[.#:]/).pop() ?? symbol).toLowerCase();
+  return bare.length > 2 && path.toLowerCase().includes(bare);
+}
+
+/** A filename-safe stand-in for a title, so the diff tab reads as a file. */
+function slug(title: string): string {
+  const cleaned = title.replace(/[^\w.-]+/g, '-').replace(/^-+|-+$/g, '');
+  return cleaned.slice(0, 60) || 'change';
+}
+
+/** Enough to key one snippet apart from another; not a security boundary. */
+function hash(text: string): string {
+  let value = 0x811c9dc5;
+  for (let i = 0; i < text.length; i += 1) {
+    value ^= text.charCodeAt(i);
+    value = Math.imul(value, 0x01000193);
+  }
+  return (value >>> 0).toString(36);
+}
 
 export async function openPackageVersionDiff(args: {
   ecosystem: string;

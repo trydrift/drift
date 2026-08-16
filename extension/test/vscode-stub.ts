@@ -173,6 +173,8 @@ export const workspace = {
   },
   textDocuments: [] as { uri: { fsPath: string }; getText(): string }[],
   onDidChangeTextDocument: () => ({ dispose: () => undefined }),
+  onDidChangeConfiguration: () => ({ dispose: () => undefined }),
+  registerTextDocumentContentProvider: () => ({ dispose: () => undefined }),
   applyEdit: async (edit: WorkspaceEdit) => {
     for (const entry of edit.edits) writeFileSync(entry.uri.fsPath, entry.text);
     return true;
@@ -194,8 +196,13 @@ export const workspace = {
   },
 };
 
+export const ColorThemeKind = { Light: 1, Dark: 2, HighContrast: 3, HighContrastLight: 4 } as const;
+
 export const window = {
   activeTextEditor: undefined as unknown,
+  /** Highlighting reads this to pick a fallback theme when none can be loaded from disk. */
+  activeColorTheme: { kind: ColorThemeKind.Dark },
+  onDidChangeActiveColorTheme: () => ({ dispose: () => undefined }),
   /** Test-only: set by `createWebviewPanel` so tests can read what it produced. */
   __lastWebviewPanel: undefined as { webview: { html: string } } | undefined,
   showInformationMessage: async () => undefined,
@@ -317,4 +324,12 @@ export const TextEditorRevealType = { InCenterIfOutsideViewport: 2 } as const;
 export const ProgressLocation = { Notification: 15, Window: 10 } as const;
 export const ConfigurationTarget = { Global: 1, Workspace: 2 } as const;
 export const env = { openExternal: async () => true };
+
+export const Disposable = {
+  from: (...items: { dispose(): unknown }[]) => ({
+    dispose: () => {
+      for (const item of items) item.dispose();
+    },
+  }),
+};
 export const version = '1.95.0-stub';

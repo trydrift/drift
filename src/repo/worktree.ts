@@ -31,8 +31,8 @@ export interface Worktree {
    */
   copiedFiles: readonly string[];
   /**
-   * The `.gitignore` rules that matched {@link copiedFiles}, deduplicated and
-   * formatted as `<path to the .gitignore, from repo root>:<line>:<pattern>`
+   * The `.gitignore` patterns that matched {@link copiedFiles}, deduplicated —
+   * the rule alone (`dist/`), not `git check-ignore -v`'s file-and-line prefix
    * — what a reader needs to find and, if wrong, adjust the rule, without
    * scrolling past a file-by-file dump that is often mostly noise (a single
    * `dist/` rule can match hundreds of files).
@@ -511,11 +511,25 @@ export async function gitignoreRules(
       if (!line) continue;
       const tab = line.indexOf('\t');
       if (tab === -1) continue;
-      rules.add(line.slice(0, tab));
+      rules.add(ignorePattern(line.slice(0, tab)));
     }
   }
 
   return [...rules].sort();
+}
+
+/**
+ * The rule itself, out of `git check-ignore -v`'s `<source>:<line>:<pattern>`.
+ *
+ * A reader shown `.gitignore:12:dist/` has to parse past a filename and a
+ * line number to reach the one token that means anything to them — and the
+ * line number is stale the moment anyone edits the file. `dist/` is the whole
+ * answer. The greedy first group anchors on the *last* `:<digits>:` in the
+ * string, so a pattern containing digits or a source path containing a colon
+ * still splits at the right place.
+ */
+function ignorePattern(source: string): string {
+  return /^(.*):(\d+):([^]*)$/.exec(source)?.[3] ?? source;
 }
 
 /** Directory-safe, collision-resistant enough for one label per scan. */

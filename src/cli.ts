@@ -796,7 +796,7 @@ async function outdatedCommand(flags: Flags): Promise<number> {
         `this is not the same as “up to date”:`,
     );
     for (const dep of result.unchecked) {
-      console.log(`  ${dep.name} ${dep.current} (${dep.manifestPath})`);
+      console.log(`  ${dep.name} ${dep.current} (${dep.ecosystem} · ${dep.manifestPath})`);
       console.log(`    ${dep.reason}`);
     }
     console.log();
@@ -808,6 +808,11 @@ async function outdatedCommand(flags: Flags): Promise<number> {
         ? `${candidate.current} → ${candidate.selected}`
         : `${candidate.current} → ${candidate.selected} (latest ${candidate.latest})`;
     console.log(`${candidateLabel(candidate, result.candidates)} ${versionLabel}`);
+    // Which registry, and which manifest. One scan routinely spans several
+    // ecosystems at once — an npm dependency and a Go module in the same
+    // repository — and a bare package name says neither which of them a row
+    // belongs to nor which file declares it.
+    console.log(`  ${candidate.ecosystem} · ${candidate.manifestPath}`);
     console.log(`  ${describeSeverity(candidate)}`);
     if (candidate.summary) console.log(`  ${candidate.summary}`);
     if (!process.stdin.isTTY) {

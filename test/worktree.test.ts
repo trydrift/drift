@@ -192,10 +192,10 @@ describe('naming the .gitignore rule behind a carried-over file', () => {
     };
 
     const rules = await gitignoreRules('/repo', ['dist/a.js', 'dist/b.js'], exec as never, {});
-    assert.deepEqual(rules, ['.gitignore:1:dist/']);
+    assert.deepEqual(rules, ['dist/']);
   });
 
-  test('names rules from a nested .gitignore by their path from the repo root', async () => {
+  test('reports the pattern alone, without the .gitignore path and line number', async () => {
     const exec = async (_command: string, args: readonly string[]) => {
       if (args[0] === 'check-ignore') {
         return { code: 0, stdout: 'packages/app/.gitignore:3:*.generated.ts\tpackages/app/src/x.generated.ts\n', stderr: '' };
@@ -204,7 +204,7 @@ describe('naming the .gitignore rule behind a carried-over file', () => {
     };
 
     const rules = await gitignoreRules('/repo', ['packages/app/src/x.generated.ts'], exec as never, {});
-    assert.deepEqual(rules, ['packages/app/.gitignore:3:*.generated.ts']);
+    assert.deepEqual(rules, ['*.generated.ts']);
   });
 
   test('returns nothing for an empty file list without shelling out', async () => {
