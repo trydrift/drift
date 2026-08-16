@@ -210,6 +210,180 @@ describe('protobuf, via buf breaking', () => {
     assert.match(gaps[0]?.detail ?? '', /does not exist/);
   });
 
+  test('every configured .proto is laid out, so an import of a sibling resolves', async () => {
+    // A `.proto` compiled alone in an empty directory fails on its imports —
+    // a statement about how Drift laid the file out, not about the contract.
+    // The sibling has to be written on *both* sides, and written even though it
+    // did not itself change, because an import resolves against it regardless.
+    const sibling = 'proto/common.proto';
+    const written: string[] = [];
+    const exec = (async (_cmd: string, args: readonly string[], opts?: { cwd?: string }) => {
+      if (args[0] === '--version') return ok('1.72.0');
+      const root = opts?.cwd ?? '';
+      const { readdir } = await import('node:fs/promises');
+      const { join } = await import('node:path');
+      for (const side of ['before', 'after']) {
+        for (const entry of await readdir(join(root, side), { recursive: true, withFileTypes: true })) {
+          if (entry.isFile()) written.push(`${side}/${join(entry.parentPath, entry.name).slice(join(root, side).length + 1)}`);
+        }
+      }
+      return ok('');
+    }) as never;
+
+    await gatherEvidence([], {
+      config: DriftConfigSchema.parse({
+        evidence: { protobuf: true, protobufSpecs: [path, sibling] },
+      }),
+      logger,
+      exec,
+      readRepoFile: async (requested: string, ref: string) => {
+        if (requested === path) return ref === 'before' ? PROTO_BEFORE : PROTO_AFTER;
+        // Unchanged between the two revisions, and still required to compile.
+        if (requested === sibling) return 'syntax = "proto3";\npackage acme.common.v1;\n';
+        return null;
+      },
+      beforeSha: 'before',
+      afterSha: 'after',
+    });
+
+    assert.ok(written.includes(`after/${path}`), 'the target must be written');
+    assert.ok(written.includes(`after/${sibling}`), 'an unchanged sibling must be written too');
+    assert.ok(written.includes(`before/${sibling}`), 'and on the old side, so both revisions compile');
+  });
+
+  test('a sibling’s own breaking change is not reported against the target', async () => {
+    // Every configured `.proto` is compiled together, so buf reports on all of
+    // them at once. Without scoping the output back to the document under
+    // comparison, one removed field in a shared file would be published once
+    // per document that imports it.
+    const sibling = 'proto/common.proto';
+    const stdout = [
+      JSON.stringify({
+        path: `after/${path}`,
+        start_line: 5,
+        type: 'FIELD_NO_DELETE',
+        message: 'Previously present field "2" with name "email" on message "User" was deleted.',
+      }),
+      JSON.stringify({
+        path: `after/${sibling}`,
+        start_line: 3,
+        type: 'FIELD_NO_DELETE',
+        message: 'Previously present field "1" with name "trace_id" on message "Meta" was deleted.',
+      }),
+    ].join('\n');
+
+    const records = await gatherEvidence([], {
+      config: DriftConfigSchema.parse({ evidence: { protobuf: true, protobufSpecs: [path] } }),
+      logger,
+      exec: (async (_c: string, args: readonly string[]) =>
+        args[0] === '--version' ? ok('1.72.0') : ok(stdout, 100)) as never,
+      readRepoFile: repoWith(path, PROTO_BEFORE, PROTO_AFTER),
+      beforeSha: 'before',
+      afterSha: 'after',
+    });
+
+    assert.deepEqual(
+      records.flatMap((r) => r.findings?.map((f) => f.symbol) ?? []),
+      ['User.email'],
+      'only the document under comparison may be reported against it',
+    );
+  });
+
+  test('a finding cites the repository’s own path, not Drift’s scratch layout', async () => {
+    // buf names files relative to the input directory it was handed, so its
+    // answer is prefixed with `after/`. Published as-is, the citation points at
+    // a temp directory that no longer exists by the time anyone reads it.
+    const stdout = JSON.stringify({
+      path: `after/${path}`,
+      start_line: 5,
+      type: 'FIELD_SAME_TYPE',
+      // No quoted owner or member, so the symbol falls back to `path:line`.
+      message: 'Field type changed.',
+    });
+
+    const records = await gatherEvidence([], {
+      config: DriftConfigSchema.parse({ evidence: { protobuf: true, protobufSpecs: [path] } }),
+      logger,
+      exec: (async (_c: string, args: readonly string[]) =>
+        args[0] === '--version' ? ok('1.72.0') : ok(stdout, 100)) as never,
+      readRepoFile: repoWith(path, PROTO_BEFORE, PROTO_AFTER),
+      beforeSha: 'before',
+      afterSha: 'after',
+    });
+
+    const symbol = records[0]?.findings?.[0]?.symbol ?? '';
+    assert.equal(symbol, `${path}:5`);
+    assert.ok(!symbol.startsWith('after/'), 'the scratch prefix must never reach a reader');
+  });
+
+  for (const type of ['PLUGIN_FAILURE', 'CONFIGURATION']) {
+    test(`a ${type} is a stated gap, not a silently dropped line`, async () => {
+      // Everything buf says about *itself* arrives on the findings channel, not
+      // just COMPILE. Filtering these out without saying so would report a run
+      // that never happened as a run that found nothing.
+      const failure: CommandResult = {
+        code: 100,
+        stdout: JSON.stringify({ path: 'after/proto/users.proto', type, message: 'buf could not run' }),
+        stderr: '',
+      };
+      const gaps: { reason: string; detail: string; remedy?: string }[] = [];
+
+      const records = await gatherEvidence([], {
+        config: DriftConfigSchema.parse({ evidence: { protobuf: true, protobufSpecs: [path] } }),
+        logger,
+        exec: (async (_c: string, args: readonly string[]) =>
+          args[0] === '--version' ? ok('1.47.2') : failure) as never,
+        readRepoFile: repoWith(path, PROTO_BEFORE, PROTO_AFTER),
+        beforeSha: 'before',
+        afterSha: 'after',
+        onUnavailableSpec: (_path, reason) => gaps.push(reason),
+      });
+
+      assert.deepEqual(records, []);
+      assert.equal(gaps[0]?.reason, 'toolchain-failed');
+      assert.match(gaps[0]?.detail ?? '', /buf could not run/);
+      assert.ok(gaps[0]?.remedy, 'a gap must name something the developer can do');
+    });
+  }
+
+  test('a self-report alongside real findings suppresses the whole comparison', async () => {
+    // A run that failed to compile has not checked the rest of the file either.
+    // Publishing the lines that did come back would present a partial
+    // comparison as a complete one — the same false-clean the COMPILE guard
+    // exists to prevent, just harder to notice.
+    const mixed: CommandResult = {
+      code: 100,
+      stdout: [
+        JSON.stringify({
+          path: 'after/proto/users.proto',
+          type: 'FIELD_NO_DELETE',
+          message: 'Previously present field "2" with name "email" on message "User" was deleted.',
+        }),
+        JSON.stringify({
+          path: 'after/proto/users.proto',
+          type: 'COMPILE',
+          message: 'imported file "common.proto" does not exist',
+        }),
+      ].join('\n'),
+      stderr: '',
+    };
+    const gaps: { reason: string; detail: string }[] = [];
+
+    const records = await gatherEvidence([], {
+      config: DriftConfigSchema.parse({ evidence: { protobuf: true, protobufSpecs: [path] } }),
+      logger,
+      exec: (async (_c: string, args: readonly string[]) =>
+        args[0] === '--version' ? ok('1.47.2') : mixed) as never,
+      readRepoFile: repoWith(path, PROTO_BEFORE, PROTO_AFTER),
+      beforeSha: 'before',
+      afterSha: 'after',
+      onUnavailableSpec: (_path, reason) => gaps.push(reason),
+    });
+
+    assert.deepEqual(records, [], 'no finding may be published from a failed compile');
+    assert.equal(gaps[0]?.reason, 'toolchain-failed');
+  });
+
   test('a buf invocation that fails outright is a gap too', async () => {
     const failure: CommandResult = { code: 1, stdout: '', stderr: 'unknown flag: --against' };
     const gaps: { reason: string }[] = [];

@@ -64,6 +64,22 @@ export class LocalGitProvider implements RepoProvider {
     return this.git(['show', `${ref}:${path}`]);
   }
 
+  async listFiles(ref: string): Promise<string[] | null> {
+    // The working tree is the index plus whatever is on disk, so `ls-files`
+    // is the honest answer there; `ls-tree` would describe a commit that is
+    // not what the user is asking about.
+    const out =
+      ref === WORKING_TREE
+        ? await this.git(['ls-files', '--cached', '--others', '--exclude-standard'])
+        : await this.git(['ls-tree', '-r', '--name-only', ref]);
+    if (out === null) return null;
+
+    return out
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+  }
+
   /** Run a git command, returning `null` on any failure. */
   private async git(args: readonly string[]): Promise<string | null> {
     try {

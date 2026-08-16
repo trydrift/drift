@@ -23,7 +23,7 @@ import { classify, normalizeProposedTaxonomy } from '../confidence/taxonomy.js';
  */
 
 /** The `@anthropic-ai/sdk` surface Drift uses. Kept narrow deliberately. */
-interface AnthropicLike {
+export interface AnthropicLike {
   messages: {
     create(params: Record<string, unknown>): Promise<{
       content: { type: string; text?: string }[];
@@ -169,6 +169,15 @@ Rules you must follow:
 export interface LlmOptions {
   config: DriftConfig;
   logger: Logger;
+  /**
+   * The model client, for tests.
+   *
+   * Injected rather than imported so this module's behaviour — what it does
+   * with a refusal, an unparseable answer, a finding citing evidence that does
+   * not exist — is testable without a network call or an API key. Production
+   * leaves it unset and the SDK is loaded on demand below.
+   */
+  client?: AnthropicLike;
 }
 
 export async function extractWithLlm(
@@ -179,15 +188,7 @@ export async function extractWithLlm(
 ): Promise<BreakingChange[]> {
   const { config, logger } = options;
 
-  const apiKey = process.env[config.llm.apiKeyEnv];
-  if (!apiKey) {
-    logger.warn(
-      `llm.enabled is true but ${config.llm.apiKeyEnv} is not set; skipping LLM extraction. The rule-based analyser still ran.`,
-    );
-    return [];
-  }
-
-  const client = await loadClient(apiKey, logger);
+  const client = options.client ?? (await connect(config, logger));
   if (!client) return [];
 
   // Prose only. Computed evidence is already fully structured, and re-reading
@@ -204,7 +205,7 @@ export async function extractWithLlm(
     if (relevant.length === 0) continue;
 
     try {
-      const extracted = await callModel(client, config, change, relevant, alreadyFound);
+      const extracted = await callModel(client, config, change, relevant, alreadyFound, logger);
       results.push(...toBreakingChanges(extracted, change.name, change.workspace, relevant));
     } catch (err) {
       // A model outage must never fail a run; the rules already produced output.
@@ -213,6 +214,18 @@ export async function extractWithLlm(
   }
 
   return results;
+}
+
+/** Resolve the API key and load the SDK, stating any reason it cannot. */
+async function connect(config: DriftConfig, logger: Logger): Promise<AnthropicLike | null> {
+  const apiKey = process.env[config.llm.apiKeyEnv];
+  if (!apiKey) {
+    logger.warn(
+      `llm.enabled is true but ${config.llm.apiKeyEnv} is not set; skipping LLM extraction. The rule-based analyser still ran.`,
+    );
+    return null;
+  }
+  return loadClient(apiKey, logger);
 }
 
 /**
@@ -253,6 +266,7 @@ async function callModel(
   change: DependencyChange,
   evidence: readonly Evidence[],
   alreadyFound: readonly BreakingChange[],
+  logger: Logger,
 ): Promise<ExtractedChange[]> {
   const known = alreadyFound
     .filter((c) => c.dependency === change.name && c.workspace === change.workspace)
@@ -289,18 +303,48 @@ async function callModel(
     messages: [{ role: 'user', content: prompt }],
   });
 
+  // Every path below returns "no findings", so every path below has to say why.
+  // "The model read the prose and found nothing" and "the model never answered"
+  // are different facts, and an unannounced empty array reports the second as
+  // the first — on the one evidence source whose whole purpose is catching what
+  // the rules miss.
+
   // Safety classifiers can decline; `content` is empty or partial in that case.
-  if (response.stop_reason === 'refusal') return [];
-
-  const text = response.content.find((b) => b.type === 'text')?.text;
-  if (!text) return [];
-
-  try {
-    const parsed = JSON.parse(text) as { changes?: ExtractedChange[] };
-    return Array.isArray(parsed.changes) ? parsed.changes : [];
-  } catch {
+  if (response.stop_reason === 'refusal') {
+    logger.warn(
+      `The model declined to analyse the prose for ${change.name}, so nothing was extracted from it. The rule-based analyser still ran.`,
+    );
     return [];
   }
+
+  const text = response.content.find((b) => b.type === 'text')?.text;
+  if (!text) {
+    logger.warn(
+      `The model returned no text for ${change.name}${
+        response.stop_reason ? ` (stop reason: ${response.stop_reason})` : ''
+      }, so nothing was extracted from its prose.`,
+    );
+    return [];
+  }
+
+  let parsed: { changes?: ExtractedChange[] };
+  try {
+    parsed = JSON.parse(text) as { changes?: ExtractedChange[] };
+  } catch (err) {
+    logger.warn(
+      `The model's answer for ${change.name} was not readable as JSON (${(err as Error).message}), so nothing was extracted from its prose.`,
+    );
+    return [];
+  }
+
+  if (!Array.isArray(parsed.changes)) {
+    logger.warn(
+      `The model's answer for ${change.name} carried no \`changes\` array, so nothing was extracted from its prose.`,
+    );
+    return [];
+  }
+
+  return parsed.changes;
 }
 
 function toBreakingChanges(

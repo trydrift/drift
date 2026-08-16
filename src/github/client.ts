@@ -77,6 +77,40 @@ export class GitHubClient {
   }
 
   /**
+   * Every file in the tree at a ref, for expanding configured path patterns.
+   *
+   * Returns `null` rather than `[]` on any failure, and on a tree GitHub
+   * truncated. A partial listing is worse than no listing here: the caller
+   * expands globs against it, so a file missing from the list becomes a
+   * contract that was silently never compared.
+   */
+  async listFiles(repo: RepoContext, ref: string): Promise<string[] | null> {
+    try {
+      const response = await this.octokit.git.getTree({
+        owner: repo.owner,
+        repo: repo.repo,
+        tree_sha: ref,
+        recursive: 'true',
+      });
+
+      if (response.data.truncated) {
+        this.logger.warn(
+          `The file tree at ${ref} is too large for GitHub to return in full, so path patterns ` +
+            `cannot be expanded against it. List the contract documents by literal path instead.`,
+        );
+        return null;
+      }
+
+      return response.data.tree
+        .filter((entry) => entry.type === 'blob' && typeof entry.path === 'string')
+        .map((entry) => entry.path as string);
+    } catch (err) {
+      this.logger.debug(`Could not list the tree at ${ref}: ${(err as Error).message}`);
+      return null;
+    }
+  }
+
+  /**
    * Files changed between two commits, for locating manifest edits.
    *
    * Returns `[]` only for a genuinely empty diff. A failed comparison (rate
@@ -844,6 +878,7 @@ export class GitHubClient {
     return {
       changedFiles: () => this.changedFiles(repo),
       readFile: (path, ref) => this.readFile(repo, path, ref),
+      listFiles: (ref) => this.listFiles(repo, ref),
     };
   }
 

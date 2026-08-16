@@ -152,7 +152,20 @@ evidence:
     - "spec/partner-api.json"
 ```
 
-Literal paths only — globs are not yet resolved.
+Patterns work too, in every `*Specs` and `*Schemas` list. `*` matches within one
+path segment, `**/` matches any number of segments including none, and `?`
+matches a single character:
+
+```yaml
+evidence:
+  openapiSpecs:
+    - "spec/**/*.yaml"
+```
+
+Patterns are expanded against the files present at the *after* revision. If
+Drift cannot list the repository — a GitHub tree too large to return in full,
+for instance — the pattern is reported as a gap naming itself, never expanded
+to nothing and reported as clean.
 
 ### `evidence.protobuf` · `evidence.protobufSpecs`
 
@@ -162,18 +175,25 @@ The same idea for `.proto` files. Drift hands the two revisions to `buf
 breaking`, which checks them against protobuf's own compatibility rules —
 field numbers, wire types, deleted RPCs — rather than against a guess at them.
 
+Drift compiles every configured `.proto` together, so imports between them
+resolve. Because a `.proto` almost always imports its siblings, name the
+directory rather than the single file you care about:
+
 ```yaml
 evidence:
   protobufSpecs:
-    - "proto/users/v1/users.proto"
+    - "proto/**/*.proto"
 ```
+
+Each document is still compared on its own terms — a field removed from a
+shared file is reported once, against that file, not again against everything
+importing it.
 
 Needs the [Buf CLI](https://buf.build/docs/installation) on `PATH`. When it is
 missing, the run says so and names the remedy; it never reports a comparison
-that did not happen as a clean one. A `.proto` that imports siblings Drift was
-not asked to read cannot be compiled on its own, and that is reported as a
-toolchain failure naming the import — list the imported files too, or point
-Drift at a path `buf` can compile alone.
+that did not happen as a clean one. An import of a file Drift was *not* told
+about still cannot resolve, and that is reported as a toolchain failure naming
+the import — never as "no breaking changes".
 
 ### `evidence.graphql` · `evidence.graphqlSchemas`
 
