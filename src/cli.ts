@@ -24,6 +24,8 @@ import { main as serveWebhook } from './runners/webhook.js';
 import { sampleTelemetryEvent } from './telemetry.js';
 import { createLogger, type LogLevel, type Logger } from './util/logger.js';
 import { configureHttpDiskCache } from './util/http.js';
+import { execCommand } from './util/exec.js';
+import { fetchVersionDiff, unifiedDiffText } from './evidence/version-diff.js';
 import { dispatchRemainingToCopilot, runFix } from './remediation/cli-runner.js';
 import {
   installUpgrade,
@@ -219,6 +221,11 @@ Usage:
   drift outdated [options]    Scan for available upgrades, not just past ones
   drift fix [options]         Analyse, then apply the fixes and push a branch
   drift pr [options]          Push the current branch and open a pull request
+  drift diff <eco> <pkg> <from> <to>
+                              Print a real \`git diff\` between two published
+                              versions of a package's source. Supports npm
+                              and cargo; nothing else has a fetchable archive
+                              yet
   drift action                Run as a GitHub Action (reads INPUT_* env vars)
   drift serve                 Run the self-hosted webhook server
   drift telemetry print       Print the exact telemetry event shape
@@ -362,6 +369,8 @@ export async function main(argv: string[]): Promise<number> {
       // Awaited: the queue is opened asynchronously, and a failure there must
       // surface as an exit code rather than an unhandled rejection.
       return await serveWebhook();
+    case 'diff':
+      return diffCommand(rest);
     case 'telemetry':
       return telemetryCommand(rest);
     case '--version':
@@ -378,6 +387,34 @@ export async function main(argv: string[]): Promise<number> {
       console.log(USAGE);
       return 1;
   }
+}
+
+/**
+ * A real diff between two published versions, for the one evidence source
+ * that is a claim rather than an observation — the semver heuristic. Prints
+ * exactly what `git diff` prints, because it is one, run `--no-index` across
+ * the two extracted archives rather than against a repository's history.
+ */
+async function diffCommand(args: readonly string[]): Promise<number> {
+  const [ecosystem, name, from, to] = args;
+  if (!ecosystem || !name || !from || !to) {
+    console.error('Usage: drift diff <ecosystem> <package> <from-version> <to-version>');
+    return 1;
+  }
+
+  const result = await fetchVersionDiff({ ecosystem, name, from, to, exec: execCommand });
+  if (!result.available) {
+    console.error(result.reason);
+    return 1;
+  }
+
+  const diff = await unifiedDiffText(result.beforeDir, result.afterDir, execCommand);
+  if (diff) {
+    process.stdout.write(diff.endsWith('\n') ? diff : `${diff}\n`);
+  } else {
+    console.log(`${name} ${from} → ${to}: no textual difference.`);
+  }
+  return 0;
 }
 
 async function telemetryCommand(args: readonly string[]): Promise<number> {
