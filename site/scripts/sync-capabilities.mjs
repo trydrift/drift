@@ -103,3 +103,58 @@ if (current !== source) {
   await writeFile(target, source, 'utf8');
   process.stderr.write('[sync-capabilities] updated src/lib/capabilities.ts\n');
 }
+
+await checkSpelledCount(rows.length);
+
+/**
+ * The one claim the generated matrix does not cover: the count, spelled out in
+ * prose.
+ *
+ * "sixteen ecosystems" is a marketing claim like any other, and it is the kind
+ * that decays silently — adding a seventeenth ecosystem is a good day, and
+ * nobody grepping for a numeral would find the word. It decays in the direction
+ * that matters, too: the page would keep undercounting what Drift actually
+ * does. So the prose is checked against the data that generated the matrix, and
+ * a mismatch fails the build with the word to change.
+ */
+async function checkSpelledCount(count) {
+  const SPELLED = [
+    'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+    'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen',
+    'nineteen', 'twenty',
+  ];
+  const expected = SPELLED[count];
+  if (!expected) return; // Past twenty, the prose will have been rewritten anyway.
+
+  // Any other spelled number immediately before "ecosystem"/"supported"/"are",
+  // which is how every one of these sentences is built today.
+  const stale = new RegExp(`\\b(?!${expected}\\b)(${SPELLED.join('|')})\\b(?=[^.\\n]{0,40}\\becosystems?\\b)`, 'gi');
+
+  const files = await sourceFiles(join(here, '..', 'src'));
+  const wrong = [];
+  for (const file of files) {
+    const text = await readFile(file, 'utf8');
+    for (const match of text.matchAll(stale)) {
+      wrong.push(`${file.slice(repoRoot.length + 1)}: "${match[1]}" should be "${expected}"`);
+    }
+  }
+
+  if (wrong.length > 0) {
+    process.stderr.write(
+      `[sync-capabilities] the page claims the wrong number of ecosystems (there are ${count}):\n` +
+        wrong.map((w) => `  ${w}\n`).join(''),
+    );
+    process.exit(1);
+  }
+}
+
+async function sourceFiles(dir) {
+  const { readdir } = await import('node:fs/promises');
+  const out = [];
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...(await sourceFiles(full)));
+    else if (/\.(ts|tsx)$/.test(entry.name)) out.push(full);
+  }
+  return out;
+}
