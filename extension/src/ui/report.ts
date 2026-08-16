@@ -1119,6 +1119,7 @@ a:hover { text-decoration: underline; color: var(--vscode-textLink-activeForegro
               display: flex; flex-direction: column; min-width: 140px;
               background: var(--vscode-dropdown-background); border: 1px solid var(--vscode-dropdown-border);
               border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.25); overflow: hidden; }
+.split-menu[hidden] { display: none; }
 .split-menu button { border: none; border-radius: 0; background: transparent; text-align: left;
                       padding: 6px 10px; font-size: 0.82em; color: var(--vscode-dropdown-foreground); }
 .split-menu button:hover { background: var(--vscode-list-hoverBackground); }
