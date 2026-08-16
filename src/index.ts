@@ -85,9 +85,10 @@ export {
   assessLocalImpact,
   assessVerification,
   deriveLegacyConfidence,
+  deriveOverallConfidence,
   CALIBRATION_VERSION,
 } from './confidence/calibrate.js';
-export { bandFor, BANDS } from './confidence/types.js';
+export { bandFor, BANDS, OVERALL_LABEL } from './confidence/types.js';
 export type {
   AnalysisGap,
   CheckedSurface,
@@ -97,6 +98,7 @@ export type {
   ConfidenceScore,
   GapSeverity,
   GapStage,
+  OverallConfidence,
   VerificationOutcome,
 } from './confidence/types.js';
 export {

@@ -2,11 +2,13 @@ import { createHash } from 'node:crypto';
 import type { BreakingChange, Confidence, Evidence, EvidenceSource, ImpactSite } from '../types.js';
 import {
   bandFor,
+  OVERALL_LABEL,
   type AnalysisGap,
   type CheckedSurface,
   type ConfidenceAssessment,
   type ConfidenceReason,
   type ConfidenceScore,
+  type OverallConfidence,
   type VerificationOutcome,
 } from './types.js';
 import { isLocallyUnprovable, type ChangeTaxonomy } from './taxonomy.js';
@@ -533,6 +535,42 @@ export function assess(input: AssessmentInput): ConfidenceAssessment {
     checkedSurfaces: [...(input.checkedSurfaces ?? [])],
     gaps,
   };
+}
+
+/**
+ * The single customer-facing score, derived from the same three dimensions.
+ *
+ * Weighted toward the weaker of upstream and local impact rather than
+ * averaged, for the same reason `deriveLegacyConfidence` is: a finding is only
+ * as trustworthy as its weakest necessary link, and averaging a certain
+ * upstream diff against an unestablished local match would print a
+ * reassuring number for a claim nothing local actually supports.
+ *
+ * When local impact is `none` — Drift never searched, or searched and could
+ * not tell — the score is capped well short of "confident", because the
+ * question a customer is really asking ("does this break my code?") has not
+ * been answered either way. That is the case this whole feature exists to
+ * make legible: it is fine for Drift to say it is not sure, but it must not
+ * dress up "not sure" as a middling verdict about the change itself.
+ */
+export function deriveOverallConfidence(assessment: ConfidenceAssessment): OverallConfidence {
+  const { upstream, localImpact, verification } = assessment;
+
+  const base =
+    localImpact.band === 'none'
+      ? Math.min(upstream.score, 0.55)
+      : Math.min(upstream.score, localImpact.score);
+
+  // A check that actually ran and passed against this change is the strongest
+  // thing Drift can report; it only ever adds, and only once verification has
+  // something to show (an absent or failed check should not subtract from a
+  // score already earned on upstream and local grounds — `verification.score`
+  // is already 0 in both of those cases).
+  const verifiedBonus = verification.score > 0 ? Math.min(0.1, verification.score * 0.15) : 0;
+
+  const score = Math.round(Math.max(0, Math.min(1, base + verifiedBonus)) * 100);
+  const band = bandFor(score / 100);
+  return { score, band, label: OVERALL_LABEL[band] };
 }
 
 /**

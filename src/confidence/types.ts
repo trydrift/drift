@@ -170,3 +170,34 @@ export function bandFor(score: number): ConfidenceBand {
   }
   return 'none';
 }
+
+/**
+ * The one number a non-expert reader sees.
+ *
+ * `ConfidenceAssessment` splits confidence into three questions on purpose —
+ * that is the fix for the failure this whole model exists to prevent. But a
+ * customer opening a report wants one thing first: how sure is Drift, overall,
+ * and should that make them more or less willing to trust the verdict? This is
+ * that number. It never hides the three-dimension breakdown, which stays
+ * available for anyone who wants to see the working.
+ */
+export interface OverallConfidence {
+  /** 0 to 100, for a display a non-expert reads at a glance. */
+  score: number;
+  band: ConfidenceBand;
+  /** A short phrase, not a band name — "Very confident", not "high". */
+  label: string;
+}
+
+/**
+ * Words a reader trusts more than a band name.
+ *
+ * Deliberately says how sure Drift is, not how bad the change is — a `none`
+ * finding is not "this looks terrible", it is "Drift could not tell".
+ */
+export const OVERALL_LABEL: Record<ConfidenceBand, string> = {
+  high: 'Very confident',
+  medium: 'Fairly confident',
+  low: 'Not very confident',
+  none: 'Not enough evidence to say',
+};
