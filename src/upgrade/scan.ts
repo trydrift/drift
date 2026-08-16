@@ -722,7 +722,28 @@ async function verifyCandidates(args: {
 }): Promise<void> {
   const byId = new Map(args.candidates.map((candidate) => [candidate.id, candidate]));
 
-  const targets: ProbeTarget[] = args.candidates.map((candidate) => ({
+  // A version the registry has already disowned (yanked, withdrawn, retracted)
+  // cannot be installed, so probing it is not a cheaper version of the real
+  // answer — it is a worktree and a package-manager invocation spent to learn
+  // something `assessMaintenance` already knows for certain. Settle it here,
+  // immediately, instead of handing it to `probeUpgrades` to fail the same way
+  // more slowly.
+  const withdrawn = args.candidates.filter((candidate) => candidate.rationale?.maintenance.deprecated);
+  for (const candidate of withdrawn) {
+    const deprecated = candidate.rationale?.maintenance.deprecated;
+    const verified = applyVerification(candidate, {
+      status: 'skipped',
+      reason: `${candidate.name} ${candidate.selected} has been withdrawn (${deprecated}), so it cannot be installed to test.`,
+      checks: [],
+      failedFiles: [],
+    });
+    const at = args.candidates.indexOf(candidate);
+    if (at >= 0) args.candidates[at] = verified;
+    args.onCandidate?.(verified);
+  }
+  const probeCandidates = args.candidates.filter((candidate) => !withdrawn.includes(candidate));
+
+  const targets: ProbeTarget[] = probeCandidates.map((candidate) => ({
     id: candidate.id,
     name: candidate.name,
     current: candidate.current,
