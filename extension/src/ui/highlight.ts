@@ -84,7 +84,23 @@ export function warmCodeHighlighter(): Promise<void> {
 }
 
 async function build(): Promise<void> {
-  const theme = (await readActiveTextMateTheme()) ?? fallbackTheme();
+  const resolved = await readActiveTextMateTheme();
+  // `vscode.window.activeColorTheme.kind` is the one signal here that cannot
+  // be stale: it is VS Code's own answer to "what is actually painting the
+  // window right now", including when the OS is driving a light/dark switch
+  // that the plain `workbench.colorTheme` setting does not always keep in
+  // step with. A theme read off disk whose own declared `type` disagrees with
+  // it is not trustworthy — better to fall back to VS Code's bundled default
+  // for the kind that is actually active than to tokenise, say, light text on
+  // a light background because the wrong theme file was loaded. This is what
+  // "code looks fine in dark mode and is unreadable in light mode" looks like
+  // from here: a dark theme's colours, applied while the workbench is light.
+  const authoritative =
+    vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light ||
+    vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.HighContrastLight
+      ? 'light'
+      : 'dark';
+  const theme = resolved && resolved.type === authoritative ? resolved : fallbackTheme();
 
   try {
     const created = await createHighlighterCore({
