@@ -205,7 +205,11 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
         dependency: change.name,
         url: release.url,
         title: `${change.name} ${release.name ?? release.tag} release notes`,
-        content: passages.join('\n'),
+        // Joined with a blank line, not a bare newline: `extractBreakingPassages`
+        // hands back individual lines with the blank lines between them already
+        // stripped out, so a bare join glued separate headings, bullets and
+        // paragraphs into one run-on line once rendered as markdown.
+        content: passages.join('\n\n'),
         weight: WEIGHTS['github-release'],
       });
     }
@@ -236,7 +240,11 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
           url: `${changelog.url}#L${section.line}`,
           locator: `${changelog.path}:${section.line}`,
           title: `${change.name} CHANGELOG § ${section.version}`,
-          content: passages.join('\n'),
+          // Joined with a blank line, not a bare newline: `extractBreakingPassages`
+        // hands back individual lines with the blank lines between them already
+        // stripped out, so a bare join glued separate headings, bullets and
+        // paragraphs into one run-on line once rendered as markdown.
+        content: passages.join('\n\n'),
           weight: WEIGHTS.changelog,
         });
       }
@@ -261,7 +269,7 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
         url: guide.url,
         locator: guide.path,
         title: `${change.name} migration guide (${guide.path})`,
-        content: passages.slice(0, 200).join('\n'),
+        content: passages.slice(0, 200).join('\n\n'),
         weight: WEIGHTS['migration-guide'],
       });
     }
