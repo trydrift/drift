@@ -175,18 +175,25 @@ The same idea for `.proto` files. Drift hands the two revisions to `buf
 breaking`, which checks them against protobuf's own compatibility rules —
 field numbers, wire types, deleted RPCs — rather than against a guess at them.
 
+Drift compiles every configured `.proto` together, so imports between them
+resolve. Because a `.proto` almost always imports its siblings, name the
+directory rather than the single file you care about:
+
 ```yaml
 evidence:
   protobufSpecs:
-    - "proto/users/v1/users.proto"
+    - "proto/**/*.proto"
 ```
+
+Each document is still compared on its own terms — a field removed from a
+shared file is reported once, against that file, not again against everything
+importing it.
 
 Needs the [Buf CLI](https://buf.build/docs/installation) on `PATH`. When it is
 missing, the run says so and names the remedy; it never reports a comparison
-that did not happen as a clean one. A `.proto` that imports siblings Drift was
-not asked to read cannot be compiled on its own, and that is reported as a
-toolchain failure naming the import — list the imported files too, or point
-Drift at a path `buf` can compile alone.
+that did not happen as a clean one. An import of a file Drift was *not* told
+about still cannot resolve, and that is reported as a toolchain failure naming
+the import — never as "no breaking changes".
 
 ### `evidence.graphql` · `evidence.graphqlSchemas`
 

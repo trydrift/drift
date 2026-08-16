@@ -91,13 +91,32 @@ export function isSpecDiff(outcome: SpecOutcome): outcome is SpecDiff {
   return outcome.available;
 }
 
-export interface SpecRequest {
+/** One revision pair of a document, as configured and read from the repo. */
+export interface SpecDocument {
   /** Repo-relative path of the document, as configured. */
   path: string;
   /** The document as it was before the analysed change. */
   before: string;
   /** The document as it is after it. */
   after: string;
+}
+
+export interface SpecRequest extends SpecDocument {
+  /**
+   * The other documents configured for this provider, both revisions of each.
+   *
+   * Contract formats differ on whether a document stands alone. An OpenAPI
+   * document does; a `.proto` routinely imports its siblings and will not
+   * compile without them, so handing `buf` one file in an empty directory
+   * produces "imported file does not exist" — a failure about what Drift was
+   * given, reported on a file that is perfectly valid in its own repository.
+   *
+   * A provider that needs the neighbourhood writes these out beside the target
+   * and scopes its tool to the target alone. One that does not need them
+   * ignores this field. Includes documents that did not change between the two
+   * revisions, since an import resolves against them just the same.
+   */
+  siblings: readonly SpecDocument[];
   /** A scratch directory the provider owns and may fill. */
   workdir: string;
   exec: Exec;

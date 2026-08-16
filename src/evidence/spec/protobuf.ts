@@ -20,10 +20,11 @@ import { unavailableSpec } from './types.js';
  * than as a silent zero. Weighted 1.0: the `.proto` *is* the contract, and this
  * is a computed diff of two committed revisions of it.
  *
- * One limit, stated because it is invisible otherwise: Drift hands `buf` the
- * two revisions of the one configured file. A `.proto` that imports siblings
- * Drift was not asked to read will not compile, and that is reported as a
- * toolchain failure naming the import — not as "no breaking changes".
+ * A `.proto` rarely stands alone, so Drift lays out both revisions of *every*
+ * configured `.proto` and scopes the reported findings back to the one under
+ * comparison. An import of a file Drift was told about therefore resolves. One
+ * it was never told about still cannot, and that is reported as a toolchain
+ * failure naming the import — not as "no breaking changes".
  */
 
 const TOOL = 'buf breaking';
@@ -33,7 +34,7 @@ const REMEDY =
 
 /** What to do about a `.proto` `buf` could not compile — almost always an import. */
 const COMPILE_REMEDY =
-  'If the file imports other `.proto` files, list them in `evidence.protobufSpecs` as well, or point Drift at a path `buf` can compile on its own.';
+  'Add the imported `.proto` files to `evidence.protobufSpecs` — Drift compiles every configured `.proto` together, so an import it was told about resolves. A pattern such as `proto/**/*.proto` covers a whole directory of them.';
 
 /**
  * `buf` exits 100 when it has findings to report.
@@ -88,8 +89,25 @@ export const protobufSpecProvider: SpecProvider = {
     const before = join(request.workdir, 'before');
     // The repo-relative path is preserved on both sides, because it is the
     // import path other files would use and it is what `buf` prints back.
+    //
+    // Every other configured `.proto` is written out alongside it. A `.proto`
+    // routinely imports its siblings, and a file compiled alone in an empty
+    // directory fails with "imported file does not exist" — a statement about
+    // what Drift laid out, reported against a file that is perfectly valid in
+    // its own repository. `--path` then scopes the comparison back to the one
+    // document — a sibling's own changes are reported when that sibling is the
+    // target, not a second time here.
+    //
+    // The scoping is done on the output rather than with buf's `--path`, which
+    // resolves against something other than either input directory and rejects
+    // every spelling of the target this layout can offer.
     await writeProto(join(after, request.path), request.after);
     await writeProto(join(before, request.path), request.before);
+    for (const sibling of request.siblings) {
+      if (sibling.path === request.path) continue;
+      await writeProto(join(after, sibling.path), sibling.after);
+      await writeProto(join(before, sibling.path), sibling.before);
+    }
 
     const result = await request.exec(
       'buf',
@@ -148,7 +166,9 @@ export const protobufSpecProvider: SpecProvider = {
 
     return {
       available: true,
-      changes: issues.map(toSpecChange),
+      changes: issues
+        .filter((issue) => isTarget(issue, request.path))
+        .map((issue) => toSpecChange(issue, request.path)),
       tool: TOOL,
       weight: 1.0,
       locator: `${request.path} (buf breaking)`,
@@ -393,12 +413,26 @@ function remedyFor(issue: BufIssue): string {
   return 'Check the `buf` configuration and plugins in this repository, then re-run.';
 }
 
-function toSpecChange(issue: BufIssue): SpecChange {
+/**
+ * Whether a buf issue is about the document under comparison.
+ *
+ * buf names files relative to its own input directory, so the target reads back
+ * as `after/proto/users/v1/users.proto`. Matching on the repo-relative suffix
+ * identifies it without depending on what that prefix happens to be.
+ */
+export function isTarget(issue: BufIssue, path: string): boolean {
+  return issue.path === path || issue.path.endsWith(`/${path}`);
+}
+
+function toSpecChange(issue: BufIssue, path: string): SpecChange {
   const line = issue.start_line ?? 0;
+  // Cited as the repository spells it. buf's own answer is prefixed with the
+  // scratch directory Drift laid the revisions out in, which is a path that
+  // exists on no machine by the time anybody reads the finding.
   return {
     code: codeForBufRule(issue.type),
-    location: symbolFromBufMessage(issue.message) ?? `${issue.path}:${line}`,
-    pointer: line > 0 ? `${issue.path}:${line}` : issue.path,
+    location: symbolFromBufMessage(issue.message) ?? `${path}:${line}`,
+    pointer: line > 0 ? `${path}:${line}` : path,
     // buf's own sentence, verbatim. It names the field number, the old type and
     // the new one — everything a reader needs to check the finding — and
     // paraphrasing it would only add a way to be wrong.

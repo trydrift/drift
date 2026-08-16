@@ -21,6 +21,7 @@ import {
   SPEC_PROVIDERS,
   SPEC_WEIGHTS,
   type SpecChange,
+  type SpecDocument,
   type SpecProvider,
   type SpecUnavailable,
 } from './spec/index.js';
@@ -634,19 +635,32 @@ async function gatherSpecEvidence(ctx: EvidenceContext): Promise<Evidence[]> {
       });
     }
 
+    // Read every configured document once, before diffing any of them. Formats
+    // whose documents import each other need the whole set to compile even one,
+    // and a document that did not change is exactly as necessary to that as one
+    // that did — so the read cannot be folded into the "did this change?" loop
+    // below.
+    const documents: SpecDocument[] = [];
     for (const specPath of resolved.paths) {
       const [before, after] = await Promise.all([
         readRepoFile(specPath, beforeSha),
         readRepoFile(specPath, afterSha),
       ]);
-      if (!before || !after || before === after) continue;
+      if (!before || !after) continue;
       if (!provider.handles(specPath, after)) continue;
+      documents.push({ path: specPath, before, after });
+    }
 
-      const outcome = await computeSpecDiff(
-        provider,
-        { path: specPath, before, after },
-        { logger, exec: ctx.exec, env: ctx.env },
-      );
+    for (const document of documents) {
+      const specPath = document.path;
+      if (document.before === document.after) continue;
+
+      const outcome = await computeSpecDiff(provider, document, {
+        logger,
+        exec: ctx.exec,
+        env: ctx.env,
+        siblings: documents.filter((other) => other.path !== specPath),
+      });
 
       if (!outcome.available) {
         // Stated, never silent. "buf is not installed" and "that document does

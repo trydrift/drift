@@ -7,7 +7,7 @@ import { execCommand, type Exec } from '../../util/exec.js';
 import { openapiSpecProvider } from './openapi.js';
 import { protobufSpecProvider } from './protobuf.js';
 import { graphqlSpecProvider } from './graphql.js';
-import type { SpecFindingCode, SpecOutcome, SpecProvider } from './types.js';
+import type { SpecDocument, SpecFindingCode, SpecOutcome, SpecProvider } from './types.js';
 import type { SpecEvidenceSource } from './sources.js';
 
 /**
@@ -75,6 +75,11 @@ export interface ComputeSpecOptions {
   /** Environment to use for local toolchain commands. */
   env?: NodeJS.ProcessEnv;
   timeoutMs?: number;
+  /**
+   * The other documents configured for this provider, for formats whose
+   * documents do not stand alone. See `SpecRequest.siblings`.
+   */
+  siblings?: readonly SpecDocument[];
 }
 
 const DEFAULT_TIMEOUT_MS = 120_000;
@@ -88,7 +93,7 @@ const DEFAULT_TIMEOUT_MS = 120_000;
  */
 export async function computeSpecDiff(
   provider: SpecProvider,
-  document: { path: string; before: string; after: string },
+  document: SpecDocument,
   options: ComputeSpecOptions,
 ): Promise<SpecOutcome> {
   const workdir = await mkdtemp(join(tmpdir(), 'drift-spec-'));
@@ -97,6 +102,7 @@ export async function computeSpecDiff(
       path: document.path,
       before: document.before,
       after: document.after,
+      siblings: options.siblings ?? [],
       workdir,
       exec: options.exec ?? execCommand,
       logger: options.logger,
