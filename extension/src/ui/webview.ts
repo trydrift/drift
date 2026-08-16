@@ -771,17 +771,24 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
     return `<div class="turn assistant"><div class="who">${LOGO_SMALL}<span>Drift</span></div><div class="body markdown">${renderMarkdown(item.headline)}</div></div>`;
   }
 
-  const affected = candidates.filter((c) => severityOf(c) === 'affected');
+  // A re-check in flight has not reached a verdict yet — `severityOf` falls
+  // through to `clean` for it, which used to count a package still being
+  // examined as though it had already been found safe. Pulled out first so
+  // none of the buckets below ever see one.
+  const checking = candidates.filter((c) => c.status === 'checking' || c.status === 'upgrading');
+  const settled = candidates.filter((c) => !checking.includes(c));
+
+  const affected = settled.filter((c) => severityOf(c) === 'affected');
   // A failed verification has no located call site, but it is measured
   // evidence the upgrade broke the project's own checks — closer to
   // `affected` than to anything that could be called "safe", so it gets its
   // own group rather than silently vanishing from every bucket below.
-  const verificationFailed = candidates.filter((c) => severityOf(c) === 'verification-failed');
-  const unchecked = candidates.filter((c) => severityOf(c) === 'unchecked');
-  const safe = candidates.filter(
+  const verificationFailed = settled.filter((c) => severityOf(c) === 'verification-failed');
+  const unchecked = settled.filter((c) => severityOf(c) === 'unchecked');
+  const safe = settled.filter(
     (c) => severityOf(c) === 'clean' || severityOf(c) === 'upstream-only',
   );
-  const failed = candidates.filter((c) => severityOf(c) === 'error');
+  const failed = settled.filter((c) => severityOf(c) === 'error');
   // More than one repository actually contributed to this list — not just
   // more than one open, since a scope-narrowed scan should read the same as
   // a single-repository one.
@@ -800,6 +807,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
           ${unchecked.length ? tally(unchecked.length, 'unverified', 'unchecked') : ''}
           ${safe.length ? tally(safe.length, 'safe', 'clean') : ''}
           ${failed.length ? tally(failed.length, 'unknown', 'error') : ''}
+          ${checking.length ? tally(checking.length, 'checking', 'unchecked') : ''}
         </span>
         <button class="ctl icon" data-action="rescan" title="Check every dependency again" aria-label="Rescan">${ICON_REFRESH}</button>
       </div>
@@ -838,6 +846,19 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
           ? `<section class="pkg-group">
               <h4 class="pkg-subhead unchecked">${ICON_ALERT}<span>Could not verify</span><small>${unchecked.length}</small></h4>
               <div class="pkg-list">${unchecked.map((c) => renderCandidate(c, unchecked.length === 1, showRepo)).join('')}</div>
+            </section>`
+          : ''
+      }
+
+      ${
+        // Above the safe list, same as `unchecked` — a package still being
+        // re-checked has no verdict at all yet, which is a weaker claim than
+        // "safe" and deserves its own place rather than sitting among upgrades
+        // that were actually cleared.
+        checking.length
+          ? `<section class="pkg-group">
+              <h4 class="pkg-subhead unchecked"><span class="spinner"></span><span>Checking…</span><small>${checking.length}</small></h4>
+              <div class="pkg-list">${checking.map((c) => renderCandidate(c, checking.length === 1, showRepo)).join('')}</div>
             </section>`
           : ''
       }
@@ -1247,7 +1268,15 @@ function renderVerification(candidate: UpgradeCandidate): string {
     ${renderVerificationDiagnostics(candidate.id, verification.checks)}`;
   }
 
-  return `<p class="verification skipped">${ICON_ALERT}<span>Not verified — ${escapeHtml(verification.reason ?? 'Drift could not test this upgrade.')} The findings below are predictions.</span></p>`;
+  // `describeUnusableBaseline` (and similar reasons) fold the actual command
+  // and its output into this string as `sentence\n\n$ command\noutput`, so a
+  // reader can tell a genuine break from the worktree just missing a file.
+  // Split it back apart here rather than dumping the whole thing into one
+  // paragraph, where a multi-line build log read as an unbroken wall of text.
+  const [summary, ...detailParts] = (verification.reason ?? 'Drift could not test this upgrade.').split('\n\n');
+  const detail = detailParts.join('\n\n');
+  return `<p class="verification skipped">${ICON_ALERT}<span>Not verified — ${escapeHtml(summary ?? '')} The findings below are predictions.</span></p>
+  ${detail ? `<pre class="activity-io"><code>${escapeHtml(detail)}</code></pre>` : ''}`;
 }
 
 /**
