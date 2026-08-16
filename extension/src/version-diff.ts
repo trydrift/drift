@@ -126,8 +126,15 @@ export async function openChangeDiff(
   const beforeUri = snippetUri('before', name, before);
   const afterUri = snippetUri('after', name, after);
 
+  output?.info(`Drift: opening the diff for ${title}`);
+  // Explicit rather than left to default to "whichever group is active":
+  // the click that requested this came from a sidebar webview, which is never
+  // itself an editor group, and leaving the target unstated risked the new tab
+  // landing wherever VS Code's own notion of "active" happened to resolve to
+  // instead of somewhere the developer would actually see it open.
   await vscode.commands.executeCommand('vscode.diff', beforeUri, afterUri, title, {
     preview: true,
+    viewColumn: vscode.ViewColumn.One,
   } satisfies vscode.TextDocumentShowOptions);
 }
 
@@ -156,6 +163,7 @@ async function locateInSource(
   if (!source || !symbol) return null;
 
   try {
+    output?.info(`Drift: fetching ${source.name} ${source.from} and ${source.to} to locate ${symbol}`);
     const env = await envWithShellPath();
     const exec: Exec = (command, args, options) => execCommand(command, args, { ...options, env });
     const result = await fetchVersionDiff({ ...source, exec });
@@ -265,6 +273,7 @@ export async function openPackageVersionDiff(args: {
   ensureEmptyContentProvider();
 
   const label = `${args.name} ${args.from} → ${args.to}`;
+  args.output?.info(`Drift: fetching ${label} to build a diff`);
   await vscode.window.withProgress(
     { location: vscode.ProgressLocation.Notification, title: `Drift: fetching ${label}…` },
     async () => {
@@ -306,14 +315,17 @@ export async function openPackageVersionDiff(args: {
       if (resources.length === 1) {
         const [only] = resources;
         if (only) {
+          args.output?.info(`Drift: opening the diff for ${label} — ${only[2]}`);
           await vscode.commands.executeCommand('vscode.diff', only[0], only[1], `${label} — ${only[2]}`, {
             preview: true,
+            viewColumn: vscode.ViewColumn.One,
           } satisfies vscode.TextDocumentShowOptions);
         }
         return;
       }
 
       try {
+        args.output?.info(`Drift: opening a ${resources.length}-file diff for ${label}`);
         await vscode.commands.executeCommand(
           'vscode.changes',
           label,
@@ -327,6 +339,7 @@ export async function openPackageVersionDiff(args: {
         if (first) {
           await vscode.commands.executeCommand('vscode.diff', first[0], first[1], `${label} — ${first[2]}`, {
             preview: true,
+            viewColumn: vscode.ViewColumn.One,
           } satisfies vscode.TextDocumentShowOptions);
         }
       }

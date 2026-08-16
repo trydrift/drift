@@ -543,7 +543,74 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   /* Message handling                                                  */
   /* ---------------------------------------------------------------- */
 
+  /**
+   * Route one message from the panel, and make sure whatever happens is
+   * visible.
+   *
+   * `webview.onDidReceiveMessage` calls this fire-and-forget (`void
+   * this.handle(message)`), so a throw anywhere in a case below used to become
+   * an unhandled rejection: nothing in the panel, nothing in the output
+   * channel, nothing a developer clicking a button would ever see — a "View
+   * diff" that failed and a "View diff" that was never clicked looked
+   * identical. Every action a developer takes is now logged before it runs
+   * and any failure is caught, logged, and turned into a notice, so a click
+   * that did not work says why instead of just doing nothing.
+   */
   private async handle(message: Incoming): Promise<void> {
+    this.logAction(message);
+    try {
+      await this.dispatch(message);
+    } catch (err) {
+      const detail = (err as Error)?.message ?? String(err);
+      this.output.error(`Drift: "${message.type}" failed — ${detail}`);
+      this.session.notice('error', detail);
+      // Nothing else settles the panel's busy state for an action that threw
+      // here — most of these cases are outside `run()`, which is what
+      // normally closes that loop — so the click that triggered this would
+      // otherwise leave its button spinning until the client's own 20-second
+      // timeout gives up on it.
+      this.render();
+    }
+  }
+
+  /**
+   * One line per user action, to the "Drift" output channel — before it runs,
+   * not after, so a command that hangs or crashes still leaves a record of
+   * what was attempted. Purely informational: nothing here decides what to
+   * do, only what to say about it.
+   */
+  private logAction(message: Incoming): void {
+    switch (message.type) {
+      case 'openFile':
+        this.output.info(`Drift: opening ${message.file}${message.line > 1 ? `:${message.line}` : ''}`);
+        return;
+      case 'openUrl':
+        this.output.info(`Drift: opening ${message.url} in the browser`);
+        return;
+      case 'openDiff':
+        this.output.info(`Drift: opening the diff for ${message.path}`);
+        return;
+      case 'openFindingDiff':
+        this.output.info('Drift: fetching a real diff for one finding');
+        return;
+      case 'openVersionDiff': {
+        const candidate = this.candidates.get(message.id);
+        this.output.info(
+          candidate
+            ? `Drift: fetching ${candidate.name} ${candidate.current} → ${candidate.selected} to diff`
+            : `Drift: fetching a package diff for an id no longer on the list (${message.id})`,
+        );
+        return;
+      }
+      default:
+        // Every other action already narrates itself through the transcript
+        // (a step, a notice, a task list) — logging it a second time here
+        // would just be the same sentence twice.
+        return;
+    }
+  }
+
+  private async dispatch(message: Incoming): Promise<void> {
     switch (message.type) {
       case 'ready':
         return;
@@ -610,19 +677,39 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         // attribute, so a malformed one means the panel and the host are out
         // of step — nothing a user can act on, and not worth an error dialog.
         const request = parseChangeDiffRequest(message.value);
-        if (request) await openChangeDiff(request, this.output);
+        if (!request) {
+          this.output.warn('Drift: "View diff" sent a payload the panel could not parse; nothing to show.');
+          return;
+        }
+        try {
+          await openChangeDiff(request, this.output);
+        } finally {
+          // Not `LOCAL_ACTIONS` on the client any more — fetching and locating
+          // the real source can take real time — so the button that triggered
+          // this is disabled and spinning until a `render` message tells the
+          // panel to let go of it. Nothing else here changes `session` or
+          // `state`, so nothing would otherwise fire one.
+          this.render();
+        }
         return;
       }
       case 'openVersionDiff': {
         const candidate = this.candidates.get(message.id);
-        if (!candidate) return;
-        await openPackageVersionDiff({
-          ecosystem: candidate.ecosystem,
-          name: candidate.name,
-          from: candidate.current,
-          to: candidate.selected,
-          output: this.output,
-        });
+        if (!candidate) {
+          this.output.warn(`Drift: "View diff" was clicked for a package no longer on the list (${message.id}).`);
+          return;
+        }
+        try {
+          await openPackageVersionDiff({
+            ecosystem: candidate.ecosystem,
+            name: candidate.name,
+            from: candidate.current,
+            to: candidate.selected,
+            output: this.output,
+          });
+        } finally {
+          this.render();
+        }
         return;
       }
       case 'selectVersion':
@@ -4709,16 +4796,18 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
   private async openFile(file: string, line: number): Promise<void> {
     const target = Math.max(0, (line || 1) - 1);
-    const uri = await this.resolveWorkspaceFile(file);
-    if (!uri) {
+    const found = await this.resolveWorkspaceFile(file);
+    if (!found) {
       // A path that named something Drift read but that is not in any open
       // root — a file inside a throwaway test checkout, most often. Saying so
       // beats a click that silently does nothing.
+      this.output.warn(`Drift: "${file}" is not in any folder open in this window; nothing to open.`);
       this.session.notice('info', `\`${file}\` is not in any folder open in this window.`);
       return;
     }
 
-    await vscode.window.showTextDocument(uri, {
+    this.output.info(`Drift: opened ${found.uri.fsPath}`);
+    await vscode.window.showTextDocument(found.uri, {
       selection: new vscode.Range(target, 0, target, 0),
       preview: true,
       viewColumn: vscode.ViewColumn.One,
@@ -4733,25 +4822,44 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
    * more often, none — for every root but the first. Existence is checked
    * rather than assumed for the same reason: a link that opens an editor onto
    * a nonexistent file is worse than one that explains itself.
+   *
+   * Every candidate root is checked at once rather than one after another —
+   * `vscode.workspace.fs.stat` is a filesystem round trip and, on a remote or
+   * virtual workspace, a real one, so a developer with several roots open was
+   * paying for that latency multiple times over on every click. The result
+   * still prefers the active root over the others: `Promise.all` waits for
+   * every check, and the roots are picked from in their original order rather
+   * than by whichever settled first.
    */
-  private async resolveWorkspaceFile(file: string): Promise<vscode.Uri | null> {
+  private async resolveWorkspaceFile(file: string): Promise<{ uri: vscode.Uri; root: string } | null> {
     const active = this.state.activeRoot?.path;
     const roots = [
       ...(active ? [active] : []),
       ...this.state.roots.map((root) => root.path).filter((path) => path !== active),
       ...(vscode.workspace.workspaceFolders ?? []).map((folder) => folder.uri.fsPath),
     ];
+    const distinct = [...new Set(roots)];
 
-    for (const root of [...new Set(roots)]) {
-      const uri = vscode.Uri.file(join(root, file));
-      try {
-        await vscode.workspace.fs.stat(uri);
-        return uri;
-      } catch {
-        // Not in this root; try the next.
-      }
+    const exists = await Promise.all(
+      distinct.map(async (root) => {
+        const uri = vscode.Uri.file(join(root, file));
+        try {
+          await vscode.workspace.fs.stat(uri);
+          return true;
+        } catch {
+          return false;
+        }
+      }),
+    );
+
+    const at = exists.indexOf(true);
+    if (at === -1) {
+      this.output.info(
+        `Drift: checked ${distinct.length} open root${distinct.length === 1 ? '' : 's'} for "${file}": ${distinct.join(', ') || '(none open)'}`,
+      );
+      return null;
     }
-    return null;
+    return { uri: vscode.Uri.file(join(distinct[at]!, file)), root: distinct[at]! };
   }
 
   private async refreshIdentity(): Promise<void> {

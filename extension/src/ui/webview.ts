@@ -4173,9 +4173,13 @@ function previewSlider(slider) {
 
 // Actions that answer locally or navigate away instantly — no round trip to
 // the extension host worth locking the UI over, and \`stop\` has to stay live
-// precisely because something else is already pending.
+// precisely because something else is already pending. \`openFindingDiff\` is
+// deliberately absent: it can fetch and extract a real published package to
+// widen the declaration into context, which is real network- and CPU-bound
+// time, and a button with no spinner over that wait reads as a click that did
+// nothing — the same reason \`openVersionDiff\` was never local either.
 const LOCAL_ACTIONS = new Set([
-  'slider', 'submit', 'complete', 'openMenu', 'openUrl', 'openFile', 'openDiff', 'openFindingDiff',
+  'slider', 'submit', 'complete', 'openMenu', 'openUrl', 'openFile', 'openDiff',
   'selectVersion', 'pickVersion', 'stop', 'selectOutput',
 ]);
 
