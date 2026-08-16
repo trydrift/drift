@@ -298,6 +298,28 @@ describe('a signature that only changed how it is spelled', () => {
     assert.equal(changes.length, 1);
     assert.equal(changes[0]?.kind, 'signature-changed');
   });
+
+  test('the same bare name qualified through two different modules is not waved through as a re-spelling', () => {
+    // Stripping every `import("...").` blind cannot tell "the same type,
+    // spelled two ways" apart from "two unrelated types that happen to share
+    // a name" — both dequalify to the identical bare identifier. Reported
+    // only when both sides actually carry a qualifier for that name: an
+    // unqualified bare name on one side gives no module to disagree with,
+    // which is the ordinary "a re-export was added" case this must still let
+    // through (see the `vitePreprocess` case above).
+    const before = fn(
+      'load',
+      'export function load(): import("svelte/compiler").PreprocessorGroup;',
+    );
+    const after = fn(
+      'load',
+      'export function load(): import("some-other-lib").PreprocessorGroup;',
+    );
+
+    const changes = diffSurfaces(before, after);
+    assert.equal(changes.length, 1);
+    assert.equal(changes[0]?.kind, 'signature-changed');
+  });
 });
 
 describe('choosing which releases to read', () => {

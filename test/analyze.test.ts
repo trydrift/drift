@@ -790,6 +790,61 @@ describe('analysis', () => {
     assert.doesNotMatch(result[0]!.remediation, /statically typed|dynamically typed/i);
   });
 
+  test('a class-to-function kind change says to remove `new`, not the generic taxonomy sentence', async () => {
+    const evidence = [
+      {
+        id: 'ev_kind',
+        source: 'type-surface-diff' as const,
+        dependency: 'acme-sdk',
+        title: 'surface diff',
+        content: 'the kind changed',
+        weight: 1,
+        findings: [
+          {
+            code: 'kind-changed',
+            symbol: 'Client',
+            detail: '`Client` changed from a class to a function.',
+            before: 'declare class Client {}',
+            after: 'declare function Client(): ClientHandle;',
+            fromKind: 'class',
+            toKind: 'function',
+          },
+        ],
+      },
+    ];
+
+    const result = await analyze([change], evidence, { config: DEFAULT_CONFIG, logger });
+    assert.match(result[0]!.remediation, /Remove `new` from every construction site/);
+    assert.match(result[0]!.remediation, /new Client\(\.\.\.\)/);
+    assert.doesNotMatch(result[0]!.remediation, /for example class to function/);
+  });
+
+  test('a function-to-class kind change says to add `new`, the opposite fix for the same finding code', async () => {
+    const evidence = [
+      {
+        id: 'ev_kind2',
+        source: 'type-surface-diff' as const,
+        dependency: 'acme-sdk',
+        title: 'surface diff',
+        content: 'the kind changed',
+        weight: 1,
+        findings: [
+          {
+            code: 'kind-changed',
+            symbol: 'Client',
+            detail: '`Client` changed from a function to a class.',
+            fromKind: 'function',
+            toKind: 'class',
+          },
+        ],
+      },
+    ];
+
+    const result = await analyze([change], evidence, { config: DEFAULT_CONFIG, logger });
+    assert.match(result[0]!.remediation, /Add `new` at every call site/);
+    assert.doesNotMatch(result[0]!.remediation, /Remove `new`/);
+  });
+
   test('every breaking change carries at least one citation', async () => {
     const evidence = [
       {

@@ -90,7 +90,7 @@ export function remediationForFinding(finding: StructuredFinding, dependency: st
       // Before/after are shown as their own diff block above this text.
       return `\`${symbol}\` changed underlying value. This does not necessarily require a source change — most code that only refers to \`${symbol}\` by name keeps working. Review code in this repository that depends on the concrete value: a hard-coded copy of the old number, a value persisted or sent over the wire, or a comparison against zero or another literal.`;
     case 'kind-changed':
-      return `\`${symbol}\` changed form (for example class to function, or interface to type alias). Update declarations, \`new\` expressions, and type positions accordingly.`;
+      return kindChangeRemediation(symbol, finding.fromKind, finding.toKind);
     case 'entry-point-moved':
       // Deliberately forbids the per-symbol fix. An agent told only that a
       // hundred symbols vanished will replace them one at a time with things it
@@ -130,6 +130,37 @@ export function remediationForFinding(finding: StructuredFinding, dependency: st
     default:
       return `Review usages of \`${symbol}\` from \`${dependency}\` and update them for the new version.`;
   }
+}
+
+/**
+ * What actually has to change at a call site for one specific pair of
+ * declaration shapes.
+ *
+ * "Update declarations, `new` expressions, and type positions accordingly"
+ * is true for every pair and useful for none of them — the fix for "class
+ * became a function" (drop every `new`) is the opposite of the fix for
+ * "function became a class" (add `new` everywhere), and neither is
+ * discoverable from the generic sentence. Falls back to the general form
+ * only for the one direction — anything through `interface`/`type`, which
+ * are positions, not values, and have no construction syntax to correct.
+ */
+function kindChangeRemediation(symbol: string, fromKind: string | undefined, toKind: string | undefined): string {
+  if (fromKind === 'class' && toKind === 'function') {
+    return `\`${symbol}\` is no longer a class — it is a function now. Remove \`new\` from every construction site (\`new ${symbol}(...)\` becomes \`${symbol}(...)\`); calling it without \`new\` on the old version would have thrown or behaved differently, so every call site necessarily used \`new\` and necessarily needs it removed. Anything that did \`instanceof ${symbol}\` on the result has no replacement to fall back on automatically — check what it was actually testing for.`;
+  }
+  if (fromKind === 'function' && toKind === 'class') {
+    return `\`${symbol}\` is a class now, not a function. Add \`new\` at every call site (\`${symbol}(...)\` becomes \`new ${symbol}(...)\`); calling a class without \`new\` throws in JavaScript, so this is a hard requirement, not a style choice.`;
+  }
+  if ((fromKind === 'interface' || fromKind === 'type') && toKind === 'class') {
+    return `\`${symbol}\` is a class now, not just a type. Nothing changes for code that only used it as a type annotation — but if this repository ever constructed a value shaped like it by hand (an object literal, a factory function), that code should now go through \`new ${symbol}(...)\` if the class provides real behaviour a plain object cannot.`;
+  }
+  if (fromKind === 'class' && (toKind === 'interface' || toKind === 'type')) {
+    return `\`${symbol}\` is a plain type now, not a class. Replace every \`new ${symbol}(...)\` with however the package now wants this value built. Remove any \`instanceof ${symbol}\` check — there is no runtime class left to test against; if the value's presence still needs checking, do a structural check on its fields instead.`;
+  }
+  if (fromKind === 'namespace' || toKind === 'namespace') {
+    return `\`${symbol}\` moved between a namespace and a ${fromKind === 'namespace' ? toKind : fromKind}. Update every access through \`${symbol}.\` to match how its members are reached in the new form, and update any type position that named \`${symbol}\` directly.`;
+  }
+  return `\`${symbol}\` changed from a ${fromKind ?? 'previous form'} to a ${toKind ?? 'different form'}. Update declarations, \`new\` expressions, and type positions accordingly.`;
 }
 
 /** One prose pattern that recognises a breaking change and names the symbols. */

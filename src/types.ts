@@ -160,6 +160,16 @@ export interface StructuredFinding {
    * strings and no parser to tell them apart.
    */
   changed?: 'parameters' | 'return-type' | 'both';
+  /**
+   * The declaration's own shape on each side of a `kind-changed` finding —
+   * `function`, `class`, `interface`, and so on. What a caller needs to edit
+   * for "class became a function" (drop every `new`) and "function became a
+   * class" (add `new` everywhere) are opposite fixes for the same finding
+   * code, and neither is discoverable from `before`/`after` alone without
+   * re-parsing them.
+   */
+  fromKind?: string;
+  toKind?: string;
 }
 
 /**

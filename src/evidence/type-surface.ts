@@ -90,6 +90,9 @@ export interface SurfaceChange {
   after?: string;
   /** See `StructuredFinding.changed`. Only ever set on `signature-changed`. */
   changed?: 'parameters' | 'return-type' | 'both';
+  /** See `StructuredFinding.fromKind`/`toKind`. Only ever set on `kind-changed`. */
+  fromKind?: string;
+  toKind?: string;
 }
 
 const JSDELIVR_DATA = 'https://data.jsdelivr.com/v1/packages/npm';
@@ -1417,6 +1420,8 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
         detail: `\`${name}\` changed from a ${oldEntry.kind} to a ${newEntry.kind}${origin}.`,
         before: oldEntry.signature,
         after: newEntry.signature,
+        fromKind: oldEntry.kind,
+        toKind: newEntry.kind,
       });
       continue;
     }
@@ -1851,11 +1856,42 @@ export function alphaEquivalent(a: string, b: string): boolean {
  * a caller's arguments nor what it can do with the return value changes
  * either way, so this is compared with the qualifier stripped from both
  * sides rather than left to read as a different type.
+ *
+ * Stripping every qualifier blind would be a weaker check than it looks:
+ * `import("svelte/compiler").PreprocessorGroup` and `import("some-other-lib"
+ * ).PreprocessorGroup` both dequalify to the bare name `PreprocessorGroup`,
+ * and nothing about that text says whether they are the same declaration or
+ * two unrelated types that merely share a name. So a qualifier is only ever
+ * dropped when doing so cannot hide that kind of disagreement: if the same
+ * identifier is qualified on *both* sides, their modules have to match first;
+ * a qualifier appearing on only one side is unconstrained, because that side
+ * gives no module to check against and this is the case a re-export being
+ * added or removed always produces. This is still not a proof that the
+ * referenced declaration itself is unchanged — that would need an actual
+ * type checker walking both versions' declaration graphs, not a text diff —
+ * only that the two spellings are not provably different types.
  */
 export function sameIgnoringImportQualifiers(a: string, b: string): boolean {
   if (a === b) return true;
-  const left = dequalifyImports(a);
-  return left === dequalifyImports(b);
+
+  const qualifiersA = qualifiedReferences(a);
+  const qualifiersB = qualifiedReferences(b);
+  for (const [name, moduleA] of qualifiersA) {
+    const moduleB = qualifiersB.get(name);
+    if (moduleB !== undefined && moduleB !== moduleA) return false;
+  }
+
+  return dequalifyImports(a) === dequalifyImports(b);
+}
+
+/** Every `import("module").Name` reference, keyed by the name it qualifies. */
+function qualifiedReferences(signature: string): Map<string, string> {
+  const refs = new Map<string, string>();
+  const pattern = /\bimport\((["'])((?:(?!\1).)*)\1\)\.([A-Za-z_$][\w$]*)/g;
+  for (const match of signature.matchAll(pattern)) {
+    refs.set(match[3]!, match[2]!);
+  }
+  return refs;
 }
 
 function dequalifyImports(signature: string): string {
