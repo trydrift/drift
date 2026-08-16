@@ -1343,14 +1343,14 @@ function renderCandidateDetail(candidate: UpgradeCandidate, plan: RemediationPla
   );
 
   return `<div class="detail">
-    ${matched.map((change) => renderBreak(change, plan, true)).join('')}
+    ${matched.map((change) => renderBreak(candidate, change, plan, true)).join('')}
 
     ${
       unmatched.length
         ? `<details class="sub" data-key="unmatched:${escapeAttr(candidate.name)}">
             <summary>${unmatched.length} upstream change${unmatched.length === 1 ? '' : 's'} that ${unmatched.length === 1 ? 'does' : 'do'} not touch your code</summary>
             <p class="hint">Drift found ${unmatched.length === 1 ? 'this' : 'these'} in the release notes, then searched this repository for the affected APIs and found nothing. Listed so you can check the reasoning, not because there is anything to do.</p>
-            ${unmatched.map((change) => renderBreak(change, plan, false)).join('')}
+            ${unmatched.map((change) => renderBreak(candidate, change, plan, false)).join('')}
           </details>`
         : ''
     }
@@ -1359,14 +1359,19 @@ function renderCandidateDetail(candidate: UpgradeCandidate, plan: RemediationPla
       plan.evidence.length
         ? `<details class="sub" data-key="evidence:${escapeAttr(candidate.name)}">
             <summary>Evidence Drift read <small>${plan.evidence.length} source${plan.evidence.length === 1 ? '' : 's'}</small></summary>
-            ${renderEvidence(plan.evidence)}
+            ${renderEvidence(candidate, plan.evidence)}
           </details>`
         : ''
     }
   </div>`;
 }
 
-function renderBreak(change: BreakingChange, plan: RemediationPlan, expanded: boolean): string {
+function renderBreak(
+  candidate: UpgradeCandidate,
+  change: BreakingChange,
+  plan: RemediationPlan,
+  expanded: boolean,
+): string {
   const sites = plan.impactSites.filter((site) => site.breakingChangeId === change.id);
   const evidence = plan.evidence.filter((entry) => change.citations.includes(entry.id));
 
@@ -1397,12 +1402,21 @@ function renderBreak(change: BreakingChange, plan: RemediationPlan, expanded: bo
               .join('')}${sites.length > 20 ? `<li class="hint">…and ${sites.length - 20} more</li>` : ''}</ul>`
           : ''
       }
-      ${evidence.length ? renderEvidence(evidence) : ''}
+      ${evidence.length ? renderEvidence(candidate, evidence) : ''}
     </div>
   </details>`;
 }
 
-function renderEvidence(evidence: readonly Evidence[]): string {
+/**
+ * Every source cited for one dependency, each its own collapsed section.
+ *
+ * `semver-heuristic` gets a second action beyond its citation link: the
+ * semver spec explains *why* a patch bump is usually safe, but says nothing
+ * about *this* one. "View diff" is Drift's answer to the question a reader
+ * actually has — fetches the two published versions and opens them in the
+ * editor's own diff view, rather than asking the reader to go find them.
+ */
+function renderEvidence(candidate: UpgradeCandidate, evidence: readonly Evidence[]): string {
   return `<div class="evidence">
     ${evidence
       .map(
@@ -1413,6 +1427,11 @@ function renderEvidence(evidence: readonly Evidence[]): string {
               entry.url
                 ? `<a data-action="openUrl" data-url="${escapeAttr(entry.url)}">${escapeHtml(entry.title)}</a>`
                 : `<span>${escapeHtml(entry.title)}</span>`
+            }
+            ${
+              entry.source === 'semver-heuristic'
+                ? `<button class="ctl bordered" data-action="openVersionDiff" data-id="${escapeAttr(candidate.id)}" title="Fetch ${escapeAttr(candidate.name)} ${escapeAttr(candidate.current)} and ${escapeAttr(candidate.selected)} and open a real diff between them">View diff</button>`
+                : ''
             }
           </summary>
           <div class="markdown quote">${renderMarkdown(entry.content, { baseUrl: entry.url })}</div>

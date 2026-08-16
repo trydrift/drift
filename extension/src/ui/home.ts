@@ -79,6 +79,7 @@ import {
 import { createPullRequestWithGh } from '../gh.js';
 import { Checkpoints } from '../checkpoint.js';
 import { DriftReportPanel } from './report.js';
+import { openPackageVersionDiff } from '../version-diff.js';
 import {
   makeNonce,
   renderBody,
@@ -121,6 +122,7 @@ type Incoming =
   | { type: 'openFile'; file: string; line: number }
   | { type: 'openUrl'; url: string }
   | { type: 'openDiff'; path: string }
+  | { type: 'openVersionDiff'; id: string }
   | { type: 'pickVersion'; id: string }
   | { type: 'selectVersion'; id: string; version: string }
   | { type: 'recheck'; id: string }
@@ -600,6 +602,18 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       case 'openDiff':
         await vscode.commands.executeCommand('drift.openChangeDiff', message.path);
         return;
+      case 'openVersionDiff': {
+        const candidate = this.candidates.get(message.id);
+        if (!candidate) return;
+        await openPackageVersionDiff({
+          ecosystem: candidate.ecosystem,
+          name: candidate.name,
+          from: candidate.current,
+          to: candidate.selected,
+          output: this.output,
+        });
+        return;
+      }
       case 'selectVersion':
         // Retarget rather than install: the whole point of the shortcut is to
         // see what that version costs before committing to it.

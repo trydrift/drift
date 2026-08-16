@@ -1409,6 +1409,46 @@ test('evidence rendering does not silently drop later sources', () => {
   assert.match(html, /content 7/);
 });
 
+test('semver-heuristic evidence offers a real diff between the two versions; other sources do not', () => {
+  const c = candidate({
+    name: 'serde_json',
+    current: '1.0.150',
+    selected: '1.0.151',
+    latest: '1.0.151',
+    plan: plan({
+      evidence: [
+        {
+          id: 'e1',
+          source: 'semver-heuristic',
+          dependency: 'serde_json',
+          title: 'serde_json 1.0.150 → 1.0.151 (patch)',
+          content: 'Patch bump. Breakage here is usually accidental.',
+          weight: 0.3,
+          url: 'https://semver.org/#spec-item-6',
+        },
+        {
+          id: 'e2',
+          source: 'changelog',
+          dependency: 'serde_json',
+          title: 'serde_json CHANGELOG § 1.0.151',
+          content: 'Nothing breaking.',
+          weight: 0.9,
+        },
+      ],
+    }),
+  });
+
+  const html = panelFor(c);
+
+  assert.match(
+    html,
+    /data-action="openVersionDiff" data-id="[^"]*"[^>]*>View diff/,
+    'the semver-heuristic entry must offer to open a real diff',
+  );
+  // Exactly one — the changelog entry gets no such button.
+  assert.equal(html.match(/data-action="openVersionDiff"/g)?.length, 1);
+});
+
 const panelFor = (c: UpgradeCandidate): string =>
   renderPanel(
     model({
