@@ -10,13 +10,15 @@ import type {
 import type { DriftConfig } from '../config/schema.js';
 import { renderRationale } from './rationale.js';
 import {
+  evidenceStrengthLabel,
+  overallConfidenceLine,
   renderCheckedSurfaces,
   renderConfidenceTable,
   renderEligibility,
   renderGaps,
   renderTaxonomy,
   verdictFor,
-  VERDICT_TEXT,
+  verdictText,
 } from './confidence.js';
 import { PLAN_SCHEMA_VERSION, planDigest } from '../approval/digest.js';
 import { renderApprovalMetadata } from '../approval/metadata.js';
@@ -207,13 +209,20 @@ function renderBreakingChanges(plan: RemediationPlan): string {
     // The verdict leads, because it is the sentence a reader acts on — and
     // because it is the one place the difference between "checked and clean"
     // and "not checked" is stated in words rather than implied by a count.
-    lines.push(`**Verdict:** ${VERDICT_TEXT[verdict]}.`);
+    // Hedged against the assessment: a `low`/`medium` local-impact match reads
+    // "may be affected", not "is affected" — the same certainty a reader would
+    // otherwise wrongly assign to a single textual hit.
+    lines.push(`**Verdict:** ${verdictText(verdict, change.assessment)}.`);
     lines.push('');
 
     lines.push(renderTaxonomy(change));
     lines.push('');
 
     if (change.assessment) {
+      // The one number a non-expert reads first, ahead of the three-dimension
+      // breakdown that follows for anyone who wants to see the working.
+      lines.push(overallConfidenceLine(change.assessment));
+      lines.push('');
       lines.push(renderConfidenceTable(change.assessment));
       lines.push('');
       lines.push(renderEligibility(change.assessment));
@@ -397,7 +406,7 @@ function renderEvidence(plan: RemediationPlan): string {
   for (const record of plan.evidence) {
     lines.push(`#### ${linkTo(record)}`);
     lines.push('');
-    lines.push(`\`${record.source}\` · weight ${record.weight.toFixed(2)}`);
+    lines.push(`\`${record.source}\` · ${evidenceStrengthLabel(record.weight)} (weight ${record.weight.toFixed(2)})`);
     lines.push('');
     lines.push('```');
     lines.push(truncate(record.content, 2000));

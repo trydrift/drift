@@ -147,7 +147,12 @@ export {
   renderTaxonomy,
   renderEligibility,
   verdictFor,
+  verdictText,
   VERDICT_TEXT,
+  overallConfidenceLine,
+  evidenceStrengthLabel,
+  bandBadge,
+  scoreLabel,
 } from './report/confidence.js';
 export type { FindingVerdict } from './report/confidence.js';
 

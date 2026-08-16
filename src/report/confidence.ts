@@ -1,6 +1,7 @@
 import type { BreakingChange, RemediationPlan } from '../types.js';
 import type { AnalysisGap, ConfidenceAssessment, ConfidenceScore } from '../confidence/types.js';
 import { taxonomyOf } from '../confidence/taxonomy.js';
+import { deriveOverallConfidence } from '../confidence/calibrate.js';
 
 /**
  * Rendering for the confidence model.
@@ -35,6 +36,23 @@ export const VERDICT_TEXT: Record<FindingVerdict, string> = {
   'insufficient-evidence': 'Insufficient evidence to say',
   'verification-incomplete': 'Verification incomplete',
 };
+
+/**
+ * The verdict sentence, hedged when it's earned.
+ *
+ * `VERDICT_TEXT['locally-affected']` states impact flatly, but a `low` or
+ * `medium` localImpact band means the match itself is uncertain — a textual
+ * hit with no import edge, or a wrapper-mediated call. Declaring "this
+ * repository is affected" with the same confidence as a direct, imported
+ * usage overstates what was actually found. Only a `high` local-impact band —
+ * a symbol bound from an established import — earns the unhedged sentence.
+ */
+export function verdictText(verdict: FindingVerdict, assessment?: ConfidenceAssessment): string {
+  if (verdict === 'locally-affected' && assessment && assessment.localImpact.band !== 'high') {
+    return 'This repository may be affected';
+  }
+  return VERDICT_TEXT[verdict];
+}
 
 /**
  * Which of the five a finding warrants.
@@ -76,6 +94,30 @@ export function bandBadge(band: string): string {
 /** `🟢 high (0.90)` */
 export function scoreLabel(score: ConfidenceScore): string {
   return `${bandBadge(score.band)} ${score.band} (${score.score.toFixed(2)})`;
+}
+
+/**
+ * A word for what `weight` means, next to the number rather than instead of
+ * it — the raw figure stays for anyone auditing the calibration, but "strong
+ * source" is what most readers actually need from it.
+ */
+export function evidenceStrengthLabel(weight: number): string {
+  if (weight >= 0.9) return 'very strong source';
+  if (weight >= 0.7) return 'strong source';
+  if (weight >= 0.5) return 'moderate source';
+  if (weight >= 0.3) return 'weak source';
+  return 'very weak source';
+}
+
+/**
+ * The one line a non-expert reads: `Confidence: 82/100 — Fairly confident`.
+ *
+ * Placed above the three-dimension table, never instead of it — the breakdown
+ * stays available for anyone who wants to see why the number is what it is.
+ */
+export function overallConfidenceLine(assessment: ConfidenceAssessment): string {
+  const overall = deriveOverallConfidence(assessment);
+  return `${bandBadge(overall.band)} **Confidence: ${overall.score}/100 — ${overall.label}**`;
 }
 
 /**
