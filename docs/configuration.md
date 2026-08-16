@@ -154,6 +154,49 @@ evidence:
 
 Literal paths only — globs are not yet resolved.
 
+### `evidence.protobuf` · `evidence.protobufSpecs`
+
+`boolean` / `string[]` — default **`true`** / **`[]`**
+
+The same idea for `.proto` files. Drift hands the two revisions to `buf
+breaking`, which checks them against protobuf's own compatibility rules —
+field numbers, wire types, deleted RPCs — rather than against a guess at them.
+
+```yaml
+evidence:
+  protobufSpecs:
+    - "proto/users/v1/users.proto"
+```
+
+Needs the [Buf CLI](https://buf.build/docs/installation) on `PATH`. When it is
+missing, the run says so and names the remedy; it never reports a comparison
+that did not happen as a clean one. A `.proto` that imports siblings Drift was
+not asked to read cannot be compiled on its own, and that is reported as a
+toolchain failure naming the import — list the imported files too, or point
+Drift at a path `buf` can compile alone.
+
+### `evidence.graphql` · `evidence.graphqlSchemas`
+
+`boolean` / `string[]` — default **`true`** / **`[]`**
+
+GraphQL SDL, diffed with `graphql-inspector`. No toolchain to install — it is a
+library Drift ships with.
+
+```yaml
+evidence:
+  graphqlSchemas:
+    - "schema/api.graphql"
+```
+
+Both *breaking* and *dangerous* changes are reported, using
+graphql-inspector's own classification. A removed field is breaking: the whole
+operation stops validating, not just that selection. A new enum value is
+dangerous: the query still runs, and an exhaustive switch over the enum has
+quietly stopped being exhaustive. Purely additive changes are not reported.
+
+Schema documents only. An operation document (`{ user(id: 1) { id } }`) that
+happens to share the extension is skipped rather than diffed.
+
 ### `evidence.maxReleases`
 
 `number` — default **`25`**

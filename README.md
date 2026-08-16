@@ -325,13 +325,13 @@ everything it skips rather than dropping it silently.
 
 ### 2 · Evidence
 
-Gathers citable ground truth from six sources, weighted by how directly each
+Gathers citable ground truth from several sources, weighted by how directly each
 speaks to breakage:
 
 | Weight | Source |
 | --- | --- |
 | 1.00 | **Computed API surface diff** — npm, Go, cargo, Maven, NuGet |
-| 1.00 | **OpenAPI spec diff** — computed |
+| 1.00 | **Contract-document diff** — OpenAPI, protobuf (`buf breaking`), GraphQL SDL |
 | 0.90 | Computed C/C++ header surface — real, but blind to the preprocessor |
 | 0.90 | Computed Python surface — reconstructed, so capped below the rest |
 | 0.80 | Computed Dart and Hex surfaces — read from the published *source* under the ecosystem's own visibility rule (`lib/` vs `lib/src/`, `def` vs `defp`), which is one inference more than a compiled artefact makes |
@@ -350,9 +350,13 @@ jsDelivr and diffs them with the TypeScript compiler. For Go, it fetches both
 versions into the module cache and extracts every importable package's exported
 API at three platforms, honouring build tags — which is how it finds that
 `golang.org/x/sys` changed `windows.Signal` from `int` to `syscall.Signal`
-between v0.26.0 and v0.47.0, a change no changelog mentions. The OpenAPI engine
-reports only consumer-breaking direction: tightening what a server accepts, or
-loosening what it returns.
+between v0.26.0 and v0.47.0, a change no changelog mentions.
+
+The contract-document differs cover what no package manager can see: an upstream
+service changing its contract without any version moving. Point Drift at an
+OpenAPI spec, a `.proto`, or a GraphQL schema your repository consumes and it
+diffs the document between commits. Each reports only the consumer-breaking
+direction — tightening what a server accepts, or loosening what it returns.
 
 ### 3 · Analyze
 

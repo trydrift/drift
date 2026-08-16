@@ -5,6 +5,8 @@ import type { DriftConfig } from '../../config/schema.js';
 import type { Logger } from '../../util/logger.js';
 import { execCommand, type Exec } from '../../util/exec.js';
 import { openapiSpecProvider } from './openapi.js';
+import { protobufSpecProvider } from './protobuf.js';
+import { graphqlSpecProvider } from './graphql.js';
 import type { SpecFindingCode, SpecOutcome, SpecProvider } from './types.js';
 import type { SpecEvidenceSource } from './sources.js';
 
@@ -19,7 +21,11 @@ import type { SpecEvidenceSource } from './sources.js';
  * files that each know one fifth of the answer.
  */
 
-export const SPEC_PROVIDERS: readonly SpecProvider[] = [openapiSpecProvider];
+export const SPEC_PROVIDERS: readonly SpecProvider[] = [
+  openapiSpecProvider,
+  protobufSpecProvider,
+  graphqlSpecProvider,
+];
 
 export function specProviderFor(source: string): SpecProvider | undefined {
   return SPEC_PROVIDERS.find((provider) => provider.source === source);
@@ -116,3 +122,5 @@ export * from './types.js';
 export * from './sources.js';
 export { parseSpec, diffSpecs, openapiSpecProvider } from './openapi.js';
 export type { OpenApiFinding, OpenApiChangeKind } from './openapi.js';
+export { protobufSpecProvider, parseBufBreaking, codeForBufRule, symbolFromBufMessage } from './protobuf.js';
+export { graphqlSpecProvider, codeForChangeType } from './graphql.js';

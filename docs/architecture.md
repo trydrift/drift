@@ -53,7 +53,9 @@ src/
 │   ├── spec/             Contract-document diffs, one provider per format
 │   │   ├── types.ts      The SpecProvider interface — source, weight, codes
 │   │   ├── sources.ts    The evidence sources those providers publish under
-│   │   └── openapi.ts    Consumer-breaking OpenAPI/Swagger diff engine
+│   │   ├── openapi.ts    Consumer-breaking OpenAPI/Swagger diff engine
+│   │   ├── protobuf.ts   `buf breaking`, parsed into the same diff shape
+│   │   └── graphql.ts    GraphQL SDL, via graphql-inspector
 │   └── surface/          Computed API diffs for cargo, go, maven, pypi, nuget,
 │       │                 and the three C/C++ ecosystems
 │       ├── c.ts          Source resolution per C ecosystem
@@ -340,11 +342,29 @@ vanished with its type intact is reported once, through the type. Bulk constant
 churn from a regenerated platform header collapses into a single counted line.
 One unparseable package is recorded and skipped, never fatal.
 
+**Contract-document diffs** (`evidence/spec/`) — one provider per format,
+behind a single interface: each declares the documents it recognises, its
+evidence source and weight, and what every finding code it emits means
+(fix kind, taxonomy, remediation). Adding a format is one file and one
+registration, not five hand-edited tables.
+
 **OpenAPI diff** — reports only consumer-breaking direction. Tightening what a
 server accepts (new required field, narrowed request enum) or loosening what it
 returns (removed field, widened response enum) breaks callers. The mirror cases
 are safe and are deliberately not reported: flooding a plan with non-findings a
 reviewer must filter is how trust in a tool like this dies.
+
+**Protobuf diff** — shells out to `buf breaking`, which implements protobuf's
+own compatibility rules. Field-number semantics make "is this breaking?" a
+specification question rather than a judgement, and the reference
+implementation of that specification is a better answer than a reimplementation
+of it. A missing `buf` is a stated gap with a remedy, exactly as a missing
+japicmp is.
+
+**GraphQL diff** — translates graphql-inspector's own criticality
+classification. `BREAKING` and `DANGEROUS` are kept; a new enum value is
+reported for the same reason a widened response enum is, because an exhaustive
+switch stops being exhaustive without anything failing.
 
 Only removals and tightenings are reported, everywhere.
 

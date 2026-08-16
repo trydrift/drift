@@ -95,14 +95,26 @@ evidence:
   # changelogs that omit a removal.
   typeSurface: true
 
+  # Contract documents this repo *consumes*. Drift diffs each between commits
+  # and finds the client code that breaks — this catches upstream service
+  # changes that no package manager would ever tell you about. Each format
+  # costs nothing until you name a document, which is the whole opt-in.
   openapi: true
-
-  # OpenAPI specs this repo *consumes*. Drift diffs these between commits and
-  # finds the client code that breaks — this catches upstream service changes
-  # that no package manager would ever tell you about.
   openapiSpecs: []
   #  - "api/openapi.yaml"
   #  - "spec/partner-api.json"
+
+  # Protobuf, checked against the protobuf compatibility rules by `buf
+  # breaking`. Needs the Buf CLI on PATH; when it is missing Drift says so
+  # rather than reporting a clean comparison.
+  protobuf: true
+  protobufSpecs: []
+  #  - "proto/users/v1/users.proto"
+
+  # GraphQL SDL, diffed with graphql-inspector. No toolchain to install.
+  graphql: true
+  graphqlSchemas: []
+  #  - "schema/api.graphql"
 
   maxReleases: 25
 

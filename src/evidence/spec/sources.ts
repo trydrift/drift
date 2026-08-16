@@ -12,7 +12,7 @@
  * here with no provider, or a provider whose source is not listed, fails.
  */
 
-export const SPEC_EVIDENCE_SOURCES = ['openapi-diff'] as const;
+export const SPEC_EVIDENCE_SOURCES = ['openapi-diff', 'protobuf-diff', 'graphql-diff'] as const;
 
 export type SpecEvidenceSource = (typeof SPEC_EVIDENCE_SOURCES)[number];
 

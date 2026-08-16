@@ -106,10 +106,27 @@ export const DriftConfigSchema = z.object({
        * The strongest signal Drift has for npm packages.
        */
       typeSurface: z.boolean().default(true),
-      /** Diff OpenAPI specs when the dependency ships or is one. */
+      /**
+       * Contract documents this repository consumes, diffed between commits.
+       *
+       * Each format is a provider (`evidence/spec/`) that declares its own
+       * weight, taxonomy and remediation text; these are the two keys it reads.
+       * The enable flags default to `true` and the path lists to empty, so a
+       * format costs nothing until a document is named — and naming one is the
+       * whole opt-in.
+       */
+      /** Diff OpenAPI/Swagger specs listed in `openapiSpecs`. */
       openapi: z.boolean().default(true),
-      /** Repo-relative globs pointing at OpenAPI specs this repo consumes. */
+      /** Repo-relative paths of the OpenAPI specs this repo consumes. */
       openapiSpecs: z.array(z.string()).default([]),
+      /** Diff protobuf definitions listed in `protobufSpecs`, via `buf breaking`. */
+      protobuf: z.boolean().default(true),
+      /** Repo-relative paths of the `.proto` files this repo consumes. */
+      protobufSpecs: z.array(z.string()).default([]),
+      /** Diff GraphQL SDL listed in `graphqlSchemas`, via graphql-inspector. */
+      graphql: z.boolean().default(true),
+      /** Repo-relative paths of the GraphQL schema documents this repo consumes. */
+      graphqlSchemas: z.array(z.string()).default([]),
       /** Cap on release notes fetched per dependency. */
       maxReleases: z.number().int().min(1).max(100).default(25),
     })
