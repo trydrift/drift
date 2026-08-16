@@ -118,9 +118,25 @@ export const protobufSpecProvider: SpecProvider = {
       );
     }
 
+    // A `.proto` that does not compile is reported by buf as an ordinary
+    // finding — `type: "COMPILE"`, exit code 100, exactly like a real
+    // incompatibility. Left alone, "imported file does not exist" would be
+    // published as a breaking change to the contract, which is both false and
+    // the most damaging shape of wrong this pipeline can produce. It is a fact
+    // about what Drift was given to compare, so it is a gap.
+    const compileError = issues.find((issue) => issue.type === 'COMPILE');
+    if (compileError) {
+      return unavailableSpec(
+        TOOL,
+        'toolchain-failed',
+        `\`buf breaking\` could not compile ${request.path}: ${compileError.message}`,
+        'If the file imports other `.proto` files, list them in `evidence.protobufSpecs` as well, or point Drift at a path `buf` can compile on its own.',
+      );
+    }
+
     return {
       available: true,
-      changes: issues.map(toSpecChange),
+      changes: issues.filter(isRuleFinding).map(toSpecChange),
       tool: TOOL,
       weight: 1.0,
       locator: `${request.path} (buf breaking)`,
@@ -345,6 +361,21 @@ export function parseBufBreaking(stdout: string): BufIssue[] {
   return issues;
 }
 
+/**
+ * Whether an issue is a compatibility rule firing, rather than buf reporting on
+ * itself.
+ *
+ * buf's JSON stream carries both. Its own failures use SCREAMING names that are
+ * not rule ids — `COMPILE` for a file that will not build, and the same channel
+ * is used for plugin and configuration problems — and every one of those would
+ * otherwise be published as a breaking change to the contract.
+ */
+function isRuleFinding(issue: BufIssue): boolean {
+  return !NON_RULE_TYPES.has(issue.type);
+}
+
+const NON_RULE_TYPES = new Set(['COMPILE', 'PLUGIN_FAILURE', 'CONFIGURATION']);
+
 function toSpecChange(issue: BufIssue): SpecChange {
   const line = issue.start_line ?? 0;
   return {
@@ -433,11 +464,15 @@ export function symbolFromBufMessage(message: string): string | null {
 
   const member =
     /\bwith name "([^"]+)"/.exec(message)?.[1] ??
-    /\b(?:RPC|field|value|oneof) "([^"]+)"/.exec(message)?.[1] ??
+    // A rename names both sides; the new one is what the repository will have
+    // to be written against, so that is the one worth searching for.
+    /\bchanged name from "[^"]+" to "([^"]+)"/.exec(message)?.[1] ??
+    /\b(?:RPC|field|value|oneof) "([^"]+)"/i.exec(message)?.[1] ??
     null;
 
-  // A field's own quoted token is its *number* in several buf messages, and a
-  // bare "3" is not a symbol anything can be searched for.
+  // A field's own quoted token is its *number* in most buf messages ("Field
+  // \"2\" on message \"User\"…"), and a bare "2" is not a symbol anything can
+  // be searched for.
   const named = member && !/^\d+$/.test(member) ? member : null;
 
   if (owner && named) return `${owner}.${named}`;

@@ -178,11 +178,20 @@ describe('protobuf, via buf breaking', () => {
     assert.match(gaps[0]?.remedy ?? '', /buf\.build/);
   });
 
-  test('a compile failure is reported as a toolchain failure, not as no findings', async () => {
+  test('a compile failure is reported as a toolchain failure, never as a finding', async () => {
+    // buf reports a file that will not compile through the *same* channel as a
+    // real incompatibility: `type: "COMPILE"`, exit code 100. Published as-is,
+    // "imported file does not exist" would become a breaking change to the
+    // contract — false, and the most damaging shape of wrong Drift can produce.
     const failure: CommandResult = {
-      code: 1,
-      stdout: '',
-      stderr: 'proto/users.proto:4:1: import "acme/common.proto": file does not exist',
+      code: 100,
+      stdout: JSON.stringify({
+        path: 'after/proto/users.proto',
+        start_line: 2,
+        type: 'COMPILE',
+        message: 'imported file does not exist',
+      }),
+      stderr: '',
     };
     const gaps: { reason: string; detail: string }[] = [];
 
@@ -199,6 +208,24 @@ describe('protobuf, via buf breaking', () => {
 
     assert.equal(gaps[0]?.reason, 'toolchain-failed');
     assert.match(gaps[0]?.detail ?? '', /does not exist/);
+  });
+
+  test('a buf invocation that fails outright is a gap too', async () => {
+    const failure: CommandResult = { code: 1, stdout: '', stderr: 'unknown flag: --against' };
+    const gaps: { reason: string }[] = [];
+
+    await gatherEvidence([], {
+      config: DriftConfigSchema.parse({ evidence: { protobuf: true, protobufSpecs: [path] } }),
+      logger,
+      exec: (async (_c: string, args: readonly string[]) =>
+        args[0] === '--version' ? ok('1.47.2') : failure) as never,
+      readRepoFile: repoWith(path, PROTO_BEFORE, PROTO_AFTER),
+      beforeSha: 'before',
+      afterSha: 'after',
+      onUnavailableSpec: (_path, reason) => gaps.push(reason),
+    });
+
+    assert.equal(gaps[0]?.reason, 'toolchain-failed');
   });
 
   test('the provider is skipped when its flag is off', async () => {
@@ -241,6 +268,16 @@ describe('protobuf, via buf breaking', () => {
       'Users.DeleteUser',
     );
     assert.equal(symbolFromBufMessage('Previously present message "User" was deleted.'), 'User');
+    // buf spells a rename without "with name", and quotes the field *number*
+    // first — reading that as the symbol would search the repository for "2".
+    assert.equal(
+      symbolFromBufMessage('Field "2" on message "User" changed name from "email" to "mail".'),
+      'User.mail',
+    );
+    assert.equal(
+      symbolFromBufMessage('Field "1" with name "id" on message "User" changed type from "string" to "int32".'),
+      'User.id',
+    );
     assert.equal(symbolFromBufMessage('Something entirely unrecognised happened.'), null);
   });
 });
