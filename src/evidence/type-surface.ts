@@ -88,6 +88,8 @@ export interface SurfaceChange {
   detail: string;
   before?: string;
   after?: string;
+  /** See `StructuredFinding.changed`. Only ever set on `signature-changed`. */
+  changed?: 'parameters' | 'return-type' | 'both';
 }
 
 const JSDELIVR_DATA = 'https://data.jsdelivr.com/v1/packages/npm';
@@ -1455,7 +1457,14 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
       // `f()` into `f(options?)` is the most common shape of a minor release,
       // and reporting it sends a developer to read code that was already
       // correct. See `onlyRelaxesCallers`.
-      !onlyRelaxesCallers(oldEntry.signature, newEntry.signature)
+      !onlyRelaxesCallers(oldEntry.signature, newEntry.signature) &&
+      // A type printed as `import("svelte/compiler").PreprocessorGroup` in one
+      // release and `PreprocessorGroup` in the next has not changed — the
+      // compiler just chose a different way to spell a reference to the exact
+      // same declaration, most often because the second release re-exports the
+      // name locally instead of pointing back through its dependency. See
+      // `dequalifyImports`.
+      !sameIgnoringImportQualifiers(oldEntry.signature, newEntry.signature)
     ) {
       changes.push({
         kind: 'signature-changed',
@@ -1463,11 +1472,47 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
         detail: `The signature of \`${name}\` changed${origin}.`,
         before: oldEntry.signature,
         after: newEntry.signature,
+        ...(whatChanged(oldEntry.signature, newEntry.signature) ?? {}),
       });
     }
   }
 
   return changes;
+}
+
+/**
+ * Which part of a call actually moved: the parameters a caller supplies, the
+ * value it gets back, or both.
+ *
+ * `null` when either side cannot be parsed as a call — an overload chain, a
+ * declaration this comparison already runs conservatively for elsewhere —
+ * rather than guessing.
+ */
+function whatChanged(before: string, after: string): { changed: 'parameters' | 'return-type' | 'both' } | null {
+  const old = callSignature(before);
+  const now = callSignature(after);
+  if (!old || !now) return null;
+
+  const returnChanged = !sameType(old.returns, now.returns);
+  const parametersChanged =
+    old.parameters.length !== now.parameters.length ||
+    old.parameters.some((parameter, index) => {
+      const replacement = now.parameters[index];
+      return (
+        !replacement ||
+        parameter.optional !== replacement.optional ||
+        parameter.rest !== replacement.rest ||
+        !sameType(parameter.type, replacement.type)
+      );
+    });
+
+  if (returnChanged && parametersChanged) return { changed: 'both' };
+  if (returnChanged) return { changed: 'return-type' };
+  if (parametersChanged) return { changed: 'parameters' };
+  // Parseable on both sides, and neither piece moved by this test's lights —
+  // reached only via a change this function does not model (e.g. a rest
+  // parameter's own type), so there is nothing confident to say.
+  return null;
 }
 
 /**
@@ -1791,6 +1836,30 @@ export function alphaEquivalent(a: string, b: string): boolean {
   if (a === b) return true;
   const left = normalizeTypeParameters(a);
   return left === normalizeTypeParameters(b) && left !== null;
+}
+
+/**
+ * Same declaration, with an import path spelled out in one version and
+ * dropped in the other.
+ *
+ * TypeScript prints a type by its qualified import path — `import("mod").Foo`
+ * — whenever it cannot resolve `Foo` to something already in scope at the
+ * point it is printing from, and by its bare name otherwise. Which of those
+ * happens for the same underlying type can change release to release for
+ * reasons that have nothing to do with the type itself: a re-export added
+ * locally, a barrel file reorganised, a `.d.ts` bundler swapped out. Neither
+ * a caller's arguments nor what it can do with the return value changes
+ * either way, so this is compared with the qualifier stripped from both
+ * sides rather than left to read as a different type.
+ */
+export function sameIgnoringImportQualifiers(a: string, b: string): boolean {
+  if (a === b) return true;
+  const left = dequalifyImports(a);
+  return left === dequalifyImports(b);
+}
+
+function dequalifyImports(signature: string): string {
+  return signature.replace(/\bimport\((["'])(?:(?!\1).)*\1\)\./g, '');
 }
 
 function normalizeTypeParameters(signature: string): string | null {

@@ -65,14 +65,30 @@ export function remediationForFinding(finding: StructuredFinding, dependency: st
     case 'member-removed':
       return `The member \`${symbol}\` no longer exists in \`${dependency}\`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.`;
     case 'signature-changed':
-      return `The signature of \`${symbol}\` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: ${finding.before ?? '(unknown)'}\n  after:  ${finding.after ?? '(unknown)'}`;
+      // Before/after are already shown as their own diff block above this
+      // text (see renderBreak / report/markdown.ts) — repeating them here
+      // just says the same thing twice. What is worth adding instead is what
+      // `finding.changed` knows and a raw diff cannot say by itself: which
+      // half of the contract moved, and — for the return-type case
+      // specifically — whether the calling language would even catch it.
+      switch (finding.changed) {
+        case 'parameters':
+          return `The parameters of \`${symbol}\` changed; its return type did not. Update every call site to pass arguments matching the new list — check argument order, argument count, and whether an options object replaced positional arguments. A call that only reads the result of \`${symbol}\` needs no change beyond its arguments.`;
+        case 'return-type':
+          return `The return type of \`${symbol}\` changed; its parameters did not, so no call site needs its arguments touched. What changed is what a caller gets back. In a statically typed language, a call site that assigns or passes the result on will fail to compile and point you straight at the fix; nothing here needs a source change beyond letting the type checker find those. In a dynamically typed one (plain JavaScript, Python, Ruby), nothing will catch this automatically — search for call sites that store, destructure, or pass along the result of \`${symbol}\` and check each one against the new type by hand.`;
+        case 'both':
+          return `Both the parameters and the return type of \`${symbol}\` changed. Update every call site's arguments to match the new parameter list, then separately check what each call site does with the result: a statically typed caller will have a mismatched return type caught by its own compiler, a dynamically typed one will not.`;
+        default:
+          return `The signature of \`${symbol}\` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.`;
+      }
     case 'constant-value-changed':
       // Not a call site to rewrite: the constant's name and type are
       // unchanged, so code that only ever refers to it by name keeps
       // compiling and behaving correctly. What can break silently is code
       // that depends on the concrete number underneath — a hard-coded copy of
       // the old value, a serialized/persisted form, or a check against zero.
-      return `\`${symbol}\` changed underlying value.\n  before: ${finding.before ?? '(unknown)'}\n  after:  ${finding.after ?? '(unknown)'}\nThis does not necessarily require a source change — most code that only refers to \`${symbol}\` by name keeps working. Review code in this repository that depends on the concrete value: a hard-coded copy of the old number, a value persisted or sent over the wire, or a comparison against zero or another literal.`;
+      // Before/after are shown as their own diff block above this text.
+      return `\`${symbol}\` changed underlying value. This does not necessarily require a source change — most code that only refers to \`${symbol}\` by name keeps working. Review code in this repository that depends on the concrete value: a hard-coded copy of the old number, a value persisted or sent over the wire, or a comparison against zero or another literal.`;
     case 'kind-changed':
       return `\`${symbol}\` changed form (for example class to function, or interface to type alias). Update declarations, \`new\` expressions, and type positions accordingly.`;
     case 'entry-point-moved':

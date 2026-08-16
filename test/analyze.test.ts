@@ -705,6 +705,91 @@ describe('analysis', () => {
     assert.match(result[0]!.remediation, /concrete value|hard-coded|persisted|zero/i);
   });
 
+  test('a signature-changed finding never repeats before/after in its own remediation text', async () => {
+    // The diff itself is rendered separately, both in the panel and in the
+    // markdown report (see report/markdown.ts) — a remediation that quotes
+    // `before`/`after` again says the same thing twice.
+    const evidence = [
+      {
+        id: 'ev_sig',
+        source: 'type-surface-diff' as const,
+        dependency: 'acme-sdk',
+        title: 'surface diff',
+        content: 'the signature changed',
+        weight: 1,
+        findings: [
+          {
+            code: 'signature-changed',
+            symbol: 'run',
+            detail: 'The signature of `run` changed.',
+            before: 'export function run(): Result;',
+            after: 'export function run(): Outcome;',
+            changed: 'return-type' as const,
+          },
+        ],
+      },
+    ];
+
+    const result = await analyze([change], evidence, { config: DEFAULT_CONFIG, logger });
+    assert.equal(result.length, 1);
+    assert.doesNotMatch(result[0]!.remediation, /\bbefore:|\bafter:/);
+  });
+
+  test('a return-type-only change tells the reader a static checker will catch it and a dynamic one will not', async () => {
+    const evidence = [
+      {
+        id: 'ev_ret',
+        source: 'type-surface-diff' as const,
+        dependency: 'acme-sdk',
+        title: 'surface diff',
+        content: 'the signature changed',
+        weight: 1,
+        findings: [
+          {
+            code: 'signature-changed',
+            symbol: 'run',
+            detail: 'The signature of `run` changed.',
+            before: 'export function run(): Result;',
+            after: 'export function run(): Outcome;',
+            changed: 'return-type' as const,
+          },
+        ],
+      },
+    ];
+
+    const result = await analyze([change], evidence, { config: DEFAULT_CONFIG, logger });
+    assert.doesNotMatch(result[0]!.remediation, /argument order|argument count/);
+    assert.match(result[0]!.remediation, /statically typed/i);
+    assert.match(result[0]!.remediation, /dynamically typed/i);
+  });
+
+  test('a parameters-only change is not told to go check the return value', async () => {
+    const evidence = [
+      {
+        id: 'ev_params',
+        source: 'type-surface-diff' as const,
+        dependency: 'acme-sdk',
+        title: 'surface diff',
+        content: 'the signature changed',
+        weight: 1,
+        findings: [
+          {
+            code: 'signature-changed',
+            symbol: 'run',
+            detail: 'The signature of `run` changed.',
+            before: 'export function run(a: string): Result;',
+            after: 'export function run(a: string, b: string): Result;',
+            changed: 'parameters' as const,
+          },
+        ],
+      },
+    ];
+
+    const result = await analyze([change], evidence, { config: DEFAULT_CONFIG, logger });
+    assert.match(result[0]!.remediation, /parameters of `run` changed/);
+    assert.doesNotMatch(result[0]!.remediation, /statically typed|dynamically typed/i);
+  });
+
   test('every breaking change carries at least one citation', async () => {
     const evidence = [
       {

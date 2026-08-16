@@ -448,6 +448,7 @@ function surfaceRecord(
       detail: c.detail,
       before: c.before,
       after: c.after,
+      ...(c.changed ? { changed: c.changed } : {}),
     })),
     weight: args.weight,
   };

@@ -148,6 +148,18 @@ export interface StructuredFinding {
   detail: string;
   before?: string;
   after?: string;
+  /**
+   * Which part of a `signature-changed` finding actually moved, when the
+   * provider could tell.
+   *
+   * The distinction changes what a reader needs to do about it: a parameter
+   * change means every call site's arguments need attention, a return-type
+   * change means every call site that keeps the result does — and whether
+   * that second kind is even visible depends on whether the calling language
+   * checks types at all. Absent when the provider only has two raw signature
+   * strings and no parser to tell them apart.
+   */
+  changed?: 'parameters' | 'return-type' | 'both';
 }
 
 /**

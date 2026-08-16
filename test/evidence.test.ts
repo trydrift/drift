@@ -268,6 +268,38 @@ describe('an upgrade that moved the API instead of removing it', () => {
   });
 });
 
+describe('a signature that only changed how it is spelled', () => {
+  const fn = (name: string, signature: string): SurfaceApi =>
+    new Map([[name, { name, kind: 'function' as const, signature, members: [], requiredMembers: [] }]]);
+
+  test('a return type qualified by its import path in one release and not the other is not a signature change', () => {
+    // @sveltejs/vite-plugin-svelte: the same exported function, the same
+    // parameter, and a return type TypeScript printed two different ways
+    // across releases because the second one re-exports `PreprocessorGroup`
+    // locally instead of pointing back through `svelte/compiler`. Nothing a
+    // caller does with `vitePreprocess` changed.
+    const before = fn(
+      'vitePreprocess',
+      'export function vitePreprocess(opts?: VitePreprocessOptions): import("svelte/compiler").PreprocessorGroup;',
+    );
+    const after = fn(
+      'vitePreprocess',
+      'export function vitePreprocess(opts?: VitePreprocessOptions): PreprocessorGroup;',
+    );
+
+    assert.deepEqual(diffSurfaces(before, after), []);
+  });
+
+  test('a genuine return type change is still reported even when one side carries an import qualifier', () => {
+    const before = fn('run', 'export function run(): import("./types").Result;');
+    const after = fn('run', 'export function run(): Outcome;');
+
+    const changes = diffSurfaces(before, after);
+    assert.equal(changes.length, 1);
+    assert.equal(changes[0]?.kind, 'signature-changed');
+  });
+});
+
 describe('choosing which releases to read', () => {
   const release = (version: string) => ({
     tag: `v${version}`,
