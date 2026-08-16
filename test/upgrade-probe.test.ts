@@ -2,7 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { probeUpgrades, probeDependencyChange, filesNamedIn } from '../dist/verification/upgrade-probe.js';
+import { probeUpgrades, probeDependencyChange, filesNamedIn, warmProbe } from '../dist/verification/upgrade-probe.js';
 import { applyVerificationToPlan, combineVerifications, describeVerification } from '../dist/verification/apply.js';
 
 /**
@@ -395,6 +395,80 @@ describe('probing an upgrade before reporting it', () => {
     // are made, only whether the loop over them awaits one at a time.
     const added = calls.filter((c) => c.command === 'git' && c.args[0] === 'worktree' && c.args[1] === 'add');
     assert.equal(added.length, 2, 'one worktree per manifest group');
+  });
+});
+
+/**
+ * Preparing a checkout is a worktree, a full install and a baseline check run
+ * — minutes of local work that depends on nothing the scan learns from the
+ * network. Starting it early is the largest single speedup available to a
+ * scan, so what these protect is that it stays an optimisation: the same
+ * verdicts, the same number of worktrees, and nothing left on disk.
+ */
+describe('warming a test checkout before the packages that need it are known', () => {
+  test('a warmed checkout is used instead of preparing a second one', async () => {
+    const { exec, calls } = recorder();
+    const warm = warmProbe({ root, targets: [], exec, fs }, [{ dir: '', packageManager: 'npm' }]);
+
+    const results = await probeUpgrades({ root, targets: [target('zod')], exec, fs, warm });
+    await warm.dispose();
+
+    assert.equal(results.get('t-zod')?.status, 'passed');
+    const added = calls.filter((c) => c.command === 'git' && c.args[0] === 'worktree' && c.args[1] === 'add');
+    assert.equal(added.length, 1, 'the warmed checkout is taken, not duplicated');
+  });
+
+  test('a directory nobody warmed still prepares its own, so warming never changes the verdict', async () => {
+    const { exec, calls } = recorder();
+    // Warmed for the root only; the probe is handed a member manifest too.
+    const warm = warmProbe({ root, targets: [], exec, fs }, [{ dir: '', packageManager: 'npm' }]);
+
+    const results = await probeUpgrades({
+      root,
+      targets: [
+        { ...target('zod'), manifestPath: 'package.json' },
+        { ...target('react'), manifestPath: 'packages/web/package.json' },
+      ],
+      exec,
+      fs,
+      warm,
+    });
+    await warm.dispose();
+
+    assert.equal(results.get('t-zod')?.status, 'passed');
+    assert.equal(results.get('t-react')?.status, 'passed');
+    const added = calls.filter((c) => c.command === 'git' && c.args[0] === 'worktree' && c.args[1] === 'add');
+    assert.equal(added.length, 2, 'the unwarmed member prepared its own');
+  });
+
+  test('a warmed checkout nobody took is removed rather than left on disk', async () => {
+    const { exec, calls } = recorder();
+    // Warmed for a member that turns out to have no upgrades worth testing.
+    const warm = warmProbe({ root, targets: [], exec, fs }, [{ dir: 'packages/web', packageManager: 'npm' }]);
+
+    await probeUpgrades({ root, targets: [], exec, fs, warm });
+    await warm.dispose();
+
+    const added = calls.filter((c) => c.command === 'git' && c.args[0] === 'worktree' && c.args[1] === 'add');
+    const removed = calls.filter(
+      (c) => c.command === 'git' && c.args[0] === 'worktree' && c.args[1] === 'remove' && c.args.includes('--force'),
+    );
+    assert.equal(added.length, 1, 'the warmup did prepare one');
+    assert.ok(
+      removed.some((c) => c.args.some((arg) => arg.includes('probe-packages'))),
+      'the abandoned worktree was disposed of',
+    );
+  });
+
+  test('a warmup whose install fails settles its packages with the reason, not a crash', async () => {
+    const { exec } = recorder({ 'npm install': 1 });
+    const warm = warmProbe({ root, targets: [], exec, fs }, [{ dir: '', packageManager: 'npm' }]);
+
+    const results = await probeUpgrades({ root, targets: [target('zod')], exec, fs, warm });
+    await warm.dispose();
+
+    assert.equal(results.get('t-zod')?.status, 'skipped');
+    assert.match(results.get('t-zod')?.reason ?? '', /npm install/);
   });
 });
 

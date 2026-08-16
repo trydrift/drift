@@ -1,7 +1,7 @@
-import { dirname } from 'node:path';
+import { basename, dirname } from 'node:path';
 import { packageManagerById, type PackageManagerId } from '../detect/package-manager.js';
 import { nodeWorkspaceFs, type WorkspaceFs } from '../detect/workspace.js';
-import { createWorktree } from '../repo/worktree.js';
+import { createWorktree, type Worktree } from '../repo/worktree.js';
 import { execCommand, type Exec } from '../util/exec.js';
 import { mapWithConcurrency } from '../util/http.js';
 import type { Logger } from '../util/logger.js';
@@ -93,6 +93,16 @@ export interface ProbeProgress {
   detail: string;
   done: number;
   total: number;
+  /**
+   * A chunk the running command just printed.
+   *
+   * Present *instead of* a phase change, not alongside one: a consumer appends
+   * this to whatever the current phase is showing rather than treating it as a
+   * new step. The install, the typecheck and the test suite are the three
+   * slowest things in a scan and the only evidence that any of them is
+   * progressing rather than wedged.
+   */
+  output?: string;
 }
 
 export interface ProbeOptions {
@@ -129,6 +139,13 @@ export interface ProbeOptions {
    * handful of manifests running at once.
    */
   concurrency?: number;
+  /**
+   * Checkouts already being prepared when this probe starts. See {@link warmProbe}.
+   *
+   * A group with no warmed preparation for its directory prepares its own, so
+   * this is purely an optimisation and never changes what is measured.
+   */
+  warm?: ProbeWarmup;
   onProgress?: (progress: ProbeProgress) => void;
   /** Called as each target is settled, so a caller can release it one at a time. */
   onVerified?: (target: ProbeTarget, verification: UpgradeVerification) => void;
@@ -172,6 +189,7 @@ export async function probeUpgrades(options: ProbeOptions): Promise<Map<string, 
     const dir = memberDirOf(manifestPath);
     await probeGroup(options, dir, targets, {
       report: (phase, detail) => options.onProgress?.({ phase, detail, done, total }),
+      output: (chunk) => options.onProgress?.({ phase: '', detail: '', done, total, output: chunk }),
       settle: (target, verification) => {
         done += 1;
         settle(target, verification);
@@ -186,6 +204,8 @@ const DEFAULT_GROUP_CONCURRENCY = 3;
 
 interface GroupHooks {
   report(phase: string, detail: string): void;
+  /** A chunk the currently reported command printed. See {@link ProbeProgress.output}. */
+  output(chunk: string): void;
   settle(target: ProbeTarget, verification: UpgradeVerification): void;
 }
 
@@ -214,105 +234,26 @@ async function probeGroup(
 ): Promise<void> {
   const exec = options.exec ?? execCommand;
   const env = scrubEnv(options.env ?? process.env);
-  const kinds = options.kinds ?? DEFAULT_KINDS;
+  const project = projectLabel(options.root, dir);
 
-  hooks.report('Preparing a test checkout', `${targets.length} upgrade${targets.length === 1 ? '' : 's'} to try`);
+  // Either the checkout this scan warmed while it was busy on the network, or
+  // one prepared right here. See `warmProbe`.
+  const preparation = await (options.warm?.take(dir, targets[0]!.packageManager) ??
+    prepareGroup(options, dir, targets[0]!.packageManager, hooks));
 
-  let worktree;
-  try {
-    worktree = await createWorktree(options.root, `probe-${dir || 'root'}`, {
-      exec,
-      env,
-      ...(options.allowedGlobs ? { allowedGlobs: options.allowedGlobs } : {}),
-    });
-  } catch (err) {
-    for (const target of targets) hooks.settle(target, skipped(messageOf(err)));
+  if (!preparation.ok) {
+    for (const target of targets) hooks.settle(target, skipped(preparation.reason));
     return;
   }
 
-  if (worktree.copiedFiles.length > 0) {
-    hooks.report(
-      'Preparing a test checkout',
-      `carried over ${worktree.copiedFiles.length} gitignored file${worktree.copiedFiles.length === 1 ? '' : 's'} not tracked by git, matching: ${worktree.copiedRules.join(', ')}`,
-    );
-  }
-  if (worktree.oversizedFiles.length > 0) {
-    hooks.report(
-      'Preparing a test checkout',
-      `skipped ${worktree.oversizedFiles.length} gitignored file${worktree.oversizedFiles.length === 1 ? '' : 's'} too large to carry over automatically, which may make a check fail for a reason unrelated to this upgrade, matching: ${worktree.oversizedRules.join(', ')}`,
-    );
-  }
-  if (worktree.skippedSecrets.length > 0) {
-    hooks.report(
-      'Preparing a test checkout',
-      `never copied ${worktree.skippedSecrets.length} gitignored file${worktree.skippedSecrets.length === 1 ? '' : 's'} that looked like credentials, matching: ${worktree.skippedSecretRules.join(', ')} — this may make a check fail for a reason unrelated to this upgrade; see \`verify.generatedSourceGlobs\` if the project genuinely needs one of them`,
-    );
-  }
+  const { worktree, usable, manager } = preparation;
+
+  // Reported here rather than inside the preparation: a warmed checkout is
+  // prepared before anyone knows which packages it will be used for, and these
+  // lines only make sense next to the group they affect.
+  for (const line of preparation.notes) hooks.report(`Preparing a test checkout of ${project}`, line);
 
   try {
-    const manager = packageManagerById(targets[0]!.packageManager);
-
-    // Detected in the worktree rather than in the developer's checkout, because
-    // that is where they will run. Reading the open tree would offer a script
-    // that only exists in someone's unsaved edits, and miss one they have just
-    // deleted without committing.
-    const wanted = (
-      await availableChecks(worktree.path, dir, options.fs ?? nodeWorkspaceFs(), targets[0]!.packageManager)
-    ).filter((check) => kinds.includes(check.kind));
-    if (wanted.length === 0) {
-      for (const target of targets) {
-        hooks.settle(
-          target,
-          skipped('This project declares no typecheck or build that Drift could run against the upgrade.'),
-        );
-      }
-      return;
-    }
-
-    // A worktree is the commit and nothing else: no `node_modules`, no
-    // virtualenv. Without this the very first typecheck fails on every import
-    // in the project and reports the whole repository as broken by an upgrade
-    // that has not even been applied yet.
-    if (manager?.install) {
-      hooks.report('Installing dependencies', `\`${manager.install.command} ${manager.install.args.join(' ')}\``);
-      const restored = await exec(manager.install.command, manager.install.args, {
-        cwd: dir ? `${worktree.path}/${dir}` : worktree.path,
-        env,
-        timeoutMs: options.timeoutMs ?? DEFAULT_INSTALL_TIMEOUT_MS,
-      });
-      if (restored.code !== 0) {
-        const detail = (restored.stderr || restored.stdout).trim().split('\n').slice(-3).join(' ');
-        for (const target of targets) {
-          hooks.settle(
-            target,
-            skipped(`\`${manager.install.command} ${manager.install.args.join(' ')}\` failed in a clean checkout, so there was nothing to test the upgrade against. ${detail}`.trim()),
-          );
-        }
-        return;
-      }
-    }
-
-    // What is already red before Drift touches anything. Without this, a
-    // repository with one pre-existing type error would have that error
-    // attributed to every dependency in it.
-    hooks.report('Checking the project as it is', `${wanted.map((check) => check.label).join(', ')}`);
-    const baseline = await runChecks({
-      root: worktree.path,
-      dir,
-      checks: wanted,
-      env,
-      exec,
-      ...(options.token ? { token: options.token } : {}),
-      ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
-    });
-
-    const usable = wanted.filter((check) => baseline.some((o) => o.label === check.label && o.status === 'passed'));
-    if (usable.length === 0) {
-      const reason = describeUnusableBaseline(baseline);
-      for (const target of targets) hooks.settle(target, skipped(reason));
-      return;
-    }
-
     const pass: GroupPass = {
       exec,
       env,
@@ -350,8 +291,9 @@ async function probeGroup(
         continue;
       }
 
-      hooks.report(`Testing ${target.name}@${target.selected}`, usable.map((check) => check.label).join(', '));
-      hooks.settle(target, verdictFrom(await runPass(pass)));
+      const phase = `Testing ${target.name}@${target.selected}`;
+      hooks.report(phase, usable.map((check) => check.label).join(', '));
+      hooks.settle(target, verdictFrom(await runPass(pass, hooks, phase)));
       if (!(await resetWorktree(pass))) {
         settleRemainingAsContaminated(targets, index + 1, hooks);
         break;
@@ -360,6 +302,254 @@ async function probeGroup(
   } finally {
     await worktree.dispose();
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Preparing a checkout, before anyone needs it                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * A checkout with the project's dependencies installed and its baseline
+ * measured — everything that is true before any upgrade is applied.
+ */
+type Preparation =
+  | {
+      ok: true;
+      worktree: Worktree;
+      /** Checks that passed at baseline, so a failure later is one an upgrade caused. */
+      usable: readonly LocalCheck[];
+      manager: PackageManager | undefined;
+      /** Things worth telling the developer about this checkout, e.g. a secret not carried over. */
+      notes: string[];
+    }
+  | { ok: false; reason: string };
+
+type PackageManager = NonNullable<ReturnType<typeof packageManagerById>>;
+
+/**
+ * Create the worktree, install into it, and find out what is already red.
+ *
+ * Split out of `probeGroup` because none of it depends on *which* upgrades are
+ * about to be tested — only on the directory and its package manager, both
+ * known the moment the scan has read the manifests. That is what lets
+ * `warmProbe` start it against the clock instead of after it.
+ */
+async function prepareGroup(
+  options: ProbeOptions,
+  dir: string,
+  packageManager: PackageManagerId,
+  hooks: Pick<GroupHooks, 'report' | 'output'>,
+): Promise<Preparation> {
+  const exec = options.exec ?? execCommand;
+  const env = scrubEnv(options.env ?? process.env);
+  const kinds = options.kinds ?? DEFAULT_KINDS;
+  // Which project these commands run in. A monorepo runs the same three check
+  // labels in every member, so "Checking the project as it is — npm run
+  // typecheck, npm run build" appearing twice with nothing to tell the two
+  // apart reads as one step that stalled and repeated itself.
+  const project = projectLabel(options.root, dir);
+
+  hooks.report(`Preparing a test checkout of ${project}`, 'checking out a clean copy');
+
+  let worktree: Worktree;
+  try {
+    worktree = await createWorktree(options.root, `probe-${dir || 'root'}`, {
+      exec,
+      env,
+      ...(options.allowedGlobs ? { allowedGlobs: options.allowedGlobs } : {}),
+    });
+  } catch (err) {
+    return { ok: false, reason: messageOf(err) };
+  }
+
+  const notes: string[] = [];
+  if (worktree.copiedFiles.length > 0) {
+    notes.push(`carried over ${describeIgnored(worktree.copiedFiles, worktree.copiedRules)} not tracked by git`);
+  }
+  if (worktree.oversizedFiles.length > 0) {
+    notes.push(
+      `skipped ${describeIgnored(worktree.oversizedFiles, worktree.oversizedRules)} — too large to carry over automatically, which may make a check fail for a reason unrelated to this upgrade`,
+    );
+  }
+  if (worktree.skippedSecrets.length > 0) {
+    notes.push(
+      `never copied ${describeIgnored(worktree.skippedSecrets, worktree.skippedSecretRules)} — ${worktree.skippedSecrets.length === 1 ? 'it looked' : 'they looked'} like credentials, which may make a check fail for a reason unrelated to this upgrade; see \`verify.generatedSourceGlobs\` if the project genuinely needs ${worktree.skippedSecrets.length === 1 ? 'it' : 'one of them'}`,
+    );
+  }
+
+  /** Anything that gives up after the worktree exists has to take it away again. */
+  const abandon = async (reason: string): Promise<Preparation> => {
+    await worktree.dispose();
+    return { ok: false, reason };
+  };
+
+  const manager = packageManagerById(packageManager);
+
+  // Detected in the worktree rather than in the developer's checkout, because
+  // that is where they will run. Reading the open tree would offer a script
+  // that only exists in someone's unsaved edits, and miss one they have just
+  // deleted without committing.
+  const wanted = (await availableChecks(worktree.path, dir, options.fs ?? nodeWorkspaceFs(), packageManager)).filter(
+    (check) => kinds.includes(check.kind),
+  );
+  if (wanted.length === 0) {
+    return abandon('This project declares no typecheck or build that Drift could run against the upgrade.');
+  }
+
+  // A worktree is the commit and nothing else: no `node_modules`, no
+  // virtualenv. Without this the very first typecheck fails on every import
+  // in the project and reports the whole repository as broken by an upgrade
+  // that has not even been applied yet.
+  if (manager?.install) {
+    hooks.report(
+      `Installing ${project}'s dependencies`,
+      `\`${manager.install.command} ${manager.install.args.join(' ')}\``,
+    );
+    const restored = await exec(manager.install.command, manager.install.args, {
+      cwd: dir ? `${worktree.path}/${dir}` : worktree.path,
+      env,
+      timeoutMs: options.timeoutMs ?? DEFAULT_INSTALL_TIMEOUT_MS,
+      onOutput: hooks.output,
+    });
+    if (restored.code !== 0) {
+      const detail = (restored.stderr || restored.stdout).trim().split('\n').slice(-3).join(' ');
+      return abandon(
+        `\`${manager.install.command} ${manager.install.args.join(' ')}\` failed in a clean checkout, so there was nothing to test the upgrade against. ${detail}`.trim(),
+      );
+    }
+  }
+
+  if (options.token?.isCancellationRequested) return abandon('Cancelled before this upgrade could be tested.');
+
+  // What is already red before Drift touches anything. Without this, a
+  // repository with one pre-existing type error would have that error
+  // attributed to every dependency in it.
+  hooks.report(`Checking ${project} as it is`, `${wanted.map((check) => check.label).join(', ')}`);
+  const baseline = await runChecks({
+    root: worktree.path,
+    dir,
+    checks: wanted,
+    env,
+    exec,
+    // Named per check rather than left as one undifferentiated phase: a
+    // typecheck, a build and a test suite are different waits with different
+    // reasons to be slow, and "Checking" covering all three is the reason
+    // this looked stuck.
+    onProgress: (check) => hooks.report(`Checking ${project} as it is`, `\`${check.label}\``),
+    onOutput: (_check, chunk) => hooks.output(chunk),
+    ...(options.token ? { token: options.token } : {}),
+    ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
+  });
+
+  const usable = wanted.filter((check) => baseline.some((o) => o.label === check.label && o.status === 'passed'));
+  if (usable.length === 0) return abandon(describeUnusableBaseline(baseline));
+
+  return { ok: true, worktree, usable, manager, notes };
+}
+
+/**
+ * A checkout being prepared ahead of the packages that will need it.
+ *
+ * `take` hands over the preparation for one directory, waiting on it if it is
+ * still running. Each is handed out exactly once — a second `take` for the
+ * same directory gets a fresh preparation, since the first caller now owns
+ * that worktree and will dispose of it.
+ */
+export interface ProbeWarmup {
+  take(dir: string, packageManager: PackageManagerId): Promise<Preparation> | undefined;
+  /** Throw away anything prepared that nobody ever took. Never throws. */
+  dispose(): Promise<void>;
+}
+
+/**
+ * Start preparing test checkouts now, for a probe that will happen later.
+ *
+ * This is the single largest thing standing between a developer and a scan
+ * result. Preparation is a `git worktree add`, a full dependency install, and
+ * a baseline typecheck/build/test — minutes of disk and CPU — and it depends
+ * on nothing the scan learns from the network. The analysis it used to wait
+ * behind is the opposite: registry lookups, changelog fetches, type-declaration
+ * downloads, all latency and no local work. Running them at the same time
+ * costs nothing but a little memory and takes the *sum* of the two phases down
+ * to roughly the longer of them.
+ *
+ * Every failure is captured rather than thrown, so a warmup that could not
+ * prepare anything simply produces the same `skipped` verdict the probe would
+ * have produced on its own.
+ */
+export function warmProbe(
+  options: ProbeOptions,
+  dirs: readonly { dir: string; packageManager: PackageManagerId }[],
+  onProgress?: (progress: ProbeProgress) => void,
+): ProbeWarmup {
+  const pending = new Map<string, { packageManager: PackageManagerId; prepared: Promise<Preparation> }>();
+  const hooks = {
+    report: (phase: string, detail: string) => onProgress?.({ phase, detail, done: 0, total: 0 }),
+    output: (chunk: string) => onProgress?.({ phase: '', detail: '', done: 0, total: 0, output: chunk }),
+  };
+
+  // Bounded for the same reason `probeUpgrades` bounds its groups: git worktree
+  // operations briefly lock shared repository state, and a monorepo with twenty
+  // members should not start twenty installs at once on one machine.
+  const limit = Math.max(1, options.concurrency ?? DEFAULT_GROUP_CONCURRENCY);
+  let active = 0;
+  const queue: (() => void)[] = [];
+
+  const slot = async <T>(work: () => Promise<T>): Promise<T> => {
+    if (active >= limit) await new Promise<void>((resolve) => queue.push(resolve));
+    active += 1;
+    try {
+      return await work();
+    } finally {
+      active -= 1;
+      queue.shift()?.();
+    }
+  };
+
+  for (const { dir, packageManager } of dirs) {
+    if (pending.has(dir)) continue;
+    pending.set(dir, {
+      packageManager,
+      prepared: slot(() => prepareGroup(options, dir, packageManager, hooks)).catch((err) => ({
+        ok: false as const,
+        reason: messageOf(err),
+      })),
+    });
+  }
+
+  return {
+    take(dir, packageManager) {
+      const entry = pending.get(dir);
+      if (!entry) return undefined;
+      // The install and the baseline are specific to the manager they were run
+      // with — a checkout prepared with `npm install` proves nothing about a
+      // group that pnpm owns. Mismatches should not happen (both come from the
+      // same manifest scan) but the cost of being wrong is a verdict measured
+      // against the wrong toolchain, so the caller prepares its own instead.
+      if (entry.packageManager !== packageManager) return undefined;
+      // Handed over, not shared: the caller disposes of the worktree when it
+      // is done, so a second taker would be given one that is about to vanish.
+      pending.delete(dir);
+      return entry.prepared;
+    },
+    async dispose() {
+      const abandoned = [...pending.values()];
+      pending.clear();
+      await Promise.all(
+        abandoned.map(({ prepared }) =>
+          prepared.then(
+            (result) => (result.ok ? result.worktree.dispose() : undefined),
+            () => undefined,
+          ),
+        ),
+      );
+    },
+  };
+}
+
+/** How a project is named in progress lines: its member directory, or the repository's own folder. */
+function projectLabel(root: string, dir: string): string {
+  return dir || basename(root) || 'the repository';
 }
 
 /** Everything a pass over the prepared worktree needs, gathered once. */
@@ -416,7 +606,10 @@ async function probeTogether(
     }
   }
 
-  const outcomes = installed && !pass.token?.isCancellationRequested ? await runPass(pass) : [];
+  const outcomes =
+    installed && !pass.token?.isCancellationRequested
+      ? await runPass(pass, hooks, `Testing ${targets.length} upgrades together`)
+      : [];
   const green = outcomes.length > 0 && outcomes.every((outcome) => outcome.status === 'passed');
 
   const resetOk = await resetWorktree(pass);
@@ -448,14 +641,23 @@ async function probeTogether(
   return false;
 }
 
-/** The group's usable checks, run against whatever is installed right now. */
-function runPass(pass: GroupPass): Promise<CheckOutcome[]> {
+/**
+ * The group's usable checks, run against whatever is installed right now.
+ *
+ * `phase` is what the caller is already showing, so each check can say which
+ * of them is running without inventing a competing label — "Testing react@19.2
+ * — `npm run build`" rather than a phase that sits unchanged for the length of
+ * a typecheck, a build and a suite.
+ */
+function runPass(pass: GroupPass, hooks?: GroupHooks, phase?: string): Promise<CheckOutcome[]> {
   return runChecks({
     root: pass.root,
     dir: pass.dir,
     checks: pass.usable,
     env: pass.env,
     exec: pass.exec,
+    ...(hooks && phase ? { onProgress: (check: LocalCheck) => hooks.report(phase, `\`${check.label}\``) } : {}),
+    ...(hooks ? { onOutput: (_check: LocalCheck, chunk: string) => hooks.output(chunk) } : {}),
     ...(pass.token ? { token: pass.token } : {}),
     ...(pass.timeoutMs ? { timeoutMs: pass.timeoutMs } : {}),
   });
@@ -779,6 +981,39 @@ function groupByManifest(targets: readonly ProbeTarget[]): Map<string, ProbeTarg
   }
   return groups;
 }
+
+/**
+ * Gitignored files, named the way the reader can act on them.
+ *
+ * The file paths themselves are what a developer can open, check, and decide
+ * about — `backend/server.key` answers "which file?" outright, where the rule
+ * that matched it is one indirection away from the answer and, for a rule
+ * that is simply the path spelled again, exactly the same string with
+ * `.gitignore:6:` bolted on the front.
+ *
+ * The rule is still the better summary past a handful of files, because that
+ * is the point where the paths stop being a list and become a wall — a single
+ * `dist/` can match hundreds — and where "which rule do I change" is the
+ * question actually being asked.
+ */
+function describeIgnored(files: readonly string[], rules: readonly string[]): string {
+  const count = `${files.length} gitignored file${files.length === 1 ? '' : 's'}`;
+  if (files.length === 0) return count;
+  if (files.length <= NAMED_IGNORED_FILES) return `${count} (${files.join(', ')})`;
+
+  const named = files.slice(0, NAMED_IGNORED_FILES).join(', ');
+  const rest = rules.length > 0 ? `, matching: ${rules.join(', ')}` : '';
+  return `${count} (${named}, and ${files.length - NAMED_IGNORED_FILES} more${rest})`;
+}
+
+/**
+ * How many gitignored paths to name before falling back to the rules.
+ *
+ * Four fits on one line in the panel and covers the shape this message is
+ * usually about — a certificate, a key, a generated config — without letting
+ * one broad rule turn a progress line into a directory listing.
+ */
+const NAMED_IGNORED_FILES = 4;
 
 /** `''` for a root manifest, otherwise the member directory that owns it. */
 function memberDirOf(manifestPath: string): string {

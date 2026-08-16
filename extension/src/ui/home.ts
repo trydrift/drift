@@ -578,14 +578,15 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         return;
       case 'stop':
         if (!this.cancellable) {
-          this.session.notice(
-            'info',
-            'The dependency check runs to the end. Stopping half way would leave packages marked safe that nothing has looked at yet.',
-          );
+          this.session.notice('info', 'This step finishes before anything else can start.');
           return;
         }
         this.running?.cancel();
-        this.session.notice('info', 'Stopping…');
+        // A scan's slowest work is a package manager and a compiler in a test
+        // checkout, and neither dies the instant a token flips — saying so is
+        // the difference between a stop that looks ignored and one that is
+        // understood to be in progress.
+        this.session.notice('info', 'Stopping — finishing the command that is already running.');
         return;
       case 'signIn':
         await getGitHubSession({ createIfNone: true });
@@ -1242,8 +1243,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
             githubToken: await getRateLimitToken(),
             token,
             repoLabel,
-            onProgress: ({ phase, detail, done, total }) =>
-              step.progress(repoLabel ? `${repoLabel}: ${phase}` : phase, detail, done, total),
+            onProgress: ({ phase, detail, done, total, output }) => {
+              // Output belongs to the phase already showing, so it appends
+              // rather than replacing it — see `ScanProgress.output`.
+              if (output !== undefined) step.output(output);
+              else step.progress(repoLabel ? `${repoLabel}: ${phase}` : phase, detail, done, total);
+            },
             onCandidate: (candidate) => {
               this.candidates.set(candidate.id, candidate);
               // Replaced, never appended twice. Each candidate is now published
@@ -1281,11 +1286,32 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       }
 
       const ranked = found.slice().sort(bySeverity);
-      step.done(
-        `Checked ${checked - unlooked.length} package${checked - unlooked.length === 1 ? '' : 's'} · ` +
-          `${ranked.filter((c) => severityOf(c) === 'affected' || severityOf(c) === 'verification-failed').length} need attention` +
-          (unlooked.length > 0 ? ` · ${unlooked.length} could not be checked` : ''),
-      );
+      const stopped = token.isCancellationRequested;
+
+      if (stopped) {
+        // A stopped scan is a partial answer, and the danger has never been
+        // that it is partial — it is that every surface below reads a partial
+        // answer as a complete one and calls the packages nothing looked at
+        // safe. So the result is kept and labelled rather than discarded:
+        // whoever pressed stop wanted what had been found so far, and saying
+        // "checked 12 of 47, the rest were not looked at" gives them that
+        // without ever claiming the other 35 are fine.
+        step.fail(
+          `Stopped after ${found.length} of ${checked} package${checked === 1 ? '' : 's'} · ` +
+            `${checked - found.length} not checked`,
+        );
+        this.session.notice(
+          'warn',
+          `Scan stopped. ${found.length} of ${checked} dependenc${found.length === 1 ? 'y was' : 'ies were'} checked; ` +
+            `the rest were not looked at, which is not the same as being safe. Run \`/scan\` again to finish.`,
+        );
+      } else {
+        step.done(
+          `Checked ${checked - unlooked.length} package${checked - unlooked.length === 1 ? '' : 's'} · ` +
+            `${ranked.filter((c) => severityOf(c) === 'affected' || severityOf(c) === 'verification-failed').length} need attention` +
+            (unlooked.length > 0 ? ` · ${unlooked.length} could not be checked` : ''),
+        );
+      }
 
       // Named, with the reason, rather than reduced to a count. "Drift could
       // not reach PyPI for boto3" is something a developer can act on; "4
@@ -1318,22 +1344,30 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         this.session.updatePackages(
           // Never "every one of your N dependencies is already at the newest
           // version" when some of them were never looked at. The sentence is
-          // only true about the ones a source actually answered for.
-          unlooked.length > 0
-            ? `${upToDate} of your ${checked} direct dependencies ${upToDate === 1 ? 'is' : 'are'} already at the newest version. ${unlooked.length} could not be checked at all.`
-            : `Every one of your ${checked} direct dependenc${checked === 1 ? 'y is' : 'ies are'} already at the newest version.`,
+          // only true about the ones a source actually answered for — and a
+          // stopped scan is the largest version of exactly that gap.
+          stopped
+            ? `Scan stopped before any upgrade was found. Nothing here says your dependencies are up to date — most of them were never checked.`
+            : unlooked.length > 0
+              ? `${upToDate} of your ${checked} direct dependencies ${upToDate === 1 ? 'is' : 'are'} already at the newest version. ${unlooked.length} could not be checked at all.`
+              : `Every one of your ${checked} direct dependenc${checked === 1 ? 'y is' : 'ies are'} already at the newest version.`,
           [],
         );
-        this.session.setTitle(scanTitle([], checked, unlooked.length));
+        if (!stopped) this.session.setTitle(scanTitle([], checked, unlooked.length));
         return;
       }
 
-      this.session.updatePackages(headline(ranked, checked, unlooked.length), ranked.map((c) => c.id));
+      this.session.updatePackages(
+        stopped
+          ? `${ranked.length} upgrade${ranked.length === 1 ? '' : 's'} found before the scan was stopped — ${checked - found.length} of your ${checked} dependencies were never checked.`
+          : headline(ranked, checked, unlooked.length),
+        ranked.map((c) => c.id),
+      );
       this.state.setCandidates(ranked);
       // Named now rather than from the `/scan` that started it: every scan is
       // started the same way, and only the result tells two of them apart in
       // the history list.
-      this.session.setTitle(scanTitle(ranked, checked, unlooked.length));
+      if (!stopped) this.session.setTitle(scanTitle(ranked, checked, unlooked.length));
 
       const affected = ranked.filter((c) => severityOf(c) === 'affected');
       if (affected.length > 0 && !options.quiet) {
@@ -1341,7 +1375,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           `I can hand ${affected.length === 1 ? 'this' : 'these'} to **${this.agentLabel()}** — say \`/fix\`, or use the button above.`,
         );
       }
-    }, { cancellable: false });
+    });
   }
 
   private async analyzeRecent(): Promise<void> {
@@ -4674,14 +4708,50 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   }
 
   private async openFile(file: string, line: number): Promise<void> {
-    const ctx = await this.context();
-    if (!ctx) return;
     const target = Math.max(0, (line || 1) - 1);
-    await vscode.window.showTextDocument(vscode.Uri.file(join(ctx.root, file)), {
+    const uri = await this.resolveWorkspaceFile(file);
+    if (!uri) {
+      // A path that named something Drift read but that is not in any open
+      // root — a file inside a throwaway test checkout, most often. Saying so
+      // beats a click that silently does nothing.
+      this.session.notice('info', `\`${file}\` is not in any folder open in this window.`);
+      return;
+    }
+
+    await vscode.window.showTextDocument(uri, {
       selection: new vscode.Range(target, 0, target, 0),
       preview: true,
       viewColumn: vscode.ViewColumn.One,
     });
+  }
+
+  /**
+   * Find a repo-relative path in whichever open root actually holds it.
+   *
+   * Progress lines come from every root a multi-root scan covered, so
+   * resolving against the active one alone would open the wrong file — or,
+   * more often, none — for every root but the first. Existence is checked
+   * rather than assumed for the same reason: a link that opens an editor onto
+   * a nonexistent file is worse than one that explains itself.
+   */
+  private async resolveWorkspaceFile(file: string): Promise<vscode.Uri | null> {
+    const active = this.state.activeRoot?.path;
+    const roots = [
+      ...(active ? [active] : []),
+      ...this.state.roots.map((root) => root.path).filter((path) => path !== active),
+      ...(vscode.workspace.workspaceFolders ?? []).map((folder) => folder.uri.fsPath),
+    ];
+
+    for (const root of [...new Set(roots)]) {
+      const uri = vscode.Uri.file(join(root, file));
+      try {
+        await vscode.workspace.fs.stat(uri);
+        return uri;
+      } catch {
+        // Not in this root; try the next.
+      }
+    }
+    return null;
   }
 
   private async refreshIdentity(): Promise<void> {

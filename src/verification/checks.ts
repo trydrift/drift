@@ -108,6 +108,14 @@ export interface RunChecksOptions {
   onProgress?: (check: LocalCheck, index: number, total: number) => void;
   /** Called as each check finishes, so a caller can report it while the rest run. */
   onResult?: (outcome: CheckOutcome, index: number, total: number) => void;
+  /**
+   * Each chunk the running check prints, as it prints it.
+   *
+   * A typecheck and a test suite are the two slowest things Drift does, and
+   * from the outside they are indistinguishable from a hang. The command was
+   * saying which file it was on the whole time.
+   */
+  onOutput?: (check: LocalCheck, chunk: string) => void;
   timeoutMs?: number;
   env?: NodeJS.ProcessEnv;
   exec?: Exec;
@@ -159,6 +167,7 @@ export async function runChecks(options: RunChecksOptions): Promise<CheckOutcome
       cwd,
       env,
       timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      ...(options.onOutput ? { onOutput: (chunk: string) => options.onOutput!(check, chunk) } : {}),
     });
     const durationMs = Date.now() - started;
 

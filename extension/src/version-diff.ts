@@ -76,6 +76,8 @@ const SNIPPET_SCHEME = 'drift-change-diff';
 const CONTEXT_LINES = 12;
 /** Files read while looking for the symbol, before giving up and showing the declarations alone. */
 const MAX_SEARCHED_FILES = 400;
+/** Files read at once while searching. See the loop in `locateInSource`. */
+const LOCATE_BATCH = 16;
 
 const snippets = new Map<string, string>();
 let snippetProviderRegistered = false;
@@ -95,13 +97,21 @@ export async function openChangeDiff(
   ensureSnippetProvider();
 
   const extension = extensionForLanguage(request.language ?? 'typescript');
+  // A notification, not a window-bar message, and cancellable. Widening the
+  // declarations with real surrounding source means downloading and extracting
+  // two published versions of the package, which on a large one is tens of
+  // seconds — and the status-bar spinner this used to show was invisible
+  // enough that pressing "View diff" read as a button that did nothing at all.
+  // Cancelling falls back to the declarations, which were always a complete
+  // answer to the question the pair is asking.
   const located = request.source
     ? await vscode.window.withProgress(
         {
-          location: vscode.ProgressLocation.Window,
-          title: `Drift: locating ${request.title}…`,
+          location: vscode.ProgressLocation.Notification,
+          title: `Drift: fetching ${request.source.name} ${request.source.from} and ${request.source.to} to show ${request.title} in context…`,
+          cancellable: true,
         },
-        () => locateInSource(request, output),
+        (_progress, token) => locateInSource(request, output, token),
       )
     : null;
 
@@ -139,6 +149,7 @@ function snippetUri(side: 'before' | 'after', name: string, content: string): vs
 async function locateInSource(
   request: ChangeDiffRequest,
   output?: vscode.LogOutputChannel,
+  token?: vscode.CancellationToken,
 ): Promise<{ before: string; after: string; path: string } | null> {
   const source = request.source;
   const symbol = request.symbol?.trim();
@@ -148,6 +159,7 @@ async function locateInSource(
     const env = await envWithShellPath();
     const exec: Exec = (command, args, options) => execCommand(command, args, { ...options, env });
     const result = await fetchVersionDiff({ ...source, exec });
+    if (token?.isCancellationRequested) return null;
     if (!result.available) {
       output?.info(`Drift: showing the declaration alone for ${request.title}: ${result.reason}`);
       return null;
@@ -164,26 +176,41 @@ async function locateInSource(
 
     const word = symbolPattern(symbol);
 
-    for (const file of candidates) {
-      const [beforeText, afterText] = await Promise.all([
-        readFile(join(result.beforeDir, file.path), 'utf8').catch(() => null),
-        readFile(join(result.afterDir, file.path), 'utf8').catch(() => null),
-      ]);
-      if (beforeText === null || afterText === null) continue;
-      if (!word.test(beforeText) && !word.test(afterText)) continue;
+    // Read in batches rather than one file at a time. The files are already
+    // ordered best-guess-first, so the batch is kept small: the common case is
+    // a hit in the first few, and reading four hundred files to find one that
+    // was going to be second is its own kind of slow.
+    for (let i = 0; i < candidates.length; i += LOCATE_BATCH) {
+      if (token?.isCancellationRequested) return null;
 
-      const hunk = diffHunks(beforeText, afterText).find(
-        (candidate) =>
-          candidate.baselineLines.some((line) => word.test(line)) ||
-          candidate.modifiedLines.some((line) => word.test(line)),
+      const batch = candidates.slice(i, i + LOCATE_BATCH);
+      const texts = await Promise.all(
+        batch.map(async (file) => ({
+          file,
+          before: await readFile(join(result.beforeDir, file.path), 'utf8').catch(() => null),
+          after: await readFile(join(result.afterDir, file.path), 'utf8').catch(() => null),
+        })),
       );
-      if (!hunk) continue;
 
-      return {
-        before: slice(beforeText, hunk.baselineStart, hunk.baselineEnd),
-        after: slice(afterText, hunk.start, hunk.end),
-        path: file.path,
-      };
+      // Scanned in the batch's own order, not completion order, so the answer
+      // does not depend on which read happened to finish first.
+      for (const { file, before: beforeText, after: afterText } of texts) {
+        if (beforeText === null || afterText === null) continue;
+        if (!word.test(beforeText) && !word.test(afterText)) continue;
+
+        const hunk = diffHunks(beforeText, afterText).find(
+          (candidate) =>
+            candidate.baselineLines.some((line) => word.test(line)) ||
+            candidate.modifiedLines.some((line) => word.test(line)),
+        );
+        if (!hunk) continue;
+
+        return {
+          before: slice(beforeText, hunk.baselineStart, hunk.baselineEnd),
+          after: slice(afterText, hunk.start, hunk.end),
+          path: file.path,
+        };
+      }
     }
 
     output?.info(

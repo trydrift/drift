@@ -320,6 +320,35 @@ describe('a signature that only changed how it is spelled', () => {
     assert.equal(changes.length, 1);
     assert.equal(changes[0]?.kind, 'signature-changed');
   });
+
+  test('a new optional parameter and a re-spelled return type are dismissed together, not just apart', () => {
+    // @sveltejs/kit. Each half of this is already known to be harmless —
+    // growing `f()` into `f(config?)` relaxes callers, and printing the same
+    // type as `Plugin[]` instead of `import("vite").Plugin[]` is a spelling
+    // change — but each dismissal used to be its own independent test against
+    // the raw text, so a release that did both passed through all of them and
+    // reported a breaking change against `sveltekit()`, a call that still
+    // compiles unchanged. The qualifier is normalized away first now, and
+    // every other test runs on the result.
+    const before = fn('sveltekit', 'export function sveltekit(): Promise<import("vite").Plugin[]>;');
+    const after = fn(
+      'sveltekit',
+      'export function sveltekit(config?: KitConfig & Omit<Options, "onwarn"> & Pick<SvelteConfig, "vitePlugin">): Promise<Plugin[]>;',
+    );
+
+    assert.deepEqual(diffSurfaces(before, after), []);
+  });
+
+  test('a parameter that narrows is still reported when the return type was only re-spelled', () => {
+    // The guard for the case above: normalizing the qualifier must not also
+    // normalize away a parameter change a caller really can break on.
+    const before = fn('parse', 'export function parse(input: string): import("./ast").Node;');
+    const after = fn('parse', 'export function parse(input: number): Node;');
+
+    const changes = diffSurfaces(before, after);
+    assert.equal(changes.length, 1);
+    assert.equal(changes[0]?.kind, 'signature-changed');
+  });
 });
 
 describe('choosing which releases to read', () => {

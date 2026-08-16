@@ -25,6 +25,19 @@ export interface ExecOptions {
   timeoutMs?: number;
   env?: NodeJS.ProcessEnv;
   maxBuffer?: number;
+  /**
+   * Called with each chunk the command prints, as it prints it.
+   *
+   * The buffered `stdout`/`stderr` on the result are still the record; this is
+   * for surfaces that have someone watching. A `npm install` or a `tsc -b` on a
+   * large repository is minutes of a developer staring at a spinner that cannot
+   * distinguish "compiling" from "hung", and the tool was printing the
+   * difference the whole time — there was simply nowhere for it to go.
+   *
+   * Never trusted to arrive on line boundaries: a chunk is whatever the pipe
+   * delivered, so a consumer that wants lines has to buffer them itself.
+   */
+  onOutput?: (chunk: string) => void;
 }
 
 export type Exec = (
@@ -64,6 +77,23 @@ export const execCommand: Exec = (command, args, options = {}) =>
         });
       },
     );
+    // Reading the pipes in addition to `execFile`'s own buffering, not instead
+    // of it: the callback above still receives the complete output, and this
+    // only mirrors it somewhere a progress display can use while the command
+    // is still running.
+    if (options.onOutput) {
+      const forward = (chunk: unknown) => {
+        try {
+          options.onOutput!(String(chunk));
+        } catch {
+          // A progress renderer that throws must not take down the command it
+          // is reporting on.
+        }
+      };
+      child.stdout?.on('data', forward);
+      child.stderr?.on('data', forward);
+    }
+
     // Nothing here ever has input to give an interactive prompt. Left open,
     // an unattended pipe leaves a tool that stops to ask something (a package
     // manager's "already installed, overwrite?") blocked forever instead of

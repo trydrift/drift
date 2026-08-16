@@ -44,7 +44,14 @@ import { buildPlan } from '../plan/index.js';
 import { dependencyEcosystemKey } from '../util/id.js';
 import { compareSeverity, describeSeverity, severityOf, type UpgradeSeverity } from './severity.js';
 import { lookupVersions, versionSourceLabel } from './versions.js';
-import { probeUpgrades, scrubEnv, type ProbeTarget, type UpgradeVerification } from '../verification/upgrade-probe.js';
+import {
+  probeUpgrades,
+  scrubEnv,
+  warmProbe,
+  type ProbeTarget,
+  type ProbeWarmup,
+  type UpgradeVerification,
+} from '../verification/upgrade-probe.js';
 import type { CheckKind } from '../detect/checks.js';
 import { applyVerification, describeVerification } from './verification.js';
 
@@ -237,6 +244,14 @@ export interface ScanProgress {
   done: number;
   /** Packages to check in total, once known. */
   total: number;
+  /**
+   * A chunk the command named by the current phase just printed.
+   *
+   * Present *instead of* a phase change: `phase` and `detail` are empty and a
+   * consumer appends this to whatever it is already showing. See
+   * {@link ProbeProgress.output}.
+   */
+  output?: string;
 }
 
 /** How widely to look. */
@@ -558,21 +573,69 @@ export async function scanUpgrades(args: {
   const deps = breadth.maxPackages > 0 ? all.slice(0, breadth.maxPackages) : all;
 
   report('Indexing your code', 'Walking source files', 0, deps.length);
+  // Started, not awaited. Walking and indexing a repository is disk- and
+  // CPU-bound and depends on nothing the registry lookups below are about to
+  // learn; those are pure latency. Awaiting here made every scan pay for the
+  // walk before the first HTTP request went out, which on a large checkout is
+  // the difference between "the scan has started" and "the scan is thinking".
+  // The index is only needed by `localize`, which is the last thing each
+  // package does, so it is awaited there instead.
+  //
   // Repository-wide on purpose: an import that crosses a package boundary is a
   // real edge and the index needs it. Only the impact sites are scoped.
-  const files = await walkSourceFiles(root, { members: dirs });
-  const index = buildIndex(files);
-  report(
-    'Indexing your code',
-    `${files.length} file${files.length === 1 ? '' : 's'} indexed · ${deps.length} direct dependenc${deps.length === 1 ? 'y' : 'ies'} to check`,
-    0,
-    deps.length,
-  );
+  const indexing = walkSourceFiles(root, { members: dirs }).then((files) => {
+    report(
+      'Indexing your code',
+      `${files.length} file${files.length === 1 ? '' : 's'} indexed · ${deps.length} direct dependenc${deps.length === 1 ? 'y' : 'ies'} to check`,
+      0,
+      deps.length,
+    );
+    return { files, index: buildIndex(files) };
+  });
+  // Nothing here reads a rejection until `analyzeUpgrade` awaits it, and an
+  // unhandled rejection in the meantime would take down the process.
+  indexing.catch(() => undefined);
 
   let upToDate = 0;
   let done = 0;
   const candidates: UpgradeCandidate[] = [];
   const unchecked: UncheckedDependency[] = [];
+
+  // Start preparing the test checkouts *now*, while the analysis below is
+  // waiting on registries and changelogs.
+  //
+  // Verification needs a worktree with the project's dependencies installed
+  // and its baseline checks measured, and none of that depends on anything the
+  // analysis is about to learn — only on which manifests exist, which is
+  // already known. Leaving it until afterwards meant a scan cost the network
+  // phase *plus* an install and a full typecheck/build/test, strictly one after
+  // the other, and the install is usually the larger half. Overlapping them
+  // costs a little memory and takes the total down to roughly the longer of the
+  // two. The probe still prepares its own checkout for any directory this did
+  // not cover, so nothing here changes what is measured — only when.
+  const warm =
+    verify.enabled && !token?.isCancellationRequested
+      ? warmProbe(
+          {
+            root,
+            targets: [],
+            kinds: verify.checks,
+            env,
+            logger,
+            timeoutMs: verify.timeoutMs,
+            ...(verify.generatedSourceGlobs ? { allowedGlobs: verify.generatedSourceGlobs } : {}),
+            ...(token ? { token } : {}),
+          },
+          [...new Map(targets.map((target) => [target.dir, target])).values()].map((target) => ({
+            dir: target.dir,
+            packageManager: target.manager.id,
+          })),
+          (progress) =>
+            progress.output !== undefined
+              ? onProgress?.({ phase: '', detail: '', done: 0, total: 0, output: progress.output })
+              : report(progress.phase, progress.detail),
+        )
+      : undefined;
 
   // Checking a package is almost entirely waiting: a registry request, a
   // changelog fetch, a release-notes call, a type-declaration download. Doing
@@ -636,8 +699,7 @@ export async function scanUpgrades(args: {
       config,
       githubToken,
       root,
-      files,
-      index,
+      indexing,
       logger,
       env,
       maxSites: breadth.maxSites,
@@ -668,19 +730,61 @@ export async function scanUpgrades(args: {
     );
   });
 
-  if (verify.enabled && candidates.length > 0 && !token?.isCancellationRequested) {
-    await verifyCandidates({
-      root,
-      candidates,
-      checks: verify.checks,
-      timeoutMs: verify.timeoutMs,
-      generatedSourceGlobs: verify.generatedSourceGlobs,
-      env,
-      logger,
-      ...(token ? { token } : {}),
-      onProgress: (progress) => report(progress.phase, progress.detail, progress.done, progress.total),
-      onCandidate,
-    });
+  try {
+    if (verify.enabled && candidates.length > 0 && !token?.isCancellationRequested) {
+      await verifyCandidates({
+        root,
+        candidates,
+        checks: verify.checks,
+        timeoutMs: verify.timeoutMs,
+        generatedSourceGlobs: verify.generatedSourceGlobs,
+        env,
+        logger,
+        ...(warm ? { warm } : {}),
+        ...(token ? { token } : {}),
+        // A chunk of command output is not a phase, so it bypasses `report` —
+        // which logs and re-times every call as though a new stage had begun.
+        onProgress: (progress) =>
+          progress.output !== undefined
+            ? onProgress?.({ phase: '', detail: '', done: progress.done, total: progress.total, output: progress.output })
+            : report(progress.phase, progress.detail, progress.done, progress.total),
+        onCandidate,
+      });
+    }
+  } finally {
+    // Every candidate released as `checking` has to be released again, whatever
+    // happened in between.
+    //
+    // `checking` is a promise that a verdict is coming, and the row renders it
+    // as a spinner. Verification is skipped outright when the scan is cancelled
+    // or when it throws, and both used to leave every one of those rows turning
+    // for the rest of the session — a scan that looked permanently stuck on
+    // packages it had in fact finished analysing. Cancellation is no longer a
+    // rare path (the stop button reaches it directly), so this settles the
+    // difference explicitly and says why rather than leaving a spinner to imply
+    // work that is not happening.
+    if (verify.enabled) {
+      for (const [at, candidate] of candidates.entries()) {
+        if (candidate.verification) continue;
+        const settled = applyVerification(candidate, {
+          status: 'skipped',
+          reason: token?.isCancellationRequested
+            ? `The scan was stopped before ${candidate.name} ${candidate.selected} could be installed and checked, so the findings below are predictions.`
+            : `${candidate.name} ${candidate.selected} was not installed and checked, so the findings below are predictions.`,
+          checks: [],
+          failedFiles: [],
+        });
+        candidates[at] = settled;
+        onCandidate?.(settled);
+      }
+    }
+
+    // Directories that turned out to have no upgrades to test, and everything
+    // prepared for a scan that was cancelled or threw. A warmed checkout
+    // nobody took is a `git worktree` and an installed `node_modules` sitting
+    // on disk, so this runs on every path out — including the ones where
+    // verification never ran at all.
+    await warm?.dispose();
   }
 
   return {
@@ -717,6 +821,8 @@ async function verifyCandidates(args: {
   env: NodeJS.ProcessEnv;
   logger: Logger;
   token?: { isCancellationRequested: boolean };
+  /** Checkouts the scan started preparing while it was busy on the network. */
+  warm?: ProbeWarmup;
   onProgress?: (progress: ScanProgress) => void;
   onCandidate?: (candidate: UpgradeCandidate) => void;
 }): Promise<void> {
@@ -767,6 +873,7 @@ async function verifyCandidates(args: {
     logger: args.logger,
     timeoutMs: args.timeoutMs,
     ...(args.generatedSourceGlobs ? { allowedGlobs: args.generatedSourceGlobs } : {}),
+    ...(args.warm ? { warm: args.warm } : {}),
     ...(args.token ? { token: args.token } : {}),
     onProgress: (progress) =>
       args.onProgress?.({
@@ -774,6 +881,7 @@ async function verifyCandidates(args: {
         detail: progress.detail,
         done: progress.done,
         total: progress.total,
+        ...(progress.output !== undefined ? { output: progress.output } : {}),
       }),
     onVerified: (target, verification) => {
       const candidate = byId.get(target.id);
@@ -872,8 +980,11 @@ export async function reanalyzeUpgrade(args: {
   }
 
   args.onProgress?.('Indexing your code', `Re-checking ${args.candidate.name}@${version}`);
-  const files = await walkSourceFiles(args.root);
-  const index = buildIndex(files);
+  // Started rather than awaited, for the same reason the scan does it: the
+  // walk overlaps the evidence gathering `analyzeUpgrade` is about to do, and
+  // is awaited inside it at the one point that needs it.
+  const indexing = walkSourceFiles(args.root).then((files) => ({ files, index: buildIndex(files) }));
+  indexing.catch(() => undefined);
 
   return analyzeUpgrade({
     dep,
@@ -890,8 +1001,7 @@ export async function reanalyzeUpgrade(args: {
     config: args.config,
     githubToken: args.githubToken,
     root: args.root,
-    files,
-    index,
+    indexing,
     logger: args.logger,
     env: args.env ?? process.env,
     onProgress: args.onProgress,
@@ -1058,8 +1168,17 @@ async function analyzeUpgrade(args: {
   config: DriftConfig;
   githubToken?: string;
   root: string;
-  files: Awaited<ReturnType<typeof walkSourceFiles>>;
-  index: ReturnType<typeof buildIndex>;
+  /**
+   * The repository walk and its index, still in flight.
+   *
+   * A promise rather than the finished thing so the walk overlaps every
+   * registry round trip in the scan — see where it is started. Awaited once,
+   * immediately before the only step that needs it.
+   */
+  indexing: Promise<{
+    files: Awaited<ReturnType<typeof walkSourceFiles>>;
+    index: ReturnType<typeof buildIndex>;
+  }>;
   logger: Logger;
   env: NodeJS.ProcessEnv;
   maxSites?: number;
@@ -1170,7 +1289,8 @@ async function analyzeUpgrade(args: {
       breakingChanges.length > 0
         ? await resolveModuleMaps([change], { logger: args.logger })
         : undefined;
-    const impactSites = localize(breakingChanges, [change], args.index, args.files, {
+    const { files, index } = await args.indexing;
+    const impactSites = localize(breakingChanges, [change], index, files, {
       logger: args.logger,
       maxSitesPerChange: args.maxSites ?? 40,
       member: args.member,

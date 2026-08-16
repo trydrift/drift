@@ -1447,8 +1447,20 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
       }
     }
 
+    // Import qualifiers are normalized away *first*, and every later test runs
+    // on the result. Applying it as one more independent escape hatch — which
+    // is what it used to be — cannot see a change that is harmless in two ways
+    // at once, and that combination is the ordinary shape of a minor release
+    // rather than an exotic one. `@sveltejs/kit` grew `sveltekit()` into
+    // `sveltekit(config?)` and, in the same release, started spelling its own
+    // return type `Promise<Plugin[]>` instead of `Promise<import("vite").
+    // Plugin[]>`. Each half is dismissed on its own; together they passed
+    // through all three tests and reported a breaking change against a call
+    // that is still `sveltekit()` and still compiles.
+    const [oldSignature, newSignature] = comparableSignatures(oldEntry.signature, newEntry.signature);
+
     if (
-      oldEntry.signature !== newEntry.signature &&
+      oldSignature !== newSignature &&
       oldEntry.kind !== 'interface' &&
       oldEntry.kind !== 'class' &&
       // Renaming a type parameter changes the text of a declaration without
@@ -1457,27 +1469,23 @@ export function diffSurfaces(before: SurfaceApi, after: SurfaceApi): SurfaceChan
       // it has "changed signature" — dozens of findings, each pointing at
       // working code, none of them true. Two declarations that differ only in
       // what their type parameters are spelled are the same declaration.
-      !alphaEquivalent(oldEntry.signature, newEntry.signature) &&
+      !alphaEquivalent(oldSignature, newSignature) &&
       // And a call site cannot break on an argument it never passes. Growing
       // `f()` into `f(options?)` is the most common shape of a minor release,
       // and reporting it sends a developer to read code that was already
       // correct. See `onlyRelaxesCallers`.
-      !onlyRelaxesCallers(oldEntry.signature, newEntry.signature) &&
-      // A type printed as `import("svelte/compiler").PreprocessorGroup` in one
-      // release and `PreprocessorGroup` in the next has not changed — the
-      // compiler just chose a different way to spell a reference to the exact
-      // same declaration, most often because the second release re-exports the
-      // name locally instead of pointing back through its dependency. See
-      // `dequalifyImports`.
-      !sameIgnoringImportQualifiers(oldEntry.signature, newEntry.signature)
+      !onlyRelaxesCallers(oldSignature, newSignature)
     ) {
       changes.push({
         kind: 'signature-changed',
         symbol: name,
         detail: `The signature of \`${name}\` changed${origin}.`,
+        // The signatures the *package* publishes, not the normalized pair used
+        // to decide. A reader comparing the panel against the `.d.ts` on disk
+        // must find the same text in both.
         before: oldEntry.signature,
         after: newEntry.signature,
-        ...(whatChanged(oldEntry.signature, newEntry.signature) ?? {}),
+        ...(whatChanged(oldSignature, newSignature) ?? {}),
       });
     }
   }
@@ -1604,8 +1612,13 @@ export function onlyRelaxesCallers(before: string, after: string): boolean {
 export function acceptsCallOfArity(before: string, after: string, arity: number): boolean {
   if (arity < 0) return false;
 
-  const olds = overloadChain(before).map(callSignature).filter((s): s is CallShape => s !== null);
-  const news = overloadChain(after).map(callSignature).filter((s): s is CallShape => s !== null);
+  // Normalized for the same reason `diffSurfaces` normalizes: the return types
+  // are compared below, and `Promise<import("vite").Plugin[]>` against
+  // `Promise<Plugin[]>` is a spelling difference that would otherwise leave
+  // every call site of an unchanged function reported.
+  const [left, right] = comparableSignatures(before, after);
+  const olds = overloadChain(left).map(callSignature).filter((s): s is CallShape => s !== null);
+  const news = overloadChain(right).map(callSignature).filter((s): s is CallShape => s !== null);
   if (olds.length === 0 || news.length === 0) return false;
 
   const accepting = olds.filter((shape) => admitsArity(shape, arity));
@@ -1873,15 +1886,38 @@ export function alphaEquivalent(a: string, b: string): boolean {
  */
 export function sameIgnoringImportQualifiers(a: string, b: string): boolean {
   if (a === b) return true;
+  const [left, right] = comparableSignatures(a, b);
+  return left === right;
+}
 
+/**
+ * The same two declarations, with import qualifiers dropped when dropping them
+ * cannot change the answer.
+ *
+ * Every structural comparison here — is this alpha-equivalent, does this only
+ * relax callers, which half moved — should run on this pair rather than on the
+ * raw text, because a qualifier appearing or disappearing is not a change any
+ * of them are trying to detect, and leaving it in place makes each of them
+ * answer "different" for a reason that has nothing to do with the question it
+ * was asked.
+ *
+ * Returns the originals untouched whenever stripping would hide a real
+ * disagreement — see {@link sameIgnoringImportQualifiers} for why the same
+ * identifier qualified by two different modules must not be collapsed — so a
+ * caller can use the result unconditionally without having to know which case
+ * it got.
+ */
+function comparableSignatures(a: string, b: string): [string, string] {
   const qualifiersA = qualifiedReferences(a);
   const qualifiersB = qualifiedReferences(b);
+  if (qualifiersA.size === 0 && qualifiersB.size === 0) return [a, b];
+
   for (const [name, moduleA] of qualifiersA) {
     const moduleB = qualifiersB.get(name);
-    if (moduleB !== undefined && moduleB !== moduleA) return false;
+    if (moduleB !== undefined && moduleB !== moduleA) return [a, b];
   }
 
-  return dequalifyImports(a) === dequalifyImports(b);
+  return [dequalifyImports(a), dequalifyImports(b)];
 }
 
 /** Every `import("module").Name` reference, keyed by the name it qualifies. */

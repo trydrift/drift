@@ -161,6 +161,16 @@ export type ThreadItem =
       state: 'running' | 'done' | 'failed';
       /** Recent phase lines, newest last. Collapsed by default. */
       log: string[];
+      /**
+       * What the command behind the current phase is printing, newest last.
+       *
+       * Cleared whenever the phase changes, because it belongs to the command
+       * being named and not to the step as a whole. This is the difference
+       * between a five-minute "Checking your dependencies" that is
+       * indistinguishable from a hang and one where a developer can open a
+       * drawer and watch `tsc` name files.
+       */
+      output?: string[];
       /** When set, a later `step()` call with the same key replaces this one instead of stacking. */
       key?: string;
     }
@@ -541,14 +551,46 @@ export class DriftSession {
           // scan reaches it, and the renderer shows everything below it.
           if (item.log.length > 5000) item.log.shift();
         }
+        // The previous command's output is not this one's. Keeping it would
+        // show `npm install`'s tail under a phase that says "typecheck", which
+        // is worse than showing nothing.
+        if (item.phase !== phase) item.output = undefined;
         update({ phase, detail, done, total });
+      },
+      output: (chunk) => {
+        const item = this.items.find((entry) => entry.id === id);
+        if (!item || item.kind !== 'step') return;
+
+        // Chunks arrive on pipe boundaries, not line boundaries, so the tail
+        // of the buffer is re-joined with whatever continues it rather than
+        // left as a half line that never completes.
+        const lines = (item.output ?? []);
+        const pending = lines.length > 0 && !lines[lines.length - 1]!.endsWith('\n') ? lines.pop()! : '';
+        const combined = pending + chunk;
+        const parts = combined.split('\n');
+        const trailing = parts.pop() ?? '';
+
+        for (const part of parts) {
+          const cleaned = stripControl(part);
+          // Progress bars and spinners redraw the same line hundreds of times.
+          // Kept only when they carry new text.
+          if (cleaned.trim() && cleaned !== lines[lines.length - 1]) lines.push(cleaned);
+        }
+        if (trailing) lines.push(trailing);
+
+        // A tail, deliberately. This is a live window onto a running command,
+        // not its transcript — the full output is on the `CheckOutcome` and is
+        // what the failure report quotes.
+        while (lines.length > MAX_STEP_OUTPUT_LINES) lines.shift();
+        item.output = lines;
+        this.emitter.fire();
       },
       // Clearing done/total here (not just flipping `state`) matters: `renderStep`
       // keys the "N / M" badge and progress bar off `total > 0` alone, so without
       // this a finished step still shows a fraction like "7 / 14" next to its
       // checkmark — read by a developer mid-glance as "still running, stuck at 7".
-      done: (phase) => update({ state: 'done', phase, detail: '', done: 0, total: 0 }),
-      fail: (phase) => update({ state: 'failed', phase, detail: '', done: 0, total: 0 }),
+      done: (phase) => update({ state: 'done', phase, detail: '', done: 0, total: 0, output: undefined }),
+      fail: (phase) => update({ state: 'failed', phase, detail: '', done: 0, total: 0, output: undefined }),
     };
   }
 
@@ -914,8 +956,32 @@ export class DriftSession {
 export interface StepHandle {
   id: string;
   progress: (phase: string, detail: string, done?: number, total?: number) => void;
+  /** A chunk the current phase's command printed. Cleared when the phase moves on. */
+  output: (chunk: string) => void;
   done: (phase: string) => void;
   fail: (phase: string) => void;
+}
+
+/**
+ * How much of a running command's output the step keeps.
+ *
+ * Enough to see a compiler working through files or a test runner naming
+ * suites, and few enough that the drawer stays a glance rather than a scroll.
+ */
+const MAX_STEP_OUTPUT_LINES = 200;
+
+/**
+ * ANSI escapes and carriage returns out, so the panel renders text rather than
+ * terminal control codes.
+ *
+ * A `\r` is kept as a line break in spirit — a tool that redraws in place is
+ * showing successive states of one line, and the last one is the current one.
+ */
+function stripControl(text: string): string {
+  const lastRedraw = text.lastIndexOf('\r');
+  const visible = lastRedraw === -1 ? text : text.slice(lastRedraw + 1);
+  // eslint-disable-next-line no-control-regex
+  return visible.replace(/\[[0-9;?]*[a-zA-Z]/g, '').replace(/[ --]/g, '');
 }
 
 function read<T extends string>(key: string, fallback: T): T {

@@ -1,6 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { crossesMajor, renderBody, renderMarkdown, renderPanel, SLASH_COMMANDS, type ViewModel } from '../src/ui/webview.js';
+import {
+  crossesMajor,
+  linkifyPaths,
+  renderBody,
+  renderMarkdown,
+  renderPanel,
+  SLASH_COMMANDS,
+  type ViewModel,
+} from '../src/ui/webview.js';
 import { warmCodeHighlighter } from '../src/ui/highlight.js';
 import type { TaskGroup } from '../src/session.js';
 import { describeSeverity, severityOf } from '../src/severity.js';
@@ -452,6 +460,78 @@ test('a running step shows the specific phase, detail and progress', () => {
   // Agent work is interruptible, and says so with a stop button.
   assert.match(html, /data-action="stop"/);
   assert.ok(!/data-action="submit"/.test(html));
+});
+
+/**
+ * A progress line that names a file has already done the work of telling the
+ * developer where Drift is; making them retype that path to go and look is the
+ * whole distance between a log and a tool. What these guard is the other half:
+ * a link that opens nothing is worse than plain text, because it invites a
+ * click and then does nothing with it.
+ */
+test('a file path in a progress line becomes a link that opens it', () => {
+  const html = linkifyPaths('Reading manifest — eval/fixtures/npm-return-value/consumer/package.json');
+
+  assert.match(html, /data-action="openFile"/);
+  assert.match(html, /data-file="eval\/fixtures\/npm-return-value\/consumer\/package\.json"/);
+});
+
+test('a bare manifest name at the repository root is still a link', () => {
+  assert.match(linkifyPaths('Reading manifest — package.json'), /data-file="package\.json"/);
+});
+
+test('a gitignored file a test checkout refused to copy is a link, not a rule to decode', () => {
+  const html = linkifyPaths('never copied 1 gitignored file (backend/lutexplorer.key) — it looked like credentials');
+
+  assert.match(html, /data-file="backend\/lutexplorer\.key"/);
+  // The `.gitignore:6:` prefix `git check-ignore -v` prints is not the answer
+  // to "which file?" — it is the answer with a filename and a stale line
+  // number bolted onto the front.
+  assert.ok(!/gitignore:\d+:/.test(html));
+});
+
+test('a version is never mistaken for a path', () => {
+  for (const line of [
+    'react 18.3.1 → 19.2.0',
+    'Checked zod 3.22.4 → 4.1.5 · safe',
+    '@anthropic-ai/sdk@0.68.0',
+  ]) {
+    assert.ok(!/data-action="openFile"/.test(linkifyPaths(line)), `${line} should not linkify`);
+  }
+});
+
+test('text around a path is escaped rather than passed through', () => {
+  const html = linkifyPaths('<script> src/app.ts');
+  assert.ok(!html.includes('<script>'));
+  assert.match(html, /data-file="src\/app\.ts"/);
+});
+
+test('a running command shows what it is printing, so a long check is not a hang', () => {
+  const html = renderPanel(
+    model({
+      busy: true,
+      thread: [
+        {
+          id: 'i1',
+          kind: 'step',
+          title: 'Checking your dependencies',
+          phase: 'Checking extension as it is',
+          detail: '`npm run typecheck`',
+          done: 3,
+          total: 9,
+          state: 'running',
+          log: ['Checking extension as it is — `npm run typecheck`'],
+          output: ['src/ui/home.ts', 'src/ui/webview.ts'],
+        },
+      ],
+    }),
+  );
+
+  assert.match(html, /class="step-output"/);
+  assert.match(html, /src\/ui\/webview\.ts/);
+  // The phase names the command, not just "checking" — a typecheck, a build
+  // and a test suite are different waits.
+  assert.match(html, /npm run typecheck/);
 });
 
 test('step logs leave room for double digit markers', () => {

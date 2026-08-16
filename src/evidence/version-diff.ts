@@ -1,5 +1,5 @@
 import { dirname, join, sep } from 'node:path';
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { readArchive, type ArchiveEntry } from '../util/archive.js';
 import type { Exec } from '../util/exec.js';
@@ -52,6 +52,15 @@ export type VersionDiffResult =
 
 const MAX_FILES = 4000;
 
+/**
+ * Files written at once while extracting an archive.
+ *
+ * High enough that the filesystem is the bottleneck rather than the await
+ * chain, low enough not to exhaust the descriptor table on a package with tens
+ * of thousands of entries.
+ */
+const EXTRACT_BATCH = 64;
+
 export async function fetchVersionDiff(args: {
   ecosystem: string;
   name: string;
@@ -68,9 +77,15 @@ export async function fetchVersionDiff(args: {
     };
   }
 
-  const before = await extracted(fetcher, args.name, args.from, args.timeoutMs);
+  // Both sides at once. They share nothing — separate URLs, separate cache
+  // directories — and fetching them one after the other made every diff cost
+  // two full download-and-extract round trips end to end when it only ever
+  // needed to cost the slower of the two.
+  const [before, after] = await Promise.all([
+    extracted(fetcher, args.name, args.from, args.timeoutMs),
+    extracted(fetcher, args.name, args.to, args.timeoutMs),
+  ]);
   if (!before.ok) return { available: false, reason: before.reason };
-  const after = await extracted(fetcher, args.name, args.to, args.timeoutMs);
   if (!after.ok) return { available: false, reason: after.reason };
 
   const files = await diffFileList(before.dir, after.dir, args.exec, args.timeoutMs);
@@ -141,10 +156,19 @@ function fetcherFor(ecosystem: string): EcosystemFetcher | null {
       return {
         cacheKey: 'npm',
         async fetchEntries(name, version, timeoutMs) {
-          const data = await fetchJson<{ versions?: Record<string, { dist?: { tarball?: string } }> }>(
-            `https://registry.npmjs.org/${encodeURIComponent(name).replaceAll('%40', '@')}`,
+          // The single-version manifest, not the whole packument. Asking
+          // `registry.npmjs.org/<name>` returns every version this package has
+          // ever published with its full metadata — tens of megabytes for
+          // something like `typescript` or `aws-sdk` — to read one `tarball`
+          // field out of it. `/<name>/<version>` returns that one manifest,
+          // and it is immutable, so it is also the only half of this that can
+          // be cached indefinitely.
+          const encoded = encodeURIComponent(name).replaceAll('%40', '@');
+          const manifest = await fetchJson<{ dist?: { tarball?: string } }>(
+            `https://registry.npmjs.org/${encoded}/${encodeURIComponent(version)}`,
+            { immutable: true },
           );
-          const url = data?.versions?.[version]?.dist?.tarball;
+          const url = manifest?.dist?.tarball;
           if (!url) return { ok: false, reason: `Could not find a tarball for ${name} ${version} on the npm registry.` };
           return fetchArchiveEntries(url, timeoutMs);
         },
@@ -273,21 +297,40 @@ async function extracted(
   if (!result.ok) return { ok: false, reason: result.reason };
 
   await mkdir(dir, { recursive: true });
+
+  // Every entry used to cost a `mkdir` and a `writeFile` awaited one at a
+  // time — two round trips to the filesystem per file, serialized, for
+  // archives that routinely hold thousands. The directories are created once
+  // each up front (a package has orders of magnitude fewer directories than
+  // files), and the writes then go out in bounded batches.
+  const writable: { target: string; entry: ArchiveEntry }[] = [];
+  const directories = new Set<string>();
   for (const { path, entry } of stripCommonPrefix(result.entries)) {
     const target = join(dir, path);
     // The archive is a third party's; a path like `../../etc/passwd` inside
     // one is not hypothetical, and the only safe response is never to write
     // outside the directory this extraction owns.
     if (!(target === dir || target.startsWith(dir + sep))) continue;
+    writable.push({ target, entry });
+    directories.add(dirname(target));
+  }
 
-    let bytes: Buffer;
-    try {
-      bytes = entry.read();
-    } catch {
-      continue;
-    }
-    await mkdir(dirname(target), { recursive: true });
-    await writeFile(target, bytes);
+  await Promise.all([...directories].map((path) => mkdir(path, { recursive: true })));
+
+  for (let i = 0; i < writable.length; i += EXTRACT_BATCH) {
+    await Promise.all(
+      writable.slice(i, i + EXTRACT_BATCH).map(async ({ target, entry }) => {
+        let bytes: Buffer;
+        try {
+          bytes = entry.read();
+        } catch {
+          return;
+        }
+        // A single unwritable entry is not a reason to fail the extraction —
+        // the diff is still worth showing without it.
+        await writeFile(target, bytes).catch(() => undefined);
+      }),
+    );
   }
 
   await writeFile(marker, '.');
@@ -373,6 +416,82 @@ async function diffFileList(
 
 function safeSegment(text: string): string {
   return text.replace(/[^\w.-]/g, '_');
+}
+
+/** Root of the extracted-package cache, so callers can prune it without rebuilding the path. */
+export function versionDiffCacheDir(): string {
+  return join(tmpdir(), 'drift-version-diff');
+}
+
+/**
+ * How long an extracted package stays on disk before it is evicted.
+ *
+ * The cache exists because opening the same diff twice in one session should
+ * not download the package twice, and a published archive never changes — so
+ * a short window is enough to buy back everything the cache was for. What it
+ * must not do is what it was doing: accumulate every version of every package
+ * anyone ever diffed, on a machine where nothing ever deletes it, in a
+ * directory nobody thinks to look in.
+ */
+const CACHE_TTL_MS = 7 * 24 * 60 * 60_000;
+
+/**
+ * Drop extracted packages nobody has looked at in a week.
+ *
+ * Never throws and never blocks anything: a cache that could not be pruned is
+ * a disk-space problem, and failing a scan over it would make Drift worse at
+ * its actual job in order to tidy up. Safe to call concurrently with a fetch —
+ * an entry removed mid-read is re-fetched by the next caller that wants it.
+ */
+export async function pruneVersionDiffCache(now = Date.now()): Promise<{ removed: number }> {
+  const root = versionDiffCacheDir();
+  let removed = 0;
+
+  try {
+    // ecosystem / name / version — the layout `extracted()` writes.
+    for (const ecosystem of await readdir(root, { withFileTypes: true }).catch(() => [])) {
+      if (!ecosystem.isDirectory()) continue;
+      const ecosystemDir = join(root, ecosystem.name);
+
+      for (const pkg of await readdir(ecosystemDir, { withFileTypes: true }).catch(() => [])) {
+        if (!pkg.isDirectory()) continue;
+        const packageDir = join(ecosystemDir, pkg.name);
+
+        for (const version of await readdir(packageDir, { withFileTypes: true }).catch(() => [])) {
+          if (!version.isDirectory()) continue;
+          const versionDir = join(packageDir, version.name);
+          // The marker is written last, so its mtime is when this extraction
+          // completed. A directory without one is a half-finished extraction
+          // from a killed process and is always safe to remove.
+          const age = await stat(join(versionDir, '.drift-extracted'))
+            .then((info) => now - info.mtimeMs)
+            .catch(() => Number.POSITIVE_INFINITY);
+          if (age <= CACHE_TTL_MS) continue;
+          await rm(versionDir, { recursive: true, force: true }).catch(() => undefined);
+          removed += 1;
+        }
+      }
+    }
+  } catch {
+    // Nothing here is worth reporting: the cache is an optimisation.
+  }
+
+  // Staging directories from an interrupted `unifiedDiffText`, which cleans up
+  // after itself on every path that returns but not on a killed process.
+  try {
+    for (const entry of await readdir(tmpdir(), { withFileTypes: true }).catch(() => [])) {
+      if (!entry.isDirectory() || !entry.name.startsWith('drift-version-diff-view-')) continue;
+      const path = join(tmpdir(), entry.name);
+      const age = await stat(path).then((info) => now - info.mtimeMs).catch(() => 0);
+      if (age <= CACHE_TTL_MS) continue;
+      await rm(path, { recursive: true, force: true }).catch(() => undefined);
+      removed += 1;
+    }
+  } catch {
+    // As above.
+  }
+
+  return { removed };
 }
 
 function firstLine(text: string): string {

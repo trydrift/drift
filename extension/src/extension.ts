@@ -27,6 +27,7 @@ import type { RemediationPlan } from '../../src/types.js';
 import { discoverNestedProjects } from '../../src/detect/nested.js';
 import type { IssueBranchAction } from './issue-actions.js';
 import { openChangeDiff, openPackageVersionDiff, type ChangeDiffRequest } from './version-diff.js';
+import { pruneVersionDiffCache } from '../../src/evidence/version-diff.js';
 import { onDidChangeCodeTheme, warmCodeHighlighter, watchCodeTheme } from './ui/highlight.js';
 
 /**
@@ -54,6 +55,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const statusBar = new DriftStatusBar(state);
   const reviewUi = new DriftReviewUi(review);
   configureHttpDiskCache(vscode.Uri.joinPath(context.globalStorageUri, 'evidence-cache').fsPath);
+
+  // Extracted package sources pile up in the system temp directory — a few
+  // hundred megabytes for anyone who diffs regularly — and nothing was ever
+  // deleting them. Fire-and-forget on purpose: activation must not wait on a
+  // directory walk, and a cache that could not be pruned is not a reason for
+  // the extension to fail to start.
+  void pruneVersionDiffCache().then(
+    ({ removed }) => {
+      if (removed > 0) output.info(`Drift: removed ${removed} cached package extraction(s) older than a week.`);
+    },
+    () => undefined,
+  );
   const home = new DriftHomeView(
     context.extensionUri,
     state,

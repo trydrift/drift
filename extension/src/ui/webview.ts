@@ -409,6 +409,8 @@ function renderStep(item: Extract<ThreadItem, { kind: 'step' }>): string {
   const icon =
     item.state === 'running' ? '<span class="spinner"></span>' : item.state === 'done' ? ICON_CHECK : ICON_ERROR;
 
+  const output = item.output ?? [];
+
   return `<div class="step ${item.state}">
     <div class="step-head">
       ${icon}
@@ -417,9 +419,23 @@ function renderStep(item: Extract<ThreadItem, { kind: 'step' }>): string {
     </div>
     <div class="step-now">
       <span class="phase">${escapeHtml(item.phase)}</span>
-      ${item.detail ? `<span class="detail">${escapeHtml(item.detail)}</span>` : ''}
+      ${item.detail ? `<span class="detail">${linkifyPaths(item.detail)}</span>` : ''}
     </div>
     ${item.total > 0 ? `<div class="bar"><span style="width:${pct}%"></span></div>` : ''}
+    ${
+      // What the running command is printing, right now. A typecheck or a test
+      // suite on a large repository is minutes long and, without this, is
+      // indistinguishable from a hang — the reason "checking" felt stuck was
+      // never that it was stuck, it was that the tool saying otherwise had
+      // nowhere to say it. Open by default while it is producing output, since
+      // a drawer nobody knows to open answers nobody's question.
+      output.length > 0
+        ? `<details class="step-output" data-key="out:${escapeAttr(item.id)}" open>
+            <summary>Output</summary>
+            <pre data-scroll="out:${escapeAttr(item.id)}"><code>${escapeHtml(output.join('\n'))}</code></pre>
+          </details>`
+        : ''
+    }
     ${
       // Every line the step holds, not the last 60 of them. The summary right
       // above this counts the whole log, so truncating here promised "184
@@ -429,12 +445,114 @@ function renderStep(item: Extract<ThreadItem, { kind: 'step' }>): string {
       // read, so the count and the list cannot disagree again.
       item.log.length > 1
         ? `<details class="log" data-key="log:${escapeAttr(item.id)}"><summary>${item.log.length} step${item.log.length === 1 ? '' : 's'}</summary><ol>${item.log
-            .map((line) => `<li>${escapeHtml(line)}</li>`)
+            .map((line) => `<li>${linkifyPaths(line)}</li>`)
             .join('')}</ol></details>`
         : ''
     }
   </div>`;
 }
+
+/**
+ * Turn the file paths inside a progress line into links that open the file.
+ *
+ * A step that says "Reading manifest — eval/fixtures/npm/consumer/package.json"
+ * has already done the hard part of telling the developer where it is; making
+ * them retype that path into a file picker to go and look is the whole distance
+ * between a log and a tool. The same applies to the gitignored files a test
+ * checkout reports carrying over or refusing to: those are named precisely so
+ * someone can go and check them.
+ *
+ * Deliberately narrow about what counts. A token has to carry a path separator
+ * or a known manifest name *and* an extension, so ordinary prose — a version
+ * range, a package name, `3.4.5` — is never turned into a link that opens
+ * nothing. Anything that does not match is escaped and passed through, so this
+ * is safe to run over every line whether or not it names a file.
+ */
+export function linkifyPaths(text: string): string {
+  // Repo-relative, no leading slash, at least one `/` or a bare filename with
+  // an extension. Trailing punctuation is left out of the href so a path at the
+  // end of a sentence still resolves.
+  const pattern = /(?:[\w.@~-]+\/)*[\w.@~-]+\.[A-Za-z][\w]{0,9}\b/g;
+
+  let out = '';
+  let at = 0;
+
+  for (const match of text.matchAll(pattern)) {
+    const raw = match[0];
+    const start = match.index;
+
+    if (!looksLikePath(raw)) continue;
+
+    out += escapeHtml(text.slice(at, start));
+    out += `<a data-action="openFile" data-file="${escapeAttr(raw)}" data-line="1" title="Open ${escapeAttr(
+      raw,
+    )}"><code>${escapeHtml(raw)}</code></a>`;
+    at = start + raw.length;
+  }
+
+  return out + escapeHtml(text.slice(at));
+}
+
+/**
+ * Is this token a path worth offering to open, rather than a version or a
+ * dotted identifier that happens to have the same shape?
+ *
+ * `react@19.2.0` and `1.2.3` both match a path-ish pattern and neither is a
+ * file. A link that opens nothing is worse than plain text, because it invites
+ * a click and then does nothing with it.
+ */
+function looksLikePath(token: string): boolean {
+  // A version, whole or partial — the single most common false match.
+  if (/^v?\d+(\.\d+)*$/.test(token)) return false;
+  // `name@1.2.3`, which the scan prints constantly.
+  if (/@\d/.test(token)) return false;
+
+  const extension = token.slice(token.lastIndexOf('.') + 1);
+  // An all-digit "extension" is a version tail, not a file type.
+  if (/^\d+$/.test(extension)) return false;
+
+  return token.includes('/') || KNOWN_FILENAMES.has(token);
+}
+
+/**
+ * Files worth linking even with no directory in front of them, because a scan
+ * names them at the repository root constantly and they are exactly what the
+ * reader wants to open.
+ */
+const KNOWN_FILENAMES = new Set([
+  'package.json',
+  'package-lock.json',
+  'pnpm-lock.yaml',
+  'yarn.lock',
+  'bun.lockb',
+  'deno.json',
+  'Cargo.toml',
+  'Cargo.lock',
+  'go.mod',
+  'go.sum',
+  'pyproject.toml',
+  'requirements.txt',
+  'Pipfile',
+  'poetry.lock',
+  'uv.lock',
+  'Gemfile',
+  'Gemfile.lock',
+  'composer.json',
+  'composer.lock',
+  'pubspec.yaml',
+  'pubspec.lock',
+  'mix.exs',
+  'pom.xml',
+  'build.gradle',
+  'build.gradle.kts',
+  'build.sbt',
+  'Package.swift',
+  'Podfile',
+  'Podfile.lock',
+  'conanfile.txt',
+  'vcpkg.json',
+  '.gitignore',
+]);
 
 /* ------------------------------------------------------------------ */
 /* The plan, as a checklist                                            */
@@ -1687,13 +1805,14 @@ function renderComposer(vm: ViewModel): string {
       ${
         vm.busy
           ? vm.cancellable
-            ? `<button class="stop" data-action="stop" title="Stop">${ICON_STOP}</button>`
-            : // A dependency check is the one thing that must run to completion:
-              // a half-scanned repository reports packages as safe purely because
-              // nothing looked at them yet, which is the one wrong answer Drift
-              // must never give. So there is no stop button — just an honest
-              // statement that it is working.
-              `<span class="working" title="Drift is checking your dependencies. This one runs to the end — a half-finished check would report packages as safe just because nothing looked at them." aria-label="Working"><span class="spinner"></span></span>`
+            ? // A scan is stoppable like everything else. The risk it used to be
+              // locked for is real but belongs to the *result*, not the button:
+              // what must never happen is a half-scanned repository presented as
+              // a clean bill of health, and that is prevented by labelling the
+              // partial result as partial — which `scan()` now does — rather
+              // than by refusing to let anyone out of a five-minute wait.
+              `<button class="stop" data-action="stop" title="Stop — what has been checked so far is kept, and the rest is reported as unchecked">${ICON_STOP}</button>`
+            : `<span class="working" title="Drift is finishing this step." aria-label="Working"><span class="spinner"></span></span>`
           : `<button class="send" data-action="submit" title="Send (Enter)" aria-label="Send">${ICON_SEND}</button>`
       }
     </div>
@@ -2261,8 +2380,16 @@ pre {
   white-space: pre;
   word-break: normal;
   line-height: 1.5;
+  /* The editor's font *family*, so code reads as code — but the panel's own
+     font size, not the editor's. A developer who sets a 16px editor for
+     comfortable all-day reading has not asked a side panel's quoted
+     declarations to be larger than the prose around them, and inheriting
+     the editor font size made the before/after blocks visibly mismatched with
+     every other line in the transcript. The .92 factor matches the inline code
+     rule above, so a declaration is the same size whether it is quoted in a
+     sentence or shown in a block. */
   font-family: var(--vscode-editor-font-family);
-  font-size: var(--vscode-editor-font-size, 12px);
+  font-size: calc(var(--vscode-font-size, 13px) * .92);
   background: var(--vscode-textCodeBlock-background);
   border-radius: 5px;
 }
@@ -2465,6 +2592,20 @@ button.wide { width: 100%; }
   padding-left: 28px;
   max-height: 170px;
   overflow: auto;
+  color: var(--vscode-descriptionForeground);
+}
+/* A path in a progress line is a link, but it must not look like prose with a
+   colour dropped on it — the code face is what says "this is a file". */
+.step .log a code, .step-now a code { background: none; padding: 0; font-size: inherit; }
+
+/* The running command's own output. Bounded and scrolled: this is a live
+   window onto a process, not its transcript. */
+.step-output { margin: 7px 0 0 21px; font-size: 11px; }
+.step-output summary { cursor: pointer; color: var(--vscode-descriptionForeground); }
+.step-output pre {
+  margin: 5px 0 0;
+  max-height: 150px;
+  font-size: 11px;
   color: var(--vscode-descriptionForeground);
 }
 /* A soft fading ring rather than a hard two-tone border — the border trick
