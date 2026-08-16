@@ -4,8 +4,9 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fetchVersionDiff, unifiedDiffText } from '../dist/evidence/version-diff.js';
+import { fetchVersionDiff, stripCommonPrefix, unifiedDiffText } from '../dist/evidence/version-diff.js';
 import { execCommand } from '../dist/util/exec.js';
+import type { ArchiveEntry } from '../dist/util/archive.js';
 
 /**
  * `fetchVersionDiff` is exercised against the real `tar` and `git` binaries —
@@ -42,13 +43,27 @@ describe('a real diff between two published versions', () => {
 
   test('reports added, removed and modified files between two crate releases', async () => {
     const name = `drift-fixture-${randomUUID().slice(0, 8)}`;
+    // A real crate always has at least one file at its true root (Cargo.toml)
+    // alongside `src/` — included here so the fixture matches what
+    // `stripCommonPrefix` actually has to tell apart: the registry's own
+    // throwaway wrapper directory versus `src/`, which is real structure and
+    // must survive even though every other file in this fixture happens to
+    // share it too.
     const before = await crateArchive(
-      { 'src/lib.rs': 'pub fn old() {}\n', 'src/removed.rs': 'pub fn gone() {}\n' },
+      {
+        'Cargo.toml': `[package]\nname = "${name}"\nversion = "1.0.0"\n`,
+        'src/lib.rs': 'pub fn old() {}\n',
+        'src/removed.rs': 'pub fn gone() {}\n',
+      },
       name,
       '1.0.0',
     );
     const after = await crateArchive(
-      { 'src/lib.rs': 'pub fn old() {}\npub fn newly_added() {}\n', 'src/added.rs': 'pub fn hi() {}\n' },
+      {
+        'Cargo.toml': `[package]\nname = "${name}"\nversion = "1.0.1"\n`,
+        'src/lib.rs': 'pub fn old() {}\npub fn newly_added() {}\n',
+        'src/added.rs': 'pub fn hi() {}\n',
+      },
       name,
       '1.0.1',
     );
@@ -130,5 +145,46 @@ describe('a real diff between two published versions', () => {
     assert.equal(result.available, false);
     if (result.available) return;
     assert.match(result.reason, /gleam/);
+  });
+});
+
+describe('stripCommonPrefix', () => {
+  const fake = (path: string): ArchiveEntry => ({ path, size: 0, read: () => Buffer.from('') });
+
+  test('strips a wrapper directory several levels deep, the shape a Go module proxy zip publishes', () => {
+    const entries = [
+      fake('github.com/gorilla/mux@v1.8.0/go.mod'),
+      fake('github.com/gorilla/mux@v1.8.0/mux.go'),
+      fake('github.com/gorilla/mux@v1.8.0/.circleci/config.yml'),
+    ];
+
+    assert.deepEqual(
+      stripCommonPrefix(entries).map((f) => f.path),
+      ['go.mod', 'mux.go', '.circleci/config.yml'],
+    );
+  });
+
+  test('a sibling file at the true root stops the strip at the wrapper, not past it', () => {
+    // Every *other* file here happens to live under `src/` too, so nothing
+    // short of a file directly at the package's own root (`Cargo.toml`, same
+    // as the registry test above) can prove `pkg-1.0.0/` is the wrapper and
+    // `src/` is not — without it, `src/` and the wrapper are indistinguishable
+    // from the file list alone, which is why every real registry archive
+    // Drift fetches always carries a root-level manifest.
+    const entries = [fake('pkg-1.0.0/Cargo.toml'), fake('pkg-1.0.0/src/lib.rs'), fake('pkg-1.0.0/src/util.rs')];
+
+    assert.deepEqual(
+      stripCommonPrefix(entries).map((f) => f.path),
+      ['Cargo.toml', 'src/lib.rs', 'src/util.rs'],
+    );
+  });
+
+  test('a flat archive with no wrapper at all is left exactly as published', () => {
+    const entries = [fake('lib/foo.dart'), fake('pubspec.yaml')];
+
+    assert.deepEqual(
+      stripCommonPrefix(entries).map((f) => f.path),
+      ['lib/foo.dart', 'pubspec.yaml'],
+    );
   });
 });

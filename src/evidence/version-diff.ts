@@ -1,8 +1,11 @@
-import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { dirname, join, sep } from 'node:path';
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { readArchive, type ArchiveEntry } from '../util/archive.js';
 import type { Exec } from '../util/exec.js';
 import { fetchJson } from '../util/http.js';
+import { sourceArchiveUrl } from './surface/python.js';
+import { parseCoordinate } from './surface/java.js';
 
 /**
  * A real diff between two published versions of a package's source, for the
@@ -13,10 +16,21 @@ import { fetchJson } from '../util/http.js';
  * reasonably want to go and look for themselves, so this fetches what they'd
  * see if they did.
  *
- * Scoped to npm and crates.io for now, both of which publish a single
- * content-addressed archive at a URL that needs no build step to read.
+ * Covers every ecosystem that publishes a fetchable archive of its actual
+ * source at a URL derivable without a build step or a registry search:
+ * npm, cargo, PyPI, Go (via the module proxy), pub.dev, and Hex — the same
+ * archives `pythonSurface`, `pubSurface` and `hexSurface` already read for
+ * their own computed diffs. Maven is best-effort: Central hosts a
+ * `-sources.jar` for most libraries but not all, and there is no source
+ * archive to fall back to when one is missing. NuGet and the C/C++
+ * ecosystems are absent on purpose — a `.nupkg` ships a compiled assembly,
+ * not source, and C/C++ has no registry with a single fetchable archive at
+ * all, so pretending otherwise would mean diffing the wrong thing rather
+ * than saying so.
+ *
  * Nothing here executes anything from the package — only downloads and
- * extracts it, the same rule `pythonSurface` follows for the same reason.
+ * reads it in memory, the same rule `pythonSurface`, `pubSurface` and
+ * `hexSurface` already follow for the same reason.
  */
 
 export interface VersionDiffFile {
@@ -46,17 +60,17 @@ export async function fetchVersionDiff(args: {
   exec: Exec;
   timeoutMs?: number;
 }): Promise<VersionDiffResult> {
-  const source = archiveSourceFor(args.ecosystem);
-  if (!source) {
+  const fetcher = fetcherFor(args.ecosystem);
+  if (!fetcher) {
     return {
       available: false,
       reason: `Drift does not yet know how to fetch ${args.ecosystem} package sources to build a diff.`,
     };
   }
 
-  const before = await extracted(source, args.name, args.from, args.exec, args.timeoutMs);
+  const before = await extracted(fetcher, args.name, args.from, args.timeoutMs);
   if (!before.ok) return { available: false, reason: before.reason };
-  const after = await extracted(source, args.name, args.to, args.exec, args.timeoutMs);
+  const after = await extracted(fetcher, args.name, args.to, args.timeoutMs);
   if (!after.ok) return { available: false, reason: after.reason };
 
   const files = await diffFileList(before.dir, after.dir, args.exec, args.timeoutMs);
@@ -87,8 +101,8 @@ export async function unifiedDiffText(
   const staging = await mkdtemp(join(tmpdir(), 'drift-version-diff-view-'));
   try {
     await Promise.all([
-      exec('cp', ['-R', beforeDir, join(staging, 'before')], { timeoutMs: timeoutMs ?? 30_000 }),
-      exec('cp', ['-R', afterDir, join(staging, 'after')], { timeoutMs: timeoutMs ?? 30_000 }),
+      cp(beforeDir, join(staging, 'before'), { recursive: true }),
+      cp(afterDir, join(staging, 'after'), { recursive: true }),
     ]);
 
     const result = await exec('git', ['diff', '--no-index', '--no-prefix', 'before', 'after'], {
@@ -104,30 +118,129 @@ export async function unifiedDiffText(
   }
 }
 
-interface ArchiveSource {
+type EntriesResult = { ok: true; entries: ArchiveEntry[] } | { ok: false; reason: string };
+
+interface EcosystemFetcher {
   cacheKey: string;
-  url(name: string, version: string): Promise<string | null>;
+  fetchEntries(name: string, version: string, timeoutMs: number): Promise<EntriesResult>;
 }
 
-function archiveSourceFor(ecosystem: string): ArchiveSource | null {
+async function fetchArchiveEntries(url: string, timeoutMs: number): Promise<EntriesResult> {
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+    if (!response.ok) return { ok: false, reason: `${url} returned HTTP ${response.status}.` };
+    return { ok: true, entries: readArchive(Buffer.from(await response.arrayBuffer())) };
+  } catch (err) {
+    return { ok: false, reason: `Could not download ${url}: ${(err as Error).message}` };
+  }
+}
+
+function fetcherFor(ecosystem: string): EcosystemFetcher | null {
   switch (ecosystem) {
     case 'npm':
       return {
         cacheKey: 'npm',
-        async url(name, version) {
+        async fetchEntries(name, version, timeoutMs) {
           const data = await fetchJson<{ versions?: Record<string, { dist?: { tarball?: string } }> }>(
             `https://registry.npmjs.org/${encodeURIComponent(name).replaceAll('%40', '@')}`,
           );
-          return data?.versions?.[version]?.dist?.tarball ?? null;
+          const url = data?.versions?.[version]?.dist?.tarball;
+          if (!url) return { ok: false, reason: `Could not find a tarball for ${name} ${version} on the npm registry.` };
+          return fetchArchiveEntries(url, timeoutMs);
         },
       };
     case 'cargo':
       return {
         cacheKey: 'cargo',
-        async url(name, version) {
-          // crates.io serves the source of truth at this fixed, versioned
-          // path; no lookup needed, it either exists or the download 404s.
-          return `https://static.crates.io/crates/${encodeURIComponent(name)}/${encodeURIComponent(name)}-${encodeURIComponent(version)}.crate`;
+        // crates.io serves the source of truth at this fixed, versioned path;
+        // no lookup needed, it either exists or the download 404s.
+        fetchEntries: (name, version, timeoutMs) =>
+          fetchArchiveEntries(
+            `https://static.crates.io/crates/${encodeURIComponent(name)}/${encodeURIComponent(name)}-${encodeURIComponent(version)}.crate`,
+            timeoutMs,
+          ),
+      };
+    case 'pypi':
+      return {
+        cacheKey: 'pypi',
+        async fetchEntries(name, version, timeoutMs) {
+          const source = await sourceArchiveUrl(name, version);
+          if (!source) {
+            return {
+              ok: false,
+              reason: `PyPI has no source archive for ${name} ${version}. It may be private, yanked, or published only as a built wheel with no sdist.`,
+            };
+          }
+          return fetchArchiveEntries(source.url, timeoutMs);
+        },
+      };
+    case 'go':
+      return {
+        cacheKey: 'go',
+        // The module proxy protocol case-encodes uppercase letters (an
+        // artefact of module paths living on case-insensitive filesystems,
+        // same reason `GOFLAGS` documents it) and expects the leading `v`
+        // Drift's own version strings do not always carry.
+        fetchEntries: (name, version, timeoutMs) => {
+          const tag = version.startsWith('v') ? version : `v${version}`;
+          const url = `https://proxy.golang.org/${escapeGoModulePath(name)}/@v/${escapeGoModulePath(tag)}.zip`;
+          return fetchArchiveEntries(url, timeoutMs);
+        },
+      };
+    case 'pub':
+      return {
+        cacheKey: 'pub',
+        fetchEntries: (name, version, timeoutMs) =>
+          fetchArchiveEntries(
+            `https://pub.dev/api/archives/${encodeURIComponent(name)}-${encodeURIComponent(version)}.tar.gz`,
+            timeoutMs,
+          ),
+      };
+    case 'hex':
+      return {
+        cacheKey: 'hex',
+        // A Hex tarball is a tar whose payload is another, gzipped tar (see
+        // `hexSurface`) — the outer layer carries metadata and a checksum
+        // alongside the one entry that is actually the package's source.
+        async fetchEntries(name, version, timeoutMs) {
+          const url = `https://repo.hex.pm/tarballs/${encodeURIComponent(name)}-${encodeURIComponent(version)}.tar`;
+          const outer = await fetchArchiveEntries(url, timeoutMs);
+          if (!outer.ok) return outer;
+
+          const contents = outer.entries.find(
+            (entry) => entry.path === 'contents.tar.gz' || entry.path.endsWith('/contents.tar.gz'),
+          );
+          if (!contents) {
+            return { ok: false, reason: `${name} ${version} is not in the layout Hex tarballs use.` };
+          }
+          try {
+            return { ok: true, entries: readArchive(contents.read()) };
+          } catch (err) {
+            return { ok: false, reason: `Could not unpack ${name} ${version}: ${(err as Error).message}` };
+          }
+        },
+      };
+    case 'maven':
+      return {
+        cacheKey: 'maven',
+        async fetchEntries(name, version, timeoutMs) {
+          const coordinate = parseCoordinate(name);
+          if (!coordinate) {
+            return { ok: false, reason: `\`${name}\` is not a \`groupId:artifactId\` coordinate.` };
+          }
+          const path = coordinate.groupId.replace(/\./g, '/');
+          const url = `https://repo1.maven.org/maven2/${path}/${coordinate.artifactId}/${version}/${coordinate.artifactId}-${version}-sources.jar`;
+          const result = await fetchArchiveEntries(url, timeoutMs);
+          if (!result.ok) {
+            // Central hosts compiled jars for every release but a sources jar
+            // only by convention, not by requirement — this is the ordinary
+            // shape of "not published", not a fetch failure worth detailing.
+            return {
+              ok: false,
+              reason: `${name} ${version} has no sources jar published on Maven Central, so there is no source to diff (only compiled classfiles are).`,
+            };
+          }
+          return result;
         },
       };
     default:
@@ -135,61 +248,82 @@ function archiveSourceFor(ecosystem: string): ArchiveSource | null {
   }
 }
 
+/** Uppercase letters case-encoded as `!` + lowercase, per the Go module proxy protocol. */
+function escapeGoModulePath(text: string): string {
+  return text.replace(/[A-Z]/g, (letter) => `!${letter.toLowerCase()}`);
+}
+
 type ExtractAttempt = { ok: true; dir: string } | { ok: false; reason: string };
 
 async function extracted(
-  source: ArchiveSource,
+  fetcher: EcosystemFetcher,
   name: string,
   version: string,
-  exec: Exec,
   timeoutMs?: number,
 ): Promise<ExtractAttempt> {
   // Cached by ecosystem/name/version rather than a fresh mkdtemp per call: a
   // patch bump's diff gets opened more than once in a session, and a
   // published archive never changes shape once fetched.
-  const dir = join(tmpdir(), 'drift-version-diff', source.cacheKey, safeSegment(name), safeSegment(version));
+  const dir = join(tmpdir(), 'drift-version-diff', fetcher.cacheKey, safeSegment(name), safeSegment(version));
   const marker = join(dir, '.drift-extracted');
 
-  const cached = await readFile(marker, 'utf8').catch(() => null);
-  if (cached !== null) return { ok: true, dir: cached === '.' ? dir : join(dir, cached) };
+  if (await readFile(marker, 'utf8').then(() => true, () => false)) return { ok: true, dir };
 
-  const url = await source.url(name, version);
-  if (!url) {
-    return { ok: false, reason: `Could not find a source archive for ${name} ${version}.` };
-  }
-
-  let archiveBytes: Buffer;
-  try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs ?? 60_000) });
-    if (!response.ok) {
-      return { ok: false, reason: `${url} returned HTTP ${response.status}.` };
-    }
-    archiveBytes = Buffer.from(await response.arrayBuffer());
-  } catch (err) {
-    return { ok: false, reason: `Could not download ${url}: ${(err as Error).message}` };
-  }
+  const result = await fetcher.fetchEntries(name, version, timeoutMs ?? 60_000);
+  if (!result.ok) return { ok: false, reason: result.reason };
 
   await mkdir(dir, { recursive: true });
-  const archivePath = join(dir, 'archive.tgz');
-  await writeFile(archivePath, archiveBytes);
+  for (const { path, entry } of stripCommonPrefix(result.entries)) {
+    const target = join(dir, path);
+    // The archive is a third party's; a path like `../../etc/passwd` inside
+    // one is not hypothetical, and the only safe response is never to write
+    // outside the directory this extraction owns.
+    if (!(target === dir || target.startsWith(dir + sep))) continue;
 
-  // `tar` reads gzip tarballs and .crate files alike; extracting an archive
-  // executes nothing in it, the same guarantee `pythonSurface` relies on.
-  const result = await exec('tar', ['-xf', archivePath, '-C', dir], { timeoutMs: timeoutMs ?? 30_000 });
-  if (result.code !== 0) {
-    return { ok: false, reason: `Could not unpack ${name} ${version}: ${firstLine(result.stderr)}` };
+    let bytes: Buffer;
+    try {
+      bytes = entry.read();
+    } catch {
+      continue;
+    }
+    await mkdir(dirname(target), { recursive: true });
+    await writeFile(target, bytes);
   }
 
-  const root = await singleSubdirectory(dir);
-  await writeFile(marker, root ?? '.');
-  return { ok: true, dir: root ? join(dir, root) : dir };
+  await writeFile(marker, '.');
+  return { ok: true, dir };
 }
 
-/** npm tarballs unpack into `package/`, crates into `{name}-{version}/`. */
-async function singleSubdirectory(dir: string): Promise<string | null> {
-  const entries = await readdir(dir, { withFileTypes: true }).catch(() => []);
-  const dirs = entries.filter((entry) => entry.isDirectory());
-  return dirs.length === 1 ? dirs[0]!.name : null;
+/**
+ * Most registries wrap every entry in one throwaway directory path — `package/`
+ * for npm, `{name}-{version}/` for a crate, and the *whole* module path plus
+ * version for a Go proxy zip (`github.com/gorilla/mux@v1.8.0/`, three levels
+ * deep, not one) — that exists only so extracting the archive by hand doesn't
+ * scatter files into whatever directory you're standing in. Some (pub.dev's
+ * archive, a Hex release's inner tarball) publish flat instead.
+ *
+ * The common directory prefix shared by every entry is stripped, however many
+ * levels deep it goes, capped so every entry always keeps at least its own
+ * filename — a directory that turned out to *be* one of the archive's own
+ * files is left alone rather than eaten as part of the wrapper.
+ */
+export function stripCommonPrefix(entries: readonly ArchiveEntry[]): { path: string; entry: ArchiveEntry }[] {
+  const parsed = entries
+    .map((entry) => ({ entry, segments: entry.path.split('/').filter(Boolean) }))
+    .filter((parsed) => parsed.segments.length > 0);
+  if (parsed.length === 0) return [];
+
+  const shortest = Math.min(...parsed.map((p) => p.segments.length));
+  let prefixLen = Math.max(0, shortest - 1);
+  for (let i = 0; i < prefixLen; i++) {
+    const segment = parsed[0]!.segments[i];
+    if (!parsed.every((p) => p.segments[i] === segment)) {
+      prefixLen = i;
+      break;
+    }
+  }
+
+  return parsed.map((p) => ({ entry: p.entry, path: p.segments.slice(prefixLen).join('/') }));
 }
 
 type FileListAttempt =

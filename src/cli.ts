@@ -223,9 +223,11 @@ Usage:
   drift pr [options]          Push the current branch and open a pull request
   drift diff <eco> <pkg> <from> <to>
                               Print a real \`git diff\` between two published
-                              versions of a package's source. Supports npm
-                              and cargo; nothing else has a fetchable archive
-                              yet
+                              versions of a package's source. eco is one of:
+                              npm, cargo, pypi, go, pub, hex, maven (best-
+                              effort: only when Central has a sources jar).
+                              Not nuget or a C/C++ ecosystem — neither has a
+                              single fetchable archive of actual source
   drift action                Run as a GitHub Action (reads INPUT_* env vars)
   drift serve                 Run the self-hosted webhook server
   drift telemetry print       Print the exact telemetry event shape

@@ -156,13 +156,13 @@ async function surfaceOf(
   return { ok: true, api };
 }
 
-interface SourceArchive {
+export interface SourceArchive {
   url: string;
   filename: string;
 }
 
 /** The sdist if there is one, else a wheel — both are archives `tar` can open. */
-async function sourceArchiveUrl(name: string, version: string): Promise<SourceArchive | null> {
+export async function sourceArchiveUrl(name: string, version: string): Promise<SourceArchive | null> {
   const data = await fetchJson<{
     releases?: Record<string, { url: string; filename: string; packagetype: string }[]>;
   }>(`https://pypi.org/pypi/${encodeURIComponent(name)}/json`);
