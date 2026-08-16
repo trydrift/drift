@@ -17,6 +17,7 @@ import {
 } from './rules.js';
 import { extractWithLlm } from './llm.js';
 import { assessUpstream } from '../confidence/calibrate.js';
+import { isSpecEvidenceSource } from '../evidence/spec/sources.js';
 import { classify, taxonomyOf, type ChangeTaxonomy } from '../confidence/taxonomy.js';
 import type { ConfidenceBand } from '../confidence/types.js';
 
@@ -48,10 +49,11 @@ export async function analyze(
     results.push(...analyzeDependency(change.name, change.workspace, relevant));
   }
 
-  // Spec-derived evidence is keyed by file path rather than a package name, so
-  // it is not covered by the loop above.
+  // Contract-document evidence is keyed by file path rather than a package
+  // name, so it is not covered by the loop above. Asked of the registry rather
+  // than named source by source, so a new format is picked up here for free.
   for (const record of evidence) {
-    if (record.source !== 'openapi-diff') continue;
+    if (!isSpecEvidenceSource(record.source)) continue;
     results.push(...fromComputedEvidence(record));
   }
 

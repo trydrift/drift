@@ -1,13 +1,14 @@
 import { parse as parseYaml } from 'yaml';
+import type { SpecOutcome, SpecProvider, SpecRequest } from './types.js';
 
 /**
  * OpenAPI breaking-change detection.
  *
- * This is one of Drift's two *machine-verified* evidence sources (the other is
- * the TypeScript surface diff). Unlike changelog prose, a spec diff is ground
- * truth: if `DELETE /users/{id}` is gone from the new document, it is gone.
- * Findings from here carry the highest evidence weight and are the only ones
- * eligible for `high` confidence without corroboration.
+ * This is a *machine-verified* evidence source, like the API surface diffs.
+ * Unlike changelog prose, a spec diff is ground truth: if `DELETE /users/{id}`
+ * is gone from the new document, it is gone. Findings from here carry the
+ * highest evidence weight and are the only ones eligible for `high` confidence
+ * without corroboration.
  *
  * Directionality matters and is easy to get backwards. Drift analyses specs
  * from the perspective of a *consumer* calling the API:
@@ -43,6 +44,199 @@ export interface OpenApiFinding {
   pointer: string;
   detail: string;
 }
+
+const TOOL = 'openapi-diff';
+
+/**
+ * The OpenAPI provider.
+ *
+ * Weighted 1.0: the document *is* the contract, and the comparison is of two
+ * committed revisions of it rather than of anything reconstructed.
+ */
+export const openapiSpecProvider: SpecProvider = {
+  id: 'openapi',
+  source: 'openapi-diff',
+  tool: TOOL,
+  weight: 1.0,
+  originClass: 'computed-artifact',
+  config: { enabled: 'openapi', paths: 'openapiSpecs' },
+
+  handles(_path: string, content: string): boolean {
+    return parseSpec(content) !== null;
+  },
+
+  async compute(request: SpecRequest): Promise<SpecOutcome> {
+    if (!parseSpec(request.before) || !parseSpec(request.after)) {
+      return {
+        available: false,
+        reason: 'parse-failed',
+        detail: `${request.path} is not a document Drift could read as an OpenAPI or Swagger spec on both sides of this change.`,
+        tool: TOOL,
+      };
+    }
+
+    return {
+      available: true,
+      changes: diffSpecs(request.before, request.after).map((finding) => ({
+        code: finding.kind,
+        location: finding.location,
+        pointer: finding.pointer,
+        detail: finding.detail,
+      })),
+      tool: TOOL,
+      weight: 1.0,
+      locator: request.path,
+    };
+  },
+
+  // Endpoints have no import edge and no compile step, so nothing local proves
+  // a consumer is affected. `external-observation` is the honest floor.
+  codes: {
+    'path-removed': {
+      kind: 'removed-endpoint',
+      taxonomy: {
+        nature: 'protocol',
+        detectability: ['runtime-only', 'external-observation'],
+        scope: 'module',
+        visibility: ['unknown'],
+      },
+      remediation: ({ symbol }) =>
+        `The endpoint \`${symbol}\` no longer exists. Locate the client code that calls it and migrate to the replacement endpoint. If there is no replacement, do not delete the feature — leave the call site intact with a clearly-marked TODO and explain it in the PR description.`,
+    },
+    'operation-removed': {
+      kind: 'removed-endpoint',
+      taxonomy: {
+        nature: 'protocol',
+        detectability: ['runtime-only', 'external-observation'],
+        scope: 'symbol',
+        visibility: ['unknown'],
+      },
+      remediation: ({ symbol }) =>
+        `The endpoint \`${symbol}\` no longer exists. Locate the client code that calls it and migrate to the replacement endpoint. If there is no replacement, do not delete the feature — leave the call site intact with a clearly-marked TODO and explain it in the PR description.`,
+    },
+    'response-status-removed': {
+      kind: 'removed-endpoint',
+      taxonomy: {
+        nature: 'protocol',
+        detectability: ['runtime-only', 'external-observation'],
+        scope: 'symbol',
+        visibility: ['unknown'],
+      },
+      remediation: ({ symbol }) =>
+        `\`${symbol}\` no longer returns this success status. Update response handling so the removed status is no longer treated as a success path.`,
+    },
+    'parameter-removed': {
+      kind: 'changed-endpoint',
+      taxonomy: {
+        nature: 'protocol',
+        detectability: ['runtime-only'],
+        scope: 'symbol',
+        visibility: ['unknown'],
+      },
+      remediation: ({ symbol }) =>
+        `A required parameter was removed from \`${symbol}\`. Remove it from client calls; sending it may now be rejected as an unexpected parameter.`,
+    },
+    'parameter-type-changed': {
+      kind: 'changed-endpoint',
+      taxonomy: {
+        nature: 'data-schema',
+        detectability: ['runtime-only'],
+        scope: 'symbol',
+        visibility: ['unknown'],
+      },
+      remediation: ({ symbol }) =>
+        `The request type for \`${symbol}\` changed. Update serialisation at each call site so the value sent matches the new type.`,
+    },
+    'parameter-now-required': {
+      kind: 'required-field-added',
+      taxonomy: {
+        nature: 'protocol',
+        detectability: ['runtime-only'],
+        scope: 'symbol',
+        visibility: ['unknown'],
+      },
+      remediation: ({ symbol }) =>
+        `\`${symbol}\` now requires this field. Add it to every request built in this repo, using a value consistent with the surrounding code's intent.`,
+    },
+    'request-field-now-required': {
+      kind: 'required-field-added',
+      taxonomy: {
+        nature: 'data-schema',
+        detectability: ['runtime-only'],
+        scope: 'symbol',
+        visibility: ['unknown'],
+      },
+      remediation: ({ symbol }) =>
+        `\`${symbol}\` now requires this field. Add it to every request built in this repo, using a value consistent with the surrounding code's intent.`,
+    },
+    'request-field-type-changed': {
+      kind: 'changed-endpoint',
+      taxonomy: {
+        nature: 'data-schema',
+        detectability: ['runtime-only'],
+        scope: 'symbol',
+        visibility: ['unknown'],
+      },
+      remediation: ({ symbol }) =>
+        `The request type for \`${symbol}\` changed. Update serialisation at each call site so the value sent matches the new type.`,
+    },
+    'request-enum-narrowed': {
+      kind: 'changed-endpoint',
+      taxonomy: {
+        nature: 'data-schema',
+        detectability: ['runtime-only'],
+        scope: 'symbol',
+        visibility: ['unknown'],
+      },
+      remediation: ({ symbol }) =>
+        `\`${symbol}\` no longer accepts some previously-valid values. Find code that sends the removed values and map them onto still-supported ones.`,
+    },
+    'response-field-removed': {
+      kind: 'changed-endpoint',
+      taxonomy: {
+        nature: 'data-schema',
+        detectability: ['runtime-only', 'external-observation'],
+        scope: 'symbol',
+        visibility: ['unknown'],
+      },
+      remediation: ({ symbol }) =>
+        `\`${symbol}\` no longer returns this field. Update every reader of that field. If the value is genuinely no longer available, propagate the absence properly rather than substituting a placeholder that could be mistaken for real data.`,
+    },
+    'response-field-type-changed': {
+      kind: 'changed-endpoint',
+      taxonomy: {
+        nature: 'data-schema',
+        detectability: ['runtime-only', 'external-observation'],
+        scope: 'symbol',
+        visibility: ['unknown'],
+      },
+      remediation: ({ symbol }) =>
+        `The response type for \`${symbol}\` changed. Update parsing and any downstream type declarations.`,
+    },
+    'response-enum-widened': {
+      kind: 'changed-endpoint',
+      taxonomy: {
+        nature: 'data-schema',
+        detectability: ['runtime-only', 'external-observation'],
+        scope: 'symbol',
+        visibility: ['unknown'],
+      },
+      remediation: ({ symbol }) =>
+        `\`${symbol}\` can now return values this code has never seen. Add explicit handling; make sure exhaustive switches and mapping tables have a safe default rather than falling through silently.`,
+    },
+    'security-added': {
+      kind: 'config-change',
+      taxonomy: {
+        nature: 'configuration',
+        detectability: ['runtime-only'],
+        scope: 'module',
+        visibility: ['unknown'],
+      },
+      remediation: ({ symbol }) =>
+        `\`${symbol}\` now requires authentication. Ensure the client attaches credentials for this call, reusing the repo's existing auth mechanism — never introduce a new credential source or hard-code a token.`,
+    },
+  },
+};
 
 interface AnySpec {
   openapi?: string;

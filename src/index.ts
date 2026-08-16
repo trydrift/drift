@@ -29,8 +29,10 @@ export type { ManifestSnapshot, TriageResult } from './detect/index.js';
 
 export { gatherEvidence, EVIDENCE_WEIGHTS } from './evidence/index.js';
 export type { EvidenceContext } from './evidence/index.js';
-export { diffSpecs, parseSpec } from './evidence/openapi.js';
-export type { OpenApiFinding, OpenApiChangeKind } from './evidence/openapi.js';
+export { diffSpecs, parseSpec } from './evidence/spec/openapi.js';
+export type { OpenApiFinding, OpenApiChangeKind } from './evidence/spec/openapi.js';
+export { SPEC_PROVIDERS, specCodeFor, computeSpecDiff } from './evidence/spec/index.js';
+export type { SpecProvider, SpecOutcome, SpecDiff, SpecUnavailable, SpecChange } from './evidence/spec/index.js';
 export { diffSurfaces, extractExports, fetchTypeSurface } from './evidence/type-surface.js';
 export type { SurfaceApi, SurfaceChange, SurfaceEntry } from './evidence/type-surface.js';
 export {

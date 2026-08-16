@@ -172,6 +172,11 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   // whether it found anything — `additions` alone cannot answer that, because
   // a clean diff and "never computed" both leave it without an entry.
   const surfaceComputed = new Set<string>();
+  // Contract documents (OpenAPI, protobuf, GraphQL) are keyed by path rather
+  // than by dependency, and recorded whether or not the comparison worked: a
+  // spec that was configured and could not be diffed must not look like one
+  // that was diffed and found clean.
+  const specChecks: CheckedSurface[] = [];
 
   let evidence = await gatherEvidence(actionable, {
     config,
@@ -192,6 +197,20 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       const key = dependencyEcosystemKey(change);
       prose.set(key, [...(prose.get(key) ?? []), source]);
     },
+    onSpecComputed: (path, provider) =>
+      specChecks.push({
+        surface: 'contract-document',
+        dependency: path,
+        status: 'checked',
+        detail: `${path} was compared between the two commits by ${provider.tool}.`,
+      }),
+    onUnavailableSpec: (path, reason) =>
+      specChecks.push({
+        surface: 'contract-document',
+        dependency: path,
+        status: 'unavailable',
+        detail: reason.remedy ? `${reason.detail} ${reason.remedy}` : reason.detail,
+      }),
   });
   logger.info(`Gathered ${evidence.length} evidence record(s)`);
 
@@ -389,7 +408,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   // What was looked at, and how it went. Recorded so the report can say which
   // surfaces were genuinely checked rather than leaving a reader to assume
   // that everything not mentioned was fine.
-  const checkedSurfaces: CheckedSurface[] = [];
+  const checkedSurfaces: CheckedSurface[] = [...specChecks];
 
   if (config.verification.behavioural.enabled) {
     checkedSurfaces.push({

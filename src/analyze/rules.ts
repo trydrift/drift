@@ -1,4 +1,5 @@
 import type { BreakingChangeKind, StructuredFinding } from '../types.js';
+import { specCodeFor } from '../evidence/spec/index.js';
 
 /**
  * Deterministic mapping from computed findings and changelog prose to
@@ -12,6 +13,11 @@ import type { BreakingChangeKind, StructuredFinding } from '../types.js';
 
 /** Map a computed finding code onto Drift's fix-strategy taxonomy. */
 export function kindForFindingCode(code: string): BreakingChangeKind {
+  // Contract-document formats (OpenAPI, protobuf, GraphQL) answer for their own
+  // codes, next to the differ that emits them — see `evidence/spec/types.ts`.
+  const spec = specCodeFor(code);
+  if (spec) return spec.kind;
+
   switch (code) {
     case 'export-removed':
       return 'removed-export';
@@ -32,24 +38,6 @@ export function kindForFindingCode(code: string): BreakingChangeKind {
     case 'package-removed':
       return 'moved-export';
 
-    case 'path-removed':
-    case 'operation-removed':
-    case 'response-status-removed':
-      return 'removed-endpoint';
-    case 'parameter-removed':
-    case 'parameter-type-changed':
-    case 'response-field-removed':
-    case 'response-field-type-changed':
-    case 'request-field-type-changed':
-    case 'request-enum-narrowed':
-    case 'response-enum-widened':
-      return 'changed-endpoint';
-    case 'parameter-now-required':
-    case 'request-field-now-required':
-      return 'required-field-added';
-    case 'security-added':
-      return 'config-change';
-
     default:
       return 'unknown';
   }
@@ -58,6 +46,11 @@ export function kindForFindingCode(code: string): BreakingChangeKind {
 /** Imperative remediation text for a computed finding. Fed to the agent verbatim. */
 export function remediationForFinding(finding: StructuredFinding, dependency: string): string {
   const { code, symbol } = finding;
+
+  // As with `kindForFindingCode`: a contract format owns the wording for its
+  // own codes, so a new format ships its remediation text with its differ.
+  const spec = specCodeFor(code);
+  if (spec) return spec.remediation(finding);
 
   switch (code) {
     case 'export-removed':
@@ -102,30 +95,6 @@ export function remediationForFinding(finding: StructuredFinding, dependency: st
       return `The package \`${symbol}\` no longer exists in \`${dependency}\`. Update the import path in every file that imports it to whichever package now provides the same API. Do not re-implement or stub the symbols it exported — if you cannot determine the replacement package, leave the import in place with a \`TODO(drift):\` comment naming it rather than guessing.`;
     case 'member-now-required':
       return `\`${symbol}\` is now required. Supply an explicit value at every construction site. Choose the value that preserves the previous default behaviour; if the previous default is not documented, leave a TODO and flag it in the PR description rather than guessing.`;
-
-    case 'path-removed':
-    case 'operation-removed':
-      return `The endpoint \`${symbol}\` no longer exists. Locate the client code that calls it and migrate to the replacement endpoint. If there is no replacement, do not delete the feature — leave the call site intact with a clearly-marked TODO and explain it in the PR description.`;
-    case 'response-status-removed':
-      return `\`${symbol}\` no longer returns this success status. Update response handling so the removed status is no longer treated as a success path.`;
-    case 'parameter-removed':
-      return `A required parameter was removed from \`${symbol}\`. Remove it from client calls; sending it may now be rejected as an unexpected parameter.`;
-    case 'parameter-now-required':
-    case 'request-field-now-required':
-      return `\`${symbol}\` now requires this field. Add it to every request built in this repo, using a value consistent with the surrounding code's intent.`;
-    case 'parameter-type-changed':
-    case 'request-field-type-changed':
-      return `The request type for \`${symbol}\` changed. Update serialisation at each call site so the value sent matches the new type.`;
-    case 'response-field-removed':
-      return `\`${symbol}\` no longer returns this field. Update every reader of that field. If the value is genuinely no longer available, propagate the absence properly rather than substituting a placeholder that could be mistaken for real data.`;
-    case 'response-field-type-changed':
-      return `The response type for \`${symbol}\` changed. Update parsing and any downstream type declarations.`;
-    case 'request-enum-narrowed':
-      return `\`${symbol}\` no longer accepts some previously-valid values. Find code that sends the removed values and map them onto still-supported ones.`;
-    case 'response-enum-widened':
-      return `\`${symbol}\` can now return values this code has never seen. Add explicit handling; make sure exhaustive switches and mapping tables have a safe default rather than falling through silently.`;
-    case 'security-added':
-      return `\`${symbol}\` now requires authentication. Ensure the client attaches credentials for this call, reusing the repo's existing auth mechanism — never introduce a new credential source or hard-code a token.`;
 
     default:
       return `Review usages of \`${symbol}\` from \`${dependency}\` and update them for the new version.`;

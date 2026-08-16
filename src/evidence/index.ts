@@ -1,4 +1,4 @@
-import type { DependencyChange, Evidence } from '../types.js';
+import type { DependencyChange, Evidence, EvidenceSource } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
 import { mapWithConcurrency } from '../util/http.js';
@@ -13,7 +13,16 @@ import {
 } from './changelog.js';
 import { fetchRegistryInfo } from './registry.js';
 import { fetchReleaseNotes } from './releases.js';
-import { diffSpecs, parseSpec, type OpenApiFinding } from './openapi.js';
+import {
+  computeSpecDiff,
+  specEnabled,
+  specPaths,
+  SPEC_PROVIDERS,
+  SPEC_WEIGHTS,
+  type SpecChange,
+  type SpecProvider,
+  type SpecUnavailable,
+} from './spec/index.js';
 import {
   diffSurfaces,
   entryPointMoved,
@@ -41,15 +50,21 @@ import { join } from 'node:path';
  * which Drift will dispatch an automatic fix. "The major number went up" is a
  * reason to look, not a reason to let an agent edit your code.
  */
-const WEIGHTS = {
+const WEIGHTS: Record<Exclude<EvidenceSource, 'behavioural-diff'>, number> = {
   'type-surface-diff': 1.0,
-  'openapi-diff': 1.0,
+  // Contract-document diffs carry the weight their own provider declares, so
+  // a format's weight lives with the differ that earns it rather than here.
+  ...SPEC_WEIGHTS,
   'migration-guide': 0.8,
   'github-release': 0.7,
   changelog: 0.65,
   'registry-metadata': 0.4,
   'semver-heuristic': 0.25,
-} as const;
+  // `behavioural-diff` is deliberately absent: a probe's weight depends on what
+  // the probe observed (a difference, no difference, or an unavailable run),
+  // so `verification/behavioural.ts` sets it per record rather than reading a
+  // constant that could only ever be wrong for two of the three outcomes.
+};
 
 export interface EvidenceContext {
   config: DriftConfig;
@@ -99,6 +114,19 @@ export interface EvidenceContext {
    * changelog was read and nothing in it looked breaking.
    */
   onProseConsulted?: (change: DependencyChange, source: ProseSource) => void;
+  /**
+   * Called when a configured contract document *was* compared, even if the
+   * comparison found nothing. The counterpart of `onSurfaceComputed`: "the
+   * schema was diffed and is clean" and "the schema was never diffed" are
+   * different claims, and only this can tell them apart.
+   */
+  onSpecComputed?: (path: string, provider: SpecProvider) => void;
+  /**
+   * Called when a configured contract document could not be compared —
+   * `buf` missing, a document that does not parse. A fact about the run, not
+   * about the contract, and the report says which.
+   */
+  onUnavailableSpec?: (path: string, reason: SpecUnavailable) => void;
 }
 
 /** One prose document Drift reached, for reporting what was actually read. */
@@ -562,56 +590,81 @@ function formatSurfaceChanges(changes: readonly SurfaceChange[]): string {
 }
 
 /**
- * Diff OpenAPI specs committed in the user's own repo.
+ * Diff the contract documents committed in the user's own repo.
  *
  * This covers the case the dependency-manifest path cannot see at all: a repo
- * that vendors the spec of an upstream HTTP service. When that spec changes,
- * the consumer's client code breaks even though no package version moved.
+ * that vendors the contract of an upstream service — an OpenAPI document, a
+ * `.proto`, a GraphQL schema. When that document changes, the consumer's client
+ * code breaks even though no package version moved.
+ *
+ * Format-agnostic by construction. Every provider in `SPEC_PROVIDERS` declares
+ * which config keys switch it on, which documents it recognises, and what its
+ * evidence is called and weighs, so this loop never learns that OpenAPI exists.
  */
 async function gatherSpecEvidence(ctx: EvidenceContext): Promise<Evidence[]> {
-  const { config, readRepoFile, beforeSha, afterSha } = ctx;
-  if (!config.evidence.openapi) return [];
+  const { config, logger, readRepoFile, beforeSha, afterSha } = ctx;
   if (!readRepoFile || !beforeSha || !afterSha) return [];
-  if (config.evidence.openapiSpecs.length === 0) return [];
 
   const out: Evidence[] = [];
 
-  for (const specPath of config.evidence.openapiSpecs) {
-    // Globs are resolved by the caller's file listing where available; a
-    // literal path is the common case and is handled directly.
-    if (specPath.includes('*')) continue;
+  for (const provider of SPEC_PROVIDERS) {
+    if (!specEnabled(provider, config)) continue;
 
-    const [before, after] = await Promise.all([
-      readRepoFile(specPath, beforeSha),
-      readRepoFile(specPath, afterSha),
-    ]);
-    if (!before || !after || before === after) continue;
-    if (!parseSpec(after)) continue;
+    for (const specPath of specPaths(provider, config)) {
+      // Globs are resolved by the caller's file listing where available; a
+      // literal path is the common case and is handled directly.
+      if (specPath.includes('*')) continue;
 
-    const findings = diffSpecs(before, after);
-    if (findings.length === 0) continue;
+      const [before, after] = await Promise.all([
+        readRepoFile(specPath, beforeSha),
+        readRepoFile(specPath, afterSha),
+      ]);
+      if (!before || !after || before === after) continue;
+      if (!provider.handles(specPath, after)) continue;
 
-    out.push({
-      id: stableId('ev', specPath, 'openapi', afterSha),
-      source: 'openapi-diff',
-      dependency: specPath,
-      locator: specPath,
-      title: `${findings.length} breaking change(s) in ${specPath}`,
-      content: formatOpenApiFindings(findings),
-      findings: findings.map((f) => ({
-        code: f.kind,
-        symbol: f.location,
-        detail: f.detail,
-      })),
-      weight: WEIGHTS['openapi-diff'],
-    });
+      const outcome = await computeSpecDiff(
+        provider,
+        { path: specPath, before, after },
+        { logger, exec: ctx.exec, env: ctx.env },
+      );
+
+      if (!outcome.available) {
+        // Stated, never silent. "buf is not installed" and "that document does
+        // not parse" lead a developer to different actions, and a spec that was
+        // configured and then not compared must not look like one that was
+        // compared and found clean.
+        logger.debug(`No ${provider.id} diff for ${specPath}: ${outcome.detail}`);
+        ctx.onUnavailableSpec?.(specPath, outcome);
+        continue;
+      }
+
+      ctx.onSpecComputed?.(specPath, provider);
+      if (outcome.changes.length === 0) continue;
+
+      out.push({
+        id: stableId('ev', specPath, provider.id, afterSha),
+        source: provider.source,
+        dependency: specPath,
+        locator: specPath,
+        title: `${outcome.changes.length} breaking change(s) in ${specPath}`,
+        content: formatSpecChanges(outcome.changes),
+        findings: outcome.changes.map((change) => ({
+          code: change.code,
+          symbol: change.location,
+          detail: change.detail,
+          ...(change.before !== undefined ? { before: change.before } : {}),
+          ...(change.after !== undefined ? { after: change.after } : {}),
+        })),
+        weight: outcome.weight,
+      });
+    }
   }
 
   return out;
 }
 
-function formatOpenApiFindings(findings: readonly OpenApiFinding[]): string {
-  return findings.map((f) => `- \`${f.location}\` — ${f.detail}`).join('\n');
+function formatSpecChanges(changes: readonly SpecChange[]): string {
+  return changes.map((change) => `- \`${change.location}\` — ${change.detail}`).join('\n');
 }
 
 /**
@@ -665,7 +718,7 @@ function truncate(text: string, max: number): string {
 }
 
 export { WEIGHTS as EVIDENCE_WEIGHTS };
-export * from './openapi.js';
+export * from './spec/index.js';
 export * from './type-surface.js';
 export * from './surface/index.js';
 export * from './changelog.js';

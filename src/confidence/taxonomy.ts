@@ -1,4 +1,5 @@
 import type { BreakingChangeKind } from '../types.js';
+import { SPEC_PROVIDERS } from '../evidence/spec/index.js';
 
 /**
  * What kind of break is this?
@@ -201,88 +202,23 @@ const BY_FINDING_CODE: Record<string, Omit<ChangeTaxonomy, 'origin'>> = {
     visibility: ['direct'],
   },
 
-  /* --- OpenAPI ----------------------------------------------------------- */
-  // Endpoints have no import edge and no compile step, so nothing local proves
-  // a consumer is affected. `external-observation` is the honest floor.
-  'path-removed': {
-    nature: 'protocol',
-    detectability: ['runtime-only', 'external-observation'],
-    scope: 'module',
-    visibility: ['unknown'],
-  },
-  'operation-removed': {
-    nature: 'protocol',
-    detectability: ['runtime-only', 'external-observation'],
-    scope: 'symbol',
-    visibility: ['unknown'],
-  },
-  'response-status-removed': {
-    nature: 'protocol',
-    detectability: ['runtime-only', 'external-observation'],
-    scope: 'symbol',
-    visibility: ['unknown'],
-  },
-  'parameter-removed': {
-    nature: 'protocol',
-    detectability: ['runtime-only'],
-    scope: 'symbol',
-    visibility: ['unknown'],
-  },
-  'parameter-type-changed': {
-    nature: 'data-schema',
-    detectability: ['runtime-only'],
-    scope: 'symbol',
-    visibility: ['unknown'],
-  },
-  'parameter-now-required': {
-    nature: 'protocol',
-    detectability: ['runtime-only'],
-    scope: 'symbol',
-    visibility: ['unknown'],
-  },
-  'response-field-removed': {
-    nature: 'data-schema',
-    detectability: ['runtime-only', 'external-observation'],
-    scope: 'symbol',
-    visibility: ['unknown'],
-  },
-  'response-field-type-changed': {
-    nature: 'data-schema',
-    detectability: ['runtime-only', 'external-observation'],
-    scope: 'symbol',
-    visibility: ['unknown'],
-  },
-  'request-field-type-changed': {
-    nature: 'data-schema',
-    detectability: ['runtime-only'],
-    scope: 'symbol',
-    visibility: ['unknown'],
-  },
-  'request-field-now-required': {
-    nature: 'data-schema',
-    detectability: ['runtime-only'],
-    scope: 'symbol',
-    visibility: ['unknown'],
-  },
-  'request-enum-narrowed': {
-    nature: 'data-schema',
-    detectability: ['runtime-only'],
-    scope: 'symbol',
-    visibility: ['unknown'],
-  },
-  'response-enum-widened': {
-    nature: 'data-schema',
-    detectability: ['runtime-only', 'external-observation'],
-    scope: 'symbol',
-    visibility: ['unknown'],
-  },
-  'security-added': {
-    nature: 'configuration',
-    detectability: ['runtime-only'],
-    scope: 'module',
-    visibility: ['unknown'],
-  },
+  /* --- Contract documents ------------------------------------------------ */
+  // OpenAPI, protobuf and GraphQL codes are not listed here: each is declared
+  // by the provider that emits it (`evidence/spec/*.ts`), alongside the code's
+  // remediation text and fix-strategy kind. A classification that lived three
+  // files away from the differ was one a new format could silently forget,
+  // and a forgotten code is classified `default` — which reads as "we could
+  // not tell" rather than as "nobody registered this".
+  ...specTaxonomies(),
 };
+
+function specTaxonomies(): Record<string, Omit<ChangeTaxonomy, 'origin'>> {
+  const out: Record<string, Omit<ChangeTaxonomy, 'origin'>> = {};
+  for (const provider of SPEC_PROVIDERS) {
+    for (const [code, spec] of Object.entries(provider.codes)) out[code] = spec.taxonomy;
+  }
+  return out;
+}
 
 /**
  * Fallback classification from the remediation kind.

@@ -24,6 +24,7 @@ import type { UpgradeRationale } from './rationale/types.js';
 import type { ChangeTaxonomy } from './confidence/taxonomy.js';
 import type { AnalysisGap, CheckedSurface, ConfidenceAssessment } from './confidence/types.js';
 import type { CommunityRecipeCandidate } from './remediation/types.js';
+import type { SpecEvidenceSource } from './evidence/spec/sources.js';
 import type { UpgradeVerification } from './verification/upgrade-probe.js';
 
 export type { UpgradeRationale };
@@ -121,16 +122,22 @@ export interface DependencyChange {
   workspaceName?: string;
 }
 
-/** Where a piece of evidence came from. Drives how much we trust it. */
+/**
+ * Where a piece of evidence came from. Drives how much we trust it.
+ *
+ * The contract-document diffs (OpenAPI and friends) are not listed by hand:
+ * each is declared by the provider that produces it, and `SpecEvidenceSource`
+ * is the union of those declarations. See `evidence/spec/sources.ts`.
+ */
 export type EvidenceSource =
   | 'registry-metadata'
   | 'github-release'
   | 'changelog'
   | 'migration-guide'
-  | 'openapi-diff'
   | 'type-surface-diff'
   | 'behavioural-diff'
-  | 'semver-heuristic';
+  | 'semver-heuristic'
+  | SpecEvidenceSource;
 
 /**
  * A machine-extracted finding attached to an Evidence record.

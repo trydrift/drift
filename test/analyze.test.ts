@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { analyze, matchProse } from '../dist/analyze/index.js';
-import { diffSpecs } from '../dist/evidence/openapi.js';
+import { diffSpecs } from '../dist/evidence/spec/openapi.js';
 import {
   acceptsCallOfArity,
   callCannotResolveTo,

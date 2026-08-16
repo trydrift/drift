@@ -12,6 +12,7 @@ import {
   type VerificationOutcome,
 } from './types.js';
 import { isLocallyUnprovable, type ChangeTaxonomy } from './taxonomy.js';
+import { SPEC_ORIGIN_CLASSES } from '../evidence/spec/index.js';
 
 /**
  * The one calculation.
@@ -49,7 +50,11 @@ export const CALIBRATION_VERSION = 'drift-confidence-1';
  */
 const ORIGIN_CLASS: Record<EvidenceSource, string> = {
   'type-surface-diff': 'computed-artifact',
-  'openapi-diff': 'computed-artifact',
+  // Contract-document diffs declare their own class, next to the differ that
+  // produces them — a diff of a committed `.proto` is as much a computed
+  // artifact as a diff of an OpenAPI document, and neither should have to be
+  // remembered here to be scored.
+  ...SPEC_ORIGIN_CLASSES,
   // Same author, same release, frequently copy-pasted between the two.
   changelog: 'maintainer-narrative',
   'github-release': 'maintainer-narrative',

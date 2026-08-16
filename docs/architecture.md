@@ -48,9 +48,12 @@ src/
 │   ├── registry.ts       npm, PyPI, crates.io, Go proxy, Maven, RubyGems
 │   ├── changelog.ts      CHANGELOG + migration guide retrieval and slicing
 │   ├── releases.ts       GitHub release notes for a version range
-│   ├── openapi.ts        Consumer-breaking spec diff engine
 │   ├── type-surface.ts   TypeScript .d.ts API diff via the compiler API
 │   ├── arduino-index.ts  The Arduino Library Manager index, reduced and cached
+│   ├── spec/             Contract-document diffs, one provider per format
+│   │   ├── types.ts      The SpecProvider interface — source, weight, codes
+│   │   ├── sources.ts    The evidence sources those providers publish under
+│   │   └── openapi.ts    Consumer-breaking OpenAPI/Swagger diff engine
 │   └── surface/          Computed API diffs for cargo, go, maven, pypi, nuget,
 │       │                 and the three C/C++ ecosystems
 │       ├── c.ts          Source resolution per C ecosystem
