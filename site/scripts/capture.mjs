@@ -40,6 +40,7 @@ const { scanUpgrades } = await import(join(repoRoot, 'dist/upgrade/scan.js'));
 const { DriftConfigSchema } = await import(join(repoRoot, 'dist/config/schema.js'));
 const { createLogger } = await import(join(repoRoot, 'dist/util/logger.js'));
 const { configureHttpDiskCache } = await import(join(repoRoot, 'dist/util/http.js'));
+const { deriveOverallConfidence } = await import(join(repoRoot, 'dist/confidence/calibrate.js'));
 
 /**
  * A disk cache, and a GitHub token.
@@ -415,6 +416,11 @@ function slimCandidate(candidate) {
         summary: change.summary,
         remediation: change.remediation,
         confidence: change.confidence,
+        // The single customer-facing number, computed from the same
+        // assessment the extension and the Markdown report read. `null` for
+        // the rare finding with no assessment at all, so the page can fall
+        // back to the plain band without pretending it has a score.
+        overall: change.assessment ? deriveOverallConfidence(change.assessment) : null,
         symbols: change.symbols.slice(0, 4),
         evidence: evidenceFor(change, evidenceById),
         // Strongest evidence first — the same ranking `dedupeSites` applies in

@@ -36,11 +36,25 @@ export interface EvidenceRef {
   locator: string | null;
 }
 
+/** The single customer-facing number — see `deriveOverallConfidence` in core. */
+export interface OverallConfidence {
+  score: number;
+  band: "high" | "medium" | "low" | "none";
+  label: string;
+}
+
 export interface BreakingChange {
   kind: string;
   summary: string;
   remediation: string;
   confidence: "high" | "medium" | "low";
+  /**
+   * Absent on recordings captured before this field existed, and `null` for
+   * the rare finding with no assessment to derive it from. Both render the
+   * same way: fall back to a label for the plain `confidence` band above,
+   * rather than a fabricated number.
+   */
+  overall?: OverallConfidence | null;
   symbols: string[];
   evidence?: EvidenceRef[];
   sites: ImpactSite[];
@@ -129,6 +143,24 @@ function asSeverityInput(candidate: Candidate): SeverityInput {
         ? "low"
         : "none";
   return { ...candidate, recommendation: candidate.recommendation ?? undefined, impactConfidence };
+}
+
+/** Mirrors `OVERALL_LABEL` in `src/confidence/types.ts`, for recordings with no stored score to read a label from. */
+const BAND_LABEL: Record<"high" | "medium" | "low", string> = {
+  high: "Very confident",
+  medium: "Fairly confident",
+  low: "Not very confident",
+};
+
+/**
+ * The line a reader sees: a real "82/100 — Fairly confident" for a recording
+ * captured with `overall` present, or just the label for an older one that
+ * only has the plain band. Never invents a number for data that doesn't have
+ * one.
+ */
+export function overallConfidenceLabel(change: BreakingChange): string {
+  if (change.overall) return `${change.overall.score}/100 — ${change.overall.label}`;
+  return BAND_LABEL[change.confidence];
 }
 
 export function severityOf(candidate: Candidate): UpgradeSeverity {

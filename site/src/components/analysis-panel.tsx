@@ -5,9 +5,11 @@ import { cn } from "@/lib/cn";
 import {
   ECOSYSTEM_LABEL,
   describeSeverity,
+  overallConfidenceLabel,
   severityOf,
   shortDate,
   totalsOf,
+  type BreakingChange,
   type Candidate,
   type EvidenceRef,
   type ImpactSite,
@@ -56,6 +58,18 @@ const CONFIDENCE_STYLE: Record<ImpactSite["confidence"], string> = {
   medium: "bg-amber-500/12 text-amber-700 dark:text-amber-400",
   low: "bg-surface-hover text-faint",
 };
+
+/** Same rule as `CONFIDENCE_STYLE`, keyed by the overall band instead of a per-site one. */
+const OVERALL_STYLE: Record<"high" | "medium" | "low" | "none", string> = {
+  high: "bg-brand-soft text-brand-text",
+  medium: "bg-amber-500/12 text-amber-700 dark:text-amber-400",
+  low: "bg-surface-hover text-faint",
+  none: "bg-surface-hover text-faint",
+};
+
+function overallBand(change: BreakingChange): "high" | "medium" | "low" | "none" {
+  return change.overall?.band ?? change.confidence;
+}
 
 /** Permalink to the exact line, at the exact commit that was analysed. */
 export function sourceUrl(recording: Recording, site: ImpactSite): string {
@@ -515,6 +529,15 @@ function PackageRow({
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded bg-surface-hover px-1.5 py-0.5 font-mono text-[10px] text-faint">
                   {change.kind}
+                </span>
+                <span
+                  className={cn(
+                    "rounded px-1.5 py-0.5 text-[10px] font-medium",
+                    OVERALL_STYLE[overallBand(change)],
+                  )}
+                  title="How confident Drift is overall, combining whether the change really happened upstream, whether it reaches this repository, and whether anything confirmed it."
+                >
+                  {overallConfidenceLabel(change)}
                 </span>
                 <span className="text-xs font-medium text-foreground">{change.summary}</span>
               </div>

@@ -404,10 +404,14 @@ export function Pipeline() {
           What the Confidence on a Finding Means
         </h3>
         <p className="mt-2 max-w-3xl text-[13px] leading-relaxed text-muted">
-          Two separate questions, never merged into one number. <em className="not-italic text-foreground">Did
+          Two separate questions underneath. <em className="not-italic text-foreground">Did
           this happen upstream?</em> is answered by the evidence — a computed diff starts high,
           prose starts medium, and agreement between sources promotes it.{" "}
           <em className="not-italic text-foreground">Does it land here?</em> is answered per line.
+          Drift keeps them apart internally — a certain upstream diff is not a reason to call a
+          repository affected on its own — but rolls them into one score on the report, so the
+          question &ldquo;how sure is Drift, overall?&rdquo; has a plain answer without hiding the
+          breakdown that produced it.
         </p>
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           {CONFIDENCE.map((level) => (
@@ -422,6 +426,13 @@ export function Pipeline() {
         <p className="mt-3 max-w-3xl text-[12px] leading-relaxed text-muted">
           AI-pass findings are capped at medium by construction, so they can never alone clear the
           bar to open a pull request. They assist recall — they don&rsquo;t get a vote.
+        </p>
+        <p className="mt-3 max-w-3xl text-[12px] leading-relaxed text-muted">
+          And when Drift isn&rsquo;t sure a change lands in your code, it says so in the verdict
+          itself — <span className="font-medium text-foreground">&ldquo;may affect your
+          code&rdquo;</span>, not <span className="font-medium text-foreground">&ldquo;affects your
+          code&rdquo;</span>, for anything short of a directly imported match. Being wrong with the
+          same confidence as being right is the failure mode this whole model exists to avoid.
         </p>
       </div>
     </section>
@@ -440,7 +451,7 @@ function FindingCard() {
       <div className="border-b border-border px-3 py-3">
         <div className="flex flex-wrap items-center gap-1.5">
           <GhBadge tone="warn">signature-change</GhBadge>
-          <GhBadge tone="brand">confidence: high</GhBadge>
+          <GhBadge tone="brand">confidence: 95/100 — Very confident</GhBadge>
           <GhBadge>cites: computed surface diff</GhBadge>
         </div>
         <p className="mt-2.5 text-[13px] font-medium text-foreground">
