@@ -116,6 +116,7 @@ describe('the command an upgrade will run', () => {
     breakingCount: 0,
     impactCount: 0,
     impactFiles: 0,
+    impactConfidence: 'high',
     risk: 'none',
     gaps: [],
     toolRequests: [],

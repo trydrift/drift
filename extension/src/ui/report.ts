@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import { join } from 'node:path';
 import type { BreakingChange, Evidence, RemediationPlan } from '../../../src/types.js';
+import { deriveOverallConfidence } from '../../../src/confidence/calibrate.js';
+import { evidenceStrengthLabel } from '../../../src/report/confidence.js';
 import type { DriftState } from '../state.js';
 import { highlightCode, languageForEcosystem } from './highlight.js';
 
@@ -489,6 +491,9 @@ function renderChangeCard(
   const sites = plan.impactSites.filter((s) => s.breakingChangeId === change.id);
   const evidence = plan.evidence.filter((e) => change.citations.includes(e.id));
   const diff = changeDiffContext(change, plan);
+  // The one number a reader sees first — the three-dimension breakdown in
+  // `renderConfidenceDetail` stays underneath for anyone who wants the working.
+  const overall = change.assessment ? deriveOverallConfidence(change.assessment) : null;
 
   const siteList = sites.length
     ? `<ul class="sites">
@@ -533,7 +538,9 @@ function renderChangeCard(
   return `
 <article class="card ${focused ? 'focused' : ''}" id="${escapeAttr(change.id)}" ${focused ? 'data-focus="true"' : ''}>
   <div class="card-head">
-    <span class="badge ${change.confidence}">${change.confidence}</span>
+    <span class="badge ${overall?.band ?? change.confidence}" title="How confident Drift is overall — did this really happen upstream, does it reach this repository, and did anything confirm it">${
+      overall ? `${overall.score}/100 · ${escapeHtml(overall.label)}` : escapeHtml(change.confidence)
+    }</span>
     <span class="kind">${escapeHtml(change.kind)}</span>
     <code class="dep">${escapeHtml(change.dependency)}</code>
     ${renderIssueBranchButton('change', change.id)}
@@ -617,7 +624,7 @@ function renderEvidenceItem(evidence: Evidence, plan: RemediationPlan): string {
         ? `<a data-url="${escapeAttr(evidence.url)}">${escapeHtml(evidence.title)}</a>`
         : `<span>${escapeHtml(evidence.title)}</span>`
     }
-    <span class="weight">weight ${evidence.weight.toFixed(2)}</span>
+    <span class="weight" title="weight ${evidence.weight.toFixed(2)}">${escapeHtml(evidenceStrengthLabel(evidence.weight))}</span>
   </summary>
   <div class="markdown evidence-body">${renderMarkdown(evidence.content, {
     ...(evidence.url ? { baseUrl: evidence.url } : {}),
@@ -647,11 +654,13 @@ function riskClass(risk: string): string {
 }
 
 /**
- * The three dimensions, shown separately.
+ * The three dimensions, shown separately, underneath the single overall score.
  *
- * The single badge above is upstream confidence and always was; showing it
- * alone let a machine-verified upstream diff read as a high-confidence reason
- * to edit local code nothing had shown to be affected.
+ * The badge above used to be upstream confidence alone; showing it by itself
+ * let a machine-verified upstream diff read as a high-confidence reason to
+ * edit local code nothing had shown to be affected. The overall score fixes
+ * that at a glance, but the breakdown stays here for anyone who wants to see
+ * which of the three questions is actually carrying the number.
  */
 function renderConfidenceDetail(change: BreakingChange): string {
   const assessment = change.assessment;
@@ -1074,6 +1083,7 @@ button.selected { border-color: var(--vscode-focusBorder); box-shadow: inset 0 0
                 color: var(--vscode-editorWarning-foreground); }
 .badge.low { background: var(--vscode-inputValidation-infoBackground);
              color: var(--vscode-editorInfo-foreground); }
+.badge.none { background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); }
 .kind { font-size: 0.78rem; color: var(--vscode-descriptionForeground); }
 .dep { margin-left: auto; }
 .fix { margin: 8px 0; }

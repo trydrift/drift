@@ -56,6 +56,7 @@ function candidate(over: Partial<UpgradeCandidate> = {}): UpgradeCandidate {
     breakingCount: 7,
     impactCount: 0,
     impactFiles: 0,
+    impactConfidence: 'high',
     risk: 'none',
     gaps: [],
     toolRequests: [],
