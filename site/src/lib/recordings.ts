@@ -110,13 +110,25 @@ export type { UpgradeSeverity };
 /**
  * A captured candidate, in the shape the core verdict expects.
  *
- * The only difference is `recommendation`: JSON has no `undefined`, so the
- * recording stores `null` where the core type uses an absent field. Adapting
- * here rather than loosening the core type keeps the change where the format
- * mismatch actually is.
+ * Two differences from the recorded JSON. `recommendation`: JSON has no
+ * `undefined`, so the recording stores `null` where the core type uses an
+ * absent field. And `impactConfidence`: recordings predate that field, so it
+ * is derived here from the per-site confidence already present in every
+ * capture, the same way `scan.ts` derives it live — the strongest band across
+ * every site on every breaking change, so a recording with only textual
+ * matches still gets the hedged "May affect" wording rather than reading as
+ * unhedged just because it is old data.
  */
 function asSeverityInput(candidate: Candidate): SeverityInput {
-  return { ...candidate, recommendation: candidate.recommendation ?? undefined };
+  const confidences = candidate.breaking.flatMap((b) => b.sites.map((s) => s.confidence));
+  const impactConfidence = confidences.includes("high")
+    ? "high"
+    : confidences.includes("medium")
+      ? "medium"
+      : confidences.includes("low")
+        ? "low"
+        : "none";
+  return { ...candidate, recommendation: candidate.recommendation ?? undefined, impactConfidence };
 }
 
 export function severityOf(candidate: Candidate): UpgradeSeverity {
