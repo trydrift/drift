@@ -146,10 +146,14 @@ describe('report rendering', () => {
     });
 
     const html = __renderForTest(state);
+    // Syntax highlighting wraps tokens like `render` in their own <span>, so
+    // assertions about the escaped source text strip tags first rather than
+    // expecting it to survive as one contiguous run.
+    const text = html.replace(/<[^>]+>/g, '');
 
     assert.match(html, /<figcaption>before<\/figcaption>/);
-    assert.match(html, /render\(&lt;App \/&gt;\)/);
-    assert.match(html, /old\(&lt;tag&gt;\)/);
+    assert.match(text, /render\(&lt;App \/&gt;\)/);
+    assert.match(text, /old\(&lt;tag&gt;\)/);
     assert.doesNotMatch(html, /render\(<App \/>/);
   });
 

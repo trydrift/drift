@@ -26,6 +26,7 @@ import { detectWorkspaces, memberDirectories } from '../../src/detect/workspace.
 import type { RemediationPlan } from '../../src/types.js';
 import { discoverNestedProjects } from '../../src/detect/nested.js';
 import type { IssueBranchAction } from './issue-actions.js';
+import { openPackageVersionDiff } from './version-diff.js';
 
 /**
  * Drift for VS Code.
@@ -207,6 +208,15 @@ function registerCommands(
   register('drift.keepAllChanges', () => review.keepAll());
   register('drift.undoAllChanges', () => review.undoAll());
   register('drift.openChangeDiff', ((path: string) => reviewUi.openDiff(path)) as never);
+  // The report panel's own "See diff" button — unlike the home view's
+  // `openVersionDiff` webview message, this has no `UpgradeCandidate` to look
+  // an id up against, so it carries the ecosystem/name/from/to it needs
+  // straight in its arguments.
+  register(
+    'drift.openVersionDiff',
+    ((ecosystem: string, name: string, from: string, to: string) =>
+      openPackageVersionDiff({ ecosystem, name, from, to, output })) as never,
+  );
   // Whatever the checks printed, verbatim. A summary is enough to decide with;
   // a failure is not something to paraphrase.
   register('drift.showCheckOutput', ((order: number) => {

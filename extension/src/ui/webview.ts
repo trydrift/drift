@@ -18,6 +18,7 @@ import type { ReviewGroup, ReviewTotals } from '../review/store.js';
 import type { BreakingChange, Evidence, RemediationPlan } from '../../../src/types.js';
 import type { Vulnerability } from '../../../src/rationale/types.js';
 import type { CheckOutcome } from '../../../src/verification/checks.js';
+import { highlightCode } from './highlight.js';
 
 /**
  * The panel's markup.
@@ -1385,9 +1386,16 @@ function renderBreak(
       ${
         // The declaration itself, before and after — the actual evidence for
         // the summary above, scoped to just this change rather than the
-        // dependency's full evidence dump below.
+        // dependency's full evidence dump below. "See diff" answers the
+        // question a before/after pair always raises next: what else changed
+        // around it — by fetching the two published versions and opening a
+        // real diff, the same one `renderEvidence`'s semver-heuristic button
+        // opens, rather than asking the reader to go find them.
         change.before && change.after && change.before !== change.after
-          ? `<div class="markdown">${renderMarkdown(`before: ${change.before}\nafter: ${change.after}`)}</div>`
+          ? `<div class="before-after">
+              <div class="markdown">${renderMarkdown(`before: ${change.before}\nafter: ${change.after}`)}</div>
+              <button class="ctl bordered" data-action="openVersionDiff" data-id="${escapeAttr(candidate.id)}" title="Fetch ${escapeAttr(candidate.name)} ${escapeAttr(candidate.current)} and ${escapeAttr(candidate.selected)} and open a real diff between them">See diff</button>
+            </div>`
           : ''
       }
       <div class="fix"><b>Fix:</b> <div class="markdown fix-body">${renderMarkdown(change.remediation)}</div></div>
@@ -1397,7 +1405,7 @@ function renderBreak(
               .slice(0, 20)
               .map(
                 (site) =>
-                  `<li><a data-action="openFile" data-file="${escapeAttr(site.file)}" data-line="${site.line}"><code>${escapeHtml(site.file)}:${site.line}</code></a><span>${escapeHtml(site.excerpt)}</span></li>`,
+                  `<li><a data-action="openFile" data-file="${escapeAttr(site.file)}" data-line="${site.line}"><code>${escapeHtml(site.file)}:${site.line}</code></a><code class="excerpt">${highlightCode(site.excerpt)}</code></li>`,
               )
               .join('')}${sites.length > 20 ? `<li class="hint">…and ${sites.length - 20} more</li>` : ''}</ul>`
           : ''
@@ -1830,7 +1838,7 @@ export function renderMarkdown(text: string, options: MarkdownOptions = {}): str
 
     if (line.startsWith('```')) {
       if (inCode) {
-        out.push(`<pre><code>${escapeHtml(code.join('\n'))}</code></pre>`);
+        out.push(`<pre><code>${highlightCode(code.join('\n'))}</code></pre>`);
         code = [];
         inCode = false;
       } else {
@@ -1854,7 +1862,7 @@ export function renderMarkdown(text: string, options: MarkdownOptions = {}): str
     if (labelledCode) {
       out.push(
         closeList(),
-        `<figure class="code-compare"><figcaption>${escapeHtml(labelledCode[1]!.toLowerCase())}</figcaption><pre><code>${escapeHtml(
+        `<figure class="code-compare"><figcaption>${escapeHtml(labelledCode[1]!.toLowerCase())}</figcaption><pre><code>${highlightCode(
           labelledCode[2]!,
         )}</code></pre></figure>`,
       );
@@ -1880,7 +1888,7 @@ export function renderMarkdown(text: string, options: MarkdownOptions = {}): str
     out.push(closeList(), `<p>${inlineMarkdown(line, options)}</p>`);
   }
 
-  if (inCode && code.length) out.push(`<pre><code>${escapeHtml(code.join('\n'))}</code></pre>`);
+  if (inCode && code.length) out.push(`<pre><code>${highlightCode(code.join('\n'))}</code></pre>`);
   out.push(closeList());
   return out.filter(Boolean).join('');
 }
@@ -2093,6 +2101,14 @@ pre {
   border-radius: 5px;
 }
 pre code { background: none; padding: 0; }
+/* Token colors for highlightCode() — the theme's own symbol-icon colors, so a
+   snippet picks up the same palette as the outline view and breadcrumbs
+   instead of a fixed color that only happens to suit one theme. */
+.tok-kw { color: var(--vscode-symbolIcon-keywordForeground, #c586c0); }
+.tok-str { color: var(--vscode-symbolIcon-stringForeground, #ce9178); }
+.tok-num { color: var(--vscode-symbolIcon-numberForeground, #b5cea8); }
+.tok-fn { color: var(--vscode-symbolIcon-functionForeground, #dcdcaa); }
+.tok-com { color: var(--vscode-descriptionForeground); font-style: italic; }
 button {
   font: inherit;
   border: 1px solid var(--vscode-button-border, transparent);
@@ -2293,16 +2309,22 @@ button.wide { width: 100%; }
   overflow: auto;
   color: var(--vscode-descriptionForeground);
 }
+/* A soft fading ring rather than a hard two-tone border — the border trick
+   reads as two flat arcs (one grey, one accent) chasing each other, which at
+   a glance looks like a stray line spinning rather than a loading indicator.
+   A conic gradient masked down to a ring fades smoothly around its own
+   circumference instead, the same shape VS Code's own spinners use. */
 .spinner {
-  width: 12px;
-  height: 12px;
+  width: 13px;
+  height: 13px;
   flex: 0 0 auto;
   border-radius: 50%;
-  border: 1.6px solid var(--vscode-panel-border);
-  border-top-color: var(--vscode-progressBar-background);
+  background: conic-gradient(from 0turn, transparent, transparent 65%, var(--vscode-progressBar-background));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 1.6px), #000 calc(100% - 1.6px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 1.6px), #000 calc(100% - 1.6px));
   animation: spin .8s linear infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin { to { transform: rotate(1turn); } }
 
 /* Clicked button gets the spinner immediately, before the extension has had
    a chance to answer — a click that visibly did nothing is what makes people
@@ -2317,11 +2339,12 @@ button[data-action].is-loading::after {
   position: absolute;
   inset: 0;
   margin: auto;
-  width: 12px;
-  height: 12px;
+  width: 13px;
+  height: 13px;
   border-radius: 50%;
-  border: 1.6px solid var(--vscode-panel-border);
-  border-top-color: var(--vscode-progressBar-background);
+  background: conic-gradient(from 0turn, transparent, transparent 65%, var(--vscode-progressBar-background));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 1.6px), #000 calc(100% - 1.6px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 1.6px), #000 calc(100% - 1.6px));
   animation: spin .8s linear infinite;
 }
 button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
@@ -2540,7 +2563,9 @@ button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
 .fix .code-compare { display: block; }
 ul.sites { margin: 6px 0; padding: 0; list-style: none; display: grid; gap: 5px; }
 ul.sites li { display: grid; gap: 1px; overflow-wrap: anywhere; }
-ul.sites span { font-size: 11px; color: var(--vscode-descriptionForeground); }
+ul.sites code.excerpt { font-size: 11px; color: var(--vscode-descriptionForeground); background: none; padding: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.before-after { display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap; }
+.before-after .markdown { flex: 1 1 240px; min-width: 0; }
 .evidence { display: grid; gap: 5px; margin-top: 6px; }
 .evidence > details { border: 1px solid var(--vscode-panel-border); border-radius: 4px; padding: 5px 7px; }
 .evidence summary { display: flex; gap: 6px; align-items: center; cursor: pointer; overflow-wrap: anywhere; }

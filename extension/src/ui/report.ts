@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { join } from 'node:path';
 import type { BreakingChange, Evidence, RemediationPlan } from '../../../src/types.js';
 import type { DriftState } from '../state.js';
+import { highlightCode } from './highlight.js';
 
 /**
  * The Drift report panel.
@@ -488,7 +489,7 @@ function renderChangeCard(
                 <span class="path">${escapeHtml(s.file)}</span><span class="line">:${s.line}</span>
               </a>
               ${s.enclosingSymbol ? `<span class="in">in ${escapeHtml(s.enclosingSymbol)}</span>` : ''}
-              <code class="excerpt">${escapeHtml(s.excerpt)}</code>
+              <code class="excerpt">${highlightCode(s.excerpt)}</code>
             </li>`,
           )
           .join('')}
@@ -505,6 +506,24 @@ function renderChangeCard(
       ? `<details class="fix"><summary>Required fix</summary><div class="markdown">${renderMarkdown(change.remediation)}</div></details>`
       : `<p class="fix"><b>Required fix:</b> ${escapeHtml(change.remediation)}</p>`;
 
+  // The declaration itself, before and after — the actual evidence for the
+  // summary above. "See diff" is the natural next question a before/after
+  // pair raises (what else changed around it), answered by fetching the two
+  // published versions and opening a real diff rather than sending the
+  // reader off to go find them.
+  const diffArgs = versionDiffArgs(change, plan);
+  const beforeAfter =
+    change.before && change.after && change.before !== change.after
+      ? `<div class="before-after">
+          <div class="markdown">${renderMarkdown(`before: ${change.before}\nafter: ${change.after}`)}</div>
+          ${
+            diffArgs
+              ? `<button class="small" data-command="drift.openVersionDiff" data-args="${escapeAttr(JSON.stringify(diffArgs))}" title="Fetch ${escapeAttr(change.dependency)} ${escapeAttr(diffArgs[2])} and ${escapeAttr(diffArgs[3])} and open a real diff between them">See diff</button>`
+              : ''
+          }
+        </div>`
+      : '';
+
   return `
 <article class="card ${focused ? 'focused' : ''}" id="${escapeAttr(change.id)}" ${focused ? 'data-focus="true"' : ''}>
   <div class="card-head">
@@ -515,6 +534,7 @@ function renderChangeCard(
   </div>
   ${renderConfidenceDetail(change)}
   <h3>${escapeHtml(displaySummary(change, plan, pendingUpgrade))}</h3>
+  ${beforeAfter}
   ${remediation}
   ${
     evidence.length
@@ -647,6 +667,13 @@ function renderConfidenceDetail(change: BreakingChange): string {
   </div>${classification}${eligibility}`;
 }
 
+/** The (ecosystem, name, from, to) `drift.openVersionDiff` needs, when the plan knows both versions. */
+function versionDiffArgs(change: BreakingChange, plan: RemediationPlan): [string, string, string, string] | null {
+  const dep = plan.changes.find((c) => c.name === change.dependency);
+  if (!dep?.from || !dep.to) return null;
+  return [dep.ecosystem, dep.name, dep.from, dep.to];
+}
+
 /** True when localization never ran, as opposed to running and finding nothing. */
 function notSearched(change: BreakingChange): boolean {
   return Boolean(
@@ -707,7 +734,7 @@ function renderMarkdown(text: string, options: MarkdownOptions = {}): string {
 
     if (line.startsWith('```')) {
       if (inCode) {
-        blocks.push(`<pre><code>${escapeHtml(code.join('\n'))}</code></pre>`);
+        blocks.push(`<pre><code>${highlightCode(code.join('\n'))}</code></pre>`);
         code = [];
         inCode = false;
       } else {
@@ -731,7 +758,7 @@ function renderMarkdown(text: string, options: MarkdownOptions = {}): string {
     if (labelledCode) {
       blocks.push(
         closeList(),
-        `<figure class="code-compare"><figcaption>${escapeHtml(labelledCode[1]!.toLowerCase())}</figcaption><pre><code>${escapeHtml(
+        `<figure class="code-compare"><figcaption>${escapeHtml(labelledCode[1]!.toLowerCase())}</figcaption><pre><code>${highlightCode(
           labelledCode[2]!,
         )}</code></pre></figure>`,
       );
@@ -757,7 +784,7 @@ function renderMarkdown(text: string, options: MarkdownOptions = {}): string {
     blocks.push(closeList(), `<p>${inlineMarkdown(line, options)}</p>`);
   }
 
-  if (inCode && code.length) blocks.push(`<pre><code>${escapeHtml(code.join('\n'))}</code></pre>`);
+  if (inCode && code.length) blocks.push(`<pre><code>${highlightCode(code.join('\n'))}</code></pre>`);
   blocks.push(closeList());
   return blocks.filter(Boolean).join('');
 }
@@ -848,6 +875,16 @@ h3 { font-size: 0.98rem; margin: 6px 0; font-weight: 600; }
 .muted { color: var(--vscode-descriptionForeground); font-size: 0.9em; }
 code { font-family: var(--vscode-editor-font-family); font-size: 0.9em;
        background: var(--vscode-textCodeBlock-background); padding: 1px 5px; border-radius: 3px; }
+/* Token colors for highlightCode() — the theme's own symbol-icon colors, so a
+   snippet picks up the same palette as the outline view and breadcrumbs
+   instead of a fixed color that only happens to suit one theme. */
+.tok-kw { color: var(--vscode-symbolIcon-keywordForeground, #c586c0); }
+.tok-str { color: var(--vscode-symbolIcon-stringForeground, #ce9178); }
+.tok-num { color: var(--vscode-symbolIcon-numberForeground, #b5cea8); }
+.tok-fn { color: var(--vscode-symbolIcon-functionForeground, #dcdcaa); }
+.tok-com { color: var(--vscode-descriptionForeground); font-style: italic; }
+.before-after { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+.before-after .code-compare { flex: 1 1 240px; min-width: 0; margin: 0; }
 
 .stats { display: flex; gap: 10px; flex-wrap: wrap; margin: var(--gap) 0; }
 .stat { background: var(--vscode-editorWidget-background);
@@ -998,11 +1035,19 @@ pre { background: var(--vscode-textCodeBlock-background); padding: 10px; border-
 .big-icon { font-size: 2.4rem; line-height: 1; margin-bottom: 10px; }
 .big-icon.ok { color: var(--vscode-charts-green); }
 .big-icon.bad { color: var(--vscode-charts-red); }
-.spinner { width: 26px; height: 26px; margin: 0 auto 14px;
-           border: 2px solid var(--vscode-panel-border);
-           border-top-color: var(--vscode-progressBar-background);
-           border-radius: 50%; animation: spin 0.9s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+/* A soft fading ring rather than a hard two-tone border — the border trick
+   reads as two flat arcs (one grey, one accent) chasing each other, which at
+   a glance looks like a stray line spinning rather than a loading indicator.
+   A conic gradient masked down to a ring fades smoothly around its own
+   circumference instead, the same shape VS Code's own spinners use. */
+.spinner {
+  width: 26px; height: 26px; margin: 0 auto 14px; border-radius: 50%;
+  background: conic-gradient(from 0turn, transparent, transparent 65%, var(--vscode-progressBar-background));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.4px), #000 calc(100% - 2.4px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2.4px), #000 calc(100% - 2.4px));
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(1turn); } }
 
 /* A click on a command button (file an issue, create a branch, install an
    upgrade) round-trips through \`gh\`/git and can take a few seconds — this
@@ -1019,11 +1064,12 @@ pre { background: var(--vscode-textCodeBlock-background); padding: 10px; border-
   position: absolute;
   inset: 0;
   margin: auto;
-  width: 12px;
-  height: 12px;
+  width: 13px;
+  height: 13px;
   border-radius: 50%;
-  border: 1.6px solid var(--vscode-panel-border);
-  border-top-color: var(--vscode-progressBar-background);
+  background: conic-gradient(from 0turn, transparent, transparent 65%, var(--vscode-progressBar-background));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 1.6px), #000 calc(100% - 1.6px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 1.6px), #000 calc(100% - 1.6px));
   animation: spin .8s linear infinite;
 }
 `;

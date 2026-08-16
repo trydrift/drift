@@ -560,9 +560,12 @@ test('markdown renders signature evidence as labelled code blocks', () => {
 
   assert.match(html, /<p>Update call sites\.<\/p>/);
   assert.match(html, /<figcaption>before<\/figcaption>/);
-  assert.match(html, /<pre><code>old\(&lt;tag&gt;\)<\/code><\/pre>/);
+  // `old` and `next` are highlighted as function calls (each followed by
+  // `(`), so the escaped source text is wrapped in its own <span> rather
+  // than sitting bare inside <code>.
+  assert.match(html, /<pre><code><span class="tok-fn">old<\/span>\(&lt;tag&gt;\)<\/code><\/pre>/);
   assert.match(html, /<figcaption>after<\/figcaption>/);
-  assert.match(html, /<pre><code>next\(value\)<\/code><\/pre>/);
+  assert.match(html, /<pre><code><span class="tok-fn">next<\/span>\(value\)<\/code><\/pre>/);
 });
 
 test('a scan whose results have gone stale says so and offers a rescan', () => {
