@@ -210,6 +210,74 @@ describe('protobuf, via buf breaking', () => {
     assert.match(gaps[0]?.detail ?? '', /does not exist/);
   });
 
+  for (const type of ['PLUGIN_FAILURE', 'CONFIGURATION']) {
+    test(`a ${type} is a stated gap, not a silently dropped line`, async () => {
+      // Everything buf says about *itself* arrives on the findings channel, not
+      // just COMPILE. Filtering these out without saying so would report a run
+      // that never happened as a run that found nothing.
+      const failure: CommandResult = {
+        code: 100,
+        stdout: JSON.stringify({ path: 'after/proto/users.proto', type, message: 'buf could not run' }),
+        stderr: '',
+      };
+      const gaps: { reason: string; detail: string; remedy?: string }[] = [];
+
+      const records = await gatherEvidence([], {
+        config: DriftConfigSchema.parse({ evidence: { protobuf: true, protobufSpecs: [path] } }),
+        logger,
+        exec: (async (_c: string, args: readonly string[]) =>
+          args[0] === '--version' ? ok('1.47.2') : failure) as never,
+        readRepoFile: repoWith(path, PROTO_BEFORE, PROTO_AFTER),
+        beforeSha: 'before',
+        afterSha: 'after',
+        onUnavailableSpec: (_path, reason) => gaps.push(reason),
+      });
+
+      assert.deepEqual(records, []);
+      assert.equal(gaps[0]?.reason, 'toolchain-failed');
+      assert.match(gaps[0]?.detail ?? '', /buf could not run/);
+      assert.ok(gaps[0]?.remedy, 'a gap must name something the developer can do');
+    });
+  }
+
+  test('a self-report alongside real findings suppresses the whole comparison', async () => {
+    // A run that failed to compile has not checked the rest of the file either.
+    // Publishing the lines that did come back would present a partial
+    // comparison as a complete one — the same false-clean the COMPILE guard
+    // exists to prevent, just harder to notice.
+    const mixed: CommandResult = {
+      code: 100,
+      stdout: [
+        JSON.stringify({
+          path: 'after/proto/users.proto',
+          type: 'FIELD_NO_DELETE',
+          message: 'Previously present field "2" with name "email" on message "User" was deleted.',
+        }),
+        JSON.stringify({
+          path: 'after/proto/users.proto',
+          type: 'COMPILE',
+          message: 'imported file "common.proto" does not exist',
+        }),
+      ].join('\n'),
+      stderr: '',
+    };
+    const gaps: { reason: string; detail: string }[] = [];
+
+    const records = await gatherEvidence([], {
+      config: DriftConfigSchema.parse({ evidence: { protobuf: true, protobufSpecs: [path] } }),
+      logger,
+      exec: (async (_c: string, args: readonly string[]) =>
+        args[0] === '--version' ? ok('1.47.2') : mixed) as never,
+      readRepoFile: repoWith(path, PROTO_BEFORE, PROTO_AFTER),
+      beforeSha: 'before',
+      afterSha: 'after',
+      onUnavailableSpec: (_path, reason) => gaps.push(reason),
+    });
+
+    assert.deepEqual(records, [], 'no finding may be published from a failed compile');
+    assert.equal(gaps[0]?.reason, 'toolchain-failed');
+  });
+
   test('a buf invocation that fails outright is a gap too', async () => {
     const failure: CommandResult = { code: 1, stdout: '', stderr: 'unknown flag: --against' };
     const gaps: { reason: string }[] = [];

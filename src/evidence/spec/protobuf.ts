@@ -31,6 +31,10 @@ const TOOL = 'buf breaking';
 const REMEDY =
   'Install the Buf CLI (https://buf.build/docs/installation) so Drift can compare `.proto` revisions against the protobuf compatibility rules.';
 
+/** What to do about a `.proto` `buf` could not compile — almost always an import. */
+const COMPILE_REMEDY =
+  'If the file imports other `.proto` files, list them in `evidence.protobufSpecs` as well, or point Drift at a path `buf` can compile on its own.';
+
 /**
  * `buf` exits 100 when it has findings to report.
  *
@@ -103,7 +107,7 @@ export const protobufSpecProvider: SpecProvider = {
         TOOL,
         'toolchain-failed',
         `\`buf breaking\` could not compare ${request.path}: ${reason}`,
-        'If the file imports other `.proto` files, list them in `evidence.protobufSpecs` as well, or point Drift at a path `buf` can compile on its own.',
+        COMPILE_REMEDY,
       );
     }
 
@@ -122,21 +126,29 @@ export const protobufSpecProvider: SpecProvider = {
     // finding — `type: "COMPILE"`, exit code 100, exactly like a real
     // incompatibility. Left alone, "imported file does not exist" would be
     // published as a breaking change to the contract, which is both false and
-    // the most damaging shape of wrong this pipeline can produce. It is a fact
-    // about what Drift was given to compare, so it is a gap.
-    const compileError = issues.find((issue) => issue.type === 'COMPILE');
-    if (compileError) {
+    // the most damaging shape of wrong this pipeline can produce.
+    //
+    // The same channel carries buf's plugin and configuration failures, and
+    // those are the same kind of statement: buf reporting on itself, not on the
+    // contract. Every one of them is a fact about what Drift was given to
+    // compare, so every one is a gap — and it has to be the *whole* comparison
+    // that becomes a gap, not just the offending line. A run that failed to
+    // compile has not checked the rest of the file either, so dropping the line
+    // and publishing the remaining findings would report a partial comparison
+    // as a complete one.
+    const selfReport = issues.find(isSelfReport);
+    if (selfReport) {
       return unavailableSpec(
         TOOL,
         'toolchain-failed',
-        `\`buf breaking\` could not compile ${request.path}: ${compileError.message}`,
-        'If the file imports other `.proto` files, list them in `evidence.protobufSpecs` as well, or point Drift at a path `buf` can compile on its own.',
+        `\`buf breaking\` could not compare ${request.path}: ${selfReport.message}`,
+        remedyFor(selfReport),
       );
     }
 
     return {
       available: true,
-      changes: issues.filter(isRuleFinding).map(toSpecChange),
+      changes: issues.map(toSpecChange),
       tool: TOOL,
       weight: 1.0,
       locator: `${request.path} (buf breaking)`,
@@ -362,19 +374,24 @@ export function parseBufBreaking(stdout: string): BufIssue[] {
 }
 
 /**
- * Whether an issue is a compatibility rule firing, rather than buf reporting on
- * itself.
+ * Whether an issue is buf reporting on itself, rather than a rule firing.
  *
- * buf's JSON stream carries both. Its own failures use SCREAMING names that are
- * not rule ids — `COMPILE` for a file that will not build, and the same channel
- * is used for plugin and configuration problems — and every one of those would
- * otherwise be published as a breaking change to the contract.
+ * buf's JSON stream carries both, on the same exit code. Its own failures use
+ * names that are not rule ids — `COMPILE` for a file that will not build, and
+ * the same channel for plugin and configuration problems — and every one of
+ * those would otherwise be published as a breaking change to the contract.
  */
-function isRuleFinding(issue: BufIssue): boolean {
-  return !NON_RULE_TYPES.has(issue.type);
+function isSelfReport(issue: BufIssue): boolean {
+  return SELF_REPORT_TYPES.has(issue.type);
 }
 
-const NON_RULE_TYPES = new Set(['COMPILE', 'PLUGIN_FAILURE', 'CONFIGURATION']);
+const SELF_REPORT_TYPES = new Set(['COMPILE', 'PLUGIN_FAILURE', 'CONFIGURATION']);
+
+/** What the developer can do about buf failing on itself, per kind of failure. */
+function remedyFor(issue: BufIssue): string {
+  if (issue.type === 'COMPILE') return COMPILE_REMEDY;
+  return 'Check the `buf` configuration and plugins in this repository, then re-run.';
+}
 
 function toSpecChange(issue: BufIssue): SpecChange {
   const line = issue.start_line ?? 0;
