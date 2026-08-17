@@ -603,6 +603,25 @@ test('a single-phase step shows its output with no tab bar to switch between', (
   assert.ok(!/<div class="output-tabs">/.test(html), 'nothing to switch between yet');
 });
 
+test('a button that is working keeps its label and spins beside it', () => {
+  // The regression this guards: the loading state blanked the label to centre
+  // a spinner in the gap, and drew that spinner in the progress-bar colour —
+  // the same blue as a primary button's background. The result was an empty
+  // blue rectangle with an invisible ring in it, and no way to tell which of
+  // two adjacent buttons had been pressed.
+  const html = renderPanel(model({}));
+  const rule = /button\[data-action\]\.is-loading \{[\s\S]*?\}/.exec(html)?.[0] ?? '';
+
+  assert.ok(rule, 'the loading state is styled');
+  assert.ok(!/color:\s*transparent/.test(rule), 'the label stays readable while the action runs');
+  assert.match(rule, /display:\s*inline-flex/, 'the spinner sits beside the label rather than over it');
+  assert.match(
+    html,
+    /button\[data-action\]\.is-loading::after \{[\s\S]*?currentColor/,
+    'the spinner is drawn in the colour the label is drawn in, which every theme guarantees is readable here',
+  );
+});
+
 test('step logs leave room for double digit markers', () => {
   const html = renderPanel(
     model({

@@ -2753,24 +2753,41 @@ button.wide { width: 100%; }
 /* Clicked button gets the spinner immediately, before the extension has had
    a chance to answer — a click that visibly did nothing is what makes people
    click twice and fire the same action again. */
+/* The label stays, and the spinner sits after it.
+   Blanking the text to centre a spinner in the gap costs the one thing a
+   developer needs while they wait: which button they pressed. "Upgrade and fix
+   3 sites" and "Create issue" sit next to each other, and an empty blue
+   rectangle is not an answer to "what did I just start?". */
 button[data-action].is-loading {
   position: relative;
-  color: transparent !important;
   pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 }
 button[data-action].is-loading::after {
   content: '';
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  width: 13px;
-  height: 13px;
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
-  background: conic-gradient(from 0turn, transparent, transparent 65%, var(--vscode-progressBar-background));
+  /* Drawn in the button's own foreground colour, not the progress bar's.
+     A primary button is painted in VS Code's button background — its blue —
+     and the progress-bar colour is the same blue, so the spinner was a blue ring
+     on a blue field: present, animating, and effectively invisible. The
+     foreground colour is the one colour every theme guarantees is readable
+     against this exact background, because it is what the label is drawn in.
+     The faint remainder of the ring keeps the moving end legible instead of
+     leaving a lone arc chasing nothing. */
+  background: conic-gradient(from 0turn, currentColor 0deg, transparent 60deg, transparent 330deg, currentColor);
+  opacity: .9;
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 1.6px), #000 calc(100% - 1.6px));
   mask: radial-gradient(farthest-side, transparent calc(100% - 1.6px), #000 calc(100% - 1.6px));
   animation: spin .8s linear infinite;
 }
+/* An icon-only button has no label to sit beside, so its spinner takes the
+   icon's place rather than being added next to it. */
+button[data-action].ctl.icon.is-loading > svg { display: none; }
 button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
 
 /* Questions ------------------------------------------------------- */
