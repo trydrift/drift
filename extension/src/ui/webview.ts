@@ -440,6 +440,19 @@ function renderStep(item: Extract<ThreadItem, { kind: 'step' }>): string {
  * nothing behind it that highlights on hover is an offer the panel cannot
  * keep.
  */
+/**
+ * A log line, split back into the phase it names and the detail after it.
+ *
+ * `session.ts` joins them with an em dash surrounded by spaces, so this is the
+ * inverse of that one join and not a general parser: anything that does not
+ * carry the separator is all phase, which is exactly how such a line was
+ * written.
+ */
+function splitLogLine(text: string): [phase: string, detail: string] {
+  const at = text.indexOf(' — ');
+  return at === -1 ? [text, ''] : [text.slice(0, at), text.slice(at + 3)];
+}
+
 function renderStepLog(item: Extract<ThreadItem, { kind: 'step' }>): string {
   // Every line the step holds, not the last 60 of them. The summary right
   // above this counts the whole log, so truncating here promised "184 steps"
@@ -455,12 +468,24 @@ function renderStepLog(item: Extract<ThreadItem, { kind: 'step' }>): string {
 
   const lines = item.log
     .map((entry) => {
-      const body = linkifyPaths(entry.text);
-      return entry.output && withOutput.has(entry.output)
-        ? `<li class="has-output"><button type="button" class="log-line" data-action="selectOutput" data-step="${escapeAttr(
-            item.id,
-          )}" data-seg="${escapeAttr(entry.output)}" title="Show what this step printed">${body}</button></li>`
-        : `<li>${body}</li>`;
+      const clickable = entry.output && withOutput.has(entry.output);
+      if (!clickable) return `<li>${linkifyPaths(entry.text)}</li>`;
+
+      // The phase is the button; the detail stays outside it.
+      //
+      // A log line reads `phase — detail`, and the detail is where the file
+      // paths are — which `linkifyPaths` turns into links that open them. Those
+      // links cannot live inside the button: an anchor nested in a button is
+      // invalid, and browsers disagree about which of the two a click or a
+      // keypress belongs to, so the file link and the output picker would fight
+      // over the same gesture. Splitting them gives each its own target and
+      // keeps both working.
+      const [phase, detail] = splitLogLine(entry.text);
+      return `<li><button type="button" class="log-line" data-action="selectOutput" data-step="${escapeAttr(
+        item.id,
+      )}" data-seg="${escapeAttr(entry.output!)}" title="Show what this step printed">${escapeHtml(
+        phase,
+      )}</button>${detail ? `<span class="log-detail"> — ${linkifyPaths(detail)}</span>` : ''}</li>`;
     })
     .join('');
 
@@ -2726,31 +2751,35 @@ button.wide { width: 100%; }
 /* A step that ran a command is the control for showing what it printed. It
    reads as an ordinary log line until it is hovered — the list is something
    to read first and something to click second, and turning every line into a
-   button-shaped thing would cost the reading. */
-.step .log li.has-output { list-style: none; margin-left: -1.2em; }
+   button-shaped thing would cost the reading.
+   Inline, and only around the phase: the list is numbered, and that numbering
+   is its reading order, so every line keeps its marker — and the detail after
+   the phase keeps its own file links instead of being swallowed by the
+   button. */
 .step .log .log-line {
   font: inherit;
   color: inherit;
   background: none;
   border: none;
   border-radius: 3px;
-  padding: 0 4px 0 1.2em;
-  margin: 0;
-  width: 100%;
+  padding: 0 3px;
+  margin: 0 0 0 -3px;
   text-align: left;
   cursor: pointer;
-  position: relative;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+  text-decoration-color: var(--vscode-descriptionForeground);
 }
-.step .log .log-line::before {
-  content: '\\25B8';
-  position: absolute;
-  left: 2px;
-  opacity: .5;
+.step .log .log-line:hover {
+  background: var(--vscode-list-hoverBackground);
+  color: var(--vscode-foreground);
+  text-decoration-color: var(--vscode-foreground);
 }
-.step .log .log-line:hover { background: var(--vscode-list-hoverBackground); color: var(--vscode-foreground); }
 .step .log .log-line.active {
   background: var(--vscode-list-activeSelectionBackground);
   color: var(--vscode-list-activeSelectionForeground);
+  text-decoration: none;
 }
 
 /* The running command's own output. Bounded and scrolled: this is a live

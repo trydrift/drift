@@ -624,6 +624,8 @@ test('a button that is working keeps its label and spins beside it', () => {
     /button\[data-action\]\.is-loading::after \{[\s\S]*?currentColor/,
     'the spinner is drawn in the colour the label is drawn in, which every theme guarantees is readable here',
   );
+});
+
 test('a step in the log opens its own output, and one that printed nothing does not', () => {
   // The control that replaced the row of phase badges. A phase that ran a
   // command is a button in the step list; a phase that printed nothing stays
@@ -643,11 +645,11 @@ test('a step in the log opens its own output, and one that printed nothing does 
           state: 'running',
           log: [
             { text: 'Reading manifest — package.json' },
-            { text: 'Installing dependencies — `npm install`', output: 'i1-o1' },
+            { text: 'Preparing a test checkout — carried over config/local.json', output: 'i1-o1' },
             { text: 'Checking extension as it is — `npm run build`', output: 'i1-o2' },
           ],
           outputs: [
-            { id: 'i1-o1', phase: 'Installing dependencies', lines: ['added 412 packages'] },
+            { id: 'i1-o1', phase: 'Preparing a test checkout', lines: ['added 412 packages'] },
             { id: 'i1-o2', phase: 'Checking extension as it is', lines: ['src/ui/home.ts(12,3): error'] },
           ],
         },
@@ -659,6 +661,28 @@ test('a step in the log opens its own output, and one that printed nothing does 
   assert.match(html, /<button type="button" class="log-line" data-action="selectOutput" data-step="i1" data-seg="i1-o2"/);
   // The line for a phase that ran no command is not clickable.
   assert.match(html, /<li>Reading manifest/);
+
+  // The button is the phase alone. The detail after it carries the file links
+  // `linkifyPaths` produces, and an anchor inside a button is invalid markup
+  // that browsers resolve inconsistently — the file link and the output picker
+  // would be fighting over the same click.
+  for (const button of html.matchAll(/<button[^>]*class="log-line"[^>]*>([\s\S]*?)<\/button>/g)) {
+    assert.ok(!/<a\b/.test(button[1] ?? ''), `an anchor is nested inside a log-line button: ${button[0]}`);
+  }
+  assert.match(
+    html,
+    /<span class="log-detail"> — carried over <a data-action="openFile" data-file="config\/local\.json"/,
+    'the path after the phase still opens the file',
+  );
+
+  // Every line keeps its list marker: the numbering is the reading order, and
+  // hiding it on the clickable ones would leave the visible markers skipping
+  // (the double-digit-marker test below is about that numbering).
+  assert.ok(!/<li class=/.test(html), 'no log line opts out of the list numbering');
+  assert.ok(
+    !/\.step \.log[^{]*\{[^}]*list-style:\s*none/.test(html),
+    'and nothing in the step log stylesheet removes the markers either',
+  );
 });
 
 test('a log line whose output has been evicted is not offered as a button', () => {
