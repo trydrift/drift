@@ -6,7 +6,7 @@ import { describeSeverity, severityOf, type UpgradeSeverity } from '../severity.
 import { DriftReportPanel } from './report.js';
 
 const MANIFESTS = new Set(['package.json', 'go.mod', 'Cargo.toml', 'pom.xml', 'requirements.txt', 'Gemfile']);
-const ORDER: UpgradeSeverity[] = ['affected', 'verification-failed', 'unchecked', 'clean', 'error'];
+const ORDER: UpgradeSeverity[] = ['affected', 'verification-failed', 'unchecked', 'pending', 'clean', 'error'];
 
 type DependencyNode =
   | { kind: 'group'; severity: UpgradeSeverity; candidates: UpgradeCandidate[] }
@@ -66,7 +66,12 @@ export class DriftDependencyTreeProvider
 
     const candidate = element.candidate;
     const item = new vscode.TreeItem(candidate.name, vscode.TreeItemCollapsibleState.None);
-    item.description = `${candidate.current} -> ${candidate.selected}`;
+    // A package still being looked at has no target version to point at, so it
+    // says what is happening to it instead of `1.2.3 -> 1.2.3`.
+    item.description =
+      candidate.status === 'pending'
+        ? (candidate.phase ?? 'Checking…')
+        : `${candidate.current} -> ${candidate.selected}`;
     item.tooltip = `${candidate.name} ${candidate.current} -> ${candidate.selected}\n${describeSeverity(candidate)}\n${candidate.manifestPath}`;
     item.contextValue = `driftDependency:${severityOf(candidate)}`;
     item.iconPath = new vscode.ThemeIcon(iconFor(severityOf(candidate)));
@@ -251,6 +256,8 @@ function findDependencyLine(document: vscode.TextDocument, name: string, manifes
 
 function groupLabel(severity: UpgradeSeverity): string {
   switch (severity) {
+    case 'pending':
+      return 'Being checked';
     case 'affected':
       return 'Affected';
     case 'verification-failed':
@@ -267,6 +274,8 @@ function groupLabel(severity: UpgradeSeverity): string {
 
 function iconFor(severity: UpgradeSeverity): string {
   switch (severity) {
+    case 'pending':
+      return 'loading~spin';
     case 'affected':
       return 'warning';
     case 'verification-failed':

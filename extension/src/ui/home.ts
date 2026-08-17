@@ -1292,7 +1292,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     );
 
     await this.run(async (token) => {
-      const found: UpgradeCandidate[] = [];
+      let found: UpgradeCandidate[] = [];
       const nestedGitRepos: NestedProject[] = [];
       /** Dependencies whose version lookup never returned. Never silently dropped. */
       const unlooked: UncheckedDependency[] = [];
@@ -1356,6 +1356,20 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
               );
               this.state.setCandidates([...found].sort(bySeverity));
             },
+            onDropped: (id) => {
+              // A package listed the moment its manifest was read, which turned
+              // out to have no upgrade to offer. The row goes away rather than
+              // sitting there forever with nothing in it.
+              this.candidates.delete(id);
+              const at = found.findIndex((existing) => existing.id === id);
+              if (at < 0) return;
+              found.splice(at, 1);
+              this.session.updatePackages(
+                headline(found, checked, unlooked.length),
+                [...found].sort(bySeverity).map((c) => c.id),
+              );
+              this.state.setCandidates([...found].sort(bySeverity));
+            },
           });
 
           checked += result.checked;
@@ -1371,6 +1385,17 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         step.fail('Scan failed');
         return;
       }
+
+      // Rows that were listed from a manifest and never reached — the scan was
+      // stopped, or the root it belonged to threw. They exist to show work in
+      // progress, and once there is no work in progress they would be a row
+      // spinning forever over a package nobody is checking. The notice below
+      // is what tells the developer those dependencies went unlooked-at; a
+      // permanent spinner is not.
+      for (const abandoned of found.filter((c) => c.status === 'pending')) {
+        this.candidates.delete(abandoned.id);
+      }
+      found = found.filter((c) => c.status !== 'pending');
 
       const ranked = found.slice().sort(bySeverity);
       const stopped = token.isCancellationRequested;
@@ -5603,6 +5628,22 @@ function headline(
   const affected =
     candidates.filter((c) => severityOf(c) === 'affected' || severityOf(c) === 'verification-failed').length;
   const unchecked = candidates.filter((c) => severityOf(c) === 'unchecked').length + unlooked;
+
+  // Rows a manifest produced that nothing has looked at yet. They are counted
+  // separately and never folded into `safe`: while a scan is running the list
+  // is mostly these, and a headline that added them to the safe pile would
+  // announce a clean bill of health for packages nobody had opened.
+  const pending = candidates.filter((c) => severityOf(c) === 'pending');
+  if (pending.length > 0) {
+    const answered = candidates.length - pending.length;
+    return (
+      `**Checking ${candidates.length} dependenc${candidates.length === 1 ? 'y' : 'ies'}** — ` +
+      `${answered} answered so far` +
+      (affected > 0 ? `, ${affected} affecting code in this repository` : '') +
+      '.'
+    );
+  }
+
   const safe = candidates.length - affected - (unchecked - unlooked);
   const scope = checked > 0 ? ` out of ${checked} checked` : '';
 

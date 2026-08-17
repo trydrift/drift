@@ -135,6 +135,7 @@ export async function scanUpgrades(args: {
   managers?: ManagerPreferences;
   onProgress?: (progress: ScanProgress) => void;
   onCandidate?: (candidate: UpgradeCandidate) => void;
+  onDropped?: (id: string) => void;
   token?: { isCancellationRequested: boolean };
   repoLabel?: string;
   output?: vscode.LogOutputChannel;
