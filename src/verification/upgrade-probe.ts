@@ -272,13 +272,14 @@ async function probeGroup(
 }
 
 /**
- * Below this many candidates, a red batch is cheaper to settle one at a time
- * than to keep halving.
+ * At or below this many candidates, a red batch is cheaper to settle one at a
+ * time than to keep halving.
  *
  * Halving a group of four costs up to seven passes (two halves, then each of
  * the four); testing the four costs four. The crossover is what this constant
- * is: above it, splitting wins because a green half settles everything in it
- * at once, and below it the arithmetic reverses.
+ * is: *above* it, splitting wins because a green half settles everything in it
+ * at once, and at or below it the arithmetic reverses — which is why the test
+ * is `<=` and four is itself settled serially.
  */
 const SERIAL_ATTRIBUTION_THRESHOLD = 4;
 
