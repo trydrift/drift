@@ -116,6 +116,22 @@ export interface PackageManager {
    * directly (npm, cargo add, ...) or where there is no command at all.
    */
   rewriteManifest?: (content: string, target: UpgradeTarget, manifestPath: string) => string;
+  /**
+   * Does this manager's `upgrade` command take more than one package at a time?
+   *
+   * `npm install a@1 b@2` is one resolution and one lockfile write; twenty
+   * separate `npm install` runs are twenty of each, over a dependency graph
+   * that has not meaningfully changed between them. On a manifest with twenty
+   * outdated packages that is most of what a verification pass spends its time
+   * on — see {@link upgradeMany}, which is where the merge actually happens.
+   *
+   * Opt-in rather than assumed, because "accepts several" is a fact about each
+   * tool's argument parser and there is no way to derive it: `dotnet add
+   * package` takes exactly one, `rebar3 upgrade` wants them comma-separated,
+   * and `pio pkg install --library` is undocumented on the point. Anything not
+   * marked here is installed one at a time, exactly as before.
+   */
+  batchable?: boolean;
 }
 
 /** A package manager found in a directory, with the files that proved it. */
@@ -160,6 +176,7 @@ const npmFlags = (kind: DependencyKind, dev: string, optional: string, peer?: st
 const MANAGERS: readonly PackageManager[] = [
   {
     id: 'npm',
+    batchable: true,
     ecosystem: 'npm',
     label: 'npm',
     manifests: ['package.json'],
@@ -173,6 +190,7 @@ const MANAGERS: readonly PackageManager[] = [
   },
   {
     id: 'pnpm',
+    batchable: true,
     ecosystem: 'npm',
     label: 'pnpm',
     manifests: ['package.json'],
@@ -188,6 +206,7 @@ const MANAGERS: readonly PackageManager[] = [
   },
   {
     id: 'yarn-berry',
+    batchable: true,
     ecosystem: 'npm',
     label: 'Yarn (berry)',
     manifests: ['package.json'],
@@ -210,6 +229,7 @@ const MANAGERS: readonly PackageManager[] = [
   },
   {
     id: 'yarn',
+    batchable: true,
     ecosystem: 'npm',
     label: 'Yarn (classic)',
     manifests: ['package.json'],
@@ -223,6 +243,7 @@ const MANAGERS: readonly PackageManager[] = [
   },
   {
     id: 'bun',
+    batchable: true,
     ecosystem: 'npm',
     label: 'Bun',
     manifests: ['package.json'],
@@ -236,6 +257,7 @@ const MANAGERS: readonly PackageManager[] = [
   },
   {
     id: 'uv',
+    batchable: true,
     ecosystem: 'pypi',
     label: 'uv',
     manifests: ['pyproject.toml'],
@@ -249,6 +271,7 @@ const MANAGERS: readonly PackageManager[] = [
   },
   {
     id: 'poetry',
+    batchable: true,
     ecosystem: 'pypi',
     label: 'Poetry',
     manifests: ['pyproject.toml'],
@@ -262,6 +285,7 @@ const MANAGERS: readonly PackageManager[] = [
   },
   {
     id: 'pip',
+    batchable: true,
     ecosystem: 'pypi',
     label: 'pip',
     manifests: ['requirements.txt', 'pyproject.toml', 'setup.py'],
@@ -281,6 +305,7 @@ const MANAGERS: readonly PackageManager[] = [
   },
   {
     id: 'go',
+    batchable: true,
     ecosystem: 'go',
     label: 'Go modules',
     manifests: ['go.mod'],
@@ -293,6 +318,7 @@ const MANAGERS: readonly PackageManager[] = [
   },
   {
     id: 'cargo',
+    batchable: true,
     ecosystem: 'cargo',
     label: 'Cargo',
     manifests: ['Cargo.toml'],
@@ -313,6 +339,7 @@ const MANAGERS: readonly PackageManager[] = [
   },
   {
     id: 'bundler',
+    batchable: true,
     ecosystem: 'rubygems',
     label: 'Bundler',
     manifests: ['Gemfile'],
@@ -384,6 +411,7 @@ const MANAGERS: readonly PackageManager[] = [
   },
   {
     id: 'composer',
+    batchable: true,
     ecosystem: 'packagist',
     label: 'Composer',
     manifests: ['composer.json'],
@@ -397,6 +425,7 @@ const MANAGERS: readonly PackageManager[] = [
   },
   {
     id: 'mix',
+    batchable: true,
     ecosystem: 'hex',
     label: 'Mix',
     manifests: ['mix.exs'],
@@ -460,6 +489,7 @@ const MANAGERS: readonly PackageManager[] = [
   },
   {
     id: 'cocoapods',
+    batchable: true,
     ecosystem: 'cocoapods',
     label: 'CocoaPods',
     manifests: ['Podfile'],
@@ -473,6 +503,7 @@ const MANAGERS: readonly PackageManager[] = [
   },
   {
     id: 'opam',
+    batchable: true,
     ecosystem: 'opam',
     label: 'opam',
     manifests: ['dune-project'],
@@ -486,6 +517,7 @@ const MANAGERS: readonly PackageManager[] = [
   },
   {
     id: 'conan',
+    batchable: true,
     ecosystem: 'conan',
     label: 'Conan',
     manifests: ['conanfile.txt', 'conanfile.py'],
@@ -499,6 +531,7 @@ const MANAGERS: readonly PackageManager[] = [
   },
   {
     id: 'vcpkg',
+    batchable: true,
     ecosystem: 'vcpkg',
     label: 'vcpkg',
     manifests: ['vcpkg.json'],
@@ -513,6 +546,7 @@ const MANAGERS: readonly PackageManager[] = [
   },
   {
     id: 'arduino-cli',
+    batchable: true,
     ecosystem: 'arduino',
     label: 'Arduino CLI',
     manifests: ['library.properties'],
@@ -701,6 +735,74 @@ export function packageManagerById(id: PackageManagerId): PackageManager | undef
 }
 
 export const PACKAGE_MANAGERS = MANAGERS;
+
+/**
+ * Move several packages in as few commands as the manager allows.
+ *
+ * Derived from `upgrade` rather than declared a second time, so a manager can
+ * never grow a batch form that disagrees with its single form. Each target's
+ * own command is computed, the argument carrying its package specifier is
+ * located, and targets whose commands are otherwise identical are merged into
+ * one invocation with every specifier in that argument's place:
+ *
+ *   npm install react@19.2 --save-dev  ┐
+ *   npm install vite@7.1 --save-dev    ┴→  npm install react@19.2 vite@7.1 --save-dev
+ *   npm install zod@4.4                →   npm install zod@4.4
+ *
+ * The grouping is what keeps it honest. Flags that differ — `--save-dev`, a
+ * Poetry group, Composer's `--dev` — put their targets in different groups
+ * rather than being dropped, which is what a hand-written batch form would
+ * quietly get wrong. A manager whose command names no package at all (Conan,
+ * vcpkg, where the manifest rewrite *is* the upgrade) collapses to a single
+ * invocation for the same reason: every target's command is identical.
+ *
+ * `null` where nothing may be merged — the manager is not marked
+ * {@link PackageManager.batchable}, or one of its targets has no upgrade
+ * command — and the caller installs one at a time.
+ */
+export function upgradeMany(
+  manager: PackageManager,
+  targets: readonly UpgradeTarget[],
+): Command[] | null {
+  if (!manager.batchable || targets.length === 0) return null;
+
+  // Insertion-ordered, so the commands come back in the order the targets were
+  // given rather than in whatever order a hash lands them.
+  const groups = new Map<string, { command: Command; at: number | null; specs: string[] }>();
+
+  for (const target of targets) {
+    const command = manager.upgrade(target);
+    if (!command) return null;
+
+    // The argument carrying this package's name. `null` where the command
+    // names no package, which is a shape, not a failure.
+    const at = command.args.findIndex((arg) => arg.includes(target.name));
+    const index = at === -1 ? null : at;
+    const skeleton =
+      index === null ? command.args : command.args.filter((_, position) => position !== index);
+    const key = `${command.command} ${index} ${skeleton.join(' ')}`;
+
+    const existing = groups.get(key);
+    if (existing) {
+      if (index !== null) existing.specs.push(command.args[index]!);
+      continue;
+    }
+    groups.set(key, {
+      command,
+      at: index,
+      specs: index === null ? [] : [command.args[index]!],
+    });
+  }
+
+  return [...groups.values()].map(({ command, at, specs }) =>
+    at === null
+      ? command
+      : {
+          command: command.command,
+          args: [...command.args.slice(0, at), ...specs, ...command.args.slice(at + 1)],
+        },
+  );
+}
 
 /**
  * Which package managers own this directory.

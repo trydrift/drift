@@ -20,6 +20,7 @@ import {
   detectPackageManagers,
   packageManagerAmbiguities,
   packageManagerById,
+  upgradeMany,
   PACKAGE_MANAGERS,
   type Command,
   type DetectedPackageManager,
@@ -1020,6 +1021,16 @@ async function verifyCandidates(args: {
   await probeUpgrades({
     root: args.root,
     targets,
+    // One `npm install` for a whole batch instead of one per package. The
+    // probe falls back to `install` per target wherever this declines, so
+    // nothing depends on which managers can do it.
+    installTogether: (checkout, group) =>
+      installUpgrades(
+        checkout,
+        group.map((target) => byId.get(target.id)).filter((c): c is UpgradeCandidate => c !== undefined),
+        'safe',
+        scrubEnv(args.env),
+      ),
     kinds: args.checks,
     env: args.env,
     logger: args.logger,
@@ -1272,6 +1283,103 @@ export async function installUpgrade(
     }
     throw err;
   }
+}
+
+/**
+ * Install several candidates of one manifest in as few commands as possible.
+ *
+ * The verification pass tests a whole manifest's worth of upgrades together
+ * before it tries to attribute anything, and it used to apply them by calling
+ * `installUpgrade` in a loop — twenty outdated packages meant twenty `npm
+ * install` runs, each re-resolving a dependency graph that had barely changed
+ * and rewriting the same lockfile, before a single check had run. One
+ * invocation resolves the whole set once, which is what a developer taking
+ * these upgrades by hand would do.
+ *
+ * `false` means nothing was installed and the caller should fall back to
+ * one at a time: the manager cannot take several packages in one command, or
+ * the candidates do not share a manifest. Failure throws, having put every file
+ * it touched back — the same transactional guarantee `installUpgrade` makes,
+ * for the same reason.
+ */
+export async function installUpgrades(
+  root: string,
+  candidates: readonly UpgradeCandidate[],
+  mode: 'safe' | 'force' = 'safe',
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<boolean> {
+  if (candidates.length === 0) return false;
+
+  const first = candidates[0]!;
+  const sameProject = candidates.every(
+    (candidate) =>
+      candidate.manifestPath === first.manifestPath &&
+      candidate.packageManager === first.packageManager,
+  );
+  if (!sameProject) return false;
+
+  const manager = packageManagerById(first.packageManager);
+  if (!manager) return false;
+
+  const commands = upgradeMany(
+    manager,
+    candidates.map((candidate) => ({
+      name: candidate.name,
+      version: candidate.selected,
+      kind: candidate.kind,
+    })),
+  );
+  if (!commands) return false;
+
+  const manifestFile = join(root, first.manifestPath);
+  const cwd = dirname(manifestFile);
+  const snapshot = await snapshotFiles([
+    manifestFile,
+    ...(manager.lockfiles ?? []).map((name) => join(cwd, name)),
+  ]);
+
+  try {
+    // Every rewrite first, then every command. A manager in this position
+    // (Bundler, Mix, CocoaPods, Conan, pip's requirements.txt) resolves against
+    // what the manifest declares, so the whole set has to be declared before
+    // the first resolution runs — otherwise the batch is no batch at all.
+    if (manager.rewriteManifest) {
+      const original = await readFile(manifestFile, 'utf8');
+      let rewritten = original;
+      for (const candidate of candidates) {
+        rewritten = manager.rewriteManifest(
+          rewritten,
+          { name: candidate.name, version: candidate.selected, kind: candidate.kind },
+          candidate.manifestPath,
+        );
+      }
+      if (rewritten !== original) await writeFile(manifestFile, rewritten, 'utf8');
+    }
+
+    for (const command of commands) {
+      const args =
+        mode === 'force' && first.packageManager === 'npm' ? [...command.args, '--force'] : command.args;
+      await run(command.command, args, {
+        cwd,
+        env,
+        shell: process.platform === 'win32',
+        windowsHide: true,
+        maxBuffer: 8 * 1024 * 1024,
+      });
+    }
+  } catch (err) {
+    await restoreFiles(snapshot);
+
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+      throw new Error(
+        `${commands[0]!.command} was not found on PATH. Run \`command -v ${commands[0]!.command}\` to check, ` +
+          `and install it if it is genuinely missing.`,
+      );
+    }
+    throw err;
+  }
+
+  return true;
 }
 
 /** A file's contents before an upgrade, or `null` where it did not exist. */

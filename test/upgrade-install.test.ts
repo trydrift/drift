@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm, writeFile, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { installUpgrade } from '../dist/upgrade/scan.js';
+import { installUpgrade, installUpgrades } from '../dist/upgrade/scan.js';
 
 /**
  * A failed upgrade must leave nothing behind.
@@ -115,6 +115,76 @@ describe('installUpgrade: a failed upgrade rolls back', () => {
         // Rolling back must not replace the error that explains what went wrong.
         /was not found on PATH/,
       );
+    });
+  });
+});
+
+/**
+ * A manifest with twenty outdated packages used to mean twenty package-manager
+ * runs before a single check ran — twenty resolutions of a dependency graph
+ * that barely changed between them, and twenty lockfile writes.
+ */
+describe('installUpgrades: a whole batch in as few runs as possible', () => {
+  const gem = (name: string, version: string) => ({
+    ...gemCandidate,
+    id: `Gemfile#${name}`,
+    name,
+    selected: version,
+  });
+
+  test('rewrites every manifest entry before running anything', async () => {
+    const gemfile = "source 'https://rubygems.org'\ngem 'rails', '~> 7.0'\ngem 'puma', '~> 6.0'\n";
+    await withRepo({ Gemfile: gemfile }, async (root) => {
+      // `bundle` is unresolvable, so this fails after the rewrites — which is
+      // what makes the rollback observable.
+      await assert.rejects(
+        installUpgrades(root, [gem('rails', '7.1.0'), gem('puma', '6.4.0')] as never, 'safe', { PATH: '' }),
+      );
+
+      assert.equal(
+        await readFile(join(root, 'Gemfile'), 'utf8'),
+        gemfile,
+        'a batch is as transactional as a single install',
+      );
+    });
+  });
+
+  test('declines a batch that does not share one manifest', async () => {
+    await withRepo({ Gemfile: GEMFILE }, async (root) => {
+      const elsewhere = { ...gem('puma', '6.4.0'), manifestPath: 'api/Gemfile' };
+      assert.equal(
+        await installUpgrades(root, [gem('rails', '7.1.0'), elsewhere] as never, 'safe', { PATH: '' }),
+        false,
+        'two manifests are two resolutions, whatever the manager can take',
+      );
+    });
+  });
+
+  test('declines a manager that takes one package per command', async () => {
+    const project = '<Project><ItemGroup></ItemGroup></Project>';
+    await withRepo({ 'app.csproj': project }, async (root) => {
+      const nuget = (name: string) => ({
+        ...gemCandidate,
+        id: `csproj#${name}`,
+        name,
+        ecosystem: 'nuget',
+        packageManager: 'dotnet',
+        manifestPath: 'app.csproj',
+        selected: '2.0.0',
+      });
+
+      assert.equal(
+        await installUpgrades(root, [nuget('Serilog'), nuget('Polly')] as never, 'safe', { PATH: '' }),
+        false,
+        '`dotnet add package` names exactly one package',
+      );
+      assert.equal(await readFile(join(root, 'app.csproj'), 'utf8'), project);
+    });
+  });
+
+  test('an empty batch is nothing to do, not an error', async () => {
+    await withRepo({ Gemfile: GEMFILE }, async (root) => {
+      assert.equal(await installUpgrades(root, [] as never, 'safe', { PATH: '' }), false);
     });
   });
 });

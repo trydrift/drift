@@ -482,6 +482,151 @@ describe('probing an upgrade before reporting it', () => {
  * scan, so what these protect is that it stays an optimisation: the same
  * verdicts, the same number of worktrees, and nothing left on disk.
  */
+describe('installing a batch, and giving up on it early', () => {
+  test('the whole batch is applied in one package-manager run when the manager can', async () => {
+    const { exec, lines } = recorder();
+    const batches: string[][] = [];
+    const perTarget: string[] = [];
+
+    const targets = ['zod', 'react', 'vite'].map((name) => ({
+      ...target(name),
+      install: async () => {
+        perTarget.push(name);
+      },
+    }));
+
+    await probeUpgrades({
+      root,
+      targets,
+      exec,
+      fs,
+      installTogether: async (_checkout, group) => {
+        batches.push(group.map((t) => t.name));
+        return true;
+      },
+    });
+
+    assert.deepEqual(batches, [['zod', 'react', 'vite']], 'one call, carrying all three');
+    assert.deepEqual(perTarget, [], 'nothing was installed one at a time');
+    assert.ok(lines().length > 0);
+  });
+
+  test('a manager that declines falls back to one install per target', async () => {
+    const { exec } = recorder();
+    const perTarget: string[] = [];
+
+    const targets = ['zod', 'react'].map((name) => ({
+      ...target(name),
+      install: async () => {
+        perTarget.push(name);
+      },
+    }));
+
+    await probeUpgrades({ root, targets, exec, fs, installTogether: async () => false });
+
+    assert.deepEqual(perTarget, ['zod', 'react']);
+  });
+
+  test('the one-at-a-time pass never goes through the batch install', async () => {
+    // The batch is red, so each candidate is re-measured alone — and a verdict
+    // about one package has to be measured with that package as the only thing
+    // that moved, whatever the batch path is capable of.
+    let installed = '';
+    const targets = ['zod', 'react'].map((name) => ({
+      ...target(name),
+      install: async () => {
+        installed = installed ? `${installed}+${name}` : name;
+      },
+    }));
+
+    const sizes: number[] = [];
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      if (command === 'git' && args[0] === 'checkout') installed = '';
+      const broken = line === 'npm run typecheck' && installed.includes('react');
+      return {
+        code: broken ? 1 : 0,
+        stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '',
+        stderr: broken ? 'error TS2554' : '',
+      };
+    };
+
+    const results = await probeUpgrades({
+      root,
+      targets,
+      exec,
+      fs,
+      installTogether: async (_checkout, group) => {
+        sizes.push(group.length);
+        installed = group.map((t) => t.name).join('+');
+        return true;
+      },
+    });
+
+    assert.deepEqual(sizes, [2], 'the batch install is only ever used for the combined pass');
+    assert.equal(results.get('t-react')?.status, 'failed');
+    assert.equal(results.get('t-zod')?.status, 'passed');
+  });
+
+  test('a failing batch stops at the first red check instead of running the rest', async () => {
+    // The combined pass is a search: it asks whether this batch is clean, and
+    // a red typecheck has answered. Running the build and the suite behind it
+    // costs minutes and produces diagnostics nobody reports.
+    const ran: string[] = [];
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      if (line.startsWith('npm run')) ran.push(line);
+      return {
+        code: line === 'npm run typecheck' && ran.filter((l) => l === 'npm run typecheck').length > 1 ? 1 : 0,
+        stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '',
+        stderr: '',
+      };
+    };
+
+    await probeUpgrades({
+      root,
+      targets: [target('zod'), target('react'), target('vite'), target('svelte'), target('esbuild')],
+      exec,
+      fs,
+    });
+
+    // Baseline runs both checks. The combined pass then fails its typecheck,
+    // and must not go on to the build.
+    const typechecks = ran.filter((line) => line === 'npm run typecheck').length;
+    const builds = ran.filter((line) => line === 'npm run build').length;
+    assert.ok(typechecks > builds, 'a red combined pass skipped the build behind it');
+  });
+
+  test('a candidate measured on its own still runs every check, red or not', async () => {
+    // Red only once the upgrade is in, so the baseline keeps both checks
+    // usable and the failure is attributable to the candidate.
+    let installed = false;
+    const zod = {
+      ...target('zod'),
+      install: async () => {
+        installed = true;
+      },
+    };
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      const broken = installed && line === 'npm run typecheck';
+      return {
+        code: broken ? 1 : 0,
+        stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '',
+        stderr: broken ? 'error TS2554' : '',
+      };
+    };
+
+    const results = await probeUpgrades({ root, targets: [zod], exec, fs });
+
+    assert.deepEqual(
+      results.get('t-zod')?.checks.map((check) => check.label),
+      ['npm run typecheck', 'npm run build'],
+      'the verdict a developer reads is the whole picture, not the first failure',
+    );
+  });
+});
+
 describe('warming a test checkout before the packages that need it are known', () => {
   test('a warmed checkout is used instead of preparing a second one', async () => {
     const { exec, calls } = recorder();

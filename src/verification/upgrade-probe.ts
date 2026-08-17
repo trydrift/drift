@@ -157,6 +157,18 @@ export interface ProbeOptions {
    * this is purely an optimisation and never changes what is measured.
    */
   warm?: ProbeWarmup;
+  /**
+   * Apply a whole batch of upgrades in as few package-manager runs as possible.
+   *
+   * `false` means it declined — the manager takes one package per command, the
+   * batch spans manifests — and the caller installs them one at a time instead.
+   * A rejected promise means it tried and failed, which is a fact about the
+   * batch and settles it the same way a failing loop always did.
+   *
+   * Optional: absent, every install goes through {@link ProbeTarget.install},
+   * which is exactly the old behaviour.
+   */
+  installTogether?: (root: string, targets: readonly ProbeTarget[]) => Promise<boolean>;
   onProgress?: (progress: ProbeProgress) => void;
   /** Called as each target is settled, so a caller can release it one at a time. */
   onVerified?: (target: ProbeTarget, verification: UpgradeVerification) => void;
@@ -280,6 +292,7 @@ async function probeGroup(
       root: worktree.path,
       usable,
       install: manager?.install,
+      ...(options.installTogether ? { installTogether: options.installTogether } : {}),
       ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
       ...(options.token ? { token: options.token } : {}),
     };
@@ -647,6 +660,8 @@ interface GroupPass {
   /** Checks that passed at baseline, so a failure here is one an upgrade caused. */
   usable: readonly LocalCheck[];
   install: { command: string; args: string[] } | undefined;
+  /** See {@link ProbeOptions.installTogether}. */
+  installTogether?: (root: string, targets: readonly ProbeTarget[]) => Promise<boolean>;
   timeoutMs?: number;
   token?: CancelSignal;
 }
@@ -687,23 +702,19 @@ async function probeTogether(
     targets,
   );
 
-  let installed = true;
-  for (const target of targets) {
-    if (pass.token?.isCancellationRequested) return 'inconclusive';
-    try {
-      await target.install(pass.root);
-    } catch {
-      // Which one failed does not matter: narrowing the batch down is about to
-      // install each of them on its own and will report the real reason against
-      // the candidate it actually belongs to.
-      installed = false;
-      break;
-    }
-  }
+  const installed = await installBatch(pass, targets);
 
   const outcomes =
     installed && !pass.token?.isCancellationRequested
-      ? await runPass(pass, hooks, `Testing ${targets.length} upgrades together`, targets)
+      ? await runPass(pass, hooks, `Testing ${targets.length} upgrades together`, targets, {
+          // This pass is a search, not a report. Its only question is whether
+          // the batch is clean, and the first red check has answered it — the
+          // build and the test suite behind a failing typecheck are minutes
+          // spent producing diagnostics about a batch that is about to be
+          // halved and asked again. The one-at-a-time pass that produces the
+          // verdict a developer reads still runs every check.
+          stopOnFirstFailure: true,
+        })
       : [];
   const green = outcomes.length > 0 && outcomes.every((outcome) => outcome.status === 'passed');
 
@@ -737,6 +748,43 @@ async function probeTogether(
 }
 
 /**
+ * Apply every upgrade in the batch, in as few package-manager runs as the
+ * ecosystem allows.
+ *
+ * One `npm install a@1 b@2 c@3` rather than three: the resolver runs once over
+ * a graph that is the same in either case, and the lockfile is written once. A
+ * manifest with twenty outdated packages used to spend most of this phase
+ * re-resolving it, before a single check had run.
+ *
+ * Which one failed is deliberately not established here, whichever path ran.
+ * Narrowing the batch down is about to install each candidate on its own and
+ * will report the real reason against the candidate it belongs to.
+ */
+async function installBatch(pass: GroupPass, targets: readonly ProbeTarget[]): Promise<boolean> {
+  if (pass.token?.isCancellationRequested) return false;
+
+  if (pass.installTogether) {
+    try {
+      if (await pass.installTogether(pass.root, targets)) return true;
+    } catch {
+      return false;
+    }
+    // Declined rather than failed — this manager takes one package at a time.
+  }
+
+  for (const target of targets) {
+    if (pass.token?.isCancellationRequested) return false;
+    try {
+      await target.install(pass.root);
+    } catch {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
  * The group's usable checks, run against whatever is installed right now.
  *
  * `phase` is what the caller is already showing, so each check can say which
@@ -749,6 +797,7 @@ function runPass(
   hooks?: GroupHooks,
   phase?: string,
   about?: readonly ProbeTarget[],
+  options?: { stopOnFirstFailure?: boolean },
 ): Promise<CheckOutcome[]> {
   return runChecks({
     root: pass.root,
@@ -756,6 +805,7 @@ function runPass(
     checks: pass.usable,
     env: pass.env,
     exec: pass.exec,
+    ...(options?.stopOnFirstFailure ? { stopOnFirstFailure: true } : {}),
     ...(hooks && phase
       ? { onProgress: (check: LocalCheck) => hooks.report(phase, `\`${check.label}\``, about) }
       : {}),
