@@ -1,0 +1,195 @@
+import { applyOpToLine } from './execute.js';
+import type { FixOp } from './schema.js';
+
+/**
+ * Read a rule back out of an edit somebody else made.
+ *
+ * This is what lets a community recipe be an *input* to the deterministic
+ * fix rather than an override of it. A recipe is a program — jscodeshift,
+ * OpenRewrite — and there is no way to translate a program into Drift's
+ * closed op vocabulary by reading it. But there is a way to translate what
+ * it *did*: run it in a throwaway worktree, take the before/after pairs it
+ * produced, and ask which ops from the vocabulary would explain them.
+ *
+ * If a small, consistent set of ops explains every line the recipe touched,
+ * that set is a candidate fix plan, and it goes through the same gate as a
+ * model-authored one: grounded in the finding, attested, idempotent,
+ * line-preserving. Drift then applies its own ops — not the recipe's diff.
+ * The recipe's output never reaches the repository.
+ *
+ * If no such set explains the edits, the recipe did something outside what
+ * Drift can reason about, and the answer is to decline rather than to fall
+ * back to trusting it. That is a real reduction in what recipes are allowed
+ * to do, and it is the point: the previous design scope-checked a recipe's
+ * diff and committed it, which answers "did it stay in its lane" but never
+ * "is this the right edit". A gate that asks a model to prove its rule and
+ * asks a third-party program for nothing had the trust backwards.
+ */
+
+/** One line a recipe rewrote, as it read before and after. */
+export interface ObservedEdit {
+  file: string;
+  lineNumber: number;
+  before: string;
+  after: string;
+}
+
+export interface InferenceResult {
+  ops: FixOp[];
+  /** Edits no op could explain. Non-empty means the inference is incomplete. */
+  unexplained: ObservedEdit[];
+}
+
+/** Beyond this, the edit is not one migration and should not be described as one. */
+const MAX_INFERRED_OPS = 8;
+
+/**
+ * Infer the smallest op set that reproduces every observed edit.
+ *
+ * Incremental rather than one-shot greedy, because a single line often needs
+ * more than one op: an import whose module path moved *and* whose symbol was
+ * renamed is one line and two rules, and no single op explains it. Each
+ * round therefore proposes against what is *left* of each edit once the ops
+ * already chosen have been applied, and scores a candidate by how many edits
+ * it finishes off in combination with them.
+ *
+ * Exactness is what matters, not minimality. Every round requires the
+ * combined op set to reproduce its edits character for character, so a
+ * "close enough" inference is impossible by construction rather than by
+ * threshold — which is the property that lets a recipe's output be re-derived
+ * instead of trusted.
+ */
+export function inferOps(edits: readonly ObservedEdit[]): InferenceResult {
+  const remaining = edits.filter((edit) => edit.before !== edit.after);
+  if (remaining.length === 0) return { ops: [], unexplained: [] };
+
+  const ops: FixOp[] = [];
+
+  while (ops.length < MAX_INFERRED_OPS) {
+    const pending = remaining.filter((edit) => applyAll(ops, edit.before) !== edit.after);
+    if (pending.length === 0) break;
+
+    const candidates = new Map<string, FixOp>();
+    for (const edit of pending) {
+      // Propose against the residual difference, not the original line — the
+      // ops already chosen have moved `before` part of the way there.
+      const partial = applyAll(ops, edit.before);
+      for (const op of proposeOps({ ...edit, before: partial })) {
+        candidates.set(JSON.stringify(op), op);
+      }
+    }
+
+    let best: { op: FixOp; score: number; key: string } | null = null;
+    for (const [key, op] of candidates) {
+      const combined = [...ops, op];
+      const score = pending.filter((edit) => applyAll(combined, edit.before) === edit.after).length;
+      if (score === 0) continue;
+      // Ties break on the serialized op so inference is deterministic across
+      // runs and machines — a plan whose id depended on Map iteration order
+      // would not be content-addressable.
+      if (!best || score > best.score || (score === best.score && key < best.key)) {
+        best = { op, score, key };
+      }
+    }
+
+    if (!best) break;
+    ops.push(best.op);
+  }
+
+  const unexplained = remaining.filter((edit) => applyAll(ops, edit.before) !== edit.after);
+  return { ops, unexplained };
+}
+
+/** Apply every op in order, skipping the ones whose preconditions do not hold. */
+function applyAll(ops: readonly FixOp[], line: string): string {
+  let current = line;
+  for (const op of ops) {
+    const next = applyOpToLine(current, op);
+    if (next !== null) current = next;
+  }
+  return current;
+}
+
+/**
+ * Ops that could plausibly explain one edit.
+ *
+ * Proposals only — every one is verified by re-execution above, so a wrong
+ * guess costs nothing and a missing guess costs coverage. Generated by
+ * reading the two lines' token and string differences rather than by
+ * pattern-matching the diff text, which keeps this independent of how the
+ * recipe formatted its output.
+ */
+function proposeOps(edit: ObservedEdit): FixOp[] {
+  const proposals: FixOp[] = [];
+  const before = tokenize(edit.before);
+  const after = tokenize(edit.after);
+
+  // Identifier and member renames: a token present on one side and absent on
+  // the other, paired positionally.
+  const lost = before.filter((token) => !after.includes(token));
+  const gained = after.filter((token) => !before.includes(token));
+
+  for (const from of new Set(lost)) {
+    for (const to of new Set(gained)) {
+      proposals.push({ kind: 'rename-identifier', from, to });
+      proposals.push({ kind: 'rename-member', from, to });
+      proposals.push({ kind: 'replace-import-path', from, to });
+    }
+  }
+
+  // Module specifiers, which are strings rather than tokens.
+  const beforePaths = stringLiterals(edit.before);
+  const afterPaths = stringLiterals(edit.after);
+  for (const from of beforePaths.filter((path) => !afterPaths.includes(path))) {
+    for (const to of afterPaths.filter((path) => !beforePaths.includes(path))) {
+      proposals.push({ kind: 'replace-import-path', from, to });
+    }
+  }
+
+  // A prefix appearing before a call that was not there before.
+  for (const wrapper of ['await', 'new'] as const) {
+    if (edit.before.includes(`${wrapper} `) || !edit.after.includes(`${wrapper} `)) continue;
+    for (const callee of calleesIn(edit.after)) {
+      proposals.push({ kind: 'wrap-call', callee, wrapper });
+    }
+  }
+
+  // A new argument in an existing call.
+  for (const callee of calleesIn(edit.before)) {
+    for (const literal of gainedLiterals(edit.before, edit.after)) {
+      for (let index = 0; index <= 4; index++) {
+        proposals.push({ kind: 'insert-argument', callee, index, text: literal });
+      }
+    }
+  }
+
+  return proposals;
+}
+
+function tokenize(line: string): string[] {
+  return line.match(/[A-Za-z_$][\w$]*/g) ?? [];
+}
+
+function stringLiterals(line: string): string[] {
+  return [...line.matchAll(/"([^"\\]*)"|'([^'\\]*)'/g)].map((match) => match[1] ?? match[2] ?? '');
+}
+
+function calleesIn(line: string): string[] {
+  return [...line.matchAll(/([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s*\(/g)].map((match) => match[1]!);
+}
+
+/**
+ * Candidate literal arguments the edit introduced.
+ *
+ * Bounded deliberately: this only looks at whole balanced object literals and
+ * quoted strings, so an inference cannot propose inserting a fragment that
+ * happens to differ between the two lines.
+ */
+function gainedLiterals(before: string, after: string): string[] {
+  const candidates = [
+    ...(after.match(/\{[^{}]*\}/g) ?? []),
+    ...(after.match(/"[^"\\]*"|'[^'\\]*'/g) ?? []),
+    ...(after.match(/\b(?:true|false|null|None|nil)\b/g) ?? []),
+  ];
+  return [...new Set(candidates.filter((candidate) => !before.includes(candidate)))];
+}
