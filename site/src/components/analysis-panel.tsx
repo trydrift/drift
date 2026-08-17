@@ -41,6 +41,11 @@ const VERDICT_STYLE: Record<UpgradeSeverity, string> = {
   unchecked: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
   clean: "border-border bg-surface-hover text-faint",
   error: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  // A row the scan has listed and not yet checked. The demo never renders one
+  // — it shows a finished report — but the verdict exists in the extension, so
+  // it is styled here as the absence of a verdict rather than left to fall
+  // through to whatever `clean` looks like.
+  pending: "border-border bg-surface-hover text-faint",
 };
 
 /** The short form for the pill. `describeSeverity` writes the long one. */
@@ -51,6 +56,7 @@ const VERDICT_PILL: Record<UpgradeSeverity, string> = {
   unchecked: "Not Verified",
   clean: "Safe",
   error: "Could Not Check",
+  pending: "Checking",
 };
 
 const CONFIDENCE_STYLE: Record<ImpactSite["confidence"], string> = {
