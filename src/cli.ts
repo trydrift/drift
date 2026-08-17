@@ -1043,8 +1043,14 @@ async function resolveManagerForWrite(
 
 /**
  * Analyse, then apply the resulting plan: Drift's own codemod first, a
- * community recipe second (only when enabled), an AI agent last — the same
- * priority every surface shares (`src/remediation/partition.ts`).
+ * validated fix plan second, an AI agent last — the same priority every
+ * surface shares (`src/remediation/partition.ts`).
+ *
+ * `--plan` stops after printing the fix plan documents, having written
+ * nothing at all. That is the read-only half of this command and the reason
+ * a plan is worth having as a document rather than only as a mechanism: a
+ * developer can read exactly what would happen to every call site, and to
+ * which call sites nothing would happen, before granting any of it.
  *
  * Runs entirely in an isolated git worktree via `runFix`, so nothing here
  * ever touches the caller's working tree, and pushes only a branch it built
