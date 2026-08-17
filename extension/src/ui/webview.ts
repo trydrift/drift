@@ -935,11 +935,13 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
     return `<div class="turn assistant"><div class="who">${LOGO_SMALL}<span>Drift</span></div><div class="body markdown">${renderMarkdown(item.headline)}</div></div>`;
   }
 
-  // A re-check in flight has not reached a verdict yet — `severityOf` falls
-  // through to `clean` for it, which used to count a package still being
-  // examined as though it had already been found safe. Pulled out first so
-  // none of the buckets below ever see one.
-  const checking = candidates.filter((c) => c.status === 'checking' || c.status === 'upgrading');
+  // Anything still in flight has not reached a verdict yet — for a re-check,
+  // `severityOf` used to fall through to `clean` and count a package still
+  // being examined as though it had already been found safe. Pulled out first
+  // so none of the buckets below ever see one.
+  const checking = candidates.filter(
+    (c) => c.status === 'pending' || c.status === 'checking' || c.status === 'upgrading',
+  );
   const settled = candidates.filter((c) => !checking.includes(c));
 
   const affected = settled.filter((c) => severityOf(c) === 'affected');
@@ -971,7 +973,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
           ${unchecked.length ? tally(unchecked.length, 'unverified', 'unchecked') : ''}
           ${safe.length ? tally(safe.length, 'safe', 'clean') : ''}
           ${failed.length ? tally(failed.length, 'unknown', 'error') : ''}
-          ${checking.length ? tally(checking.length, 'checking', 'unchecked') : ''}
+          ${checking.length ? tally(checking.length, 'in progress', 'unchecked') : ''}
         </span>
         <button class="ctl icon" data-action="rescan" title="Check every dependency again" aria-label="Rescan">${ICON_REFRESH}</button>
       </div>
@@ -1021,7 +1023,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
         // that were actually cleared.
         checking.length
           ? `<section class="pkg-group">
-              <h4 class="pkg-subhead unchecked"><span class="spinner"></span><span>Checking…</span><small>${checking.length}</small></h4>
+              <h4 class="pkg-subhead unchecked"><span class="spinner"></span><span>Checking your packages</span><small>${checking.length}</small></h4>
               <div class="pkg-list">${checking.map((c) => renderCandidate(c, checking.length === 1, showRepo)).join('')}</div>
             </section>`
           : ''
@@ -1108,7 +1110,11 @@ function workspaceTag(candidate: UpgradeCandidate, showRepo: boolean): string {
 
 function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = false): string {
   const severity = severityOf(candidate);
-  const busy = candidate.status === 'checking' || candidate.status === 'upgrading';
+  // `pending` is the row a manifest produced before anything looked at it: it
+  // has a name and an installed version and nothing else, so everything below
+  // that would describe a *result* is left out rather than rendered as zeroes.
+  const waiting = candidate.status === 'pending';
+  const busy = waiting || candidate.status === 'checking' || candidate.status === 'upgrading';
   const target = versionLabel(candidate, candidate.selected);
 
   // Keyed by the manifest as well as the name. One package can legitimately
@@ -1122,18 +1128,27 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
       <span class="pkg-name">
         <b>${escapeHtml(candidate.name)}</b>
         ${workspaceTag(candidate, showRepo)}
-        <span class="versions">${escapeHtml(candidate.current)} <span class="arrow">→</span> ${escapeHtml(candidate.selected)}</span>
+        <span class="versions">${escapeHtml(candidate.current)}${
+          waiting ? '' : ` <span class="arrow">→</span> ${escapeHtml(candidate.selected)}`
+        }</span>
       </span>
-      <span class="verdict ${severity}">${escapeHtml(busy ? busyLabel(candidate) : shortVerdict(candidate, severity))}</span>
+      <span class="verdict ${severity}${busy ? ' busy' : ''}">${
+        busy ? `<span class="spinner"></span>${escapeHtml(busyLabel(candidate))}` : escapeHtml(shortVerdict(candidate, severity))
+      }</span>
     </summary>
 
     <div class="pkg-body">
-      <p class="verdict-long">${inlineMarkdown(candidate.error ?? candidate.summary, {})}</p>
+      ${
+        // Nothing to say yet, and an empty paragraph where the verdict will go
+        // is worse than none — it reserves space for a sentence that reads as
+        // missing rather than as not written yet.
+        waiting ? '' : `<p class="verdict-long">${inlineMarkdown(candidate.error ?? candidate.summary, {})}</p>`
+      }
       ${renderVerification(candidate)}
       ${renderRationale(candidate)}
       ${renderGaps(candidate)}
 
-      <div class="pkg-target">
+      ${waiting ? '' : `<div class="pkg-target">
         <span class="field-label">Target version</span>
         <button class="ctl bordered" data-action="pickVersion" data-id="${escapeAttr(candidate.id)}" title="Choose which version to check and install">
           <span>${escapeHtml(target)}</span>${ICON_CHEVRON}
@@ -1147,7 +1162,7 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
             ? ''
             : `<button class="ctl icon pkg-recheck" data-action="recheck" data-id="${escapeAttr(candidate.id)}" title="Check ${escapeAttr(candidate.name)} again, including any version published since the scan" aria-label="Re-check ${escapeAttr(candidate.name)}">${ICON_REFRESH}</button>`
         }
-      </div>
+      </div>`}
 
       ${candidate.plan ? renderCandidateDetail(candidate, candidate.plan) : ''}
 
@@ -1254,12 +1269,24 @@ export function crossesMajor(current: string, target: string): boolean {
   return from !== null && to !== null && to > from;
 }
 
+/**
+ * What is happening to this package, right now.
+ *
+ * The scan reports a real phase per package — asking the registry, reading
+ * release notes, searching this repository, running `npm run build` — and this
+ * is where it is shown. "Checking…" for four minutes is what made a working
+ * scan look like a stuck one; it survives only as the fallback for a row whose
+ * phase has not been reported yet.
+ */
 function busyLabel(candidate: UpgradeCandidate): string {
-  return candidate.status === 'upgrading' ? 'Installing…' : 'Checking…';
+  if (candidate.status === 'upgrading') return 'Installing…';
+  return candidate.phase ?? 'Checking…';
 }
 
 function shortVerdict(candidate: UpgradeCandidate, severity: UpgradeSeverity): string {
   switch (severity) {
+    case 'pending':
+      return candidate.phase ?? 'Not checked yet';
     case 'affected':
       return `${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'} here`;
     case 'verification-failed':
@@ -2894,6 +2921,7 @@ button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
 .dot.affected { background: var(--vscode-editorWarning-foreground); }
 .dot.error, .dot.verification-failed { background: var(--vscode-editorError-foreground); }
 .dot.unchecked { background: var(--vscode-descriptionForeground); }
+.dot.pending { background: var(--vscode-descriptionForeground); opacity: .5; }
 .pkg-name { min-width: 0; display: flex; flex-direction: column; }
 .pkg-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pkg-workspace {
@@ -2932,6 +2960,23 @@ button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
 .verdict.unchecked {
   color: var(--vscode-editorWarning-foreground);
   border-color: var(--vscode-editorWarning-foreground);
+}
+/* A row that is still working says what it is working on, so it is the one
+   verdict allowed to be long — it wraps rather than being clipped to a width
+   that would turn a named build command into an ellipsis. The spinner in front
+   of it is what marks it as an activity rather than a result.
+   Marked with a class the renderer sets rather than matched with :has() on the
+   spinner: the two say the same thing, but one of them depends on a selector
+   whose support varies with whichever Chromium the running VS Code was built
+   against, and silently does nothing where it is missing. */
+.verdict.pending, .verdict.busy {
+  color: var(--vscode-descriptionForeground);
+  border-color: transparent;
+  white-space: normal;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  text-align: right;
 }
 /* Why a check came up short, under the verdict it explains. */
 /* The upgrade rationale. Tinted by tone, and only where there is a tone to

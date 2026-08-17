@@ -10,7 +10,15 @@
  * layer can use it and so the whole panel stays testable in plain Node.
  */
 
-export type UpgradeSeverity = 'affected' | 'verification-failed' | 'upstream-only' | 'unchecked' | 'clean' | 'error';
+export type UpgradeSeverity =
+  | 'affected'
+  | 'verification-failed'
+  | 'upstream-only'
+  | 'unchecked'
+  | 'clean'
+  | 'error'
+  /** Nothing has been checked yet. Not a verdict — the absence of one. */
+  | 'pending';
 
 /** The parts of an upgrade candidate that decide its severity. */
 export interface SeverityInput {
@@ -76,6 +84,11 @@ export interface SeverityInput {
  * different facts, and a developer needs to be told which one they have.
  */
 export function severityOf(candidate: SeverityInput): UpgradeSeverity {
+  // A row that exists because a manifest names the package, and for no other
+  // reason. Every count on it is zero because nothing has looked yet, and the
+  // rules below would read those zeroes as a clean bill of health — which is
+  // the one wrong answer this module exists to prevent.
+  if (candidate.status === 'pending') return 'pending';
   if (candidate.status === 'error') return 'error';
   if (candidate.impactCount > 0) return 'affected';
   // Static analysis found nothing to point at, but the project's own toolchain
@@ -103,6 +116,8 @@ export function severityOf(candidate: SeverityInput): UpgradeSeverity {
  */
 export function describeSeverity(candidate: SeverityInput): string {
   switch (severityOf(candidate)) {
+    case 'pending':
+      return 'Not checked yet';
     case 'error':
       return 'Could not check';
     case 'affected': {
@@ -149,7 +164,11 @@ export function compareSeverity(a: SeverityInput, b: SeverityInput): number {
     error: 2,
     'upstream-only': 3,
     unchecked: 4,
-    clean: 5,
+    // Above `clean` deliberately: a package nobody has looked at yet is not a
+    // package that has been cleared, and sorting it under the safe ones is how
+    // it would be read as one.
+    pending: 5,
+    clean: 6,
   } as const;
   return rank[severityOf(a)] - rank[severityOf(b)];
 }

@@ -361,6 +361,35 @@ describe('probing an upgrade before reporting it', () => {
     );
   });
 
+  test('every phase about a package names that package, so a caller can show it on its row', async () => {
+    // `ProbeProgress.targets` is what lets the panel put "running the test
+    // suite" on the row it belongs to instead of on all of them. The phases
+    // that name a target must actually carry it; the ones about the checkout
+    // itself — creating the worktree, installing the project's own
+    // dependencies, measuring the baseline — must not pretend to.
+    const { exec } = recorder();
+    const phases: { phase: string; targets?: readonly string[] }[] = [];
+    await probeUpgrades({
+      root,
+      targets: [target('zod')],
+      exec,
+      fs,
+      onProgress: (progress) => {
+        if (progress.phase) phases.push({ phase: progress.phase, targets: progress.targets });
+      },
+    });
+
+    const attributed = phases.filter((entry) => entry.targets?.includes('t-zod'));
+    assert.ok(
+      attributed.some((entry) => /Testing zod@2\.0\.0/.test(entry.phase)),
+      `no phase named the package it was about: ${JSON.stringify(phases)}`,
+    );
+    assert.ok(
+      phases.some((entry) => /Preparing a test checkout/.test(entry.phase) && !entry.targets),
+      'work on the checkout itself is not attributed to a package',
+    );
+  });
+
   test('a worktree that fails to reset is not reused for the next candidate in a group', async () => {
     // `git checkout -- .` succeeds the first time (letting the batch attempt,
     // which fails to install at all, fall through to the serial pass) and

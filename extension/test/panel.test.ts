@@ -794,6 +794,34 @@ test('a package already being checked offers no second re-check', () => {
   assert.doesNotMatch(html, /data-action="recheck"/);
 });
 
+test('a package the manifest named but nothing has checked yet says so, and offers nothing', () => {
+  // The row that exists to prove the scan is working. It has a name and an
+  // installed version and nothing else, so it must not render a target
+  // version, an upgrade button, or a verdict — and above all must not be
+  // counted among the packages found safe.
+  const c = candidate({
+    status: 'pending',
+    phase: 'Reading release notes and changelog',
+    selected: '4.17.21',
+    latest: '4.17.21',
+    versions: [],
+    breakingCount: 0,
+    evidenceCount: 0,
+    summary: '',
+  });
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'p1', kind: 'packages', headline: 'Checking.', ids: [c.id] }],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  assert.match(html, /Reading release notes and changelog/, 'the row says what is happening to it');
+  assert.doesNotMatch(html, /Target version/, 'there is no target version to choose yet');
+  assert.doesNotMatch(html, /data-action="upgrade"/, 'nothing to install yet');
+  assert.doesNotMatch(html, /Safe to upgrade/, 'a package nobody has checked is not a package found safe');
+});
+
 test('every disclosure carries a key, so re-rendering cannot collapse it', () => {
   // The panel re-renders many times a second during a scan. Without a stable
   // key on each <details>, everything the developer opened slams shut each time

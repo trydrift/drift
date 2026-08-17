@@ -76,7 +76,17 @@ const run = promisify(execFile);
  * calls, the same breaking-change analysis, the same severity verdict.
  */
 
-export type UpgradeStatus = 'checking' | 'ready' | 'clean' | 'error' | 'upgrading';
+/**
+ * Where one package is in the scan.
+ *
+ * `pending` is the row that exists before anything is known about it: the
+ * manifest has been read, the dependency is real, and nothing has been checked
+ * yet. It exists because the alternative — showing nothing until the first
+ * verdict lands — made the first minute of a scan look like a tool that had not
+ * started, when in fact it had already read every manifest and knew exactly
+ * what it was going to check.
+ */
+export type UpgradeStatus = 'pending' | 'checking' | 'ready' | 'clean' | 'error' | 'upgrading';
 
 export interface UpgradeCandidate {
   id: string;
@@ -107,6 +117,16 @@ export interface UpgradeCandidate {
   latest: string;
   versions: string[];
   status: UpgradeStatus;
+  /**
+   * What is being done to this package right now, in the developer's terms.
+   *
+   * "Reading release notes", "Running `npm run build`" — the actual step,
+   * named. A row that says only "Checking…" for four minutes is
+   * indistinguishable from a row that is stuck, which is the whole reason this
+   * field exists rather than being left to a spinner. Absent once the package
+   * is settled: a finished row describes a result, not an activity.
+   */
+  phase?: string;
   evidenceCount: number;
   breakingCount: number;
   impactCount: number;
@@ -259,6 +279,13 @@ export interface ScanProgress {
   done: number;
   /** Packages to check in total, once known. */
   total: number;
+  /**
+   * Candidate ids this phase is about, when it is about particular packages.
+   *
+   * See {@link ProbeProgress.targets} — the scan forwards them so a caller
+   * rendering one row per package can say what is happening on that row.
+   */
+  targets?: readonly string[];
   /**
    * A chunk the command named by the current phase just printed.
    *
@@ -467,8 +494,23 @@ export async function scanUpgrades(args: {
   dirs?: readonly string[];
   managers?: ManagerPreferences;
   onProgress?: (progress: ScanProgress) => void;
-  /** Called as soon as each package resolves, so the caller can fill in gradually. */
+  /**
+   * Called every time a package's row changes — when the manifest first names
+   * it, at each phase of its analysis, and with the verdict.
+   *
+   * Always keyed by `candidate.id`, and the id does not change across those
+   * calls, so a caller keeps one row per package and replaces it in place.
+   */
   onCandidate?: (candidate: UpgradeCandidate) => void;
+  /**
+   * Called when a package announced by `onCandidate` turns out to have no
+   * upgrade to offer — it is already current, or its version lookup failed.
+   *
+   * The counterpart to announcing a row before anything is known about it: the
+   * row has to be able to go away again, or a scan would end showing rows for
+   * every dependency it checked and cleared.
+   */
+  onDropped?: (id: string) => void;
   token?: { isCancellationRequested: boolean };
   /** Stamped onto every candidate — set when scanning more than one open root. */
   repoLabel?: string;
@@ -492,7 +534,7 @@ export async function scanUpgrades(args: {
     generatedSourceGlobs?: readonly string[];
   };
 }): Promise<UpgradeScanResult> {
-  const { root, repo, config, logger, githubToken, onProgress, onCandidate, token, repoLabel } = args;
+  const { root, repo, config, logger, githubToken, onProgress, onCandidate, onDropped, token, repoLabel } = args;
   const breadth = args.breadth ?? DEFAULT_BREADTH;
   const fs = args.fs ?? nodeWorkspaceFs();
   const env = args.env ?? process.env;
@@ -578,11 +620,70 @@ export async function scanUpgrades(args: {
 
   const enabled = new Set(config.ecosystems);
   const multiPackage = new Set(targets.map((t) => t.dir)).size > 1;
+
+  /**
+   * Every row this scan has put on screen and not yet taken back.
+   *
+   * A row announced from a manifest is a promise that a verdict is coming, and
+   * every path out of this function has to keep or withdraw it — including the
+   * ones nobody plans for. See `releaseUnreached`.
+   */
+  const announced = new Set<string>();
+
+  /** Where each package is right now, published as soon as it changes. */
+  const announce = (dep: ScanDependency, phase: string): void => {
+    announced.add(candidateId(dep, repoLabel ? root : undefined));
+    onCandidate?.(
+      pendingCandidate({
+        dep,
+        member: multiPackage ? dep.target.dir : undefined,
+        memberName: multiPackage ? memberNames.get(dep.target.dir) : undefined,
+        repoRoot: repoLabel ? root : undefined,
+        repoLabel,
+        phase,
+      }),
+    );
+  };
+
+  /**
+   * Withdraw every row that was announced and never settled.
+   *
+   * A scan can end without reaching a package it has already listed: the
+   * developer pressed stop, a root threw, an ecosystem was disabled between
+   * one phase and the next. Without this, each of those leaves a row with a
+   * name on it, no verdict, and a spinner that never stops — and every caller
+   * would have to implement the same cleanup to avoid it. The lifecycle
+   * belongs to whoever opened it.
+   */
+  const releaseUnreached = (): void => {
+    for (const candidate of candidates) announced.delete(candidate.id);
+    for (const id of announced) onDropped?.(id);
+    announced.clear();
+  };
+
+  const drop = (dep: ScanDependency): void => {
+    const id = candidateId(dep, repoLabel ? root : undefined);
+    announced.delete(id);
+    onDropped?.(id);
+  };
+
   const all: ScanDependency[] = [];
   for (const target of targets) {
     if (!enabled.has(target.manager.ecosystem)) continue;
     report('Reading manifest', target.manifestPath);
-    all.push(...(await directDependencies(root, target, breadth.includeDev, fs)));
+    const found = await directDependencies(root, target, breadth.includeDev, fs);
+    // Listed the moment the manifest names them, with nothing in them yet.
+    //
+    // Everything below — the registry lookups, the evidence, the impact
+    // search, the install-and-check probe — takes time proportional to the
+    // number of dependencies, and until the first of them finished the panel
+    // had nothing to show at all. A developer watching that has no way to tell
+    // a scan that is working from one that is wedged. An empty row with a name
+    // on it answers that immediately, and fills itself in as the answers
+    // arrive.
+    const room = breadth.maxPackages > 0 ? Math.max(0, breadth.maxPackages - all.length) : found.length;
+    for (const dep of found.slice(0, room)) announce(dep, 'Waiting to be checked');
+    all.push(...found);
   }
 
   const deps = breadth.maxPackages > 0 ? all.slice(0, breadth.maxPackages) : all;
@@ -657,149 +758,185 @@ export async function scanUpgrades(args: {
   // that one package at a time made a scan take as long as the sum of every
   // network round trip in the project. Running several at once turns that sum
   // into something much closer to the slowest one.
-  await inParallel(deps, concurrency, async (dep) => {
-    if (token?.isCancellationRequested) return;
-
-    report(
-      `Checking ${versionSourceLabel(dep.target.manager.ecosystem)}`,
-      `${dep.name} (installed ${dep.current})`,
-      done,
-      deps.length,
-    );
-    const available = await lookupVersions({
-      name: dep.name,
-      ecosystem: dep.target.manager.ecosystem,
-      current: dep.current,
-      range: dep.range,
-      ...(githubToken ? { githubToken } : {}),
-    });
-
-    if (available.outcome === 'up-to-date') {
-      upToDate += 1;
-      done += 1;
-      report('Up to date', `${dep.name}@${dep.current}`, done, deps.length);
-      return;
-    }
-
-    // The case this whole shape exists for. Reporting it as "Up to date" —
-    // which is what happened until the lookup learned to say so — turns every
-    // registry timeout and every ecosystem without a version API into a clean
-    // bill of health for a dependency nobody looked at.
-    if (available.outcome === 'unchecked') {
-      unchecked.push({
-        name: dep.name,
-        kind: dep.kind,
-        ecosystem: dep.target.manager.ecosystem,
-        packageManager: dep.target.manager.id,
-        manifestPath: dep.target.manifestPath,
-        current: dep.current,
-        reason: available.reason,
-      });
-      done += 1;
-      report('Could not check', `${dep.name}@${dep.current} · ${available.reason}`, done, deps.length);
-      return;
-    }
-
-    if (token?.isCancellationRequested) return;
-
-    const selected = available.safeLatest ?? available.latest;
-    const candidate = await analyzeUpgrade({
-      dep,
-      selected,
-      versions: available.versions,
-      latest: available.latest,
-      safeLatest: available.safeLatest,
-      latestMinor: available.latestMinor,
-      repo,
-      config,
-      githubToken,
-      root,
-      indexing,
-      logger,
-      env,
-      maxSites: breadth.maxSites,
-      member: multiPackage ? dep.target.dir : undefined,
-      // Paired with `member` above: a name without a directory would put a
-      // label on every row of a single-package repository, which is one more
-      // thing to read past on every line and never varies.
-      memberName: multiPackage ? memberNames.get(dep.target.dir) : undefined,
-      repoRoot: repoLabel ? root : undefined,
-      repoLabel,
-      onProgress: (phase, detail) => report(phase, detail, done, deps.length),
-    });
-
-    candidates.push(candidate);
-    // Released immediately, but marked `checking` while the upgrade is about to
-    // be tested for real. Holding it back entirely left a package invisible for
-    // as long as its install took; releasing it as-is presented a prediction the
-    // probe may be about to withdraw as though it were the answer. `checking` is
-    // the honest third option — here is what we suspect, we are not finished —
-    // and it is the same status the row already uses while a re-check runs.
-    onCandidate?.(verify.enabled ? { ...candidate, status: 'checking' } : candidate);
-    done += 1;
-    report(
-      severityOf(candidate) === 'affected' ? 'Needs your attention' : 'Checked',
-      `${candidate.name} ${candidate.current} → ${candidate.selected} · ${describeSeverity(candidate).toLowerCase()}`,
-      done,
-      deps.length,
-    );
-  });
-
   try {
-    if (verify.enabled && candidates.length > 0 && !token?.isCancellationRequested) {
-      await verifyCandidates({
-        root,
-        candidates,
-        checks: verify.checks,
-        timeoutMs: verify.timeoutMs,
-        generatedSourceGlobs: verify.generatedSourceGlobs,
-        env,
-        logger,
-        ...(warm ? { warm } : {}),
-        ...(token ? { token } : {}),
-        // A chunk of command output is not a phase, so it bypasses `report` —
-        // which logs and re-times every call as though a new stage had begun.
-        onProgress: (progress) =>
-          progress.output !== undefined
-            ? onProgress?.({ phase: '', detail: '', done: progress.done, total: progress.total, output: progress.output })
-            : report(progress.phase, progress.detail, progress.done, progress.total),
-        onCandidate,
+    await inParallel(deps, concurrency, async (dep) => {
+      if (token?.isCancellationRequested) return;
+
+      const source = versionSourceLabel(dep.target.manager.ecosystem);
+      report(`Checking ${source}`, `${dep.name} (installed ${dep.current})`, done, deps.length);
+      announce(dep, `Asking ${source} what has been published`);
+      const available = await lookupVersions({
+        name: dep.name,
+        ecosystem: dep.target.manager.ecosystem,
+        current: dep.current,
+        range: dep.range,
+        ...(githubToken ? { githubToken } : {}),
       });
+
+      if (available.outcome === 'up-to-date') {
+        upToDate += 1;
+        done += 1;
+        // The row announced when the manifest was read has nothing to offer, so
+        // it is taken back rather than left sitting there with no target version
+        // and no verdict.
+        drop(dep);
+        report('Up to date', `${dep.name}@${dep.current}`, done, deps.length);
+        return;
+      }
+
+      // The case this whole shape exists for. Reporting it as "Up to date" —
+      // which is what happened until the lookup learned to say so — turns every
+      // registry timeout and every ecosystem without a version API into a clean
+      // bill of health for a dependency nobody looked at.
+      if (available.outcome === 'unchecked') {
+        unchecked.push({
+          name: dep.name,
+          kind: dep.kind,
+          ecosystem: dep.target.manager.ecosystem,
+          packageManager: dep.target.manager.id,
+          manifestPath: dep.target.manifestPath,
+          current: dep.current,
+          reason: available.reason,
+        });
+        done += 1;
+        drop(dep);
+        report('Could not check', `${dep.name}@${dep.current} · ${available.reason}`, done, deps.length);
+        return;
+      }
+
+      if (token?.isCancellationRequested) return;
+
+      const selected = available.safeLatest ?? available.latest;
+      const candidate = await analyzeUpgrade({
+        dep,
+        selected,
+        versions: available.versions,
+        latest: available.latest,
+        safeLatest: available.safeLatest,
+        latestMinor: available.latestMinor,
+        repo,
+        config,
+        githubToken,
+        root,
+        indexing,
+        logger,
+        env,
+        maxSites: breadth.maxSites,
+        member: multiPackage ? dep.target.dir : undefined,
+        // Paired with `member` above: a name without a directory would put a
+        // label on every row of a single-package repository, which is one more
+        // thing to read past on every line and never varies.
+        memberName: multiPackage ? memberNames.get(dep.target.dir) : undefined,
+        repoRoot: repoLabel ? root : undefined,
+        repoLabel,
+        onProgress: (phase, detail) => {
+          report(phase, detail, done, deps.length);
+          // The same phase, said on the package's own row. The scan-wide step
+          // line only ever shows whichever of the eight packages in flight
+          // reported last, so without this a developer looking at one row can
+          // see it is busy and never what it is busy with.
+          announce(dep, phase);
+        },
+      });
+
+      candidates.push(candidate);
+      // Released immediately, but marked `checking` while the upgrade is about to
+      // be tested for real. Holding it back entirely left a package invisible for
+      // as long as its install took; releasing it as-is presented a prediction the
+      // probe may be about to withdraw as though it were the answer. `checking` is
+      // the honest third option — here is what we suspect, we are not finished —
+      // and it is the same status the row already uses while a re-check runs.
+      onCandidate?.(
+        verify.enabled
+          ? { ...candidate, status: 'checking', phase: 'Waiting to be installed and tested' }
+          : candidate,
+      );
+      done += 1;
+      report(
+        severityOf(candidate) === 'affected' ? 'Needs your attention' : 'Checked',
+        `${candidate.name} ${candidate.current} → ${candidate.selected} · ${describeSeverity(candidate).toLowerCase()}`,
+        done,
+        deps.length,
+      );
+    });
+
+    try {
+      if (verify.enabled && candidates.length > 0 && !token?.isCancellationRequested) {
+        await verifyCandidates({
+          root,
+          candidates,
+          checks: verify.checks,
+          timeoutMs: verify.timeoutMs,
+          generatedSourceGlobs: verify.generatedSourceGlobs,
+          env,
+          logger,
+          ...(warm ? { warm } : {}),
+          ...(token ? { token } : {}),
+          // A chunk of command output is not a phase, so it bypasses `report` —
+          // which logs and re-times every call as though a new stage had begun.
+          onProgress: (progress) => {
+            if (progress.output !== undefined) {
+              onProgress?.({ phase: '', detail: '', done: progress.done, total: progress.total, output: progress.output });
+              return;
+            }
+            report(progress.phase, progress.detail, progress.done, progress.total);
+            // Said on the rows it is actually about. A install-and-check pass is
+            // the longest part of a scan by far, and "Checking…" on every row for
+            // the whole of it is exactly the wait that reads as a hang.
+            for (const id of progress.targets ?? []) {
+              const at = candidates.findIndex((entry) => entry.id === id);
+              const candidate = at >= 0 ? candidates[at]! : undefined;
+              if (!candidate || candidate.verification) continue;
+              onCandidate?.({
+                ...candidate,
+                status: 'checking',
+                phase: progress.detail ? `${progress.phase} · ${progress.detail}` : progress.phase,
+              });
+            }
+          },
+          onCandidate,
+        });
+      }
+    } finally {
+      // Every candidate released as `checking` has to be released again, whatever
+      // happened in between.
+      //
+      // `checking` is a promise that a verdict is coming, and the row renders it
+      // as a spinner. Verification is skipped outright when the scan is cancelled
+      // or when it throws, and both used to leave every one of those rows turning
+      // for the rest of the session — a scan that looked permanently stuck on
+      // packages it had in fact finished analysing. Cancellation is no longer a
+      // rare path (the stop button reaches it directly), so this settles the
+      // difference explicitly and says why rather than leaving a spinner to imply
+      // work that is not happening.
+      if (verify.enabled) {
+        for (const [at, candidate] of candidates.entries()) {
+          if (candidate.verification) continue;
+          const settled = applyVerification(candidate, {
+            status: 'skipped',
+            reason: token?.isCancellationRequested
+              ? `The scan was stopped before ${candidate.name} ${candidate.selected} could be installed and checked, so the findings below are predictions.`
+              : `${candidate.name} ${candidate.selected} was not installed and checked, so the findings below are predictions.`,
+            checks: [],
+            failedFiles: [],
+          });
+          candidates[at] = settled;
+          onCandidate?.(settled);
+        }
+      }
+
+      // Directories that turned out to have no upgrades to test, and everything
+      // prepared for a scan that was cancelled or threw. A warmed checkout
+      // nobody took is a `git worktree` and an installed `node_modules` sitting
+      // on disk, so this runs on every path out — including the ones where
+      // verification never ran at all.
+      await warm?.dispose();
     }
   } finally {
-    // Every candidate released as `checking` has to be released again, whatever
-    // happened in between.
-    //
-    // `checking` is a promise that a verdict is coming, and the row renders it
-    // as a spinner. Verification is skipped outright when the scan is cancelled
-    // or when it throws, and both used to leave every one of those rows turning
-    // for the rest of the session — a scan that looked permanently stuck on
-    // packages it had in fact finished analysing. Cancellation is no longer a
-    // rare path (the stop button reaches it directly), so this settles the
-    // difference explicitly and says why rather than leaving a spinner to imply
-    // work that is not happening.
-    if (verify.enabled) {
-      for (const [at, candidate] of candidates.entries()) {
-        if (candidate.verification) continue;
-        const settled = applyVerification(candidate, {
-          status: 'skipped',
-          reason: token?.isCancellationRequested
-            ? `The scan was stopped before ${candidate.name} ${candidate.selected} could be installed and checked, so the findings below are predictions.`
-            : `${candidate.name} ${candidate.selected} was not installed and checked, so the findings below are predictions.`,
-          checks: [],
-          failedFiles: [],
-        });
-        candidates[at] = settled;
-        onCandidate?.(settled);
-      }
-    }
-
-    // Directories that turned out to have no upgrades to test, and everything
-    // prepared for a scan that was cancelled or threw. A warmed checkout
-    // nobody took is a `git worktree` and an installed `node_modules` sitting
-    // on disk, so this runs on every path out — including the ones where
-    // verification never ran at all.
-    await warm?.dispose();
+    // Cancellation, a throw from any stage above, or simply a package the loop
+    // never reached: whatever ended the scan, no row is left claiming that a
+    // verdict is still coming.
+    releaseUnreached();
   }
 
   return {
@@ -896,6 +1033,7 @@ async function verifyCandidates(args: {
         detail: progress.detail,
         done: progress.done,
         total: progress.total,
+        ...(progress.targets ? { targets: progress.targets } : {}),
         ...(progress.output !== undefined ? { output: progress.output } : {}),
       }),
     onVerified: (target, verification) => {
@@ -1224,10 +1362,7 @@ async function analyzeUpgrade(args: {
   };
 
   const base = {
-    // Prefixed with the root when more than one is open, so two repositories
-    // that happen to share a manifest path and a dependency bump never
-    // collide in a `Map<id, candidate>` the caller keeps.
-    id: `${args.repoRoot ? `${args.repoRoot}::` : ''}${target.manifestPath}#${args.dep.name}@${args.dep.current}->${args.selected}`,
+    id: candidateId(args.dep, args.repoRoot),
     name: args.dep.name,
     kind: args.dep.kind,
     ecosystem: target.manager.ecosystem,
@@ -1463,6 +1598,69 @@ function summarize(
 
 function capitalizeFirst(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/**
+ * The identity of one row in the packages list.
+ *
+ * The installed version rather than the target one: a package is one row from
+ * the moment its manifest is read until the moment it is settled, and the
+ * target version is chosen partway through that (and can be changed again
+ * afterwards, from the version picker). Keying on the target made every one of
+ * those moments a *different* row — the pending row could not become the
+ * checked one, and re-targeting replaced the row rather than updating it.
+ *
+ * Prefixed with the root when more than one is open, so two repositories that
+ * share a manifest path and a dependency never collide in a `Map<id,
+ * candidate>` the caller keeps.
+ */
+function candidateId(dep: ScanDependency, repoRoot?: string): string {
+  return `${repoRoot ? `${repoRoot}::` : ''}${dep.target.manifestPath}#${dep.name}@${dep.current}`;
+}
+
+/**
+ * The row for a dependency nothing has been learned about yet.
+ *
+ * Every count is zero and every version is the installed one, because that is
+ * genuinely all that is known — this is the manifest entry, rendered. `status`
+ * is what keeps a caller from reading those zeroes as "no breaking changes".
+ */
+function pendingCandidate(args: {
+  dep: ScanDependency;
+  member?: string;
+  memberName?: string;
+  repoRoot?: string;
+  repoLabel?: string;
+  phase: string;
+}): UpgradeCandidate {
+  const { dep } = args;
+  return {
+    id: candidateId(dep, args.repoRoot),
+    name: dep.name,
+    kind: dep.kind,
+    ecosystem: dep.target.manager.ecosystem,
+    packageManager: dep.target.manager.id,
+    manifestPath: dep.target.manifestPath,
+    ...(args.member === undefined ? {} : { workspace: args.member }),
+    ...(args.memberName ? { workspaceName: args.memberName } : {}),
+    ...(args.repoRoot ? { repoRoot: args.repoRoot, repoLabel: args.repoLabel } : {}),
+    current: dep.current,
+    range: dep.range,
+    selected: dep.current,
+    latest: dep.current,
+    versions: [],
+    status: 'pending',
+    phase: args.phase,
+    evidenceCount: 0,
+    breakingCount: 0,
+    impactCount: 0,
+    impactFiles: 0,
+    impactConfidence: 'none',
+    risk: 'unknown',
+    summary: '',
+    gaps: [],
+    toolRequests: [],
+  };
 }
 
 /** One direct dependency, and the manifest and manager it came from. */
