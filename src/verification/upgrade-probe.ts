@@ -372,7 +372,7 @@ async function attribute(
  */
 async function probeAlone(pass: GroupPass, target: ProbeTarget, hooks: GroupHooks): Promise<boolean> {
   const phase = `Testing ${target.name}@${target.selected}`;
-  hooks.report(phase, 'installing into the test checkout');
+  hooks.report(phase, 'installing into the test checkout', [target]);
   try {
     await target.install(pass.root);
   } catch (err) {
@@ -383,8 +383,8 @@ async function probeAlone(pass: GroupPass, target: ProbeTarget, hooks: GroupHook
     return resetWorktree(pass);
   }
 
-  hooks.report(phase, pass.usable.map((check) => check.label).join(', '));
-  hooks.settle(target, verdictFrom(await runPass(pass, hooks, phase)));
+  hooks.report(phase, pass.usable.map((check) => check.label).join(', '), [target]);
+  hooks.settle(target, verdictFrom(await runPass(pass, hooks, phase, [target])));
   return resetWorktree(pass);
 }
 
