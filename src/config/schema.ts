@@ -290,9 +290,82 @@ export const DriftConfigSchema = z.object({
        * and in the extension this only changes what is *offered*: a recipe
        * is never applied without an explicit choice in that run, regardless
        * of this setting. On the Action, which cannot prompt, this is what
-       * actually gates whether a found recipe is used.
+       * actually gates whether a recipe is consulted at all.
+       *
+       * What a recipe is allowed to *do* once enabled changed with fix plans
+       * (see `fixPlans` below). A recipe now runs only in a throwaway
+       * worktree, as a source of suggestions: Drift reads the edits it made,
+       * infers which of its own operations would explain them, and applies
+       * those. A recipe's own output is never committed, and a recipe whose
+       * edits Drift cannot re-derive is declined rather than trusted.
        */
       communityRecipes: z.boolean().default(false),
+
+      /**
+       * Deterministic fix plans: describe a migration once, as a rule, and
+       * let Drift apply it to every call site itself.
+       *
+       * The tier between Drift's own codemod engine and handing a finding to
+       * an agent. A model is asked for the *rule* — once per breaking change,
+       * however many call sites it reaches — and everything after that is
+       * Drift's: the rule is validated (grounded in the finding, every
+       * introduced name attested by cited evidence, proven idempotent and
+       * line-preserving), applied by Drift's own executor, and written down
+       * as a document a reviewer approves before anything happens and an
+       * auditor can read a year later instead of interpreting a diff.
+       *
+       * `enabled` is off by default because authoring needs `llm.enabled` and
+       * an API key. With it off, cached and recipe-derived plans are still
+       * used — those cost no model call — so a repository can benefit from
+       * plans authored elsewhere without configuring a model at all.
+       */
+      fixPlans: z
+        .object({
+          /** Ask a model to author a plan for findings nothing cheaper resolved. */
+          enabled: z.boolean().default(false),
+
+          /**
+           * How much of a finding a plan must cover before Drift uses it.
+           *
+           * A plan covering a single call site out of forty is not wrong, but
+           * it is not a migration either — it is a coincidence, and acting on
+           * it splits one finding across two mechanisms for no benefit. The
+           * default asks for half. Set to 0 to take any coverage at all, or
+           * to 1 to accept only plans that resolve a finding completely.
+           */
+          minCoverage: z.number().min(0).max(1).default(0.5),
+
+          /**
+           * Whether a plan may be applied without a human seeing it first.
+           *
+           * `'review'` (the default) always writes the plan document and asks,
+           * on every surface that can ask. `'proven'` applies plans whose
+           * every operation is structurally incapable of changing whether the
+           * file parses, and asks about the rest. `'verified'` additionally
+           * applies structural plans once the project's own checks have
+           * actually passed against them.
+           *
+           * Note what is missing: there is no "always". A plan whose
+           * assurance is `checked` and whose verification did not run is
+           * never applied unattended, regardless of this setting — that
+           * combination is precisely where a deterministic engine would
+           * propagate a mistake faster than any per-site agent could.
+           */
+          autoApply: z.enum(['review', 'proven', 'verified']).default('review'),
+
+          /**
+           * Reuse plans previously validated for the same migration.
+           *
+           * The cache is keyed on the migration — dependency, version range,
+           * change kind, symbols — and never on the repository, so a plan
+           * authored for one codebase is a candidate for any other hitting
+           * the same upstream break. Restored plans are re-validated against
+           * the local call sites exactly as fresh ones are; the cache saves
+           * the authoring call, never the checking.
+           */
+          cache: z.boolean().default(true),
+        })
+        .prefault({}),
     })
     .prefault({}),
 
