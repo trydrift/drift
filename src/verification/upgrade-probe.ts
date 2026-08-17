@@ -94,6 +94,17 @@ export interface ProbeProgress {
   done: number;
   total: number;
   /**
+   * Which upgrades this phase is about, by `ProbeTarget.id`.
+   *
+   * Absent for work that belongs to the checkout rather than to any particular
+   * package — creating the worktree, installing the project's own
+   * dependencies, measuring the baseline. Present, and specific, for anything
+   * a caller could sensibly show on one package's row: a caller that renders
+   * per-package progress has no other way to tell which row "running the test
+   * suite" belongs to.
+   */
+  targets?: readonly string[];
+  /**
    * A chunk the running command just printed.
    *
    * Present *instead of* a phase change, not alongside one: a consumer appends
@@ -188,7 +199,14 @@ export async function probeUpgrades(options: ProbeOptions): Promise<Map<string, 
 
     const dir = memberDirOf(manifestPath);
     await probeGroup(options, dir, targets, {
-      report: (phase, detail) => options.onProgress?.({ phase, detail, done, total }),
+      report: (phase, detail, about) =>
+        options.onProgress?.({
+          phase,
+          detail,
+          done,
+          total,
+          ...(about ? { targets: about.map((target) => target.id) } : {}),
+        }),
       output: (chunk) => options.onProgress?.({ phase: '', detail: '', done, total, output: chunk }),
       settle: (target, verification) => {
         done += 1;
@@ -203,7 +221,8 @@ export async function probeUpgrades(options: ProbeOptions): Promise<Map<string, 
 const DEFAULT_GROUP_CONCURRENCY = 3;
 
 interface GroupHooks {
-  report(phase: string, detail: string): void;
+  /** `about` names the upgrades this phase belongs to, when it belongs to any. */
+  report(phase: string, detail: string, about?: readonly ProbeTarget[]): void;
   /** A chunk the currently reported command printed. See {@link ProbeProgress.output}. */
   output(chunk: string): void;
   settle(target: ProbeTarget, verification: UpgradeVerification): void;
@@ -665,6 +684,7 @@ async function probeTogether(
   hooks.report(
     `Testing ${targets.length} upgrades together`,
     targets.map((target) => `${target.name}@${target.selected}`).join(', '),
+    targets,
   );
 
   let installed = true;
@@ -683,7 +703,7 @@ async function probeTogether(
 
   const outcomes =
     installed && !pass.token?.isCancellationRequested
-      ? await runPass(pass, hooks, `Testing ${targets.length} upgrades together`)
+      ? await runPass(pass, hooks, `Testing ${targets.length} upgrades together`, targets)
       : [];
   const green = outcomes.length > 0 && outcomes.every((outcome) => outcome.status === 'passed');
 
@@ -724,14 +744,21 @@ async function probeTogether(
  * — `npm run build`" rather than a phase that sits unchanged for the length of
  * a typecheck, a build and a suite.
  */
-function runPass(pass: GroupPass, hooks?: GroupHooks, phase?: string): Promise<CheckOutcome[]> {
+function runPass(
+  pass: GroupPass,
+  hooks?: GroupHooks,
+  phase?: string,
+  about?: readonly ProbeTarget[],
+): Promise<CheckOutcome[]> {
   return runChecks({
     root: pass.root,
     dir: pass.dir,
     checks: pass.usable,
     env: pass.env,
     exec: pass.exec,
-    ...(hooks && phase ? { onProgress: (check: LocalCheck) => hooks.report(phase, `\`${check.label}\``) } : {}),
+    ...(hooks && phase
+      ? { onProgress: (check: LocalCheck) => hooks.report(phase, `\`${check.label}\``, about) }
+      : {}),
     ...(hooks ? { onOutput: (_check: LocalCheck, chunk: string) => hooks.output(chunk) } : {}),
     ...(pass.token ? { token: pass.token } : {}),
     ...(pass.timeoutMs ? { timeoutMs: pass.timeoutMs } : {}),
