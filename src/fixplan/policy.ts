@@ -83,7 +83,7 @@ export function dispositionFor(
   if (assessment.assurance === 'proven') {
     return {
       action: 'apply',
-      reason: `Every operation swaps one token for another of the same kind, so it cannot change whether the file parses, and ${assessment.covered} call site${assessment.covered === 1 ? '' : 's'} ${assessment.covered === 1 ? 'is' : 'are'} anchored to lines Drift localized itself.`,
+      reason: `Every operation swaps one token for another of the same kind, so it cannot change whether the file parses, and each of the ${assessment.covered} edit${assessment.covered === 1 ? '' : 's'} is anchored to an exact occurrence Drift localized itself — file, line, column, and matched text.`,
     };
   }
 

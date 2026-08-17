@@ -36,8 +36,23 @@ import type { BreakingChangeKind } from '../types.js';
  * designed to outlive the run that produced it — in a cache, in a PR body,
  * in an audit — so a consumer reading a stored one has to be able to tell
  * whether it understands the format rather than misreading a newer one.
+ *
+ * Version 2 replaced line-level anchors with exact occurrence anchors.
+ *
+ * The bump is deliberately incompatible rather than additive. A version 1
+ * anchor recorded only a file, a line's text, and its number, and application
+ * re-ran the plan across that whole line — which meant an operation could
+ * rewrite a *second* occurrence of the same name that Drift never localized:
+ *
+ *   primary.oldMethod(); backup.oldMethod();
+ *
+ * There is no way to read a version 1 anchor as a version 2 one, because the
+ * missing information — which occurrence — is exactly the information that
+ * made the old form unsafe. Reading them optimistically would silently
+ * reintroduce the bug on every stored plan, so a version 1 plan is rejected
+ * outright by `validateFixPlan` and treated as a miss by the cache.
  */
-export const FIX_PLAN_SCHEMA_VERSION = 1;
+export const FIX_PLAN_SCHEMA_VERSION = 2;
 
 /** The closed set of transforms Drift can execute deterministically. */
 export type FixOpKind =
@@ -139,6 +154,15 @@ export type FixOp =
  * The edit may still be semantically wrong if the plan itself is wrong, but
  * the plan's correctness is separately attested by cited evidence.
  *
+ * `proven` is a claim about **one occurrence**, and only holds because
+ * anchors are exact (see `FixPlanAnchor`). Under version 1's line-level
+ * anchors the label was too strong: a "proven" rename re-ran across the
+ * whole anchored line and could rewrite a second, same-named occurrence
+ * Drift never localized — syntactically valid, and wrong. The guarantee now
+ * has two halves, and both are enforced rather than asserted: the operation
+ * is shape-preserving, *and* it can only reach the exact occurrence
+ * localization established.
+ *
  * `checked` — applying this op changes the structure of an expression, and
  * whether the result is valid depends on context this line-based engine
  * cannot see. `await` outside an async function is a syntax error; an
@@ -154,6 +178,38 @@ export type FixOp =
  * edit", which are different claims and only the first is free.
  */
 export type OpAssurance = 'proven' | 'checked';
+
+/**
+ * One exact occurrence a plan is permitted to edit.
+ *
+ * Not a line. The distinction is the whole safety property of this tier: an
+ * anchor names the single occurrence localization established, so an
+ * operation physically cannot reach a same-named identifier elsewhere on the
+ * same line, in the same file, or anywhere else.
+ *
+ * Four fields, each load-bearing:
+ *
+ * - `lineNumber` and `column` are where the occurrence *was*. Fast path.
+ * - `line` is the whole line's text as it read then, which is what lets an
+ *   anchor survive earlier commits in the same run shifting the file — a
+ *   line number goes stale, its text usually does not.
+ * - `matchedText` is what the matcher actually consumed at `column`
+ *   (`connect(`, `new Foo(`, a bare name). It is the fingerprint: an anchor
+ *   is only usable where this text is still present at this offset, so a
+ *   file edited underneath a plan fails closed instead of splicing at a
+ *   position that now means something else.
+ */
+export interface FixPlanAnchor {
+  file: string;
+  /** The full line as it read when the occurrence was localized. */
+  line: string;
+  /** 1-indexed line number at localization time. */
+  lineNumber: number;
+  /** 0-based offset of the occurrence within `line`. */
+  column: number;
+  /** Exact text the matcher consumed at `column`. */
+  matchedText: string;
+}
 
 export function opAssurance(op: FixOp): OpAssurance {
   switch (op.kind) {
@@ -293,8 +349,8 @@ export interface FixPlanAssessment {
    * `rejected`.
    */
   rejections: string[];
-  /** Exact original lines the accepted ops are permitted to touch. */
-  anchors: { file: string; line: string; lineNumber: number }[];
+  /** The exact occurrences the accepted ops are permitted to touch. */
+  anchors: FixPlanAnchor[];
 }
 
 /**
@@ -309,7 +365,7 @@ export interface AttachedFixPlan {
   plan: FixPlan;
   assurance: OpAssurance;
   files: string[];
-  anchors: { file: string; line: string; lineNumber: number }[];
+  anchors: FixPlanAnchor[];
   covered: number;
   residual: number;
   /** Residual sites, kept so the next tier knows exactly what is left. */

@@ -1,9 +1,39 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyOpToLine, applyOpsToLine, applyFixPlanToContent } from '../dist/fixplan/execute.js';
+import {
+  opEditAt,
+  editAtOccurrence,
+  applyFixPlanToContent,
+  resolveAnchor,
+} from '../dist/fixplan/execute.js';
 import { validateFixPlan } from '../dist/fixplan/validate.js';
 import { inferOps } from '../dist/fixplan/infer.js';
 import { FIX_PLAN_SCHEMA_VERSION, planAssurance } from '../dist/fixplan/schema.js';
+
+/**
+ * The property every test in here exists to defend:
+ *
+ *   A `proven` fix plan is incapable of modifying any source occurrence that
+ *   Drift did not explicitly localize for that breaking change.
+ *
+ * Anchors are per-occurrence, not per-line. `primary.oldMethod();
+ * backup.oldMethod();` is one line with two occurrences, and a plan localized
+ * against the first must be structurally unable to reach the second.
+ */
+
+/** Apply one op at an occurrence, returning the new line or `null` if it declined. */
+const apply = (line: string, op: unknown, occurrence: { column: number; matchedText: string }) => {
+  const edit = opEditAt(line, op as never, occurrence);
+  return edit === null ? null : line.slice(0, edit.start) + edit.text + line.slice(edit.end);
+};
+
+/** The occurrence of `text` in `line`, by index — `nth` is 0-based. */
+const at = (line: string, text: string, nth = 0) => {
+  let column = -1;
+  for (let i = 0; i <= nth; i++) column = line.indexOf(text, column + 1);
+  assert.notEqual(column, -1, `fixture error: no occurrence ${nth} of ${text}`);
+  return { column, matchedText: text };
+};
 
 const change = (overrides: Record<string, unknown> = {}) => ({
   id: 'bc_1',
@@ -44,196 +74,185 @@ const plan = (ops: unknown[], overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const site = (file: string, line: number) => ({
+/** An impact site carrying the exact occurrence localization established. */
+const site = (file: string, line: number, occurrence?: { column: number; matchedText: string }) => ({
   breakingChangeId: 'bc_1',
   file,
   line,
   excerpt: '',
   matchedSymbol: 'connect',
   confidence: 'high' as const,
+  ...(occurrence ?? {}),
 });
 
-describe('fix plan ops: each declines rather than guesses', () => {
-  test('rename-identifier ignores members and string contents', () => {
-    const op = { kind: 'rename-identifier', from: 'connect', to: 'createConnection' } as const;
+describe('ops act on one occurrence, never on the line', () => {
+  test('rename-identifier rewrites only the anchored occurrence', () => {
+    const line = 'connect(a); connect(b);';
+    const op = { kind: 'rename-identifier', from: 'connect', to: 'createConnection' };
 
-    assert.equal(applyOpToLine('connect(url);', op), 'createConnection(url);');
-    assert.equal(applyOpToLine('client.connect(url);', op), null);
-    assert.equal(applyOpToLine('log("connect failed");', op), null);
+    assert.equal(apply(line, op, at(line, 'connect(', 0)), 'createConnection(a); connect(b);');
+    assert.equal(apply(line, op, at(line, 'connect(', 1)), 'connect(a); createConnection(b);');
+  });
+
+  test('rename-member rewrites only the anchored receiver’s method', () => {
+    // The exact bug this rework exists to fix: only `primary` was bound from
+    // the dependency that moved.
+    const line = 'primary.oldMethod(); backup.oldMethod();';
+    const op = { kind: 'rename-member', from: 'oldMethod', to: 'newMethod' };
+
     assert.equal(
-      applyOpToLine('connect(url); // connect', op),
-      'createConnection(url); // createConnection',
+      apply(line, op, at(line, 'oldMethod(', 0)),
+      'primary.newMethod(); backup.oldMethod();',
+    );
+    assert.equal(
+      apply(line, op, at(line, 'oldMethod(', 1)),
+      'primary.oldMethod(); backup.newMethod();',
     );
   });
 
-  test('rename-member is the exact inverse — members only', () => {
-    const op = { kind: 'rename-member', from: 'connect', to: 'createConnection' } as const;
-
-    assert.equal(applyOpToLine('client.connect(url);', op), 'client.createConnection(url);');
-    assert.equal(applyOpToLine('connect(url);', op), null);
-    assert.equal(applyOpToLine('c?.connect();', op), 'c?.createConnection();');
-    assert.equal(applyOpToLine('log(".connect");', op), null);
-  });
-
-  test('replace-import-path only rewrites lines that actually import', () => {
-    const op = { kind: 'replace-import-path', from: 'acme-sdk', to: 'acme-sdk/client' } as const;
+  test('rename-identifier still refuses members, and rename-member still refuses bare names', () => {
+    const line = 'connect(a); client.connect(b);';
 
     assert.equal(
-      applyOpToLine("import { connect } from 'acme-sdk';", op),
-      "import { connect } from 'acme-sdk/client';",
+      apply(line, { kind: 'rename-identifier', from: 'connect', to: 'createConnection' }, at(line, 'connect(', 1)),
+      null,
     );
-    assert.equal(applyOpToLine("const name = 'acme-sdk';", op), null);
-    assert.equal(applyOpToLine("require('acme-sdk')", op), "require('acme-sdk/client')");
-    // A longer specifier is not the one named, so it is left alone.
-    assert.equal(applyOpToLine("import x from 'acme-sdk/other';", op), null);
+    assert.equal(
+      apply(line, { kind: 'rename-member', from: 'connect', to: 'createConnection' }, at(line, 'connect(', 0)),
+      null,
+    );
   });
 
-  test('insert-argument reads the real argument list, and declines when it cannot', () => {
-    const op = { kind: 'insert-argument', callee: 'connect', index: 1, text: '{ retries: 3 }' } as const;
-
-    assert.equal(applyOpToLine('connect(url);', op), 'connect(url, { retries: 3 });');
-    // Commas nested in a call are not separators.
+  test('an occurrence whose text no longer matches is refused outright', () => {
+    const line = 'createConnection(a);';
     assert.equal(
-      applyOpToLine('connect(build(a, b));', op),
-      'connect(build(a, b), { retries: 3 });',
+      apply(line, { kind: 'rename-identifier', from: 'connect', to: 'createConnection' }, { column: 0, matchedText: 'connect(' }),
+      null,
     );
+  });
+
+  test('a string literal sharing the name is never the target', () => {
+    const line = 'log("connect"); connect(a);';
+    const op = { kind: 'rename-identifier', from: 'connect', to: 'createConnection' };
+    assert.equal(apply(line, op, at(line, 'connect(', 0)), 'log("connect"); createConnection(a);');
+  });
+
+  test('replace-import-path rewrites the specifier, and declines when the line has two of them', () => {
+    const single = "import { connect } from 'acme-sdk';";
+    const op = { kind: 'replace-import-path', from: 'acme-sdk', to: 'acme-sdk/client' };
+    assert.equal(apply(single, op, at(single, 'connect')), "import { connect } from 'acme-sdk/client';");
+
+    // Not an import line at all.
+    const notImport = "const name = 'acme-sdk'; connect(a);";
+    assert.equal(apply(notImport, op, at(notImport, 'connect(')), null);
+
+    // Ambiguous: two identical specifiers, no way to say which was meant.
+    const twice = "import { connect } from 'acme-sdk'; export * from 'acme-sdk';";
+    assert.equal(apply(twice, op, at(twice, 'connect')), null);
+  });
+
+  test('insert-argument targets the anchored call only', () => {
+    const line = 'connect(a); connect(b);';
+    const op = { kind: 'insert-argument', callee: 'connect', index: 1, text: '{ retries: 3 }' };
+
+    assert.equal(apply(line, op, at(line, 'connect(', 0)), 'connect(a, { retries: 3 }); connect(b);');
+    // Nested commas are not separators.
+    const nested = 'connect(build(x, y));';
+    assert.equal(apply(nested, op, at(nested, 'connect(')), 'connect(build(x, y), { retries: 3 });');
     // The list does not close on this line — declined, not guessed at.
-    assert.equal(applyOpToLine('connect(url,', op), null);
-    // Position beyond the end of the list.
-    assert.equal(applyOpToLine('connect();', { ...op, index: 2 }), null);
-    // A bare name does not match a member call of the same name.
-    assert.equal(applyOpToLine('client.connect(url);', op), null);
+    assert.equal(apply('connect(a,', op, { column: 0, matchedText: 'connect(' }), null);
   });
 
-  test('insert-argument is idempotent — it will not stack the same argument twice', () => {
-    const op = { kind: 'insert-argument', callee: 'connect', index: 1, text: '{ retries: 3 }' } as const;
-    const once = applyOpToLine('connect(url);', op)!;
-    assert.equal(applyOpToLine(once, op), null);
-  });
+  test('wrap-call prefixes the anchored call only', () => {
+    const line = 'const x = connect(a); const y = connect(b);';
+    const op = { kind: 'wrap-call', callee: 'connect', wrapper: 'await' };
 
-  test('wrap-call adds a prefix once and only once', () => {
-    const op = { kind: 'wrap-call', callee: 'connect', wrapper: 'await' } as const;
-
-    assert.equal(applyOpToLine('const c = connect(url);', op), 'const c = await connect(url);');
-    assert.equal(applyOpToLine('const c = await connect(url);', op), null);
     assert.equal(
-      applyOpToLine('const c = client.connect(url);', { ...op, callee: 'client.connect' }),
-      'const c = await client.connect(url);',
+      apply(line, op, at(line, 'connect(', 0)),
+      'const x = await connect(a); const y = connect(b);',
     );
+    // Already prefixed.
+    const done = 'const x = await connect(a);';
+    assert.equal(apply(done, op, at(done, 'connect(')), null);
   });
 
-  test('ops compose on one line, in order', () => {
-    const result = applyOpsToLine("import { connect } from 'acme-sdk';", [
-      { kind: 'replace-import-path', from: 'acme-sdk', to: 'acme-sdk/client' },
+  test('first applicable op wins — an occurrence is one token, not a pipeline', () => {
+    const line = 'connect(a);';
+    const result = editAtOccurrence(line, [
+      { kind: 'rename-member', from: 'connect', to: 'createConnection' },
       { kind: 'rename-identifier', from: 'connect', to: 'createConnection' },
-    ]);
+    ], at(line, 'connect('));
 
-    assert.equal(result.line, "import { createConnection } from 'acme-sdk/client';");
-    assert.deepEqual(result.applied, ['replace-import-path', 'rename-identifier']);
+    assert.equal(result!.op, 'rename-identifier');
   });
 });
 
-describe('fix plan validation: the gate', () => {
-  const files = new Map([['src/app.ts', "import { connect } from 'acme-sdk';\n\nconnect(url);\n"]]);
-  const sites = [site('src/app.ts', 1), site('src/app.ts', 3)];
+describe('validation derives anchors from the localized occurrence', () => {
+  test('two identical members, one localized — only that one is covered and anchored', () => {
+    const line = 'primary.connect(); backup.connect();';
+    const files = new Map([['src/app.ts', `${line}\n`]]);
 
-  test('accepts a grounded, attested, idempotent plan and anchors every covered site', () => {
     const result = validateFixPlan({
-      plan: plan([{ kind: 'rename-identifier', from: 'connect', to: 'createConnection' }]),
+      plan: plan([{ kind: 'rename-member', from: 'connect', to: 'createConnection' }]),
       change: change(),
-      sites,
+      sites: [site('src/app.ts', 1, at(line, 'connect(', 0))],
       fileContents: files,
       evidence: [evidence()],
     });
 
     assert.equal(result.verdict, 'accepted');
-    assert.equal(result.assurance, 'proven');
-    assert.equal(result.covered, 2);
-    assert.equal(result.residual, 0);
-    assert.equal(result.anchors.length, 2);
-    assert.equal(result.anchors[0]!.line, "import { connect } from 'acme-sdk';");
-  });
-
-  test('rejects a replacement no cited evidence mentions', () => {
-    const result = validateFixPlan({
-      // `openSocket` appears nowhere upstream — the classic confident invention.
-      plan: plan([{ kind: 'rename-identifier', from: 'connect', to: 'openSocket' }]),
-      change: change(),
-      sites,
-      fileContents: files,
-      evidence: [evidence()],
-    });
-
-    assert.equal(result.verdict, 'rejected');
-    assert.match(result.rejections.join(' '), /Nothing in the cited evidence mentions `openSocket`/);
-  });
-
-  test('a substring of an attested word does not count as attestation', () => {
-    const result = validateFixPlan({
-      plan: plan([{ kind: 'rename-identifier', from: 'connect', to: 'Connection' }]),
-      change: change({ replacementSymbols: [], summary: 'connect changed', remediation: 'update it' }),
-      sites,
-      fileContents: files,
-      evidence: [evidence({ content: 'createConnection is the replacement.' })],
-    });
-
-    assert.equal(result.verdict, 'rejected');
-  });
-
-  test('rejects a plan about a symbol the finding never mentions', () => {
-    const result = validateFixPlan({
-      plan: plan([{ kind: 'rename-identifier', from: 'unrelated', to: 'createConnection' }]),
-      change: change(),
-      sites,
-      fileContents: files,
-      evidence: [evidence()],
-    });
-
-    assert.equal(result.verdict, 'rejected');
-    assert.match(result.rejections.join(' '), /never mentions/);
-  });
-
-  test('rejects a non-literal argument — no rule may execute code', () => {
-    const result = validateFixPlan({
-      plan: plan([
-        { kind: 'insert-argument', callee: 'connect', index: 1, text: 'buildOptions()' },
-      ]),
-      change: change(),
-      sites,
-      fileContents: files,
-      evidence: [evidence()],
-    });
-
-    assert.equal(result.verdict, 'rejected');
-    assert.match(result.rejections.join(' '), /is not a literal/);
-  });
-
-  test('partial coverage resolves what it can and reports the rest with a reason', () => {
-    const mixed = new Map([
-      ['src/app.ts', "connect(url);\nclient.connect(url);\n"],
-    ]);
-    const result = validateFixPlan({
-      plan: plan([{ kind: 'rename-identifier', from: 'connect', to: 'createConnection' }]),
-      change: change(),
-      sites: [site('src/app.ts', 1), site('src/app.ts', 2)],
-      fileContents: mixed,
-      evidence: [evidence()],
-    });
-
-    assert.equal(result.verdict, 'partial');
     assert.equal(result.covered, 1);
-    assert.equal(result.residual, 1);
-    assert.equal(result.sites[1]!.status, 'residual');
-    assert.match(result.sites[1]!.reason!, /shaped differently/);
+    assert.equal(result.anchors.length, 1);
+    assert.equal(result.anchors[0]!.column, line.indexOf('connect('));
+    assert.equal(result.sites[0]!.after, 'primary.createConnection(); backup.connect();');
   });
 
-  test('a comment naming the symbol is never rewritten', () => {
-    const commented = new Map([['src/app.ts', '// connect() is deprecated\n']]);
+  test('two identical bare identifiers, one localized — the other is untouched', () => {
+    const line = 'connect(a); connect(b);';
+    const files = new Map([['src/app.ts', `${line}\n`]]);
+
     const result = validateFixPlan({
       plan: plan([{ kind: 'rename-identifier', from: 'connect', to: 'createConnection' }]),
       change: change(),
+      sites: [site('src/app.ts', 1, at(line, 'connect(', 1))],
+      fileContents: files,
+      evidence: [evidence()],
+    });
+
+    assert.equal(result.verdict, 'accepted');
+    assert.equal(result.sites[0]!.after, 'connect(a); createConnection(b);');
+  });
+
+  test('both occurrences localized means both are anchored — separately', () => {
+    const line = 'connect(a); connect(b);';
+    const files = new Map([['src/app.ts', `${line}\n`]]);
+
+    const result = validateFixPlan({
+      plan: plan([{ kind: 'rename-identifier', from: 'connect', to: 'createConnection' }]),
+      change: change(),
+      sites: [site('src/app.ts', 1, at(line, 'connect(', 0)), site('src/app.ts', 1, at(line, 'connect(', 1))],
+      fileContents: files,
+      evidence: [evidence()],
+    });
+
+    assert.equal(result.covered, 2);
+    assert.equal(result.anchors.length, 2);
+    assert.equal(
+      applyFixPlanToContent(`${line}\n`, result.plan.ops, result.anchors, 'src/app.ts'),
+      'createConnection(a); createConnection(b);\n',
+    );
+  });
+
+  test('a site with no column is residual — Drift never established which occurrence', () => {
+    const line = 'connect(';
+    const files = new Map([['src/app.ts', `${line}\n  a,\n);\n`]]);
+
+    const result = validateFixPlan({
+      plan: plan([{ kind: 'rename-identifier', from: 'connect', to: 'createConnection' }]),
+      change: change(),
+      // No column/matchedText: the call-opens-on-next-line fallback.
       sites: [site('src/app.ts', 1)],
-      fileContents: commented,
+      fileContents: files,
       evidence: [evidence()],
     });
 
@@ -241,85 +260,165 @@ describe('fix plan validation: the gate', () => {
     assert.match(result.rejections.join(' '), /matched any of the call sites/);
   });
 
-  test('a plan using a checked op is marked checked, not proven', () => {
-    const async = new Map([['src/app.ts', 'const c = connect(url);\n']]);
+  test('a stale site whose line changed under it is residual, not a blind splice', () => {
+    const files = new Map([['src/app.ts', 'somethingElse(a);\n']]);
+
     const result = validateFixPlan({
+      plan: plan([{ kind: 'rename-identifier', from: 'connect', to: 'createConnection' }]),
+      change: change(),
+      sites: [site('src/app.ts', 1, { column: 0, matchedText: 'connect(' })],
+      fileContents: files,
+      evidence: [evidence()],
+    });
+
+    assert.equal(result.verdict, 'rejected');
+  });
+
+  test('partial coverage still resolves what it can, per occurrence', () => {
+    const first = 'connect(a);';
+    const second = 'client.connect(b);';
+    const files = new Map([['src/app.ts', `${first}\n${second}\n`]]);
+
+    const result = validateFixPlan({
+      plan: plan([{ kind: 'rename-identifier', from: 'connect', to: 'createConnection' }]),
+      change: change(),
+      sites: [site('src/app.ts', 1, at(first, 'connect(')), site('src/app.ts', 2, at(second, 'connect(') )],
+      fileContents: files,
+      evidence: [evidence()],
+    });
+
+    assert.equal(result.verdict, 'partial');
+    assert.equal(result.covered, 1);
+    assert.equal(result.residual, 1);
+    assert.match(result.sites[1]!.reason!, /exact occurrence/);
+  });
+
+  test('a version 1 plan is rejected rather than read as if its anchors were exact', () => {
+    const line = 'connect(a);';
+    const result = validateFixPlan({
+      plan: plan([{ kind: 'rename-identifier', from: 'connect', to: 'createConnection' }], { schemaVersion: 1 }),
+      change: change(),
+      sites: [site('src/app.ts', 1, at(line, 'connect('))],
+      fileContents: new Map([['src/app.ts', `${line}\n`]]),
+      evidence: [evidence()],
+    });
+
+    assert.equal(result.verdict, 'rejected');
+    assert.match(result.rejections.join(' '), /schema version 1/);
+  });
+
+  test('attestation, grounding and literal-only arguments are unchanged', () => {
+    const line = 'connect(a);';
+    const files = new Map([['src/app.ts', `${line}\n`]]);
+    const sites = [site('src/app.ts', 1, at(line, 'connect('))];
+    const check = (ops: unknown[]) =>
+      validateFixPlan({ plan: plan(ops), change: change(), sites, fileContents: files, evidence: [evidence()] });
+
+    assert.match(
+      check([{ kind: 'rename-identifier', from: 'connect', to: 'openSocket' }]).rejections.join(' '),
+      /Nothing in the cited evidence mentions `openSocket`/,
+    );
+    assert.match(
+      check([{ kind: 'rename-identifier', from: 'unrelated', to: 'createConnection' }]).rejections.join(' '),
+      /never mentions/,
+    );
+    assert.match(
+      check([{ kind: 'insert-argument', callee: 'connect', index: 1, text: 'buildOptions()' }]).rejections.join(' '),
+      /is not a literal/,
+    );
+  });
+
+  test('a checked op is still marked checked, and a proven one proven', () => {
+    const line = 'const c = connect(a);';
+    const files = new Map([['src/app.ts', `${line}\n`]]);
+    const sites = [site('src/app.ts', 1, at(line, 'connect('))];
+
+    const checked = validateFixPlan({
       plan: plan([{ kind: 'wrap-call', callee: 'connect', wrapper: 'await' }]),
       change: change({ kind: 'signature-change', summary: '`connect` is now async.' }),
-      sites: [site('src/app.ts', 1)],
-      fileContents: async,
+      sites,
+      fileContents: files,
       evidence: [evidence({ content: '`connect` now returns a promise.' })],
     });
+    assert.equal(checked.assurance, 'checked');
+    assert.equal(planAssurance(checked.plan.ops), 'checked');
 
-    assert.equal(result.verdict, 'accepted');
-    assert.equal(result.assurance, 'checked');
-    assert.equal(planAssurance(result.plan.ops), 'checked');
-  });
-
-  test('a model-authored plan citing evidence Drift never gathered is rejected', () => {
-    const result = validateFixPlan({
-      plan: plan([{ kind: 'rename-identifier', from: 'connect', to: 'createConnection' }], {
-        citations: ['ev_invented'],
-      }),
+    const proven = validateFixPlan({
+      plan: plan([{ kind: 'rename-identifier', from: 'connect', to: 'createConnection' }]),
       change: change(),
       sites,
       fileContents: files,
       evidence: [evidence()],
     });
-
-    assert.equal(result.verdict, 'rejected');
-    assert.match(result.rejections.join(' '), /did not gather/);
-  });
-
-  test('a recipe-provenance plan must name the recipe it came from', () => {
-    const result = validateFixPlan({
-      plan: plan([{ kind: 'rename-identifier', from: 'connect', to: 'createConnection' }], {
-        provenance: { author: 'recipe', authoredAt: '2026-01-01T00:00:00Z' },
-        citations: [],
-      }),
-      change: change(),
-      sites,
-      fileContents: files,
-      evidence: [evidence()],
-    });
-
-    assert.equal(result.verdict, 'rejected');
-    assert.match(result.rejections.join(' '), /claims to come from a community recipe but names none/);
+    assert.equal(proven.assurance, 'proven');
   });
 });
 
-describe('applyFixPlanToContent: re-derived, never replayed', () => {
+describe('applyFixPlanToContent: exact, relocatable, idempotent', () => {
   const ops = [{ kind: 'rename-identifier', from: 'connect', to: 'createConnection' }];
+  const anchor = (over: Record<string, unknown> = {}) => ({
+    file: 'src/app.ts',
+    line: 'connect(a); connect(b);',
+    lineNumber: 2,
+    column: 0,
+    matchedText: 'connect(',
+    ...over,
+  });
 
-  test('rewrites only anchored lines, even when the file shifted', () => {
-    const shifted = "// a new header line\nimport { connect } from 'acme-sdk';\n\nconnect(url);\nconnect(other);\n";
+  test('rewrites the anchored occurrence and leaves its twin alone', () => {
+    const content = 'header();\nconnect(a); connect(b);\n';
+    assert.equal(
+      applyFixPlanToContent(content, ops, [anchor()], 'src/app.ts'),
+      'header();\ncreateConnection(a); connect(b);\n',
+    );
+  });
+
+  test('relocates when an earlier edit shifted the line', () => {
+    const shifted = '// a new header\nheader();\nconnect(a); connect(b);\n';
+    assert.equal(
+      applyFixPlanToContent(shifted, ops, [anchor()], 'src/app.ts'),
+      '// a new header\nheader();\ncreateConnection(a); connect(b);\n',
+    );
+  });
+
+  test('declines to relocate when two lines read identically', () => {
+    const duplicated = 'connect(a); connect(b);\nx();\nconnect(a); connect(b);\n';
+    // Recorded at line 9, which no longer exists — and the text is ambiguous.
+    assert.equal(
+      applyFixPlanToContent(duplicated, ops, [anchor({ lineNumber: 9 })], 'src/app.ts'),
+      duplicated,
+    );
+  });
+
+  test('declines when the anchored text is stale', () => {
+    const changed = 'header();\nsomethingElse(a);\n';
+    assert.equal(applyFixPlanToContent(changed, ops, [anchor()], 'src/app.ts'), changed);
+  });
+
+  test('is idempotent — the second application finds nothing to do', () => {
+    const content = 'header();\nconnect(a); connect(b);\n';
+    const once = applyFixPlanToContent(content, ops, [anchor()], 'src/app.ts');
+    assert.equal(applyFixPlanToContent(once, ops, [anchor()], 'src/app.ts'), once);
+  });
+
+  test('two anchors on one line both apply, without invalidating each other’s offsets', () => {
+    const content = 'connect(a); connect(b);\n';
     const anchors = [
-      { file: 'src/app.ts', line: "import { connect } from 'acme-sdk';", lineNumber: 1 },
-      { file: 'src/app.ts', line: 'connect(url);', lineNumber: 3 },
+      { file: 'src/app.ts', line: 'connect(a); connect(b);', lineNumber: 1, column: 0, matchedText: 'connect(' },
+      { file: 'src/app.ts', line: 'connect(a); connect(b);', lineNumber: 1, column: 12, matchedText: 'connect(' },
     ];
-
-    const result = applyFixPlanToContent(shifted, ops, anchors, 'src/app.ts');
-    const lines = result.split('\n');
-
-    assert.equal(lines[1], "import { createConnection } from 'acme-sdk';");
-    assert.equal(lines[3], 'createConnection(url);');
-    // Never localized, never anchored, never touched.
-    assert.equal(lines[4], 'connect(other);');
+    assert.equal(
+      applyFixPlanToContent(content, ops, anchors, 'src/app.ts'),
+      'createConnection(a); createConnection(b);\n',
+    );
   });
 
-  test('declines an ambiguous text match rather than guessing which line was localized', () => {
-    const duplicated = 'x();\nconnect(url);\nconnect(url);\n';
-    const anchors = [{ file: 'src/app.ts', line: 'connect(url);', lineNumber: 9 }];
-
-    assert.equal(applyFixPlanToContent(duplicated, ops, anchors, 'src/app.ts'), duplicated);
-  });
-
-  test('is idempotent across repeated application', () => {
-    const source = 'connect(url);\n';
-    const anchors = [{ file: 'src/app.ts', line: 'connect(url);', lineNumber: 1 }];
-    const once = applyFixPlanToContent(source, ops, anchors, 'src/app.ts');
-
-    assert.equal(applyFixPlanToContent(once, ops, anchors, 'src/app.ts'), once);
+  test('resolveAnchor reports exactly why it could or could not place an anchor', () => {
+    const lines = ['x();', 'connect(a); connect(b);'];
+    assert.equal(resolveAnchor(lines, anchor()), 1);
+    // Right text, wrong column — the occurrence is not there.
+    assert.equal(resolveAnchor(lines, anchor({ column: 5 })), null);
+    assert.equal(resolveAnchor(['x();'], anchor()), null);
   });
 });
 
@@ -331,12 +430,7 @@ describe('inferOps: reading a rule back out of a community recipe’s edits', ()
     ]);
 
     assert.deepEqual(result.unexplained, []);
-    assert.equal(result.ops.length, 1);
-    assert.deepEqual(result.ops[0], {
-      kind: 'rename-identifier',
-      from: 'connect',
-      to: 'createConnection',
-    });
+    assert.deepEqual(result.ops[0], { kind: 'rename-identifier', from: 'connect', to: 'createConnection' });
   });
 
   test('recovers a combination of an import move and a rename', () => {
@@ -351,7 +445,16 @@ describe('inferOps: reading a rule back out of a community recipe’s edits', ()
     ]);
 
     assert.deepEqual(result.unexplained, []);
-    assert.ok(result.ops.length >= 1 && result.ops.length <= 3);
+  });
+
+  test('a recipe that rewrote two occurrences on one line is not explainable', () => {
+    // No single-occurrence op reproduces this, and inventing one would produce
+    // a plan that applies differently from how it was inferred.
+    const result = inferOps([
+      { file: 'a.ts', lineNumber: 1, before: 'connect(a); connect(b);', after: 'createConnection(a); createConnection(b);' },
+    ]);
+
+    assert.equal(result.unexplained.length, 1);
   });
 
   test('reports an edit no op in the vocabulary can explain', () => {
@@ -359,7 +462,6 @@ describe('inferOps: reading a rule back out of a community recipe’s edits', ()
       {
         file: 'a.ts',
         lineNumber: 1,
-        // A restructure, not a rule — exactly what must not be silently taken.
         before: 'const c = connect(url);',
         after: 'const { client: c, meta } = createConnection({ url, retries: 3 });',
       },

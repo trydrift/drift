@@ -1,4 +1,4 @@
-import { applyOpToLine } from './execute.js';
+import { applyOpLeftmost } from './execute.js';
 import type { FixOp } from './schema.js';
 
 /**
@@ -100,13 +100,19 @@ export function inferOps(edits: readonly ObservedEdit[]): InferenceResult {
   return { ops, unexplained };
 }
 
-/** Apply every op in order, skipping the ones whose preconditions do not hold. */
+/**
+ * Apply every op in order, each at the leftmost occurrence where it fires.
+ *
+ * One occurrence per op, deliberately: an op that fired at *every* matching
+ * occurrence would let inference "explain" a recipe edit that rewrote two
+ * same-named tokens on one line, and then Drift would apply that rule with
+ * exact anchors and produce a different result. Inference has to model what
+ * application will actually do, or the plan it produces is a plan about a
+ * different engine.
+ */
 function applyAll(ops: readonly FixOp[], line: string): string {
   let current = line;
-  for (const op of ops) {
-    const next = applyOpToLine(current, op);
-    if (next !== null) current = next;
-  }
+  for (const op of ops) current = applyOpLeftmost(current, op);
   return current;
 }
 

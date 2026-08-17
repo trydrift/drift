@@ -65,17 +65,64 @@ just an AI fix with extra steps.
 | --- | --- | --- |
 | `rename-identifier` | `connect(…)` → `createConnection(…)`. Bare identifiers only — never `obj.connect`. | `proven` |
 | `rename-member` | `client.connect` → `client.createConnection`. Members only — never a bare `connect`. | `proven` |
-| `replace-import-path` | The module specifier moves. Only on lines that actually import. | `proven` |
+| `replace-import-path` | The module specifier moves. Only on lines that actually import, and only where that specifier appears once. | `proven` |
 | `insert-argument` | A required argument was added. **Literals only** — never an expression, because an expression can call something. | `checked` |
 | `wrap-call` | `f(…)` → `await f(…)` or `new f(…)`. | `checked` |
 
-**Assurance** is what Drift can promise *without* running your checks.
+**Assurance** is what Drift can promise *without* running your checks, and it
+is a claim with two halves.
+
 `proven` means the operation swaps one token or string for another of the
-same syntactic class, so it cannot change whether the file parses. `checked`
-means it changes the structure of an expression — `await` outside an async
-function does not parse, and an inserted argument may be the wrong arity —
-so Drift knows exactly what it will write but cannot promise the result
-compiles.
+same syntactic class — so it cannot change whether the file parses — **and**
+that it edits only the exact occurrence Drift localized. Both halves are
+enforced, not asserted: see [exact anchoring](#anchors-are-occurrences-not-lines)
+for why the second half is not free.
+
+`checked` means the operation changes the structure of an expression —
+`await` outside an async function does not parse, and an inserted argument
+may be the wrong arity — so Drift knows exactly what it will write but cannot
+promise the result compiles.
+
+## Anchors are occurrences, not lines
+
+An anchor names **one occurrence**: file, line text, line number, column, and
+the exact text matched there. Not a line. The distinction is the whole safety
+property of the tier, and it is easiest to see in the case that motivated it:
+
+```ts
+primary.oldMethod(); backup.oldMethod();
+```
+
+Localization matches once per line, so Drift established exactly one of these
+— say `primary`, whose receiver it proved was bound from the dependency that
+moved. `backup` may be anything at all. A line-level anchor re-ran the rule
+across the whole line and rewrote **both**, while the plan called itself
+`proven`. The label was doing real damage: `proven` plans are the ones
+`autoApply` will run unattended.
+
+So an operation now resolves to a single splice inside the anchored
+occurrence. There is no code path by which it can reach a second occurrence
+of the same name — not on the line, not in the file.
+
+Three consequences worth knowing:
+
+- **A site with no column is residual.** The call-opens-on-next-line
+  fallback matches a line without establishing an occurrence on it. Drift
+  will not invent a position it never localized, so that site goes to an
+  agent, which can read the surrounding code as a line-based rule cannot.
+- **Relocation is stricter.** If earlier commits in the same run shifted the
+  file, an anchor relocates by its exact line text — but only when that text
+  is unique *and* the occurrence is still at the recorded column. Otherwise
+  the site is left alone rather than guessed at.
+- **Idempotence is structural.** Once an occurrence is rewritten,
+  `matchedText` is no longer at `column`, the anchor stops resolving, and a
+  second application finds nothing to do.
+
+Stored plans from before this change use line-level anchors and are
+**rejected rather than upgraded**. The missing information — which occurrence
+— is exactly what made the old form unsafe, so reading them optimistically
+would reintroduce the bug on every cached plan. The fix plan schema version
+is `2`; version `1` plans fail validation and are treated as a cache miss.
 
 ## What the gate checks
 
@@ -95,8 +142,12 @@ compiles.
    and more thoroughly than any per-site agent would have. **Determinism
    multiplies whatever it is given.** This check is what makes sure it is
    given a fact.
-4. **Convergence**, proved by running the plan twice rather than argued for.
-5. **Line preservation**, likewise. No operation splits or joins a line.
+4. **Exact occurrence.** Every edit is anchored to one call site
+   localization established — file, line, column, matched text — and an
+   operation is structurally incapable of reaching any other occurrence. A
+   site whose occurrence Drift could not pin down is residual, not guessed.
+5. **Convergence**, proved by running the plan twice rather than argued for.
+6. **Line preservation**, likewise. No operation splits or joins a line.
 
 A plan that fails any of these is rejected outright and the finding falls
 through to an agent. The rejection is kept and reported: "Drift tried a
@@ -206,7 +257,9 @@ llm:
 
 Plans are cached under `~/.drift/cache/fixplans/` (`DRIFT_CACHE_DIR` moves
 it, `DRIFT_NO_CACHE=1` disables it) as plain JSON — readable, diffable, and
-shareable as migration recipes in their own right.
+shareable as migration recipes in their own right. Entries written before the
+exact-anchor change declare `schemaVersion: 1` and are ignored; they are
+re-authored on next use rather than reinterpreted.
 
 ## Where the code lives
 

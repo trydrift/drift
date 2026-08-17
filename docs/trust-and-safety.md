@@ -324,10 +324,21 @@ counts. A plan containing any operation that could change whether a file
 parses is never applied unattended unless the project's own checks ran and
 passed against it — there is no setting that turns that off.
 
+A separate bound applies to *where* a plan can write. Every edit is anchored
+to one exact occurrence localization established — file, line, column, and the
+matched text — so an operation cannot reach a same-named identifier elsewhere
+on the line, let alone elsewhere in the file. This was not always true: anchors
+used to be line-level and a rename re-ran across the whole line, so
+`primary.oldMethod(); backup.oldMethod();` had both rewritten when only
+`primary` was bound from the dependency that moved — while the plan reported
+itself `proven`, which is the assurance level `autoApply` runs unattended.
+Plans stored under the old schema are rejected rather than upgraded.
+
 Residual risk: attestation proves the replacement *was mentioned upstream*,
 not that this is the *right* replacement or that the rule generalizes to every
-call site it matches. That is what the plan document and `autoApply: review`
-(the default) are for.
+call site it matches. Exact anchoring proves Drift edits only what it
+localized, not that localization was right to localize it. Both are what the
+plan document and `autoApply: review` (the default) are for.
 
 ### A compromised Drift release
 

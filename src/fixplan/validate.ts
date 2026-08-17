@@ -1,12 +1,13 @@
 import type { BreakingChange, Evidence, ImpactSite } from '../types.js';
 import { isCommentOnly } from '../codemod/line.js';
-import { applyOpsToLine } from './execute.js';
+import { editAtOccurrence, opEditAt } from './execute.js';
 import {
   FIX_PLAN_SCHEMA_VERSION,
   opAssurance,
   type FixOp,
   type FixPlan,
   type FixPlanAssessment,
+  type FixPlanAnchor,
   type FixPlanSiteOutcome,
   type OpAssurance,
 } from './schema.js';
@@ -151,10 +152,11 @@ export function validateFixPlan(options: ValidateOptions): FixPlanAssessment {
   if (rejections.length > 0) return rejected(plan, rejections);
 
   /* 4 — proved by execution, not asserted */
-  const outcomes = evaluateSites(plan.ops, change, sites, fileContents);
+  const evaluated = evaluateSites(plan.ops, change, sites, fileContents);
+  const outcomes = evaluated.map((entry) => entry.outcome);
 
-  for (const outcome of outcomes) {
-    if (outcome.status !== 'covered' || outcome.after === undefined) continue;
+  for (const { outcome, anchor } of evaluated) {
+    if (outcome.status !== 'covered' || outcome.after === undefined || !anchor) continue;
 
     if (outcome.after.includes('\n')) {
       rejections.push(
@@ -163,8 +165,15 @@ export function validateFixPlan(options: ValidateOptions): FixPlanAssessment {
       continue;
     }
 
-    const second = applyOpsToLine(outcome.after, plan.ops);
-    if (second.line !== outcome.after) {
+    // Idempotence, proved by re-running against the rewritten line at the
+    // same occurrence. Under exact anchoring the usual reason a second pass
+    // finds nothing is that `matchedText` is no longer at `column` — which is
+    // itself the property being checked, so it is checked rather than assumed.
+    const second = editAtOccurrence(outcome.after, plan.ops, {
+      column: anchor.column,
+      matchedText: anchor.matchedText,
+    });
+    if (second) {
       rejections.push(
         `Applying this plan twice to ${outcome.file}:${outcome.line} does not give the same result as applying it once. A rule that keeps changing its own output cannot be safely re-applied, and Drift re-applies every rule against live file contents rather than a snapshot.`,
       );
@@ -173,7 +182,7 @@ export function validateFixPlan(options: ValidateOptions): FixPlanAssessment {
 
   if (rejections.length > 0) return rejected(plan, rejections);
 
-  const covered = outcomes.filter((outcome) => outcome.status === 'covered');
+  const covered = evaluated.filter((entry) => entry.outcome.status === 'covered');
   if (covered.length === 0) {
     rejections.push(
       'No operation in the plan matched any of the call sites Drift localized for this finding. The plan may be correct about the upstream change and wrong about how this repository uses it.',
@@ -181,7 +190,7 @@ export function validateFixPlan(options: ValidateOptions): FixPlanAssessment {
     return rejected(plan, rejections);
   }
 
-  const usedKinds = new Set(covered.map((outcome) => outcome.op));
+  const usedKinds = new Set(covered.map((entry) => entry.outcome.op));
   const assurance: OpAssurance = plan.ops.some((op) => usedKinds.has(op.kind) && opAssurance(op) === 'checked')
     ? 'checked'
     : 'proven';
@@ -194,11 +203,10 @@ export function validateFixPlan(options: ValidateOptions): FixPlanAssessment {
     covered: covered.length,
     residual: outcomes.length - covered.length,
     rejections: [],
-    anchors: covered.map((outcome) => ({
-      file: outcome.file,
-      line: outcome.before,
-      lineNumber: outcome.line,
-    })),
+    // Exact occurrences, taken from the impact sites localization established
+    // — never re-derived by searching the line, which is what allowed a rule
+    // to reach a second, same-named occurrence Drift never localized.
+    anchors: covered.map((entry) => entry.anchor!),
   };
 }
 
@@ -210,81 +218,95 @@ export function validateFixPlan(options: ValidateOptions): FixPlanAssessment {
  * nine of ten sites resolves none of them — which is defensible when the
  * rule was cheap to derive and pointless when it cost a model call. Here the
  * nine are taken and the tenth is handed on with a reason attached.
+ *
+ * Each covered site yields an **exact anchor**, built from the column
+ * localization recorded rather than by searching the line. A site that has no
+ * column is residual by definition: Drift never established which occurrence
+ * it meant, so there is nothing a plan may safely edit there.
  */
 function evaluateSites(
   ops: readonly FixOp[],
   change: BreakingChange,
   sites: readonly ImpactSite[],
   fileContents: ReadonlyMap<string, string>,
-): FixPlanSiteOutcome[] {
-  const outcomes: FixPlanSiteOutcome[] = [];
+): { outcome: FixPlanSiteOutcome; anchor?: FixPlanAnchor }[] {
+  const evaluated: { outcome: FixPlanSiteOutcome; anchor?: FixPlanAnchor }[] = [];
   const seen = new Set<string>();
 
   for (const site of sites) {
     if (site.breakingChangeId !== change.id) continue;
 
-    const key = `${site.file}\0${site.line}`;
+    // Keyed by occurrence, not by line: two distinct occurrences on one line
+    // are two sites, and collapsing them would silently drop one.
+    const key = `${site.file}\0${site.line}\0${site.column ?? 'line'}`;
     if (seen.has(key)) continue;
     seen.add(key);
 
+    const residual = (before: string, reason: string) =>
+      evaluated.push({ outcome: { file: site.file, line: site.line, before, status: 'residual', reason } });
+
     const content = fileContents.get(site.file);
     if (content === undefined) {
-      outcomes.push({
-        file: site.file,
-        line: site.line,
-        before: site.excerpt,
-        status: 'residual',
-        reason: 'Drift no longer has this file’s contents, so it could not check the rule against the real line.',
-      });
+      residual(site.excerpt, 'Drift no longer has this file’s contents, so it could not check the rule against the real line.');
       continue;
     }
 
     const line = content.split('\n')[site.line - 1];
     if (line === undefined) {
-      outcomes.push({
-        file: site.file,
-        line: site.line,
-        before: site.excerpt,
-        status: 'residual',
-        reason: 'The file no longer has a line here.',
-      });
+      residual(site.excerpt, 'The file no longer has a line here.');
       continue;
     }
 
     if (isCommentOnly(line)) {
-      outcomes.push({
-        file: site.file,
-        line: site.line,
-        before: line,
-        status: 'residual',
-        reason: 'This line is a comment. Drift does not rewrite prose, even prose that names the changed symbol.',
-      });
+      residual(line, 'This line is a comment. Drift does not rewrite prose, even prose that names the changed symbol.');
       continue;
     }
 
-    const result = applyOpsToLine(line, ops);
-    if (result.applied.length === 0) {
-      outcomes.push({
-        file: site.file,
-        line: site.line,
-        before: line,
-        status: 'residual',
-        reason: 'No operation in the plan matched this line, so the call site is shaped differently from the ones the plan describes.',
-      });
+    // No column means localization matched the line without establishing an
+    // occurrence on it — the call-opens-on-next-line fallback, or a
+    // manifest/runtime finding. A plan must not invent a position Drift never
+    // established, so this is residual rather than a guess at the first match.
+    if (site.column === undefined || site.matchedText === undefined) {
+      residual(
+        line,
+        'Drift matched this line but not a specific occurrence on it, so there is no exact position a deterministic rule could edit. An agent can read the surrounding code; a line-based rule cannot.',
+      );
       continue;
     }
 
-    outcomes.push({
-      file: site.file,
-      line: site.line,
-      before: line,
-      after: result.line,
-      status: 'covered',
-      op: result.applied[0],
+    const occurrence = { column: site.column, matchedText: site.matchedText };
+    if (line.slice(occurrence.column, occurrence.column + occurrence.matchedText.length) !== occurrence.matchedText) {
+      residual(
+        line,
+        'The line no longer reads the way it did when this occurrence was localized, so Drift cannot confirm it would edit the right one.',
+      );
+      continue;
+    }
+
+    const applied = editAtOccurrence(line, ops, occurrence);
+    if (!applied) {
+      residual(
+        line,
+        'No operation in the plan applies at the exact occurrence Drift localized, so this call site is shaped differently from the ones the plan describes.',
+      );
+      continue;
+    }
+
+    const after = line.slice(0, applied.edit.start) + applied.edit.text + line.slice(applied.edit.end);
+
+    evaluated.push({
+      outcome: { file: site.file, line: site.line, before: line, after, status: 'covered', op: applied.op },
+      anchor: {
+        file: site.file,
+        line,
+        lineNumber: site.line,
+        column: occurrence.column,
+        matchedText: occurrence.matchedText,
+      },
     });
   }
 
-  return outcomes;
+  return evaluated;
 }
 
 /** Is every parameter the syntactic class its op claims? */

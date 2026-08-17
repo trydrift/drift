@@ -17,7 +17,7 @@ import type { CommitUnit } from '../../src/types.js';
 
 const FIX_PLAN: NonNullable<CommitUnit['fixPlan']> = {
   plan: {
-    schemaVersion: 1,
+    schemaVersion: 2,
     id: 'fp_1',
     breakingChangeId: 'bc_2',
     dependency: 'acme-sdk',
@@ -32,7 +32,7 @@ const FIX_PLAN: NonNullable<CommitUnit['fixPlan']> = {
   },
   assurance: 'proven',
   files: ['src/app.ts'],
-  anchors: [{ file: 'src/app.ts', line: 'gone();', lineNumber: 1 }],
+  anchors: [{ file: 'src/app.ts', line: 'gone();', lineNumber: 1, column: 0, matchedText: 'gone(' }],
   covered: 1,
   residual: 0,
   residualSites: [],

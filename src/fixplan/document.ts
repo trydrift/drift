@@ -25,26 +25,35 @@ export interface DocumentOptions {
   headingLevel?: number;
 }
 
-/** One sentence naming what a rule does, in the language a reviewer thinks in. */
+/**
+ * One sentence naming what a rule does, in the language a reviewer thinks in.
+ *
+ * Every sentence says "at each call site Drift localized" rather than
+ * "everywhere", because that is now literally what happens: a rule is applied
+ * once per localized occurrence and cannot reach a same-named identifier
+ * beside it. Saying "every" would overstate the edit and understate the
+ * guarantee, which is the wrong way round for a document whose whole job is
+ * to be believed.
+ */
 export function describeOp(op: FixOp): string {
   switch (op.kind) {
     case 'rename-identifier':
-      return `Rename the identifier \`${op.from}\` to \`${op.to}\` (bare uses only — never \`something.${op.from}\`).`;
+      return `Rename the identifier \`${op.from}\` to \`${op.to}\` at each call site Drift localized (bare uses only — never \`something.${op.from}\`, and never another \`${op.from}\` on the same line that was not localized).`;
     case 'rename-member':
-      return `Rename the member \`.${op.from}\` to \`.${op.to}\` (member access only — never a bare \`${op.from}\`).`;
+      return `Rename the member \`.${op.from}\` to \`.${op.to}\` at each call site Drift localized (member access only, and only on the receiver that was localized — a different object's \`.${op.from}\` on the same line is left alone).`;
     case 'replace-import-path':
-      return `Change the import path \`${op.from}\` to \`${op.to}\`, on lines that actually import.`;
+      return `Change the import path \`${op.from}\` to \`${op.to}\`, on localized lines that actually import, and only where that specifier appears once.`;
     case 'insert-argument':
-      return `Insert \`${op.text}\` as argument ${op.index + 1} of every \`${op.callee}(…)\` call that closes on its own line.`;
+      return `Insert \`${op.text}\` as argument ${op.index + 1} of each localized \`${op.callee}(…)\` call that closes on its own line.`;
     case 'wrap-call':
-      return `Prefix every \`${op.callee}(…)\` call with \`${op.wrapper}\`, where it is not already prefixed.`;
+      return `Prefix each localized \`${op.callee}(…)\` call with \`${op.wrapper}\`, where it is not already prefixed.`;
   }
 }
 
 /** How the assurance level should be stated to someone deciding whether to apply. */
 export function describeAssurance(assurance: OpAssurance): string {
   return assurance === 'proven'
-    ? 'Every operation swaps one token or string for another of the same kind, so applying this cannot change whether the file parses.'
+    ? 'Every operation swaps one token or string for another of the same kind, at one anchored occurrence, so applying this cannot change whether the file parses and cannot touch anything Drift did not localize.'
     : 'At least one operation changes the structure of an expression. Drift knows exactly what it will write, but cannot promise the result compiles — so this plan is only applied automatically once the project’s own checks have actually passed.';
 }
 
@@ -107,6 +116,9 @@ export function renderFixPlanDocument(assessment: FixPlanAssessment, options: Do
   out.push(`${h(1)} What Drift checked`);
   out.push('');
   out.push(`- **Grounding.** Every operation acts on a symbol this finding names.`);
+  out.push(
+    `- **Exact occurrences.** Every edit is anchored to one call site Drift localized — file, line, column, and the exact text matched there. An operation cannot reach a same-named identifier elsewhere on the line, let alone elsewhere in the file.`,
+  );
   out.push(
     `- **Attestation.** Every name introduced (${plan.ops.flatMap(introduced).map((token) => `\`${token}\``).join(', ') || 'none'}) appears in the cited evidence${plan.citations.length ? ` (${plan.citations.map((id) => `\`${id}\``).join(', ')})` : ''}.`,
   );

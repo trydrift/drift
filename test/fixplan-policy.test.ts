@@ -33,7 +33,7 @@ const assessment = (overrides: Record<string, unknown> = {}) => ({
   covered: 4,
   residual: 0,
   rejections: [] as string[],
-  anchors: [{ file: 'src/app.ts', line: 'connect();', lineNumber: 1 }],
+  anchors: [{ file: 'src/app.ts', line: 'connect();', lineNumber: 1, column: 0, matchedText: 'connect(' }],
   ...overrides,
 });
 
@@ -110,6 +110,7 @@ describe('the fix plan document', () => {
 
     assert.match(document, /Rename the identifier `connect` to `createConnection`/);
     assert.match(document, /Attestation/);
+    assert.match(document, /Exact occurrences/);
     assert.match(document, /Convergence/);
     assert.match(document, /claude-opus-5/);
     assert.match(document, /All 4 call sites are resolved deterministically/);
@@ -175,10 +176,16 @@ describe('the fix plan document', () => {
   test('every op describes itself in reviewer language', () => {
     assert.match(describeOp({ kind: 'rename-member', from: 'a', to: 'b' }), /member access only/);
     assert.match(describeOp({ kind: 'replace-import-path', from: 'a', to: 'b' }), /import path/);
-    assert.match(describeOp({ kind: 'wrap-call', callee: 'f', wrapper: 'await' }), /Prefix every `f\(…\)`/);
+    assert.match(describeOp({ kind: 'wrap-call', callee: 'f', wrapper: 'await' }), /Prefix each localized `f\(…\)`/);
     assert.match(
       describeOp({ kind: 'insert-argument', callee: 'f', index: 1, text: '{}' }),
-      /as argument 2 of every `f\(…\)`/,
+      /as argument 2 of each localized `f\(…\)`/,
+    );
+    // The claim a reviewer is being asked to believe: one occurrence, not
+    // every same-named token that happens to share the line.
+    assert.match(
+      describeOp({ kind: 'rename-member', from: 'a', to: 'b' }),
+      /a different object's `\.a` on the same line is left alone/,
     );
   });
 
@@ -264,7 +271,16 @@ describe('resolveFixPlans: many proposal sources, one gate', () => {
     },
   ];
   const sites = [
-    { breakingChangeId: 'bc_1', file: 'src/app.ts', line: 1, excerpt: '', matchedSymbol: 'connect', confidence: 'high' as const },
+    {
+      breakingChangeId: 'bc_1',
+      file: 'src/app.ts',
+      line: 1,
+      excerpt: '',
+      matchedSymbol: 'connect',
+      column: 0,
+      matchedText: 'connect(',
+      confidence: 'high' as const,
+    },
   ];
   const fileContents = new Map([['src/app.ts', 'connect(url);\n']]);
   const dependencyChanges = [
@@ -328,8 +344,8 @@ describe('resolveFixPlans: many proposal sources, one gate', () => {
   test('a plan below minCoverage is discarded once, here, not per surface', async () => {
     const manySites = [
       ...sites,
-      { breakingChangeId: 'bc_1', file: 'src/app.ts', line: 2, excerpt: '', matchedSymbol: 'connect', confidence: 'high' as const },
-      { breakingChangeId: 'bc_1', file: 'src/app.ts', line: 3, excerpt: '', matchedSymbol: 'connect', confidence: 'high' as const },
+      { breakingChangeId: 'bc_1', file: 'src/app.ts', line: 2, excerpt: '', matchedSymbol: 'connect', column: 2, matchedText: 'connect(', confidence: 'high' as const },
+      { breakingChangeId: 'bc_1', file: 'src/app.ts', line: 3, excerpt: '', matchedSymbol: 'connect', column: 2, matchedText: 'connect(', confidence: 'high' as const },
     ];
 
     const result = await resolveFixPlans({

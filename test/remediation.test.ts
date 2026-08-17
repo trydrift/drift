@@ -98,7 +98,7 @@ function commitUnit(overrides: Record<string, unknown> = {}) {
 
 const FIX_PLAN = {
   plan: {
-    schemaVersion: 1,
+    schemaVersion: 2,
     id: 'fp_1',
     breakingChangeId: 'bc_1',
     dependency: 'acme-sdk',
@@ -113,7 +113,7 @@ const FIX_PLAN = {
   },
   assurance: 'proven' as const,
   files: ['src/app.ts'],
-  anchors: [{ file: 'src/app.ts', line: 'gone();', lineNumber: 1 }],
+  anchors: [{ file: 'src/app.ts', line: 'gone();', lineNumber: 1, column: 0, matchedText: 'gone(' }],
   covered: 1,
   residual: 0,
   residualSites: [],

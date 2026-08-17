@@ -339,6 +339,34 @@ export interface ImpactSite {
   enclosingSymbol?: string;
   /** Which symbol from the BreakingChange matched here. */
   matchedSymbol: string;
+  /**
+   * 0-based offset within the line where the match actually started.
+   *
+   * Localization matches once per line, so this identifies *the* occurrence
+   * Drift established — not "somewhere on this line". It matters because a
+   * line can legitimately contain the same name twice for different reasons:
+   *
+   *   primary.oldMethod(); backup.oldMethod();
+   *
+   * where only one receiver was bound from the dependency that moved. A fix
+   * anchored to the line would rewrite both; a fix anchored here rewrites the
+   * one that was localized. See `FixPlanAnchor`.
+   *
+   * Absent for the two sites that genuinely have no column: a manifest/runtime
+   * finding, and the `callOpensOnNextLine` fallback, where the match is the
+   * *absence* of a call on this line. A consumer needing an exact position
+   * must treat an absent column as "not established" rather than guessing 0.
+   */
+  column?: number;
+  /**
+   * The exact text the matcher consumed at `column` — `connect(`, `new Foo(`,
+   * `<Slot`, or a bare name, depending on the symbol's shape.
+   *
+   * Carried alongside `column` so a later consumer can confirm it is looking
+   * at the same occurrence rather than trusting an offset into a file that
+   * may have changed since.
+   */
+  matchedText?: string;
   confidence: Confidence;
 }
 
@@ -438,6 +466,14 @@ export interface CommitUnit {
     from: string;
     to: string;
     files: string[];
+    /**
+     * Line-level, and safe to remain so. This tier only ever performs
+     * `rename-identifier`, whose matcher refuses anything preceded by a dot,
+     * so every occurrence it can reach on one line is the same imported
+     * binding. The fix plan tier added `rename-member`, where that stops
+     * being true — two receivers on one line can be different objects — which
+     * is why `FixPlanAnchor` is per-occurrence instead.
+     */
     anchors: { file: string; line: string; lineNumber: number }[];
   }[];
   /**
