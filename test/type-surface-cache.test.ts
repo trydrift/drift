@@ -38,6 +38,23 @@ afterEach(() => {
   reset();
 });
 
+/**
+ * Whether a request went to jsDelivr's metadata API rather than its CDN.
+ *
+ * The host is parsed out and compared, not searched for in the string: a
+ * substring test says yes to `https://evil.example.com/data.jsdelivr.com/…`
+ * as readily as to the real thing. That distinction does not matter to a stub
+ * answering its own fixtures, but writing the check the loose way here teaches
+ * the pattern, and the strict version is no harder to read.
+ */
+function isMetadataApi(url: string): boolean {
+  try {
+    return new URL(url).hostname === 'data.jsdelivr.com';
+  } catch {
+    return false;
+  }
+}
+
 /** jsDelivr's flat file listing, which is how a version's contents are resolved. */
 function listing(...files: string[]): Response {
   return new Response(JSON.stringify({ files: files.map((name) => ({ name: `/${name}` })) }), {
@@ -50,7 +67,7 @@ describe('remembering the type surface of a published version', () => {
   test('a surface is read once, however many callers ask for it', async () => {
     reset();
     const stub = stubFetch((url) => {
-      if (url.includes('data.jsdelivr.com')) return listing('package.json', 'index.d.ts');
+      if (isMetadataApi(url)) return listing('package.json', 'index.d.ts');
       if (url.endsWith('/package.json')) return new Response('{"types":"index.d.ts"}', { status: 200 });
       if (url.endsWith('/index.d.ts')) return new Response('export declare function go(a: string): void;', { status: 200 });
       return new Response('', { status: 404 });
@@ -68,7 +85,7 @@ describe('remembering the type surface of a published version', () => {
   test('two callers asking at once share one read rather than racing', async () => {
     reset();
     const stub = stubFetch((url) => {
-      if (url.includes('data.jsdelivr.com')) return listing('package.json', 'index.d.ts');
+      if (isMetadataApi(url)) return listing('package.json', 'index.d.ts');
       if (url.endsWith('/package.json')) return new Response('{"types":"index.d.ts"}', { status: 200 });
       if (url.endsWith('/index.d.ts')) return new Response('export declare const x: number;', { status: 200 });
       return new Response('', { status: 404 });
@@ -91,7 +108,7 @@ describe('remembering the type surface of a published version', () => {
     let failing = true;
     stubFetch((url) => {
       if (failing) return new Response('', { status: 503 });
-      if (url.includes('data.jsdelivr.com')) return listing('package.json', 'index.d.ts');
+      if (isMetadataApi(url)) return listing('package.json', 'index.d.ts');
       if (url.endsWith('/package.json')) return new Response('{"types":"index.d.ts"}', { status: 200 });
       if (url.endsWith('/index.d.ts')) return new Response('export declare function late(): void;', { status: 200 });
       return new Response('', { status: 404 });
@@ -117,7 +134,7 @@ describe('remembering the type surface of a published version', () => {
     // rest of the scan.
     reset();
     const stub = stubFetch((url) => {
-      if (url.includes('data.jsdelivr.com')) return listing('package.json');
+      if (isMetadataApi(url)) return listing('package.json');
       if (url.endsWith('/package.json')) return new Response('{"main":"index.js"}', { status: 200 });
       return new Response('', { status: 404 });
     });
