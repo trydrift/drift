@@ -1739,7 +1739,7 @@ export function onlyRelaxesCallers(before: string, after: string): boolean {
 
   for (const [index, parameter] of old.parameters.entries()) {
     const replacement = now.parameters[index]!;
-    if (!sameType(parameter.type, replacement.type) && !widened(parameter.type, replacement.type)) return false;
+    if (!stillAccepts(parameter.type, replacement.type)) return false;
     // Required → optional loosens; optional → required breaks every call that
     // relied on the default.
     if (parameter.optional && !replacement.optional) return false;
@@ -1803,7 +1803,7 @@ export function acceptsCallOfArity(before: string, after: string, arity: number)
         // compared, so it proves nothing and the call is left reported.
         if (!parameter || !replacement) return false;
         if (parameter.rest || replacement.rest) return false;
-        if (!sameType(parameter.type, replacement.type) && !widened(parameter.type, replacement.type)) return false;
+        if (!stillAccepts(parameter.type, replacement.type)) return false;
       }
 
       return true;
@@ -1940,6 +1940,258 @@ function matchingParenOffset(content: string, open: number): number {
     }
   }
   return -1;
+}
+
+/**
+ * Does every argument the old parameter type accepted still satisfy the new one?
+ *
+ * Textual equality and a grown union are the two easy cases, and for years they
+ * were the only ones — which left the most common shape of a minor release
+ * being reported as a break. A library adds an option:
+ *
+ *   before  options?: { props?: P; context?: Map<any, any>; idPrefix?: string }
+ *   after   options?: { props?: P; context?: Map<any, any>; idPrefix?: string;
+ *                       csp?: Csp; transformError?: (e: unknown) => unknown }
+ *
+ * Not one existing call has anything to change — every new member is optional —
+ * but the two strings differ, so `onlyRelaxesCallers` said no and every call
+ * site of `render` in the repository was handed to a developer to inspect. That
+ * is a false positive with a paper trail, which is worse than a vague one: it
+ * looks researched.
+ *
+ * So a type is compared by its shape when its shape is legible. Three
+ * constructs are read, and each is the same question one level down:
+ *
+ *   objects  every member the caller could already pass survives, no optional
+ *            member became required, and anything new is optional;
+ *   tuples   element by element, with extra trailing elements optional;
+ *   conditionals  identical check, then each branch.
+ *
+ * Everything else — mapped types, intersections, a bare type reference whose
+ * definition lives in another file — is left to the textual tests. This never
+ * proves two *named* types are compatible: `Csp` and `Csp` are equal as text
+ * and unknown as declarations, and chasing that would need a type checker
+ * rather than a diff. Being unable to decide always means reporting.
+ */
+function stillAccepts(before: string, after: string, depth = 0): boolean {
+  if (sameType(before, after)) return true;
+  if (widened(before, after)) return true;
+  // A guard against a pathological declaration, not against ordinary nesting:
+  // real option objects bottom out long before this.
+  if (depth >= MAX_TYPE_DEPTH) return false;
+
+  const old = before.trim();
+  const now = after.trim();
+
+  const conditionals = [parseConditional(old), parseConditional(now)] as const;
+  if (conditionals[0] && conditionals[1]) {
+    // The branch a call takes is decided by the check, so a check that moved is
+    // a different function for some caller and nothing below it can be trusted.
+    return (
+      sameType(conditionals[0].check, conditionals[1].check) &&
+      stillAccepts(conditionals[0].whenTrue, conditionals[1].whenTrue, depth + 1) &&
+      stillAccepts(conditionals[0].whenFalse, conditionals[1].whenFalse, depth + 1)
+    );
+  }
+
+  if (isWrapped(old, '{', '}') && isWrapped(now, '{', '}')) {
+    return objectStillAccepts(old, now, depth);
+  }
+  if (isWrapped(old, '[', ']') && isWrapped(now, '[', ']')) {
+    return tupleStillAccepts(old, now, depth);
+  }
+
+  return false;
+}
+
+const MAX_TYPE_DEPTH = 6;
+
+/**
+ * An object type, member by member.
+ *
+ * A removed member is not "the caller passes less now": TypeScript's excess
+ * property check rejects an object literal carrying a property the target type
+ * does not declare, and an object literal is how options are passed. So a
+ * member that disappears breaks calls, and only additions that are optional are
+ * free.
+ */
+function objectStillAccepts(before: string, after: string, depth: number): boolean {
+  const old = objectMembers(before);
+  const now = objectMembers(after);
+  if (!old || !now) return false;
+
+  for (const [name, member] of old) {
+    const replacement = now.get(name);
+    if (!replacement) return false;
+    if (member.optional && !replacement.optional) return false;
+    if (!stillAccepts(member.type, replacement.type, depth + 1)) return false;
+  }
+
+  for (const [name, member] of now) {
+    if (!old.has(name) && !member.optional) return false;
+  }
+
+  return true;
+}
+
+/**
+ * A tuple type, element by element.
+ *
+ * Worth reading because of rest parameters: `...args: [a: A, options?: O]` is
+ * how a library spells "one required argument and an options bag", and the
+ * whole option-object case above arrives inside one of these.
+ */
+function tupleStillAccepts(before: string, after: string, depth: number): boolean {
+  const old = tupleElements(before);
+  const now = tupleElements(after);
+  if (!old || !now) return false;
+  if (now.length < old.length) return false;
+
+  for (const [index, element] of old.entries()) {
+    const replacement = now[index]!;
+    if (element.optional && !replacement.optional) return false;
+    if (element.rest !== replacement.rest) return false;
+    if (!stillAccepts(element.type, replacement.type, depth + 1)) return false;
+  }
+
+  return now.slice(old.length).every((element) => element.optional || element.rest);
+}
+
+interface TypeMember {
+  optional: boolean;
+  type: string;
+}
+
+/**
+ * The members of an object type literal, or `null` when one of them is not a
+ * plain property.
+ *
+ * Index signatures, call signatures, construct signatures and method shorthand
+ * all mean something this comparison does not model, and a member it cannot
+ * name is a member it cannot check for removal — so the whole type falls back
+ * to the textual tests rather than being half-read.
+ */
+function objectMembers(type: string): Map<string, TypeMember> | null {
+  const members = new Map<string, TypeMember>();
+
+  for (const part of splitMembers(type.trim().slice(1, -1))) {
+    const text = part.trim();
+    if (!text) continue;
+
+    const declared = /^(?:readonly\s+)?(?:'([^']+)'|"([^"]+)"|([A-Za-z_$][\w$]*))\s*(\?)?\s*:\s*([\s\S]+)$/.exec(text);
+    if (!declared) return null;
+
+    const name = declared[1] ?? declared[2] ?? declared[3]!;
+    members.set(name, { optional: Boolean(declared[4]), type: declared[5]!.trim() });
+  }
+
+  return members;
+}
+
+interface TupleElement extends TypeMember {
+  rest: boolean;
+}
+
+/**
+ * The elements of a tuple type, labelled or not.
+ *
+ * Labels are documentation — `[component: C, options?: O]` and `[C, O?]` are
+ * the same tuple — so a rename is not a change to anything a caller passes, and
+ * elements are matched by position rather than by name.
+ */
+function tupleElements(type: string): TupleElement[] | null {
+  const elements: TupleElement[] = [];
+
+  for (const part of splitTopLevel(type.trim().slice(1, -1))) {
+    const text = part.trim();
+    if (!text) continue;
+
+    const labelled = /^(\.\.\.)?\s*([A-Za-z_$][\w$]*)\s*(\?)?\s*:\s*([\s\S]+)$/.exec(text);
+    if (labelled) {
+      elements.push({
+        rest: Boolean(labelled[1]),
+        optional: Boolean(labelled[3]) || Boolean(labelled[1]),
+        type: labelled[4]!.trim(),
+      });
+      continue;
+    }
+
+    const bare = /^(\.\.\.)?\s*([\s\S]+?)(\?)?$/.exec(text);
+    if (!bare) return null;
+    elements.push({
+      rest: Boolean(bare[1]),
+      optional: Boolean(bare[3]) || Boolean(bare[1]),
+      type: bare[2]!.trim(),
+    });
+  }
+
+  return elements;
+}
+
+/** `A extends B ? T : F`, split at the top level, or `null` if it is not one. */
+function parseConditional(type: string): { check: string; whenTrue: string; whenFalse: string } | null {
+  let depth = 0;
+
+  for (let i = 0; i < type.length; i++) {
+    const character = type[i]!;
+    if ('<([{'.includes(character)) depth += 1;
+    else if ('>)]}'.includes(character)) {
+      // `=>` is an arrow, not a closing bracket.
+      if (!(character === '>' && type[i - 1] === '=')) depth -= 1;
+    } else if (character === '?' && depth === 0) {
+      const check = type.slice(0, i);
+      if (!/\bextends\b/.test(check)) return null;
+      const colon = topLevelColon(type, i + 1);
+      if (colon === -1) return null;
+      return {
+        check: check.trim(),
+        whenTrue: type.slice(i + 1, colon).trim(),
+        whenFalse: type.slice(colon + 1).trim(),
+      };
+    }
+  }
+
+  return null;
+}
+
+/** The `:` matching a conditional's `?`, skipping any conditional nested in its true branch. */
+function topLevelColon(type: string, from: number): number {
+  let depth = 0;
+  let pending = 0;
+
+  for (let i = from; i < type.length; i++) {
+    const character = type[i]!;
+    if ('<([{'.includes(character)) depth += 1;
+    else if ('>)]}'.includes(character)) {
+      if (!(character === '>' && type[i - 1] === '=')) depth -= 1;
+    } else if (depth === 0 && character === '?') pending += 1;
+    else if (depth === 0 && character === ':') {
+      if (pending === 0) return i;
+      pending -= 1;
+    }
+  }
+
+  return -1;
+}
+
+/** Split object-type members on the `;` or `,` that separates them. */
+function splitMembers(body: string): string[] {
+  return splitTopLevel(body, ';,');
+}
+
+/** Is this type wrapped in one matching pair of brackets, rather than merely containing them? */
+function isWrapped(type: string, open: string, close: string): boolean {
+  if (!type.startsWith(open) || !type.endsWith(close)) return false;
+
+  let depth = 0;
+  for (let i = 0; i < type.length; i++) {
+    if (type[i] === open) depth += 1;
+    else if (type[i] === close) {
+      depth -= 1;
+      if (depth === 0) return i === type.length - 1;
+    }
+  }
+  return false;
 }
 
 /**
@@ -2151,17 +2403,28 @@ function matchingAngle(text: string, start: number): number {
   return -1;
 }
 
-/** Split on commas that are not nested inside brackets of any kind. */
-function splitTopLevel(text: string): string[] {
+/**
+ * Split on separators that are not nested inside brackets of any kind.
+ *
+ * The `>` of an arrow closes nothing. Counting it as a bracket leaves the depth
+ * permanently short by one for the rest of the string, which is how
+ * `f(cb: (x: A) => B, y: C)` came to be read as a single parameter named
+ * something unparseable — and, through `callSignature` returning `null`,
+ * every signature containing a callback was left undecidable.
+ */
+function splitTopLevel(text: string, separators = ','): string[] {
   const parts: string[] = [];
   let depth = 0;
   let current = '';
 
-  for (const character of text) {
+  for (let i = 0; i < text.length; i++) {
+    const character = text[i]!;
     if ('<([{'.includes(character)) depth += 1;
-    else if ('>)]}'.includes(character)) depth -= 1;
+    else if ('>)]}'.includes(character)) {
+      if (!(character === '>' && text[i - 1] === '=')) depth -= 1;
+    }
 
-    if (character === ',' && depth === 0) {
+    if (separators.includes(character) && depth === 0) {
       parts.push(current);
       current = '';
       continue;

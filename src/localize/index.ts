@@ -25,6 +25,17 @@ import { acceptsCallOfArity, callCannotResolveTo } from '../evidence/type-surfac
  *            (dynamic import, re-export barrel, or an ecosystem where the
  *            package name and module name differ).
  *
+ * Before any of that, a match has to *resolve*. A matcher can only say the
+ * characters are present, and the difference between a tool and a grep is
+ * everything that happens between the match and the site: `this.render()` is a
+ * method on the enclosing class, `private render()` is a declaration,
+ * `overlay.render()` next to that declaration is a call to it, and in a
+ * language whose imports enumerate their bindings a bare `render` in a file
+ * that imported only `{ mount }` is not this package's `render` at all. Each
+ * of those is dropped rather than downgraded, because a low-confidence finding
+ * still costs a developer the read — and Svelte's `render` gaining two optional
+ * options once produced seven of them in a repository that had never called it.
+ *
  * Two things widen that search without widening the noise, and both are worth
  * naming because they are what separates this from grep with extra steps:
  *
@@ -619,6 +630,61 @@ function searchFiles(
         .filter((unit) => unit.kind !== 'method')
         .map((unit) => unit.name),
     );
+    /**
+     * Methods this file declares, by their bare name.
+     *
+     * Kept apart from `locallyDefined` because a method is only reached through
+     * a receiver, so it shadows less: `client.request()` is not the local
+     * `request` merely because some class in the file has one. It shadows
+     * exactly as far as the receiver is unknown to this dependency — see where
+     * this is read.
+     */
+    const locallyDefinedMethods = new Set(
+      candidate.units
+        .filter((unit) => unit.kind === 'method')
+        .map((unit) => unit.name.split('.').pop() ?? unit.name),
+    );
+    /**
+     * Lines that *declare* something, by the name they declare.
+     *
+     * A declaration is never a call into a dependency, whatever it is called.
+     * `private render(): void {` matches an invocation search for `render` as
+     * readily as `this.render()` does, and both were reported against Svelte's
+     * `render` in a repository whose only relationship to it was owning a class
+     * with a method of the same name.
+     *
+     * Variables are excluded: `const parse = pkg.parse` declares a name *and*
+     * uses the dependency on one line, and that line is a real site.
+     */
+    const declarations = new Map<number, Set<string>>();
+    for (const unit of candidate.units) {
+      if (unit.kind === 'variable') continue;
+      const bare = unit.name.split('.').pop() ?? unit.name;
+      const declared = declarations.get(unit.startLine) ?? new Set<string>();
+      declared.add(unit.name);
+      declared.add(bare);
+      declarations.set(unit.startLine, declared);
+    }
+    /**
+     * Can an unbound name in this file be ruled out as the dependency's?
+     *
+     * Only where the language's imports say everything they bring into scope.
+     * In TypeScript, Python, Go, Rust and Java an import enumerates its
+     * bindings, so a bare `render` in a file whose only Svelte import is
+     * `{ mount }` is provably not Svelte's `render` — it is a global, a local,
+     * or something from another package. In Dart, C, Swift or C# an import
+     * makes a whole namespace visible without naming any of it, so the same
+     * absence proves nothing at all and the match keeps its low-confidence
+     * report.
+     *
+     * A wildcard (`import *`, `use foo::*`) or a synthesised record forfeits
+     * this for the file: neither enumerates anything.
+     */
+    const bindingsEnumerated =
+      ENUMERATED_IMPORT_LANGUAGES.has(candidate.language) &&
+      importsDependency &&
+      !indirect &&
+      relevantImports.every((i) => i.synthetic !== true && !i.bindings.includes('*'));
     // Synthetic records are call sites the index inferred, not import lines.
     // Excluding them here is what lets `Jason.encode!(body)` be reported as the
     // site it is rather than suppressed as the import it is not.
@@ -691,10 +757,59 @@ function searchFiles(
         // What is written immediately before the match decides whether it is a
         // use of this dependency at all, and neither rule can be expressed in
         // the matcher because both are about a *different* name.
-        if (hit && qualifiedByAnother(searchable, hit.index, importedNames, foreignNames, locallyDefined)) {
+        if (hit && qualifiedByAnother(searchable, hit.index, importedNames, foreignNames, locallyDefined, candidate.language)) {
           continue;
         }
         if (hit && isAtomLiteral(searchable, hit.index, candidate.language)) continue;
+
+        // Everything from here to the push is one question: does this
+        // occurrence of the name *resolve* to the dependency's symbol? A
+        // matcher can only say the characters are there.
+        //
+        // `chain` is the qualifying path written before the match —
+        // `os.path.join` gives `['os', 'path']`, `this.render()` gives
+        // `['this']`, a bare `render()` gives nothing. Its root is what decides
+        // where the name came from, which is why the whole chain is read rather
+        // than the receiver alone: `os` is the import, `path` is a name only
+        // Python's own module system knows.
+        const chain = hit ? receiverChainOf(searchable, hit.index, candidate.language) : undefined;
+        const root = chain?.[0];
+        // A path rooted in a name this file bound from the dependency, or in
+        // the dependency's own module name, is the dependency's symbol.
+        const resolvedByPath =
+          root !== undefined &&
+          (importedNames.has(root) || importedNames.has('*') || matchesImportName(root, names));
+
+        // `this.render()`, `self.render()`, `super.render()` — a member of the
+        // enclosing object, which no import ever binds. This is the single
+        // largest class of false positive a name search produces in
+        // object-oriented code, and no reviewer can act on one: the method is
+        // right there in the same file.
+        if (!resolvedByPath && root !== undefined && SELF_REFERENCES.has(root)) continue;
+
+        // A method of the same name is declared in this file and the receiver
+        // is not the dependency's. `overlay.render()` beside `private
+        // render()` is the local one.
+        if (!resolvedByPath && root !== undefined && locallyDefinedMethods.has(symbol)) continue;
+
+        // The declaration itself, not a call into anything.
+        if (declarations.get(i + 1)?.has(symbol)) continue;
+
+        // Nothing in this file brought the name in from this dependency, in a
+        // language where an import would have had to say so.
+        //
+        // Only for a plain identifier. A module specifier or URL path
+        // (`@scope/pkg`, `/v1/users`) is never bound by anything and appears
+        // only as data, and a dotted symbol (`Todo.__init__`) already carries
+        // enough of its own qualification that a bare name collision is not
+        // the likely explanation — the argument this rule rests on is about
+        // short identifiers being reused, and neither of those is one.
+        const bound =
+          importedNames.has(symbol) ||
+          importedNames.has(symbol.split('.')[0] ?? symbol) ||
+          importedNames.has('*');
+        const resolvable = !symbol.includes('.') && !livesInStringLiteral(symbol);
+        if (bindingsEnumerated && resolvable && !bound && !resolvedByPath) continue;
 
         // The compiler's answer, reached without a compiler: this call passes
         // arguments the new signature still accepts, in positions whose type
@@ -705,11 +820,10 @@ function searchFiles(
 
         const unit = fileIndex ? unitAtLine(fileIndex, i + 1) : undefined;
         // A member access (`x.symbol`) whose receiver is not something this
-        // file provably bound from the dependency. `hit` is absent only for
-        // the call-opens-on-next-line fallback, where there is no match index
-        // on this line to read a receiver from.
-        const receiver = hit ? receiverOf(searchable, hit.index) : undefined;
-        const unboundReceiver = receiver !== undefined && !importedNames.has(receiver) && !importedNames.has('*');
+        // file provably bound from the dependency. `chain` is absent only for
+        // an unqualified match, and for the call-opens-on-next-line fallback,
+        // where there is no match index on this line to read a receiver from.
+        const unboundReceiver = root !== undefined && !resolvedByPath;
 
         sites.push({
           breakingChangeId: change.id,
@@ -976,19 +1090,82 @@ function qualifiedByAnother(
   importedNames: ReadonlySet<string>,
   foreignNames: ReadonlySet<string>,
   locallyDefined: ReadonlySet<string>,
+  language: FileIndex['language'],
 ): boolean {
-  const receiver = receiverOf(line, at);
+  const receiver = receiverChainOf(line, at, language)?.at(-1);
   if (!receiver) return false;
   // A receiver this file bound from *this* dependency is the opposite signal.
   if (importedNames.has(receiver) || importedNames.has('*')) return false;
   return foreignNames.has(receiver) || locallyDefined.has(receiver);
 }
 
-/** The name immediately before `.` or `::` at a match position, if any. */
-function receiverOf(line: string, at: number): string | undefined {
-  const before = line.slice(0, at);
-  return /([A-Za-z_$][\w$]*)\s*(?:\.|::)\s*$/.exec(before)?.[1];
+/**
+ * The qualifying path written before a match, outermost name first.
+ *
+ * `os.path.join(` gives `['os', 'path']`, `Foo::Bar::baz` gives `['Foo',
+ * 'Bar']`, and a bare `join(` gives nothing. The whole chain matters because
+ * the two ends answer different questions: the root says which import (if any)
+ * the name came from, and the last element is the receiver a shadowing rule
+ * asks about.
+ *
+ * `->` counts only in PHP. It is the member operator there, and `$this->render()`
+ * is unreadable without it — but in Elixir a `case` clause is written
+ * `:ok -> render(conn)`, and reading `ok` as a receiver would quietly demote
+ * every finding in an idiomatic pipeline.
+ */
+function receiverChainOf(
+  line: string,
+  at: number,
+  language: FileIndex['language'],
+): string[] | undefined {
+  const pattern =
+    language === 'php'
+      ? /([A-Za-z_$][\w$]*)\s*(?:\.|::|->)\s*$/
+      : /([A-Za-z_$][\w$]*)\s*(?:\.|::)\s*$/;
+
+  const chain: string[] = [];
+  let before = line.slice(0, at);
+
+  // Deep enough for any real qualified path; a bound in case of a pathological
+  // line rather than a semantic limit.
+  for (let depth = 0; depth < 8; depth++) {
+    const match = pattern.exec(before);
+    if (!match) break;
+    chain.unshift(match[1]!);
+    before = before.slice(0, match.index);
+  }
+
+  return chain.length > 0 ? chain : undefined;
 }
+
+/**
+ * Names that always refer to the enclosing object, never to an import.
+ *
+ * Every language that has one spells it as an ordinary identifier before a
+ * member operator, which is exactly what a receiver looks like — so without
+ * this list `this.render()` reads as a use of whatever `render` the dependency
+ * happens to export.
+ */
+const SELF_REFERENCES = new Set(['this', '$this', 'self', 'Self', 'super', 'cls', 'me']);
+
+/**
+ * Languages whose import statements enumerate every name they bring into scope.
+ *
+ * The distinction is not stylistic. `from svelte import mount` and `import {
+ * mount } from 'svelte'` are complete statements about what became visible, so
+ * a name that is not among them came from somewhere else. `import 'package:dio
+ * /dio.dart'`, `#include <zlib.h>`, `using System.Text;` and `import Foundation`
+ * name no bindings at all and make everything visible, so the same reasoning
+ * applied there would suppress every finding in those ecosystems.
+ */
+const ENUMERATED_IMPORT_LANGUAGES = new Set<FileIndex['language']>([
+  'typescript',
+  'javascript',
+  'python',
+  'go',
+  'rust',
+  'java',
+]);
 
 /**
  * `:push` is an atom, not a call.

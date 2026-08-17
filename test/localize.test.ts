@@ -860,3 +860,172 @@ export const name = z.string();`,
     assert.equal(sites.length, 1, 'nothing to compare means nothing is dismissed');
   });
 });
+
+/**
+ * The report that prompted this suite listed seven "impact sites" for a change
+ * to Svelte's `render`, in a Phaser game. Four were `this.render()`, three were
+ * `private render(): void {`, and not one of them had anything to do with
+ * Svelte — the repository owned two classes with a method of that name.
+ *
+ * A name search cannot tell those apart from a call into a dependency. What
+ * separates them is where the name came from, which is a question the index can
+ * actually answer.
+ */
+describe('a match has to resolve to the dependency', () => {
+  const change = {
+    id: 'bc1',
+    dependency: 'svelte',
+    kind: 'signature-change' as const,
+    summary: 'The signature of `render` changed.',
+    remediation: 'Update every call site.',
+    symbols: ['render'],
+    confidence: 'high' as const,
+    citations: ['e1'],
+  };
+
+  const sitesIn = (files: ReturnType<typeof file>[], ecosystem = 'npm') =>
+    localize([change], [dep('svelte', ecosystem)], buildIndex(files), files, { logger });
+
+  test('a method on the enclosing object is never an import', () => {
+    const sites = sitesIn([
+      file(
+        'src/game/SettingsOverlay.ts',
+        'typescript',
+        `import { mount } from 'svelte';
+
+export class SettingsOverlay {
+  open() {
+    this.render();
+  }
+
+  private render(): void {}
+}`,
+      ),
+    ]);
+
+    assert.equal(sites.length, 0, 'this.render() is this class’s own method');
+  });
+
+  test('a declaration is not a call into anything', () => {
+    const sites = sitesIn([
+      file(
+        'src/game/Slot.ts',
+        'typescript',
+        `import { mount } from 'svelte';
+
+export class Slot {
+  render(): void {}
+}`,
+      ),
+    ]);
+
+    assert.equal(sites.length, 0, 'the line that declares a method is not a site of a call');
+  });
+
+  test('an unbound name in a language whose imports enumerate is not the package’s', () => {
+    const sites = sitesIn([
+      file(
+        'src/app.ts',
+        'typescript',
+        `import { mount } from 'svelte';
+
+export function draw() {
+  render({ target: document.body });
+}`,
+      ),
+    ]);
+
+    assert.equal(sites.length, 0, 'the only Svelte import in this file binds `mount`');
+  });
+
+  test('the name this file actually imported is still a site', () => {
+    const sites = sitesIn([
+      file(
+        'src/ssr.ts',
+        'typescript',
+        `import { render } from 'svelte/server';
+
+export const html = render(App, { props: {} });`,
+      ),
+    ]);
+
+    assert.equal(sites.length, 1);
+    assert.equal(sites[0]!.confidence, 'high');
+  });
+
+  test('a namespace import resolves the whole path under it', () => {
+    const sites = sitesIn([
+      file(
+        'src/ssr.ts',
+        'typescript',
+        `import * as server from 'svelte/server';
+
+export const html = server.render(App);`,
+      ),
+    ]);
+
+    assert.equal(sites.length, 1, 'server.render is reached through a binding of this dependency');
+  });
+
+  test('a qualified path is read to its root, not to the segment before the match', () => {
+    const sites = sitesIn(
+      [
+        file(
+          'app/main.py',
+          'python',
+          `import svelte.server
+
+def ssr(app):
+    return svelte.server.render(app)`,
+        ),
+      ],
+      'pypi',
+    );
+
+    assert.equal(sites.length, 1, '`svelte` is the import; `server` is a submodule of it');
+  });
+
+  test('a language whose imports name nothing keeps the match', () => {
+    const sites = sitesIn(
+      [
+        file(
+          'lib/app.dart',
+          'dart',
+          `import 'package:svelte/svelte.dart';
+
+void go() {
+  render(context);
+}`,
+        ),
+      ],
+      'pub',
+    );
+
+    assert.ok(
+      sites.length > 0,
+      'a Dart import brings in everything it exports without naming any of it, so absence proves nothing',
+    );
+  });
+
+  test('self is self in Python too', () => {
+    const sites = sitesIn(
+      [
+        file(
+          'app/view.py',
+          'python',
+          `from svelte import mount
+
+class View:
+    def draw(self):
+        return self.render()
+
+    def render(self):
+        return 1`,
+        ),
+      ],
+      'pypi',
+    );
+
+    assert.equal(sites.length, 0);
+  });
+});
