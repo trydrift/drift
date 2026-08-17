@@ -159,8 +159,12 @@ export type ThreadItem =
       done: number;
       total: number;
       state: 'running' | 'done' | 'failed';
-      /** Recent phase lines, newest last. Collapsed by default. */
-      log: string[];
+      /**
+       * Every phase line this step has printed, newest last. Collapsed by
+       * default, and the way a reader reaches an earlier phase's output — see
+       * `StepLogEntry.output`.
+       */
+      log: StepLogEntry[];
       /**
        * The command output produced by each phase that printed any, oldest
        * first — a typecheck's output stays available after the build that
@@ -196,6 +200,27 @@ export type ThreadItem =
       answer?: string;
     }
   | { id: string; kind: 'changes'; title: string };
+
+/**
+ * One line of a step's log, and the output it can lead to.
+ *
+ * The log is the list of things this step has done, in order, and it is the
+ * natural place to ask "what did *that* one print". Before this it was a list
+ * of bare strings sitting next to a separate row of tabs that tried to fit a
+ * phase name into a badge — two controls for one question, neither of which
+ * had room to say what it was offering. Now the list is the control.
+ */
+export interface StepLogEntry {
+  /** The line as shown: the phase, and its detail when there is one. */
+  text: string;
+  /**
+   * The output segment this line's phase printed into, when it printed
+   * anything at all. Absent for a phase that produced no command output,
+   * which is most of them and is why they are not offered as something to
+   * click.
+   */
+  output?: string;
+}
 
 /** One phase's worth of command output, kept together so a reader can tell which step it came from. */
 export interface StepOutputSegment {
@@ -424,7 +449,21 @@ export class DriftSession {
   restore(items: readonly ThreadItem[], title?: string): void {
     this.rejectPending();
     this.explicitTitle = title?.trim() ? title.trim().slice(0, 80) : null;
-    this.items = JSON.parse(JSON.stringify(items)) as ThreadItem[];
+    this.items = (JSON.parse(JSON.stringify(items)) as ThreadItem[]).map((item) =>
+      // A conversation saved before a step's log carried the output each line
+      // led to holds plain strings. Read as objects they would render as
+      // blanks, so they are lifted into the current shape on the way in — the
+      // output they point at is gone either way, since a restored step is not
+      // running.
+      item.kind === 'step'
+        ? {
+            ...item,
+            log: item.log.map((entry) =>
+              typeof entry === 'string' ? { text: entry as string } : entry,
+            ),
+          }
+        : item,
+    );
     // Ids must never collide with the restored ones, or `answer` and `rewind`
     // would act on the wrong turn.
     this.counter = this.items.length;
@@ -557,8 +596,9 @@ export class DriftSession {
         // One line per distinct phase, so the log reads as a list of things
         // done rather than a flood of near-identical updates.
         const line = detail ? `${phase} — ${detail}` : phase;
-        if (item.log[item.log.length - 1] !== line) {
-          item.log.push(line);
+        const isNewPhase = item.phase !== phase;
+        if (item.log[item.log.length - 1]?.text !== line) {
+          item.log.push({ text: line });
           // A scan writes a line per phase per package, so 200 evicted real
           // content on any repository big enough to want the log — and it
           // evicted it silently, from the front, where the scan says what it
@@ -574,12 +614,19 @@ export class DriftSession {
         // able to find the install's own output afterwards, tabbed rather than
         // erased out from under them. Bounded the same way the log itself is —
         // this is a scrollback, not an archive.
-        if (item.phase !== phase) {
+        if (isNewPhase) {
           segmentCounter += 1;
           const segments = item.outputs ?? (item.outputs = []);
           segments.push({ id: `${id}-o${segmentCounter}`, phase, lines: [] });
           if (segments.length > MAX_STEP_OUTPUT_SEGMENTS) segments.shift();
         }
+        // Whatever segment is open now is the one this line's phase prints
+        // into, so the log entry can offer it. Written on every line rather
+        // than only on the first of a phase: a phase that runs three commands
+        // has three lines, and any of them is a reasonable thing to click.
+        const open = item.outputs?.[item.outputs.length - 1];
+        const entry = item.log[item.log.length - 1];
+        if (entry && open && open.phase === phase) entry.output = open.id;
         update({ phase, detail, done, total });
       },
       output: (chunk) => {
