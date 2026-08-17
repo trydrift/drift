@@ -38,7 +38,7 @@ export class DriftDependencyTreeProvider
 
     const grouped = new Map<UpgradeSeverity, UpgradeCandidate[]>();
     for (const candidate of this.state.candidates) {
-      const severity = severityOf(candidate);
+      const severity = inFlight(candidate) ? 'pending' : severityOf(candidate);
       const key = severity === 'upstream-only' ? 'clean' : severity;
       const bucket = grouped.get(key);
       if (bucket) bucket.push(candidate);
@@ -65,16 +65,18 @@ export class DriftDependencyTreeProvider
     }
 
     const candidate = element.candidate;
+    const severity = inFlight(candidate) ? 'pending' : severityOf(candidate);
     const item = new vscode.TreeItem(candidate.name, vscode.TreeItemCollapsibleState.None);
-    // A package still being looked at has no target version to point at, so it
-    // says what is happening to it instead of `1.2.3 -> 1.2.3`.
-    item.description =
-      candidate.status === 'pending'
-        ? (candidate.phase ?? 'Checking…')
-        : `${candidate.current} -> ${candidate.selected}`;
+    // A package still being looked at says what is happening to it. `pending`
+    // has no target version to point at at all; a re-check or an install has
+    // one, but it is a version being tested rather than a verdict, so the row
+    // still leads with the activity.
+    item.description = inFlight(candidate)
+      ? (candidate.phase ?? 'Checking…')
+      : `${candidate.current} -> ${candidate.selected}`;
     item.tooltip = `${candidate.name} ${candidate.current} -> ${candidate.selected}\n${describeSeverity(candidate)}\n${candidate.manifestPath}`;
-    item.contextValue = `driftDependency:${severityOf(candidate)}`;
-    item.iconPath = new vscode.ThemeIcon(iconFor(severityOf(candidate)));
+    item.contextValue = `driftDependency:${severity}`;
+    item.iconPath = new vscode.ThemeIcon(iconFor(severity));
     item.command = {
       command: 'drift.openDependency',
       title: 'Open Dependency',
@@ -215,6 +217,23 @@ export function lineMentionsDependency(line: string, name: string, manifestName:
     default:
       return false;
   }
+}
+
+/**
+ * Whether this package is being worked on right now.
+ *
+ * `severityOf` answers "how much should a developer care", and for a candidate
+ * mid-flight the honest answer is "nobody knows yet" — but only `pending`
+ * carries that in the status, because a re-check (`checking`) or an install
+ * (`upgrading`) still has last time's counts hanging off it, which
+ * `severityOf` will happily read as a verdict. The webview pulls these out
+ * before it tallies anything; this tree has to do the same, or a package being
+ * re-checked sits under "Safe" while it is being examined.
+ */
+function inFlight(candidate: UpgradeCandidate): boolean {
+  return (
+    candidate.status === 'pending' || candidate.status === 'checking' || candidate.status === 'upgrading'
+  );
 }
 
 function isManifest(path: string): boolean {
