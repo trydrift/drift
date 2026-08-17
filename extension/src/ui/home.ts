@@ -1386,12 +1386,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         return;
       }
 
-      // Rows that were listed from a manifest and never reached — the scan was
-      // stopped, or the root it belonged to threw. They exist to show work in
-      // progress, and once there is no work in progress they would be a row
-      // spinning forever over a package nobody is checking. The notice below
-      // is what tells the developer those dependencies went unlooked-at; a
-      // permanent spinner is not.
+      // A backstop. `scanUpgrades` withdraws every row it announced and never
+      // reached, on every path out including cancellation and a throw, so this
+      // normally finds nothing. It stays because the cost of being wrong is a
+      // row spinning forever over a package nobody is checking, and this list
+      // is also fed by roots whose scan threw before it could clean up after
+      // itself. The notice below is what tells the developer those
+      // dependencies went unlooked-at; a permanent spinner is not.
       for (const abandoned of found.filter((c) => c.status === 'pending')) {
         this.candidates.delete(abandoned.id);
       }

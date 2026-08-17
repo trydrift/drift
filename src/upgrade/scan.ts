@@ -621,8 +621,18 @@ export async function scanUpgrades(args: {
   const enabled = new Set(config.ecosystems);
   const multiPackage = new Set(targets.map((t) => t.dir)).size > 1;
 
+  /**
+   * Every row this scan has put on screen and not yet taken back.
+   *
+   * A row announced from a manifest is a promise that a verdict is coming, and
+   * every path out of this function has to keep or withdraw it — including the
+   * ones nobody plans for. See `releaseUnreached`.
+   */
+  const announced = new Set<string>();
+
   /** Where each package is right now, published as soon as it changes. */
-  const announce = (dep: ScanDependency, phase: string): void =>
+  const announce = (dep: ScanDependency, phase: string): void => {
+    announced.add(candidateId(dep, repoLabel ? root : undefined));
     onCandidate?.(
       pendingCandidate({
         dep,
@@ -633,6 +643,29 @@ export async function scanUpgrades(args: {
         phase,
       }),
     );
+  };
+
+  /**
+   * Withdraw every row that was announced and never settled.
+   *
+   * A scan can end without reaching a package it has already listed: the
+   * developer pressed stop, a root threw, an ecosystem was disabled between
+   * one phase and the next. Without this, each of those leaves a row with a
+   * name on it, no verdict, and a spinner that never stops — and every caller
+   * would have to implement the same cleanup to avoid it. The lifecycle
+   * belongs to whoever opened it.
+   */
+  const releaseUnreached = (): void => {
+    for (const candidate of candidates) announced.delete(candidate.id);
+    for (const id of announced) onDropped?.(id);
+    announced.clear();
+  };
+
+  const drop = (dep: ScanDependency): void => {
+    const id = candidateId(dep, repoLabel ? root : undefined);
+    announced.delete(id);
+    onDropped?.(id);
+  };
 
   const all: ScanDependency[] = [];
   for (const target of targets) {
@@ -725,178 +758,185 @@ export async function scanUpgrades(args: {
   // that one package at a time made a scan take as long as the sum of every
   // network round trip in the project. Running several at once turns that sum
   // into something much closer to the slowest one.
-  await inParallel(deps, concurrency, async (dep) => {
-    if (token?.isCancellationRequested) return;
-
-    const source = versionSourceLabel(dep.target.manager.ecosystem);
-    report(`Checking ${source}`, `${dep.name} (installed ${dep.current})`, done, deps.length);
-    announce(dep, `Asking ${source} what has been published`);
-    const available = await lookupVersions({
-      name: dep.name,
-      ecosystem: dep.target.manager.ecosystem,
-      current: dep.current,
-      range: dep.range,
-      ...(githubToken ? { githubToken } : {}),
-    });
-
-    if (available.outcome === 'up-to-date') {
-      upToDate += 1;
-      done += 1;
-      // The row announced when the manifest was read has nothing to offer, so
-      // it is taken back rather than left sitting there with no target version
-      // and no verdict.
-      onDropped?.(candidateId(dep, repoLabel ? root : undefined));
-      report('Up to date', `${dep.name}@${dep.current}`, done, deps.length);
-      return;
-    }
-
-    // The case this whole shape exists for. Reporting it as "Up to date" —
-    // which is what happened until the lookup learned to say so — turns every
-    // registry timeout and every ecosystem without a version API into a clean
-    // bill of health for a dependency nobody looked at.
-    if (available.outcome === 'unchecked') {
-      unchecked.push({
-        name: dep.name,
-        kind: dep.kind,
-        ecosystem: dep.target.manager.ecosystem,
-        packageManager: dep.target.manager.id,
-        manifestPath: dep.target.manifestPath,
-        current: dep.current,
-        reason: available.reason,
-      });
-      done += 1;
-      onDropped?.(candidateId(dep, repoLabel ? root : undefined));
-      report('Could not check', `${dep.name}@${dep.current} · ${available.reason}`, done, deps.length);
-      return;
-    }
-
-    if (token?.isCancellationRequested) return;
-
-    const selected = available.safeLatest ?? available.latest;
-    const candidate = await analyzeUpgrade({
-      dep,
-      selected,
-      versions: available.versions,
-      latest: available.latest,
-      safeLatest: available.safeLatest,
-      latestMinor: available.latestMinor,
-      repo,
-      config,
-      githubToken,
-      root,
-      indexing,
-      logger,
-      env,
-      maxSites: breadth.maxSites,
-      member: multiPackage ? dep.target.dir : undefined,
-      // Paired with `member` above: a name without a directory would put a
-      // label on every row of a single-package repository, which is one more
-      // thing to read past on every line and never varies.
-      memberName: multiPackage ? memberNames.get(dep.target.dir) : undefined,
-      repoRoot: repoLabel ? root : undefined,
-      repoLabel,
-      onProgress: (phase, detail) => {
-        report(phase, detail, done, deps.length);
-        // The same phase, said on the package's own row. The scan-wide step
-        // line only ever shows whichever of the eight packages in flight
-        // reported last, so without this a developer looking at one row can
-        // see it is busy and never what it is busy with.
-        announce(dep, phase);
-      },
-    });
-
-    candidates.push(candidate);
-    // Released immediately, but marked `checking` while the upgrade is about to
-    // be tested for real. Holding it back entirely left a package invisible for
-    // as long as its install took; releasing it as-is presented a prediction the
-    // probe may be about to withdraw as though it were the answer. `checking` is
-    // the honest third option — here is what we suspect, we are not finished —
-    // and it is the same status the row already uses while a re-check runs.
-    onCandidate?.(
-      verify.enabled
-        ? { ...candidate, status: 'checking', phase: 'Waiting to be installed and tested' }
-        : candidate,
-    );
-    done += 1;
-    report(
-      severityOf(candidate) === 'affected' ? 'Needs your attention' : 'Checked',
-      `${candidate.name} ${candidate.current} → ${candidate.selected} · ${describeSeverity(candidate).toLowerCase()}`,
-      done,
-      deps.length,
-    );
-  });
-
   try {
-    if (verify.enabled && candidates.length > 0 && !token?.isCancellationRequested) {
-      await verifyCandidates({
-        root,
-        candidates,
-        checks: verify.checks,
-        timeoutMs: verify.timeoutMs,
-        generatedSourceGlobs: verify.generatedSourceGlobs,
-        env,
-        logger,
-        ...(warm ? { warm } : {}),
-        ...(token ? { token } : {}),
-        // A chunk of command output is not a phase, so it bypasses `report` —
-        // which logs and re-times every call as though a new stage had begun.
-        onProgress: (progress) => {
-          if (progress.output !== undefined) {
-            onProgress?.({ phase: '', detail: '', done: progress.done, total: progress.total, output: progress.output });
-            return;
-          }
-          report(progress.phase, progress.detail, progress.done, progress.total);
-          // Said on the rows it is actually about. A install-and-check pass is
-          // the longest part of a scan by far, and "Checking…" on every row for
-          // the whole of it is exactly the wait that reads as a hang.
-          for (const id of progress.targets ?? []) {
-            const at = candidates.findIndex((entry) => entry.id === id);
-            const candidate = at >= 0 ? candidates[at]! : undefined;
-            if (!candidate || candidate.verification) continue;
-            onCandidate?.({
-              ...candidate,
-              status: 'checking',
-              phase: progress.detail ? `${progress.phase} · ${progress.detail}` : progress.phase,
-            });
-          }
-        },
-        onCandidate,
+    await inParallel(deps, concurrency, async (dep) => {
+      if (token?.isCancellationRequested) return;
+
+      const source = versionSourceLabel(dep.target.manager.ecosystem);
+      report(`Checking ${source}`, `${dep.name} (installed ${dep.current})`, done, deps.length);
+      announce(dep, `Asking ${source} what has been published`);
+      const available = await lookupVersions({
+        name: dep.name,
+        ecosystem: dep.target.manager.ecosystem,
+        current: dep.current,
+        range: dep.range,
+        ...(githubToken ? { githubToken } : {}),
       });
+
+      if (available.outcome === 'up-to-date') {
+        upToDate += 1;
+        done += 1;
+        // The row announced when the manifest was read has nothing to offer, so
+        // it is taken back rather than left sitting there with no target version
+        // and no verdict.
+        drop(dep);
+        report('Up to date', `${dep.name}@${dep.current}`, done, deps.length);
+        return;
+      }
+
+      // The case this whole shape exists for. Reporting it as "Up to date" —
+      // which is what happened until the lookup learned to say so — turns every
+      // registry timeout and every ecosystem without a version API into a clean
+      // bill of health for a dependency nobody looked at.
+      if (available.outcome === 'unchecked') {
+        unchecked.push({
+          name: dep.name,
+          kind: dep.kind,
+          ecosystem: dep.target.manager.ecosystem,
+          packageManager: dep.target.manager.id,
+          manifestPath: dep.target.manifestPath,
+          current: dep.current,
+          reason: available.reason,
+        });
+        done += 1;
+        drop(dep);
+        report('Could not check', `${dep.name}@${dep.current} · ${available.reason}`, done, deps.length);
+        return;
+      }
+
+      if (token?.isCancellationRequested) return;
+
+      const selected = available.safeLatest ?? available.latest;
+      const candidate = await analyzeUpgrade({
+        dep,
+        selected,
+        versions: available.versions,
+        latest: available.latest,
+        safeLatest: available.safeLatest,
+        latestMinor: available.latestMinor,
+        repo,
+        config,
+        githubToken,
+        root,
+        indexing,
+        logger,
+        env,
+        maxSites: breadth.maxSites,
+        member: multiPackage ? dep.target.dir : undefined,
+        // Paired with `member` above: a name without a directory would put a
+        // label on every row of a single-package repository, which is one more
+        // thing to read past on every line and never varies.
+        memberName: multiPackage ? memberNames.get(dep.target.dir) : undefined,
+        repoRoot: repoLabel ? root : undefined,
+        repoLabel,
+        onProgress: (phase, detail) => {
+          report(phase, detail, done, deps.length);
+          // The same phase, said on the package's own row. The scan-wide step
+          // line only ever shows whichever of the eight packages in flight
+          // reported last, so without this a developer looking at one row can
+          // see it is busy and never what it is busy with.
+          announce(dep, phase);
+        },
+      });
+
+      candidates.push(candidate);
+      // Released immediately, but marked `checking` while the upgrade is about to
+      // be tested for real. Holding it back entirely left a package invisible for
+      // as long as its install took; releasing it as-is presented a prediction the
+      // probe may be about to withdraw as though it were the answer. `checking` is
+      // the honest third option — here is what we suspect, we are not finished —
+      // and it is the same status the row already uses while a re-check runs.
+      onCandidate?.(
+        verify.enabled
+          ? { ...candidate, status: 'checking', phase: 'Waiting to be installed and tested' }
+          : candidate,
+      );
+      done += 1;
+      report(
+        severityOf(candidate) === 'affected' ? 'Needs your attention' : 'Checked',
+        `${candidate.name} ${candidate.current} → ${candidate.selected} · ${describeSeverity(candidate).toLowerCase()}`,
+        done,
+        deps.length,
+      );
+    });
+
+    try {
+      if (verify.enabled && candidates.length > 0 && !token?.isCancellationRequested) {
+        await verifyCandidates({
+          root,
+          candidates,
+          checks: verify.checks,
+          timeoutMs: verify.timeoutMs,
+          generatedSourceGlobs: verify.generatedSourceGlobs,
+          env,
+          logger,
+          ...(warm ? { warm } : {}),
+          ...(token ? { token } : {}),
+          // A chunk of command output is not a phase, so it bypasses `report` —
+          // which logs and re-times every call as though a new stage had begun.
+          onProgress: (progress) => {
+            if (progress.output !== undefined) {
+              onProgress?.({ phase: '', detail: '', done: progress.done, total: progress.total, output: progress.output });
+              return;
+            }
+            report(progress.phase, progress.detail, progress.done, progress.total);
+            // Said on the rows it is actually about. A install-and-check pass is
+            // the longest part of a scan by far, and "Checking…" on every row for
+            // the whole of it is exactly the wait that reads as a hang.
+            for (const id of progress.targets ?? []) {
+              const at = candidates.findIndex((entry) => entry.id === id);
+              const candidate = at >= 0 ? candidates[at]! : undefined;
+              if (!candidate || candidate.verification) continue;
+              onCandidate?.({
+                ...candidate,
+                status: 'checking',
+                phase: progress.detail ? `${progress.phase} · ${progress.detail}` : progress.phase,
+              });
+            }
+          },
+          onCandidate,
+        });
+      }
+    } finally {
+      // Every candidate released as `checking` has to be released again, whatever
+      // happened in between.
+      //
+      // `checking` is a promise that a verdict is coming, and the row renders it
+      // as a spinner. Verification is skipped outright when the scan is cancelled
+      // or when it throws, and both used to leave every one of those rows turning
+      // for the rest of the session — a scan that looked permanently stuck on
+      // packages it had in fact finished analysing. Cancellation is no longer a
+      // rare path (the stop button reaches it directly), so this settles the
+      // difference explicitly and says why rather than leaving a spinner to imply
+      // work that is not happening.
+      if (verify.enabled) {
+        for (const [at, candidate] of candidates.entries()) {
+          if (candidate.verification) continue;
+          const settled = applyVerification(candidate, {
+            status: 'skipped',
+            reason: token?.isCancellationRequested
+              ? `The scan was stopped before ${candidate.name} ${candidate.selected} could be installed and checked, so the findings below are predictions.`
+              : `${candidate.name} ${candidate.selected} was not installed and checked, so the findings below are predictions.`,
+            checks: [],
+            failedFiles: [],
+          });
+          candidates[at] = settled;
+          onCandidate?.(settled);
+        }
+      }
+
+      // Directories that turned out to have no upgrades to test, and everything
+      // prepared for a scan that was cancelled or threw. A warmed checkout
+      // nobody took is a `git worktree` and an installed `node_modules` sitting
+      // on disk, so this runs on every path out — including the ones where
+      // verification never ran at all.
+      await warm?.dispose();
     }
   } finally {
-    // Every candidate released as `checking` has to be released again, whatever
-    // happened in between.
-    //
-    // `checking` is a promise that a verdict is coming, and the row renders it
-    // as a spinner. Verification is skipped outright when the scan is cancelled
-    // or when it throws, and both used to leave every one of those rows turning
-    // for the rest of the session — a scan that looked permanently stuck on
-    // packages it had in fact finished analysing. Cancellation is no longer a
-    // rare path (the stop button reaches it directly), so this settles the
-    // difference explicitly and says why rather than leaving a spinner to imply
-    // work that is not happening.
-    if (verify.enabled) {
-      for (const [at, candidate] of candidates.entries()) {
-        if (candidate.verification) continue;
-        const settled = applyVerification(candidate, {
-          status: 'skipped',
-          reason: token?.isCancellationRequested
-            ? `The scan was stopped before ${candidate.name} ${candidate.selected} could be installed and checked, so the findings below are predictions.`
-            : `${candidate.name} ${candidate.selected} was not installed and checked, so the findings below are predictions.`,
-          checks: [],
-          failedFiles: [],
-        });
-        candidates[at] = settled;
-        onCandidate?.(settled);
-      }
-    }
-
-    // Directories that turned out to have no upgrades to test, and everything
-    // prepared for a scan that was cancelled or threw. A warmed checkout
-    // nobody took is a `git worktree` and an installed `node_modules` sitting
-    // on disk, so this runs on every path out — including the ones where
-    // verification never ran at all.
-    await warm?.dispose();
+    // Cancellation, a throw from any stage above, or simply a package the loop
+    // never reached: whatever ended the scan, no row is left claiming that a
+    // verdict is still coming.
+    releaseUnreached();
   }
 
   return {
