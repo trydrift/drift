@@ -11,6 +11,25 @@ import { severityOf, describeSeverity, compareSeverity, scanTitle } from '../dis
 
 const base = { status: 'ready', breakingCount: 0, impactCount: 0, impactFiles: 0, gaps: [] as string[] };
 
+describe('a package nothing has looked at yet', () => {
+  test('is never reported as clean, however empty its counts are', () => {
+    // The row a manifest produces before the scan reaches it. Every count on
+    // it is zero because nothing has checked it, and reading those zeroes as
+    // "no breaking changes found" is exactly the claim this module exists to
+    // prevent.
+    assert.equal(severityOf({ ...base, status: 'pending' }), 'pending');
+    assert.equal(describeSeverity({ ...base, status: 'pending' }), 'Not checked yet');
+  });
+
+  test('sorts below anything with a real finding and above the ones found safe', () => {
+    const pending = { ...base, status: 'pending' };
+    const clean = { ...base, recommendation: 'safe-to-upgrade' };
+    const affected = { ...base, impactCount: 1 };
+    assert.ok(compareSeverity(affected, pending) < 0);
+    assert.ok(compareSeverity(pending, clean) < 0);
+  });
+});
+
 describe('a failed verification outranks a clean-looking result', () => {
   test('zero breaking changes and zero impact sites, but the build failed, is not clean', () => {
     const candidate = { ...base, verification: { status: 'failed', checks: [] } };
