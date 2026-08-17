@@ -1,4 +1,5 @@
 import type { BreakingChange, ImpactSite } from '../types.js';
+import { escapeRegExp, isCommentOnly, replaceOutsideStrings } from './line.js';
 
 /**
  * Deterministic codemods: mechanical fixes computed by code, never by a model.
@@ -248,69 +249,5 @@ function renameAtAnchors(
  * has nothing to do with the identifier being renamed.
  */
 function renameOnLine(line: string, matcher: RegExp, to: string): string {
-  const masked = maskQuotedSpans(line);
-  matcher.lastIndex = 0;
-
-  let result = '';
-  let cursor = 0;
-  let match: RegExpExecArray | null;
-  while ((match = matcher.exec(masked))) {
-    const start = match.index;
-    const end = start + match[0].length;
-    result += line.slice(cursor, start) + to;
-    cursor = end;
-  }
-  result += line.slice(cursor);
-  return result;
-}
-
-/**
- * Replace the contents of every quoted string on a line with placeholder
- * characters of the same length, so indices still line up with the original
- * line for the caller's substitution. Handles single, double, and backtick
- * quotes with backslash-escaped delimiters — the common case across every
- * ecosystem Drift indexes, not a full per-language string grammar (template
- * literal interpolations, for instance, are masked along with everything
- * else between the backticks, which only makes this stricter, never looser).
- */
-function maskQuotedSpans(line: string): string {
-  let result = '';
-  let quote: string | null = null;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i]!;
-
-    if (quote) {
-      result += ch === quote ? ch : ' ';
-      if (ch === '\\' && i + 1 < line.length) {
-        result += ' ';
-        i += 1;
-      } else if (ch === quote) {
-        quote = null;
-      }
-      continue;
-    }
-
-    if (ch === '"' || ch === "'" || ch === '`') {
-      quote = ch;
-      result += ch;
-      continue;
-    }
-
-    result += ch;
-  }
-  return result;
-}
-
-function isCommentOnly(line: string): boolean {
-  const trimmed = line.trim();
-  return (
-    trimmed.startsWith('//') ||
-    trimmed.startsWith('#') ||
-    trimmed.startsWith('*') ||
-    trimmed.startsWith('/*')
-  );
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return replaceOutsideStrings(line, matcher, to);
 }
