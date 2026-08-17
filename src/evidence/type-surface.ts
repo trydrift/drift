@@ -1,4 +1,4 @@
-import { fetchJson, fetchText } from '../util/http.js';
+import { fetchJson, fetchText, mapWithConcurrency } from '../util/http.js';
 
 /**
  * TypeScript declaration-surface diffing.
@@ -114,11 +114,55 @@ export interface TypeSurface {
   subpaths: string[];
 }
 
+/**
+ * Surfaces already fetched in this process, keyed by exactly what decides
+ * their content.
+ *
+ * A published version is immutable, so reading one twice can only ever produce
+ * the same answer — and a scan reads the same one constantly: every candidate
+ * follows up to eight of its own dependencies, and a repository's dependencies
+ * overlap heavily (half the npm ecosystem's declarations lead back to the same
+ * handful of packages). Without this, each of those repeats the whole
+ * cost: a file listing, up to twenty-five declaration fetches, and the parse
+ * over all of them.
+ *
+ * The promise is cached rather than the value, so two callers that ask at the
+ * same time — which is the normal case at concurrency 8 — share one fetch
+ * instead of racing to do identical work. A rejection is evicted: a version
+ * that could not be reached this second is not a fact about the package, and
+ * `VersionUnavailableError` decides whether a whole comparison is reported as
+ * impossible.
+ *
+ * Callers must treat the result as read-only; it is now shared.
+ */
+const surfaces = new Map<string, Promise<TypeSurface | null>>();
+
 /** Fetch and parse the public type surface of one published npm version. */
-export async function fetchTypeSurface(
+export function fetchTypeSurface(
   packageName: string,
   version: string,
   options: { followDependencies?: boolean } = {},
+): Promise<TypeSurface | null> {
+  const key = `${packageName}@${version}#${options.followDependencies === false ? 'own' : 'deps'}`;
+  const cached = surfaces.get(key);
+  if (cached) return cached;
+
+  const pending = computeTypeSurface(packageName, version, options);
+  surfaces.set(key, pending);
+  pending.catch(() => surfaces.delete(key));
+  return pending;
+}
+
+/** Drop every memoized surface. Test seam, and the counterpart to `clearHttpCache`. */
+export function clearTypeSurfaceCache(): void {
+  surfaces.clear();
+  listings.clear();
+}
+
+async function computeTypeSurface(
+  packageName: string,
+  version: string,
+  options: { followDependencies?: boolean },
 ): Promise<TypeSurface | null> {
   const manifest = await fetchManifest(packageName, version);
   const entryPath = await resolveTypesEntry(packageName, version, manifest);
@@ -178,6 +222,75 @@ function fetchManifest(packageName: string, version: string): Promise<Manifest |
 }
 
 /* ------------------------------------------------------------------ */
+/* What a published version actually contains                          */
+/* ------------------------------------------------------------------ */
+
+/** One flat file listing per package version, for this process's lifetime. */
+const listings = new Map<string, Promise<ReadonlySet<string> | null>>();
+
+/**
+ * Every file a published version contains, as one request.
+ *
+ * Resolving a package's declarations used to be done entirely by guessing and
+ * probing: five candidate paths for the `types` field, five conventional entry
+ * points, and five more for each of the twenty-five re-exports the traversal
+ * follows — each one a CDN round trip that usually 404s, each one waited on
+ * before the next was tried. On a package with a wide barrel file that is
+ * *hundreds* of sequential requests to learn something jsDelivr will state
+ * outright in a single one.
+ *
+ * So the listing is fetched once and every "does this path exist" question is
+ * answered from memory. A version's contents cannot change, so it is cached as
+ * immutable and shared by both the entry-point resolution and the traversal.
+ *
+ * `null` when the listing is unavailable — a tag rather than an exact version,
+ * a CDN that will not answer — and every caller falls back to probing, which
+ * is what they did before this existed.
+ */
+function fileListing(packageName: string, version: string): Promise<ReadonlySet<string> | null> {
+  const key = `${packageName}@${version}`;
+  const cached = listings.get(key);
+  if (cached) return cached;
+
+  const pending = fetchJson<{ files?: { name?: string }[] }>(
+    `${JSDELIVR_DATA}/${packageName}@${version}?structure=flat`,
+    { immutable: true, retries: 0 },
+  )
+    .then((body) => {
+      if (!body?.files) return null;
+      // jsDelivr names every file from the package root with a leading slash;
+      // every path Drift asks about is relative, so the slash comes off here
+      // rather than at each of the call sites.
+      return new Set(
+        body.files
+          .map((file) => file.name)
+          .filter((name): name is string => typeof name === 'string')
+          .map((name) => (name.startsWith('/') ? name.slice(1) : name)),
+      ) as ReadonlySet<string>;
+    })
+    .catch(() => null);
+
+  listings.set(key, pending);
+  return pending;
+}
+
+/**
+ * The first of `candidates` this version actually publishes.
+ *
+ * `undefined` — as distinct from `null` — means the listing could not be read,
+ * so the caller has to probe rather than conclude the paths are absent.
+ */
+async function firstPublished(
+  packageName: string,
+  version: string,
+  candidates: readonly string[],
+): Promise<string | null | undefined> {
+  const listing = await fileListing(packageName, version);
+  if (!listing) return undefined;
+  return candidates.find((candidate) => listing.has(candidate)) ?? null;
+}
+
+/* ------------------------------------------------------------------ */
 /* Dependencies a package publishes its API through                    */
 /* ------------------------------------------------------------------ */
 
@@ -214,40 +327,53 @@ async function mergeDependencySurfaces(
   const declared = { ...manifest?.dependencies, ...manifest?.peerDependencies };
   if (Object.keys(declared).length === 0) return [];
 
-  const wanted = externalReferences(sources, api);
+  const wanted = [...externalReferences(sources, api)].filter(([specifier]) => declared[specifier]);
   const followed: string[] = [];
 
-  for (const [specifier, reference] of wanted) {
-    if (followed.length >= MAX_FOLLOWED_DEPENDENCIES) break;
-    const range = declared[specifier];
-    if (!range) continue;
+  // Read a chunk at a time, and merge that chunk strictly in order.
+  //
+  // Each dependency here is a full surface fetch — a listing, its declaration
+  // files, and the parse over them — and doing them one after another made a
+  // wrapper package cost eight of those back to back. The chunk is the same
+  // size as the follow budget, so the outcome is identical to the serial loop
+  // (the first eight references that resolve, merged in reference order, with
+  // earlier ones winning a name collision); only the waiting overlaps.
+  for (let at = 0; at < wanted.length && followed.length < MAX_FOLLOWED_DEPENDENCIES; at += MAX_FOLLOWED_DEPENDENCIES) {
+    const chunk = wanted.slice(at, at + MAX_FOLLOWED_DEPENDENCIES);
+    const fetched = await mapWithConcurrency(chunk, MAX_FOLLOWED_DEPENDENCIES, async ([specifier]) => {
+      const resolved = await resolveDependencyVersion(specifier, declared[specifier]!);
+      if (!resolved) return null;
+      // One level only. The dependency's own dependencies are its business; a
+      // second hop multiplies requests without changing what this package
+      // exposes, and a cycle would otherwise be reachable.
+      // A dependency Drift cannot reach costs its symbols, never the comparison:
+      // the rest of this package's surface is still worth diffing.
+      const surface = await fetchTypeSurface(specifier, resolved, {
+        followDependencies: false,
+      }).catch(() => null);
+      return surface ? { resolved, surface } : null;
+    });
 
-    const resolved = await resolveDependencyVersion(specifier, range);
-    if (!resolved) continue;
+    for (const [index, [specifier, reference]] of chunk.entries()) {
+      if (followed.length >= MAX_FOLLOWED_DEPENDENCIES) break;
+      const found = fetched[index];
+      if (!found) continue;
+      const { resolved, surface } = found;
 
-    // One level only. The dependency's own dependencies are its business; a
-    // second hop multiplies requests without changing what this package
-    // exposes, and a cycle would otherwise be reachable.
-    // A dependency Drift cannot reach costs its symbols, never the comparison:
-    // the rest of this package's surface is still worth diffing.
-    const surface = await fetchTypeSurface(specifier, resolved, { followDependencies: false }).catch(
-      () => null,
-    );
-    if (!surface) continue;
+      let merged = 0;
+      for (const [exportedAs, declaredAs] of reference.names(surface.api)) {
+        const entry = surface.api.get(declaredAs);
+        if (!entry) continue;
+        // Keyed by origin so a wrapper and its dependency can both publish a
+        // symbol of the same name without one silently masking the other.
+        const key = reference.reExported.has(exportedAs) ? exportedAs : `${specifier}#${exportedAs}`;
+        if (api.has(key)) continue;
+        api.set(key, { ...renameEntry(entry, exportedAs), via: specifier });
+        merged += 1;
+      }
 
-    let merged = 0;
-    for (const [exportedAs, declaredAs] of reference.names(surface.api)) {
-      const entry = surface.api.get(declaredAs);
-      if (!entry) continue;
-      // Keyed by origin so a wrapper and its dependency can both publish a
-      // symbol of the same name without one silently masking the other.
-      const key = reference.reExported.has(exportedAs) ? exportedAs : `${specifier}#${exportedAs}`;
-      if (api.has(key)) continue;
-      api.set(key, { ...renameEntry(entry, exportedAs), via: specifier });
-      merged += 1;
+      if (merged > 0) followed.push(`${specifier}@${resolved}`);
     }
-
-    if (merged > 0) followed.push(`${specifier}@${resolved}`);
   }
 
   return followed;
@@ -417,27 +543,30 @@ async function resolveTypesEntry(
   version: string,
   pkg: Manifest | null,
 ): Promise<string | null> {
+  // Every path this function would otherwise probe for, in the order it would
+  // have probed them. Asked of the listing as one question, so the common case
+  // costs no requests at all beyond the listing itself; a version with no
+  // listing falls back to the same sequential probing as before.
+  const wanted: string[] = [];
   if (pkg) {
     const declared = pkg.types ?? pkg.typings ?? typesFromExports(pkg.exports);
-    if (declared) {
-      // A `types` field routinely points at a directory or an extensionless
-      // path (`"types": "dist/source"`) rather than a `.d.ts` file. Fetching it
-      // verbatim 404s and silently costs us the strongest evidence we have, so
-      // try the conventional expansions before giving up.
-      for (const candidate of expandTypesEntry(normalizePath(declared))) {
-        if (await exists(packageName, version, candidate)) return candidate;
-      }
-    }
-
+    // A `types` field routinely points at a directory or an extensionless
+    // path (`"types": "dist/source"`) rather than a `.d.ts` file. Fetching it
+    // verbatim 404s and silently costs us the strongest evidence we have, so
+    // try the conventional expansions before giving up.
+    if (declared) wanted.push(...expandTypesEntry(normalizePath(declared)));
     // A JS entry point often has a sibling declaration file.
-    if (pkg.main) {
-      const sibling = normalizePath(pkg.main).replace(/\.(c|m)?js$/, '.d.ts');
-      if (await exists(packageName, version, sibling)) return sibling;
-    }
+    if (pkg.main) wanted.push(normalizePath(pkg.main).replace(/\.(c|m)?js$/, '.d.ts'));
   }
+  wanted.push(...conventionalTypeEntries(packageName));
 
-  for (const candidate of conventionalTypeEntries(packageName)) {
-    if (await exists(packageName, version, candidate)) return candidate;
+  const published = await firstPublished(packageName, version, wanted);
+  if (published !== undefined) {
+    if (published) return published;
+  } else {
+    for (const candidate of wanted) {
+      if (await exists(packageName, version, candidate)) return candidate;
+    }
   }
 
   // DefinitelyTyped ships types for the same *major* line, so this is only a
@@ -543,44 +672,66 @@ async function collectDeclarationSources(
     return content ? [{ path: 'index.d.ts', content }] : [];
   }
 
-  const MAX_FILES = 25;
-  // Each re-export now expands to five candidate paths rather than two, so the
-  // queue holds candidate *groups* and stops at the first that resolves. A
-  // package with a thirty-line barrel costs thirty-odd requests, not a hundred
-  // and fifty.
+  const listing = await fileListing(packageName, version);
+
+  // Each re-export expands to five candidate paths rather than two, so the
+  // queue holds candidate *groups* and stops at the first that resolves. With
+  // a listing to consult, "which of these five" costs nothing and the group is
+  // one fetch; without one it degrades to probing them in order, as before.
   const sources: DeclarationSource[] = [];
   const seen = new Set<string>();
   const queue: string[][] = [[entryPath]];
 
-  while (queue.length > 0 && sources.length < MAX_FILES) {
-    const candidates = queue.shift()!.filter((path) => !seen.has(path));
-    if (candidates.length === 0) continue;
-
-    let resolved: DeclarationSource | null = null;
-    for (const path of candidates) {
-      seen.add(path);
+  const resolveGroup = async (candidates: readonly string[]): Promise<DeclarationSource | null> => {
+    const published = listing ? (candidates.find((path) => listing.has(path)) ?? null) : undefined;
+    for (const path of published === undefined ? candidates : published ? [published] : []) {
       const content = await fetchText(`${JSDELIVR_CDN}/${packageName}@${version}/${path}`, {
         retries: 0,
       });
-      if (content) {
-        resolved = { path, content };
-        break;
+      if (content) return { path, content };
+    }
+    return null;
+  };
+
+  // A barrel file names thirty siblings at once, and reading them one after
+  // another means thirty sequential round trips to a CDN for files that have
+  // nothing to do with each other. Each level of the traversal is fetched as
+  // one wave instead — bounded, because this is still someone else's CDN, and
+  // in input order, so which sources are read (and therefore which symbols win
+  // a name collision) does not depend on which response happened to land first.
+  while (queue.length > 0 && sources.length < MAX_FILES) {
+    const wave: string[][] = [];
+    while (queue.length > 0 && wave.length + sources.length < MAX_FILES) {
+      const candidates = queue.shift()!.filter((path) => !seen.has(path));
+      for (const path of candidates) seen.add(path);
+      if (candidates.length > 0) wave.push(candidates);
+    }
+    if (wave.length === 0) continue;
+
+    const resolved = await mapWithConcurrency(wave, DECLARATION_FETCH_CONCURRENCY, (candidates) =>
+      resolveGroup(candidates),
+    );
+
+    for (const source of resolved) {
+      if (!source || sources.length >= MAX_FILES) continue;
+      sources.push(source);
+      for (const specifier of relativeReExports(source.content)) {
+        queue.push(resolveRelative(source.path, specifier));
       }
-    }
-    if (!resolved) continue;
-
-    sources.push(resolved);
-
-    for (const specifier of relativeReExports(resolved.content)) {
-      queue.push(resolveRelative(resolved.path, specifier));
-    }
-    for (const specifier of tripleSlashReferences(resolved.content)) {
-      queue.push(resolveRelative(resolved.path, specifier));
+      for (const specifier of tripleSlashReferences(source.content)) {
+        queue.push(resolveRelative(source.path, specifier));
+      }
     }
   }
 
   return sources;
 }
+
+/** How many declaration files of one package are fetched at once. */
+const DECLARATION_FETCH_CONCURRENCY = 8;
+
+/** How many declaration files one package's surface is assembled from. */
+const MAX_FILES = 25;
 
 /**
  * `export * from './x'` / `export { a } from './x'` — relative targets only.
@@ -651,6 +802,8 @@ function normalizePath(path: string): string {
 }
 
 async function exists(packageName: string, version: string, path: string): Promise<boolean> {
+  const published = await firstPublished(packageName, version, [path]);
+  if (published !== undefined) return published !== null;
   const content = await fetchText(`${JSDELIVR_CDN}/${packageName}@${version}/${path}`, { retries: 0 });
   return content !== null;
 }
