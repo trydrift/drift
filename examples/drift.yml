@@ -176,10 +176,46 @@ remediation:
   # Off by default. When true, Drift queries Codemod.com and Maven Central
   # (for OpenRewrite) live for a matching, version-pinned recipe once its own
   # codemod engine cannot resolve a commit — no network call to either
-  # happens while this is false. On the Action this is the only thing that
-  # can select a found recipe, since it cannot prompt; the CLI and VS Code
-  # extension still ask before using one either way.
+  # happens while this is false.
+  #
+  # A recipe is a *proposal source*, not an execution path. It runs in a
+  # throwaway worktree so Drift can watch what it does, then Drift infers
+  # which of its own operations explain those edits and applies those. The
+  # recipe's own output is never committed, and a recipe whose edits Drift
+  # cannot re-derive is declined. See docs/fix-plans.md.
   communityRecipes: false
+
+  # Deterministic fix plans: a migration described once, as a rule, and
+  # applied by Drift to every call site at once. The tier between Drift's own
+  # codemod engine and handing a finding to an AI agent.
+  #
+  # Full treatment in docs/fix-plans.md.
+  fixPlans:
+    # Ask a model to author a plan for findings nothing cheaper resolved.
+    # Off by default because this needs `llm.enabled` and an API key —
+    # cached and recipe-derived plans still work without it, since neither
+    # costs a model call.
+    enabled: false
+
+    # Fraction of a finding's call sites a plan must cover to be used at all.
+    # Coverage is per site: a rule explaining nine of ten resolves nine and
+    # hands the tenth to an agent. But a rule explaining one site out of
+    # forty is a coincidence, not a migration — this is the floor.
+    minCoverage: 0.5
+
+    # review   — always write the plan document and ask (the default)
+    # proven   — apply plans that cannot change whether the file parses
+    # verified — also apply structural plans, once your own checks passed
+    #
+    # There is deliberately no "always": a plan Drift cannot promise still
+    # parses is never applied unattended without your checks passing.
+    autoApply: review
+
+    # Reuse plans validated for this same migration elsewhere. Keyed on the
+    # migration, never on the repository, so a plan validated for one
+    # codebase is a candidate for any other hitting the same upstream break —
+    # and re-validated against your own call sites regardless.
+    cache: true
 
 # ---------------------------------------------------------------------------
 # How the pull request gets opened

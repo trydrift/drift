@@ -31,7 +31,7 @@ inputs:
       transmits it anywhere except api.github.com.
 
       Drift only needs this for a planned fix that remains after deterministic
-      remediation and any enabled community recipe. Omit it and Drift still
+      remediation and any validated fix plan. Omit it and Drift still
       detects breaking changes, gathers evidence, and applies what it can fix
       itself; if a remaining commit needs an agent, it reports that instead of
       guessing.

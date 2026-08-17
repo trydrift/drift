@@ -280,6 +280,55 @@ host directly. Treat verification as narrowing the blast radius, not
 eliminating it; a secretless, network-isolated sandbox would close more of
 this gap than a scrubbed environment and a filename denylist can.
 
+### A malicious community recipe
+
+A recipe is third-party code fetched from a registry, so enabling
+`remediation.communityRecipes` means Drift will run somebody else's program
+against your source. Two things bound what that can achieve.
+
+**It runs in a disposable worktree, during analysis, and never in your
+checkout.** The same isolation the verification probe uses (above) applies
+here, including the sensitive-filename denylist and the scrubbed environment,
+and with `copyIgnoredFiles: false` so nothing untracked is carried in at all.
+The worktree is removed whether the recipe succeeded, failed, or hung.
+
+**Its output is never committed.** This is the part that changed with fix
+plans. Drift used to run a recipe, scope-check the files it touched, and
+commit the diff — which answers "did it stay in its lane" but never "is this
+the right edit". Now the recipe is only *observed*: Drift reads the
+before/after pairs it produced, infers which of its own operations would
+explain them, and applies those, anchored to its own localized impact sites.
+A recipe whose edits Drift cannot re-derive contributes nothing, and a recipe
+that edited files outside the finding's call sites contributes nothing from
+those files. What reaches your repository is always Drift's own operations
+from a closed vocabulary — see [fix-plans.md](fix-plans.md).
+
+Residual risk: the recipe still executes, on the same host, with whatever
+ambient access the job has. Refusing to commit its output bounds what it can
+write to your repository; it does not bound what it can read or send while
+running. The setting is off by default for that reason.
+
+### A model that invents a replacement API
+
+Fix plan authoring asks a model for a migration rule that Drift then applies
+to every call site at once. The obvious failure mode is a confident,
+well-named, entirely fictional replacement — and determinism *multiplies*
+whatever it is given, so a hallucination here would propagate faster and more
+thoroughly than a per-site agent's would.
+
+Every name a plan would introduce must appear in the evidence Drift actually
+retrieved, matched as a whole token rather than as a substring, or the plan is
+rejected outright. Plans are also checked to be grounded in the finding's own
+symbols, to converge (proved by running them twice), and to preserve line
+counts. A plan containing any operation that could change whether a file
+parses is never applied unattended unless the project's own checks ran and
+passed against it — there is no setting that turns that off.
+
+Residual risk: attestation proves the replacement *was mentioned upstream*,
+not that this is the *right* replacement or that the rule generalizes to every
+call site it matches. That is what the plan document and `autoApply: review`
+(the default) are for.
+
 ### A compromised Drift release
 
 You'd be running our code in your CI. Standard mitigations apply: pin to a commit

@@ -680,35 +680,115 @@ remediation:
 
 `boolean` — default **`false`**
 
-Every surface resolves a commit's fix the same way: Drift's own deterministic
-codemod first, then — only when this is `true` — a matching, version-pinned
-recipe discovered live from Codemod.com's registry or Maven Central (for
+Whether Drift may query Codemod.com's registry and Maven Central (for
 OpenRewrite, restricted to its own `org.openrewrite.recipe` group — see
-`src/remediation/live-search.ts`), then an AI agent.
+`src/remediation/live-search.ts`) for a recipe matching a finding its own
+codemod engine could not resolve.
 
-This is what gates the network query itself, on every surface, not just
-whether a found recipe may run: with this `false` (the default), Drift never
-queries either registry, so a plain `drift analyze` makes no third-party
-network calls for this. Set it to `true` to let Drift ask Codemod.com and
-Maven Central whether a recipe exists for a finding its own codemod engine
-couldn't resolve — the result is still only ever a proposal, never applied
-automatically.
+This gates the network query itself, on every surface: with this `false` (the
+default), Drift never contacts either registry, so a plain `drift analyze`
+makes no third-party network calls for this.
 
-On the **GitHub Action**, which cannot prompt, this is also what gates
-whether a found recipe is actually used instead of falling straight to
-Copilot:
+**What a recipe is allowed to do changed with fix plans.** A recipe used to
+be an execution tier — a match was scope-checked and its diff committed.
+Scope checking answers "did it stay in its lane" and never answers "is this
+the right edit", so a recipe is now a *proposal source* instead. It runs in a
+throwaway worktree purely to be observed; Drift reads the edits it made,
+infers which of its own operations would explain them, and puts the result
+through the same gate a model-authored plan goes through. What reaches your
+repository is Drift's operations, applied by Drift's executor. The recipe's
+output is discarded along with the worktree, and a recipe whose edits Drift
+cannot re-derive is declined rather than trusted — the finding goes to an
+agent and the report says the recipe was *consulted*.
+
+See [fix-plans.md](fix-plans.md#community-recipes-are-an-input-not-an-override).
 
 ```yaml
 remediation:
   communityRecipes: true
 ```
 
-On the **CLI** and in the **VS Code extension**, enabling this surfaces a
-matching recipe as an explicit choice (a prompt, or `--community-recipes`
-for non-interactive `drift fix` runs) — it is still never run without that
-choice, in this run or on this exact pinned version. A
-recipe is never executed silently on any surface, and Drift's own codemod
-always takes priority over a recipe when both could resolve a commit.
+### `remediation.fixPlans`
+
+A migration described once, as a rule, and applied by Drift to every call
+site at once. The tier between Drift's own codemod engine and handing a
+finding to an AI agent — see [fix-plans.md](fix-plans.md) for the full
+treatment.
+
+```yaml
+remediation:
+  fixPlans:
+    enabled: false
+    minCoverage: 0.5
+    autoApply: review
+    cache: true
+```
+
+#### `remediation.fixPlans.enabled`
+
+`boolean` — default **`false`**
+
+Ask a model to author a plan for findings nothing cheaper resolved. Off by
+default because authoring needs [`llm.enabled`](#llm) and an API key.
+
+With it off, **cached and recipe-derived plans are still used** — neither
+costs a model call — so a repository can benefit from plans validated
+elsewhere without configuring a model at all.
+
+#### `remediation.fixPlans.minCoverage`
+
+`number` between `0` and `1` — default **`0.5`**
+
+The fraction of a finding's call sites a plan must cover to be used at all.
+
+Coverage is decided per call site rather than per finding: a rule explaining
+nine of ten call sites resolves nine, and the tenth is handed to an agent
+individually with a reason attached. But a rule explaining *one* site out of
+forty is not a migration — it is a coincidence, and acting on it splits one
+finding across two mechanisms for no benefit. This is the floor. Set it to
+`0` to take any coverage at all, or `1` to accept only plans that resolve a
+finding completely.
+
+Enforced once, centrally, so all three surfaces agree about which findings
+even have a deterministic fix.
+
+#### `remediation.fixPlans.autoApply`
+
+`'review' | 'proven' | 'verified'` — default **`'review'`**
+
+Whether a plan may be applied without a human seeing it first.
+
+| Value | Behaviour |
+| --- | --- |
+| `review` | Always write the plan document and ask, on every surface that can ask. |
+| `proven` | Apply plans whose every operation is structurally incapable of changing whether the file parses (a token or string swap). Ask about the rest. |
+| `verified` | Also apply structural plans, once the project's own checks have actually passed against them. |
+
+There is deliberately no `always`. **A plan Drift cannot promise still parses
+is never applied unattended without the project's own checks passing**,
+regardless of this setting — that combination is precisely where a
+deterministic engine would propagate a mistake faster than any per-site agent
+could. Verification being *switched off* is not verification that *passed*,
+and the two are distinguished.
+
+`mode: approve` reviews everything regardless of this setting: a repository
+that asks before an agent edits it is not asking to be edited
+deterministically instead.
+
+#### `remediation.fixPlans.cache`
+
+`boolean` — default **`true`**
+
+Reuse plans previously validated for the same migration.
+
+The cache is keyed on the migration — dependency, version range, change kind,
+symbols — and never on the repository, so a plan validated for one codebase
+is a candidate for any other hitting the same upstream break. Restored plans
+are re-validated against the local call sites exactly as fresh ones are: the
+cache saves the authoring call, never the checking.
+
+Plans live in `~/.drift/cache/fixplans/` as plain JSON. `DRIFT_CACHE_DIR`
+moves the whole cache; `DRIFT_NO_CACHE=1` disables it.
 
 ---
 

@@ -1,6 +1,6 @@
 # Drift — Safe Dependency Upgrades
 
-**Which upgrades actually break your code? Drift finds out, shows the evidence, and fixes them — deterministically when it can, with a community recipe when one applies, or with the AI agent you already use otherwise.**
+**Which upgrades actually break your code? Drift finds out, shows the evidence, and fixes them — deterministically when it can, with a validated fix plan that migrates every call site at once, or with the AI agent you already use for whatever is left.**
 
 No API keys. No tokens to paste. No account.
 
@@ -14,7 +14,7 @@ Open the Drift panel and it starts checking your dependencies, naming each step 
 
 That distinction is the product. A package can have seven breaking changes and still be a five-second upgrade for you, because your code never calls the parts that changed. Drift says so plainly, in neutral colour, with the upstream detail one click away — because a warning that turns out to be nothing is how a tool teaches you to ignore it.
 
-For the upgrades that *do* affect you, Drift shows the exact file and line, then resolves each fix in order: its own deterministic transform first, a community recipe if one applies and you've enabled it, and your AI agent for whatever's left — holding every edit for review before anything is committed.
+For the upgrades that *do* affect you, Drift shows the exact file and line, then resolves each fix in order: its own deterministic transform first, a validated fix plan second, and your AI agent for whatever's left — holding every edit for review before anything is committed. A fix plan is shown to you *before* it runs: the rule, the evidence attesting it, every call site it would change, and every call site it would decline.
 
 ## The panel
 
@@ -99,7 +99,7 @@ Open a repository. That's the setup. Drift works **signed out**, because nothing
 | Detect the change | your local git |
 | Gather evidence | public registries — npm, PyPI, crates.io, GitHub releases |
 | Find affected code | your local files |
-| Fix it | Drift's own codemod, then a community recipe if enabled, then your AI agent |
+| Fix it | Drift's own codemod, then a validated fix plan, then your AI agent |
 | Commit | your local git |
 
 Pushing needs nothing new either: git already has whatever credential you push with every day, and Drift uses it. Sign-in is asked for only if you choose GitHub's cloud agent, or if you want Drift to open the pull request for you and have no `gh` signed in. It is VS Code's own one-click OAuth — no token to create or store.
