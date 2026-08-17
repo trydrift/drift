@@ -4,24 +4,33 @@ import type { CommitUnit, RemediationPlan, RepoContext } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
 import { execCommand, type Exec } from '../util/exec.js';
-import { applyBuiltinCodemod } from './apply.js';
-import { executeCommunityRecipe } from './execute-recipe.js';
+import { applyBuiltinCodemod, applyCommitFixPlan } from './apply.js';
 import { dispatchToCopilot } from '../dispatch/copilot.js';
 import { planForCommits } from './partition.js';
-import type { CommunityRecipeCandidate } from './types.js';
+import { dispositionFor } from '../fixplan/policy.js';
+import { renderFixPlanDocument } from '../fixplan/document.js';
+import type { FixPlanAssessment } from '../fixplan/schema.js';
 import { ask as defaultAsk } from '../util/prompt.js';
 
 /**
  * `drift fix`: apply a plan's commits through the same three-tier priority
- * every surface shares — Drift's own codemod, then (only when enabled) a
- * community recipe, then an AI agent — in an isolated git worktree, so the
+ * every surface shares — Drift's own codemod, then a validated deterministic
+ * fix plan, then an AI agent — in an isolated git worktree, so the
  * developer's working tree is never touched regardless of what the run does.
+ *
+ * The interactive step is the fix plan review. A plan is a rule plus a
+ * document describing exactly what it will do to every call site, which is
+ * something a developer can meaningfully accept or decline *before* anything
+ * happens — unlike an agent's output, which can only be reviewed afterwards.
+ * `--plan` stops after printing those documents; the default prints each one
+ * and asks; `--non-interactive` applies whatever `dispositionFor` clears for
+ * unattended use and leaves the rest to an agent.
  *
  * The CLI has no local interactive agent of its own (that is the VS Code
  * extension's job, built around the editor's document model and a
- * webview-rendered chat). For commits neither Drift nor a recipe can
- * resolve, this reuses the same Copilot cloud-agent dispatch the GitHub
- * Action already uses — one AI integration, not two.
+ * webview-rendered chat). For commits no deterministic path resolved, this
+ * reuses the same Copilot cloud-agent dispatch the GitHub Action already
+ * uses — one AI integration, not two.
  */
 
 export interface FixOptions {
@@ -31,9 +40,16 @@ export interface FixOptions {
   logger: Logger;
   workspace: string;
   copilotToken?: string;
-  /** Explicit override; falls back to `config.remediation.communityRecipes`. */
-  allowCommunityRecipes?: boolean;
-  /** Never prompt; decide automatically from `allowCommunityRecipes`. */
+  /**
+   * Print every fix plan document and stop without applying anything.
+   *
+   * The read-only half of `fix`, and the reason a plan is worth having as a
+   * document rather than only as a mechanism: a developer can read exactly
+   * what would happen to every call site, and to which call sites nothing
+   * would happen, before granting any of it.
+   */
+  planOnly?: boolean;
+  /** Never prompt; apply only what `dispositionFor` clears unattended. */
   nonInteractive?: boolean;
   exec?: Exec;
   ask?: (question: string, options: string[]) => Promise<string>;
@@ -42,7 +58,15 @@ export interface FixOptions {
 export interface FixRunResult {
   branch: string;
   builtinResolved: number;
-  recipeResolved: number;
+  fixPlanResolved: number;
+  /** Fix plan documents, in plan order — printed by `--plan` and after a run. */
+  documents: string[];
+  /**
+   * Commits still needing an agent, including ones whose fix plan was applied
+   * but left residual call sites. A plan covering nine of ten sites resolves
+   * nine; the tenth is real work and must not vanish because the commit
+   * counted as deterministically handled.
+   */
   needsAgent: CommitUnit[];
   pushed: boolean;
   worktree: string;
@@ -57,13 +81,13 @@ export interface FixRunResult {
 export async function runFix(options: FixOptions): Promise<FixRunResult & { teardown: () => Promise<void> }> {
   const { repo, plan, config, logger, workspace } = options;
   const exec = options.exec ?? execCommand;
-  const allowCommunityRecipes = options.allowCommunityRecipes ?? config.remediation.communityRecipes;
   const nonInteractive = options.nonInteractive ?? !process.stdin.isTTY;
 
   const worktree = await createWorktree(workspace, plan.branchName, repo.afterSha, exec);
 
   let builtinResolved = 0;
-  let recipeResolved = 0;
+  let fixPlanResolved = 0;
+  const documents: string[] = [];
   const needsAgent: CommitUnit[] = [];
   let committedAny = false;
 
@@ -89,23 +113,43 @@ export async function runFix(options: FixOptions): Promise<FixRunResult & { tear
       continue;
     }
 
-    if (commit.recipe) {
-      const candidate = commit.recipe[0]!;
-      const useRecipe = await shouldUseRecipe({
-        candidate,
-        allowCommunityRecipes,
+    if (commit.fixPlan) {
+      const assessment = assessmentOf(commit);
+      const document = renderFixPlanDocument(assessment);
+      documents.push(document);
+
+      // `--plan` is the whole read-only half of this command: print what
+      // would happen and stop, without a worktree edit or a commit.
+      if (options.planOnly) {
+        if (commit.fixPlan.residual > 0) needsAgent.push(commit);
+        continue;
+      }
+
+      const disposition = dispositionFor(assessment, config, {
+        verificationPassed: plan.verification?.status === 'passed',
+      });
+
+      const approved = await shouldApplyFixPlan({
+        disposition,
+        document,
         nonInteractive,
         ask: options.ask,
       });
 
-      if (useRecipe) {
-        const applied = await applyRecipeCommit(worktree, commit, exec, logger);
-        if (applied) {
-          recipeResolved += 1;
+      if (approved) {
+        const outcome = await applyFixPlanCommit(worktree, commit, exec);
+        if (outcome === 'applied') {
+          fixPlanResolved += 1;
           committedAny = true;
+          // A partially covering plan leaves real work behind. The commit is
+          // resolved for its covered sites and still needs an agent for the
+          // rest — reporting it as fully handled is how a call site silently
+          // never gets fixed.
+          if (commit.fixPlan.residual > 0) needsAgent.push(commit);
           continue;
         }
-        logger.warn(`Community recipe for commit ${commit.order} did not apply cleanly; falling back to an agent.`);
+        if (outcome === 'no-changes') continue;
+        logger.warn(`The fix plan for commit ${commit.order} could not be committed; falling back to an agent.`);
       }
     }
 
@@ -115,12 +159,71 @@ export async function runFix(options: FixOptions): Promise<FixRunResult & { tear
   return {
     branch: plan.branchName,
     builtinResolved,
-    recipeResolved,
+    fixPlanResolved,
+    documents,
     needsAgent,
     pushed: committedAny,
     worktree,
     teardown: () => removeWorktree(workspace, worktree, exec),
   };
+}
+
+/**
+ * Rebuild the assessment a commit's attached plan came from.
+ *
+ * `CommitUnit.fixPlan` is the serialization-safe subset that survives being
+ * written into a stored plan; `dispositionFor` and the document renderer both
+ * read the fuller shape. Reconstructing it here keeps one policy function and
+ * one renderer rather than a second pair that take the narrower type and
+ * gradually disagree with the first.
+ */
+function assessmentOf(commit: CommitUnit): FixPlanAssessment {
+  const fixPlan = commit.fixPlan!;
+  return {
+    plan: fixPlan.plan,
+    verdict: fixPlan.residual === 0 ? 'accepted' : 'partial',
+    assurance: fixPlan.assurance,
+    sites: fixPlan.residualSites.map((site) => ({
+      file: site.file,
+      line: site.line,
+      before: '',
+      status: 'residual' as const,
+      reason: site.reason,
+    })),
+    covered: fixPlan.covered,
+    residual: fixPlan.residual,
+    rejections: [],
+    anchors: fixPlan.anchors,
+  };
+}
+
+/**
+ * Show the plan and decide.
+ *
+ * A terminal can ask, so it asks — a fix plan is precisely the artefact worth
+ * asking about, because the question ("may Drift make this exact edit to
+ * these exact lines?") is answerable in advance. Non-interactive runs fall
+ * back to `dispositionFor` alone, which is the same answer the Action would
+ * reach for the same config, so a CI `drift fix` and a `drift action` run do
+ * not quietly differ.
+ */
+async function shouldApplyFixPlan(args: {
+  disposition: ReturnType<typeof dispositionFor>;
+  document: string;
+  nonInteractive: boolean;
+  ask?: (question: string, options: string[]) => Promise<string>;
+}): Promise<boolean> {
+  const { disposition, nonInteractive } = args;
+
+  if (disposition.action === 'skip') return false;
+  if (nonInteractive) return disposition.action === 'apply';
+
+  const ask = args.ask ?? defaultAsk;
+  const answer = await ask(
+    `${args.document}\n\n${disposition.action === 'apply' ? 'Drift can apply this without asking.' : disposition.reason}`,
+    ['Apply this fix plan', 'Skip it and use AI'],
+  );
+  return /^apply/i.test(answer);
 }
 
 /** Dispatch commits the deterministic paths could not resolve to Copilot. */
@@ -142,24 +245,6 @@ export async function dispatchRemainingToCopilot(options: {
     logger: options.logger,
   });
   return { ok: result.ok, error: result.error };
-}
-
-async function shouldUseRecipe(args: {
-  candidate: CommunityRecipeCandidate;
-  allowCommunityRecipes: boolean;
-  nonInteractive: boolean;
-  ask?: (question: string, options: string[]) => Promise<string>;
-}): Promise<boolean> {
-  const { candidate, allowCommunityRecipes, nonInteractive } = args;
-
-  if (nonInteractive) return allowCommunityRecipes;
-
-  const ask = args.ask ?? defaultAsk;
-  const answer = await ask(
-    `Community recipe available:\n  ${candidate.name}@${candidate.version} — ${candidate.publisher}\n  (${candidate.migration})`,
-    ['Use community recipe', 'Continue with AI'],
-  );
-  return /^use/i.test(answer);
 }
 
 async function applyBuiltinCommit(
@@ -187,38 +272,42 @@ async function applyBuiltinCommit(
   return committed ? 'applied' : 'failed';
 }
 
-async function applyRecipeCommit(
+/**
+ * Apply a commit's validated fix plan in the worktree and commit it.
+ *
+ * The commit message carries the plan document itself, not a summary of it.
+ * A `git log` entry that says "applied a deterministic fix" is exactly the
+ * unclear artefact this tier exists to replace — the rule, its evidence, and
+ * the call sites it declined belong in the history alongside the diff.
+ */
+async function applyFixPlanCommit(
   worktree: string,
   commit: CommitUnit,
   exec: Exec,
-  logger: Logger,
-): Promise<boolean> {
-  const allowed = new Set([...commit.allowedFiles, ...commit.files]);
-  const touched = new Set<string>();
-  const messages: string[] = [];
-
-  for (const recipe of commit.recipe ?? []) {
-    const result = await executeCommunityRecipe(recipe, worktree, { exec, logger });
-    if (result.status === 'failed') return false;
-    for (const file of result.changedFiles) touched.add(file);
-    if (result.status === 'applied') messages.push(result.message);
+): Promise<'applied' | 'no-changes' | 'failed'> {
+  const contents = new Map<string, string>();
+  for (const file of commit.fixPlan?.files ?? []) {
+    try {
+      contents.set(file, await readFile(join(worktree, file), 'utf8'));
+    } catch {
+      // Missing file — skipped by applyCommitFixPlan.
+    }
   }
 
-  if (touched.size === 0) return false;
+  const result = applyCommitFixPlan(commit, contents);
+  if (result.status !== 'applied') return 'no-changes';
 
-  const outOfScope = [...touched].filter((file) => !allowed.has(file));
-  if (outOfScope.length > 0) {
-    logger.warn(`Community recipe touched file(s) outside commit ${commit.order}'s scope; discarding.`);
-    await exec('git', ['checkout', '--', ...touched], { cwd: worktree });
-    return false;
+  for (const edit of result.edits) {
+    await writeFile(join(worktree, edit.path), edit.content, 'utf8');
   }
 
-  return commitFiles(
+  const committed = await commitFiles(
     worktree,
-    [...touched],
-    `${commit.message}\n\n${commit.body}\n\n${messages.join(' ')}`,
+    result.edits.map((e) => e.path),
+    [commit.message, '', commit.body, '', result.message, '', renderFixPlanDocument(assessmentOf(commit), { sites: false, headingLevel: 2 })].join('\n'),
     exec,
   );
+  return committed ? 'applied' : 'failed';
 }
 
 async function commitFiles(worktree: string, files: readonly string[], message: string, exec: Exec): Promise<boolean> {

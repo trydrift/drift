@@ -8,3 +8,4 @@ export * from './document.js';
 export * from './policy.js';
 export * from './from-recipe.js';
 export * from './resolve.js';
+export * from './sandbox.js';

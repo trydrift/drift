@@ -24,6 +24,7 @@ import type { UpgradeRationale } from './rationale/types.js';
 import type { ChangeTaxonomy } from './confidence/taxonomy.js';
 import type { AnalysisGap, CheckedSurface, ConfidenceAssessment } from './confidence/types.js';
 import type { CommunityRecipeCandidate } from './remediation/types.js';
+import type { AttachedFixPlan } from './fixplan/schema.js';
 import type { SpecEvidenceSource } from './evidence/spec/sources.js';
 import type { UpgradeVerification } from './verification/upgrade-probe.js';
 
@@ -440,17 +441,40 @@ export interface CommitUnit {
     anchors: { file: string; line: string; lineNumber: number }[];
   }[];
   /**
-   * Community recipe candidates that claim to resolve every breaking change
-   * in this unit, when no built-in codemod could and a live registry lookup
-   * (`src/remediation/live-search.ts`, only run when
-   * `remediation.communityRecipes` is enabled) found a matching,
-   * version-pinned recipe for each one. Metadata only, exactly like `codemod` is a rule plus
-   * parameters rather than precomputed content — a consumer decides whether
-   * to run it (never automatically; see `src/remediation/partition.ts`),
-   * executes it in an isolated worktree, and puts the result through the
-   * same scope validation and verification an agent's output would.
+   * A validated deterministic fix plan covering some or all of this unit's
+   * call sites (see `src/fixplan/`).
    *
-   * `codemod`, when present, always takes priority over this field.
+   * The tier between `codemod` and an agent. Where `codemod` carries a rule
+   * Drift derived unaided, this carries a rule Drift *validated* — proposed
+   * by a cache hit, a community recipe's observed edits, or one model call
+   * for the whole finding, then put through `validateFixPlan` before it was
+   * allowed anywhere near a file.
+   *
+   * Unlike `codemod`, this is not all-or-nothing. `covered` sites are
+   * resolved by Drift's own executor and `residualSites` are handed to an
+   * agent individually, so a rule explaining nine of ten call sites resolves
+   * nine rather than none. A consumer re-applies it against whatever each
+   * file actually holds when it runs (`applyFixPlanToContent`) and puts the
+   * result through the same scope validation and verification an agent's
+   * output would.
+   *
+   * `codemod`, when present, still wins: it needed no model and no
+   * validation because it could not have been wrong by construction.
+   */
+  fixPlan?: AttachedFixPlan;
+  /**
+   * Community recipe candidates matching this unit's breaking changes, when
+   * a live registry lookup (`src/remediation/live-search.ts`, only run when
+   * `remediation.communityRecipes` is enabled) found a version-pinned recipe
+   * for each one.
+   *
+   * Metadata for the report, and a record of what was consulted. This is no
+   * longer an execution path: a recipe's own edits are never committed. What
+   * a recipe can do is *propose* — it runs in a throwaway worktree, Drift
+   * infers which of its own operations explain the edits it made, and the
+   * result arrives on `fixPlan` above having passed the same gate a
+   * model-authored plan passes. A recipe whose edits Drift cannot re-derive
+   * leaves no `fixPlan` behind and the finding goes to an agent.
    */
   recipe?: CommunityRecipeCandidate[];
 }

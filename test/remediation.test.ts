@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   remediationKindFor,
   partitionCommits,
+  hasResidualWork,
   planForCommits,
 } from '../dist/remediation/partition.js';
 import { findCommunityRecipe } from '../dist/remediation/registry.js';
@@ -95,39 +96,76 @@ function commitUnit(overrides: Record<string, unknown> = {}) {
   };
 }
 
+const FIX_PLAN = {
+  plan: {
+    schemaVersion: 1,
+    id: 'fp_1',
+    breakingChangeId: 'bc_1',
+    dependency: 'acme-sdk',
+    fromVersion: '1.0.0',
+    toVersion: '2.0.0',
+    changeKind: 'renamed-export' as const,
+    migration: '`gone` became `arrived`.',
+    rationale: '',
+    ops: [{ kind: 'rename-identifier' as const, from: 'gone', to: 'arrived' }],
+    citations: ['ev_1'],
+    provenance: { author: 'model' as const, authoredAt: '2026-01-01T00:00:00Z' },
+  },
+  assurance: 'proven' as const,
+  files: ['src/app.ts'],
+  anchors: [{ file: 'src/app.ts', line: 'gone();', lineNumber: 1 }],
+  covered: 1,
+  residual: 0,
+  residualSites: [],
+};
+
 describe('remediationKindFor / partitionCommits', () => {
-  test('a built-in codemod always wins, regardless of community recipe permission', () => {
-    const commit = commitUnit({ codemod: [{ ruleId: 'rename-identifier', from: 'oldName', to: 'newName', files: [], anchors: [] }], recipe: [RECIPE] });
-    assert.equal(remediationKindFor(commit as never, true), 'builtin');
-    assert.equal(remediationKindFor(commit as never, false), 'builtin');
+  test('a built-in codemod always wins — it needed no model and no validation', () => {
+    const commit = commitUnit({
+      codemod: [{ ruleId: 'rename-identifier', from: 'oldName', to: 'newName', files: [], anchors: [] }],
+      fixPlan: FIX_PLAN,
+      recipe: [RECIPE],
+    });
+    assert.equal(remediationKindFor(commit as never), 'builtin');
   });
 
-  test('a community recipe is only used when explicitly allowed — this is the "never silently execute" guarantee', () => {
-    const commit = commitUnit({ recipe: [RECIPE] });
-    assert.equal(remediationKindFor(commit as never, false), 'ai');
-    assert.equal(remediationKindFor(commit as never, true), 'community-recipe');
+  test('a validated fix plan is its own tier, above AI', () => {
+    assert.equal(remediationKindFor(commitUnit({ fixPlan: FIX_PLAN }) as never), 'fix-plan');
   });
 
-  test('nothing built-in or community falls to AI', () => {
-    const commit = commitUnit();
-    assert.equal(remediationKindFor(commit as never, true), 'ai');
+  test('a matched community recipe is not, by itself, an execution path any more', () => {
+    // The recipe tier is gone: a recipe proposes a fix plan (which then has to
+    // pass the same gate as any other proposal) or it does nothing at all.
+    // Recipe metadata with no resulting plan means nothing was re-derivable.
+    assert.equal(remediationKindFor(commitUnit({ recipe: [RECIPE] }) as never), 'ai');
+  });
+
+  test('nothing deterministic falls to AI', () => {
+    assert.equal(remediationKindFor(commitUnit() as never), 'ai');
   });
 
   test('partitionCommits splits a plan\'s commits into the three buckets in order', () => {
     const builtinCommit = commitUnit({ id: 'a', codemod: [{ ruleId: 'rename-identifier', from: 'x', to: 'y', files: [], anchors: [] }] });
-    const recipeCommit = commitUnit({ id: 'b', recipe: [RECIPE] });
-    const aiCommit = commitUnit({ id: 'c' });
-    const plan = { commits: [builtinCommit, recipeCommit, aiCommit] } as never;
+    const fixPlanCommit = commitUnit({ id: 'b', fixPlan: FIX_PLAN });
+    const aiCommit = commitUnit({ id: 'c', recipe: [RECIPE] });
+    const plan = { commits: [builtinCommit, fixPlanCommit, aiCommit] } as never;
 
-    const disabled = partitionCommits(plan, false);
-    assert.deepEqual(disabled.builtin.map((c: never) => (c as { id: string }).id), ['a']);
-    assert.deepEqual(disabled.communityRecipe, []);
-    assert.deepEqual(disabled.ai.map((c: never) => (c as { id: string }).id), ['b', 'c']);
+    const split = partitionCommits(plan);
+    assert.deepEqual(split.builtin.map((c: never) => (c as { id: string }).id), ['a']);
+    assert.deepEqual(split.fixPlan.map((c: never) => (c as { id: string }).id), ['b']);
+    assert.deepEqual(split.ai.map((c: never) => (c as { id: string }).id), ['c']);
+  });
 
-    const enabled = partitionCommits(plan, true);
-    assert.deepEqual(enabled.builtin.map((c: never) => (c as { id: string }).id), ['a']);
-    assert.deepEqual(enabled.communityRecipe.map((c: never) => (c as { id: string }).id), ['b']);
-    assert.deepEqual(enabled.ai.map((c: never) => (c as { id: string }).id), ['c']);
+  test('a partially covering fix plan still reports residual work', () => {
+    const full = commitUnit({ id: 'full', fixPlan: FIX_PLAN });
+    const partial = commitUnit({
+      id: 'partial',
+      fixPlan: { ...FIX_PLAN, covered: 9, residual: 1, residualSites: [{ file: 'src/b.ts', line: 4, reason: 'no rule matched' }] },
+    });
+
+    assert.equal(hasResidualWork(full as never), false);
+    assert.equal(hasResidualWork(partial as never), true);
+    assert.equal(hasResidualWork(commitUnit() as never), true);
   });
 
   test('planForCommits restricts commits and breakingChanges to the given subset', () => {

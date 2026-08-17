@@ -12,6 +12,7 @@ import type {
 import type { DriftConfig } from '../config/schema.js';
 import type { CodemodResult } from '../codemod/index.js';
 import type { CommunityRecipeCandidate } from '../remediation/types.js';
+import type { FixPlanAssessment } from '../fixplan/schema.js';
 import { stableId, slugify } from '../util/id.js';
 
 /**
@@ -79,6 +80,8 @@ export interface PlanCommitsInput {
   codemods?: ReadonlyMap<string, CodemodResult>;
   /** Community recipe candidates matched for individual findings, by `BreakingChange.id`. */
   recipes?: ReadonlyMap<string, CommunityRecipeCandidate>;
+  /** Validated deterministic fix plans, by `BreakingChange.id`. See `src/fixplan/`. */
+  fixPlans?: ReadonlyMap<string, FixPlanAssessment>;
 }
 
 export interface PlanCommitGraph {
@@ -95,6 +98,7 @@ export function planCommitGraph({
   changes = [],
   codemods,
   recipes,
+  fixPlans,
 }: PlanCommitsInput): PlanCommitGraph {
   const sitesByChange = groupSites(impactSites);
 
@@ -119,7 +123,7 @@ export function planCommitGraph({
   }
 
   const commits = sorted.map((group, index) =>
-    toCommitUnit(group, index + 1, sitesByChange, sorted.length, codemods, recipes),
+    toCommitUnit(group, index + 1, sitesByChange, sorted.length, codemods, recipes, fixPlans),
   );
   const edges = deriveEdges(commits, breakingChanges, impactSites, cohortByDependency);
   const layered = assignExecutionLayers(commits, edges);
@@ -174,13 +178,17 @@ function toCommitUnit(
   totalCommits: number,
   codemods?: ReadonlyMap<string, CodemodResult>,
   recipes?: ReadonlyMap<string, CommunityRecipeCandidate>,
+  fixPlans?: ReadonlyMap<string, FixPlanAssessment>,
 ): CommitUnit {
   const sites = group.flatMap((c) => sitesByChange.get(c.id) ?? []);
   const files = [...new Set(sites.map((s) => s.file))].sort();
   const primary = group[0]!;
   const codemod = codemods ? resolveCodemod(group, sitesByChange, codemods) : undefined;
-  // Only worth offering a recipe for a commit the built-in engine could not
-  // resolve — `codemod` always wins, mirroring `remediationKindFor`.
+  // Only worth resolving a fix plan for a commit the built-in engine could
+  // not — `codemod` always wins, mirroring `remediationKindFor`.
+  const fixPlan = !codemod && fixPlans ? resolveFixPlan(group, sitesByChange, fixPlans) : undefined;
+  // Recipe metadata is recorded whenever it was consulted, including when it
+  // is what produced `fixPlan`, so the report can say what was looked at.
   const recipe = !codemod && recipes ? resolveRecipe(group, recipes) : undefined;
 
   return {
@@ -205,7 +213,71 @@ function toCommitUnit(
     expectedChecks: expectedChecksFor(group, files),
     invalidationTriggers: invalidationTriggersFor(group, files),
     ...(codemod ? { codemod } : {}),
+    ...(fixPlan ? { fixPlan } : {}),
     ...(recipe ? { recipe } : {}),
+  };
+}
+
+/**
+ * Collect the validated fix plans covering a commit group.
+ *
+ * Deliberately *not* the "full coverage or nothing" rule `resolveCodemod`
+ * applies. That rule is right for the built-in engine, whose fixes are free
+ * to derive: if it cannot resolve a whole commit, falling back costs
+ * nothing. It is wrong here, where the plan cost a model call and where the
+ * per-site split is the entire point — a rule explaining nine of ten call
+ * sites should resolve nine, and `residualSites` is how the tenth stays
+ * visible to the agent that will handle it.
+ *
+ * A group whose changes have plans touching the same file is still merged
+ * rather than refused, because unlike codemods these are applied by
+ * re-deriving against live content rather than by writing back a snapshot —
+ * two plans editing one file cannot silently discard each other's work.
+ */
+function resolveFixPlan(
+  group: readonly BreakingChange[],
+  sitesByChange: ReadonlyMap<string, ImpactSite[]>,
+  fixPlans: ReadonlyMap<string, FixPlanAssessment>,
+): CommitUnit['fixPlan'] {
+  const assessments = group.map((change) => fixPlans.get(change.id)).filter((a): a is FixPlanAssessment => !!a);
+  if (assessments.length === 0) return undefined;
+
+  // A commit granularity that bundles several findings can leave some of
+  // them with no plan at all. Every site of an unplanned finding is residual
+  // by definition, and omitting them here would under-report the work left
+  // for the agent — the commit would look deterministically handled while
+  // quietly dropping a finding.
+  const unplanned = group
+    .filter((change) => !fixPlans.has(change.id))
+    .flatMap((change) =>
+      (sitesByChange.get(change.id) ?? []).map((site) => ({
+        file: site.file,
+        line: site.line,
+        reason: `No fix plan was accepted for "${change.summary}", so this site needs an agent.`,
+      })),
+    );
+
+  // One commit, one plan document. A group with more than one accepted plan
+  // is one whose commit granularity bundles several findings; the first is
+  // the one the document describes, and the rest keep their own anchors.
+  const primary = assessments[0]!;
+  const anchors = assessments.flatMap((a) => a.anchors);
+
+  return {
+    plan: primary.plan,
+    assurance: assessments.some((a) => a.assurance === 'checked') ? 'checked' : 'proven',
+    files: [...new Set(anchors.map((anchor) => anchor.file))].sort(),
+    anchors,
+    covered: assessments.reduce((total, a) => total + a.covered, 0),
+    residual: assessments.reduce((total, a) => total + a.residual, 0) + unplanned.length,
+    residualSites: [
+      ...assessments.flatMap((a) =>
+        a.sites
+          .filter((site) => site.status === 'residual')
+          .map((site) => ({ file: site.file, line: site.line, reason: site.reason ?? 'No rule matched.' })),
+      ),
+      ...unplanned,
+    ],
   };
 }
 

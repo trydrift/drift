@@ -273,12 +273,17 @@ Options for \`analyze\`:
   --log-level <level>         debug | info | warn | error. Default: info
 
 Options for \`fix\` (accepts every \`analyze\` option too):
-  --community-recipes         Use a matching community recipe when Drift's own
-                              codemod can't resolve a commit, without asking
-  --no-community-recipes      Never use a community recipe; go straight to AI
-  --non-interactive           Never prompt; decide from --community-recipes /
-                              drift.yml's \`remediation.communityRecipes\`
-                              (this is the default when not run in a TTY)
+  --plan                      Print every deterministic fix plan and stop.
+                              Writes nothing: no worktree edit, no commit, no
+                              branch, no agent. This is the review step — each
+                              plan states the rule, the evidence attesting it,
+                              every call site it would change (before → after),
+                              and every call site it would decline and why
+  --non-interactive           Never prompt. Applies only the fix plans
+                              \`remediation.fixPlans.autoApply\` clears for
+                              unattended use and leaves the rest to an agent —
+                              the same decision the GitHub Action makes for the
+                              same config (this is the default outside a TTY)
   --copilot-token <token>     User-scoped token for commits that need an
                               agent. Default: $DRIFT_COPILOT_TOKEN
   --draft                     Open the pull request as a draft
@@ -303,11 +308,19 @@ dependency against its registry for a version that could — the same "Scan
 Dependencies" check the extension runs. It never writes either, except when
 given --upgrade, and even then only a local manifest/lockfile edit.
 \`fix\` applies the plan in an isolated git worktree — your working tree is
-never touched — using, per commit, Drift's own deterministic fix, then (if
-enabled) a community recipe, then an AI agent, in that order; it pushes a
-branch and opens a pull request. It never merges, never force-pushes, and
-never touches the base branch. A community recipe is never used without an
-explicit choice, in this run or in \`remediation.communityRecipes\`.
+never touched — using, per commit, Drift's own deterministic codemod, then a
+validated fix plan, then an AI agent, in that order; it pushes a branch and
+opens a pull request. It never merges, never force-pushes, and never touches
+the base branch.
+
+A fix plan is a migration described once, as a rule, and applied by Drift to
+every call site at once. Whatever proposed it — a cached plan, a community
+recipe's observed edits, or one model call for the whole finding — it is only
+used after Drift has checked that it is grounded in the finding, that every
+name it introduces appears in cited evidence, and that it converges and
+preserves lines. Community recipes are a proposal source, not an execution
+path: a recipe's own edits are never committed. Run \`drift fix --plan\` to
+read every plan before any of it happens.
 \`pr\` pushes the current branch and opens a pull request. It never merges,
 never force-pushes, and never touches the base branch.
 
@@ -1123,13 +1136,7 @@ async function fixCommand(flags: Flags): Promise<number> {
   }
 
   const plan = result.plan;
-  const allowCommunityRecipes = flags['community-recipes']
-    ? true
-    : flags['no-community-recipes']
-      ? false
-      : undefined;
-
-  return await fixPlanAndOpenPR({ repo, plan, config, workspace, logger, flags, token, allowCommunityRecipes });
+  return await fixPlanAndOpenPR({ repo, plan, config, workspace, logger, flags, token });
 }
 
 /**
@@ -1146,11 +1153,16 @@ async function fixPlanAndOpenPR(args: {
   logger: Logger;
   flags: Flags;
   token: string;
-  allowCommunityRecipes?: boolean;
 }): Promise<number> {
-  const { repo, plan, config, workspace, logger, flags, token, allowCommunityRecipes } = args;
+  const { repo, plan, config, workspace, logger, flags, token } = args;
 
-  logger.info(`Fixing ${plan.commits.length} commit(s) on \`${plan.branchName}\` in an isolated worktree`);
+  const planOnly = Boolean(flags['plan']);
+
+  logger.info(
+    planOnly
+      ? `Reviewing fix plans for ${plan.commits.length} commit(s) — nothing will be applied`
+      : `Fixing ${plan.commits.length} commit(s) on \`${plan.branchName}\` in an isolated worktree`,
+  );
 
   const fix = await runFix({
     repo,
@@ -1158,9 +1170,31 @@ async function fixPlanAndOpenPR(args: {
     config,
     logger,
     workspace,
-    allowCommunityRecipes,
+    planOnly,
     nonInteractive: Boolean(flags['non-interactive']),
   });
+
+  // `--plan` is read-only by construction: the worktree was created but
+  // nothing was written to it, so print the documents and stop before any of
+  // the push, dispatch, or pull-request machinery below.
+  if (planOnly) {
+    try {
+      if (fix.documents.length === 0) {
+        console.log('\nNo deterministic fix plan applies to this change. Every commit needs an agent.\n');
+      } else {
+        console.log(`\n${fix.documents.join('\n\n---\n\n')}\n`);
+        console.log(
+          `${fix.documents.length} fix plan(s). Run \`drift fix\` without --plan to apply them, or edit them first — see docs/fix-plans.md.\n`,
+        );
+      }
+      if (fix.needsAgent.length > 0) {
+        console.log(`${fix.needsAgent.length} commit(s) have call sites no plan covers; those would go to an agent.\n`);
+      }
+    } finally {
+      await fix.teardown();
+    }
+    return 0;
+  }
 
   // Tracks whether any commit that needed an agent is left unresolved —
   // missing Copilot token, a failed dispatch, or (after the agent-fallback
@@ -1173,10 +1207,14 @@ async function fixPlanAndOpenPR(args: {
     if (fix.pushed) {
       await run('git', ['push', '-u', 'origin', `HEAD:refs/heads/${fix.branch}`], { cwd: fix.worktree });
       logger.info(
-        `Resolved ${fix.builtinResolved} commit(s) deterministically` +
-          (fix.recipeResolved > 0 ? ` and ${fix.recipeResolved} via community recipe` : '') +
+        `Resolved ${fix.builtinResolved} commit(s) with a built-in codemod` +
+          (fix.fixPlanResolved > 0 ? ` and ${fix.fixPlanResolved} with a validated fix plan` : '') +
           ` on \`${fix.branch}\`.`,
       );
+      // The documents, not a count. What a deterministic fix actually did to
+      // every call site is the thing worth printing, and it is what a
+      // reviewer will be asked about on the pull request.
+      for (const document of fix.documents) console.log(`\n${document}\n`);
     }
 
     if (fix.needsAgent.length > 0) {

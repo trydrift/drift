@@ -188,7 +188,7 @@ export async function extractWithLlm(
 ): Promise<BreakingChange[]> {
   const { config, logger } = options;
 
-  const client = options.client ?? (await connect(config, logger));
+  const client = options.client ?? (await connectAnthropic(config, logger));
   if (!client) return [];
 
   // Prose only. Computed evidence is already fully structured, and re-reading
@@ -216,8 +216,15 @@ export async function extractWithLlm(
   return results;
 }
 
-/** Resolve the API key and load the SDK, stating any reason it cannot. */
-async function connect(config: DriftConfig, logger: Logger): Promise<AnthropicLike | null> {
+/**
+ * Resolve the API key and load the SDK, stating any reason it cannot.
+ *
+ * Exported because fix plan authoring (`src/fixplan/author.ts`) needs the
+ * same client, resolved the same way, with the same actionable messages when
+ * it cannot be had. Two loaders would mean two spellings of "the key is
+ * missing" and two places to forget the optional-dependency fallback.
+ */
+export async function connectAnthropic(config: DriftConfig, logger: Logger): Promise<AnthropicLike | null> {
   const apiKey = process.env[config.llm.apiKeyEnv];
   if (!apiKey) {
     logger.warn(
