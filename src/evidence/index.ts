@@ -208,25 +208,57 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
     });
   }
 
-  // The machine-verified API surface diff. Every ecosystem answers the same
-  // question here, with the weight its evidence honestly earns; when it
+  const githubRepo = registry?.githubRepo;
+
+  // Everything below this line is started here and awaited where its results
+  // are needed, rather than each being waited out before the next begins.
+  //
+  // The API surface diff, the release notes, the changelog and the migration
+  // guides ask four different servers four unrelated questions; none of them
+  // depends on any other's answer, and the registry lookup above has already
+  // supplied the only thing they share. Running them in series made one
+  // dependency's evidence cost the *sum* of four round trips — the largest
+  // single component of per-package latency, paid once per dependency in the
+  // repository. The evidence list is still assembled in the same order, so
+  // nothing downstream can tell the difference except by how long it waited.
+  //
+  // The machine-verified API surface diff: every ecosystem answers the same
+  // question there, with the weight its evidence honestly earns, and when it
   // applies it is decisive.
-  if (config.evidence.typeSurface) {
-    const surface = await surfaceEvidence(change, ctx);
-    if (surface) out.push(surface);
+  const surfacePending = config.evidence.typeSurface ? surfaceEvidence(change, ctx) : null;
+  const releasesPending =
+    githubRepo && config.evidence.githubReleases
+      ? fetchReleaseNotes(githubRepo, change.from, change.to, {
+          token: ctx.githubToken,
+          maxReleases: config.evidence.maxReleases,
+        })
+      : null;
+  // Plural: a project large enough to split its changelog by version has one
+  // document per release, and the index that lists them is not itself prose.
+  const changelogsPending =
+    githubRepo && config.evidence.changelog
+      ? fetchChangelogDocuments(githubRepo, change.from, change.to)
+      : null;
+  // Migration guides are the artefact LADU relies on exclusively. Drift
+  // treats one as strong corroboration rather than the sole input, so a
+  // package without a guide is still analysable.
+  const guidesPending = githubRepo && config.evidence.changelog ? fetchMigrationGuides(githubRepo) : null;
+  // A rejection is still raised at the `await` below; this only stops one that
+  // is awaited later than another's failure from being seen as unhandled.
+  for (const pending of [surfacePending, releasesPending, changelogsPending, guidesPending]) {
+    pending?.catch(() => undefined);
   }
 
-  const githubRepo = registry?.githubRepo;
+  const surface = surfacePending ? await surfacePending : null;
+  if (surface) out.push(surface);
+
   if (!githubRepo) {
     logger.debug(`No source repository resolved for ${change.name}; prose evidence unavailable`);
     return tag(out);
   }
 
-  if (config.evidence.githubReleases) {
-    const releases = await fetchReleaseNotes(githubRepo, change.from, change.to, {
-      token: ctx.githubToken,
-      maxReleases: config.evidence.maxReleases,
-    });
+  if (releasesPending) {
+    const releases = await releasesPending;
 
     for (const release of releases) {
       const passages = extractBreakingPassages(release.body);
@@ -253,10 +285,8 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
     }
   }
 
-  if (config.evidence.changelog) {
-    // Plural: a project large enough to split its changelog by version has one
-    // document per release, and the index that lists them is not itself prose.
-    const documents = await fetchChangelogDocuments(githubRepo, change.from, change.to);
+  if (changelogsPending) {
+    const documents = await changelogsPending;
 
     for (const changelog of documents) {
       const sections = sectionsBetween(parseChangelogSections(changelog.content), change.from, change.to);
@@ -287,11 +317,10 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
         });
       }
     }
+  }
 
-    // Migration guides are the artefact LADU relies on exclusively. Drift
-    // treats one as strong corroboration rather than the sole input, so a
-    // package without a guide is still analysable.
-    for (const guide of await fetchMigrationGuides(githubRepo)) {
+  if (guidesPending) {
+    for (const guide of await guidesPending) {
       const passages = extractBreakingPassages(guide.content);
       ctx.onProseConsulted?.(change, {
         kind: 'migration-guide',
