@@ -128,10 +128,17 @@ export interface TypeSurface {
  *
  * The promise is cached rather than the value, so two callers that ask at the
  * same time — which is the normal case at concurrency 8 — share one fetch
- * instead of racing to do identical work. A rejection is evicted: a version
- * that could not be reached this second is not a fact about the package, and
- * `VersionUnavailableError` decides whether a whole comparison is reported as
- * impossible.
+ * instead of racing to do identical work.
+ *
+ * Only a *surface* is remembered. A rejection is evicted, and so is `null`:
+ * both mean "nothing was read", and this module cannot tell a package that
+ * publishes no declarations from one whose declarations timed out — every
+ * fetch under it answers `null` for either. Keeping that would turn one slow
+ * response into "this package has no type surface" for the rest of the scan,
+ * and quietly downgrade the strongest evidence Drift has for every later
+ * candidate that depends on it. Retrying costs almost nothing when the answer
+ * really was "no declarations", because the HTTP layer has already cached each
+ * of those responses; it costs a second chance when it was not.
  *
  * Callers must treat the result as read-only; it is now shared.
  */
@@ -149,7 +156,12 @@ export function fetchTypeSurface(
 
   const pending = computeTypeSurface(packageName, version, options);
   surfaces.set(key, pending);
-  pending.catch(() => surfaces.delete(key));
+  pending.then(
+    (surface) => {
+      if (!surface) surfaces.delete(key);
+    },
+    () => surfaces.delete(key),
+  );
   return pending;
 }
 
