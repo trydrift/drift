@@ -742,8 +742,9 @@ export const PACKAGE_MANAGERS = MANAGERS;
  * Derived from `upgrade` rather than declared a second time, so a manager can
  * never grow a batch form that disagrees with its single form. Each target's
  * own command is computed, the argument carrying its package specifier is
- * located, and targets whose commands are otherwise identical are merged into
- * one invocation with every specifier in that argument's place:
+ * located (see {@link specifierPosition}), and targets whose commands are
+ * otherwise identical are merged into one invocation with every specifier in
+ * that argument's place:
  *
  *   npm install react@19.2 --save-dev  ┐
  *   npm install vite@7.1 --save-dev    ┴→  npm install react@19.2 vite@7.1 --save-dev
@@ -774,10 +775,10 @@ export function upgradeMany(
     const command = manager.upgrade(target);
     if (!command) return null;
 
-    // The argument carrying this package's name. `null` where the command
-    // names no package, which is a shape, not a failure.
-    const at = command.args.findIndex((arg) => arg.includes(target.name));
-    const index = at === -1 ? null : at;
+    const index = specifierPosition(manager, target, command);
+    // `undefined` is "this argument list cannot be read", which is different
+    // from `null`'s "it names no package" — decline rather than guess.
+    if (index === undefined) return null;
     const skeleton =
       index === null ? command.args : command.args.filter((_, position) => position !== index);
     const key = `${command.command} ${index} ${skeleton.join(' ')}`;
@@ -803,6 +804,42 @@ export function upgradeMany(
         },
   );
 }
+
+/**
+ * Which argument carries the package specifier.
+ *
+ * Found by asking the manager for the same upgrade under a name and version
+ * nothing else can equal, and taking the one position that moved. Searching
+ * for an argument *containing* the package name is the obvious approach and is
+ * wrong: a package genuinely called `install`, `add`, `update` or `package`
+ * matches the subcommand first, and the merge would then rewrite the verb
+ * rather than the specifier.
+ *
+ * `null` where nothing moved — the command names no package, as with Conan and
+ * vcpkg, where the manifest rewrite is the upgrade. `undefined` where more than
+ * one argument moved, which is an argument list this cannot merge safely.
+ */
+function specifierPosition(
+  manager: PackageManager,
+  target: UpgradeTarget,
+  command: Command,
+): number | null | undefined {
+  const probe = manager.upgrade({ ...target, name: PROBE_NAME, version: PROBE_VERSION });
+  if (!probe || probe.command !== command.command || probe.args.length !== command.args.length) {
+    return undefined;
+  }
+
+  const moved = command.args.reduce<number[]>(
+    (positions, arg, index) => (arg === probe.args[index] ? positions : [...positions, index]),
+    [],
+  );
+  if (moved.length === 0) return null;
+  return moved.length === 1 ? moved[0]! : undefined;
+}
+
+/** A name and version no real package has, used only to find where they land. */
+const PROBE_NAME = ' drift-probe';
+const PROBE_VERSION = ' drift-probe-version';
 
 /**
  * Which package managers own this directory.

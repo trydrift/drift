@@ -257,3 +257,25 @@ describe('moving several packages at once', () => {
     assert.deepEqual(many('pnpm', [['zod', '4.4.3']]), ['pnpm add zod@4.4.3']);
   });
 });
+
+describe('finding the package specifier in a command', () => {
+  test('a package named after the subcommand does not confuse the merge', () => {
+    // `npm install install@2.0.0`: searching for the argument *containing* the
+    // package name finds the verb first, and merging there produces
+    // `npm install@2.0.0 install` — a command that installs nothing.
+    const merged = upgradeMany(packageManagerById('npm')!, [
+      { name: 'install', version: '2.0.0', kind: 'runtime' },
+      { name: 'react', version: '19.2.0', kind: 'runtime' },
+    ])?.map((command) => [command.command, ...command.args].join(' '));
+
+    assert.deepEqual(merged, ['npm install install@2.0.0 react@19.2.0']);
+  });
+
+  test('a package named after a flag stays in the specifier position', () => {
+    const merged = upgradeMany(packageManagerById('pnpm')!, [
+      { name: 'add', version: '1.0.0', kind: 'runtime' },
+    ])?.map((command) => [command.command, ...command.args].join(' '));
+
+    assert.deepEqual(merged, ['pnpm add add@1.0.0']);
+  });
+});
