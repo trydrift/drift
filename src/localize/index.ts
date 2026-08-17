@@ -718,6 +718,13 @@ function searchFiles(
           excerpt: line.trim().slice(0, 200),
           enclosingSymbol: unit?.name,
           matchedSymbol: symbol,
+          // The exact occurrence, not just the line. `masked` is
+          // offset-preserving (see `maskComments`), so an index into it is an
+          // index into `line`. Absent on the call-opens-on-next-line
+          // fallback, where there is no match on this line to point at — and
+          // absent is honest there, since a fix plan must not invent a
+          // position Drift never established.
+          ...(hit ? { column: hit.index, matchedText: hit[0] } : {}),
           confidence: confidenceFor(symbol, importedNames, importsDependency, indirect, inherited?.inherited, unboundReceiver),
         });
       }
@@ -1173,6 +1180,21 @@ const PREPROCESSOR =
  * shown to a developer is always the untouched source line; only the search
  * runs against this.
  */
+/**
+ * Blank out what is not code, **without changing any offset**.
+ *
+ * Every branch below appends exactly as many characters as it consumes, so
+ * an index into a masked line is also an index into the raw line. Two things
+ * depend on that. Impact sites record the column a symbol matched at
+ * (`ImpactSite.column`), and a fix plan anchors its edit to that exact
+ * occurrence rather than to the whole line — neither is sound if masking can
+ * shift an index.
+ *
+ * Block comments used to be *elided* rather than blanked, which broke both
+ * and was a latent false-match bug in its own right: eliding joined the code
+ * on either side of an inline comment into one token, so a symbol could match
+ * a line that never contained it.
+ */
 function maskComments(
   lines: readonly string[],
   options: { blankStrings: boolean },
@@ -1205,9 +1227,11 @@ function maskComments(
       if (inBlockComment) {
         const end = rawLine.indexOf('*/', i);
         if (end === -1) {
+          result += ' '.repeat(rawLine.length - i);
           i = rawLine.length;
           break;
         }
+        result += ' '.repeat(end + 2 - i);
         i = end + 2;
         inBlockComment = false;
         continue;
@@ -1253,9 +1277,11 @@ function maskComments(
         const end = rawLine.indexOf('*/', i + 2);
         if (end === -1) {
           inBlockComment = true;
+          result += ' '.repeat(rawLine.length - i);
           i = rawLine.length;
           break;
         }
+        result += ' '.repeat(end + 2 - i);
         i = end + 2;
         continue;
       }

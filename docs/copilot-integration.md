@@ -207,7 +207,7 @@ remediation.
 
 Without `DRIFT_COPILOT_TOKEN`, Drift still detects the change, gathers
 evidence, localizes affected code, builds the plan, and applies whatever it can
-resolve deterministically — or via an explicitly enabled community recipe — in
+resolve deterministically — or via a validated fix plan — in
 a pushed branch and pull request. Only a commit that still needs an agent after
 that goes unresolved.
 

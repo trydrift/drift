@@ -160,7 +160,7 @@ const STAGES: Stage[] = [
     title: "Plan, Then Fix",
     lead: "One commit per concern, in dependency order.",
     detail:
-      "Never one 'upgrade everything' commit — a reviewer has to read, approve, or revert one piece at a time, and git bisect has to stay meaningful. Each change is resolved by a deterministic codemod where one exists, then a version-pinned community recipe, then an AI agent. Never silently, and always in that order.",
+      "Never one 'upgrade everything' commit — a reviewer has to read, approve, or revert one piece at a time, and git bisect has to stay meaningful. Each change is resolved by a deterministic codemod where one exists, then a validated fix plan — one rule, applied to every call site at once — then an AI agent for whatever is left. Never silently, and always in that order.",
     artefact: (
       <GhPanel icon="commit" name="drift/upgrade-w3lib" meta="3 commits">
         <div className="divide-y divide-border">
@@ -170,9 +170,9 @@ const STAGES: Stage[] = [
             detail="The manifest and the lockfile, alone, so the version move is revertible on its own."
           />
           <GhCommit
-            tag="recipe"
+            tag="fix plan"
             message="fix(w3lib): pass quote_path explicitly at 25 call sites"
-            detail="A version-pinned community recipe for the signature change, applied deterministically."
+            detail="One validated rule, applied by Drift to all 25 call sites. The plan states the rule, the evidence attesting it, and every site it declined."
           />
           <GhCommit
             tag="agent"

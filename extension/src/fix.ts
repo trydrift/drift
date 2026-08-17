@@ -3,7 +3,9 @@ import { join } from 'node:path';
 import { rm } from 'node:fs/promises';
 import type { CommitUnit, RemediationPlan } from '../../src/types.js';
 import { applyCodemodTransform } from '../../src/codemod/index.js';
-import { executeCommunityRecipe } from '../../src/remediation/execute-recipe.js';
+import { applyFixPlanToContent } from '../../src/fixplan/execute.js';
+import { renderFixPlanDocument, summarizeFixPlan } from '../../src/fixplan/document.js';
+import type { FixPlanAssessment } from '../../src/fixplan/schema.js';
 import { WORKING_TREE } from '../../src/repo/local-git.js';
 import { Git } from './git.js';
 import { diffHunks, statOf, type Hunk } from './diff.js';
@@ -475,7 +477,18 @@ async function runFixOnBranch(args: {
       // Asking before touching anything is the point of `ask` mode: at this
       // moment nothing has been written, so declining costs nothing.
       if (permission === 'ask' && options.ask) {
-        const recipe = !commit.codemod ? commit.recipe?.[0] : undefined;
+        // A fix plan is the one thing here that can be reviewed *before* it
+        // happens, so the prompt shows the plan itself rather than a summary
+        // of it: the rule, the coverage, and what it declines to touch.
+        //
+        // This surface does not consult `dispositionFor` the way the CLI and
+        // the Action do, and the difference is deliberate rather than an
+        // omission: the coverage rule that decides whether a finding *has* a
+        // usable plan is enforced once in `fixplan/resolve.ts`, so all three
+        // surfaces see the same plans. What `dispositionFor` decides on top
+        // of that is whether to proceed without asking — a question the
+        // editor answers by asking, here, and whose other permission modes
+        // are an explicit per-session grant from the person watching.
         const answer = commit.codemod
           ? await options.ask(
               `Drift found a deterministic fix for "${commit.message}" (${renameSummary(commit.codemod)}, ` +
@@ -483,11 +496,10 @@ async function runFixOnBranch(args: {
                 `${agent.label} instead?`,
               ['Apply deterministic fix', `Use ${agent.label} instead`, 'Skip this one', 'Stop'],
             )
-          : recipe
+          : commit.fixPlan
             ? await options.ask(
-                `A community-maintained recipe is available for "${commit.message}": ` +
-                  `${recipeSummary(commit.recipe!)} from ${recipe.publisher}. Use community recipe, or continue with ${agent.label}?`,
-                ['Use community recipe', `Continue with ${agent.label}`, 'Skip this one', 'Stop'],
+                `${renderFixPlanDocument(fixPlanAssessmentOf(commit))}\n\nApply this fix plan, or hand the whole commit to ${agent.label}?`,
+                ['Apply fix plan', `Use ${agent.label} instead`, 'Skip this one', 'Stop'],
               )
             : await options.ask(
                 `Let ${agent.label} edit ${commit.files.length} file${commit.files.length === 1 ? '' : 's'} for "${commit.message}"?`,
@@ -915,57 +927,86 @@ function renameSummary(codemod: NonNullable<CommitUnit['codemod']>): string {
   return codemod.map((t) => `\`${t.from}\` → \`${t.to}\``).join(', ');
 }
 
-/** A short, human-readable list of the recipe(s) offered for a commit, for the confirm prompt. */
-function recipeSummary(recipe: NonNullable<CommitUnit['recipe']>): string {
-  const seen = new Set<string>();
-  const names: string[] = [];
-  for (const candidate of recipe) {
-    const key = `${candidate.name}@${candidate.version}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    names.push(`\`${key}\``);
-  }
-  return names.join(', ');
+/**
+ * Rebuild the full assessment from the serialization-safe subset a commit
+ * carries, so the extension renders the same document — from the same
+ * renderer — that the CLI prints and the Action commits.
+ *
+ * Three surfaces showing three summaries of one plan is how a reviewer who
+ * approved it in the editor and an auditor who reads it on the pull request
+ * end up looking at different claims. There is one renderer for that reason.
+ */
+export function fixPlanAssessmentOf(commit: CommitUnit): FixPlanAssessment {
+  const fixPlan = commit.fixPlan!;
+  return {
+    plan: fixPlan.plan,
+    verdict: fixPlan.residual === 0 ? 'accepted' : 'partial',
+    assurance: fixPlan.assurance,
+    sites: fixPlan.residualSites.map((site) => ({
+      file: site.file,
+      line: site.line,
+      before: '',
+      status: 'residual' as const,
+      reason: site.reason,
+    })),
+    covered: fixPlan.covered,
+    residual: fixPlan.residual,
+    rejections: [],
+    anchors: fixPlan.anchors,
+  };
 }
 
 /**
- * Run a commit's matched community recipe(s) directly against the worktree
- * at `root`. Unlike `applyCommitCodemod`, this writes to disk itself (the
- * recipe tool edits files in place) rather than returning in-memory content
- * — the caller's post-run worktree diff (`editsFromWorktree`, driven by
- * `validateAgentWorktree`) is what turns those writes into reviewable edits,
- * the same path an agent's or a codemod's output already goes through.
+ * Apply a commit's validated fix plan against the files as they actually
+ * exist right now.
+ *
+ * Structurally identical to `applyCommitCodemod`, because at the point of
+ * application the two tiers differ only in where the rule came from — both
+ * are Drift's own operations, anchored to Drift's own localized impact
+ * sites, re-derived against live content rather than replayed from a
+ * snapshot. Notably this no longer runs any third-party code: a community
+ * recipe, when one was involved at all, ran during analysis in a throwaway
+ * worktree and contributed only the operations Drift could re-derive from
+ * what it did.
  */
-export async function applyCommitRecipe(
+export function applyCommitFixPlan(
   commit: CommitUnit,
-  root: string,
-  run: typeof executeCommunityRecipe = executeCommunityRecipe,
-): Promise<FixOutcome> {
-  const candidates = commit.recipe ?? [];
-  if (candidates.length === 0) {
-    return { status: 'no-changes', message: 'No community recipe was available for this commit.' };
+  files: readonly { path: string; content: string }[],
+): FixOutcome {
+  const fixPlan = commit.fixPlan;
+  if (!fixPlan) return { status: 'no-changes', message: 'This commit has no fix plan.' };
+
+  const byPath = new Map(files.map((file) => [file.path, file.content]));
+  for (const file of fixPlan.files) {
+    const content = byPath.get(file);
+    if (content === undefined) continue;
+    byPath.set(file, applyFixPlanToContent(content, fixPlan.plan.ops, fixPlan.anchors, file));
   }
 
-  const seen = new Set<string>();
-  const messages: string[] = [];
-  let applied = false;
-
-  for (const candidate of candidates) {
-    const key = `${candidate.provider}:${candidate.name}@${candidate.version}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-
-    const result = await run(candidate, root);
-    if (result.status === 'failed') return { status: 'failed', message: result.message };
-    if (result.status === 'applied') {
-      applied = true;
-      messages.push(result.message);
-    }
+  const edits: { path: string; content: string }[] = [];
+  for (const file of files) {
+    const updated = byPath.get(file.path);
+    if (updated !== undefined && updated !== file.content) edits.push({ path: file.path, content: updated });
   }
 
-  return applied
-    ? { status: 'applied', message: messages.join(' ') }
-    : { status: 'no-changes', message: 'The community recipe produced no changes here.' };
+  if (edits.length === 0) {
+    return {
+      status: 'no-changes',
+      message: 'The fix plan produced no changes here — likely already applied by an earlier commit.',
+    };
+  }
+
+  const fileCount = new Set(edits.map((edit) => edit.path)).size;
+  return {
+    status: 'applied',
+    edits,
+    message:
+      `Applied fix plan \`${fixPlan.plan.id}\` — ${summarizeFixPlan(fixPlanAssessmentOf(commit))} — across ` +
+      `${fileCount} file${fileCount === 1 ? '' : 's'}.` +
+      (fixPlan.residual > 0
+        ? ` ${fixPlan.residual} call site${fixPlan.residual === 1 ? '' : 's'} still need${fixPlan.residual === 1 ? 's' : ''} an agent.`
+        : ''),
+  };
 }
 
 /**
@@ -1059,19 +1100,24 @@ async function applyOneCommit(args: {
     return { outcome, edits: [...edits] };
   }
 
-  // Same idea as the codemod branch above, one tier down: a community
-  // recipe present here already passed the ask-gate (or was never offered,
-  // for a permission mode that skips asking — see `runFixOnBranch`), so it
-  // is safe to run without a model call. The recipe writes directly to
-  // `root`; nothing to hand to `applyEdits` here.
-  if (commit.recipe) {
-    const outcome = await applyCommitRecipe(commit, root);
+  // Same idea as the codemod branch above, one tier down: a validated fix
+  // plan present here already passed the ask-gate (or was never offered, for
+  // a permission mode that skips asking — see `runFixOnBranch`), so no model
+  // call is needed for the sites it covers. Its edits still go through the
+  // same scope validation, review, and verification an agent's output would.
+  if (commit.fixPlan) {
+    const outcome = applyCommitFixPlan(commit, files);
     args.onActivity?.({
       kind: outcome.status === 'applied' ? 'edit' : 'status',
-      title: 'Community recipe',
+      title: 'Fix plan',
       detail: outcome.message,
     });
-    return { outcome, edits: [] };
+    const edits = outcome.status === 'applied' ? (outcome.edits ?? []) : [];
+    if (!args.deferEdits && edits.length > 0) {
+      await applyEdits(root, edits, scopeFiles(commit));
+      return { outcome, edits: [] };
+    }
+    return { outcome, edits: [...edits] };
   }
 
   const controller = new AbortController();

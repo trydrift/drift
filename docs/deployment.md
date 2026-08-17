@@ -70,7 +70,7 @@ and without a diff there is nothing to analyse.
 | Input | Default | |
 | --- | --- | --- |
 | `repo-token` | `${{ github.token }}` | Repository operations |
-| `copilot-token` | — | **User-scoped**. Only needed for commits Drift can't resolve deterministically or via an enabled community recipe |
+| `copilot-token` | — | **User-scoped**. Only needed for commits Drift can't resolve deterministically or via a validated fix plan |
 | `mode` | from `drift.yml` | Overrides the committed config |
 | `dry-run` | `false` | Analyse without writing |
 | `config-path` | `.github/drift.yml` | |

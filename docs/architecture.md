@@ -22,7 +22,7 @@ Rationale            rationale   is the upgrade worth taking
        ↓
 RemediationPlan      plan        ordered, separated commit units + risk + guardrails
        ↓
-DispatchResult       dispatch    branch + codemod/recipe/Copilot task + PR, or an
+DispatchResult       dispatch    branch + codemod/fix-plan/Copilot task + PR, or an
                                   approval issue
 ```
 
@@ -82,9 +82,13 @@ src/
 │   └── assess.ts         The recommendation, as transparent rules
 ├── plan/                 Stage 6 — commits, risk, guardrails
 ├── codemod/              Drift's own deterministic transform (rename-identifier)
+├── fixplan/              A migration described once as a rule, validated, and
+│                         applied to every call site — proposal sources
+│                         (cache, recipe, model) meet one gate and one
+│                         executor. See docs/fix-plans.md
 ├── remediation/          Community-recipe discovery + execution, and the
-│                         codemod → recipe → Copilot priority order
-├── dispatch/             Stage 7 — resolves each commit (codemod, recipe, or
+│                         codemod → fix plan → Copilot priority order
+├── dispatch/             Stage 7 — resolves each commit (codemod, fix plan, or
 │                         Copilot) + approval flow
 ├── report/               Stage 8 — the Drift Report
 ├── github/               Octokit wrapper
@@ -93,10 +97,10 @@ src/
 ```
 
 The VS Code extension is a second front end over the same analysis and
-remediation-priority code (`analyzeRepository`, `src/codemod/`,
+remediation-priority code (`analyzeRepository`, `src/codemod/`, `src/fixplan/`,
 `src/remediation/`). It adds no analysis of its own; everything below either
 drives the shared pipeline or renders its output. Its `fix.ts` applies the
-same codemod → community-recipe → agent tiering as the CLI's `cli-runner.ts`,
+same codemod → fix-plan → agent tiering as the CLI's `cli-runner.ts`,
 per commit unit, before falling back to whichever coding agent the developer
 has selected.
 
@@ -463,12 +467,17 @@ and listing the import beside it is noise that makes a computed finding look
 like it came from grep.
 
 Localization also looks up, per impact site, whether Drift's own deterministic
-codemod applies (`src/codemod/`) and — separately — whether a matching
-community recipe exists via a live query to Codemod.com or Maven Central
-(`src/remediation/live-search.ts`). Discovery always runs; whether a found
-recipe is ever *executed* is gated behind `remediation.communityRecipes`
-(default `false`) and, outside the Action, an explicit choice in the CLI or
-extension.
+codemod applies (`src/codemod/`), and — for the findings it declines — whether
+a **fix plan** can be validated for them (`src/fixplan/`, stage 5.6). A fix
+plan is a migration described once as a rule and applied to every call site at
+once; it may be proposed by a cached plan, by a community recipe's observed
+edits, or by one model call for the whole finding, and all three meet the same
+gate. Whether a matching community recipe is discovered at all is gated behind
+`remediation.communityRecipes` (default `false`), and whether a validated plan
+is applied unattended is decided by `dispositionFor`
+(`src/fixplan/policy.ts`) — one function, asked by all three surfaces.
+
+See [fix-plans.md](fix-plans.md).
 
 ### 4a · Verify (optional)
 
@@ -577,18 +586,32 @@ and `extension/src/fix.ts` (VS Code):
 1. **Drift's own deterministic codemod**, if localization matched one — a
    single, proven-by-construction transform (`rename-identifier` today),
    anchored to the exact impact sites, never a whole-file rewrite.
-2. **A community recipe**, only when one was found *and*
-   `remediation.communityRecipes` is enabled — on the Action that flag alone
-   decides it, since it can't prompt; the CLI and extension still ask before
-   using one either way.
+2. **A validated fix plan**, when one was accepted for the finding — Drift's
+   own operations, from a closed vocabulary, anchored to the exact impact
+   sites and re-derived against live file contents. Unlike the codemod tier
+   this is not all-or-nothing: a plan covering nine of ten call sites
+   resolves nine, and the tenth falls through to step 3 on its own.
 3. **GitHub Copilot's coding-agent API**, for everything neither of the above
-   resolved, given a single task carrying the whole remaining plan with
+   resolved — including the residual call sites of a partially covering fix
+   plan — given a single task carrying the whole remaining plan with
    evidence quoted inline and exact file:line locations.
 
-A commit Drift resolved itself is never handed to Copilot. The optional
-`ANTHROPIC_API_KEY` / `llm.enabled` setting (`src/analyze/llm.ts`) is
-unrelated to this list — it only assists breaking-change *detection* during
-stage 3, capped at `medium` confidence, and never touches remediation.
+Community recipes are deliberately not a step here. They used to be one; a
+match's diff was scope-checked and committed. Scope checking answers "did it
+stay in its lane" and never answers "is this the right edit", so a recipe is
+now a proposal source feeding step 2 and subject to the same gate as
+everything else.
+
+A commit Drift resolved itself is never handed to Copilot, and a commit whose
+plan left residual sites is handed over for those sites only.
+
+The optional `ANTHROPIC_API_KEY` / `llm.enabled` setting is used in two
+distinct places, and it is worth keeping them apart. In stage 3
+(`src/analyze/llm.ts`) it assists breaking-change *detection*, capped at
+`medium` confidence. In stage 5.6 (`src/fixplan/author.ts`) it authors fix
+plan *rules* — but nothing it proposes there is trusted: every rule is
+validated by Drift before it is applied, and Drift, not the model, does the
+applying.
 
 ### 8 · Report
 

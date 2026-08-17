@@ -8,9 +8,10 @@
 
 Drift watches dependency changes in your repositories, works out which upstream
 changes actually break *your* code, and fixes them — deterministically when it
-can prove the fix correct, via a community recipe when one applies and you've
-enabled it, and with GitHub Copilot otherwise — in a branch, in separated
-commits, in a pull request you review.
+can prove the fix correct, via a validated [fix plan](docs/fix-plans.md) that
+describes the migration once and applies it to every call site, and with GitHub
+Copilot for whatever is left — in a branch, in separated commits, in a pull
+request you review.
 
 It never merges anything.
 
@@ -169,7 +170,8 @@ export GITHUB_TOKEN=ghp_...   # optional — only raises the API rate limit
 Once you're ready to act on the plan:
 
 ```bash
-drift fix   # deterministic fix, then a community recipe (if enabled), then AI — never silently
+drift fix --plan   # print every deterministic fix plan; write nothing
+drift fix          # deterministic codemod, then a validated fix plan, then AI
 drift pr    # push the branch `fix` built and open a pull request
 ```
 
@@ -180,9 +182,11 @@ asks you to paste a token first. Copilot remediation is separate again, and
 wants `DRIFT_COPILOT_TOKEN`; nothing else uses it.
 
 `fix` runs entirely in an isolated git worktree, so your working tree is
-never touched, and it never merges or force-pushes. See `drift fix --help`
-(via `drift --help`) for flags, including `--community-recipes` /
-`--no-community-recipes` for non-interactive/CI use.
+never touched, and it never merges or force-pushes. `drift fix --plan` writes
+nothing at all: it prints each fix plan — the rule, the evidence attesting it,
+every call site it would change, and every call site it would decline and why
+— so you can read the migration before granting any of it. See `drift fix
+--help` (via `drift --help`) for the rest.
 
 ---
 
@@ -199,8 +203,11 @@ linked, so you can check it. Built from [`site/`](site/).
 ## VS Code, CLI, or Action — which one?
 
 All three share the same analysis pipeline and the same remediation priority
-(Drift's own deterministic fix, then a community recipe if one applies and is
-enabled, then an AI agent) — they differ in where that runs and who's driving.
+(Drift's own deterministic codemod, then a validated [fix plan](docs/fix-plans.md),
+then an AI agent for whatever is left) — they differ in where that runs and
+who's driving. They also share one plan document, from one renderer, so the
+plan you approve in the editor is the plan an auditor reads on the pull
+request.
 
 One caveat worth stating plainly: *the same pipeline* is not *the same result*.
 Drift's strongest evidence for several ecosystems needs that ecosystem's own
@@ -224,7 +231,8 @@ They don't behave identically. What each surface actually does:
 | Analyse a dependency change that already happened | Yes | Yes (`drift analyze`) | Yes |
 | Evidence / localization | Yes | Yes | Yes |
 | Deterministic remediation | Yes | Yes (`drift fix`) | Yes |
-| External recipes | Yes — asks before using one | Yes — opt-in flag or interactive prompt | Yes, but only if `remediation.communityRecipes: true` in `drift.yml` — it cannot prompt |
+| Fix plans | Yes — shows the plan and asks before applying | Yes — `drift fix --plan` to read, `drift fix` to apply | Yes — applies what `remediation.fixPlans.autoApply` clears, and files the rest for review, since it cannot prompt |
+| External recipes | Yes — as a proposal source, validated like any other | Yes — same | Yes, but only if `remediation.communityRecipes: true` in `drift.yml` |
 | AI remediation | Yes — Copilot, Claude Code, Codex, Gemini, Aider, OpenCode, or local Ollama | Yes — GitHub Copilot coding agent only | Yes — GitHub Copilot coding agent only |
 | Interactive hunk-level review | Yes — Keep/Undo per hunk before committing | No — reviewed as a PR after the fact | No — reviewed as a PR or approval issue |
 | Create branch / commit | Yes | Yes | Yes |
@@ -435,14 +443,21 @@ risk. Evaluates guardrails.
 
 Creates the branch pinned to the analysed commit, then resolves each commit in
 priority order: Drift's own deterministic codemod first (anchored to the exact
-impact sites localization found, never a whole-file rewrite), a matching
-community recipe second — only when `remediation.communityRecipes` is enabled,
-and never without an explicit choice on the CLI or in the extension — and
-GitHub Copilot last, given a single task carrying the whole remaining plan,
-with evidence quoted inline, exact file:line locations, and explicit
-prohibitions against the predictable agent failure modes (weakening tests,
-fixing unrelated code, inventing replacement APIs). A commit Drift resolved
-itself is never handed to Copilot.
+impact sites localization found, never a whole-file rewrite), a validated
+[fix plan](docs/fix-plans.md) second, and GitHub Copilot last, given a single
+task carrying the whole remaining plan, with evidence quoted inline, exact
+file:line locations, and explicit prohibitions against the predictable agent
+failure modes (weakening tests, fixing unrelated code, inventing replacement
+APIs).
+
+A fix plan is a migration described once, as a rule, and applied by Drift to
+every call site at once — so a finding reaching fifty files costs what a
+finding reaching one costs. Whatever proposed it (a cached plan, a community
+recipe's observed edits, or one model call), it is only used after Drift has
+checked that it is grounded in the finding, that every name it introduces
+appears in cited evidence, and that it converges and preserves lines.
+Coverage is decided per call site: a rule explaining nine of ten resolves
+nine, and only the tenth reaches an agent.
 
 ### 8 · Report
 

@@ -85,8 +85,8 @@ const STEPS: Step[] = [
   {
     title: "Open the Pull Request",
     detail:
-      "One commit per concern, in dependency order, each resolved by a deterministic codemod, then a version-pinned community recipe, then an agent — never silently, and always in that order.",
-    log: ["3 commits · codemod → recipe → agent", "every claim cites the evidence it came from"],
+      "One commit per concern, in dependency order, each resolved by a deterministic codemod, then a validated fix plan, then an agent — never silently, and always in that order.",
+    log: ["3 commits · codemod → fix plan → agent", "every claim cites the evidence it came from"],
     took: "12s",
   },
 ];

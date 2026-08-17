@@ -19,6 +19,11 @@ import { walkSourceFiles } from './index/walk.js';
 import { localize } from './localize/index.js';
 import { resolveModuleMaps } from './localize/modules.js';
 import { attemptCodemod, type CodemodResult } from './codemod/index.js';
+import { resolveFixPlans } from './fixplan/resolve.js';
+import { defaultFixPlanCacheDir, fileSystemFixPlanCache, noFixPlanCache } from './fixplan/cache.js';
+import type { FixPlanAssessment } from './fixplan/schema.js';
+import { proposeFixPlanFromRecipe } from './fixplan/sandbox.js';
+import { connectAnthropic } from './analyze/llm.js';
 import { findCommunityRecipe } from './remediation/registry.js';
 import type { CommunityRecipeCandidate } from './remediation/types.js';
 import { buildPlan } from './plan/index.js';
@@ -238,6 +243,12 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   // `src/remediation/registry.ts`. Keyed the same way as `codemods` so
   // `buildPlan` can attach them to the same commit unit(s).
   const recipes = new Map<string, CommunityRecipeCandidate>();
+  // Validated deterministic fix plans, and the ones that failed the gate.
+  // Both are kept: "Drift tried a deterministic fix and rejected it because
+  // the replacement was not attested" and "Drift never tried" are different
+  // facts, and only the first is a reason to read the agent's output harder.
+  const fixPlans = new Map<string, FixPlanAssessment>();
+  const rejectedFixPlans = new Map<string, FixPlanAssessment>();
 
   if (breakingChanges.length > 0 && workspace) {
     progress('localize', 'Searching for affected code');
@@ -315,6 +326,55 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       for (const [changeId, recipe] of found) {
         if (recipe) recipes.set(changeId, recipe);
       }
+    }
+
+    /* Stage 5.6 — fix plans: one validated rule per finding, applied everywhere
+     *
+     * Only for findings the built-in engine declined: a codemod Drift derived
+     * unaided could not have been wrong by construction, so there is nothing
+     * a validated plan could add to it and a model call would be spent for
+     * nothing.
+     *
+     * Every proposal source runs through the same gate (`validateFixPlan`),
+     * and the sources are ordered by cost — a cache hit is free, a recipe
+     * costs a sandbox, authoring costs a model call. See `fixplan/resolve.ts`.
+     */
+    if (needsRecipeLookup.length > 0) {
+      progress('plan', 'Resolving deterministic fix plans');
+
+      const resolved = await resolveFixPlans({
+        changes: needsRecipeLookup,
+        sites: impactSites,
+        evidence,
+        dependencyChanges: actionable,
+        fileContents,
+        config,
+        logger,
+        cache: config.remediation.fixPlans.cache
+          ? (defaultFixPlanCacheDir() ? fileSystemFixPlanCache(defaultFixPlanCacheDir()!) : noFixPlanCache())
+          : noFixPlanCache(),
+        client:
+          config.remediation.fixPlans.enabled && config.llm.enabled
+            ? ((await connectAnthropic(config, logger)) ?? undefined)
+            : undefined,
+        proposeFromRecipe:
+          config.remediation.communityRecipes && workspace
+            ? (change) =>
+                proposeFixPlanFromRecipe({
+                  change,
+                  candidate: recipes.get(change.id),
+                  dependencyChange: dependencyChangeByKey.get(`${change.workspace ?? ''}::${change.dependency}`),
+                  sites: impactSites,
+                  workspace,
+                  headSha: repo.afterSha,
+                  env: options.env,
+                  logger,
+                })
+            : undefined,
+      });
+
+      for (const [changeId, assessment] of resolved.accepted) fixPlans.set(changeId, assessment);
+      for (const [changeId, assessment] of resolved.rejected) rejectedFixPlans.set(changeId, assessment);
     }
   } else if (breakingChanges.length > 0) {
     logger.warn('No local checkout available; affected code cannot be located.');
@@ -493,6 +553,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     checkedSurfaces,
     codemods,
     recipes,
+    fixPlans,
   });
 
   progress('done', 'Analysis complete');

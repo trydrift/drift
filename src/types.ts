@@ -24,6 +24,7 @@ import type { UpgradeRationale } from './rationale/types.js';
 import type { ChangeTaxonomy } from './confidence/taxonomy.js';
 import type { AnalysisGap, CheckedSurface, ConfidenceAssessment } from './confidence/types.js';
 import type { CommunityRecipeCandidate } from './remediation/types.js';
+import type { AttachedFixPlan } from './fixplan/schema.js';
 import type { SpecEvidenceSource } from './evidence/spec/sources.js';
 import type { UpgradeVerification } from './verification/upgrade-probe.js';
 
@@ -338,6 +339,34 @@ export interface ImpactSite {
   enclosingSymbol?: string;
   /** Which symbol from the BreakingChange matched here. */
   matchedSymbol: string;
+  /**
+   * 0-based offset within the line where the match actually started.
+   *
+   * Localization matches once per line, so this identifies *the* occurrence
+   * Drift established — not "somewhere on this line". It matters because a
+   * line can legitimately contain the same name twice for different reasons:
+   *
+   *   primary.oldMethod(); backup.oldMethod();
+   *
+   * where only one receiver was bound from the dependency that moved. A fix
+   * anchored to the line would rewrite both; a fix anchored here rewrites the
+   * one that was localized. See `FixPlanAnchor`.
+   *
+   * Absent for the two sites that genuinely have no column: a manifest/runtime
+   * finding, and the `callOpensOnNextLine` fallback, where the match is the
+   * *absence* of a call on this line. A consumer needing an exact position
+   * must treat an absent column as "not established" rather than guessing 0.
+   */
+  column?: number;
+  /**
+   * The exact text the matcher consumed at `column` — `connect(`, `new Foo(`,
+   * `<Slot`, or a bare name, depending on the symbol's shape.
+   *
+   * Carried alongside `column` so a later consumer can confirm it is looking
+   * at the same occurrence rather than trusting an offset into a file that
+   * may have changed since.
+   */
+  matchedText?: string;
   confidence: Confidence;
 }
 
@@ -437,20 +466,51 @@ export interface CommitUnit {
     from: string;
     to: string;
     files: string[];
+    /**
+     * Line-level, and safe to remain so. This tier only ever performs
+     * `rename-identifier`, whose matcher refuses anything preceded by a dot,
+     * so every occurrence it can reach on one line is the same imported
+     * binding. The fix plan tier added `rename-member`, where that stops
+     * being true — two receivers on one line can be different objects — which
+     * is why `FixPlanAnchor` is per-occurrence instead.
+     */
     anchors: { file: string; line: string; lineNumber: number }[];
   }[];
   /**
-   * Community recipe candidates that claim to resolve every breaking change
-   * in this unit, when no built-in codemod could and a live registry lookup
-   * (`src/remediation/live-search.ts`, only run when
-   * `remediation.communityRecipes` is enabled) found a matching,
-   * version-pinned recipe for each one. Metadata only, exactly like `codemod` is a rule plus
-   * parameters rather than precomputed content — a consumer decides whether
-   * to run it (never automatically; see `src/remediation/partition.ts`),
-   * executes it in an isolated worktree, and puts the result through the
-   * same scope validation and verification an agent's output would.
+   * A validated deterministic fix plan covering some or all of this unit's
+   * call sites (see `src/fixplan/`).
    *
-   * `codemod`, when present, always takes priority over this field.
+   * The tier between `codemod` and an agent. Where `codemod` carries a rule
+   * Drift derived unaided, this carries a rule Drift *validated* — proposed
+   * by a cache hit, a community recipe's observed edits, or one model call
+   * for the whole finding, then put through `validateFixPlan` before it was
+   * allowed anywhere near a file.
+   *
+   * Unlike `codemod`, this is not all-or-nothing. `covered` sites are
+   * resolved by Drift's own executor and `residualSites` are handed to an
+   * agent individually, so a rule explaining nine of ten call sites resolves
+   * nine rather than none. A consumer re-applies it against whatever each
+   * file actually holds when it runs (`applyFixPlanToContent`) and puts the
+   * result through the same scope validation and verification an agent's
+   * output would.
+   *
+   * `codemod`, when present, still wins: it needed no model and no
+   * validation because it could not have been wrong by construction.
+   */
+  fixPlan?: AttachedFixPlan;
+  /**
+   * Community recipe candidates matching this unit's breaking changes, when
+   * a live registry lookup (`src/remediation/live-search.ts`, only run when
+   * `remediation.communityRecipes` is enabled) found a version-pinned recipe
+   * for each one.
+   *
+   * Metadata for the report, and a record of what was consulted. This is no
+   * longer an execution path: a recipe's own edits are never committed. What
+   * a recipe can do is *propose* — it runs in a throwaway worktree, Drift
+   * infers which of its own operations explain the edits it made, and the
+   * result arrives on `fixPlan` above having passed the same gate a
+   * model-authored plan passes. A recipe whose edits Drift cannot re-derive
+   * leaves no `fixPlan` behind and the finding goes to an agent.
    */
   recipe?: CommunityRecipeCandidate[];
 }

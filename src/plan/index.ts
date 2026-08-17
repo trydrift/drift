@@ -11,6 +11,7 @@ import type {
 } from '../types.js';
 import { compareRisk, riskWithinLimit, type DriftConfig } from '../config/schema.js';
 import type { CodemodResult } from '../codemod/index.js';
+import type { FixPlanAssessment } from '../fixplan/schema.js';
 import type { CommunityRecipeCandidate } from '../remediation/types.js';
 import { branchNameFor as branchName } from './pull-request.js';
 import { meetsConfidence } from '../analyze/index.js';
@@ -67,6 +68,8 @@ export interface BuildPlanInput {
   codemods?: ReadonlyMap<string, CodemodResult>;
   /** Community recipe candidates matched for individual findings, by `BreakingChange.id`. */
   recipes?: ReadonlyMap<string, CommunityRecipeCandidate>;
+  /** Validated deterministic fix plans, by `BreakingChange.id`. See `src/fixplan/`. */
+  fixPlans?: ReadonlyMap<string, FixPlanAssessment>;
 }
 
 /**
@@ -95,6 +98,7 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
     changes,
     codemods: input.codemods,
     recipes: input.recipes,
+    fixPlans: input.fixPlans,
   });
   const commits = graph.commits;
   const risk = assessRisk(changes, breakingChanges, impactSites);

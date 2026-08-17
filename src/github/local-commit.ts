@@ -6,14 +6,14 @@ import type { Logger } from '../util/logger.js';
 import type { GitHubClient } from './client.js';
 import { execCommand, type Exec } from '../util/exec.js';
 import { remediationKindFor } from '../remediation/partition.js';
-import { applyBuiltinCodemod } from '../remediation/apply.js';
-import { executeCommunityRecipe } from '../remediation/execute-recipe.js';
-import type { CommunityRecipeCandidate } from '../remediation/types.js';
+import { applyBuiltinCodemod, applyCommitFixPlan } from '../remediation/apply.js';
+import { dispositionFor } from '../fixplan/policy.js';
+import { renderFixPlanDocument } from '../fixplan/document.js';
 
 /**
  * Apply the commits of a plan that Drift can resolve itself — built-in
- * codemod first, then (only when `remediation.communityRecipes` is enabled)
- * a matching community recipe — directly to the Action's remediation branch.
+ * codemod first, then a validated deterministic fix plan — directly to the
+ * Action's remediation branch.
  *
  * This is what lets `dispatch()` skip Copilot entirely for a plan it can
  * fully resolve on its own, and dispatch only the commits it could not
@@ -24,6 +24,13 @@ import type { CommunityRecipeCandidate } from '../remediation/types.js';
  * already rely on. A commit this function could not safely resolve is left
  * untouched on disk and reported as unresolved so the caller can fall back
  * to an agent for it, never guessed at.
+ *
+ * The Action is the surface that cannot ask anyone anything, which is why it
+ * consults `dispositionFor` rather than deciding for itself: a plan that
+ * comes back `'review'` here is not applied and not silently dropped either —
+ * it stays in the plan, its document goes into the approval issue and the
+ * pull request body, and a human decides. That is the same "guardrails
+ * downgrade, never drop" rule the rest of the Action already follows.
  */
 export async function applyDeterministicRemediation(options: {
   repo: RepoContext;
@@ -40,7 +47,7 @@ export async function applyDeterministicRemediation(options: {
   if (!repo.workspace) return { committedIds };
 
   for (const commit of plan.commits) {
-    const kind = remediationKindFor(commit, config.remediation.communityRecipes);
+    const kind = remediationKindFor(commit);
     if (kind === 'ai') continue;
 
     try {
@@ -70,19 +77,35 @@ export async function applyDeterministicRemediation(options: {
         continue;
       }
 
-      // A community recipe is not proven to stay inside `commit.files` — it
-      // may have written to additional paths before failing a scope check or
-      // before the commit-to-GitHub step fails. Reverting only the declared
-      // `commit.files` in that case would leave the recipe's actual delta
-      // sitting uncommitted in the workspace, corrupting the next commit's
-      // starting state. `applyRecipeCommit` reports the true `touched` set
-      // for exactly this reason; fall back to `commit.files` only if it
-      // could not determine anything was touched.
-      const resolved = await applyRecipeCommit(repo.workspace, commit, exec, logger);
-      const revertTarget = resolved.touched.length > 0 ? resolved.touched : commit.files;
+      // A fix plan only edits lines it anchored, and every anchor came from
+      // one of this commit's own impact sites, so `commit.files` is the
+      // complete revert set exactly as it is for a built-in codemod.
+      const fixPlan = commit.fixPlan!;
+      const disposition = dispositionFor(
+        {
+          plan: fixPlan.plan,
+          verdict: fixPlan.residual === 0 ? 'accepted' : 'partial',
+          assurance: fixPlan.assurance,
+          sites: [],
+          covered: fixPlan.covered,
+          residual: fixPlan.residual,
+          rejections: [],
+          anchors: fixPlan.anchors,
+        },
+        config,
+        { verificationPassed: plan.verification?.status === 'passed' },
+      );
 
-      if (!resolved.edits) {
-        await revertWorkspaceFiles(repo.workspace, revertTarget, exec);
+      if (disposition.action !== 'apply') {
+        logger.info(
+          `Commit ${commit.order} has a validated fix plan that will not be applied unattended: ${disposition.reason} The plan document is included for review.`,
+        );
+        continue;
+      }
+
+      const resolved = await applyFixPlanCommit(repo.workspace, commit);
+      if (!resolved) {
+        await revertWorkspaceFiles(repo.workspace, commit.files, exec);
         continue;
       }
 
@@ -90,14 +113,34 @@ export async function applyDeterministicRemediation(options: {
         repo,
         plan.branchName,
         resolved.edits,
-        `${commit.message}\n\n${commit.body}\n\n${resolved.message}`,
+        [
+          `${commit.message}`,
+          '',
+          commit.body,
+          '',
+          resolved.message,
+          '',
+          renderFixPlanDocument(
+            {
+              plan: fixPlan.plan,
+              verdict: fixPlan.residual === 0 ? 'accepted' : 'partial',
+              assurance: fixPlan.assurance,
+              sites: [],
+              covered: fixPlan.covered,
+              residual: fixPlan.residual,
+              rejections: [],
+              anchors: fixPlan.anchors,
+            },
+            { sites: false, headingLevel: 2 },
+          ),
+        ].join('\n'),
       );
 
       if (committed) {
         committedIds.add(commit.id);
-        logger.info(`Resolved commit ${commit.order} directly (recipe): ${resolved.message}`);
+        logger.info(`Resolved commit ${commit.order} directly (fix plan): ${resolved.message}`);
       } else {
-        await revertWorkspaceFiles(repo.workspace, revertTarget, exec);
+        await revertWorkspaceFiles(repo.workspace, commit.files, exec);
       }
     } catch (err) {
       logger.warn(
@@ -134,68 +177,34 @@ async function applyBuiltinCommit(
 }
 
 /**
- * `touched` is always the true set of paths the recipe(s) wrote to on disk,
- * regardless of whether the commit ultimately succeeds — the caller needs it
- * to revert the recipe's actual delta, not just the commit's declared
- * `files`, on any failure path (out-of-scope edits, a deleted-file readback,
- * or a failed `commitFiles` call).
+ * Apply a commit's fix plan to the Action's checkout, and write the result.
+ *
+ * Mirrors `applyBuiltinCommit` exactly, because at this point the two tiers
+ * differ only in where the rule came from: both are Drift's own operations,
+ * both are anchored to Drift's own localized impact sites, and both are
+ * re-derived against live file contents rather than replayed from a snapshot.
  */
-async function applyRecipeCommit(
+async function applyFixPlanCommit(
   workspace: string,
   commit: CommitUnit,
-  exec: Exec,
-  logger: Logger,
-): Promise<{ edits: { path: string; content: string }[] | null; message: string; touched: string[] }> {
-  const recipes = dedupeRecipes(commit.recipe ?? []);
-  if (recipes.length === 0) return { edits: null, message: '', touched: [] };
-
-  const allowed = new Set([...commit.allowedFiles, ...commit.files]);
-  const touched = new Set<string>();
-  const messages: string[] = [];
-
-  for (const recipe of recipes) {
-    const result = await executeCommunityRecipe(recipe, workspace, { exec, logger });
-    for (const file of result.changedFiles) touched.add(file);
-    if (result.status === 'failed') {
-      logger.warn(`Community recipe ${recipe.name}@${recipe.version} failed: ${result.message}`);
-      return { edits: null, message: '', touched: [...touched] };
-    }
-    if (result.status === 'applied') messages.push(result.message);
-  }
-
-  if (touched.size === 0) return { edits: null, message: '', touched: [] };
-
-  // Scope enforcement: a recipe is never trusted to stay inside the commit's
-  // declared files the way a built-in codemod is proven to. Any edit outside
-  // scope voids the whole commit rather than being partially accepted.
-  const outOfScope = [...touched].filter((file) => !allowed.has(file));
-  if (outOfScope.length > 0) {
-    logger.warn(
-      `Community recipe for commit ${commit.order} touched file(s) outside its scope (${outOfScope.join(', ')}); discarding and falling back to an agent.`,
-    );
-    return { edits: null, message: '', touched: [...touched] };
-  }
-
-  const edits: { path: string; content: string }[] = [];
-  for (const file of touched) {
+): Promise<{ edits: { path: string; content: string }[]; message: string } | null> {
+  const contents = new Map<string, string>();
+  for (const file of commit.fixPlan?.files ?? []) {
     try {
-      edits.push({ path: file, content: await readFile(join(workspace, file), 'utf8') });
+      contents.set(file, await readFile(join(workspace, file), 'utf8'));
     } catch {
-      // Deleted by the recipe — nothing to commit for this path.
+      // Missing file — applyCommitFixPlan skips anything it wasn't given.
     }
   }
 
-  if (edits.length === 0) return { edits: null, message: '', touched: [...touched] };
+  const result = applyCommitFixPlan(commit, contents);
+  if (result.status !== 'applied') return null;
 
-  return { edits, message: messages.join(' ') || 'Applied community recipe(s).', touched: [...touched] };
-}
-
-function dedupeRecipes(recipes: readonly CommunityRecipeCandidate[]): CommunityRecipeCandidate[] {
-  const seen = new Map<string, CommunityRecipeCandidate>();
-  for (const recipe of recipes) {
-    seen.set(`${recipe.provider}:${recipe.name}@${recipe.version}`, recipe);
+  for (const edit of result.edits) {
+    await writeFile(join(workspace, edit.path), edit.content, 'utf8');
   }
-  return [...seen.values()];
+
+  return { edits: result.edits, message: result.message };
 }
 
 async function revertWorkspaceFiles(workspace: string, files: readonly string[], exec: Exec): Promise<void> {
