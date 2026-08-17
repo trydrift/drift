@@ -610,6 +610,19 @@ function jsdelivrDeclarationUrl(packageName: string, version: string, entryPath:
   return `https://cdn.jsdelivr.net/npm/${packageName}@${version}/${entryPath}`;
 }
 
+/**
+ * A declaration, on one line.
+ *
+ * The only shaping these get: the `before:`/`after:` prefixes make each a line
+ * of a list, so an embedded newline would break the pairing the panel parses
+ * back out. A ceiling is kept for the pathological case — a machine-generated
+ * type thousands of characters wide is not evidence anyone reads — but it sits
+ * far above any real signature rather than in the middle of them.
+ */
+function collapseSignature(declaration: string): string {
+  return truncate(declaration.replace(/\s+/g, ' ').trim(), 4000);
+}
+
 function formatSurfaceChanges(changes: readonly SurfaceChange[]): string {
   const MAX = 60;
   const lines = changes.slice(0, MAX).map((c) => {
@@ -619,8 +632,17 @@ function formatSurfaceChanges(changes: readonly SurfaceChange[]): string {
     // it is machine vocabulary leaking into prose.
     const parts = [`- ${c.detail}`];
     if (c.before && c.after) {
-      parts.push(`    before: ${truncate(c.before, 200)}`);
-      parts.push(`    after:  ${truncate(c.after, 200)}`);
+      // Whole, not clipped. These two lines are the evidence — the declaration
+      // as it was and as it now is — and the panel renders them as the
+      // before/after pair a developer reads to decide what the change means. A
+      // signature cut at 200 characters loses the end of the parameter list,
+      // which is exactly where a parameter tends to have been added, so the
+      // pair showed a "before" and an "after" that were identical up to the
+      // ellipsis and said nothing. They are already whitespace-collapsed to a
+      // single line each, and the number of changes is capped above, so what
+      // bounds this is the count rather than the truth of any one entry.
+      parts.push(`    before: ${collapseSignature(c.before)}`);
+      parts.push(`    after:  ${collapseSignature(c.after)}`);
     }
     return parts.join('\n');
   });

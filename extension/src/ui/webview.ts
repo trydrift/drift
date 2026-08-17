@@ -3183,7 +3183,21 @@ ul.sites code.excerpt { font-size: 11px; color: var(--vscode-descriptionForegrou
   margin-bottom: 3px;
   text-transform: uppercase;
 }
-.code-compare pre { margin-top: 0; }
+/* The one place code wraps instead of scrolling.
+   A before/after pair is a *declaration*, normalised onto a single line, and
+   the whole point of showing both is to compare their ends — which is where a
+   parameter gets added and where a return type changes. In a sidebar a few
+   hundred pixels wide, a line that scrolls sideways hides exactly the part the
+   pair exists to show, and the reader has to drag two blocks independently to
+   the same offset to compare them. Wrapping keeps both ends on screen and both
+   sides aligned; newlines are still honoured, so a genuinely multi-line
+   snippet keeps its shape. */
+.code-compare pre {
+  margin-top: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: none;
+}
 
 /* Changes --------------------------------------------------------- */
 .changes {

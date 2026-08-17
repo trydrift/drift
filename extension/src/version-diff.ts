@@ -182,7 +182,12 @@ async function locateInSource(
       .sort((a, b) => Number(mentions(b.path, symbol)) - Number(mentions(a.path, symbol)))
       .slice(0, MAX_SEARCHED_FILES);
 
-    const word = symbolPattern(symbol);
+    const anchor = anchorFor(request, symbol);
+
+    // The best match found so far, and how good it is. A weak match is kept
+    // rather than returned: the search carries on looking for a real one, and
+    // falls back to the weak one only once there is nothing better anywhere.
+    let best: { before: string; after: string; path: string; score: number } | null = null;
 
     // Read in batches rather than one file at a time. The files are already
     // ordered best-guess-first, so the batch is kept small: the common case is
@@ -204,21 +209,48 @@ async function locateInSource(
       // does not depend on which read happened to finish first.
       for (const { file, before: beforeText, after: afterText } of texts) {
         if (beforeText === null || afterText === null) continue;
-        if (!word.test(beforeText) && !word.test(afterText)) continue;
+        if (!anchor.mentioned(beforeText) && !anchor.mentioned(afterText)) continue;
 
-        const hunk = diffHunks(beforeText, afterText).find(
-          (candidate) =>
-            candidate.baselineLines.some((line) => word.test(line)) ||
-            candidate.modifiedLines.some((line) => word.test(line)),
-        );
-        if (!hunk) continue;
+        for (const hunk of diffHunks(beforeText, afterText)) {
+          const score = anchor.score(hunk.baselineLines, hunk.modifiedLines);
+          if (score === 0 || score <= (best?.score ?? 0)) continue;
 
-        return {
-          before: slice(beforeText, hunk.baselineStart, hunk.baselineEnd),
-          after: slice(afterText, hunk.start, hunk.end),
-          path: file.path,
-        };
+          best = {
+            before: slice(beforeText, hunk.baselineStart, hunk.baselineEnd),
+            after: slice(afterText, hunk.start, hunk.end),
+            path: file.path,
+            score,
+          };
+          // The declaration itself, found. Nothing later can beat it, and
+          // reading on would only risk replacing it with a coincidence.
+          if (score === DECLARATION_TEXT) break;
+        }
+
+        if (best?.score === DECLARATION_TEXT) {
+          output?.info(`Drift: found ${symbol} in ${best.path}`);
+          return best;
+        }
       }
+    }
+
+    // A bare mention is only worth showing when a mention is all there ever was
+    // to look for. When the panel handed over an actual declaration and it was
+    // found nowhere, the honest answer is the declaration itself — that pair is
+    // always correct, just narrower — rather than the nearest hunk that happens
+    // to say the word, which is how "View diff" came to open a screen of
+    // unrelated imports.
+    if (best && (best.score >= DECLARATION_SITE || !anchor.exact)) {
+      output?.info(
+        `Drift: showing ${best.path} for ${symbol} — the closest change to it in the published source.`,
+      );
+      return best;
+    }
+
+    if (best) {
+      output?.info(
+        `Drift: the declaration shown for ${symbol} does not appear in any file that changed between ${source.name} ${source.from} and ${source.to}; showing the declarations alone rather than an unrelated hunk.`,
+      );
+      return null;
     }
 
     output?.info(
@@ -239,7 +271,128 @@ function slice(text: string, start: number, end: number): string {
 /** The symbol as a whole word — `Drop` must not match `Dropdown`. */
 function symbolPattern(symbol: string): RegExp {
   const bare = symbol.split(/[.#:]/).pop() ?? symbol;
-  return new RegExp(`(^|[^\\w$])${bare.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\w$])`);
+  return new RegExp(`(^|[^\\w$])${escapeRegExp(bare)}($|[^\\w$])`);
+}
+
+/* ------------------------------------------------------------------ */
+/* Finding the change the panel is actually showing                    */
+/* ------------------------------------------------------------------ */
+
+/*
+ * How well a hunk answers "show me *this* change".
+ *
+ * The bug these exist to fix: the symbol was matched anywhere in a file, so a
+ * finding about a `coverage` property landed on a hunk of import statements
+ * because one of them read `from './chunks/coverage.d.BZtK59WP.js'`. The
+ * developer pressed "View diff" under a type alias and got a screen of
+ * unrelated imports — a diff that is not wrong so much as not an answer.
+ */
+
+/** The declaration the panel is showing, found verbatim. Nothing beats this. */
+export const DECLARATION_TEXT = 3;
+/** The symbol, where something is being declared rather than merely mentioned. */
+export const DECLARATION_SITE = 2;
+/** The symbol, somewhere. Kept only when nothing better exists anywhere. */
+export const MENTION = 1;
+
+export interface Anchor {
+  /**
+   * Whether the panel handed over the declaration itself, rather than only a
+   * symbol to hunt for. When it did, a weak match is not good enough — see
+   * where this is read in `locateInSource`.
+   */
+  exact: boolean;
+  /** A cheap pre-filter, so a file with no trace of the symbol is never diffed. */
+  mentioned(text: string): boolean;
+  /** `0` when this hunk is not about the change at all. */
+  score(baseline: readonly string[], modified: readonly string[]): number;
+}
+
+/**
+ * What to look for, and how convincing each kind of match is.
+ *
+ * The declaration text the panel is already showing is the strongest anchor
+ * available and was not being used at all: it is, literally, the thing the
+ * reader asked to see. It is matched whitespace-collapsed, because the panel's
+ * copy is normalised and the published source is formatted.
+ */
+export function anchorFor(request: ChangeDiffRequest, symbol: string): Anchor {
+  const needles = [needleFor(request.before), needleFor(request.after)].filter(
+    (needle): needle is string => needle !== null,
+  );
+  const loose = symbolPattern(symbol);
+  const declared = declarationPattern(symbol);
+
+  return {
+    exact: needles.length > 0,
+    mentioned: (text) => loose.test(text),
+    score: (baseline, modified) => {
+      const lines = [...baseline, ...modified];
+      if (needles.length > 0) {
+        const skeleton = bareCharacters(lines.join(' '));
+        if (needles.some((needle) => skeleton.includes(needle))) return DECLARATION_TEXT;
+      }
+      // An `import ... from './x'` or `export … from './y'` mentions names it
+      // does not declare, and its specifier is a path that routinely contains
+      // one. Neither is where a changed declaration lives.
+      const own = lines.filter((line) => !REEXPORT.test(line));
+      if (own.some((line) => declared.test(line))) return DECLARATION_SITE;
+      return own.some((line) => loose.test(line)) ? MENTION : 0;
+    },
+  };
+}
+
+/** `import { a } from 'x'` / `export * from './y'` — a mention, never a declaration. */
+const REEXPORT = /^\s*(?:import|export)\b[^;]*\bfrom\s*['"]/;
+
+/**
+ * Enough of a declaration to recognise it again.
+ *
+ * The opening is used rather than the whole thing: the two sides of a change
+ * differ by definition, so matching either in full would only ever find the
+ * side it came from, and a signature that gained a parameter still begins the
+ * same way. Too short a fragment matches everything, so anything that reduces
+ * to less than a recognisable phrase is not used as an anchor at all.
+ */
+function needleFor(declaration: string | undefined): string | null {
+  const bare = bareCharacters(declaration ?? '');
+  return bare.length >= MIN_NEEDLE ? bare.slice(0, NEEDLE_LENGTH) : null;
+}
+
+const MIN_NEEDLE = 16;
+const NEEDLE_LENGTH = 48;
+
+/**
+ * A declaration reduced to its identifier characters, so formatting cannot
+ * hide it.
+ *
+ * The panel's copy of a declaration is normalised onto one line; the published
+ * source it came from is formatted across several, with its own indentation
+ * and a trailing comma the collapsed form never had. Comparing the two as text
+ * finds nothing. Comparing what they *say* — the letters, digits and
+ * underscores, in order — finds it whatever the formatter did, and at sixteen
+ * characters and up there is nothing else in a file it could be.
+ */
+function bareCharacters(text: string): string {
+  return text.replace(/[^\w$]+/g, '');
+}
+
+/**
+ * The symbol where it is being *declared*: after a declaring keyword, or as a
+ * member with a type or a body after it.
+ */
+function declarationPattern(symbol: string): RegExp {
+  const bare = escapeRegExp(symbol.split(/[.#:]/).pop() ?? symbol);
+  return new RegExp(
+    // `export declare function Foo`, `interface Foo`, `type Foo`, `class Foo`…
+    `(?:\\b(?:declare|export|default|abstract|type|interface|class|function|const|let|var|enum|namespace|module|new|get|set|readonly|async|static)\\s+)${bare}\\b` +
+      // …or a member: `foo?: X`, `foo(x: Y)`, `foo = 1`, at the head of a line.
+      `|^\\s*(?:readonly\\s+)?${bare}\\s*[?!]?\\s*[:(<=]`,
+  );
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function mentions(path: string, symbol: string): boolean {
