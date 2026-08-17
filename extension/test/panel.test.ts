@@ -448,7 +448,10 @@ test('a running step shows the specific phase, detail and progress', () => {
           done: 12,
           total: 48,
           state: 'running',
-          log: ['Reading manifest — package.json', 'Reading release notes and changelog — react 18.3.1 → 19.2.0'],
+          log: [
+            { text: 'Reading manifest — package.json' },
+            { text: 'Reading release notes and changelog — react 18.3.1 → 19.2.0' },
+          ],
         },
       ],
     }),
@@ -521,7 +524,7 @@ test('a running command shows what it is printing, so a long check is not a hang
           done: 3,
           total: 9,
           state: 'running',
-          log: ['Checking extension as it is — `npm run typecheck`'],
+          log: [{ text: 'Checking extension as it is — `npm run typecheck`', output: 'i1-o1' }],
           outputs: [
             { id: 'i1-o1', phase: 'Checking extension as it is', lines: ['src/ui/home.ts', 'src/ui/webview.ts'] },
           ],
@@ -572,9 +575,10 @@ test('a step with output from more than one phase keeps every phase, not just th
   // is a client-side choice, not something the server hides.
   assert.match(html, /added 412 packages/);
   assert.match(html, /src\/ui\/home\.ts\(12,3\): error/);
-  // A tab per phase, plus the way back to the live one.
-  assert.match(html, /data-action="selectOutput"/);
-  assert.match(html, /class="output-tab live"/);
+  // One control — the follow/pin toggle — and the name of whichever phase is
+  // showing. Picking a different phase is done from the step list itself.
+  assert.match(html, /class="output-tab live active"/);
+  assert.ok(!/class="output-tab"/.test(html), 'no per-phase badges');
 });
 
 test('a single-phase step shows its output with no tab bar to switch between', () => {
@@ -622,6 +626,91 @@ test('a button that is working keeps its label and spins beside it', () => {
   );
 });
 
+test('a step in the log opens its own output, and one that printed nothing does not', () => {
+  // The control that replaced the row of phase badges. A phase that ran a
+  // command is a button in the step list; a phase that printed nothing stays
+  // plain text, because a highlight on hover is an offer the panel cannot
+  // keep.
+  const html = renderPanel(
+    model({
+      thread: [
+        {
+          id: 'i1',
+          kind: 'step',
+          title: 'Checking your dependencies',
+          phase: 'Checking extension as it is',
+          detail: '`npm run build`',
+          done: 3,
+          total: 9,
+          state: 'running',
+          log: [
+            { text: 'Reading manifest — package.json' },
+            { text: 'Preparing a test checkout — carried over config/local.json', output: 'i1-o1' },
+            { text: 'Checking extension as it is — `npm run build`', output: 'i1-o2' },
+          ],
+          outputs: [
+            { id: 'i1-o1', phase: 'Preparing a test checkout', lines: ['added 412 packages'] },
+            { id: 'i1-o2', phase: 'Checking extension as it is', lines: ['src/ui/home.ts(12,3): error'] },
+          ],
+        },
+      ],
+    }),
+  );
+
+  assert.match(html, /<button type="button" class="log-line" data-action="selectOutput" data-step="i1" data-seg="i1-o1"/);
+  assert.match(html, /<button type="button" class="log-line" data-action="selectOutput" data-step="i1" data-seg="i1-o2"/);
+  // The line for a phase that ran no command is not clickable.
+  assert.match(html, /<li>Reading manifest/);
+
+  // The button is the phase alone. The detail after it carries the file links
+  // `linkifyPaths` produces, and an anchor inside a button is invalid markup
+  // that browsers resolve inconsistently — the file link and the output picker
+  // would be fighting over the same click.
+  for (const button of html.matchAll(/<button[^>]*class="log-line"[^>]*>([\s\S]*?)<\/button>/g)) {
+    assert.ok(!/<a\b/.test(button[1] ?? ''), `an anchor is nested inside a log-line button: ${button[0]}`);
+  }
+  assert.match(
+    html,
+    /<span class="log-detail"> — carried over <a data-action="openFile" data-file="config\/local\.json"/,
+    'the path after the phase still opens the file',
+  );
+
+  // Every line keeps its list marker: the numbering is the reading order, and
+  // hiding it on the clickable ones would leave the visible markers skipping
+  // (the double-digit-marker test below is about that numbering).
+  assert.ok(!/<li class=/.test(html), 'no log line opts out of the list numbering');
+  assert.ok(
+    !/\.step \.log[^{]*\{[^}]*list-style:\s*none/.test(html),
+    'and nothing in the step log stylesheet removes the markers either',
+  );
+});
+
+test('a log line whose output has been evicted is not offered as a button', () => {
+  // Segments are bounded; the log is not. A line pointing at a segment that
+  // has since been dropped must read as plain text rather than as a control
+  // that does nothing.
+  const html = renderPanel(
+    model({
+      thread: [
+        {
+          id: 'i1',
+          kind: 'step',
+          title: 'Checking',
+          phase: 'Now',
+          detail: '',
+          done: 0,
+          total: 0,
+          state: 'running',
+          log: [{ text: 'Long gone — `npm install`', output: 'i1-o0' }, { text: 'Now' }],
+          outputs: [{ id: 'i1-o9', phase: 'Now', lines: ['working'] }],
+        },
+      ],
+    }),
+  );
+
+  assert.ok(!/data-seg="i1-o0"/.test(html), 'a segment that no longer exists is not offered');
+});
+
 test('step logs leave room for double digit markers', () => {
   const html = renderPanel(
     model({
@@ -635,7 +724,7 @@ test('step logs leave room for double digit markers', () => {
           done: 10,
           total: 12,
           state: 'running',
-          log: Array.from({ length: 12 }, (_, i) => `Package ${i + 1}`),
+          log: Array.from({ length: 12 }, (_, i) => ({ text: `Package ${i + 1}` })),
         },
       ],
     }),
@@ -664,7 +753,7 @@ test('a dependency check offers no way to stop it', () => {
           done: 3,
           total: 40,
           state: 'running',
-          log: ['a', 'b'],
+          log: [{ text: 'a' }, { text: 'b' }],
         },
       ],
     }),
@@ -830,7 +919,7 @@ test('every disclosure carries a key, so re-rendering cannot collapse it', () =>
   const html = renderPanel(
     model({
       thread: [
-        { id: 's1', kind: 'step', title: 'Checking', phase: 'x', detail: '', done: 1, total: 2, state: 'running', log: ['a', 'b'] },
+        { id: 's1', kind: 'step', title: 'Checking', phase: 'x', detail: '', done: 1, total: 2, state: 'running', log: [{ text: 'a' }, { text: 'b' }] },
         { id: 'p1', kind: 'packages', headline: 'One upgrade.', ids: [c.id] },
       ],
       candidates: { [c.id]: c },
@@ -1063,7 +1152,7 @@ test('a panel with every item type produces balanced markup', () => {
       thread: [
         { id: 'u1', kind: 'user', text: '/scan', attachments: [] },
         { id: 'a1', kind: 'assistant', text: 'Here is what I found:\n\n- one\n- two\n\n```ts\nconst x = 1;\n```' },
-        { id: 's1', kind: 'step', title: 'Checking', phase: 'Reading changelog', detail: 'lodash 4 → 5', done: 3, total: 9, state: 'done', log: ['a', 'b'] },
+        { id: 's1', kind: 'step', title: 'Checking', phase: 'Reading changelog', detail: 'lodash 4 → 5', done: 3, total: 9, state: 'done', log: [{ text: 'a' }, { text: 'b' }] },
         { id: 'p1', kind: 'packages', headline: '**1 of 1** affects your code.', ids: [c.id] },
         {
           id: 't1',
