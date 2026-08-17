@@ -1132,7 +1132,7 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
           waiting ? '' : ` <span class="arrow">→</span> ${escapeHtml(candidate.selected)}`
         }</span>
       </span>
-      <span class="verdict ${severity}">${
+      <span class="verdict ${severity}${busy ? ' busy' : ''}">${
         busy ? `<span class="spinner"></span>${escapeHtml(busyLabel(candidate))}` : escapeHtml(shortVerdict(candidate, severity))
       }</span>
     </summary>
@@ -2964,8 +2964,12 @@ button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
 /* A row that is still working says what it is working on, so it is the one
    verdict allowed to be long — it wraps rather than being clipped to a width
    that would turn a named build command into an ellipsis. The spinner in front
-   of it is what marks it as an activity rather than a result. */
-.verdict.pending, .pkg .verdict:has(.spinner) {
+   of it is what marks it as an activity rather than a result.
+   Marked with a class the renderer sets rather than matched with :has() on the
+   spinner: the two say the same thing, but one of them depends on a selector
+   whose support varies with whichever Chromium the running VS Code was built
+   against, and silently does nothing where it is missing. */
+.verdict.pending, .verdict.busy {
   color: var(--vscode-descriptionForeground);
   border-color: transparent;
   white-space: normal;
