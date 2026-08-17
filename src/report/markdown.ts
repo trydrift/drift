@@ -23,6 +23,7 @@ import {
 import { PLAN_SCHEMA_VERSION, planDigest } from '../approval/digest.js';
 import { renderApprovalMetadata } from '../approval/metadata.js';
 import { DEPENDENCY_KIND_LABELS } from './sarif.js';
+import { describeOp } from '../fixplan/document.js';
 
 /**
  * The Drift Report.
@@ -348,12 +349,36 @@ function renderCommitPlan(plan: RemediationPlan): string {
       lines.push(
         `**Resolved deterministically** by Drift's codemod engine (${renames}) — no model call was needed for this commit.`,
       );
+    } else if (commit.fixPlan) {
+      const { plan: fixPlan, covered, residual, assurance } = commit.fixPlan;
+      const total = covered + residual;
+      lines.push(
+        `**Deterministic fix plan** \`${fixPlan.id}\` — ${fixPlan.migration} ` +
+          `${fixPlan.ops.length} rule${fixPlan.ops.length === 1 ? '' : 's'}, ${covered}/${total} call site${total === 1 ? '' : 's'} covered, assurance \`${assurance}\`.`,
+      );
+      for (const op of fixPlan.ops) lines.push(`  - ${describeOp(op)}`);
+      if (residual > 0) {
+        lines.push(
+          `  - ${residual} call site${residual === 1 ? '' : 's'} not covered by the plan; an agent handles ${residual === 1 ? 'it' : 'them'} individually.`,
+        );
+      }
+      if (commit.recipe?.length) {
+        const recipes = [...new Map(commit.recipe.map((r) => [`${r.provider}:${r.name}@${r.version}`, r])).values()];
+        lines.push(
+          `  - Consulted: ${recipes.map((r) => `[\`${r.name}@${r.version}\`](${r.source}) from ${r.publisher}`).join(', ')}`,
+        );
+      }
     } else if (commit.recipe?.length) {
       const recipes = [...new Map(commit.recipe.map((r) => [`${r.provider}:${r.name}@${r.version}`, r])).values()];
       const list = recipes
         .map((r) => `[\`${r.name}@${r.version}\`](${r.source}) from ${r.publisher} (${r.provider})`)
         .join(', ');
-      lines.push(`**Community recipe available**: ${list} — ${recipes[0]!.migration}`);
+      // Metadata only: a matched recipe whose edits Drift could not re-derive
+      // as its own operations is reported as consulted, never as available to
+      // run. What it proposed was not something Drift can describe in advance.
+      lines.push(
+        `**Community recipe consulted**: ${list} — ${recipes[0]!.migration} Drift could not re-derive its edits as deterministic operations, so this commit goes to an agent.`,
+      );
     }
     lines.push('');
   }

@@ -111,6 +111,28 @@ export async function resolveFixPlans(options: ResolveOptions): Promise<Resolved
         continue;
       }
 
+      // Coverage is enforced here, once, rather than at each surface. A plan
+      // that clears the gate but explains too little of the finding is not
+      // attached to the commit at all — which is what keeps the CLI, the
+      // Action, and the extension agreeing about which findings even have a
+      // deterministic fix, independently of what each does with the ones
+      // that do. `dispositionFor` re-checks it as a safety net for callers
+      // holding a plan from elsewhere.
+      const total = assessment.covered + assessment.residual;
+      const coverage = total === 0 ? 0 : assessment.covered / total;
+      if (coverage < config.remediation.fixPlans.minCoverage) {
+        const shortfall: FixPlanAssessment = {
+          ...assessment,
+          verdict: 'rejected',
+          rejections: [
+            `The plan covers ${assessment.covered} of ${total} call sites (${Math.round(coverage * 100)}%), below the configured minimum of ${Math.round(config.remediation.fixPlans.minCoverage * 100)}%. A rule that explains this little of a finding is a coincidence rather than a migration.`,
+          ],
+        };
+        logger.info(`Discarded a fix plan for ${change.dependency}: ${shortfall.rejections[0]}`);
+        lastRejection = shortfall;
+        continue;
+      }
+
       logger.info(
         `Fix plan for ${change.dependency}: ${assessment.plan.ops.length} rule(s) covering ${assessment.covered}/${assessment.covered + assessment.residual} call site(s), ${assessment.assurance}.`,
       );

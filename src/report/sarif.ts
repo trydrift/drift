@@ -924,15 +924,19 @@ function fixFromCommit(
 ): SarifFix | undefined {
   if (!commit) return undefined;
   const deterministic = (commit.codemod?.length ?? 0) > 0;
-  const recipe = (commit.recipe?.length ?? 0) > 0;
   if (deterministic) {
     return {
       description: `Deterministic fix available: "${commit.message}". Drift can commit this itself once approved.`,
     };
   }
-  if (recipe) {
+  if (commit.fixPlan) {
+    const { plan: fixPlan, covered, residual } = commit.fixPlan;
+    const total = covered + residual;
     return {
-      description: `A pinned community recipe resolves this: "${commit.message}". Enable \`remediation.communityRecipes\` in drift.yml to let Drift apply it.`,
+      description:
+        `Validated fix plan \`${fixPlan.id}\` covers ${covered}/${total} call site(s): ${fixPlan.migration} ` +
+        (residual > 0 ? `The remaining ${residual} need an agent. ` : '') +
+        `Run \`drift fix --plan\` to read the full plan before applying it.`,
     };
   }
   return {
