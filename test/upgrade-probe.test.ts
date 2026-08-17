@@ -358,6 +358,9 @@ describe('probing an upgrade before reporting it', () => {
       results.get('t-react')?.measuredWith,
       undefined,
       'the package finally blamed was measured on its own',
+    );
+  });
+
   test('every phase about a package names that package, so a caller can show it on its row', async () => {
     // `ProbeProgress.targets` is what lets the panel put "running the test
     // suite" on the row it belongs to instead of on all of them. The phases
@@ -384,7 +387,6 @@ describe('probing an upgrade before reporting it', () => {
     assert.ok(
       phases.some((entry) => /Preparing a test checkout/.test(entry.phase) && !entry.targets),
       'work on the checkout itself is not attributed to a package',
->>>>>>> b79c926 (fix(verify): attribute the serial pass's phases to the package they test)
     );
   });
 
