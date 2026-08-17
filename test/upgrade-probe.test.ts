@@ -313,6 +313,54 @@ describe('probing an upgrade before reporting it', () => {
     );
   });
 
+  test('a large red group is halved rather than re-measured package by package', async () => {
+    // Eight upgrades, one of which breaks the typecheck. Testing each on its
+    // own is eight check runs; halving finds the culprit in far fewer, and
+    // every candidate still ends up with the same verdict it would have got.
+    let installed: string[] = [];
+    const candidate = (name: string) => ({
+      ...target(name),
+      install: async () => {
+        installed.push(name);
+      },
+    });
+    const names = ['a', 'b', 'c', 'd', 'e', 'react', 'g', 'h'];
+
+    let checkRuns = 0;
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      if (command === 'git' && args[0] === 'checkout') installed = [];
+      if (line === 'npm run typecheck') checkRuns += 1;
+      const broken = line === 'npm run typecheck' && installed.includes('react');
+      return {
+        code: broken ? 1 : 0,
+        stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '',
+        stderr: broken ? 'src/app.ts(3,11): error TS2554: Expected 1 arguments, but got 2.' : '',
+      };
+    };
+
+    const results = await probeUpgrades({
+      root,
+      targets: names.map(candidate),
+      exec: exec as never,
+      fs,
+    });
+
+    assert.equal(results.get('t-react')?.status, 'failed', 'the package that actually breaks is named');
+    for (const name of names.filter((n) => n !== 'react')) {
+      assert.equal(results.get(`t-${name}`)?.status, 'passed', `${name} is not blamed for someone else's failure`);
+    }
+    // One baseline, the whole batch, then the halves. The serial shape needed
+    // nine runs of the typecheck alone; anything close to that means the
+    // search stopped narrowing.
+    assert.ok(checkRuns < 9, `expected fewer than nine typecheck runs, got ${checkRuns}`);
+    assert.equal(
+      results.get('t-react')?.measuredWith,
+      undefined,
+      'the package finally blamed was measured on its own',
+    );
+  });
+
   test('a worktree that fails to reset is not reused for the next candidate in a group', async () => {
     // `git checkout -- .` succeeds the first time (letting the batch attempt,
     // which fails to install at all, fall through to the serial pass) and
