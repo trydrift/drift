@@ -265,43 +265,108 @@ async function probeGroup(
       ...(options.token ? { token: options.token } : {}),
     };
 
-    // The cheap answer first. Only worth attempting for more than one candidate
-    // — a single upgrade is already its own attribution — and only conclusive
-    // when it comes back green.
-    if (targets.length > 1 && (await probeTogether(pass, targets, hooks))) return;
+    await attribute(pass, targets, hooks);
+  } finally {
+    await worktree.dispose();
+  }
+}
 
+/**
+ * At or below this many candidates, a red batch is cheaper to settle one at a
+ * time than to keep halving.
+ *
+ * Halving a group of four costs up to seven passes (two halves, then each of
+ * the four); testing the four costs four. The crossover is what this constant
+ * is: *above* it, splitting wins because a green half settles everything in it
+ * at once, and at or below it the arithmetic reverses — which is why the test
+ * is `<=` and four is itself settled serially.
+ */
+const SERIAL_ATTRIBUTION_THRESHOLD = 4;
+
+/**
+ * Work out which candidates in a group actually break the project.
+ *
+ * The old shape asked the question once and then gave up on being clever: if
+ * the whole batch was not green, every candidate was installed and checked on
+ * its own — a typecheck, a build and a test suite *per dependency*, which on a
+ * repository with forty outdated packages and one genuinely broken one is
+ * thirty-nine full check runs spent confirming what a single green pass would
+ * have said.
+ *
+ * So a red batch is halved instead. A half that comes back green settles every
+ * candidate in it at once (the same verdict, and the same honest
+ * `measuredWith`, that the whole-group pass already produced); a half that
+ * comes back red is halved again, until the culprit is alone and gets the
+ * individual verdict it deserves. Nothing is ever reported as broken without
+ * having been tested by itself, which is the property that matters — this is
+ * only a cheaper search for the same answer.
+ *
+ * Returns whether the worktree is still clean enough for the caller to keep
+ * using.
+ */
+async function attribute(
+  pass: GroupPass,
+  targets: readonly ProbeTarget[],
+  hooks: GroupHooks,
+): Promise<boolean> {
+  if (pass.token?.isCancellationRequested) {
+    for (const target of targets) hooks.settle(target, cancelled());
+    return true;
+  }
+
+  const only = targets.length === 1 ? targets[0] : undefined;
+  if (only) return probeAlone(pass, only, hooks);
+
+  const together = await probeTogether(pass, targets, hooks);
+  if (together !== 'inconclusive') return together === 'settled';
+
+  if (targets.length <= SERIAL_ATTRIBUTION_THRESHOLD) {
     for (const [index, target] of targets.entries()) {
       if (pass.token?.isCancellationRequested) {
         hooks.settle(target, cancelled());
         continue;
       }
-
-      hooks.report(`Testing ${target.name}@${target.selected}`, `installing into the test checkout`);
-      try {
-        await target.install(pass.root);
-      } catch (err) {
-        hooks.settle(
-          target,
-          skipped(`${target.name}@${target.selected} could not be installed, so it could not be tested. ${messageOf(err)}`),
-        );
-        if (!(await resetWorktree(pass))) {
-          settleRemainingAsContaminated(targets, index + 1, hooks);
-          break;
-        }
-        continue;
-      }
-
-      const phase = `Testing ${target.name}@${target.selected}`;
-      hooks.report(phase, usable.map((check) => check.label).join(', '));
-      hooks.settle(target, verdictFrom(await runPass(pass, hooks, phase)));
-      if (!(await resetWorktree(pass))) {
+      if (!(await probeAlone(pass, target, hooks))) {
         settleRemainingAsContaminated(targets, index + 1, hooks);
-        break;
+        return false;
       }
     }
-  } finally {
-    await worktree.dispose();
+    return true;
   }
+
+  const middle = Math.ceil(targets.length / 2);
+  const first = targets.slice(0, middle);
+  const second = targets.slice(middle);
+
+  if (!(await attribute(pass, first, hooks))) {
+    settleRemainingAsContaminated(second, 0, hooks);
+    return false;
+  }
+  return attribute(pass, second, hooks);
+}
+
+/**
+ * One candidate, installed and checked by itself.
+ *
+ * The only place a `failed` verdict can come from: a verdict about one package
+ * has to be measured with that package as the only thing that moved.
+ */
+async function probeAlone(pass: GroupPass, target: ProbeTarget, hooks: GroupHooks): Promise<boolean> {
+  const phase = `Testing ${target.name}@${target.selected}`;
+  hooks.report(phase, 'installing into the test checkout');
+  try {
+    await target.install(pass.root);
+  } catch (err) {
+    hooks.settle(
+      target,
+      skipped(`${target.name}@${target.selected} could not be installed, so it could not be tested. ${messageOf(err)}`),
+    );
+    return resetWorktree(pass);
+  }
+
+  hooks.report(phase, pass.usable.map((check) => check.label).join(', '));
+  hooks.settle(target, verdictFrom(await runPass(pass, hooks, phase)));
+  return resetWorktree(pass);
 }
 
 /* ------------------------------------------------------------------ */
@@ -568,25 +633,35 @@ interface GroupPass {
 }
 
 /**
+ * What one combined install-and-check pass established about a batch.
+ *
+ * `settled` means every candidate in it now has a verdict and the caller is
+ * done with them; `inconclusive` means something in the batch is broken
+ * without saying what, so the caller has to narrow it down; `contaminated`
+ * means the worktree can no longer be trusted for anything.
+ */
+type BatchOutcome = 'settled' | 'inconclusive' | 'contaminated';
+
+/**
  * Install the whole group and check it once.
  *
- * Returns `true` only when every candidate was settled from this pass, which is
- * exactly when the combined run came back green: nothing failed, so nothing in
- * the batch broke anything, so each of them individually did not either. Any
- * other outcome — an install that would not resolve, a red check, a
- * cancellation — leaves every candidate unsettled and returns `false`, and the
- * caller attributes them one at a time. A failure here is deliberately *not*
- * reported: it says something in this batch is broken without saying what, and
- * naming the wrong package is worse than taking longer to name the right one.
+ * `settled` only when the combined run came back green: nothing failed, so
+ * nothing in the batch broke anything, so each of them individually did not
+ * either. Any other outcome — an install that would not resolve, a red check,
+ * a cancellation — leaves every candidate unsettled, and the caller narrows the
+ * batch down. A failure here is deliberately *not* reported against these
+ * candidates: it says something in this batch is broken without saying what,
+ * and naming the wrong package is worse than taking longer to name the right
+ * one.
  *
- * The worktree is put back either way, so the caller's serial pass starts from
+ * The worktree is put back either way, so the caller's next pass starts from
  * the same clean baseline it would have had.
  */
 async function probeTogether(
   pass: GroupPass,
   targets: readonly ProbeTarget[],
   hooks: GroupHooks,
-): Promise<boolean> {
+): Promise<BatchOutcome> {
   hooks.report(
     `Testing ${targets.length} upgrades together`,
     targets.map((target) => `${target.name}@${target.selected}`).join(', '),
@@ -594,13 +669,13 @@ async function probeTogether(
 
   let installed = true;
   for (const target of targets) {
-    if (pass.token?.isCancellationRequested) return false;
+    if (pass.token?.isCancellationRequested) return 'inconclusive';
     try {
       await target.install(pass.root);
     } catch {
-      // Which one failed does not matter: the serial pass is about to install
-      // each of them on its own and will report the real reason against the
-      // candidate it actually belongs to.
+      // Which one failed does not matter: narrowing the batch down is about to
+      // install each of them on its own and will report the real reason against
+      // the candidate it actually belongs to.
       installed = false;
       break;
     }
@@ -615,17 +690,17 @@ async function probeTogether(
   const resetOk = await resetWorktree(pass);
   if (green) {
     for (const target of targets) hooks.settle(target, { ...verdictFrom(outcomes), measuredWith: targets.length });
-    return true;
+    return 'settled';
   }
 
-  // The batch was red (or never installed), so the caller's serial pass is
-  // about to reuse this same worktree to attribute the failure to one
-  // candidate at a time. If the reset back to a clean checkout did not
-  // actually succeed, that worktree still carries whatever this batch
-  // installed — a serial pass on top of it would test each candidate
-  // alongside residue from every other one, exactly the cross-contamination
-  // a throwaway worktree exists to prevent. Settling every target here,
-  // instead of falling through, keeps that dirty tree from being reused.
+  // The batch was red (or never installed), so the caller is about to reuse
+  // this same worktree to narrow the failure down. If the reset back to a
+  // clean checkout did not actually succeed, that worktree still carries
+  // whatever this batch installed — a later pass on top of it would test each
+  // candidate alongside residue from every other one, exactly the cross-
+  // contamination a throwaway worktree exists to prevent. Settling every
+  // target here, instead of falling through, keeps that dirty tree from being
+  // reused.
   if (!resetOk) {
     for (const target of targets) {
       hooks.settle(
@@ -635,10 +710,10 @@ async function probeTogether(
         ),
       );
     }
-    return true;
+    return 'contaminated';
   }
 
-  return false;
+  return 'inconclusive';
 }
 
 /**

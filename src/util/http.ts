@@ -41,6 +41,36 @@ interface CacheEntry {
 
 /** Process-lifetime response cache. Runs are short; a Map is the right size. */
 const cache = new Map<string, CacheEntry>();
+
+/**
+ * Requests that have gone out and not yet come back.
+ *
+ * The response cache is only written once a response *lands*, so two callers
+ * asking for the same URL a millisecond apart both saw a miss and both went to
+ * the network. That is the normal case here, not a corner one: a scan checks
+ * eight packages at a time, and packages share registries, repositories and —
+ * through `type-surface`'s dependency following — whole declaration trees, so
+ * the same handful of URLs is requested from several workers at once. Sharing
+ * the in-flight promise makes the second asker wait for the first's answer
+ * instead of duplicating the round trip.
+ */
+const inFlight = new Map<string, Promise<unknown>>();
+
+/**
+ * Run `work` under `key`, or join the call already running under it.
+ *
+ * The entry is removed as soon as the work settles, so this only ever collapses
+ * genuinely concurrent calls — everything afterwards is the response cache's
+ * business, including whether a failure should be remembered at all.
+ */
+function coalesce<T>(key: string, work: () => Promise<T>): Promise<T> {
+  const running = inFlight.get(key) as Promise<T> | undefined;
+  if (running) return running;
+
+  const started = work().finally(() => inFlight.delete(key));
+  inFlight.set(key, started);
+  return started;
+}
 let diskCacheDir: string | null = null;
 
 function cacheGet<T>(key: string): { hit: true; value: T } | { hit: false } {
@@ -99,13 +129,24 @@ export function httpCacheDir(): string | null {
 
 export function clearHttpCache(): void {
   cache.clear();
+  // Anything already in flight would otherwise be joined by the next caller
+  // and answer from before the cache was cleared, which is precisely what a
+  // caller clearing it has asked not to happen.
+  inFlight.clear();
 }
 
-export async function fetchJson<T>(url: string, options: FetchOptions = {}): Promise<T | null> {
+export function fetchJson<T>(url: string, options: FetchOptions = {}): Promise<T | null> {
   const cacheKey = `json:${authFingerprint(options.headers)}:${url}`;
   const cached = cacheGet<T | null>(cacheKey);
-  if (cached.hit) return cached.value;
+  if (cached.hit) return Promise.resolve(cached.value);
+  return coalesce(cacheKey, () => fetchAndParseJson<T>(url, cacheKey, options));
+}
 
+async function fetchAndParseJson<T>(
+  url: string,
+  cacheKey: string,
+  options: FetchOptions,
+): Promise<T | null> {
   const text = await fetchText(url, {
     ...options,
     headers: { Accept: 'application/json', ...options.headers },
@@ -125,11 +166,18 @@ export async function fetchJson<T>(url: string, options: FetchOptions = {}): Pro
   }
 }
 
-export async function fetchText(url: string, options: FetchOptions = {}): Promise<string | null> {
+export function fetchText(url: string, options: FetchOptions = {}): Promise<string | null> {
   const cacheKey = `text:${authFingerprint(options.headers)}:${url}`;
   const cached = cacheGet<string | null>(cacheKey);
-  if (cached.hit) return cached.value;
+  if (cached.hit) return Promise.resolve(cached.value);
+  return coalesce(cacheKey, () => fetchTextUncoalesced(url, cacheKey, options));
+}
 
+async function fetchTextUncoalesced(
+  url: string,
+  cacheKey: string,
+  options: FetchOptions,
+): Promise<string | null> {
   const { timeoutMs = DEFAULT_TIMEOUT_MS, headers = {}, retries = 2 } = options;
   const disk = await readDiskEntry(url);
   const ttl = options.cacheTtlMs ?? DEFAULT_DISK_TTL_MS;
