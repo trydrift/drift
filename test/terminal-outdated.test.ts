@@ -191,9 +191,13 @@ describe('the grouped report', () => {
     view.report([affected] as never, () => 'graphql');
     const out = text();
     assert.ok(out.includes('src/schema.ts:42'));
-    assert.ok(out.includes('graphql 17 release notes'));
-    assert.ok(out.includes('https://example.test/notes'));
     assert.ok(out.includes('drift outdated --upgrade graphql'));
+    // The citation, whole: a terminal that cannot make it clickable prints the
+    // title and the URL beside it, and both halves have to survive.
+    assert.ok(
+      out.split('\n').some((line) => line.trim() === '· graphql 17 release notes https://example.test/notes'),
+      out,
+    );
   });
 
   test('does not print a paragraph for every safe package', () => {

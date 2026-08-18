@@ -90,8 +90,11 @@ describe('links', () => {
   const flat = createPalette({ color: false, unicode: true, hyperlinks: false });
 
   test('become OSC 8 sequences where the terminal renders them', () => {
+    // Asserted exactly rather than by substring: the escape has to open with
+    // the URL and close with an empty one, and a `.includes` would pass on a
+    // sequence that merely mentioned it somewhere.
     const rendered = linking.link('react', 'https://npmjs.com/package/react');
-    assert.ok(rendered.includes('https://npmjs.com/package/react'));
+    assert.equal(rendered, '\u001b]8;;https://npmjs.com/package/react\u0007react\u001b]8;;\u0007');
     assert.equal(stripAnsi(rendered), 'react');
   });
 
