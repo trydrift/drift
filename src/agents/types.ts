@@ -46,6 +46,14 @@ export interface TaskActivityInput {
 
 export type AgentKind = 'in-editor' | 'cli' | 'cloud';
 
+export interface AgentCapabilities {
+  execution: 'workspace' | 'cloud';
+  /** Cloud adapters may be pollable; workspace agents complete in-process. */
+  canAwaitCompletion: boolean;
+  /** Whether Drift can inspect the complete result before accepting it. */
+  canInspectResult: boolean;
+}
+
 export interface AgentAvailability {
   available: boolean;
   /** Shown in the picker when unavailable — must say how to fix it. */
@@ -181,8 +189,18 @@ export interface FixOutcome {
   message: string;
   /** Cloud agents return where the work is happening. */
   url?: string;
+  handle?: CloudAgentHandle;
   /** Anything the agent flagged as unresolved. Surfaced prominently. */
   warnings?: string[];
+}
+
+export interface CloudAgentHandle {
+  provider: string;
+  id: string;
+  state: string;
+  branch: string;
+  url?: string;
+  capabilities: AgentCapabilities;
 }
 
 export interface AgentContext {
@@ -222,6 +240,7 @@ export interface FixAgent {
   readonly label: string;
   readonly description: string;
   readonly kind: AgentKind;
+  readonly capabilities: AgentCapabilities;
   /** Whether a model id typed by hand is worth offering. */
   readonly acceptsCustomModel?: boolean;
   /**

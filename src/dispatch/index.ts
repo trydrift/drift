@@ -6,9 +6,10 @@ import type { Exec } from '../util/exec.js';
 import { isAutoDispatchable } from '../plan/index.js';
 import { renderApprovalIssue, renderPullRequestBody, renderSummaryLine } from '../report/markdown.js';
 import { titleFor } from '../plan/pull-request.js';
-import { dispatchToCopilot } from './copilot.js';
 import { applyDeterministicRemediation } from '../github/local-commit.js';
 import { planForCommits } from '../remediation/partition.js';
+import type { FixAgent } from '../agents/types.js';
+import { CopilotCloudAgent } from '../agents/copilot-cloud.js';
 
 /**
  * Dispatch: decide what to do with a plan, and do it.
@@ -34,6 +35,8 @@ export interface DispatchOptions {
   logger: Logger;
   /** User-scoped Copilot token. Absent means dispatch cannot proceed. */
   copilotToken?: string;
+  /** Provider-neutral agent. Compatibility callers may still pass copilotToken. */
+  agent?: FixAgent;
   /** Analyse and report, but never create branches, issues, or tasks. */
   dryRun?: boolean;
   /**
@@ -47,6 +50,7 @@ export interface DispatchOptions {
 
 export async function dispatch(options: DispatchOptions): Promise<DispatchResult> {
   const { repo, plan, config, github, logger, copilotToken, dryRun = false, approved = false } = options;
+  const agent = options.agent ?? agentFromLegacyCopilot(options);
 
   // Zero commits only means "not affected" when the plan has no blocking gap.
   // A blocker at this point — most often localization never having run, as on
@@ -72,10 +76,7 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
 
   if (dryRun) {
     logger.info(`Dry run: would dispatch ${plan.commits.length} commit(s) on ${plan.branchName}`);
-    const preview = copilotToken
-      ? await dispatchToCopilot({ copilotToken, repo, plan, config, logger, dryRun: true })
-      : undefined;
-    if (preview) logger.debug('Copilot prompt preview', { length: preview.prompt.length });
+    if (agent) logger.debug(`Agent preview: ${agent.label}`);
     return {
       status: 'skipped',
       planId: plan.id,
@@ -131,12 +132,12 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
   }
 
   if (committedIds.size > 0) {
-    logger.info(`Resolved ${committedIds.size} commit(s) deterministically; dispatching the remaining ${remaining.length} to Copilot.`);
+    logger.info(`Resolved ${committedIds.size} commit(s) deterministically; dispatching the remaining ${remaining.length} to ${agent?.label ?? 'an agent'}.`);
   }
 
-  if (!copilotToken) {
+  if (!agent) {
     logger.warn(
-      'Drift is in auto mode with commit(s) that need an agent, but no Copilot token is available. Falling back to approval.',
+      'Drift is in auto mode with commit(s) that need an agent, but no usable agent is available. Falling back to approval.',
     );
     return requestApproval({
       ...options,
@@ -144,33 +145,45 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
         ...plan,
         blockers: [
           ...plan.blockers,
-          'No Copilot token was available. Set the `DRIFT_COPILOT_TOKEN` secret to a user-scoped fine-grained token with `Agent tasks: read and write` — that is the only permission the Agent Tasks endpoint checks. The Copilot agent API does not accept GitHub App installation tokens.',
+          'No usable AI agent was available. Configure `remediation.agent.provider` or pass an explicit agent input; legacy Copilot users can still set `DRIFT_COPILOT_TOKEN` or `copilot-token`.',
         ],
       },
     });
   }
 
   const agentPlan = planForCommits(plan, remaining);
-  const result = await dispatchToCopilot({ copilotToken, repo, plan: agentPlan, config, logger });
+  const result = await agent.run(
+    {
+      plan: agentPlan,
+      commit: agentPlan.commits[0]!,
+      workspaceRoot: repo.workspace ?? '',
+      files: [],
+      customInstructions: config.remediation.customInstructions,
+      model: config.remediation.agent.model ?? config.remediation.model,
+      effort: config.remediation.agent.effort,
+      fast: config.remediation.agent.fast,
+    },
+    { report: (message) => logger.info(message), signal: new AbortController().signal },
+  );
 
-  if (!result.ok) {
-    logger.error(`Copilot dispatch failed: ${result.error}`);
+  if (result.status === 'failed') {
+    logger.error(`${agent.label} dispatch failed: ${result.message}`);
     // A dispatch failure falls back to approval rather than silently dropping
     // the analysis — the work is still valuable to a human. Anything already
     // resolved deterministically stays committed on the branch either way.
     const fallback = await requestApproval({
       ...options,
-      plan: { ...plan, blockers: [...plan.blockers, result.error ?? 'Copilot dispatch failed.'] },
+      plan: { ...plan, blockers: [...plan.blockers, result.message] },
     });
-    return { ...fallback, status: 'failed', message: result.error ?? 'Copilot dispatch failed.' };
+    return { ...fallback, status: 'failed', message: result.message };
   }
 
-  await postCheckRun(options, 'neutral', `Copilot is fixing ${agentPlan.breakingChanges.length} breaking change(s)`);
+  await postCheckRun(options, 'neutral', `${agent.label} is fixing ${agentPlan.breakingChanges.length} breaking change(s)`);
 
-  const task = result.task;
-  logger.info(`Dispatched to Copilot: task ${task?.id ?? 'unknown'} on ${plan.branchName}`);
+  const task = result.handle;
+  logger.info(`Dispatched to ${agent.label}: task ${task?.id ?? 'unknown'} on ${plan.branchName}`);
 
-  const pr = await ensurePullRequest(options, task?.pullRequestNumber, task?.pullRequestUrl);
+  const pr = await ensurePullRequest(options, undefined, task?.url);
 
   const resolvedNote = committedIds.size > 0 ? `${committedIds.size} commit(s) resolved deterministically; ` : '';
 
@@ -179,12 +192,23 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
     planId: plan.id,
     branchName: plan.branchName,
     taskId: task?.id,
-    pullRequestNumber: pr?.number ?? task?.pullRequestNumber,
-    pullRequestUrl: pr?.url ?? task?.pullRequestUrl,
+    pullRequestNumber: pr?.number,
+    pullRequestUrl: pr?.url ?? task?.url,
     message: pr
-      ? `${resolvedNote}Copilot is working on ${remaining.length} commit(s) on \`${plan.branchName}\`, tracked in pull request #${pr.number} into \`${plan.baseBranch}\`.`
-      : `${resolvedNote}Copilot is working on ${remaining.length} commit(s) on \`${plan.branchName}\`. A pull request into \`${plan.baseBranch}\` will follow.`,
+      ? `${resolvedNote}${agent.label} is working on ${remaining.length} commit(s) on \`${plan.branchName}\`, tracked in pull request #${pr.number} into \`${plan.baseBranch}\`.`
+      : `${resolvedNote}${agent.label} is working on ${remaining.length} commit(s) on \`${plan.branchName}\`. A pull request into \`${plan.baseBranch}\` will follow.`,
   };
+}
+
+function agentFromLegacyCopilot(options: DispatchOptions): FixAgent | undefined {
+  if (!options.copilotToken) return undefined;
+  return new CopilotCloudAgent({
+    repo: options.repo,
+    config: options.config,
+    token: options.copilotToken,
+    logger: options.logger,
+    dryRun: options.dryRun,
+  });
 }
 
 /**

@@ -26,6 +26,11 @@ export class CopilotCloudAgent implements FixAgent {
   readonly label = 'Copilot Cloud';
   readonly description = 'Runs on GitHub and opens a pull request. Signs in with one click.';
   readonly kind = 'cloud' as const;
+  readonly capabilities = {
+    execution: 'cloud',
+    canAwaitCompletion: true,
+    canInspectResult: false,
+  } as const;
 
   constructor(
     private readonly slug: string | null,

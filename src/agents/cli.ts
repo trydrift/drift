@@ -251,6 +251,11 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
 
 export class CliFixAgent implements FixAgent {
   readonly kind = 'cli' as const;
+  readonly capabilities = {
+    execution: 'workspace',
+    canAwaitCompletion: false,
+    canInspectResult: true,
+  } as const;
   readonly id: string;
   readonly label: string;
   readonly description: string;

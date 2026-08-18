@@ -26,6 +26,11 @@ import {
  */
 export class LanguageModelAgent implements FixAgent {
   readonly kind = 'in-editor' as const;
+  readonly capabilities = {
+    execution: 'workspace',
+    canAwaitCompletion: false,
+    canInspectResult: true,
+  } as const;
 
   constructor(
     readonly id: string,

@@ -5,12 +5,12 @@ import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
 import { execCommand, type Exec } from '../util/exec.js';
 import { applyBuiltinCodemod, applyCommitFixPlan } from './apply.js';
-import { dispatchToCopilot } from '../dispatch/copilot.js';
 import { planForCommits } from './partition.js';
 import { dispositionFor } from '../fixplan/policy.js';
 import { renderFixPlanDocument } from '../fixplan/document.js';
 import type { FixPlanAssessment } from '../fixplan/schema.js';
 import { ask as defaultAsk } from '../util/prompt.js';
+import { CopilotCloudAgent } from '../agents/copilot-cloud.js';
 
 /**
  * `drift fix`: apply a plan's commits through the same three-tier priority
@@ -237,14 +237,26 @@ export async function dispatchRemainingToCopilot(options: {
 }): Promise<{ ok: boolean; error?: string }> {
   if (options.commits.length === 0) return { ok: true };
   const agentPlan = planForCommits(options.plan, options.commits);
-  const result = await dispatchToCopilot({
-    copilotToken: options.copilotToken,
+  const agent = new CopilotCloudAgent({
     repo: options.repo,
-    plan: agentPlan,
     config: options.config,
+    token: options.copilotToken,
     logger: options.logger,
   });
-  return { ok: result.ok, error: result.error };
+  const result = await agent.run(
+    {
+      plan: agentPlan,
+      commit: agentPlan.commits[0]!,
+      workspaceRoot: options.repo.workspace ?? '',
+      files: [],
+      customInstructions: options.config.remediation.customInstructions,
+      model: options.config.remediation.agent.model ?? options.config.remediation.model,
+      effort: options.config.remediation.agent.effort,
+      fast: options.config.remediation.agent.fast,
+    },
+    { report: (message) => options.logger.info(message), signal: new AbortController().signal },
+  );
+  return result.status === 'failed' ? { ok: false, error: result.message } : { ok: true };
 }
 
 async function applyBuiltinCommit(
