@@ -167,6 +167,62 @@ limit mid-scan, in which case Drift picks one up on its own from
 export GITHUB_TOKEN=ghp_...   # optional — only raises the API rate limit
 ```
 
+### `drift outdated`
+
+Answers the cheap question first. The table lands as soon as the registries
+reply — the same columns `npm outdated` prints, in the same order, on the same
+timescale — and the analysis behind it fills the verdicts in below as each
+package settles:
+
+```
+drift outdated  trydrift/drift
+/Users/you/src/drift
+
+14 of 38 direct dependencies have a newer version  ·  24 up to date
+
+Package                     Current  Wanted   Latest   Declared in
+@anthropic-ai/sdk            0.68.0   0.68.0  0.117.1  package.json
+esbuild                      0.28.1   0.28.2   0.28.2  extension/package.json
+graphql                     16.14.2  16.14.2   17.0.2  package.json
+next                         16.3.0   16.3.0   16.3.1  site/package.json
+typescript                    5.9.3    5.9.3    7.0.2  extension/package.json
+…
+
+Checking what these 14 upgrades would do to your code. Each line below is one
+package settled.
+
+  ✔ @anthropic-ai/sdk 0.68.0 → 0.117.1  Safe for your code · 2 upstream changes, none used here
+  ✔ graphql 16.14.2 → 17.0.2  Safe for your code · 1 upstream change, none used here
+  ▲ some-lib 2.1.0 → 3.0.0  Affects your code · 12 sites in 4 files
+  …
+
+Scan — 1 of 14 affect this repo
+────────────────────────────────────────────────────────────────────
+
+▲ Affects your code (1)
+  These upgrades change an API this repository actually uses.
+
+  some-lib 2.1.0 → 3.0.0
+    npm · package.json
+    Review before upgrading. 12 places in this repository use an API that
+    some-lib changed.
+    ✔ npm run typecheck, npm test passed with this upgrade installed
+    src/client.ts:88  (7 sites)
+    src/retry.ts:24   (5 sites)
+    · some-lib 3.0.0 release notes
+    drift outdated --upgrade some-lib
+```
+
+`Wanted` is the newest release your declared range already permits and `Latest`
+is the newest published — the same distinction npm draws, and the one that
+decides whether an upgrade is one command or a decision.
+
+Progress goes to stderr and the report to stdout, so `drift outdated >
+report.txt` captures a clean report while you watch the scan, and
+`drift outdated | grep` works. Colour and symbols carry emphasis only: every
+verdict is stated in words, so nothing is lost to a pipe, a CI log, or
+`NO_COLOR=1`. `--json` emits the whole scan result instead.
+
 Once you're ready to act on the plan:
 
 ```bash
