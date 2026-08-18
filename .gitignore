@@ -22,3 +22,7 @@ site/.next/
 site/out/
 site/next-env.d.ts
 *.tsbuildinfo
+
+# Benchmark output — profiles and per-run summaries, regenerated on demand.
+bench-results/
+drift-profile.json
