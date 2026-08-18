@@ -4,6 +4,7 @@ import { nodeWorkspaceFs, type WorkspaceFs } from '../detect/workspace.js';
 import { createWorktree, type Worktree } from '../repo/worktree.js';
 import { execCommand, type Exec } from '../util/exec.js';
 import { count, measure, span } from '../util/profile.js';
+import { anyToolAvailable } from './tool-availability.js';
 import { mapWithConcurrency } from '../util/http.js';
 import { localConcurrency } from '../util/parallelism.js';
 import { baselineKey, noBaselineCache, type CachedCheck } from './baseline-cache.js';
@@ -17,6 +18,7 @@ import {
   type CheckOutcome,
   type LocalCheck,
 } from './checks.js';
+import { detectChecks } from '../detect/checks.js';
 
 /**
  * Testing an upgrade before anyone is told about it.
@@ -471,6 +473,34 @@ async function prepareGroup(
   // typecheck, npm run build" appearing twice with nothing to tell the two
   // apart reads as one step that stalled and repeated itself.
   const project = projectLabel(options.root, dir);
+
+  // Asked before anything is built, because nothing that follows can make a
+  // missing binary appear. The checks themselves are still detected in the
+  // worktree — an uncommitted script must not decide what runs — but *which
+  // tools they would invoke* is a fact about this machine, and reading it from
+  // the developer's own checkout is both correct and free.
+  //
+  // The union with the no-manifest set is deliberate and one-directional: a
+  // manifest that differs between the checkout and the commit can only add a
+  // tool to the list here, never remove one, so this can only ever be too
+  // willing to prepare — never too quick to skip.
+  const declared = await availableChecks(options.root, dir, options.fs ?? nodeWorkspaceFs(), packageManager).catch(
+    () => [] as LocalCheck[],
+  );
+  const possible = [...declared, ...detectChecks(packageManager, null)].filter((check) => kinds.includes(check.kind));
+  if (possible.length > 0) {
+    const present = await anyToolAvailable(exec, possible.map((check) => check.command.command), env);
+    if (!present) {
+      const missing = [...new Set(possible.map((check) => check.command.command))];
+      count('verify.skipped.noTool');
+      return {
+        ok: false,
+        reason:
+          `${missing.length === 1 ? `\`${missing[0]}\` is` : `${missing.slice(0, -1).map((m) => `\`${m}\``).join(', ')} and \`${missing.at(-1)}\` are`} ` +
+          `not installed, so ${project} could not be built or tested against the upgrade.`,
+      };
+    }
+  }
 
   hooks.report(`Preparing a test checkout of ${project}`, 'checking out a clean copy');
 

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { probeUpgrades, probeDependencyChange, filesNamedIn, warmProbe } from '../dist/verification/upgrade-probe.js';
+import { clearToolAvailability } from '../dist/verification/tool-availability.js';
 import { applyVerificationToPlan, combineVerifications, describeVerification } from '../dist/verification/apply.js';
 import { applyVerification } from '../dist/upgrade/verification.js';
 import { severityOf, describeSeverity } from '../dist/upgrade/severity.js';
@@ -77,7 +78,76 @@ const target = (name: string, overrides: Partial<{ installs: string[] }> = {}) =
   };
 };
 
+describe('not building a test checkout nothing could be run in', () => {
+  /**
+   * The probe's most expensive step is the one that can be skipped on the
+   * strength of `PATH` alone. Answers are memoised for the process, so every
+   * test here starts from a clean slate.
+   */
+  const withoutTool = (missing: string) => {
+    const calls: string[] = [];
+    const exec = async (command: string, args: readonly string[]) => {
+      calls.push([command, ...args].join(' '));
+      if (command === missing) {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+    return { calls, exec };
+  };
+
+  test('a missing check tool skips the group without checking anything out', async () => {
+    clearToolAvailability();
+    const { calls, exec } = withoutTool('npm');
+    const results = await probeUpgrades({ root, targets: [target('zod')], exec, fs });
+
+    const verification = results.get('t-zod');
+    assert.equal(verification?.status, 'skipped');
+    // The point of the whole exercise: no worktree, no install, no checks.
+    assert.ok(!calls.some((line) => line.startsWith('git worktree add')));
+    assert.ok(!calls.some((line) => line === 'npm install'));
+  });
+
+  test('the reason names the tool, rather than describing a baseline nobody could run', async () => {
+    clearToolAvailability();
+    const { exec } = withoutTool('npm');
+    const results = await probeUpgrades({ root, targets: [target('zod')], exec, fs });
+
+    assert.match(results.get('t-zod')?.reason ?? '', /`npm` is not installed/);
+  });
+
+  test('one probe per tool, however many members ask about it', async () => {
+    clearToolAvailability();
+    const { calls, exec } = withoutTool('npm');
+    await probeUpgrades({ root, targets: [target('zod'), target('semver'), target('yaml')], exec, fs });
+
+    assert.equal(calls.filter((line) => line === 'npm --version').length, 1);
+  });
+
+  test('a tool that answers a bare --version with a usage error still counts as present', async () => {
+    clearToolAvailability();
+    // `go version` is the real spelling; `go --version` exits non-zero. Reading
+    // the exit code rather than ENOENT would skip verification on a machine
+    // with a perfectly good toolchain.
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      if (line === 'npm --version') return { code: 2, stdout: '', stderr: 'unknown flag' };
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+
+    const results = await probeUpgrades({ root, targets: [target('zod')], exec, fs });
+    assert.equal(results.get('t-zod')?.status, 'passed');
+  });
+});
+
 describe('probing an upgrade before reporting it', () => {
+  test('a present toolchain is probed once and then left alone', async () => {
+    clearToolAvailability();
+    const { exec, lines } = recorder();
+    await probeUpgrades({ root, targets: [target('zod')], exec, fs });
+    assert.equal(lines().filter((line) => line === 'npm --version').length, 1);
+  });
+
   test('passes when the project still typechecks and builds with it installed', async () => {
     const { exec, lines } = recorder();
     const results = await probeUpgrades({ root, targets: [target('zod')], exec, fs });

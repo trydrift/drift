@@ -1,3 +1,6 @@
 {
-  "trantor": "63a4e5e164e219dc3bf30cdbfa1462ae5602fa97"
+  "trantor": "63a4e5e164e219dc3bf30cdbfa1462ae5602fa97",
+  "supabase": "a249594bc5790929ff090baa64f2d5bb3a40c286",
+  "scrapy": "3f46d1a8b5e2b474ef64fdf70900c3a0b881f9a2",
+  "deno": "6e0621c57435fd2b59c2821ac1db4f878bc2d8e9"
 }
