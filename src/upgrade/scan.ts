@@ -39,7 +39,6 @@ import {
 import { discoverNestedProjects, type NestedProject } from '../detect/nested.js';
 import { gatherEvidence } from '../evidence/index.js';
 import { buildRationale } from '../rationale/index.js';
-import { RECOMMENDATION_LABEL } from '../rationale/assess.js';
 import type { UpgradeRationale } from '../rationale/types.js';
 import type { SurfaceAddition, SurfaceUnavailable, ToolInstallRequest } from '../evidence/surface/types.js';
 import type { ProseSource } from '../evidence/index.js';
@@ -51,7 +50,9 @@ import { resolveModuleMaps } from '../localize/modules.js';
 import { buildPlan } from '../plan/index.js';
 import { dependencyEcosystemKey } from '../util/id.js';
 import { compareSeverity, describeSeverity, severityOf, type UpgradeSeverity } from './severity.js';
-import { lookupVersions, versionSourceLabel } from './versions.js';
+import { lookupVersions, versionSourceLabel, type VersionLookup } from './versions.js';
+import { summarize } from './summary.js';
+import { analysisConcurrency, describeParallelism, networkConcurrency } from '../util/parallelism.js';
 import {
   probeUpgrades,
   scrubEnv,
@@ -201,6 +202,25 @@ export interface UncheckedDependency {
   current: string;
   /** Why the check came up empty, in the developer's terms. */
   reason: string;
+}
+
+/**
+ * What a scan knows after its cheap first phase, and before its expensive one.
+ *
+ * The same question `npm outdated` answers — which direct dependencies have a
+ * newer version, and what that version is — with none of the "what would this
+ * do to my code" work behind it yet. Every candidate here is `pending`: the
+ * version numbers on it are final, the verdict on it does not exist.
+ */
+export interface OutdatedSummary {
+  /** One per outdated dependency, in name order, all of them `pending`. */
+  outdated: readonly UpgradeCandidate[];
+  /** Direct dependencies whose version was looked up, outdated or not. */
+  checked: number;
+  /** How many of those are already current. */
+  upToDate: number;
+  /** The ones no source would answer for. Never counted as up to date. */
+  unchecked: readonly UncheckedDependency[];
 }
 
 export interface UpgradeScanResult {
@@ -519,8 +539,21 @@ export async function scanUpgrades(args: {
   fs?: WorkspaceFs;
   /** Environment for spawned tools (Go, etc.). Defaults to `process.env`. */
   env?: NodeJS.ProcessEnv;
-  /** Packages checked in parallel. Defaults to 8, clamped to [1, 16]. */
+  /**
+   * Packages analysed in parallel. Defaults to what the machine can carry —
+   * see `util/parallelism.ts` — and is clamped to [1, 32].
+   */
   concurrency?: number;
+  /**
+   * Called once, as soon as every dependency's version lookup has settled and
+   * before any of them has been analysed.
+   *
+   * This is the cheap half of a scan, and it is the half that answers the
+   * question `npm outdated` answers: what is out of date, and what is the
+   * newest version. A caller that wants a table on screen in seconds renders
+   * this and then lets `onCandidate` fill the verdicts in behind it.
+   */
+  onOutdated?: (summary: OutdatedSummary) => void;
   /**
    * Install each candidate in a throwaway worktree and run the project's own
    * checks against it before reporting it. Defaults to `config.verify`.
@@ -535,11 +568,16 @@ export async function scanUpgrades(args: {
     generatedSourceGlobs?: readonly string[];
   };
 }): Promise<UpgradeScanResult> {
-  const { root, repo, config, logger, githubToken, onProgress, onCandidate, onDropped, token, repoLabel } = args;
+  const { root, repo, config, logger, githubToken, onProgress, onCandidate, onDropped, onOutdated, token, repoLabel } =
+    args;
   const breadth = args.breadth ?? DEFAULT_BREADTH;
   const fs = args.fs ?? nodeWorkspaceFs();
   const env = args.env ?? process.env;
-  const concurrency = Math.max(1, Math.min(16, Math.floor(args.concurrency ?? 8) || 8));
+  // Sized from the machine rather than from a constant. A fixed 8 was both too
+  // many for a two-core CI container and far too few for a workstation that
+  // spends the whole scan mostly idle.
+  const concurrency = Math.max(1, Math.min(32, Math.floor(args.concurrency ?? analysisConcurrency(env)) || 1));
+  logger.debug(`Scan parallelism: ${describeParallelism(env)}`);
   const verify = {
     enabled: args.verify?.enabled ?? config.verify.enabled,
     checks: args.verify?.checks ?? (config.verify.checks as readonly CheckKind[]),
@@ -646,6 +684,19 @@ export async function scanUpgrades(args: {
     );
   };
 
+  /** The same row, once a registry has said which version it is heading for. */
+  const outdatedRow = (
+    dep: ScanDependency,
+    available: Extract<VersionLookup, { outcome: 'upgrade' }>,
+  ): UpgradeCandidate =>
+    versionedCandidate(dep, available, 'Waiting to be checked', {
+      ...(multiPackage ? { member: dep.target.dir } : {}),
+      ...(multiPackage && memberNames.get(dep.target.dir)
+        ? { memberName: memberNames.get(dep.target.dir)! }
+        : {}),
+      ...(repoLabel ? { repoRoot: root, repoLabel } : {}),
+    });
+
   /**
    * Withdraw every row that was announced and never settled.
    *
@@ -714,6 +765,9 @@ export async function scanUpgrades(args: {
   indexing.catch(() => undefined);
 
   let upToDate = 0;
+  /** Dependencies whose version lookup has settled — phase one's progress. */
+  let looked = 0;
+  /** Outdated packages whose analysis has settled — phase two's progress. */
   let done = 0;
   const candidates: UpgradeCandidate[] = [];
   const unchecked: UncheckedDependency[] = [];
@@ -754,57 +808,114 @@ export async function scanUpgrades(args: {
         )
       : undefined;
 
-  // Checking a package is almost entirely waiting: a registry request, a
-  // changelog fetch, a release-notes call, a type-declaration download. Doing
-  // that one package at a time made a scan take as long as the sum of every
-  // network round trip in the project. Running several at once turns that sum
-  // into something much closer to the slowest one.
-  try {
-    await inParallel(deps, concurrency, async (dep) => {
-      if (token?.isCancellationRequested) return;
+  // Phase one: what is outdated at all.
+  //
+  // Split out of the analysis on purpose, and it is the difference between a
+  // scan that answers in seconds and one that answers in minutes. A version
+  // lookup is a single registry request per package and nothing else; the
+  // analysis behind it — changelogs, declaration trees, an impact search, an
+  // install-and-check probe — is orders of magnitude more work. Interleaving
+  // them meant the *list* of what is outdated could not be known until the
+  // slowest package had been fully analysed, so `drift outdated` had nothing at
+  // all to show for minutes where `npm outdated` shows a table in seconds.
+  //
+  // Doing every lookup first costs nothing (they were all going to happen
+  // anyway) and lets `onOutdated` hand the caller the complete list — name,
+  // installed, wanted, latest — as soon as the registries have answered. The
+  // analysis then fills that list in, row by row.
+  //
+  // Run at `networkConcurrency` rather than the analysis limit: this phase is
+  // pure latency with no parsing behind it, so the bound that matters is the
+  // registry's tolerance, not the machine's.
+  report('Checking registries', `${deps.length} direct dependenc${deps.length === 1 ? 'y' : 'ies'}`, 0, deps.length);
+  const outdated: { dep: ScanDependency; available: Extract<VersionLookup, { outcome: 'upgrade' }> }[] = [];
+  await inParallel(deps, networkConcurrency(env), async (dep) => {
+    if (token?.isCancellationRequested) return;
 
-      const source = versionSourceLabel(dep.target.manager.ecosystem);
-      report(`Checking ${source}`, `${dep.name} (installed ${dep.current})`, done, deps.length);
-      announce(dep, `Asking ${source} what has been published`);
-      const available = await lookupVersions({
+    const source = versionSourceLabel(dep.target.manager.ecosystem);
+    announce(dep, `Asking ${source} what has been published`);
+    const available = await lookupVersions({
+      name: dep.name,
+      ecosystem: dep.target.manager.ecosystem,
+      current: dep.current,
+      range: dep.range,
+      ...(githubToken ? { githubToken } : {}),
+    });
+
+    if (available.outcome === 'up-to-date') {
+      upToDate += 1;
+      looked += 1;
+      // The row announced when the manifest was read has nothing to offer, so
+      // it is taken back rather than left sitting there with no target version
+      // and no verdict.
+      drop(dep);
+      report('Up to date', `${dep.name}@${dep.current}`, looked, deps.length);
+      return;
+    }
+
+    // The case this whole shape exists for. Reporting it as "Up to date" —
+    // which is what happened until the lookup learned to say so — turns every
+    // registry timeout and every ecosystem without a version API into a clean
+    // bill of health for a dependency nobody looked at.
+    if (available.outcome === 'unchecked') {
+      unchecked.push({
         name: dep.name,
+        kind: dep.kind,
         ecosystem: dep.target.manager.ecosystem,
+        packageManager: dep.target.manager.id,
+        manifestPath: dep.target.manifestPath,
         current: dep.current,
-        range: dep.range,
-        ...(githubToken ? { githubToken } : {}),
+        reason: available.reason,
       });
+      looked += 1;
+      drop(dep);
+      report('Could not check', `${dep.name}@${dep.current} · ${available.reason}`, looked, deps.length);
+      return;
+    }
 
-      if (available.outcome === 'up-to-date') {
-        upToDate += 1;
-        done += 1;
-        // The row announced when the manifest was read has nothing to offer, so
-        // it is taken back rather than left sitting there with no target version
-        // and no verdict.
-        drop(dep);
-        report('Up to date', `${dep.name}@${dep.current}`, done, deps.length);
-        return;
-      }
+    outdated.push({ dep, available });
+    looked += 1;
+    // The row now knows which version it is heading for, which is most of what
+    // a table of outdated packages is, so it is republished with those numbers
+    // on it rather than waiting for the verdict to carry them.
+    onCandidate?.(outdatedRow(dep, available));
+    report('Outdated', `${dep.name} ${dep.current} → ${available.safeLatest ?? available.latest}`, looked, deps.length);
+  });
 
-      // The case this whole shape exists for. Reporting it as "Up to date" —
-      // which is what happened until the lookup learned to say so — turns every
-      // registry timeout and every ecosystem without a version API into a clean
-      // bill of health for a dependency nobody looked at.
-      if (available.outcome === 'unchecked') {
-        unchecked.push({
-          name: dep.name,
-          kind: dep.kind,
-          ecosystem: dep.target.manager.ecosystem,
-          packageManager: dep.target.manager.id,
-          manifestPath: dep.target.manifestPath,
-          current: dep.current,
-          reason: available.reason,
-        });
-        done += 1;
-        drop(dep);
-        report('Could not check', `${dep.name}@${dep.current} · ${available.reason}`, done, deps.length);
-        return;
-      }
+  outdated.sort((a, b) => a.dep.name.localeCompare(b.dep.name));
 
+  // The answer to "what is out of date", complete, before a single changelog
+  // has been read.
+  onOutdated?.({
+    outdated: outdated.map(({ dep, available }) => outdatedRow(dep, available)),
+    checked: deps.length,
+    upToDate,
+    unchecked: [...unchecked],
+  });
+
+  if (token?.isCancellationRequested) {
+    releaseUnreached();
+    await warm?.dispose();
+    return {
+      candidates: [],
+      checked: deps.length,
+      upToDate,
+      unchecked,
+      targets,
+      workspaces,
+      ambiguities,
+      nestedGitRepos,
+    };
+  }
+
+  // Phase two: what those upgrades would do to this repository.
+  //
+  // Still parallel, and still mostly waiting — a changelog fetch, a
+  // release-notes call, a type-declaration download — but with real parsing and
+  // a repository-wide search behind each one, so this is bounded by the
+  // machine rather than by the registries.
+  try {
+    await inParallel(outdated, concurrency, async ({ dep, available }) => {
       if (token?.isCancellationRequested) return;
 
       const selected = available.safeLatest ?? available.latest;
@@ -831,11 +942,11 @@ export async function scanUpgrades(args: {
         repoRoot: repoLabel ? root : undefined,
         repoLabel,
         onProgress: (phase, detail) => {
-          report(phase, detail, done, deps.length);
+          report(phase, detail, done, outdated.length);
           // The same phase, said on the package's own row. The scan-wide step
-          // line only ever shows whichever of the eight packages in flight
-          // reported last, so without this a developer looking at one row can
-          // see it is busy and never what it is busy with.
+          // line only ever shows whichever of the packages in flight reported
+          // last, so without this a developer looking at one row can see it is
+          // busy and never what it is busy with.
           announce(dep, phase);
         },
       });
@@ -857,7 +968,7 @@ export async function scanUpgrades(args: {
         severityOf(candidate) === 'affected' ? 'Needs your attention' : 'Checked',
         `${candidate.name} ${candidate.current} → ${candidate.selected} · ${describeSeverity(candidate).toLowerCase()}`,
         done,
-        deps.length,
+        outdated.length,
       );
     });
 
@@ -1635,78 +1746,6 @@ function installRequests(gaps: ReadonlyMap<string, SurfaceUnavailable>): ToolIns
   return out;
 }
 
-/**
- * The one-line verdict.
- *
- * Written from the developer's point of view, not the registry's: what this
- * upgrade means for *this* repository comes first, and the upstream count is
- * context rather than a headline.
- *
- * It leads with the recommendation, because "Upgrade recommended — fixes a
- * high-severity advisory" and "Safe to upgrade" are different answers to the
- * question actually being asked, and a line that could only ever say what
- * might break was the old, weaker version of this.
- *
- * The failure case is the reason this function is careful. It used to
- * concatenate every gap onto a fixed preamble, which printed the same missing
- * toolchain twice — once as "Drift could not verify this upgrade" and once as
- * the gap that explained it. Gaps arrive deduplicated from the rationale, and
- * the preamble no longer restates them.
- */
-function summarize(
-  breakingCount: number,
-  impactCount: number,
-  name: string,
-  rationale: UpgradeRationale | undefined,
-): string {
-  if (!rationale) {
-    return breakingCount > 0
-      ? `${breakingCount} breaking change${breakingCount === 1 ? '' : 's'} found in ${name}.`
-      : `No breaking changes found for this version of ${name}.`;
-  }
-
-  const { assessment, security } = rationale;
-  const headline = RECOMMENDATION_LABEL[assessment.recommendation];
-
-  const detail: string[] = [];
-
-  if (impactCount > 0) {
-    detail.push(
-      `${impactCount} place${impactCount === 1 ? '' : 's'} in this repository use${impactCount === 1 ? 's' : ''} an API that ${name} changed`,
-    );
-  } else if (breakingCount > 0) {
-    detail.push(
-      `${breakingCount} upstream breaking change${breakingCount === 1 ? '' : 's'}, none of which this repository uses`,
-    );
-  }
-
-  if (security.checked && security.resolved.length > 0) {
-    detail.push(
-      `fixes ${security.resolved.length} known ${security.resolved.length === 1 ? 'vulnerability' : 'vulnerabilities'}`,
-    );
-  }
-  if (security.checked && security.introduced.length > 0) {
-    detail.push(
-      `introduces ${security.introduced.length} known ${security.introduced.length === 1 ? 'vulnerability' : 'vulnerabilities'}`,
-    );
-  }
-
-  // Said once, at the end, and only when nothing above already carried the
-  // news. Repeating a stated gap is the bug this shape exists to prevent.
-  if (detail.length === 0 && rationale.gaps.length > 0) {
-    return `${headline}. ${rationale.gaps.join(' ')}`;
-  }
-
-  if (detail.length === 0) {
-    return `${headline}. No breaking changes found for this version of ${name}.`;
-  }
-
-  return `${headline}. ${capitalizeFirst(detail.join('; '))}.`;
-}
-
-function capitalizeFirst(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
-}
 
 /**
  * The identity of one row in the packages list.
@@ -1768,6 +1807,38 @@ function pendingCandidate(args: {
     summary: '',
     gaps: [],
     toolRequests: [],
+  };
+}
+
+/**
+ * A row that knows where it is going but not yet what that would cost.
+ *
+ * Built the moment a registry answers, so a table of outdated packages can be
+ * complete long before the first changelog has been read. Still `pending`:
+ * every finding count on it is zero because nothing has looked, and
+ * `severityOf` reads `pending` precisely so those zeroes are never mistaken for
+ * a clean bill of health.
+ */
+function versionedCandidate(
+  dep: ScanDependency,
+  available: Extract<VersionLookup, { outcome: 'upgrade' }>,
+  phase: string,
+  context?: { member?: string; memberName?: string; repoRoot?: string; repoLabel?: string },
+): UpgradeCandidate {
+  return {
+    ...pendingCandidate({
+      dep,
+      phase,
+      ...(context?.member === undefined ? {} : { member: context.member }),
+      ...(context?.memberName ? { memberName: context.memberName } : {}),
+      ...(context?.repoRoot ? { repoRoot: context.repoRoot } : {}),
+      ...(context?.repoLabel ? { repoLabel: context.repoLabel } : {}),
+    }),
+    selected: available.safeLatest ?? available.latest,
+    latest: available.latest,
+    ...(available.safeLatest ? { safeLatest: available.safeLatest } : {}),
+    ...(available.latestMinor ? { latestMinor: available.latestMinor } : {}),
+    versions: available.versions,
   };
 }
 
