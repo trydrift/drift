@@ -240,6 +240,22 @@ describe('the grouped report', () => {
   });
 });
 
+describe('a repository with nothing to check', () => {
+  test('says nothing rather than clearing zero dependencies', () => {
+    // "All 0 direct dependencies are up to date" is technically true and reads
+    // as a bug: there was nothing to give a clean bill of health to.
+    const { view, lines } = harness();
+    view.allCurrent(0);
+    assert.deepEqual(lines, []);
+  });
+
+  test('but does clear a repository whose dependencies are all current', () => {
+    const { view, text } = harness();
+    view.allCurrent(38);
+    assert.ok(text().includes('All 38 direct dependencies are up to date.'));
+  });
+});
+
 describe('a terminal without the glyphs', () => {
   test('renders the same report in ASCII', () => {
     const { view, text } = harness({ unicode: false });

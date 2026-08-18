@@ -784,20 +784,31 @@ export async function scanUpgrades(args: {
   const candidates: UpgradeCandidate[] = [];
   const unchecked: UncheckedDependency[] = [];
 
-  // Start preparing the test checkouts *now*, while the analysis below is
-  // waiting on registries and changelogs.
-  //
-  // Verification needs a worktree with the project's dependencies installed
-  // and its baseline checks measured, and none of that depends on anything the
-  // analysis is about to learn — only on which manifests exist, which is
-  // already known. Leaving it until afterwards meant a scan cost the network
-  // phase *plus* an install and a full typecheck/build/test, strictly one after
-  // the other, and the install is usually the larger half. Overlapping them
-  // costs a little memory and takes the total down to roughly the longer of the
-  // two. The probe still prepares its own checkout for any directory this did
-  // not cover, so nothing here changes what is measured — only when.
-  const warm =
-    verify.enabled && !token?.isCancellationRequested
+  /**
+   * Prepare the test checkouts now, while the analysis is waiting on registries
+   * and changelogs.
+   *
+   * Verification needs a worktree with the project's dependencies installed and
+   * its baseline checks measured, and none of that depends on anything the
+   * analysis is about to learn. Leaving it until afterwards meant a scan cost
+   * the network phase *plus* an install and a full typecheck/build/test,
+   * strictly one after the other, and the install is usually the larger half.
+   * Overlapping them costs a little memory and takes the total down to roughly
+   * the longer of the two.
+   *
+   * Started after phase one rather than before it, and only for the directories
+   * that turned out to have something to test. Before the scan had two phases
+   * this had to guess, so it prepared a checkout for every manifest in the
+   * repository — which for an up-to-date project meant a full `npm install` and
+   * a whole typecheck, build and test suite run to verify nothing at all, in
+   * every member. Waiting for the version lookups costs the four seconds they
+   * take and skips all of it.
+   *
+   * The probe still prepares its own checkout for any directory this did not
+   * cover, so this changes what is *prepared*, never what is measured.
+   */
+  const warmFor = (dirs: ReadonlySet<string>) =>
+    verify.enabled && dirs.size > 0 && !token?.isCancellationRequested
       ? warmProbe(
           {
             root,
@@ -810,10 +821,9 @@ export async function scanUpgrades(args: {
             ...(verify.baselineCache ? { baselineCache: verify.baselineCache } : {}),
             ...(token ? { token } : {}),
           },
-          [...new Map(targets.map((target) => [target.dir, target])).values()].map((target) => ({
-            dir: target.dir,
-            packageManager: target.manager.id,
-          })),
+          [...new Map(targets.filter((target) => dirs.has(target.dir)).map((target) => [target.dir, target])).values()].map(
+            (target) => ({ dir: target.dir, packageManager: target.manager.id }),
+          ),
           (progress) =>
             progress.output !== undefined
               ? onProgress?.({ phase: '', detail: '', done: 0, total: 0, output: progress.output })
@@ -896,6 +906,10 @@ export async function scanUpgrades(args: {
   });
 
   outdated.sort((a, b) => a.dep.name.localeCompare(b.dep.name));
+
+  // Now that the outdated set is known, prepare exactly the checkouts that will
+  // be needed — and start doing it while the analysis below runs.
+  const warm = warmFor(new Set(outdated.map(({ dep }) => dep.target.dir)));
 
   // The answer to "what is out of date", complete, before a single changelog
   // has been read.
