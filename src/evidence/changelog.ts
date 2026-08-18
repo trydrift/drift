@@ -76,25 +76,67 @@ export async function fetchMigrationGuide(
   return probe(githubRepo, MIGRATION_FILENAMES, branches);
 }
 
+/**
+ * How a guess-the-filename probe is paced.
+ *
+ * There is no API that answers "does this repository have a changelog" without
+ * credentials for it, so the only way to find out is to ask for each name in
+ * turn. Done strictly one at a time — which is what this used to do — a package
+ * with no changelog at all costs thirty-two sequential round trips before
+ * answering "no", and a scan of Scrapy's dependencies spent 1,413 requests and
+ * half a minute of wall time doing exactly that.
+ *
+ * Issuing all thirty-two at once would fix the latency and break something
+ * else: `raw.githubusercontent.com` is unauthenticated, which is the whole
+ * reason it is used here rather than the API, and eight packages each fanning
+ * out thirty-two ways is how a scan starts collecting 429s instead of evidence.
+ *
+ * So: the single overwhelmingly likely candidate on its own, and only if that
+ * misses, the rest in bounded waves. A repository with `CHANGELOG.md` on its
+ * default branch costs exactly one request, as before. A repository with none
+ * costs the same thirty-two requests it always did, in three round trips
+ * instead of thirty-two.
+ */
+const FIRST_WAVE = 1;
+const WAVE_SIZE = 16;
+
+function* waves<T>(candidates: readonly T[]): Generator<readonly T[]> {
+  if (candidates.length === 0) return;
+  yield candidates.slice(0, FIRST_WAVE);
+  for (let at = FIRST_WAVE; at < candidates.length; at += WAVE_SIZE) {
+    yield candidates.slice(at, at + WAVE_SIZE);
+  }
+}
+
 async function probe(
   githubRepo: string,
   filenames: readonly string[],
   branches: readonly string[],
 ): Promise<FetchedDocument | null> {
-  for (const branch of branches) {
-    for (const filename of filenames) {
-      const url = `https://raw.githubusercontent.com/${githubRepo}/${branch}/${filename}`;
-      const content = await fetchText(url, { retries: 0 });
-      if (content && content.trim()) {
-        return {
-          path: filename,
-          url: `https://github.com/${githubRepo}/blob/${branch}/${filename}`,
-          content,
-          branch,
-        };
-      }
-    }
+  const candidates = branches.flatMap((branch) => filenames.map((filename) => ({ branch, filename })));
+
+  for (const wave of waves(candidates)) {
+    const fetched = await Promise.all(
+      wave.map(({ branch, filename }) =>
+        fetchText(`https://raw.githubusercontent.com/${githubRepo}/${branch}/${filename}`, { retries: 0 }),
+      ),
+    );
+
+    // `find`, so the answer is the first *by priority* rather than the first to
+    // come back. Which document wins must not depend on which response was
+    // quickest, or two runs of the same scan cite different files.
+    const at = fetched.findIndex((content) => content !== null && content.trim() !== '');
+    if (at < 0) continue;
+
+    const { branch, filename } = wave[at]!;
+    return {
+      path: filename,
+      url: `https://github.com/${githubRepo}/blob/${branch}/${filename}`,
+      content: fetched[at]!,
+      branch,
+    };
   }
+
   return null;
 }
 
