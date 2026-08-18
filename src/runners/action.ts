@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { appendFile } from 'node:fs/promises';
-import type { DispatchResult, RepoContext } from '../types.js';
+import type { DispatchResult, RemediationPlan, RepoContext } from '../types.js';
 import { AGENT_PROVIDER_IDS, type DriftConfig, type ExplicitAgentProvider } from '../config/schema.js';
 import { loadConfig } from '../config/load.js';
 import { GitHubClient } from '../github/client.js';
@@ -20,11 +20,12 @@ import { createLogger, type Logger, type LogLevel } from '../util/logger.js';
 import { matchesAny } from '../util/glob.js';
 import { configureHttpDiskCache } from '../util/http.js';
 import { applyApproval } from '../approval/apply.js';
-import { awaitTerminalState, isTerminalState } from '../dispatch/copilot.js';
+import { awaitTerminalState, getTaskStatus, isTerminalState } from '../dispatch/copilot.js';
 import { CLI_AGENT_SPECS, CliFixAgent } from '../agents/cli.js';
 import { CopilotCloudAgent } from '../agents/copilot-cloud.js';
 import { resolveAgentSelection, type AgentSelection } from '../agents/selection.js';
 import type { FixAgent, SessionEffort } from '../agents/types.js';
+import { reconcileCloudTask, type CloudTaskMonitor } from '../remediation/cloud-lifecycle.js';
 
 /**
  * GitHub Action entrypoint — Drift's primary runner.
@@ -181,6 +182,7 @@ export async function runAction(): Promise<number> {
       await maybeAwaitCopilotCompletion({
         config: effectiveConfig,
         repo,
+        plan: result.plan,
         dispatchResult: result.dispatch,
         github,
         copilotToken: inputs.copilotToken,
@@ -686,6 +688,7 @@ async function runApproval(
         await maybeAwaitCopilotCompletion({
           config: outcome.config,
           repo: { owner, repo, baseBranch: '', beforeSha: '', afterSha: outcome.plan.headSha },
+          plan: outcome.plan,
           dispatchResult: outcome.dispatch,
           github,
           copilotToken: inputs.copilotToken,
@@ -720,12 +723,13 @@ async function readWorkspaceFile(workspace: string, path: string): Promise<strin
 async function maybeAwaitCopilotCompletion(args: {
   config: DriftConfig;
   repo: RepoContext;
+  plan?: RemediationPlan | null;
   dispatchResult: DispatchResult;
   github: GitHubClient;
   copilotToken?: string;
   logger: Logger;
 }): Promise<void> {
-  const { config, repo, dispatchResult, github, copilotToken, logger } = args;
+  const { config, repo, plan, dispatchResult, github, copilotToken, logger } = args;
   const settings = config.remediation.awaitCompletion;
   if (!settings.enabled || !copilotToken || !dispatchResult.taskId) return;
 
@@ -757,23 +761,46 @@ async function maybeAwaitCopilotCompletion(args: {
     return;
   }
 
-  const succeeded = task.state === 'completed';
-  const where = dispatchResult.pullRequestUrl ?? task.pullRequestUrl;
+  const monitor = copilotCloudMonitor(copilotToken);
+  const reconciliation = await reconcileCloudTask({
+    task: {
+      id: 0,
+      provider: dispatchResult.taskProvider ?? 'copilot-cloud',
+      owner: repo.owner,
+      repo: repo.repo,
+      taskId: dispatchResult.taskId,
+      headSha: repo.afterSha,
+      branchName: dispatchResult.branchName ?? '',
+      prNumber: dispatchResult.pullRequestNumber ?? null,
+      prUrl: dispatchResult.pullRequestUrl ?? null,
+      planJson: plan ? JSON.stringify(plan) : null,
+      createdAt: new Date().toISOString(),
+    },
+    monitor,
+    github,
+    logger,
+  });
 
   await github.createCheckRun(repo, {
     name: 'Drift',
-    conclusion: succeeded ? 'success' : 'failure',
-    title: succeeded ? 'Copilot finished' : `Copilot did not finish (${task.state})`,
-    summary: succeeded
-      ? where
-        ? `See ${where} for the result.`
-        : 'The agent task completed.'
-      : `The Copilot agent task ended in state \`${task.state}\` without finishing the fix. ${
-          where ? `See ${where} for what it left behind.` : 'A human needs to look at this.'
-        }`,
+    conclusion: reconciliation.conclusion ?? 'action_required',
+    title: reconciliation.title ?? `Copilot Cloud reached ${task.state}`,
+    summary: reconciliation.summary ?? `Copilot Cloud reached terminal state ${task.state}.`,
   });
 
-  logger.info(`Copilot task ${dispatchResult.taskId} reached terminal state ${task.state}`);
+  logger.info(`Copilot Cloud task ${dispatchResult.taskId} reached terminal state ${task.state}`);
+}
+
+function copilotCloudMonitor(copilotToken: string): CloudTaskMonitor {
+  return {
+    provider: 'copilot-cloud',
+    label: 'Copilot Cloud',
+    status: async (task, repo) => {
+      const result = await getTaskStatus({ copilotToken, repo, taskId: task.taskId });
+      return result ? { state: result.state, pullRequestUrl: result.pullRequestUrl } : null;
+    },
+    isTerminalState,
+  };
 }
 
 async function writeOutputs(

@@ -63,7 +63,7 @@ export interface ApplyApprovalOptions {
    * naming the task id rather than only logging the gap, so it is not a
    * silent one.
    */
-  onDispatched?: (result: DispatchResult, repo: RepoContext) => Promise<void> | void;
+  onDispatched?: (result: DispatchResult, repo: RepoContext, plan: RemediationPlan) => Promise<void> | void;
   /**
    * A durable, permanent record of dispatches, independent of the GitHub
    * comment marker (`renderDispatchMarker` / `findPriorDispatch` below).
@@ -389,7 +389,7 @@ export async function applyApproval(options: ApplyApprovalOptions): Promise<Appr
     // fixing…" check run never gets a terminal update, so it is surfaced on
     // the check run itself instead of only in a log line.
     try {
-      await options.onDispatched?.(result, repo);
+      await options.onDispatched?.(result, repo, plan);
     } catch (err) {
       logger.error(`Failed to record dispatched task ${result.taskId ?? '(no id)'}: ${(err as Error).message}`);
       await github.createCheckRun(repo, {

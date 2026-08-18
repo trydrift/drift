@@ -616,6 +616,8 @@ export interface DispatchResult {
   branchName?: string;
   /** Copilot Agent Tasks API session id, when dispatch succeeded. */
   taskId?: string;
+  /** Provider that owns `taskId`, when an async cloud task was dispatched. */
+  taskProvider?: string;
   pullRequestNumber?: number;
   pullRequestUrl?: string;
   /** Issue opened for human approval in `approve` mode. */

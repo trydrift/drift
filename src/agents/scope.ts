@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { lstat, realpath, readFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import { promisify } from 'node:util';
-import type { CommitUnit } from '../types.js';
+import type { CommitUnit, RemediationPlan } from '../types.js';
 
 const run = promisify(execFile);
 
@@ -46,6 +46,54 @@ export interface ScopeValidationResult {
   patch: string;
   reasons: string[];
   warnings: string[];
+}
+
+export interface CloudScopeValidationOptions {
+  plan: RemediationPlan;
+  changedFiles: readonly string[];
+  protectedPaths?: readonly string[];
+  maxFiles?: number;
+}
+
+export interface CloudScopeValidationResult {
+  ok: boolean;
+  reasons: string[];
+  warnings: string[];
+}
+
+export function validateCloudChangedFiles(options: CloudScopeValidationOptions): CloudScopeValidationResult {
+  const reasons: string[] = [];
+  const warnings: string[] = [];
+  const protectedPaths = options.protectedPaths ?? DEFAULT_PROTECTED_PATHS;
+  const allowed = new Set(
+    options.plan.commits.flatMap((commit) => (commit.allowedFiles?.length ? commit.allowedFiles : commit.files)).map(normalizePlanPath),
+  );
+
+  if (options.changedFiles.length > (options.maxFiles ?? DEFAULT_MAX_FILES)) {
+    reasons.push(`Agent changed ${options.changedFiles.length} files, above the limit of ${options.maxFiles ?? DEFAULT_MAX_FILES}.`);
+  }
+
+  for (const file of options.changedFiles) {
+    const normalized = normalizePlanPath(file);
+    if (!normalized || normalized !== file.replace(/^\.\//, '').replace(/\\/g, '/')) {
+      reasons.push(`Agent produced an invalid path: ${file}.`);
+      continue;
+    }
+    if (!allowed.has(normalized)) reasons.push(`Agent changed ${normalized}, which is outside the remediation plan's allowed files.`);
+    if (matchesAny(protectedPaths, normalized)) reasons.push(`Agent changed protected path ${normalized}.`);
+    if (isWorkflow(normalized) && !allowed.has(normalized)) {
+      reasons.push(`Agent changed workflow path ${normalized} without an explicit file grant.`);
+    }
+    if (isLockfile(normalized) && !allowed.has(normalized)) {
+      reasons.push(`Agent changed lockfile ${normalized} without an explicit file grant.`);
+    }
+  }
+
+  warnings.push(
+    'Cloud reconciliation validates changed paths after the provider writes them; it cannot provide the pre-commit transactional guarantee used for local runner agents.',
+  );
+
+  return { ok: reasons.length === 0, reasons: [...new Set(reasons)], warnings: [...new Set(warnings)] };
 }
 
 export async function validateAgentWorktree(

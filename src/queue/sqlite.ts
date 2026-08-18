@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS schema_meta (
 
 CREATE TABLE IF NOT EXISTS pending_copilot_tasks (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  provider    TEXT    NOT NULL DEFAULT 'copilot-cloud',
   owner       TEXT    NOT NULL,
   repo        TEXT    NOT NULL,
   task_id     TEXT    NOT NULL,
@@ -59,6 +60,7 @@ CREATE TABLE IF NOT EXISTS pending_copilot_tasks (
   branch_name TEXT    NOT NULL,
   pr_number   INTEGER,
   pr_url      TEXT,
+  plan_json   TEXT,
   created_at  TEXT    NOT NULL
 );
 
@@ -79,7 +81,13 @@ CREATE TABLE IF NOT EXISTS dispatched_plans (
 `;
 
 /** Bump alongside any migration to `SCHEMA`. */
-export const QUEUE_SCHEMA_VERSION = 3;
+export const QUEUE_SCHEMA_VERSION = 4;
+
+function addColumnIfMissing(db: DatabaseSync, table: string, column: string, definition: string): void {
+  const rows = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  if (rows.some((row) => row.name === column)) return;
+  db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+}
 
 interface JobRow {
   id: number;
@@ -142,6 +150,8 @@ export class SqliteJobQueue implements JobQueue {
     // concurrent writer beats failing an enqueue that GitHub will not resend.
     db.exec('PRAGMA busy_timeout = 5000');
     db.exec(SCHEMA);
+    addColumnIfMissing(db, 'pending_copilot_tasks', 'provider', "TEXT NOT NULL DEFAULT 'copilot-cloud'");
+    addColumnIfMissing(db, 'pending_copilot_tasks', 'plan_json', 'TEXT');
 
     db.prepare('INSERT OR REPLACE INTO schema_meta (key, value) VALUES (?, ?)').run(
       'version',
@@ -268,10 +278,11 @@ export class SqliteJobQueue implements JobQueue {
   async recordPendingCopilotTask(task: Omit<PendingCopilotTask, 'id' | 'createdAt'>): Promise<void> {
     this.db
       .prepare(
-        `INSERT INTO pending_copilot_tasks (owner, repo, task_id, head_sha, branch_name, pr_number, pr_url, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO pending_copilot_tasks (provider, owner, repo, task_id, head_sha, branch_name, pr_number, pr_url, plan_json, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
+        task.provider,
         task.owner,
         task.repo,
         task.taskId,
@@ -279,6 +290,7 @@ export class SqliteJobQueue implements JobQueue {
         task.branchName,
         task.prNumber,
         task.prUrl,
+        task.planJson,
         new Date().toISOString(),
       );
   }
@@ -331,6 +343,7 @@ export class SqliteJobQueue implements JobQueue {
 
 interface PendingCopilotTaskRow {
   id: number;
+  provider: string;
   owner: string;
   repo: string;
   task_id: string;
@@ -338,12 +351,14 @@ interface PendingCopilotTaskRow {
   branch_name: string;
   pr_number: number | null;
   pr_url: string | null;
+  plan_json: string | null;
   created_at: string;
 }
 
 function toPendingCopilotTask(row: PendingCopilotTaskRow): PendingCopilotTask {
   return {
     id: row.id,
+    provider: row.provider,
     owner: row.owner,
     repo: row.repo,
     taskId: row.task_id,
@@ -351,6 +366,7 @@ function toPendingCopilotTask(row: PendingCopilotTaskRow): PendingCopilotTask {
     branchName: row.branch_name,
     prNumber: row.pr_number,
     prUrl: row.pr_url,
+    planJson: row.plan_json,
     createdAt: row.created_at,
   };
 }

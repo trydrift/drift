@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import type { DispatchResult, RepoContext } from '../types.js';
+import type { DispatchResult, RemediationPlan, RepoContext } from '../types.js';
 import { loadConfig } from '../config/load.js';
 import { GitHubClient } from '../github/client.js';
 import { runPipeline } from '../pipeline.js';
@@ -12,6 +12,7 @@ import { QueueWorker } from '../queue/worker.js';
 import { MemoryJobQueue } from '../queue/memory.js';
 import { SqliteJobQueue } from '../queue/sqlite.js';
 import { getTaskStatus, isTerminalState } from '../dispatch/copilot.js';
+import { reconcileCloudTask, type CloudTaskMonitor } from '../remediation/cloud-lifecycle.js';
 
 /**
  * Self-hosted GitHub App webhook runner — the secondary deployment.
@@ -254,7 +255,7 @@ async function handlePush(
   // same push. Losing the reconciliation record instead of duplicating the
   // dispatch is the safer failure, but it must not be a silent one.
   try {
-    await recordDispatchedTask(options.queue, repo, result.dispatch);
+    await recordDispatchedTask(options.queue, repo, result.dispatch, result.plan);
   } catch (err) {
     logger.error(`Failed to record dispatched task for reconciliation: ${(err as Error).message}`);
     if (result.dispatch.status === 'dispatched') {
@@ -280,9 +281,11 @@ async function recordDispatchedTask(
   queue: JobQueue,
   repo: RepoContext,
   result: DispatchResult,
+  plan?: RemediationPlan | null,
 ): Promise<void> {
   if (result.status !== 'dispatched' || !result.taskId) return;
   await queue.recordPendingCopilotTask({
+    provider: result.taskProvider ?? 'copilot-cloud',
     owner: repo.owner,
     repo: repo.repo,
     taskId: result.taskId,
@@ -290,6 +293,7 @@ async function recordDispatchedTask(
     branchName: result.branchName ?? '',
     prNumber: result.pullRequestNumber ?? null,
     prUrl: result.pullRequestUrl ?? null,
+    planJson: plan ? JSON.stringify(plan) : null,
   });
 }
 
@@ -313,7 +317,12 @@ export async function reconcilePendingCopilotTasks(
 
   const github = new GitHubClient({ repoToken: options.repoToken, logger });
 
+  const monitor = copilotCloudMonitor(options.copilotToken);
+
   for (const pendingTask of pending) {
+    const reconciliation = await reconcileCloudTask({ task: pendingTask, monitor, github, logger });
+    if (!reconciliation.terminal) continue;
+
     const repo: RepoContext = {
       owner: pendingTask.owner,
       repo: pendingTask.repo,
@@ -322,40 +331,30 @@ export async function reconcilePendingCopilotTasks(
       afterSha: pendingTask.headSha,
     };
 
-    const task = await getTaskStatus({
-      copilotToken: options.copilotToken,
-      repo,
-      taskId: pendingTask.taskId,
-    });
-
-    // `null` means the lookup itself failed (network, rate limit) — leave the
-    // task pending and try again on the next tick, rather than treating an
-    // unreachable API as a terminal state.
-    if (!task || !isTerminalState(task.state)) continue;
-
-    const succeeded = task.state === 'completed';
     await github.createCheckRun(repo, {
       name: 'Drift',
-      conclusion: succeeded ? 'success' : 'failure',
-      title: succeeded
-        ? 'Copilot finished'
-        : `Copilot did not finish (${task.state})`,
-      summary: succeeded
-        ? (pendingTask.prUrl ?? task.pullRequestUrl
-            ? `See ${pendingTask.prUrl ?? task.pullRequestUrl} for the result.`
-            : 'The agent task completed.')
-        : `The Copilot agent task ended in state \`${task.state}\` without finishing the fix. ${
-            pendingTask.prUrl ?? task.pullRequestUrl
-              ? `See ${pendingTask.prUrl ?? task.pullRequestUrl} for what it left behind.`
-              : 'A human needs to look at this.'
-          }`,
+      conclusion: reconciliation.conclusion ?? 'action_required',
+      title: reconciliation.title ?? `${monitor.label} reached ${reconciliation.state ?? 'terminal state'}`,
+      summary: reconciliation.summary ?? `${monitor.label} reached terminal state ${reconciliation.state ?? 'unknown'}.`,
     });
 
     logger.info(
-      `Copilot task ${pendingTask.taskId} on ${pendingTask.owner}/${pendingTask.repo} reached terminal state ${task.state}`,
+      `${monitor.label} task ${pendingTask.taskId} on ${pendingTask.owner}/${pendingTask.repo} reached terminal state ${reconciliation.state ?? 'unknown'}`,
     );
     await options.queue.resolvePendingCopilotTask(pendingTask.id);
   }
+}
+
+function copilotCloudMonitor(copilotToken: string): CloudTaskMonitor {
+  return {
+    provider: 'copilot-cloud',
+    label: 'Copilot Cloud',
+    status: async (task, repo) => {
+      const result = await getTaskStatus({ copilotToken, repo, taskId: task.taskId });
+      return result ? { state: result.state, pullRequestUrl: result.pullRequestUrl } : null;
+    },
+    isTerminalState,
+  };
 }
 
 /**
@@ -394,7 +393,7 @@ async function handleIssueComment(
     // does, and needs the same follow-up — without this, an approved plan's
     // task was recorded nowhere and `reconcilePendingCopilotTasks` never saw
     // it.
-    onDispatched: (result, dispatchRepo) => recordDispatchedTask(options.queue, dispatchRepo, result),
+    onDispatched: (result, dispatchRepo, plan) => recordDispatchedTask(options.queue, dispatchRepo, result, plan),
     // Durable idempotency, independent of the GitHub comment marker
     // `applyApproval` also posts. That comment is a plain API call which can
     // fail without `commentOnIssue` telling its caller — this is the second,

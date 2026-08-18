@@ -198,6 +198,7 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
     planId: plan.id,
     branchName: plan.branchName,
     taskId: task?.id,
+    taskProvider: task?.provider ?? agent.id,
     pullRequestNumber: pr?.number,
     pullRequestUrl: pr?.url ?? task?.url,
     message: pr

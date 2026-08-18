@@ -78,6 +78,7 @@ export interface QueueStats {
  */
 export interface PendingCopilotTask {
   id: number;
+  provider: string;
   owner: string;
   repo: string;
   taskId: string;
@@ -86,6 +87,8 @@ export interface PendingCopilotTask {
   branchName: string;
   prNumber: number | null;
   prUrl: string | null;
+  /** Serialized RemediationPlan, used for post-agent scope reconciliation. */
+  planJson: string | null;
   createdAt: string;
 }
 
