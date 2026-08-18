@@ -91,23 +91,30 @@ function cacheSet(key: string, value: unknown): void {
 }
 
 /**
- * Fold the caller's auth into the cache key so two callers hitting the same
- * URL with different credentials (or none) never share a cached response —
- * e.g. an unauthenticated rate-limited 403 must not be served back to a call
- * that supplies a token, or vice versa.
+ * Fold the headers that change *what comes back* into the cache key.
+ *
+ * Two of them do. Credentials decide whether a response is the resource or a
+ * rate-limited 403, and an unauthenticated failure must never be served back to
+ * a call that supplies a token, or vice versa. `Accept` decides which
+ * *representation* the server sends: `registry.npmjs.org/<name>` answers the
+ * same URL with a full packument or npm's abbreviated install document
+ * depending on what was asked for, and the abbreviated one is missing most of
+ * the fields the evidence layer reads. Sharing one cache entry between those
+ * two callers hands whichever asked second a document of the wrong shape.
  */
-function authFingerprint(headers?: Record<string, string>): string {
-  if (!headers) return 'noauth';
-  const authHeaders = Object.entries(headers)
-    .filter(([key]) => /auth|token/i.test(key))
+function variantFingerprint(headers?: Record<string, string>): string {
+  if (!headers) return 'default';
+  const relevant = Object.entries(headers)
+    .filter(([key]) => /auth|token/i.test(key) || key.toLowerCase() === 'accept')
     .sort(([a], [b]) => a.localeCompare(b));
-  if (authHeaders.length === 0) return 'noauth';
-  const raw = authHeaders.map(([key, value]) => `${key.toLowerCase()}=${value}`).join('&');
+  if (relevant.length === 0) return 'default';
+  const raw = relevant.map(([key, value]) => `${key.toLowerCase()}=${value}`).join('&');
   return createHash('sha256').update(raw).digest('hex').slice(0, 16);
 }
 
 interface DiskEntry {
-  url: string;
+  /** The in-memory cache key — the URL plus whichever headers change the response. */
+  key: string;
   body: string | null;
   etag?: string;
   fetchedAt: number;
@@ -136,7 +143,7 @@ export function clearHttpCache(): void {
 }
 
 export function fetchJson<T>(url: string, options: FetchOptions = {}): Promise<T | null> {
-  const cacheKey = `json:${authFingerprint(options.headers)}:${url}`;
+  const cacheKey = `json:${variantFingerprint(options.headers)}:${url}`;
   const cached = cacheGet<T | null>(cacheKey);
   if (cached.hit) return Promise.resolve(cached.value);
   return coalesce(cacheKey, () => fetchAndParseJson<T>(url, cacheKey, options));
@@ -167,7 +174,7 @@ async function fetchAndParseJson<T>(
 }
 
 export function fetchText(url: string, options: FetchOptions = {}): Promise<string | null> {
-  const cacheKey = `text:${authFingerprint(options.headers)}:${url}`;
+  const cacheKey = `text:${variantFingerprint(options.headers)}:${url}`;
   const cached = cacheGet<string | null>(cacheKey);
   if (cached.hit) return Promise.resolve(cached.value);
   return coalesce(cacheKey, () => fetchTextUncoalesced(url, cacheKey, options));
@@ -179,7 +186,7 @@ async function fetchTextUncoalesced(
   options: FetchOptions,
 ): Promise<string | null> {
   const { timeoutMs = DEFAULT_TIMEOUT_MS, headers = {}, retries = 2 } = options;
-  const disk = await readDiskEntry(url);
+  const disk = await readDiskEntry(cacheKey);
   const ttl = options.cacheTtlMs ?? DEFAULT_DISK_TTL_MS;
   const now = Date.now();
   if (disk && disk.body !== null && (disk.immutable || options.immutable || now - disk.fetchedAt < ttl)) {
@@ -199,7 +206,7 @@ async function fetchTextUncoalesced(
       });
 
       if (response.status === 304 && disk) {
-        await writeDiskEntry(url, { ...disk, fetchedAt: now, immutable: disk.immutable || options.immutable });
+        await writeDiskEntry(cacheKey, { ...disk, fetchedAt: now, immutable: disk.immutable || options.immutable });
         cacheSet(cacheKey, disk.body);
         return disk.body;
       }
@@ -207,8 +214,8 @@ async function fetchTextUncoalesced(
       if (response.ok) {
         const body = await response.text();
         cacheSet(cacheKey, body);
-        await writeDiskEntry(url, {
-          url,
+        await writeDiskEntry(cacheKey, {
+          key: cacheKey,
           body,
           etag: response.headers.get('etag') ?? undefined,
           fetchedAt: now,
@@ -240,29 +247,32 @@ async function fetchTextUncoalesced(
   return null;
 }
 
-async function readDiskEntry(url: string): Promise<DiskEntry | null> {
+async function readDiskEntry(key: string): Promise<DiskEntry | null> {
   if (!diskCacheDir) return null;
   try {
-    const raw = await readFile(cachePath(url), 'utf8');
+    const raw = await readFile(cachePath(key), 'utf8');
     const parsed = JSON.parse(raw) as DiskEntry;
-    return parsed.url === url ? parsed : null;
+    // A hash collision, or an entry written by an older layout that keyed on
+    // the URL alone. Either way it is not this response; treat it as a miss
+    // rather than answering with someone else's body.
+    return parsed.key === key ? parsed : null;
   } catch {
     return null;
   }
 }
 
-async function writeDiskEntry(url: string, entry: DiskEntry): Promise<void> {
+async function writeDiskEntry(key: string, entry: DiskEntry): Promise<void> {
   if (!diskCacheDir) return;
   try {
     await mkdir(diskCacheDir, { recursive: true });
-    await writeFile(cachePath(url), JSON.stringify(entry), 'utf8');
+    await writeFile(cachePath(key), JSON.stringify(entry), 'utf8');
   } catch {
     // Evidence is best-effort; a cache write must never fail a scan.
   }
 }
 
-function cachePath(url: string): string {
-  const hash = createHash('sha256').update(url).digest('hex');
+function cachePath(key: string): string {
+  const hash = createHash('sha256').update(key).digest('hex');
   return join(diskCacheDir!, `${hash}.json`);
 }
 

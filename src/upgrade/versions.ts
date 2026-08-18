@@ -219,10 +219,26 @@ async function publishedVersions(
   }
 }
 
+/**
+ * npm's abbreviated packument — the same document `npm outdated` asks for.
+ *
+ * The full packument carries every README, every `dist` block and every
+ * dependency map of every release ever published, which for a package like
+ * `typescript` or `@types/node` is tens of megabytes to answer a question about
+ * two version numbers. The abbreviated form is the registry's own answer to
+ * that: it keeps `dist-tags` and the version keys, which is exactly and only
+ * what this module reads, and it is routinely an order of magnitude smaller.
+ *
+ * The evidence layer still asks for the full document where it genuinely needs
+ * the rest; `variantFingerprint` in `util/http.ts` keeps the two apart in the
+ * cache.
+ */
+const NPM_ABBREVIATED = 'application/vnd.npm.install-v1+json, application/json';
+
 async function npmVersions(name: string): Promise<{ latest: string | null; versions: string[] } | null> {
   const packument = await fetchJson<NpmPackument>(
     `https://registry.npmjs.org/${encodeURIComponent(name).replaceAll('%40', '@')}`,
-    { timeoutMs: 12_000 },
+    { timeoutMs: 12_000, headers: { Accept: NPM_ABBREVIATED } },
   );
   if (!packument) return null;
 
