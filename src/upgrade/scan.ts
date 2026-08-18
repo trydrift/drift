@@ -143,6 +143,17 @@ export interface UpgradeCandidate {
    * actually traced. See `SeverityInput.impactConfidence`.
    */
   impactConfidence: 'high' | 'medium' | 'low' | 'none';
+  /**
+   * `impactCount` includes a compiler-provable finding that only a batch pass
+   * has weighed in on — not because isolated evidence found it real, but
+   * because a batch is never allowed to clear one (see
+   * `verification/apply.ts`). `false` covers every other case: nothing was
+   * verified, an isolated pass ran and left this uncleared on its own merits
+   * (a behavioural change no compiler can see, or a genuine failure), or
+   * there is nothing left to clear. Absent (not `undefined` on purpose vs.
+   * omitted) is read as `false` by callers not yet updated to supply it.
+   */
+  impactPendingIsolatedClearance?: boolean;
   risk: string;
   summary: string;
   /**

@@ -114,6 +114,7 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
     changes: [...changes],
     evidence: [...evidence],
     breakingChanges,
+    upstreamBreakingCount: breakingChanges.length,
     impactSites: [...impactSites],
     commits,
     planEdges: graph.edges,

@@ -544,6 +544,21 @@ export interface RemediationPlan {
   changes: DependencyChange[];
   evidence: Evidence[];
   breakingChanges: BreakingChange[];
+  /**
+   * How many breaking changes upstream published, fixed at plan creation and
+   * never revised afterward.
+   *
+   * `breakingChanges` is a working list: verification prunes it as compiler-
+   * provable predictions get disproved, so its length is "what's still
+   * unresolved", not "what upstream shipped". Reading that shrinking length as
+   * the headline count is how the same commit reported "209 upstream changes"
+   * in one verification run and "2" in another — the only thing that changed
+   * was whether the probe happened to test this package alone or batched with
+   * others, not what the dependency actually published. Absent only for plans
+   * built before this field existed; callers should fall back to
+   * `breakingChanges.length` in that case.
+   */
+  upstreamBreakingCount?: number;
   impactSites: ImpactSite[];
   commits: CommitUnit[];
   /** Real dependency graph over commit units. */
