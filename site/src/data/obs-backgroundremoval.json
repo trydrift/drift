@@ -5,9 +5,10 @@
   "language": "C++",
   "repo": "https://github.com/royshil/obs-backgroundremoval",
   "blurb": "An OBS plugin that pins its native dependencies through vcpkg.",
-  "capturedAt": "2026-08-15T00:54:29.122Z",
-  "commit": "0360688cf48bf225d9e4c4fe32f0f073c649d88f",
-  "durationMs": 78449,
+  "capturedAt": "2026-08-18T05:42:24.184Z",
+  "commit": "0d74d839c27d8344f093116c5b9e3722736e4505",
+  "engine": "81044c47297efc90",
+  "durationMs": 146881,
   "packagesChecked": 4,
   "manifests": [
     "vcpkg.json",
@@ -16,163 +17,1871 @@
   "nestedGitRepos": [],
   "events": [
     {
-      "at": 3028,
+      "at": 155,
       "phase": "Looking for manifests",
       "detail": "royshil/obs-backgroundremoval",
       "done": 0,
       "total": 0
     },
     {
-      "at": 3034,
+      "at": 213,
       "phase": "Reading the workspace",
       "detail": "2 packages · undeclared",
       "done": 0,
       "total": 0
     },
     {
-      "at": 3035,
+      "at": 218,
       "phase": "Reading manifest",
       "detail": "vcpkg.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 3035,
+      "at": 219,
       "phase": "Reading manifest",
       "detail": "pages/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 3039,
+      "at": 239,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 4
     },
     {
-      "at": 3067,
-      "phase": "Indexing your code",
-      "detail": "66 files indexed · 4 direct dependencies to check",
+      "at": 239,
+      "phase": "Checking registries",
+      "detail": "4 direct dependencies",
       "done": 0,
       "total": 4
     },
     {
-      "at": 3067,
-      "phase": "Checking the npm registry",
-      "detail": "@octokit/rest (installed 22.0.1)",
-      "done": 0,
-      "total": 4
-    },
-    {
-      "at": 3067,
-      "phase": "Checking the npm registry",
-      "detail": "astro (installed 6.4.8)",
-      "done": 0,
-      "total": 4
-    },
-    {
-      "at": 3067,
-      "phase": "Checking the npm registry",
-      "detail": "pretty-bytes (installed 7.1.1)",
-      "done": 0,
-      "total": 4
-    },
-    {
-      "at": 3067,
-      "phase": "Checking the npm registry",
-      "detail": "typescript (installed 7.0.2)",
-      "done": 0,
-      "total": 4
-    },
-    {
-      "at": 3228,
+      "at": 306,
       "phase": "Up to date",
       "detail": "pretty-bytes@7.1.1",
       "done": 1,
       "total": 4
     },
     {
-      "at": 3315,
+      "at": 446,
       "phase": "Up to date",
       "detail": "@octokit/rest@22.0.1",
       "done": 2,
       "total": 4
     },
     {
-      "at": 3687,
-      "phase": "Reading release notes and changelog",
-      "detail": "astro 6.4.8 → 7.2.2",
-      "done": 2,
+      "at": 835,
+      "phase": "Indexing your code",
+      "detail": "60 files indexed · 4 direct dependencies to check",
+      "done": 0,
       "total": 4
     },
     {
-      "at": 4061,
+      "at": 1125,
+      "phase": "Outdated",
+      "detail": "astro 6.4.8 → 7.2.2",
+      "done": 3,
+      "total": 4
+    },
+    {
+      "at": 1981,
       "phase": "Up to date",
       "detail": "typescript@7.0.2",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 36041,
-      "phase": "Comparing the public API surface",
-      "detail": "astro 6.4.8 → 7.2.2 · 7 evidence sources",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 36048,
-      "phase": "Searching your code for 39 breaking changes",
-      "detail": "astro 6.4.8 → 7.2.2",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 36053,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "astro 6.4.8 → 7.2.2",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 36753,
-      "phase": "Checked",
-      "detail": "astro 6.4.8 → 7.2.2 · safe for your code · 39 upstream changes, none used here",
       "done": 4,
       "total": 4
     },
     {
-      "at": 36753,
-      "phase": "Preparing a test checkout",
-      "detail": "1 upgrade to try",
+      "at": 1982,
+      "phase": "Preparing a test checkout of pages",
+      "detail": "checking out a clean copy",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 2019,
+      "phase": "Reading release notes and changelog",
+      "detail": "astro 6.4.8 → 7.2.2",
       "done": 0,
       "total": 1
     },
     {
-      "at": 37566,
-      "phase": "Installing dependencies",
+      "at": 4383,
+      "phase": "Installing pages's dependencies",
       "detail": "`npm install`",
       "done": 0,
-      "total": 1
+      "total": 0
     },
     {
-      "at": 47601,
-      "phase": "Checking the project as it is",
-      "detail": "npm run build",
+      "at": 7121,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 8169,
+      "phase": "Comparing the public API surface",
+      "detail": "astro 6.4.8 → 7.2.2 · 7 evidence sources",
       "done": 0,
       "total": 1
     },
     {
-      "at": 55535,
+      "at": 8265,
+      "phase": "Searching your code for 39 breaking changes",
+      "detail": "astro 6.4.8 → 7.2.2",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 8292,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "astro 6.4.8 → 7.2.2",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 8772,
+      "phase": "Checked",
+      "detail": "astro 6.4.8 → 7.2.2 · safe for your code · 39 upstream changes, none used here",
+      "done": 1,
+      "total": 1
+    },
+    {
+      "at": 31555,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 31571,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 31797,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 31973,
+      "phase": "Checking pages as it is",
+      "detail": "npm run build",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 31973,
+      "phase": "Checking pages as it is",
+      "detail": "`npm run build`",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 33092,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 43746,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 43762,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 56329,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 56450,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 56490,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 56591,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 57322,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 57466,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 57539,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 57539,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 57576,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 57576,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 57600,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 57600,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 57631,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 57666,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 57794,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 57833,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 57859,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 57859,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 57921,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 57921,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 57945,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58041,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58099,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58099,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58129,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58159,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58190,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58218,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58218,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58264,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58264,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58289,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58308,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58344,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58370,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58386,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58386,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58416,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58440,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58467,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58495,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58495,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58521,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58538,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58555,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58555,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58578,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58592,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58617,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58637,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58646,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58646,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58779,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58830,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58830,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58902,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58902,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58925,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58938,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58959,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58968,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58975,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58975,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58993,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 58993,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59003,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59018,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59030,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59053,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59058,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59058,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59073,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59092,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59092,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59103,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59103,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59109,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59109,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59122,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59122,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59135,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59135,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59144,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59144,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59164,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59171,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59173,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59177,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59180,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59194,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59201,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59201,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59373,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59390,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59390,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59431,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59817,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59914,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59929,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59963,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 59978,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 60175,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 61838,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 61845,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 61865,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 61873,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 61873,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 62235,
       "phase": "Testing astro@7.2.2",
       "detail": "installing into the test checkout",
       "done": 0,
       "total": 1
     },
     {
-      "at": 66808,
+      "at": 108500,
       "phase": "Testing astro@7.2.2",
       "detail": "npm run build",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 108503,
+      "phase": "Testing astro@7.2.2",
+      "detail": "`npm run build`",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 109780,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 118598,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 119427,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 119517,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 123289,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 123532,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 123571,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 123652,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124412,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124454,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124457,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124481,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124481,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124490,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124493,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124496,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124502,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124514,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124514,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124583,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124593,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124594,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124610,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124650,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124653,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124658,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124661,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124688,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124688,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124750,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124750,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124758,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124758,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124767,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124767,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124778,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124780,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124795,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124799,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124799,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124809,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124811,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124821,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124827,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124827,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124842,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124842,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124850,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124850,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124854,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124857,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124863,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124864,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124864,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124869,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124869,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124874,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124874,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124878,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124878,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124882,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124883,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124891,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124894,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124895,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124903,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124908,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124908,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124915,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124915,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124921,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124922,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124928,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124928,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124942,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124942,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124960,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124970,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124970,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124980,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124980,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124989,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 124989,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125002,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125002,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125027,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125027,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125047,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125047,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125059,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125059,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125071,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125071,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125078,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125078,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125086,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125086,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125094,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125094,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125103,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125103,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125111,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125111,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125123,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125123,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125130,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125133,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125154,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125154,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125178,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125183,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125183,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125202,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125202,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125210,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125210,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125248,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125255,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125255,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125391,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125391,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125400,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125400,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125420,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125421,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125421,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125435,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125444,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125447,
+      "phase": "",
+      "detail": "",
+      "done": 0,
+      "total": 1
+    },
+    {
+      "at": 125468,
+      "phase": "",
+      "detail": "",
       "done": 0,
       "total": 1
     }
@@ -203,6 +1912,11 @@
           "summary": "`SSRManifest.experimentalQueuedRendering` was removed.",
           "remediation": "The member `SSRManifest.experimentalQueuedRendering` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
           "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "SSRManifest.experimentalQueuedRendering",
             "experimentalQueuedRendering"
@@ -222,6 +1936,11 @@
           "summary": "`SSRManifest.poolSize` was removed.",
           "remediation": "The member `SSRManifest.poolSize` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
           "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "SSRManifest.poolSize",
             "poolSize"
@@ -241,6 +1960,11 @@
           "summary": "`SSRManifest.contentCache` was removed.",
           "remediation": "The member `SSRManifest.contentCache` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
           "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "SSRManifest.contentCache",
             "contentCache"
@@ -260,6 +1984,365 @@
           "summary": "`SSRManifest.experimentalLogger` was removed.",
           "remediation": "The member `SSRManifest.experimentalLogger` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
           "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "SSRManifest.experimentalLogger",
+            "experimentalLogger"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "38 API surface change(s) in astro",
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.2/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts → astro@7.2.2:dist/index.d.ts"
+            }
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "astro",
+      "ecosystem": "npm",
+      "manifestPath": "pages/package.json",
+      "workspace": "pages",
+      "workspaceName": "obs-backgroundremoval-pages",
+      "current": "6.4.8",
+      "latest": "7.2.2",
+      "selected": "7.2.2",
+      "safeLatest": null,
+      "status": "checking",
+      "risk": "none",
+      "summary": "Upgrade recommended. 39 upstream breaking changes, none of which this repository uses; fixes 3 known vulnerabilities.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 39,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 7,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`SSRManifest.experimentalQueuedRendering` was removed.",
+          "remediation": "The member `SSRManifest.experimentalQueuedRendering` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "SSRManifest.experimentalQueuedRendering",
+            "experimentalQueuedRendering"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "38 API surface change(s) in astro",
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.2/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts → astro@7.2.2:dist/index.d.ts"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`SSRManifest.poolSize` was removed.",
+          "remediation": "The member `SSRManifest.poolSize` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "SSRManifest.poolSize",
+            "poolSize"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "38 API surface change(s) in astro",
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.2/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts → astro@7.2.2:dist/index.d.ts"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`SSRManifest.contentCache` was removed.",
+          "remediation": "The member `SSRManifest.contentCache` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "SSRManifest.contentCache",
+            "contentCache"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "38 API surface change(s) in astro",
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.2/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts → astro@7.2.2:dist/index.d.ts"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`SSRManifest.experimentalLogger` was removed.",
+          "remediation": "The member `SSRManifest.experimentalLogger` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "SSRManifest.experimentalLogger",
+            "experimentalLogger"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "38 API surface change(s) in astro",
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.2/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts → astro@7.2.2:dist/index.d.ts"
+            }
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "astro",
+      "ecosystem": "npm",
+      "manifestPath": "pages/package.json",
+      "workspace": "pages",
+      "workspaceName": "obs-backgroundremoval-pages",
+      "current": "6.4.8",
+      "latest": "7.2.2",
+      "selected": "7.2.2",
+      "safeLatest": null,
+      "status": "checking",
+      "risk": "none",
+      "summary": "Upgrade recommended. 39 upstream breaking changes, none of which this repository uses; fixes 3 known vulnerabilities.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 39,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 7,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`SSRManifest.experimentalQueuedRendering` was removed.",
+          "remediation": "The member `SSRManifest.experimentalQueuedRendering` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "SSRManifest.experimentalQueuedRendering",
+            "experimentalQueuedRendering"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "38 API surface change(s) in astro",
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.2/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts → astro@7.2.2:dist/index.d.ts"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`SSRManifest.poolSize` was removed.",
+          "remediation": "The member `SSRManifest.poolSize` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "SSRManifest.poolSize",
+            "poolSize"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "38 API surface change(s) in astro",
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.2/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts → astro@7.2.2:dist/index.d.ts"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`SSRManifest.contentCache` was removed.",
+          "remediation": "The member `SSRManifest.contentCache` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "SSRManifest.contentCache",
+            "contentCache"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "38 API surface change(s) in astro",
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.2/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts → astro@7.2.2:dist/index.d.ts"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`SSRManifest.experimentalLogger` was removed.",
+          "remediation": "The member `SSRManifest.experimentalLogger` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "SSRManifest.experimentalLogger",
+            "experimentalLogger"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "38 API surface change(s) in astro",
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.2/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts → astro@7.2.2:dist/index.d.ts"
+            }
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "astro",
+      "ecosystem": "npm",
+      "manifestPath": "pages/package.json",
+      "workspace": "pages",
+      "workspaceName": "obs-backgroundremoval-pages",
+      "current": "6.4.8",
+      "latest": "7.2.2",
+      "selected": "7.2.2",
+      "safeLatest": null,
+      "status": "checking",
+      "risk": "none",
+      "summary": "Upgrade recommended. 39 upstream breaking changes, none of which this repository uses; fixes 3 known vulnerabilities.",
+      "recommendation": "upgrade-recommended",
+      "breakingCount": 39,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 7,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`SSRManifest.experimentalQueuedRendering` was removed.",
+          "remediation": "The member `SSRManifest.experimentalQueuedRendering` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "SSRManifest.experimentalQueuedRendering",
+            "experimentalQueuedRendering"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "38 API surface change(s) in astro",
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.2/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts → astro@7.2.2:dist/index.d.ts"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`SSRManifest.poolSize` was removed.",
+          "remediation": "The member `SSRManifest.poolSize` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "SSRManifest.poolSize",
+            "poolSize"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "38 API surface change(s) in astro",
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.2/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts → astro@7.2.2:dist/index.d.ts"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`SSRManifest.contentCache` was removed.",
+          "remediation": "The member `SSRManifest.contentCache` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "SSRManifest.contentCache",
+            "contentCache"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "38 API surface change(s) in astro",
+              "url": "https://cdn.jsdelivr.net/npm/astro@7.2.2/dist/index.d.ts",
+              "locator": "astro@6.4.8:dist/index.d.ts → astro@7.2.2:dist/index.d.ts"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`SSRManifest.experimentalLogger` was removed.",
+          "remediation": "The member `SSRManifest.experimentalLogger` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "SSRManifest.experimentalLogger",
             "experimentalLogger"
@@ -301,6 +2384,11 @@
           "summary": "`SSRManifest.experimentalQueuedRendering` was removed.",
           "remediation": "The member `SSRManifest.experimentalQueuedRendering` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
           "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "SSRManifest.experimentalQueuedRendering",
             "experimentalQueuedRendering"
@@ -320,6 +2408,11 @@
           "summary": "`SSRManifest.poolSize` was removed.",
           "remediation": "The member `SSRManifest.poolSize` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
           "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "SSRManifest.poolSize",
             "poolSize"
@@ -339,6 +2432,11 @@
           "summary": "`SSRManifest.contentCache` was removed.",
           "remediation": "The member `SSRManifest.contentCache` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
           "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "SSRManifest.contentCache",
             "contentCache"
@@ -358,6 +2456,11 @@
           "summary": "`SSRManifest.experimentalLogger` was removed.",
           "remediation": "The member `SSRManifest.experimentalLogger` no longer exists in `astro`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
           "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "SSRManifest.experimentalLogger",
             "experimentalLogger"
@@ -373,6 +2476,279 @@
           "sites": []
         }
       ]
+    },
+    {
+      "name": "@octokit/rest",
+      "ecosystem": "npm",
+      "manifestPath": "pages/package.json",
+      "workspace": "pages",
+      "workspaceName": "obs-backgroundremoval-pages",
+      "current": "22.0.1",
+      "latest": "22.0.1",
+      "selected": "22.0.1",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "@octokit/rest",
+      "ecosystem": "npm",
+      "manifestPath": "pages/package.json",
+      "workspace": "pages",
+      "workspaceName": "obs-backgroundremoval-pages",
+      "current": "22.0.1",
+      "latest": "22.0.1",
+      "selected": "22.0.1",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "astro",
+      "ecosystem": "npm",
+      "manifestPath": "pages/package.json",
+      "workspace": "pages",
+      "workspaceName": "obs-backgroundremoval-pages",
+      "current": "6.4.8",
+      "latest": "6.4.8",
+      "selected": "6.4.8",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "astro",
+      "ecosystem": "npm",
+      "manifestPath": "pages/package.json",
+      "workspace": "pages",
+      "workspaceName": "obs-backgroundremoval-pages",
+      "current": "6.4.8",
+      "latest": "6.4.8",
+      "selected": "6.4.8",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "astro",
+      "ecosystem": "npm",
+      "manifestPath": "pages/package.json",
+      "workspace": "pages",
+      "workspaceName": "obs-backgroundremoval-pages",
+      "current": "6.4.8",
+      "latest": "7.2.2",
+      "selected": "7.2.2",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "astro",
+      "ecosystem": "npm",
+      "manifestPath": "pages/package.json",
+      "workspace": "pages",
+      "workspaceName": "obs-backgroundremoval-pages",
+      "current": "6.4.8",
+      "latest": "6.4.8",
+      "selected": "6.4.8",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "astro",
+      "ecosystem": "npm",
+      "manifestPath": "pages/package.json",
+      "workspace": "pages",
+      "workspaceName": "obs-backgroundremoval-pages",
+      "current": "6.4.8",
+      "latest": "6.4.8",
+      "selected": "6.4.8",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "astro",
+      "ecosystem": "npm",
+      "manifestPath": "pages/package.json",
+      "workspace": "pages",
+      "workspaceName": "obs-backgroundremoval-pages",
+      "current": "6.4.8",
+      "latest": "6.4.8",
+      "selected": "6.4.8",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "astro",
+      "ecosystem": "npm",
+      "manifestPath": "pages/package.json",
+      "workspace": "pages",
+      "workspaceName": "obs-backgroundremoval-pages",
+      "current": "6.4.8",
+      "latest": "6.4.8",
+      "selected": "6.4.8",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "pretty-bytes",
+      "ecosystem": "npm",
+      "manifestPath": "pages/package.json",
+      "workspace": "pages",
+      "workspaceName": "obs-backgroundremoval-pages",
+      "current": "7.1.1",
+      "latest": "7.1.1",
+      "selected": "7.1.1",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "pretty-bytes",
+      "ecosystem": "npm",
+      "manifestPath": "pages/package.json",
+      "workspace": "pages",
+      "workspaceName": "obs-backgroundremoval-pages",
+      "current": "7.1.1",
+      "latest": "7.1.1",
+      "selected": "7.1.1",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "typescript",
+      "ecosystem": "npm",
+      "manifestPath": "pages/package.json",
+      "workspace": "pages",
+      "workspaceName": "obs-backgroundremoval-pages",
+      "current": "7.0.2",
+      "latest": "7.0.2",
+      "selected": "7.0.2",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "typescript",
+      "ecosystem": "npm",
+      "manifestPath": "pages/package.json",
+      "workspace": "pages",
+      "workspaceName": "obs-backgroundremoval-pages",
+      "current": "7.0.2",
+      "latest": "7.0.2",
+      "selected": "7.0.2",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
     }
   ]
 }
