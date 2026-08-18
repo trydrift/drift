@@ -262,7 +262,19 @@ export interface TaskActivity {
    * glance: a file the agent merely looked at, and a file that did not exist
    * before it ran.
    */
-  kind: 'thinking' | 'bash' | 'edit' | 'create' | 'read' | 'status' | 'search';
+  kind:
+    | 'thinking'
+    | 'bash'
+    | 'edit'
+    | 'create'
+    | 'read'
+    | 'status'
+    | 'search'
+    | 'prompt'
+    | 'patch'
+    | 'tokens'
+    | 'diff'
+    | 'error';
   title: string;
   detail?: string;
   input?: string;
