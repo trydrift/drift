@@ -17,11 +17,19 @@ import { join } from 'node:path';
 
 const repoRoot = process.cwd();
 const root = process.env.DRIFT_BENCH_ROOT;
+/**
+ * Which build to measure.
+ *
+ * A/B-ing two commits of the engine by rebuilding between runs makes the
+ * comparison hostage to whatever the network was doing an hour apart. Pointing
+ * two child processes at two `dist` directories in the same minute does not.
+ */
+const dist = process.env.DRIFT_BENCH_DIST ?? join(repoRoot, 'dist');
 
-const { scanUpgrades } = await import(join(repoRoot, 'dist/upgrade/scan.js'));
-const { DriftConfigSchema } = await import(join(repoRoot, 'dist/config/schema.js'));
-const { createLogger } = await import(join(repoRoot, 'dist/util/logger.js'));
-const { configureHttpDiskCache } = await import(join(repoRoot, 'dist/util/http.js'));
+const { scanUpgrades } = await import(join(dist, 'upgrade/scan.js'));
+const { DriftConfigSchema } = await import(join(dist, 'config/schema.js'));
+const { createLogger } = await import(join(dist, 'util/logger.js'));
+const { configureHttpDiskCache } = await import(join(dist, 'util/http.js'));
 
 configureHttpDiskCache(process.env.DRIFT_BENCH_CACHE);
 

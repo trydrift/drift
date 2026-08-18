@@ -69,6 +69,10 @@ if (cold === warm) {
 }
 
 const selected = (flag('targets') ?? Object.keys(TARGETS).join(',')).split(',').filter(Boolean);
+/** An alternate build to measure, so two engine commits can be compared in one sitting. */
+const dist = flag('dist');
+/** Repeat count. Cold runs vary with the network; the median of three is worth the wait. */
+const repeats = Number(flag('repeat', '1')) || 1;
 const outName = flag('out', cold ? 'cold' : 'warm');
 const outDir = join(repoRoot, 'bench-results');
 const cloneCache = join(tmpdir(), 'drift-capture-clones');
@@ -146,6 +150,7 @@ async function scanOnce(id, checkout, profilePath) {
       DRIFT_PROFILE: profilePath,
       DRIFT_BENCH_ROOT: checkout.dir,
       DRIFT_BENCH_CACHE: httpCache,
+      ...(dist ? { DRIFT_BENCH_DIST: dist } : {}),
       ...(githubToken ? { GITHUB_TOKEN: githubToken } : {}),
     },
   }).catch((err) => ({ stdout: err.stdout ?? '', stderr: err.stderr ?? String(err), failed: true }));
@@ -166,21 +171,31 @@ const results = [];
 for (const id of selected) {
   const checkout = await checkoutOf(id);
   pinned[id] ??= checkout.head;
-  const profilePath = join(outDir, `${outName}-${id}.profile.json`);
-  process.stderr.write(`[${id}] scanning (${cold ? 'cold' : 'warm'})\n`);
-  const result = await scanOnce(id, checkout, profilePath);
+  const runs = [];
+  for (let attempt = 0; attempt < repeats; attempt++) {
+    // A cold run means cold every time, not just the first of three.
+    if (cold && attempt > 0) await rm(httpCache, { recursive: true, force: true });
+    const profilePath = join(outDir, `${outName}-${id}${attempt > 0 ? `.${attempt}` : ''}.profile.json`);
+    process.stderr.write(`[${id}] scanning (${cold ? 'cold' : 'warm'}${repeats > 1 ? ` ${attempt + 1}/${repeats}` : ''})\n`);
+    const result = await scanOnce(id, checkout, profilePath);
+    runs.push({ ...result, profile: profilePath });
+    process.stderr.write(
+      `[${id}] ${(result.wallMs / 1000).toFixed(1)}s · ${result.checked ?? '?'} checked · ` +
+        `${result.outdated ?? '?'} outdated · ${result.candidates ?? '?'} analysed\n`,
+    );
+  }
+
+  // The median, not the mean: one run that caught a registry mid-hiccup should
+  // not move the number the comparison is made against.
+  const median = [...runs].sort((a, b) => a.wallMs - b.wallMs)[Math.floor(runs.length / 2)];
   results.push({
     id,
     ...TARGETS[id],
     commit: checkout.head,
     mode: cold ? 'cold' : 'warm',
-    profile: profilePath,
-    ...result,
+    ...median,
+    ...(runs.length > 1 ? { allWallMs: runs.map((r) => r.wallMs) } : {}),
   });
-  process.stderr.write(
-    `[${id}] ${(result.wallMs / 1000).toFixed(1)}s · ${result.checked ?? '?'} checked · ` +
-      `${result.outdated ?? '?'} outdated · ${result.candidates ?? '?'} analysed\n`,
-  );
 }
 
 await writeFile(lockPath, `${JSON.stringify(pinned, null, 2)}\n`, 'utf8');
