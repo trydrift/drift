@@ -52,6 +52,22 @@ export const TARGETS = {
   scrapy: { repo: 'https://github.com/scrapy/scrapy', ecosystem: 'pypi', size: 'medium' },
   deno: { repo: 'https://github.com/denoland/deno', ecosystem: 'cargo', size: 'large' },
   kubernetes: { repo: 'https://github.com/kubernetes/kubernetes', ecosystem: 'go', size: 'large' },
+
+  // The rest of the capture suite's ecosystems. Not in the inner loop — the
+  // four above cover the paths that dominate — but the set a change has to
+  // generalise across before it is believed, since each of these exercises a
+  // different registry, a different surface provider, and a different set of
+  // gaps.
+  restsharp: { repo: 'https://github.com/restsharp/RestSharp', ecosystem: 'nuget', size: 'small' },
+  guzzle: { repo: 'https://github.com/guzzle/guzzle', ecosystem: 'packagist', size: 'small' },
+  phoenix: { repo: 'https://github.com/phoenixframework/phoenix', ecosystem: 'hex', size: 'medium' },
+  dio: { repo: 'https://github.com/cfug/dio', ecosystem: 'pub', size: 'small' },
+  tca: { repo: 'https://github.com/pointfreeco/swift-composable-architecture', ecosystem: 'swift', size: 'medium' },
+  cohttp: { repo: 'https://github.com/mirage/ocaml-cohttp', ecosystem: 'opam', size: 'small' },
+  elasticsearch: { repo: 'https://github.com/elastic/elasticsearch-java', ecosystem: 'maven', size: 'medium' },
+  esphome: { repo: 'https://github.com/esphome/esphome', ecosystem: 'arduino', size: 'large' },
+  obs: { repo: 'https://github.com/royshil/obs-backgroundremoval', ecosystem: 'vcpkg', size: 'small' },
+  gitlab: { repo: 'https://github.com/gitlabhq/gitlabhq', ecosystem: 'rubygems', size: 'large' },
 };
 
 const argv = process.argv.slice(2);
