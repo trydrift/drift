@@ -3,6 +3,7 @@ import { packageManagerById, type PackageManagerId } from '../detect/package-man
 import { nodeWorkspaceFs, type WorkspaceFs } from '../detect/workspace.js';
 import { createWorktree, type Worktree } from '../repo/worktree.js';
 import { execCommand, type Exec } from '../util/exec.js';
+import { count, measure, span } from '../util/profile.js';
 import { mapWithConcurrency } from '../util/http.js';
 import { localConcurrency } from '../util/parallelism.js';
 import { baselineKey, noBaselineCache, type CachedCheck } from './baseline-cache.js';
@@ -474,13 +475,16 @@ async function prepareGroup(
   hooks.report(`Preparing a test checkout of ${project}`, 'checking out a clean copy');
 
   let worktree: Worktree;
+  const checkout = span('verify', 'worktree', { project });
   try {
     worktree = await createWorktree(options.root, `probe-${dir || 'root'}`, {
       exec,
       env,
       ...(options.allowedGlobs ? { allowedGlobs: options.allowedGlobs } : {}),
     });
+    checkout.end();
   } catch (err) {
+    checkout.end({ failed: true });
     return { ok: false, reason: messageOf(err) };
   }
 
@@ -522,21 +526,26 @@ async function prepareGroup(
   // virtualenv. Without this the very first typecheck fails on every import
   // in the project and reports the whole repository as broken by an upgrade
   // that has not even been applied yet.
-  if (manager?.install) {
+  const install = manager?.install;
+  if (install) {
     hooks.report(
       `Installing ${project}'s dependencies`,
-      `\`${manager.install.command} ${manager.install.args.join(' ')}\``,
+      `\`${install.command} ${install.args.join(' ')}\``,
     );
-    const restored = await exec(manager.install.command, manager.install.args, {
-      cwd: dir ? `${worktree.path}/${dir}` : worktree.path,
-      env,
-      timeoutMs: options.timeoutMs ?? DEFAULT_INSTALL_TIMEOUT_MS,
-      onOutput: hooks.output,
-    });
+    count('verify.install');
+    const restored = await measure('verify', 'install', () =>
+      exec(install.command, install.args, {
+        cwd: dir ? `${worktree.path}/${dir}` : worktree.path,
+        env,
+        timeoutMs: options.timeoutMs ?? DEFAULT_INSTALL_TIMEOUT_MS,
+        onOutput: hooks.output,
+      }),
+      { project, manager: install.command },
+    );
     if (restored.code !== 0) {
       const detail = (restored.stderr || restored.stdout).trim().split('\n').slice(-3).join(' ');
       return abandon(
-        `\`${manager.install.command} ${manager.install.args.join(' ')}\` failed in a clean checkout, so there was nothing to test the upgrade against. ${detail}`.trim(),
+        `\`${install.command} ${install.args.join(' ')}\` failed in a clean checkout, so there was nothing to test the upgrade against. ${detail}`.trim(),
       );
     }
   }
@@ -558,12 +567,15 @@ async function prepareGroup(
 
   let baseline: readonly (CheckOutcome | CachedCheck)[];
   if (remembered) {
+    count('verify.baseline.cached');
     hooks.report(
       `Checking ${project} as it is`,
       `reusing the baseline measured earlier for this commit (${remembered.filter((c) => c.status === 'passed').length} of ${remembered.length} checks green)`,
     );
     baseline = remembered;
   } else {
+    count('verify.baseline.measured');
+    const baselineRun = span('verify', 'baseline', { project, checks: wanted.length });
     hooks.report(`Checking ${project} as it is`, `${wanted.map((check) => check.label).join(', ')}`);
     const measured = await runChecks({
       root: worktree.path,
@@ -580,6 +592,7 @@ async function prepareGroup(
       ...(options.token ? { token: options.token } : {}),
       ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
     });
+    baselineRun.end();
     baseline = measured;
     // Never a cancelled run: a check abandoned halfway is not a measurement of
     // anything, and remembering it would skip the real one for a week.
@@ -871,6 +884,16 @@ async function probeTogether(
  */
 async function installBatch(pass: GroupPass, targets: readonly ProbeTarget[]): Promise<boolean> {
   if (pass.token?.isCancellationRequested) return false;
+  count('verify.install');
+  const batch = span('verify', 'install', { packages: targets.length });
+  try {
+    return await installBatchInner(pass, targets);
+  } finally {
+    batch.end();
+  }
+}
+
+async function installBatchInner(pass: GroupPass, targets: readonly ProbeTarget[]): Promise<boolean> {
 
   if (pass.installTogether) {
     try {
@@ -908,7 +931,8 @@ function runPass(
   about?: readonly ProbeTarget[],
   options?: { stopOnFirstFailure?: boolean },
 ): Promise<CheckOutcome[]> {
-  return runChecks({
+  count('verify.checkPass');
+  return measure('verify', 'checks', () => runChecks({
     root: pass.root,
     dir: pass.dir,
     checks: pass.usable,
@@ -921,7 +945,7 @@ function runPass(
     ...(hooks ? { onOutput: (_check: LocalCheck, chunk: string) => hooks.output(chunk) } : {}),
     ...(pass.token ? { token: pass.token } : {}),
     ...(pass.timeoutMs ? { timeoutMs: pass.timeoutMs } : {}),
-  });
+  }));
 }
 
 const DEFAULT_INSTALL_TIMEOUT_MS = 15 * 60_000;
@@ -1121,6 +1145,16 @@ function short(sha: string): string {
  * report a real zero exit for the worktree to count as clean.
  */
 async function resetWorktree(pass: GroupPass): Promise<boolean> {
+  count('verify.reset');
+  const reset = span('verify', 'reset');
+  try {
+    return await resetWorktreeInner(pass);
+  } finally {
+    reset.end();
+  }
+}
+
+async function resetWorktreeInner(pass: GroupPass): Promise<boolean> {
   const checkout = await pass
     .exec('git', ['checkout', '--', '.'], { cwd: pass.root, env: pass.env })
     .catch(() => ({ code: 1 }) as Awaited<ReturnType<Exec>>);

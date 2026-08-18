@@ -1,4 +1,5 @@
 import { fetchJson, fetchText, mapWithConcurrency } from '../util/http.js';
+import { count, measure } from '../util/profile.js';
 
 /**
  * TypeScript declaration-surface diffing.
@@ -152,9 +153,13 @@ export function fetchTypeSurface(
 ): Promise<TypeSurface | null> {
   const key = `${packageName}@${version}#${options.followDependencies === false ? 'own' : 'deps'}`;
   const cached = surfaces.get(key);
-  if (cached) return cached;
+  if (cached) {
+    count('surface.cache.hit');
+    return cached;
+  }
 
-  const pending = computeTypeSurface(packageName, version, options);
+  count('surface.cache.miss');
+  const pending = measure('surface', packageName, () => computeTypeSurface(packageName, version, options));
   surfaces.set(key, pending);
   pending.then(
     (surface) => {
@@ -186,7 +191,10 @@ async function computeTypeSurface(
   if (!manifest && !entryPath) throw new VersionUnavailableError(packageName, version);
   if (!entryPath) return null;
 
-  const sources = await collectDeclarationSources(packageName, version, entryPath);
+  const sources = await measure('surface-sources', packageName, () =>
+    collectDeclarationSources(packageName, version, entryPath),
+  );
+  count('surface.declarationFiles', sources.length);
   if (sources.length === 0) return null;
 
   const api: SurfaceApi = new Map();
@@ -202,7 +210,7 @@ async function computeTypeSurface(
   const viaDependencies =
     !manifest || options.followDependencies === false
       ? []
-      : await mergeDependencySurfaces(manifest, sources, api);
+      : await measure('surface-deps', packageName, () => mergeDependencySurfaces(manifest, sources, api));
 
   return api.size > 0
     ? { api, entryPath, viaDependencies, ownSymbols, subpaths: subpathsOf(manifest?.exports) }

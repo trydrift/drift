@@ -53,6 +53,7 @@ import { compareSeverity, describeSeverity, severityOf, type UpgradeSeverity } f
 import { lookupVersions, versionSourceLabel, type VersionLookup } from './versions.js';
 import { summarize } from './summary.js';
 import { analysisConcurrency, describeParallelism, networkConcurrency } from '../util/parallelism.js';
+import { count, measure, span } from '../util/profile.js';
 import type { BaselineCache } from '../verification/baseline-cache.js';
 import {
   probeUpgrades,
@@ -620,6 +621,8 @@ export async function scanUpgrades(args: {
     onProgress?.({ phase, detail, done, total });
   };
 
+  const scanSpan = span('scan', 'total');
+  const discovery = span('discover', 'manifests');
   report('Looking for manifests', root);
   // A monorepo is many packages sharing a checkout. Each member is scanned as
   // itself: its own manifest, its own package manager, its own impact sites.
@@ -647,6 +650,8 @@ export async function scanUpgrades(args: {
 
   const { targets, ambiguities } = await discoverTargets(root, dirs, args.managers ?? new Map(), fs);
   if (targets.length === 0) {
+    discovery.end({ targets: 0 });
+    scanSpan.end({ checked: 0, candidates: 0 });
     return {
       candidates: [],
       checked: 0,
@@ -680,6 +685,7 @@ export async function scanUpgrades(args: {
     if (name) memberNames.set(target.dir, name);
   }
 
+  discovery.end({ targets: targets.length });
   const enabled = new Set(config.ecosystems);
   const multiPackage = new Set(targets.map((t) => t.dir)).size > 1;
 
@@ -774,6 +780,7 @@ export async function scanUpgrades(args: {
   //
   // Repository-wide on purpose: an import that crosses a package boundary is a
   // real edge and the index needs it. Only the impact sites are scoped.
+  const indexSpan = span('index', 'walk+build');
   const indexing = walkSourceFiles(root, { members: dirs }).then((files) => {
     report(
       'Indexing your code',
@@ -781,7 +788,9 @@ export async function scanUpgrades(args: {
       0,
       deps.length,
     );
-    return { files, index: buildIndex(files) };
+    const built = { files, index: buildIndex(files) };
+    indexSpan.end({ files: files.length });
+    return built;
   });
   // Nothing here reads a rejection until `analyzeUpgrade` awaits it, and an
   // unhandled rejection in the meantime would take down the process.
@@ -863,18 +872,21 @@ export async function scanUpgrades(args: {
   // registry's tolerance, not the machine's.
   report('Checking registries', `${deps.length} direct dependenc${deps.length === 1 ? 'y' : 'ies'}`, 0, deps.length);
   const outdated: { dep: ScanDependency; available: Extract<VersionLookup, { outcome: 'upgrade' }> }[] = [];
+  const lookupPhase = span('phase', 'version-discovery');
   await inParallel(deps, networkConcurrency(env), async (dep) => {
     if (token?.isCancellationRequested) return;
 
     const source = versionSourceLabel(dep.target.manager.ecosystem);
     announce(dep, `Asking ${source} what has been published`);
-    const available = await lookupVersions({
-      name: dep.name,
-      ecosystem: dep.target.manager.ecosystem,
-      current: dep.current,
-      range: dep.range,
-      ...(githubToken ? { githubToken } : {}),
-    });
+    const available = await measure('versions', dep.target.manager.ecosystem, () =>
+      lookupVersions({
+        name: dep.name,
+        ecosystem: dep.target.manager.ecosystem,
+        current: dep.current,
+        range: dep.range,
+        ...(githubToken ? { githubToken } : {}),
+      }),
+    );
 
     if (available.outcome === 'up-to-date') {
       upToDate += 1;
@@ -916,6 +928,7 @@ export async function scanUpgrades(args: {
     report('Outdated', `${dep.name} ${dep.current} → ${available.safeLatest ?? available.latest}`, looked, deps.length);
   });
 
+  lookupPhase.end({ checked: deps.length, outdated: outdated.length });
   outdated.sort((a, b) => a.dep.name.localeCompare(b.dep.name));
 
   // Now that the outdated set is known, prepare exactly the checkouts that will
@@ -934,6 +947,7 @@ export async function scanUpgrades(args: {
   if (token?.isCancellationRequested) {
     releaseUnreached();
     await warm?.dispose();
+    scanSpan.end({ cancelled: true });
     return {
       candidates: [],
       checked: deps.length,
@@ -952,6 +966,7 @@ export async function scanUpgrades(args: {
   // release-notes call, a type-declaration download — but with real parsing and
   // a repository-wide search behind each one, so this is bounded by the
   // machine rather than by the registries.
+  const analysisPhase = span('phase', 'analysis');
   try {
     await inParallel(outdated, concurrency, async ({ dep, available }) => {
       if (token?.isCancellationRequested) return;
@@ -1010,6 +1025,9 @@ export async function scanUpgrades(args: {
       );
     });
 
+    analysisPhase.end({ packages: outdated.length });
+
+    const verifyPhase = span('phase', 'verification');
     try {
       if (verify.enabled && candidates.length > 0 && !token?.isCancellationRequested) {
         await verifyCandidates({
@@ -1082,6 +1100,7 @@ export async function scanUpgrades(args: {
       // on disk, so this runs on every path out — including the ones where
       // verification never ran at all.
       await warm?.dispose();
+      verifyPhase.end({ candidates: candidates.length });
     }
   } finally {
     // Cancellation, a throw from any stage above, or simply a package the loop
@@ -1090,6 +1109,7 @@ export async function scanUpgrades(args: {
     releaseUnreached();
   }
 
+  scanSpan.end({ checked: deps.length, candidates: candidates.length });
   return {
     candidates: candidates.sort(compareCandidates),
     checked: deps.length,
@@ -1657,7 +1677,7 @@ async function analyzeUpgrade(args: {
     const surfaceCompared = new Set<string>();
     const prose = new Map<string, ProseSource[]>();
 
-    const evidence = await gatherEvidence([change], {
+    const evidence = await measure('evidence', target.manager.ecosystem, () => gatherEvidence([change], {
       config: args.config,
       logger: args.logger,
       githubToken: args.githubToken,
@@ -1676,16 +1696,18 @@ async function analyzeUpgrade(args: {
         const key = dependencyEcosystemKey(proseChange);
         prose.set(key, [...(prose.get(key) ?? []), source]);
       },
-    });
+    }), { package: args.dep.name });
 
     report(
       'Comparing the public API surface',
       `${label} · ${evidence.length} evidence source${evidence.length === 1 ? '' : 's'}`,
     );
-    const breakingChanges = await analyze([change], evidence, {
-      config: args.config,
-      logger: args.logger,
-    });
+    const breakingChanges = await measure('analyze', target.manager.ecosystem, () =>
+      analyze([change], evidence, {
+        config: args.config,
+        logger: args.logger,
+      }),
+    );
 
     report(
       breakingChanges.length > 0
@@ -1698,17 +1720,23 @@ async function analyzeUpgrade(args: {
     // across findings pays for each package once however many times this runs.
     const moduleMaps =
       breakingChanges.length > 0
-        ? await resolveModuleMaps([change], { logger: args.logger })
+        ? await measure('module-maps', target.manager.ecosystem, () =>
+            resolveModuleMaps([change], { logger: args.logger }),
+          )
         : undefined;
+    const awaitIndex = span('index-wait', target.manager.ecosystem);
     const { files, index } = await args.indexing;
+    awaitIndex.end();
+    const localizing = span('localize', target.manager.ecosystem, { changes: breakingChanges.length });
     const impactSites = localize(breakingChanges, [change], index, files, {
       logger: args.logger,
       maxSitesPerChange: args.maxSites ?? 40,
       member: args.member,
       ...(moduleMaps ? { moduleMaps } : {}),
     });
+    localizing.end({ sites: impactSites.length });
     report('Weighing what this upgrade is worth', label);
-    const [rationale] = await buildRationale(
+    const [rationale] = await measure('rationale', target.manager.ecosystem, () => buildRationale(
       { changes: [change], evidence, breakingChanges, impactSites },
       {
         config: args.config,
@@ -1719,7 +1747,7 @@ async function analyzeUpgrade(args: {
         surfaceGaps,
         prose,
       },
-    );
+    ));
 
     const plan = buildPlan({
       repo: args.repo,

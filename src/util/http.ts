@@ -11,6 +11,8 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { count, profiling, span } from './profile.js';
+
 export interface FetchOptions {
   timeoutMs?: number;
   headers?: Record<string, string>;
@@ -112,6 +114,22 @@ function variantFingerprint(headers?: Record<string, string>): string {
   return createHash('sha256').update(raw).digest('hex').slice(0, 16);
 }
 
+/**
+ * The host a URL is on, for grouping spans.
+ *
+ * Deliberately not the full URL: a profile of a large scan holds tens of
+ * thousands of requests and the useful question is "how much of this run was
+ * spent waiting on the GitHub API", not which of four hundred packages was
+ * asked about.
+ */
+function hostOf(url: string): string {
+  const start = url.indexOf('://');
+  if (start < 0) return 'unknown';
+  const rest = url.slice(start + 3);
+  const end = rest.search(/[/?#]/);
+  return (end < 0 ? rest : rest.slice(0, end)).toLowerCase();
+}
+
 interface DiskEntry {
   /** The in-memory cache key — the URL plus whichever headers change the response. */
   key: string;
@@ -145,7 +163,11 @@ export function clearHttpCache(): void {
 export function fetchJson<T>(url: string, options: FetchOptions = {}): Promise<T | null> {
   const cacheKey = `json:${variantFingerprint(options.headers)}:${url}`;
   const cached = cacheGet<T | null>(cacheKey);
-  if (cached.hit) return Promise.resolve(cached.value);
+  if (cached.hit) {
+    count('http.cache.memory');
+    return Promise.resolve(cached.value);
+  }
+  if (profiling() && inFlight.has(cacheKey)) count('http.cache.coalesced');
   return coalesce(cacheKey, () => fetchAndParseJson<T>(url, cacheKey, options));
 }
 
@@ -176,7 +198,11 @@ async function fetchAndParseJson<T>(
 export function fetchText(url: string, options: FetchOptions = {}): Promise<string | null> {
   const cacheKey = `text:${variantFingerprint(options.headers)}:${url}`;
   const cached = cacheGet<string | null>(cacheKey);
-  if (cached.hit) return Promise.resolve(cached.value);
+  if (cached.hit) {
+    count('http.cache.memory');
+    return Promise.resolve(cached.value);
+  }
+  if (profiling() && inFlight.has(cacheKey)) count('http.cache.coalesced');
   return coalesce(cacheKey, () => fetchTextUncoalesced(url, cacheKey, options));
 }
 
@@ -186,18 +212,24 @@ async function fetchTextUncoalesced(
   options: FetchOptions,
 ): Promise<string | null> {
   const { timeoutMs = DEFAULT_TIMEOUT_MS, headers = {}, retries = 2 } = options;
+  const host = profiling() ? hostOf(url) : '';
+  const diskRead = span('disk-cache', host);
   const disk = await readDiskEntry(cacheKey);
+  diskRead.end({ hit: disk !== null });
   const ttl = options.cacheTtlMs ?? DEFAULT_DISK_TTL_MS;
   const now = Date.now();
   if (disk && disk.body !== null && (disk.immutable || options.immutable || now - disk.fetchedAt < ttl)) {
+    count('http.cache.disk');
     cacheSet(cacheKey, disk.body);
     return disk.body;
   }
   const conditionalHeaders: Record<string, string> = disk?.etag ? { 'If-None-Match': disk.etag } : {};
 
+  count('http.network');
   for (let attempt = 0; attempt <= retries; attempt++) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const request = span('http', host, attempt > 0 ? { attempt } : undefined);
     try {
       const response = await fetch(url, {
         signal: controller.signal,
@@ -206,6 +238,8 @@ async function fetchTextUncoalesced(
       });
 
       if (response.status === 304 && disk) {
+        request.end({ status: 304 });
+        count('http.notModified');
         await writeDiskEntry(cacheKey, { ...disk, fetchedAt: now, immutable: disk.immutable || options.immutable });
         cacheSet(cacheKey, disk.body);
         return disk.body;
@@ -213,6 +247,10 @@ async function fetchTextUncoalesced(
 
       if (response.ok) {
         const body = await response.text();
+        // Closed here rather than when the headers landed: for a packument or a
+        // declaration tarball the body is most of the wait, and a span that
+        // stopped at the status line would attribute that time to nothing.
+        request.end({ status: response.status, bytes: body.length });
         cacheSet(cacheKey, body);
         await writeDiskEntry(cacheKey, {
           key: cacheKey,
@@ -224,6 +262,7 @@ async function fetchTextUncoalesced(
         return body;
       }
 
+      request.end({ status: response.status });
       // 404 is a legitimate answer ("no changelog here"), not a failure to retry.
       if (response.status === 404 || response.status === 403) break;
 
@@ -232,6 +271,8 @@ async function fetchTextUncoalesced(
 
       await sleep(backoffMs(attempt, response.headers.get('retry-after')));
     } catch {
+      request.end({ status: 0 });
+      count('http.error');
       if (attempt === retries) break;
       await sleep(backoffMs(attempt, null));
     } finally {
