@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { readArchive } from '../../util/archive.js';
 import { isAvailable } from '../../util/exec.js';
 import { fetchArchive, fetchJson } from '../../util/http.js';
 import { diffSurfaces, type SurfaceApi, type SurfaceKind } from '../type-surface.js';
@@ -88,8 +89,8 @@ async function surfaceOf(
   }
 
   const dir = join(request.workdir, `probe-${version.replace(/[^\w.-]/g, '_')}`);
-  const archive = join(dir, source.filename);
 
+  let bytes: Buffer;
   try {
     await mkdir(dir, { recursive: true });
     const downloaded = await fetchArchive(source.url, { timeoutMs: 60_000 });
@@ -108,7 +109,7 @@ async function surfaceOf(
             failure: unavailable(TOOL, 'version-unavailable', `PyPI returned ${downloaded.status} for ${source.url}.`),
           };
     }
-    await writeFile(archive, downloaded.bytes);
+    bytes = downloaded.bytes;
   } catch (err) {
     return {
       ok: false,
@@ -116,18 +117,45 @@ async function surfaceOf(
     };
   }
 
-  // `tar` reads both gzip tarballs and zip archives, and extracting an archive
-  // executes nothing in it.
-  const extracted = await request.exec('tar', ['-xf', archive, '-C', dir], {
-    timeoutMs: request.timeoutMs,
-  });
-  if (extracted.code !== 0) {
+  // Unpacked in-process, and only the files the reader below will actually
+  // open. This used to shell out to `tar -xf`, which was wrong in two ways at
+  // once: it spawned a subprocess per archive — eighty-two of them on a scan of
+  // Scrapy's dependencies, twelve seconds of wall time — and reading a *zip*
+  // with `tar` is a BSD-tar behaviour, so the wheel path worked on macOS and
+  // failed on every GNU/Linux runner in CI.
+  //
+  // The written set is exactly what `SURFACE_SCRIPT`'s own walk would have
+  // picked up: `.py` and `.pyi`, with `test`, `tests`, `.git` and `__pycache__`
+  // pruned. An sdist is mostly documentation, C sources and fixtures, none of
+  // which the parser opens, so this writes a fraction of what it did.
+  let written = 0;
+  try {
+    for (const entry of readArchive(bytes)) {
+      const path = safeRelativePath(entry.path);
+      if (!path) continue;
+      const target = join(dir, path);
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, entry.read());
+      written += 1;
+    }
+  } catch (err) {
     return {
       ok: false,
       failure: unavailable(
         TOOL,
         'toolchain-failed',
-        `Could not unpack ${source.filename}: ${firstLine(extracted.stderr)}`,
+        `Could not unpack ${source.filename}: ${firstLine((err as Error).message)}`,
+      ),
+    };
+  }
+
+  if (written === 0) {
+    return {
+      ok: false,
+      failure: unavailable(
+        TOOL,
+        'no-public-surface',
+        `${request.name} ${version} ships no Python sources Drift could read.`,
       ),
     };
   }
@@ -163,6 +191,30 @@ async function surfaceOf(
   }
 
   return { ok: true, api };
+}
+
+/**
+ * Where an archive entry may be written, or `null` for one that must not be.
+ *
+ * Two jobs. The safety one: an entry may name `../../etc/passwd`, and an
+ * archive from a third party is exactly where that shows up, so anything that
+ * escapes the extraction directory is dropped rather than reasoned about. The
+ * cheap one: only `.py` and `.pyi` are ever read, and only outside the
+ * directories the reader prunes, so nothing else is worth the write.
+ */
+const PRUNED_DIRECTORIES = new Set(['test', 'tests', '.git', '__pycache__']);
+
+export function safeRelativePath(entryPath: string): string | null {
+  if (!entryPath.endsWith('.py') && !entryPath.endsWith('.pyi')) return null;
+
+  const parts = entryPath.split('/').filter((part) => part !== '' && part !== '.');
+  if (parts.length === 0) return null;
+  if (parts.some((part) => part === '..')) return null;
+  // An absolute path in the archive, or a Windows drive letter.
+  if (entryPath.startsWith('/') || /^[a-zA-Z]:/.test(entryPath)) return null;
+  if (parts.slice(0, -1).some((part) => PRUNED_DIRECTORIES.has(part))) return null;
+
+  return parts.join('/');
 }
 
 export interface SourceArchive {
