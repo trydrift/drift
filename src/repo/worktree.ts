@@ -1,7 +1,7 @@
-import { cp, copyFile, mkdir, rm, stat } from 'node:fs/promises';
+import { cp, copyFile, mkdir, readdir, rename, rm, stat } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, sep } from 'node:path';
 import { tmpdir } from 'node:os';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { execCommand, type Exec } from '../util/exec.js';
 
 /**
@@ -151,16 +151,16 @@ export async function createWorktree(
   const gitDir = common.stdout.trim() || '.git';
   const commonDir = isAbsolute(gitDir) ? gitDir : join(root, gitDir);
   const runId = options.runId ?? DEFAULT_RUN_ID;
-  const path = join(commonDir, 'drift-worktrees', sanitize(runId), sanitize(label));
+  const worktreesDir = join(commonDir, 'drift-worktrees');
+  const path = join(worktreesDir, sanitize(runId), sanitize(label));
+  sweepAbandonedTrash(worktreesDir);
 
   // A previous run that was killed rather than finished leaves both a directory
   // and a registration behind, and `worktree add` refuses either. Clearing both
   // before adding is what makes an interrupted scan recoverable without the
   // developer being told to run `git worktree prune` by hand. Scoped to this
   // run's own namespaced path, never another run's — see `runId` above.
-  await exec('git', ['worktree', 'remove', '--force', path], { cwd: root, env });
-  await rm(path, { recursive: true, force: true }).catch(() => undefined);
-  await exec('git', ['worktree', 'prune'], { cwd: root, env });
+  await discard(root, path, exec, env);
 
   const added = await exec('git', ['worktree', 'add', '--detach', path, at], { cwd: root, env });
   if (added.code !== 0) {
@@ -191,14 +191,117 @@ export async function createWorktree(
     async dispose() {
       if (disposed) return;
       disposed = true;
-      // Every step is best-effort and independently attempted: a worktree left
-      // behind is a wasted gigabyte, but a cleanup that throws would replace
-      // whatever real error the caller is already handling.
-      await exec('git', ['worktree', 'remove', '--force', path], { cwd: root, env }).catch(() => undefined);
-      await rm(path, { recursive: true, force: true }).catch(() => undefined);
-      await exec('git', ['worktree', 'prune'], { cwd: root, env }).catch(() => undefined);
+      await discard(root, path, exec, env);
     },
   };
+}
+
+/**
+ * Delete a worktree directory and forget it was ever registered.
+ *
+ * Two things were wrong with the obvious spelling, `git worktree remove
+ * --force`, and they compound. A prepared checkout has the project's
+ * dependencies installed in it, so removing one means deleting a
+ * `node_modules` — and git insists on walking the whole tree to decide what it
+ * is being asked to throw away before it throws any of it away. Worse,
+ * worktree bookkeeping takes a lock on the shared repository, so three members
+ * of a monorepo could not even do it at the same time. On a three-package pnpm
+ * workspace that was 56 seconds of a 129-second scan, strictly one at a time,
+ * entirely *after* every answer was already known.
+ *
+ * So the directory is renamed out of the way — one syscall — and the deletion
+ * itself is handed to {@link settleWorktreeDeletions}, which the probe awaits
+ * once at the end. Three deletions that used to run in sequence now overlap
+ * each other and overlap whatever work is left.
+ *
+ * The rename is to a sibling path so it stays on the same filesystem, where a
+ * rename is a directory-entry edit rather than a copy. Nothing is left behind
+ * on a run that finishes: the deletions are awaited before the probe returns.
+ * A run that is *killed* mid-delete leaves a `.trash-` directory, which is no
+ * worse than being killed mid-`rm` was, and {@link sweepAbandonedTrash} clears
+ * it the next time a worktree is created here.
+ */
+async function discard(root: string, path: string, exec: Exec, env: NodeJS.ProcessEnv): Promise<void> {
+  const trash = `${path}.trash-${randomUUID().slice(0, 8)}`;
+  const moved = await rename(path, trash).then(
+    () => true,
+    () => false,
+  );
+
+  if (moved) {
+    deleteInBackground(trash);
+  } else {
+    // Usually because there was nothing there — the common case for the
+    // pre-add cleanup — in which case this succeeds trivially. `git worktree
+    // remove` stays as the fallback for a directory neither could handle.
+    const removed = await rm(path, { recursive: true, force: true }).then(
+      () => true,
+      () => false,
+    );
+    if (!removed) {
+      await exec('git', ['worktree', 'remove', '--force', path], { cwd: root, env }).catch(() => undefined);
+    }
+  }
+
+  await exec('git', ['worktree', 'prune'], { cwd: root, env }).catch(() => undefined);
+}
+
+/** Deletions started but not yet finished. Never rejects; see `deleteInBackground`. */
+const deleting = new Set<Promise<void>>();
+
+function deleteInBackground(path: string): void {
+  const work = rm(path, { recursive: true, force: true })
+    .catch(() => undefined)
+    .then(() => {
+      deleting.delete(work);
+    });
+  deleting.add(work);
+}
+
+/**
+ * Wait for every backgrounded worktree deletion to finish.
+ *
+ * Called once, where the probe is done rather than where each worktree is, so
+ * that "nothing is left on disk when a scan returns" stays true while the
+ * deletions themselves overlap. Loops because a deletion can be started while
+ * an earlier batch is still being awaited.
+ */
+export async function settleWorktreeDeletions(): Promise<void> {
+  while (deleting.size > 0) await Promise.all([...deleting]);
+}
+
+/**
+ * Clear `.trash-` directories left by a run that was killed mid-delete.
+ *
+ * Best-effort and never awaited: this is housekeeping for a case that should
+ * not happen, and a scan must not wait on it or fail for it. Scoped to Drift's
+ * own naming convention under Drift's own directory, so there is nothing here
+ * that could reach a developer's files.
+ */
+function sweepAbandonedTrash(worktreesDir: string): void {
+  void readdir(worktreesDir, { withFileTypes: true })
+    .then((runs) =>
+      Promise.all(
+        runs
+          .filter((run) => run.isDirectory())
+          .map((run) =>
+            readdir(join(worktreesDir, run.name), { withFileTypes: true }).then(
+              (entries) =>
+                Promise.all(
+                  entries
+                    .filter((entry) => entry.name.includes('.trash-'))
+                    .map((entry) =>
+                      rm(join(worktreesDir, run.name, entry.name), { recursive: true, force: true }).catch(
+                        () => undefined,
+                      ),
+                    ),
+                ),
+              () => undefined,
+            ),
+          ),
+      ),
+    )
+    .catch(() => undefined);
 }
 
 /**

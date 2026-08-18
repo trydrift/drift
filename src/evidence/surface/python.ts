@@ -1,8 +1,11 @@
 import { mkdir, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { createHash } from 'node:crypto';
+import { readArchive } from '../../util/archive.js';
 import { isAvailable } from '../../util/exec.js';
-import { fetchJson } from '../../util/http.js';
-import { diffSurfaces, type SurfaceApi, type SurfaceKind } from '../type-surface.js';
+import { fetchArchive, fetchJson } from '../../util/http.js';
+import { readComputed, writeComputed } from '../../util/artifact-cache.js';
+import { diffSurfaces, type SurfaceApi, type SurfaceEntry, type SurfaceKind } from '../type-surface.js';
 import { unavailable, type SurfaceProvider, type SurfaceRequest, type SurfaceOutcome } from './types.js';
 
 /**
@@ -53,9 +56,13 @@ export const pythonSurface: SurfaceProvider = {
     const scriptPath = join(request.workdir, 'surface.py');
     await writeFile(scriptPath, SURFACE_SCRIPT, 'utf8');
 
-    const before = await surfaceOf(request, request.from, scriptPath);
+    // What would have to change for a remembered surface to be wrong: the
+    // script that reads it, and the interpreter that runs the script.
+    const analyzer = `${SCRIPT_FINGERPRINT}/${await interpreterVersion(request)}`;
+
+    const before = await surfaceOf(request, request.from, scriptPath, analyzer);
     if (!before.ok) return before.failure;
-    const after = await surfaceOf(request, request.to, scriptPath);
+    const after = await surfaceOf(request, request.to, scriptPath, analyzer);
     if (!after.ok) return after.failure;
 
     return {
@@ -70,7 +77,43 @@ export const pythonSurface: SurfaceProvider = {
 
 type SurfaceAttempt = { ok: true; api: SurfaceApi } | { ok: false; failure: SurfaceOutcome };
 
+/**
+ * The parsed public surface of one published version, computed at most once
+ * per machine per analyzer.
+ *
+ * Everything below this — a download, an unpack, and an `ast` parse of every
+ * Python file in the package — produces the same answer every time it runs,
+ * because a published version is immutable and no registry permits anyone to
+ * change one after the fact. On a warm scan of Scrapy's dependencies that was
+ * thirty-odd `python3` invocations re-deriving what the last scan already knew.
+ *
+ * The key carries the analyzer, not just the artifact: a hash of the script
+ * below and the interpreter that runs it. Keyed on the package alone, a fixed
+ * parser would keep serving the answer it got wrong — a silent accuracy
+ * regression, and the reason there is no TTL here instead.
+ *
+ * Only a *successful* surface is remembered. Every failure path below is either
+ * a fact about this machine (no `python3`) or a transient one (a download that
+ * did not land), and neither is a property of the version being asked about.
+ */
 async function surfaceOf(
+  request: SurfaceRequest,
+  version: string,
+  scriptPath: string,
+  analyzer: string,
+): Promise<SurfaceAttempt> {
+  const key = `python-surface:${analyzer}:${request.name}@${version}`;
+  // Stored as entry pairs: a `Map` is not JSON, and every field of a
+  // `SurfaceEntry` is a string or an array of them, so the round trip is exact.
+  const remembered = await readComputed<[string, SurfaceEntry][]>(key);
+  if (remembered) return { ok: true, api: new Map(remembered) };
+
+  const computed = await computeSurfaceOf(request, version, scriptPath);
+  if (computed.ok) await writeComputed(key, [...computed.api]);
+  return computed;
+}
+
+async function computeSurfaceOf(
   request: SurfaceRequest,
   version: string,
   scriptPath: string,
@@ -88,18 +131,27 @@ async function surfaceOf(
   }
 
   const dir = join(request.workdir, `probe-${version.replace(/[^\w.-]/g, '_')}`);
-  const archive = join(dir, source.filename);
 
+  let bytes: Buffer;
   try {
     await mkdir(dir, { recursive: true });
-    const response = await fetch(source.url, { signal: AbortSignal.timeout(60_000) });
-    if (!response.ok) {
-      return {
-        ok: false,
-        failure: unavailable(TOOL, 'version-unavailable', `PyPI returned ${response.status} for ${source.url}.`),
-      };
+    const downloaded = await fetchArchive(source.url, { timeoutMs: 60_000 });
+    if (!downloaded.ok) {
+      return downloaded.status === 0
+        ? {
+            ok: false,
+            failure: unavailable(
+              TOOL,
+              'toolchain-failed',
+              `Could not download ${source.url}: ${downloaded.error ?? 'the request did not complete'}`,
+            ),
+          }
+        : {
+            ok: false,
+            failure: unavailable(TOOL, 'version-unavailable', `PyPI returned ${downloaded.status} for ${source.url}.`),
+          };
     }
-    await writeFile(archive, Buffer.from(await response.arrayBuffer()));
+    bytes = downloaded.bytes;
   } catch (err) {
     return {
       ok: false,
@@ -107,18 +159,45 @@ async function surfaceOf(
     };
   }
 
-  // `tar` reads both gzip tarballs and zip archives, and extracting an archive
-  // executes nothing in it.
-  const extracted = await request.exec('tar', ['-xf', archive, '-C', dir], {
-    timeoutMs: request.timeoutMs,
-  });
-  if (extracted.code !== 0) {
+  // Unpacked in-process, and only the files the reader below will actually
+  // open. This used to shell out to `tar -xf`, which was wrong in two ways at
+  // once: it spawned a subprocess per archive — eighty-two of them on a scan of
+  // Scrapy's dependencies, twelve seconds of wall time — and reading a *zip*
+  // with `tar` is a BSD-tar behaviour, so the wheel path worked on macOS and
+  // failed on every GNU/Linux runner in CI.
+  //
+  // The written set is exactly what `SURFACE_SCRIPT`'s own walk would have
+  // picked up: `.py` and `.pyi`, with `test`, `tests`, `.git` and `__pycache__`
+  // pruned. An sdist is mostly documentation, C sources and fixtures, none of
+  // which the parser opens, so this writes a fraction of what it did.
+  let written = 0;
+  try {
+    for (const entry of readArchive(bytes)) {
+      const path = safeRelativePath(entry.path);
+      if (!path) continue;
+      const target = join(dir, path);
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, entry.read());
+      written += 1;
+    }
+  } catch (err) {
     return {
       ok: false,
       failure: unavailable(
         TOOL,
         'toolchain-failed',
-        `Could not unpack ${source.filename}: ${firstLine(extracted.stderr)}`,
+        `Could not unpack ${source.filename}: ${firstLine((err as Error).message)}`,
+      ),
+    };
+  }
+
+  if (written === 0) {
+    return {
+      ok: false,
+      failure: unavailable(
+        TOOL,
+        'no-public-surface',
+        `${request.name} ${version} ships no Python sources Drift could read.`,
       ),
     };
   }
@@ -154,6 +233,30 @@ async function surfaceOf(
   }
 
   return { ok: true, api };
+}
+
+/**
+ * Where an archive entry may be written, or `null` for one that must not be.
+ *
+ * Two jobs. The safety one: an entry may name `../../etc/passwd`, and an
+ * archive from a third party is exactly where that shows up, so anything that
+ * escapes the extraction directory is dropped rather than reasoned about. The
+ * cheap one: only `.py` and `.pyi` are ever read, and only outside the
+ * directories the reader prunes, so nothing else is worth the write.
+ */
+const PRUNED_DIRECTORIES = new Set(['test', 'tests', '.git', '__pycache__']);
+
+export function safeRelativePath(entryPath: string): string | null {
+  if (!entryPath.endsWith('.py') && !entryPath.endsWith('.pyi')) return null;
+
+  const parts = entryPath.split('/').filter((part) => part !== '' && part !== '.');
+  if (parts.length === 0) return null;
+  if (parts.some((part) => part === '..')) return null;
+  // An absolute path in the archive, or a Windows drive letter.
+  if (entryPath.startsWith('/') || /^[a-zA-Z]:/.test(entryPath)) return null;
+  if (parts.slice(0, -1).some((part) => PRUNED_DIRECTORIES.has(part))) return null;
+
+  return parts.join('/');
 }
 
 export interface SourceArchive {
@@ -310,4 +413,32 @@ json.dump(sorted(symbols.values(), key=lambda s: s['name']), sys.stdout)
 
 function firstLine(text: string): string {
   return text.split('\n').find((line) => line.trim().length > 0)?.trim() ?? 'no output';
+}
+
+/**
+ * A fingerprint of the reader below, so a fix to it invalidates every surface
+ * it could have got wrong.
+ *
+ * Hashing the script rather than versioning it by hand: a constant somebody has
+ * to remember to bump is a constant that eventually is not bumped, and the
+ * failure mode there is a cache quietly serving conclusions from a parser that
+ * has since been corrected.
+ */
+const SCRIPT_FINGERPRINT = createHash('sha256').update(SURFACE_SCRIPT).digest('hex').slice(0, 12);
+
+/**
+ * Which `python3` this is, asked once per process.
+ *
+ * Part of the cache key because `ast` is a moving target: a syntax the running
+ * interpreter cannot parse is a file the reader silently skips, so the same
+ * package can have a different readable surface under 3.9 and under 3.13.
+ */
+let interpreter: Promise<string> | null = null;
+
+function interpreterVersion(request: SurfaceRequest): Promise<string> {
+  interpreter ??= request
+    .exec('python3', ['--version'], { timeoutMs: 20_000 })
+    .then((result) => (result.stdout || result.stderr).trim().replace(/\s+/g, '-') || 'unknown')
+    .catch(() => 'unknown');
+  return interpreter;
 }

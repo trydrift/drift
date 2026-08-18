@@ -1029,3 +1029,91 @@ class View:
     assert.equal(sites.length, 0);
   });
 });
+
+/**
+ * The masked views of a file — comments stripped, string contents blanked — are
+ * computed once per file and shared across every finding that searches it. That
+ * turned twenty per cent of a scan's CPU into a cache lookup, and it is only
+ * sound while "the same index entry" really does mean "the same content".
+ */
+describe('reusing the masked view of a file', () => {
+  const change = (id: string, symbols: string[]) => ({
+    id,
+    dependency: 'acme-sdk',
+    ecosystem: 'npm' as never,
+    kind: 'removed-export' as const,
+    summary: `${symbols.join(', ')} removed`,
+    symbols,
+    confidence: 'high' as const,
+    citations: [],
+    remediation: 'use the replacement',
+  });
+
+  const source = `import { createClient, render } from 'acme-sdk';
+// createClient is mentioned in this comment and must never match
+const url = 'https://example.com/createClient';
+export const a = createClient();
+export const b = render();`;
+
+  test('two findings over the same file agree with one finding over it', () => {
+    const index = buildIndex([file('src/app.ts', 'typescript', source)]);
+    const files = [file('src/app.ts', 'typescript', source)];
+
+    const together = localize(
+      [change('c1', ['createClient']), change('c2', ['render'])],
+      [dep('acme-sdk', 'npm')],
+      index,
+      files,
+      { logger, maxSitesPerChange: 40 },
+    );
+    const first = localize([change('c1', ['createClient'])], [dep('acme-sdk', 'npm')], index, files, {
+      logger,
+      maxSitesPerChange: 40,
+    });
+
+    const forC1 = together.filter((site) => site.breakingChangeId === 'c1');
+    assert.deepEqual(
+      forC1.map((s) => `${s.file}:${s.line}:${s.matchedSymbol}`),
+      first.map((s) => `${s.file}:${s.line}:${s.matchedSymbol}`),
+      'a second finding in the same call must not change what the first one found',
+    );
+  });
+
+  test('the same call repeated gives the same answer', () => {
+    const index = buildIndex([file('src/app.ts', 'typescript', source)]);
+    const files = [file('src/app.ts', 'typescript', source)];
+    const run = () =>
+      JSON.stringify(
+        localize([change('c1', ['createClient'])], [dep('acme-sdk', 'npm')], index, files, {
+          logger,
+          maxSitesPerChange: 40,
+        }).map((s) => `${s.file}:${s.line}:${s.matchedSymbol}:${s.confidence}`),
+      );
+
+    assert.equal(run(), run());
+    assert.equal(run(), run());
+  });
+
+  test('a rebuilt index sees the new content, never the old masked view', () => {
+    const before = buildIndex([file('src/app.ts', 'typescript', source)]);
+    localize([change('c1', ['createClient'])], [dep('acme-sdk', 'npm')], before, [file('src/app.ts', 'typescript', source)], {
+      logger,
+      maxSitesPerChange: 40,
+    });
+
+    // The call is gone; the only remaining mention is in a comment.
+    const edited = `import { render } from 'acme-sdk';
+// createClient used to be called here
+export const b = render();`;
+    const after = buildIndex([file('src/app.ts', 'typescript', edited)]);
+    const sites = localize(
+      [change('c1', ['createClient'])],
+      [dep('acme-sdk', 'npm')],
+      after,
+      [file('src/app.ts', 'typescript', edited)],
+      { logger, maxSitesPerChange: 40 },
+    );
+
+    assert.deepEqual(sites, [], 'a mention inside a comment is not an impact site');
+  });
+});

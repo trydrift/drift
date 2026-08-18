@@ -1,8 +1,10 @@
 import { basename, dirname } from 'node:path';
 import { packageManagerById, type PackageManagerId } from '../detect/package-manager.js';
 import { nodeWorkspaceFs, type WorkspaceFs } from '../detect/workspace.js';
-import { createWorktree, type Worktree } from '../repo/worktree.js';
+import { createWorktree, type Worktree, settleWorktreeDeletions } from '../repo/worktree.js';
 import { execCommand, type Exec } from '../util/exec.js';
+import { count, measure, span } from '../util/profile.js';
+import { createToolAvailabilityCache, toolsAvailable, type ToolAvailabilityCache } from './tool-availability.js';
 import { mapWithConcurrency } from '../util/http.js';
 import { localConcurrency } from '../util/parallelism.js';
 import { baselineKey, noBaselineCache, type CachedCheck } from './baseline-cache.js';
@@ -16,6 +18,7 @@ import {
   type CheckOutcome,
   type LocalCheck,
 } from './checks.js';
+import { detectChecks } from '../detect/checks.js';
 
 /**
  * Testing an upgrade before anyone is told about it.
@@ -189,6 +192,8 @@ export interface ProbeOptions {
   onVerified?: (target: ProbeTarget, verification: UpgradeVerification) => void;
 }
 
+type ProbeRunOptions = ProbeOptions & { toolAvailability: ToolAvailabilityCache };
+
 const DEFAULT_KINDS: readonly CheckKind[] = ['typecheck', 'build', 'test'];
 
 /**
@@ -210,17 +215,18 @@ type BaselineLike = { label: string; status: CheckOutcome['status']; output?: st
  * reason rather than a scan that dies on someone's unusual setup.
  */
 export async function probeUpgrades(options: ProbeOptions): Promise<Map<string, UpgradeVerification>> {
+  const runOptions: ProbeRunOptions = { ...options, toolAvailability: createToolAvailabilityCache() };
   const results = new Map<string, UpgradeVerification>();
   const settle = (target: ProbeTarget, verification: UpgradeVerification) => {
     results.set(target.id, verification);
-    options.onVerified?.(target, verification);
+    runOptions.onVerified?.(target, verification);
   };
 
-  if (options.targets.length === 0) return results;
+  if (runOptions.targets.length === 0) return results;
 
-  const groups = [...groupByManifest(options.targets)];
+  const groups = [...groupByManifest(runOptions.targets)];
   let done = 0;
-  const total = options.targets.length;
+  const total = runOptions.targets.length;
 
   // Each group gets its own worktree and shares nothing with the others, so
   // nothing about correctness requires running them one at a time — only the
@@ -228,29 +234,35 @@ export async function probeUpgrades(options: ProbeOptions): Promise<Map<string, 
   // briefly lock shared repository state, so a monorepo with many manifests
   // benefits from running several at once without every group racing for the
   // same lock simultaneously.
-  await mapWithConcurrency(groups, Math.max(1, options.concurrency ?? localConcurrency()), async ([manifestPath, targets]) => {
-    if (options.token?.isCancellationRequested) {
+  await mapWithConcurrency(groups, Math.max(1, runOptions.concurrency ?? localConcurrency()), async ([manifestPath, targets]) => {
+    if (runOptions.token?.isCancellationRequested) {
       for (const target of targets) settle(target, cancelled());
       return;
     }
 
     const dir = memberDirOf(manifestPath);
-    await probeGroup(options, dir, targets, {
+    await probeGroup(runOptions, dir, targets, {
       report: (phase, detail, about) =>
-        options.onProgress?.({
+        runOptions.onProgress?.({
           phase,
           detail,
           done,
           total,
           ...(about ? { targets: about.map((target) => target.id) } : {}),
         }),
-      output: (chunk) => options.onProgress?.({ phase: '', detail: '', done, total, output: chunk }),
+      output: (chunk) => runOptions.onProgress?.({ phase: '', detail: '', done, total, output: chunk }),
       settle: (target, verification) => {
         done += 1;
         settle(target, verification);
       },
     });
   });
+
+  // Each group hands its worktree over to be deleted rather than waiting for
+  // it, so the deletions overlap each other and overlap the groups still
+  // running. Awaited here — once, at the end — so "nothing is left on disk
+  // when a scan returns" stays exactly as true as it was.
+  await settleWorktreeDeletions();
 
   return results;
 }
@@ -283,7 +295,7 @@ interface GroupHooks {
  * before, plus a batch pass that told us where to look.
  */
 async function probeGroup(
-  options: ProbeOptions,
+  options: ProbeRunOptions,
   dir: string,
   targets: readonly ProbeTarget[],
   hooks: GroupHooks,
@@ -448,6 +460,68 @@ type Preparation =
 
 type PackageManager = NonNullable<ReturnType<typeof packageManagerById>>;
 
+async function preflightUsableChecks(
+  exec: Exec,
+  checks: readonly LocalCheck[],
+  env: NodeJS.ProcessEnv,
+  cache: ToolAvailabilityCache,
+): Promise<{ usable: readonly LocalCheck[]; missing: readonly string[] }> {
+  const required = [...new Set(checks.flatMap(requiredHostCommands))];
+  if (required.length === 0) return { usable: checks, missing: [] };
+
+  const available = await toolsAvailable(exec, required, env, cache);
+  const eligible = (check: LocalCheck): boolean =>
+    requiredHostCommands(check).every((command) => available.get(command) === true);
+  const usable = checks.filter(eligible);
+
+  return {
+    usable,
+    missing: required.filter((command) => available.get(command) === false),
+  };
+}
+
+function requiredHostCommands(check: LocalCheck): string[] {
+  return check.commandOrigin.kind === 'host'
+    ? [check.commandOrigin.command]
+    : [...check.commandOrigin.requiredHostCommands];
+}
+
+function earlyPreflightChecks(
+  packageManager: PackageManager,
+  declared: readonly LocalCheck[],
+  kinds: readonly CheckKind[],
+): LocalCheck[] {
+  const install = packageManager.install
+    ? [
+        {
+          kind: 'build' as const,
+          label: `${packageManager.install.command} ${packageManager.install.args.join(' ')}`.trim(),
+          command: packageManager.install,
+          source: `${packageManager.label} install`,
+          commandOrigin: { kind: 'host' as const, command: packageManager.install.command },
+          compileCapable: false,
+        },
+      ]
+    : [];
+  const intrinsic = detectChecks(packageManager.id, null).filter((check) => kinds.includes(check.kind));
+  const checkout = install.length > 0 ? declared.filter((check) => kinds.includes(check.kind)) : [];
+  return uniqueChecks([...install, ...intrinsic, ...checkout]);
+}
+
+function uniqueChecks(checks: readonly LocalCheck[]): LocalCheck[] {
+  const out: LocalCheck[] = [];
+  for (const check of checks) {
+    if (!out.some((existing) => existing.label === check.label)) out.push(check);
+  }
+  return out;
+}
+
+function describeMissingTools(missing: readonly string[]): string {
+  return missing.length === 1
+    ? `\`${missing[0]}\` is`
+    : `${missing.slice(0, -1).map((m) => `\`${m}\``).join(', ')} and \`${missing.at(-1)}\` are`;
+}
+
 /**
  * Create the worktree, install into it, and find out what is already red.
  *
@@ -457,7 +531,7 @@ type PackageManager = NonNullable<ReturnType<typeof packageManagerById>>;
  * `warmProbe` start it against the clock instead of after it.
  */
 async function prepareGroup(
-  options: ProbeOptions,
+  options: ProbeRunOptions,
   dir: string,
   packageManager: PackageManagerId,
   hooks: Pick<GroupHooks, 'report' | 'output'>,
@@ -470,17 +544,43 @@ async function prepareGroup(
   // typecheck, npm run build" appearing twice with nothing to tell the two
   // apart reads as one step that stalled and repeated itself.
   const project = projectLabel(options.root, dir);
+  const manager = packageManagerById(packageManager);
+
+  // Asked before anything is built, but only as a gate: if the package
+  // manager needed for installation, or a manager-intrinsic check such as
+  // `cargo check`, is missing, the clean worktree cannot make it appear. The
+  // open checkout may have uncommitted script edits, so its checks are never
+  // allowed to decide the final runnable set.
+  const declared = manager
+    ? await availableChecks(options.root, dir, options.fs ?? nodeWorkspaceFs(), packageManager).catch(
+        () => [] as LocalCheck[],
+      )
+    : [];
+  const possible = manager ? earlyPreflightChecks(manager, declared, kinds) : [];
+  if (possible.length > 0) {
+    const preflight = await preflightUsableChecks(exec, possible, env, options.toolAvailability);
+    if (preflight.usable.length === 0) {
+      count('verify.skipped.noTool');
+      return {
+        ok: false,
+        reason: `${describeMissingTools(preflight.missing)} not installed, so ${project} could not be built or tested against the upgrade.`,
+      };
+    }
+  }
 
   hooks.report(`Preparing a test checkout of ${project}`, 'checking out a clean copy');
 
   let worktree: Worktree;
+  const checkout = span('verify', 'worktree', { project });
   try {
     worktree = await createWorktree(options.root, `probe-${dir || 'root'}`, {
       exec,
       env,
       ...(options.allowedGlobs ? { allowedGlobs: options.allowedGlobs } : {}),
     });
+    checkout.end();
   } catch (err) {
+    checkout.end({ failed: true });
     return { ok: false, reason: messageOf(err) };
   }
 
@@ -505,38 +605,50 @@ async function prepareGroup(
     return { ok: false, reason };
   };
 
-  const manager = packageManagerById(packageManager);
-
   // Detected in the worktree rather than in the developer's checkout, because
   // that is where they will run. Reading the open tree would offer a script
   // that only exists in someone's unsaved edits, and miss one they have just
   // deleted without committing.
-  const wanted = (await availableChecks(worktree.path, dir, options.fs ?? nodeWorkspaceFs(), packageManager)).filter(
+  const detectedWanted = (await availableChecks(worktree.path, dir, options.fs ?? nodeWorkspaceFs(), packageManager)).filter(
     (check) => kinds.includes(check.kind),
   );
-  if (wanted.length === 0) {
+  if (detectedWanted.length === 0) {
     return abandon('This project declares no typecheck or build that Drift could run against the upgrade.');
+  }
+  const current = await preflightUsableChecks(exec, detectedWanted, env, options.toolAvailability);
+  const wanted = current.usable;
+  if (wanted.length === 0) {
+    return abandon(
+      current.missing.length > 0
+        ? `${describeMissingTools(current.missing)} not installed, so ${project} could not be built or tested against the upgrade.`
+        : 'This project declares checks, but none of them could run in the current environment.',
+    );
   }
 
   // A worktree is the commit and nothing else: no `node_modules`, no
   // virtualenv. Without this the very first typecheck fails on every import
   // in the project and reports the whole repository as broken by an upgrade
   // that has not even been applied yet.
-  if (manager?.install) {
+  const install = manager?.install;
+  if (install) {
     hooks.report(
       `Installing ${project}'s dependencies`,
-      `\`${manager.install.command} ${manager.install.args.join(' ')}\``,
+      `\`${install.command} ${install.args.join(' ')}\``,
     );
-    const restored = await exec(manager.install.command, manager.install.args, {
-      cwd: dir ? `${worktree.path}/${dir}` : worktree.path,
-      env,
-      timeoutMs: options.timeoutMs ?? DEFAULT_INSTALL_TIMEOUT_MS,
-      onOutput: hooks.output,
-    });
+    count('verify.install');
+    const restored = await measure('verify', 'install', () =>
+      exec(install.command, install.args, {
+        cwd: dir ? `${worktree.path}/${dir}` : worktree.path,
+        env,
+        timeoutMs: options.timeoutMs ?? DEFAULT_INSTALL_TIMEOUT_MS,
+        onOutput: hooks.output,
+      }),
+      { project, manager: install.command },
+    );
     if (restored.code !== 0) {
       const detail = (restored.stderr || restored.stdout).trim().split('\n').slice(-3).join(' ');
       return abandon(
-        `\`${manager.install.command} ${manager.install.args.join(' ')}\` failed in a clean checkout, so there was nothing to test the upgrade against. ${detail}`.trim(),
+        `\`${install.command} ${install.args.join(' ')}\` failed in a clean checkout, so there was nothing to test the upgrade against. ${detail}`.trim(),
       );
     }
   }
@@ -558,12 +670,15 @@ async function prepareGroup(
 
   let baseline: readonly (CheckOutcome | CachedCheck)[];
   if (remembered) {
+    count('verify.baseline.cached');
     hooks.report(
       `Checking ${project} as it is`,
       `reusing the baseline measured earlier for this commit (${remembered.filter((c) => c.status === 'passed').length} of ${remembered.length} checks green)`,
     );
     baseline = remembered;
   } else {
+    count('verify.baseline.measured');
+    const baselineRun = span('verify', 'baseline', { project, checks: wanted.length });
     hooks.report(`Checking ${project} as it is`, `${wanted.map((check) => check.label).join(', ')}`);
     const measured = await runChecks({
       root: worktree.path,
@@ -580,6 +695,7 @@ async function prepareGroup(
       ...(options.token ? { token: options.token } : {}),
       ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
     });
+    baselineRun.end();
     baseline = measured;
     // Never a cancelled run: a check abandoned halfway is not a measurement of
     // anything, and remembering it would skip the real one for a week.
@@ -688,6 +804,7 @@ export function warmProbe(
   dirs: readonly { dir: string; packageManager: PackageManagerId }[],
   onProgress?: (progress: ProbeProgress) => void,
 ): ProbeWarmup {
+  const runOptions: ProbeRunOptions = { ...options, toolAvailability: createToolAvailabilityCache() };
   const pending = new Map<string, { packageManager: PackageManagerId; prepared: Promise<Preparation> }>();
   const hooks = {
     report: (phase: string, detail: string) => onProgress?.({ phase, detail, done: 0, total: 0 }),
@@ -697,7 +814,7 @@ export function warmProbe(
   // Bounded for the same reason `probeUpgrades` bounds its groups: git worktree
   // operations briefly lock shared repository state, and a monorepo with twenty
   // members should not start twenty installs at once on one machine.
-  const limit = Math.max(1, options.concurrency ?? localConcurrency());
+  const limit = Math.max(1, runOptions.concurrency ?? localConcurrency());
   let active = 0;
   const queue: (() => void)[] = [];
 
@@ -716,7 +833,7 @@ export function warmProbe(
     if (pending.has(dir)) continue;
     pending.set(dir, {
       packageManager,
-      prepared: slot(() => prepareGroup(options, dir, packageManager, hooks)).catch((err) => ({
+      prepared: slot(() => prepareGroup(runOptions, dir, packageManager, hooks)).catch((err) => ({
         ok: false as const,
         reason: messageOf(err),
       })),
@@ -749,6 +866,9 @@ export function warmProbe(
           ),
         ),
       );
+      // `dispose` hands the directory over to be deleted rather than deleting
+      // it; this is the point where the caller is entitled to assume it is gone.
+      await settleWorktreeDeletions();
     },
   };
 }
@@ -871,6 +991,16 @@ async function probeTogether(
  */
 async function installBatch(pass: GroupPass, targets: readonly ProbeTarget[]): Promise<boolean> {
   if (pass.token?.isCancellationRequested) return false;
+  count('verify.install');
+  const batch = span('verify', 'install', { packages: targets.length });
+  try {
+    return await installBatchInner(pass, targets);
+  } finally {
+    batch.end();
+  }
+}
+
+async function installBatchInner(pass: GroupPass, targets: readonly ProbeTarget[]): Promise<boolean> {
 
   if (pass.installTogether) {
     try {
@@ -908,7 +1038,8 @@ function runPass(
   about?: readonly ProbeTarget[],
   options?: { stopOnFirstFailure?: boolean },
 ): Promise<CheckOutcome[]> {
-  return runChecks({
+  count('verify.checkPass');
+  return measure('verify', 'checks', () => runChecks({
     root: pass.root,
     dir: pass.dir,
     checks: pass.usable,
@@ -921,7 +1052,7 @@ function runPass(
     ...(hooks ? { onOutput: (_check: LocalCheck, chunk: string) => hooks.output(chunk) } : {}),
     ...(pass.token ? { token: pass.token } : {}),
     ...(pass.timeoutMs ? { timeoutMs: pass.timeoutMs } : {}),
-  });
+  }));
 }
 
 const DEFAULT_INSTALL_TIMEOUT_MS = 15 * 60_000;
@@ -1121,6 +1252,16 @@ function short(sha: string): string {
  * report a real zero exit for the worktree to count as clean.
  */
 async function resetWorktree(pass: GroupPass): Promise<boolean> {
+  count('verify.reset');
+  const reset = span('verify', 'reset');
+  try {
+    return await resetWorktreeInner(pass);
+  } finally {
+    reset.end();
+  }
+}
+
+async function resetWorktreeInner(pass: GroupPass): Promise<boolean> {
   const checkout = await pass
     .exec('git', ['checkout', '--', '.'], { cwd: pass.root, env: pass.env })
     .catch(() => ({ code: 1 }) as Awaited<ReturnType<Exec>>);
@@ -1172,6 +1313,19 @@ function verdictFrom(outcomes: readonly CheckOutcome[]): UpgradeVerification {
       checks: [...outcomes],
       diagnostics,
       failedFiles: filesNamedIn(diagnostics),
+    };
+  }
+
+  const skippedOutcomes = outcomes.filter((outcome) => outcome.status === 'not-run' || outcome.status === 'cancelled');
+  if (skippedOutcomes.length > 0) {
+    return {
+      status: 'skipped',
+      reason: skippedOutcomes.some((outcome) => outcome.status === 'cancelled')
+        ? 'Cancelled before this upgrade could be tested.'
+        : (skippedOutcomes.find((outcome) => outcome.reason)?.reason ??
+          'One or more project checks could not run against this upgrade.'),
+      checks: [...outcomes],
+      failedFiles: [],
     };
   }
 

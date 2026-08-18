@@ -15,6 +15,9 @@ const labels = (manager: string, manifest: string | null) =>
 const capabilities = (manager: string, manifest: string | null) =>
   detectChecks(manager as never, manifest).map((c) => [c.kind, c.compileCapable] as const);
 
+const origins = (manager: string, manifest: string | null) =>
+  detectChecks(manager as never, manifest).map((c) => c.commandOrigin);
+
 describe('node projects declare their own checks', () => {
   const manifest = JSON.stringify({
     scripts: { typecheck: 'tsc --noEmit', test: 'node --test', build: 'tsc', lint: 'eslint .' },
@@ -159,5 +162,25 @@ testpaths = ["tests"]
     assert.deepEqual(labels('bundler', 'gem "rspec", "~> 3.0"\n'), ['bundle exec rspec']);
     assert.deepEqual(labels('bundler', 'gem "minitest"\n'), ['bundle exec rake test']);
     assert.deepEqual(labels('bundler', 'gem "rails"\n'), []);
+  });
+});
+
+describe('composer-installed check binaries', () => {
+  test('raw vendor/bin checks are marked as post-install commands', () => {
+    const manifest = JSON.stringify({
+      'require-dev': { 'phpunit/phpunit': '^10', 'phpstan/phpstan': '^1' },
+    });
+
+    assert.deepEqual(labels('composer', manifest), ['vendor/bin/phpstan analyse', 'vendor/bin/phpunit']);
+    assert.deepEqual(origins('composer', manifest), [
+      { kind: 'post-install', requiredHostCommands: ['composer'] },
+      { kind: 'post-install', requiredHostCommands: ['composer'] },
+    ]);
+  });
+
+  test('composer scripts are host commands because composer runs them', () => {
+    assert.deepEqual(origins('composer', JSON.stringify({ scripts: { test: 'phpunit' } })), [
+      { kind: 'host', command: 'composer' },
+    ]);
   });
 });

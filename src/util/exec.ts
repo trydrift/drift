@@ -1,5 +1,7 @@
 import { execFile } from 'node:child_process';
 
+import { count, profiling, span } from './profile.js';
+
 /**
  * Running local tools.
  *
@@ -49,8 +51,22 @@ export type Exec = (
 const DEFAULT_TIMEOUT_MS = 180_000;
 const DEFAULT_MAX_BUFFER = 32 * 1024 * 1024;
 
+/**
+ * A span name for one invocation: the tool, plus the subcommand where the tool
+ * is a multiplexer. `git` alone says nothing — `git worktree` and `git clone`
+ * are different orders of magnitude — while a package manager's first argument
+ * is the difference between a metadata query and a full install.
+ */
+function commandLabel(command: string, args: readonly string[]): string {
+  const tool = command.slice(command.lastIndexOf('/') + 1);
+  const sub = args[0];
+  return sub && !sub.startsWith('-') ? `${tool} ${sub}` : tool;
+}
+
 export const execCommand: Exec = (command, args, options = {}) =>
   new Promise((resolve) => {
+    const process_ = profiling() ? span('exec', commandLabel(command, args)) : null;
+    if (process_) count('exec.spawned');
     const child = execFile(
       command,
       [...args],
@@ -63,6 +79,7 @@ export const execCommand: Exec = (command, args, options = {}) =>
         encoding: 'utf8',
       },
       (error, stdout, stderr) => {
+        process_?.end({ code: error ? 1 : 0 });
         if (!error) {
           resolve({ code: 0, stdout, stderr });
           return;

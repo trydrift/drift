@@ -2,6 +2,7 @@ import type { Dirent } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 import { memberOf } from '../detect/workspace.js';
+import { mapWithConcurrency } from '../util/http.js';
 
 /**
  * Source-file discovery.
@@ -219,21 +220,44 @@ export async function walkSourceFiles(
   const { maxFileBytes = 512 * 1024, maxFiles = 5000, extraIgnores = [], members } = options;
   const ignored = new Set([...IGNORED_DIRECTORIES, ...extraIgnores]);
 
-  const files: SourceFile[] = [];
+  // Phase one: which files are *candidates*, in the order a depth-first walk
+  // reaches them. Directory listings only — no `stat`, no `readFile` — so the
+  // whole of a 14,000-file checkout costs about a sixth of a second, and
+  // subdirectories are listed concurrently because listing one says nothing
+  // about any other.
+  //
+  // The order is what makes this equivalent to the serial walk it replaces:
+  // entries are taken in `readdir` order and a subdirectory is fully expanded
+  // at the point it appears, so the sequence of candidates is exactly the
+  // sequence the old loop visited them in. That matters because `maxFiles`
+  // genuinely bites on a large repository — Deno offers 6,754 analysable files
+  // against a ceiling of 5,000 — and any reordering here would silently change
+  // which 1,754 are dropped.
+  interface Candidate {
+    full: string;
+    repoPath: string;
+    language: Language;
+  }
 
-  const visit = async (dir: string): Promise<void> => {
-    if (files.length >= maxFiles) return;
-
+  /**
+   * Every candidate under `dir`, in the order a depth-first walk reaches them.
+   *
+   * Subdirectories are listed concurrently, but their results are spliced back
+   * into the position the directory held among its siblings — so concurrency
+   * changes the timing and never the sequence.
+   */
+  const list = async (dir: string): Promise<Candidate[]> => {
     let entries: Dirent[];
     try {
-      entries = await readdir(dir, { withFileTypes: true });
+      entries = await listings.run(() => readdir(dir, { withFileTypes: true }));
     } catch {
-      return; // Unreadable directory: skip rather than fail the run.
+      return []; // Unreadable directory: skip rather than fail the run.
     }
 
-    for (const entry of entries) {
-      if (files.length >= maxFiles) return;
+    /** A file resolves immediately; a directory resolves once it has been listed. */
+    const slots: (Candidate[] | Promise<Candidate[]>)[] = [];
 
+    for (const entry of entries) {
       const full = join(dir, entry.name);
 
       if (entry.isDirectory()) {
@@ -243,42 +267,108 @@ export async function walkSourceFiles(
         // no exception here, but `.circleci/config.yml` is nested inside a
         // hidden directory the walker must be allowed to enter.
         if (entry.name.startsWith('.') && entry.name !== '.github' && entry.name !== '.circleci') continue;
-        await visit(full);
+        slots.push(list(full));
         continue;
       }
 
       if (!entry.isFile()) continue;
 
       const repoPath = toPosix(relative(root, full));
-      const language: Language = isRuntimeConfigPath(repoPath)
-        ? 'config'
-        : languageOf(entry.name);
+      const language: Language = isRuntimeConfigPath(repoPath) ? 'config' : languageOf(entry.name);
       if (language === 'other') continue;
       // Minified and generated bundles produce useless multi-thousand-column
       // "impact sites" that a reviewer cannot act on.
       if (/\.min\.(js|ts)$/.test(entry.name) || /\.d\.ts\.map$/.test(entry.name)) continue;
 
-      try {
-        const info = await stat(full);
-        if (info.size > maxFileBytes) continue;
-
-        const content = await readFile(full, 'utf8');
-        files.push({
-          path: repoPath,
-          language,
-          content,
-          lineCount: countLines(content),
-          ...(members ? { member: memberOf(repoPath, members) } : {}),
-        });
-      } catch {
-        continue;
-      }
+      slots.push([{ full, repoPath, language }]);
     }
+
+    return (await Promise.all(slots)).flat();
   };
 
-  await visit(root);
+  const candidates = await list(root);
+
+  // Phase two: read them, in candidate order, many at once.
+  //
+  // Only as many as are needed. A file that is too large or unreadable is
+  // skipped without consuming any of the `maxFiles` budget — which is what the
+  // serial walk did — so the batch is topped up from the remaining candidates
+  // until either the budget is full or the candidates run out. In practice one
+  // round covers it; oversized source files are rare.
+  const files: SourceFile[] = [];
+  let cursor = 0;
+
+  while (files.length < maxFiles && cursor < candidates.length) {
+    const take = candidates.slice(cursor, cursor + (maxFiles - files.length));
+    cursor += take.length;
+
+    const read = await mapWithConcurrency(take, READ_CONCURRENCY, async (candidate) => {
+      try {
+        const info = await stat(candidate.full);
+        if (info.size > maxFileBytes) return null;
+        return await readFile(candidate.full, 'utf8');
+      } catch {
+        return null;
+      }
+    });
+
+    for (const [at, content] of read.entries()) {
+      if (content === null) continue;
+      const candidate = take[at]!;
+      files.push({
+        path: candidate.repoPath,
+        language: candidate.language,
+        content,
+        lineCount: countLines(content),
+        ...(members ? { member: memberOf(candidate.repoPath, members) } : {}),
+      });
+    }
+  }
+
   return files.sort((a, b) => a.path.localeCompare(b.path));
 }
+
+/**
+ * A bound on how many of something may be in flight, with everything else
+ * queued in arrival order.
+ *
+ * The directory walk is recursive and fans out at every level, so without this
+ * a large checkout would have every directory in the tree listed at once —
+ * tens of thousands of open descriptors on a repository like Kubernetes, and
+ * `EMFILE` well before that. Queuing does not change the *order* anything is
+ * returned in, only how many are open together.
+ */
+class Semaphore {
+  private active = 0;
+  private readonly waiting: (() => void)[] = [];
+
+  constructor(private readonly limit: number) {}
+
+  async run<T>(work: () => Promise<T>): Promise<T> {
+    if (this.active >= this.limit) await new Promise<void>((resolve) => this.waiting.push(resolve));
+    this.active += 1;
+    try {
+      return await work();
+    } finally {
+      this.active -= 1;
+      this.waiting.shift()?.();
+    }
+  }
+}
+
+/** Directory listings open at once. Well inside every default descriptor limit. */
+const listings = new Semaphore(64);
+
+/**
+ * Files read at once.
+ *
+ * `readFile` runs on libuv's thread pool, which defaults to four threads and is
+ * shared with DNS resolution — so a walk that saturates it stalls the registry
+ * lookups running alongside it. Sixteen keeps the pool busy through the
+ * latency of each read without queueing so deeply that a name lookup waits
+ * behind a thousand files.
+ */
+const READ_CONCURRENCY = 16;
 
 function toPosix(path: string): string {
   return sep === '/' ? path : path.split(sep).join('/');

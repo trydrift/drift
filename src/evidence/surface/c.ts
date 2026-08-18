@@ -1,6 +1,6 @@
 import type { Ecosystem } from '../../types.js';
 import { readArchive } from '../../util/archive.js';
-import { fetchJson, fetchText } from '../../util/http.js';
+import { fetchArchive, fetchJson, fetchText } from '../../util/http.js';
 import { arduinoLibrary } from '../arduino-index.js';
 import { fetchRegistryInfo, parseGitHubRepo } from '../registry.js';
 import { diffSurfaces, type SurfaceApi } from '../type-surface.js';
@@ -116,15 +116,18 @@ async function surfaceOf(
 
   let files: HeaderFile[];
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(request.timeoutMs) });
-    if (!response.ok) {
+    const downloaded = await fetchArchive(url, { timeoutMs: request.timeoutMs });
+    // A request that never completed used to throw out of `fetch`; re-thrown so
+    // it still lands in this provider's own catch, with the same message.
+    if (!downloaded.ok && downloaded.status === 0) throw new Error(downloaded.error ?? 'the request failed');
+    if (!downloaded.ok) {
       return {
         ok: false,
-        failure: unavailable(TOOL, 'version-unavailable', `${url} returned ${response.status}.`),
+        failure: unavailable(TOOL, 'version-unavailable', `${url} returned ${downloaded.status}.`),
       };
     }
 
-    const entries = readArchive(Buffer.from(await response.arrayBuffer()));
+    const entries = readArchive(downloaded.bytes);
     const byPath = new Map(entries.map((entry) => [entry.path, entry]));
     files = publicHeaders([...byPath.keys()])
       .map((header) => ({

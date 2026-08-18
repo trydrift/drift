@@ -1,6 +1,7 @@
 import { readArchive } from '../../util/archive.js';
 import { diffSurfaces, type SurfaceApi } from '../type-surface.js';
 import { readAssembly, type AssemblyType } from './ecma335.js';
+import { fetchArchive } from '../../util/http.js';
 import { unavailable, type SurfaceOutcome, type SurfaceProvider, type SurfaceRequest } from './types.js';
 
 /**
@@ -52,20 +53,23 @@ async function surfaceOf(request: SurfaceRequest, version: string): Promise<Atte
 
   let entries;
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(request.timeoutMs) });
-    if (!response.ok) {
+    const downloaded = await fetchArchive(url, { timeoutMs: request.timeoutMs });
+    // A request that never completed used to throw out of `fetch`; re-thrown so
+    // it still lands in this provider's own catch, with the same message.
+    if (!downloaded.ok && downloaded.status === 0) throw new Error(downloaded.error ?? 'the request failed');
+    if (!downloaded.ok) {
       return {
         ok: false,
         failure: unavailable(
           TOOL,
           'version-unavailable',
-          response.status === 404
+          downloaded.status === 404
             ? `NuGet has no package for ${request.name} ${version}. It may be unlisted, delisted, or published to a private feed.`
-            : `NuGet returned ${response.status} for ${request.name} ${version}.`,
+            : `NuGet returned ${downloaded.status} for ${request.name} ${version}.`,
         ),
       };
     }
-    entries = readArchive(Buffer.from(await response.arrayBuffer()));
+    entries = readArchive(downloaded.bytes);
   } catch (err) {
     return {
       ok: false,

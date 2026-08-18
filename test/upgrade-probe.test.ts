@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { probeUpgrades, probeDependencyChange, filesNamedIn, warmProbe } from '../dist/verification/upgrade-probe.js';
+import { clearToolAvailability } from '../dist/verification/tool-availability.js';
 import { applyVerificationToPlan, combineVerifications, describeVerification } from '../dist/verification/apply.js';
 import { applyVerification } from '../dist/upgrade/verification.js';
 import { severityOf, describeSeverity } from '../dist/upgrade/severity.js';
@@ -77,7 +78,493 @@ const target = (name: string, overrides: Partial<{ installs: string[] }> = {}) =
   };
 };
 
+const cargoTarget = (name: string) => ({
+  id: `t-${name}`,
+  name,
+  current: '1.0.0',
+  selected: '2.0.0',
+  manifestPath: 'Cargo.toml',
+  packageManager: 'cargo' as const,
+  install: async () => {},
+});
+
+const composerTarget = (name: string, install?: (checkout: string) => void) => ({
+  id: `t-${name}`,
+  name,
+  current: '1.0.0',
+  selected: '2.0.0',
+  manifestPath: 'composer.json',
+  packageManager: 'composer' as const,
+  install: async (checkout: string) => {
+    install?.(checkout);
+  },
+});
+
+describe('not building a test checkout nothing could be run in', () => {
+  /**
+   * The probe's most expensive step is the one that can be skipped on the
+   * strength of `PATH` alone. Answers are memoised for the process, so every
+   * test here starts from a clean slate.
+   */
+  const withoutTool = (missing: string) => {
+    const calls: string[] = [];
+    const exec = async (command: string, args: readonly string[]) => {
+      calls.push([command, ...args].join(' '));
+      if (command === missing) {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+    return { calls, exec };
+  };
+
+  test('a missing check tool skips the group without checking anything out', async () => {
+    clearToolAvailability();
+    const { calls, exec } = withoutTool('npm');
+    const results = await probeUpgrades({ root, targets: [target('zod')], exec, fs });
+
+    const verification = results.get('t-zod');
+    assert.equal(verification?.status, 'skipped');
+    // The point of the whole exercise: no worktree, no install, no checks.
+    assert.ok(!calls.some((line) => line.startsWith('git worktree add')));
+    assert.ok(!calls.some((line) => line === 'npm install'));
+  });
+
+  test('a missing host toolchain still skips a Cargo project before checkout', async () => {
+    clearToolAvailability();
+    const { calls, exec } = withoutTool('cargo');
+    const cargoFs = {
+      readFile: async () => '[package]\nname = "app"\nversion = "0.1.0"\n',
+      readDirectory: async () => ['Cargo.toml', 'Cargo.lock'],
+      isDirectory: async () => true,
+    };
+
+    const results = await probeUpgrades({ root, targets: [cargoTarget('serde')], exec, fs: cargoFs });
+
+    assert.equal(results.get('t-serde')?.status, 'skipped');
+    assert.match(results.get('t-serde')?.reason ?? '', /`cargo` is not installed/);
+    assert.ok(!calls.some((line) => line.startsWith('git worktree add')));
+    assert.ok(!calls.some((line) => line === 'cargo check'));
+  });
+
+  test('the reason names the tool, rather than describing a baseline nobody could run', async () => {
+    clearToolAvailability();
+    const { exec } = withoutTool('npm');
+    const results = await probeUpgrades({ root, targets: [target('zod')], exec, fs });
+
+    assert.match(results.get('t-zod')?.reason ?? '', /`npm` is not installed/);
+  });
+
+  test('one probe per tool, however many members ask about it', async () => {
+    clearToolAvailability();
+    const { calls, exec } = withoutTool('npm');
+    await probeUpgrades({ root, targets: [target('zod'), target('semver'), target('yaml')], exec, fs });
+
+    assert.equal(calls.filter((line) => line === 'npm --version').length, 1);
+  });
+
+  test('a tool that answers a bare --version with a usage error still counts as present', async () => {
+    clearToolAvailability();
+    // `go version` is the real spelling; `go --version` exits non-zero. Reading
+    // the exit code rather than ENOENT would skip verification on a machine
+    // with a perfectly good toolchain.
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      if (line === 'npm --version') return { code: 2, stdout: '', stderr: 'unknown flag' };
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+
+    const results = await probeUpgrades({ root, targets: [target('zod')], exec, fs });
+    assert.equal(results.get('t-zod')?.status, 'passed');
+  });
+
+  test('tool availability is keyed by PATH so one scan cannot poison the next', async () => {
+    clearToolAvailability();
+    const calls: string[] = [];
+    const exec = async (command: string, args: readonly string[], options: { env?: NodeJS.ProcessEnv } = {}) => {
+      const line = [command, ...args].join(' ');
+      calls.push(`${line} PATH=${options.env?.PATH ?? ''}`);
+      if (line === 'npm --version' && options.env?.PATH === '/missing') {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+
+    const first = await probeUpgrades({ root, targets: [target('zod')], exec, fs, env: { PATH: '/missing' } });
+    const second = await probeUpgrades({ root, targets: [target('react')], exec, fs, env: { PATH: '/present' } });
+
+    assert.equal(first.get('t-zod')?.status, 'skipped');
+    assert.equal(second.get('t-react')?.status, 'passed');
+    assert.equal(calls.filter((line) => line.startsWith('npm --version')).length, 2);
+    assert.ok(calls.some((line) => line === 'npm --version PATH=/missing'));
+    assert.ok(calls.some((line) => line === 'npm --version PATH=/present'));
+  });
+
+  test('a negative tool result is rechecked on a later scan even when PATH is unchanged', async () => {
+    clearToolAvailability();
+    let npmAvailable = false;
+    const calls: string[] = [];
+    const env = { PATH: '/usr/local/bin' };
+    const exec = async (command: string, args: readonly string[], options: { env?: NodeJS.ProcessEnv } = {}) => {
+      const line = [command, ...args].join(' ');
+      calls.push(`${line} PATH=${options.env?.PATH ?? ''}`);
+      if (line === 'npm --version' && !npmAvailable) {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+
+    const first = await probeUpgrades({ root, targets: [target('zod')], exec, fs, env });
+    npmAvailable = true;
+    const second = await probeUpgrades({ root, targets: [target('react')], exec, fs, env });
+
+    assert.equal(first.get('t-zod')?.status, 'skipped');
+    assert.equal(second.get('t-react')?.status, 'passed');
+    assert.equal(
+      calls.filter((line) => line === 'npm --version PATH=/usr/local/bin').length,
+      2,
+      'the second scan probes again instead of reusing the stale negative',
+    );
+  });
+
+  test('a positive tool result is rechecked on a later scan even when PATH is unchanged', async () => {
+    clearToolAvailability();
+    let npmAvailable = true;
+    const calls: string[] = [];
+    const env = { PATH: '/usr/local/bin' };
+    const exec = async (command: string, args: readonly string[], options: { env?: NodeJS.ProcessEnv } = {}) => {
+      const line = [command, ...args].join(' ');
+      calls.push(`${line} PATH=${options.env?.PATH ?? ''}`);
+      if (line === 'npm --version' && !npmAvailable) {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+
+    const first = await probeUpgrades({ root, targets: [target('zod')], exec, fs, env });
+    npmAvailable = false;
+    const second = await probeUpgrades({ root, targets: [target('react')], exec, fs, env });
+
+    assert.equal(first.get('t-zod')?.status, 'passed');
+    assert.equal(second.get('t-react')?.status, 'skipped');
+    assert.match(second.get('t-react')?.reason ?? '', /`npm` is not installed/);
+    assert.equal(
+      calls.filter((line) => line === 'npm --version PATH=/usr/local/bin').length,
+      2,
+      'the second scan probes again instead of reusing the stale positive',
+    );
+  });
+
+  test('probe errors fail open and let verification run', async () => {
+    clearToolAvailability();
+    const calls: string[] = [];
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      calls.push(line);
+      if (line === 'npm --version') throw new Error('spawn EACCES');
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+
+    const results = await probeUpgrades({ root, targets: [target('zod')], exec, fs });
+
+    assert.equal(results.get('t-zod')?.status, 'passed');
+    assert.ok(calls.some((line) => line.startsWith('git worktree add')));
+    assert.ok(calls.includes('npm run typecheck'));
+  });
+
+  test('a cached baseline cannot resurrect a check whose host tool is now missing', async () => {
+    clearToolAvailability();
+    let upgradeInstalled = false;
+    let cacheRead = false;
+    const calls: string[] = [];
+    const pythonFs = {
+      readFile: async () => '[project]\ndependencies = ["mypy", "pytest"]\n',
+      readDirectory: async () => ['pyproject.toml'],
+      isDirectory: async () => true,
+    };
+    const cachedGreenBaseline = {
+      read: async () => {
+        cacheRead = true;
+        return [
+          { kind: 'typecheck' as const, label: 'mypy .', compileCapable: true, status: 'passed' as const },
+          { kind: 'test' as const, label: 'pytest', compileCapable: false, status: 'passed' as const },
+        ];
+      },
+      write: async () => {
+        throw new Error('cached baseline should not be rewritten');
+      },
+    };
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      calls.push(line);
+      if (line === 'pytest --version') {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      if (line === 'pytest') {
+        return { code: 127, stdout: '', stderr: 'pytest: command not found' };
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+    const pyTarget = {
+      id: 't-httpx',
+      name: 'httpx',
+      current: '1.0.0',
+      selected: '2.0.0',
+      manifestPath: 'pyproject.toml',
+      packageManager: 'pip' as const,
+      install: async () => {
+        upgradeInstalled = true;
+      },
+    };
+
+    const results = await probeUpgrades({
+      root,
+      targets: [pyTarget],
+      exec,
+      fs: pythonFs,
+      baselineCache: cachedGreenBaseline,
+    });
+
+    const verification = results.get('t-httpx');
+    assert.equal(cacheRead, true);
+    assert.equal(upgradeInstalled, true);
+    assert.equal(verification?.status, 'passed');
+    assert.deepEqual(verification?.checks.map((check) => check.label), ['mypy .']);
+    assert.equal(calls.filter((line) => line === 'mypy .').length, 1);
+    assert.ok(!calls.includes('pytest'), 'the stale cached pytest pass must not make pytest runnable today');
+  });
+
+  test('a committed-only check is availability-tested before cached baseline can use it', async () => {
+    clearToolAvailability();
+    let upgradeInstalled = false;
+    let cacheRead = false;
+    const calls: string[] = [];
+    const splitFs = {
+      readFile: async (path: string) =>
+        path.includes('drift-worktrees')
+          ? '[project]\ndependencies = ["mypy", "pytest"]\n'
+          : '[project]\ndependencies = ["mypy"]\n',
+      readDirectory: async () => ['pyproject.toml'],
+      isDirectory: async () => true,
+    };
+    const cachedGreenBaseline = {
+      read: async () => {
+        cacheRead = true;
+        return [
+          { kind: 'typecheck' as const, label: 'mypy .', compileCapable: true, status: 'passed' as const },
+          { kind: 'test' as const, label: 'pytest', compileCapable: false, status: 'passed' as const },
+        ];
+      },
+      write: async () => {
+        throw new Error('cached baseline should not be rewritten');
+      },
+    };
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      calls.push(line);
+      if (line === 'pytest --version') {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      if (line === 'pytest') {
+        throw new Error('pytest must not run');
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+    const pyTarget = {
+      id: 't-httpx',
+      name: 'httpx',
+      current: '1.0.0',
+      selected: '2.0.0',
+      manifestPath: 'pyproject.toml',
+      packageManager: 'pip' as const,
+      install: async () => {
+        upgradeInstalled = true;
+      },
+    };
+
+    const results = await probeUpgrades({
+      root,
+      targets: [pyTarget],
+      exec,
+      fs: splitFs,
+      baselineCache: cachedGreenBaseline,
+    });
+
+    const verification = results.get('t-httpx');
+    assert.equal(cacheRead, true);
+    assert.equal(upgradeInstalled, true);
+    assert.equal(verification?.status, 'passed');
+    assert.ok(calls.some((line) => line.startsWith('git worktree add')), 'early preflight must not skip the worktree');
+    assert.ok(calls.includes('pytest --version'), 'the committed-only check is probed after worktree detection');
+    assert.deepEqual(verification?.checks.map((check) => check.label), ['mypy .']);
+    assert.equal(calls.filter((line) => line === 'mypy .').length, 1, 'the available check still judges the upgrade');
+    assert.ok(!calls.includes('pytest'), 'the unavailable committed-only check never runs');
+  });
+
+  test('an open-checkout-only check cannot change committed worktree verification', async () => {
+    clearToolAvailability();
+    const calls: string[] = [];
+    const splitFs = {
+      readFile: async (path: string) =>
+        path.includes('drift-worktrees')
+          ? '[project]\ndependencies = ["mypy"]\n'
+          : '[project]\ndependencies = ["pytest"]\n',
+      readDirectory: async () => ['pyproject.toml'],
+      isDirectory: async () => true,
+    };
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      calls.push(line);
+      if (line === 'pytest --version') {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      if (line === 'pytest') {
+        throw new Error('open-checkout-only pytest must not run');
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+    const pyTarget = {
+      id: 't-httpx',
+      name: 'httpx',
+      current: '1.0.0',
+      selected: '2.0.0',
+      manifestPath: 'pyproject.toml',
+      packageManager: 'pip' as const,
+      install: async () => {},
+    };
+
+    const results = await probeUpgrades({ root, targets: [pyTarget], exec, fs: splitFs });
+
+    const verification = results.get('t-httpx');
+    assert.equal(verification?.status, 'passed');
+    assert.ok(calls.some((line) => line.startsWith('git worktree add')));
+    assert.ok(!calls.includes('pytest --version'), 'the open-only missing check is not authoritative');
+    assert.deepEqual(verification?.checks.map((check) => check.label), ['mypy .']);
+  });
+
+  test('all currently unavailable authoritative checks skip instead of passing from cache', async () => {
+    clearToolAvailability();
+    let upgradeInstalled = false;
+    const calls: string[] = [];
+    const pythonFs = {
+      readFile: async () => '[project]\ndependencies = ["pytest"]\n',
+      readDirectory: async () => ['pyproject.toml'],
+      isDirectory: async () => true,
+    };
+    const cachedGreenBaseline = {
+      read: async () => [{ kind: 'test' as const, label: 'pytest', compileCapable: false, status: 'passed' as const }],
+      write: async () => {
+        throw new Error('cached baseline should not be rewritten');
+      },
+    };
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      calls.push(line);
+      if (line === 'pytest --version') {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+    const pyTarget = {
+      id: 't-httpx',
+      name: 'httpx',
+      current: '1.0.0',
+      selected: '2.0.0',
+      manifestPath: 'pyproject.toml',
+      packageManager: 'pip' as const,
+      install: async () => {
+        upgradeInstalled = true;
+      },
+    };
+
+    const results = await probeUpgrades({
+      root,
+      targets: [pyTarget],
+      exec,
+      fs: pythonFs,
+      baselineCache: cachedGreenBaseline,
+    });
+
+    const verification = results.get('t-httpx');
+    assert.equal(verification?.status, 'skipped');
+    assert.match(verification?.reason ?? '', /`pytest` is not installed/);
+    assert.equal(upgradeInstalled, false, 'no upgrade is installed when no authoritative checks can run');
+    assert.ok(!calls.includes('pytest'), 'the cached green baseline cannot make pytest run');
+  });
+
+  test('a Composer vendor binary missing before install does not skip the checkout', async () => {
+    clearToolAvailability();
+    let dependenciesInstalled = false;
+    let upgradeInstalled = false;
+    const calls: string[] = [];
+    const composerFs = {
+      readFile: async () => JSON.stringify({ 'require-dev': { 'phpunit/phpunit': '^10' } }),
+      readDirectory: async () => ['composer.json', 'composer.lock'],
+      isDirectory: async () => true,
+    };
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      calls.push(line);
+      if (line === 'vendor/bin/phpunit --version') {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      if (line === 'composer install') dependenciesInstalled = true;
+      if (line === 'vendor/bin/phpunit' && !dependenciesInstalled) {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+
+    const results = await probeUpgrades({
+      root,
+      targets: [composerTarget('symfony/console', () => { upgradeInstalled = true; })],
+      exec,
+      fs: composerFs,
+    });
+
+    assert.equal(results.get('t-symfony/console')?.status, 'passed');
+    assert.ok(calls.some((line) => line.startsWith('git worktree add')));
+    assert.ok(calls.includes('composer install'));
+    assert.ok(!calls.includes('vendor/bin/phpunit --version'));
+    assert.equal(calls.filter((line) => line === 'vendor/bin/phpunit').length, 2);
+    assert.equal(upgradeInstalled, true);
+  });
+
+  test('a Composer project still skips safely when composer itself is missing', async () => {
+    clearToolAvailability();
+    const calls: string[] = [];
+    const composerFs = {
+      readFile: async () => JSON.stringify({ 'require-dev': { 'phpunit/phpunit': '^10' } }),
+      readDirectory: async () => ['composer.json', 'composer.lock'],
+      isDirectory: async () => true,
+    };
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      calls.push(line);
+      if (command === 'composer') {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+
+    const results = await probeUpgrades({ root, targets: [composerTarget('symfony/console')], exec, fs: composerFs });
+
+    assert.equal(results.get('t-symfony/console')?.status, 'skipped');
+    assert.match(results.get('t-symfony/console')?.reason ?? '', /`composer` is not installed/);
+    assert.ok(!calls.some((line) => line.startsWith('git worktree add')));
+    assert.ok(!calls.includes('composer install'));
+    assert.ok(!calls.includes('vendor/bin/phpunit'));
+  });
+});
+
 describe('probing an upgrade before reporting it', () => {
+  test('a present toolchain is probed once and then left alone', async () => {
+    clearToolAvailability();
+    const { exec, lines } = recorder();
+    await probeUpgrades({ root, targets: [target('zod')], exec, fs });
+    assert.equal(lines().filter((line) => line === 'npm --version').length, 1);
+  });
+
   test('passes when the project still typechecks and builds with it installed', async () => {
     const { exec, lines } = recorder();
     const results = await probeUpgrades({ root, targets: [target('zod')], exec, fs });
@@ -126,6 +613,37 @@ describe('probing an upgrade before reporting it', () => {
     assert.equal(verification?.status, 'failed');
     assert.match(verification?.diagnostics ?? '', /TS2554/);
     assert.deepEqual(verification?.failedFiles, ['src/app.ts']);
+  });
+
+  test('a check executable disappearing during upgrade verification is indeterminate, not breakage', async () => {
+    clearToolAvailability();
+    let typecheckRuns = 0;
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      if (line === 'npm run typecheck') {
+        typecheckRuns += 1;
+        if (typecheckRuns > 1) {
+          return { code: 1, stdout: '', stderr: 'npm: command not found', failure: 'not-found' as const };
+        }
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+
+    const results = await probeUpgrades({
+      root,
+      targets: [target('zod')],
+      exec,
+      fs: {
+        readFile: async () => JSON.stringify({ name: 'app', scripts: { typecheck: 'tsc --noEmit' } }),
+        readDirectory: async () => ['package.json', 'package-lock.json'],
+        isDirectory: async () => true,
+      },
+    });
+
+    const verification = results.get('t-zod');
+    assert.equal(verification?.status, 'skipped');
+    assert.match(verification?.reason ?? '', /`npm` was not found on PATH/);
+    assert.equal(verification?.diagnostics, undefined);
   });
 
   test('catches runtime breakage a typecheck cannot see', async () => {
@@ -231,10 +749,15 @@ describe('probing an upgrade before reporting it', () => {
     await probeUpgrades({ root, targets: [target('zod'), target('react'), target('vite')], exec, fs });
 
     const added = lines().filter((line) => line.startsWith('git worktree add'));
-    const removed = lines().filter((line) => line.startsWith('git worktree remove'));
+    // Disposal deletes the directory and then prunes the registration; `git
+    // worktree remove` is only the fallback for a delete that failed. Here git
+    // is faked and no directory exists, so the prune is the observable half —
+    // that the *directory* goes is asserted against a real filesystem in
+    // `worktree.test.ts`.
+    const pruned = lines().filter((line) => line === 'git worktree prune');
 
     assert.equal(added.length, 1, 'one worktree for three candidates sharing package.json');
-    assert.ok(removed.length >= 1, 'the worktree is removed when the group finishes');
+    assert.ok(pruned.length >= 1, 'the worktree is disposed of when the group finishes');
   });
 
   test('each candidate starts from the committed manifest, not the previous candidate’s install', async () => {
@@ -627,6 +1150,50 @@ describe('installing a batch, and giving up on it early', () => {
       'the verdict a developer reads is the whole picture, not the first failure',
     );
   });
+
+  test('batch and solo fallback both use the same authoritative usable checks', async () => {
+    clearToolAvailability();
+    const calls: string[] = [];
+    const pythonFs = {
+      readFile: async () => '[project]\ndependencies = ["mypy", "pytest"]\n',
+      readDirectory: async () => ['pyproject.toml'],
+      isDirectory: async () => true,
+    };
+    let installed: string[] = [];
+    const candidate = (name: string) => ({
+      id: `t-${name}`,
+      name,
+      current: '1.0.0',
+      selected: '2.0.0',
+      manifestPath: 'pyproject.toml',
+      packageManager: 'pip' as const,
+      install: async () => {
+        installed.push(name);
+      },
+    });
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      calls.push(line);
+      if (command === 'git' && args[0] === 'checkout') installed = [];
+      if (line === 'pytest --version') {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      const broken = line === 'mypy .' && installed.includes('react');
+      return {
+        code: broken ? 1 : 0,
+        stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '',
+        stderr: broken ? 'src/app.py:3: error: incompatible type' : '',
+      };
+    };
+
+    const results = await probeUpgrades({ root, targets: [candidate('zod'), candidate('react')], exec, fs: pythonFs });
+
+    assert.equal(results.get('t-zod')?.status, 'passed');
+    assert.equal(results.get('t-react')?.status, 'failed');
+    assert.ok(!calls.includes('pytest'), 'neither batch nor solo fallback runs the unavailable check');
+    assert.ok(calls.includes('pytest --version'), 'the unavailable check was still tested for availability');
+    assert.ok(calls.filter((line) => line === 'mypy .').length > 2, 'mypy is used in baseline, batch, and solo fallback');
+  });
 });
 
 describe('warming a test checkout before the packages that need it are known', () => {
@@ -674,14 +1241,11 @@ describe('warming a test checkout before the packages that need it are known', (
     await warm.dispose();
 
     const added = calls.filter((c) => c.command === 'git' && c.args[0] === 'worktree' && c.args[1] === 'add');
-    const removed = calls.filter(
-      (c) => c.command === 'git' && c.args[0] === 'worktree' && c.args[1] === 'remove' && c.args.includes('--force'),
-    );
+    const pruned = calls.filter((c) => c.command === 'git' && c.args[0] === 'worktree' && c.args[1] === 'prune');
     assert.equal(added.length, 1, 'the warmup did prepare one');
-    assert.ok(
-      removed.some((c) => c.args.some((arg) => arg.includes('probe-packages'))),
-      'the abandoned worktree was disposed of',
-    );
+    // One prune before the add (clearing an interrupted run's leftovers) and one
+    // after the dispose. Two is the shape of "prepared, then thrown away".
+    assert.ok(pruned.length >= 2, 'the abandoned worktree was disposed of');
   });
 
   test('a warmup whose install fails settles its packages with the reason, not a crash', async () => {
@@ -693,6 +1257,56 @@ describe('warming a test checkout before the packages that need it are known', (
 
     assert.equal(results.get('t-zod')?.status, 'skipped');
     assert.match(results.get('t-zod')?.reason ?? '', /npm install/);
+  });
+
+  test('a warmed checkout filters cached baselines through current authoritative availability', async () => {
+    clearToolAvailability();
+    const calls: string[] = [];
+    const pythonFs = {
+      readFile: async () => '[project]\ndependencies = ["mypy", "pytest"]\n',
+      readDirectory: async () => ['pyproject.toml'],
+      isDirectory: async () => true,
+    };
+    const cachedGreenBaseline = {
+      read: async () => [
+        { kind: 'typecheck' as const, label: 'mypy .', compileCapable: true, status: 'passed' as const },
+        { kind: 'test' as const, label: 'pytest', compileCapable: false, status: 'passed' as const },
+      ],
+      write: async () => {
+        throw new Error('cached baseline should not be rewritten');
+      },
+    };
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      calls.push(line);
+      if (line === 'pytest --version') {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      if (line === 'pytest') {
+        throw new Error('warmed cached baseline must not resurrect pytest');
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+    const pyTarget = {
+      id: 't-httpx',
+      name: 'httpx',
+      current: '1.0.0',
+      selected: '2.0.0',
+      manifestPath: 'pyproject.toml',
+      packageManager: 'pip' as const,
+      install: async () => {},
+    };
+
+    const warm = warmProbe({ root, targets: [], exec, fs: pythonFs, baselineCache: cachedGreenBaseline }, [
+      { dir: '', packageManager: 'pip' },
+    ]);
+    const results = await probeUpgrades({ root, targets: [pyTarget], exec, fs: pythonFs, warm });
+    await warm.dispose();
+
+    assert.equal(results.get('t-httpx')?.status, 'passed');
+    assert.deepEqual(results.get('t-httpx')?.checks.map((check) => check.label), ['mypy .']);
+    assert.ok(calls.includes('pytest --version'));
+    assert.ok(!calls.includes('pytest'));
   });
 });
 

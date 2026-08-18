@@ -1,5 +1,6 @@
 import { readArchive, type ArchiveEntry } from '../../util/archive.js';
 import { diffSurfaces, type SurfaceApi } from '../type-surface.js';
+import { fetchArchive } from '../../util/http.js';
 import { unavailable, type SurfaceOutcome, type SurfaceProvider, type SurfaceRequest } from './types.js';
 
 /**
@@ -63,20 +64,23 @@ async function surfaceOf(request: SurfaceRequest, version: string): Promise<Atte
 
   let outer: ArchiveEntry[];
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(request.timeoutMs) });
-    if (!response.ok) {
+    const downloaded = await fetchArchive(url, { timeoutMs: request.timeoutMs });
+    // A request that never completed used to throw out of `fetch`; re-thrown so
+    // it still lands in this provider's own catch, with the same message.
+    if (!downloaded.ok && downloaded.status === 0) throw new Error(downloaded.error ?? 'the request failed');
+    if (!downloaded.ok) {
       return {
         ok: false,
         failure: unavailable(
           TOOL,
           'version-unavailable',
-          response.status === 404
+          downloaded.status === 404
             ? `Hex has no release for ${request.name} ${version}. It may have been retired, or published to a private repository.`
-            : `Hex returned ${response.status} for ${request.name} ${version}.`,
+            : `Hex returned ${downloaded.status} for ${request.name} ${version}.`,
         ),
       };
     }
-    outer = readArchive(Buffer.from(await response.arrayBuffer()));
+    outer = readArchive(downloaded.bytes);
   } catch (err) {
     return {
       ok: false,
