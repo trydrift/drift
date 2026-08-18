@@ -1,6 +1,7 @@
 import { applyVerificationToPlan } from '../verification/apply.js';
 import type { UpgradeVerification } from '../verification/upgrade-probe.js';
 import type { UpgradeCandidate } from './scan.js';
+import { summarize } from './summary.js';
 
 /**
  * Folding a probe result into the candidate a developer will actually see.
@@ -39,5 +40,17 @@ export function applyVerification(
   verified.breakingCount = verified.plan.breakingChanges.length;
   verified.impactCount = verified.plan.impactSites.length;
   verified.impactFiles = new Set(verified.plan.impactSites.map((site) => site.file)).size;
+  // And the sentence built from those numbers, for exactly the same reason.
+  // Leaving it alone printed both readings of the same upgrade side by side —
+  // `Safe for your code · 1 upstream change, none used here` on the badge line,
+  // `66 upstream breaking changes` in the summary directly beneath it, with
+  // nothing to tell a reader that the second was written before the compiler
+  // disproved sixty-five of them.
+  verified.summary = summarize(
+    verified.breakingCount,
+    verified.impactCount,
+    verified.name,
+    verified.rationale,
+  );
   return verified;
 }
