@@ -200,6 +200,95 @@ describe('not building a test checkout nothing could be run in', () => {
     assert.ok(calls.some((line) => line === 'npm --version PATH=/present'));
   });
 
+  test('a negative tool result is rechecked on a later scan even when PATH is unchanged', async () => {
+    clearToolAvailability();
+    let npmAvailable = false;
+    const calls: string[] = [];
+    const env = { PATH: '/usr/local/bin' };
+    const exec = async (command: string, args: readonly string[], options: { env?: NodeJS.ProcessEnv } = {}) => {
+      const line = [command, ...args].join(' ');
+      calls.push(`${line} PATH=${options.env?.PATH ?? ''}`);
+      if (line === 'npm --version' && !npmAvailable) {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+
+    const first = await probeUpgrades({ root, targets: [target('zod')], exec, fs, env });
+    npmAvailable = true;
+    const second = await probeUpgrades({ root, targets: [target('react')], exec, fs, env });
+
+    assert.equal(first.get('t-zod')?.status, 'skipped');
+    assert.equal(second.get('t-react')?.status, 'passed');
+    assert.equal(
+      calls.filter((line) => line === 'npm --version PATH=/usr/local/bin').length,
+      2,
+      'the second scan probes again instead of reusing the stale negative',
+    );
+  });
+
+  test('a cached baseline cannot resurrect a check whose host tool is now missing', async () => {
+    clearToolAvailability();
+    let upgradeInstalled = false;
+    let cacheRead = false;
+    const calls: string[] = [];
+    const pythonFs = {
+      readFile: async () => '[project]\ndependencies = ["mypy", "pytest"]\n',
+      readDirectory: async () => ['pyproject.toml'],
+      isDirectory: async () => true,
+    };
+    const cachedGreenBaseline = {
+      read: async () => {
+        cacheRead = true;
+        return [
+          { kind: 'typecheck' as const, label: 'mypy .', compileCapable: true, status: 'passed' as const },
+          { kind: 'test' as const, label: 'pytest', compileCapable: false, status: 'passed' as const },
+        ];
+      },
+      write: async () => {
+        throw new Error('cached baseline should not be rewritten');
+      },
+    };
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      calls.push(line);
+      if (line === 'pytest --version') {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      if (line === 'pytest') {
+        return { code: 127, stdout: '', stderr: 'pytest: command not found' };
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+    const pyTarget = {
+      id: 't-httpx',
+      name: 'httpx',
+      current: '1.0.0',
+      selected: '2.0.0',
+      manifestPath: 'pyproject.toml',
+      packageManager: 'pip' as const,
+      install: async () => {
+        upgradeInstalled = true;
+      },
+    };
+
+    const results = await probeUpgrades({
+      root,
+      targets: [pyTarget],
+      exec,
+      fs: pythonFs,
+      baselineCache: cachedGreenBaseline,
+    });
+
+    const verification = results.get('t-httpx');
+    assert.equal(cacheRead, true);
+    assert.equal(upgradeInstalled, true);
+    assert.equal(verification?.status, 'passed');
+    assert.deepEqual(verification?.checks.map((check) => check.label), ['mypy .']);
+    assert.equal(calls.filter((line) => line === 'mypy .').length, 1);
+    assert.ok(!calls.includes('pytest'), 'the stale cached pytest pass must not make pytest runnable today');
+  });
+
   test('a Composer vendor binary missing before install does not skip the checkout', async () => {
     clearToolAvailability();
     let dependenciesInstalled = false;
