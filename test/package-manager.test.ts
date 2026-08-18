@@ -5,6 +5,7 @@ import {
   detectPackageManagers,
   packageManagerAmbiguities,
   packageManagerById,
+  upgradeMany,
 } from '../dist/detect/package-manager.js';
 
 const ids = (entries: readonly string[], read?: (name: string) => string | null) =>
@@ -197,5 +198,84 @@ describe('manifest rewriting', () => {
   test('rewrites a Podfile constraint, or adds one to a bare pod', () => {
     assert.equal(rewrite('cocoapods', "pod 'left-pad', '~> 1.0'\n"), "pod 'left-pad', '2.0.0'\n");
     assert.equal(rewrite('cocoapods', "pod 'left-pad'\n"), "pod 'left-pad', '2.0.0'\n");
+  });
+});
+
+describe('moving several packages at once', () => {
+  const many = (id: string, targets: Array<[string, string, string?]>) =>
+    upgradeMany(
+      packageManagerById(id as never)!,
+      targets.map(([name, version, kind]) => ({ name, version, kind: (kind ?? 'runtime') as never })),
+    )?.map((command) => [command.command, ...command.args].join(' '));
+
+  test('merges into one invocation', () => {
+    assert.deepEqual(many('npm', [['react', '19.2.0'], ['vite', '7.1.0']]), [
+      'npm install react@19.2.0 vite@7.1.0',
+    ]);
+    assert.deepEqual(many('cargo', [['serde', '1.0.2'], ['tokio', '1.40.0']]), [
+      'cargo add serde@=1.0.2 tokio@=1.40.0',
+    ]);
+    assert.deepEqual(many('go', [['github.com/a/b', '1.2.0'], ['github.com/c/d', 'v2.0.0']]), [
+      'go get github.com/a/b@v1.2.0 github.com/c/d@v2.0.0',
+    ]);
+    assert.deepEqual(many('bundler', [['rails', '7.1.0'], ['puma', '6.4.0']]), [
+      'bundle update rails puma --conservative',
+    ]);
+  });
+
+  test('a flag that differs splits the batch rather than being dropped', () => {
+    // Merging these would move `vitest` out of devDependencies, which is a
+    // different guarantee to this package's consumers, not a version bump.
+    assert.deepEqual(
+      many('npm', [
+        ['react', '19.2.0'],
+        ['vitest', '3.0.0', 'dev'],
+        ['vite', '7.1.0'],
+      ]),
+      ['npm install react@19.2.0 vite@7.1.0', 'npm install vitest@3.0.0 --save-dev'],
+    );
+  });
+
+  test('a command that names no package collapses to one run', () => {
+    // Conan and vcpkg declare the version in the manifest; the rewrite is the
+    // upgrade, and the command only re-resolves against it.
+    assert.deepEqual(many('conan', [['zlib', '1.3.1'], ['fmt', '11.0.0']]), [
+      'conan install . --build=missing',
+    ]);
+  });
+
+  test('a manager that takes one package per command declines', () => {
+    assert.equal(many('dotnet', [['Serilog', '4.0.0'], ['Polly', '8.0.0']]), undefined);
+    assert.equal(many('rebar', [['cowboy', '2.12.0'], ['jsx', '3.1.0']]), undefined);
+  });
+
+  test('a manager with no upgrade command at all declines', () => {
+    assert.equal(many('gradle', [['com.google.guava:guava', '33.0.0']]), undefined);
+  });
+
+  test('one target is still one command', () => {
+    assert.deepEqual(many('pnpm', [['zod', '4.4.3']]), ['pnpm add zod@4.4.3']);
+  });
+});
+
+describe('finding the package specifier in a command', () => {
+  test('a package named after the subcommand does not confuse the merge', () => {
+    // `npm install install@2.0.0`: searching for the argument *containing* the
+    // package name finds the verb first, and merging there produces
+    // `npm install@2.0.0 install` — a command that installs nothing.
+    const merged = upgradeMany(packageManagerById('npm')!, [
+      { name: 'install', version: '2.0.0', kind: 'runtime' },
+      { name: 'react', version: '19.2.0', kind: 'runtime' },
+    ])?.map((command) => [command.command, ...command.args].join(' '));
+
+    assert.deepEqual(merged, ['npm install install@2.0.0 react@19.2.0']);
+  });
+
+  test('a package named after a flag stays in the specifier position', () => {
+    const merged = upgradeMany(packageManagerById('pnpm')!, [
+      { name: 'add', version: '1.0.0', kind: 'runtime' },
+    ])?.map((command) => [command.command, ...command.args].join(' '));
+
+    assert.deepEqual(merged, ['pnpm add add@1.0.0']);
   });
 });

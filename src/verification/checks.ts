@@ -127,6 +127,18 @@ export interface RunChecksOptions {
    * interactive one — so it supplies its own rather than core guessing.
    */
   notFoundReason?: (command: string) => string;
+  /**
+   * Stop as soon as one check fails, leaving the rest `not-run`.
+   *
+   * Off by default, and it must stay off wherever the result is shown to a
+   * developer: see below. It exists for the one caller whose question is not
+   * "what is wrong with this project" but "is this batch clean" — the grouped
+   * verification pass, which halves a red batch and asks again. There, a
+   * typecheck that failed in fifteen seconds has already answered, and the
+   * build and the test suite behind it are two minutes spent producing
+   * diagnostics about a batch nobody will report.
+   */
+  stopOnFirstFailure?: boolean;
 }
 
 /**
@@ -135,7 +147,8 @@ export interface RunChecksOptions {
  * A failing typecheck is not a reason to skip the build: whoever is deciding
  * what to do about this upgrade wants the whole picture, and "we stopped after
  * the first red" hides the case where the type error is trivial and everything
- * else is fine.
+ * else is fine. `stopOnFirstFailure` opts out, for a caller that is searching
+ * rather than reporting.
  */
 export async function runChecks(options: RunChecksOptions): Promise<CheckOutcome[]> {
   const cwd = options.dir ? join(options.root, options.dir) : options.root;
@@ -143,8 +156,24 @@ export async function runChecks(options: RunChecksOptions): Promise<CheckOutcome
   const env = options.env ?? process.env;
   const outcomes: CheckOutcome[] = [];
   const total = options.checks.length;
+  let abandoned = false;
 
   for (const [index, check] of options.checks.entries()) {
+    if (abandoned) {
+      outcomes.push(
+        record(options, index, {
+          kind: check.kind,
+          label: check.label,
+          compileCapable: check.compileCapable,
+          status: 'not-run',
+          durationMs: 0,
+          output: '',
+          reason: 'An earlier check already failed, so this one was not run.',
+        }),
+      );
+      continue;
+    }
+
     if (options.token?.isCancellationRequested) {
       outcomes.push(
         record(options, index, {
@@ -187,6 +216,8 @@ export async function runChecks(options: RunChecksOptions): Promise<CheckOutcome
       );
       continue;
     }
+
+    if (result.code !== 0 && options.stopOnFirstFailure) abandoned = true;
 
     outcomes.push(
       record(options, index, {

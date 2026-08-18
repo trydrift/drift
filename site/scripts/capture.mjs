@@ -18,9 +18,25 @@
  * clones repositories, and calls registries — which is exactly why it runs
  * once, here, and ships its own output.
  *
+ * Targets are captured several at a time. A capture is overwhelmingly spent
+ * waiting — cloning a repository, then asking a registry about several hundred
+ * packages one HTTP round trip at a time — so running them one after another
+ * left a laptop idle for most of an hour. They share nothing but the HTTP
+ * cache, which they are better off sharing: two JavaScript projects asking npm
+ * about the same package now cost one request instead of two.
+ *
+ * What that costs is fidelity, and it is worth being exact about where. The
+ * `at` timestamps stay honest — each target measures from its own start, and
+ * the stalls being recorded are network waits that overlap rather than queue —
+ * but a machine running four scans at once has less CPU for each, so the
+ * fastest events stretch slightly. Four is the default because it is where
+ * that stretch is still inside the noise between two runs of the same target;
+ * `--jobs=1` reproduces the old, strictly serial cadence.
+ *
  * Usage:
  *   node site/scripts/capture.mjs            # every target
  *   node site/scripts/capture.mjs deno       # one, by id
+ *   node site/scripts/capture.mjs --jobs=8   # more at once
  */
 
 import { execFile, execFileSync } from 'node:child_process';
@@ -288,6 +304,8 @@ async function capture(target) {
     '1',
     '--filter=blob:none',
     '--single-branch',
+    // Nothing here reads a tag, and Kubernetes has thousands of them.
+    '--no-tags',
     target.repo,
     checkout,
   ], { maxBuffer: 64 * 1024 * 1024 });
@@ -476,7 +494,9 @@ function byAttention(a, b) {
   );
 }
 
-const requested = process.argv.slice(2);
+const args = process.argv.slice(2);
+const jobsFlag = args.find((arg) => arg.startsWith('--jobs='));
+const requested = args.filter((arg) => !arg.startsWith('-'));
 const selected = requested.length > 0 ? TARGETS.filter((t) => requested.includes(t.id)) : TARGETS;
 
 if (selected.length === 0) {
@@ -484,20 +504,48 @@ if (selected.length === 0) {
   process.exit(1);
 }
 
+const jobs = Math.max(
+  1,
+  Number(jobsFlag?.slice('--jobs='.length) ?? process.env.CAPTURE_JOBS ?? 4) || 1,
+);
+
 await mkdir(outDir, { recursive: true });
 
-for (const target of selected) {
-  try {
-    const result = await capture(target);
-    await writeFile(join(outDir, `${target.id}.json`), `${JSON.stringify(result, null, 2)}\n`, 'utf8');
-    process.stderr.write(
-      `[${target.id}] done — ${result.candidates.length} candidates, ` +
-        `${result.events.length} events, ${(result.durationMs / 1000).toFixed(1)}s\n`,
-    );
-  } catch (err) {
-    process.stderr.write(`[${target.id}] FAILED: ${err.stack ?? err.message}\n`);
+process.stderr.write(
+  `capturing ${selected.length} target(s), ${Math.min(jobs, selected.length)} at a time\n`,
+);
+
+/**
+ * A fixed pool of workers over one shared queue.
+ *
+ * A queue rather than an even split of the list: the targets are wildly
+ * uneven — Kubernetes takes minutes and FlexLayout takes seconds — so a worker
+ * that finishes early has to be able to take the next thing rather than sit
+ * out the rest of the run.
+ */
+const queue = [...selected];
+const startedAt = Date.now();
+
+async function worker() {
+  for (;;) {
+    const target = queue.shift();
+    if (!target) return;
+
+    try {
+      const result = await capture(target);
+      await writeFile(join(outDir, `${target.id}.json`), `${JSON.stringify(result, null, 2)}\n`, 'utf8');
+      process.stderr.write(
+        `[${target.id}] done — ${result.candidates.length} candidates, ` +
+          `${result.events.length} events, ${(result.durationMs / 1000).toFixed(1)}s\n`,
+      );
+    } catch (err) {
+      process.stderr.write(`[${target.id}] FAILED: ${err.stack ?? err.message}\n`);
+    }
   }
 }
+
+await Promise.all(Array.from({ length: Math.min(jobs, selected.length) }, worker));
+process.stderr.write(`\nall captures finished in ${((Date.now() - startedAt) / 1000).toFixed(1)}s\n`);
 
 // An index of what was actually captured, so the site never lists a demo whose
 // recording failed — a broken tab is worse than an absent one.

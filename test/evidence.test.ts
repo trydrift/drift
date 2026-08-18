@@ -351,6 +351,101 @@ describe('a signature that only changed how it is spelled', () => {
   });
 });
 
+describe('an option object that grew an option', () => {
+  const fn = (name: string, signature: string): SurfaceApi =>
+    new Map([[name, { name, kind: 'function' as const, signature, members: [], requiredMembers: [] }]]);
+
+  /**
+   * Svelte 5.x. `render` gained `csp` and `transformError`, both optional,
+   * inside the options object of a conditional tuple rest parameter. Nothing a
+   * caller passes changed, but the declaration text did — and comparing types
+   * as text reported it, which put every `render` in the consuming repository
+   * in front of a developer.
+   */
+  const svelteRender = (extra: string) =>
+    'export declare function render<Comp extends SvelteComponent<any> | Component<any>, ' +
+    'Props extends ComponentProps<Comp> = ComponentProps<Comp>>(...args: {} extends Props ? ' +
+    "[component: Comp extends SvelteComponent<any> ? ComponentType<Comp> : Comp, options?: { props?: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any>; idPrefix?: string;" +
+    extra +
+    ' }] : ' +
+    "[component: Comp extends SvelteComponent<any> ? ComponentType<Comp> : Comp, options: { props: Omit<Props, '$$slots' | '$$events'>; context?: Map<any, any>; idPrefix?: string;" +
+    extra +
+    ' }]): RenderOutput;';
+
+  test('two new optional members deep inside a conditional tuple break nobody', () => {
+    const before = fn('render', svelteRender(''));
+    const after = fn(
+      'render',
+      svelteRender(' csp?: Csp; transformError?: (error: unknown) => unknown | Promise<unknown>;'),
+    );
+
+    assert.deepEqual(diffSurfaces(before, after), []);
+  });
+
+  test('a new required member in the same position is reported', () => {
+    const before = fn('render', svelteRender(''));
+    const after = fn('render', svelteRender(' csp: Csp;'));
+
+    const changes = diffSurfaces(before, after);
+    assert.equal(changes.length, 1, 'a required option is an argument every call now has to pass');
+    assert.equal(changes[0]?.kind, 'signature-changed');
+  });
+
+  test('an option that became required is reported', () => {
+    const before = fn('mount', 'export declare function mount(target: T, options?: { props?: P; anchor?: Node; }): void;');
+    const after = fn('mount', 'export declare function mount(target: T, options?: { props: P; anchor?: Node; }): void;');
+
+    assert.equal(diffSurfaces(before, after).length, 1);
+  });
+
+  test('an option that disappeared is reported', () => {
+    // Not "the caller passes less now": an object literal carrying a property
+    // the parameter type no longer declares is an excess property error.
+    const before = fn('mount', 'export declare function mount(target: T, options?: { props?: P; anchor?: Node; }): void;');
+    const after = fn('mount', 'export declare function mount(target: T, options?: { props?: P; }): void;');
+
+    assert.equal(diffSurfaces(before, after).length, 1);
+  });
+
+  test('an option whose type narrowed is reported', () => {
+    const before = fn('mount', 'export declare function mount(options?: { target?: string | Element; }): void;');
+    const after = fn('mount', 'export declare function mount(options?: { target?: Element; }): void;');
+
+    assert.equal(diffSurfaces(before, after).length, 1);
+  });
+
+  test('an option whose type widened is not', () => {
+    const before = fn('mount', 'export declare function mount(options?: { target?: Element; }): void;');
+    const after = fn('mount', 'export declare function mount(options?: { target?: string | Element; }): void;');
+
+    assert.deepEqual(diffSurfaces(before, after), []);
+  });
+
+  test('a conditional whose check moved is reported, however harmless its branches look', () => {
+    const before = fn('render', 'export declare function render(...args: {} extends Props ? [a: A] : [b: B]): R;');
+    const after = fn('render', 'export declare function render(...args: {} extends Other ? [a: A] : [b: B]): R;');
+
+    assert.equal(diffSurfaces(before, after).length, 1);
+  });
+
+  test('a callback parameter no longer hides the comma after it', () => {
+    // `splitTopLevel` counted the `>` of `=>` as a closing bracket, which left
+    // every parameter after a callback invisible and every such signature
+    // undecidable — the reason the Svelte case above could not be dismissed.
+    const before = fn('on', 'export declare function on(handler: (event: E) => void, options?: { once?: boolean; }): void;');
+    const after = fn('on', 'export declare function on(handler: (event: E) => void, options?: { once?: boolean; capture?: boolean; }): void;');
+
+    assert.deepEqual(diffSurfaces(before, after), []);
+  });
+
+  test('a callback whose own parameter changed is still reported', () => {
+    const before = fn('on', 'export declare function on(handler: (event: E) => void, target: T): void;');
+    const after = fn('on', 'export declare function on(handler: (event: F) => void, target: T): void;');
+
+    assert.equal(diffSurfaces(before, after).length, 1);
+  });
+});
+
 describe('choosing which releases to read', () => {
   const release = (version: string) => ({
     tag: `v${version}`,
