@@ -175,9 +175,9 @@
     "repo": "https://github.com/an-tao/trantor",
     "blurb": "The C++ network library underneath Drogon, with a conanfile.txt.",
     "commit": "63a4e5e164e219dc3bf30cdbfa1462ae5602fa97",
-    "capturedAt": "2026-08-15T00:53:10.672Z",
+    "capturedAt": "2026-08-18T04:01:52.585Z",
     "packagesChecked": 3,
-    "candidates": 6
+    "candidates": 27
   },
   {
     "id": "obs-backgroundremoval",

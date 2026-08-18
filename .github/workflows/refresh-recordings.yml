@@ -185,6 +185,13 @@ jobs:
           # stays at the documented default rather than being wound up for the
           # sake of a faster job. See the fidelity note in `capture.mjs`.
           CAPTURE_JOBS: '4'
+        # Exit 1 means "some targets did not record", and every one that did has
+        # already been written and indexed by the time it is returned. Losing
+        # fifteen good recordings — including a Kubernetes scan that cost an
+        # hour of runner time — because a sixteenth wedged is the failure this
+        # tolerates. Whatever failed keeps its old recording, still marked stale
+        # by its engine fingerprint, so the next run tries it again.
+        continue-on-error: true
         run: node site/scripts/capture.mjs ${{ needs.check.outputs.targets }}
 
       # A capture that reached no registry produces recordings full of "could
@@ -217,6 +224,10 @@ jobs:
             would produce them, or the commits they were taken at.
 
             Re-captured: `${{ needs.check.outputs.targets || 'every target' }}`
+
+            Any target that failed to record is not in this diff and keeps its
+            previous recording — still marked stale, so the next run retries it.
+            The capture step's log names them.
 
             Each recording is a real analysis of the linked commit, so this
             diff is the honest answer to "what would Drift say about these

@@ -5,9 +5,10 @@
   "language": "C++",
   "repo": "https://github.com/an-tao/trantor",
   "blurb": "The C++ network library underneath Drogon, with a conanfile.txt.",
-  "capturedAt": "2026-08-15T00:53:10.672Z",
+  "capturedAt": "2026-08-18T04:01:52.585Z",
   "commit": "63a4e5e164e219dc3bf30cdbfa1462ae5602fa97",
-  "durationMs": 9343,
+  "engine": "81044c47297efc90",
+  "durationMs": 9284,
   "packagesChecked": 3,
   "manifests": [
     "conanfile.txt"
@@ -15,171 +16,185 @@
   "nestedGitRepos": [],
   "events": [
     {
-      "at": 2005,
+      "at": 125,
       "phase": "Looking for manifests",
       "detail": "an-tao/trantor",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2009,
+      "at": 133,
       "phase": "Reading manifest",
       "detail": "conanfile.txt",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2009,
+      "at": 135,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 3
     },
     {
-      "at": 2070,
+      "at": 136,
+      "phase": "Checking registries",
+      "detail": "3 direct dependencies",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "at": 332,
       "phase": "Indexing your code",
       "detail": "131 files indexed · 3 direct dependencies to check",
       "done": 0,
       "total": 3
     },
     {
-      "at": 2070,
-      "phase": "Checking ConanCenter",
-      "detail": "gtest (installed 1.10.0)",
-      "done": 0,
+      "at": 764,
+      "phase": "Outdated",
+      "detail": "gtest 1.10.0 → 1.18.0",
+      "done": 1,
       "total": 3
     },
     {
-      "at": 2071,
-      "phase": "Checking ConanCenter",
-      "detail": "openssl (installed 1.1.1)",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "at": 2071,
-      "phase": "Checking ConanCenter",
-      "detail": "spdlog (installed 1.12.0)",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "at": 2310,
-      "phase": "Reading release notes and changelog",
+      "at": 781,
+      "phase": "Outdated",
       "detail": "spdlog 1.12.0 → 1.17.0",
-      "done": 0,
+      "done": 2,
       "total": 3
     },
     {
-      "at": 2331,
-      "phase": "Reading release notes and changelog",
+      "at": 799,
+      "phase": "Outdated",
       "detail": "openssl 1.1.1 → 4.0.1",
-      "done": 0,
+      "done": 3,
       "total": 3
     },
     {
-      "at": 2345,
+      "at": 800,
+      "phase": "Preparing a test checkout of trantor",
+      "detail": "checking out a clean copy",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 808,
       "phase": "Reading release notes and changelog",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
       "total": 3
     },
     {
-      "at": 6414,
+      "at": 809,
+      "phase": "Reading release notes and changelog",
+      "detail": "openssl 1.1.1 → 4.0.1",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "at": 809,
+      "phase": "Reading release notes and changelog",
+      "detail": "spdlog 1.12.0 → 1.17.0",
+      "done": 0,
+      "total": 3
+    },
+    {
+      "at": 1339,
+      "phase": "Checking trantor as it is",
+      "detail": "conan build .",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 1339,
+      "phase": "Checking trantor as it is",
+      "detail": "`conan build .`",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 3141,
       "phase": "Comparing the public API surface",
       "detail": "openssl 1.1.1 → 4.0.1 · 18 evidence sources",
       "done": 0,
       "total": 3
     },
     {
-      "at": 6415,
+      "at": 3148,
       "phase": "Searching your code for 10 breaking changes",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
       "total": 3
     },
     {
-      "at": 6462,
+      "at": 3319,
       "phase": "Weighing what this upgrade is worth",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
       "total": 3
     },
     {
-      "at": 6687,
+      "at": 3595,
       "phase": "Needs your attention",
-      "detail": "openssl 1.1.1 → 4.0.1 · affects your code · 3 sites in 1 file",
+      "detail": "openssl 1.1.1 → 4.0.1 · may affect your code · 3 sites in 1 file",
       "done": 1,
       "total": 3
     },
     {
-      "at": 6837,
+      "at": 3941,
+      "phase": "Comparing the public API surface",
+      "detail": "spdlog 1.12.0 → 1.17.0 · 2 evidence sources",
+      "done": 1,
+      "total": 3
+    },
+    {
+      "at": 3960,
+      "phase": "Searching your code for 170 breaking changes",
+      "detail": "spdlog 1.12.0 → 1.17.0",
+      "done": 1,
+      "total": 3
+    },
+    {
+      "at": 6087,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "spdlog 1.12.0 → 1.17.0",
+      "done": 1,
+      "total": 3
+    },
+    {
+      "at": 6091,
       "phase": "Comparing the public API surface",
       "detail": "gtest 1.10.0 → 1.18.0 · 6 evidence sources",
       "done": 1,
       "total": 3
     },
     {
-      "at": 6913,
+      "at": 6808,
       "phase": "Searching your code for 212 breaking changes",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 1,
       "total": 3
     },
     {
-      "at": 7578,
+      "at": 8287,
       "phase": "Weighing what this upgrade is worth",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 1,
       "total": 3
     },
     {
-      "at": 7653,
+      "at": 8738,
       "phase": "Needs your attention",
-      "detail": "gtest 1.10.0 → 1.18.0 · affects your code · 8 sites in 6 files",
+      "detail": "spdlog 1.12.0 → 1.17.0 · may affect your code · 29 sites in 1 file",
       "done": 2,
       "total": 3
     },
     {
-      "at": 7656,
-      "phase": "Comparing the public API surface",
-      "detail": "spdlog 1.12.0 → 1.17.0 · 2 evidence sources",
-      "done": 2,
-      "total": 3
-    },
-    {
-      "at": 7674,
-      "phase": "Searching your code for 170 breaking changes",
-      "detail": "spdlog 1.12.0 → 1.17.0",
-      "done": 2,
-      "total": 3
-    },
-    {
-      "at": 8735,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "spdlog 1.12.0 → 1.17.0",
-      "done": 2,
-      "total": 3
-    },
-    {
-      "at": 8967,
+      "at": 9278,
       "phase": "Needs your attention",
-      "detail": "spdlog 1.12.0 → 1.17.0 · affects your code · 29 sites in 1 file",
+      "detail": "gtest 1.10.0 → 1.18.0 · may affect your code · 8 sites in 6 files",
       "done": 3,
-      "total": 3
-    },
-    {
-      "at": 8967,
-      "phase": "Preparing a test checkout",
-      "detail": "3 upgrades to try",
-      "done": 0,
-      "total": 3
-    },
-    {
-      "at": 9221,
-      "phase": "Checking the project as it is",
-      "detail": "conan build .",
-      "done": 0,
       "total": 3
     }
   ],
@@ -193,10 +208,10 @@
       "current": "1.12.0",
       "latest": "1.17.0",
       "selected": "1.17.0",
-      "safeLatest": "1.17.0",
+      "safeLatest": null,
       "status": "checking",
       "risk": "medium",
-      "summary": "Manual migration required. 29 places in this repository use an API that spdlog changed.",
+      "summary": "Migration required. 29 places in this repository use an API that spdlog changed.",
       "recommendation": "manual-migration-required",
       "breakingCount": 170,
       "impactCount": 29,
@@ -211,6 +226,11 @@
           "summary": "`level` is no longer exported (was a function).",
           "remediation": "Every use of `level` from `spdlog` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `level` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
           "confidence": "high",
+          "overall": {
+            "score": 65,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "level"
           ],
@@ -258,6 +278,11 @@
           "summary": "`sinks` is no longer exported (was a function).",
           "remediation": "Every use of `sinks` from `spdlog` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `sinks` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
           "confidence": "high",
+          "overall": {
+            "score": 65,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "sinks"
           ],
@@ -305,6 +330,11 @@
           "summary": "`basic_cstring_view.c_str` was removed.",
           "remediation": "The member `basic_cstring_view.c_str` no longer exists in `spdlog`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
           "confidence": "high",
+          "overall": {
+            "score": 63,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "basic_cstring_view.c_str",
             "c_str"
@@ -353,6 +383,11 @@
           "summary": "`name` is no longer exported (was a function).",
           "remediation": "Every use of `name` from `spdlog` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `name` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
           "confidence": "high",
+          "overall": {
+            "score": 63,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "name"
           ],
@@ -406,10 +441,10 @@
       "current": "1.12.0",
       "latest": "1.17.0",
       "selected": "1.17.0",
-      "safeLatest": "1.17.0",
+      "safeLatest": null,
       "status": "ready",
       "risk": "medium",
-      "summary": "Manual migration required. 29 places in this repository use an API that spdlog changed.",
+      "summary": "Migration required. 29 places in this repository use an API that spdlog changed.",
       "recommendation": "manual-migration-required",
       "breakingCount": 170,
       "impactCount": 29,
@@ -424,6 +459,11 @@
           "summary": "`level` is no longer exported (was a function).",
           "remediation": "Every use of `level` from `spdlog` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `level` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
           "confidence": "high",
+          "overall": {
+            "score": 65,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "level"
           ],
@@ -471,6 +511,11 @@
           "summary": "`sinks` is no longer exported (was a function).",
           "remediation": "Every use of `sinks` from `spdlog` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `sinks` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
           "confidence": "high",
+          "overall": {
+            "score": 65,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "sinks"
           ],
@@ -518,6 +563,11 @@
           "summary": "`basic_cstring_view.c_str` was removed.",
           "remediation": "The member `basic_cstring_view.c_str` no longer exists in `spdlog`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
           "confidence": "high",
+          "overall": {
+            "score": 63,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "basic_cstring_view.c_str",
             "c_str"
@@ -566,6 +616,11 @@
           "summary": "`name` is no longer exported (was a function).",
           "remediation": "Every use of `name` from `spdlog` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `name` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
           "confidence": "high",
+          "overall": {
+            "score": 63,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "name"
           ],
@@ -619,10 +674,10 @@
       "current": "1.10.0",
       "latest": "1.18.0",
       "selected": "1.18.0",
-      "safeLatest": "1.18.0",
+      "safeLatest": null,
       "status": "checking",
       "risk": "medium",
-      "summary": "Manual migration required. 8 places in this repository use an API that gtest changed.",
+      "summary": "Migration required. 8 places in this repository use an API that gtest changed.",
       "recommendation": "manual-migration-required",
       "breakingCount": 212,
       "impactCount": 8,
@@ -637,6 +692,11 @@
           "summary": "`RUN_ALL_TESTS` is no longer exported (was a function).",
           "remediation": "Every use of `RUN_ALL_TESTS` from `gtest` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `RUN_ALL_TESTS` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
           "confidence": "high",
+          "overall": {
+            "score": 65,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "RUN_ALL_TESTS"
           ],
@@ -682,8 +742,13 @@
         {
           "kind": "signature-change",
           "summary": "The signature of `EXPECT_TRUE` changed.",
-          "remediation": "The signature of `EXPECT_TRUE` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: #define EXPECT_TRUE(condition) GTEST_TEST_BOOLEAN_(condition, #condition, false, true, GTEST_NONFATAL_FAILURE_)\n  after:  #define EXPECT_TRUE(condition) GTEST_EXPECT_TRUE(condition)",
+          "remediation": "The signature of `EXPECT_TRUE` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
           "confidence": "high",
+          "overall": {
+            "score": 61,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "EXPECT_TRUE"
           ],
@@ -717,6 +782,11 @@
           "summary": "`GTEST_DISALLOW_COPY_AND_ASSIGN_` is no longer exported (was a function).",
           "remediation": "Every use of `GTEST_DISALLOW_COPY_AND_ASSIGN_` from `gtest` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `GTEST_DISALLOW_COPY_AND_ASSIGN_` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
           "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "GTEST_DISALLOW_COPY_AND_ASSIGN_"
           ],
@@ -735,6 +805,11 @@
           "summary": "`CardinalityInterface` is no longer exported (was a class).",
           "remediation": "Every use of `CardinalityInterface` from `gtest` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `CardinalityInterface` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
           "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "CardinalityInterface"
           ],
@@ -759,10 +834,10 @@
       "current": "1.10.0",
       "latest": "1.18.0",
       "selected": "1.18.0",
-      "safeLatest": "1.18.0",
+      "safeLatest": null,
       "status": "ready",
       "risk": "medium",
-      "summary": "Manual migration required. 8 places in this repository use an API that gtest changed.",
+      "summary": "Migration required. 8 places in this repository use an API that gtest changed.",
       "recommendation": "manual-migration-required",
       "breakingCount": 212,
       "impactCount": 8,
@@ -777,6 +852,11 @@
           "summary": "`RUN_ALL_TESTS` is no longer exported (was a function).",
           "remediation": "Every use of `RUN_ALL_TESTS` from `gtest` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `RUN_ALL_TESTS` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
           "confidence": "high",
+          "overall": {
+            "score": 65,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "RUN_ALL_TESTS"
           ],
@@ -822,8 +902,13 @@
         {
           "kind": "signature-change",
           "summary": "The signature of `EXPECT_TRUE` changed.",
-          "remediation": "The signature of `EXPECT_TRUE` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.\n  before: #define EXPECT_TRUE(condition) GTEST_TEST_BOOLEAN_(condition, #condition, false, true, GTEST_NONFATAL_FAILURE_)\n  after:  #define EXPECT_TRUE(condition) GTEST_EXPECT_TRUE(condition)",
+          "remediation": "The signature of `EXPECT_TRUE` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
           "confidence": "high",
+          "overall": {
+            "score": 61,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "EXPECT_TRUE"
           ],
@@ -857,6 +942,11 @@
           "summary": "`GTEST_DISALLOW_COPY_AND_ASSIGN_` is no longer exported (was a function).",
           "remediation": "Every use of `GTEST_DISALLOW_COPY_AND_ASSIGN_` from `gtest` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `GTEST_DISALLOW_COPY_AND_ASSIGN_` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
           "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "GTEST_DISALLOW_COPY_AND_ASSIGN_"
           ],
@@ -875,6 +965,11 @@
           "summary": "`CardinalityInterface` is no longer exported (was a class).",
           "remediation": "Every use of `CardinalityInterface` from `gtest` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `CardinalityInterface` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
           "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "CardinalityInterface"
           ],
@@ -902,7 +997,7 @@
       "safeLatest": null,
       "status": "checking",
       "risk": "high",
-      "summary": "Manual migration required. 3 places in this repository use an API that openssl changed.",
+      "summary": "Migration required. 3 places in this repository use an API that openssl changed.",
       "recommendation": "manual-migration-required",
       "breakingCount": 10,
       "impactCount": 3,
@@ -918,6 +1013,11 @@
           "summary": "`SSL_get_error` no longer depends on the state of the error stack,",
           "remediation": "Behaviour changed: `SSL_get_error` no longer depends on the state of the error stack,. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
           "confidence": "medium",
+          "overall": {
+            "score": 60,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "SSL_get_error"
           ],
@@ -925,8 +1025,8 @@
             {
               "source": "changelog",
               "title": "openssl CHANGELOG § 3.6.0",
-              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1586",
-              "locator": "CHANGES.md:1586"
+              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1600",
+              "locator": "CHANGES.md:1600"
             }
           ],
           "sites": [
@@ -951,6 +1051,11 @@
           "summary": "`OPENSSL_cleanup` no longer by default free global",
           "remediation": "Behaviour changed: `OPENSSL_cleanup` no longer by default free global. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
           "confidence": "medium",
+          "overall": {
+            "score": 60,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "OPENSSL_cleanup"
           ],
@@ -958,8 +1063,8 @@
             {
               "source": "changelog",
               "title": "openssl CHANGELOG § 3.6.0",
-              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1586",
-              "locator": "CHANGES.md:1586"
+              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1600",
+              "locator": "CHANGES.md:1600"
             }
           ],
           "sites": [
@@ -977,6 +1082,11 @@
           "summary": "`libcrypto` no longer cleans up globally allocated data via `atexit()`",
           "remediation": "Behaviour changed: `libcrypto` no longer cleans up globally allocated data via `atexit()`. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
           "confidence": "medium",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "libcrypto"
           ],
@@ -990,8 +1100,8 @@
             {
               "source": "changelog",
               "title": "openssl CHANGELOG § 3.6.0",
-              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1586",
-              "locator": "CHANGES.md:1586"
+              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1600",
+              "locator": "CHANGES.md:1600"
             }
           ],
           "sites": []
@@ -1001,6 +1111,11 @@
           "summary": "Dropped support for the SSLv2 Client Hello",
           "remediation": "Dropped support for the SSLv2 Client Hello. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
           "confidence": "medium",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "the SSLv2 Client Hello"
           ],
@@ -1028,7 +1143,7 @@
       "safeLatest": null,
       "status": "ready",
       "risk": "high",
-      "summary": "Manual migration required. 3 places in this repository use an API that openssl changed.",
+      "summary": "Migration required. 3 places in this repository use an API that openssl changed.",
       "recommendation": "manual-migration-required",
       "breakingCount": 10,
       "impactCount": 3,
@@ -1044,6 +1159,11 @@
           "summary": "`SSL_get_error` no longer depends on the state of the error stack,",
           "remediation": "Behaviour changed: `SSL_get_error` no longer depends on the state of the error stack,. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
           "confidence": "medium",
+          "overall": {
+            "score": 60,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "SSL_get_error"
           ],
@@ -1051,8 +1171,8 @@
             {
               "source": "changelog",
               "title": "openssl CHANGELOG § 3.6.0",
-              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1586",
-              "locator": "CHANGES.md:1586"
+              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1600",
+              "locator": "CHANGES.md:1600"
             }
           ],
           "sites": [
@@ -1077,6 +1197,11 @@
           "summary": "`OPENSSL_cleanup` no longer by default free global",
           "remediation": "Behaviour changed: `OPENSSL_cleanup` no longer by default free global. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
           "confidence": "medium",
+          "overall": {
+            "score": 60,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "OPENSSL_cleanup"
           ],
@@ -1084,8 +1209,8 @@
             {
               "source": "changelog",
               "title": "openssl CHANGELOG § 3.6.0",
-              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1586",
-              "locator": "CHANGES.md:1586"
+              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1600",
+              "locator": "CHANGES.md:1600"
             }
           ],
           "sites": [
@@ -1103,6 +1228,11 @@
           "summary": "`libcrypto` no longer cleans up globally allocated data via `atexit()`",
           "remediation": "Behaviour changed: `libcrypto` no longer cleans up globally allocated data via `atexit()`. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.",
           "confidence": "medium",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "libcrypto"
           ],
@@ -1116,8 +1246,8 @@
             {
               "source": "changelog",
               "title": "openssl CHANGELOG § 3.6.0",
-              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1586",
-              "locator": "CHANGES.md:1586"
+              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1600",
+              "locator": "CHANGES.md:1600"
             }
           ],
           "sites": []
@@ -1127,6 +1257,11 @@
           "summary": "Dropped support for the SSLv2 Client Hello",
           "remediation": "Dropped support for the SSLv2 Client Hello. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
           "confidence": "medium",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
           "symbols": [
             "the SSLv2 Client Hello"
           ],
@@ -1141,6 +1276,447 @@
           "sites": []
         }
       ]
+    },
+    {
+      "name": "gtest",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.10.0",
+      "latest": "1.10.0",
+      "selected": "1.10.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "gtest",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.10.0",
+      "latest": "1.10.0",
+      "selected": "1.10.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "gtest",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.10.0",
+      "latest": "1.18.0",
+      "selected": "1.18.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "gtest",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.10.0",
+      "latest": "1.10.0",
+      "selected": "1.10.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "gtest",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.10.0",
+      "latest": "1.10.0",
+      "selected": "1.10.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "gtest",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.10.0",
+      "latest": "1.10.0",
+      "selected": "1.10.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "gtest",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.10.0",
+      "latest": "1.10.0",
+      "selected": "1.10.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "openssl",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.1.1",
+      "latest": "1.1.1",
+      "selected": "1.1.1",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "openssl",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.1.1",
+      "latest": "1.1.1",
+      "selected": "1.1.1",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "openssl",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.1.1",
+      "latest": "4.0.1",
+      "selected": "4.0.1",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "openssl",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.1.1",
+      "latest": "1.1.1",
+      "selected": "1.1.1",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "openssl",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.1.1",
+      "latest": "1.1.1",
+      "selected": "1.1.1",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "openssl",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.1.1",
+      "latest": "1.1.1",
+      "selected": "1.1.1",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "openssl",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.1.1",
+      "latest": "1.1.1",
+      "selected": "1.1.1",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "spdlog",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.12.0",
+      "latest": "1.12.0",
+      "selected": "1.12.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "spdlog",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.12.0",
+      "latest": "1.12.0",
+      "selected": "1.12.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "spdlog",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.12.0",
+      "latest": "1.17.0",
+      "selected": "1.17.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "spdlog",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.12.0",
+      "latest": "1.12.0",
+      "selected": "1.12.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "spdlog",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.12.0",
+      "latest": "1.12.0",
+      "selected": "1.12.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "spdlog",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.12.0",
+      "latest": "1.12.0",
+      "selected": "1.12.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "spdlog",
+      "ecosystem": "conan",
+      "manifestPath": "conanfile.txt",
+      "workspace": null,
+      "workspaceName": null,
+      "current": "1.12.0",
+      "latest": "1.12.0",
+      "selected": "1.12.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
     }
   ]
 }

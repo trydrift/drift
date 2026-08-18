@@ -639,6 +639,17 @@ const cloneJobs = Math.max(
   Number(flag('clone-jobs') ?? process.env.CAPTURE_CLONE_JOBS ?? Math.min(8, availableParallelism())) || jobs,
 );
 
+/**
+ * How long one target may take before it is abandoned.
+ *
+ * Generous on purpose: GitLab's recording legitimately takes over half an hour,
+ * and Kubernetes' took sixty-nine minutes on a runner. This is a guard against
+ * a wedged scan, not a performance budget, so it is set well past the slowest
+ * honest run rather than near it.
+ */
+const targetTimeoutMs =
+  Math.max(1, Number(flag('target-timeout') ?? process.env.CAPTURE_TARGET_TIMEOUT_MINUTES ?? 90) || 90) * 60_000;
+
 const useCache = !has('no-cache');
 const onlyStale = has('if-stale') || has('check');
 const checkOnly = has('check');
@@ -757,20 +768,68 @@ for (const target of queue) {
 
 const scanQueue = [...queue];
 
+/** Targets that did not produce a recording, and why. */
+const failures = [];
+
+/**
+ * Give up on a target that has stopped making progress.
+ *
+ * A scan can wedge — a package manager that ignores the signal sent to it, a
+ * socket that never closes, a deadlock between the probe's own workers — and
+ * when it does, nothing downstream is defensive about it. The whole capture
+ * hung on `gitlab`, and because the last worker never settled, Node drained the
+ * event loop and exited on an unsettled top-level await, taking with it fifteen
+ * recordings that had already finished, including a Kubernetes scan that had
+ * cost an hour of runner time.
+ *
+ * Two things about this are deliberate. The deadline is generous — GitLab's own
+ * recording takes over half an hour legitimately, and a timeout that fires on
+ * slow work would be worse than the hang it replaces. And a target that trips it
+ * is *reported*, never quietly skipped: its previous recording stays on disk,
+ * still marked stale by its engine fingerprint, so the next run tries it again
+ * rather than pretending it succeeded.
+ */
+function withDeadline(promise, ms, label) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      // What is still holding this process open. A hang with no handles at all
+      // is a deadlock in our own code; one sitting on a socket or a child
+      // process is something the environment did. That distinction is most of
+      // the diagnosis and is impossible to recover afterwards, so it is
+      // written down at the moment it is knowable.
+      try {
+        process.report?.writeReport(join(outDir, '..', '..', `capture-hang-${label}.json`));
+        process.stderr.write(`[${label}] wrote a diagnostic report for the hang\n`);
+      } catch {
+        // Best effort. A missing report must not replace the timeout error.
+      }
+      reject(new Error(`gave up after ${(ms / 1000 / 60).toFixed(0)} minutes without finishing`));
+    }, ms);
+    // Deliberately *not* `unref`'d, which is the reflex here and is exactly
+    // backwards. An unref'd timer does not keep the event loop alive, and the
+    // case this guard exists for is the one where nothing else is keeping it
+    // alive either — a wedged scan holding no socket and no child process. The
+    // loop would drain and Node would exit on the unsettled await before the
+    // deadline ever fired, which is the original bug with extra code.
+    promise.then(resolve, reject).finally(() => clearTimeout(timer));
+  });
+}
+
 async function worker() {
   for (;;) {
     const target = scanQueue.shift();
     if (!target) return;
 
     try {
-      const prepared = await pending.get(target.id);
-      const result = await capture(target, prepared, fingerprint);
+      const prepared = await withDeadline(pending.get(target.id), targetTimeoutMs, target.id);
+      const result = await withDeadline(capture(target, prepared, fingerprint), targetTimeoutMs, target.id);
       await writeFile(join(outDir, `${target.id}.json`), `${JSON.stringify(result, null, 2)}\n`, 'utf8');
       process.stderr.write(
         `[${target.id}] done — ${result.candidates.length} candidates, ` +
           `${result.events.length} events, ${(result.durationMs / 1000).toFixed(1)}s\n`,
       );
     } catch (err) {
+      failures.push({ id: target.id, reason: err.message });
       process.stderr.write(`[${target.id}] FAILED: ${err.stack ?? err.message}\n`);
     }
   }
@@ -801,3 +860,14 @@ for (const target of TARGETS) {
 }
 await writeFile(join(outDir, 'index.json'), `${JSON.stringify(captured, null, 2)}\n`, 'utf8');
 process.stderr.write(`\nwrote ${captured.length} recording(s) to site/src/data\n`);
+
+// Said last and loudly, and the exit code carries it — but only after every
+// recording that *did* work has been written and indexed. One wedged target
+// used to discard fourteen good ones on its way out; a target that fails now
+// costs exactly itself, and its previous recording stays on disk still marked
+// stale, so the next run picks it up again.
+if (failures.length > 0) {
+  process.stderr.write(`\n${failures.length} target(s) did not record:\n`);
+  for (const failure of failures) process.stderr.write(`  ${failure.id}: ${failure.reason}\n`);
+  process.exitCode = 1;
+}
