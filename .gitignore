@@ -26,3 +26,6 @@ site/next-env.d.ts
 # Benchmark output — profiles and per-run summaries, regenerated on demand.
 bench-results/
 drift-profile.json
+
+# A second build, kept only while A/B-ing two engine commits.
+.oldbuild/
