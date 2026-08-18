@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isAvailable } from '../../util/exec.js';
+import { fetchArchive } from '../../util/http.js';
 import type { SurfaceChange } from '../type-surface.js';
 import {
   unavailable,
@@ -121,20 +122,23 @@ async function downloadJar(
   const path = join(workdir, `${coordinate.artifactId}-${version}.jar`);
 
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(60_000) });
-    if (!response.ok) {
+    const downloaded = await fetchArchive(url, { timeoutMs: 60_000 });
+    // A request that never completed used to throw out of `fetch`; re-thrown so
+    // it still lands in this provider's own catch, with the same message.
+    if (!downloaded.ok && downloaded.status === 0) throw new Error(downloaded.error ?? 'the request failed');
+    if (!downloaded.ok) {
       return {
         ok: false,
         failure: unavailable(
           TOOL,
-          response.status === 404 ? 'version-unavailable' : 'toolchain-failed',
-          response.status === 404
+          downloaded.status === 404 ? 'version-unavailable' : 'toolchain-failed',
+          downloaded.status === 404
             ? `Maven Central has no jar for ${coordinate.groupId}:${coordinate.artifactId}:${version}. It may be an internal artefact, or published only as a POM or a BOM.`
-            : `Maven Central returned ${response.status} for ${url}.`,
+            : `Maven Central returned ${downloaded.status} for ${url}.`,
         ),
       };
     }
-    await writeFile(path, Buffer.from(await response.arrayBuffer()));
+    await writeFile(path, downloaded.bytes);
     return { ok: true, path };
   } catch (err) {
     return {

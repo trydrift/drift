@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fetchText, clearHttpCache, configureHttpDiskCache } from '../dist/util/http.js';
+import { fetchArchive, fetchText, clearHttpCache, configureHttpDiskCache } from '../dist/util/http.js';
 
 /**
  * Absence is most of what a scan learns.
@@ -136,5 +136,76 @@ describe('remembering that something is not there', () => {
     const second = stub(() => new Response('nope', { status: 404 }));
     assert.equal(await fetchText('https://example.com/e.md'), '# real content');
     assert.equal(second.calls(), 0);
+  });
+});
+
+/**
+ * The surface providers that diff a compiled API each download an archive and
+ * unpack it, and every one of them called `fetch` directly — outside the cache
+ * entirely. A warm scan of Scrapy's dependencies re-downloaded ninety-four
+ * archives it had fetched an hour before.
+ *
+ * These are the most cacheable things Drift fetches: a published version's
+ * artifact is immutable by every registry's own rules, so there is no TTL to
+ * reason about and nothing to revalidate.
+ */
+describe('downloading an immutable archive', () => {
+  test('the bytes are kept, and the second ask never reaches the network', async () => {
+    const first = stub(() => new Response(new Uint8Array([1, 2, 3, 4]), { status: 200 }));
+    const one = await fetchArchive('https://example.com/pkg-1.0.0.tar.gz');
+    assert.ok(one.ok && Buffer.from([1, 2, 3, 4]).equals(one.bytes));
+    assert.equal(first.calls(), 1);
+
+    clearHttpCache();
+    const second = stub(() => new Response(new Uint8Array([9, 9]), { status: 200 }));
+    const two = await fetchArchive('https://example.com/pkg-1.0.0.tar.gz');
+    assert.ok(two.ok && Buffer.from([1, 2, 3, 4]).equals(two.bytes));
+    assert.equal(second.calls(), 0);
+  });
+
+  test('a failure keeps its status, so a provider can still tell 404 from 503', async () => {
+    stub(() => new Response('nope', { status: 404 }));
+    const missing = await fetchArchive('https://example.com/gone.jar');
+    assert.deepEqual(missing, { ok: false, status: 404 });
+
+    clearHttpCache();
+    stub(() => new Response('later', { status: 503 }));
+    const down = await fetchArchive('https://example.com/flaky.jar');
+    assert.ok(!down.ok && down.status === 503);
+  });
+
+  test('a failure is never cached — a 503 now is not a missing artifact forever', async () => {
+    stub(() => new Response('down', { status: 503 }));
+    assert.equal((await fetchArchive('https://example.com/a.jar')).ok, false);
+
+    clearHttpCache();
+    const retry = stub(() => new Response(new Uint8Array([7]), { status: 200 }));
+    const back = await fetchArchive('https://example.com/a.jar');
+    assert.ok(back.ok && back.bytes[0] === 7);
+    assert.equal(retry.calls(), 1);
+  });
+
+  test('a request that never completes is reported, not thrown', async () => {
+    globalThis.fetch = (() => Promise.reject(new Error('ECONNRESET'))) as typeof fetch;
+    const result = await fetchArchive('https://example.com/b.jar');
+    assert.ok(!result.ok && result.status === 0);
+    assert.match(result.error ?? '', /ECONNRESET/);
+  });
+
+  test('two callers asking at once share one download', async () => {
+    let calls = 0;
+    globalThis.fetch = (() => {
+      calls += 1;
+      return new Promise((resolve) =>
+        setTimeout(() => resolve(new Response(new Uint8Array([5]), { status: 200 })), 10),
+      );
+    }) as typeof fetch;
+
+    const [a, b] = await Promise.all([
+      fetchArchive('https://example.com/shared.tgz'),
+      fetchArchive('https://example.com/shared.tgz'),
+    ]);
+    assert.ok(a.ok && b.ok);
+    assert.equal(calls, 1);
   });
 });

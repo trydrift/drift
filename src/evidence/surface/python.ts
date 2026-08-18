@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { isAvailable } from '../../util/exec.js';
-import { fetchJson } from '../../util/http.js';
+import { fetchArchive, fetchJson } from '../../util/http.js';
 import { diffSurfaces, type SurfaceApi, type SurfaceKind } from '../type-surface.js';
 import { unavailable, type SurfaceProvider, type SurfaceRequest, type SurfaceOutcome } from './types.js';
 
@@ -92,14 +92,23 @@ async function surfaceOf(
 
   try {
     await mkdir(dir, { recursive: true });
-    const response = await fetch(source.url, { signal: AbortSignal.timeout(60_000) });
-    if (!response.ok) {
-      return {
-        ok: false,
-        failure: unavailable(TOOL, 'version-unavailable', `PyPI returned ${response.status} for ${source.url}.`),
-      };
+    const downloaded = await fetchArchive(source.url, { timeoutMs: 60_000 });
+    if (!downloaded.ok) {
+      return downloaded.status === 0
+        ? {
+            ok: false,
+            failure: unavailable(
+              TOOL,
+              'toolchain-failed',
+              `Could not download ${source.url}: ${downloaded.error ?? 'the request did not complete'}`,
+            ),
+          }
+        : {
+            ok: false,
+            failure: unavailable(TOOL, 'version-unavailable', `PyPI returned ${downloaded.status} for ${source.url}.`),
+          };
     }
-    await writeFile(archive, Buffer.from(await response.arrayBuffer()));
+    await writeFile(archive, downloaded.bytes);
   } catch (err) {
     return {
       ok: false,

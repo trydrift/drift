@@ -8,7 +8,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { count, profiling, span } from './profile.js';
@@ -348,6 +348,93 @@ async function fetchTextUncoalesced(
     return disk.body;
   }
   return null;
+}
+
+/**
+ * Download a binary artifact, once per machine.
+ *
+ * The surface providers that diff a compiled or packaged API — Python sdists,
+ * Maven sources jars, NuGet packages, Hex tarballs — each download an archive
+ * and unpack it, and every one of them called `fetch` directly. That put them
+ * outside the disk cache entirely: a warm scan of Scrapy's dependencies
+ * re-downloaded ninety-four archives it had downloaded an hour before, because
+ * the only cache in the process stores text.
+ *
+ * These are the most cacheable things Drift fetches. A published version's
+ * artifact is immutable by every registry's own rules — PyPI and Maven Central
+ * refuse re-uploads outright — so there is no TTL to reason about and no
+ * revalidation to do. The bytes are written under a content-addressed name and
+ * reused until the cache directory is removed.
+ *
+ * Returns `null` on any failure, like everything else here: an archive that
+ * cannot be fetched is a gap in evidence, never an error.
+ */
+export type ArchiveResult =
+  /** The bytes, whether they came from the network or from the cache. */
+  | { ok: true; bytes: Buffer }
+  /**
+   * No bytes. `status` is the HTTP status where there was one and `0` where the
+   * request never completed, so a caller can keep saying "Maven Central has no
+   * jar for this version" and "Maven Central returned 503" as different things.
+   */
+  | { ok: false; status: number; error?: string };
+
+export function fetchArchive(url: string, options: { timeoutMs?: number } = {}): Promise<ArchiveResult> {
+  const cacheKey = `archive:${url}`;
+  return coalesce(cacheKey, () => fetchArchiveUncoalesced(url, cacheKey, options));
+}
+
+async function fetchArchiveUncoalesced(
+  url: string,
+  cacheKey: string,
+  options: { timeoutMs?: number },
+): Promise<ArchiveResult> {
+  const host = profiling() ? hostOf(url) : '';
+  const path = archivePath(cacheKey);
+
+  if (path) {
+    try {
+      const cached = await readFile(path);
+      count('http.cache.archive');
+      return { ok: true, bytes: cached };
+    } catch {
+      // Not cached yet, or unreadable. Either way, fetch it.
+    }
+  }
+
+  count('http.archive');
+  const request = span('archive', host);
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(options.timeoutMs ?? 60_000) });
+    if (!response.ok) {
+      request.end({ status: response.status });
+      return { ok: false, status: response.status };
+    }
+    const bytes = Buffer.from(await response.arrayBuffer());
+    request.end({ status: response.status, bytes: bytes.length });
+    if (path) {
+      try {
+        await mkdir(diskCacheDir!, { recursive: true });
+        // Written under a temporary name and moved into place, so a scan killed
+        // mid-download cannot leave a truncated archive that every later run
+        // reads as the real thing.
+        const staging = `${path}.${process.pid}.partial`;
+        await writeFile(staging, bytes);
+        await rename(staging, path);
+      } catch {
+        // Best-effort, exactly like the text cache.
+      }
+    }
+    return { ok: true, bytes };
+  } catch (err) {
+    request.end({ status: 0 });
+    return { ok: false, status: 0, error: (err as Error).message };
+  }
+}
+
+function archivePath(key: string): string | null {
+  if (!diskCacheDir) return null;
+  return join(diskCacheDir, `${createHash('sha256').update(key).digest('hex')}.bin`);
 }
 
 async function readDiskEntry(key: string): Promise<DiskEntry | null> {
