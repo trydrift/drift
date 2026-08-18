@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { appendFile } from 'node:fs/promises';
 import type { DispatchResult, RepoContext } from '../types.js';
-import type { DriftConfig } from '../config/schema.js';
+import { AGENT_PROVIDER_IDS, type DriftConfig, type ExplicitAgentProvider } from '../config/schema.js';
 import { loadConfig } from '../config/load.js';
 import { GitHubClient } from '../github/client.js';
 import { runPipeline } from '../pipeline.js';
@@ -21,6 +21,10 @@ import { matchesAny } from '../util/glob.js';
 import { configureHttpDiskCache } from '../util/http.js';
 import { applyApproval } from '../approval/apply.js';
 import { awaitTerminalState, isTerminalState } from '../dispatch/copilot.js';
+import { CLI_AGENT_SPECS, CliFixAgent } from '../agents/cli.js';
+import { CopilotCloudAgent } from '../agents/copilot-cloud.js';
+import { resolveAgentSelection, type AgentSelection } from '../agents/selection.js';
+import type { FixAgent, SessionEffort } from '../agents/types.js';
 
 /**
  * GitHub Action entrypoint — Drift's primary runner.
@@ -36,6 +40,10 @@ import { awaitTerminalState, isTerminalState } from '../dispatch/copilot.js';
 interface ActionInputs {
   repoToken: string;
   copilotToken?: string;
+  agent?: string;
+  agentModel?: string;
+  agentEffort?: string;
+  agentTimeoutSeconds?: string;
   mode?: 'auto' | 'approve';
   dryRun: boolean;
   logLevel: LogLevel;
@@ -110,6 +118,13 @@ export async function runAction(): Promise<number> {
       codeScanning: { ...effectiveConfig.codeScanning, granularity: inputs.alertGranularity },
     };
   }
+  const agentResolution = await resolveActionAgent({
+    repo,
+    config: effectiveConfig,
+    inputs,
+    logger,
+  });
+  effectiveConfig = agentResolution.config;
 
   // A `schedule` trigger, or an explicit `scan-mode: outdated` on a manual
   // dispatch, means "check every installed dependency against its registry"
@@ -127,9 +142,9 @@ export async function runAction(): Promise<number> {
     return 0;
   }
 
-  if (effectiveConfig.mode === 'auto' && !inputs.copilotToken && !inputs.dryRun) {
+  if (effectiveConfig.mode === 'auto' && !agentResolution.agent && !inputs.dryRun) {
     logger.warn(
-      'mode is `auto` but no copilot-token input was supplied. Drift will analyse and file an approval issue instead of dispatching. See docs/copilot-integration.md.',
+      'mode is `auto` but no usable agent was selected. Drift will analyse and file an approval issue instead of dispatching.',
     );
   }
 
@@ -140,6 +155,7 @@ export async function runAction(): Promise<number> {
       logger,
       github,
       copilotToken: inputs.copilotToken,
+      agent: agentResolution.agent,
       githubToken: inputs.repoToken,
       dryRun: inputs.dryRun,
       // Never approved on this path. Approval arrives only through
@@ -416,6 +432,10 @@ function readInputs(): ActionInputs {
   return {
     repoToken: actionInput('repo-token') ?? process.env.GITHUB_TOKEN ?? '',
     copilotToken: actionInput('copilot-token') || process.env.DRIFT_COPILOT_TOKEN || undefined,
+    agent: actionInput('agent'),
+    agentModel: actionInput('agent-model'),
+    agentEffort: actionInput('agent-effort'),
+    agentTimeoutSeconds: actionInput('agent-timeout-seconds'),
     mode: mode === 'auto' || mode === 'approve' ? mode : undefined,
     dryRun: (actionInput('dry-run') ?? '').toLowerCase() === 'true',
     logLevel: (actionInput('log-level') as LogLevel) || 'info',
@@ -428,6 +448,125 @@ function readInputs(): ActionInputs {
         : undefined,
     cacheDir: actionInput('cache-dir') || process.env.DRIFT_CACHE_DIR || undefined,
   };
+}
+
+async function resolveActionAgent(args: {
+  repo: RepoContext;
+  config: DriftConfig;
+  inputs: ActionInputs;
+  logger: Logger;
+}): Promise<{ config: DriftConfig; agent?: FixAgent }> {
+  const override = agentOverrideFromActionInputs(args.inputs, args.logger);
+  if (override === null) return { config: args.config };
+
+  const localAgents = await detectActionLocalAgents(args.config);
+  const eligibleProviders = [...localAgents.keys()];
+  if (args.inputs.copilotToken) eligibleProviders.push('copilot-cloud');
+
+  const selection = resolveAgentSelection({
+    config: args.config.remediation.agent,
+    override,
+    runtime: {
+      surface: 'action',
+      interactive: false,
+      eligibleProviders,
+      credentials: args.inputs.copilotToken ? { copilotToken: args.inputs.copilotToken } : undefined,
+    },
+    legacyCopilot:
+      args.inputs.copilotToken || args.config.remediation.model
+        ? { token: args.inputs.copilotToken, model: args.config.remediation.model }
+        : undefined,
+  });
+
+  if (selection.source === 'unresolved') {
+    args.logger.warn(selection.reason);
+    return { config: args.config };
+  }
+
+  const config: DriftConfig = {
+    ...args.config,
+    remediation: { ...args.config.remediation, agent: selection.config },
+  };
+  const agent = instantiateActionAgent(selection, localAgents, args.repo, config, args.inputs, args.logger);
+  return { config, agent };
+}
+
+async function detectActionLocalAgents(config: DriftConfig): Promise<Map<ExplicitAgentProvider, CliFixAgent>> {
+  const timeoutMs = config.remediation.agent.timeoutSeconds * 1000;
+  const entries = await Promise.all(
+    CLI_AGENT_SPECS.map(async (spec) => {
+      const agent = new CliFixAgent(spec, timeoutMs);
+      const availability = await agent.detect().catch(() => ({ available: false }));
+      return availability.available ? ([spec.id as ExplicitAgentProvider, agent] as const) : null;
+    }),
+  );
+  return new Map(entries.filter((entry): entry is readonly [ExplicitAgentProvider, CliFixAgent] => Boolean(entry)));
+}
+
+function instantiateActionAgent(
+  selection: AgentSelection,
+  localAgents: Map<ExplicitAgentProvider, CliFixAgent>,
+  repo: RepoContext,
+  config: DriftConfig,
+  inputs: ActionInputs,
+  logger: Logger,
+): FixAgent | undefined {
+  if (localAgents.has(selection.provider)) {
+    return createActionLocalAgent(selection.provider, selection.config.timeoutSeconds);
+  }
+  if (selection.provider === 'copilot-cloud') {
+    if (!inputs.copilotToken) {
+      logger.warn('Copilot Cloud was selected, but no copilot-token input or DRIFT_COPILOT_TOKEN was supplied.');
+      return undefined;
+    }
+    return new CopilotCloudAgent({ repo, config, token: inputs.copilotToken, logger, dryRun: inputs.dryRun });
+  }
+  logger.warn(`${selection.provider} was selected, but no matching installed CLI agent was detected on this runner.`);
+  return undefined;
+}
+
+function createActionLocalAgent(provider: ExplicitAgentProvider, timeoutSeconds: number): CliFixAgent | undefined {
+  const spec = CLI_AGENT_SPECS.find((candidate) => candidate.id === provider);
+  return spec ? new CliFixAgent(spec, timeoutSeconds * 1000) : undefined;
+}
+
+function agentOverrideFromActionInputs(
+  inputs: ActionInputs,
+  logger: Logger,
+): Partial<DriftConfig['remediation']['agent']> | null {
+  const override: Partial<DriftConfig['remediation']['agent']> = {};
+  if (inputs.agent) {
+    if (!isExplicitAgentProvider(inputs.agent)) {
+      logger.warn(`Unknown action agent input \`${inputs.agent}\`. Expected one of: ${AGENT_PROVIDER_IDS.filter((id) => id !== 'auto').join(', ')}.`);
+      return null;
+    }
+    override.provider = inputs.agent;
+  }
+  if (inputs.agentModel) override.model = inputs.agentModel;
+  if (inputs.agentEffort) {
+    if (!isSessionEffort(inputs.agentEffort)) {
+      logger.warn(`Unknown action agent-effort input \`${inputs.agentEffort}\`. Expected low, medium, high, or xhigh.`);
+      return null;
+    }
+    override.effort = inputs.agentEffort;
+  }
+  if (inputs.agentTimeoutSeconds) {
+    const timeoutSeconds = Number(inputs.agentTimeoutSeconds);
+    if (!Number.isInteger(timeoutSeconds) || timeoutSeconds < 30) {
+      logger.warn('Action agent-timeout-seconds must be an integer number of seconds, at least 30.');
+      return null;
+    }
+    override.timeoutSeconds = timeoutSeconds;
+  }
+  return override;
+}
+
+function isExplicitAgentProvider(value: string): value is ExplicitAgentProvider {
+  return value !== 'auto' && (AGENT_PROVIDER_IDS as readonly string[]).includes(value);
+}
+
+function isSessionEffort(value: string): value is SessionEffort {
+  return value === 'low' || value === 'medium' || value === 'high' || value === 'xhigh';
 }
 
 /** Actions passes inputs as `INPUT_<NAME>` with spaces replaced by underscores. */

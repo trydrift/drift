@@ -1298,33 +1298,39 @@ async function fixPlanAndOpenPR(args: {
       if (!selection) {
         unresolvedAgentWork = true;
       } else {
-        const agent = localAgents.get(selection.provider);
+        const agent = createLocalFixAgent(selection.provider, selection.config.timeoutSeconds);
         if (agent) {
-          const agentConfig: DriftConfig = {
-            ...config,
-            remediation: { ...config.remediation, agent: selection.config },
-          };
-          const agentRun = await runAgentCommitsInWorktree({
-            repo,
-            plan,
-            config: agentConfig,
-            worktree: fix.worktree,
-            commits: fix.needsAgent,
-            agent,
-            logger,
-          });
-          unresolvedAgentCount = agentRun.unresolved.length;
-          if (agentRun.committed) {
-            fix.pushed = true;
-            await pushWorktreeHead();
-          }
-          if (agentRun.unresolved.length > 0) {
-            for (const failure of agentRun.unresolved) {
-              logger.warn(`Commit ${failure.commit.order} remains unresolved: ${failure.message}`);
-            }
+          const availability = await agent.detect().catch(() => ({ available: false }));
+          if (!availability.available) {
+            logger.warn(`${selection.provider} was selected, but that provider is not available in this CLI runtime.`);
             unresolvedAgentWork = true;
           } else {
-            logger.info(`Resolved ${agentRun.resolved.length} commit(s) with ${agent.label}.`);
+            const agentConfig: DriftConfig = {
+              ...config,
+              remediation: { ...config.remediation, agent: selection.config },
+            };
+            const agentRun = await runAgentCommitsInWorktree({
+              repo,
+              plan,
+              config: agentConfig,
+              worktree: fix.worktree,
+              commits: fix.needsAgent,
+              agent,
+              logger,
+            });
+            unresolvedAgentCount = agentRun.unresolved.length;
+            if (agentRun.committed) {
+              fix.pushed = true;
+              await pushWorktreeHead();
+            }
+            if (agentRun.unresolved.length > 0) {
+              for (const failure of agentRun.unresolved) {
+                logger.warn(`Commit ${failure.commit.order} remains unresolved: ${failure.message}`);
+              }
+              unresolvedAgentWork = true;
+            } else {
+              logger.info(`Resolved ${agentRun.resolved.length} commit(s) with ${agent.label}.`);
+            }
           }
         } else if (selection.provider === 'copilot-cloud') {
           if (!copilotToken) {
@@ -1503,6 +1509,11 @@ function isExplicitAgentProvider(value: string): value is ExplicitAgentProvider 
 
 function labelForAgentProvider(provider: ExplicitAgentProvider, localAgents: Map<ExplicitAgentProvider, CliFixAgent>): string {
   return localAgents.get(provider)?.label ?? (provider === 'copilot-cloud' ? 'Copilot Cloud' : provider);
+}
+
+function createLocalFixAgent(provider: ExplicitAgentProvider, timeoutSeconds: number): CliFixAgent | undefined {
+  const spec = CLI_AGENT_SPECS.find((candidate) => candidate.id === provider);
+  return spec ? new CliFixAgent(spec, timeoutSeconds * 1000) : undefined;
 }
 
 /**

@@ -10,6 +10,8 @@ import { applyBuiltinCodemod, applyCommitFixPlan } from './apply.js';
 import { planForCommits } from './partition.js';
 import { renderFixPlanDocument } from '../fixplan/document.js';
 import type { FixPlanAssessment } from '../fixplan/schema.js';
+import { dispositionFor } from '../fixplan/policy.js';
+import { ask as defaultAsk } from '../util/prompt.js';
 
 export interface WorktreeRunOptions {
   repo: RepoContext;
@@ -38,6 +40,105 @@ export interface WorktreeAgentRunResult {
   resolved: CommitUnit[];
   unresolved: WorktreeAgentFailure[];
   committed: boolean;
+}
+
+export interface WorktreeRemediationOptions {
+  repo: RepoContext;
+  plan: RemediationPlan;
+  config: DriftConfig;
+  logger: Logger;
+  workspace: string;
+  planOnly?: boolean;
+  nonInteractive?: boolean;
+  exec?: Exec;
+  ask?: (question: string, options: string[]) => Promise<string>;
+}
+
+export interface WorktreeRemediationResult {
+  branch: string;
+  builtinResolved: number;
+  fixPlanResolved: number;
+  documents: string[];
+  needsAgent: CommitUnit[];
+  pushed: boolean;
+  worktree: string;
+}
+
+export async function runWorktreeRemediation(
+  options: WorktreeRemediationOptions,
+): Promise<WorktreeRemediationResult & { teardown: () => Promise<void> }> {
+  const { repo, plan, config, logger, workspace } = options;
+  const exec = options.exec ?? execCommand;
+  const nonInteractive = options.nonInteractive ?? !process.stdin.isTTY;
+
+  const worktree = await createRemediationWorktree({ repo, plan, workspace, exec });
+
+  let builtinResolved = 0;
+  let fixPlanResolved = 0;
+  const documents: string[] = [];
+  const needsAgent: CommitUnit[] = [];
+  let committedAny = false;
+
+  for (const commit of plan.commits) {
+    if (commit.codemod) {
+      const outcome = await applyBuiltinCommit(worktree, commit, exec);
+      if (outcome === 'applied') {
+        builtinResolved += 1;
+        committedAny = true;
+        continue;
+      }
+      if (outcome === 'no-changes') continue;
+      needsAgent.push(commit);
+      continue;
+    }
+
+    if (commit.fixPlan) {
+      const assessment = assessmentOf(commit);
+      const document = renderFixPlanDocument(assessment);
+      documents.push(document);
+
+      if (options.planOnly) {
+        if (commit.fixPlan.residual > 0) needsAgent.push(commit);
+        continue;
+      }
+
+      const disposition = dispositionFor(assessment, config, {
+        verificationPassed: plan.verification?.status === 'passed',
+      });
+
+      const approved = await shouldApplyFixPlan({
+        disposition,
+        document,
+        nonInteractive,
+        ask: options.ask,
+      });
+
+      if (approved) {
+        const outcome = await applyFixPlanCommit(worktree, commit, exec);
+        if (outcome === 'applied') {
+          fixPlanResolved += 1;
+          committedAny = true;
+          if (commit.fixPlan.residual > 0) needsAgent.push(commit);
+          continue;
+        }
+        if (outcome === 'no-changes') continue;
+        logger.warn(`The fix plan for commit ${commit.order} could not be committed; falling back to an agent.`);
+      }
+    }
+
+    needsAgent.push(commit);
+  }
+
+  return {
+    branch: plan.branchName,
+    builtinResolved,
+    fixPlanResolved,
+    documents,
+    needsAgent,
+    pushed: committedAny,
+    worktree,
+    teardown: () => removeRemediationWorktree(workspace, worktree, exec),
+  };
 }
 
 export async function createRemediationWorktree(options: WorktreeRunOptions): Promise<string> {
@@ -248,4 +349,23 @@ async function resetAttempt(worktree: string, baseline: string, exec: Exec): Pro
 
 export async function worktreeHasChanges(worktree: string): Promise<boolean> {
   return (await changedPaths(worktree)).length > 0;
+}
+
+async function shouldApplyFixPlan(args: {
+  disposition: ReturnType<typeof dispositionFor>;
+  document: string;
+  nonInteractive: boolean;
+  ask?: (question: string, options: string[]) => Promise<string>;
+}): Promise<boolean> {
+  const { disposition, nonInteractive } = args;
+
+  if (disposition.action === 'skip') return false;
+  if (nonInteractive) return disposition.action === 'apply';
+
+  const ask = args.ask ?? defaultAsk;
+  const answer = await ask(
+    `${args.document}\n\n${disposition.action === 'apply' ? 'Drift can apply this without asking.' : disposition.reason}`,
+    ['Apply this fix plan', 'Skip it and use AI'],
+  );
+  return /^apply/i.test(answer);
 }

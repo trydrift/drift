@@ -10,6 +10,8 @@ import { applyDeterministicRemediation } from '../github/local-commit.js';
 import { planForCommits } from '../remediation/partition.js';
 import type { FixAgent } from '../agents/types.js';
 import { CopilotCloudAgent } from '../agents/copilot-cloud.js';
+import { execCommand } from '../util/exec.js';
+import { runAgentCommitsInWorktree, runWorktreeRemediation } from '../remediation/worktree-runner.js';
 
 /**
  * Dispatch: decide what to do with a plan, and do it.
@@ -83,6 +85,10 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
       branchName: plan.branchName,
       message: `Dry run — no changes made. Would create branch \`${plan.branchName}\` and resolve ${plan.commits.length} commit(s) (deterministically where possible, otherwise via agent).`,
     };
+  }
+
+  if (agent?.capabilities.execution === 'workspace') {
+    return dispatchViaWorkspaceAgent({ ...options, agent });
   }
 
   // The branch is created by Drift rather than left to the agent so the base
@@ -209,6 +215,101 @@ function agentFromLegacyCopilot(options: DispatchOptions): FixAgent | undefined 
     logger: options.logger,
     dryRun: options.dryRun,
   });
+}
+
+async function dispatchViaWorkspaceAgent(options: DispatchOptions & { agent: FixAgent }): Promise<DispatchResult> {
+  const { repo, plan, config, logger, agent } = options;
+  const workspace = repo.workspace;
+  const exec = options.exec ?? execCommand;
+
+  if (!workspace) {
+    logger.warn(`${agent.label} needs a checked-out workspace, but this dispatch surface did not provide one.`);
+    return requestApproval({
+      ...options,
+      plan: { ...plan, blockers: [...plan.blockers, `${agent.label} needs a checked-out workspace.`] },
+    });
+  }
+
+  const fix = await runWorktreeRemediation({
+    repo,
+    plan,
+    config,
+    logger,
+    workspace,
+    nonInteractive: true,
+    exec,
+  });
+
+  try {
+    if (fix.needsAgent.length > 0) {
+      const agentRun = await runAgentCommitsInWorktree({
+        repo,
+        plan,
+        config,
+        worktree: fix.worktree,
+        commits: fix.needsAgent,
+        agent,
+        logger,
+        exec,
+      });
+
+      if (agentRun.unresolved.length > 0) {
+        for (const failure of agentRun.unresolved) {
+          logger.warn(`Commit ${failure.commit.order} remains unresolved: ${failure.message}`);
+        }
+        await postCheckRun(options, 'action_required', `${agent.label} left unresolved work`);
+        return requestApproval({
+          ...options,
+          plan: {
+            ...plan,
+            blockers: [
+              ...plan.blockers,
+              `${agent.label} could not safely resolve ${agentRun.unresolved.length} commit(s). Choose another agent or approve a manual follow-up.`,
+            ],
+          },
+        });
+      }
+
+      if (agentRun.committed) fix.pushed = true;
+    }
+
+    if (!fix.pushed) {
+      logger.info('Nothing to fix.');
+      await postCheckRun(options, 'success', 'No action needed');
+      return {
+        status: 'skipped',
+        planId: plan.id,
+        message: 'No changes were needed after deterministic and agent remediation.',
+      };
+    }
+
+    const push = await exec('git', ['push', '-u', 'origin', `HEAD:refs/heads/${plan.branchName}`], {
+      cwd: fix.worktree,
+    });
+    if (push.code !== 0) {
+      return {
+        status: 'failed',
+        planId: plan.id,
+        branchName: plan.branchName,
+        message: `Could not push branch \`${plan.branchName}\`: ${push.stderr.trim() || push.stdout.trim()}`,
+      };
+    }
+
+    await postCheckRun(options, 'success', `${agent.label} resolved ${plan.commits.length} commit(s)`);
+    const pr = await ensurePullRequest(options, undefined, undefined);
+    return {
+      status: 'dispatched',
+      planId: plan.id,
+      branchName: plan.branchName,
+      pullRequestNumber: pr?.number,
+      pullRequestUrl: pr?.url,
+      message: pr
+        ? `${agent.label} resolved ${plan.commits.length} commit(s) on \`${plan.branchName}\`, tracked in pull request #${pr.number} into \`${plan.baseBranch}\`.`
+        : `${agent.label} resolved ${plan.commits.length} commit(s) on \`${plan.branchName}\`. A pull request into \`${plan.baseBranch}\` will follow.`,
+    };
+  } finally {
+    await fix.teardown();
+  }
 }
 
 /**

@@ -37,6 +37,36 @@ inputs:
       guessing.
     required: false
 
+  agent:
+    description: >-
+      Agent provider for unresolved edits. Supported values: "codex",
+      "claude", "gemini", "aider", "opencode", or "copilot-cloud". Omit this
+      to use `remediation.agent.provider` from drift.yml. In non-interactive
+      auto mode, Drift only selects automatically when exactly one usable
+      provider is available; otherwise it files an approval issue asking for
+      an explicit selection. The Action never reads local CLI preferences.
+    required: false
+
+  agent-model:
+    description: >-
+      Optional model id passed to the selected agent, where that agent supports
+      model selection. Overrides `remediation.agent.model`.
+    required: false
+
+  agent-effort:
+    description: >-
+      Optional reasoning effort passed to the selected agent where supported:
+      "low", "medium", "high", or "xhigh". Overrides
+      `remediation.agent.effort`.
+    required: false
+
+  agent-timeout-seconds:
+    description: >-
+      Timeout for local runner agents installed on the GitHub runner. Drift
+      does not install agents for you; the workflow must install and
+      authenticate the selected CLI before this Action runs.
+    required: false
+
   mode:
     description: >-
       "auto" dispatches a fix as soon as a breaking change is detected, subject

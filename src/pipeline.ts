@@ -3,6 +3,7 @@ import type { DriftConfig } from './config/schema.js';
 import type { Logger } from './util/logger.js';
 import type { GitHubClient } from './github/client.js';
 import type { RepoProvider } from './repo/provider.js';
+import type { FixAgent } from './agents/types.js';
 import { analyzeRepository } from './analysis.js';
 import { dispatch } from './dispatch/index.js';
 import { renderSummaryLine } from './report/markdown.js';
@@ -42,6 +43,8 @@ export interface PipelineOptions {
   provider?: RepoProvider;
   /** Analyse and report without creating branches, issues, or tasks. */
   dryRun?: boolean;
+  /** Provider-neutral agent selected by the surface after applying its own rules. */
+  agent?: FixAgent;
   /** A human approved this plan via `/drift apply`. */
   approved?: boolean;
   /** Local checkout to index. Falls back to `repo.workspace`. */
@@ -55,7 +58,7 @@ export interface PipelineResult {
 }
 
 export async function runPipeline(options: PipelineOptions): Promise<PipelineResult> {
-  const { repo, config, logger, github, copilotToken, githubToken, dryRun, approved } = options;
+  const { repo, config, logger, github, copilotToken, githubToken, dryRun, approved, agent } = options;
   const started = Date.now();
 
   const { plan, summary } = await logger.group('Drift: analysing', () =>
@@ -83,7 +86,7 @@ export async function runPipeline(options: PipelineOptions): Promise<PipelineRes
   for (const blocker of plan.blockers) logger.warn(`Blocker: ${blocker}`);
 
   const result = await logger.group('Drift: dispatching', () =>
-    dispatch({ repo, plan, config, github, logger, copilotToken, dryRun, approved }),
+    dispatch({ repo, plan, config, github, logger, copilotToken, agent, dryRun, approved }),
   );
 
   logger.info(result.message);

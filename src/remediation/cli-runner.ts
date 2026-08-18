@@ -1,19 +1,10 @@
 import type { CommitUnit, RemediationPlan, RepoContext } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
-import { execCommand, type Exec } from '../util/exec.js';
+import type { Exec } from '../util/exec.js';
 import { planForCommits } from './partition.js';
-import { dispositionFor } from '../fixplan/policy.js';
-import { renderFixPlanDocument } from '../fixplan/document.js';
-import { ask as defaultAsk } from '../util/prompt.js';
 import { CopilotCloudAgent } from '../agents/copilot-cloud.js';
-import {
-  applyBuiltinCommit,
-  applyFixPlanCommit,
-  assessmentOf,
-  createRemediationWorktree,
-  removeRemediationWorktree,
-} from './worktree-runner.js';
+import { runWorktreeRemediation } from './worktree-runner.js';
 
 /**
  * `drift fix`: apply a plan's commits through the same three-tier priority
@@ -82,122 +73,7 @@ export interface FixRunResult {
  * called (in a `finally`) regardless of outcome.
  */
 export async function runFix(options: FixOptions): Promise<FixRunResult & { teardown: () => Promise<void> }> {
-  const { repo, plan, config, logger, workspace } = options;
-  const exec = options.exec ?? execCommand;
-  const nonInteractive = options.nonInteractive ?? !process.stdin.isTTY;
-
-  const worktree = await createRemediationWorktree({ repo, plan, workspace, exec });
-
-  let builtinResolved = 0;
-  let fixPlanResolved = 0;
-  const documents: string[] = [];
-  const needsAgent: CommitUnit[] = [];
-  let committedAny = false;
-
-  for (const commit of plan.commits) {
-    if (commit.codemod) {
-      const outcome = await applyBuiltinCommit(worktree, commit, exec);
-      if (outcome === 'applied') {
-        builtinResolved += 1;
-        committedAny = true;
-        continue;
-      }
-      if (outcome === 'no-changes') {
-        // Genuinely nothing to apply (already applied by an earlier commit,
-        // or the file moved out from under it) — nothing more this commit
-        // needs, and it must not be reported as unresolved work.
-        continue;
-      }
-      // The codemod produced edits but they could not be committed to disk
-      // (e.g. `git add`/`git commit` failed) — this commit is not resolved
-      // and must not be silently dropped; it needs an agent's attention the
-      // same way the GitHub Action path (`local-commit.ts`) falls back.
-      needsAgent.push(commit);
-      continue;
-    }
-
-    if (commit.fixPlan) {
-      const assessment = assessmentOf(commit);
-      const document = renderFixPlanDocument(assessment);
-      documents.push(document);
-
-      // `--plan` is the whole read-only half of this command: print what
-      // would happen and stop, without a worktree edit or a commit.
-      if (options.planOnly) {
-        if (commit.fixPlan.residual > 0) needsAgent.push(commit);
-        continue;
-      }
-
-      const disposition = dispositionFor(assessment, config, {
-        verificationPassed: plan.verification?.status === 'passed',
-      });
-
-      const approved = await shouldApplyFixPlan({
-        disposition,
-        document,
-        nonInteractive,
-        ask: options.ask,
-      });
-
-      if (approved) {
-        const outcome = await applyFixPlanCommit(worktree, commit, exec);
-        if (outcome === 'applied') {
-          fixPlanResolved += 1;
-          committedAny = true;
-          // A partially covering plan leaves real work behind. The commit is
-          // resolved for its covered sites and still needs an agent for the
-          // rest — reporting it as fully handled is how a call site silently
-          // never gets fixed.
-          if (commit.fixPlan.residual > 0) needsAgent.push(commit);
-          continue;
-        }
-        if (outcome === 'no-changes') continue;
-        logger.warn(`The fix plan for commit ${commit.order} could not be committed; falling back to an agent.`);
-      }
-    }
-
-    needsAgent.push(commit);
-  }
-
-  return {
-    branch: plan.branchName,
-    builtinResolved,
-    fixPlanResolved,
-    documents,
-    needsAgent,
-    pushed: committedAny,
-    worktree,
-    teardown: () => removeRemediationWorktree(workspace, worktree, exec),
-  };
-}
-
-/**
- * Show the plan and decide.
- *
- * A terminal can ask, so it asks — a fix plan is precisely the artefact worth
- * asking about, because the question ("may Drift make this exact edit to
- * these exact lines?") is answerable in advance. Non-interactive runs fall
- * back to `dispositionFor` alone, which is the same answer the Action would
- * reach for the same config, so a CI `drift fix` and a `drift action` run do
- * not quietly differ.
- */
-async function shouldApplyFixPlan(args: {
-  disposition: ReturnType<typeof dispositionFor>;
-  document: string;
-  nonInteractive: boolean;
-  ask?: (question: string, options: string[]) => Promise<string>;
-}): Promise<boolean> {
-  const { disposition, nonInteractive } = args;
-
-  if (disposition.action === 'skip') return false;
-  if (nonInteractive) return disposition.action === 'apply';
-
-  const ask = args.ask ?? defaultAsk;
-  const answer = await ask(
-    `${args.document}\n\n${disposition.action === 'apply' ? 'Drift can apply this without asking.' : disposition.reason}`,
-    ['Apply this fix plan', 'Skip it and use AI'],
-  );
-  return /^apply/i.test(answer);
+  return runWorktreeRemediation(options);
 }
 
 /** Dispatch commits the deterministic paths could not resolve to Copilot. */
