@@ -4,6 +4,7 @@ import { nodeWorkspaceFs, type WorkspaceFs } from '../detect/workspace.js';
 import { createWorktree, type Worktree } from '../repo/worktree.js';
 import { execCommand, type Exec } from '../util/exec.js';
 import { mapWithConcurrency } from '../util/http.js';
+import { localConcurrency } from '../util/parallelism.js';
 import type { Logger } from '../util/logger.js';
 import {
   availableChecks,
@@ -144,10 +145,12 @@ export interface ProbeOptions {
    * Each group already gets its own worktree, so groups share nothing —
    * `packages/web`'s install and `packages/api`'s install were only ever
    * serialized because the loop over them was, not because anything
-   * required it. `3` by default: git worktree operations briefly lock
-   * shared repository state, so unbounded concurrency trades a slow scan
-   * for a flaky one on a large monorepo without buying much beyond a
-   * handful of manifests running at once.
+   * required it. Defaults to `localConcurrency()`, which is deliberately the
+   * smallest of the three parallelism budgets: an install saturates the disk
+   * and a typecheck saturates every core it is given, so running many at once
+   * makes each one slower without finishing the set any sooner. Git worktree
+   * operations also briefly lock shared repository state, so unbounded
+   * concurrency trades a slow scan for a flaky one on a large monorepo.
    */
   concurrency?: number;
   /**
@@ -203,7 +206,7 @@ export async function probeUpgrades(options: ProbeOptions): Promise<Map<string, 
   // briefly lock shared repository state, so a monorepo with many manifests
   // benefits from running several at once without every group racing for the
   // same lock simultaneously.
-  await mapWithConcurrency(groups, Math.max(1, options.concurrency ?? DEFAULT_GROUP_CONCURRENCY), async ([manifestPath, targets]) => {
+  await mapWithConcurrency(groups, Math.max(1, options.concurrency ?? localConcurrency()), async ([manifestPath, targets]) => {
     if (options.token?.isCancellationRequested) {
       for (const target of targets) settle(target, cancelled());
       return;
@@ -230,7 +233,7 @@ export async function probeUpgrades(options: ProbeOptions): Promise<Map<string, 
   return results;
 }
 
-const DEFAULT_GROUP_CONCURRENCY = 3;
+
 
 interface GroupHooks {
   /** `about` names the upgrades this phase belongs to, when it belongs to any. */
@@ -588,7 +591,7 @@ export function warmProbe(
   // Bounded for the same reason `probeUpgrades` bounds its groups: git worktree
   // operations briefly lock shared repository state, and a monorepo with twenty
   // members should not start twenty installs at once on one machine.
-  const limit = Math.max(1, options.concurrency ?? DEFAULT_GROUP_CONCURRENCY);
+  const limit = Math.max(1, options.concurrency ?? localConcurrency());
   let active = 0;
   const queue: (() => void)[] = [];
 
