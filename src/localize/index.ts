@@ -571,6 +571,51 @@ const PYPI_MODULE_ALIASES: Record<string, string> = {
   'typing-extensions': 'typing_extensions',
 };
 
+/**
+ * A file split into lines, and the two masked views of it, computed once.
+ *
+ * `searchFiles` runs once per breaking change, and a package like Twisted
+ * reports dozens of them against overlapping sets of candidate files — so the
+ * same file was being split and masked once per finding. On a scan of Scrapy
+ * that made `maskComments` twenty per cent of all CPU the process burned, every
+ * repetition producing a character-for-character identical answer.
+ *
+ * Keyed on the index entry rather than on the path or the content: index
+ * entries are built once per scan and handed to every `localize` call, so
+ * object identity is exactly the right notion of "the same file" here, and a
+ * `WeakMap` means a stale index is collected rather than pinned.
+ *
+ * Both views are lazy. A change whose symbols are all plain identifiers never
+ * reads the string-preserving view, and computing it anyway doubled the cost of
+ * the most expensive step for nothing.
+ */
+interface MaskedFile {
+  readonly lines: readonly string[];
+  /** Comments stripped, string *contents* kept — for symbols that live in one. */
+  withStrings(): readonly string[];
+  /** Comments stripped and string contents blanked — for identifiers. */
+  withoutStrings(): readonly string[];
+}
+
+const maskedFiles = new WeakMap<FileIndex, MaskedFile>();
+
+function maskedFor(candidate: FileIndex, content: string): MaskedFile {
+  const cached = maskedFiles.get(candidate);
+  if (cached) return cached;
+
+  const lines = content.split('\n');
+  let kept: readonly string[] | undefined;
+  let blanked: readonly string[] | undefined;
+  const view: MaskedFile = {
+    lines,
+    withStrings: () => (kept ??= maskComments(lines, { blankStrings: false })),
+    withoutStrings: () => (blanked ??= maskComments(lines, { blankStrings: true })),
+  };
+
+  maskedFiles.set(candidate, view);
+  return view;
+}
+
 function searchFiles(
   change: BreakingChange,
   candidates: readonly FileIndex[],
@@ -698,7 +743,6 @@ function searchFiles(
     const invocationOnly =
       breaksOnlyAtTheCall(change.kind) && callsAreParenthesised(candidate.language);
 
-    const lines = content.split('\n');
     // Two views of the same file, because two kinds of symbol need opposite
     // things from a string literal.
     //
@@ -709,8 +753,11 @@ function searchFiles(
     // as an affected site on the line `" to define format set a colon at the
     // end of the o"`. Both views strip comments; only one keeps string
     // contents, and `matcherFor`'s symbol shape decides which a symbol reads.
-    const withStrings = maskComments(lines, { blankStrings: false });
-    const withoutStrings = maskComments(lines, { blankStrings: true });
+    //
+    // Computed once per file for the whole scan, and each view only if a symbol
+    // actually reads it. See `maskedFor`.
+    const view = maskedFor(candidate, content);
+    const { lines } = view;
 
     for (const symbol of change.symbols) {
       const matcher = invocationOnly ? invocationMatcherFor(symbol) : matcherFor(symbol);
@@ -724,7 +771,7 @@ function searchFiles(
       if (definedLocally(symbol, importedNames, locallyDefined)) continue;
 
       const inString = livesInStringLiteral(symbol);
-      const masked = inString ? withStrings : withoutStrings;
+      const masked = inString ? view.withStrings() : view.withoutStrings();
       // A module specifier only ever appears on an import line, so suppressing
       // those would suppress the finding entirely. The rule below is about
       // identifiers, which have somewhere else to be.
