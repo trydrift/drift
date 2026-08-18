@@ -28,6 +28,20 @@ const ECOSYSTEM_NAMES = z.enum([
   'arduino',
 ] as const satisfies readonly Ecosystem[]);
 
+export const AGENT_PROVIDER_IDS = [
+  'auto',
+  'copilot-cloud',
+  'claude',
+  'codex',
+  'gemini',
+  'aider',
+  'opencode',
+  'ollama',
+] as const;
+
+const AGENT_PROVIDER = z.enum(AGENT_PROVIDER_IDS);
+const AGENT_EFFORT = z.enum(['low', 'medium', 'high', 'xhigh']);
+
 /**
  * `satisfies` above proves every name listed is a real ecosystem. This proves
  * the converse — that every real ecosystem is listed — by failing to compile
@@ -247,6 +261,24 @@ export const DriftConfigSchema = z.object({
       draftPr: z.boolean().optional(),
       /** Model hint passed to the Copilot Agent Tasks API. */
       model: z.string().optional(),
+      /**
+       * Provider-neutral policy for the AI fallback tier.
+       *
+       * Credentials are deliberately absent. A repository can say which kind
+       * of agent is acceptable and which provider-scoped model hint to use,
+       * but tokens, API keys, existing CLI auth, and editor sessions are
+       * runtime facts supplied by the CLI, Action, webhook, or extension.
+       */
+      agent: z
+        .object({
+          provider: AGENT_PROVIDER.default('auto'),
+          /** Provider-scoped. A Codex model id and a Copilot model id are not portable. */
+          model: z.string().optional(),
+          effort: AGENT_EFFORT.optional(),
+          fast: z.boolean().default(false),
+          timeoutSeconds: z.number().int().min(30).max(24 * 60 * 60).default(600),
+        })
+        .prefault({}),
       /** Extra repo-specific guidance appended to every agent task. */
       customInstructions: z.string().default(''),
       /**
@@ -722,6 +754,9 @@ export const DriftConfigSchema = z.object({
 
 export type DriftConfig = z.infer<typeof DriftConfigSchema>;
 export type LicensePolicy = DriftConfig['licenses'];
+export type AgentConfig = DriftConfig['remediation']['agent'];
+export type AgentProvider = AgentConfig['provider'];
+export type ExplicitAgentProvider = Exclude<AgentProvider, 'auto'>;
 
 export const DEFAULT_CONFIG: DriftConfig = DriftConfigSchema.parse({});
 
