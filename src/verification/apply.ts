@@ -31,6 +31,28 @@ export function provableByCompiler(change: Parameters<typeof taxonomyOf>[0]): bo
 }
 
 /**
+ * How much of the manifest a verdict actually stands for.
+ *
+ * `'isolated'`: this candidate was the only thing installed — the verdict is
+ * about it, alone. `'batch'`: it was measured alongside other upgrades, and a
+ * green result only proves the *group* is safe together (see
+ * {@link applyVerificationToPlan}). `undefined`: nothing was measured, so
+ * there is no scope to report.
+ *
+ * Derived from `measuredWith` rather than stored as its own field, so the two
+ * can never disagree with each other. This exists so every caller that used
+ * to write `verification.measuredWith && verification.measuredWith > 1` inline
+ * — a magic-number check repeated at each call site — instead names what that
+ * comparison means, once.
+ */
+export type VerificationScope = 'isolated' | 'batch';
+
+export function verificationScope(verification: UpgradeVerification): VerificationScope | undefined {
+  if (verification.status === 'skipped') return undefined;
+  return verification.measuredWith && verification.measuredWith > 1 ? 'batch' : 'isolated';
+}
+
+/**
  * Fold a probe result into a plan.
  *
  * Returns a new plan; the input is not modified, so a caller holding the
@@ -65,11 +87,11 @@ export function applyVerificationToPlan(
   // safe together, not that any one of them is safe alone: dependencies can
   // compensate for each other (a framework and its adapter, a runtime and its
   // type definitions), so `A@2 + B@2` passing says nothing about `A@2` on its
-  // own. `measuredWith > 1` marks exactly that case — the display keeps
-  // saying "passed", which is a true statement about the batch, but nothing
-  // gets pruned on the strength of it. Only a pass measured for this
-  // candidate alone may clear its predictions.
-  if (verification.measuredWith && verification.measuredWith > 1) {
+  // own. Batch scope marks exactly that case — the display keeps saying
+  // "passed", which is a true statement about the batch, but nothing gets
+  // pruned on the strength of it. Only a pass scoped to this candidate alone
+  // may clear its predictions.
+  if (verificationScope(verification) === 'batch') {
     return { ...plan, verification };
   }
 
@@ -193,8 +215,8 @@ export function describeVerification(verification: UpgradeVerification): string 
     // upgrade is fine" and "this set of upgrades is fine", and only the reader
     // knows whether they are about to take one or all of them.
     const alongside =
-      verification.measuredWith && verification.measuredWith > 1
-        ? ` (measured with ${verification.measuredWith - 1} other upgrade${verification.measuredWith === 2 ? '' : 's'} from the same manifest installed alongside it)`
+      verificationScope(verification) === 'batch'
+        ? ` (measured with ${verification.measuredWith! - 1} other upgrade${verification.measuredWith === 2 ? '' : 's'} from the same manifest installed alongside it)`
         : '';
     return ran.length > 0
       ? `${ran.join(', ')} ${ran.length === 1 ? 'passes' : 'pass'} with this upgrade installed${alongside}.`
