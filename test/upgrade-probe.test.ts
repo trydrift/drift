@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { probeUpgrades, probeDependencyChange, filesNamedIn, warmProbe } from '../dist/verification/upgrade-probe.js';
 import { applyVerificationToPlan, combineVerifications, describeVerification } from '../dist/verification/apply.js';
 import { applyVerification } from '../dist/upgrade/verification.js';
+import { severityOf, describeSeverity } from '../dist/upgrade/severity.js';
 
 /**
  * The probe installs each upgrade in a throwaway worktree and runs the
@@ -1062,5 +1063,152 @@ describe('what a measurement does to a candidate row', () => {
     assert.equal(batch.plan.breakingChanges.length, 2, 'batch pass cleared nothing');
     assert.equal(solo.breakingCount, 2, 'upstream count is reported, not the post-prune remainder');
     assert.equal(batch.breakingCount, 2, 'and it agrees with the solo run');
+  });
+
+  // The deeper case: a compiler-provable breaking change with one localized
+  // impact site. Static analysis alone calls this `affected`. A batch pass
+  // cannot license clearing it (batch-mates can compensate for each other), so
+  // it stays `affected` — but an isolated pass can, and does. Two runs of the
+  // same commit must not read as Drift flatly contradicting itself; the scope
+  // of what was actually measured has to be visible in the verdict.
+  const oneImpactedFinding = () => ({
+    id: 'zod',
+    name: 'zod',
+    kind: 'production',
+    ecosystem: 'npm',
+    packageManager: 'npm',
+    manifestPath: 'package.json',
+    current: '2.0.0',
+    range: '^2.0.0',
+    selected: '3.0.0',
+    latest: '3.0.0',
+    versions: [],
+    status: 'ready',
+    evidenceCount: 1,
+    breakingCount: 1,
+    impactCount: 1,
+    impactFiles: 1,
+    impactConfidence: 'high',
+    risk: 'medium',
+    summary: '1 breaking change',
+    gaps: [],
+    toolRequests: [],
+    plan: {
+      schemaVersion: 1,
+      id: 'plan-2',
+      branchName: 'drift/zod',
+      baseBranch: 'main',
+      headSha: 'abc',
+      changes: [],
+      evidence: [],
+      breakingChanges: [change('signature-changed')],
+      upstreamBreakingCount: 1,
+      impactSites: [{ id: 's1', breakingChangeId: 'signature-changed', file: 'src/a.ts', line: 1 }],
+      commits: [{ id: 'c1', breakingChangeIds: ['signature-changed'], dependsOn: [], dependencyReasons: [] }],
+      planEdges: [],
+      upgradeCohorts: [],
+      risk: 'medium',
+      gaps: [],
+      checkedSurfaces: [],
+      blockers: [],
+      warnings: [],
+      createdAt: new Date().toISOString(),
+    },
+  });
+
+  test('a green batch and a green isolated pass agree on everything except what was actually cleared', () => {
+    const batch = applyVerification(oneImpactedFinding(), { ...compileCapablePass, measuredWith: 5 });
+    const isolated = applyVerification(oneImpactedFinding(), compileCapablePass);
+
+    assert.equal(batch.plan.upstreamBreakingCount, 1, 'upstream count is untouched by batch scope');
+    assert.equal(isolated.plan.upstreamBreakingCount, 1, 'and by isolated scope, agreeing with the batch run');
+
+    // The batch never clears the finding — the existing, conservative rule.
+    assert.equal(batch.impactCount, 1, 'a batch pass cannot prove this package is safe alone');
+    assert.equal(severityOf(batch), 'affected', 'so the site is still reported as affecting the repository');
+    assert.match(
+      describeSeverity(batch),
+      /not yet confirmed alone/,
+      'and the verdict says why, instead of reading as a plain, checked "affects"',
+    );
+
+    // The isolated pass can, and does.
+    assert.equal(isolated.impactCount, 0, 'an isolated compile-capable pass disproves the compiler-provable finding');
+    assert.equal(severityOf(isolated), 'upstream-only', 'so the row is reported safe');
+    assert.doesNotMatch(
+      describeSeverity(isolated),
+      /not yet confirmed alone/,
+      'a genuinely cleared finding carries no such hedge',
+    );
+  });
+
+  test('an isolated pass that leaves a finding uncleared for its own reasons is not hedged as "batch-only"', () => {
+    // A behavioural change is invisible to a compiler — even an isolated,
+    // compile-capable pass cannot clear it, and correctly does not. That
+    // absence of clearance is not the batch-scope gap the hedge exists to
+    // flag, and mislabeling it as "not yet confirmed alone" would suggest an
+    // isolated re-run could fix what a compiler fundamentally cannot see.
+    const behavioural = {
+      ...oneImpactedFinding(),
+      plan: {
+        ...oneImpactedFinding().plan,
+        breakingChanges: [{ ...change('default-changed'), kind: 'behaviour-change' }],
+        impactSites: [{ id: 's1', breakingChangeId: 'default-changed', file: 'src/a.ts', line: 1 }],
+      },
+    };
+    const isolated = applyVerification(behavioural, compileCapablePass);
+
+    assert.equal(isolated.impactCount, 1, 'a compiler cannot clear a behavioural finding, isolated or not');
+    assert.equal(severityOf(isolated), 'affected');
+    assert.doesNotMatch(
+      describeSeverity(isolated),
+      /not yet confirmed alone/,
+      'this was already given its isolated check and stood by the finding — no batch gap to name',
+    );
+  });
+
+  test('a genuinely failing isolated probe is still reported as measured breakage, never hedged', () => {
+    const failing = {
+      status: 'failed',
+      checks: [{ kind: 'test', label: 'npm test', status: 'failed', durationMs: 1, output: 'boom' }],
+      diagnostics: 'boom',
+      failedFiles: [],
+    };
+    const failed = applyVerification(oneImpactedFinding(), failing);
+
+    // A located impact site already outranks a failed verification in
+    // `severityOf` (a static match is a stronger, more specific claim than an
+    // aggregate check failure) — this test's job is only to confirm that a
+    // real, isolated failure is never mistaken for the batch-scope gap the
+    // hedge exists to name.
+    assert.equal(severityOf(failed), 'affected');
+    assert.equal(failed.impactPendingIsolatedClearance, false, 'nothing here was left unresolved by batch scope');
+    assert.doesNotMatch(
+      describeSeverity(failed),
+      /not yet confirmed alone/,
+      'real, measured breakage is never described as merely unconfirmed',
+    );
+  });
+
+  test('the transient path — batch fails, falls back to solo — lands on the same verdict as a batch that never had to fall back', () => {
+    // What actually varies between "a batch happened to succeed" and "a batch
+    // happened to fail for an unrelated reason and this package was probed
+    // alone" is the scope of the evidence gathered, and that has to be an
+    // explicit, inspectable fact — not something a reader infers from which
+    // of two contradictory-looking sentences they happened to see.
+    const batchSucceeded = applyVerification(oneImpactedFinding(), { ...compileCapablePass, measuredWith: 3 });
+    const fellBackToSolo = applyVerification(oneImpactedFinding(), compileCapablePass);
+
+    assert.notEqual(
+      severityOf(batchSucceeded),
+      severityOf(fellBackToSolo),
+      'the verdicts do differ — isolated evidence really is stronger',
+    );
+    // But the difference is explained, not silent: only the run that actually
+    // measured this package alone claims the stronger verdict, and it is
+    // named as such rather than looking like an arbitrary flip.
+    assert.equal(batchSucceeded.impactPendingIsolatedClearance, true);
+    assert.equal(fellBackToSolo.impactPendingIsolatedClearance, false);
+    assert.equal(batchSucceeded.plan.upstreamBreakingCount, fellBackToSolo.plan.upstreamBreakingCount);
   });
 });

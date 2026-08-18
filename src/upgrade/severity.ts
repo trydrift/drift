@@ -70,6 +70,19 @@ export interface SeverityInput {
    * it keep today's wording.
    */
   impactConfidence?: 'high' | 'medium' | 'low' | 'none';
+  /**
+   * The affected count includes a finding a compiler could disprove, but the
+   * only pass that has run for it was scoped to a batch of upgrades — which is
+   * never allowed to clear one, batch-mates can compensate for each other.
+   * That is a true "affects your code" exactly as much as an unverified
+   * prediction is, and `describeSeverity` says so, rather than reading the
+   * same way as a finding an isolated check already looked at and stood by.
+   * Whether probing this dependency alone would flip the verdict to safe is
+   * unknown until that isolated check actually runs — batching is what makes
+   * a clean scan cheap, and re-running everything solo just to find out would
+   * give up exactly the cost that batching exists to save.
+   */
+  impactPendingIsolatedClearance?: boolean;
 }
 
 /**
@@ -127,7 +140,17 @@ export function describeSeverity(candidate: SeverityInput): string {
       // not certain enough to tell someone flatly that their code is affected.
       const verb =
         candidate.impactConfidence && candidate.impactConfidence !== 'high' ? 'May affect' : 'Affects';
-      return `${verb} your code · ${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'} in ${files} file${files === 1 ? '' : 's'}`;
+      // Stated whenever it applies, for the same reason `describeVerification`
+      // states `measuredWith`: this exact finding could read "safe" on the
+      // next scan for no reason but an unrelated dependency's install
+      // happening to fail and knocking this one out of its batch and into an
+      // isolated probe. Silence here is what made that look like Drift
+      // contradicting itself; naming the batch scope makes it what it is —
+      // still-unconfirmed, not yet disproven.
+      const unconfirmed = candidate.impactPendingIsolatedClearance
+        ? ' — not yet confirmed alone: a batch check passed without testing this package in isolation'
+        : '';
+      return `${verb} your code · ${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'} in ${files} file${files === 1 ? '' : 's'}${unconfirmed}`;
     }
     case 'verification-failed': {
       const failing = (candidate.verification?.checks ?? [])
