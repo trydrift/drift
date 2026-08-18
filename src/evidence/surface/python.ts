@@ -1,9 +1,11 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import { createHash } from 'node:crypto';
 import { readArchive } from '../../util/archive.js';
 import { isAvailable } from '../../util/exec.js';
 import { fetchArchive, fetchJson } from '../../util/http.js';
-import { diffSurfaces, type SurfaceApi, type SurfaceKind } from '../type-surface.js';
+import { readComputed, writeComputed } from '../../util/artifact-cache.js';
+import { diffSurfaces, type SurfaceApi, type SurfaceEntry, type SurfaceKind } from '../type-surface.js';
 import { unavailable, type SurfaceProvider, type SurfaceRequest, type SurfaceOutcome } from './types.js';
 
 /**
@@ -54,9 +56,13 @@ export const pythonSurface: SurfaceProvider = {
     const scriptPath = join(request.workdir, 'surface.py');
     await writeFile(scriptPath, SURFACE_SCRIPT, 'utf8');
 
-    const before = await surfaceOf(request, request.from, scriptPath);
+    // What would have to change for a remembered surface to be wrong: the
+    // script that reads it, and the interpreter that runs the script.
+    const analyzer = `${SCRIPT_FINGERPRINT}/${await interpreterVersion(request)}`;
+
+    const before = await surfaceOf(request, request.from, scriptPath, analyzer);
     if (!before.ok) return before.failure;
-    const after = await surfaceOf(request, request.to, scriptPath);
+    const after = await surfaceOf(request, request.to, scriptPath, analyzer);
     if (!after.ok) return after.failure;
 
     return {
@@ -71,7 +77,43 @@ export const pythonSurface: SurfaceProvider = {
 
 type SurfaceAttempt = { ok: true; api: SurfaceApi } | { ok: false; failure: SurfaceOutcome };
 
+/**
+ * The parsed public surface of one published version, computed at most once
+ * per machine per analyzer.
+ *
+ * Everything below this — a download, an unpack, and an `ast` parse of every
+ * Python file in the package — produces the same answer every time it runs,
+ * because a published version is immutable and no registry permits anyone to
+ * change one after the fact. On a warm scan of Scrapy's dependencies that was
+ * thirty-odd `python3` invocations re-deriving what the last scan already knew.
+ *
+ * The key carries the analyzer, not just the artifact: a hash of the script
+ * below and the interpreter that runs it. Keyed on the package alone, a fixed
+ * parser would keep serving the answer it got wrong — a silent accuracy
+ * regression, and the reason there is no TTL here instead.
+ *
+ * Only a *successful* surface is remembered. Every failure path below is either
+ * a fact about this machine (no `python3`) or a transient one (a download that
+ * did not land), and neither is a property of the version being asked about.
+ */
 async function surfaceOf(
+  request: SurfaceRequest,
+  version: string,
+  scriptPath: string,
+  analyzer: string,
+): Promise<SurfaceAttempt> {
+  const key = `python-surface:${analyzer}:${request.name}@${version}`;
+  // Stored as entry pairs: a `Map` is not JSON, and every field of a
+  // `SurfaceEntry` is a string or an array of them, so the round trip is exact.
+  const remembered = await readComputed<[string, SurfaceEntry][]>(key);
+  if (remembered) return { ok: true, api: new Map(remembered) };
+
+  const computed = await computeSurfaceOf(request, version, scriptPath);
+  if (computed.ok) await writeComputed(key, [...computed.api]);
+  return computed;
+}
+
+async function computeSurfaceOf(
   request: SurfaceRequest,
   version: string,
   scriptPath: string,
@@ -371,4 +413,32 @@ json.dump(sorted(symbols.values(), key=lambda s: s['name']), sys.stdout)
 
 function firstLine(text: string): string {
   return text.split('\n').find((line) => line.trim().length > 0)?.trim() ?? 'no output';
+}
+
+/**
+ * A fingerprint of the reader below, so a fix to it invalidates every surface
+ * it could have got wrong.
+ *
+ * Hashing the script rather than versioning it by hand: a constant somebody has
+ * to remember to bump is a constant that eventually is not bumped, and the
+ * failure mode there is a cache quietly serving conclusions from a parser that
+ * has since been corrected.
+ */
+const SCRIPT_FINGERPRINT = createHash('sha256').update(SURFACE_SCRIPT).digest('hex').slice(0, 12);
+
+/**
+ * Which `python3` this is, asked once per process.
+ *
+ * Part of the cache key because `ast` is a moving target: a syntax the running
+ * interpreter cannot parse is a file the reader silently skips, so the same
+ * package can have a different readable surface under 3.9 and under 3.13.
+ */
+let interpreter: Promise<string> | null = null;
+
+function interpreterVersion(request: SurfaceRequest): Promise<string> {
+  interpreter ??= request
+    .exec('python3', ['--version'], { timeoutMs: 20_000 })
+    .then((result) => (result.stdout || result.stderr).trim().replace(/\s+/g, '-') || 'unknown')
+    .catch(() => 'unknown');
+  return interpreter;
 }
