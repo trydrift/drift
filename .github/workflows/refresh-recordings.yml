@@ -123,10 +123,17 @@ jobs:
           fi
 
           # Exit code 1 means "some are stale", which is the answer, not a
-          # failure — so the step must not abort on it. The stale ids are on
+          # failure. Actions runs every `run:` under `bash -e`, which aborts a
+          # step the moment any command returns non-zero — including this
+          # assignment — so the check reported sixteen stale recordings and
+          # then failed the job instead of re-recording them. `set +e` around
+          # the call is what makes a non-zero exit readable rather than fatal;
+          # `set -uo pipefail` above cannot turn `-e` off. The stale ids are on
           # stdout, ready to hand straight back to the same script.
+          set +e
           targets=$(node site/scripts/capture.mjs --check)
           status=$?
+          set -e
 
           if [ "$status" -gt 1 ]; then
             echo "The staleness check itself failed (exit $status)." >&2
