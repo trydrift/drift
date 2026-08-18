@@ -4,6 +4,9 @@ import { nodeWorkspaceFs, type WorkspaceFs } from '../detect/workspace.js';
 import { createWorktree, type Worktree } from '../repo/worktree.js';
 import { execCommand, type Exec } from '../util/exec.js';
 import { mapWithConcurrency } from '../util/http.js';
+import { localConcurrency } from '../util/parallelism.js';
+import { baselineKey, noBaselineCache, type CachedCheck } from './baseline-cache.js';
+import type { BaselineCache } from './baseline-cache.js';
 import type { Logger } from '../util/logger.js';
 import {
   availableChecks,
@@ -144,10 +147,12 @@ export interface ProbeOptions {
    * Each group already gets its own worktree, so groups share nothing —
    * `packages/web`'s install and `packages/api`'s install were only ever
    * serialized because the loop over them was, not because anything
-   * required it. `3` by default: git worktree operations briefly lock
-   * shared repository state, so unbounded concurrency trades a slow scan
-   * for a flaky one on a large monorepo without buying much beyond a
-   * handful of manifests running at once.
+   * required it. Defaults to `localConcurrency()`, which is deliberately the
+   * smallest of the three parallelism budgets: an install saturates the disk
+   * and a typecheck saturates every core it is given, so running many at once
+   * makes each one slower without finishing the set any sooner. Git worktree
+   * operations also briefly lock shared repository state, so unbounded
+   * concurrency trades a slow scan for a flaky one on a large monorepo.
    */
   concurrency?: number;
   /**
@@ -157,6 +162,16 @@ export interface ProbeOptions {
    * this is purely an optimisation and never changes what is measured.
    */
   warm?: ProbeWarmup;
+  /**
+   * Where a measured baseline is remembered between runs. See
+   * `verification/baseline-cache.ts`.
+   *
+   * Absent means measure it every time, which is what a fresh CI container and
+   * every test want. Present, it removes the one part of the preparation that
+   * is pure recomputation: running a project's typecheck, build and test suite
+   * to learn what they said the last time nothing had changed.
+   */
+  baselineCache?: BaselineCache;
   /**
    * Apply a whole batch of upgrades in as few package-manager runs as possible.
    *
@@ -175,6 +190,16 @@ export interface ProbeOptions {
 }
 
 const DEFAULT_KINDS: readonly CheckKind[] = ['typecheck', 'build', 'test'];
+
+/**
+ * A baseline check, however it was arrived at.
+ *
+ * A cached entry keeps only what the decisions below actually read — the label,
+ * whether it passed, and why not — while a freshly measured one carries its
+ * whole output. Everything that consumes a baseline works from this narrower
+ * shape so neither source needs a special case.
+ */
+type BaselineLike = { label: string; status: CheckOutcome['status']; output?: string; reason?: string };
 
 /**
  * Install and check every target, and report what actually happened.
@@ -203,7 +228,7 @@ export async function probeUpgrades(options: ProbeOptions): Promise<Map<string, 
   // briefly lock shared repository state, so a monorepo with many manifests
   // benefits from running several at once without every group racing for the
   // same lock simultaneously.
-  await mapWithConcurrency(groups, Math.max(1, options.concurrency ?? DEFAULT_GROUP_CONCURRENCY), async ([manifestPath, targets]) => {
+  await mapWithConcurrency(groups, Math.max(1, options.concurrency ?? localConcurrency()), async ([manifestPath, targets]) => {
     if (options.token?.isCancellationRequested) {
       for (const target of targets) settle(target, cancelled());
       return;
@@ -230,7 +255,7 @@ export async function probeUpgrades(options: ProbeOptions): Promise<Map<string, 
   return results;
 }
 
-const DEFAULT_GROUP_CONCURRENCY = 3;
+
 
 interface GroupHooks {
   /** `about` names the upgrades this phase belongs to, when it belongs to any. */
@@ -521,28 +546,112 @@ async function prepareGroup(
   // What is already red before Drift touches anything. Without this, a
   // repository with one pre-existing type error would have that error
   // attributed to every dependency in it.
-  hooks.report(`Checking ${project} as it is`, `${wanted.map((check) => check.label).join(', ')}`);
-  const baseline = await runChecks({
-    root: worktree.path,
-    dir,
-    checks: wanted,
-    env,
-    exec,
-    // Named per check rather than left as one undifferentiated phase: a
-    // typecheck, a build and a test suite are different waits with different
-    // reasons to be slow, and "Checking" covering all three is the reason
-    // this looked stuck.
-    onProgress: (check) => hooks.report(`Checking ${project} as it is`, `\`${check.label}\``),
-    onOutput: (_check, chunk) => hooks.output(chunk),
-    ...(options.token ? { token: options.token } : {}),
-    ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
-  });
+  //
+  // Deterministic, and therefore cacheable: the same commit with the same
+  // lockfile under the same runtime has the same answer it had an hour ago, and
+  // re-deriving it is a full typecheck, build and test suite spent learning
+  // nothing. `baselineKey` covers every input that could change it — see
+  // `baseline-cache.ts` for why each one is in there.
+  const cache = options.baselineCache ?? noBaselineCache();
+  const key = await cacheKeyFor(options, worktree.path, dir, packageManager, wanted);
+  const remembered = key ? await cache.read(key) : null;
+
+  let baseline: readonly (CheckOutcome | CachedCheck)[];
+  if (remembered) {
+    hooks.report(
+      `Checking ${project} as it is`,
+      `reusing the baseline measured earlier for this commit (${remembered.filter((c) => c.status === 'passed').length} of ${remembered.length} checks green)`,
+    );
+    baseline = remembered;
+  } else {
+    hooks.report(`Checking ${project} as it is`, `${wanted.map((check) => check.label).join(', ')}`);
+    const measured = await runChecks({
+      root: worktree.path,
+      dir,
+      checks: wanted,
+      env,
+      exec,
+      // Named per check rather than left as one undifferentiated phase: a
+      // typecheck, a build and a test suite are different waits with different
+      // reasons to be slow, and "Checking" covering all three is the reason
+      // this looked stuck.
+      onProgress: (check) => hooks.report(`Checking ${project} as it is`, `\`${check.label}\``),
+      onOutput: (_check, chunk) => hooks.output(chunk),
+      ...(options.token ? { token: options.token } : {}),
+      ...(options.timeoutMs ? { timeoutMs: options.timeoutMs } : {}),
+    });
+    baseline = measured;
+    // Never a cancelled run: a check abandoned halfway is not a measurement of
+    // anything, and remembering it would skip the real one for a week.
+    if (key && !options.token?.isCancellationRequested) await cache.write(key, measured);
+  }
 
   const usable = wanted.filter((check) => baseline.some((o) => o.label === check.label && o.status === 'passed'));
   if (usable.length === 0) return abandon(describeUnusableBaseline(baseline));
 
   return { ok: true, worktree, usable, manager, notes };
 }
+
+/**
+ * The identity of this group's baseline, or `null` when it cannot be pinned down.
+ *
+ * `null` on any doubt, and every path to it is a case where a key would be a
+ * claim the inputs do not support: no commit to name, or a manifest that could
+ * not be read. A hash that quietly skipped an unreadable lockfile would match
+ * across the very change it failed to see, which is worse than not caching.
+ */
+async function cacheKeyFor(
+  options: ProbeOptions,
+  worktreePath: string,
+  dir: string,
+  packageManager: PackageManagerId,
+  checks: readonly LocalCheck[],
+): Promise<string | null> {
+  if (!options.baselineCache) return null;
+
+  const exec = options.exec ?? execCommand;
+  const env = scrubEnv(options.env ?? process.env);
+  const head = await exec('git', ['rev-parse', 'HEAD'], { cwd: worktreePath, env }).catch(() => null);
+  if (!head || head.code !== 0) return null;
+
+  // Read from the worktree, which is the tree the checks will actually run in —
+  // including any uncommitted manifest or lockfile carried over into it. That
+  // is the case `head` alone gets wrong.
+  const fs = options.fs ?? nodeWorkspaceFs();
+  const base = dir ? `${worktreePath}/${dir}` : worktreePath;
+  const entries = await fs.readDirectory(base).catch(() => []);
+  const interesting = entries.filter((name) => MANIFEST_PATTERN.test(name)).sort();
+  if (interesting.length === 0) return null;
+
+  const files: { path: string; content: string }[] = [];
+  for (const name of interesting) {
+    const content = await fs.readFile(`${base}/${name}`).catch(() => null);
+    // An unreadable manifest is exactly the input that must not be silently
+    // dropped from the hash.
+    if (content === null) return null;
+    files.push({ path: name, content });
+  }
+
+  return baselineKey({
+    head: head.stdout.trim(),
+    dir,
+    packageManager,
+    kinds: checks.map((check) => check.kind),
+    files,
+    runtime: `${process.version}/${process.platform}/${process.arch}`,
+  });
+}
+
+/**
+ * Files whose contents decide what an install produces.
+ *
+ * Manifests and lockfiles across every ecosystem Drift supports, matched by
+ * name rather than enumerated per package manager: a group is keyed on
+ * everything in its directory that could change the answer, and a name this
+ * misses is a cache hit it should not have had.
+ */
+const MANIFEST_PATTERN =
+  /^(package\.json|package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|bun\.lockb?|pyproject\.toml|setup\.py|setup\.cfg|requirements[^/]*\.txt|poetry\.lock|uv\.lock|Pipfile(\.lock)?|go\.mod|go\.sum|Cargo\.(toml|lock)|Gemfile(\.lock)?|[^/]*\.gemspec|pom\.xml|build\.gradle(\.kts)?|gradle\.lockfile|build\.sbt|composer\.(json|lock)|mix\.(exs|lock)|pubspec\.(yaml|lock)|Package\.(swift|resolved)|Podfile(\.lock)?|[^/]*\.opam|conanfile\.(txt|py)|conan\.lock|vcpkg\.json|platformio\.ini|library\.properties|.*\.csproj|.*\.fsproj|packages\.lock\.json)$/i;
 
 /**
  * A checkout being prepared ahead of the packages that will need it.
@@ -588,7 +697,7 @@ export function warmProbe(
   // Bounded for the same reason `probeUpgrades` bounds its groups: git worktree
   // operations briefly lock shared repository state, and a monorepo with twenty
   // members should not start twenty installs at once on one machine.
-  const limit = Math.max(1, options.concurrency ?? DEFAULT_GROUP_CONCURRENCY);
+  const limit = Math.max(1, options.concurrency ?? localConcurrency());
   let active = 0;
   const queue: (() => void)[] = [];
 
@@ -1088,7 +1197,13 @@ function verdictFrom(outcomes: readonly CheckOutcome[]): UpgradeVerification {
  * scan which verified nothing — and "we could not check" with no reason is the
  * failure mode `unchecked` exists to prevent.
  */
-function describeUnusableBaseline(baseline: readonly CheckOutcome[]): string {
+/**
+ * Accepts a cached baseline as readily as a freshly measured one — the reason a
+ * baseline is unusable does not depend on whether it was just re-derived. A
+ * cached entry carries `reason` in place of the full output for exactly this,
+ * so the sentence a developer reads is the same either way.
+ */
+function describeUnusableBaseline(baseline: readonly BaselineLike[]): string {
   const failing = baseline.filter((outcome) => outcome.status === 'failed');
   if (failing.length > 0) {
     const labels = failing.map((outcome) => outcome.label);
@@ -1098,7 +1213,7 @@ function describeUnusableBaseline(baseline: readonly CheckOutcome[]): string {
     // as a real difference between their checkout and the worktree's. The
     // command and its actual output are what let them tell those apart.
     const detail = failing
-      .map((outcome) => `$ ${outcome.label}\n${outcome.output.trim() || '(no output captured)'}`)
+      .map((outcome) => `$ ${outcome.label}\n${(outcome.output ?? outcome.reason ?? '').trim() || '(no output captured)'}`)
       .join('\n\n');
     return `\`${labels.join('`, `')}\` already fails on this commit before any upgrade is applied, so a failure afterwards would prove nothing.\n\n${detail}`;
   }

@@ -23,7 +23,11 @@ import { runAction } from './runners/action.js';
 import { main as serveWebhook } from './runners/webhook.js';
 import { sampleTelemetryEvent } from './telemetry.js';
 import { createLogger, type LogLevel, type Logger } from './util/logger.js';
+import { paletteFor, supportsRedraw } from './util/terminal.js';
+import { createStatusLine } from './util/status-line.js';
+import { createOutdatedView } from './report/terminal-outdated.js';
 import { configureHttpDiskCache } from './util/http.js';
+import { createBaselineCache } from './verification/baseline-cache.js';
 import { execCommand } from './util/exec.js';
 import { fetchVersionDiff, unifiedDiffText } from './evidence/version-diff.js';
 import { dispatchRemainingToCopilot, runFix } from './remediation/cli-runner.js';
@@ -362,6 +366,20 @@ Environment:
 function defaultHttpCacheDir(): string | null {
   if (process.env.DRIFT_NO_CACHE === '1') return null;
   return process.env.DRIFT_CACHE_DIR || join(homedir(), '.drift', 'cache', 'http');
+}
+
+/**
+ * Where measured baselines are remembered between runs.
+ *
+ * Beside the HTTP cache and governed by the same switches, because it is the
+ * same bargain: both trade a little disk for not re-deriving a fact that has
+ * not changed. `DRIFT_NO_CACHE=1` turns off both.
+ */
+function defaultBaselineCacheDir(): string | null {
+  if (process.env.DRIFT_NO_CACHE === '1') return null;
+  return process.env.DRIFT_CACHE_DIR
+    ? join(process.env.DRIFT_CACHE_DIR, 'baseline')
+    : join(homedir(), '.drift', 'cache', 'baseline');
 }
 
 export async function main(argv: string[]): Promise<number> {
@@ -747,8 +765,25 @@ async function outdatedCommand(flags: Flags): Promise<number> {
   for (const problem of problems) logger.warn(problem);
   if (path) logger.info(`Using config from ${path}`);
 
-  logger.info(`Scanning ${owner}/${repoName} for available upgrades`);
+  // Everything the command *produces* goes to stdout; everything about how it
+  // is going goes to stderr through the status line. That is what makes
+  // `drift outdated > report.txt` a clean report and `drift outdated | grep`
+  // work at all, and it is why the palette is read from stdout rather than
+  // from whichever stream happens to be in hand.
+  const palette = paletteFor(process.stdout);
+  const status = createStatusLine({ palette, live: supportsRedraw(process.stderr) && !flags.json });
+  const view = createOutdatedView({
+    palette,
+    status,
+    interactive: Boolean(process.stdin.isTTY),
+  });
 
+  // Announced up front, before the first registry request, so the command has
+  // said what it is doing before it starts taking time over it.
+  if (!flags.json) view.start(slug ? `${owner}/${repoName}` : 'this workspace', workspace);
+
+  let settledCount = 0;
+  let toAnalyse = 0;
   const result = await scanUpgrades({
     root: workspace,
     repo,
@@ -756,8 +791,43 @@ async function outdatedCommand(flags: Flags): Promise<number> {
     logger,
     githubToken: token || undefined,
     breadth: { includeDev: flags['no-dev'] !== true, maxSites: 40, maxPackages: 0 },
-    onProgress: (progress) => logger.debug(`${progress.phase}: ${progress.detail}`),
+    // Running `drift outdated` twice against the same commit used to pay for
+    // the same baseline typecheck, build and test suite both times.
+    verify: { baselineCache: createBaselineCache(defaultBaselineCacheDir()) },
+    onProgress: (progress) => {
+      logger.debug(`${progress.phase}: ${progress.detail}`);
+      if (flags.json || !progress.phase) return;
+      const counted = progress.total > 0 ? ` (${progress.done}/${progress.total})` : '';
+      status.update(`${progress.phase}${progress.detail ? ` ${palette.glyph('dot')} ${progress.detail}` : ''}${counted}`);
+    },
+    // The whole reason the scan has two phases: the table is printable here,
+    // seconds in, and everything below it takes minutes.
+    onOutdated: (summary) => {
+      if (flags.json) return;
+      toAnalyse = summary.outdated.length;
+      if (summary.outdated.length === 0) {
+        view.allCurrent(summary.checked);
+        view.unchecked(summary.unchecked);
+        return;
+      }
+      view.table(summary.outdated, summary.checked, summary.upToDate);
+      view.unchecked(summary.unchecked);
+      view.analysing(summary.outdated.length);
+    },
+    // One line per package, the moment it is settled rather than at the end.
+    // `onCandidate` fires several times per package as it moves through its
+    // phases; only the final verdict is worth a line, and `verification` is
+    // what marks it — every candidate gets one, even when it is `skipped`.
+    onCandidate: (candidate) => {
+      if (flags.json) return;
+      if (candidate.status === 'pending' || candidate.status === 'checking') return;
+      if (config.verify.enabled && !candidate.verification) return;
+      settledCount += 1;
+      view.settled(candidate);
+      status.update(`Checked ${settledCount} of ${toAnalyse}`);
+    },
   });
+  status.stop();
 
   // A read-only scan may guess which manager owns an ambiguous directory and
   // say so. `performUpgrade` refuses to guess, because that guess writes.
@@ -793,46 +863,17 @@ async function outdatedCommand(flags: Flags): Promise<number> {
   }
 
   if (result.checked === 0) {
-    console.log('\nNo direct dependencies found to check.\n');
+    console.log(`\n${palette('gray', 'No direct dependencies found to check.')}\n`);
     return 0;
   }
 
-  console.log(`\n${scanTitle(result.candidates, result.checked, result.unchecked.length)}\n`);
-
-  // Printed before the candidates, not after, and never folded into the
-  // up-to-date count. "All 47 dependencies are current" when four of them
-  // could not be reached is the single most misleading thing this command
-  // could say, so the dependencies Drift failed to check lead the report.
-  if (result.unchecked.length > 0) {
-    console.log(
-      `Could not check ${result.unchecked.length} dependenc${result.unchecked.length === 1 ? 'y' : 'ies'} — ` +
-        `this is not the same as “up to date”:`,
-    );
-    for (const dep of result.unchecked) {
-      console.log(`  ${dep.name} ${dep.current} (${dep.ecosystem} · ${dep.manifestPath})`);
-      console.log(`    ${dep.reason}`);
-    }
-    console.log();
-  }
-
-  for (const candidate of result.candidates) {
-    const versionLabel =
-      candidate.selected === candidate.latest
-        ? `${candidate.current} → ${candidate.selected}`
-        : `${candidate.current} → ${candidate.selected} (latest ${candidate.latest})`;
-    console.log(`${candidateLabel(candidate, result.candidates)} ${versionLabel}`);
-    // Which registry, and which manifest. One scan routinely spans several
-    // ecosystems at once — an npm dependency and a Go module in the same
-    // repository — and a bare package name says neither which of them a row
-    // belongs to nor which file declares it.
-    console.log(`  ${candidate.ecosystem} · ${candidate.manifestPath}`);
-    console.log(`  ${describeSeverity(candidate)}`);
-    if (candidate.summary) console.log(`  ${candidate.summary}`);
-    if (!process.stdin.isTTY) {
-      console.log(`  Run: drift outdated --upgrade ${selectorFor(candidate, result.candidates)}`);
-    }
-    console.log();
-  }
+  // The table, the verdicts and the unchecked list are already on screen — each
+  // printed at the moment it was known rather than held back to here. What is
+  // left is the part that could only be written once every verdict was in:
+  // the same packages grouped by how much a developer has to care, which is
+  // the question the whole command exists to answer.
+  console.log(`\n${palette('bold', scanTitle(result.candidates, result.checked, result.unchecked.length))}`);
+  view.report(result.candidates, (candidate) => selectorFor(candidate, result.candidates));
 
   if (result.candidates.length > 0 && process.stdin.isTTY) {
     // Labelled, not bare names: two workspace members can both depend on

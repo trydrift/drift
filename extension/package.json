@@ -526,10 +526,10 @@
         },
         "drift.analysis.concurrency": {
           "type": "number",
-          "default": 8,
-          "minimum": 1,
-          "maximum": 16,
-          "markdownDescription": "How many packages to check at once. Checking one is almost entirely waiting on the network, so raising this shortens a scan roughly in proportion — up to the point where the GitHub API starts rate-limiting, which turns evidence into 'could not check'.",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 32,
+          "markdownDescription": "How many packages to check at once. **0 (the default) sizes this from your machine** — its core count and its memory — which is almost always the right answer. Checking one package is mostly waiting on the network, so raising this shortens a scan roughly in proportion, up to the point where the GitHub API starts rate-limiting and evidence turns into 'could not check'.",
           "order": 13
         },
         "drift.analysis.includeTransitive": {

@@ -30,8 +30,11 @@ export function createLogger(level: LogLevel = 'info'): Logger {
       console.log(`::${l === 'warn' ? 'warning' : 'error'}::${line.replace(/\n/g, '%0A')}`);
       return;
     }
-    const stream = l === 'error' ? console.error : console.log;
-    stream(`[drift:${l}] ${line}`);
+    // stderr, every level of it. These are diagnostics about the run, not the
+    // run's output, and a command whose report is on stdout has to be able to
+    // be redirected, piped and grepped without `[drift:info]` lines landing in
+    // the middle of it.
+    console.error(`[drift:${l}] ${line}`);
   };
 
   return {
@@ -41,7 +44,7 @@ export function createLogger(level: LogLevel = 'info'): Logger {
     error: (m, meta) => emit('error', m, meta),
     async group(name, fn) {
       if (inActions) console.log(`::group::${name}`);
-      else console.log(`[drift] ── ${name}`);
+      else console.error(`[drift] ── ${name}`);
       try {
         return await fn();
       } finally {

@@ -21,7 +21,7 @@ import { discoverAgents, invalidateAgentCache } from './agents/registry.js';
 import { isSignedIn, onDidChangeGitHubAuth } from './github-auth.js';
 import { inspectLocalRepo } from '../../src/repo/local-git.js';
 import { Git } from './git.js';
-import { vscodeWorkspaceFs } from './upgrades.js';
+import { configureBaselineCache, vscodeWorkspaceFs } from './upgrades.js';
 import { detectWorkspaces, memberDirectories } from '../../src/detect/workspace.js';
 import type { RemediationPlan } from '../../src/types.js';
 import { discoverNestedProjects } from '../../src/detect/nested.js';
@@ -55,6 +55,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const statusBar = new DriftStatusBar(state);
   const reviewUi = new DriftReviewUi(review);
   configureHttpDiskCache(vscode.Uri.joinPath(context.globalStorageUri, 'evidence-cache').fsPath);
+  // Beside it, and for the same reason: re-scanning a commit nothing has
+  // changed should not re-run the project's whole typecheck, build and test
+  // suite to rediscover which of them were already green.
+  configureBaselineCache(vscode.Uri.joinPath(context.globalStorageUri, 'baseline-cache').fsPath);
 
   // Extracted package sources pile up in the system temp directory — a few
   // hundred megabytes for anyone who diffs regularly — and nothing was ever
