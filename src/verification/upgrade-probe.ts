@@ -4,7 +4,7 @@ import { nodeWorkspaceFs, type WorkspaceFs } from '../detect/workspace.js';
 import { createWorktree, type Worktree, settleWorktreeDeletions } from '../repo/worktree.js';
 import { execCommand, type Exec } from '../util/exec.js';
 import { count, measure, span } from '../util/profile.js';
-import { anyToolAvailable } from './tool-availability.js';
+import { toolsAvailable } from './tool-availability.js';
 import { mapWithConcurrency } from '../util/http.js';
 import { localConcurrency } from '../util/parallelism.js';
 import { baselineKey, noBaselineCache, type CachedCheck } from './baseline-cache.js';
@@ -457,6 +457,31 @@ type Preparation =
 
 type PackageManager = NonNullable<ReturnType<typeof packageManagerById>>;
 
+async function preflightUsableChecks(
+  exec: Exec,
+  checks: readonly LocalCheck[],
+  env: NodeJS.ProcessEnv,
+): Promise<{ usable: readonly LocalCheck[]; missing: readonly string[] }> {
+  const required = [...new Set(checks.flatMap(requiredHostCommands))];
+  if (required.length === 0) return { usable: checks, missing: [] };
+
+  const available = await toolsAvailable(exec, required, env);
+  const usable = checks.filter((check) =>
+    requiredHostCommands(check).every((command) => available.get(command) !== false),
+  );
+
+  return {
+    usable,
+    missing: required.filter((command) => available.get(command) === false),
+  };
+}
+
+function requiredHostCommands(check: LocalCheck): string[] {
+  return check.commandOrigin.kind === 'host'
+    ? [check.commandOrigin.command]
+    : [...check.commandOrigin.requiredHostCommands];
+}
+
 /**
  * Create the worktree, install into it, and find out what is already red.
  *
@@ -495,14 +520,13 @@ async function prepareGroup(
   );
   const possible = [...declared, ...detectChecks(packageManager, null)].filter((check) => kinds.includes(check.kind));
   if (possible.length > 0) {
-    const present = await anyToolAvailable(exec, possible.map((check) => check.command.command), env);
-    if (!present) {
-      const missing = [...new Set(possible.map((check) => check.command.command))];
+    const preflight = await preflightUsableChecks(exec, possible, env);
+    if (preflight.usable.length === 0) {
       count('verify.skipped.noTool');
       return {
         ok: false,
         reason:
-          `${missing.length === 1 ? `\`${missing[0]}\` is` : `${missing.slice(0, -1).map((m) => `\`${m}\``).join(', ')} and \`${missing.at(-1)}\` are`} ` +
+          `${preflight.missing.length === 1 ? `\`${preflight.missing[0]}\` is` : `${preflight.missing.slice(0, -1).map((m) => `\`${m}\``).join(', ')} and \`${preflight.missing.at(-1)}\` are`} ` +
           `not installed, so ${project} could not be built or tested against the upgrade.`,
       };
     }

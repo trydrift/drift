@@ -27,11 +27,15 @@
 import type { Exec } from '../util/exec.js';
 
 /**
- * One answer per binary, for the life of the process.
+ * One answer per binary and path-like environment, for the life of the process.
  *
  * A scan asks about the same three or four tools once per workspace member, and
  * a monorepo has dozens. The promise is cached rather than the value so members
  * being prepared concurrently share one probe instead of racing.
+ *
+ * The environment is part of the key because a long-running editor process can
+ * learn a better PATH later. A negative answer from the GUI launch environment
+ * must not poison a later scan that explicitly supplies the user's shell PATH.
  */
 const probes = new Map<string, Promise<boolean>>();
 
@@ -41,7 +45,8 @@ export function clearToolAvailability(): void {
 }
 
 export function toolAvailable(exec: Exec, command: string, env?: NodeJS.ProcessEnv): Promise<boolean> {
-  const cached = probes.get(command);
+  const key = availabilityKey(command, env);
+  const cached = probes.get(key);
   if (cached) return cached;
 
   const probe = exec(command, ['--version'], {
@@ -56,7 +61,7 @@ export function toolAvailable(exec: Exec, command: string, env?: NodeJS.ProcessE
     // let the real invocation report the truth.
     .catch(() => true);
 
-  probes.set(command, probe);
+  probes.set(key, probe);
   return probe;
 }
 
@@ -78,4 +83,21 @@ export async function anyToolAvailable(
   const present = await Promise.all(distinct.map((command) => toolAvailable(exec, command, env)));
   const at = present.indexOf(true);
   return at >= 0 ? distinct[at]! : null;
+}
+
+export async function toolsAvailable(
+  exec: Exec,
+  commands: readonly string[],
+  env?: NodeJS.ProcessEnv,
+): Promise<Map<string, boolean>> {
+  const distinct = [...new Set(commands)];
+  const present = await Promise.all(distinct.map((command) => toolAvailable(exec, command, env)));
+  return new Map(distinct.map((command, index) => [command, present[index]!] as const));
+}
+
+function availabilityKey(command: string, env?: NodeJS.ProcessEnv): string {
+  const source = env ?? process.env;
+  const path = source.PATH ?? source.Path ?? source.path ?? '';
+  const pathExt = source.PATHEXT ?? source.PathExt ?? '';
+  return JSON.stringify([command, path, pathExt, process.platform]);
 }

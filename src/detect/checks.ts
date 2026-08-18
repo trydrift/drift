@@ -26,6 +26,16 @@ export interface LocalCheck {
   /** Where Drift found it, so the offer can be justified. */
   source: string;
   /**
+   * What the early verification preflight may prove before dependency install.
+   *
+   * Most checks invoke a host tool directly (`npm`, `cargo`, `mvn`, ...), and a
+   * missing host tool cannot be fixed by creating a worktree. Some checks name
+   * an executable that the install itself creates, such as Composer's
+   * `vendor/bin/phpunit`; those must not be treated as missing before
+   * `composer install` has had a chance to put them there.
+   */
+  commandOrigin: CheckCommandOrigin;
+  /**
    * Whether a pass of this specific check proves the compiler saw the real
    * declarations — able to disprove a signature change, a removed export, a
    * narrowed type.
@@ -41,6 +51,10 @@ export interface LocalCheck {
    */
   compileCapable: boolean;
 }
+
+export type CheckCommandOrigin =
+  | { kind: 'host'; command: string }
+  | { kind: 'post-install'; requiredHostCommands: readonly string[] };
 
 /**
  * Ordered typecheck → test → build.
@@ -226,10 +240,24 @@ function composerChecks(manifest: string | null): LocalCheck[] {
   const dev = doc?.['require-dev'] ?? {};
   if ('phpunit/phpunit' in dev) {
     out.push(
-      check('test', { command: 'vendor/bin/phpunit', args: [] }, 'phpunit, declared in composer.json'),
+      check(
+        'test',
+        { command: 'vendor/bin/phpunit', args: [] },
+        'phpunit, declared in composer.json',
+        false,
+        postInstall('composer'),
+      ),
     );
   } else if ('pestphp/pest' in dev) {
-    out.push(check('test', { command: 'vendor/bin/pest', args: [] }, 'pest, declared in composer.json'));
+    out.push(
+      check(
+        'test',
+        { command: 'vendor/bin/pest', args: [] },
+        'pest, declared in composer.json',
+        false,
+        postInstall('composer'),
+      ),
+    );
   }
 
   if ('phpstan/phpstan' in dev) {
@@ -238,11 +266,19 @@ function composerChecks(manifest: string | null): LocalCheck[] {
         'typecheck',
         { command: 'vendor/bin/phpstan', args: ['analyse'] },
         'phpstan, declared in composer.json',
+        true,
+        postInstall('composer'),
       ),
     );
   } else if ('vimeo/psalm' in dev) {
     out.push(
-      check('typecheck', { command: 'vendor/bin/psalm', args: [] }, 'psalm, declared in composer.json'),
+      check(
+        'typecheck',
+        { command: 'vendor/bin/psalm', args: [] },
+        'psalm, declared in composer.json',
+        true,
+        postInstall('composer'),
+      ),
     );
   }
 
@@ -362,6 +398,11 @@ function check(
   source: string,
   /** Defaults to the `typecheck` bucket: every other hardcoded (non-Node) check is a literal, known toolchain command, so the default is correct except where overridden above for a `build` step that is itself the compiler. */
   compileCapable: boolean = kind === 'typecheck',
+  commandOrigin: CheckCommandOrigin = { kind: 'host', command: command.command },
 ): LocalCheck {
-  return { kind, label: [command.command, ...command.args].join(' '), command, source, compileCapable };
+  return { kind, label: [command.command, ...command.args].join(' '), command, source, commandOrigin, compileCapable };
+}
+
+function postInstall(...requiredHostCommands: string[]): CheckCommandOrigin {
+  return { kind: 'post-install', requiredHostCommands };
 }
