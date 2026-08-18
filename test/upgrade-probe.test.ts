@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { probeUpgrades, probeDependencyChange, filesNamedIn, warmProbe } from '../dist/verification/upgrade-probe.js';
 import { applyVerificationToPlan, combineVerifications, describeVerification } from '../dist/verification/apply.js';
+import { applyVerification } from '../dist/upgrade/verification.js';
 
 /**
  * The probe installs each upgrade in a throwaway worktree and runs the
@@ -779,6 +780,7 @@ describe('what a measurement does to a plan', () => {
     changes: [],
     evidence: [{ id: 'e1' } as never],
     breakingChanges: [change('signature-changed', 'signature-change'), change('behaviour-changed', 'behaviour-change')],
+    upstreamBreakingCount: 2,
     impactSites: [
       { id: 's1', breakingChangeId: 'signature-changed', file: 'src/a.ts', line: 1 } as never,
       { id: 's2', breakingChangeId: 'behaviour-changed', file: 'src/b.ts', line: 1 } as never,
@@ -899,6 +901,20 @@ describe('what a measurement does to a plan', () => {
     assert.equal(verified.verification, batch, 'the batch result is still recorded');
   });
 
+  test('upstreamBreakingCount is untouched by pruning, whether or not anything was cleared', () => {
+    // Same commit, two verification runs: one measured this package alone
+    // (clears the compiler-provable finding), one measured it batched with
+    // others (clears nothing). What upstream actually published must read the
+    // same either way.
+    const solo = applyVerificationToPlan(plan(), passed);
+    const batch = applyVerificationToPlan(plan(), { ...passed, measuredWith: 3 });
+
+    assert.equal(solo.breakingChanges.length, 1, 'the solo pass did prune a finding');
+    assert.equal(batch.breakingChanges.length, 2, 'the batch pass pruned nothing');
+    assert.equal(solo.upstreamBreakingCount, 2, 'upstream count is unaffected by the prune');
+    assert.equal(batch.upstreamBreakingCount, 2, 'upstream count agrees with the solo run');
+  });
+
   test('verification is only applied within the workspace it actually checked', () => {
     const twoWorkspaces = {
       ...plan(),
@@ -964,5 +980,87 @@ describe('one verdict for a plan built from several', () => {
   test('nothing measured anywhere stays undefined, so nothing claims otherwise', () => {
     assert.equal(combineVerifications([undefined, undefined]), undefined);
     assert.equal(combineVerifications([]), undefined);
+  });
+});
+
+describe('what a measurement does to a candidate row', () => {
+  const change = (id) => ({
+    id,
+    dependency: 'zod',
+    kind: 'signature-change',
+    summary: `${id} changed`,
+    symbols: [id],
+    confidence: 0.9,
+    citations: [],
+  });
+
+  const planWithTwoUpstreamChanges = () => ({
+    schemaVersion: 1,
+    id: 'plan-1',
+    branchName: 'drift/zod',
+    baseBranch: 'main',
+    headSha: 'abc',
+    changes: [],
+    evidence: [],
+    breakingChanges: [change('a'), change('b')],
+    upstreamBreakingCount: 2,
+    impactSites: [],
+    commits: [],
+    planEdges: [],
+    upgradeCohorts: [],
+    risk: 'medium',
+    gaps: [],
+    checkedSurfaces: [],
+    blockers: [],
+    warnings: [],
+    createdAt: new Date().toISOString(),
+  });
+
+  const candidate = () => ({
+    id: 'zod',
+    name: 'zod',
+    kind: 'production',
+    ecosystem: 'npm',
+    packageManager: 'npm',
+    manifestPath: 'package.json',
+    current: '2.0.0',
+    range: '^2.0.0',
+    selected: '3.0.0',
+    latest: '3.0.0',
+    versions: [],
+    status: 'ready',
+    evidenceCount: 1,
+    breakingCount: 2,
+    impactCount: 0,
+    impactFiles: 0,
+    impactConfidence: 'none',
+    risk: 'medium',
+    summary: '2 breaking changes',
+    gaps: [],
+    toolRequests: [],
+    plan: planWithTwoUpstreamChanges(),
+  });
+
+  const compileCapablePass = {
+    status: 'passed',
+    checks: [
+      { kind: 'typecheck', label: 'tsc --noEmit', compileCapable: true, status: 'passed', durationMs: 1, output: '' },
+    ],
+    failedFiles: [],
+  };
+
+  test('the same commit reports the same upstream count whether probed alone or batched', () => {
+    // The exact regression this guards: a manifest with an unrelated package
+    // failing to install sends verification down the batch fallback path on
+    // one run and the solo path on another. Both must show the developer the
+    // same "N upstream changes" — only whether that N shrank via a cleared
+    // plan should differ, never the headline number.
+    const solo = applyVerification(candidate(), compileCapablePass);
+    const batch = applyVerification(candidate(), { ...compileCapablePass, measuredWith: 4 });
+
+    assert.equal(solo.plan.breakingChanges.length, 0, 'solo pass cleared both compiler-provable findings');
+    assert.equal(batch.plan.breakingChanges.length, 2, 'batch pass cleared nothing');
+    assert.equal(solo.breakingCount, 2, 'upstream count is reported, not the post-prune remainder');
+    assert.equal(batch.breakingCount, 2, 'and it agrees with the solo run');
   });
 });

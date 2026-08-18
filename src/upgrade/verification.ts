@@ -37,7 +37,15 @@ export function applyVerification(
   // The row's own numbers, re-derived rather than adjusted: they are what
   // `severityOf` reads, so a count left stale here would show an "affected"
   // badge over a plan with nothing left in it.
-  verified.breakingCount = verified.plan.breakingChanges.length;
+  //
+  // `breakingCount` is the one exception: it stays pinned to what upstream
+  // actually published (`upstreamBreakingCount`), not to `plan.breakingChanges`
+  // — that array shrinks as verification clears compiler-provable predictions,
+  // and whether it shrinks at all depends on whether this package happened to
+  // be probed alone or batched with others. Reading the post-prune length as
+  // "upstream changes" is how the same commit reported 209 in one run and 2 in
+  // another; the count shown to a developer must not depend on that.
+  verified.breakingCount = verified.plan.upstreamBreakingCount ?? verified.plan.breakingChanges.length;
   verified.impactCount = verified.plan.impactSites.length;
   verified.impactFiles = new Set(verified.plan.impactSites.map((site) => site.file)).size;
   // And the sentence built from those numbers, for exactly the same reason.

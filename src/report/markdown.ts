@@ -152,7 +152,7 @@ function renderSummaryTable(plan: RemediationPlan): string {
     '| | |',
     '|---|---|',
     `| **Risk** | ${RISK_BADGE[plan.risk] ?? plan.risk} |`,
-    `| **Breaking changes** | ${plan.breakingChanges.length} |`,
+    `| **Breaking changes** | ${plan.upstreamBreakingCount ?? plan.breakingChanges.length} |`,
     `| **Impact sites** | ${plan.impactSites.length} across ${files} file(s) |`,
     `| **Planned commits** | ${plan.commits.length} |`,
     `| **Evidence sources** | ${describeSources(plan.evidence)} |`,
