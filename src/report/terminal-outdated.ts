@@ -27,7 +27,7 @@
  */
 
 import type { UpgradeCandidate, UncheckedDependency } from '../upgrade/scan.js';
-import { describeSeverity, severityOf, type UpgradeSeverity } from '../upgrade/severity.js';
+import { compareSeverity, describeSeverity, severityOf, type UpgradeSeverity } from '../upgrade/severity.js';
 import type { StatusLine } from '../util/status-line.js';
 import {
   displayWidth,
@@ -51,64 +51,106 @@ interface Facade {
 }
 
 /**
- * Deliberately the same six groups, in the same order, with the same words the
- * extension's panel uses — see `extension/src/ui/dependencies.ts`.
+ * The groups, named the way the extension's panel names them.
+ *
+ * `heading` is `groupLabel` from `extension/src/ui/dependencies.ts`, word for
+ * word. Two surfaces onto one engine must not invent two vocabularies for the
+ * same verdict — somebody who has scanned in the panel and then runs the CLI
+ * should recognise what they are reading, and "Affected" and "Affects your
+ * code" are two names for one thing that a reader has to work out are the same.
+ *
+ * `gloss` is the CLI's own addition, and it is where the room a terminal has
+ * and a tree view does not gets spent: a panel can afford a bare label because
+ * the rows are one click from their evidence, and a report someone scrolls past
+ * cannot.
  */
 const FACADE: Record<UpgradeSeverity, Facade> = {
   affected: {
     glyph: 'affected',
     style: 'yellow',
-    heading: 'Affects your code',
+    heading: 'Affected',
     gloss: 'These upgrades change an API this repository actually uses.',
   },
   'verification-failed': {
     glyph: 'failed',
     style: 'red',
-    heading: 'Broke the build',
+    heading: 'Checks failed',
     gloss: "Installed for real; the project's own checks failed. Measured, not predicted.",
   },
   error: {
     glyph: 'failed',
     style: 'brightRed',
-    heading: 'Could not be inspected',
+    heading: 'Failed',
     gloss: 'Something went wrong while checking these. They are not known to be safe.',
   },
   'upstream-only': {
     glyph: 'safe',
     style: 'green',
-    heading: 'Safe to take',
+    heading: 'Safe',
     gloss: 'Breaking changes upstream, none of them on any API this repository uses.',
   },
   unchecked: {
     glyph: 'unknown',
     style: 'cyan',
-    heading: 'Not verified',
+    heading: 'Unchecked',
     gloss: 'Drift found nothing it could check these against. Not the same as safe.',
   },
   pending: {
     glyph: 'pending',
     style: 'gray',
-    heading: 'Still being checked',
+    heading: 'Being checked',
     gloss: 'The scan ended before these settled.',
   },
   clean: {
     glyph: 'safe',
     style: 'green',
-    heading: 'Safe to take',
+    heading: 'Safe',
     gloss: 'No breaking changes found for these versions.',
   },
 };
 
-/** The order the final report walks its groups in: what to act on first. */
-const GROUP_ORDER: readonly UpgradeSeverity[] = [
-  'verification-failed',
-  'affected',
-  'error',
-  'unchecked',
-  'pending',
-  'upstream-only',
-  'clean',
-];
+/**
+ * The order the report walks its groups in — what to act on first.
+ *
+ * Derived from `compareSeverity` rather than written out, because that function
+ * is the one place this repository decides how much a developer should care,
+ * and it is shared verbatim with the extension for exactly that reason. Two
+ * hand-maintained orderings had already drifted apart: the panel led with
+ * `affected` and the ranking agreed, while the list here led with
+ * `verification-failed` — so the same scan put a different package at the top
+ * depending on which surface you read it in.
+ */
+const GROUP_ORDER: readonly UpgradeSeverity[] = (
+  Object.keys(FACADE) as UpgradeSeverity[]
+).sort((a, b) => compareSeverity(exemplarOf(a), exemplarOf(b)));
+
+/**
+ * The smallest candidate `severityOf` would rank as `severity`.
+ *
+ * A way to ask `compareSeverity` about a severity directly: it takes candidates
+ * because that is what every other caller has, and the ranking it applies is
+ * private to it — which is the point, since a second copy of that table here is
+ * precisely the drift being removed.
+ */
+function exemplarOf(severity: UpgradeSeverity): Parameters<typeof compareSeverity>[0] {
+  const base = { status: 'ready', breakingCount: 0, impactCount: 0, impactFiles: 0, gaps: [] as string[] };
+  switch (severity) {
+    case 'affected':
+      return { ...base, impactCount: 1 };
+    case 'verification-failed':
+      return { ...base, verification: { status: 'failed' } };
+    case 'error':
+      return { ...base, status: 'error' };
+    case 'upstream-only':
+      return { ...base, breakingCount: 1 };
+    case 'unchecked':
+      return { ...base, gaps: ['nothing to compare against'] };
+    case 'pending':
+      return { ...base, status: 'pending' };
+    case 'clean':
+      return { ...base, recommendation: 'safe-to-upgrade' };
+  }
+}
 
 export interface OutdatedView {
   /** The banner naming what is being scanned. */
