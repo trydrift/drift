@@ -182,7 +182,7 @@ describe('the grouped report', () => {
     const { view, text } = harness();
     view.report([candidate(), affected] as never, () => 'graphql');
     const out = text();
-    assert.ok(out.indexOf('Affects your code') < out.indexOf('Safe to take'));
+    assert.ok(out.indexOf('Affected') < out.indexOf('Safe'));
   });
 
   test('gives an affected package its files, its evidence and its command', () => {
@@ -205,7 +205,7 @@ describe('the grouped report', () => {
     const { view, text } = harness();
     view.report([candidate()] as never, () => 'react');
     const out = text();
-    assert.ok(out.includes('Safe to take'));
+    assert.ok(out.includes('Safe'));
     assert.ok(!out.includes('Safe to upgrade.'), 'the per-package summary belongs to the groups that need it');
   });
 
@@ -237,6 +237,44 @@ describe('the grouped report', () => {
     const out = text();
     assert.ok(out.includes('npm run build failed with this installed'));
     assert.ok(out.includes('npm run typecheck passed with this installed'));
+  });
+});
+
+describe('the words this shares with the extension', () => {
+  test('names its groups exactly as the panel names them', () => {
+    // Two surfaces onto one engine must not invent two vocabularies for the
+    // same verdict — `groupLabel` in `extension/src/ui/dependencies.ts`.
+    const { view, text } = harness();
+    view.report(
+      [
+        candidate({ name: 'a', id: 'a', status: 'ready', impactCount: 1, impactFiles: 1 }),
+        candidate({ name: 'b', id: 'b' }),
+        candidate({ name: 'c', id: 'c', gaps: ['nothing to compare against'], recommendation: undefined }),
+      ] as never,
+      (c) => c.name,
+    );
+    // A group heading is the only line shaped `<glyph> <name> (<count>)`.
+    const headings = text()
+      .split('\n')
+      .map((line) => /^\S+ (.+) \(\d+\)$/.exec(line.trim())?.[1])
+      .filter((name): name is string => name !== undefined);
+    assert.deepEqual(headings, ['Affected', 'Unchecked', 'Safe']);
+  });
+
+  test('orders them by compareSeverity rather than by a second copy of it', () => {
+    // The panel led with `affected` and this list led with
+    // `verification-failed`, so the same scan put a different package at the
+    // top depending on which surface you read it in.
+    const { view, text } = harness();
+    view.report(
+      [
+        candidate({ name: 'broke', id: 'broke', verification: { status: 'failed', checks: [], reason: '', failedFiles: [] } }),
+        candidate({ name: 'uses', id: 'uses', status: 'ready', impactCount: 1, impactFiles: 1 }),
+      ] as never,
+      (c) => c.name,
+    );
+    const out = text();
+    assert.ok(out.indexOf('Affected') < out.indexOf('Checks failed'));
   });
 });
 
