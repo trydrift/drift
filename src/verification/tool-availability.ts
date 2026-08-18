@@ -27,26 +27,48 @@
 import type { Exec } from '../util/exec.js';
 
 /**
- * One answer per binary and path-like environment, for the life of the process.
+ * One positive answer per binary and path-like environment, for the life of the
+ * process.
  *
  * A scan asks about the same three or four tools once per workspace member, and
- * a monorepo has dozens. The promise is cached rather than the value so members
- * being prepared concurrently share one probe instead of racing.
+ * a monorepo has dozens. The scan-local promise is cached rather than the value
+ * so members being prepared concurrently share one probe instead of racing.
  *
  * The environment is part of the key because a long-running editor process can
  * learn a better PATH later. A negative answer from the GUI launch environment
  * must not poison a later scan that explicitly supplies the user's shell PATH.
+ *
+ * Negative answers are not process-global. A developer can install `cargo` into
+ * the same PATH a minute later, and the next scan must discover it without an
+ * editor restart. Positive answers may stay process-global: if a tool later
+ * disappears, the real check invocation still reports that ordinary failure.
  */
-const probes = new Map<string, Promise<boolean>>();
+const presentProbes = new Map<string, Promise<boolean>>();
+
+export interface ToolAvailabilityCache {
+  probes: Map<string, Promise<boolean>>;
+}
+
+export function createToolAvailabilityCache(): ToolAvailabilityCache {
+  return { probes: new Map() };
+}
 
 /** Drop every memoised answer. Test seam. */
 export function clearToolAvailability(): void {
-  probes.clear();
+  presentProbes.clear();
 }
 
-export function toolAvailable(exec: Exec, command: string, env?: NodeJS.ProcessEnv): Promise<boolean> {
+export function toolAvailable(
+  exec: Exec,
+  command: string,
+  env?: NodeJS.ProcessEnv,
+  cache?: ToolAvailabilityCache,
+): Promise<boolean> {
   const key = availabilityKey(command, env);
-  const cached = probes.get(key);
+  const present = presentProbes.get(key);
+  if (present) return present;
+
+  const cached = cache?.probes.get(key);
   if (cached) return cached;
 
   const probe = exec(command, ['--version'], {
@@ -60,9 +82,14 @@ export function toolAvailable(exec: Exec, command: string, env?: NodeJS.ProcessE
     // guessing "missing" would silently skip verification. Assume present and
     // let the real invocation report the truth.
     .catch(() => true);
+  const remembered = probe.then((available) => {
+    if (!available) presentProbes.delete(key);
+    return available;
+  });
 
-  probes.set(key, probe);
-  return probe;
+  presentProbes.set(key, remembered);
+  cache?.probes.set(key, remembered);
+  return remembered;
 }
 
 /**
@@ -77,10 +104,11 @@ export async function anyToolAvailable(
   exec: Exec,
   commands: readonly string[],
   env?: NodeJS.ProcessEnv,
+  cache?: ToolAvailabilityCache,
 ): Promise<string | null> {
   const distinct = [...new Set(commands)];
   if (distinct.length === 0) return null;
-  const present = await Promise.all(distinct.map((command) => toolAvailable(exec, command, env)));
+  const present = await Promise.all(distinct.map((command) => toolAvailable(exec, command, env, cache)));
   const at = present.indexOf(true);
   return at >= 0 ? distinct[at]! : null;
 }
@@ -89,9 +117,10 @@ export async function toolsAvailable(
   exec: Exec,
   commands: readonly string[],
   env?: NodeJS.ProcessEnv,
+  cache?: ToolAvailabilityCache,
 ): Promise<Map<string, boolean>> {
   const distinct = [...new Set(commands)];
-  const present = await Promise.all(distinct.map((command) => toolAvailable(exec, command, env)));
+  const present = await Promise.all(distinct.map((command) => toolAvailable(exec, command, env, cache)));
   return new Map(distinct.map((command, index) => [command, present[index]!] as const));
 }
 

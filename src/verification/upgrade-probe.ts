@@ -4,7 +4,7 @@ import { nodeWorkspaceFs, type WorkspaceFs } from '../detect/workspace.js';
 import { createWorktree, type Worktree, settleWorktreeDeletions } from '../repo/worktree.js';
 import { execCommand, type Exec } from '../util/exec.js';
 import { count, measure, span } from '../util/profile.js';
-import { toolsAvailable } from './tool-availability.js';
+import { createToolAvailabilityCache, toolsAvailable, type ToolAvailabilityCache } from './tool-availability.js';
 import { mapWithConcurrency } from '../util/http.js';
 import { localConcurrency } from '../util/parallelism.js';
 import { baselineKey, noBaselineCache, type CachedCheck } from './baseline-cache.js';
@@ -192,6 +192,8 @@ export interface ProbeOptions {
   onVerified?: (target: ProbeTarget, verification: UpgradeVerification) => void;
 }
 
+type ProbeRunOptions = ProbeOptions & { toolAvailability: ToolAvailabilityCache };
+
 const DEFAULT_KINDS: readonly CheckKind[] = ['typecheck', 'build', 'test'];
 
 /**
@@ -213,17 +215,18 @@ type BaselineLike = { label: string; status: CheckOutcome['status']; output?: st
  * reason rather than a scan that dies on someone's unusual setup.
  */
 export async function probeUpgrades(options: ProbeOptions): Promise<Map<string, UpgradeVerification>> {
+  const runOptions: ProbeRunOptions = { ...options, toolAvailability: createToolAvailabilityCache() };
   const results = new Map<string, UpgradeVerification>();
   const settle = (target: ProbeTarget, verification: UpgradeVerification) => {
     results.set(target.id, verification);
-    options.onVerified?.(target, verification);
+    runOptions.onVerified?.(target, verification);
   };
 
-  if (options.targets.length === 0) return results;
+  if (runOptions.targets.length === 0) return results;
 
-  const groups = [...groupByManifest(options.targets)];
+  const groups = [...groupByManifest(runOptions.targets)];
   let done = 0;
-  const total = options.targets.length;
+  const total = runOptions.targets.length;
 
   // Each group gets its own worktree and shares nothing with the others, so
   // nothing about correctness requires running them one at a time — only the
@@ -231,23 +234,23 @@ export async function probeUpgrades(options: ProbeOptions): Promise<Map<string, 
   // briefly lock shared repository state, so a monorepo with many manifests
   // benefits from running several at once without every group racing for the
   // same lock simultaneously.
-  await mapWithConcurrency(groups, Math.max(1, options.concurrency ?? localConcurrency()), async ([manifestPath, targets]) => {
-    if (options.token?.isCancellationRequested) {
+  await mapWithConcurrency(groups, Math.max(1, runOptions.concurrency ?? localConcurrency()), async ([manifestPath, targets]) => {
+    if (runOptions.token?.isCancellationRequested) {
       for (const target of targets) settle(target, cancelled());
       return;
     }
 
     const dir = memberDirOf(manifestPath);
-    await probeGroup(options, dir, targets, {
+    await probeGroup(runOptions, dir, targets, {
       report: (phase, detail, about) =>
-        options.onProgress?.({
+        runOptions.onProgress?.({
           phase,
           detail,
           done,
           total,
           ...(about ? { targets: about.map((target) => target.id) } : {}),
         }),
-      output: (chunk) => options.onProgress?.({ phase: '', detail: '', done, total, output: chunk }),
+      output: (chunk) => runOptions.onProgress?.({ phase: '', detail: '', done, total, output: chunk }),
       settle: (target, verification) => {
         done += 1;
         settle(target, verification);
@@ -292,7 +295,7 @@ interface GroupHooks {
  * before, plus a batch pass that told us where to look.
  */
 async function probeGroup(
-  options: ProbeOptions,
+  options: ProbeRunOptions,
   dir: string,
   targets: readonly ProbeTarget[],
   hooks: GroupHooks,
@@ -461,18 +464,20 @@ async function preflightUsableChecks(
   exec: Exec,
   checks: readonly LocalCheck[],
   env: NodeJS.ProcessEnv,
-): Promise<{ usable: readonly LocalCheck[]; missing: readonly string[] }> {
+  cache: ToolAvailabilityCache,
+): Promise<{ usable: readonly LocalCheck[]; missing: readonly string[]; eligible(check: LocalCheck): boolean }> {
   const required = [...new Set(checks.flatMap(requiredHostCommands))];
-  if (required.length === 0) return { usable: checks, missing: [] };
+  if (required.length === 0) return { usable: checks, missing: [], eligible: () => true };
 
-  const available = await toolsAvailable(exec, required, env);
-  const usable = checks.filter((check) =>
-    requiredHostCommands(check).every((command) => available.get(command) !== false),
-  );
+  const available = await toolsAvailable(exec, required, env, cache);
+  const eligible = (check: LocalCheck): boolean =>
+    requiredHostCommands(check).every((command) => available.get(command) !== false);
+  const usable = checks.filter(eligible);
 
   return {
     usable,
     missing: required.filter((command) => available.get(command) === false),
+    eligible,
   };
 }
 
@@ -491,7 +496,7 @@ function requiredHostCommands(check: LocalCheck): string[] {
  * `warmProbe` start it against the clock instead of after it.
  */
 async function prepareGroup(
-  options: ProbeOptions,
+  options: ProbeRunOptions,
   dir: string,
   packageManager: PackageManagerId,
   hooks: Pick<GroupHooks, 'report' | 'output'>,
@@ -519,8 +524,9 @@ async function prepareGroup(
     () => [] as LocalCheck[],
   );
   const possible = [...declared, ...detectChecks(packageManager, null)].filter((check) => kinds.includes(check.kind));
+  let preflight: Awaited<ReturnType<typeof preflightUsableChecks>> | undefined;
   if (possible.length > 0) {
-    const preflight = await preflightUsableChecks(exec, possible, env);
+    preflight = await preflightUsableChecks(exec, possible, env, options.toolAvailability);
     if (preflight.usable.length === 0) {
       count('verify.skipped.noTool');
       return {
@@ -575,11 +581,15 @@ async function prepareGroup(
   // that is where they will run. Reading the open tree would offer a script
   // that only exists in someone's unsaved edits, and miss one they have just
   // deleted without committing.
-  const wanted = (await availableChecks(worktree.path, dir, options.fs ?? nodeWorkspaceFs(), packageManager)).filter(
+  const detectedWanted = (await availableChecks(worktree.path, dir, options.fs ?? nodeWorkspaceFs(), packageManager)).filter(
     (check) => kinds.includes(check.kind),
   );
-  if (wanted.length === 0) {
+  if (detectedWanted.length === 0) {
     return abandon('This project declares no typecheck or build that Drift could run against the upgrade.');
+  }
+  const wanted = detectedWanted.filter((check) => preflight?.eligible(check) ?? true);
+  if (wanted.length === 0) {
+    return abandon('This project declares checks, but none of their required tools are installed.');
   }
 
   // A worktree is the commit and nothing else: no `node_modules`, no
@@ -761,6 +771,7 @@ export function warmProbe(
   dirs: readonly { dir: string; packageManager: PackageManagerId }[],
   onProgress?: (progress: ProbeProgress) => void,
 ): ProbeWarmup {
+  const runOptions: ProbeRunOptions = { ...options, toolAvailability: createToolAvailabilityCache() };
   const pending = new Map<string, { packageManager: PackageManagerId; prepared: Promise<Preparation> }>();
   const hooks = {
     report: (phase: string, detail: string) => onProgress?.({ phase, detail, done: 0, total: 0 }),
@@ -770,7 +781,7 @@ export function warmProbe(
   // Bounded for the same reason `probeUpgrades` bounds its groups: git worktree
   // operations briefly lock shared repository state, and a monorepo with twenty
   // members should not start twenty installs at once on one machine.
-  const limit = Math.max(1, options.concurrency ?? localConcurrency());
+  const limit = Math.max(1, runOptions.concurrency ?? localConcurrency());
   let active = 0;
   const queue: (() => void)[] = [];
 
@@ -789,7 +800,7 @@ export function warmProbe(
     if (pending.has(dir)) continue;
     pending.set(dir, {
       packageManager,
-      prepared: slot(() => prepareGroup(options, dir, packageManager, hooks)).catch((err) => ({
+      prepared: slot(() => prepareGroup(runOptions, dir, packageManager, hooks)).catch((err) => ({
         ok: false as const,
         reason: messageOf(err),
       })),
