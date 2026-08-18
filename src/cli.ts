@@ -30,10 +30,12 @@ import { configureHttpDiskCache } from './util/http.js';
 import { createBaselineCache } from './verification/baseline-cache.js';
 import { execCommand } from './util/exec.js';
 import { fetchVersionDiff, unifiedDiffText } from './evidence/version-diff.js';
-import { dispatchRemainingToCopilot, runFix } from './remediation/cli-runner.js';
+import { runFix } from './remediation/cli-runner.js';
 import { runAgentCommitsInWorktree } from './remediation/worktree-runner.js';
 import { CLI_AGENT_SPECS, CliFixAgent } from './agents/cli.js';
+import { CopilotCloudAgent } from './agents/copilot-cloud.js';
 import { resolveAgentSelection, type AgentSelection } from './agents/selection.js';
+import { planForCommits } from './remediation/partition.js';
 import {
   installUpgrade,
   reanalyzeUpgrade,
@@ -1514,6 +1516,38 @@ function labelForAgentProvider(provider: ExplicitAgentProvider, localAgents: Map
 function createLocalFixAgent(provider: ExplicitAgentProvider, timeoutSeconds: number): CliFixAgent | undefined {
   const spec = CLI_AGENT_SPECS.find((candidate) => candidate.id === provider);
   return spec ? new CliFixAgent(spec, timeoutSeconds * 1000) : undefined;
+}
+
+async function dispatchRemainingToCopilot(options: {
+  copilotToken: string;
+  repo: RepoContext;
+  plan: RemediationPlan;
+  commits: readonly RemediationPlan['commits'][number][];
+  config: DriftConfig;
+  logger: Logger;
+}): Promise<{ ok: boolean; error?: string }> {
+  if (options.commits.length === 0) return { ok: true };
+  const agentPlan = planForCommits(options.plan, options.commits);
+  const agent = new CopilotCloudAgent({
+    repo: options.repo,
+    config: options.config,
+    token: options.copilotToken,
+    logger: options.logger,
+  });
+  const result = await agent.run(
+    {
+      plan: agentPlan,
+      commit: agentPlan.commits[0]!,
+      workspaceRoot: options.repo.workspace ?? '',
+      files: [],
+      customInstructions: options.config.remediation.customInstructions,
+      model: options.config.remediation.agent.model ?? options.config.remediation.model,
+      effort: options.config.remediation.agent.effort,
+      fast: options.config.remediation.agent.fast,
+    },
+    { report: (message) => options.logger.info(message), signal: new AbortController().signal },
+  );
+  return result.status === 'failed' ? { ok: false, error: result.message } : { ok: true };
 }
 
 /**

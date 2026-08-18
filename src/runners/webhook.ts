@@ -13,6 +13,7 @@ import { MemoryJobQueue } from '../queue/memory.js';
 import { SqliteJobQueue } from '../queue/sqlite.js';
 import { getTaskStatus, isTerminalState } from '../dispatch/copilot.js';
 import { reconcileCloudTask, type CloudTaskMonitor } from '../remediation/cloud-lifecycle.js';
+import { CopilotCloudAgent } from '../agents/copilot-cloud.js';
 
 /**
  * Self-hosted GitHub App webhook runner — the secondary deployment.
@@ -236,6 +237,9 @@ async function handlePush(
     logger,
     github,
     copilotToken: options.copilotToken,
+    agent: options.copilotToken
+      ? new CopilotCloudAgent({ repo, config, token: options.copilotToken, logger, dryRun: options.dryRun })
+      : undefined,
     githubToken: options.repoToken,
     dryRun: options.dryRun,
     // No workspace: localization is unavailable here, and the pipeline warns.

@@ -269,15 +269,41 @@ export interface FixAgent {
 /* Shared prompt construction                                          */
 /* ------------------------------------------------------------------ */
 
-/**
- * Build the instruction text handed to any agent.
- *
- * Deliberately identical across every backend. The prompt carries the evidence
- * inline so the model does not have to recall the package's API, the exact
- * impact sites so it does not have to search, and the prohibitions that cover
- * an unsupervised agent's predictable failure modes.
- */
+export interface FixTaskSemantics {
+  plan: RemediationPlan;
+  commit: CommitUnit;
+  files: readonly FileSnapshot[];
+  customInstructions?: string;
+  context?: readonly AttachedContext[];
+  diagnostics?: string;
+  revision?: RevisionRequest;
+}
+
+export function buildFixTask(task: FixTask): FixTaskSemantics {
+  return {
+    plan: task.plan,
+    commit: task.commit,
+    files: task.files,
+    customInstructions: task.customInstructions,
+    context: task.context,
+    diagnostics: task.diagnostics,
+    revision: task.revision,
+  };
+}
+
+/** Compatibility name for commit-scoped agents. */
 export function buildFixPrompt(task: FixTask): string {
+  return renderCommitAgentPrompt(buildFixTask(task));
+}
+
+/**
+ * Render the prompt for a single commit/unit agent run.
+ *
+ * The semantics come from `buildFixTask`; this renderer is allowed to be
+ * commit-shaped because workspace agents are executed and validated one unit
+ * at a time.
+ */
+export function renderCommitAgentPrompt(task: FixTaskSemantics): string {
   const { plan, commit } = task;
   const evidenceById = new Map(plan.evidence.map((e) => [e.id, e]));
   const changes = plan.breakingChanges.filter((c) => commit.breakingChangeIds.includes(c.id));
@@ -461,6 +487,17 @@ export function buildFixPrompt(task: FixTask): string {
   }
 
   return sections.join('\n\n');
+}
+
+/**
+ * Render a whole-plan cloud task.
+ *
+ * Cloud agents work asynchronously on a branch, so their protocol is
+ * plan-shaped rather than commit-shaped. It still receives the same evidence,
+ * scope, repository conventions, and safety rules.
+ */
+export function renderPlanAgentPrompt(task: FixTaskSemantics): string {
+  return renderCommitAgentPrompt(task);
 }
 
 /** Marker format used to get whole files back from a text-completion model. */

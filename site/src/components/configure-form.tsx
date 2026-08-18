@@ -127,12 +127,20 @@ export function ConfigureForm({
           <Toggle checked={opts.outdatedEnabled} onChange={(v) => set("outdatedEnabled", v)} label="Enabled" />
         </Field>
 
+        <Field label="Agent Provider" hint="Used only after Drift's deterministic fixes are exhausted.">
+          <Select
+            value={opts.agentProvider}
+            onChange={(v) => set("agentProvider", v as ConfigureOptions["agentProvider"])}
+            options={["auto", "codex", "claude", "gemini", "aider", "opencode", "copilot-cloud"]}
+          />
+        </Field>
+
         <Field label="Workflow" hint="">
           <div className="flex flex-col gap-2">
             <Toggle
               checked={opts.copilotToken}
               onChange={(v) => set("copilotToken", v)}
-              label="Include copilot-token (agent fallback for fixes Drift can't resolve itself)"
+              label="Include copilot-token (only needed for copilot-cloud)"
             />
             <Toggle checked={opts.dryRun} onChange={(v) => set("dryRun", v)} label="dry-run — report only, write nothing" />
           </div>

@@ -9,7 +9,6 @@ import { titleFor } from '../plan/pull-request.js';
 import { applyDeterministicRemediation } from '../github/local-commit.js';
 import { planForCommits } from '../remediation/partition.js';
 import type { FixAgent } from '../agents/types.js';
-import { CopilotCloudAgent } from '../agents/copilot-cloud.js';
 import { execCommand } from '../util/exec.js';
 import { runAgentCommitsInWorktree, runWorktreeRemediation } from '../remediation/worktree-runner.js';
 
@@ -35,7 +34,7 @@ export interface DispatchOptions {
   config: DriftConfig;
   github: GitHubClient;
   logger: Logger;
-  /** User-scoped Copilot token. Absent means dispatch cannot proceed. */
+  /** @deprecated Compatibility-only; surfaces should translate this into `agent`. */
   copilotToken?: string;
   /** Provider-neutral agent. Compatibility callers may still pass copilotToken. */
   agent?: FixAgent;
@@ -51,8 +50,8 @@ export interface DispatchOptions {
 }
 
 export async function dispatch(options: DispatchOptions): Promise<DispatchResult> {
-  const { repo, plan, config, github, logger, copilotToken, dryRun = false, approved = false } = options;
-  const agent = options.agent ?? agentFromLegacyCopilot(options);
+  const { repo, plan, config, github, logger, dryRun = false, approved = false } = options;
+  const agent = options.agent;
 
   // Zero commits only means "not affected" when the plan has no blocking gap.
   // A blocker at this point — most often localization never having run, as on
@@ -205,17 +204,6 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
       ? `${resolvedNote}${agent.label} is working on ${remaining.length} commit(s) on \`${plan.branchName}\`, tracked in pull request #${pr.number} into \`${plan.baseBranch}\`.`
       : `${resolvedNote}${agent.label} is working on ${remaining.length} commit(s) on \`${plan.branchName}\`. A pull request into \`${plan.baseBranch}\` will follow.`,
   };
-}
-
-function agentFromLegacyCopilot(options: DispatchOptions): FixAgent | undefined {
-  if (!options.copilotToken) return undefined;
-  return new CopilotCloudAgent({
-    repo: options.repo,
-    config: options.config,
-    token: options.copilotToken,
-    logger: options.logger,
-    dryRun: options.dryRun,
-  });
 }
 
 async function dispatchViaWorkspaceAgent(options: DispatchOptions & { agent: FixAgent }): Promise<DispatchResult> {

@@ -2,8 +2,6 @@ import type { CommitUnit, RemediationPlan, RepoContext } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
 import type { Exec } from '../util/exec.js';
-import { planForCommits } from './partition.js';
-import { CopilotCloudAgent } from '../agents/copilot-cloud.js';
 import { runWorktreeRemediation } from './worktree-runner.js';
 
 /**
@@ -20,11 +18,9 @@ import { runWorktreeRemediation } from './worktree-runner.js';
  * and asks; `--non-interactive` applies whatever `dispositionFor` clears for
  * unattended use and leaves the rest to an agent.
  *
- * The CLI has no local interactive agent of its own (that is the VS Code
- * extension's job, built around the editor's document model and a
- * webview-rendered chat). For commits no deterministic path resolved, this
- * reuses the same Copilot cloud-agent dispatch the GitHub Action already
- * uses — one AI integration, not two.
+ * Local CLI agents now run through `worktree-runner.ts`; this file remains as
+ * the compatibility entrypoint for the CLI command and legacy Copilot Cloud
+ * dispatch helper.
  */
 
 export interface FixOptions {
@@ -74,37 +70,4 @@ export interface FixRunResult {
  */
 export async function runFix(options: FixOptions): Promise<FixRunResult & { teardown: () => Promise<void> }> {
   return runWorktreeRemediation(options);
-}
-
-/** Dispatch commits the deterministic paths could not resolve to Copilot. */
-export async function dispatchRemainingToCopilot(options: {
-  copilotToken: string;
-  repo: RepoContext;
-  plan: RemediationPlan;
-  commits: readonly CommitUnit[];
-  config: DriftConfig;
-  logger: Logger;
-}): Promise<{ ok: boolean; error?: string }> {
-  if (options.commits.length === 0) return { ok: true };
-  const agentPlan = planForCommits(options.plan, options.commits);
-  const agent = new CopilotCloudAgent({
-    repo: options.repo,
-    config: options.config,
-    token: options.copilotToken,
-    logger: options.logger,
-  });
-  const result = await agent.run(
-    {
-      plan: agentPlan,
-      commit: agentPlan.commits[0]!,
-      workspaceRoot: options.repo.workspace ?? '',
-      files: [],
-      customInstructions: options.config.remediation.customInstructions,
-      model: options.config.remediation.agent.model ?? options.config.remediation.model,
-      effort: options.config.remediation.agent.effort,
-      fast: options.config.remediation.agent.fast,
-    },
-    { report: (message) => options.logger.info(message), signal: new AbortController().signal },
-  );
-  return result.status === 'failed' ? { ok: false, error: result.message } : { ok: true };
 }

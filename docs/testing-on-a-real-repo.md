@@ -172,10 +172,10 @@ jobs:
       - uses: YOUR-USERNAME/Drift@main      # your fork
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          # Omit copilot-token for the first run — see below
+          # Omit agent credentials for the first run — see below
 ```
 
-**Run it in the default `approve` mode, without `copilot-token`, first.** Drift
+**Run it in the default `approve` mode, without agent credentials, first.** Drift
 will analyse, find the ESM break, and file an approval issue. Nothing gets
 edited. Read that issue before granting anything more — a Copilot token is
 only needed later, for fixes Drift can't resolve itself.
@@ -187,13 +187,16 @@ permission the endpoint checks), save it as the secret `DRIFT_COPILOT_TOKEN`,
 and add:
 
 ```yaml
+          # For Copilot Cloud:
           copilot-token: ${{ secrets.DRIFT_COPILOT_TOKEN }}
+          # Or set remediation.agent.provider to codex/claude/gemini/aider/opencode
+          # and install/authenticate that CLI earlier in the job.
 ```
 
 Comment `/drift apply` on the approval issue. Drift creates the branch and
 hands Copilot the plan.
 
-Requires an active Copilot subscription with the coding agent enabled — the
+Copilot Cloud requires an active Copilot subscription with the coding agent enabled — the
 API rejects `GITHUB_TOKEN` and App installation tokens, because Copilot is
 billed per seat. See [copilot-integration.md](copilot-integration.md).
 

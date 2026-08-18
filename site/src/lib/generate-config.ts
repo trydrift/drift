@@ -15,6 +15,7 @@ export type MaxAutoRisk = "none" | "low" | "medium" | "high";
 export type AlertGranularity = "package" | "breakingChange" | "affectedSite";
 export type IssueDefault = "issue" | "branch" | "both";
 export type IssueGranularity = "package" | "change";
+export type AgentProvider = "auto" | "copilot-cloud" | "codex" | "claude" | "gemini" | "aider" | "opencode";
 
 export interface ConfigureOptions {
   mode: Mode;
@@ -31,6 +32,7 @@ export interface ConfigureOptions {
   prReviewers: string[];
   prDraft: boolean;
   outdatedEnabled: boolean;
+  agentProvider: AgentProvider;
   copilotToken: boolean;
   dryRun: boolean;
 }
@@ -50,6 +52,7 @@ export const DEFAULT_OPTIONS: ConfigureOptions = {
   prReviewers: [],
   prDraft: false,
   outdatedEnabled: false,
+  agentProvider: "auto",
   copilotToken: true,
   dryRun: false,
 };
@@ -148,6 +151,16 @@ export function generateDriftYaml(opts: ConfigureOptions): string {
       "# Proactively scan every installed dependency's version, not just the ones a push just bumped.",
       "outdated:",
       `  enabled: ${opts.outdatedEnabled}`,
+      "",
+    );
+  }
+
+  if (opts.agentProvider !== DEFAULT_OPTIONS.agentProvider) {
+    lines.push(
+      "# Agent policy for unresolved edits. Credentials stay in the environment/provider login.",
+      "remediation:",
+      "  agent:",
+      `    provider: ${opts.agentProvider}`,
       "",
     );
   }

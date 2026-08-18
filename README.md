@@ -79,12 +79,24 @@ Drift's intended failure mode is asking you too often. Not editing code it shoul
 Copy [`examples/workflows/drift.yml`](examples/workflows/drift.yml) to
 `.github/workflows/drift.yml`.
 
-### 2. Add the Copilot token
+### 2. Choose an agent
 
-Drift needs a **user-scoped** token to invoke Copilot on your behalf. GitHub's
-agent API rejects the built-in `GITHUB_TOKEN` and any GitHub App installation
-token, because Copilot is billed per seat and GitHub needs to know whose seat is
-being spent.
+Drift is agent-neutral. If it can resolve a fix deterministically, it does not
+call an agent at all. When a commit still needs one, choose explicitly in
+`.github/drift.yml`:
+
+```yaml
+remediation:
+  agent:
+    provider: codex # codex, claude, gemini, aider, opencode, or copilot-cloud
+```
+
+For local CLI agents, install and authenticate the tool yourself; Drift detects
+what is already present and never stores that provider's credentials.
+
+For `copilot-cloud`, add a **user-scoped** token. GitHub's agent API rejects the
+built-in `GITHUB_TOKEN` and any GitHub App installation token, because Copilot
+is billed per seat and GitHub needs to know whose seat is being spent.
 
 Create a fine-grained PAT with **Agent tasks: read and write** (plus the
 mandatory **Metadata: read**), then save it as the repository secret
@@ -97,7 +109,7 @@ call it; if you get a 403, check
 before assuming Drift is misconfigured.
 
 The token lives in your repository secrets. Drift reads it from the environment at
-run time and sends it only to `api.github.com`. It is never stored anywhere else —
+run time and sends it only to `api.github.com`. It is never stored in `drift.yml` —
 [which is why Drift needs no database](docs/copilot-integration.md).
 
 ### 3. (Optional) Configure
@@ -276,8 +288,8 @@ it enables by default. Add the ones your repository needs.
 | | Best for | Needs |
 | --- | --- | --- |
 | **VS Code extension** | Working a dependency bump interactively, reviewing every edit before it lands | Nothing — no token, no account, for analysis. A Copilot/Claude/etc. session only if a commit needs an agent. Pushing uses whatever credential git already pushes with; a signed-in `gh` or a GitHub sign-in only if you want Drift to open the pull request for you |
-| **CLI (`drift fix`)** | Scripting a fix locally or in a bespoke CI job, outside GitHub Actions | Nothing for `analyze` and `outdated` — credentials only raise the GitHub API rate limit. GitHub write access (a signed-in `gh`, `$GITHUB_TOKEN`, or `--token`) to push and open a pull request. A Copilot token only if some commit needs an agent |
-| **GitHub Action** | Unattended, on every dependency bump, with review via a PR or an approval issue | `DRIFT_COPILOT_TOKEN` repo secret (only required once a commit actually needs an agent) |
+| **CLI (`drift fix`)** | Scripting a fix locally or in a bespoke CI job, outside GitHub Actions | Nothing for `analyze` and `outdated` — credentials only raise the GitHub API rate limit. GitHub write access (a signed-in `gh`, `$GITHUB_TOKEN`, or `--token`) to push and open a pull request. A selected local agent already installed/authenticated, or a Copilot token only when using `copilot-cloud` |
+| **GitHub Action** | Unattended, on every dependency bump, with review via a PR or an approval issue | Repository `GITHUB_TOKEN` for Drift's branch/PR work. For local runner agents, install/authenticate the selected CLI before Drift runs and keep a push-capable checkout. For `copilot-cloud`, add `DRIFT_COPILOT_TOKEN` |
 
 They don't behave identically. What each surface actually does:
 
@@ -289,7 +301,7 @@ They don't behave identically. What each surface actually does:
 | Deterministic remediation | Yes | Yes (`drift fix`) | Yes |
 | Fix plans | Yes — shows the plan and asks before applying | Yes — `drift fix --plan` to read, `drift fix` to apply | Yes — applies what `remediation.fixPlans.autoApply` clears, and files the rest for review, since it cannot prompt |
 | External recipes | Yes — as a proposal source, validated like any other | Yes — same | Yes, but only if `remediation.communityRecipes: true` in `drift.yml` |
-| AI remediation | Yes — Copilot, Claude Code, Codex, Gemini, Aider, OpenCode, or local Ollama | Yes — GitHub Copilot coding agent only | Yes — GitHub Copilot coding agent only |
+| AI remediation | Yes — Copilot, Claude Code, Codex, Gemini, Aider, OpenCode, or local Ollama | Yes — Codex, Claude Code, Gemini, Aider, OpenCode, or Copilot Cloud | Yes — installed runner CLIs or Copilot Cloud |
 | Interactive hunk-level review | Yes — Keep/Undo per hunk before committing | No — reviewed as a PR after the fact | No — reviewed as a PR or approval issue |
 | Create branch / commit | Yes | Yes | Yes |
 | Create PR | Yes — directly, when an authenticated GitHub CLI or GitHub sign-in is available; otherwise it pushes the branch and opens GitHub's pull request page | Yes (`drift pr`) — directly | Yes — files an approval issue by default, and creates or dispatches the PR after approval, or straight away under `mode: auto` |

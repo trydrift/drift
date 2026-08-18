@@ -6,6 +6,7 @@ import { loadConfig } from '../config/load.js';
 import { execCommand } from '../util/exec.js';
 import { analyzeRepository } from '../analysis.js';
 import { dispatch, DRIFT_LABEL } from '../dispatch/index.js';
+import { CopilotCloudAgent } from '../agents/copilot-cloud.js';
 import { reportTelemetry } from '../pipeline.js';
 import { authorizeApproval, type ApprovalRequest } from './authorize.js';
 import { planDigest } from './digest.js';
@@ -319,7 +320,12 @@ export async function applyApproval(options: ApplyApprovalOptions): Promise<Appr
     config,
     github,
     logger,
-    ...(options.copilotToken ? { copilotToken: options.copilotToken } : {}),
+    ...(options.copilotToken
+      ? {
+          copilotToken: options.copilotToken,
+          agent: new CopilotCloudAgent({ repo, config, token: options.copilotToken, logger, dryRun: options.dryRun }),
+        }
+      : {}),
     ...(options.dryRun ? { dryRun: true } : {}),
     approved: true,
   });
