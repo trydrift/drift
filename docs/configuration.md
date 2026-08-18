@@ -1009,6 +1009,7 @@ mid-session.
 | `drift.analysis.includePatch` / `includeTransitive` | `false` | Widen `/recent` analysis |
 | `drift.analysis.includeDev` | `true` | Also analyse dev, optional, and peer dependencies |
 | `drift.analysis.ignore` | `[]` | Package patterns to skip, added to `ignore` in `drift.yml` |
+| `drift.analysis.concurrency` | `0` | Packages checked at once. `0` sizes it from your machine's cores and memory |
 | `drift.ui.showInlineDiagnostics` | `true` | Flag affected lines in the Problems panel |
 | `drift.logLevel` | `info` | Output channel verbosity |
 
@@ -1026,3 +1027,48 @@ mid-session.
 | `GITHUB_WEBHOOK_SECRET` | Webhook runner only |
 | `DRIFT_LOG_LEVEL` | `debug` \| `info` \| `warn` \| `error` |
 | `DRIFT_DRY_RUN` | `true` to analyse without writing |
+| `DRIFT_CACHE_DIR` | Moves the whole cache — HTTP responses, fix plans, and measured baselines |
+| `DRIFT_NO_CACHE` | `1` disables all three |
+| `DRIFT_CONCURRENCY` | Packages analysed at once. Default: sized from cores and memory |
+| `DRIFT_NETWORK_CONCURRENCY` | Registry requests in flight at once. Default: `cores × 4`, capped at 32 |
+| `DRIFT_LOCAL_CONCURRENCY` | Installs and project checks at once. Default: `cores ÷ 4`, 2–6 |
+| `NO_COLOR` | Any non-empty value turns off colour |
+| `FORCE_COLOR` | Turns colour on where a bare TTY check would say no — a CI log viewer that renders ANSI |
+| `DRIFT_ASCII` | `1` replaces the box drawing and status glyphs with ASCII |
+| `DRIFT_HYPERLINKS` | `0` or `1` overrides terminal hyperlink detection |
+
+### Sizing the parallelism by hand
+
+The three defaults are computed from the machine, and they are three numbers
+rather than one because the three kinds of work a scan does have nothing in
+common. Network work is pure waiting and scales with what a registry will
+tolerate. Analysis is network and CPU and memory at once. A local install or
+typecheck saturates the disk and every core it is given all by itself, so
+running many at once makes each slower without finishing the set any sooner.
+
+The one thing a heuristic cannot know is that this process is sharing a runner
+with four others, which is what the overrides are for.
+
+### What is cached, and where
+
+Three things, all under `~/.drift/cache` unless `DRIFT_CACHE_DIR` says
+otherwise:
+
+| | What it saves | Keyed on |
+| --- | --- | --- |
+| `http/` | Registry, changelog and release-note responses | The URL, plus whichever headers change the reply |
+| `fixplans/` | Deterministic fix plans | The migration — never the repository |
+| `baseline/` | Which of a project's own checks were green before any upgrade | The commit, every manifest and lockfile, the check kinds, the package manager, and the runtime |
+
+The baseline is the expensive one. Verification cannot say an upgrade broke
+something without first knowing what was already broken, so every scan runs the
+project's unchanged typecheck, build and test suite before touching a version
+number — and two scans of the same commit re-derived an identical answer at
+full cost. Only the verdict is cached; the dependency install is not, and could
+not usefully be, since each upgrade is installed on top of a populated tree
+either way.
+
+A baseline in which nothing passed is never remembered. That is usually a
+transient failure, and caching it would turn one bad afternoon into a week of
+skipped verification. Entries expire after a week regardless, because a
+compiler upgraded through the system package manager appears in no lockfile.
