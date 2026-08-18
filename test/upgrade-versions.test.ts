@@ -72,6 +72,53 @@ describe('version lookup: the three honest outcomes', () => {
     assert.equal(result.safeLatest, '1.5.0');
   });
 
+  test('a range that forbids everything newer has no safe landing at all', async () => {
+    // `site/package.json` pins `"next": "16.3.0"`. `npm outdated` prints
+    // `wanted 16.3.0` for that — "there is no upgrade here you have not
+    // already forbidden" — and Drift used to answer 16.3.1, quietly rewriting
+    // the pin into a caret nobody wrote. A range semver could read and that
+    // said no is not the same fact as a range semver could not read.
+    stubFetch(() =>
+      json({ 'dist-tags': { latest: '17.0.0' }, versions: { '16.3.0': {}, '16.3.1': {}, '17.0.0': {} } }),
+    );
+
+    const result = await lookupVersions({
+      name: 'next',
+      ecosystem: 'npm',
+      current: '16.3.0',
+      range: '16.3.0',
+    });
+
+    assert.equal(result.outcome, 'upgrade');
+    if (result.outcome !== 'upgrade') return;
+    assert.equal(result.safeLatest, undefined);
+    // The pinned developer is not left with nothing: `latestMinor` is still the
+    // "update it, but not onto the next major" answer.
+    assert.equal(result.latestMinor, '16.3.1');
+    assert.equal(result.latest, '17.0.0');
+  });
+
+  test('but a range no parser can read still falls back to the compatibility band', async () => {
+    // The case that fallback was built for. Go, Maven and Gradle all write
+    // constraints npm-semver cannot parse, and for those there is no declared
+    // bound to respect — so the newest release on the same major is a better
+    // answer than none.
+    stubFetch(() =>
+      json({ 'dist-tags': { latest: '2.0.0' }, versions: { '1.0.0': {}, '1.7.0': {}, '2.0.0': {} } }),
+    );
+
+    const result = await lookupVersions({
+      name: 'left-pad',
+      ecosystem: 'npm',
+      current: '1.0.0',
+      range: '1.2.+',
+    });
+
+    assert.equal(result.outcome, 'upgrade');
+    if (result.outcome !== 'upgrade') return;
+    assert.equal(result.safeLatest, '1.7.0');
+  });
+
   test('an unreachable registry is unchecked, NOT up to date', async () => {
     stubFetch(() => {
       throw new Error('ECONNRESET');

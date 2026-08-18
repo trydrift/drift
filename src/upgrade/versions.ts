@@ -343,6 +343,32 @@ function latestWithinMajor(versions: readonly string[], current: string): string
     .sort(semver.rcompare)[0];
 }
 
+/**
+ * The newest release the manifest's own range already permits — npm's "wanted".
+ *
+ * The distinction that matters here is between a range that *forbids*
+ * everything newer and a range this function could not read at all. They are
+ * not the same fact and used to produce the same answer.
+ *
+ * `site/package.json` pins `"next": "16.3.0"` exactly. That range is perfectly
+ * valid semver, and it admits nothing newer — `npm outdated` prints `wanted
+ * 16.3.0`, meaning "there is no upgrade here you have not already forbidden".
+ * Falling through to the compatibility band answered `16.3.1` instead, which
+ * quietly rewrote the developer's pin into a caret they did not write, and made
+ * Drift's table disagree with `npm outdated` on a column both claim to compute
+ * the same way.
+ *
+ * The band remains, for the case it was built for: a range no semver parser can
+ * read. Go's `v1.2.3`, a Maven `[1.0,2.0)`, a Gradle `1.2.+` — for those there
+ * is no bound to respect, and "the newest release on the same compatibility
+ * line" is a better answer than none. That is a fallback for an unreadable
+ * range, never for a readable one that said no.
+ *
+ * When this returns undefined the caller is not left without a suggestion:
+ * `latestMinor` still offers the newest release inside the current major, which
+ * is exactly the "update it, but don't put me on the next major" a pinned
+ * repository wants.
+ */
 function safeLatest(
   versions: readonly string[],
   current: string,
@@ -357,15 +383,11 @@ function safeLatest(
   // would silently misinterpret the range instead of falling back.
   const rubyBound = ecosystem === 'rubygems' ? rubyPessimisticUpperBound(range) : null;
   if (rubyBound) {
-    const matched = candidates.filter((version) => semver.lt(version, rubyBound)).sort(semver.rcompare)[0];
-    if (matched) return matched;
-  } else {
-    const validRange = semver.validRange(range);
-    if (validRange) {
-      const matched = semver.maxSatisfying(candidates, validRange);
-      if (matched) return matched;
-    }
+    return candidates.filter((version) => semver.lt(version, rubyBound)).sort(semver.rcompare)[0];
   }
+
+  const validRange = semver.validRange(range);
+  if (validRange) return semver.maxSatisfying(candidates, validRange) ?? undefined;
 
   const parsed = semver.parse(current);
   if (!parsed) return undefined;
