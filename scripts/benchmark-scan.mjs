@@ -30,8 +30,20 @@ const { scanUpgrades } = await import(join(dist, 'upgrade/scan.js'));
 const { DriftConfigSchema } = await import(join(dist, 'config/schema.js'));
 const { createLogger } = await import(join(dist, 'util/logger.js'));
 const { configureHttpDiskCache } = await import(join(dist, 'util/http.js'));
+const { createBaselineCache } = await import(join(dist, 'verification/baseline-cache.js'));
 
 configureHttpDiskCache(process.env.DRIFT_BENCH_CACHE);
+
+/**
+ * The same baseline cache the CLI configures.
+ *
+ * Without it the benchmark re-runs every project's typecheck, build and test
+ * suite on a warm run — work the real tool skips — which understates warm
+ * performance on exactly the target where verification dominates. It lives
+ * beside the HTTP cache so that "cold" wipes both and neither can quietly warm
+ * the other.
+ */
+const baselineCache = createBaselineCache(join(process.env.DRIFT_BENCH_CACHE, 'baselines'));
 
 const config = DriftConfigSchema.parse({});
 const logger = createLogger('error');
@@ -47,6 +59,7 @@ const result = await scanUpgrades({
   // The capture harness's own breadth and concurrency, so the two agree.
   breadth: { includeDev: false, maxSites: 40, maxPackages: 0 },
   concurrency: 8,
+  verify: { baselineCache },
   onOutdated: (summary) => {
     outdated = summary.outdated.length;
   },

@@ -1,7 +1,7 @@
 import { basename, dirname } from 'node:path';
 import { packageManagerById, type PackageManagerId } from '../detect/package-manager.js';
 import { nodeWorkspaceFs, type WorkspaceFs } from '../detect/workspace.js';
-import { createWorktree, type Worktree } from '../repo/worktree.js';
+import { createWorktree, type Worktree, settleWorktreeDeletions } from '../repo/worktree.js';
 import { execCommand, type Exec } from '../util/exec.js';
 import { count, measure, span } from '../util/profile.js';
 import { anyToolAvailable } from './tool-availability.js';
@@ -254,6 +254,12 @@ export async function probeUpgrades(options: ProbeOptions): Promise<Map<string, 
       },
     });
   });
+
+  // Each group hands its worktree over to be deleted rather than waiting for
+  // it, so the deletions overlap each other and overlap the groups still
+  // running. Awaited here — once, at the end — so "nothing is left on disk
+  // when a scan returns" stays exactly as true as it was.
+  await settleWorktreeDeletions();
 
   return results;
 }
@@ -792,6 +798,9 @@ export function warmProbe(
           ),
         ),
       );
+      // `dispose` hands the directory over to be deleted rather than deleting
+      // it; this is the point where the caller is entitled to assume it is gone.
+      await settleWorktreeDeletions();
     },
   };
 }

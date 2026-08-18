@@ -301,10 +301,15 @@ describe('probing an upgrade before reporting it', () => {
     await probeUpgrades({ root, targets: [target('zod'), target('react'), target('vite')], exec, fs });
 
     const added = lines().filter((line) => line.startsWith('git worktree add'));
-    const removed = lines().filter((line) => line.startsWith('git worktree remove'));
+    // Disposal deletes the directory and then prunes the registration; `git
+    // worktree remove` is only the fallback for a delete that failed. Here git
+    // is faked and no directory exists, so the prune is the observable half —
+    // that the *directory* goes is asserted against a real filesystem in
+    // `worktree.test.ts`.
+    const pruned = lines().filter((line) => line === 'git worktree prune');
 
     assert.equal(added.length, 1, 'one worktree for three candidates sharing package.json');
-    assert.ok(removed.length >= 1, 'the worktree is removed when the group finishes');
+    assert.ok(pruned.length >= 1, 'the worktree is disposed of when the group finishes');
   });
 
   test('each candidate starts from the committed manifest, not the previous candidate’s install', async () => {
@@ -744,14 +749,11 @@ describe('warming a test checkout before the packages that need it are known', (
     await warm.dispose();
 
     const added = calls.filter((c) => c.command === 'git' && c.args[0] === 'worktree' && c.args[1] === 'add');
-    const removed = calls.filter(
-      (c) => c.command === 'git' && c.args[0] === 'worktree' && c.args[1] === 'remove' && c.args.includes('--force'),
-    );
+    const pruned = calls.filter((c) => c.command === 'git' && c.args[0] === 'worktree' && c.args[1] === 'prune');
     assert.equal(added.length, 1, 'the warmup did prepare one');
-    assert.ok(
-      removed.some((c) => c.args.some((arg) => arg.includes('probe-packages'))),
-      'the abandoned worktree was disposed of',
-    );
+    // One prune before the add (clearing an interrupted run's leftovers) and one
+    // after the dispose. Two is the shape of "prepared, then thrown away".
+    assert.ok(pruned.length >= 2, 'the abandoned worktree was disposed of');
   });
 
   test('a warmup whose install fails settles its packages with the reason, not a crash', async () => {

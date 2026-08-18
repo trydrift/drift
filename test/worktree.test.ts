@@ -1,6 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { copyIgnoredSourceFiles, gitignoreRules, createWorktree } from '../dist/repo/worktree.js';
@@ -263,14 +264,64 @@ describe('where a worktree is put', () => {
   });
 
   test("the pre-add cleanup only targets this run's own namespaced path", async () => {
-    const { calls, exec } = fakeGitRepo('.git\n');
-    const worktree = await createWorktree('/repo', 'probe-root', { exec: exec as never, runId: 'run-a' });
-    const removals = calls.filter((c) => c.args[0] === 'worktree' && c.args[1] === 'remove');
-    assert.ok(removals.length > 0);
-    for (const removal of removals) {
-      assert.ok(removal.args.includes(worktree.path), "every removal names this run's own path");
+    // Asserted against the real filesystem rather than against a spy on `git`,
+    // because deleting the directory is now how a worktree is discarded — a
+    // `git worktree remove` is only the fallback for when that fails. What
+    // matters is which directory goes, and that is observable directly.
+    const common = await mkdtemp(join(tmpdir(), 'drift-worktree-scope-'));
+    const exec = async (command: string, args: readonly string[]) => ({
+      code: 0,
+      stdout: args[0] === 'rev-parse' && args[1] === '--git-common-dir' ? common : '',
+      stderr: '',
+    });
+
+    try {
+      const mine = join(common, 'drift-worktrees', 'run-a', 'probe-root');
+      const theirs = join(common, 'drift-worktrees', 'run-b', 'probe-root');
+      for (const path of [mine, theirs]) {
+        await mkdir(path, { recursive: true });
+        await writeFile(join(path, 'leftover.txt'), 'from a run that was killed', 'utf8');
+      }
+
+      const worktree = await createWorktree(common, 'probe-root', { exec: exec as never, runId: 'run-a' });
+      assert.equal(worktree.path, mine);
+
+      assert.ok(!existsSync(join(mine, 'leftover.txt')), "this run's own leftovers are cleared");
+      assert.ok(existsSync(join(theirs, 'leftover.txt')), "another run's worktree is never touched");
+    } finally {
+      await rm(common, { recursive: true, force: true });
     }
   });
+
+  test('disposing deletes the directory and prunes the registration', async () => {
+    const common = await mkdtemp(join(tmpdir(), 'drift-worktree-dispose-'));
+    const calls: string[] = [];
+    const exec = async (command: string, args: readonly string[]) => {
+      calls.push([command, ...args].join(' '));
+      return {
+        code: 0,
+        stdout: args[0] === 'rev-parse' && args[1] === '--git-common-dir' ? common : '',
+        stderr: '',
+      };
+    };
+
+    try {
+      const worktree = await createWorktree(common, 'probe-root', { exec: exec as never, runId: 'run-a' });
+      // `git worktree add` is faked, so stand in for what it would have written.
+      await mkdir(worktree.path, { recursive: true });
+      await writeFile(join(worktree.path, 'installed.txt'), 'node_modules stand-in', 'utf8');
+
+      await worktree.dispose();
+
+      assert.ok(!existsSync(worktree.path), 'the directory is gone');
+      assert.ok(calls.includes('git worktree prune'), 'and git is told to forget it');
+      // The slow path is the fallback, not the route taken when the delete worked.
+      assert.ok(!calls.some((line) => line.startsWith('git worktree remove')));
+    } finally {
+      await rm(common, { recursive: true, force: true });
+    }
+  });
+
 });
 
 /** A fake `git` that fails `rev-parse --git-common-dir`, as it does outside any repository. */
