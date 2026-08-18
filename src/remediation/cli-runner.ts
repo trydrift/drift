@@ -1,16 +1,19 @@
-import { readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
 import type { CommitUnit, RemediationPlan, RepoContext } from '../types.js';
 import type { DriftConfig } from '../config/schema.js';
 import type { Logger } from '../util/logger.js';
 import { execCommand, type Exec } from '../util/exec.js';
-import { applyBuiltinCodemod, applyCommitFixPlan } from './apply.js';
 import { planForCommits } from './partition.js';
 import { dispositionFor } from '../fixplan/policy.js';
 import { renderFixPlanDocument } from '../fixplan/document.js';
-import type { FixPlanAssessment } from '../fixplan/schema.js';
 import { ask as defaultAsk } from '../util/prompt.js';
 import { CopilotCloudAgent } from '../agents/copilot-cloud.js';
+import {
+  applyBuiltinCommit,
+  applyFixPlanCommit,
+  assessmentOf,
+  createRemediationWorktree,
+  removeRemediationWorktree,
+} from './worktree-runner.js';
 
 /**
  * `drift fix`: apply a plan's commits through the same three-tier priority
@@ -83,7 +86,7 @@ export async function runFix(options: FixOptions): Promise<FixRunResult & { tear
   const exec = options.exec ?? execCommand;
   const nonInteractive = options.nonInteractive ?? !process.stdin.isTTY;
 
-  const worktree = await createWorktree(workspace, plan.branchName, repo.afterSha, exec);
+  const worktree = await createRemediationWorktree({ repo, plan, workspace, exec });
 
   let builtinResolved = 0;
   let fixPlanResolved = 0;
@@ -164,36 +167,7 @@ export async function runFix(options: FixOptions): Promise<FixRunResult & { tear
     needsAgent,
     pushed: committedAny,
     worktree,
-    teardown: () => removeWorktree(workspace, worktree, exec),
-  };
-}
-
-/**
- * Rebuild the assessment a commit's attached plan came from.
- *
- * `CommitUnit.fixPlan` is the serialization-safe subset that survives being
- * written into a stored plan; `dispositionFor` and the document renderer both
- * read the fuller shape. Reconstructing it here keeps one policy function and
- * one renderer rather than a second pair that take the narrower type and
- * gradually disagree with the first.
- */
-function assessmentOf(commit: CommitUnit): FixPlanAssessment {
-  const fixPlan = commit.fixPlan!;
-  return {
-    plan: fixPlan.plan,
-    verdict: fixPlan.residual === 0 ? 'accepted' : 'partial',
-    assurance: fixPlan.assurance,
-    sites: fixPlan.residualSites.map((site) => ({
-      file: site.file,
-      line: site.line,
-      before: '',
-      status: 'residual' as const,
-      reason: site.reason,
-    })),
-    covered: fixPlan.covered,
-    residual: fixPlan.residual,
-    rejections: [],
-    anchors: fixPlan.anchors,
+    teardown: () => removeRemediationWorktree(workspace, worktree, exec),
   };
 }
 
@@ -257,95 +231,4 @@ export async function dispatchRemainingToCopilot(options: {
     { report: (message) => options.logger.info(message), signal: new AbortController().signal },
   );
   return result.status === 'failed' ? { ok: false, error: result.message } : { ok: true };
-}
-
-async function applyBuiltinCommit(
-  worktree: string,
-  commit: CommitUnit,
-  exec: Exec,
-): Promise<'applied' | 'no-changes' | 'failed'> {
-  const contents = new Map<string, string>();
-  for (const file of commit.files) {
-    try {
-      contents.set(file, await readFile(join(worktree, file), 'utf8'));
-    } catch {
-      // Missing file — skipped by applyBuiltinCodemod.
-    }
-  }
-
-  const result = applyBuiltinCodemod(commit, contents);
-  if (result.status !== 'applied') return 'no-changes';
-
-  for (const edit of result.edits) {
-    await writeFile(join(worktree, edit.path), edit.content, 'utf8');
-  }
-
-  const committed = await commitFiles(worktree, result.edits.map((e) => e.path), `${commit.message}\n\n${commit.body}`, exec);
-  return committed ? 'applied' : 'failed';
-}
-
-/**
- * Apply a commit's validated fix plan in the worktree and commit it.
- *
- * The commit message carries the plan document itself, not a summary of it.
- * A `git log` entry that says "applied a deterministic fix" is exactly the
- * unclear artefact this tier exists to replace — the rule, its evidence, and
- * the call sites it declined belong in the history alongside the diff.
- */
-async function applyFixPlanCommit(
-  worktree: string,
-  commit: CommitUnit,
-  exec: Exec,
-): Promise<'applied' | 'no-changes' | 'failed'> {
-  const contents = new Map<string, string>();
-  for (const file of commit.fixPlan?.files ?? []) {
-    try {
-      contents.set(file, await readFile(join(worktree, file), 'utf8'));
-    } catch {
-      // Missing file — skipped by applyCommitFixPlan.
-    }
-  }
-
-  const result = applyCommitFixPlan(commit, contents);
-  if (result.status !== 'applied') return 'no-changes';
-
-  for (const edit of result.edits) {
-    await writeFile(join(worktree, edit.path), edit.content, 'utf8');
-  }
-
-  const committed = await commitFiles(
-    worktree,
-    result.edits.map((e) => e.path),
-    [commit.message, '', commit.body, '', result.message, '', renderFixPlanDocument(assessmentOf(commit), { sites: false, headingLevel: 2 })].join('\n'),
-    exec,
-  );
-  return committed ? 'applied' : 'failed';
-}
-
-async function commitFiles(worktree: string, files: readonly string[], message: string, exec: Exec): Promise<boolean> {
-  if (files.length === 0) return false;
-  const add = await exec('git', ['add', '--', ...files], { cwd: worktree });
-  if (add.code !== 0) return false;
-  const commit = await exec('git', ['commit', '-m', message], { cwd: worktree });
-  return commit.code === 0;
-}
-
-async function createWorktree(workspace: string, branch: string, atSha: string, exec: Exec): Promise<string> {
-  const common = await exec('git', ['rev-parse', '--git-common-dir'], { cwd: workspace });
-  const gitDir = common.stdout.trim() || '.git';
-  const dir = join(workspace, gitDir, 'drift-worktrees', branch.replace(/[^\w.-]+/g, '-'));
-
-  // Reusing a stale worktree directory from a previous, interrupted run is
-  // not safe to assume clean — remove any trace before adding a fresh one.
-  await exec('git', ['worktree', 'remove', '--force', dir], { cwd: workspace });
-
-  const result = await exec('git', ['worktree', 'add', '-B', branch, dir, atSha], { cwd: workspace });
-  if (result.code !== 0) {
-    throw new Error(`Could not create an isolated worktree for the fix: ${result.stderr.trim() || result.stdout.trim()}`);
-  }
-  return dir;
-}
-
-async function removeWorktree(workspace: string, dir: string, exec: Exec): Promise<void> {
-  await exec('git', ['worktree', 'remove', '--force', dir], { cwd: workspace });
 }

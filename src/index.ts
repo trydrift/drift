@@ -178,6 +178,14 @@ export type {
   FixOutcome,
   FixTask,
 } from './agents/types.js';
+export {
+  applyBuiltinCommit,
+  applyFixPlanCommit,
+  createRemediationWorktree,
+  removeRemediationWorktree,
+  runAgentCommitsInWorktree,
+} from './remediation/worktree-runner.js';
+export type { WorktreeAgentRunOptions, WorktreeAgentRunResult } from './remediation/worktree-runner.js';
 
 export { authorizeApproval, canApprove } from './approval/authorize.js';
 export type { AuthorizeResult, ApprovalRequest, RepoPermission } from './approval/authorize.js';
