@@ -743,7 +743,7 @@
     "@shikijs/engine-javascript": "^3.23.0",
     "@shikijs/langs": "^3.23.0",
     "@shikijs/themes": "^3.23.0",
-    "@shikijs/types": "^3.23.0",
+    "@shikijs/types": "^4.4.3",
     "semver": "^7.6.3",
     "yaml": "^2.7.0",
     "zod": "^4.4.3"
