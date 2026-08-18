@@ -1,0 +1,223 @@
+name: Refresh site recordings
+
+# The landing page replays real analyses of real repositories, and those
+# recordings are committed output. They go stale in two ways, and only one of
+# them is visible.
+#
+# The visible one is that the repositories move: a project takes a new
+# dependency, a package publishes a new major, and the page shows a scan of a
+# commit nobody is on any more.
+#
+# The quiet one is that *Drift* moves. A better surface diff, a new evidence
+# source, a change to how impact is localized — and the page is now showing
+# what Drift said last month beside a claim that this is what Drift does. That
+# one cannot be noticed by looking at the page, which is exactly why it needs a
+# machine watching for it. `site/scripts/engine-fingerprint.mjs` hashes only the
+# directories a scan actually reaches, so a change to the CLI's colours or the
+# extension's panel does not send seventeen real repositories through an hour of
+# re-analysis for output that would be byte-identical.
+#
+# Two triggers, doing two different jobs:
+#
+#   - On a push to main that touched the engine, this checks whether the
+#     recordings still match it and re-captures the ones that do not.
+#   - On a weekly schedule, it also catches the repositories moving underneath
+#     us, which no push to this repository could ever signal.
+#
+# The result is always a pull request, never a direct commit. A recording is a
+# claim about what Drift does, made in public, and it deserves the same review
+# any other claim on that page gets.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/analyze/**'
+      - 'src/confidence/**'
+      - 'src/detect/**'
+      - 'src/evidence/**'
+      - 'src/index/**'
+      - 'src/localize/**'
+      - 'src/plan/**'
+      - 'src/rationale/**'
+      - 'src/repo/**'
+      - 'src/upgrade/**'
+      - 'src/verification/**'
+      - 'src/analysis.ts'
+      - 'src/config/schema.ts'
+      - 'src/pipeline.ts'
+      - 'src/types.ts'
+      - 'site/scripts/capture.mjs'
+      - 'site/scripts/engine-fingerprint.mjs'
+      - '.github/workflows/refresh-recordings.yml'
+  schedule:
+    # Early Monday, UTC. Nothing here is urgent — a recording a few days behind
+    # a dependency release is a recording, not a bug — and a quiet slot keeps a
+    # capture that clones seventeen repositories out of everybody's way.
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: 'Space-separated target ids to re-capture. Empty means whatever is stale.'
+        required: false
+        default: ''
+      force:
+        description: 'Re-capture even the targets that are already current.'
+        type: boolean
+        required: false
+        default: false
+
+permissions: {}
+
+# One capture at a time. Two overlapping runs would clone the same seventeen
+# repositories twice and race each other to open the same pull request; never
+# cancelled in flight, because a half-finished capture is a set of recordings
+# from two different engines.
+concurrency:
+  group: refresh-recordings
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: are the recordings still current?
+    runs-on: ubuntu-latest
+    outputs:
+      stale: ${{ steps.check.outputs.stale }}
+      targets: ${{ steps.check.outputs.targets }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # The recordings are produced by `dist/`, not by `src/`, so this is the
+      # same build a local capture runs against.
+      - run: npm run build
+
+      - name: Check
+        id: check
+        env:
+          # `--check` asks a remote for each target's current HEAD. Unauthenticated
+          # is fine for `ls-remote`, but the capture itself reads release notes
+          # from the API, where sixty requests an hour is not enough for one
+          # target let alone seventeen.
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+
+          if [ "${{ inputs.force }}" = "true" ]; then
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+            echo "targets=${{ inputs.targets }}" >> "$GITHUB_OUTPUT"
+            echo "Forced: re-capturing ${{ inputs.targets || 'every target' }}."
+            exit 0
+          fi
+
+          if [ -n "${{ inputs.targets }}" ]; then
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+            echo "targets=${{ inputs.targets }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Exit code 1 means "some are stale", which is the answer, not a
+          # failure — so the step must not abort on it. The stale ids are on
+          # stdout, ready to hand straight back to the same script.
+          targets=$(node site/scripts/capture.mjs --check)
+          status=$?
+
+          if [ "$status" -gt 1 ]; then
+            echo "The staleness check itself failed (exit $status)." >&2
+            exit "$status"
+          fi
+
+          if [ -z "$targets" ]; then
+            echo "stale=false" >> "$GITHUB_OUTPUT"
+            echo "Every recording matches the current engine and the current commits."
+          else
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+            echo "targets=$targets" >> "$GITHUB_OUTPUT"
+          fi
+
+  capture:
+    name: re-record what has moved
+    needs: check
+    if: needs.check.outputs.stale == 'true'
+    runs-on: ubuntu-latest
+    # A capture clones seventeen repositories and analyses every direct
+    # dependency of each. Kubernetes alone is minutes of that, and the default
+    # six-hour cap would let a wedged registry hold a runner all day.
+    timeout-minutes: 120
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Capture
+        env:
+          # Release notes and changelogs come from the GitHub API, and a
+          # whole-repository sweep asks about several hundred packages.
+          # Unauthenticated that is sixty requests an hour, which does not fail
+          # — it degrades into a recording full of "could not check" that would
+          # be a fair record of a throttled runner and a libel against the tool.
+          GITHUB_TOKEN: ${{ github.token }}
+          # A runner is not somebody's laptop, and nothing here is watching the
+          # cadence for fidelity — but the recordings *are* the output, so this
+          # stays at the documented default rather than being wound up for the
+          # sake of a faster job. See the fidelity note in `capture.mjs`.
+          CAPTURE_JOBS: '4'
+        run: node site/scripts/capture.mjs ${{ needs.check.outputs.targets }}
+
+      # A capture that reached no registry produces recordings full of "could
+      # not check", which would sail through `git diff` as a large, confident,
+      # completely wrong change. Better to fail the job than to open that PR.
+      - name: Sanity-check what was captured
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          const index = JSON.parse(await readFile('site/src/data/index.json', 'utf8'));
+          const empty = index.filter((entry) => entry.packagesChecked === 0);
+          if (index.length === 0) throw new Error('No recordings were produced at all.');
+          if (empty.length > 0) {
+            throw new Error(
+              `${empty.length} recording(s) checked zero packages: ${empty.map((e) => e.id).join(', ')}. ` +
+                'That is what a rate-limited or offline capture looks like, not a real result.',
+            );
+          }
+          console.log(`${index.length} recording(s), ${index.reduce((sum, e) => sum + e.packagesChecked, 0)} packages checked.`);
+          NODE
+
+      - name: Open a pull request
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
+        with:
+          commit-message: 'chore(site): re-record the landing page demos'
+          title: 'chore(site): re-record the landing page demos'
+          body: |
+            The recordings on the landing page no longer match the engine that
+            would produce them, or the commits they were taken at.
+
+            Re-captured: `${{ needs.check.outputs.targets || 'every target' }}`
+
+            Each recording is a real analysis of the linked commit, so this
+            diff is the honest answer to "what would Drift say about these
+            projects today". Worth reading the same way any other claim on that
+            page is read — particularly anywhere a package moved from a finding
+            to none, or the other way round.
+
+            Opened by `.github/workflows/refresh-recordings.yml`.
+          branch: refresh-recordings
+          delete-branch: true
+          add-paths: site/src/data
