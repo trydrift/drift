@@ -280,6 +280,11 @@ export function createOutdatedView(options: {
     },
 
     allCurrent(checked) {
+      // "All 0 direct dependencies are up to date" is technically true and
+      // reads as a bug. A directory with no dependencies has not been given a
+      // clean bill of health; there was nothing to give one to, and the caller
+      // says so on its own.
+      if (checked === 0) return;
       line(
         `${c('green', c.glyph('safe'))} All ${checked} direct dependenc${checked === 1 ? 'y is' : 'ies are'} up to date.`,
       );
