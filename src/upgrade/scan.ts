@@ -53,6 +53,7 @@ import { compareSeverity, describeSeverity, severityOf, type UpgradeSeverity } f
 import { lookupVersions, versionSourceLabel, type VersionLookup } from './versions.js';
 import { summarize } from './summary.js';
 import { analysisConcurrency, describeParallelism, networkConcurrency } from '../util/parallelism.js';
+import type { BaselineCache } from '../verification/baseline-cache.js';
 import {
   probeUpgrades,
   scrubEnv,
@@ -566,6 +567,16 @@ export async function scanUpgrades(args: {
     checks?: readonly CheckKind[];
     timeoutMs?: number;
     generatedSourceGlobs?: readonly string[];
+    /**
+     * Where a measured baseline is remembered between runs. See
+     * `verification/baseline-cache.ts`.
+     *
+     * Absent means measure it every time. Two scans of the same commit
+     * otherwise re-derive the same typecheck, build and test result at full
+     * cost, which on this repository is most of a minute per run spent
+     * confirming what did not change.
+     */
+    baselineCache?: BaselineCache;
   };
 }): Promise<UpgradeScanResult> {
   const { root, repo, config, logger, githubToken, onProgress, onCandidate, onDropped, onOutdated, token, repoLabel } =
@@ -583,6 +594,7 @@ export async function scanUpgrades(args: {
     checks: args.verify?.checks ?? (config.verify.checks as readonly CheckKind[]),
     timeoutMs: args.verify?.timeoutMs ?? config.verify.timeoutMs,
     generatedSourceGlobs: args.verify?.generatedSourceGlobs ?? config.verify.generatedSourceGlobs,
+    baselineCache: args.verify?.baselineCache,
   };
 
   // Timed the same way `analyzeRepository`'s stages are: not for `onProgress`,
@@ -795,6 +807,7 @@ export async function scanUpgrades(args: {
             logger,
             timeoutMs: verify.timeoutMs,
             ...(verify.generatedSourceGlobs ? { allowedGlobs: verify.generatedSourceGlobs } : {}),
+            ...(verify.baselineCache ? { baselineCache: verify.baselineCache } : {}),
             ...(token ? { token } : {}),
           },
           [...new Map(targets.map((target) => [target.dir, target])).values()].map((target) => ({
@@ -980,6 +993,7 @@ export async function scanUpgrades(args: {
           checks: verify.checks,
           timeoutMs: verify.timeoutMs,
           generatedSourceGlobs: verify.generatedSourceGlobs,
+          ...(verify.baselineCache ? { baselineCache: verify.baselineCache } : {}),
           env,
           logger,
           ...(warm ? { warm } : {}),
@@ -1082,6 +1096,8 @@ async function verifyCandidates(args: {
   timeoutMs: number;
   /** See {@link WorktreeOptions.allowedGlobs} — `config.verify.generatedSourceGlobs`. */
   generatedSourceGlobs?: readonly string[];
+  /** See {@link ProbeOptions.baselineCache}. */
+  baselineCache?: BaselineCache;
   env: NodeJS.ProcessEnv;
   logger: Logger;
   token?: { isCancellationRequested: boolean };
@@ -1147,6 +1163,7 @@ async function verifyCandidates(args: {
     logger: args.logger,
     timeoutMs: args.timeoutMs,
     ...(args.generatedSourceGlobs ? { allowedGlobs: args.generatedSourceGlobs } : {}),
+    ...(args.baselineCache ? { baselineCache: args.baselineCache } : {}),
     ...(args.warm ? { warm: args.warm } : {}),
     ...(args.token ? { token: args.token } : {}),
     onProgress: (progress) =>
@@ -1929,7 +1946,17 @@ function compareCandidates(a: UpgradeCandidate, b: UpgradeCandidate): number {
   const bySeverity = compareSeverity(a, b);
   if (bySeverity !== 0) return bySeverity;
   if (a.impactCount !== b.impactCount) return b.impactCount - a.impactCount;
-  return a.name.localeCompare(b.name);
+  const byName = a.name.localeCompare(b.name);
+  if (byName !== 0) return byName;
+  // A monorepo declares the same package in several manifests, and those rows
+  // tied on every comparison above — so the order they came out in was the
+  // order the analysis happened to finish in, which differs between two runs of
+  // the same scan. A report whose rows move around between identical runs
+  // cannot be diffed, and diffing two scans is how anyone sees what changed.
+  return a.manifestPath.localeCompare(b.manifestPath);
 }
 
 export { describeSeverity, severityOf, type UpgradeSeverity };
+// Re-exported so a caller that already imports the scan can turn its baseline
+// cache on without reaching two directories deeper for the constructor.
+export { createBaselineCache, noBaselineCache, type BaselineCache } from '../verification/baseline-cache.js';

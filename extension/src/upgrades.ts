@@ -97,16 +97,28 @@ function scanLogger(output?: vscode.LogOutputChannel) {
 }
 
 /**
- * How many packages to check at once.
+ * Where measured baselines are kept, set once at activation.
  *
- * High enough that a fifty-dependency project finishes in the time a developer
- * will actually wait, low enough to stay a polite client of the npm registry and
- * the GitHub API — the unauthenticated GitHub rate limit is the real ceiling
- * here, and blowing through it turns evidence into "could not check", which is
- * worse than being slower.
+ * Under the extension's own global storage rather than `~/.drift`, so
+ * uninstalling takes it with it — the same place the HTTP evidence cache lives.
  */
-function concurrency(): number {
-  return vscode.workspace.getConfiguration('drift').get<number>('analysis.concurrency', 8);
+let baselineCacheDir: string | null = null;
+
+export function configureBaselineCache(dir: string | null): void {
+  baselineCacheDir = dir;
+}
+
+/**
+ * How many packages to analyse at once, or `undefined` to let the core size it
+ * from the machine.
+ *
+ * `0` is the default and means "you decide" — see `src/util/parallelism.ts`.
+ * The setting used to default to a literal 8, which was the same number on a
+ * two-core laptop and a workstation and wrong on both.
+ */
+function concurrency(): number | undefined {
+  const configured = vscode.workspace.getConfiguration('drift').get<number>('analysis.concurrency', 0);
+  return configured > 0 ? configured : undefined;
 }
 
 /**
@@ -140,12 +152,17 @@ export async function scanUpgrades(args: {
   repoLabel?: string;
   output?: vscode.LogOutputChannel;
 }): Promise<UpgradeScanResult> {
+  const limit = concurrency();
   return core.scanUpgrades({
     ...args,
     logger: scanLogger(args.output),
     fs: vscodeWorkspaceFs(),
     env: await envWithShellPath(),
-    concurrency: concurrency(),
+    ...(limit === undefined ? {} : { concurrency: limit }),
+    // Scanning the same commit twice — which the panel's refresh button does
+    // constantly — used to re-run the project's whole typecheck, build and test
+    // suite each time just to re-establish what was already green.
+    ...(baselineCacheDir ? { verify: { baselineCache: core.createBaselineCache(baselineCacheDir) } } : {}),
   });
 }
 

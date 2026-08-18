@@ -27,6 +27,7 @@ import { paletteFor, supportsRedraw } from './util/terminal.js';
 import { createStatusLine } from './util/status-line.js';
 import { createOutdatedView } from './report/terminal-outdated.js';
 import { configureHttpDiskCache } from './util/http.js';
+import { createBaselineCache } from './verification/baseline-cache.js';
 import { execCommand } from './util/exec.js';
 import { fetchVersionDiff, unifiedDiffText } from './evidence/version-diff.js';
 import { dispatchRemainingToCopilot, runFix } from './remediation/cli-runner.js';
@@ -365,6 +366,20 @@ Environment:
 function defaultHttpCacheDir(): string | null {
   if (process.env.DRIFT_NO_CACHE === '1') return null;
   return process.env.DRIFT_CACHE_DIR || join(homedir(), '.drift', 'cache', 'http');
+}
+
+/**
+ * Where measured baselines are remembered between runs.
+ *
+ * Beside the HTTP cache and governed by the same switches, because it is the
+ * same bargain: both trade a little disk for not re-deriving a fact that has
+ * not changed. `DRIFT_NO_CACHE=1` turns off both.
+ */
+function defaultBaselineCacheDir(): string | null {
+  if (process.env.DRIFT_NO_CACHE === '1') return null;
+  return process.env.DRIFT_CACHE_DIR
+    ? join(process.env.DRIFT_CACHE_DIR, 'baseline')
+    : join(homedir(), '.drift', 'cache', 'baseline');
 }
 
 export async function main(argv: string[]): Promise<number> {
@@ -776,6 +791,9 @@ async function outdatedCommand(flags: Flags): Promise<number> {
     logger,
     githubToken: token || undefined,
     breadth: { includeDev: flags['no-dev'] !== true, maxSites: 40, maxPackages: 0 },
+    // Running `drift outdated` twice against the same commit used to pay for
+    // the same baseline typecheck, build and test suite both times.
+    verify: { baselineCache: createBaselineCache(defaultBaselineCacheDir()) },
     onProgress: (progress) => {
       logger.debug(`${progress.phase}: ${progress.detail}`);
       if (flags.json || !progress.phase) return;
