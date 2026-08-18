@@ -78,6 +78,28 @@ const target = (name: string, overrides: Partial<{ installs: string[] }> = {}) =
   };
 };
 
+const cargoTarget = (name: string) => ({
+  id: `t-${name}`,
+  name,
+  current: '1.0.0',
+  selected: '2.0.0',
+  manifestPath: 'Cargo.toml',
+  packageManager: 'cargo' as const,
+  install: async () => {},
+});
+
+const composerTarget = (name: string, install?: (checkout: string) => void) => ({
+  id: `t-${name}`,
+  name,
+  current: '1.0.0',
+  selected: '2.0.0',
+  manifestPath: 'composer.json',
+  packageManager: 'composer' as const,
+  install: async (checkout: string) => {
+    install?.(checkout);
+  },
+});
+
 describe('not building a test checkout nothing could be run in', () => {
   /**
    * The probe's most expensive step is the one that can be skipped on the
@@ -106,6 +128,23 @@ describe('not building a test checkout nothing could be run in', () => {
     // The point of the whole exercise: no worktree, no install, no checks.
     assert.ok(!calls.some((line) => line.startsWith('git worktree add')));
     assert.ok(!calls.some((line) => line === 'npm install'));
+  });
+
+  test('a missing host toolchain still skips a Cargo project before checkout', async () => {
+    clearToolAvailability();
+    const { calls, exec } = withoutTool('cargo');
+    const cargoFs = {
+      readFile: async () => '[package]\nname = "app"\nversion = "0.1.0"\n',
+      readDirectory: async () => ['Cargo.toml', 'Cargo.lock'],
+      isDirectory: async () => true,
+    };
+
+    const results = await probeUpgrades({ root, targets: [cargoTarget('serde')], exec, fs: cargoFs });
+
+    assert.equal(results.get('t-serde')?.status, 'skipped');
+    assert.match(results.get('t-serde')?.reason ?? '', /`cargo` is not installed/);
+    assert.ok(!calls.some((line) => line.startsWith('git worktree add')));
+    assert.ok(!calls.some((line) => line === 'cargo check'));
   });
 
   test('the reason names the tool, rather than describing a baseline nobody could run', async () => {
@@ -137,6 +176,92 @@ describe('not building a test checkout nothing could be run in', () => {
 
     const results = await probeUpgrades({ root, targets: [target('zod')], exec, fs });
     assert.equal(results.get('t-zod')?.status, 'passed');
+  });
+
+  test('tool availability is keyed by PATH so one scan cannot poison the next', async () => {
+    clearToolAvailability();
+    const calls: string[] = [];
+    const exec = async (command: string, args: readonly string[], options: { env?: NodeJS.ProcessEnv } = {}) => {
+      const line = [command, ...args].join(' ');
+      calls.push(`${line} PATH=${options.env?.PATH ?? ''}`);
+      if (line === 'npm --version' && options.env?.PATH === '/missing') {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+
+    const first = await probeUpgrades({ root, targets: [target('zod')], exec, fs, env: { PATH: '/missing' } });
+    const second = await probeUpgrades({ root, targets: [target('react')], exec, fs, env: { PATH: '/present' } });
+
+    assert.equal(first.get('t-zod')?.status, 'skipped');
+    assert.equal(second.get('t-react')?.status, 'passed');
+    assert.equal(calls.filter((line) => line.startsWith('npm --version')).length, 2);
+    assert.ok(calls.some((line) => line === 'npm --version PATH=/missing'));
+    assert.ok(calls.some((line) => line === 'npm --version PATH=/present'));
+  });
+
+  test('a Composer vendor binary missing before install does not skip the checkout', async () => {
+    clearToolAvailability();
+    let dependenciesInstalled = false;
+    let upgradeInstalled = false;
+    const calls: string[] = [];
+    const composerFs = {
+      readFile: async () => JSON.stringify({ 'require-dev': { 'phpunit/phpunit': '^10' } }),
+      readDirectory: async () => ['composer.json', 'composer.lock'],
+      isDirectory: async () => true,
+    };
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      calls.push(line);
+      if (line === 'vendor/bin/phpunit --version') {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      if (line === 'composer install') dependenciesInstalled = true;
+      if (line === 'vendor/bin/phpunit' && !dependenciesInstalled) {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+
+    const results = await probeUpgrades({
+      root,
+      targets: [composerTarget('symfony/console', () => { upgradeInstalled = true; })],
+      exec,
+      fs: composerFs,
+    });
+
+    assert.equal(results.get('t-symfony/console')?.status, 'passed');
+    assert.ok(calls.some((line) => line.startsWith('git worktree add')));
+    assert.ok(calls.includes('composer install'));
+    assert.ok(!calls.includes('vendor/bin/phpunit --version'));
+    assert.equal(calls.filter((line) => line === 'vendor/bin/phpunit').length, 2);
+    assert.equal(upgradeInstalled, true);
+  });
+
+  test('a Composer project still skips safely when composer itself is missing', async () => {
+    clearToolAvailability();
+    const calls: string[] = [];
+    const composerFs = {
+      readFile: async () => JSON.stringify({ 'require-dev': { 'phpunit/phpunit': '^10' } }),
+      readDirectory: async () => ['composer.json', 'composer.lock'],
+      isDirectory: async () => true,
+    };
+    const exec = async (command: string, args: readonly string[]) => {
+      const line = [command, ...args].join(' ');
+      calls.push(line);
+      if (command === 'composer') {
+        return { code: 1, stdout: '', stderr: 'not found', failure: 'not-found' as const };
+      }
+      return { code: 0, stdout: command === 'git' && args[0] === 'rev-parse' ? '.git' : '', stderr: '' };
+    };
+
+    const results = await probeUpgrades({ root, targets: [composerTarget('symfony/console')], exec, fs: composerFs });
+
+    assert.equal(results.get('t-symfony/console')?.status, 'skipped');
+    assert.match(results.get('t-symfony/console')?.reason ?? '', /`composer` is not installed/);
+    assert.ok(!calls.some((line) => line.startsWith('git worktree add')));
+    assert.ok(!calls.includes('composer install'));
+    assert.ok(!calls.includes('vendor/bin/phpunit'));
   });
 });
 

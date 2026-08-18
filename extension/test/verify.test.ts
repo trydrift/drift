@@ -33,6 +33,7 @@ const script = (name: string, body: string): LocalCheck => {
     label: name,
     command: { command: path, args: [] },
     source: 'a test fixture',
+    commandOrigin: { kind: 'host', command: path },
     compileCapable: false,
   };
 };
@@ -90,6 +91,7 @@ describe('running them', () => {
           label: 'definitely-not-installed',
           command: { command: join(root, 'definitely-not-installed'), args: [] },
           source: 'a test fixture',
+          commandOrigin: { kind: 'host', command: join(root, 'definitely-not-installed') },
           compileCapable: false,
         },
       ],
