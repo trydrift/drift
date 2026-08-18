@@ -18,34 +18,65 @@
  * clones repositories, and calls registries — which is exactly why it runs
  * once, here, and ships its own output.
  *
- * Targets are captured several at a time. A capture is overwhelmingly spent
- * waiting — cloning a repository, then asking a registry about several hundred
- * packages one HTTP round trip at a time — so running them one after another
- * left a laptop idle for most of an hour. They share nothing but the HTTP
- * cache, which they are better off sharing: two JavaScript projects asking npm
- * about the same package now cost one request instead of two.
+ * # Why this is not simply a loop
  *
- * What that costs is fidelity, and it is worth being exact about where. The
- * `at` timestamps stay honest — each target measures from its own start, and
- * the stalls being recorded are network waits that overlap rather than queue —
- * but a machine running four scans at once has less CPU for each, so the
- * fastest events stretch slightly. Four is the default because it is where
- * that stretch is still inside the noise between two runs of the same target;
- * `--jobs=1` reproduces the old, strictly serial cadence.
+ * A capture is overwhelmingly spent waiting, and on two entirely different
+ * things. Cloning Kubernetes is minutes of pure download. Scanning it is
+ * hundreds of registry round trips with real parsing behind them. Doing those
+ * one target at a time left a laptop idle for most of an hour.
+ *
+ * So there are two pools, sized differently, and the important part is that
+ * they overlap: clones run ahead of the scans, filling a small buffer of ready
+ * checkouts, so a scan never waits for a download that could have happened
+ * while the previous scan was running. Clones are also cached between runs — a
+ * re-capture after a fix reuses the checkout and pays a `git fetch` instead of
+ * a fresh clone of a repository with two million commits.
+ *
+ * # Fidelity, and where the line is
+ *
+ * The recordings are the product, so it matters exactly which parallelism is
+ * safe:
+ *
+ * - **Cloning in parallel is free.** The recording's clock starts when the scan
+ *   starts, not when the target does, so nothing about fetching a repository
+ *   appears in it. (It used to: the clock started before the clone, which put
+ *   several minutes of Kubernetes download into the offset of its first event.)
+ * - **Scanning several targets at once is not free**, and the cost is spelled
+ *   out honestly. The `at` timestamps stay meaningful — each target measures
+ *   from its own start, and the stalls being recorded are network waits that
+ *   overlap rather than queue — but a machine running four scans at once has
+ *   less CPU for each, so the fastest events stretch slightly. Four is the
+ *   default because that stretch is still inside the noise between two runs of
+ *   the same target. `--jobs=1` reproduces a strictly serial cadence.
+ * - **The scan's own concurrency is pinned**, deliberately, at
+ *   {@link SCAN_CONCURRENCY} rather than sized from the machine the way a real
+ *   run sizes it. A recording is a published artifact; it should not have a
+ *   different cadence because it was captured on a bigger laptop.
+ *
+ * # Not re-recording what has not changed
+ *
+ * Each recording carries the commit it was taken at and a fingerprint of the
+ * engine that took it. `--if-stale` re-captures only the targets where one of
+ * those has moved, which turns a scheduled freshness check from an hour of work
+ * into a handful of `git ls-remote` calls on the common day where nothing has.
  *
  * Usage:
- *   node site/scripts/capture.mjs            # every target
- *   node site/scripts/capture.mjs deno       # one, by id
- *   node site/scripts/capture.mjs --jobs=8   # more at once
+ *   node site/scripts/capture.mjs               # every target
+ *   node site/scripts/capture.mjs deno          # one, by id
+ *   node site/scripts/capture.mjs --jobs=8      # more scans at once
+ *   node site/scripts/capture.mjs --if-stale    # only what has moved
+ *   node site/scripts/capture.mjs --check       # report staleness, record nothing
+ *   node site/scripts/capture.mjs --no-cache    # ignore the clone cache
  */
 
 import { execFile, execFileSync } from 'node:child_process';
 import { promisify } from 'node:util';
 import { mkdir, mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { availableParallelism, tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { engineFingerprint } from './engine-fingerprint.mjs';
 
 const run = promisify(execFile);
 const here = dirname(fileURLToPath(import.meta.url));
@@ -292,28 +323,103 @@ const TARGETS = [
 const config = DriftConfigSchema.parse({});
 const logger = createLogger('error');
 
-async function capture(target) {
-  const started = Date.now();
-  const workdir = await mkdtemp(join(tmpdir(), `drift-capture-${target.id}-`));
-  const checkout = join(workdir, 'repo');
+/**
+ * How many packages one scan checks at once.
+ *
+ * Pinned rather than sized from the machine, which is the opposite of what a
+ * real `drift outdated` run does and is right here for one reason: a recording
+ * is a published artifact. Reading it off `availableParallelism()` would give
+ * the page a different cadence depending on whose laptop last ran the capture,
+ * and the cadence is the thing being recorded.
+ */
+const SCAN_CONCURRENCY = 8;
 
-  process.stderr.write(`\n[${target.id}] cloning ${target.repo}\n`);
-  await run('git', [
-    'clone',
-    '--depth',
-    '1',
-    '--filter=blob:none',
-    '--single-branch',
-    // Nothing here reads a tag, and Kubernetes has thousands of them.
-    '--no-tags',
-    target.repo,
-    checkout,
-  ], { maxBuffer: 64 * 1024 * 1024 });
+/**
+ * Where checkouts are kept between runs.
+ *
+ * Cloning Kubernetes is minutes of download and it is the same download every
+ * time. A cached checkout is updated with a shallow `fetch` instead — seconds
+ * — and a cache that has gone wrong in any way at all is thrown away and
+ * re-cloned rather than reasoned about.
+ */
+const cloneCacheDir = join(tmpdir(), 'drift-capture-clones');
 
+/** The commit a repository's default branch is on right now, without cloning it. */
+async function remoteHead(repo) {
+  try {
+    const { stdout } = await run('git', ['ls-remote', repo, 'HEAD'], { maxBuffer: 1024 * 1024 });
+    return stdout.split(/\s/)[0]?.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * A checkout of `target`, cloned or refreshed.
+ *
+ * Deliberately outside the recording: the clock the browser replays against
+ * starts when the scan starts, so however long this takes and however many of
+ * these run at once, nothing here reaches the page.
+ */
+async function checkoutOf(target, { useCache }) {
   const [owner, name] = new URL(target.repo).pathname.slice(1).split('/');
+  const shallow = ['--depth', '1', '--filter=blob:none', '--single-branch',
+    // Nothing here reads a tag, and Kubernetes has thousands of them.
+    '--no-tags'];
+
+  if (!useCache) {
+    const workdir = await mkdtemp(join(tmpdir(), `drift-capture-${target.id}-`));
+    const checkout = join(workdir, 'repo');
+    process.stderr.write(`[${target.id}] cloning ${target.repo}\n`);
+    await run('git', ['clone', ...shallow, target.repo, checkout], { maxBuffer: 64 * 1024 * 1024 });
+    return { checkout, workdir, owner, name };
+  }
+
+  const checkout = join(cloneCacheDir, target.id);
+  const refresh = async () => {
+    process.stderr.write(`[${target.id}] refreshing cached checkout\n`);
+    await run('git', ['fetch', '--depth', '1', '--no-tags', 'origin', 'HEAD'], {
+      cwd: checkout,
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    await run('git', ['reset', '--hard', 'FETCH_HEAD'], { cwd: checkout });
+    // A stale working tree from a previous scan — an installed `node_modules`,
+    // a manifest an upgrade probe rewrote — would be read as part of the
+    // project. The recording has to be of the repository, not of what the last
+    // capture left in it.
+    await run('git', ['clean', '-xdff'], { cwd: checkout, maxBuffer: 64 * 1024 * 1024 });
+  };
+
+  try {
+    if (existsSync(join(checkout, '.git'))) await refresh();
+    else {
+      await mkdir(cloneCacheDir, { recursive: true });
+      process.stderr.write(`[${target.id}] cloning ${target.repo}\n`);
+      await run('git', ['clone', ...shallow, target.repo, checkout], { maxBuffer: 64 * 1024 * 1024 });
+    }
+  } catch (err) {
+    // Any cache that cannot be brought up to date is not worth understanding.
+    process.stderr.write(`[${target.id}] cache unusable (${err.message.split('\n')[0]}); re-cloning\n`);
+    await rm(checkout, { recursive: true, force: true });
+    await mkdir(cloneCacheDir, { recursive: true });
+    await run('git', ['clone', ...shallow, target.repo, checkout], { maxBuffer: 64 * 1024 * 1024 });
+  }
+
+  // `workdir` is null: a cached checkout outlives the capture on purpose.
+  return { checkout, workdir: null, owner, name };
+}
+
+async function capture(target, prepared, fingerprint) {
+  const { checkout, workdir, owner, name } = prepared;
+  const root = checkout;
+  // Started here, after the checkout exists, rather than at the top of the
+  // target. The clone is not part of what is being recorded, and when the clock
+  // started before it, Kubernetes' first event carried several minutes of
+  // download in its offset and the page opened on a stall that never happened.
+  const started = Date.now();
+
   const head = (await run('git', ['rev-parse', 'HEAD'], { cwd: checkout })).stdout.trim();
   const branch = (await run('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: checkout })).stdout.trim();
-  const root = checkout;
 
   const repo = {
     owner,
@@ -352,7 +458,7 @@ async function capture(target) {
       logger,
       githubToken: githubToken || undefined,
       breadth: { includeDev: false, maxSites: FULL_REPO.maxSites, maxPackages: FULL_REPO.maxPackages },
-      concurrency: 8,
+      concurrency: SCAN_CONCURRENCY,
       onProgress: ({ phase, detail, done, total }) => mark(phase, detail, done, total),
       onCandidate: (candidate) => candidates.push(slimCandidate(candidate)),
     });
@@ -360,7 +466,9 @@ async function capture(target) {
     process.stderr.write(`[${target.id}] scan failed: ${err.message}\n`);
   }
 
-  await rm(workdir, { recursive: true, force: true });
+  // Only a throwaway checkout is removed. A cached one is the whole point of
+  // the cache, and is left for the next run to refresh.
+  if (workdir) await rm(workdir, { recursive: true, force: true });
 
   return {
     id: target.id,
@@ -371,6 +479,10 @@ async function capture(target) {
     blurb: target.blurb,
     capturedAt: new Date().toISOString(),
     commit: head,
+    // What produced this recording. The commit says the *repository* has not
+    // moved; this says Drift has not, which is the staleness nobody can see by
+    // reading the page. See `engine-fingerprint.mjs`.
+    engine: fingerprint,
     durationMs: Date.now() - started,
     packagesChecked: scan?.checked ?? 0,
     manifests: (scan?.targets ?? []).map((t) => t.manifestPath),
@@ -495,7 +607,9 @@ function byAttention(a, b) {
 }
 
 const args = process.argv.slice(2);
-const jobsFlag = args.find((arg) => arg.startsWith('--jobs='));
+const flag = (name) => args.find((arg) => arg.startsWith(`--${name}=`))?.slice(name.length + 3);
+const has = (name) => args.includes(`--${name}`);
+
 const requested = args.filter((arg) => !arg.startsWith('-'));
 const selected = requested.length > 0 ? TARGETS.filter((t) => requested.includes(t.id)) : TARGETS;
 
@@ -504,35 +618,153 @@ if (selected.length === 0) {
   process.exit(1);
 }
 
-const jobs = Math.max(
-  1,
-  Number(jobsFlag?.slice('--jobs='.length) ?? process.env.CAPTURE_JOBS ?? 4) || 1,
+/**
+ * How many *scans* run at once. See the fidelity note at the top of this file:
+ * this is the one number that shows up in the output, so it stays at four
+ * unless somebody asks for otherwise.
+ */
+const jobs = Math.max(1, Number(flag('jobs') ?? process.env.CAPTURE_JOBS ?? 4) || 1);
+
+/**
+ * How many *clones* run at once, which is a different question with a different
+ * answer.
+ *
+ * Nothing about a clone reaches the recording, so this is bounded by bandwidth
+ * and by how many concurrent fetches GitHub will serve cheerfully, not by
+ * fidelity. It runs ahead of the scans so that a scan never waits for a
+ * download that could have happened while the previous scan was running.
+ */
+const cloneJobs = Math.max(
+  jobs,
+  Number(flag('clone-jobs') ?? process.env.CAPTURE_CLONE_JOBS ?? Math.min(8, availableParallelism())) || jobs,
 );
+
+const useCache = !has('no-cache');
+const onlyStale = has('if-stale') || has('check');
+const checkOnly = has('check');
 
 await mkdir(outDir, { recursive: true });
 
-process.stderr.write(
-  `capturing ${selected.length} target(s), ${Math.min(jobs, selected.length)} at a time\n`,
-);
+/** What produced the recordings that are already committed, and what would produce new ones. */
+const fingerprint = await engineFingerprint(repoRoot);
 
 /**
- * A fixed pool of workers over one shared queue.
+ * Why a target is being re-recorded, or `null` when it does not need to be.
+ *
+ * Two reasons, and they go stale independently. The repository moves — a new
+ * dependency, a new release — which the commit catches. And *Drift* moves — a
+ * better surface diff, a new evidence source — which nothing about the
+ * recording's content would reveal, and which the engine fingerprint catches.
+ *
+ * Anything unreadable counts as stale. A recording that cannot be parsed, or a
+ * remote that will not answer, is not evidence that nothing has changed.
+ */
+async function stalenessOf(target) {
+  const path = join(outDir, `${target.id}.json`);
+  if (!existsSync(path)) return 'never recorded';
+
+  let existing;
+  try {
+    existing = JSON.parse(await readFile(path, 'utf8'));
+  } catch {
+    return 'the existing recording could not be read';
+  }
+
+  if (existing.engine !== fingerprint) {
+    return existing.engine
+      ? `recorded by a different engine (${existing.engine} -> ${fingerprint})`
+      : `recorded before the engine was fingerprinted (now ${fingerprint})`;
+  }
+
+  const head = await remoteHead(target.repo);
+  if (!head) return 'could not reach the repository to check';
+  if (head !== existing.commit) return `${target.repo.split('/').slice(-1)[0]} moved to ${head.slice(0, 10)}`;
+
+  return null;
+}
+
+let queue = [...selected];
+if (onlyStale) {
+  // Every remote asked at once: `git ls-remote` is a single round trip and
+  // seventeen of them one after another is the whole cost of a check that
+  // usually finds nothing to do.
+  const reasons = await Promise.all(selected.map(stalenessOf));
+  const stale = selected.filter((_, at) => reasons[at] !== null);
+
+  for (const [at, target] of selected.entries()) {
+    process.stderr.write(
+      reasons[at] ? `[${target.id}] stale — ${reasons[at]}\n` : `[${target.id}] current\n`,
+    );
+  }
+
+  if (checkOnly) {
+    // For CI: the exit code is the answer, and the list is on stdout so a
+    // workflow can pass it straight back to this script.
+    process.stdout.write(stale.map((target) => target.id).join(' '));
+    process.stderr.write(
+      `\n${stale.length} of ${selected.length} recording(s) are out of date` +
+        `${stale.length > 0 ? `: ${stale.map((t) => t.id).join(', ')}` : ''}\n`,
+    );
+    process.exit(stale.length > 0 ? 1 : 0);
+  }
+
+  queue = stale;
+  if (queue.length === 0) process.stderr.write('every recording is current; nothing to capture\n');
+}
+
+process.stderr.write(
+  `capturing ${queue.length} target(s), ${Math.min(jobs, queue.length)} scan(s) and ` +
+    `${Math.min(cloneJobs, queue.length)} clone(s) at a time (engine ${fingerprint})\n`,
+);
+
+const startedAt = Date.now();
+
+/**
+ * Clones running ahead of scans, over one shared queue.
  *
  * A queue rather than an even split of the list: the targets are wildly
  * uneven — Kubernetes takes minutes and FlexLayout takes seconds — so a worker
- * that finishes early has to be able to take the next thing rather than sit
- * out the rest of the run.
+ * that finishes early has to be able to take the next thing rather than sit out
+ * the rest of the run.
+ *
+ * Each entry becomes a promise for a ready checkout the moment a clone slot is
+ * free, and a scan worker awaits whichever it picks up. Bounded on both sides:
+ * `cloneJobs` clones may be in flight, and `jobs` scans, so the pipeline never
+ * turns into seventeen simultaneous downloads of large repositories.
  */
-const queue = [...selected];
-const startedAt = Date.now();
+const pending = new Map();
+let cloning = 0;
+const cloneWaiters = [];
+
+async function cloneSlot(work) {
+  if (cloning >= cloneJobs) await new Promise((resolve) => cloneWaiters.push(resolve));
+  cloning += 1;
+  try {
+    return await work();
+  } finally {
+    cloning -= 1;
+    cloneWaiters.shift()?.();
+  }
+}
+
+for (const target of queue) {
+  const prepared = cloneSlot(() => checkoutOf(target, { useCache }));
+  // Nothing reads a rejection until a scan worker awaits it, and an unhandled
+  // rejection in the meantime would take the process down.
+  prepared.catch(() => undefined);
+  pending.set(target.id, prepared);
+}
+
+const scanQueue = [...queue];
 
 async function worker() {
   for (;;) {
-    const target = queue.shift();
+    const target = scanQueue.shift();
     if (!target) return;
 
     try {
-      const result = await capture(target);
+      const prepared = await pending.get(target.id);
+      const result = await capture(target, prepared, fingerprint);
       await writeFile(join(outDir, `${target.id}.json`), `${JSON.stringify(result, null, 2)}\n`, 'utf8');
       process.stderr.write(
         `[${target.id}] done — ${result.candidates.length} candidates, ` +
@@ -544,7 +776,7 @@ async function worker() {
   }
 }
 
-await Promise.all(Array.from({ length: Math.min(jobs, selected.length) }, worker));
+await Promise.all(Array.from({ length: Math.min(jobs, queue.length) }, worker));
 process.stderr.write(`\nall captures finished in ${((Date.now() - startedAt) / 1000).toFixed(1)}s\n`);
 
 // An index of what was actually captured, so the site never lists a demo whose
