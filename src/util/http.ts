@@ -33,6 +33,31 @@ const DEFAULT_DISK_TTL_MS = 24 * 60 * 60 * 1000;
  * entry would make it.
  */
 const FAILURE_CACHE_TTL_MS = 60_000;
+/**
+ * How long a *definitive* absence stays on disk.
+ *
+ * Not the same thing as a failure, and the distinction is the whole point. A
+ * 404 from `raw.githubusercontent.com` is the server successfully answering a
+ * question — this repository has no `CHANGES.rst` — and that answer is as
+ * cacheable as any other. A 403, a timeout or a 502 is the server declining to
+ * answer, and remembering one of those as "absent" is precisely how a
+ * throttled network turns into a report full of "no changelog found".
+ *
+ * It matters because absence is most of what a scan learns. There is no API
+ * that says whether a third-party repository has a changelog without
+ * credentials for it, so Drift guesses filenames — and on a warm scan of
+ * Scrapy's dependencies, *every single one* of the 1,397 requests that still
+ * went to the network was a 404 being re-asked, 148 seconds of cumulative wait
+ * spent re-learning that files do not exist.
+ *
+ * Shorter than the 24-hour success TTL, deliberately. The two are not
+ * symmetric: a stale success cites a slightly old changelog, while a stale
+ * absence reports that a document does not exist when it was added this
+ * morning — and that silently downgrades the evidence behind a finding. Six
+ * hours collapses the repeat scans of a working day without letting "absent"
+ * outlive the day it was true.
+ */
+const ABSENCE_DISK_TTL_MS = 6 * 60 * 60 * 1000;
 const USER_AGENT = 'drift-bot/0.1 (+https://github.com/trydrift/drift)';
 
 interface CacheEntry {
@@ -137,6 +162,15 @@ interface DiskEntry {
   etag?: string;
   fetchedAt: number;
   immutable?: boolean;
+  /**
+   * The server said this resource is not there, and meant it.
+   *
+   * Distinct from a `null` body with no flag, which is what an older cache
+   * layout wrote for anything that failed. Requiring the flag means entries
+   * written before this existed are re-fetched rather than read as confirmed
+   * absences they were never checked to be.
+   */
+  absent?: boolean;
 }
 
 export function configureHttpDiskCache(path: string | null): void {
@@ -223,6 +257,21 @@ async function fetchTextUncoalesced(
     cacheSet(cacheKey, disk.body);
     return disk.body;
   }
+  // A remembered 404. Only ever written for a definitive absence — see
+  // `ABSENCE_DISK_TTL_MS` — so this can never serve a rate limit or a timeout
+  // back as though the resource had been confirmed missing. An immutable URL's
+  // absence is immutable too: a published version does not grow a file it did
+  // not ship with.
+  if (
+    disk &&
+    disk.body === null &&
+    disk.absent === true &&
+    (disk.immutable || options.immutable || now - disk.fetchedAt < ABSENCE_DISK_TTL_MS)
+  ) {
+    count('http.cache.disk.absent');
+    cacheSet(cacheKey, null);
+    return null;
+  }
   const conditionalHeaders: Record<string, string> = disk?.etag ? { 'If-None-Match': disk.etag } : {};
 
   count('http.network');
@@ -263,8 +312,21 @@ async function fetchTextUncoalesced(
       }
 
       request.end({ status: response.status });
-      // 404 is a legitimate answer ("no changelog here"), not a failure to retry.
-      if (response.status === 404 || response.status === 403) break;
+      // 404 is a legitimate answer ("no changelog here"), not a failure to retry
+      // — and, being an answer rather than a refusal, one worth writing down.
+      if (response.status === 404) {
+        cacheSet(cacheKey, null);
+        await writeDiskEntry(cacheKey, {
+          key: cacheKey,
+          body: null,
+          absent: true,
+          fetchedAt: now,
+          immutable: options.immutable,
+        });
+        return null;
+      }
+      // 403 is the opposite: a refusal, usually a rate limit. Never remembered.
+      if (response.status === 403) break;
 
       const retryable = response.status === 429 || response.status >= 500;
       if (!retryable || attempt === retries) break;
