@@ -465,19 +465,18 @@ async function preflightUsableChecks(
   checks: readonly LocalCheck[],
   env: NodeJS.ProcessEnv,
   cache: ToolAvailabilityCache,
-): Promise<{ usable: readonly LocalCheck[]; missing: readonly string[]; eligible(check: LocalCheck): boolean }> {
+): Promise<{ usable: readonly LocalCheck[]; missing: readonly string[] }> {
   const required = [...new Set(checks.flatMap(requiredHostCommands))];
-  if (required.length === 0) return { usable: checks, missing: [], eligible: () => true };
+  if (required.length === 0) return { usable: checks, missing: [] };
 
   const available = await toolsAvailable(exec, required, env, cache);
   const eligible = (check: LocalCheck): boolean =>
-    requiredHostCommands(check).every((command) => available.get(command) !== false);
+    requiredHostCommands(check).every((command) => available.get(command) === true);
   const usable = checks.filter(eligible);
 
   return {
     usable,
     missing: required.filter((command) => available.get(command) === false),
-    eligible,
   };
 }
 
@@ -485,6 +484,42 @@ function requiredHostCommands(check: LocalCheck): string[] {
   return check.commandOrigin.kind === 'host'
     ? [check.commandOrigin.command]
     : [...check.commandOrigin.requiredHostCommands];
+}
+
+function earlyPreflightChecks(
+  packageManager: PackageManager,
+  declared: readonly LocalCheck[],
+  kinds: readonly CheckKind[],
+): LocalCheck[] {
+  const install = packageManager.install
+    ? [
+        {
+          kind: 'build' as const,
+          label: `${packageManager.install.command} ${packageManager.install.args.join(' ')}`.trim(),
+          command: packageManager.install,
+          source: `${packageManager.label} install`,
+          commandOrigin: { kind: 'host' as const, command: packageManager.install.command },
+          compileCapable: false,
+        },
+      ]
+    : [];
+  const intrinsic = detectChecks(packageManager.id, null).filter((check) => kinds.includes(check.kind));
+  const checkout = install.length > 0 ? declared.filter((check) => kinds.includes(check.kind)) : [];
+  return uniqueChecks([...install, ...intrinsic, ...checkout]);
+}
+
+function uniqueChecks(checks: readonly LocalCheck[]): LocalCheck[] {
+  const out: LocalCheck[] = [];
+  for (const check of checks) {
+    if (!out.some((existing) => existing.label === check.label)) out.push(check);
+  }
+  return out;
+}
+
+function describeMissingTools(missing: readonly string[]): string {
+  return missing.length === 1
+    ? `\`${missing[0]}\` is`
+    : `${missing.slice(0, -1).map((m) => `\`${m}\``).join(', ')} and \`${missing.at(-1)}\` are`;
 }
 
 /**
@@ -509,31 +544,26 @@ async function prepareGroup(
   // typecheck, npm run build" appearing twice with nothing to tell the two
   // apart reads as one step that stalled and repeated itself.
   const project = projectLabel(options.root, dir);
+  const manager = packageManagerById(packageManager);
 
-  // Asked before anything is built, because nothing that follows can make a
-  // missing binary appear. The checks themselves are still detected in the
-  // worktree — an uncommitted script must not decide what runs — but *which
-  // tools they would invoke* is a fact about this machine, and reading it from
-  // the developer's own checkout is both correct and free.
-  //
-  // The union with the no-manifest set is deliberate and one-directional: a
-  // manifest that differs between the checkout and the commit can only add a
-  // tool to the list here, never remove one, so this can only ever be too
-  // willing to prepare — never too quick to skip.
-  const declared = await availableChecks(options.root, dir, options.fs ?? nodeWorkspaceFs(), packageManager).catch(
-    () => [] as LocalCheck[],
-  );
-  const possible = [...declared, ...detectChecks(packageManager, null)].filter((check) => kinds.includes(check.kind));
-  let preflight: Awaited<ReturnType<typeof preflightUsableChecks>> | undefined;
+  // Asked before anything is built, but only as a gate: if the package
+  // manager needed for installation, or a manager-intrinsic check such as
+  // `cargo check`, is missing, the clean worktree cannot make it appear. The
+  // open checkout may have uncommitted script edits, so its checks are never
+  // allowed to decide the final runnable set.
+  const declared = manager
+    ? await availableChecks(options.root, dir, options.fs ?? nodeWorkspaceFs(), packageManager).catch(
+        () => [] as LocalCheck[],
+      )
+    : [];
+  const possible = manager ? earlyPreflightChecks(manager, declared, kinds) : [];
   if (possible.length > 0) {
-    preflight = await preflightUsableChecks(exec, possible, env, options.toolAvailability);
+    const preflight = await preflightUsableChecks(exec, possible, env, options.toolAvailability);
     if (preflight.usable.length === 0) {
       count('verify.skipped.noTool');
       return {
         ok: false,
-        reason:
-          `${preflight.missing.length === 1 ? `\`${preflight.missing[0]}\` is` : `${preflight.missing.slice(0, -1).map((m) => `\`${m}\``).join(', ')} and \`${preflight.missing.at(-1)}\` are`} ` +
-          `not installed, so ${project} could not be built or tested against the upgrade.`,
+        reason: `${describeMissingTools(preflight.missing)} not installed, so ${project} could not be built or tested against the upgrade.`,
       };
     }
   }
@@ -575,8 +605,6 @@ async function prepareGroup(
     return { ok: false, reason };
   };
 
-  const manager = packageManagerById(packageManager);
-
   // Detected in the worktree rather than in the developer's checkout, because
   // that is where they will run. Reading the open tree would offer a script
   // that only exists in someone's unsaved edits, and miss one they have just
@@ -587,9 +615,14 @@ async function prepareGroup(
   if (detectedWanted.length === 0) {
     return abandon('This project declares no typecheck or build that Drift could run against the upgrade.');
   }
-  const wanted = detectedWanted.filter((check) => preflight?.eligible(check) ?? true);
+  const current = await preflightUsableChecks(exec, detectedWanted, env, options.toolAvailability);
+  const wanted = current.usable;
   if (wanted.length === 0) {
-    return abandon('This project declares checks, but none of their required tools are installed.');
+    return abandon(
+      current.missing.length > 0
+        ? `${describeMissingTools(current.missing)} not installed, so ${project} could not be built or tested against the upgrade.`
+        : 'This project declares checks, but none of them could run in the current environment.',
+    );
   }
 
   // A worktree is the commit and nothing else: no `node_modules`, no
@@ -1280,6 +1313,19 @@ function verdictFrom(outcomes: readonly CheckOutcome[]): UpgradeVerification {
       checks: [...outcomes],
       diagnostics,
       failedFiles: filesNamedIn(diagnostics),
+    };
+  }
+
+  const skippedOutcomes = outcomes.filter((outcome) => outcome.status === 'not-run' || outcome.status === 'cancelled');
+  if (skippedOutcomes.length > 0) {
+    return {
+      status: 'skipped',
+      reason: skippedOutcomes.some((outcome) => outcome.status === 'cancelled')
+        ? 'Cancelled before this upgrade could be tested.'
+        : (skippedOutcomes.find((outcome) => outcome.reason)?.reason ??
+          'One or more project checks could not run against this upgrade.'),
+      checks: [...outcomes],
+      failedFiles: [],
     };
   }
 
