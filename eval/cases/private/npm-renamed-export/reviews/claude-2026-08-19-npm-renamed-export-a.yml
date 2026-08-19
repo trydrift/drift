@@ -1,0 +1,85 @@
+id: claude-2026-08-19-npm-renamed-export-a
+fixtureId: npm-renamed-export
+createdAt: 2026-08-19T00:00:00.000Z
+reviewer:
+  type: ai
+  name: Claude
+  provider: Anthropic
+  model: claude-sonnet-5
+  modelVersion: unavailable
+  toolVersion: unavailable
+reviewedRevision:
+  fixtureMetadata: 584c7bbc32d4c23e58739e54a3ede5a21584d5fd68e67fe9f54a7e4007ecd366
+  upstreamOld: 8c438b6781711fe8f14a97326f2c5fafda6e6e7c8f1fa61aeb9c73b72bf39df2
+  upstreamNew: fbf6d8e07b2a65dcd00da29652e1837e91acf83c7661f431a50429b6cc600fc0
+  consumer: 71425c9962d9a991a387ccff992e1dcb6987ee76fb4448bdbf2fbd2b786cd03a
+  oracles: 8e5b05fc4d98245f6d2f9c163cb5b9be686a40fc253e2274d9001d0b3d77679c
+  goldPatch: 97beb8c1df291fa40603c6c16b9d45319406a31a02c25aa6e4b773f13cf1a70d
+evidence:
+  files:
+    - upstream/old/index.js
+    - upstream/old/index.d.ts
+    - upstream/old/package.json
+    - upstream/new/index.js
+    - upstream/new/index.d.ts
+    - upstream/new/package.json
+    - consumer/src/app.js
+    - consumer/package.json
+  commands:
+    - "npm test (baseline: consumer pointed at upstream/old)"
+    - "npm test (broken: consumer pointed at upstream/new, unmodified)"
+  artifacts: []
+  notes: Reviewed by reading every file in upstream/old, upstream/new, and
+    consumer, then running the baseline/broken oracle commands by hand in a
+    disposable copy before forming a conclusion. Did not inspect any adapter
+    prediction beforehand.
+conclusion:
+  upstreamFindings:
+    - fixture-lib:oldName:renamed-export
+  impactSites:
+    - src/app.js:oldName
+  taxonomy:
+    nature: api-shape
+    detectability:
+      - link-or-import
+      - compile-time
+    scope: symbol
+    visibility:
+      - direct
+  gaps: []
+  groundTruthSafety: unsafe
+  repair:
+    expectedAction: repair
+    expectedChangedFiles:
+      - src/app.js
+    goldPatch: expected/gold.patch
+rationale:
+  summary: "upstream/old/index.js exports oldName(name){return
+    name.toUpperCase()}; upstream/new/index.js exports newName(name) with an
+    identical body. No other export changed. This is a straight rename: same
+    arity, same implementation, old name absent from new, new name absent from
+    old. consumer/src/app.js imports { oldName } and calls it;
+    consumer/package.json depends on file:../upstream/new, so the consumer is
+    already pinned to the new version and its import of oldName will throw at
+    import time (no such export). Baseline oracle (old dependency) passes;
+    broken oracle (new dependency, unmodified consumer) fails with an import
+    error, confirming the break empirically, not just textually. The fix is
+    mechanical: rename the one import/call site from oldName to newName."
+  findingNotes:
+    - fixture-lib:oldName:renamed-export — confirmed by identical function body
+      across old/new and one-for-one name substitution, not merely by name
+      absence.
+    - src/app.js:oldName — the only consumer file, a real bound named import,
+      not a textual coincidence.
+  uncertainty: "None on the ground-truth facts. Separately: production's
+    drift-full-pipeline adapter, lacking any prose evidence (migration
+    guide/changelog) linking oldName to newName, can only prove the surface-diff
+    fact 'export-removed' — it has no evidence source that would let it conclude
+    'renamed' rather than merely 'removed' for a synthetic local package that
+    cannot legitimately produce a real changelog fetch under network: disabled.
+    That is a real, expected detection-granularity gap in the full-pipeline
+    adapter, not a review error — see eval/README.md."
+status: reviewed
+reviewOf: []
+promptVersion: ground-truth-v1
+promptHash: see eval/review-prompts/ground-truth-v1.md

@@ -1,0 +1,74 @@
+schemaVersion: drift-bench-case-v1
+id: npm-return-value
+provenanceKind: synthetic
+ecosystem: npm
+status: benchmark-ready
+consumer:
+  repository: fixture-local
+  licence: MIT
+  baseCommit: synthetic
+  migrationCommit: null
+  manifestPaths:
+    - package.json
+  lockfilePaths: []
+  workspaceDir: ""
+dependency:
+  name: fixture-lib
+  fromVersion: 1.0.0
+  toVersion: 2.0.0
+  updateClass: major
+  section: dependencies
+  exposure: direct
+  upstreamRepository: unavailable
+  upstreamFromRef: unavailable
+  upstreamToRef: unavailable
+graph:
+  before:
+    - name: fixture-lib
+      version: 1.0.0
+  after:
+    - name: fixture-lib
+      version: 2.0.0
+  effectiveChanges:
+    - name: fixture-lib
+      from: 1.0.0
+      to: 2.0.0
+environment:
+  runtimeVersion: v26.0.0
+  packageManager: npm
+  packageManagerVersion: unavailable
+  containerDigest: unavailable
+  platform: darwin
+  arch: x64
+  timezone: UTC
+  locale: C
+oracles:
+  install: npm install --package-lock=false --ignore-scripts
+  baseline:
+    command: npm test
+    expect: pass
+    provenance: project-native
+  broken:
+    command: npm test
+    expect: fail
+    provenance: project-native
+  repaired:
+    command: npm test
+    expect: pass
+    provenance: project-native
+networkPolicy: disabled
+discovery:
+  source: synthetic
+  reference: eval/fixtures/npm-return-value
+  minedAt: 2026-08-19
+  minerVersion: fixture-import-v1
+  importedFrom: ""
+failureCategory: runtime-failure
+migrationComplexity: compound
+artifactHashes:
+  consumerTree: 7ca489a65b6273d31f66f7d30e2e1564d009602fec537eaf95457605e3e44efe
+  upstreamOld: 3f122a65d0117d37b6107f73993ba1936cc9808309b39c113c4f08dacfa79608
+  upstreamNew: f80f688094c439539cc96467960b45012c260ca6b84235a46741f9b2db1b35f6
+  lockfileBefore: unavailable
+  lockfileAfter: unavailable
+  evidenceBundle: unavailable

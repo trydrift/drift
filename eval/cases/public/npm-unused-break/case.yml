@@ -1,0 +1,74 @@
+schemaVersion: drift-bench-case-v1
+id: npm-unused-break
+provenanceKind: synthetic
+ecosystem: npm
+status: benchmark-ready
+consumer:
+  repository: fixture-local
+  licence: MIT
+  baseCommit: synthetic
+  migrationCommit: null
+  manifestPaths:
+    - package.json
+  lockfilePaths: []
+  workspaceDir: ""
+dependency:
+  name: fixture-lib
+  fromVersion: 1.0.0
+  toVersion: 2.0.0
+  updateClass: major
+  section: dependencies
+  exposure: direct
+  upstreamRepository: unavailable
+  upstreamFromRef: unavailable
+  upstreamToRef: unavailable
+graph:
+  before:
+    - name: fixture-lib
+      version: 1.0.0
+  after:
+    - name: fixture-lib
+      version: 2.0.0
+  effectiveChanges:
+    - name: fixture-lib
+      from: 1.0.0
+      to: 2.0.0
+environment:
+  runtimeVersion: v26.0.0
+  packageManager: npm
+  packageManagerVersion: unavailable
+  containerDigest: unavailable
+  platform: darwin
+  arch: x64
+  timezone: UTC
+  locale: C
+oracles:
+  install: npm install --package-lock=false --ignore-scripts
+  baseline:
+    command: npm test
+    expect: pass
+    provenance: project-native
+  broken:
+    command: npm test
+    expect: pass
+    provenance: project-native
+  repaired:
+    command: npm test
+    expect: pass
+    provenance: project-native
+networkPolicy: disabled
+discovery:
+  source: synthetic
+  reference: eval/fixtures/npm-unused-break
+  minedAt: 2026-08-19
+  minerVersion: fixture-import-v1
+  importedFrom: ""
+failureCategory: none
+migrationComplexity: none
+artifactHashes:
+  consumerTree: 01c9a656fcd16ea7a8e59a84282f6dd3e784587b40cc952dc46ee6577de53a47
+  upstreamOld: 7ccdef9733105b682c0599a99f87f7e932b2dcf0f0e7a90d8c9b2b5f1894d73e
+  upstreamNew: eb82ee7c71cf95543dffeaa9a4b16924f50cf8cfcd7e2fecc4c6045586fb62bb
+  lockfileBefore: unavailable
+  lockfileAfter: unavailable
+  evidenceBundle: unavailable

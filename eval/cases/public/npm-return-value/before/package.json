@@ -1,0 +1,11 @@
+{
+  "name": "drift-eval-consumer-npm-return-value",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node src/app.js"
+  },
+  "dependencies": {
+    "fixture-lib": "1.0.0"
+  }
+}

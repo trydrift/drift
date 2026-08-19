@@ -1,0 +1,22 @@
+schemaVersion: drift-bench-case-v1
+caseId: npm-renamed-export
+adjudicationRef: adjudication.yml
+developerPatch: |
+  diff --git a/src/app.js b/src/app.js
+  --- a/src/app.js
+  +++ b/src/app.js
+  @@
+  -import { oldName } from 'fixture-lib';
+  +import { newName } from 'fixture-lib';
+   
+  -const value = oldName('Ada');
+  +const value = newName('Ada');
+   if (value !== 'ADA') {
+     throw new Error(`expected ADA, got ${value}`);
+   }
+developerPatchFiles:
+  - src/app.js
+hiddenOracles: []
+triggerSignature: []
+baselineSignature: []
+notes: Imported from eval/fixtures/npm-renamed-export by fixture-import-v1.

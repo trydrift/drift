@@ -1,0 +1,6 @@
+diff --git a/src/app.ts b/src/app.ts
+--- a/src/app.ts
++++ b/src/app.ts
+@@
+-export const label = formatUser({ name: 'Ada' });
++export const label = formatUser({ name: 'Ada' }).label;

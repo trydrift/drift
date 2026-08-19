@@ -1,0 +1,31 @@
+fixtureId: npm-return-value
+acceptedReviewIds:
+  - claude-2026-08-19-npm-return-value-c
+decision:
+  upstreamFindings:
+    - fixture-lib:formatUser:signature-change
+    - fixture-lib:formatUser:return-value
+  impactSites:
+    - src/app.js:formatUser
+    - src/app.ts:formatUser
+  taxonomy:
+    nature: behaviour
+    detectability:
+      - static-semantic
+      - test-time
+      - runtime-only
+    scope: symbol
+    visibility:
+      - direct
+  gaps: []
+  groundTruthSafety: unsafe
+  repair:
+    expectedAction: abstain
+    expectedChangedFiles: []
+status: accepted
+decidedAt: 2026-08-19T03:00:00.000Z
+decidedBy:
+  type: ai
+  name: Claude
+notes: Re-verified after a non-material fixture.yml wording change staled review
+  b. No conclusion changes.

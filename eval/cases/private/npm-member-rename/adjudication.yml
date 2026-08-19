@@ -1,0 +1,28 @@
+fixtureId: npm-member-rename
+acceptedReviewIds:
+  - claude-2026-08-19-npm-member-rename-a
+decision:
+  upstreamFindings:
+    - fixture-lib:oldQuery:renamed-export
+  impactSites:
+    - src/app.js:oldQuery
+  taxonomy:
+    nature: api-shape
+    detectability:
+      - link-or-import
+      - compile-time
+    scope: symbol
+    visibility:
+      - direct
+  gaps: []
+  groundTruthSafety: unsafe
+  repair:
+    expectedAction: abstain
+    expectedChangedFiles: []
+status: accepted
+decidedAt: 2026-08-19T00:00:00.000Z
+decidedBy:
+  type: ai
+  name: Claude
+notes: Single independent review; no conflicting review exists yet, so
+  adjudication accepts it directly.

@@ -1,0 +1,15 @@
+schemaVersion: drift-bench-case-v1
+caseId: npm-return-value
+adjudicationRef: adjudication.yml
+developerPatch: |
+  diff --git a/src/app.ts b/src/app.ts
+  --- a/src/app.ts
+  +++ b/src/app.ts
+  @@
+  -export const label = formatUser({ name: 'Ada' });
+  +export const label = formatUser({ name: 'Ada' }).label;
+developerPatchFiles: []
+hiddenOracles: []
+triggerSignature: []
+baselineSignature: []
+notes: Imported from eval/fixtures/npm-return-value by fixture-import-v1.

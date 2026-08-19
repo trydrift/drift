@@ -1,0 +1,9 @@
+schemaVersion: drift-bench-case-v1
+caseId: npm-unused-break
+adjudicationRef: adjudication.yml
+developerPatch: null
+developerPatchFiles: []
+hiddenOracles: []
+triggerSignature: []
+baselineSignature: []
+notes: Imported from eval/fixtures/npm-unused-break by fixture-import-v1.
