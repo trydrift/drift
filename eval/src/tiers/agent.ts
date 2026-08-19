@@ -117,6 +117,13 @@ export async function runAgentTrack(context: RepairContext, options: AgentTrackO
       },
     });
 
+    // What the agent says it actually used beats what Drift asked for. Codex
+    // resolves its own model and reasoning effort from its config when the
+    // flags are absent, so recording the request would attribute a result to a
+    // model that never ran it. Read from the agent's own banner, which Drift
+    // already captures verbatim.
+    Object.assign(provenance, observedSelection(context.observedCommands));
+
     const changedFiles = await changedFilesAgainst(worktree, afterSha);
     const patch = await diffAgainst(worktree, afterSha);
 
@@ -180,6 +187,26 @@ function withAgentSelection(config: RepairContext['config'], options: AgentTrack
       },
     },
   };
+}
+
+/**
+ * Model and effort as the agent itself reported them.
+ *
+ * Only fields the agent actually printed are returned, so an agent that says
+ * nothing leaves the recorded value at `unavailable` rather than having a
+ * requested-but-unconfirmed value written over it.
+ */
+export function observedSelection(lines: readonly string[]): Partial<{ model: string; effort: string; provider: string }> {
+  const found: Partial<{ model: string; effort: string; provider: string }> = {};
+  for (const line of lines) {
+    const model = /^\s*model:\s*(?<value>\S+)\s*$/.exec(line);
+    if (model?.groups) found.model = model.groups['value']!;
+    const provider = /^\s*provider:\s*(?<value>\S+)\s*$/.exec(line);
+    if (provider?.groups) found.provider = provider.groups['value']!;
+    const effort = /^\s*reasoning effort:\s*(?<value>\S+)\s*$/.exec(line);
+    if (effort?.groups) found.effort = effort.groups['value']!;
+  }
+  return found;
 }
 
 /** Hashes exactly what the agent was asked to do, so two trials can be shown to have received the same task. */
