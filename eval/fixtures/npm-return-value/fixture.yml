@@ -3,6 +3,7 @@ ecosystem: npm
 dependency: fixture-lib
 fromVersion: 1.0.0
 toVersion: 2.0.0
+scenario: behaviour-return-value
 source:
   repository: fixture-local
   licence: MIT
@@ -24,9 +25,11 @@ expected:
   gaps:
     - No checks were run against this plan, so nothing confirms the findings were understood correctly or that a fix would compile.
   planNodes:
-    - unit_b31ac9b2f1
+    - unit_f6c182228e
   edges: []
-  goldPatch: expected/gold.patch
+repair:
+  expectation: abstained
+  expectedChangedFiles: []
 oracles:
   negative: npm test
   positive: npm test

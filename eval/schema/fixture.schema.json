@@ -8,10 +8,12 @@
     "dependency",
     "fromVersion",
     "toVersion",
+    "scenario",
     "source",
     "taxonomy",
     "exposure",
     "expected",
+    "repair",
     "oracles",
     "complexity",
     "network",
@@ -23,6 +25,7 @@
     "dependency": { "type": "string" },
     "fromVersion": { "type": "string" },
     "toVersion": { "type": "string" },
+    "scenario": { "enum": ["behaviour-return-value", "renamed-export", "member-rename"] },
     "source": {
       "type": "object",
       "required": ["repository", "licence"],
@@ -46,7 +49,7 @@
     "exposure": { "enum": ["direct", "transitive"] },
     "expected": {
       "type": "object",
-      "required": ["upstreamFindings", "impactSites", "gaps", "planNodes", "edges", "goldPatch"],
+      "required": ["upstreamFindings", "impactSites", "gaps", "planNodes", "edges"],
       "properties": {
         "upstreamFindings": { "type": "array", "items": { "type": "string" } },
         "impactSites": { "type": "array", "items": { "type": "string" } },
@@ -64,8 +67,17 @@
             },
             "additionalProperties": false
           }
-        },
-        "goldPatch": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "repair": {
+      "type": "object",
+      "required": ["expectation", "expectedChangedFiles"],
+      "properties": {
+        "expectation": { "enum": ["fixed", "abstained", "failed"] },
+        "goldPatch": { "type": "string" },
+        "expectedChangedFiles": { "type": "array", "items": { "type": "string" } }
       },
       "additionalProperties": false
     },
