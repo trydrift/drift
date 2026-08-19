@@ -67,12 +67,18 @@ export interface BenchOptions {
   fixPlan?: FixPlanTrackOptions;
   runId?: string;
   notes?: string;
+  /**
+   * Repository root the corpus and the run directory live under. Defaults to
+   * the working directory; a test supplies a copy so a harness-level test can
+   * exercise the real pipeline without writing into the recorded runs.
+   */
+  root?: string;
 }
 
 export async function runBenchmark(options: BenchOptions): Promise<{ runId: string; artifacts: PredictionArtifact[] }> {
   const runId = options.runId ?? newRunId(options.tracks.join('+'));
   const revision = await driftRevision();
-  const all = await loadPublicCases();
+  const all = await loadPublicCases(options.root);
   const selected = all.filter(
     (entry) => entry.status === 'benchmark-ready' && (options.caseIds?.length ? options.caseIds.includes(entry.id) : true),
   );
@@ -91,22 +97,22 @@ export async function runBenchmark(options: BenchOptions): Promise<{ runId: stri
     cases: await Promise.all(
       selected.map(async (entry) => ({
         caseId: entry.id,
-        publicCapsuleHash: await hashPublicCapsule(entry.id),
+        publicCapsuleHash: await hashPublicCapsule(entry.id, options.root),
       })),
     ),
     notes: options.notes ?? '',
-  });
+  }, options.root);
 
   const artifacts: PredictionArtifact[] = [];
   const trials = Math.max(1, options.trials ?? 1);
 
   for (const publicCase of selected) {
-    const publicCapsuleHash = await hashPublicCapsule(publicCase.id);
+    const publicCapsuleHash = await hashPublicCapsule(publicCase.id, options.root);
     // The only private material this file touches, read here so it is
     // impossible to miss. It never reaches an adapter, a repair tier, or the
     // materialized workspace — only the throwaway copies `runCaseStage` makes
     // *after* a repair already exists.
-    const hiddenChecks = await loadHiddenChecks(publicCase.id);
+    const hiddenChecks = await loadHiddenChecks(publicCase.id, options.root);
 
     for (const track of options.tracks) {
       // A deterministic track repeated N times produces N identical artifacts
@@ -117,8 +123,8 @@ export async function runBenchmark(options: BenchOptions): Promise<{ runId: stri
       const trackTrials = isLiveTrack(track) ? trials : 1;
 
       for (let trial = 1; trial <= trackTrials; trial += 1) {
-        const artifact = await runOne({ publicCase, publicCapsuleHash, hiddenChecks, track, trial, trialsPlanned: trackTrials, runId, revision, agent: options.agent, fixPlan: options.fixPlan });
-        await writeArtifact(artifact);
+        const artifact = await runOne({ publicCase, publicCapsuleHash, hiddenChecks, track, trial, trialsPlanned: trackTrials, runId, revision, agent: options.agent, fixPlan: options.fixPlan, ...(options.root ? { root: options.root } : {}) });
+        await writeArtifact(artifact, options.root);
         artifacts.push(artifact);
       }
     }
@@ -149,6 +155,7 @@ interface RunOneInput {
   revision: { commit: string; dirty: boolean };
   agent?: AgentTrackOptions;
   fixPlan?: FixPlanTrackOptions;
+  root?: string;
 }
 
 async function runOne(input: RunOneInput): Promise<PredictionArtifact> {
@@ -157,7 +164,7 @@ async function runOne(input: RunOneInput): Promise<PredictionArtifact> {
   const started = Date.now();
   const observedCommands: string[] = [];
 
-  const workspace = await materializeCase(publicCase);
+  const workspace = await materializeCase(publicCase, input.root);
   const config = DriftConfigSchema.parse({
     // `auto` is a real production mode and the only one under which a repair
     // result means anything: in `approve` — the default — `dispositionFor`
@@ -227,7 +234,7 @@ async function runOne(input: RunOneInput): Promise<PredictionArtifact> {
       // every track — codemod edits in place, the agent works in a worktree —
       // and it makes the artifact's patch the thing that was actually
       // evaluated, so a replay scores exactly what a reader can see.
-      const fresh = await materializeCase(publicCase);
+      const fresh = await materializeCase(publicCase, input.root);
       try {
         oracleStages.push(
           await runCaseStage(publicCase, fresh, {
