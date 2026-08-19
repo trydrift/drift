@@ -73,7 +73,26 @@ export async function runCaseStage(
     // here — rather than in the case data — is what lets both be true at once.
     await repointDependency(consumerDir, publicCase.dependency.name, `../upstream/${options.dependencyVersion}`);
 
-    if (options.prepareConsumer) await options.prepareConsumer(consumerDir);
+    if (options.prepareConsumer) {
+      try {
+        await options.prepareConsumer(consumerDir);
+      } catch (err) {
+        // A repair or gold patch that will not apply is a real, reportable
+        // outcome about that patch -- never an exception that takes down the
+        // sweep. `unable-to-run` keeps it out of both the success and the
+        // failure column, and the reason travels in the excerpt.
+        return {
+          stage: options.stage,
+          expected: options.expected,
+          observed: 'unable-to-run',
+          matchesExpectation: false,
+          signature: [],
+          exitCode: null,
+          outputExcerpt: `prepareConsumer failed: ${(err as Error).message}`,
+          durationMs: Date.now() - started,
+        };
+      }
+    }
 
     const install = await runCommand(consumerDir, options.installCommand ?? publicCase.oracles.install, publicCase);
     if (install.code !== 0) {

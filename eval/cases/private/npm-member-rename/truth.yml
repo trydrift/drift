@@ -15,6 +15,7 @@ developerPatch: |
    }
 developerPatchFiles: []
 hiddenOracles: []
-triggerSignature: []
+triggerSignature:
+  - runtime:TypeError:fixture.oldQuery is not a function
 baselineSignature: []
 notes: Imported from eval/fixtures/npm-member-rename by fixture-import-v1.

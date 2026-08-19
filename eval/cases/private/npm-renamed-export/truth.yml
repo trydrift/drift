@@ -17,6 +17,8 @@ developerPatch: |
 developerPatchFiles:
   - src/app.js
 hiddenOracles: []
-triggerSignature: []
+triggerSignature:
+  - runtime:SyntaxError:The requested module 'fixture-lib' does not provide an
+    export named 'oldName'
 baselineSignature: []
 notes: Imported from eval/fixtures/npm-renamed-export by fixture-import-v1.

@@ -1,7 +1,8 @@
 diff --git a/src/app.js b/src/app.js
+index 9f118ae..34dfb77 100644
 --- a/src/app.js
 +++ b/src/app.js
-@@
+@@ -1,6 +1,6 @@
 -import { oldName } from 'fixture-lib';
 +import { newName } from 'fixture-lib';
  

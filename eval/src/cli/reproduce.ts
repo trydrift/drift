@@ -38,7 +38,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
         // The gold patch is applied as the third stage where one exists: a
         // recorded repair that does not actually repair cannot serve as
         // evidence of a valid one.
-        ...(truth?.developerPatch ? { goldRepair: () => applyGold(workspace.root, truth.developerPatch!) } : {}),
+        ...(truth?.developerPatch ? { goldRepair: (dir: string) => applyGold(dir, truth.developerPatch!) } : {}),
       });
 
       console.log(`\n${publicCase.id}: ${report.verdict}`);
@@ -68,6 +68,14 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   return failures > 0 && argv.includes('--strict') ? 1 : 0;
 }
 
+/**
+ * Applies the recorded developer/gold patch.
+ *
+ * A patch that will not apply is a defect in the *case*, not an error in the
+ * run, so it surfaces as a failed gold-repaired stage — which the gate reads
+ * as `oracle-insufficient` — rather than as a crash. Crashing loses every
+ * other case in the sweep to one bad record.
+ */
 async function applyGold(consumerDir: string, patch: string): Promise<void> {
   const { execFile } = await import('node:child_process');
   const { promisify } = await import('node:util');
@@ -78,7 +86,9 @@ async function applyGold(consumerDir: string, patch: string): Promise<void> {
   try {
     const path = join(temp, 'gold.patch');
     await writeFile(path, patch.endsWith('\n') ? patch : `${patch}\n`, 'utf8');
-    await run('git', ['apply', '-p1', '--whitespace=nowarn', path], { cwd: consumerDir });
+    await run('git', ['apply', '-p1', '--whitespace=nowarn', path], { cwd: consumerDir }).catch((err: Error) => {
+      throw new Error(`the recorded gold patch does not apply to this case: ${err.message}`);
+    });
   } finally {
     await rm(temp, { recursive: true, force: true });
   }

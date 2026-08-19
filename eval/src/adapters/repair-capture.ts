@@ -93,7 +93,19 @@ async function buildPatch(files: readonly { path: string; before: string; after:
     });
     // `git diff --no-index` exits 1 when the compared trees differ (the
     // ordinary case here) and only >1 on an actual failure to run the diff.
-    return result.code <= 1 ? result.stdout : '';
+    if (result.code > 1) return '';
+
+    // git prefixes the paths it was given, so diffing `a` against `b` yields
+    // `a/a/src/x` and `b/b/src/x`. Restored to the conventional single prefix
+    // so a captured patch applies with `-p1` exactly like a `git diff` taken
+    // from a real repository -- without this, the two patch sources in this
+    // harness need different strip levels, and only one of them is ever
+    // exercised on any given case.
+    return result.stdout
+      .replace(/^diff --git a\/a\//gm, 'diff --git a/')
+      .replace(/ b\/b\//gm, ' b/')
+      .replace(/^--- a\/a\//gm, '--- a/')
+      .replace(/^\+\+\+ b\/b\//gm, '+++ b/');
   } finally {
     await rm(staging, { recursive: true, force: true });
   }

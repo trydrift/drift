@@ -1,7 +1,8 @@
 diff --git a/src/app.js b/src/app.js
+index dfab989..a6825e8 100644
 --- a/src/app.js
 +++ b/src/app.js
-@@
+@@ -1,6 +1,6 @@
  import * as fixture from 'fixture-lib';
  
 -const value = fixture.oldQuery('Ada');

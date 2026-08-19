@@ -162,3 +162,18 @@ test('a semantically different actual patch does not match the gold patch', () =
   ].join('\n');
   assert.equal(goldPatchMatches(actual, GOLD_PATCH), false);
 });
+
+test('a captured patch applies with -p1, like a git diff taken from a real repository', async () => {
+  const builder = createRepairCaptureBuilder();
+  builder.recordCommit(['src/app.js'], new Map([['src/app.js', 'const a = old();\n']]), [
+    { path: 'src/app.js', content: 'const a = neu();\n' },
+  ]);
+  const capture = await builder.finalize();
+
+  // Without the prefix fix this reads `a/a/src/app.js`, so the harness's two
+  // patch sources would need different strip levels -- and only one of them is
+  // exercised on any given case, so the mismatch would sit undetected.
+  assert.match(capture.patch, /^diff --git a\/src\/app\.js b\/src\/app\.js$/m);
+  assert.match(capture.patch, /^--- a\/src\/app\.js$/m);
+  assert.match(capture.patch, /^\+\+\+ b\/src\/app\.js$/m);
+});

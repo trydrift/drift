@@ -2,7 +2,9 @@ schemaVersion: drift-bench-case-v1
 id: npm-return-value
 provenanceKind: synthetic
 ecosystem: npm
-status: benchmark-ready
+status: oracle-insufficient
+statusReason: The recorded developer/gold repair does not make the bump-only
+  state pass, so it cannot serve as evidence of a valid repair.
 consumer:
   repository: fixture-local
   licence: MIT

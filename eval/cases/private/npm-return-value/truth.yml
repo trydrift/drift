@@ -10,6 +10,7 @@ developerPatch: |
   +export const label = formatUser({ name: 'Ada' }).label;
 developerPatchFiles: []
 hiddenOracles: []
-triggerSignature: []
+triggerSignature:
+  - runtime:Error:expected ADA, got [object Object]
 baselineSignature: []
 notes: Imported from eval/fixtures/npm-return-value by fixture-import-v1.

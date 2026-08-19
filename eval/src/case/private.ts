@@ -23,10 +23,19 @@ export function privateCaseDir(caseId: string, root?: string): string {
 }
 
 export async function loadPrivateTruth(caseId: string, root?: string): Promise<Private<PrivateTruth>> {
-  const body = await readFile(join(privateCaseDir(caseId, root), 'truth.yml'), 'utf8');
+  const dir = privateCaseDir(caseId, root);
+  const body = await readFile(join(dir, 'truth.yml'), 'utf8');
   const parsed = privateTruthSchema.parse(YAML.parse(body));
   if (parsed.caseId !== caseId) {
     throw new Error(`Private truth in ${caseId} declares caseId ${parsed.caseId}.`);
   }
-  return markPrivate(parsed);
+
+  // `expected/gold.patch` is the single source of truth for the developer
+  // patch. It was previously also inlined into `truth.yml`, and the two
+  // silently diverged the first time the patch was corrected -- the gate then
+  // applied a stale copy and reported every repair-bearing case as
+  // environment-unavailable. The file wins; the field remains only as a
+  // fallback for a case that has no patch file.
+  const goldPatch = await readFile(join(dir, 'expected', 'gold.patch'), 'utf8').catch(() => null);
+  return markPrivate(goldPatch === null ? parsed : { ...parsed, developerPatch: goldPatch });
 }
