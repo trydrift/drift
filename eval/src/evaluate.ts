@@ -77,6 +77,19 @@ export async function evaluateRun(runId: string, root = process.cwd()): Promise<
     const failures: string[] = [];
     const stale = hashes.get(artifact.caseId) !== artifact.publicCaseHash;
 
+    // A case the reproducibility gate has since disqualified stops
+    // contributing, even though its artifacts are still on disk. This is not
+    // hypothetical: the gate's first real run moved a case to
+    // `oracle-insufficient` *after* three live agent runs had already scored
+    // against it, and without this those trials would keep counting against a
+    // case the harness has stated it cannot interpret.
+    const publicCase = cases.get(artifact.caseId)!;
+    if (publicCase.status !== 'benchmark-ready') {
+      missing.push({ caseId: artifact.caseId, reason: `case status is ${publicCase.status}: ${publicCase.statusReason ?? ''}` });
+      evaluations.push({ caseId: artifact.caseId, track: artifact.track, trial: artifact.provenance.trial, stale, detection: null, repair: null, integrityFailures: [] });
+      continue;
+    }
+
     if (stale) {
       failures.push(
         `${artifact.caseId}: the public case has changed since this prediction was made; the artifact is reported stale rather than re-scored against evidence it never saw.`,
