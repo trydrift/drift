@@ -100,11 +100,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # A fixture-based regression check for the deterministic pipeline —
-      # small today (one fixture), but it existed with nothing stopping it
-      # from regressing silently. Wiring it in now means the next fixture
-      # someone adds is enforced from day one instead of needing a second PR
-      # to remember CI.
+      # Ground-truth integrity: every benchmark-ready fixture must have a
+      # valid, non-stale, accepted adjudication before its numbers are
+      # allowed to count. Runs before the harness itself so a broken/missing
+      # review fails here, not as a confusing downstream scoring anomaly.
+      - name: Validate benchmark review/adjudication integrity
+        run: npm run eval:review:validate
+
+      - name: Run the eval harness's own test suite
+        run: npm run eval:test
+
+      # A fixture-based regression check for the deterministic pipeline.
+      # Fails only on harness-integrity problems (false-safe, out-of-scope
+      # edits, a failed review/adjudication validation) — a genuine Drift
+      # detection or repair miss on a hard fixture is a reportable metric,
+      # not a CI break. See eval/README.md.
       - name: Run the deterministic evaluation harness
         run: npm run eval:deterministic
 
