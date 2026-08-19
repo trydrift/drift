@@ -1,90 +1,87 @@
 import { execFile as execFileCallback } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { appendFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { loadFixtures } from './load.ts';
-import { deterministicPredictions, SCORING_VERSION } from './run.ts';
-import { scoreFixtures } from './score.ts';
+import { createHash } from 'node:crypto';
+import { loadFixtures, loadFixtureYamlBody } from './load.ts';
+import { hashFixtureRevision } from './hash.ts';
+import { loadAdjudication } from './review.ts';
+import { runDeterministicEvaluation, buildReport } from './run.ts';
+import { SCORING_VERSION } from './score.ts';
 
 const execFile = promisify(execFileCallback);
-const REPORT_PATH = join(process.cwd(), 'eval', 'reports', 'accuracy-audit.md');
+const AUDITS_DIR = join(process.cwd(), 'eval', 'reports', 'audits');
 
-async function main(): Promise<void> {
-  const fixtures = await loadFixtures();
-  const predictions = await deterministicPredictions(fixtures);
-  const metrics = scoreFixtures(fixtures, predictions);
-  const metadata = await runMetadata();
-  const fixtureHash = await hashDirectory(join(process.cwd(), 'eval', 'fixtures'));
-  const generatedAt = new Date().toISOString();
-
-  await mkdir(join(process.cwd(), 'eval', 'reports'), { recursive: true });
-  await ensureAuditHeader();
-  await appendFile(
-    REPORT_PATH,
-    [
-      '',
-      `## ${generatedAt} - ${metadata.commit.slice(0, 12)}`,
-      '',
-      `- Commit: \`${metadata.commit}\``,
-      `- Branch: \`${metadata.branch}\``,
-      `- Dirty worktree: \`${metadata.dirty ? 'yes' : 'no'}\``,
-      `- Fixture set hash: \`${fixtureHash}\``,
-      `- Scoring version: \`${SCORING_VERSION}\``,
-      '- Command: `npm run eval:accuracy:audit`',
-      '',
-      '| Adapter | Fixtures | Detection F1 | Impact F1 | Repair Oracle | Gold Patch | Repair Files F1 | False-safe | Score |',
-      '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
-      ...metrics.map((metric) =>
-        [
-          metric.adapter,
-          metric.fixtures,
-          metric.upstream.f1.toFixed(3),
-          metric.impactSites.f1.toFixed(3),
-          metric.repairOraclePassRate.toFixed(3),
-          metric.repairGoldPatchExactRate.toFixed(3),
-          metric.repairChangedFiles.f1.toFixed(3),
-          metric.falseSafeCount,
-          metric.costSensitiveScore.toFixed(3),
-        ]
-          .join(' | ')
-          .replace(/^/, '| ')
-          .replace(/$/, ' |'),
-      ),
-      '',
-    ].join('\n'),
-    'utf8',
-  );
-
-  console.log(`wrote ${REPORT_PATH}`);
+/**
+ * One file per run, written only via `--record`, never on a plain
+ * `eval:deterministic`. That keeps ordinary CI runs from dirtying a tracked
+ * file — the failure mode the previous append-only `accuracy-audit.md` had.
+ */
+export interface AuditRecord {
+  repositoryCommit: string;
+  branch: string;
+  dirty: boolean;
+  fixtureSetHash: string;
+  fixtureHashes: Record<string, string>;
+  acceptedReviewIds: Record<string, string[]>;
+  adjudicationHashes: Record<string, string>;
+  scoringVersion: string;
+  adapterVersions: Record<string, string>;
+  command: string;
+  timestamp: string;
+  environment: { node: string; platform: string };
+  metrics: unknown;
 }
 
-async function ensureAuditHeader(): Promise<void> {
-  try {
-    await readFile(REPORT_PATH, 'utf8');
-  } catch {
-    await writeFile(
-      REPORT_PATH,
-      [
-        '# Drift Accuracy Audit Trail',
-        '',
-        'Each entry records the benchmark metrics for one commit and fixture-set hash.',
-        'Generated deterministic reports remain reproducible; this file is the historical run log.',
-        '',
-      ].join('\n'),
-      'utf8',
-    );
+async function computeFixtureSetHash(fixtureHashes: Record<string, string>): Promise<string> {
+  const hash = createHash('sha256');
+  for (const id of Object.keys(fixtureHashes).sort()) {
+    hash.update(id);
+    hash.update('\0');
+    hash.update(fixtureHashes[id]!);
+    hash.update('\0');
   }
+  return hash.digest('hex');
 }
 
-async function runMetadata(): Promise<{ commit: string; branch: string; dirty: boolean }> {
+export async function buildAuditRecord(): Promise<AuditRecord> {
+  const fixtures = await loadFixtures();
+  const report = await buildReport(fixtures);
   const [commit, branch, status] = await Promise.all([
     git(['rev-parse', 'HEAD']),
     git(['branch', '--show-current']),
     git(['status', '--porcelain']),
   ]);
 
-  return { commit, branch, dirty: status.length > 0 };
+  const fixtureHashes: Record<string, string> = {};
+  const adjudicationHashes: Record<string, string> = {};
+  const acceptedReviewIds: Record<string, string[]> = {};
+  for (const fixture of fixtures) {
+    const body = await loadFixtureYamlBody(fixture.id);
+    const hashes = await hashFixtureRevision(join(process.cwd(), 'eval', 'fixtures', fixture.id), body);
+    fixtureHashes[fixture.id] = createHash('sha256').update(JSON.stringify(hashes)).digest('hex');
+    const adjudication = await loadAdjudication(fixture.id);
+    if (adjudication) {
+      adjudicationHashes[fixture.id] = createHash('sha256').update(JSON.stringify(adjudication.decision)).digest('hex');
+      acceptedReviewIds[fixture.id] = adjudication.acceptedReviewIds;
+    }
+  }
+
+  return {
+    repositoryCommit: commit,
+    branch,
+    dirty: status.length > 0,
+    fixtureSetHash: await computeFixtureSetHash(fixtureHashes),
+    fixtureHashes,
+    acceptedReviewIds,
+    adjudicationHashes,
+    scoringVersion: SCORING_VERSION,
+    adapterVersions: { 'drift-full-pipeline': '1', 'drift-component-localize-repair': '1', 'drift-component-fixplan-application': '1' },
+    command: 'npm run eval:accuracy:audit -- --record',
+    timestamp: new Date().toISOString(),
+    environment: { node: process.version, platform: process.platform },
+    metrics: report.metrics,
+  };
 }
 
 async function git(args: readonly string[]): Promise<string> {
@@ -92,28 +89,72 @@ async function git(args: readonly string[]): Promise<string> {
   return stdout.trim();
 }
 
-async function hashDirectory(root: string): Promise<string> {
-  const hash = createHash('sha256');
-  for (const file of await listFiles(root)) {
-    hash.update(relative(root, file));
-    hash.update('\0');
-    hash.update(await readFile(file));
-    hash.update('\0');
-  }
-  return hash.digest('hex');
+function recordKey(record: AuditRecord): string {
+  return `${record.repositoryCommit}-${record.fixtureSetHash}-${record.scoringVersion}`;
 }
 
-async function listFiles(root: string): Promise<string[]> {
-  const entries = await readdir(root, { withFileTypes: true });
-  const files: string[] = [];
-  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
-    const path = join(root, entry.name);
-    if (entry.isDirectory()) files.push(...(await listFiles(path)));
-    else if (entry.isFile()) files.push(path);
+function withoutVolatileFields(record: AuditRecord): Omit<AuditRecord, 'timestamp' | 'environment' | 'dirty'> {
+  const { timestamp: _timestamp, environment: _environment, dirty: _dirty, ...rest } = record;
+  return rest;
+}
+
+async function writeAuditRecord(record: AuditRecord): Promise<{ path: string; skipped: boolean }> {
+  await mkdir(AUDITS_DIR, { recursive: true });
+  const key = recordKey(record);
+  const jsonPath = join(AUDITS_DIR, `${key}.json`);
+  const mdPath = join(AUDITS_DIR, `${key}.md`);
+
+  try {
+    const existing = JSON.parse(await readFile(jsonPath, 'utf8')) as AuditRecord;
+    if (JSON.stringify(withoutVolatileFields(existing)) === JSON.stringify(withoutVolatileFields(record))) {
+      return { path: jsonPath, skipped: true };
+    }
+    throw new Error(
+      `Refusing to overwrite ${jsonPath}: an audit record for this exact commit/fixture-set/scoring-version already exists with different metrics. ` +
+        'This should not happen for a deterministic scorer at a fixed commit — investigate before forcing a new record.',
+    );
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
   }
-  return files;
+
+  await writeFile(jsonPath, `${JSON.stringify(record, null, 2)}\n`, 'utf8');
+  await writeFile(mdPath, renderAuditMarkdown(record), 'utf8');
+  return { path: jsonPath, skipped: false };
+}
+
+function renderAuditMarkdown(record: AuditRecord): string {
+  return [
+    `# Accuracy audit — ${record.repositoryCommit.slice(0, 12)}`,
+    '',
+    `- Commit: \`${record.repositoryCommit}\``,
+    `- Branch: \`${record.branch}\``,
+    `- Dirty worktree at record time: \`${record.dirty}\``,
+    `- Fixture set hash: \`${record.fixtureSetHash}\``,
+    `- Scoring version: \`${record.scoringVersion}\``,
+    `- Command: \`${record.command}\``,
+    `- Timestamp: ${record.timestamp}`,
+    `- Environment: node ${record.environment.node} on ${record.environment.platform}`,
+    '',
+    '```json',
+    JSON.stringify(record.metrics, null, 2),
+    '```',
+    '',
+  ].join('\n');
+}
+
+async function main(): Promise<void> {
+  const record = await buildAuditRecord();
+  if (process.argv.includes('--record')) {
+    const { path, skipped } = await writeAuditRecord(record);
+    console.log(skipped ? `audit record already exists and matches: ${path}` : `wrote ${path}`);
+  } else {
+    console.log(JSON.stringify(record, null, 2));
+    console.log('\n(pass --record to persist this under eval/reports/audits/)');
+  }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   await main();
 }
+
+export { runDeterministicEvaluation };
