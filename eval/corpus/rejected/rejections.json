@@ -1,0 +1,1196 @@
+[
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1259,
+    "reason": "no-version-moved",
+    "detail": "package.json changed but no dependency version moved."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1258,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1256,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1255,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1254,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1253,
+    "reason": "no-version-moved",
+    "detail": "package.json changed but no dependency version moved."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1252,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1251,
+    "reason": "no-version-moved",
+    "detail": "package.json changed but no dependency version moved."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1250,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1249,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1248,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1247,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1246,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1245,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1244,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1243,
+    "reason": "multiple-dependencies-moved",
+    "detail": "13 dependencies moved (get-stream, pretty-ms, yoctocolors, @types/node, ava, c8, get-node, is-in-ci, tempfile, tsd, typescript, which, xo); causality cannot be attributed."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1242,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1241,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1232,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1223,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1222,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1221,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1216,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1215,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1212,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1209,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1208,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1207,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1206,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1199,
+    "reason": "no-version-moved",
+    "detail": "package.json changed but no dependency version moved."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1198,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1195,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1192,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1176,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1169,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1168,
+    "reason": "bump-only-no-adaptation",
+    "detail": "No consumer source changed; a candidate negative case, not a repair case."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1167,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1166,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1163,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1160,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1158,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1157,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1156,
+    "reason": "bump-only-no-adaptation",
+    "detail": "No consumer source changed; a candidate negative case, not a repair case."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1153,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1149,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1145,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1144,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1141,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1140,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1138,
+    "reason": "multiple-dependencies-moved",
+    "detail": "4 dependencies moved (human-signals, @types/node, is-in-ci, xo); causality cannot be attributed."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1136,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1131,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1130,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1129,
+    "reason": "bump-only-no-adaptation",
+    "detail": "No consumer source changed; a candidate negative case, not a repair case."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1128,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1127,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1126,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1122,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1121,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1120,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1119,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1118,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1117,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1116,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1115,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1114,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1113,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1111,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1110,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1109,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1108,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1107,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1105,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1104,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1101,
+    "reason": "bump-only-no-adaptation",
+    "detail": "No consumer source changed; a candidate negative case, not a repair case."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1100,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1098,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1096,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1095,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1094,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1092,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1091,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1090,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1089,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1088,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1087,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1086,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1084,
+    "reason": "no-version-moved",
+    "detail": "package.json changed but no dependency version moved."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1083,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1082,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1080,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1079,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1077,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1076,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1075,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1074,
+    "reason": "bump-only-no-adaptation",
+    "detail": "No consumer source changed; a candidate negative case, not a repair case."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1071,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1068,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "sindresorhus/execa",
+    "prNumber": 1067,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11228,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11227,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11225,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11224,
+    "reason": "no-version-moved",
+    "detail": "package.json changed but no dependency version moved."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11223,
+    "reason": "no-version-moved",
+    "detail": "package.json changed but no dependency version moved."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11222,
+    "reason": "no-version-moved",
+    "detail": "package.json changed but no dependency version moved."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11218,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11215,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11214,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11213,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11212,
+    "reason": "multiple-dependencies-moved",
+    "detail": "8 dependencies moved (typescript, typescript, typescript, typescript, typescript, @sveltejs/package, @sveltejs/package, @sveltejs/package); causality cannot be attributed."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11211,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11203,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11202,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11201,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11200,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11198,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11197,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11196,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11194,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11193,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11192,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11191,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11189,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11188,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11181,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11175,
+    "reason": "bump-only-no-adaptation",
+    "detail": "No consumer source changed; a candidate negative case, not a repair case."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11174,
+    "reason": "multiple-dependencies-moved",
+    "detail": "114 dependencies moved (@tanstack/angular-query-experimental, @tanstack/angular-query-experimental, @tanstack/angular-query-persist-client, @tanstack/query-async-storage-persister, @tanstack/angular-query-experimental, @tanstack/angular-query-experimental, @tanstack/angular-query-experimental, @tanstack/angular-query-experimental, @tanstack/angular-query-experimental, @tanstack/angular-query-experimental, @tanstack/angular-query-experimental, @tanstack/angular-query-experimental, @tanstack/angular-query-experimental, @tanstack/lit-query, @tanstack/query-core, @tanstack/lit-query, @tanstack/query-core, @tanstack/lit-query, @tanstack/query-core, @tanstack/preact-query, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/eslint-plugin-query, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/query-async-storage-persister, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query-persist-client, @tanstack/eslint-plugin-query, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/query-async-storage-persister, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query-persist-client, @tanstack/eslint-plugin-query, @tanstack/react-query, @tanstack/eslint-plugin-query, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query-next-experimental, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/query-async-storage-persister, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query-persist-client, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/react-query, @tanstack/react-query-devtools, @tanstack/query-async-storage-persister, @tanstack/eslint-plugin-query, @tanstack/svelte-query, @tanstack/svelte-query-devtools, @tanstack/query-async-storage-persister, @tanstack/svelte-query, @tanstack/svelte-query-devtools, @tanstack/svelte-query-persist-client, @tanstack/svelte-query, @tanstack/svelte-query-devtools, @tanstack/svelte-query, @tanstack/svelte-query-devtools, @tanstack/svelte-query, @tanstack/svelte-query-devtools, @tanstack/svelte-query, @tanstack/svelte-query-devtools, @tanstack/svelte-query, @tanstack/svelte-query-devtools, @tanstack/svelte-query, @tanstack/svelte-query-devtools, @tanstack/vue-query, @tanstack/vue-query-devtools, @tanstack/vue-query, @tanstack/query-core, @tanstack/query-persist-client-core, @tanstack/query-sync-storage-persister, @tanstack/vue-query, @tanstack/vue-query, @tanstack/vue-query-devtools, @tanstack/angular-query-experimental); causality cannot be attributed."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11173,
+    "reason": "multiple-dependencies-moved",
+    "detail": "27 dependencies moved (@solidjs/web, solid-js, @solidjs/web, solid-js, @solidjs/web, solid-js, @solidjs/web, solid-js, @solidjs/web, solid-js, @solidjs/web, solid-js, @solidjs/web, solid-js, solid-js, @solidjs/web, @solidjs/signals, @solidjs/web, babel-preset-solid, solid-js, @solidjs/web, babel-preset-solid, solid-js, @solidjs/web, babel-preset-solid, solid-js, solid-js); causality cannot be attributed."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11172,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11170,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11169,
+    "reason": "bump-only-no-adaptation",
+    "detail": "No consumer source changed; a candidate negative case, not a repair case."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11168,
+    "reason": "multiple-dependencies-moved",
+    "detail": "27 dependencies moved (@solidjs/web, solid-js, @solidjs/web, solid-js, @solidjs/web, solid-js, @solidjs/web, solid-js, @solidjs/web, solid-js, @solidjs/web, solid-js, @solidjs/web, solid-js, solid-js, @solidjs/web, @solidjs/signals, @solidjs/web, babel-preset-solid, solid-js, @solidjs/web, babel-preset-solid, solid-js, @solidjs/web, babel-preset-solid, solid-js, solid-js); causality cannot be attributed."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11163,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11162,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11161,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11159,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11156,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11147,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11146,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11144,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11136,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11134,
+    "reason": "bump-only-no-adaptation",
+    "detail": "No consumer source changed; a candidate negative case, not a repair case."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11133,
+    "reason": "bump-only-no-adaptation",
+    "detail": "No consumer source changed; a candidate negative case, not a repair case."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11128,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11126,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11124,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11123,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11122,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11121,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11115,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11114,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11110,
+    "reason": "bump-only-no-adaptation",
+    "detail": "No consumer source changed; a candidate negative case, not a repair case."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11105,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11099,
+    "reason": "bump-only-no-adaptation",
+    "detail": "No consumer source changed; a candidate negative case, not a repair case."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11097,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11096,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11095,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11094,
+    "reason": "bump-only-no-adaptation",
+    "detail": "No consumer source changed; a candidate negative case, not a repair case."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11093,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11092,
+    "reason": "multiple-dependencies-moved",
+    "detail": "34 dependencies moved (@solidjs/web, solid-js, @solidjs/web, solid-js, vite-plugin-solid, @solidjs/web, solid-js, vite-plugin-solid, @solidjs/web, solid-js, vite-plugin-solid, @solidjs/web, solid-js, vite-plugin-solid, @solidjs/web, solid-js, vite-plugin-solid, @solidjs/web, solid-js, solid-js, vite-plugin-solid, @solidjs/web, @solidjs/web, babel-preset-solid, solid-js, vite-plugin-solid, @solidjs/web, babel-preset-solid, solid-js, vite-plugin-solid, @solidjs/web, babel-preset-solid, solid-js, vite-plugin-solid); causality cannot be attributed."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11091,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11090,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11089,
+    "reason": "bump-only-no-adaptation",
+    "detail": "No consumer source changed; a candidate negative case, not a repair case."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11088,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11087,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11086,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11085,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11084,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11082,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11080,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11079,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11078,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11077,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11076,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11075,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11071,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11070,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11067,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11066,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11057,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11056,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11055,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11053,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11052,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11051,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11050,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11049,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11048,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11047,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11046,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11045,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11044,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11043,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11041,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11040,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11036,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11035,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11030,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  },
+  {
+    "repository": "TanStack/query",
+    "prNumber": 11029,
+    "reason": "no-manifest-change",
+    "detail": "The PR changes no package.json."
+  }
+]

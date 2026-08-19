@@ -123,7 +123,15 @@ async function mineRepository(repository: string, options: MineOptions): Promise
 
   const checkout = await mkdtemp(join(tmpdir(), 'drift-mine-'));
   try {
-    await execFile('git', ['clone', '--quiet', `https://github.com/${repository}.git`, checkout], { maxBuffer: 1 << 26 });
+    // Blobless partial clone: the miner needs full history for `git show` at
+    // two refs, but not every blob of every revision. On a large repository
+    // that is the difference between a minute and half an hour, and git
+    // fetches the blobs it actually asks for on demand.
+    await execFile(
+      'git',
+      ['clone', '--quiet', '--filter=blob:none', `https://github.com/${repository}.git`, checkout],
+      { maxBuffer: 1 << 26 },
+    );
 
     for (const pull of pulls) {
       if (candidates.length >= limit) break;
