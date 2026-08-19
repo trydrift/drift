@@ -1,0 +1,267 @@
+{
+  "datasetId": "kong",
+  "datasetClass": "upstream-bc-detection",
+  "available": 1511,
+  "selected": 1511,
+  "scored": 1511,
+  "excluded": {},
+  "missingRequirements": {},
+  "rates": {
+    "breaking-change detection recall": {
+      "numerator": 189,
+      "denominator": 1511,
+      "value": 0.12508272667107875
+    },
+    "category classification accuracy": {
+      "numerator": 2,
+      "denominator": 134,
+      "value": 0.014925373134328358
+    }
+  },
+  "refusals": [
+    {
+      "metric": "precision",
+      "reason": "Towards Better Comprehension of Breaking Changes in the NPM Ecosystem contributed no negative/control cases to this run, so there is no population a false positive could be measured against."
+    },
+    {
+      "metric": "F1",
+      "reason": "F1 is a harmonic mean of precision and recall, and precision is not defined here."
+    },
+    {
+      "metric": "false-positive rate",
+      "reason": "Towards Better Comprehension of Breaking Changes in the NPM Ecosystem contributed no negative/control cases to this run, so there is no population a false positive could be measured against."
+    }
+  ],
+  "negativeControls": 0,
+  "confusion": null,
+  "classification": null,
+  "baseline": null,
+  "breakdown": {
+    "label: rename class": {
+      "breaking-change detection recall": {
+        "numerator": 1,
+        "denominator": 22,
+        "value": 0.045454545454545456
+      }
+    },
+    "label: remove method": {
+      "breaking-change detection recall": {
+        "numerator": 36,
+        "denominator": 126,
+        "value": 0.2857142857142857
+      }
+    },
+    "label: change_behavior": {
+      "breaking-change detection recall": {
+        "numerator": 83,
+        "denominator": 1026,
+        "value": 0.08089668615984405
+      }
+    },
+    "label: remove constant": {
+      "breaking-change detection recall": {
+        "numerator": 4,
+        "denominator": 10,
+        "value": 0.4
+      }
+    },
+    "label: rename method": {
+      "breaking-change detection recall": {
+        "numerator": 5,
+        "denominator": 50,
+        "value": 0.1
+      }
+    },
+    "label: remove class": {
+      "breaking-change detection recall": {
+        "numerator": 8,
+        "denominator": 26,
+        "value": 0.3076923076923077
+      }
+    },
+    "label: remove field": {
+      "breaking-change detection recall": {
+        "numerator": 8,
+        "denominator": 27,
+        "value": 0.2962962962962963
+      }
+    },
+    "label: change_signature": {
+      "breaking-change detection recall": {
+        "numerator": 27,
+        "denominator": 134,
+        "value": 0.20149253731343283
+      },
+      "category classification accuracy": {
+        "numerator": 2,
+        "denominator": 134,
+        "value": 0.014925373134328358
+      }
+    },
+    "label: move class": {
+      "breaking-change detection recall": {
+        "numerator": 1,
+        "denominator": 7,
+        "value": 0.14285714285714285
+      }
+    },
+    "label: move": {
+      "breaking-change detection recall": {
+        "numerator": 0,
+        "denominator": 2,
+        "value": 0
+      }
+    },
+    "label: rename constant": {
+      "breaking-change detection recall": {
+        "numerator": 0,
+        "denominator": 1,
+        "value": 0
+      }
+    },
+    "label: remove interface": {
+      "breaking-change detection recall": {
+        "numerator": 1,
+        "denominator": 2,
+        "value": 0.5
+      }
+    },
+    "label: rename field": {
+      "breaking-change detection recall": {
+        "numerator": 5,
+        "denominator": 29,
+        "value": 0.1724137931034483
+      }
+    },
+    "label: move field": {
+      "breaking-change detection recall": {
+        "numerator": 0,
+        "denominator": 1,
+        "value": 0
+      }
+    },
+    "label: rename interface": {
+      "breaking-change detection recall": {
+        "numerator": 0,
+        "denominator": 4,
+        "value": 0
+      }
+    },
+    "label: rename package": {
+      "breaking-change detection recall": {
+        "numerator": 0,
+        "denominator": 1,
+        "value": 0
+      }
+    },
+    "label: remove module": {
+      "breaking-change detection recall": {
+        "numerator": 8,
+        "denominator": 17,
+        "value": 0.47058823529411764
+      }
+    },
+    "label: rename module": {
+      "breaking-change detection recall": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0
+      }
+    },
+    "label: move method": {
+      "breaking-change detection recall": {
+        "numerator": 1,
+        "denominator": 12,
+        "value": 0.08333333333333333
+      }
+    },
+    "label: move module": {
+      "breaking-change detection recall": {
+        "numerator": 0,
+        "denominator": 5,
+        "value": 0
+      }
+    },
+    "label: inline": {
+      "breaking-change detection recall": {
+        "numerator": 0,
+        "denominator": 2,
+        "value": 0
+      }
+    },
+    "label: remove": {
+      "breaking-change detection recall": {
+        "numerator": 0,
+        "denominator": 2,
+        "value": 0
+      }
+    },
+    "label: remove type": {
+      "breaking-change detection recall": {
+        "numerator": 1,
+        "denominator": 1,
+        "value": 1
+      }
+    },
+    "label: rename": {
+      "breaking-change detection recall": {
+        "numerator": 0,
+        "denominator": 1,
+        "value": 0
+      }
+    },
+    "markerBaselinePredictsBreaking: true": {
+      "breaking-change detection recall": {
+        "numerator": 189,
+        "denominator": 1464,
+        "value": 0.1290983606557377
+      },
+      "category classification accuracy": {
+        "numerator": 2,
+        "denominator": 129,
+        "value": 0.015503875968992248
+      }
+    },
+    "markerBaselinePredictsBreaking: false": {
+      "breaking-change detection recall": {
+        "numerator": 0,
+        "denominator": 47,
+        "value": 0
+      },
+      "category classification accuracy": {
+        "numerator": 0,
+        "denominator": 5,
+        "value": 0
+      }
+    },
+    "messageStatesDetail: true": {
+      "breaking-change detection recall": {
+        "numerator": 169,
+        "denominator": 1120,
+        "value": 0.15089285714285713
+      },
+      "category classification accuracy": {
+        "numerator": 1,
+        "denominator": 97,
+        "value": 0.010309278350515464
+      }
+    },
+    "messageStatesDetail: false": {
+      "breaking-change detection recall": {
+        "numerator": 20,
+        "denominator": 391,
+        "value": 0.05115089514066496
+      },
+      "category classification accuracy": {
+        "numerator": 1,
+        "denominator": 37,
+        "value": 0.02702702702702703
+      }
+    }
+  },
+  "mappingCoverage": {
+    "ambiguous": 1375,
+    "exact": 134,
+    "unsupported": 2
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "version": "drift-external-run-v1",
+  "runId": "kong-rq2-category",
+  "datasetId": "kong",
+  "createdAt": "2026-08-19T23:21:43.815Z",
+  "driftCommit": "a2c0b8a8b83fadcafd3f8b02f13d540abbeb26ce",
+  "driftTreeDirty": true,
+  "harnessVersion": "a2c0b8a8b83fadcafd3f8b02f13d540abbeb26ce",
+  "datasetVersion": "10.5281/zenodo.13857646",
+  "command": "/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts kong --experiment rq2-category --run-id kong-rq2-category",
+  "node": "v22.22.0",
+  "platform": "darwin",
+  "arch": "x64",
+  "notes": "This is a **conditional** experiment on one production stage: Drift's prose interpreter (`extractBreakingPassages` + `analyze`, imported from the shipped build). The corpus is commit messages — it contains no consumer repositories, no version pairs and no build oracles — so it establishes nothing about detection in a repository, localization, or repair."
+}

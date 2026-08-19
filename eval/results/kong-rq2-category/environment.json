@@ -1,0 +1,56 @@
+{
+  "capturedAt": "2026-08-19T23:21:43.291Z",
+  "platform": "darwin",
+  "arch": "x64",
+  "node": "v22.22.0",
+  "tools": [
+    {
+      "tool": "node",
+      "available": true,
+      "version": "v22.22.0",
+      "neededFor": "every npm/TypeScript case, and Drift itself"
+    },
+    {
+      "tool": "npm",
+      "available": true,
+      "version": "10.9.4",
+      "neededFor": "installing a TypeScript consumer before its build oracle can run"
+    },
+    {
+      "tool": "git",
+      "available": true,
+      "version": "git version 2.39.5 (Apple Git-154)",
+      "neededFor": "checking out an original repository at the exact evaluated commit"
+    },
+    {
+      "tool": "java",
+      "available": true,
+      "version": "openjdk version \"19\" 2022-09-20",
+      "neededFor": "any Java case"
+    },
+    {
+      "tool": "mvn",
+      "available": false,
+      "version": "unavailable",
+      "neededFor": "BUMP's Maven oracle, and building Roseau from its replication kit"
+    },
+    {
+      "tool": "docker",
+      "available": false,
+      "version": "unavailable",
+      "neededFor": "BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure"
+    },
+    {
+      "tool": "python3",
+      "available": true,
+      "version": "Python 3.9.6",
+      "neededFor": "any Python case"
+    },
+    {
+      "tool": "uv",
+      "available": false,
+      "version": "unavailable",
+      "neededFor": "TimeMachine's documented environment setup"
+    }
+  ]
+}
