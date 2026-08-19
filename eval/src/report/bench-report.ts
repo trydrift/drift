@@ -214,11 +214,42 @@ function repairSection(result: EvaluationResult): string[] {
       `- Correct decision (repaired, correctly abstained, or nothing needed): ${formatRate(aggregate.correctDecision)}`,
       `- **Production scope escapes: ${aggregate.productionScopeEscapes}** (CI-blocking) · unexpected in-scope changed files: ${aggregate.unexpectedChangedFiles} (quality signal, never CI-blocking)`,
       `- Gold-patch exact match: ${formatRate(aggregate.goldPatchExactOf)} — diagnostic only, never a gate`,
-      `- Excluded from every rate: ${aggregate.excluded} (operational failures and no-trigger cases)`,
       '',
-      '| Outcome | Cases |',
+      // The denominator, spelled out. A reader should never have to reconstruct
+      // what a percentage was taken over, and the line that used to stand here
+      // ("excluded: N — operational failures and no-trigger cases") pooled two
+      // exclusions that mean opposite things with a product outcome that is not
+      // an exclusion at all.
+      '| Accounting | Trials |',
       '| --- | --- |',
+      `| Trials this track produced | ${aggregate.attempted} |`,
+      `| **Denominator** — valid cases Drift was judged on | **${aggregate.delivery.denominator}** |`,
+      `| **Numerator** — successful repairs | **${aggregate.delivery.successful}** |`,
+      `| Unsuccessful product outcomes | ${aggregate.delivery.unsuccessful} |`,
+      `| …of which Drift began the case and could not finish it | ${aggregate.delivery.deliveryFailures} |`,
+      `| Excluded — benchmark or environment, never Drift | ${aggregate.excluded} |`,
+      '',
     );
+
+    if (aggregate.excluded > 0) {
+      lines.push('Every exclusion, with its reason:', '', '| Exclusion reason | Trials |', '| --- | --- |');
+      for (const [reason, count] of Object.entries(aggregate.exclusionReasons).sort()) {
+        lines.push(`| ${reason} | ${count} |`);
+      }
+      lines.push('');
+    }
+
+    if (aggregate.delivery.deliveryFailures > 0) {
+      lines.push(
+        `${aggregate.delivery.deliveryFailures} trial(s) are counted as unsuccessful because Drift started on a valid`,
+        'case and could not finish: the agent errored, timed out or was not there when the hierarchy reached it, a',
+        'patch would not apply, or a remediation-time install failed. They are product outcomes and stay in the',
+        'denominator — dropping them would let this rate improve by failing in a different way.',
+        '',
+      );
+    }
+
+    lines.push('| Outcome | Cases |', '| --- | --- |');
     for (const [outcome, count] of Object.entries(aggregate.outcomes).sort()) lines.push(`| ${outcome} | ${count} |`);
     lines.push('');
 

@@ -56,6 +56,7 @@ function repairScore(caseId: string, outcome: RepairScore['outcome'], scorable: 
     track: 'repair-agent',
     outcome,
     scorable,
+    exclusionReason: scorable ? null : outcome,
     trial,
     failToPass: { triggerFailures: [], resolvedTriggers: [], unresolvedTriggers: [], newFailures: [], regressedChecks: [], verdict: 'resolved' },
     attempted: true,
@@ -70,15 +71,42 @@ function repairScore(caseId: string, outcome: RepairScore['outcome'], scorable: 
   };
 }
 
-test('operational failures leave both the numerator and the denominator', () => {
+test('a tier that was never asked leaves both the numerator and the denominator, with its reason kept', () => {
   const aggregate = aggregateRepair('repair-agent', [
     repairScore('a', 'repaired', true),
     repairScore('b', 'failed-to-fix', true),
-    repairScore('c', 'operational-failure', false),
+    repairScore('c', 'environment-unavailable', false),
   ]);
   assert.deepEqual(aggregate.repairSuccess, { numerator: 1, denominator: 2, value: 0.5 });
   assert.equal(aggregate.excluded, 1);
-  assert.equal(aggregate.outcomes['operational-failure'], 1, 'still visible in the exclusion table');
+  assert.equal(aggregate.outcomes['environment-unavailable'], 1, 'still visible in the exclusion table');
+  assert.equal(aggregate.exclusionReasons['environment-unavailable'], 1, 'and its reason is counted');
+});
+
+test('a case Drift began and could not finish stays in the denominator', () => {
+  const aggregate = aggregateRepair('repair-full-remediation', [
+    repairScore('a', 'repaired', true),
+    repairScore('b', 'delivery-failure', true),
+    repairScore('c', 'delivery-failure', true),
+  ]);
+  assert.deepEqual(
+    aggregate.repairSuccess,
+    { numerator: 1, denominator: 3, value: 1 / 3 },
+    'excluding the two would report 1/1 for a run that delivered one repair out of three',
+  );
+  assert.equal(aggregate.excluded, 0);
+  assert.deepEqual(aggregate.delivery, { successful: 1, unsuccessful: 2, deliveryFailures: 2, denominator: 3 });
+});
+
+test('a case the benchmark could not set up leaves the denominator, and is not a delivery failure', () => {
+  const aggregate = aggregateRepair('repair-full-remediation', [
+    repairScore('a', 'repaired', true),
+    repairScore('b', 'case-invalid', false),
+  ]);
+  assert.deepEqual(aggregate.repairSuccess, { numerator: 1, denominator: 1, value: 1 });
+  assert.equal(aggregate.delivery.deliveryFailures, 0);
+  assert.equal(aggregate.exclusionReasons['case-invalid'], 1);
+  assert.equal(aggregate.attempted, 2, 'and nothing has disappeared: attempted still counts it');
 });
 
 test('a correct abstention counts as a correct decision but not as a repair', () => {
@@ -146,8 +174,9 @@ test('a track whose every trial was unavailable reports n/a, never 0%', () => {
   const unavailable = (reason: 'cache-unavailable' | 'recipe-unavailable' | 'model-unavailable'): RepairScore => ({
     caseId: `c-${reason}`,
     track: 'repair-fixplan-cache',
-    outcome: 'operational-failure',
+    outcome: 'environment-unavailable',
     scorable: false,
+    exclusionReason: reason,
     failToPass: {
       triggerFailures: [],
       resolvedTriggers: [],
@@ -179,7 +208,7 @@ test('a track whose every trial was unavailable reports n/a, never 0%', () => {
   assert.equal(aggregate.correctDecision.value, null);
   assert.equal(aggregate.goldPatchExactOf.value, null);
   // Nothing vanished: every trial is still in the outcome table.
-  assert.equal(aggregate.outcomes['operational-failure'], 3);
+  assert.equal(aggregate.outcomes['environment-unavailable'], 3);
 });
 
 test('a level no adjudication ruled on contributes nothing to a rate rather than a zero', () => {

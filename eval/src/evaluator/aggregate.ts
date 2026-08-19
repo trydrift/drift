@@ -101,9 +101,36 @@ export interface RepairAggregate {
   track: string;
   /** Every outcome, counted. The exclusion table is derived from this, so no case can vanish. */
   outcomes: Record<string, number>;
-  /** Outcomes eligible for a rate — operational failures and no-trigger cases are not. */
+  /** Trials this track produced, before anything is excluded. `scorable + excluded`. */
+  attempted: number;
+  /** Outcomes eligible for a rate. Product outcomes only — see the three exclusion kinds below. */
   scorable: number;
   excluded: number;
+  /**
+   * Why each excluded trial left the denominator, counted.
+   *
+   * Printed beside every rate rather than folded into a single "excluded"
+   * number, because the two kinds call for opposite reactions: a large
+   * `environment-unavailable` count means the run could not measure the
+   * product here, and a large `case-invalid` count means the corpus is not
+   * reproducing on this machine. Neither is a result about Drift, and both
+   * have to be visible before the rate above them is read.
+   */
+  exclusionReasons: Record<string, number>;
+  /**
+   * The end-to-end delivery breakdown, stated as three counts that sum to the
+   * denominator, so a reader never has to reconstruct it from a percentage.
+   *
+   * `unsuccessful` includes `delivery-failure` — a case Drift began and could
+   * not finish. Those used to be excluded outright, which let the headline
+   * describe only the attempts that survived long enough to be judged.
+   */
+  delivery: {
+    successful: number;
+    unsuccessful: number;
+    deliveryFailures: number;
+    denominator: number;
+  };
   repairSuccess: Rate;
   correctDecision: Rate;
   productionScopeEscapes: number;
@@ -115,21 +142,36 @@ export interface RepairAggregate {
 
 export function aggregateRepair(track: string, scores: readonly RepairScore[]): RepairAggregate {
   const outcomes: Record<string, number> = {};
+  const exclusionReasons: Record<string, number> = {};
   const resolvedByTier: Record<string, number> = {};
   for (const score of scores) {
     outcomes[score.outcome] = (outcomes[score.outcome] ?? 0) + 1;
+    if (!score.scorable) {
+      const reason = score.exclusionReason ?? score.outcome;
+      exclusionReasons[reason] = (exclusionReasons[reason] ?? 0) + 1;
+    }
     for (const entry of score.resolvedByTier) resolvedByTier[entry.tier] = (resolvedByTier[entry.tier] ?? 0) + 1;
   }
 
   const scorable = scores.filter((score) => score.scorable);
   const compared = scores.filter((score) => score.goldPatchExact !== 'not-applicable');
+  const successful = scorable.filter((score) => isRepairSuccess(score.outcome)).length;
+  const deliveryFailures = scorable.filter((score) => score.outcome === 'delivery-failure').length;
 
   return {
     track,
     outcomes,
+    attempted: scores.length,
     scorable: scorable.length,
     excluded: scores.length - scorable.length,
-    repairSuccess: rate(scorable.filter((score) => isRepairSuccess(score.outcome)).length, scorable.length),
+    exclusionReasons,
+    delivery: {
+      successful,
+      unsuccessful: scorable.length - successful,
+      deliveryFailures,
+      denominator: scorable.length,
+    },
+    repairSuccess: rate(successful, scorable.length),
     correctDecision: rate(scorable.filter((score) => isCorrectDecision(score.outcome)).length, scorable.length),
     productionScopeEscapes: scores.reduce((total, score) => total + score.productionScopeEscapes.length, 0),
     unexpectedChangedFiles: scores.reduce((total, score) => total + score.unexpectedChangedFiles.length, 0),

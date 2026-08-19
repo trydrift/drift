@@ -185,6 +185,17 @@ export const repairNonOutcomeSchema = z.enum([
   /** No community recipe candidate was supplied, so the recipe tier had nothing to re-derive from. */
   'recipe-unavailable',
   'agent-unavailable',
+  /**
+   * The remediation hierarchy actually routed work to the agent tier and found
+   * no agent there to route it to.
+   *
+   * Deliberately distinct from `agent-unavailable`, which means a standalone
+   * agent track was asked to run without the CLI it exists to measure. This
+   * one is a case Drift began and did not deliver, and it used to be recorded
+   * as `abstained-by-policy` — a missing binary presented to a reader as a
+   * considered product decision to decline.
+   */
+  'agent-required-unavailable',
   'agent-error',
   'agent-timeout',
   'patch-application-failed',

@@ -58,6 +58,10 @@ export async function runFullRemediationTrack(
 
   const resolvedByTier: { commitId: string; tier: string }[] = [];
   const scopeValidationReasons: string[] = [];
+  /** The hierarchy routed work to the agent tier and found no agent there. A delivery failure, never an abstention. */
+  let agentTierUnavailable = false;
+  /** Commits the agent was given and did not resolve — errored, timed out, or failed Drift's scope gate. */
+  let agentUnresolved = 0;
   let run: Awaited<ReturnType<typeof runWorktreeRemediation>> | null = null;
 
   try {
@@ -134,9 +138,17 @@ export async function runFullRemediationTrack(
         Object.assign(agentProvenance, observedSelection(context.observedCommands));
 
         for (const commit of agentRun.resolved) resolvedByTier.push({ commitId: commit.id, tier: 'agent' });
-        for (const failure of agentRun.unresolved) scopeValidationReasons.push(`${failure.commit.id}: ${failure.message}`);
+        for (const failure of agentRun.unresolved) {
+          agentUnresolved += 1;
+          scopeValidationReasons.push(`${failure.commit.id}: ${failure.message}`);
+        }
       } else {
-        scopeValidationReasons.push(`agent tier skipped: ${availability.reason ?? 'unavailable'}`);
+        // The hierarchy routed work here and found nothing to route it to.
+        // Recorded as its own reason, not as a policy abstention: Drift did
+        // not decline this case, it could not finish it, and the difference is
+        // the whole of what an end-to-end number means.
+        agentTierUnavailable = true;
+        scopeValidationReasons.push(`agent tier required but unavailable: ${availability.reason ?? 'unavailable'}`);
         agentProvenance = { agentId, agentLabel: spec?.label ?? agentId, ...requested };
       }
     }
@@ -145,11 +157,25 @@ export async function runFullRemediationTrack(
     const patch = await diffAgainst(run.worktree, afterSha);
 
     if (changedFiles.length === 0) {
+      /**
+       * Nothing changed on disk — but *why* nothing changed is four different
+       * facts, and this used to report three of them as the fourth.
+       *
+       * `abstained-by-policy` is a product decision: every tier looked and
+       * declined. It is the only one of these a reader should read as Drift
+       * behaving correctly, and it was previously also what a missing agent
+       * binary and a failed agent run produced, which turned an operational
+       * hole into a considered decision to decline.
+       */
+      const reason = agentTierUnavailable
+        ? ('agent-required-unavailable' as const)
+        : agentUnresolved > 0
+          ? ('agent-error' as const)
+          : resolvedByTier.length > 0
+            ? ('empty-patch' as const)
+            : ('abstained-by-policy' as const);
       return {
-        repair: {
-          ...notAttempted(resolvedByTier.length > 0 ? 'empty-patch' : 'abstained-by-policy'),
-          scopeValidationReasons,
-        },
+        repair: { ...notAttempted(reason), scopeValidationReasons },
         ...(agentProvenance ? { provenance: agentProvenance } : {}),
       };
     }

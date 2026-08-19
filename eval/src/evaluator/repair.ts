@@ -14,12 +14,23 @@ import { normalizePatch } from '../adapters/repair-capture.ts';
  * correct migration that reads differently is still correct and a benchmark
  * that punishes it is measuring conformity rather than repair.
  *
- * Everything that is not a product outcome is kept out of the numerator *and*
- * the denominator. An agent that timed out, an install that failed, a patch
- * that would not apply, a model that was not configured: none of these are
- * evidence about whether Drift can repair this case, and pooling them with
- * genuine failures would understate the product exactly as pooling them with
- * successes would overstate it.
+ * Three kinds of non-success are kept apart, because pooling them is how a
+ * repair rate stops describing the product.
+ *
+ *   `case-invalid`            the benchmark could not set the case up, so no
+ *                             observation after that point means anything.
+ *   `environment-unavailable` a tier was never asked, because the input or
+ *                             provider it needs does not exist here.
+ *   `delivery-failure`        Drift started on a valid case and could not
+ *                             finish: the agent errored, the patch would not
+ *                             apply, the install fell over.
+ *
+ * The first two leave the denominator with a reason attached. The third stays
+ * in it. That split is the correction: all three used to be one
+ * `operational-failure` that left every rate, so an end-to-end repair number
+ * could be improved by failing in a different way — every case Drift began and
+ * could not finish quietly stopped counting, and the headline described only
+ * the attempts that survived long enough to be judged.
  */
 
 export type RepairOutcome =
@@ -39,8 +50,38 @@ export type RepairOutcome =
   | 'unsafe-attempt'
   /** No repair was needed and none was attempted. */
   | 'no-repair-needed'
-  /** The trial could not produce evidence either way. Excluded from every rate. */
-  | 'operational-failure'
+  /**
+   * Drift began its product path on a valid case and failed to produce or
+   * validate a repair: the agent errored, timed out or was unavailable when
+   * the hierarchy actually reached it, a patch would not apply, a
+   * remediation-time install failed, a tier claimed a commit and emitted no
+   * diff, or Drift's own scope gate rejected what came back.
+   *
+   * This is a product outcome, not an infrastructure one, and it stays in the
+   * denominator. It used to be pooled into `operational-failure` and dropped
+   * from every rate, which meant an end-to-end repair rate could be improved
+   * by failing differently: every case Drift started and could not finish left
+   * the denominator, so the headline described only the attempts that survived
+   * long enough to be judged.
+   */
+  | 'delivery-failure'
+  /**
+   * A tier that was never asked, because the input or provider it needs does
+   * not exist on this machine: no plan cache, no recipe candidate, no
+   * configured model, no agent CLI for a track whose whole subject is the
+   * agent. Excluded from every rate with its reason preserved — a mechanism
+   * nobody invoked has not declined and has not failed.
+   */
+  | 'environment-unavailable'
+  /**
+   * The case itself did not behave as declared before Drift was judged on it:
+   * the baseline did not pass, the bump-only state did not fail, or the
+   * repaired stage could not be run at all. No observation after that point is
+   * interpretable, so nothing is scored — and this is deliberately kept apart
+   * from `delivery-failure`, because one is the benchmark failing and the
+   * other is the product failing.
+   */
+  | 'case-invalid'
   /** The case's own bump-only state produced no new failure, so nothing was repairable. */
   | 'no-trigger';
 
@@ -48,8 +89,16 @@ export interface RepairScore {
   caseId: string;
   track: Track;
   outcome: RepairOutcome;
-  /** Whether this outcome may enter a success rate at all. False for operational failures and no-trigger cases. */
+  /**
+   * Whether this outcome may enter a success rate at all.
+   *
+   * True for every product outcome, `delivery-failure` included. False only
+   * where the benchmark or the machine — not Drift — is why there is nothing
+   * to judge.
+   */
   scorable: boolean;
+  /** Why this outcome left the denominator, or `null` when it did not. Every exclusion has one. */
+  exclusionReason: string | null;
   failToPass: FailToPassAnalysis;
   attempted: boolean;
   notAttemptedReason: RepairArtifact['notAttemptedReason'];
@@ -150,7 +199,7 @@ export function scoreRepair(input: ScoreRepairInput): RepairScore {
       ? 'not-applicable'
       : normalizePatch(repair.patch) === normalizePatch(input.developerPatch);
 
-  const { outcome, scorable } = classify({
+  const { outcome, scorable, exclusionReason } = classify({
     repair,
     failToPass,
     policyScoped: isPolicyScoped(track),
@@ -166,6 +215,7 @@ export function scoreRepair(input: ScoreRepairInput): RepairScore {
     track,
     outcome,
     scorable,
+    exclusionReason,
     failToPass,
     attempted: repair.attempted,
     notAttemptedReason: repair.notAttemptedReason,
@@ -200,78 +250,114 @@ function classify(input: {
   baselineValid: boolean;
   brokenValid: boolean;
   repairedRan: boolean;
-}): { outcome: RepairOutcome; scorable: boolean } {
+}): { outcome: RepairOutcome; scorable: boolean; exclusionReason: string | null } {
   const { repair, failToPass, expectedAction } = input;
 
-  const OPERATIONAL = new Set<RepairArtifact['notAttemptedReason']>([
+  const excluded = (outcome: RepairOutcome, exclusionReason: string) => ({ outcome, scorable: false, exclusionReason });
+  const scored = (outcome: RepairOutcome) => ({ outcome, scorable: true, exclusionReason: null });
+
+  /**
+   * Tiers that were never invoked, because what they run on does not exist on
+   * this machine. A cache entry is a plan an earlier run authored, a recipe is
+   * a third-party package, a model needs a configured provider, and the
+   * standalone agent track needs the agent CLI it exists to measure. None of
+   * them declined and none of them failed; asking them was impossible.
+   */
+  const NEVER_ASKED = new Set<RepairArtifact['notAttemptedReason']>([
     'model-unavailable',
-    // A tier with no input did not decline; it was never asked. Scoring it as
-    // either a success or a failure would report a fiction, and reporting it
-    // as zero would be the same fiction with a number attached.
     'cache-unavailable',
     'recipe-unavailable',
     'agent-unavailable',
+  ]);
+
+  /**
+   * Drift's own path, begun and not finished.
+   *
+   * `agent-required-unavailable` is the one that matters most and is
+   * deliberately distinct from `agent-unavailable`: it means the hierarchy
+   * actually routed work to the agent tier and found nothing there to route it
+   * to. On the end-to-end track that is a case Drift did not deliver, and it
+   * used to be recorded as `abstained-by-policy` — a missing agent CLI
+   * presented as a considered product decision to decline.
+   */
+  const DELIVERY = new Set<RepairArtifact['notAttemptedReason']>([
+    'agent-required-unavailable',
     'agent-error',
     'agent-timeout',
     'patch-application-failed',
     'install-failed',
+    'scope-validation-rejected',
+    'empty-patch',
   ]);
-  if (!repair.attempted && OPERATIONAL.has(repair.notAttemptedReason)) {
-    return { outcome: 'operational-failure', scorable: false };
+
+  if (!repair.attempted && NEVER_ASKED.has(repair.notAttemptedReason)) {
+    return excluded('environment-unavailable', repair.notAttemptedReason!);
+  }
+  if (!repair.attempted && DELIVERY.has(repair.notAttemptedReason)) {
+    return scored('delivery-failure');
   }
 
-  if (!input.baselineValid || !input.brokenValid) return { outcome: 'operational-failure', scorable: false };
+  // Case validity, before anything about Drift is read. A consumer that was
+  // already failing its own check, or a bump that did not break it, makes
+  // every later observation uninterpretable.
+  if (!input.baselineValid) return excluded('case-invalid', 'baseline stage did not behave as the case declares');
+  if (!input.brokenValid) return excluded('case-invalid', 'bump-only stage did not behave as the case declares');
 
   if (!repair.attempted) {
-    if (expectedAction === 'no-repair-needed') return { outcome: 'no-repair-needed', scorable: true };
-    if (input.policyScoped && expectedAction === 'abstain') return { outcome: 'correct-abstention', scorable: true };
+    if (expectedAction === 'no-repair-needed') return scored('no-repair-needed');
+    if (input.policyScoped && expectedAction === 'abstain') return scored('correct-abstention');
     // Truth says an agent under approval is the right answer. A deterministic
     // tier declining is correct behaviour, not a miss — it is being asked
     // whether it could derive a rule, and the reviewed answer is that it
     // could not. A track that *can* delegate and still did nothing has missed
     // the opportunity the reviewer identified.
     if (input.policyScoped && expectedAction === 'agent-delegation' && !input.agentCapable) {
-      return { outcome: 'correct-abstention', scorable: true };
+      return scored('correct-abstention');
     }
-    return { outcome: 'missed-opportunity', scorable: true };
+    return scored('missed-opportunity');
   }
 
   // An attempt where truth says abstain is a product error regardless of
   // whether the oracle happened to go green: acting on evidence that does not
   // support acting is wrong even when lucky. Scored only where Drift made the
   // decision — see `POLICY_SCOPED_TRACKS`.
-  if (input.policyScoped && expectedAction === 'abstain') return { outcome: 'unsafe-attempt', scorable: true };
+  if (input.policyScoped && expectedAction === 'abstain') return scored('unsafe-attempt');
 
   // Same rule one step down: truth says no deterministic rule is derivable
   // here, so a deterministic mechanism that produced one produced a guess.
   // A green oracle does not rescue it — a rule that happens to work on the
   // call sites this repository has is still not attested by the evidence.
   if (input.policyScoped && expectedAction === 'agent-delegation' && !input.agentCapable) {
-    return { outcome: 'unsafe-attempt', scorable: true };
+    return scored('unsafe-attempt');
   }
 
-  if (!input.repairedRan) return { outcome: 'operational-failure', scorable: false };
+  // The repaired stage could not be run — an install that fell over inside the
+  // oracle, a patch the oracle could not stage. That is the benchmark failing
+  // to observe, not Drift failing to repair.
+  if (!input.repairedRan) return excluded('case-invalid', 'repaired stage could not be run');
 
   // A bump that broke nothing reproducibly cannot have been repaired, however
   // green the repaired stage is.
-  if (failToPass.verdict === 'no-trigger') return { outcome: 'no-trigger', scorable: false };
+  if (failToPass.verdict === 'no-trigger') return excluded('no-trigger', 'the bump-only state produced no new failure');
 
   // Editing outside the plan's own declared scope disqualifies a repair even
   // when every check passes. A green build produced by touching files Drift
   // promised not to touch is not a result a user can accept.
-  if (repair.scopeEscapeFiles.length > 0) return { outcome: 'introduced-regression', scorable: true };
+  if (repair.scopeEscapeFiles.length > 0) return scored('introduced-regression');
 
   switch (failToPass.verdict) {
     case 'resolved':
-      return { outcome: 'repaired', scorable: true };
+      return scored('repaired');
     case 'partially-resolved':
-      return { outcome: 'partially-repaired', scorable: true };
+      return scored('partially-repaired');
     case 'regressed':
-      return { outcome: 'introduced-regression', scorable: true };
+      return scored('introduced-regression');
     case 'unresolved':
-      return { outcome: 'failed-to-fix', scorable: true };
+      return scored('failed-to-fix');
     default:
-      return { outcome: 'operational-failure', scorable: false };
+      // `not-attempted` with `repair.attempted` true: the repaired stage never
+      // produced a signature to compare. Nothing about Drift is observable.
+      return excluded('case-invalid', 'no repaired-stage signature to compare against');
   }
 }
 

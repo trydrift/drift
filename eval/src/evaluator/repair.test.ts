@@ -100,19 +100,45 @@ test('a repair that escapes its own declared scope is never a success, however g
   assert.deepEqual(score.productionScopeEscapes, ['.github/workflows/ci.yml']);
 });
 
-test('an agent timeout is an operational failure and enters no rate', () => {
+test('an agent timeout is a delivery failure and stays in the denominator', () => {
   const score = scoreRepair(
     input({ repair: { ...ATTEMPTED, attempted: false, notAttemptedReason: 'agent-timeout', changedFiles: [], patch: '' } }),
   );
-  assert.equal(score.outcome, 'operational-failure');
-  assert.equal(score.scorable, false);
+  // Drift began this case and did not finish it. Excluding it — which this
+  // used to do — lets an end-to-end rate be improved by failing differently.
+  assert.equal(score.outcome, 'delivery-failure');
+  assert.equal(score.scorable, true);
+  assert.equal(isRepairSuccess(score.outcome), false);
 });
 
-test('an agent that changed nothing is not a success', () => {
+test('a required agent that was not there is a delivery failure, not a policy abstention', () => {
+  const score = scoreRepair(
+    input({
+      track: 'repair-full-remediation',
+      repair: { ...ATTEMPTED, attempted: false, notAttemptedReason: 'agent-required-unavailable', changedFiles: [], patch: '' },
+      truth: { ...TRUTH, repair: { expectedAction: 'agent-delegation', expectedChangedFiles: [] } },
+    }),
+  );
+  assert.equal(score.outcome, 'delivery-failure');
+  assert.equal(score.scorable, true);
+});
+
+test('a standalone tier whose provider does not exist here was never asked, and is excluded with its reason', () => {
+  for (const reason of ['agent-unavailable', 'cache-unavailable', 'recipe-unavailable', 'model-unavailable'] as const) {
+    const score = scoreRepair(
+      input({ repair: { ...ATTEMPTED, attempted: false, notAttemptedReason: reason, changedFiles: [], patch: '' } }),
+    );
+    assert.equal(score.outcome, 'environment-unavailable', reason);
+    assert.equal(score.scorable, false, reason);
+    assert.equal(score.exclusionReason, reason);
+  }
+});
+
+test('a tier that claimed a commit and emitted no diff is a delivery failure, not a missed opportunity', () => {
   const score = scoreRepair(
     input({ repair: { ...ATTEMPTED, attempted: false, notAttemptedReason: 'empty-patch', changedFiles: [], patch: '' } }),
   );
-  assert.equal(score.outcome, 'missed-opportunity');
+  assert.equal(score.outcome, 'delivery-failure');
   assert.equal(isRepairSuccess(score.outcome), false);
 });
 
@@ -141,8 +167,9 @@ test('an invalid baseline makes every later observation uninterpretable', () => 
       ],
     }),
   );
-  assert.equal(score.outcome, 'operational-failure');
+  assert.equal(score.outcome, 'case-invalid');
   assert.equal(score.scorable, false);
+  assert.equal(score.exclusionReason, 'baseline stage did not behave as the case declares');
 });
 
 test('a bump that broke nothing cannot credit a repair', () => {
