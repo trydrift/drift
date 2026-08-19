@@ -111,11 +111,14 @@ test('a genuinely safe fixture with a safe verdict is neither falseSafe nor unsu
 });
 
 test('unverified/inconclusive verdicts never count as safe-equivalent', () => {
-  for (const v of ['insufficient-evidence', 'verification-incomplete', 'detected-not-locally-reachable', 'unchecked', 'verification-failed'] as const) {
+  for (const v of ['insufficient-evidence', 'verification-incomplete', 'unchecked', 'verification-failed'] as const) {
     assert.equal(isUserFacingSafeVerdict(v), false, `${v} must never be treated as safe-equivalent`);
   }
   assert.equal(isUserFacingSafeVerdict('no-incompatible-change-in-checked-surfaces'), true);
   assert.equal(isUserFacingSafeVerdict('clean'), true);
+  // A conclusion, not an absence: production only emits this once localization
+  // has run, so it tells the user their repository is unaffected.
+  assert.equal(isUserFacingSafeVerdict('detected-not-locally-reachable'), true);
 });
 
 test('unsafe ground truth + unverified Drift verdict is not a false-safe (Drift did not claim safe)', () => {

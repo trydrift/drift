@@ -69,23 +69,41 @@ export interface DetectionScore {
     correctSafe: boolean;
     /** Truth says unsafe and Drift said affected. */
     correctAffected: boolean;
+    /** Truth says safe and Drift's verdict was not a safety claim at all. Neither correct nor a safety failure. */
+    safeButInconclusive: boolean;
   };
   taxonomy: { status: LevelStatus; correct: boolean };
   gapRecall: { status: LevelStatus; recall: number };
 }
 
 /**
- * Only these two verdicts are a claim of safety.
+ * The verdicts that tell a user this upgrade does not affect their repository.
  *
- * Every other production verdict — `insufficient-evidence`,
- * `verification-incomplete`, `detected-not-locally-reachable`, `unchecked`,
- * `verification-failed`, `upstream-only` — describes an incomplete or
- * inconclusive check, and an incomplete check is not a safe claim. Widening
- * this set is the single easiest way to make a false-safe rate look better
- * without changing the product, which is exactly why it is a named constant
- * with this comment attached to it.
+ * Widening this set is the single easiest way to make a false-safe rate look
+ * better without changing the product, so it is a named constant with its
+ * reasoning attached, and every member has to be defended.
+ *
+ * `no-incompatible-change-in-checked-surfaces` and `clean` are the obvious two.
+ * `detected-not-locally-reachable` is the third and was previously excluded on
+ * the grounds that it is inconclusive. It is not: production distinguishes it
+ * from `verification-incomplete` precisely on whether localization *ran*, so it
+ * means "we searched this repository and the changed symbol is not used here",
+ * which is a conclusion about the user's code and the sentence they act on.
+ * Excluding it was wrong in both directions — it under-counted false-safes,
+ * because Drift saying "not reachable from this repository" about code that is
+ * in fact affected is exactly the failure this metric exists to catch, and it
+ * made a genuine control case (a real upstream break the consumer never calls)
+ * structurally incapable of scoring `correctSafe`.
+ *
+ * Every remaining verdict — `insufficient-evidence`, `verification-incomplete`,
+ * `unchecked`, `verification-failed`, `upstream-only` — describes a check that
+ * did not complete, and an incomplete check is not a claim about anything.
  */
-const SAFE_EQUIVALENT = new Set(['no-incompatible-change-in-checked-surfaces', 'clean']);
+const SAFE_EQUIVALENT = new Set([
+  'no-incompatible-change-in-checked-surfaces',
+  'clean',
+  'detected-not-locally-reachable',
+]);
 
 export function isSafeEquivalent(verdict: string): boolean {
   return SAFE_EQUIVALENT.has(verdict);
@@ -170,6 +188,13 @@ export function scoreDetection(input: ScoreDetectionInput): DetectionScore {
       unsupportedSafe: truth.groundTruthSafety === 'uncertain' && driftSaysSafe,
       correctSafe: truth.groundTruthSafety === 'safe' && driftSaysSafe,
       correctAffected: truth.groundTruthSafety === 'unsafe' && detection.verdict === 'locally-affected',
+      /**
+       * Truth says safe and Drift did not establish it either way. Not a
+       * failure of safety — nothing unsafe was claimed — and not a success
+       * either. Reported so a control case that produced no conclusion cannot
+       * be mistaken for one that produced the right conclusion.
+       */
+      safeButInconclusive: truth.groundTruthSafety === 'safe' && !driftSaysSafe,
     },
     taxonomy: scoreTaxonomy(truth, detection),
     gapRecall:

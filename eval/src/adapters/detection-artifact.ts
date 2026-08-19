@@ -49,7 +49,13 @@ export interface ConvertOptions {
   /** Dependency-change identity is only a *prediction* on the end-to-end track; on known-bump it was supplied. */
   includeDependencyChanges: boolean;
   triageSkipped: readonly { dependency: string; reason: string }[];
-  checkedSurfaces: readonly { name: string; status: string }[];
+  /**
+   * Surfaces production recorded, in production's own vocabulary
+   * (`api-surface`, `release-notes`, `localization`, `behavioural-diff`). The
+   * artifact's `name` carries the dependency where the row is per-dependency,
+   * so a monorepo row stays distinguishable.
+   */
+  checkedSurfaces: readonly { surface: string; dependency?: string; status: string }[];
   verificationOutcomes: readonly { kind: string; status: string }[];
   /** Per-breaking-change verdict, keyed by the production `BreakingChange.id`. */
   verdictByChangeId: ReadonlyMap<string, string>;
@@ -86,7 +92,10 @@ export function toDetectionArtifact(plan: PlanLike, options: ConvertOptions): De
       (finding) => `${finding.dependency}|${finding.code}|${finding.symbol}`,
     ),
 
-    checkedSurfaces: options.checkedSurfaces.map((surface) => ({ ...surface })),
+    checkedSurfaces: options.checkedSurfaces.map((surface) => ({
+      name: surface.dependency ? `${surface.surface}:${surface.dependency}` : surface.surface,
+      status: surface.status,
+    })),
 
     // Every breaking change, each with its own taxonomy. No index-zero
     // assumption: a real historical major bump routinely carries several

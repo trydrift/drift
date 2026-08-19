@@ -49,7 +49,20 @@ export type DriftVerdict =
   | 'error'
   | 'pending';
 
-const SAFE_EQUIVALENT_VERDICTS = new Set<DriftVerdict>(['no-incompatible-change-in-checked-surfaces', 'clean']);
+/**
+ * Kept identical to `eval/src/evaluator/detection.ts`'s set, deliberately, and
+ * for the reason argued there: `detected-not-locally-reachable` is a
+ * conclusion about the user's own repository — production only emits it when
+ * localization actually ran — so it is a safety claim, and treating it as
+ * merely inconclusive both under-counted false-safes and made a genuine
+ * control case unable to score a correct-safe. Two harnesses disagreeing about
+ * what "Drift said it was safe" means would be worse than either answer.
+ */
+const SAFE_EQUIVALENT_VERDICTS = new Set<DriftVerdict>([
+  'no-incompatible-change-in-checked-surfaces',
+  'clean',
+  'detected-not-locally-reachable',
+]);
 
 export function isUserFacingSafeVerdict(verdict: DriftVerdict): boolean {
   return SAFE_EQUIVALENT_VERDICTS.has(verdict);

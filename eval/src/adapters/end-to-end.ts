@@ -133,14 +133,16 @@ export async function runEndToEndDetection(
       plan.breakingChanges.map((change) => [change.id, String(verdictFor(change as never))] as const),
     );
 
+    const checkedSurfaces = checkedSurfacesOf(result.plan);
+
     return {
       detection: toDetectionArtifact(plan, {
         includeDependencyChanges: true,
         triageSkipped,
-        checkedSurfaces: checkedSurfacesOf(result.plan),
+        checkedSurfaces,
         verificationOutcomes: verificationOutcomesOf(result.plan),
         verdictByChangeId,
-        verdict: reduceVerdict([...verdictByChangeId.values()], plan.breakingChanges.length === 0),
+        verdict: reduceVerdict([...verdictByChangeId.values()], plan.breakingChanges.length === 0, checkedSurfaces),
       }),
       plan,
       summary: result.summary,
@@ -150,18 +152,53 @@ export async function runEndToEndDetection(
   }
 }
 
+export interface CheckedSurfaceLike {
+  surface: string;
+  dependency?: string;
+  status: string;
+}
+
 /**
- * Production's own precedence, restated once here rather than per adapter.
+ * The single user-facing conclusion, derived from what production actually
+ * produced.
  *
- * The ordering is deliberate and is the safety-relevant part: an inconclusive
- * result never outranks a positive one, and no absence of evidence is ever
- * promoted to a safe-equivalent verdict. A run with no breaking change and no
- * successfully computed surface is `insufficient-evidence`, not `clean` —
- * "nothing was flagged" is not the same claim as "the surface was checked and
- * found compatible", and only the second one may be reported as safe.
+ * Production states a verdict per *finding* (`verdictFor`) and, separately,
+ * what it looked at (`checkedSurfaces`); it has no repository-level verdict
+ * function, so this is the one place the two are combined. Two rules govern
+ * it, and both are safety-relevant.
+ *
+ * An inconclusive result never outranks a positive one. That is the precedence
+ * list, unchanged.
+ *
+ * And an *absence* of findings is not a safe claim by itself — but neither is
+ * it automatically inconclusive, which is what this used to get wrong. A
+ * dependency update with no breaking change is the ordinary case, and reading
+ * it as `insufficient-evidence` made a genuine control structurally incapable
+ * of ever scoring `correctSafe`: the benchmark could only ever fail to catch
+ * Drift being wrong, never confirm it being right. So the distinction is made
+ * on the evidence production already recorded: if the API surface for the
+ * dependency was genuinely computed (`status: 'checked'`) and the repository
+ * was genuinely searched, "no incompatible change in the surfaces that were
+ * checked" is exactly what happened and is what a user is told. If the surface
+ * could not be computed, nothing was established and the verdict stays
+ * `insufficient-evidence`.
  */
-function reduceVerdict(verdicts: readonly string[], noBreakingChanges: boolean): string {
-  if (noBreakingChanges) return verdicts.length === 0 ? 'insufficient-evidence' : verdicts[0]!;
+export function reduceVerdict(
+  verdicts: readonly string[],
+  noBreakingChanges: boolean,
+  checkedSurfaces: readonly CheckedSurfaceLike[],
+): string {
+  if (noBreakingChanges) {
+    if (verdicts.length > 0) return verdicts[0]!;
+    const surfaceChecked = checkedSurfaces.some(
+      (surface) => surface.surface === 'api-surface' && surface.status === 'checked',
+    );
+    const searched = checkedSurfaces.some(
+      (surface) => surface.surface === 'localization' && surface.status === 'checked',
+    );
+    return surfaceChecked && searched ? 'no-incompatible-change-in-checked-surfaces' : 'insufficient-evidence';
+  }
+
   const precedence = [
     'locally-affected',
     'insufficient-evidence',
@@ -172,9 +209,22 @@ function reduceVerdict(verdicts: readonly string[], noBreakingChanges: boolean):
   return precedence.find((verdict) => verdicts.includes(verdict)) ?? verdicts[0] ?? 'unchecked';
 }
 
-function checkedSurfacesOf(plan: unknown): { name: string; status: string }[] {
-  const surfaces = (plan as { checkedSurfaces?: { name?: string; kind?: string; status: string }[] }).checkedSurfaces ?? [];
-  return surfaces.map((surface) => ({ name: surface.name ?? surface.kind ?? 'unknown', status: surface.status }));
+/**
+ * The surfaces production recorded, named by production's own field.
+ *
+ * This previously read `surface.name ?? surface.kind`, neither of which exists
+ * on a `CheckedSurface`, so every surface in every artifact was recorded as
+ * `unknown` — which is also why the verdict reduction above had nothing to
+ * consult. The dependency is carried through because a monorepo has one row
+ * per dependency and "the surface was checked" is a per-dependency fact.
+ */
+function checkedSurfacesOf(plan: unknown): CheckedSurfaceLike[] {
+  const surfaces = (plan as { checkedSurfaces?: CheckedSurfaceLike[] }).checkedSurfaces ?? [];
+  return surfaces.map((surface) => ({
+    surface: surface.surface,
+    ...(surface.dependency ? { dependency: surface.dependency } : {}),
+    status: surface.status,
+  }));
 }
 
 function verificationOutcomesOf(plan: unknown): { kind: string; status: string }[] {
