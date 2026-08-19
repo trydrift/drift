@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS schema_meta (
   value TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS pending_copilot_tasks (
+CREATE TABLE IF NOT EXISTS pending_cloud_tasks (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   provider    TEXT    NOT NULL DEFAULT 'copilot-cloud',
   owner       TEXT    NOT NULL,
@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS pending_copilot_tasks (
   created_at  TEXT    NOT NULL
 );
 
--- Permanent, unlike pending_copilot_tasks (which is deleted once a task
+-- Permanent, unlike pending_cloud_tasks (which is deleted once a task
 -- resolves): this is the idempotency source that still answers "was this plan
 -- already dispatched?" after the task it recorded has long since finished.
 CREATE TABLE IF NOT EXISTS dispatched_plans (
@@ -81,12 +81,57 @@ CREATE TABLE IF NOT EXISTS dispatched_plans (
 `;
 
 /** Bump alongside any migration to `SCHEMA`. */
-export const QUEUE_SCHEMA_VERSION = 4;
+export const QUEUE_SCHEMA_VERSION = 5;
+
+function tableExists(db: DatabaseSync, table: string): boolean {
+  const row = db
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
+    .get(table) as { name: string } | undefined;
+  return Boolean(row);
+}
 
 function addColumnIfMissing(db: DatabaseSync, table: string, column: string, definition: string): void {
+  if (!tableExists(db, table)) return;
   const rows = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
   if (rows.some((row) => row.name === column)) return;
   db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+}
+
+function migratePendingCloudTaskTable(db: DatabaseSync): void {
+  const hasLegacy = tableExists(db, 'pending_copilot_tasks');
+  const hasCurrent = tableExists(db, 'pending_cloud_tasks');
+
+  if (hasLegacy && !hasCurrent) {
+    db.exec('ALTER TABLE pending_copilot_tasks RENAME TO pending_cloud_tasks');
+  }
+
+  db.exec(SCHEMA);
+  addColumnIfMissing(db, 'pending_cloud_tasks', 'provider', "TEXT NOT NULL DEFAULT 'copilot-cloud'");
+  addColumnIfMissing(db, 'pending_cloud_tasks', 'plan_json', 'TEXT');
+  db.exec("UPDATE pending_cloud_tasks SET provider = 'copilot-cloud' WHERE provider IS NULL OR provider = ''");
+
+  if (hasLegacy && hasCurrent) {
+    addColumnIfMissing(db, 'pending_copilot_tasks', 'provider', "TEXT NOT NULL DEFAULT 'copilot-cloud'");
+    addColumnIfMissing(db, 'pending_copilot_tasks', 'plan_json', 'TEXT');
+    db.exec(`
+      INSERT OR IGNORE INTO pending_cloud_tasks
+        (id, provider, owner, repo, task_id, head_sha, branch_name, pr_number, pr_url, plan_json, created_at)
+      SELECT
+        id,
+        COALESCE(NULLIF(provider, ''), 'copilot-cloud'),
+        owner,
+        repo,
+        task_id,
+        head_sha,
+        branch_name,
+        pr_number,
+        pr_url,
+        plan_json,
+        created_at
+      FROM pending_copilot_tasks
+    `);
+    db.exec('DROP TABLE pending_copilot_tasks');
+  }
 }
 
 interface JobRow {
@@ -149,9 +194,7 @@ export class SqliteJobQueue implements JobQueue {
     // A queued job is worthless if the process is gone; waiting briefly for a
     // concurrent writer beats failing an enqueue that GitHub will not resend.
     db.exec('PRAGMA busy_timeout = 5000');
-    db.exec(SCHEMA);
-    addColumnIfMissing(db, 'pending_copilot_tasks', 'provider', "TEXT NOT NULL DEFAULT 'copilot-cloud'");
-    addColumnIfMissing(db, 'pending_copilot_tasks', 'plan_json', 'TEXT');
+    migratePendingCloudTaskTable(db);
 
     db.prepare('INSERT OR REPLACE INTO schema_meta (key, value) VALUES (?, ?)').run(
       'version',
@@ -278,7 +321,7 @@ export class SqliteJobQueue implements JobQueue {
   async recordPendingCloudTask(task: Omit<PendingCloudTask, 'id' | 'createdAt'>): Promise<void> {
     this.db
       .prepare(
-        `INSERT INTO pending_copilot_tasks (provider, owner, repo, task_id, head_sha, branch_name, pr_number, pr_url, plan_json, created_at)
+        `INSERT INTO pending_cloud_tasks (provider, owner, repo, task_id, head_sha, branch_name, pr_number, pr_url, plan_json, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
@@ -297,13 +340,13 @@ export class SqliteJobQueue implements JobQueue {
 
   async listPendingCloudTasks(): Promise<PendingCloudTask[]> {
     const rows = this.db
-      .prepare('SELECT * FROM pending_copilot_tasks ORDER BY id')
+      .prepare('SELECT * FROM pending_cloud_tasks ORDER BY id')
       .all() as unknown as PendingCloudTaskRow[];
     return rows.map(toPendingCloudTask);
   }
 
   async resolvePendingCloudTask(id: number): Promise<void> {
-    this.db.prepare('DELETE FROM pending_copilot_tasks WHERE id = ?').run(id);
+    this.db.prepare('DELETE FROM pending_cloud_tasks WHERE id = ?').run(id);
   }
 
   async recordDispatchedPlan(record: {
