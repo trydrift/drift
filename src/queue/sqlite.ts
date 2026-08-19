@@ -7,7 +7,7 @@ import type {
   EnqueueResult,
   Job,
   JobQueue,
-  PendingCopilotTask,
+  PendingCloudTask,
   QueueStats,
 } from './types.js';
 
@@ -50,8 +50,9 @@ CREATE TABLE IF NOT EXISTS schema_meta (
   value TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS pending_copilot_tasks (
+CREATE TABLE IF NOT EXISTS pending_cloud_tasks (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  provider    TEXT    NOT NULL DEFAULT 'copilot-cloud',
   owner       TEXT    NOT NULL,
   repo        TEXT    NOT NULL,
   task_id     TEXT    NOT NULL,
@@ -59,10 +60,11 @@ CREATE TABLE IF NOT EXISTS pending_copilot_tasks (
   branch_name TEXT    NOT NULL,
   pr_number   INTEGER,
   pr_url      TEXT,
+  plan_json   TEXT,
   created_at  TEXT    NOT NULL
 );
 
--- Permanent, unlike pending_copilot_tasks (which is deleted once a task
+-- Permanent, unlike pending_cloud_tasks (which is deleted once a task
 -- resolves): this is the idempotency source that still answers "was this plan
 -- already dispatched?" after the task it recorded has long since finished.
 CREATE TABLE IF NOT EXISTS dispatched_plans (
@@ -79,7 +81,58 @@ CREATE TABLE IF NOT EXISTS dispatched_plans (
 `;
 
 /** Bump alongside any migration to `SCHEMA`. */
-export const QUEUE_SCHEMA_VERSION = 3;
+export const QUEUE_SCHEMA_VERSION = 5;
+
+function tableExists(db: DatabaseSync, table: string): boolean {
+  const row = db
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
+    .get(table) as { name: string } | undefined;
+  return Boolean(row);
+}
+
+function addColumnIfMissing(db: DatabaseSync, table: string, column: string, definition: string): void {
+  if (!tableExists(db, table)) return;
+  const rows = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  if (rows.some((row) => row.name === column)) return;
+  db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+}
+
+function migratePendingCloudTaskTable(db: DatabaseSync): void {
+  const hasLegacy = tableExists(db, 'pending_copilot_tasks');
+  const hasCurrent = tableExists(db, 'pending_cloud_tasks');
+
+  if (hasLegacy && !hasCurrent) {
+    db.exec('ALTER TABLE pending_copilot_tasks RENAME TO pending_cloud_tasks');
+  }
+
+  db.exec(SCHEMA);
+  addColumnIfMissing(db, 'pending_cloud_tasks', 'provider', "TEXT NOT NULL DEFAULT 'copilot-cloud'");
+  addColumnIfMissing(db, 'pending_cloud_tasks', 'plan_json', 'TEXT');
+  db.exec("UPDATE pending_cloud_tasks SET provider = 'copilot-cloud' WHERE provider IS NULL OR provider = ''");
+
+  if (hasLegacy && hasCurrent) {
+    addColumnIfMissing(db, 'pending_copilot_tasks', 'provider', "TEXT NOT NULL DEFAULT 'copilot-cloud'");
+    addColumnIfMissing(db, 'pending_copilot_tasks', 'plan_json', 'TEXT');
+    db.exec(`
+      INSERT OR IGNORE INTO pending_cloud_tasks
+        (id, provider, owner, repo, task_id, head_sha, branch_name, pr_number, pr_url, plan_json, created_at)
+      SELECT
+        id,
+        COALESCE(NULLIF(provider, ''), 'copilot-cloud'),
+        owner,
+        repo,
+        task_id,
+        head_sha,
+        branch_name,
+        pr_number,
+        pr_url,
+        plan_json,
+        created_at
+      FROM pending_copilot_tasks
+    `);
+    db.exec('DROP TABLE pending_copilot_tasks');
+  }
+}
 
 interface JobRow {
   id: number;
@@ -141,7 +194,7 @@ export class SqliteJobQueue implements JobQueue {
     // A queued job is worthless if the process is gone; waiting briefly for a
     // concurrent writer beats failing an enqueue that GitHub will not resend.
     db.exec('PRAGMA busy_timeout = 5000');
-    db.exec(SCHEMA);
+    migratePendingCloudTaskTable(db);
 
     db.prepare('INSERT OR REPLACE INTO schema_meta (key, value) VALUES (?, ?)').run(
       'version',
@@ -265,13 +318,14 @@ export class SqliteJobQueue implements JobQueue {
     this.db.close();
   }
 
-  async recordPendingCopilotTask(task: Omit<PendingCopilotTask, 'id' | 'createdAt'>): Promise<void> {
+  async recordPendingCloudTask(task: Omit<PendingCloudTask, 'id' | 'createdAt'>): Promise<void> {
     this.db
       .prepare(
-        `INSERT INTO pending_copilot_tasks (owner, repo, task_id, head_sha, branch_name, pr_number, pr_url, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO pending_cloud_tasks (provider, owner, repo, task_id, head_sha, branch_name, pr_number, pr_url, plan_json, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       )
       .run(
+        task.provider,
         task.owner,
         task.repo,
         task.taskId,
@@ -279,19 +333,20 @@ export class SqliteJobQueue implements JobQueue {
         task.branchName,
         task.prNumber,
         task.prUrl,
+        task.planJson,
         new Date().toISOString(),
       );
   }
 
-  async listPendingCopilotTasks(): Promise<PendingCopilotTask[]> {
+  async listPendingCloudTasks(): Promise<PendingCloudTask[]> {
     const rows = this.db
-      .prepare('SELECT * FROM pending_copilot_tasks ORDER BY id')
-      .all() as unknown as PendingCopilotTaskRow[];
-    return rows.map(toPendingCopilotTask);
+      .prepare('SELECT * FROM pending_cloud_tasks ORDER BY id')
+      .all() as unknown as PendingCloudTaskRow[];
+    return rows.map(toPendingCloudTask);
   }
 
-  async resolvePendingCopilotTask(id: number): Promise<void> {
-    this.db.prepare('DELETE FROM pending_copilot_tasks WHERE id = ?').run(id);
+  async resolvePendingCloudTask(id: number): Promise<void> {
+    this.db.prepare('DELETE FROM pending_cloud_tasks WHERE id = ?').run(id);
   }
 
   async recordDispatchedPlan(record: {
@@ -329,8 +384,9 @@ export class SqliteJobQueue implements JobQueue {
   }
 }
 
-interface PendingCopilotTaskRow {
+interface PendingCloudTaskRow {
   id: number;
+  provider: string;
   owner: string;
   repo: string;
   task_id: string;
@@ -338,19 +394,23 @@ interface PendingCopilotTaskRow {
   branch_name: string;
   pr_number: number | null;
   pr_url: string | null;
+  plan_json: string | null;
   created_at: string;
 }
 
-function toPendingCopilotTask(row: PendingCopilotTaskRow): PendingCopilotTask {
+function toPendingCloudTask(row: PendingCloudTaskRow): PendingCloudTask {
   return {
     id: row.id,
+    provider: row.provider,
     owner: row.owner,
     repo: row.repo,
     taskId: row.task_id,
+    state: null,
     headSha: row.head_sha,
     branchName: row.branch_name,
     prNumber: row.pr_number,
     prUrl: row.pr_url,
+    planJson: row.plan_json,
     createdAt: row.created_at,
   };
 }

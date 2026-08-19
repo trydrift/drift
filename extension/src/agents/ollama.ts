@@ -28,6 +28,11 @@ export class OllamaAgent implements FixAgent {
   readonly label = 'Ollama (local)';
   readonly description = 'A model on your own machine. Nothing leaves your laptop.';
   readonly kind = 'in-editor' as const;
+  readonly capabilities = {
+    execution: 'workspace',
+    canAwaitCompletion: false,
+    canInspectResult: true,
+  } as const;
   readonly acceptsCustomModel = true;
 
   constructor(

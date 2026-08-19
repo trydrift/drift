@@ -33,6 +33,39 @@ and download a ready-to-commit `drift.yml` and workflow file.
 Start on `approve`. Read a few plans. Move to `auto` when they stop surprising
 you.
 
+### `remediation.agent`
+
+Repository policy for the agent Drift may use after deterministic codemods and
+validated fix plans have done everything they can.
+
+```yaml
+remediation:
+  agent:
+    provider: auto # auto, or any registered provider id
+    model: gpt-5
+    effort: high
+    fast: false
+    timeoutSeconds: 600
+```
+
+`drift.yml` describes policy only. It must not contain provider credentials.
+Runtime auth stays in the environment or in the provider's own CLI login:
+
+- `copilot-cloud` uses `copilot-token` / `DRIFT_COPILOT_TOKEN`.
+- Local runner agents (`codex`, `claude`, `gemini`, `aider`, `opencode`) use the
+  already-installed, already-authenticated CLI on the machine running Drift.
+- Additional providers supply their own adapter and credential handling.
+
+Selection is deterministic for unattended runs. Drift uses, in order: explicit
+CLI/Action input, `remediation.agent.provider`, a saved local CLI preference
+only for the local CLI, legacy Copilot config, automatic selection only if
+exactly one eligible provider is available, then approval/unresolved status.
+Registry order never decides which model edits code in CI.
+
+`remediation.model` is still accepted for backward compatibility and is
+translated to `remediation.agent.provider: copilot-cloud` when no new
+`remediation.agent` block is present.
+
 ### `maxAutoRisk`
 
 `none` | `low` | `medium` | `high` — default **`medium`**

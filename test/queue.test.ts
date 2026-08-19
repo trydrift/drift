@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { DatabaseSync } from 'node:sqlite';
 import { MemoryJobQueue } from '../dist/queue/memory.js';
 import { SqliteJobQueue } from '../dist/queue/sqlite.js';
 import { QueueWorker } from '../dist/queue/worker.js';
@@ -39,6 +40,27 @@ after(() => {
 
 function delivery(id: string) {
   return { deliveryId: id, event: 'push', payload: JSON.stringify({ ref: 'refs/heads/main' }) };
+}
+
+async function withRawDatabase(path: string, fn: (db: DatabaseSync) => void): Promise<void> {
+  const { DatabaseSync } = await import('node:sqlite');
+  const db = new DatabaseSync(path);
+  try {
+    fn(db);
+  } finally {
+    db.close();
+  }
+}
+
+async function tableExists(path: string, table: string): Promise<boolean> {
+  let found = false;
+  await withRawDatabase(path, (db) => {
+    const row = db
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
+      .get(table) as { name: string } | undefined;
+    found = Boolean(row);
+  });
+  return found;
 }
 
 /**
@@ -303,6 +325,116 @@ describe('sqlite durability', { skip: sqliteAvailable ? false : 'node:sqlite req
     const stats = await queue.stats();
     assert.equal(stats.failed, 1);
     await queue.close();
+  });
+
+  test('migrates pending Copilot tasks from the legacy table to pending cloud tasks', async () => {
+    const path = join(dir, 'legacy-pending-cloud.db');
+    const planJson = JSON.stringify({ id: 'plan_1' });
+
+    await withRawDatabase(path, (db) => {
+      db.exec(`
+        CREATE TABLE pending_copilot_tasks (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          provider    TEXT    NOT NULL DEFAULT 'copilot-cloud',
+          owner       TEXT    NOT NULL,
+          repo        TEXT    NOT NULL,
+          task_id     TEXT    NOT NULL,
+          head_sha    TEXT    NOT NULL,
+          branch_name TEXT    NOT NULL,
+          pr_number   INTEGER,
+          pr_url      TEXT,
+          plan_json   TEXT,
+          created_at  TEXT    NOT NULL
+        )
+      `);
+      db.prepare(
+        `INSERT INTO pending_copilot_tasks
+          (provider, owner, repo, task_id, head_sha, branch_name, pr_number, pr_url, plan_json, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        'copilot-cloud',
+        'acme',
+        'app',
+        'task_1',
+        'a'.repeat(40),
+        'drift/fix',
+        12,
+        'https://example.invalid/pr/12',
+        planJson,
+        '2026-01-01T00:00:00Z',
+      );
+    });
+
+    const queue = await SqliteJobQueue.open(path);
+    const pending = await queue.listPendingCloudTasks();
+    assert.equal(pending.length, 1);
+    assert.equal(pending[0]!.provider, 'copilot-cloud');
+    assert.equal(pending[0]!.taskId, 'task_1');
+    assert.equal(pending[0]!.planJson, planJson);
+    await queue.close();
+
+    assert.equal(await tableExists(path, 'pending_cloud_tasks'), true);
+    assert.equal(await tableExists(path, 'pending_copilot_tasks'), false);
+
+    const reopened = await SqliteJobQueue.open(path);
+    assert.equal((await reopened.listPendingCloudTasks())[0]!.provider, 'copilot-cloud');
+    await reopened.close();
+  });
+
+  test('backfills provider for older pending task rows without one', async () => {
+    const path = join(dir, 'legacy-pending-cloud-no-provider.db');
+
+    await withRawDatabase(path, (db) => {
+      db.exec(`
+        CREATE TABLE pending_copilot_tasks (
+          id          INTEGER PRIMARY KEY AUTOINCREMENT,
+          owner       TEXT    NOT NULL,
+          repo        TEXT    NOT NULL,
+          task_id     TEXT    NOT NULL,
+          head_sha    TEXT    NOT NULL,
+          branch_name TEXT    NOT NULL,
+          pr_number   INTEGER,
+          pr_url      TEXT,
+          created_at  TEXT    NOT NULL
+        )
+      `);
+      db.prepare(
+        `INSERT INTO pending_copilot_tasks
+          (owner, repo, task_id, head_sha, branch_name, pr_number, pr_url, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run('acme', 'app', 'task_old', 'a'.repeat(40), 'drift/old', null, null, '2026-01-01T00:00:00Z');
+    });
+
+    const queue = await SqliteJobQueue.open(path);
+    const [pending] = await queue.listPendingCloudTasks();
+    assert.equal(pending?.provider, 'copilot-cloud');
+    assert.equal(pending?.planJson, null);
+    await queue.close();
+  });
+
+  test('persists a non-Copilot cloud provider in the provider-neutral table', async () => {
+    const path = join(dir, 'new-pending-cloud.db');
+    const queue = await SqliteJobQueue.open(path);
+    await queue.recordPendingCloudTask({
+      provider: 'acme-cloud',
+      owner: 'acme',
+      repo: 'app',
+      taskId: 'task_acme',
+      state: 'queued',
+      headSha: 'b'.repeat(40),
+      branchName: 'drift/acme',
+      prNumber: null,
+      prUrl: null,
+      planJson: JSON.stringify({ id: 'plan_acme' }),
+    });
+
+    const [pending] = await queue.listPendingCloudTasks();
+    assert.equal(pending?.provider, 'acme-cloud');
+    assert.equal(pending?.taskId, 'task_acme');
+    await queue.close();
+
+    assert.equal(await tableExists(path, 'pending_cloud_tasks'), true);
+    assert.equal(await tableExists(path, 'pending_copilot_tasks'), false);
   });
 });
 

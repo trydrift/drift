@@ -11,7 +11,7 @@
 export * from './types.js';
 
 export { DriftConfigSchema, DEFAULT_CONFIG, riskWithinLimit, compareRisk } from './config/schema.js';
-export type { DriftConfig } from './config/schema.js';
+export type { AgentConfig, AgentProvider, DriftConfig, ExplicitAgentProvider } from './config/schema.js';
 export { loadConfig, parseConfig, CONFIG_PATHS } from './config/load.js';
 
 export {
@@ -157,6 +157,53 @@ export {
   scoreLabel,
 } from './report/confidence.js';
 export type { FindingVerdict } from './report/confidence.js';
+
+export { resolveAgentSelection } from './agents/selection.js';
+export type {
+  AgentCredentialSet,
+  AgentRuntimeState,
+  AgentSelection,
+  AgentSelectionSource,
+  ResolvedAgentSelection,
+  UnresolvedAgentSelection,
+} from './agents/selection.js';
+export {
+  AgentProviderRegistry,
+  createDefaultAgentProviderRegistry,
+  defaultAgentProviderRegistry,
+  isCloudFixAgent,
+} from './agents/registry.js';
+export type { AgentProviderAdapter, AgentProviderMetadata, AgentRuntimeContext } from './agents/registry.js';
+export { CLI_AGENT_SPECS, CliFixAgent, failureReason, parseCodexModels } from './agents/cli.js';
+export type {
+  AgentAvailability,
+  AgentContext,
+  AgentKind,
+  AgentModel,
+  EffortStop,
+  FixAgent,
+  FixOutcome,
+  FixTask,
+} from './agents/types.js';
+export {
+  applyBuiltinCommit,
+  applyFixPlanCommit,
+  createRemediationWorktree,
+  removeRemediationWorktree,
+  runAgentCommitsInWorktree,
+  runWorktreeRemediation,
+} from './remediation/worktree-runner.js';
+export type {
+  WorktreeAgentRunOptions,
+  WorktreeAgentRunResult,
+  WorktreeRemediationOptions,
+  WorktreeRemediationResult,
+} from './remediation/worktree-runner.js';
+export { awaitTerminalCloudTask, reconcileCloudTask } from './remediation/cloud-lifecycle.js';
+export type { CloudTaskReconciliation } from './remediation/cloud-lifecycle.js';
+export type { CloudFixAgent, CloudTaskStatus } from './agents/types.js';
+export { validateCloudChangedFiles, validateAgentWorktree } from './agents/scope.js';
+export type { CloudScopeValidationOptions, CloudScopeValidationResult, ScopeValidationResult } from './agents/scope.js';
 
 export { authorizeApproval, canApprove } from './approval/authorize.js';
 export type { AuthorizeResult, ApprovalRequest, RepoPermission } from './approval/authorize.js';

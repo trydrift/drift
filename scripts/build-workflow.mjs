@@ -38,13 +38,18 @@ const workflow = `# Drift — detect breaking dependency changes and fix them.
 #
 # Three things to know before you enable it:
 #
-#   1. \`copilot-token\` is optional. Drift only needs it when a planned fix
-#      remains after deterministic remediation and any enabled community
-#      recipe. If you add it, it must be a USER-scoped token (a fine-grained
-#      PAT) with "Agent tasks: read and write" — the only permission the Agent
-#      Tasks endpoint checks. GitHub's Copilot agent API rejects the built-in
-#      GITHUB_TOKEN and any GitHub App installation token, because Copilot is
-#      billed per seat. See docs/copilot-integration.md.
+#   1. Agent setup is explicit. Drift can use installed runner CLIs such as
+#      Codex, Claude Code, Gemini CLI, Aider, or OpenCode, or it can delegate
+#      to Copilot Cloud. Set \`remediation.agent.provider\` in .github/drift.yml
+#      or pass the \`agent\` input. In unattended auto mode Drift never chooses
+#      by registry order: if multiple usable agents exist, it falls back to an
+#      approval issue asking for an explicit selection.
+#
+#      For local runner agents, install and authenticate the CLI before this
+#      Action runs and keep git push credentials available to the checkout.
+#      For Copilot Cloud, \`copilot-token\` is optional until a planned fix
+#      needs it; when supplied it must be a USER-scoped token with "Agent
+#      tasks: read and write". See docs/copilot-integration.md.
 #
 #   2. Drift ships in \`approve\` mode by default: it analyses, files an issue,
 #      and waits for you. Switch to \`auto\` in \`.github/drift.yml\` once you
@@ -122,13 +127,11 @@ jobs:
           # the working tree, and skips localization (saying so in the report)
           # rather than reporting impact sites from the wrong tree.
           fetch-depth: 2
-          # Drift commits its own codemod output through the GitHub API, not a
-          # local \`git push\`, so a push-capable credential left in the runner's
-          # git config is not something Drift ever needs. Verification also
-          # installs each candidate upgrade's own (untrusted) code in a
-          # throwaway worktree — see docs/trust-and-safety.md — and a
-          # credential that doesn't exist there can't be exfiltrated from it.
-          persist-credentials: false
+          # Copilot Cloud does not need checkout credentials here, but local
+          # workspace runner agents do: Drift commits accepted agent edits in
+          # an isolated worktree, then pushes the branch with git. Leave this
+          # true when using a workspace-executing provider.
+          persist-credentials: true
 
       # ----------------------------------------------------------------------
       # Toolchains.

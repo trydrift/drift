@@ -3,8 +3,6 @@ import { constants } from 'node:fs';
 import { delimiter, dirname, join } from 'node:path';
 import { execFile, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
-import * as vscode from 'vscode';
-import type { SessionEffort, TaskActivityInput } from '../session.js';
 import {
   buildFixPrompt,
   type AgentAvailability,
@@ -14,11 +12,14 @@ import {
   type FixAgent,
   type FixOutcome,
   type FixTask,
+  type SessionEffort,
 } from './types.js';
-import { envWithShellPath } from '../shell-path.js';
-import { AgentStreamReader } from './stream.js';
 
 const run = promisify(execFile);
+
+async function envWithShellPath(): Promise<NodeJS.ProcessEnv> {
+  return { ...process.env, PATH: process.env.PATH ?? '' };
+}
 
 /**
  * Local coding-agent CLIs — Claude Code, Codex, Gemini, Aider, and friends.
@@ -113,10 +114,6 @@ export interface CliAgentSpec {
    */
   effortPrompt?: (effort: SessionEffort) => string;
   versionArgs?: string[];
-  /** VS Code chat extensions that can bundle or configure this agent. */
-  extensionIds?: string[];
-  /** Candidate executable paths inside installed VS Code extensions. */
-  extensionBinaryPaths?: string[];
   /** Optional local auth/subscription probe. Must not prompt. */
   detectAuth?: (command: string) => Promise<string | null>;
   docsUrl: string;
@@ -186,11 +183,6 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
     effortArgsFlag: '--effort',
     effortPrompt: (effort) => CLAUDE_THINKING[effort],
     versionArgs: ['--version'],
-    extensionIds: ['anthropic.claude-code'],
-    extensionBinaryPaths: [
-      'resources/native-binary/claude',
-      'resources/native-binary/claude.exe',
-    ],
     detectAuth: detectClaudeAuth,
     docsUrl: 'https://claude.com/claude-code',
   },
@@ -214,14 +206,6 @@ export const CLI_AGENT_SPECS: readonly CliAgentSpec[] = [
     fastArgs: () => ['--enable', 'fast_mode'],
     fastArgsFlag: '--enable',
     versionArgs: ['--version'],
-    extensionIds: ['openai.chatgpt'],
-    extensionBinaryPaths: [
-      'bin/macos-x86_64/codex',
-      'bin/macos-aarch64/codex',
-      'bin/linux-x64/codex',
-      'bin/linux-arm64/codex',
-      'bin/windows-x64/codex.exe',
-    ],
     detectAuth: detectCodexAuth,
     docsUrl: 'https://github.com/openai/codex',
   },
@@ -302,13 +286,9 @@ export class CliFixAgent implements FixAgent {
   async detect(): Promise<AgentAvailability> {
     const found = await resolveCommand(this.spec);
     if (!found) {
-      const extension = installedExtensionSummary(this.spec);
       return {
         available: false,
-        reason: extension
-          ? `${extension} is installed, but Drift could not find its \`${this.spec.command}\` binary. See ${this.spec.docsUrl}`
-          : `\`${this.spec.command}\` is not on your PATH and no matching VS Code extension bundle was found. See ${this.spec.docsUrl}`,
-        signals: extension ? [extension] : undefined,
+        reason: `\`${this.spec.command}\` is not on your PATH. See ${this.spec.docsUrl}`,
       };
     }
 
@@ -446,7 +426,6 @@ export class CliFixAgent implements FixAgent {
 
       let stdout = '';
       let stderr = '';
-      const readers = { out: new AgentStreamReader(), err: new AgentStreamReader() };
       const started = Date.now();
       let lastOutput = Date.now();
 
@@ -477,38 +456,15 @@ export class CliFixAgent implements FixAgent {
       };
       ctx.signal.addEventListener('abort', onAbort, { once: true });
 
-      // Which pipe a line arrived on says nothing about what it *means* —
-      // these CLIs write their whole transcript to stderr and keep stdout for
-      // the final answer, so labelling the panel's steps by stream produced a
-      // column of rows all called STDERR. But the two pipes are still two
-      // documents, and a block half-read on one when a chunk arrives on the
-      // other must not be spliced with it, so each gets its own reader.
-      //
-      // A `data` event is a pipe-buffering artifact, not a line — and a line is
-      // not an event either. These CLIs write blocks: a keyword, then the body
-      // it introduces. A reader that stops at newlines therefore produced rows
-      // titled `exec` and `codex` with the actual work scattered between them,
-      // which is what the drawer was showing. `AgentStreamReader` holds the
-      // stream until each block closes and hands back one named event per
-      // block; see `agents/stream.ts`.
-      const emit = (events: readonly TaskActivityInput[]) => {
-        for (const event of events) {
-          if (ctx.activity) ctx.activity(event);
-          // A caller with no structured channel still gets a summary line, so
-          // nothing regresses for an agent driven from somewhere else.
-          else if (event.detail || event.input) ctx.report((event.detail ?? event.input ?? '').slice(0, 400));
-        }
-      };
       const surface = (chunk: Buffer, into: 'out' | 'err') => {
         const text = chunk.toString();
         if (into === 'out') stdout += text;
         else stderr += text;
         lastOutput = Date.now();
-        emit(readers[into].push(text));
-      };
-      const flushPending = () => {
-        emit(readers.err.flush());
-        emit(readers.out.flush());
+        for (const line of text.split('\n')) {
+          const cleaned = line.trim();
+          if (!isNoise(cleaned)) ctx.report(cleaned.slice(0, 400));
+        }
       };
 
       child.stdout.on('data', (chunk: Buffer) => surface(chunk, 'out'));
@@ -527,12 +483,7 @@ export class CliFixAgent implements FixAgent {
         clearTimeout(killTimer);
         clearInterval(heartbeat);
         ctx.signal.removeEventListener('abort', onAbort);
-        flushPending();
-        // The last thing the agent said in its own voice, for a CLI that keeps
-        // its transcript on stderr and prints nothing conclusive to stdout.
-        // Read off the reader that already parsed those blocks, rather than
-        // parsing the same text a second time to a second set of rules.
-        resolve({ code: code ?? 0, stdout, stderr, spoken: readers.err.finalAnswer() ?? readers.out.finalAnswer() });
+        resolve({ code: code ?? 0, stdout, stderr });
       });
 
       if (this.spec.promptOnStdin) {
@@ -659,52 +610,14 @@ export async function which(command: string): Promise<string | null> {
 
 async function resolveCommand(spec: CliAgentSpec): Promise<{ path: string; signals: string[] } | null> {
   const onPath = await which(spec.command);
-  const extension = installedExtensionSummary(spec);
   if (onPath) {
-    return { path: onPath, signals: extension ? [extension, 'Available on PATH'] : ['Available on PATH'] };
-  }
-
-  const bundled = await bundledExtensionBinary(spec);
-  if (bundled) {
-    return {
-      path: bundled.path,
-      signals: [`${bundled.displayName} extension installed`, 'Bundled binary found'],
-    };
+    return { path: onPath, signals: ['Available on PATH'] };
   }
 
   const common = await commonInstallBinary(spec.command);
   if (common) return { path: common, signals: ['Found in a common local bin directory'] };
 
   return null;
-}
-
-async function bundledExtensionBinary(
-  spec: CliAgentSpec,
-): Promise<{ path: string; displayName: string } | null> {
-  for (const extension of installedExtensions(spec)) {
-    const displayName = String(
-      extension.packageJSON?.displayName ?? extension.packageJSON?.name ?? extension.id,
-    );
-    for (const relative of spec.extensionBinaryPaths ?? []) {
-      const path = join(extension.extensionPath, relative);
-      if (await canExecute(path)) return { path, displayName };
-    }
-  }
-  return null;
-}
-
-function installedExtensionSummary(spec: CliAgentSpec): string | null {
-  const extension = installedExtensions(spec)[0];
-  if (!extension) return null;
-  const name = String(extension.packageJSON?.displayName ?? extension.packageJSON?.name ?? extension.id);
-  const version = String(extension.packageJSON?.version ?? '').trim();
-  return `${name}${version ? ` ${version}` : ''} extension installed`;
-}
-
-function installedExtensions(spec: CliAgentSpec): readonly vscode.Extension<unknown>[] {
-  const ids = new Set((spec.extensionIds ?? []).map((id) => id.toLowerCase()));
-  if (ids.size === 0) return [];
-  return vscode.extensions.all.filter((extension) => ids.has(extension.id.toLowerCase()));
 }
 
 async function commonInstallBinary(command: string): Promise<string | null> {

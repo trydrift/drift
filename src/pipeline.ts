@@ -3,6 +3,7 @@ import type { DriftConfig } from './config/schema.js';
 import type { Logger } from './util/logger.js';
 import type { GitHubClient } from './github/client.js';
 import type { RepoProvider } from './repo/provider.js';
+import type { FixAgent } from './agents/types.js';
 import { analyzeRepository } from './analysis.js';
 import { dispatch } from './dispatch/index.js';
 import { renderSummaryLine } from './report/markdown.js';
@@ -25,8 +26,6 @@ export interface PipelineOptions {
   config: DriftConfig;
   logger: Logger;
   github: GitHubClient;
-  /** User-scoped token for the Copilot agent API. */
-  copilotToken?: string;
   /**
    * Optional, used only to raise the public GitHub API rate limit for
    * evidence gathering (release notes, changelogs). Reading is never blocked
@@ -42,6 +41,8 @@ export interface PipelineOptions {
   provider?: RepoProvider;
   /** Analyse and report without creating branches, issues, or tasks. */
   dryRun?: boolean;
+  /** Provider-neutral agent selected by the surface after applying its own rules. */
+  agent?: FixAgent;
   /** A human approved this plan via `/drift apply`. */
   approved?: boolean;
   /** Local checkout to index. Falls back to `repo.workspace`. */
@@ -55,7 +56,7 @@ export interface PipelineResult {
 }
 
 export async function runPipeline(options: PipelineOptions): Promise<PipelineResult> {
-  const { repo, config, logger, github, copilotToken, githubToken, dryRun, approved } = options;
+  const { repo, config, logger, github, githubToken, dryRun, approved, agent } = options;
   const started = Date.now();
 
   const { plan, summary } = await logger.group('Drift: analysing', () =>
@@ -83,7 +84,7 @@ export async function runPipeline(options: PipelineOptions): Promise<PipelineRes
   for (const blocker of plan.blockers) logger.warn(`Blocker: ${blocker}`);
 
   const result = await logger.group('Drift: dispatching', () =>
-    dispatch({ repo, plan, config, github, logger, copilotToken, dryRun, approved }),
+    dispatch({ repo, plan, config, github, logger, agent, dryRun, approved }),
   );
 
   logger.info(result.message);
@@ -115,7 +116,7 @@ export async function runPipeline(options: PipelineOptions): Promise<PipelineRes
  * every other dispatch — that path calls `analyzeRepository`/`dispatch`
  * directly rather than through `runPipeline`, because approval has its own
  * verification steps (digest, commit range, idempotency) that don't belong in
- * the ordinary pipeline. Without this it dispatched real Copilot tasks with
+ * the ordinary pipeline. Without this it dispatched real agent tasks with
  * no telemetry at all, and `userAction: 'approved'` — the one user action
  * Drift's own process ever directly witnesses — was consequently unreachable.
  */
@@ -137,7 +138,7 @@ export async function reportTelemetry(args: {
     const event = buildUpgradeOutcomeEvent({
       plan,
       result,
-      // Only `dispatched` actually put the Copilot Agent Tasks API to work.
+      // Only `dispatched` actually put an agent to work.
       // `skipped`, `blocked`, and `failed` all mean no agent ever ran — a
       // plan that was filed for approval or fell back to one is not a cloud
       // agent run, and reporting it as one would overstate how often Drift

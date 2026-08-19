@@ -43,6 +43,9 @@ export function parseConfig(raw: string, path: string | null = null): ConfigLoad
     return { config: DEFAULT_CONFIG, path, problems };
   }
 
+  const legacyAgentModel = legacyRemediationModel(doc);
+  const hasCanonicalAgent = hasRemediationAgent(doc);
+
   const parsed = DriftConfigSchema.safeParse(doc);
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {
@@ -53,7 +56,36 @@ export function parseConfig(raw: string, path: string | null = null): ConfigLoad
     return { config: DEFAULT_CONFIG, path, problems };
   }
 
-  return { config: parsed.data, path, problems };
+  const config = parsed.data;
+  if (legacyAgentModel && !hasCanonicalAgent) {
+    config.remediation.agent = {
+      ...config.remediation.agent,
+      provider: 'copilot-cloud',
+      model: legacyAgentModel,
+    };
+    problems.push(
+      '`remediation.model` is deprecated and now treated as `remediation.agent.model` for `copilot-cloud`. Use `remediation.agent` for new configuration.',
+    );
+  }
+
+  return { config, path, problems };
+}
+
+function hasRemediationAgent(doc: unknown): boolean {
+  if (!isRecord(doc)) return false;
+  const remediation = doc.remediation;
+  return isRecord(remediation) && remediation.agent !== undefined;
+}
+
+function legacyRemediationModel(doc: unknown): string | null {
+  if (!isRecord(doc)) return null;
+  const remediation = doc.remediation;
+  if (!isRecord(remediation)) return null;
+  return typeof remediation.model === 'string' && remediation.model.trim() ? remediation.model : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /**

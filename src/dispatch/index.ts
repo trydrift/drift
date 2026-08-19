@@ -6,9 +6,11 @@ import type { Exec } from '../util/exec.js';
 import { isAutoDispatchable } from '../plan/index.js';
 import { renderApprovalIssue, renderPullRequestBody, renderSummaryLine } from '../report/markdown.js';
 import { titleFor } from '../plan/pull-request.js';
-import { dispatchToCopilot } from './copilot.js';
 import { applyDeterministicRemediation } from '../github/local-commit.js';
 import { planForCommits } from '../remediation/partition.js';
+import type { FixAgent } from '../agents/types.js';
+import { execCommand } from '../util/exec.js';
+import { runAgentCommitsInWorktree, runWorktreeRemediation } from '../remediation/worktree-runner.js';
 
 /**
  * Dispatch: decide what to do with a plan, and do it.
@@ -18,7 +20,7 @@ import { planForCommits } from '../remediation/partition.js';
  *
  *   nothing to fix      -> report and stop
  *   blocked or approve  -> file an issue with the full plan and stop
- *   auto and unblocked  -> create branch, hand to Copilot, open PR
+ *   auto and unblocked  -> create branch, hand unresolved work to an agent, open PR
  *
  * Even the last path stops short of merging. Drift's output is always something
  * a human opens, never something that has already landed.
@@ -32,8 +34,8 @@ export interface DispatchOptions {
   config: DriftConfig;
   github: GitHubClient;
   logger: Logger;
-  /** User-scoped Copilot token. Absent means dispatch cannot proceed. */
-  copilotToken?: string;
+  /** Provider-neutral agent selected by the active runtime surface. */
+  agent?: FixAgent;
   /** Analyse and report, but never create branches, issues, or tasks. */
   dryRun?: boolean;
   /**
@@ -46,7 +48,8 @@ export interface DispatchOptions {
 }
 
 export async function dispatch(options: DispatchOptions): Promise<DispatchResult> {
-  const { repo, plan, config, github, logger, copilotToken, dryRun = false, approved = false } = options;
+  const { repo, plan, config, github, logger, dryRun = false, approved = false } = options;
+  const agent = options.agent;
 
   // Zero commits only means "not affected" when the plan has no blocking gap.
   // A blocker at this point — most often localization never having run, as on
@@ -72,16 +75,17 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
 
   if (dryRun) {
     logger.info(`Dry run: would dispatch ${plan.commits.length} commit(s) on ${plan.branchName}`);
-    const preview = copilotToken
-      ? await dispatchToCopilot({ copilotToken, repo, plan, config, logger, dryRun: true })
-      : undefined;
-    if (preview) logger.debug('Copilot prompt preview', { length: preview.prompt.length });
+    if (agent) logger.debug(`Agent preview: ${agent.label}`);
     return {
       status: 'skipped',
       planId: plan.id,
       branchName: plan.branchName,
       message: `Dry run — no changes made. Would create branch \`${plan.branchName}\` and resolve ${plan.commits.length} commit(s) (deterministically where possible, otherwise via agent).`,
     };
+  }
+
+  if (agent?.capabilities.execution === 'workspace') {
+    return dispatchViaWorkspaceAgent({ ...options, agent });
   }
 
   // The branch is created by Drift rather than left to the agent so the base
@@ -99,7 +103,7 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
   // Resolve everything Drift can prove correct itself — its own codemods
   // always, a matching community recipe only when `remediation.communityRecipes`
   // is enabled — directly on the branch, before ever considering an agent.
-  // A commit successfully committed this way is never handed to Copilot.
+  // A commit successfully committed this way is never handed to an agent.
   const { committedIds } = await applyDeterministicRemediation({
     repo,
     plan,
@@ -131,12 +135,12 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
   }
 
   if (committedIds.size > 0) {
-    logger.info(`Resolved ${committedIds.size} commit(s) deterministically; dispatching the remaining ${remaining.length} to Copilot.`);
+    logger.info(`Resolved ${committedIds.size} commit(s) deterministically; dispatching the remaining ${remaining.length} to ${agent?.label ?? 'an agent'}.`);
   }
 
-  if (!copilotToken) {
+  if (!agent) {
     logger.warn(
-      'Drift is in auto mode with commit(s) that need an agent, but no Copilot token is available. Falling back to approval.',
+      'Drift is in auto mode with commit(s) that need an agent, but no usable agent is available. Falling back to approval.',
     );
     return requestApproval({
       ...options,
@@ -144,33 +148,45 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
         ...plan,
         blockers: [
           ...plan.blockers,
-          'No Copilot token was available. Set the `DRIFT_COPILOT_TOKEN` secret to a user-scoped fine-grained token with `Agent tasks: read and write` — that is the only permission the Agent Tasks endpoint checks. The Copilot agent API does not accept GitHub App installation tokens.',
+          'No usable AI agent was available. Configure `remediation.agent.provider` or pass an explicit agent input.',
         ],
       },
     });
   }
 
   const agentPlan = planForCommits(plan, remaining);
-  const result = await dispatchToCopilot({ copilotToken, repo, plan: agentPlan, config, logger });
+  const result = await agent.run(
+    {
+      plan: agentPlan,
+      commit: agentPlan.commits[0]!,
+      workspaceRoot: repo.workspace ?? '',
+      files: [],
+      customInstructions: config.remediation.customInstructions,
+      model: config.remediation.agent.model ?? config.remediation.model,
+      effort: config.remediation.agent.effort,
+      fast: config.remediation.agent.fast,
+    },
+    { report: (message) => logger.info(message), signal: new AbortController().signal },
+  );
 
-  if (!result.ok) {
-    logger.error(`Copilot dispatch failed: ${result.error}`);
+  if (result.status === 'failed') {
+    logger.error(`${agent.label} dispatch failed: ${result.message}`);
     // A dispatch failure falls back to approval rather than silently dropping
     // the analysis — the work is still valuable to a human. Anything already
     // resolved deterministically stays committed on the branch either way.
     const fallback = await requestApproval({
       ...options,
-      plan: { ...plan, blockers: [...plan.blockers, result.error ?? 'Copilot dispatch failed.'] },
+      plan: { ...plan, blockers: [...plan.blockers, result.message] },
     });
-    return { ...fallback, status: 'failed', message: result.error ?? 'Copilot dispatch failed.' };
+    return { ...fallback, status: 'failed', message: result.message };
   }
 
-  await postCheckRun(options, 'neutral', `Copilot is fixing ${agentPlan.breakingChanges.length} breaking change(s)`);
+  await postCheckRun(options, 'neutral', `${agent.label} is fixing ${agentPlan.breakingChanges.length} breaking change(s)`);
 
-  const task = result.task;
-  logger.info(`Dispatched to Copilot: task ${task?.id ?? 'unknown'} on ${plan.branchName}`);
+  const task = result.handle;
+  logger.info(`Dispatched to ${agent.label}: task ${task?.id ?? 'unknown'} on ${plan.branchName}`);
 
-  const pr = await ensurePullRequest(options, task?.pullRequestNumber, task?.pullRequestUrl);
+  const pr = await ensurePullRequest(options, undefined, task?.url);
 
   const resolvedNote = committedIds.size > 0 ? `${committedIds.size} commit(s) resolved deterministically; ` : '';
 
@@ -179,12 +195,108 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
     planId: plan.id,
     branchName: plan.branchName,
     taskId: task?.id,
-    pullRequestNumber: pr?.number ?? task?.pullRequestNumber,
-    pullRequestUrl: pr?.url ?? task?.pullRequestUrl,
+    taskProvider: task?.provider ?? agent.id,
+    pullRequestNumber: pr?.number,
+    pullRequestUrl: pr?.url ?? task?.url,
     message: pr
-      ? `${resolvedNote}Copilot is working on ${remaining.length} commit(s) on \`${plan.branchName}\`, tracked in pull request #${pr.number} into \`${plan.baseBranch}\`.`
-      : `${resolvedNote}Copilot is working on ${remaining.length} commit(s) on \`${plan.branchName}\`. A pull request into \`${plan.baseBranch}\` will follow.`,
+      ? `${resolvedNote}${agent.label} is working on ${remaining.length} commit(s) on \`${plan.branchName}\`, tracked in pull request #${pr.number} into \`${plan.baseBranch}\`.`
+      : `${resolvedNote}${agent.label} is working on ${remaining.length} commit(s) on \`${plan.branchName}\`. A pull request into \`${plan.baseBranch}\` will follow.`,
   };
+}
+
+async function dispatchViaWorkspaceAgent(options: DispatchOptions & { agent: FixAgent }): Promise<DispatchResult> {
+  const { repo, plan, config, logger, agent } = options;
+  const workspace = repo.workspace;
+  const exec = options.exec ?? execCommand;
+
+  if (!workspace) {
+    logger.warn(`${agent.label} needs a checked-out workspace, but this dispatch surface did not provide one.`);
+    return requestApproval({
+      ...options,
+      plan: { ...plan, blockers: [...plan.blockers, `${agent.label} needs a checked-out workspace.`] },
+    });
+  }
+
+  const fix = await runWorktreeRemediation({
+    repo,
+    plan,
+    config,
+    logger,
+    workspace,
+    nonInteractive: true,
+    exec,
+  });
+
+  try {
+    if (fix.needsAgent.length > 0) {
+      const agentRun = await runAgentCommitsInWorktree({
+        repo,
+        plan,
+        config,
+        worktree: fix.worktree,
+        commits: fix.needsAgent,
+        agent,
+        logger,
+        exec,
+      });
+
+      if (agentRun.unresolved.length > 0) {
+        for (const failure of agentRun.unresolved) {
+          logger.warn(`Commit ${failure.commit.order} remains unresolved: ${failure.message}`);
+        }
+        await postCheckRun(options, 'action_required', `${agent.label} left unresolved work`);
+        return requestApproval({
+          ...options,
+          plan: {
+            ...plan,
+            blockers: [
+              ...plan.blockers,
+              `${agent.label} could not safely resolve ${agentRun.unresolved.length} commit(s). Choose another agent or approve a manual follow-up.`,
+            ],
+          },
+        });
+      }
+
+      if (agentRun.committed) fix.pushed = true;
+    }
+
+    if (!fix.pushed) {
+      logger.info('Nothing to fix.');
+      await postCheckRun(options, 'success', 'No action needed');
+      return {
+        status: 'skipped',
+        planId: plan.id,
+        message: 'No changes were needed after deterministic and agent remediation.',
+      };
+    }
+
+    const push = await exec('git', ['push', '-u', 'origin', `HEAD:refs/heads/${plan.branchName}`], {
+      cwd: fix.worktree,
+    });
+    if (push.code !== 0) {
+      return {
+        status: 'failed',
+        planId: plan.id,
+        branchName: plan.branchName,
+        message: `Could not push branch \`${plan.branchName}\`: ${push.stderr.trim() || push.stdout.trim()}`,
+      };
+    }
+
+    await postCheckRun(options, 'success', `${agent.label} resolved ${plan.commits.length} commit(s)`);
+    const pr = await ensurePullRequest(options, undefined, undefined);
+    return {
+      status: 'dispatched',
+      planId: plan.id,
+      branchName: plan.branchName,
+      pullRequestNumber: pr?.number,
+      pullRequestUrl: pr?.url,
+      message: pr
+        ? `${agent.label} resolved ${plan.commits.length} commit(s) on \`${plan.branchName}\`, tracked in pull request #${pr.number} into \`${plan.baseBranch}\`.`
+        : `${agent.label} resolved ${plan.commits.length} commit(s) on \`${plan.branchName}\`. A pull request into \`${plan.baseBranch}\` will follow.`,
+    };
+  } finally {
+    await fix.teardown();
+  }
 }
 
 /**
@@ -195,7 +307,7 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
  * a human to do the single step the automation existed to remove — and a branch
  * with no pull request is invisible to every review process a team already has.
  *
- * Copilot sometimes opens the pull request itself, which is why the task's own
+ * A cloud provider may open the pull request itself, which is why the task's own
  * number is honoured first: opening a second one for the same branch would be
  * worse than opening none.
  *

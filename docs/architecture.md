@@ -574,14 +574,16 @@ the plan.**
 
 ### 7 · Dispatch
 
-See [copilot-integration.md](copilot-integration.md).
+See [agent boundaries](security/agent-boundaries.md) and
+[copilot-integration.md](copilot-integration.md).
 
 Drift creates the branch itself, pinned to the analysed commit; if the branch
 moved underneath us the impact sites would no longer be trustworthy.
 
 Each commit is then resolved in a fixed priority order, coded in
-`src/remediation/partition.ts` and mirrored by `cli-runner.ts` (CLI/Action)
-and `extension/src/fix.ts` (VS Code):
+`src/remediation/partition.ts` and executed by the shared worktree runner
+(`src/remediation/worktree-runner.ts`) for CLI/Action local agents and by
+`extension/src/fix.ts` in VS Code:
 
 1. **Drift's own deterministic codemod**, if localization matched one — a
    single, proven-by-construction transform (`rename-identifier` today),
@@ -591,10 +593,10 @@ and `extension/src/fix.ts` (VS Code):
    sites and re-derived against live file contents. Unlike the codemod tier
    this is not all-or-nothing: a plan covering nine of ten call sites
    resolves nine, and the tenth falls through to step 3 on its own.
-3. **GitHub Copilot's coding-agent API**, for everything neither of the above
-   resolved — including the residual call sites of a partially covering fix
-   plan — given a single task carrying the whole remaining plan with
-   evidence quoted inline and exact file:line locations.
+3. **A selected coding agent**, for everything neither of the above resolved —
+   including the residual call sites of a partially covering fix plan. Local
+   runner agents edit an isolated worktree one commit unit at a time; cloud
+   agents receive a whole-plan task and are reconciled after completion.
 
 Community recipes are deliberately not a step here. They used to be one; a
 match's diff was scope-checked and committed. Scope checking answers "did it
@@ -602,7 +604,7 @@ stay in its lane" and never answers "is this the right edit", so a recipe is
 now a proposal source feeding step 2 and subject to the same gate as
 everything else.
 
-A commit Drift resolved itself is never handed to Copilot, and a commit whose
+A commit Drift resolved itself is never handed to an agent, and a commit whose
 plan left residual sites is handed over for those sites only.
 
 The optional `ANTHROPIC_API_KEY` / `llm.enabled` setting is used in two
@@ -830,5 +832,7 @@ that is impossible, not the first place to add a package.
 weight that honestly reflects how directly it speaks to breakage. Populate
 `findings` if you can compute structure.
 
-**A different coding agent** — `dispatchToCopilot` is the only Copilot-specific
-code. `buildTaskPrompt` produces plain markdown that any agent can consume.
+**A different coding agent** — add a provider adapter under `src/agents/` that
+implements the shared `FixAgent` contract. Core planning/remediation code
+selects and calls that contract; it must not import provider files such as
+`copilot.ts`, `claude.ts`, `codex.ts`, or `vscode` directly.

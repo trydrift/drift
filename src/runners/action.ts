@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { appendFile } from 'node:fs/promises';
-import type { DispatchResult, RepoContext } from '../types.js';
-import type { DriftConfig } from '../config/schema.js';
+import type { DispatchResult, RemediationPlan, RepoContext } from '../types.js';
+import type { DriftConfig, ExplicitAgentProvider } from '../config/schema.js';
 import { loadConfig } from '../config/load.js';
 import { GitHubClient } from '../github/client.js';
 import { runPipeline } from '../pipeline.js';
@@ -20,7 +20,11 @@ import { createLogger, type Logger, type LogLevel } from '../util/logger.js';
 import { matchesAny } from '../util/glob.js';
 import { configureHttpDiskCache } from '../util/http.js';
 import { applyApproval } from '../approval/apply.js';
-import { awaitTerminalState, isTerminalState } from '../dispatch/copilot.js';
+import { credentialsWithLegacyCopilot, agentConfigWithLegacyCopilot } from '../agents/compat.js';
+import { defaultAgentProviderRegistry, isCloudFixAgent, type AgentProviderRegistry } from '../agents/registry.js';
+import { resolveAgentSelection, type AgentSelection } from '../agents/selection.js';
+import type { FixAgent, SessionEffort } from '../agents/types.js';
+import { awaitTerminalCloudTask, reconcileCloudTask } from '../remediation/cloud-lifecycle.js';
 
 /**
  * GitHub Action entrypoint — Drift's primary runner.
@@ -36,6 +40,10 @@ import { awaitTerminalState, isTerminalState } from '../dispatch/copilot.js';
 interface ActionInputs {
   repoToken: string;
   copilotToken?: string;
+  agent?: string;
+  agentModel?: string;
+  agentEffort?: string;
+  agentTimeoutSeconds?: string;
   mode?: 'auto' | 'approve';
   dryRun: boolean;
   logLevel: LogLevel;
@@ -110,6 +118,13 @@ export async function runAction(): Promise<number> {
       codeScanning: { ...effectiveConfig.codeScanning, granularity: inputs.alertGranularity },
     };
   }
+  const agentResolution = await resolveActionAgent({
+    repo,
+    config: effectiveConfig,
+    inputs,
+    logger,
+  });
+  effectiveConfig = agentResolution.config;
 
   // A `schedule` trigger, or an explicit `scan-mode: outdated` on a manual
   // dispatch, means "check every installed dependency against its registry"
@@ -127,9 +142,9 @@ export async function runAction(): Promise<number> {
     return 0;
   }
 
-  if (effectiveConfig.mode === 'auto' && !inputs.copilotToken && !inputs.dryRun) {
+  if (effectiveConfig.mode === 'auto' && !agentResolution.agent && !inputs.dryRun) {
     logger.warn(
-      'mode is `auto` but no copilot-token input was supplied. Drift will analyse and file an approval issue instead of dispatching. See docs/copilot-integration.md.',
+      'mode is `auto` but no usable agent was selected. Drift will analyse and file an approval issue instead of dispatching.',
     );
   }
 
@@ -139,7 +154,7 @@ export async function runAction(): Promise<number> {
       config: effectiveConfig,
       logger,
       github,
-      copilotToken: inputs.copilotToken,
+      agent: agentResolution.agent,
       githubToken: inputs.repoToken,
       dryRun: inputs.dryRun,
       // Never approved on this path. Approval arrives only through
@@ -162,12 +177,13 @@ export async function runAction(): Promise<number> {
     }
 
     if (result.dispatch.status === 'dispatched') {
-      await maybeAwaitCopilotCompletion({
+      await maybeAwaitCloudCompletion({
         config: effectiveConfig,
         repo,
+        plan: result.plan,
         dispatchResult: result.dispatch,
         github,
-        copilotToken: inputs.copilotToken,
+        agent: agentResolution.agent,
         logger,
       });
     }
@@ -416,6 +432,10 @@ function readInputs(): ActionInputs {
   return {
     repoToken: actionInput('repo-token') ?? process.env.GITHUB_TOKEN ?? '',
     copilotToken: actionInput('copilot-token') || process.env.DRIFT_COPILOT_TOKEN || undefined,
+    agent: actionInput('agent'),
+    agentModel: actionInput('agent-model'),
+    agentEffort: actionInput('agent-effort'),
+    agentTimeoutSeconds: actionInput('agent-timeout-seconds'),
     mode: mode === 'auto' || mode === 'approve' ? mode : undefined,
     dryRun: (actionInput('dry-run') ?? '').toLowerCase() === 'true',
     logLevel: (actionInput('log-level') as LogLevel) || 'info',
@@ -428,6 +448,127 @@ function readInputs(): ActionInputs {
         : undefined,
     cacheDir: actionInput('cache-dir') || process.env.DRIFT_CACHE_DIR || undefined,
   };
+}
+
+async function resolveActionAgent(args: {
+  repo: RepoContext;
+  config: DriftConfig;
+  inputs: ActionInputs;
+  logger: Logger;
+  registry?: AgentProviderRegistry;
+}): Promise<{ config: DriftConfig; agent?: FixAgent }> {
+  const override = agentOverrideFromActionInputs(args.inputs, args.logger);
+  if (override === null) return { config: args.config };
+
+  const registry = args.registry ?? defaultAgentProviderRegistry;
+  const credentials = credentialsWithLegacyCopilot(undefined, args.inputs.copilotToken);
+  const selectionConfig = agentConfigWithLegacyCopilot(args.config.remediation.agent, {
+    token: args.inputs.copilotToken,
+    model: args.config.remediation.model,
+  });
+  const contextConfig: DriftConfig = {
+    ...args.config,
+    remediation: { ...args.config.remediation, agent: selectionConfig },
+  };
+  const available = await registry.available({
+    repo: args.repo,
+    config: contextConfig,
+    logger: args.logger,
+    credentials,
+    dryRun: args.inputs.dryRun,
+    surface: 'action',
+  });
+  const eligibleProviders = [...available.keys()];
+
+  const selection = resolveAgentSelection({
+    config: selectionConfig,
+    override,
+    runtime: {
+      surface: 'action',
+      interactive: false,
+      eligibleProviders,
+      credentials,
+    },
+  });
+
+  if (selection.source === 'unresolved') {
+    args.logger.warn(selection.reason);
+    return { config: args.config };
+  }
+
+  const config: DriftConfig = {
+    ...args.config,
+    remediation: { ...args.config.remediation, agent: selection.config },
+  };
+  const agent = await instantiateActionAgent(selection, registry, args.repo, config, args.inputs, args.logger);
+  return { config, agent };
+}
+
+async function instantiateActionAgent(
+  selection: AgentSelection,
+  registry: AgentProviderRegistry,
+  repo: RepoContext,
+  config: DriftConfig,
+  inputs: ActionInputs,
+  logger: Logger,
+): Promise<FixAgent | undefined> {
+  const agent = await registry.create(selection.provider, {
+    repo,
+    config,
+    logger,
+    credentials: selection.runtime.credentials,
+    dryRun: inputs.dryRun,
+    surface: 'action',
+  });
+  if (!agent) {
+    logger.warn(`${selection.provider} was selected, but no provider adapter could create an agent on this runner.`);
+    return undefined;
+  }
+  const availability = await agent.detect().catch(() => ({ available: false }));
+  if (!availability.available) {
+    logger.warn(`${selection.provider} was selected, but that provider is not available on this runner.`);
+    return undefined;
+  }
+  return agent;
+}
+
+function agentOverrideFromActionInputs(
+  inputs: ActionInputs,
+  logger: Logger,
+): Partial<DriftConfig['remediation']['agent']> | null {
+  const override: Partial<DriftConfig['remediation']['agent']> = {};
+  if (inputs.agent) {
+    if (!isExplicitAgentProvider(inputs.agent)) {
+      logger.warn(`Unknown action agent input \`${inputs.agent}\`. Pass a registered provider id or leave it unset for auto selection.`);
+      return null;
+    }
+    override.provider = inputs.agent;
+  }
+  if (inputs.agentModel) override.model = inputs.agentModel;
+  if (inputs.agentEffort) {
+    if (!isSessionEffort(inputs.agentEffort)) {
+      logger.warn(`Unknown action agent-effort input \`${inputs.agentEffort}\`. Expected low, medium, high, or xhigh.`);
+      return null;
+    }
+    override.effort = inputs.agentEffort;
+  }
+  if (inputs.agentTimeoutSeconds) {
+    const timeoutSeconds = Number(inputs.agentTimeoutSeconds);
+    if (!Number.isInteger(timeoutSeconds) || timeoutSeconds < 30) {
+      logger.warn('Action agent-timeout-seconds must be an integer number of seconds, at least 30.');
+      return null;
+    }
+    override.timeoutSeconds = timeoutSeconds;
+  }
+  return override;
+}
+
+function isExplicitAgentProvider(value: string): value is ExplicitAgentProvider {
+  return value.trim().length > 0 && value !== 'auto';
+}
+
+function isSessionEffort(value: string): value is SessionEffort {
+  return value === 'low' || value === 'medium' || value === 'high' || value === 'xhigh';
 }
 
 /** Actions passes inputs as `INPUT_<NAME>` with spaces replaced by underscores. */
@@ -517,6 +658,7 @@ async function runApproval(
     github,
     logger,
     ...(inputs.copilotToken ? { copilotToken: inputs.copilotToken } : {}),
+    credentials: credentialsWithLegacyCopilot(undefined, inputs.copilotToken),
     ...(inputs.dryRun ? { dryRun: true } : {}),
     // The Action has a checkout, so an approval gets real localization — the
     // one capability the webhook runner cannot offer.
@@ -544,12 +686,13 @@ async function runApproval(
       await writeJobSummary(outcome.dispatch.message);
 
       if (outcome.dispatch.status === 'dispatched') {
-        await maybeAwaitCopilotCompletion({
+        await maybeAwaitCloudCompletion({
           config: outcome.config,
           repo: { owner, repo, baseBranch: '', beforeSha: '', afterSha: outcome.plan.headSha },
+          plan: outcome.plan,
           dispatchResult: outcome.dispatch,
           github,
-          copilotToken: inputs.copilotToken,
+          agent: outcome.agent,
           logger,
         });
       }
@@ -568,73 +711,89 @@ async function readWorkspaceFile(workspace: string, path: string): Promise<strin
 
 /**
  * If `remediation.awaitCompletion` is on, block this run until the just-
- * dispatched Copilot task finishes, fails, or times out, then post a final
+ * dispatched cloud task finishes, fails, or times out, then post a final
  * check run reflecting that.
  *
  * The Action is otherwise a fire-and-forget dispatch: it submits the task and
  * exits, and nothing else in this deployment ever asks GitHub how it went.
  * This is the opt-in way to close that loop without the durable queue and
  * background reconciler the self-hosted webhook runner uses instead (see
- * `reconcilePendingCopilotTasks` in `runners/webhook.ts`) — a one-shot Action
+ * `reconcilePendingCloudTasks` in `runners/webhook.ts`) — a one-shot Action
  * run has no "later" to reconcile in, only "now, before it exits".
  */
-async function maybeAwaitCopilotCompletion(args: {
+async function maybeAwaitCloudCompletion(args: {
   config: DriftConfig;
   repo: RepoContext;
+  plan?: RemediationPlan | null;
   dispatchResult: DispatchResult;
   github: GitHubClient;
-  copilotToken?: string;
+  agent?: FixAgent;
   logger: Logger;
 }): Promise<void> {
-  const { config, repo, dispatchResult, github, copilotToken, logger } = args;
+  const { config, repo, plan, dispatchResult, github, agent, logger } = args;
   const settings = config.remediation.awaitCompletion;
-  if (!settings.enabled || !copilotToken || !dispatchResult.taskId) return;
+  if (!settings.enabled || !dispatchResult.taskId || !agent || !isCloudFixAgent(agent)) return;
 
   logger.info(
-    `Waiting up to ${settings.timeoutMinutes}m for Copilot task ${dispatchResult.taskId} to finish (remediation.awaitCompletion is on)`,
+    `Waiting up to ${settings.timeoutMinutes}m for ${agent.label} task ${dispatchResult.taskId} to finish (remediation.awaitCompletion is on)`,
   );
 
-  const task = await awaitTerminalState({
-    copilotToken,
-    repo,
-    taskId: dispatchResult.taskId,
+  const task = await awaitTerminalCloudTask({
+    agent,
+    handle: {
+      provider: dispatchResult.taskProvider ?? agent.id,
+      id: dispatchResult.taskId,
+      branch: dispatchResult.branchName,
+      url: dispatchResult.pullRequestUrl,
+    },
     timeoutMs: settings.timeoutMinutes * 60_000,
     pollIntervalMs: settings.pollIntervalSeconds * 1000,
   });
 
-  if (!task || !isTerminalState(task.state)) {
+  if (!task || !agent.isTerminalState(task.state)) {
     logger.warn(
-      `Copilot task ${dispatchResult.taskId} had not reached a terminal state after ${settings.timeoutMinutes}m; posting a final check run and giving up.`,
+      `${agent.label} task ${dispatchResult.taskId} had not reached a terminal state after ${settings.timeoutMinutes}m; posting a final check run and giving up.`,
     );
     const where = dispatchResult.pullRequestUrl;
     await github.createCheckRun(repo, {
       name: 'Drift',
       conclusion: 'action_required',
-      title: 'Copilot status tracking timed out',
-      summary: `Drift waited ${settings.timeoutMinutes}m for Copilot task ${dispatchResult.taskId} to reach a terminal state but it did not. ${
+      title: `${agent.label} status tracking timed out`,
+      summary: `Drift waited ${settings.timeoutMinutes}m for ${agent.label} task ${dispatchResult.taskId} to reach a terminal state but it did not. ${
         where ? `See ${where} for its current state.` : 'A human needs to check the task manually.'
       }`,
     });
     return;
   }
 
-  const succeeded = task.state === 'completed';
-  const where = dispatchResult.pullRequestUrl ?? task.pullRequestUrl;
+  const reconciliation = await reconcileCloudTask({
+    task: {
+      id: 0,
+      provider: dispatchResult.taskProvider ?? agent.id,
+      owner: repo.owner,
+      repo: repo.repo,
+      taskId: dispatchResult.taskId,
+      state: task.state,
+      headSha: repo.afterSha,
+      branchName: dispatchResult.branchName ?? '',
+      prNumber: dispatchResult.pullRequestNumber ?? null,
+      prUrl: dispatchResult.pullRequestUrl ?? null,
+      planJson: plan ? JSON.stringify(plan) : null,
+      createdAt: new Date().toISOString(),
+    },
+    agent,
+    github,
+    logger,
+  });
 
   await github.createCheckRun(repo, {
     name: 'Drift',
-    conclusion: succeeded ? 'success' : 'failure',
-    title: succeeded ? 'Copilot finished' : `Copilot did not finish (${task.state})`,
-    summary: succeeded
-      ? where
-        ? `See ${where} for the result.`
-        : 'The agent task completed.'
-      : `The Copilot agent task ended in state \`${task.state}\` without finishing the fix. ${
-          where ? `See ${where} for what it left behind.` : 'A human needs to look at this.'
-        }`,
+    conclusion: reconciliation.conclusion ?? 'action_required',
+    title: reconciliation.title ?? `${agent.label} reached ${task.state}`,
+    summary: reconciliation.summary ?? `${agent.label} reached terminal state ${task.state}.`,
   });
 
-  logger.info(`Copilot task ${dispatchResult.taskId} reached terminal state ${task.state}`);
+  logger.info(`${agent.label} task ${dispatchResult.taskId} reached terminal state ${task.state}`);
 }
 
 async function writeOutputs(
