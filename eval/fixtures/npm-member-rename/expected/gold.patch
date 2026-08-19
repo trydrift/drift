@@ -1,0 +1,11 @@
+diff --git a/src/app.js b/src/app.js
+--- a/src/app.js
++++ b/src/app.js
+@@
+ import * as fixture from 'fixture-lib';
+ 
+-const value = fixture.oldQuery('Ada');
++const value = fixture.query('Ada');
+ if (value !== 'ADA') {
+   throw new Error(`expected ADA, got ${value}`);
+ }

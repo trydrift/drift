@@ -1,0 +1,45 @@
+id: npm-member-rename
+ecosystem: npm
+dependency: fixture-lib
+fromVersion: 1.0.0
+toVersion: 2.0.0
+scenario: member-rename
+source:
+  repository: fixture-local
+  licence: MIT
+taxonomy:
+  nature: type-contract
+  detectability:
+    - compile-time
+    - static-semantic
+  scope: symbol
+  visibility:
+    - unknown
+exposure: direct
+expected:
+  upstreamFindings:
+    - fixture-lib:oldQuery:member-rename
+  impactSites:
+    - src/app.js:oldQuery
+  gaps:
+    - No checks were run against this plan, so nothing confirms the findings were understood correctly or that a fix would compile.
+  planNodes:
+    - unit_061fe290d8
+  edges: []
+repair:
+  expectation: fixed
+  goldPatch: expected/gold.patch
+  expectedChangedFiles:
+    - src/app.js
+oracles:
+  negative: npm test
+  positive: npm test
+complexity: small
+network: disabled
+provenance:
+  reviewStatus: reviewed
+  notes: >
+    Synthetic local fixture for Drift's validated fix-plan tier. The migration
+    guide evidence states the member rename, the fixture-local plan is
+    validated against that evidence, and the oracle fails until the member call
+    is rewritten.
