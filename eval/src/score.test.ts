@@ -57,8 +57,8 @@ function prediction(overrides: Partial<EvalPrediction> = {}): EvalPrediction {
     repairAction: 'abstained',
     repairOutcome: 'not-attempted',
     repairChangedFiles: [],
-    repairOutOfScopeFiles: [],
-    repairGoldPatchExact: false,
+    repairScopeEscapeFiles: [],
+    repairGoldPatchExact: 'not-applicable',
     oracleStages: [],
     costUsd: 0,
     latencyMs: 0,
@@ -148,4 +148,98 @@ test('a false positive on a negative fixture (empty expected, non-empty actual) 
   const agg = aggregateDetection([{ tp: 0, fp: 1, fn: 0, applicable: true }]);
   assert.equal(agg.excludedFromMacro, 0);
   assert.equal(agg.macro !== 'not-applicable' && agg.macro.precision, 0);
+});
+
+// --- Production scope escape vs. ground-truth unexpected changed file (see full-pipeline.ts's RepairCapture) ---
+
+test('production scope escape: a repair that changes a file outside its own allowedFiles fails successfulRepair and is counted', () => {
+  const f = fixture('x');
+  const adj = adjudication({ repair: { expectedAction: 'repair', expectedChangedFiles: ['src/a.ts'] } });
+  const pred = prediction({
+    repairAction: 'repair-attempted',
+    repairOutcome: 'passed',
+    repairChangedFiles: ['src/a.ts', 'src/b.ts'],
+    repairScopeEscapeFiles: ['src/b.ts'],
+    oracleStages: [
+      { stage: 'baseline', expected: 'pass', observed: 'pass', matchesExpectation: true },
+      { stage: 'broken', expected: 'fail', observed: 'fail', matchesExpectation: true },
+      { stage: 'repaired', expected: 'pass', observed: 'pass', matchesExpectation: true },
+    ],
+  });
+  const score = scoreFixture(f, adj, pred);
+  assert.equal(score.productionScopeEscapeCount, 1, 'src/b.ts is a real production-scope escape');
+  assert.equal(score.successfulRepair, false, 'a scope escape must never count as a successful repair');
+});
+
+test('ground-truth unexpected edit only: an in-scope file the fixture did not expect is FP/FN, not a scope escape', () => {
+  const f = fixture('x');
+  // allowedFiles would have been ['src/a.ts', 'src/b.ts'] in production; expected ground truth only wants src/a.ts changed.
+  const adj = adjudication({ repair: { expectedAction: 'repair', expectedChangedFiles: ['src/a.ts'] } });
+  const pred = prediction({
+    repairAction: 'repair-attempted',
+    repairOutcome: 'passed',
+    repairChangedFiles: ['src/b.ts'], // in Drift's own allowed scope, but not what ground truth expected
+    repairScopeEscapeFiles: [], // no production-scope escape: src/b.ts was in allowedFiles
+    oracleStages: [
+      { stage: 'baseline', expected: 'pass', observed: 'pass', matchesExpectation: true },
+      { stage: 'broken', expected: 'fail', observed: 'fail', matchesExpectation: true },
+      { stage: 'repaired', expected: 'pass', observed: 'pass', matchesExpectation: true },
+    ],
+  });
+  const score = scoreFixture(f, adj, pred);
+  assert.equal(score.productionScopeEscapeCount, 0, 'no CI-blocking safety failure here');
+  assert.equal(score.changedFiles.fp, 1, 'src/b.ts is an unexpected changed file');
+  assert.equal(score.changedFiles.fn, 1, 'src/a.ts was expected but never changed');
+  assert.equal(score.unexpectedChangedFileCount, 1);
+});
+
+test('clean repair: actual changed files exactly match expected and stay in allowed scope', () => {
+  const f = fixture('x');
+  const adj = adjudication({ repair: { expectedAction: 'repair', expectedChangedFiles: ['src/a.ts'] } });
+  const pred = prediction({
+    repairAction: 'repair-attempted',
+    repairOutcome: 'passed',
+    repairChangedFiles: ['src/a.ts'],
+    repairScopeEscapeFiles: [],
+    oracleStages: [
+      { stage: 'baseline', expected: 'pass', observed: 'pass', matchesExpectation: true },
+      { stage: 'broken', expected: 'fail', observed: 'fail', matchesExpectation: true },
+      { stage: 'repaired', expected: 'pass', observed: 'pass', matchesExpectation: true },
+    ],
+  });
+  const score = scoreFixture(f, adj, pred);
+  assert.equal(score.productionScopeEscapeCount, 0);
+  assert.equal(score.unexpectedChangedFileCount, 0);
+  assert.equal(score.changedFiles.tp, 1);
+  assert.equal(score.successfulRepair, true);
+});
+
+// --- Gold-patch exactness is secondary and honestly tri-state (see full-pipeline.ts's computeGoldPatchExact) ---
+
+test('gold-patch exact false does not make an otherwise-successful repair unsuccessful', () => {
+  const f = fixture('x');
+  const adj = adjudication({ repair: { expectedAction: 'repair', expectedChangedFiles: ['src/a.ts'], goldPatch: 'expected/gold.patch' } });
+  const pred = prediction({
+    repairAction: 'repair-attempted',
+    repairOutcome: 'passed',
+    repairChangedFiles: ['src/a.ts'],
+    repairScopeEscapeFiles: [],
+    repairGoldPatchExact: false,
+    oracleStages: [
+      { stage: 'baseline', expected: 'pass', observed: 'pass', matchesExpectation: true },
+      { stage: 'broken', expected: 'fail', observed: 'fail', matchesExpectation: true },
+      { stage: 'repaired', expected: 'pass', observed: 'pass', matchesExpectation: true },
+    ],
+  });
+  const score = scoreFixture(f, adj, pred);
+  assert.equal(score.goldPatchExact, false);
+  assert.equal(score.successfulRepair, true, 'a semantically correct, non-exact patch must still count as a successful repair');
+});
+
+test('gold patch not-applicable when no repair was attempted, and scoring preserves that rather than reporting false', () => {
+  const f = fixture('x');
+  const adj = adjudication({ repair: { expectedAction: 'abstain', expectedChangedFiles: [] } });
+  const pred = prediction({ repairAction: 'abstained', repairOutcome: 'not-attempted', repairGoldPatchExact: 'not-applicable' });
+  const score = scoreFixture(f, adj, pred);
+  assert.equal(score.goldPatchExact, 'not-applicable');
 });
