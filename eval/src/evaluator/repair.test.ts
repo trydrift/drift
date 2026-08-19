@@ -216,3 +216,43 @@ test('a wrong repair is caught by the oracle even on a track with no abstention 
   );
   assert.equal(score.outcome, 'introduced-regression', 'a hallucinated replacement symbol is still a failure');
 });
+
+/**
+ * A fix plan that explains only some of a finding's call sites.
+ *
+ * Production's own `minCoverage` gate rejects a rule below the configured
+ * threshold, and `residualImpactSites` records what an accepted-but-partial
+ * plan left behind. Neither is what stops it being called a repair: the oracle
+ * is, because a site nothing reached keeps failing. This pins that a partial
+ * repair stays `partially-repaired` — in the denominator, not a success, and
+ * not quietly excluded either.
+ *
+ * (No case in the current corpus has enough call sites for a genuinely partial
+ * plan to arise, which is recorded as a limitation in eval/README.md. This is
+ * the evaluator half of the property, which is the half that could silently
+ * change.)
+ */
+test('a repair that resolves some triggers and leaves others is never a success, and never excluded', () => {
+  const score = scoreRepair({
+    caseId: 'partial',
+    track: 'repair-fixplan-model',
+    repair: {
+      ...ATTEMPTED,
+      residualImpactSites: 3,
+    },
+    oracleStages: [
+      stage('baseline', 'pass', 'pass', []),
+      stage('broken', 'fail', 'fail', ['runtime:TypeError:a', 'runtime:TypeError:b']),
+      stage('repaired', 'pass', 'fail', ['runtime:TypeError:b']),
+    ],
+    truth: TRUTH,
+    developerPatch: null,
+  });
+
+  assert.equal(score.outcome, 'partially-repaired');
+  assert.equal(score.scorable, true, 'a partial repair is a product result and stays in the denominator');
+  assert.equal(isRepairSuccess(score.outcome), false);
+  assert.deepEqual(score.failToPass.resolvedTriggers, ['runtime:TypeError:a']);
+  assert.deepEqual(score.failToPass.unresolvedTriggers, ['runtime:TypeError:b']);
+  assert.equal(score.residualImpactSites, 3, 'the sites nothing reached are reported, not rounded away');
+});
