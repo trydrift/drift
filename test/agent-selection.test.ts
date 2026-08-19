@@ -99,4 +99,12 @@ describe('agent runtime selection', () => {
     assert.equal(many.source, 'unresolved');
     assert.match(many.reason, /codex, claude/);
   });
+
+  test('unavailable providers fail safely instead of guessing', () => {
+    const selected = resolveAgentSelection({ config: base(), runtime: runtime([]) });
+
+    assert.equal(selected.provider, 'auto');
+    assert.equal(selected.source, 'unresolved');
+    assert.match(selected.reason, /No usable AI agent/);
+  });
 });
