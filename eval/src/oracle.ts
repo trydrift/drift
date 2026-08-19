@@ -3,6 +3,7 @@ import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
+import { parseCommand, type ParsedCommand } from './oracle/command.ts';
 
 const execFile = promisify(execFileCallback);
 
@@ -33,10 +34,21 @@ export async function installFixtureDependencies(cwd: string): Promise<void> {
 }
 
 export async function runOracleCommand(cwd: string, command: string): Promise<OracleOutcome> {
-  const [program, ...args] = command.split(/\s+/).filter(Boolean);
-  if (!program) return 'pass';
+  let parsed: ParsedCommand;
   try {
-    await execFile(program, args, { cwd, maxBuffer: 16 * 1024 * 1024 });
+    parsed = parseCommand(command);
+  } catch {
+    // Unparseable is not "the check failed" — the check never ran.
+    return 'unable-to-run';
+  }
+  try {
+    if (parsed.needsShell) {
+      const shell = process.platform === 'win32' ? (process.env['COMSPEC'] ?? 'cmd.exe') : '/bin/sh';
+      const flag = process.platform === 'win32' ? '/d/s/c' : '-c';
+      await execFile(shell, [flag, parsed.command], { cwd, maxBuffer: 16 * 1024 * 1024 });
+    } else {
+      await execFile(parsed.program, parsed.args, { cwd, maxBuffer: 16 * 1024 * 1024 });
+    }
     return 'pass';
   } catch (err) {
     // A spawn failure (missing binary, permission error) never ran the

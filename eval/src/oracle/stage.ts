@@ -7,6 +7,7 @@ import type { HiddenCheck, PublicCase } from '../case/schema.ts';
 import type { MaterializedCase } from '../case/materialize.ts';
 import type { OracleStageArtifact } from '../artifacts/prediction.ts';
 import { extractDiagnostics, processExitDiagnostic, signatureOf, type Diagnostic } from './signature.ts';
+import { parseCommand, type ParsedCommand } from './command.ts';
 
 const execFile = promisify(execFileCallback);
 
@@ -252,8 +253,15 @@ interface CommandResult {
 }
 
 async function runCommand(cwd: string, command: string, publicCase: PublicCase): Promise<CommandResult> {
-  const [program, ...args] = command.split(/\s+/).filter(Boolean);
-  if (!program) return { code: 0, output: '', spawnFailed: false };
+  let parsed: ParsedCommand;
+  try {
+    parsed = parseCommand(command);
+  } catch (err) {
+    // A command this harness cannot turn into a process never ran. Reported as
+    // a spawn failure so it becomes `unable-to-run` rather than a product
+    // result about the code under test.
+    return { code: -1, output: `command could not be parsed: ${(err as Error).message}`, spawnFailed: true };
+  }
 
   const env = {
     ...process.env,
@@ -268,7 +276,12 @@ async function runCommand(cwd: string, command: string, publicCase: PublicCase):
   };
 
   try {
-    const { stdout, stderr } = await execFile(program, args, { cwd, env, maxBuffer: MAX_BUFFER });
+    // A command that needs a shell gets one explicitly, and only because its
+    // own text says it does. Everything else is spawned without one, so a
+    // filename with a space or a `$` in an argument cannot be reinterpreted.
+    const { stdout, stderr } = parsed.needsShell
+      ? await execFile(shellProgram(), [shellFlag(), parsed.command], { cwd, env, maxBuffer: MAX_BUFFER })
+      : await execFile(parsed.program, parsed.args, { cwd, env, maxBuffer: MAX_BUFFER });
     return { code: 0, output: `${stdout}\n${stderr}`, spawnFailed: false };
   } catch (err) {
     const error = err as NodeJS.ErrnoException & { stdout?: string; stderr?: string; code?: number | string };
@@ -296,4 +309,19 @@ async function repointDependency(consumerDir: string, dependency: string, relati
 function excerpt(output: string): string {
   const trimmed = output.trim();
   return trimmed.length <= MAX_EXCERPT ? trimmed : `${trimmed.slice(0, MAX_EXCERPT)}\n… (${trimmed.length - MAX_EXCERPT} more characters)`;
+}
+
+/**
+ * The shell a `kind: 'shell'` command runs in.
+ *
+ * Named rather than left to `execFile`'s `shell: true`, so the report can say
+ * what actually interpreted the command, and so the choice is one place rather
+ * than a boolean at each call site.
+ */
+function shellProgram(): string {
+  return process.platform === 'win32' ? (process.env['COMSPEC'] ?? 'cmd.exe') : '/bin/sh';
+}
+
+function shellFlag(): string {
+  return process.platform === 'win32' ? '/d/s/c' : '-c';
 }
