@@ -167,6 +167,13 @@ export type {
   ResolvedAgentSelection,
   UnresolvedAgentSelection,
 } from './agents/selection.js';
+export {
+  AgentProviderRegistry,
+  createDefaultAgentProviderRegistry,
+  defaultAgentProviderRegistry,
+  isCloudFixAgent,
+} from './agents/registry.js';
+export type { AgentProviderAdapter, AgentProviderMetadata, AgentRuntimeContext } from './agents/registry.js';
 export { CLI_AGENT_SPECS, CliFixAgent, failureReason, parseCodexModels } from './agents/cli.js';
 export type {
   AgentAvailability,

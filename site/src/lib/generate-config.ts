@@ -15,7 +15,7 @@ export type MaxAutoRisk = "none" | "low" | "medium" | "high";
 export type AlertGranularity = "package" | "breakingChange" | "affectedSite";
 export type IssueDefault = "issue" | "branch" | "both";
 export type IssueGranularity = "package" | "change";
-export type AgentProvider = "auto" | "copilot-cloud" | "codex" | "claude" | "gemini" | "aider" | "opencode";
+export type AgentProvider = string;
 
 export interface ConfigureOptions {
   mode: Mode;

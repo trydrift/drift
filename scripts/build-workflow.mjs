@@ -128,9 +128,9 @@ jobs:
           # rather than reporting impact sites from the wrong tree.
           fetch-depth: 2
           # Copilot Cloud does not need checkout credentials here, but local
-          # runner agents do: Drift commits accepted agent edits in an isolated
-          # worktree, then pushes the branch with git. Leave this true when
-          # using \`agent: codex\`, \`claude\`, \`gemini\`, \`aider\`, or \`opencode\`.
+          # workspace runner agents do: Drift commits accepted agent edits in
+          # an isolated worktree, then pushes the branch with git. Leave this
+          # true when using a workspace-executing provider.
           persist-credentials: true
 
       # ----------------------------------------------------------------------

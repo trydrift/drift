@@ -88,11 +88,13 @@ call an agent at all. When a commit still needs one, choose explicitly in
 ```yaml
 remediation:
   agent:
-    provider: codex # codex, claude, gemini, aider, opencode, or copilot-cloud
+    provider: codex # any registered provider id
 ```
 
-For local CLI agents, install and authenticate the tool yourself; Drift detects
-what is already present and never stores that provider's credentials.
+Built-in providers include `codex`, `claude`, `gemini`, `aider`, `opencode`,
+and `copilot-cloud`. For local CLI agents, install and authenticate the tool
+yourself; Drift detects what is already present and never stores that
+provider's credentials.
 
 For `copilot-cloud`, add a **user-scoped** token. GitHub's agent API rejects the
 built-in `GITHUB_TOKEN` and any GitHub App installation token, because Copilot

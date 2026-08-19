@@ -254,7 +254,7 @@ async function handlePush(
 
   // The check run posted during dispatch says "Copilot is fixing…" — it never
   // learns whether that turned out true unless something asks GitHub later.
-  // Recording the task here is what lets `reconcilePendingCopilotTasks` find
+  // Recording the task here is what lets `reconcilePendingCloudTasks` find
   // it after this delivery has long since been acknowledged.
   //
   // Caught rather than left to propagate: the task is already dispatched, so
@@ -281,7 +281,7 @@ async function handlePush(
 }
 
 /**
- * Record a successful dispatch so `reconcilePendingCopilotTasks` can find it
+ * Record a successful dispatch so `reconcilePendingCloudTasks` can find it
  * later. Shared by the push path above and `/drift apply` below — both
  * dispatch through the same `dispatch()` call and need the same follow-up.
  */

@@ -13,7 +13,7 @@
  *        v
  *   RemediationPlan     -- plan      (ordered, separated commit units)
  *        v
- *   DispatchResult      -- dispatch  (branch + Copilot task + PR)
+ *   DispatchResult      -- dispatch  (branch + agent task + PR)
  *
  * Every stage is independently testable and every downstream artefact carries
  * citations back to the Evidence that justified it. Nothing reaches a pull
@@ -529,7 +529,7 @@ export interface RemediationPlan {
    */
   schemaVersion: number;
   id: string;
-  /** Branch Drift will create and Copilot will work on. */
+  /** Branch Drift will create and the selected agent will work on. */
   branchName: string;
   /** Branch the eventual PR merges back into. */
   baseBranch: string;
@@ -614,7 +614,7 @@ export interface DispatchResult {
   status: 'dispatched' | 'skipped' | 'blocked' | 'failed';
   planId: string;
   branchName?: string;
-  /** Copilot Agent Tasks API session id, when dispatch succeeded. */
+  /** Cloud provider task/session id, when asynchronous dispatch succeeded. */
   taskId?: string;
   /** Provider that owns `taskId`, when an async cloud task was dispatched. */
   taskProvider?: string;

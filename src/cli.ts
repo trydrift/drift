@@ -296,8 +296,7 @@ Options for \`fix\` (accepts every \`analyze\` option too):
                               same config (this is the default outside a TTY)
   --copilot-token <token>     User-scoped token for commits that need an
                               agent. Default: $DRIFT_COPILOT_TOKEN
-  --agent <provider>          Agent for unresolved edits: codex, claude,
-                              gemini, aider, opencode, or copilot-cloud.
+  --agent <provider>          Registered agent provider for unresolved edits.
                               In non-interactive auto mode Drift only chooses
                               automatically when exactly one provider is usable
   --agent-model <model>       Model id to pass to the selected agent

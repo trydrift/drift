@@ -718,7 +718,7 @@ async function readWorkspaceFile(workspace: string, path: string): Promise<strin
  * exits, and nothing else in this deployment ever asks GitHub how it went.
  * This is the opt-in way to close that loop without the durable queue and
  * background reconciler the self-hosted webhook runner uses instead (see
- * `reconcilePendingCopilotTasks` in `runners/webhook.ts`) — a one-shot Action
+ * `reconcilePendingCloudTasks` in `runners/webhook.ts`) — a one-shot Action
  * run has no "later" to reconcile in, only "now, before it exits".
  */
 async function maybeAwaitCloudCompletion(args: {

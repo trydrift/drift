@@ -28,17 +28,6 @@ const ECOSYSTEM_NAMES = z.enum([
   'arduino',
 ] as const satisfies readonly Ecosystem[]);
 
-export const AGENT_PROVIDER_IDS = [
-  'auto',
-  'copilot-cloud',
-  'claude',
-  'codex',
-  'gemini',
-  'aider',
-  'opencode',
-  'ollama',
-] as const;
-
 const AGENT_PROVIDER = z.string().trim().min(1);
 const AGENT_EFFORT = z.enum(['low', 'medium', 'high', 'xhigh']);
 

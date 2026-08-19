@@ -39,9 +39,9 @@ inputs:
 
   agent:
     description: >-
-      Agent provider for unresolved edits. Supported values: "codex",
-      "claude", "gemini", "aider", "opencode", or "copilot-cloud". Omit this
-      to use `remediation.agent.provider` from drift.yml. In non-interactive
+      Registered agent provider for unresolved edits. Built-in providers include
+      "codex", "claude", "gemini", "aider", "opencode", and "copilot-cloud".
+      Omit this to use `remediation.agent.provider` from drift.yml. In non-interactive
       auto mode, Drift only selects automatically when exactly one usable
       provider is available; otherwise it files an approval issue asking for
       an explicit selection. The Action never reads local CLI preferences.
