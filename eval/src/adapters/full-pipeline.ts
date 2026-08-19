@@ -1,8 +1,10 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { EvalFixture } from '../load.ts';
+import type { Adjudication } from '../review.ts';
 import { installNpmFetchStub } from './npm-fetch-stub.ts';
 import { runOracleStage, type OracleStageResult } from '../oracle.ts';
+import { createRepairCaptureBuilder, goldPatchMatches, EMPTY_REPAIR_CAPTURE, type RepairCaptureBuilder } from './repair-capture.ts';
 import type { DriftVerdict, EvalPrediction } from '../score.ts';
 import {
   DriftConfigSchema,
@@ -63,7 +65,7 @@ const PIPELINE_CONFIG = DriftConfigSchema.parse({
   verification: { behavioural: { enabled: true, network: false, timeoutSeconds: 10 } },
 });
 
-export async function fullPipelinePrediction(fixture: EvalFixture): Promise<EvalPrediction> {
+export async function fullPipelinePrediction(fixture: EvalFixture, adjudication: Adjudication): Promise<EvalPrediction> {
   const started = Date.now();
   const fixtureDir = join(process.cwd(), 'eval', 'fixtures', fixture.id);
   const consumerDir = join(fixtureDir, 'consumer');
@@ -170,8 +172,8 @@ export async function fullPipelinePrediction(fixture: EvalFixture): Promise<Eval
     const repairableCommits = plan.commits.filter((commit) => commit.codemod);
     const repairAttempted = repairableCommits.length > 0;
 
-    const capture: RepairCapture = { changedFiles: [] };
-    const oracleStages = await runRepairOracles(fixture, fixtureDir, repairAttempted, repairableCommits, capture);
+    const captureBuilder = createRepairCaptureBuilder();
+    const oracleStages = await runRepairOracles(fixture, fixtureDir, repairAttempted, repairableCommits, captureBuilder);
     const repairedStage = oracleStages.find((s) => s.stage === 'repaired');
     const repairOutcome: EvalPrediction['repairOutcome'] = !repairAttempted
       ? 'not-attempted'
@@ -179,8 +181,8 @@ export async function fullPipelinePrediction(fixture: EvalFixture): Promise<Eval
         ? 'passed'
         : 'failed';
 
-    const changedFiles = capture.changedFiles;
-    const goldPatchExact = false; // secondary metric; see Blocker 22 — a semantically correct, non-exact patch must not be penalized.
+    const repairCapture = repairAttempted ? await captureBuilder.finalize() : EMPTY_REPAIR_CAPTURE;
+    const goldPatchExact = await computeGoldPatchExact(fixtureDir, adjudication, repairAttempted, repairCapture.patch);
 
     const upstreamFindings = [...new Set(allEvidence.flatMap((record) => record.findings ?? []))]
       .filter((finding) => finding.detail && !finding.detail.startsWith('no observed difference') && !finding.detail.startsWith('probe unavailable'))
@@ -201,8 +203,8 @@ export async function fullPipelinePrediction(fixture: EvalFixture): Promise<Eval
       verdict,
       repairAction: repairAttempted ? 'repair-attempted' : 'abstained',
       repairOutcome,
-      repairChangedFiles: changedFiles,
-      repairOutOfScopeFiles: [],
+      repairChangedFiles: repairCapture.changedFiles,
+      repairScopeEscapeFiles: repairCapture.productionScopeEscapeFiles,
       repairGoldPatchExact: goldPatchExact,
       oracleStages,
       costUsd: 0,
@@ -233,16 +235,12 @@ function deriveVerdict(breakingChanges: readonly BreakingChange[], surfaceComput
   return priority.find((v) => verdicts.includes(v)) ?? verdicts[0]!;
 }
 
-interface RepairCapture {
-  changedFiles: string[];
-}
-
 async function runRepairOracles(
   fixture: EvalFixture,
   fixtureDir: string,
   repairAttempted: boolean,
   repairableCommits: readonly CommitUnit[],
-  capture: RepairCapture,
+  capture: RepairCaptureBuilder,
 ): Promise<OracleStageResult[]> {
   const stages: OracleStageResult[] = [];
   stages.push(
@@ -281,23 +279,46 @@ async function runRepairOracles(
 async function applyRepair(
   consumerDir: string,
   repairableCommits: readonly CommitUnit[],
-  capture: RepairCapture,
+  capture: RepairCaptureBuilder,
 ): Promise<void> {
-  const changed = new Set<string>();
   for (const commit of repairableCommits) {
     const before = new Map(
       await Promise.all(
         commit.allowedFiles.map(async (path) => [path, await readFile(join(consumerDir, path), 'utf8')] as const),
       ),
     );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = applyBuiltinCodemod(commit, before);
+    capture.recordCommit(commit.allowedFiles, before, result.edits);
     for (const edit of result.edits) {
-      if (edit.content !== before.get(edit.path)) changed.add(edit.path);
       await writeFile(join(consumerDir, edit.path), edit.content, 'utf8');
     }
   }
-  capture.changedFiles = [...changed].sort();
+}
+
+/**
+ * `'not-applicable'` unless a repair was attempted and adjudication's
+ * accepted ground truth names a gold patch — never `false` for "we did not
+ * compare". When both hold, the real captured patch (from real repair
+ * behaviour) is compared, normalized, against the checked-in gold patch.
+ */
+async function computeGoldPatchExact(
+  fixtureDir: string,
+  adjudication: Adjudication,
+  repairAttempted: boolean,
+  actualPatch: string,
+): Promise<boolean | 'not-applicable'> {
+  if (!repairAttempted) return 'not-applicable';
+  const goldPatchPath = adjudication.decision.repair.goldPatch;
+  if (!goldPatchPath) return 'not-applicable';
+
+  let goldPatch: string;
+  try {
+    goldPatch = await readFile(join(fixtureDir, goldPatchPath), 'utf8');
+  } catch {
+    return 'not-applicable';
+  }
+
+  return goldPatchMatches(actualPatch, goldPatch);
 }
 
 function findingKind(code: string, detail: string): string {

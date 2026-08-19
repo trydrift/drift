@@ -1,8 +1,20 @@
 import type { EvalFixture } from './load.ts';
-import type { Adjudication } from './review.ts';
+import { sameTaxonomy, type Adjudication } from './review.ts';
 import type { OracleStageResult } from './oracle.ts';
 
-export const SCORING_VERSION = 'eval-score-v2';
+/**
+ * v3 replaces the fake `repairOutOfScopeFiles` (always `[]`) and hard-coded
+ * `repairGoldPatchExact: false` with real, computed signals, and splits one
+ * conflated "out of scope" concept into two distinct ones:
+ * `repairScopeEscapeFiles` (Drift edited a file outside its own plan's
+ * allowed scope — a hard safety failure) vs. a ground-truth "unexpected
+ * changed file" (Drift stayed in its own allowed scope but touched a file
+ * the accepted benchmark truth did not expect — a benchmark-quality signal).
+ * `outOfScopeEditCount` is gone; `productionScopeEscapeCount` and
+ * `unexpectedChangedFileCount` replace it as two separately-reported counts.
+ * Not a bug-fix-only bump: the JSON schema's field names changed.
+ */
+export const SCORING_VERSION = 'eval-score-v3';
 
 /**
  * Verdict strings a benchmark cares about, collapsed from production's two
@@ -47,8 +59,15 @@ export interface EvalPrediction {
   repairAction: RepairAction;
   repairOutcome: 'passed' | 'failed' | 'not-attempted';
   repairChangedFiles: string[];
-  repairOutOfScopeFiles: string[];
-  repairGoldPatchExact: boolean;
+  /** Files changed outside the union of the repairable commits' own `allowedFiles`. Computed from real repair behaviour — never hard-coded. */
+  repairScopeEscapeFiles: string[];
+  /**
+   * `'not-applicable'` when no repair was attempted or the adjudicated
+   * ground truth has no gold patch to compare against — never `false` for
+   * "we did not compare". Only `true`/`false` when an actual normalized-diff
+   * comparison ran.
+   */
+  repairGoldPatchExact: boolean | 'not-applicable';
   oracleStages: OracleStageResult[];
   costUsd: number;
   latencyMs: number;
@@ -81,7 +100,10 @@ export interface FixtureScore {
   successfulRepair: boolean;
   repairAttempted: boolean;
   regressionReason: 'none' | 'repair-failed-to-fix' | 'repair-introduced-regression' | 'oracle-unavailable';
-  outOfScopeEditCount: number;
+  /** Hard safety failure count: files changed outside Drift's own declared repair scope. CI-blocking. */
+  productionScopeEscapeCount: number;
+  /** Benchmark-quality signal: files changed within Drift's allowed scope but not expected by adjudicated ground truth. Never CI-blocking on its own. */
+  unexpectedChangedFileCount: number;
   changedFiles: Confusion;
   goldPatchExact: boolean | 'not-applicable';
   verdict: DriftVerdict;
@@ -97,7 +119,7 @@ export function scoreFixture(fixture: EvalFixture, adjudication: Adjudication, p
   const impact = confusion(adjudication.decision.impactSites.map(ns), prediction.impactSites.map(ns));
 
   const taxonomyCorrect = adjudication.decision.taxonomy
-    ? prediction.taxonomy !== undefined && taxonomyEqual(adjudication.decision.taxonomy, prediction.taxonomy)
+    ? prediction.taxonomy !== undefined && sameTaxonomy(adjudication.decision.taxonomy, prediction.taxonomy)
     : ('not-applicable' as const);
 
   const gapRecall =
@@ -137,7 +159,7 @@ export function scoreFixture(fixture: EvalFixture, adjudication: Adjudication, p
     (baselineStage === undefined || baselineStage.matchesExpectation) &&
     (brokenStage === undefined || brokenStage.matchesExpectation) &&
     repairedStage?.matchesExpectation === true &&
-    prediction.repairOutOfScopeFiles.length === 0;
+    prediction.repairScopeEscapeFiles.length === 0;
 
   let regressionReason: FixtureScore['regressionReason'] = 'none';
   if (attempted && prediction.repairOutcome !== 'passed' && (!policyScoped || expectedAction === 'repair')) {
@@ -146,12 +168,19 @@ export function scoreFixture(fixture: EvalFixture, adjudication: Adjudication, p
     else regressionReason = 'repair-failed-to-fix';
   }
 
+  // Ground truth for changed-file scoring is always the adjudicated
+  // `expectedChangedFiles` — never `allowedFiles` (Drift's own production
+  // safety boundary, which can legitimately be broader than what any one
+  // fixture's ground truth expects to change; see eval/README.md).
   const expectedChangedFiles = new Set(adjudication.decision.repair.expectedChangedFiles.map(ns));
   const actualChangedFiles = new Set(prediction.repairChangedFiles.map(ns));
   const changedFiles = confusion([...expectedChangedFiles], [...actualChangedFiles]);
 
-  const goldPatchApplicable = policyScoped ? expectedAction === 'repair' : attempted;
-  const goldPatchExact = goldPatchApplicable ? prediction.repairGoldPatchExact : ('not-applicable' as const);
+  // Prediction reports its own not-applicable state honestly (no repair
+  // attempted, or adjudication has no gold patch) — scoring trusts it rather
+  // than re-deriving applicability from policy, so an adapter that could not
+  // actually run the comparison never gets silently overridden into `false`.
+  const goldPatchExact = prediction.repairGoldPatchExact;
 
   return {
     fixtureId: fixture.id,
@@ -168,7 +197,8 @@ export function scoreFixture(fixture: EvalFixture, adjudication: Adjudication, p
     successfulRepair,
     repairAttempted: attempted,
     regressionReason,
-    outOfScopeEditCount: prediction.repairOutOfScopeFiles.length,
+    productionScopeEscapeCount: prediction.repairScopeEscapeFiles.length,
+    unexpectedChangedFileCount: changedFiles.fp,
     changedFiles,
     goldPatchExact,
     verdict: prediction.verdict,
@@ -196,17 +226,6 @@ function recall(expected: readonly string[], actual: readonly string[]): number 
   if (expected.length === 0) return 1;
   const got = new Set(actual);
   return expected.filter((item) => got.has(item)).length / expected.length;
-}
-
-function taxonomyEqual(
-  expected: NonNullable<Adjudication['decision']['taxonomy']>,
-  actual: NonNullable<EvalPrediction['taxonomy']>,
-): boolean {
-  return JSON.stringify(sortTaxonomy(expected)) === JSON.stringify(sortTaxonomy(actual));
-}
-
-function sortTaxonomy<T extends { detectability: string[]; visibility: string[] }>(taxonomy: T): T {
-  return { ...taxonomy, detectability: [...taxonomy.detectability].sort(), visibility: [...taxonomy.visibility].sort() };
 }
 
 export interface MicroMacro {
@@ -274,8 +293,14 @@ export interface AdapterMetrics {
   failedRepairs: number;
   repairedOraclePassRate: number | 'not-applicable';
   regressionCounts: Record<'repair-failed-to-fix' | 'repair-introduced-regression' | 'oracle-unavailable', number>;
-  outOfScopeEditCount: number;
-  outOfScopeEditRate: number;
+  /** Hard safety failures: files a repair changed outside Drift's own declared scope. CI-blocking whenever > 0. */
+  productionScopeEscapeCount: number;
+  productionScopeEscapeRate: number;
+  /** Benchmark-quality signal: files changed in-scope but not expected by adjudicated ground truth. Reported, never CI-blocking on its own. */
+  unexpectedChangedFileCount: number;
+  changedFilePrecision: number;
+  changedFileRecall: number;
+  changedFileF1: number;
   goldPatchExactRate: number | 'not-applicable';
 }
 
@@ -327,8 +352,12 @@ export function aggregateAdapter(adapter: string, scores: readonly FixtureScore[
       'repair-introduced-regression': scores.filter((s) => s.regressionReason === 'repair-introduced-regression').length,
       'oracle-unavailable': scores.filter((s) => s.regressionReason === 'oracle-unavailable').length,
     },
-    outOfScopeEditCount: sum(scores.map((s) => s.outOfScopeEditCount)),
-    outOfScopeEditRate: scores.length === 0 ? 0 : round(scores.filter((s) => s.outOfScopeEditCount > 0).length / scores.length),
+    productionScopeEscapeCount: sum(scores.map((s) => s.productionScopeEscapeCount)),
+    productionScopeEscapeRate: scores.length === 0 ? 0 : round(scores.filter((s) => s.productionScopeEscapeCount > 0).length / scores.length),
+    unexpectedChangedFileCount: sum(scores.map((s) => s.unexpectedChangedFileCount)),
+    changedFilePrecision: changedFiles.micro.precision,
+    changedFileRecall: changedFiles.micro.recall,
+    changedFileF1: changedFiles.micro.f1,
     goldPatchExactRate: goldApplicable.length === 0 ? 'not-applicable' : round(goldApplicable.filter((s) => s.goldPatchExact).length / goldApplicable.length),
   };
 }

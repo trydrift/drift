@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { EvalFixture } from '../load.ts';
 import { runOracleStage, type OracleStageResult } from '../oracle.ts';
+import { createRepairCaptureBuilder, EMPTY_REPAIR_CAPTURE, type RepairCaptureBuilder } from './repair-capture.ts';
 import type { DriftVerdict, EvalPrediction } from '../score.ts';
 import {
   DriftConfigSchema,
@@ -54,7 +55,12 @@ export function supportsFixture(fixture: EvalFixture): boolean {
   return SUPPORTED_SCENARIOS.has(fixture.scenarioLabel);
 }
 
-export async function componentLocalizeRepairPrediction(fixture: EvalFixture): Promise<EvalPrediction> {
+/**
+ * `_adjudication` is accepted only so this adapter's signature matches the
+ * `run.ts` adapter table's shared type. This component never compares
+ * against a gold patch — `repairGoldPatchExact` is always `'not-applicable'`.
+ */
+export async function componentLocalizeRepairPrediction(fixture: EvalFixture, _adjudication?: unknown): Promise<EvalPrediction> {
   if (!supportsFixture(fixture)) {
     throw new Error(
       `drift-component-localize-repair only handles rename-shaped fixtures (renamed-export, member-rename); ${fixture.id} declares scenarioLabel '${fixture.scenarioLabel}'. Skip this adapter for this fixture rather than running it.`,
@@ -123,7 +129,7 @@ export async function componentLocalizeRepairPrediction(fixture: EvalFixture): P
 
   const repairableCommits = plan.commits.filter((commit) => commit.codemod || commit.fixPlan);
   const repairAttempted = repairableCommits.length > 0;
-  const capture = { changedFiles: [] as string[] };
+  const captureBuilder = createRepairCaptureBuilder();
 
   const oracleStages: OracleStageResult[] = [
     await runOracleStage(fixtureDir, fixture.dependency, {
@@ -146,11 +152,12 @@ export async function componentLocalizeRepairPrediction(fixture: EvalFixture): P
         command: fixture.oracles.repaired.command,
         expected: fixture.oracles.repaired.expect,
         dependencyVersion: 'new',
-        prepareConsumer: (dir) => applyRepair(dir, repairableCommits, capture),
+        prepareConsumer: (dir) => applyRepair(dir, repairableCommits, captureBuilder),
       }),
     );
   }
 
+  const repairCapture = repairAttempted ? await captureBuilder.finalize() : EMPTY_REPAIR_CAPTURE;
   const repairedStage = oracleStages.find((s) => s.stage === 'repaired');
   const repairOutcome: EvalPrediction['repairOutcome'] = !repairAttempted
     ? 'not-attempted'
@@ -182,9 +189,9 @@ export async function componentLocalizeRepairPrediction(fixture: EvalFixture): P
     verdict,
     repairAction: repairAttempted ? 'repair-attempted' : 'abstained',
     repairOutcome,
-    repairChangedFiles: capture.changedFiles,
-    repairOutOfScopeFiles: [],
-    repairGoldPatchExact: false,
+    repairChangedFiles: repairCapture.changedFiles,
+    repairScopeEscapeFiles: repairCapture.productionScopeEscapeFiles,
+    repairGoldPatchExact: 'not-applicable',
     oracleStages,
     costUsd: 0,
     latencyMs: Date.now() - started,
@@ -270,19 +277,17 @@ function knownChange(
   };
 }
 
-async function applyRepair(consumerDir: string, commits: readonly CommitUnit[], capture: { changedFiles: string[] }): Promise<void> {
-  const changed = new Set<string>();
+async function applyRepair(consumerDir: string, commits: readonly CommitUnit[], capture: RepairCaptureBuilder): Promise<void> {
   for (const commit of commits) {
     const before = new Map(
       await Promise.all(commit.allowedFiles.map(async (path) => [path, await readFile(join(consumerDir, path), 'utf8')] as const)),
     );
     const result = commit.codemod ? applyBuiltinCodemod(commit, before) : applyCommitFixPlan(commit, before);
+    capture.recordCommit(commit.allowedFiles, before, result.edits);
     for (const edit of result.edits) {
-      if (edit.content !== before.get(edit.path)) changed.add(edit.path);
       await writeFile(join(consumerDir, edit.path), edit.content, 'utf8');
     }
   }
-  capture.changedFiles = [...changed].sort();
 }
 
 function extractJsExportNames(source: string): string[] {

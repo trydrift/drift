@@ -121,7 +121,8 @@ export function adapterMetricsSection(metrics: readonly AdapterMetrics[]): strin
       `Expected abstentions: ${m.expectedAbstentions} · Correct: ${m.correctAbstentions} · Incorrect (unsafe attempt): ${m.incorrectAbstentions} · Missed repair opportunities: ${m.missedRepairOpportunities}`,
       `Repaired-oracle pass rate: ${fmt(m.repairedOraclePassRate)} · Gold-patch exact match rate (secondary): ${fmt(m.goldPatchExactRate)}`,
       `Regressions — failed-to-fix: ${m.regressionCounts['repair-failed-to-fix']}, introduced-regression: ${m.regressionCounts['repair-introduced-regression']}, oracle-unavailable: ${m.regressionCounts['oracle-unavailable']}`,
-      `Out-of-scope edits: ${m.outOfScopeEditCount} (rate: ${fmt(m.outOfScopeEditRate)})`,
+      `**Production scope escapes (CI-blocking): ${m.productionScopeEscapeCount}** (rate: ${fmt(m.productionScopeEscapeRate)}) — a repair changed a file outside Drift's own plan's declared scope.`,
+      `Unexpected changed files (benchmark-quality signal, not CI-blocking): ${m.unexpectedChangedFileCount} — an in-scope file changed that adjudicated ground truth did not expect. Changed-file precision/recall/F1: ${m.changedFilePrecision.toFixed(3)}/${m.changedFileRecall.toFixed(3)}/${m.changedFileF1.toFixed(3)}.`,
       '',
     );
   }
@@ -195,7 +196,7 @@ function oracleCell(s: FixtureScore, stage: 'baseline' | 'broken' | 'repaired'):
 function fixtureResultLabel(s: FixtureScore): string {
   if (s.falseSafe) return 'FAIL (false-safe)';
   if (s.incorrectRepairAttempt) return 'FAIL (unsafe repair attempt)';
-  if (s.outOfScopeEditCount > 0) return 'FAIL (out-of-scope edit)';
+  if (s.productionScopeEscapeCount > 0) return 'FAIL (production scope escape)';
   if (s.upstream.fp > 0 || s.impact.fp > 0) return 'FAIL (false positive)';
   if (s.upstream.fn > 0 || s.impact.fn > 0) return 'FAIL (false negative)';
   if (s.missedRepairOpportunity) return 'FAIL (missed repair)';

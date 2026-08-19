@@ -111,10 +111,11 @@ jobs:
         run: npm run eval:test
 
       # A fixture-based regression check for the deterministic pipeline.
-      # Fails only on harness-integrity problems (false-safe, out-of-scope
-      # edits, a failed review/adjudication validation) — a genuine Drift
-      # detection or repair miss on a hard fixture is a reportable metric,
-      # not a CI break. See eval/README.md.
+      # Fails only on harness-integrity problems (false-safe, a production
+      # scope escape — Drift's own repair edited a file outside its plan's
+      # declared scope — or a failed review/adjudication validation) — a
+      # genuine Drift detection or repair miss on a hard fixture is a
+      # reportable metric, not a CI break. See eval/README.md.
       - name: Run the deterministic evaluation harness
         run: npm run eval:deterministic
 
