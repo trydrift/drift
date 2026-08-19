@@ -94,3 +94,102 @@ test('an empty finding list does not by itself make a verdict safe', () => {
   assert.equal(d4('insufficient-evidence', 'safe').correctSafe, false);
   assert.equal(d4('unchecked', 'safe').correctSafe, false);
 });
+
+/*
+ * Taxonomy attribution.
+ *
+ * Taxonomy is a claim *about a finding*, so it can only be credited against a
+ * finding adjudicated truth recognised. The regression these pin is a real
+ * scoring bug: `scoreTaxonomy` used to ask whether *any* predicted breaking
+ * change carried the adjudicated labels, so a run that misclassified the one
+ * real change and invented a second, unrelated one with the right labels
+ * scored a correct taxonomy.
+ */
+
+const RENAME_TAXONOMY = {
+  nature: 'rename',
+  detectability: ['static'],
+  scope: 'api',
+  visibility: ['public'],
+};
+
+function change(symbol: string, kind: string, taxonomy?: DetectionArtifact['breakingChanges'][number]['taxonomy']) {
+  return {
+    dependency: 'left-pad',
+    kind,
+    symbols: [symbol],
+    replacementSymbols: [],
+    summary: `${kind} of ${symbol}`,
+    citations: [],
+    verdict: 'locally-affected',
+    ...(taxonomy ? { taxonomy } : {}),
+  };
+}
+
+test('taxonomy is wrong when the matched change carries the wrong labels, however right an unrelated prediction is', () => {
+  const score = scoreDetection({
+    caseId: 'c',
+    detection: detection('locally-affected', {
+      breakingChanges: [
+        // The change truth actually ruled on — matched at D2, wrongly classified.
+        change('A', 'rename', { ...RENAME_TAXONOMY, nature: 'removal' }),
+        // An unrelated false positive that happens to carry the expected labels.
+        change('B', 'rename', RENAME_TAXONOMY),
+      ],
+    }),
+    truth: truth('unsafe', { upstreamFindings: ['left-pad:A:rename'], taxonomy: RENAME_TAXONOMY }),
+  });
+
+  assert.equal(score.d2BreakingChanges.confusion.tp, 1, 'A must match at D2');
+  assert.equal(score.d2BreakingChanges.confusion.fp, 1, 'B must be a false positive at D2');
+  assert.equal(score.taxonomy.status, 'scored');
+  assert.equal(score.taxonomy.correct, false, 'an unmatched prediction must not earn the taxonomy point');
+  assert.equal(score.taxonomy.matchedChanges, 1);
+});
+
+test('taxonomy is correct when the matched change itself carries the adjudicated labels', () => {
+  const score = scoreDetection({
+    caseId: 'c',
+    detection: detection('locally-affected', {
+      breakingChanges: [change('A', 'rename', RENAME_TAXONOMY), change('B', 'removal')],
+    }),
+    truth: truth('unsafe', { upstreamFindings: ['left-pad:A:rename'], taxonomy: RENAME_TAXONOMY }),
+  });
+  assert.equal(score.taxonomy.correct, true);
+  assert.equal(score.taxonomy.matchedChanges, 1);
+});
+
+test('taxonomy is scored and wrong when Drift never produced the adjudicated finding at all', () => {
+  const score = scoreDetection({
+    caseId: 'c',
+    detection: detection('locally-affected', { breakingChanges: [change('B', 'rename', RENAME_TAXONOMY)] }),
+    truth: truth('unsafe', { upstreamFindings: ['left-pad:A:rename'], taxonomy: RENAME_TAXONOMY }),
+  });
+  assert.equal(score.taxonomy.status, 'scored');
+  assert.equal(score.taxonomy.correct, false);
+  assert.equal(score.taxonomy.matchedChanges, 0);
+});
+
+test('one adjudicated taxonomy over several adjudicated findings is not attributable, and scores nothing', () => {
+  const score = scoreDetection({
+    caseId: 'c',
+    detection: detection('locally-affected', {
+      breakingChanges: [change('A', 'rename', RENAME_TAXONOMY), change('B', 'rename', RENAME_TAXONOMY)],
+    }),
+    truth: truth('unsafe', {
+      upstreamFindings: ['left-pad:A:rename', 'left-pad:B:rename'],
+      taxonomy: RENAME_TAXONOMY,
+    }),
+  });
+  assert.equal(score.taxonomy.status, 'not-attributable');
+  assert.equal(score.taxonomy.correct, false);
+});
+
+test('taxonomy is not-adjudicated when the adjudication states none', () => {
+  const score = scoreDetection({
+    caseId: 'c',
+    detection: detection('locally-affected', { breakingChanges: [change('A', 'rename', RENAME_TAXONOMY)] }),
+    truth: truth('unsafe', { upstreamFindings: ['left-pad:A:rename'] }),
+  });
+  assert.equal(score.taxonomy.status, 'not-adjudicated');
+});

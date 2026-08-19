@@ -157,9 +157,12 @@ function detectionSection(result: EvaluationResult): string[] {
   lines.push('');
 
   const taxonomyScored = scored.filter((entry) => entry.detection!.taxonomy.status === 'scored');
+  const taxonomyUnattributable = scored.filter((entry) => entry.detection!.taxonomy.status === 'not-attributable');
   lines.push(
-    `Taxonomy: ${taxonomyScored.filter((entry) => entry.detection!.taxonomy.correct).length}/${taxonomyScored.length} correct` +
-      ` · ${scored.length - taxonomyScored.length} case(s) had no adjudicated taxonomy.`,
+    `Taxonomy: ${taxonomyScored.filter((entry) => entry.detection!.taxonomy.correct).length}/${taxonomyScored.length} correct,` +
+      ' credited only against breaking changes that matched adjudicated truth at D2.' +
+      ` · ${scored.length - taxonomyScored.length - taxonomyUnattributable.length} case(s) had no adjudicated taxonomy.` +
+      ` · ${taxonomyUnattributable.length} case(s) stated one taxonomy over several adjudicated findings, so it could not be attributed to one and scored nothing.`,
     '',
   );
 

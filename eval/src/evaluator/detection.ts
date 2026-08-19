@@ -34,6 +34,20 @@ import {
 
 export type LevelStatus = 'scored' | 'not-adjudicated';
 
+/**
+ * Taxonomy needs a third state the confusion levels do not.
+ *
+ * An adjudication states *one* taxonomy for the case, so when reviewers ruled
+ * on more than one breaking change there is no way to say which of them that
+ * taxonomy describes. Scoring it anyway would mean crediting (or charging) a
+ * classification against a finding nobody attributed it to. `not-attributable`
+ * says so and contributes to nothing, exactly as `not-adjudicated` does — the
+ * two are kept apart because they call for different fixes: one needs a
+ * reviewer to rule, the other needs the adjudication schema to say which
+ * finding it is ruling about.
+ */
+export type TaxonomyStatus = LevelStatus | 'not-attributable';
+
 export interface Confusion {
   tp: number;
   fp: number;
@@ -72,7 +86,17 @@ export interface DetectionScore {
     /** Truth says safe and Drift's verdict was not a safety claim at all. Neither correct nor a safety failure. */
     safeButInconclusive: boolean;
   };
-  taxonomy: { status: LevelStatus; correct: boolean };
+  taxonomy: {
+    status: TaxonomyStatus;
+    correct: boolean;
+    /**
+     * Predicted breaking changes that matched adjudicated truth at D2 — the
+     * only ones whose taxonomy may be credited. A prediction nobody asked for
+     * cannot earn a taxonomy point by guessing a label that happens to be
+     * right about a different symbol.
+     */
+     matchedChanges: number;
+  };
   gapRecall: { status: LevelStatus; recall: number };
 }
 
@@ -196,7 +220,7 @@ export function scoreDetection(input: ScoreDetectionInput): DetectionScore {
        */
       safeButInconclusive: truth.groundTruthSafety === 'safe' && !driftSaysSafe,
     },
-    taxonomy: scoreTaxonomy(truth, detection),
+    taxonomy: scoreTaxonomy(truth, detection, d2, scope),
     gapRecall:
       truth.gaps.length === 0
         ? { status: 'not-adjudicated', recall: 0 }
@@ -242,13 +266,53 @@ function level(
   };
 }
 
-function scoreTaxonomy(truth: Conclusion, detection: DetectionArtifact): { status: LevelStatus; correct: boolean } {
-  if (!truth.taxonomy) return { status: 'not-adjudicated', correct: false };
-  // Correct when *any* predicted breaking change carries the adjudicated
-  // taxonomy. A multi-change migration legitimately produces several, and
-  // requiring the first one to match would score a correct multi-change
-  // analysis as wrong for ordering reasons.
-  const correct = detection.breakingChanges.some(
+function scoreTaxonomy(
+  truth: Conclusion,
+  detection: DetectionArtifact,
+  d2: LevelScore,
+  scope: (identity: string) => string,
+): DetectionScore['taxonomy'] {
+  if (!truth.taxonomy) return { status: 'not-adjudicated', correct: false, matchedChanges: 0 };
+
+  /**
+   * Only predictions that matched adjudicated truth at D2 are eligible.
+   *
+   * This was previously `detection.breakingChanges.some(...)`, which credited
+   * the case whenever *any* prediction carried the expected labels — including
+   * a prediction that was itself a false positive about an unrelated symbol.
+   * A tool that misclassified the real change and hallucinated a second one
+   * with the right label scored a correct taxonomy, which is the opposite of
+   * what the metric is for. Taxonomy is a property of a finding, so it is
+   * scored on the findings truth actually recognised.
+   */
+  const matched = new Set(d2.truePositives);
+  const matchedChanges = detection.breakingChanges.filter((change) =>
+    matched.has(
+      scope(
+        breakingChangeIdentity({
+          dependency: change.dependency,
+          workspace: change.workspace,
+          kind: change.kind,
+          symbols: change.symbols,
+          replacementSymbols: [],
+        }),
+      ),
+    ),
+  );
+
+  /**
+   * One adjudicated taxonomy cannot be attributed across several adjudicated
+   * findings. Reported rather than guessed at; no case in the corpus is in
+   * this state today, and the day one is, the adjudication schema — not this
+   * function — is what needs to change.
+   */
+  if ((truth.upstreamFindings?.length ?? 0) > 1) {
+    return { status: 'not-attributable', correct: false, matchedChanges: matchedChanges.length };
+  }
+
+  // Nothing matched: Drift did not produce the finding this taxonomy belongs
+  // to, so it did not classify it correctly either. Scored, and wrong.
+  const correct = matchedChanges.some(
     (change) =>
       change.taxonomy !== undefined &&
       change.taxonomy.nature === truth.taxonomy!.nature &&
@@ -256,7 +320,7 @@ function scoreTaxonomy(truth: Conclusion, detection: DetectionArtifact): { statu
       sameSet(change.taxonomy.detectability, truth.taxonomy!.detectability) &&
       sameSet(change.taxonomy.visibility, truth.taxonomy!.visibility),
   );
-  return { status: 'scored', correct };
+  return { status: 'scored', correct, matchedChanges: matchedChanges.length };
 }
 
 function sameSet(a: readonly string[], b: readonly string[]): boolean {
