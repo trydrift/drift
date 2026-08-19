@@ -154,6 +154,26 @@ async function runOne(input: RunOneInput): Promise<PredictionArtifact> {
 
   const workspace = await materializeCase(publicCase);
   const config = DriftConfigSchema.parse({
+    // `auto` is a real production mode and the only one under which a repair
+    // result means anything: in `approve` — the default — `dispositionFor`
+    // proposes every fix plan for a human and applies nothing, so every
+    // deterministic tier would score `abstained-by-policy` on every case and
+    // the benchmark would be measuring the default config rather than the
+    // product. What `auto` does *not* do is loosen the gate: an unattested
+    // replacement is still rejected, a plan that changes expression structure
+    // still needs the project's checks to have passed, and the agent tier is
+    // still bounded by scope validation.
+    mode: 'auto',
+    // `review` — the default — proposes every fix plan and applies none, so
+    // the tier could never be measured under it. `proven` is the most
+    // conservative setting that lets it act at all: only plans whose every
+    // operation swaps one token for another of the same kind, anchored to an
+    // occurrence Drift localized itself. A plan that changes expression
+    // structure still needs the project's own checks to have passed, which
+    // `verified` would be required for and which this benchmark does not
+    // enable — so results here understate what a `verified` configuration
+    // could apply, rather than overstating it.
+    remediation: { fixPlans: { autoApply: 'proven' } },
     evidence: { typeSurface: true },
     verification: { behavioural: { enabled: true, network: false, timeoutSeconds: 20 } },
   });

@@ -57,6 +57,10 @@ export async function importFixtureAsCase(fixture: EvalFixture, root = process.c
   await cp(join(fixtureDir, 'consumer'), join(publicDir, 'consumer'), { recursive: true });
   await cp(join(fixtureDir, 'upstream', 'old'), join(publicDir, 'upstream', 'old'), { recursive: true });
   await cp(join(fixtureDir, 'upstream', 'new'), join(publicDir, 'upstream', 'new'), { recursive: true });
+  // Frozen upstream prose, when the fixture has any. Public by construction:
+  // it is what a networked run would have fetched, so a prediction must see it.
+  await rm(join(publicDir, 'evidence'), { recursive: true, force: true });
+  await cp(join(fixtureDir, 'evidence'), join(publicDir, 'evidence'), { recursive: true }).catch(() => undefined);
 
   const manifestPath = join(publicDir, 'consumer', 'package.json');
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as {

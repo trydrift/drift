@@ -194,6 +194,7 @@ export type {
 export {
   applyBuiltinCommit,
   applyFixPlanCommit,
+  assessmentOf,
   createRemediationWorktree,
   removeRemediationWorktree,
   runAgentCommitsInWorktree,

@@ -31,15 +31,25 @@ export interface FixtureHashes {
    * prevent. `sha256('')` when a fixture has none.
    */
   hiddenChecks: string;
+  /**
+   * The fixture's frozen upstream prose (`evidence/`).
+   *
+   * Hashed because a prediction genuinely reads it: the fetch stub serves it
+   * as the upstream repository's changelog, so editing it changes what Drift
+   * concludes and what a reviewer was looking at when they concluded anything
+   * else. `sha256('')` when a fixture froze none.
+   */
+  evidence: string;
 }
 
 export async function hashFixtureRevision(fixtureDir: string, fixtureYamlBody: string): Promise<FixtureHashes> {
-  const [upstreamOld, upstreamNew, consumer, goldPatch, hiddenChecks] = await Promise.all([
+  const [upstreamOld, upstreamNew, consumer, goldPatch, hiddenChecks, evidence] = await Promise.all([
     hashTree(join(fixtureDir, 'upstream', 'old')),
     hashTree(join(fixtureDir, 'upstream', 'new')),
     hashTree(join(fixtureDir, 'consumer')),
     hashOptionalFile(join(fixtureDir, 'expected', 'gold.patch')),
     hashTree(join(fixtureDir, 'hidden')),
+    hashTree(join(fixtureDir, 'evidence')),
   ]);
 
   return {
@@ -50,6 +60,7 @@ export async function hashFixtureRevision(fixtureDir: string, fixtureYamlBody: s
     oracles: hashOracleSection(fixtureYamlBody),
     goldPatch,
     hiddenChecks,
+    evidence,
   };
 }
 

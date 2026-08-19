@@ -19,7 +19,7 @@ function review(id: string, conclusion: Conclusion): Review {
     fixtureId: 'x',
     createdAt: '2026-08-19T00:00:00.000Z',
     reviewer: { type: 'ai', name: 'test', provider: 'unavailable', model: 'unavailable', modelVersion: 'unavailable', toolVersion: 'unavailable' },
-    reviewedRevision: { fixtureMetadata: 'h', upstreamOld: 'h', upstreamNew: 'h', consumer: 'h', oracles: 'h', goldPatch: 'h', hiddenChecks: 'h' },
+    reviewedRevision: { fixtureMetadata: 'h', upstreamOld: 'h', upstreamNew: 'h', consumer: 'h', oracles: 'h', goldPatch: 'h', hiddenChecks: 'h', evidence: 'h' },
     evidence: { files: [], commands: [], artifacts: [], notes: '' },
     conclusion,
     rationale: { summary: 's', findingNotes: [], uncertainty: '' },

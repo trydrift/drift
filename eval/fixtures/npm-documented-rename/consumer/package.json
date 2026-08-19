@@ -1,0 +1,11 @@
+{
+  "name": "drift-eval-consumer-npm-documented-rename",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node src/app.js"
+  },
+  "dependencies": {
+    "fixture-lib": "file:../upstream/new"
+  }
+}

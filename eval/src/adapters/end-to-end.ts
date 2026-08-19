@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { PublicCase } from '../case/schema.ts';
 import type { MaterializedCase } from '../case/materialize.ts';
@@ -85,12 +86,21 @@ export async function runEndToEndDetection(
   clearHttpCache();
   clearTypeSurfaceCache();
 
+  // The upstream repository the case's frozen prose belongs to, read from the
+  // frozen package's own manifest rather than named here — a case that froze a
+  // changelog says which repository it came from, and one that did not gets no
+  // prose, exactly as a package without a discoverable repository does.
+  const githubRepo = await upstreamGitHubRepo(workspace.upstreamNewDir);
+
   const uninstallStub =
     publicCase.ecosystem === 'npm' && publicCase.networkPolicy !== 'allowed'
-      ? installNpmFetchStub([
-          { name: publicCase.dependency.name, version: publicCase.dependency.fromVersion, dir: workspace.upstreamOldDir },
-          { name: publicCase.dependency.name, version: publicCase.dependency.toVersion, dir: workspace.upstreamNewDir },
-        ])
+      ? installNpmFetchStub(
+          [
+            { name: publicCase.dependency.name, version: publicCase.dependency.fromVersion, dir: workspace.upstreamOldDir },
+            { name: publicCase.dependency.name, version: publicCase.dependency.toVersion, dir: workspace.upstreamNewDir },
+          ],
+          { evidenceDir: workspace.evidenceDir, githubRepo },
+        )
       : () => undefined;
 
   const triageSkipped: { dependency: string; reason: string }[] = [];
@@ -218,6 +228,20 @@ export function reduceVerdict(
  * consult. The dependency is carried through because a monorepo has one row
  * per dependency and "the surface was checked" is a per-dependency fact.
  */
+/** `owner/repo` from the frozen package manifest's `repository` field, or `null` when it declares none. */
+async function upstreamGitHubRepo(upstreamDir: string): Promise<string | null> {
+  try {
+    const manifest = JSON.parse(await readFile(join(upstreamDir, 'package.json'), 'utf8')) as {
+      repository?: string | { url?: string };
+    };
+    const url = typeof manifest.repository === 'string' ? manifest.repository : manifest.repository?.url;
+    const match = /github\.com[/:]([\w.-]+)\/([\w.-]+?)(?:\.git)?$/.exec(url ?? '');
+    return match ? `${match[1]}/${match[2]}` : null;
+  } catch {
+    return null;
+  }
+}
+
 function checkedSurfacesOf(plan: unknown): CheckedSurfaceLike[] {
   const surfaces = (plan as { checkedSurfaces?: CheckedSurfaceLike[] }).checkedSurfaces ?? [];
   return surfaces.map((surface) => ({

@@ -1,0 +1,112 @@
+id: claude-2026-08-19-npm-documented-rename-a
+fixtureId: npm-documented-rename
+createdAt: 2026-08-19T13:00:00.000Z
+reviewer:
+  type: ai
+  name: Claude
+  provider: Anthropic
+  model: claude-opus-5
+  modelVersion: unavailable
+  toolVersion: unavailable
+reviewedRevision:
+  fixtureMetadata: 04ffbf014ba21ecc5d73e62b28b00d4e144d8b03b7de6ab9e7dc619f186cdc98
+  upstreamOld: af9c5083fbeb80ca464368641633fe4e5429960b5e3fdcf1b896a0209f333221
+  upstreamNew: 9f309bb127e50ed7685ca2e6a4397c7b4d2c0b178b9acac037cb7926303002cb
+  consumer: c27e4bfd821aacff1171f7c14e7eb4666316b282596e7e97e32e7a5398c499d2
+  oracles: 8e5b05fc4d98245f6d2f9c163cb5b9be686a40fc253e2274d9001d0b3d77679c
+  goldPatch: 84e0335cce68b688bccde1ca239abc2024b630dace194967f1b28f0151127d90
+  hiddenChecks: eb5c554ccd212c7105eecd9b4db346c4973aada0be8435f62aea8696c10a66c7
+  evidence: 28d29632584934d38d77e414fb6a8b64da49dca7af0de0b88f814611e0f232c7
+evidence:
+  files:
+    - upstream/old/index.js
+    - upstream/old/index.d.ts
+    - upstream/old/package.json
+    - upstream/new/index.js
+    - upstream/new/index.d.ts
+    - upstream/new/package.json
+    - evidence/CHANGELOG.md
+    - consumer/src/app.js
+    - consumer/package.json
+    - expected/gold.patch
+    - hidden/checks.yml
+    - hidden/behaviour.mjs
+  commands:
+    - "npm test (baseline: consumer pointed at upstream/old)"
+    - "npm test (broken: consumer pointed at upstream/new, unmodified)"
+    - "npm test (gold-repaired: gold.patch applied against upstream/new)"
+    - "node hidden/behaviour.mjs (all three states)"
+  artifacts: []
+  notes: Every file above was read in full and every command above was run by
+    hand in a disposable copy. No Drift prediction was inspected before forming
+    this conclusion.
+conclusion:
+  dependencyChanges:
+    - npm:fixture-lib:1.0.0->2.0.0
+  evidenceFindings:
+    - fixture-lib:export-removed:oldQuery
+  upstreamFindings:
+    - fixture-lib:oldQuery:removed-export
+    - fixture-lib:oldQuery:renamed-export
+  impactSites:
+    - src/app.js:oldQuery
+  taxonomy:
+    nature: api-shape
+    detectability:
+      - link-or-import
+      - compile-time
+    scope: symbol
+    visibility:
+      - direct
+  gaps: []
+  groundTruthSafety: unsafe
+  repair:
+    expectedAction: deterministic-repair
+    expectedChangedFiles:
+      - src/app.js
+    goldPatch: expected/gold.patch
+rationale:
+  summary: "upstream/old exports oldQuery(name){return name.toUpperCase()};
+    upstream/new exports query(name) with an identical body and no other
+    export changed. Unlike every other fixture in this corpus, the rename is
+    *documented*: evidence/CHANGELOG.md's 2.0.0 section states, in the upstream
+    project's own words, that oldQuery has been renamed to query and that the
+    behaviour is unchanged. consumer/src/app.js reaches the symbol through a
+    namespace import and calls fixture.oldQuery('Ada'); baseline passes, broken
+    fails with a TypeError, and the gold patch makes it pass again. I ran all
+    three. Because the replacement name is attested by a document a reviewer
+    can open, a mechanical rule (rename the member oldQuery to query) is
+    derivable from evidence rather than inferred from body shapes, which is
+    exactly the line I drew on npm-member-rename when I recorded that one as
+    agent-delegation. So this one is deterministic-repair. I want the contrast
+    to be explicit, because it is the reason the fixture exists: the two cases
+    differ in the evidence and in nothing else, and any tool that treats them
+    identically is either guessing on one or refusing on the other."
+  findingNotes:
+    - "fixture-lib:export-removed:oldQuery — the evidence-layer fact, from the
+      computed .d.ts surface diff. This is the D1 expectation; I am stating it
+      because for once a synthetic case has a retrievable prose source and the
+      level is genuinely reviewable."
+    - "fixture-lib:oldQuery:removed-export and fixture-lib:oldQuery:renamed-export
+      — two interpretations from two independent sources (the surface diff can
+      only establish that the export is gone; the changelog establishes what
+      replaced it). Both are correct and I am crediting both, on the same
+      reasoning review c of npm-return-value used: a repository with types but
+      no reachable changelog would legitimately produce only the first, and
+      collapsing them would make that difference invisible."
+    - "src/app.js:oldQuery — one real call site, reached through the `fixture`
+      namespace binding."
+    - "Hidden behavioural check preserves-shout: verified to pass against
+      upstream/old, fail against upstream/new, and pass again with the gold
+      patch applied."
+  uncertainty: "None on the facts. One thing I want on the record: I expect
+    Drift's built-in codemod tier to decline this case, because its single rule
+    renames bare identifiers and this call site is a member after a dot. That
+    would be a `missed-opportunity` against this expectedAction, and it is a
+    real product limitation rather than a review error — it is the kind of gap
+    a per-mechanism benchmark exists to make visible, and I am deliberately not
+    softening the expectation to hide it."
+status: reviewed
+reviewOf: []
+promptVersion: ground-truth-v1
+promptHash: see eval/review-prompts/ground-truth-v1.md

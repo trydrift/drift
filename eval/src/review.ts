@@ -34,8 +34,13 @@ const taxonomySchema = z.object({
  * charged an `unsafe-attempt` for doing exactly what the product is designed
  * to do. Neither charge described a defect.
  *
- * - `deterministic-repair` — the evidence supports a mechanical, model-free
- *   fix, and a tier that declines has missed something it should have caught.
+ * - `deterministic-repair` — the evidence attests the replacement, so a
+ *   mechanical rule can be derived and applied deterministically without a
+ *   human looking at the result. A tier that declines has missed something.
+ *   (Which tier derives the rule is not part of the judgement: the built-in
+ *   codemod and a validated model-authored fix plan both apply one
+ *   deterministically, and they are separate tracks precisely so their
+ *   different reach is visible rather than pooled.)
  * - `agent-delegation` — no deterministic rule is derivable, and delegating to
  *   an agent under approval is correct. A deterministic tier that declines is
  *   right; a deterministic tier that acts anyway is not.
@@ -108,6 +113,8 @@ const reviewedRevisionSchema = z.object({
   goldPatch: z.string(),
   /** The benchmark-added hidden behavioural checks this reviewer saw. `sha256('')` when the fixture had none. */
   hiddenChecks: z.string(),
+  /** The frozen upstream prose this reviewer saw, which is also what a prediction reads. `sha256('')` when there was none. */
+  evidence: z.string(),
 });
 
 export const reviewSchema = z.object({

@@ -1,0 +1,39 @@
+fixtureId: npm-documented-rename
+acceptedReviewIds:
+  - claude-2026-08-19-npm-documented-rename-a
+decision:
+  dependencyChanges:
+    - npm:fixture-lib:1.0.0->2.0.0
+  evidenceFindings:
+    - fixture-lib:export-removed:oldQuery
+  upstreamFindings:
+    - fixture-lib:oldQuery:removed-export
+    - fixture-lib:oldQuery:renamed-export
+  impactSites:
+    - src/app.js:oldQuery
+  taxonomy:
+    nature: api-shape
+    detectability:
+      - link-or-import
+      - compile-time
+    scope: symbol
+    visibility:
+      - direct
+  gaps: []
+  groundTruthSafety: unsafe
+  repair:
+    expectedAction: deterministic-repair
+    expectedChangedFiles:
+      - src/app.js
+    goldPatch: expected/gold.patch
+status: accepted
+decidedAt: 2026-08-19T13:15:00.000Z
+decidedBy:
+  type: ai
+  name: Claude
+notes: >-
+  Single independent review; no conflicting review exists yet, so adjudication
+  accepts it directly. This is the first case in the corpus with adjudicated D0
+  and D1 expectations, which was previously impossible: no other case has a
+  retrievable prose source, so no reviewer could state what the evidence layer
+  should have found without inventing it.

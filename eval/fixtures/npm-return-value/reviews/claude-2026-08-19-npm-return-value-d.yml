@@ -16,6 +16,7 @@ reviewedRevision:
   oracles: 8e5b05fc4d98245f6d2f9c163cb5b9be686a40fc253e2274d9001d0b3d77679c
   goldPatch: 70bb801226cc9048adecc085e360bb0672e091d1151523afac3342474e60016b
   hiddenChecks: d619429fff2b7210479c67340fb0005c70e2366a77dddf0141112c2b45132106
+  evidence: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 evidence:
   files:
     - upstream/old/index.js
