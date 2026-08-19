@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import YAML from 'yaml';
 import { hashTree } from '../hash.ts';
@@ -174,18 +174,36 @@ export async function importFixtureAsCase(fixture: EvalFixture, root = process.c
 
   const goldPatch = await readFile(join(fixtureDir, 'expected', 'gold.patch'), 'utf8').catch(() => null);
 
+  // Hidden behavioural checks are authored in the fixture tree, where a
+  // reviewer sees them and where `hashFixtureRevision` hashes them. The
+  // declarations move into private truth and the check sources move alongside
+  // them as real files. One source, one review, one hash.
+  const hiddenChecksBody = await readFile(join(fixtureDir, 'hidden', 'checks.yml'), 'utf8').catch(() => null);
+  const hiddenChecks = hiddenChecksBody ? (YAML.parse(hiddenChecksBody) as unknown[]) : [];
+  await rm(join(privateDir, 'hidden'), { recursive: true, force: true });
+  if (hiddenChecksBody) await cp(join(fixtureDir, 'hidden'), join(privateDir, 'hidden'), { recursive: true });
+
+  // Measurements already recorded against this case are carried forward, never
+  // re-derived. `triggerSignature` and `baselineSignature` are outputs of the
+  // reproducibility gate; an importer that reset them would silently delete
+  // benchmark evidence every time a fixture was re-imported, and the case
+  // would then look un-measured rather than measured.
+  const existing = await readFile(join(privateDir, 'truth.yml'), 'utf8')
+    .then((body) => privateTruthSchema.parse(YAML.parse(body)))
+    .catch(() => null);
+
   const truth = privateTruthSchema.parse({
     schemaVersion: CASE_SCHEMA_VERSION,
     caseId: fixture.id,
     adjudicationRef: 'adjudication.yml',
     developerPatch: goldPatch,
     developerPatchFiles: adjudication?.decision.repair.expectedChangedFiles ?? [],
-    hiddenOracles: [],
-    // Left empty on purpose. A trigger signature is a *measurement* of the
-    // bump-only state, and only the reproducibility gate may record one;
-    // writing a plausible value here would be inventing benchmark evidence.
-    triggerSignature: [],
-    baselineSignature: [],
+    hiddenChecks,
+    // Only the reproducibility gate may *record* a trigger signature, because
+    // it is a measurement of the bump-only state; the importer may only carry
+    // an existing one across, never invent one.
+    triggerSignature: existing?.triggerSignature ?? [],
+    baselineSignature: existing?.baselineSignature ?? [],
     notes: `Imported from eval/fixtures/${fixture.id} by ${IMPORTER_VERSION}.`,
   });
   await writeFile(join(privateDir, 'truth.yml'), YAML.stringify(truth), 'utf8');

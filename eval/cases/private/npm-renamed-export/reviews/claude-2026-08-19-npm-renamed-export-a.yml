@@ -15,6 +15,7 @@ reviewedRevision:
   consumer: 71425c9962d9a991a387ccff992e1dcb6987ee76fb4448bdbf2fbd2b786cd03a
   oracles: 8e5b05fc4d98245f6d2f9c163cb5b9be686a40fc253e2274d9001d0b3d77679c
   goldPatch: 97beb8c1df291fa40603c6c16b9d45319406a31a02c25aa6e4b773f13cf1a70d
+  hiddenChecks: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 evidence:
   files:
     - upstream/old/index.js
@@ -49,7 +50,7 @@ conclusion:
   gaps: []
   groundTruthSafety: unsafe
   repair:
-    expectedAction: repair
+    expectedAction: deterministic-repair
     expectedChangedFiles:
       - src/app.js
     goldPatch: expected/gold.patch

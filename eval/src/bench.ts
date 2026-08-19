@@ -6,9 +6,10 @@ import { tmpdir } from 'node:os';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { loadPublicCase, loadPublicCases, publicCaseDir } from './case/load.ts';
 import { materializeCase, type MaterializedCase } from './case/materialize.ts';
-import type { PublicCase } from './case/schema.ts';
+import type { HiddenCheck, PublicCase } from './case/schema.ts';
 import { runEndToEndDetection, ADAPTER_VERSION as E2E_VERSION } from './adapters/end-to-end.ts';
 import { runCaseStage } from './oracle/stage.ts';
+import { loadHiddenChecks } from './oracle/hidden.ts';
 import { runCodemodTrack } from './tiers/codemod.ts';
 import { runModelFixPlanTrack } from './tiers/model-fixplan.ts';
 import { runAgentTrack, type AgentTrackOptions } from './tiers/agent.ts';
@@ -97,6 +98,11 @@ export async function runBenchmark(options: BenchOptions): Promise<{ runId: stri
 
   for (const publicCase of selected) {
     const publicCaseHash = hashPublicCase(await readFile(join(publicCaseDir(publicCase.id), 'case.yml'), 'utf8'));
+    // The only private material this file touches, read here so it is
+    // impossible to miss. It never reaches an adapter, a repair tier, or the
+    // materialized workspace — only the throwaway copies `runCaseStage` makes
+    // *after* a repair already exists.
+    const hiddenChecks = await loadHiddenChecks(publicCase.id);
 
     for (const track of options.tracks) {
       // A deterministic track repeated N times produces N identical artifacts
@@ -107,7 +113,7 @@ export async function runBenchmark(options: BenchOptions): Promise<{ runId: stri
       const trackTrials = isLiveTrack(track) ? trials : 1;
 
       for (let trial = 1; trial <= trackTrials; trial += 1) {
-        const artifact = await runOne({ publicCase, publicCaseHash, track, trial, trialsPlanned: trackTrials, runId, revision, agent: options.agent });
+        const artifact = await runOne({ publicCase, publicCaseHash, hiddenChecks, track, trial, trialsPlanned: trackTrials, runId, revision, agent: options.agent });
         await writeArtifact(artifact);
         artifacts.push(artifact);
       }
@@ -124,6 +130,14 @@ function isLiveTrack(track: Track): boolean {
 interface RunOneInput {
   publicCase: PublicCase;
   publicCaseHash: string;
+  /**
+   * Benchmark-added behavioural assertions for this case, loaded once per run.
+   *
+   * They travel as a parameter rather than being read inside `runOne` so the
+   * single place that reads private truth stays visible at the top of this
+   * file, and so a test can drive the whole pipeline with checks of its own.
+   */
+  hiddenChecks: readonly HiddenCheck[];
   track: Track;
   trial: number;
   trialsPlanned: number;
@@ -160,12 +174,14 @@ async function runOne(input: RunOneInput): Promise<PredictionArtifact> {
         command: publicCase.oracles.baseline.command,
         expected: publicCase.oracles.baseline.expect,
         dependencyVersion: 'old',
+        hiddenChecks: input.hiddenChecks,
       }),
       await runCaseStage(publicCase, workspace, {
         stage: 'broken',
         command: publicCase.oracles.broken.command,
         expected: publicCase.oracles.broken.expect,
         dependencyVersion: 'new',
+        hiddenChecks: input.hiddenChecks,
       }),
     ];
 
@@ -194,6 +210,7 @@ async function runOne(input: RunOneInput): Promise<PredictionArtifact> {
             command: publicCase.oracles.repaired.command,
             expected: publicCase.oracles.repaired.expect,
             dependencyVersion: 'new',
+            hiddenChecks: input.hiddenChecks,
             prepareConsumer: (consumerDir) => applyPatch(consumerDir, outcome.repair.patch),
           }),
         );

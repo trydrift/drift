@@ -1,0 +1,110 @@
+id: claude-2026-08-19-npm-return-value-d
+fixtureId: npm-return-value
+createdAt: 2026-08-19T12:00:00.000Z
+reviewer:
+  type: ai
+  name: Claude
+  provider: Anthropic
+  model: claude-opus-5
+  modelVersion: unavailable
+  toolVersion: unavailable
+reviewedRevision:
+  fixtureMetadata: 9f369ed14d11a1614ae84ec64f242646861fe8e52cad77d5def309933755e1f0
+  upstreamOld: 3f122a65d0117d37b6107f73993ba1936cc9808309b39c113c4f08dacfa79608
+  upstreamNew: f80f688094c439539cc96467960b45012c260ca6b84235a46741f9b2db1b35f6
+  consumer: 8ff2589ce9242144d893db7b2f411e8781e95a920658e3aa69871d9cc66e56de
+  oracles: 8e5b05fc4d98245f6d2f9c163cb5b9be686a40fc253e2274d9001d0b3d77679c
+  goldPatch: 70bb801226cc9048adecc085e360bb0672e091d1151523afac3342474e60016b
+  hiddenChecks: db353f16596709a2e636488f7a8070f2a81ebc47bef7c531069d6ec5289a59ab
+evidence:
+  files:
+    - upstream/old/index.js
+    - upstream/old/index.d.ts
+    - upstream/old/package.json
+    - upstream/new/index.js
+    - upstream/new/index.d.ts
+    - upstream/new/package.json
+    - consumer/src/app.js
+    - consumer/src/app.ts
+    - consumer/package.json
+    - expected/gold.patch
+    - hidden/checks.yml
+  commands:
+    - "npm test (baseline: consumer pointed at upstream/old)"
+    - "npm test (broken: consumer pointed at upstream/new, unmodified)"
+    - "npm test (gold-repaired: gold.patch applied against upstream/new)"
+    - "node hidden/behaviour.mjs (all three states)"
+  artifacts: []
+  notes: Re-review after the recorded gold patch was corrected and a hidden
+    behavioural check was added. Every file above was read in full and every
+    command above was run by hand in a disposable copy.
+conclusion:
+  upstreamFindings:
+    - fixture-lib:formatUser:signature-change
+    - fixture-lib:formatUser:return-value
+  impactSites:
+    - src/app.js:formatUser
+    - src/app.ts:formatUser
+  taxonomy:
+    nature: behaviour
+    detectability:
+      - static-semantic
+      - test-time
+      - runtime-only
+    scope: symbol
+    visibility:
+      - direct
+  gaps: []
+  groundTruthSafety: unsafe
+  repair:
+    expectedAction: agent-delegation
+    expectedChangedFiles:
+      - src/app.js
+      - src/app.ts
+    goldPatch: expected/gold.patch
+rationale:
+  summary: "The upstream facts and the impact sites are unchanged from review c
+    and I re-derived both: formatUser returns a string in upstream/old and a
+    { label } object in upstream/new, which is visible independently in the .d.ts
+    diff and in the runtime behaviour, and both consumer files call it. Two
+    things did change and both were defects in the case rather than in the
+    conclusion. First, the recorded gold patch only touched src/app.ts, while the
+    project's own check runs src/app.js — so the case's own recorded repair did
+    not repair it, the reproducibility gate correctly ruled the case
+    oracle-insufficient, and it stopped being scored. The gold patch now covers
+    both call sites and the gold-repaired stage passes; I ran it. A gold patch is
+    evidence that at least one valid repair exists, and an incomplete one is a
+    case-authoring bug, not a finding about Drift. Second, expectedChangedFiles
+    was empty because review a and c expected no change at all; it now names the
+    two files any valid repair must touch. On policy: review a argued abstain
+    because a return-shape change is not a rename and no mechanical rule
+    substitutes one call expression for another safely. I agree with that
+    reasoning and it is unchanged — but the correct expression of it under the
+    widened enum is agent-delegation, not abstain. There is a real repair here,
+    the gold patch demonstrates it, and a coding agent producing that repair for
+    human review is the right product behaviour; what is wrong is a deterministic
+    tier inventing the rule, which agent-delegation still scores as an
+    unsafe-attempt. I am explicitly not recording deterministic-repair: appending
+    .label is derivable from the .d.ts for this one shape and not in general, and
+    ground truth should not encode a rule that only happens to work here."
+  findingNotes:
+    - "fixture-lib:formatUser:signature-change — the .d.ts fact: return type
+      string -> FormattedUser."
+    - "fixture-lib:formatUser:return-value — the runtime fact, confirmed by
+      executing both implementations."
+    - "src/app.js:formatUser and src/app.ts:formatUser — both real call sites;
+      only the first is exercised by the project's own check, which is why the
+      original gold patch's omission went unnoticed."
+    - "Hidden behavioural check preserves-display-name: verified to pass against
+      upstream/old, fail against upstream/new, and pass again once the corrected
+      gold patch is applied. It asserts displayName() still returns the
+      upper-cased name as a string — so a repair that deletes the call, or one
+      that leaves the object shape leaking out to callers, does not satisfy it."
+  uncertainty: "The deterministic-vs-delegated line is a judgment call and is
+    recorded as one. I am confident about the facts, the impact sites and the
+    corrected gold patch, all of which I ran."
+status: reviewed
+reviewOf:
+  - claude-2026-08-19-npm-return-value-c
+promptVersion: ground-truth-v1
+promptHash: see eval/review-prompts/ground-truth-v1.md

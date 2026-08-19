@@ -5,6 +5,7 @@ import { loadPublicCase, loadPublicCases, publicCaseDir } from '../case/load.ts'
 import { loadPrivateTruth, privateCaseDir } from '../case/private.ts';
 import { materializeCase } from '../case/materialize.ts';
 import { checkReproducibility } from '../oracle/reproducibility.ts';
+import { loadHiddenChecks } from '../oracle/hidden.ts';
 import { privateTruthSchema, publicCaseSchema } from '../case/schema.ts';
 
 /**
@@ -33,12 +34,18 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     const workspace = await materializeCase(publicCase);
     try {
       const truth = await loadPrivateTruth(publicCase.id).catch(() => null);
+      const hiddenChecks = await loadHiddenChecks(publicCase.id);
       const report = await checkReproducibility(publicCase, workspace, {
         repetitions,
         // The gold patch is applied as the third stage where one exists: a
         // recorded repair that does not actually repair cannot serve as
         // evidence of a valid one.
         ...(truth?.developerPatch ? { goldRepair: (dir: string) => applyGold(dir, truth.developerPatch!) } : {}),
+        // Hidden behavioural checks are part of what a case must reproduce.
+        // Running them here is what proves each one passes before the upgrade
+        // and fails after it, which is the only thing that entitles a check to
+        // disqualify a repair later.
+        hiddenChecks,
       });
 
       console.log(`\n${publicCase.id}: ${report.verdict}`);
@@ -46,6 +53,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       console.log(`  platform ${report.platform}/${report.arch} · ${report.repetitions} repetition(s)`);
       console.log(`  observed failure category: ${report.observedFailureCategory} (case declares ${publicCase.failureCategory})`);
       console.log(`  trigger signature (${report.triggerSignature.length}): ${JSON.stringify(report.triggerSignature)}`);
+      console.log(`  hidden behavioural checks: ${hiddenChecks.map((check) => check.id).join(', ') || 'none'}`);
 
       if (report.observedFailureCategory !== publicCase.failureCategory) {
         // Reported, never silently corrected. A mismatch is usually a real

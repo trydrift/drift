@@ -1,0 +1,24 @@
+# Hidden behavioural checks — benchmark-added ground truth.
+#
+# These are executable assertions about the consumer's own application
+# semantics. They never reach a prediction workspace: the importer copies them
+# into eval/cases/private/<id>/hidden/, materializeCase copies only named
+# public directories, and auditWorkspaceIsolation rejects a 'hidden/' directory
+# outright.
+#
+# They exist because a failure signature cannot tell a migration from a
+# deletion. Deleted code emits no diagnostic, so the project's own script goes
+# green and the trigger set empties; only running something that calls the
+# behaviour can tell the two apart.
+#
+# `files` are paths relative to this directory, written into the disposable
+# consumer copy under hidden/.
+- id: preserves-display-name
+  description: >-
+    The consumer still exports displayName(user) and it still returns the
+    upper-cased name as a plain string, including for an input the project's own
+    check never uses.
+  command: node hidden/behaviour.mjs
+  expect: pass
+  files:
+    - behaviour.mjs

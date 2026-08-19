@@ -2,9 +2,7 @@ schemaVersion: drift-bench-case-v1
 id: npm-return-value
 provenanceKind: synthetic
 ecosystem: npm
-status: oracle-insufficient
-statusReason: The recorded developer/gold repair does not make the bump-only
-  state pass, so it cannot serve as evidence of a valid repair.
+status: benchmark-ready
 consumer:
   repository: fixture-local
   licence: MIT
@@ -36,7 +34,7 @@ graph:
       from: 1.0.0
       to: 2.0.0
 environment:
-  runtimeVersion: v26.0.0
+  runtimeVersion: v24.19.0
   packageManager: npm
   packageManagerVersion: unavailable
   containerDigest: unavailable
@@ -68,7 +66,7 @@ discovery:
 failureCategory: runtime-failure
 migrationComplexity: compound
 artifactHashes:
-  consumerTree: 7ca489a65b6273d31f66f7d30e2e1564d009602fec537eaf95457605e3e44efe
+  consumerTree: df245f97f3999bbea553fc165122e8f311cafc60d0b68d91b0f8be63ed8b0099
   upstreamOld: 3f122a65d0117d37b6107f73993ba1936cc9808309b39c113c4f08dacfa79608
   upstreamNew: f80f688094c439539cc96467960b45012c260ca6b84235a46741f9b2db1b35f6
   lockfileBefore: unavailable

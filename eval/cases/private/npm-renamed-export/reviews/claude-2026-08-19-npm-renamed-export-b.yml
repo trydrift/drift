@@ -1,0 +1,93 @@
+id: claude-2026-08-19-npm-renamed-export-b
+fixtureId: npm-renamed-export
+createdAt: 2026-08-19T12:00:00.000Z
+reviewer:
+  type: ai
+  name: Claude
+  provider: Anthropic
+  model: claude-opus-5
+  modelVersion: unavailable
+  toolVersion: unavailable
+reviewedRevision:
+  fixtureMetadata: 584c7bbc32d4c23e58739e54a3ede5a21584d5fd68e67fe9f54a7e4007ecd366
+  upstreamOld: 8c438b6781711fe8f14a97326f2c5fafda6e6e7c8f1fa61aeb9c73b72bf39df2
+  upstreamNew: fbf6d8e07b2a65dcd00da29652e1837e91acf83c7661f431a50429b6cc600fc0
+  consumer: 379a15f899517d0a6b433748d1569ce235753c4783842314e7bcfb255e226b32
+  oracles: 8e5b05fc4d98245f6d2f9c163cb5b9be686a40fc253e2274d9001d0b3d77679c
+  goldPatch: 02d3fa001d0630451f84b599cd37c42c9e2466d9ed95b4a3ba2bbb3d489c77a8
+  hiddenChecks: 819f1601544fbf0d60c11d65311d655363db5fe238d923ec683b8cc0715b79c2
+evidence:
+  files:
+    - upstream/old/index.js
+    - upstream/old/index.d.ts
+    - upstream/old/package.json
+    - upstream/new/index.js
+    - upstream/new/index.d.ts
+    - upstream/new/package.json
+    - consumer/src/app.js
+    - consumer/package.json
+    - hidden/checks.yml
+  commands:
+    - "npm test (baseline: consumer pointed at upstream/old)"
+    - "npm test (broken: consumer pointed at upstream/new, unmodified)"
+    - "node hidden/behaviour.mjs (baseline and broken)"
+  artifacts: []
+  notes: Re-review after the consumer was restructured to export its behaviour
+    and a hidden behavioural check was added. Every upstream file, the consumer
+    and the hidden check were read in full; both oracles and the hidden check
+    were run by hand in a disposable copy. No Drift prediction was inspected
+    beforehand.
+conclusion:
+  upstreamFindings:
+    - fixture-lib:oldName:renamed-export
+  impactSites:
+    - src/app.js:oldName
+  taxonomy:
+    nature: api-shape
+    detectability:
+      - link-or-import
+      - compile-time
+    scope: symbol
+    visibility:
+      - direct
+  gaps: []
+  groundTruthSafety: unsafe
+  repair:
+    expectedAction: deterministic-repair
+    expectedChangedFiles:
+      - src/app.js
+    goldPatch: expected/gold.patch
+rationale:
+  summary: "The upstream facts are unchanged from review a and I re-derived them
+    independently: upstream/old exports oldName(name){return name.toUpperCase()},
+    upstream/new exports newName(name) with an identical body, nothing else moved.
+    consumer/src/app.js binds { oldName } as a named import, which against
+    upstream/new fails at import time with a SyntaxError naming the missing
+    export. Baseline passes, broken fails; I ran both. The conclusion fields are
+    identical to review a. expectedAction reads deterministic-repair rather than
+    repair purely because the enum was widened to distinguish a deterministic
+    rule from a delegated fix; the policy this case records has not changed. I
+    kept it deterministic here, and not on npm-member-rename, for the reason
+    review a for that case gave: a *named* import that no longer resolves names
+    the missing binding in the failure itself, so the substitution is anchored to
+    a diagnostic rather than to a body-shape inference. That is a narrower and
+    better-attested claim than the namespace-member case, and it is why the two
+    fixtures are recorded differently."
+  findingNotes:
+    - fixture-lib:oldName:renamed-export — identical body across old/new, name
+      absent from the other side in both directions.
+    - src/app.js:oldName — a real bound named import, not a textual match.
+    - "Hidden behavioural check preserves-shout: verified to pass against
+      upstream/old and fail against upstream/new. It asserts shout() still
+      exists and still upper-cases, including for an input the project's own
+      check never uses."
+  uncertainty: "None on the ground-truth facts. Separately, and unchanged from
+    review a: with no fetchable changelog for a synthetic local package, Drift's
+    evidence layer can only establish 'export-removed', not 'renamed'. That is a
+    real detection-granularity result and is scored as one at D2 — it is not a
+    review error and must not be corrected away."
+status: reviewed
+reviewOf:
+  - claude-2026-08-19-npm-renamed-export-a
+promptVersion: ground-truth-v1
+promptHash: see eval/review-prompts/ground-truth-v1.md

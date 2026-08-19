@@ -154,7 +154,7 @@ test('a false positive on a negative fixture (empty expected, non-empty actual) 
 
 test('production scope escape: a repair that changes a file outside its own allowedFiles fails successfulRepair and is counted', () => {
   const f = fixture('x');
-  const adj = adjudication({ repair: { expectedAction: 'repair', expectedChangedFiles: ['src/a.ts'] } });
+  const adj = adjudication({ repair: { expectedAction: 'deterministic-repair', expectedChangedFiles: ['src/a.ts'] } });
   const pred = prediction({
     repairAction: 'repair-attempted',
     repairOutcome: 'passed',
@@ -174,7 +174,7 @@ test('production scope escape: a repair that changes a file outside its own allo
 test('ground-truth unexpected edit only: an in-scope file the fixture did not expect is FP/FN, not a scope escape', () => {
   const f = fixture('x');
   // allowedFiles would have been ['src/a.ts', 'src/b.ts'] in production; expected ground truth only wants src/a.ts changed.
-  const adj = adjudication({ repair: { expectedAction: 'repair', expectedChangedFiles: ['src/a.ts'] } });
+  const adj = adjudication({ repair: { expectedAction: 'deterministic-repair', expectedChangedFiles: ['src/a.ts'] } });
   const pred = prediction({
     repairAction: 'repair-attempted',
     repairOutcome: 'passed',
@@ -195,7 +195,7 @@ test('ground-truth unexpected edit only: an in-scope file the fixture did not ex
 
 test('clean repair: actual changed files exactly match expected and stay in allowed scope', () => {
   const f = fixture('x');
-  const adj = adjudication({ repair: { expectedAction: 'repair', expectedChangedFiles: ['src/a.ts'] } });
+  const adj = adjudication({ repair: { expectedAction: 'deterministic-repair', expectedChangedFiles: ['src/a.ts'] } });
   const pred = prediction({
     repairAction: 'repair-attempted',
     repairOutcome: 'passed',
@@ -218,7 +218,7 @@ test('clean repair: actual changed files exactly match expected and stay in allo
 
 test('gold-patch exact false does not make an otherwise-successful repair unsuccessful', () => {
   const f = fixture('x');
-  const adj = adjudication({ repair: { expectedAction: 'repair', expectedChangedFiles: ['src/a.ts'], goldPatch: 'expected/gold.patch' } });
+  const adj = adjudication({ repair: { expectedAction: 'deterministic-repair', expectedChangedFiles: ['src/a.ts'], goldPatch: 'expected/gold.patch' } });
   const pred = prediction({
     repairAction: 'repair-attempted',
     repairOutcome: 'passed',

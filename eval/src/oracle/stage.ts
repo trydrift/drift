@@ -1,12 +1,12 @@
 import { execFile as execFileCallback } from 'node:child_process';
-import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
-import type { PublicCase } from '../case/schema.ts';
+import type { HiddenCheck, PublicCase } from '../case/schema.ts';
 import type { MaterializedCase } from '../case/materialize.ts';
 import type { OracleStageArtifact } from '../artifacts/prediction.ts';
-import { extractDiagnostics, processExitDiagnostic, signatureOf } from './signature.ts';
+import { extractDiagnostics, processExitDiagnostic, signatureOf, type Diagnostic } from './signature.ts';
 
 const execFile = promisify(execFileCallback);
 
@@ -44,6 +44,17 @@ export interface StageRunOptions {
   prepareConsumer?: (consumerDir: string) => Promise<void>;
   /** Overrides the case's install command, for a stage that needs a different one. */
   installCommand?: string;
+  /**
+   * Benchmark-added behavioural assertions, run after the project's own check
+   * in the same disposable copy.
+   *
+   * Supplied by the caller rather than read here, for the same reason the
+   * reproducibility gate takes `goldRepair` as a callback: this module is
+   * Layer B machinery and must stay unable to reach private truth on its own.
+   * The files a check ships are written into the *copy*, never into the
+   * materialized workspace a prediction adapter or a coding agent sees.
+   */
+  hiddenChecks?: readonly HiddenCheck[];
 }
 
 const MAX_EXCERPT = 4000;
@@ -116,7 +127,17 @@ export async function runCaseStage(
     // identity, and it reads as "failed for an unreadable reason" in a report.
     if (run.code !== 0 && diagnostics.length === 0) diagnostics.push(processExitDiagnostic(run.code));
 
-    const observed: OracleStageArtifact['observed'] = run.spawnFailed ? 'unable-to-run' : run.code === 0 ? 'pass' : 'fail';
+    const hidden = await runHiddenChecks(consumerDir, publicCase, options.hiddenChecks ?? []);
+    diagnostics.push(...hidden.diagnostics);
+
+    // A hidden check that did not do what a correct state must do makes the
+    // stage a failure, whatever the project's own script said. That is the
+    // whole point: a destructive "repair" leaves the project's script green.
+    const observed: OracleStageArtifact['observed'] = run.spawnFailed
+      ? 'unable-to-run'
+      : run.code === 0 && !hidden.violated
+        ? 'pass'
+        : 'fail';
 
     return {
       stage: options.stage,
@@ -125,12 +146,60 @@ export async function runCaseStage(
       matchesExpectation: observed !== 'unable-to-run' && observed === options.expected,
       signature: signatureOf(diagnostics),
       exitCode: run.code,
-      outputExcerpt: excerpt(run.output),
+      outputExcerpt: excerpt(hidden.output ? `${run.output}\n${hidden.output}` : run.output),
       durationMs: Date.now() - started,
     };
   } finally {
     await rm(temp, { recursive: true, force: true });
   }
+}
+
+/**
+ * Runs each hidden check in the same disposable consumer copy and returns the
+ * diagnostics it produced.
+ *
+ * Identities are namespaced with `hidden:<check id>:` so a hidden failure is a
+ * distinct member of a stage's signature and flows through the existing
+ * fail-to-pass set algebra untouched. Nothing new has to know about hidden
+ * checks: a behaviour the upgrade broke appears in the trigger set, and a
+ * repair that deleted the behaviour instead of migrating it leaves that
+ * identity unresolved (or replaces it with a new one), so it can reach
+ * `partially-repaired` or `introduced-regression` but never `repaired`.
+ *
+ * A check that produced no parseable diagnostic still gets one, for the same
+ * reason the project's own command does: two unreadable failures must not
+ * compare equal to each other and to nothing.
+ */
+async function runHiddenChecks(
+  consumerDir: string,
+  publicCase: PublicCase,
+  checks: readonly HiddenCheck[],
+): Promise<{ diagnostics: Diagnostic[]; violated: boolean; output: string }> {
+  const diagnostics: Diagnostic[] = [];
+  const output: string[] = [];
+  let violated = false;
+
+  for (const check of checks) {
+    for (const [path, content] of Object.entries(check.files)) {
+      const target = join(consumerDir, path);
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, content, 'utf8');
+    }
+
+    const result = await runCommand(consumerDir, check.command, publicCase);
+    const observed = result.spawnFailed ? 'unable-to-run' : result.code === 0 ? 'pass' : 'fail';
+    if (observed === check.expect) continue;
+
+    violated = true;
+    output.push(`hidden check "${check.id}" (${check.description}) expected ${check.expect}, observed ${observed}:\n${result.output.trim()}`);
+    const found = extractDiagnostics(result.output, { cwd: consumerDir });
+    const raised = found.length > 0 ? found : [processExitDiagnostic(result.code)];
+    for (const diagnostic of raised) {
+      diagnostics.push({ ...diagnostic, identity: `hidden:${check.id}:${diagnostic.identity}` });
+    }
+  }
+
+  return { diagnostics, violated, output: output.join('\n') };
 }
 
 interface CommandResult {

@@ -1,0 +1,105 @@
+id: claude-2026-08-19-npm-member-rename-b
+fixtureId: npm-member-rename
+createdAt: 2026-08-19T12:00:00.000Z
+reviewer:
+  type: ai
+  name: Claude
+  provider: Anthropic
+  model: claude-opus-5
+  modelVersion: unavailable
+  toolVersion: unavailable
+reviewedRevision:
+  fixtureMetadata: 9e4dc8869c8063fcc79ead326929b7c766ac3413823087225b91623561aeb3f4
+  upstreamOld: f438cc972572b3ff161b66a03fb3a3dfac79b5268ba5c3d9e019de0c005a53eb
+  upstreamNew: f6e49d5708e32fd59b4f16e064b3e486f0548e4cbe5b9d5a6fe292c86e438dfc
+  consumer: 9aad6ff4625110f725b40521d3530a6566e5f0c4ab0289fd4807a9fc7efc1b26
+  oracles: 8e5b05fc4d98245f6d2f9c163cb5b9be686a40fc253e2274d9001d0b3d77679c
+  goldPatch: 84e0335cce68b688bccde1ca239abc2024b630dace194967f1b28f0151127d90
+  hiddenChecks: eb5c554ccd212c7105eecd9b4db346c4973aada0be8435f62aea8696c10a66c7
+evidence:
+  files:
+    - upstream/old/index.js
+    - upstream/old/index.d.ts
+    - upstream/old/package.json
+    - upstream/new/index.js
+    - upstream/new/index.d.ts
+    - upstream/new/package.json
+    - consumer/src/app.js
+    - consumer/package.json
+    - hidden/checks.yml
+  commands:
+    - "npm test (baseline: consumer pointed at upstream/old)"
+    - "npm test (broken: consumer pointed at upstream/new, unmodified)"
+    - "node hidden/behaviour.mjs (baseline and broken)"
+  artifacts: []
+  notes: Re-review of the same case after two changes to it — the consumer now
+    exports its behaviour as shout(name) so that behaviour can be observed
+    independently of the file's own self-check, and a hidden behavioural check
+    was added. Both upstream trees, the consumer and the hidden check were read
+    in full and every oracle command was run by hand in a disposable copy. No
+    Drift prediction was inspected before forming this conclusion.
+conclusion:
+  upstreamFindings:
+    - fixture-lib:oldQuery:renamed-export
+  impactSites:
+    - src/app.js:oldQuery
+  taxonomy:
+    nature: api-shape
+    detectability:
+      - link-or-import
+      - compile-time
+    scope: symbol
+    visibility:
+      - direct
+  gaps: []
+  groundTruthSafety: unsafe
+  repair:
+    expectedAction: agent-delegation
+    expectedChangedFiles:
+      - src/app.js
+rationale:
+  summary: "The upstream facts are unchanged from review a and I re-derived them
+    the same way: upstream/old exports oldQuery(name){return name.toUpperCase()},
+    upstream/new exports query(name) with an identical body, and nothing else
+    changed. consumer/src/app.js reaches it through a namespace import and calls
+    fixture.oldQuery('Ada'), which throws against upstream/new. Baseline passes,
+    broken fails; I ran both. What I am changing is expectedAction, and only
+    because the enum it was recorded under could not express what review a
+    actually argued. Review a said, in its own words, that the rename is a
+    genuine safe mechanical substitution but that nothing in the evidence
+    available to Drift attests it — there is no changelog or migration guide for
+    a local synthetic package under network: disabled — and that baking that
+    inference into an automatic rule risks matching two unrelated same-shaped
+    functions in a real repository. That reasoning supports exactly one policy:
+    no deterministic rule, but a fix produced by a coding agent and put in front
+    of a human reviewer is the right product behaviour. Under the old three-value
+    enum the closest available word was abstain, which scored the full production
+    hierarchy as an unsafe-attempt for doing the correct thing. The enum now
+    carries agent-delegation and that is what I am recording. I want to be
+    explicit that this is not a relaxation to make a result look better: a
+    deterministic tier that renames here is still scored unsafe-attempt, exactly
+    as before, and only a track that can actually delegate is entitled to act.
+    expectedChangedFiles is src/app.js — the one file a delegated fix should
+    touch — where review a left it empty because it expected no change at all."
+  findingNotes:
+    - fixture-lib:oldQuery:renamed-export — identical function body across
+      old/new plus one-for-one name substitution; the same inference review a
+      made, and still not attested by any fetchable source.
+    - src/app.js:oldQuery — real and reachable through the `fixture` namespace
+      binding; matchedSymbol is `oldQuery`.
+    - "Hidden behavioural check preserves-shout: I verified it passes against
+      upstream/old and fails against upstream/new, which is what entitles it to
+      disqualify a repair. It asserts the consumer still exports shout() and
+      that shout still upper-cases, including for an input ('grace') the
+      project's own check never uses, so a repair cannot satisfy it by
+      hard-coding the one string the visible check compares against."
+  uncertainty: "The deterministic-vs-delegated line for an inferred but
+    undocumented rename remains a judgment call and is recorded as one. A second
+    reviewer could argue that identical bodies plus a removed name plus an added
+    name is attestation enough for a deterministic rule; I do not think it is,
+    for the reason review a gave."
+status: reviewed
+reviewOf:
+  - claude-2026-08-19-npm-member-rename-a
+promptVersion: ground-truth-v1
+promptHash: see eval/review-prompts/ground-truth-v1.md

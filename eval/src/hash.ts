@@ -20,14 +20,26 @@ export interface FixtureHashes {
   consumer: string;
   oracles: string;
   goldPatch: string;
+  /**
+   * The fixture's benchmark-added hidden behavioural checks.
+   *
+   * Hashed alongside the rest because a hidden check is ground truth: it
+   * states what behaviour a correct migration must preserve, and it can
+   * disqualify a repair on its own. Editing one after a review accepted it
+   * would let this project change the definition of a correct repair without
+   * anybody reviewing the change, which is exactly what staleness exists to
+   * prevent. `sha256('')` when a fixture has none.
+   */
+  hiddenChecks: string;
 }
 
 export async function hashFixtureRevision(fixtureDir: string, fixtureYamlBody: string): Promise<FixtureHashes> {
-  const [upstreamOld, upstreamNew, consumer, goldPatch] = await Promise.all([
+  const [upstreamOld, upstreamNew, consumer, goldPatch, hiddenChecks] = await Promise.all([
     hashTree(join(fixtureDir, 'upstream', 'old')),
     hashTree(join(fixtureDir, 'upstream', 'new')),
     hashTree(join(fixtureDir, 'consumer')),
     hashOptionalFile(join(fixtureDir, 'expected', 'gold.patch')),
+    hashTree(join(fixtureDir, 'hidden')),
   ]);
 
   return {
@@ -37,6 +49,7 @@ export async function hashFixtureRevision(fixtureDir: string, fixtureYamlBody: s
     consumer,
     oracles: hashOracleSection(fixtureYamlBody),
     goldPatch,
+    hiddenChecks,
   };
 }
 

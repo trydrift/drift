@@ -1,6 +1,6 @@
 fixtureId: npm-renamed-export
 acceptedReviewIds:
-  - claude-2026-08-19-npm-renamed-export-a
+  - claude-2026-08-19-npm-renamed-export-b
 decision:
   upstreamFindings:
     - fixture-lib:oldName:renamed-export
@@ -17,14 +17,16 @@ decision:
   gaps: []
   groundTruthSafety: unsafe
   repair:
-    expectedAction: repair
+    expectedAction: deterministic-repair
     expectedChangedFiles:
       - src/app.js
     goldPatch: expected/gold.patch
 status: accepted
-decidedAt: 2026-08-19T00:00:00.000Z
+decidedAt: 2026-08-19T12:30:00.000Z
 decidedBy:
   type: ai
   name: Claude
-notes: Single independent review; no conflicting review exists yet, so
-  adjudication accepts it directly.
+notes: >-
+  Accepts review b, a re-derivation on the revised fixture. The policy is
+  unchanged from the previous adjudication; `repair` was renamed to
+  `deterministic-repair` when the enum was widened.

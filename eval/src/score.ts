@@ -159,11 +159,15 @@ export function scoreFixture(fixture: EvalFixture, adjudication: Adjudication, p
    * mislabel a successful component test as an "unsafe repair attempt".
    */
   const policyScoped = prediction.adapter === 'drift-known-bump-analysis';
-  const correctAbstention = policyScoped && expectedAction === 'abstain' && !attempted;
-  const incorrectRepairAttempt = policyScoped && expectedAction === 'abstain' && attempted;
-  const missedRepairOpportunity = policyScoped && expectedAction === 'repair' && !attempted;
+  // This legacy adapter is deterministic and cannot delegate, so
+  // `agent-delegation` truth — "no deterministic rule is derivable here" — says
+  // exactly what `abstain` says to it: do not act.
+  const mustNotAct = expectedAction === 'abstain' || expectedAction === 'agent-delegation';
+  const correctAbstention = policyScoped && mustNotAct && !attempted;
+  const incorrectRepairAttempt = policyScoped && mustNotAct && attempted;
+  const missedRepairOpportunity = policyScoped && expectedAction === 'deterministic-repair' && !attempted;
   const successfulRepair =
-    (policyScoped ? expectedAction === 'repair' : true) &&
+    (policyScoped ? expectedAction === 'deterministic-repair' : true) &&
     attempted &&
     prediction.repairOutcome === 'passed' &&
     (baselineStage === undefined || baselineStage.matchesExpectation) &&
@@ -172,7 +176,7 @@ export function scoreFixture(fixture: EvalFixture, adjudication: Adjudication, p
     prediction.repairScopeEscapeFiles.length === 0;
 
   let regressionReason: FixtureScore['regressionReason'] = 'none';
-  if (attempted && prediction.repairOutcome !== 'passed' && (!policyScoped || expectedAction === 'repair')) {
+  if (attempted && prediction.repairOutcome !== 'passed' && (!policyScoped || expectedAction === 'deterministic-repair')) {
     if (repairedStage?.observed === 'unable-to-run') regressionReason = 'oracle-unavailable';
     else if (brokenStage && !brokenStage.matchesExpectation) regressionReason = 'repair-introduced-regression';
     else regressionReason = 'repair-failed-to-fix';

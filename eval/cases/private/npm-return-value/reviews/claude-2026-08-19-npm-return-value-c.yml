@@ -15,6 +15,7 @@ reviewedRevision:
   consumer: dad02f8074b5a8a6d033a0ec255aceed9a143c9de760dba45ee9fa689d5c0a0c
   oracles: 8e5b05fc4d98245f6d2f9c163cb5b9be686a40fc253e2274d9001d0b3d77679c
   goldPatch: 9fc72de57c0835a983c1d838599ee0a121bb2b638e70a4f5caf675e29c3f7f11
+  hiddenChecks: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 evidence:
   files:
     - upstream/old/index.js

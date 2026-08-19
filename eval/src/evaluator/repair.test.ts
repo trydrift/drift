@@ -39,7 +39,7 @@ const TRUTH: Conclusion = {
   impactSites: [],
   gaps: [],
   groundTruthSafety: 'unsafe',
-  repair: { expectedAction: 'repair', expectedChangedFiles: ['src/app.js'] },
+  repair: { expectedAction: 'deterministic-repair', expectedChangedFiles: ['src/app.js'] },
 };
 
 function input(overrides: Partial<ScoreRepairInput> = {}): ScoreRepairInput {

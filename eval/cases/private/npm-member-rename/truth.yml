@@ -5,17 +5,29 @@ developerPatch: |
   diff --git a/src/app.js b/src/app.js
   --- a/src/app.js
   +++ b/src/app.js
-  @@
-   import * as fixture from 'fixture-lib';
-   
-  -const value = fixture.oldQuery('Ada');
-  +const value = fixture.query('Ada');
-   if (value !== 'ADA') {
-     throw new Error(`expected ADA, got ${value}`);
+  @@ -5,7 +5,7 @@
+    * independently of this file's own self-check.
+    */
+   export function shout(name) {
+  -  return fixture.oldQuery(name);
+  +  return fixture.query(name);
    }
-developerPatchFiles: []
-hiddenOracles: []
+   
+   const value = shout('Ada');
+developerPatchFiles:
+  - src/app.js
+hiddenChecks:
+  - id: preserves-shout
+    description: The consumer still exports shout(name) and it still returns the
+      upper-cased name, including for an input the project's own check never
+      uses.
+    files:
+      - behaviour.mjs
+    command: node hidden/behaviour.mjs
+    expect: pass
+    provenance: benchmark-added
 triggerSignature:
+  - hidden:preserves-shout:runtime:TypeError:fixture.oldQuery is not a function
   - runtime:TypeError:fixture.oldQuery is not a function
 baselineSignature: []
 notes: Imported from eval/fixtures/npm-member-rename by fixture-import-v1.

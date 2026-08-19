@@ -22,8 +22,31 @@ const taxonomySchema = z.object({
   visibility: z.array(z.string()),
 });
 
+/**
+ * What a reviewer says Drift is entitled to do about this case.
+ *
+ * Four values rather than three, because `repair | abstain | no-repair-needed`
+ * cannot express the most common honest answer to a real migration: "a
+ * deterministic rule cannot be derived from this evidence, but handing it to a
+ * coding agent behind human review is the right product behaviour". Scored
+ * under the old enum, that case punished Drift twice — the codemod tier was
+ * charged a `missed-opportunity` for not guessing, and the full hierarchy was
+ * charged an `unsafe-attempt` for doing exactly what the product is designed
+ * to do. Neither charge described a defect.
+ *
+ * - `deterministic-repair` — the evidence supports a mechanical, model-free
+ *   fix, and a tier that declines has missed something it should have caught.
+ * - `agent-delegation` — no deterministic rule is derivable, and delegating to
+ *   an agent under approval is correct. A deterministic tier that declines is
+ *   right; a deterministic tier that acts anyway is not.
+ * - `abstain` — nothing automated should touch this, agent included.
+ * - `no-repair-needed` — nothing is broken.
+ */
+const expectedActionSchema = z.enum(['deterministic-repair', 'agent-delegation', 'abstain', 'no-repair-needed']);
+export type ExpectedAction = z.infer<typeof expectedActionSchema>;
+
 const repairConclusionSchema = z.object({
-  expectedAction: z.enum(['repair', 'abstain', 'no-repair-needed']),
+  expectedAction: expectedActionSchema,
   expectedChangedFiles: z.array(z.string()).default([]),
   goldPatch: z.string().optional(),
 });
@@ -83,6 +106,8 @@ const reviewedRevisionSchema = z.object({
   consumer: z.string(),
   oracles: z.string(),
   goldPatch: z.string(),
+  /** The benchmark-added hidden behavioural checks this reviewer saw. `sha256('')` when the fixture had none. */
+  hiddenChecks: z.string(),
 });
 
 export const reviewSchema = z.object({

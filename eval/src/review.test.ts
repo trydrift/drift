@@ -19,7 +19,7 @@ function review(id: string, conclusion: Conclusion): Review {
     fixtureId: 'x',
     createdAt: '2026-08-19T00:00:00.000Z',
     reviewer: { type: 'ai', name: 'test', provider: 'unavailable', model: 'unavailable', modelVersion: 'unavailable', toolVersion: 'unavailable' },
-    reviewedRevision: { fixtureMetadata: 'h', upstreamOld: 'h', upstreamNew: 'h', consumer: 'h', oracles: 'h', goldPatch: 'h' },
+    reviewedRevision: { fixtureMetadata: 'h', upstreamOld: 'h', upstreamNew: 'h', consumer: 'h', oracles: 'h', goldPatch: 'h', hiddenChecks: 'h' },
     evidence: { files: [], commands: [], artifacts: [], notes: '' },
     conclusion,
     rationale: { summary: 's', findingNotes: [], uncertainty: '' },
@@ -50,7 +50,7 @@ test('unsafe with no supporting evidence fails validation', () => {
 
 test('unsafe with a real impact site passes validation', () => {
   const problems = validateConclusion(
-    baseConclusion({ groundTruthSafety: 'unsafe', impactSites: ['src/app.js:foo'], repair: { expectedAction: 'repair', expectedChangedFiles: ['src/app.js'] } }),
+    baseConclusion({ groundTruthSafety: 'unsafe', impactSites: ['src/app.js:foo'], repair: { expectedAction: 'deterministic-repair', expectedChangedFiles: ['src/app.js'] } }),
   );
   assert.deepEqual(problems, []);
 });
@@ -92,7 +92,7 @@ test('a real semantic difference in a set field is detected', () => {
 });
 
 test('repair.expectedAction differences are detected even though it is not a set', () => {
-  const a = baseConclusion({ repair: { expectedAction: 'repair', expectedChangedFiles: ['x'] } });
+  const a = baseConclusion({ repair: { expectedAction: 'deterministic-repair', expectedChangedFiles: ['x'] } });
   const b = baseConclusion({ repair: { expectedAction: 'abstain', expectedChangedFiles: ['x'] } });
   assert.deepEqual(diffConclusions(a, b), ['repair.expectedAction']);
 });

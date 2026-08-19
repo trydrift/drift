@@ -115,6 +115,62 @@ const oracleCommandSchema = z.object({
   provenance: z.enum(['project-native', 'benchmark-added']).default('project-native'),
 });
 
+/**
+ * A hidden behavioural check: an executable assertion about the consumer's own
+ * application semantics that no prediction workspace ever contains.
+ *
+ * This exists because a failure signature alone cannot tell a migration from a
+ * deletion. Removing the code that called the changed API removes the trigger
+ * diagnostic and leaves the project's own check green, and set algebra over
+ * three stages then reads exactly like a repair. What distinguishes them is
+ * whether the behaviour the consumer used to have is still there — which is an
+ * observation, not a diff, and has to be made by running something.
+ *
+ * The check ships its own files so it can assert against the consumer's real
+ * exports rather than re-running the project's script and hoping it says
+ * something. Those files are written into a disposable copy of the consumer at
+ * oracle time and are never copied into the workspace a prediction (or a
+ * coding agent) sees: `materializeCase` copies only named public directories,
+ * and `auditWorkspaceIsolation` rejects a `hidden/` directory outright.
+ *
+ * A check is only meaningful if it *passes on the baseline* — an assertion
+ * that was already false before the upgrade proves nothing — and the
+ * reproducibility gate enforces that by running hidden checks in every stage.
+ */
+const hiddenCheckSchema = z.object({
+  /** Stable, human-meaningful id. Appears in the diagnostic identity, so renaming one changes the signature. */
+  id: z.string().regex(/^[a-z0-9][a-z0-9-]*$/),
+  /** What behaviour this asserts, in the reviewer's own words. Surfaced in reports. */
+  description: z.string().min(1),
+  /**
+   * Files the check ships, named relative to the case's `hidden/` directory
+   * and written into the disposable consumer copy under `hidden/`.
+   *
+   * Paths rather than inline content: a check is executable source, and source
+   * embedded in YAML is source nobody reviews carefully and that one wrong
+   * block-scalar style silently corrupts.
+   */
+  files: z.array(z.string()).default([]),
+  command: z.string().min(1),
+  /**
+   * What a *correct* state must produce. `pass` for a behaviour-preservation
+   * check, which is what every check written so far is; the field exists so a
+   * check asserting that something must still fail can be expressed without a
+   * second mechanism.
+   */
+  expect: z.enum(['pass', 'fail']).default('pass'),
+  /** Always benchmark-added — by definition this is an assertion this project made, not the project's own. */
+  provenance: z.literal('benchmark-added').default('benchmark-added'),
+});
+
+export type HiddenCheckDeclaration = z.infer<typeof hiddenCheckSchema>;
+
+/** A declaration with its files' contents read, which is what an oracle stage runs. */
+export interface HiddenCheck extends Omit<HiddenCheckDeclaration, 'files'> {
+  /** Repo-relative path inside the disposable consumer copy -> file content. */
+  files: Record<string, string>;
+}
+
 const resolvedPackageSchema = z.object({
   name: z.string(),
   version: z.string(),
@@ -262,8 +318,16 @@ export const privateTruthSchema = z
     developerPatch: z.string().nullable(),
     /** Files the developer patch touched, separated from lockfile/manifest churn. */
     developerPatchFiles: z.array(z.string()).default([]),
-    /** Oracle commands added by this benchmark, kept out of the public case so a repair cannot be written against them. */
-    hiddenOracles: z.array(oracleCommandSchema).default([]),
+    /**
+     * Executable behavioural assertions added by this benchmark, kept out of
+     * the public case so a repair cannot be written against them.
+     *
+     * This is the layer that makes destructive "repairs" fail. Failure
+     * signatures establish that a repair did not swap one failure for another;
+     * they cannot establish that the behaviour still exists, because deleted
+     * behaviour emits no diagnostic at all. See `hiddenCheckSchema`.
+     */
+    hiddenChecks: z.array(hiddenCheckSchema).default([]),
     /**
      * The recorded failure signature of the bump-only state, from the
      * reproducibility gate. Used to require that a repair resolves *these*

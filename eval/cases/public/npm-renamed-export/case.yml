@@ -34,7 +34,7 @@ graph:
       from: 1.0.0
       to: 2.0.0
 environment:
-  runtimeVersion: v26.0.0
+  runtimeVersion: v24.19.0
   packageManager: npm
   packageManagerVersion: unavailable
   containerDigest: unavailable
@@ -66,7 +66,7 @@ discovery:
 failureCategory: runtime-failure
 migrationComplexity: direct
 artifactHashes:
-  consumerTree: 3df93e0bd367c3b97458ea6fb16799f6d42384d64bd45e974d94ff1844b441da
+  consumerTree: e654955f01440c4a05642958435b839630ea678364e673f25acf395d48ec14c3
   upstreamOld: 8c438b6781711fe8f14a97326f2c5fafda6e6e7c8f1fa61aeb9c73b72bf39df2
   upstreamNew: fbf6d8e07b2a65dcd00da29652e1837e91acf83c7661f431a50429b6cc600fc0
   lockfileBefore: unavailable

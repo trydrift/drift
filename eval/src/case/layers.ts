@@ -62,7 +62,16 @@ const PRIVATE_MARKERS: readonly RegExp[] = [
   /^hidden-oracles?\.ya?ml$/i,
 ];
 
-const PRIVATE_DIR_MARKERS: readonly RegExp[] = [/^reviews$/i, /^private$/i, /^expected$/i, /^judgements$/i];
+const PRIVATE_DIR_MARKERS: readonly RegExp[] = [
+  /^reviews$/i,
+  /^private$/i,
+  /^expected$/i,
+  /^judgements$/i,
+  // Where a case's hidden behavioural checks live. A workspace containing them
+  // would let a repair be written to satisfy the assertion rather than to
+  // migrate, which is precisely the attack hidden checks exist to close.
+  /^hidden$/i,
+];
 
 export class WorkspaceIsolationError extends Error {
   readonly offendingPaths: readonly string[];

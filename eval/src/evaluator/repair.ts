@@ -96,6 +96,20 @@ export function isPolicyScoped(track: Track): boolean {
   return POLICY_SCOPED_TRACKS.has(track);
 }
 
+/**
+ * Tracks that may reach the coding-agent tier.
+ *
+ * `agent-delegation` truth says an agent under approval is the right answer
+ * and a deterministic rule is not derivable. Only a track that can actually
+ * delegate is entitled to act on that; a deterministic mechanism that acts
+ * anyway is guessing, which is the behaviour the value exists to forbid.
+ */
+const AGENT_CAPABLE_TRACKS = new Set<Track>(['repair-agent', 'repair-full-remediation']);
+
+export function canDelegateToAgent(track: Track): boolean {
+  return AGENT_CAPABLE_TRACKS.has(track);
+}
+
 export interface ScoreRepairInput {
   caseId: string;
   track: Track;
@@ -140,6 +154,7 @@ export function scoreRepair(input: ScoreRepairInput): RepairScore {
     repair,
     failToPass,
     policyScoped: isPolicyScoped(track),
+    agentCapable: canDelegateToAgent(track),
     expectedAction,
     baselineValid: baseline === undefined || baseline.matchesExpectation,
     brokenValid: broken === undefined || broken.matchesExpectation,
@@ -180,6 +195,7 @@ function classify(input: {
   repair: RepairArtifact;
   failToPass: FailToPassAnalysis;
   policyScoped: boolean;
+  agentCapable: boolean;
   expectedAction: Conclusion['repair']['expectedAction'];
   baselineValid: boolean;
   brokenValid: boolean;
@@ -204,6 +220,14 @@ function classify(input: {
   if (!repair.attempted) {
     if (expectedAction === 'no-repair-needed') return { outcome: 'no-repair-needed', scorable: true };
     if (input.policyScoped && expectedAction === 'abstain') return { outcome: 'correct-abstention', scorable: true };
+    // Truth says an agent under approval is the right answer. A deterministic
+    // tier declining is correct behaviour, not a miss — it is being asked
+    // whether it could derive a rule, and the reviewed answer is that it
+    // could not. A track that *can* delegate and still did nothing has missed
+    // the opportunity the reviewer identified.
+    if (input.policyScoped && expectedAction === 'agent-delegation' && !input.agentCapable) {
+      return { outcome: 'correct-abstention', scorable: true };
+    }
     return { outcome: 'missed-opportunity', scorable: true };
   }
 
@@ -212,6 +236,14 @@ function classify(input: {
   // support acting is wrong even when lucky. Scored only where Drift made the
   // decision — see `POLICY_SCOPED_TRACKS`.
   if (input.policyScoped && expectedAction === 'abstain') return { outcome: 'unsafe-attempt', scorable: true };
+
+  // Same rule one step down: truth says no deterministic rule is derivable
+  // here, so a deterministic mechanism that produced one produced a guess.
+  // A green oracle does not rescue it — a rule that happens to work on the
+  // call sites this repository has is still not attested by the evidence.
+  if (input.policyScoped && expectedAction === 'agent-delegation' && !input.agentCapable) {
+    return { outcome: 'unsafe-attempt', scorable: true };
+  }
 
   if (!input.repairedRan) return { outcome: 'operational-failure', scorable: false };
 

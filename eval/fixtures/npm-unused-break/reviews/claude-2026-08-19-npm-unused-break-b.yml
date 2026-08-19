@@ -1,0 +1,79 @@
+id: claude-2026-08-19-npm-unused-break-b
+fixtureId: npm-unused-break
+createdAt: 2026-08-19T12:00:00.000Z
+reviewer:
+  type: ai
+  name: Claude
+  provider: Anthropic
+  model: claude-opus-5
+  modelVersion: unavailable
+  toolVersion: unavailable
+reviewedRevision:
+  fixtureMetadata: 4875baa555934b8d6ee4244682868aa18e09f5c618dc5fd465ddb92c831db629
+  upstreamOld: 7ccdef9733105b682c0599a99f87f7e932b2dcf0f0e7a90d8c9b2b5f1894d73e
+  upstreamNew: eb82ee7c71cf95543dffeaa9a4b16924f50cf8cfcd7e2fecc4c6045586fb62bb
+  consumer: 6e689344ae6de174b2293eab5d2022b634f6bf652d88bd59ef2f7f551ce48d42
+  oracles: 96ea95f6287b899730658af104331b1fbbfb5348121ef39874990955332ed1d6
+  goldPatch: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  hiddenChecks: eb5c554ccd212c7105eecd9b4db346c4973aada0be8435f62aea8696c10a66c7
+evidence:
+  files:
+    - upstream/old/index.js
+    - upstream/old/index.d.ts
+    - upstream/old/package.json
+    - upstream/new/index.js
+    - upstream/new/index.d.ts
+    - upstream/new/package.json
+    - consumer/src/app.js
+    - consumer/package.json
+    - hidden/checks.yml
+  commands:
+    - "npm test (baseline: consumer pointed at upstream/old)"
+    - "npm test (broken: consumer pointed at upstream/new, unmodified)"
+    - "node hidden/behaviour.mjs (baseline and broken)"
+  artifacts: []
+  notes: Re-review after the consumer was restructured to export its behaviour
+    and a hidden behavioural check was added. The whole (one-file) consumer was
+    read, and both oracles plus the hidden check were run by hand.
+conclusion:
+  upstreamFindings:
+    - fixture-lib:removedFn:removed-export
+  impactSites: []
+  taxonomy:
+    nature: api-shape
+    detectability:
+      - link-or-import
+      - compile-time
+    scope: symbol
+    visibility:
+      - direct
+  gaps: []
+  groundTruthSafety: safe
+  repair:
+    expectedAction: no-repair-needed
+    expectedChangedFiles: []
+rationale:
+  summary: "Unchanged from review a in every field, re-derived on the new
+    revision. upstream/old exports usedFn and removedFn; upstream/new exports
+    only usedFn, so removedFn is a real upstream breaking change.
+    consumer/src/app.js imports only { usedFn } and never mentions removedFn; I
+    read the entire one-file consumer rather than relying on a search returning
+    nothing. Both oracles pass, before and after the bump. groundTruthSafety is
+    safe because the absence of an impact site is something I verified directly,
+    not something I failed to find — which is the distinction this fixture exists
+    to make available to the D4 scoring, since a tool that reports an upstream
+    break it cannot reach must be able to earn a correct-safe here rather than
+    only ever avoiding a false-safe."
+  findingNotes:
+    - fixture-lib:removedFn:removed-export — present in old/index.d.ts, absent
+      from new/index.d.ts.
+    - Zero impact sites — confirmed by reading the whole consumer.
+    - "Hidden behavioural check preserves-shout: passes in both states, as it
+      must for a control case. Its value here is negative evidence — it shows a
+      hidden check does not manufacture a failure where there is none."
+  uncertainty: None — the fixture is small and fully inspectable in one pass.
+status: reviewed
+reviewOf:
+  - claude-2026-08-19-npm-unused-break-a
+promptVersion: ground-truth-v1
+promptHash: see eval/review-prompts/ground-truth-v1.md

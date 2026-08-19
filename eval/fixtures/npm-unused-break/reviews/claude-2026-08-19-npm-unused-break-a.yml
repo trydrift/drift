@@ -15,6 +15,7 @@ reviewedRevision:
   consumer: 30040114c42fcfe4be03ff99e13d47b45fda2cce508e6671c2d914bc7def1bca
   oracles: 96ea95f6287b899730658af104331b1fbbfb5348121ef39874990955332ed1d6
   goldPatch: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  hiddenChecks: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 evidence:
   files:
     - upstream/old/index.js

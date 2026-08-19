@@ -1,13 +1,17 @@
 diff --git a/src/app.js b/src/app.js
-index 9f118ae..34dfb77 100644
 --- a/src/app.js
 +++ b/src/app.js
-@@ -1,6 +1,6 @@
+@@ -1,11 +1,11 @@
 -import { oldName } from 'fixture-lib';
 +import { newName } from 'fixture-lib';
  
--const value = oldName('Ada');
-+const value = newName('Ada');
- if (value !== 'ADA') {
-   throw new Error(`expected ADA, got ${value}`);
+ /**
+  * The application's own behaviour, exported so it can be exercised
+  * independently of this file's own self-check.
+  */
+ export function shout(name) {
+-  return oldName(name);
++  return newName(name);
  }
+ 
+ const value = shout('Ada');

@@ -1,4 +1,4 @@
-import type { PublicCase, CaseStatus, FailureCategory } from '../case/schema.ts';
+import type { PublicCase, CaseStatus, FailureCategory, HiddenCheck } from '../case/schema.ts';
 import type { MaterializedCase } from '../case/materialize.ts';
 import type { OracleStageArtifact } from '../artifacts/prediction.ts';
 import { runCaseStage } from './stage.ts';
@@ -32,6 +32,16 @@ export interface ReproducibilityOptions {
   repetitions?: number;
   /** Runs the gold/developer patch as a third stage, proving the recorded repair actually repairs. */
   goldRepair?: (consumerDir: string) => Promise<void>;
+  /**
+   * Benchmark-added behavioural assertions, run in every stage.
+   *
+   * Running them here is what makes them trustworthy rather than merely
+   * strict. A hidden check that already fails on the baseline is asserting
+   * something that was never true, and the gate reports that as
+   * `invalid-baseline` — so a check cannot quietly disqualify every repair of
+   * a case because it was written wrong.
+   */
+  hiddenChecks?: readonly HiddenCheck[];
 }
 
 export interface StageRepetitions {
@@ -76,6 +86,7 @@ export async function checkReproducibility(
       command: publicCase.oracles.baseline.command,
       expected: publicCase.oracles.baseline.expect,
       dependencyVersion: 'old',
+      hiddenChecks: options.hiddenChecks ?? [],
     }),
   );
 
@@ -85,6 +96,7 @@ export async function checkReproducibility(
       command: publicCase.oracles.broken.command,
       expected: publicCase.oracles.broken.expect,
       dependencyVersion: 'new',
+      hiddenChecks: options.hiddenChecks ?? [],
     }),
   );
 
@@ -100,6 +112,7 @@ export async function checkReproducibility(
         command: publicCase.oracles.repaired.command,
         expected: publicCase.oracles.repaired.expect,
         dependencyVersion: 'new',
+        hiddenChecks: options.hiddenChecks ?? [],
         prepareConsumer: options.goldRepair!,
       }),
     );
