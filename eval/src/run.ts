@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { fullPipelinePrediction } from './adapters/full-pipeline.ts';
+import { knownBumpPrediction } from './adapters/known-bump.ts';
 import { componentLocalizeRepairPrediction, supportsFixture as componentSupportsFixture } from './adapters/component-localize-repair.ts';
 import { loadFixtures, type EvalFixture } from './load.ts';
 import { checkStaleness, loadAdjudication, loadReviews, type Adjudication } from './review.ts';
@@ -72,7 +72,7 @@ export async function buildReport(fixtures: readonly EvalFixture[]): Promise<Bui
     run: (f: EvalFixture, adjudication: Adjudication) => Promise<EvalPrediction>;
     supports: (f: EvalFixture) => boolean;
   }[] = [
-    { name: 'drift-full-pipeline', run: fullPipelinePrediction, supports: () => true },
+    { name: 'drift-known-bump-analysis', run: knownBumpPrediction, supports: () => true },
     { name: 'drift-component-localize-repair', run: componentLocalizeRepairPrediction, supports: componentSupportsFixture },
   ];
 

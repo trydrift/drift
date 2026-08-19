@@ -35,7 +35,7 @@ import {
  * only answers "given a known finding, does localization find the right
  * sites and does repair apply correctly?" Never contributes to headline
  * detection F1 — see eval/README.md for why full-pipeline detection lives in
- * `drift-full-pipeline` instead.
+ * `drift-known-bump-analysis` instead.
  */
 
 const SILENT_LOGGER: Logger = {

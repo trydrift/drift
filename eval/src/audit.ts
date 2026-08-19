@@ -76,7 +76,7 @@ export async function buildAuditRecord(): Promise<AuditRecord> {
     acceptedReviewIds,
     adjudicationHashes,
     scoringVersion: SCORING_VERSION,
-    adapterVersions: { 'drift-full-pipeline': '1', 'drift-component-localize-repair': '1', 'drift-component-fixplan-application': '1' },
+    adapterVersions: { 'drift-known-bump-analysis': '1', 'drift-component-localize-repair': '1', 'drift-component-fixplan-application': '1' },
     command: 'npm run eval:accuracy:audit -- --record',
     timestamp: new Date().toISOString(),
     environment: { node: process.version, platform: process.platform },

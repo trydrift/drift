@@ -33,12 +33,24 @@ import { clearHttpCache } from '../../../dist/util/http.js';
 import { clearTypeSurfaceCache } from '../../../dist/evidence/type-surface.js';
 
 /**
- * The authoritative, headline detection/repair benchmark.
+ * A DIAGNOSTIC detection benchmark: given a dependency change that is already
+ * known, how good is the reasoning downstream of it?
  *
- * Discovers the breaking change through the same production analysis path a
- * real user's `drift analyze` run takes: `gatherEvidence` → `analyze` →
- * `localize` → `attemptCodemod` → `buildPlan` → `verdictFor`. The only
- * substitution is transport — `installNpmFetchStub` serves the fixture's own
+ * Formerly named `drift-full-pipeline`, which it never was. It constructs its
+ * own `DependencyChange` from case metadata and starts at `gatherEvidence`,
+ * so everything production does first -- manifest snapshot collection,
+ * `detectChanges`, workspace and nested-project labelling, triage against
+ * drift.yml -- is skipped and thereby silently marked correct. Those stages
+ * are exactly where monorepos, undeclared nested projects, several package
+ * managers in one checkout and config exclusions go wrong.
+ *
+ * `runEndToEndDetection` (eval/src/adapters/end-to-end.ts) is the adapter that
+ * really starts from the manifests and is the user-facing headline. This one
+ * keeps its value as an isolation: when the end-to-end track misses and this
+ * one does not, the defect is in detection rather than in reasoning.
+ *
+ * It runs `gatherEvidence` → `analyze` → `localize` → `attemptCodemod` →
+ * `buildPlan` → `verdictFor` for real. The only substitution is transport — `installNpmFetchStub` serves the fixture's own
  * `upstream/old`/`upstream/new` trees as jsDelivr responses, and
  * `localPackageEnvironment` points behavioural verification at local package
  * directories instead of installing from a registry — both are real seams
@@ -65,7 +77,7 @@ const PIPELINE_CONFIG = DriftConfigSchema.parse({
   verification: { behavioural: { enabled: true, network: false, timeoutSeconds: 10 } },
 });
 
-export async function fullPipelinePrediction(fixture: EvalFixture, adjudication: Adjudication): Promise<EvalPrediction> {
+export async function knownBumpPrediction(fixture: EvalFixture, adjudication: Adjudication): Promise<EvalPrediction> {
   const started = Date.now();
   const fixtureDir = join(process.cwd(), 'eval', 'fixtures', fixture.id);
   const consumerDir = join(fixtureDir, 'consumer');
@@ -192,7 +204,7 @@ export async function fullPipelinePrediction(fixture: EvalFixture, adjudication:
 
     return {
       fixtureId: fixture.id,
-      adapter: 'drift-full-pipeline',
+      adapter: 'drift-known-bump-analysis',
       upstreamFindings: [...new Set(upstreamFindings)],
       impactSites: [...new Set(plan.impactSites.map((site) => `${site.file}:${site.matchedSymbol}`))],
       taxonomy: realTaxonomy

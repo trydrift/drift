@@ -48,7 +48,7 @@ function adjudication(overrides: Partial<Adjudication['decision']> = {}): Adjudi
 function prediction(overrides: Partial<EvalPrediction> = {}): EvalPrediction {
   return {
     fixtureId: 'x',
-    adapter: 'drift-full-pipeline',
+    adapter: 'drift-known-bump-analysis',
     upstreamFindings: [],
     impactSites: [],
     gaps: [],
@@ -126,7 +126,7 @@ test('unsafe ground truth + unverified Drift verdict is not a false-safe (Drift 
   assert.equal(score.falseSafe, false);
 });
 
-test('abstention correctness is only scored for drift-full-pipeline', () => {
+test('abstention correctness is only scored for drift-known-bump-analysis', () => {
   const f = fixture('x');
   const abstainAdj = adjudication({ repair: { expectedAction: 'abstain', expectedChangedFiles: [] } });
   const componentPrediction = prediction({ adapter: 'drift-component-localize-repair', repairAction: 'repair-attempted', repairOutcome: 'passed' });

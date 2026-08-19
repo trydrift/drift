@@ -25,7 +25,7 @@ export const fixtureSchema = z
     fromVersion: z.string(),
     toVersion: z.string(),
     /**
-     * Informational/reporting label only. `drift-full-pipeline` never reads
+     * Informational/reporting label only. `drift-known-bump-analysis` never reads
      * this field — it discovers the change through the real production
      * pipeline. Only the `drift-component-localize-repair` component adapter
      * reads it, and is labelled accordingly wherever its results are shown.

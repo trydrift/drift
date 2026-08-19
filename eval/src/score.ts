@@ -13,13 +13,23 @@ import type { OracleStageResult } from './oracle.ts';
  * `outOfScopeEditCount` is gone; `productionScopeEscapeCount` and
  * `unexpectedChangedFileCount` replace it as two separately-reported counts.
  * Not a bug-fix-only bump: the JSON schema's field names changed.
+ *
+ * v4 renames the `drift-full-pipeline` adapter to
+ * `drift-known-bump-analysis`, because it never was the full pipeline: it
+ * constructs its own `DependencyChange` and starts at `gatherEvidence`,
+ * skipping manifest detection, workspace labelling and triage. Detection and
+ * repair results are byte-identical to v3 -- only the label changed -- but a
+ * label that misdescribes what ran is exactly the kind of thing a scoring
+ * version exists to make traceable, so it gets a bump rather than a silent
+ * edit. The adapter that genuinely starts from the manifests is
+ * `drift-end-to-end` in the case-based harness.
  */
-export const SCORING_VERSION = 'eval-score-v3';
+export const SCORING_VERSION = 'eval-score-v4';
 
 /**
  * Verdict strings a benchmark cares about, collapsed from production's two
  * real enums (`FindingVerdict` from `src/report/confidence.ts`, used by the
- * `drift-full-pipeline` adapter's per-finding result; `UpgradeSeverity` from
+ * `drift-known-bump-analysis` adapter's per-finding result; `UpgradeSeverity` from
  * `src/upgrade/severity.ts`, used where a component adapter reports a
  * scan-level verdict instead). Only the safe-equivalent members are treated
  * as "Drift told the user this is safe" — everything else, including every
@@ -140,7 +150,7 @@ export function scoreFixture(fixture: EvalFixture, adjudication: Adjudication, p
 
   /**
    * Abstention correctness is a policy judgement — "should Drift have
-   * attempted this automatically?" — and only `drift-full-pipeline` makes
+   * attempted this automatically?" — and only `drift-known-bump-analysis` makes
    * that judgement. A component adapter like
    * `drift-component-localize-repair` is *handed* a known finding and always
    * attempts repair by design, because its entire purpose is testing whether
@@ -148,7 +158,7 @@ export function scoreFixture(fixture: EvalFixture, adjudication: Adjudication, p
    * should have acted. Scoring it against the same expectedAction would
    * mislabel a successful component test as an "unsafe repair attempt".
    */
-  const policyScoped = prediction.adapter === 'drift-full-pipeline';
+  const policyScoped = prediction.adapter === 'drift-known-bump-analysis';
   const correctAbstention = policyScoped && expectedAction === 'abstain' && !attempted;
   const incorrectRepairAttempt = policyScoped && expectedAction === 'abstain' && attempted;
   const missedRepairOpportunity = policyScoped && expectedAction === 'repair' && !attempted;
