@@ -27,13 +27,13 @@ D.
 | **D** evaluation (`src/evaluate.ts`, `src/evaluator/`) | oracles, scoring, metrics | yes — only here |
 | **E** reporting (`src/report/`, `src/runs/`) | aggregation, provenance, audit | derived only |
 
-### Why C cannot reach D
+### What keeps C away from D, and what does not
 
 A prediction adapter receives a `PublicCase` and a materialized workspace.
 `PrivateTruth` — adjudication references, the developer's migration patch,
 hidden behavioural checks, the recorded trigger signature — lives in a sibling
-directory that is never mounted. Three redundant enforcements, each catching a different
-mistake:
+directory that is never copied into that workspace. Three redundant
+enforcements, each catching a different mistake:
 
 1. `PredictionInput` has no field that could carry truth, so an adapter cannot
    be handed the answer. (The previous harness passed `adjudication` directly.)
@@ -48,6 +48,27 @@ The third is the only one that still holds once a coding agent with shell access
 is running in that directory, which is exactly what the agent repair track does.
 A static test also asserts nothing under `src/adapters/` or `src/tiers/` imports
 the private loader.
+
+**And that is where the guarantee stops.** A directory audit is not filesystem
+isolation. The default level — the one every run uses today, and the one every
+artifact records — is `workspace-audit`:
+
+| Level | What it means |
+| --- | --- |
+| `workspace-audit` | The directory handed over is audited clean. Private truth is **not in the workspace and is readable elsewhere on this host** by any process the trial started. |
+| `process-sandbox` | An OS-level sandbox denied reads outside the workspace. |
+| `container` | The private tree was not mounted, so it did not exist to the trial. |
+
+Only the last two support the word *unreachable*, and neither is implemented
+here — this machine has no container runtime, so the honest thing was to narrow
+the claim rather than to describe one. A deterministic track like
+`detect-end-to-end` starts no subprocess at all, which is a stronger position
+than `workspace-audit` describes; that is recorded as `spawnsSubprocesses:
+false` rather than promoted to a sandbox claim nobody enforced.
+
+Every artifact carries `isolation.level`, `isolation.groundTruthReadableOnHost`
+and `isolation.spawnsSubprocesses`, and every report prints the resulting
+sentence verbatim. See `eval/src/case/isolation-level.ts`.
 
 ---
 
@@ -523,6 +544,12 @@ no trigger, and an oracle-insufficient exclusion.
   intercepted and the package manager runs with its offline flags set. A
   subprocess — including a coding agent — is not prevented from reaching the
   network by either. No stronger claim is made anywhere in this harness.
+- **Ground-truth isolation is a workspace audit, not filesystem isolation.**
+  Private truth is never copied into a prediction workspace and the audit
+  proves it on every materialization. It is still readable at its own path on
+  the same host, so an agent-bearing trial is not *prevented* from reading it —
+  only recorded as not having been prevented. See "What keeps C away from D,
+  and what does not" above.
 - **A live agent must reach its own provider**, so `agent-service-only` is the
   strongest honest policy for an agent trial. An agent that searches for the
   historical PR is not currently prevented, only recorded.

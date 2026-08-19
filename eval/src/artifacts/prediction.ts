@@ -257,7 +257,21 @@ export const predictionArtifactSchema = z
     experimentMode: experimentModeSchema,
     provenance: provenanceSchema,
     /** Proof the workspace handed to this prediction held no private material. */
-    isolation: z.object({ audited: z.boolean(), pathsAudited: z.number(), networkPolicy: z.string() }),
+    /**
+     * What "isolated" meant for this trial, recorded rather than asserted.
+     * See `eval/src/case/isolation-level.ts` — the workspace audit and
+     * "ground truth is unreachable" are different properties, and only the
+     * first one is enforced by default.
+     */
+    isolation: z.object({
+      audited: z.boolean(),
+      pathsAudited: z.number(),
+      networkPolicy: z.string(),
+      /** Defaulted so artifacts written before this field still parse; the default is the weakest level, never a flattering one. */
+      level: z.enum(['workspace-audit', 'process-sandbox', 'container']).default('workspace-audit'),
+      groundTruthReadableOnHost: z.boolean().default(true),
+      spawnsSubprocesses: z.boolean().default(true),
+    }),
     detection: detectionArtifactSchema.optional(),
     repair: repairArtifactSchema.optional(),
     oracleStages: z.array(oracleStageArtifactSchema).default([]),

@@ -3,6 +3,7 @@ import type { PublicCase } from '../case/schema.ts';
 import { aggregateLevel, aggregateRepair, prf, trialReliability, type Rate } from '../evaluator/aggregate.ts';
 import { isPolicyScoped } from '../evaluator/repair.ts';
 import type { LevelScore } from '../evaluator/detection.ts';
+import { isolationClaim } from '../case/isolation-level.ts';
 
 /**
  * The report.
@@ -355,7 +356,7 @@ function provenanceLines(entries: readonly CaseEvaluation[]): string[] {
 }
 
 function integritySection(result: EvaluationResult): string[] {
-  const lines = ['## Harness integrity', ''];
+  const lines = ['## Harness integrity', '', ...isolationSection(result)];
   if (result.integrityFailures.length === 0) {
     lines.push('No integrity failure. A detection or repair miss above is a product result, not an integrity break — CI does not fail on one.', '');
     return lines;
@@ -387,3 +388,27 @@ function formatRate(value: Rate): string {
 }
 
 export { prf };
+
+/**
+ * What "isolated" actually meant, printed as a claim rather than implied by an
+ * `audited: true`.
+ *
+ * The workspace audit is real and it is not the same property as "ground truth
+ * is unreachable". A reader deciding whether to trust these numbers is
+ * entitled to the difference stated in the report rather than inferred from
+ * the source, so the exact level every trial ran under is a table.
+ */
+function isolationSection(result: EvaluationResult): string[] {
+  if (result.evaluations.length === 0) return [];
+
+  const byClaim = new Map<string, number>();
+  for (const entry of result.evaluations) {
+    const claim = isolationClaim(entry.isolation);
+    byClaim.set(claim, (byClaim.get(claim) ?? 0) + 1);
+  }
+
+  const lines = ['### Ground-truth isolation', '', '| Trials | What was enforced |', '| --- | --- |'];
+  for (const [claim, count] of [...byClaim.entries()].sort()) lines.push(`| ${count} | ${claim} |`);
+  lines.push('');
+  return lines;
+}

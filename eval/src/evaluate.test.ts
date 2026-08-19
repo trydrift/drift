@@ -43,7 +43,7 @@ function artifactFor(capsuleHash: string): PredictionArtifact {
       finishedAt: '2026-08-19T00:00:01.000Z',
       latencyMs: 1,
     }),
-    isolation: { audited: true, pathsAudited: 1, networkPolicy: 'disabled' },
+    isolation: { level: 'workspace-audit' as const, groundTruthReadableOnHost: true, spawnsSubprocesses: false, audited: true, pathsAudited: 1, networkPolicy: 'disabled' },
     detection: {
       dependencyChanges: [{ name: 'fixture-lib', ecosystem: 'npm', from: '1.0.0', to: '2.0.0' }],
       triageSkipped: [],

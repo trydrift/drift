@@ -30,6 +30,12 @@ export interface CaseEvaluation {
   repair: RepairScore | null;
   /** Carried through so a report can show what was requested against what the agent confirmed. */
   provenance: PredictionArtifact['provenance'];
+  /**
+   * What "isolated" meant for this trial. Carried through so the report can
+   * state the enforced level rather than letting a reader infer "unreachable"
+   * from a boolean that only ever meant "the workspace directory was audited".
+   */
+  isolation: PredictionArtifact['isolation'];
   experimentMode: PredictionArtifact['experimentMode'];
   /**
    * Content hash of the accepted adjudication this result was scored against.
@@ -122,6 +128,7 @@ export async function evaluateRun(runId: string, root = process.cwd()): Promise<
         detection: null,
         repair: null,
         provenance: artifact.provenance,
+        isolation: artifact.isolation,
         experimentMode: artifact.experimentMode,
         adjudicationRevision: adjudicationRevisions.get(artifact.caseId) ?? UNAVAILABLE,
         integrityFailures: [],
@@ -178,6 +185,7 @@ export async function evaluateRun(runId: string, root = process.cwd()): Promise<
       detection,
       repair,
       provenance: artifact.provenance,
+      isolation: artifact.isolation,
       experimentMode: artifact.experimentMode,
       adjudicationRevision: adjudicationRevisions.get(artifact.caseId) ?? UNAVAILABLE,
       integrityFailures: failures,

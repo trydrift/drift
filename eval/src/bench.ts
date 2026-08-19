@@ -26,6 +26,7 @@ import {
 } from './artifacts/prediction.ts';
 import { driftRevision, newRunId, writeArtifact, writeManifest, RUN_MANIFEST_VERSION } from './runs/store.ts';
 import { hashPublicCapsule } from './runs/capsule.ts';
+import { isolationRecord } from './case/isolation-level.ts';
 import { DriftConfigSchema, type Logger } from '../../dist/index.js';
 
 const execFile = promisify(execFileCallback);
@@ -132,6 +133,24 @@ export async function runBenchmark(options: BenchOptions): Promise<{ runId: stri
 
   return { runId, artifacts };
 }
+
+/**
+ * Tracks that start an external process inside the workspace.
+ *
+ * Every repair track shells out — to the package manager, to git, or to a
+ * coding agent — so any of them could in principle read a path outside the
+ * workspace. `detect-end-to-end` runs Drift in-process and starts nothing,
+ * which is a stronger position, and the artifact records the difference rather
+ * than flattening both into one isolation claim.
+ */
+const SUBPROCESS_TRACKS = new Set<Track>([
+  'repair-codemod',
+  'repair-fixplan-cache',
+  'repair-fixplan-recipe',
+  'repair-fixplan-model',
+  'repair-agent',
+  'repair-full-remediation',
+]);
 
 function isLiveTrack(track: Track): boolean {
   return track === 'repair-agent' || track === 'repair-fixplan-model' || track === 'repair-full-remediation';
@@ -332,7 +351,14 @@ function base(
     track: input.track,
     experimentMode: experimentModeFor(input.track),
     provenance,
-    isolation: { audited: true, pathsAudited: workspace.auditedPaths, networkPolicy: input.publicCase.networkPolicy },
+    isolation: isolationRecord({
+      pathsAudited: workspace.auditedPaths,
+      networkPolicy: input.publicCase.networkPolicy,
+      // No sandbox is applied by this runner, so the weakest level is the only
+      // honest one. It is passed rather than defaulted so that the day a
+      // sandbox exists, the runner is where it is declared.
+      spawnsSubprocesses: SUBPROCESS_TRACKS.has(input.track),
+    }),
     ...(parts.detection ? { detection: parts.detection } : {}),
     ...(parts.repair ? { repair: parts.repair } : {}),
     oracleStages: parts.oracleStages ?? [],

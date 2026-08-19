@@ -39,6 +39,7 @@ function evaluation(track: Track): CaseEvaluation {
     provenance: {} as CaseEvaluation['provenance'],
     experimentMode: experimentModeFor(track),
     adjudicationRevision: 'unavailable',
+    isolation: { audited: true, pathsAudited: 0, networkPolicy: 'disabled', level: 'workspace-audit' as const, groundTruthReadableOnHost: true, spawnsSubprocesses: false },
     integrityFailures: [],
   };
 }

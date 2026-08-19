@@ -22,7 +22,7 @@ function artifact(overrides: Partial<PredictionArtifact> = {}): PredictionArtifa
       finishedAt: '2026-08-19T00:00:01.000Z',
       latencyMs: 1000,
     }),
-    isolation: { audited: true, pathsAudited: 12, networkPolicy: 'disabled' },
+    isolation: { level: 'workspace-audit' as const, groundTruthReadableOnHost: true, spawnsSubprocesses: false, audited: true, pathsAudited: 12, networkPolicy: 'disabled' },
     oracleStages: [],
     observedCommands: [],
     error: null,
@@ -92,6 +92,6 @@ test('every attempt is retained, including the ones that failed', async () => {
 });
 
 test('an artifact that never audited its workspace is representable, so the evaluator can reject it', () => {
-  const unaudited = artifact({ isolation: { audited: false, pathsAudited: 0, networkPolicy: 'allowed' } });
+  const unaudited = artifact({ isolation: { level: 'workspace-audit' as const, groundTruthReadableOnHost: true, spawnsSubprocesses: false, audited: false, pathsAudited: 0, networkPolicy: 'allowed' } });
   assert.equal(unaudited.isolation.audited, false);
 });
