@@ -32,7 +32,10 @@ export function installNpmFetchStub(packages: readonly NpmFetchStubPackage[]): (
   const original = globalThis.fetch;
   const byKey = new Map(packages.map((pkg) => [`${pkg.name}@${pkg.version}`, pkg]));
 
-  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+  // Typed from `fetch` itself rather than from the DOM lib: this package
+  // compiles with `lib: ES2022` and no DOM, so `RequestInfo` does not exist
+  // here even though the runtime value does.
+  globalThis.fetch = (async (input: Parameters<typeof fetch>[0]) => {
     const url = new URL(typeof input === 'string' ? input : input.toString());
     if (url.hostname === JSDELIVR_DATA_HOST) return handleDataApi(url, byKey);
     if (url.hostname === JSDELIVR_CDN_HOST) return handleCdn(url, byKey);

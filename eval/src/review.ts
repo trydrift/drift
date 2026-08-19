@@ -310,7 +310,7 @@ export function validateAdjudicationConsistency(adjudication: Adjudication, acce
     const declared = new Set(adjudication.override.changedFields);
     const actual = new Set(changed);
     const missing = changed.filter((field) => !declared.has(field));
-    const extra = [...declared].filter((field) => !actual.has(field));
+    const extra = [...declared].filter((field) => !actual.has(field as ConclusionField));
     if (missing.length > 0) {
       problems.push(`adjudication override.changedFields is missing actually-differing field(s): ${missing.join(', ')}`);
     }
