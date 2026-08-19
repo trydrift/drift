@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { parseConfig } from '../dist/config/load.js';
 import { DriftConfigSchema, type AgentConfig, type ExplicitAgentProvider } from '../dist/config/schema.js';
 import { resolveAgentSelection } from '../dist/agents/selection.js';
+import { agentConfigWithLegacyCopilot, credentialsWithLegacyCopilot } from '../dist/agents/compat.js';
 
 const base = (): AgentConfig => DriftConfigSchema.parse({}).remediation.agent;
 
@@ -75,16 +76,17 @@ describe('agent runtime selection', () => {
   });
 
   test('legacy Copilot input is normalized before auto detection', () => {
+    const credentials = credentialsWithLegacyCopilot(undefined, 'token');
+    const config = agentConfigWithLegacyCopilot(base(), { token: 'token', model: 'copilot-model' });
     const selected = resolveAgentSelection({
-      config: base(),
-      runtime: runtime(['codex', 'claude']),
-      legacyCopilot: { token: 'token', model: 'copilot-model' },
+      config,
+      runtime: { ...runtime(['codex', 'claude', 'copilot-cloud']), credentials },
     });
 
     assert.equal(selected.provider, 'copilot-cloud');
-    assert.equal(selected.source, 'legacy-copilot');
+    assert.equal(selected.source, 'repository');
     assert.equal(selected.config.model, 'copilot-model');
-    assert.equal(selected.runtime.credentials?.copilotToken, 'token');
+    assert.deepEqual(selected.runtime.credentials?.['copilot-cloud'], { token: 'token' });
   });
 
   test('unattended auto selects only when exactly one provider is eligible', () => {
