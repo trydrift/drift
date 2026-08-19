@@ -66,20 +66,32 @@ export async function hashCapsuleDir(dir: string): Promise<string> {
   hash.update(CAPSULE_HASH_VERSION);
   hash.update('\0');
 
-  for (const path of files) {
-    const relativePath = relative(dir, path).split(sep).join('/');
-    hash.update(relativePath);
+  for (const entry of files) {
+    hash.update(entry.relativePath);
     hash.update('\0');
-    hash.update(canonicalBytes(await readFile(path)));
+    hash.update(canonicalBytes(await readFile(entry.path)));
     hash.update('\0');
   }
 
   return hash.digest('hex');
 }
 
-/** Every capsule file, sorted by repo-relative path so read order cannot matter. */
-async function listCapsuleFiles(root: string): Promise<string[]> {
-  const found: string[] = [];
+interface CapsuleFile {
+  path: string;
+  /** Separator-normalized and relative, which is both what is hashed and what the sort is by. */
+  relativePath: string;
+}
+
+/**
+ * Every capsule file, sorted by its *normalized* relative path.
+ *
+ * Sorting by the OS-separator form would order a Windows checkout differently
+ * from a POSIX one for any path with a directory component, and a different
+ * order is a different hash — which would make the same corpus disagree with
+ * itself across platforms.
+ */
+async function listCapsuleFiles(root: string): Promise<CapsuleFile[]> {
+  const found: CapsuleFile[] = [];
 
   const walk = async (dir: string): Promise<void> => {
     let entries;
@@ -96,12 +108,15 @@ async function listCapsuleFiles(root: string): Promise<string[]> {
       // A symlink is not followed and not hashed as content: its target is
       // outside the capsule by definition, and the isolation audit already
       // refuses a workspace containing one that leaves.
-      if (entry.isFile() && !EXCLUDED_FILES.has(entry.name)) found.push(join(dir, entry.name));
+      if (entry.isFile() && !EXCLUDED_FILES.has(entry.name)) {
+        const path = join(dir, entry.name);
+        found.push({ path, relativePath: relative(root, path).split(sep).join('/') });
+      }
     }
   };
 
   await walk(root);
-  return found.sort((a, b) => (relative(root, a) < relative(root, b) ? -1 : 1));
+  return found.sort((a, b) => (a.relativePath < b.relativePath ? -1 : a.relativePath > b.relativePath ? 1 : 0));
 }
 
 function canonicalBytes(content: Buffer): Buffer {
