@@ -130,10 +130,18 @@ deliberately differs.
 **Rejected, explicitly.**
 
 - **`errsAfter.length > errsBefore.length` as the success criterion.** A count
-  cannot distinguish a migration from deleting the code that called the changed
-  API, and it credits a patch that swaps one real error for a different real
-  error. `eval/src/oracle/signature.ts` compares diagnostic *identities*
-  instead; its final test pins exactly this case.
+  credits a patch that swaps one real error for a different real error.
+  `eval/src/oracle/signature.ts` compares diagnostic *identities* instead, so a
+  substituted failure is a new failure rather than an unchanged count.
+
+  This is worth stating precisely, because the obvious stronger claim is false.
+  Comparing identities does **not** stop a repair that deletes the code calling
+  the changed API: deleted code emits no diagnostic, so the trigger set empties
+  and the project's own check goes green, and set algebra over three stages
+  cannot tell that apart from a migration. What stops it is a different
+  mechanism, described below — hidden behavioural checks. Signature identity
+  and behaviour preservation are separate guarantees and the benchmark relies
+  on both.
 - **Keeping a task whose baseline already fails.** Its collector warns about
   pre-existing errors and keeps the task anyway. Here an invalid baseline makes
   every later observation uninterpretable, and the case is recorded
@@ -214,14 +222,33 @@ an optional `fullCi` oracle for this; it is opt-in per run because it is slow.
 
 Three properties that none of the systems above enforce.
 
-**Ground truth is physically unreachable from a prediction.** Cases split into
+**Ground truth is not reachable from a prediction workspace.** Cases split into
 `eval/cases/public/` and `eval/cases/private/`. A prediction adapter receives a
 `PublicCase` and a workspace that has been walked and audited — private
-artifacts, private-root overlap, and symlinks whose target leaves the workspace
-all fail it — and the audit runs on every materialization, not only in a test.
+artifacts, a `hidden/` directory, private-root overlap, and symlinks whose
+target leaves the workspace all fail it — and the audit runs on every
+materialization, not only in a test. The claim is about the workspace and the
+adapters, which is what can be enforced: the harness process itself does read
+private truth, because something has to run the oracle.
 Once a coding agent with shell access runs inside that directory, "the adapter
 did not read the answer" has to be a property of the filesystem rather than of a
 model's behaviour.
+
+**A repair has to leave the behaviour behind, not merely leave the check
+green.** Every prior evaluator in this space is defeated by deletion, and so is
+failure-signature comparison on its own. A case may carry hidden behavioural
+checks: executable assertions about the consumer's own application semantics,
+living in private truth, written into the throwaway consumer copy an oracle
+stage makes and never into the workspace a prediction or a coding agent sees.
+Their diagnostics join the stage's signature, so a deleted behaviour leaves a
+trigger unresolved or introduces a new failure and can never reach `repaired`.
+The reproducibility gate runs them in every stage, which is what entitles them
+to disqualify anything: a check that does not pass before the upgrade and fail
+after it is asserting something that was never true, and the gate says so.
+`eval/src/oracle/destructive-repair.test.ts` runs the real oracle against a
+correct migration, a behaviourally equivalent rewrite, a wrong replacement and
+three destructive edits — and, as a control, asserts that with hidden checks
+removed the deletion *is* credited.
 
 **Every repair mechanism is measured separately, and the mechanism that did the
 work is recorded.** Drift's hierarchy is codemod → validated fix plan (cache,
@@ -260,3 +287,22 @@ Stated here rather than discovered later.
   intervals return `null` under 20 cases; McNemar returns `null` when too few
   pairs disagree. An interval computed from four cases is arithmetically valid
   and rhetorically dishonest.
+- **The fix-plan cache and recipe tiers are implemented and have no corpus.**
+  Both run through production's own paths and are covered by controlled-fixture
+  tests, but a cache entry is a plan an earlier run authored and a recipe is a
+  third-party package, and this benchmark has neither seeded. Without an input
+  they report `cache-unavailable` / `recipe-unavailable`, which is excluded
+  from every rate — a tier that was never asked did not decline.
+- **The model fix-plan tier can only be exercised where the evidence attests
+  the replacement.** Drift's gate refuses any replacement name the cited
+  evidence does not state, which is correct and is why most synthetic cases can
+  never produce an accepted model-authored plan. Measuring the tier therefore
+  requires cases with retrievable prose; `npm-documented-rename` is the first.
+- **Repair tracks run Drift in `mode: auto` with `fixPlans.autoApply: proven`.**
+  Both are real production settings, and they are the weakest ones under which
+  a deterministic tier acts at all — under the defaults (`approve` / `review`)
+  every plan is proposed for a human and nothing is applied, so no repair could
+  be measured. A plan that changes expression structure still needs the
+  project's own checks to have passed, which this configuration does not
+  enable, so these results understate what a `verified` configuration would
+  apply rather than overstating it.
