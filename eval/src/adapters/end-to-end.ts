@@ -9,8 +9,11 @@ import type { DetectionArtifact } from '../artifacts/prediction.ts';
 import {
   DriftConfigSchema,
   analyzeRepository,
+  buildPlan,
   verdictFor,
+  type DriftConfig,
   type Logger,
+  type RemediationPlan,
   type RepoContext,
 } from '../../../dist/index.js';
 import { clearHttpCache } from '../../../dist/util/http.js';
@@ -54,8 +57,16 @@ const SILENT_LOGGER: Logger = {
 
 export interface EndToEndResult {
   detection: DetectionArtifact;
-  /** The production plan, handed on to a repair track so tiering is measured on what detection actually produced. */
-  plan: PlanLike & { commits: readonly unknown[] };
+  /**
+   * The production plan verbatim, handed on to a repair track so tiering is
+   * measured on what detection actually produced.
+   *
+   * Typed as production's own `RemediationPlan` rather than as a structural
+   * subset: every repair track reads its commit units, and a benchmark-local
+   * shape here would have to be re-widened with a cast at each of them, which
+   * is exactly where a drifting field would stop being a compile error.
+   */
+  plan: RemediationPlan;
   summary: string;
 }
 
@@ -133,14 +144,17 @@ export async function runEndToEndDetection(
       // empty artifact so it scores as a miss rather than vanishing.
       return {
         detection: emptyDetection(triageSkipped, result.summary),
-        plan: { changes: [], evidence: [], breakingChanges: [], impactSites: [], gaps: [], commits: [] },
+        // Production's own empty plan, built by production's own builder, so a
+        // no-findings run hands a repair track the same shape a findings run
+        // does rather than a hand-assembled stand-in.
+        plan: emptyPlan(repo, config),
         summary: result.summary,
       };
     }
 
-    const plan = result.plan as unknown as PlanLike & { commits: readonly unknown[] };
+    const plan = result.plan;
     const verdictByChangeId = new Map(
-      plan.breakingChanges.map((change) => [change.id, String(verdictFor(change as never))] as const),
+      plan.breakingChanges.map((change) => [change.id, String(verdictFor(change))] as const),
     );
 
     const checkedSurfaces = checkedSurfacesOf(result.plan);
@@ -228,6 +242,11 @@ export function reduceVerdict(
  * consult. The dependency is carried through because a monorepo has one row
  * per dependency and "the surface was checked" is a per-dependency fact.
  */
+/** Production's plan for a repository where nothing was found. */
+function emptyPlan(repo: RepoContext, config: DriftConfig): RemediationPlan {
+  return buildPlan({ repo, config, changes: [], evidence: [], breakingChanges: [], impactSites: [] });
+}
+
 /** `owner/repo` from the frozen package manifest's `repository` field, or `null` when it declares none. */
 async function upstreamGitHubRepo(upstreamDir: string): Promise<string | null> {
   try {

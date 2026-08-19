@@ -9,7 +9,6 @@ import {
   assessmentOf,
   buildPlan,
   type CommitUnit,
-  type RemediationPlan,
 } from '../../../dist/index.js';
 import type { CommunityRecipeCandidate } from '../../../dist/remediation/types.js';
 import { resolveFixPlans } from '../../../dist/fixplan/resolve.js';
@@ -242,7 +241,7 @@ async function runFixPlanTrack(context: RepairContext, selection: ResolvedSource
     evidence: context.plan.evidence,
     breakingChanges: context.plan.breakingChanges,
     impactSites: context.plan.impactSites,
-    checkedSurfaces: (context.plan as RemediationPlan).checkedSurfaces ?? [],
+    checkedSurfaces: context.plan.checkedSurfaces ?? [],
     fixPlans: resolved.accepted,
   });
 
@@ -262,7 +261,7 @@ async function runFixPlanTrack(context: RepairContext, selection: ResolvedSource
     // over it — including its "ask a human" state. Treating `ask` as `apply`
     // would benchmark an unattended mode Drift does not offer.
     const disposition = dispositionFor(assessmentOf(commit), context.config, {
-      verificationPassed: (context.plan as RemediationPlan).verification?.status === 'passed',
+      verificationPassed: context.plan.verification?.status === 'passed',
     });
     if (disposition.action !== 'apply') {
       declinedByPolicy = true;

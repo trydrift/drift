@@ -31,7 +31,16 @@ export interface PlanLike {
     symbols: readonly string[];
     replacementSymbols?: readonly string[] | undefined;
     summary: string;
-    citations?: readonly { id?: string; url?: string }[] | undefined;
+    /**
+     * Evidence ids, which is what production's `BreakingChange.citations` is.
+     *
+     * This previously declared `{ id?, url? }[]`, which no production plan ever
+     * produces — a shape mismatch that only survived because the caller widened
+     * the plan with `as unknown as`. The mapping below then read `.id` off a
+     * string, got `undefined`, and every artifact recorded an empty citation
+     * list for findings that cited real evidence.
+     */
+    citations?: readonly string[] | undefined;
     taxonomy?: { nature: string; detectability: readonly string[]; scope: string; visibility: readonly string[] } | undefined;
   }[];
   impactSites: readonly {
@@ -109,7 +118,7 @@ export function toDetectionArtifact(plan: PlanLike, options: ConvertOptions): De
         symbols: [...change.symbols],
         replacementSymbols: [...(change.replacementSymbols ?? [])],
         summary: change.summary,
-        citations: (change.citations ?? []).map((citation) => citation.id ?? citation.url ?? '').filter(Boolean),
+        citations: [...(change.citations ?? [])].filter(Boolean),
         ...(change.taxonomy
           ? {
               taxonomy: {

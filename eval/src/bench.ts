@@ -26,7 +26,7 @@ import {
 } from './artifacts/prediction.ts';
 import { driftRevision, newRunId, writeArtifact, writeManifest, RUN_MANIFEST_VERSION } from './runs/store.ts';
 import { hashPublicCapsule } from './runs/capsule.ts';
-import { DriftConfigSchema, type Logger, type RemediationPlan } from '../../dist/index.js';
+import { DriftConfigSchema, type Logger } from '../../dist/index.js';
 
 const execFile = promisify(execFileCallback);
 
@@ -220,7 +220,7 @@ async function runOne(input: RunOneInput): Promise<PredictionArtifact> {
     const context: RepairContext = {
       publicCase,
       workspace,
-      plan: (detection.plan as unknown as RemediationPlan) ?? emptyPlan(publicCase),
+      plan: detection.plan,
       config,
       logger: SILENT_LOGGER,
       observedCommands,
@@ -350,25 +350,6 @@ async function applyPatch(consumerDir: string, patch: string): Promise<void> {
   } finally {
     await rm(temp, { recursive: true, force: true });
   }
-}
-
-function emptyPlan(publicCase: PublicCase): RemediationPlan {
-  return {
-    schemaVersion: 1,
-    id: `${publicCase.id}-empty`,
-    branchName: `drift/${publicCase.id}`,
-    baseBranch: 'main',
-    headSha: 'unavailable',
-    changes: [],
-    evidence: [],
-    breakingChanges: [],
-    impactSites: [],
-    commits: [],
-    planEdges: [],
-    upgradeCohorts: [],
-    risk: 'low',
-    gaps: [],
-  } as unknown as RemediationPlan;
 }
 
 export { loadPublicCase };
