@@ -1,13 +1,13 @@
-import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
-import { loadPublicCase, publicCaseDir } from './case/load.ts';
+import { loadPublicCase } from './case/load.ts';
 import { loadPrivateTruth, privateCaseDir } from './case/private.ts';
 import { loadAdjudication, type Conclusion } from './review.ts';
 import { readArtifacts } from './runs/store.ts';
-import { hashPublicCase } from './runs/store.ts';
+import { hashPublicCapsule } from './runs/capsule.ts';
 import { scoreDetection, type DetectionScore } from './evaluator/detection.ts';
 import { scoreRepair, type RepairScore } from './evaluator/repair.ts';
-import type { PredictionArtifact, Track } from './artifacts/prediction.ts';
+import { UNAVAILABLE, type PredictionArtifact, type Track } from './artifacts/prediction.ts';
 import type { PublicCase } from './case/schema.ts';
 
 /**
@@ -31,6 +31,17 @@ export interface CaseEvaluation {
   /** Carried through so a report can show what was requested against what the agent confirmed. */
   provenance: PredictionArtifact['provenance'];
   experimentMode: PredictionArtifact['experimentMode'];
+  /**
+   * Content hash of the accepted adjudication this result was scored against.
+   *
+   * Deliberately a *separate* concept from capsule staleness. What a prediction
+   * saw and what the reviewers later decided are different things, and truth is
+   * allowed to improve after a trial was paid for — that is why adjudications
+   * are append-only and the evaluator re-reads them. Pinning it here means a
+   * report can always say which revision of truth produced a number, without
+   * that revision invalidating the trial.
+   */
+  adjudicationRevision: string;
   /** Integrity problems that make a result uninterpretable rather than merely bad. */
   integrityFailures: string[];
 }
@@ -51,6 +62,7 @@ export async function evaluateRun(runId: string, root = process.cwd()): Promise<
 
   const cases = new Map<string, PublicCase>();
   const truths = new Map<string, Conclusion | null>();
+  const adjudicationRevisions = new Map<string, string>();
   const developerPatches = new Map<string, string | null>();
   const hashes = new Map<string, string>();
 
@@ -58,13 +70,22 @@ export async function evaluateRun(runId: string, root = process.cwd()): Promise<
     if (!cases.has(artifact.caseId)) {
       const publicCase = await loadPublicCase(artifact.caseId, root);
       cases.set(artifact.caseId, publicCase);
-      hashes.set(artifact.caseId, hashPublicCase(await readFile(join(publicCaseDir(artifact.caseId, root), 'case.yml'), 'utf8')));
+      // Recomputed from the corpus as it stands now, and compared against what
+      // the trial recorded seeing. Any public artifact that could change a
+      // prediction is in it; nothing private is.
+      hashes.set(artifact.caseId, await hashPublicCapsule(artifact.caseId, root));
 
       // Truth is resolved through the adjudication, never through a review
       // directly and never through the case's own metadata. A case whose
       // adjudication is missing or unresolved is not scored at all — the
       // alternative is inventing an expectation.
       const adjudication = await loadAdjudication(artifact.caseId, privateCasesRootFor(root));
+      adjudicationRevisions.set(
+        artifact.caseId,
+        adjudication
+          ? createHash('sha256').update(JSON.stringify(adjudication.decision)).digest('hex').slice(0, 16)
+          : UNAVAILABLE,
+      );
       if (!adjudication || adjudication.status !== 'accepted') {
         truths.set(artifact.caseId, null);
         missing.push({ caseId: artifact.caseId, reason: 'no accepted adjudication' });
@@ -78,7 +99,11 @@ export async function evaluateRun(runId: string, root = process.cwd()): Promise<
 
     const truth = truths.get(artifact.caseId) ?? null;
     const failures: string[] = [];
-    const stale = hashes.get(artifact.caseId) !== artifact.publicCaseHash;
+    // An artifact predating the capsule hash records `unavailable`, which is
+    // not a match and must not be treated as one: it means the evaluator
+    // cannot establish what that trial saw, which is exactly the state
+    // staleness exists to refuse.
+    const stale = artifact.publicCapsuleHash !== hashes.get(artifact.caseId);
 
     // A case the reproducibility gate has since disqualified stops
     // contributing, even though its artifacts are still on disk. This is not
@@ -98,6 +123,7 @@ export async function evaluateRun(runId: string, root = process.cwd()): Promise<
         repair: null,
         provenance: artifact.provenance,
         experimentMode: artifact.experimentMode,
+        adjudicationRevision: adjudicationRevisions.get(artifact.caseId) ?? UNAVAILABLE,
         integrityFailures: [],
       });
       continue;
@@ -105,7 +131,9 @@ export async function evaluateRun(runId: string, root = process.cwd()): Promise<
 
     if (stale) {
       failures.push(
-        `${artifact.caseId}: the public case has changed since this prediction was made; the artifact is reported stale rather than re-scored against evidence it never saw.`,
+        artifact.publicCapsuleHash === UNAVAILABLE
+          ? `${artifact.caseId}: this artifact records no public-capsule hash, so what it saw cannot be established; reported stale rather than re-scored.`
+          : `${artifact.caseId}: the public case capsule has changed since this prediction was made (recorded ${artifact.publicCapsuleHash.slice(0, 12)}, now ${(hashes.get(artifact.caseId) ?? '').slice(0, 12)}); the artifact is reported stale rather than re-scored against evidence it never saw.`,
       );
     }
     if (artifact.error) failures.push(`${artifact.caseId} [${artifact.track}]: adapter error — ${artifact.error}`);
@@ -151,6 +179,7 @@ export async function evaluateRun(runId: string, root = process.cwd()): Promise<
       repair,
       provenance: artifact.provenance,
       experimentMode: artifact.experimentMode,
+      adjudicationRevision: adjudicationRevisions.get(artifact.caseId) ?? UNAVAILABLE,
       integrityFailures: failures,
     });
   }

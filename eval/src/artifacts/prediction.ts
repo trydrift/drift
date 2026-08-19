@@ -205,8 +205,21 @@ export const predictionArtifactSchema = z
     schemaVersion: z.literal(ARTIFACT_SCHEMA_VERSION),
     runId: z.string(),
     caseId: z.string(),
-    /** Pins the exact public evidence this prediction saw. A later case edit invalidates replay rather than silently re-scoring. */
-    publicCaseHash: z.string(),
+    /**
+     * Content hash of the WHOLE public capsule this prediction saw — consumer
+     * source, before-manifest, both frozen upstream trees, frozen evidence,
+     * lockfiles, `case.yml`. A later edit to any of it invalidates replay
+     * rather than silently re-scoring against evidence the trial never saw.
+     * See `eval/src/runs/capsule.ts`.
+     */
+    publicCapsuleHash: z.string().default(UNAVAILABLE),
+    /**
+     * Deprecated: a hash of `case.yml` alone, which is metadata and misses
+     * every file that actually changes a prediction. Retained so artifacts
+     * written before the capsule hash still parse and can still be read; it is
+     * never what staleness is decided on.
+     */
+    publicCaseHash: z.string().optional(),
     track: trackSchema,
     experimentMode: experimentModeSchema,
     provenance: provenanceSchema,

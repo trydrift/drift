@@ -11,7 +11,7 @@ function artifact(overrides: Partial<PredictionArtifact> = {}): PredictionArtifa
     schemaVersion: ARTIFACT_SCHEMA_VERSION,
     runId: 'r1',
     caseId: 'case-a',
-    publicCaseHash: 'abc',
+    publicCapsuleHash: 'abc',
     track: 'repair-codemod',
     experimentMode: 'end-to-end',
     provenance: deterministicProvenance({
@@ -61,7 +61,7 @@ test('a repeated trial index is refused rather than overwriting, so a run cannot
         node: process.version,
         platform: process.platform,
         arch: process.arch,
-        cases: [{ caseId: 'case-a', publicCaseHash: 'abc' }],
+        cases: [{ caseId: 'case-a', publicCapsuleHash: 'abc' }],
         notes: '',
       },
       root,

@@ -1,6 +1,5 @@
 import { execFile as execFileCallback } from 'node:child_process';
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { predictionArtifactSchema, type PredictionArtifact } from '../artifacts/prediction.ts';
@@ -39,8 +38,8 @@ export interface RunManifest {
   node: string;
   platform: string;
   arch: string;
-  /** Case ids in the run, with the public-case hash each prediction saw. */
-  cases: { caseId: string; publicCaseHash: string }[];
+  /** Case ids in the run, with the full public-capsule hash each prediction saw. */
+  cases: { caseId: string; publicCapsuleHash: string }[];
   notes: string;
 }
 
@@ -129,11 +128,6 @@ export async function driftRevision(root = process.cwd()): Promise<{ commit: str
   } catch {
     return { commit: 'unavailable', dirty: false };
   }
-}
-
-/** Content hash of the public case a prediction saw, so replay can refuse a case that has since changed. */
-export function hashPublicCase(caseYamlBody: string): string {
-  return createHash('sha256').update(caseYamlBody.replace(/\r\n/g, '\n').trim()).digest('hex');
 }
 
 /** A run id that sorts chronologically and never collides within a second. */

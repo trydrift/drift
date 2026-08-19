@@ -23,7 +23,8 @@ import {
   type PredictionArtifact,
   type Track,
 } from './artifacts/prediction.ts';
-import { driftRevision, hashPublicCase, newRunId, writeArtifact, writeManifest, RUN_MANIFEST_VERSION } from './runs/store.ts';
+import { driftRevision, newRunId, writeArtifact, writeManifest, RUN_MANIFEST_VERSION } from './runs/store.ts';
+import { hashPublicCapsule } from './runs/capsule.ts';
 import { DriftConfigSchema, type Logger, type RemediationPlan } from '../../dist/index.js';
 
 const execFile = promisify(execFileCallback);
@@ -87,7 +88,7 @@ export async function runBenchmark(options: BenchOptions): Promise<{ runId: stri
     cases: await Promise.all(
       selected.map(async (entry) => ({
         caseId: entry.id,
-        publicCaseHash: hashPublicCase(await readFile(join(publicCaseDir(entry.id), 'case.yml'), 'utf8')),
+        publicCapsuleHash: await hashPublicCapsule(entry.id),
       })),
     ),
     notes: options.notes ?? '',
@@ -97,7 +98,7 @@ export async function runBenchmark(options: BenchOptions): Promise<{ runId: stri
   const trials = Math.max(1, options.trials ?? 1);
 
   for (const publicCase of selected) {
-    const publicCaseHash = hashPublicCase(await readFile(join(publicCaseDir(publicCase.id), 'case.yml'), 'utf8'));
+    const publicCapsuleHash = await hashPublicCapsule(publicCase.id);
     // The only private material this file touches, read here so it is
     // impossible to miss. It never reaches an adapter, a repair tier, or the
     // materialized workspace — only the throwaway copies `runCaseStage` makes
@@ -113,7 +114,7 @@ export async function runBenchmark(options: BenchOptions): Promise<{ runId: stri
       const trackTrials = isLiveTrack(track) ? trials : 1;
 
       for (let trial = 1; trial <= trackTrials; trial += 1) {
-        const artifact = await runOne({ publicCase, publicCaseHash, hiddenChecks, track, trial, trialsPlanned: trackTrials, runId, revision, agent: options.agent });
+        const artifact = await runOne({ publicCase, publicCapsuleHash, hiddenChecks, track, trial, trialsPlanned: trackTrials, runId, revision, agent: options.agent });
         await writeArtifact(artifact);
         artifacts.push(artifact);
       }
@@ -129,7 +130,7 @@ function isLiveTrack(track: Track): boolean {
 
 interface RunOneInput {
   publicCase: PublicCase;
-  publicCaseHash: string;
+  publicCapsuleHash: string;
   /**
    * Benchmark-added behavioural assertions for this case, loaded once per run.
    *
@@ -307,7 +308,7 @@ function base(
     schemaVersion: ARTIFACT_SCHEMA_VERSION,
     runId: input.runId,
     caseId: input.publicCase.id,
-    publicCaseHash: input.publicCaseHash,
+    publicCapsuleHash: input.publicCapsuleHash,
     track: input.track,
     experimentMode: 'end-to-end',
     provenance,

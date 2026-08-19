@@ -161,11 +161,19 @@ function detectionSection(result: EvaluationResult): string[] {
     '',
   );
 
-  lines.push('### Per-case detection', '', '| Case | Track | Verdict | D2 TP/FP/FN | D3s TP/FP/FN | Missed |', '| --- | --- | --- | --- | --- | --- |');
+  lines.push(
+    '### Per-case detection',
+    '',
+    'The adjudication column pins *which revision of truth* produced the row. It is deliberately separate from',
+    'capsule staleness: a corrected adjudication re-scores a past trial, where a changed public capsule cannot.',
+    '',
+    '| Case | Track | Verdict | D2 TP/FP/FN | D3s TP/FP/FN | Adjudication | Missed |',
+    '| --- | --- | --- | --- | --- | --- | --- |',
+  );
   for (const entry of scored) {
     const detection = entry.detection!;
     lines.push(
-      `| \`${entry.caseId}\` | ${entry.track} | \`${detection.d4.verdict}\` | ${counts(detection.d2BreakingChanges)} | ${counts(detection.d3LocalizationSymbol)} | ${detection.d2BreakingChanges.falseNegatives.map((id) => `\`${id}\``).join(', ') || '—'} |`,
+      `| \`${entry.caseId}\` | ${entry.track} | \`${detection.d4.verdict}\` | ${counts(detection.d2BreakingChanges)} | ${counts(detection.d3LocalizationSymbol)} | \`${entry.adjudicationRevision}\` | ${detection.d2BreakingChanges.falseNegatives.map((id) => `\`${id}\``).join(', ') || '—'} |`,
     );
   }
   lines.push('');
