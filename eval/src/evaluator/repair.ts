@@ -205,6 +205,11 @@ function classify(input: {
 
   const OPERATIONAL = new Set<RepairArtifact['notAttemptedReason']>([
     'model-unavailable',
+    // A tier with no input did not decline; it was never asked. Scoring it as
+    // either a success or a failure would report a fiction, and reporting it
+    // as zero would be the same fiction with a number attached.
+    'cache-unavailable',
+    'recipe-unavailable',
     'agent-unavailable',
     'agent-error',
     'agent-timeout',

@@ -1,14 +1,16 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { loadPublicCase } from '../case/load.ts';
 import { materializeCase } from '../case/materialize.ts';
 import { runEndToEndDetection } from '../adapters/end-to-end.ts';
-import { runModelFixPlanTrack } from './model-fixplan.ts';
+import { runFixPlanCacheTrack, runFixPlanRecipeTrack, runModelFixPlanTrack } from './model-fixplan.ts';
 import type { RepairContext } from './context.ts';
 import { DriftConfigSchema, type Logger, type RemediationPlan } from '../../../dist/index.js';
 import type { AnthropicLike } from '../../../dist/analyze/llm.js';
+import type { CommunityRecipeCandidate } from '../../../dist/remediation/types.js';
 
 /**
  * `repair-fixplan-model` end to end, minus the model.
@@ -197,6 +199,143 @@ test('with no model configured nothing is attempted and no model invocation is r
     const outcome = await runModelFixPlanTrack(context, { client: null });
     assert.equal(outcome.repair.attempted, false);
     assert.equal(outcome.repair.notAttemptedReason, 'model-unavailable');
+    assert.equal(outcome.provenance, undefined, 'no model ran, so no model provenance may be written');
+  } finally {
+    await teardown();
+  }
+});
+
+/* ------------------------------------------------------------------ *
+ * The other two proposal sources.
+ *
+ * Everything after the proposal is shared with the model track and is already
+ * covered above, so these test exactly what is different: that the source is
+ * actually consulted through production's `resolveFixPlans`, that a plan from
+ * it goes through the same gate, and that a track with no input says so
+ * instead of reporting a zero.
+ * ------------------------------------------------------------------ */
+
+test('the cache track restores a plan an earlier run wrote, and revalidates it through the same gate', { timeout: 300_000 }, async () => {
+  const cacheDir = await mkdtemp(join(tmpdir(), 'drift-fixplan-cache-'));
+  const authored = await contextFor('npm-documented-rename');
+
+  try {
+    // Populated the only honest way: an earlier model run whose plan the gate
+    // accepted, written through production's own `cache.put`.
+    const client = stubClient({
+      applicable: true,
+      migration: 'fixture-lib renamed oldQuery to query.',
+      rationale: 'The changelog states oldQuery has been renamed to query.',
+      citations: authored.context.plan.breakingChanges.flatMap((change) => change.citations),
+      ops: [{ kind: 'rename-member', from: 'oldQuery', to: 'query' }],
+    });
+    const seeding = await runModelFixPlanTrack(authored.context, { client, cacheDir });
+    assert.equal(seeding.repair.attempted, true, 'the seeding run must have produced an accepted plan');
+
+    const cached = await readdir(cacheDir);
+    assert.ok(cached.length > 0, 'production must have written the accepted plan to the cache');
+
+    // A fresh workspace, no model at all, cache as the only proposal source.
+    const replay = await contextFor('npm-documented-rename');
+    try {
+      const outcome = await runFixPlanCacheTrack(replay.context, { cacheDir });
+
+      assert.equal(outcome.repair.attempted, true, `expected a repair, got ${outcome.repair.notAttemptedReason}`);
+      assert.equal(outcome.repair.fixPlan?.proposalSource, 'cache');
+      assert.equal(outcome.repair.fixPlan?.validation, 'accepted', 'a restored plan is revalidated, not trusted');
+      assert.deepEqual(outcome.repair.changedFiles, ['src/app.js']);
+      assert.deepEqual(
+        outcome.repair.resolvedByTier.map((entry) => entry.tier),
+        ['fixplan-cache'],
+      );
+      assert.equal(outcome.provenance, undefined, 'no model ran, so no model provenance may be written');
+
+      const source = await readFile(join(replay.context.workspace.root, 'src', 'app.js'), 'utf8');
+      assert.match(source, /fixture\.query\(name\)/);
+    } finally {
+      await replay.teardown();
+    }
+  } finally {
+    await authored.teardown();
+    await rm(cacheDir, { recursive: true, force: true });
+  }
+});
+
+test('a cache track with no cache reports that it had none, and is excluded from every rate', async () => {
+  const { context, teardown } = await contextFor('npm-documented-rename');
+  try {
+    const outcome = await runFixPlanCacheTrack(context, {});
+    assert.equal(outcome.repair.attempted, false);
+    assert.equal(outcome.repair.notAttemptedReason, 'cache-unavailable');
+    assert.equal(outcome.repair.patch, '');
+  } finally {
+    await teardown();
+  }
+});
+
+test('a recipe track with no recipe candidate reports that it had none rather than a zero', async () => {
+  const { context, teardown } = await contextFor('npm-documented-rename');
+  try {
+    const outcome = await runFixPlanRecipeTrack(context, {});
+    assert.equal(outcome.repair.attempted, false);
+    assert.equal(outcome.repair.notAttemptedReason, 'recipe-unavailable');
+    assert.deepEqual(outcome.repair.resolvedByTier, []);
+  } finally {
+    await teardown();
+  }
+});
+
+test('the recipe track re-derives a rule from a recipe’s own edits and puts it through the gate', { timeout: 300_000 }, async () => {
+  const { context, teardown } = await contextFor('npm-documented-rename');
+
+  try {
+    const recipe: CommunityRecipeCandidate = {
+      provider: 'codemod.com',
+      name: '@drift-bench/fixture-lib-v2',
+      version: '1.0.0',
+      publisher: 'Drift benchmark',
+      source: 'https://example.invalid/drift-bench/fixture-lib-v2',
+      migration: 'Rename fixture-lib’s oldQuery to query.',
+      official: false,
+    };
+
+    // A controlled stand-in for the third-party tool. `git` is passed straight
+    // through, because production reads the sandbox's real git status to bound
+    // what the recipe touched; only the recipe's own command is replaced, and
+    // it makes exactly the edit a real recipe would make. Everything after
+    // that — reading the diff, re-deriving a rule Drift can describe,
+    // validating it against the localized sites — is production's.
+    const exec = async (bin: string, args: string[], options?: { cwd?: string }) => {
+      if (bin === 'git') {
+        const { execFile } = await import('node:child_process');
+        const { promisify } = await import('node:util');
+        const run = promisify(execFile);
+        try {
+          const { stdout, stderr } = await run(bin, args, { cwd: options?.cwd });
+          return { code: 0, stdout, stderr };
+        } catch (err) {
+          const error = err as { stdout?: string; stderr?: string; code?: number };
+          return { code: error.code ?? 1, stdout: error.stdout ?? '', stderr: error.stderr ?? '' };
+        }
+      }
+
+      // The recipe writes into whatever sandbox production handed it, never
+      // into the workspace — which is exactly the boundary being tested.
+      const path = join(options?.cwd ?? context.workspace.root, 'src', 'app.js');
+      await writeFile(path, (await readFile(path, 'utf8')).replace('fixture.oldQuery(', 'fixture.query('), 'utf8');
+      return { code: 0, stdout: 'applied 1 file', stderr: '' };
+    };
+
+    const outcome = await runFixPlanRecipeTrack(context, { recipe, exec: exec as never });
+
+    assert.equal(outcome.repair.attempted, true, `expected a repair, got ${outcome.repair.notAttemptedReason}`);
+    assert.equal(outcome.repair.fixPlan?.proposalSource, 'recipe');
+    assert.equal(outcome.repair.fixPlan?.validation, 'accepted', 'a recipe-derived rule is validated, not trusted');
+    assert.deepEqual(
+      outcome.repair.resolvedByTier.map((entry) => entry.tier),
+      ['fixplan-recipe'],
+    );
+    assert.deepEqual(outcome.repair.changedFiles, ['src/app.js']);
     assert.equal(outcome.provenance, undefined, 'no model ran, so no model provenance may be written');
   } finally {
     await teardown();

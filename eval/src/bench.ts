@@ -11,7 +11,7 @@ import { runEndToEndDetection, ADAPTER_VERSION as E2E_VERSION } from './adapters
 import { runCaseStage } from './oracle/stage.ts';
 import { loadHiddenChecks } from './oracle/hidden.ts';
 import { runCodemodTrack } from './tiers/codemod.ts';
-import { runModelFixPlanTrack } from './tiers/model-fixplan.ts';
+import { runFixPlanCacheTrack, runFixPlanRecipeTrack, runModelFixPlanTrack, type FixPlanTrackOptions } from './tiers/model-fixplan.ts';
 import { runAgentTrack, type AgentTrackOptions } from './tiers/agent.ts';
 import { runFullRemediationTrack } from './tiers/full-remediation.ts';
 import type { RepairContext, TrackOutcome } from './tiers/context.ts';
@@ -63,6 +63,8 @@ export interface BenchOptions {
   /** Independent repetitions per case × track. Research default 3 for live tracks; 1 is correct for deterministic ones. */
   trials?: number;
   agent?: AgentTrackOptions;
+  /** Inputs the cache and recipe tiers need. Absent means those tracks report they had none. */
+  fixPlan?: FixPlanTrackOptions;
   runId?: string;
   notes?: string;
 }
@@ -115,7 +117,7 @@ export async function runBenchmark(options: BenchOptions): Promise<{ runId: stri
       const trackTrials = isLiveTrack(track) ? trials : 1;
 
       for (let trial = 1; trial <= trackTrials; trial += 1) {
-        const artifact = await runOne({ publicCase, publicCapsuleHash, hiddenChecks, track, trial, trialsPlanned: trackTrials, runId, revision, agent: options.agent });
+        const artifact = await runOne({ publicCase, publicCapsuleHash, hiddenChecks, track, trial, trialsPlanned: trackTrials, runId, revision, agent: options.agent, fixPlan: options.fixPlan });
         await writeArtifact(artifact);
         artifacts.push(artifact);
       }
@@ -146,6 +148,7 @@ interface RunOneInput {
   runId: string;
   revision: { commit: string; dirty: boolean };
   agent?: AgentTrackOptions;
+  fixPlan?: FixPlanTrackOptions;
 }
 
 async function runOne(input: RunOneInput): Promise<PredictionArtifact> {
@@ -216,7 +219,7 @@ async function runOne(input: RunOneInput): Promise<PredictionArtifact> {
       observedCommands,
     };
 
-    const outcome = await runTrack(track, context, input.agent);
+    const outcome = await runTrack(track, context, input.agent, input.fixPlan);
 
     if (outcome.repair.attempted && outcome.repair.patch.trim().length > 0) {
       // The repaired stage applies the *patch* to a fresh materialization
@@ -255,12 +258,21 @@ async function runOne(input: RunOneInput): Promise<PredictionArtifact> {
   }
 }
 
-async function runTrack(track: Track, context: RepairContext, agent?: AgentTrackOptions): Promise<TrackOutcome> {
+async function runTrack(
+  track: Track,
+  context: RepairContext,
+  agent?: AgentTrackOptions,
+  fixPlan?: FixPlanTrackOptions,
+): Promise<TrackOutcome> {
   switch (track) {
     case 'repair-codemod':
       return runCodemodTrack(context);
+    case 'repair-fixplan-cache':
+      return runFixPlanCacheTrack(context, fixPlan ?? {});
+    case 'repair-fixplan-recipe':
+      return runFixPlanRecipeTrack(context, fixPlan ?? {});
     case 'repair-fixplan-model':
-      return runModelFixPlanTrack(context);
+      return runModelFixPlanTrack(context, fixPlan ?? {});
     case 'repair-agent':
       return runAgentTrack(context, agent);
     case 'repair-full-remediation':

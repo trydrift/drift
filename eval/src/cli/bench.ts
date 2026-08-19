@@ -60,6 +60,14 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       ...(flag(argv, 'cases') ? { caseIds: flag(argv, 'cases')!.split(',').filter(Boolean) } : {}),
       ...(flag(argv, 'trials') ? { trials: Number(flag(argv, 'trials')) } : {}),
       ...(flag(argv, 'run-id') ? { runId: flag(argv, 'run-id')! } : {}),
+      fixPlan: {
+        // `repair-fixplan-cache` restores plans an *earlier* run authored and
+        // the gate accepted. Pointing a model run at the same directory is how
+        // one gets populated, through production's own `cache.put`; without a
+        // directory the cache track reports `cache-unavailable` and is
+        // excluded from every rate rather than scored as a failure.
+        ...(flag(argv, 'fixplan-cache') ? { cacheDir: flag(argv, 'fixplan-cache')! } : {}),
+      },
       agent: {
         ...(flag(argv, 'agent') ? { agentId: flag(argv, 'agent')! } : {}),
         ...(flag(argv, 'model') ? { model: flag(argv, 'model')! } : {}),

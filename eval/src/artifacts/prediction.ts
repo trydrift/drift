@@ -180,6 +180,10 @@ export const repairNonOutcomeSchema = z.enum([
   'abstained-by-policy',
   'no-repairable-commit',
   'model-unavailable',
+  /** No previously validated plan cache was supplied, so the cache tier had nothing to restore. */
+  'cache-unavailable',
+  /** No community recipe candidate was supplied, so the recipe tier had nothing to re-derive from. */
+  'recipe-unavailable',
   'agent-unavailable',
   'agent-error',
   'agent-timeout',
