@@ -25,7 +25,34 @@ describe('evaluation harness', () => {
     assert.equal(drift.falseSafeCount, 0);
     assert.equal(drift.upstream.f1, 1);
     assert.equal(drift.impactSites.f1, 1);
+    assert.equal(drift.repairOraclePassRate, 1);
+    assert.equal(drift.repairGoldPatchExactRate, 1);
+    assert.equal(drift.repairChangedFiles.f1, 1);
+    assert.equal(drift.outOfScopeEditRate, 0);
     assert.ok('taxonomyAccuracy' in drift);
+    assert.ok('repairAttemptRate' in drift);
     assert.ok(baseline.costSensitiveScore < drift.costSensitiveScore);
+  });
+
+  test('scores deterministic fixes and abstentions separately', async () => {
+    const fixtures = await loadFixtures();
+    const predictions = await deterministicPredictions(fixtures);
+    const drift = predictions.filter((prediction) => prediction.adapter === 'drift-structured-fixture');
+
+    const fixed = drift.filter((prediction) => {
+      const fixture = fixtures.find((candidate) => candidate.id === prediction.fixtureId);
+      return fixture?.repair.expectation === 'fixed';
+    });
+    const abstained = drift.filter((prediction) => {
+      const fixture = fixtures.find((candidate) => candidate.id === prediction.fixtureId);
+      return fixture?.repair.expectation === 'abstained';
+    });
+
+    assert.ok(fixed.length > 0);
+    assert.ok(fixed.every((prediction) => prediction.repair === 'passed'));
+    assert.ok(fixed.every((prediction) => prediction.repairOraclePassed));
+    assert.ok(fixed.every((prediction) => prediction.repairGoldPatchExact));
+    assert.ok(abstained.length > 0);
+    assert.ok(abstained.every((prediction) => prediction.repair === 'not-attempted'));
   });
 });
