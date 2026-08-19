@@ -1,6 +1,7 @@
 import type { CaseEvaluation, EvaluationResult } from '../evaluate.ts';
 import type { PublicCase } from '../case/schema.ts';
-import { aggregateLevel, aggregateRepair, prf, type LevelAggregate, type Rate } from '../evaluator/aggregate.ts';
+import { aggregateLevel, aggregateRepair, prf, trialReliability, type Rate } from '../evaluator/aggregate.ts';
+import { isPolicyScoped } from '../evaluator/repair.ts';
 import type { LevelScore } from '../evaluator/detection.ts';
 
 /**
@@ -190,6 +191,45 @@ function repairSection(result: EvaluationResult): string[] {
     );
     for (const [outcome, count] of Object.entries(aggregate.outcomes).sort()) lines.push(`| ${outcome} | ${count} |`);
     lines.push('');
+
+    if (!isPolicyScoped(track as Parameters<typeof isPolicyScoped>[0])) {
+      lines.push(
+        'This track answers a **capability** question — given Drift routed the work here, could the mechanism repair it?',
+        'It is not scored against the adjudicated abstain/repair policy, because the harness pointed it at commits the',
+        'planner had already routed. The policy question is answered by `repair-full-remediation`.',
+        '',
+      );
+    }
+
+    // Reliability covers only cases where a repair was actually called for.
+    // A control case whose correct outcome is `no-repair-needed` has nothing
+    // to succeed at, and listing it as 0 successes of 3 would read as a
+    // failure of the mechanism rather than as the mechanism being right.
+    const repairable = forTrack.filter((entry) => entry.repair!.outcome !== 'no-repair-needed');
+    const reliability = trialReliability(repairable.map((entry) => ({ ...entry.repair!, trial: entry.trial })));
+    if (reliability.some((entry) => entry.trials > 1)) {
+      lines.push(
+        '**Reliability across independent trials**, over the cases where a repair was called for. First-attempt',
+        'success is the headline; the rest of the distribution is here beside it, never instead of it. No',
+        'best-of-k figure is computed.',
+        '',
+        '| Case | Trials | Successes | First attempt | All trials |',
+        '| --- | --- | --- | --- | --- |',
+      );
+      for (const entry of reliability) {
+        lines.push(
+          `| \`${entry.caseId}\` | ${entry.trials} | ${entry.successes} | ${entry.firstAttemptSuccess ? 'pass' : 'fail'} | ${entry.allTrialsSucceeded ? 'all passed' : 'not all'} |`,
+        );
+      }
+      lines.push('');
+
+      const firstAttempt = reliability.filter((entry) => entry.firstAttemptSuccess).length;
+      const allTrials = reliability.filter((entry) => entry.allTrialsSucceeded).length;
+      lines.push(
+        `First-attempt success: ${firstAttempt}/${reliability.length} case(s) · all-trials success: ${allTrials}/${reliability.length}.`,
+        '',
+      );
+    }
 
     if (Object.keys(aggregate.resolvedByTier).length > 0) {
       lines.push('Resolved by tier: ' + Object.entries(aggregate.resolvedByTier).sort().map(([tier, count]) => `${tier} ${count}`).join(' · '), '');

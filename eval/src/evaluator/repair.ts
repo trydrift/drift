@@ -65,6 +65,37 @@ export interface RepairScore {
   resolvedByTier: RepairArtifact['resolvedByTier'];
 }
 
+/**
+ * Tracks where Drift itself decides whether to act, and is therefore
+ * answerable for that decision.
+ *
+ * `repair-agent` is deliberately absent. Run standalone, the harness points
+ * the agent at exactly the commits Drift's planner already routed to the agent
+ * tier — so "should Drift have acted here?" was decided upstream, by the
+ * planner, and scoring the agent against an abstention expectation would blame
+ * it for a decision it never made. That policy question is answered by
+ * `repair-full-remediation`, where Drift chooses its own tier; the agent track
+ * answers the capability question, "given Drift handed this to an agent, did
+ * the agent repair it correctly?".
+ *
+ * This distinction is not cosmetic: the first run of the agent track scored
+ * six of twelve trials as `unsafe-attempt` — including three that produced a
+ * repair the oracle confirmed correct — purely because adjudicated truth said
+ * `abstain`, and that adjudication was reasoned about what a *deterministic*
+ * tier could safely guess.
+ */
+const POLICY_SCOPED_TRACKS = new Set<Track>([
+  'repair-codemod',
+  'repair-fixplan-cache',
+  'repair-fixplan-recipe',
+  'repair-fixplan-model',
+  'repair-full-remediation',
+]);
+
+export function isPolicyScoped(track: Track): boolean {
+  return POLICY_SCOPED_TRACKS.has(track);
+}
+
 export interface ScoreRepairInput {
   caseId: string;
   track: Track;
@@ -108,6 +139,7 @@ export function scoreRepair(input: ScoreRepairInput): RepairScore {
   const { outcome, scorable } = classify({
     repair,
     failToPass,
+    policyScoped: isPolicyScoped(track),
     expectedAction,
     baselineValid: baseline === undefined || baseline.matchesExpectation,
     brokenValid: broken === undefined || broken.matchesExpectation,
@@ -147,6 +179,7 @@ export function scoreRepair(input: ScoreRepairInput): RepairScore {
 function classify(input: {
   repair: RepairArtifact;
   failToPass: FailToPassAnalysis;
+  policyScoped: boolean;
   expectedAction: Conclusion['repair']['expectedAction'];
   baselineValid: boolean;
   brokenValid: boolean;
@@ -170,14 +203,15 @@ function classify(input: {
 
   if (!repair.attempted) {
     if (expectedAction === 'no-repair-needed') return { outcome: 'no-repair-needed', scorable: true };
-    if (expectedAction === 'abstain') return { outcome: 'correct-abstention', scorable: true };
+    if (input.policyScoped && expectedAction === 'abstain') return { outcome: 'correct-abstention', scorable: true };
     return { outcome: 'missed-opportunity', scorable: true };
   }
 
   // An attempt where truth says abstain is a product error regardless of
-  // whether the oracle happened to go green: the benchmark's position is that
-  // acting on evidence that does not support acting is wrong even when lucky.
-  if (expectedAction === 'abstain') return { outcome: 'unsafe-attempt', scorable: true };
+  // whether the oracle happened to go green: acting on evidence that does not
+  // support acting is wrong even when lucky. Scored only where Drift made the
+  // decision — see `POLICY_SCOPED_TRACKS`.
+  if (input.policyScoped && expectedAction === 'abstain') return { outcome: 'unsafe-attempt', scorable: true };
 
   if (!input.repairedRan) return { outcome: 'operational-failure', scorable: false };
 

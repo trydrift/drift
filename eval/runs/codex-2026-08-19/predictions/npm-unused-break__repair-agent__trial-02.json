@@ -1,0 +1,146 @@
+{
+  "schemaVersion": "drift-bench-prediction-v1",
+  "runId": "codex-2026-08-19",
+  "caseId": "npm-unused-break",
+  "publicCaseHash": "b13d3629e8bd99e222ac80baa4c81c27c8dae3b0dcc456c4e314f818372fa74f",
+  "track": "repair-agent",
+  "experimentMode": "end-to-end",
+  "provenance": {
+    "driftCommit": "50f761b3b2d73079cf979c5405192461dbb0c1f4",
+    "driftTreeDirty": true,
+    "adapterVersion": "drift-end-to-end-v1",
+    "agentId": "unavailable",
+    "agentLabel": "unavailable",
+    "provider": "unavailable",
+    "model": "unavailable",
+    "modelVersion": "unavailable",
+    "agentCliVersion": "unavailable",
+    "promptVersion": "unavailable",
+    "promptHash": "unavailable",
+    "effort": "unavailable",
+    "fastMode": "unavailable",
+    "trial": 2,
+    "trialsPlanned": 3,
+    "startedAt": "2026-08-19T16:45:22.474Z",
+    "finishedAt": "2026-08-19T16:45:36.583Z",
+    "latencyMs": 14109,
+    "costUsd": 0,
+    "inputTokens": null,
+    "outputTokens": null
+  },
+  "isolation": {
+    "audited": true,
+    "pathsAudited": 3,
+    "networkPolicy": "disabled"
+  },
+  "detection": {
+    "dependencyChanges": [
+      {
+        "name": "fixture-lib",
+        "ecosystem": "npm",
+        "from": "1.0.0",
+        "to": "2.0.0"
+      }
+    ],
+    "triageSkipped": [],
+    "upstreamFindings": [
+      {
+        "dependency": "fixture-lib",
+        "code": "export-removed",
+        "symbol": "removedFn",
+        "detail": "`removedFn` is no longer exported (was a function)."
+      }
+    ],
+    "checkedSurfaces": [
+      {
+        "name": "unknown",
+        "status": "skipped"
+      },
+      {
+        "name": "unknown",
+        "status": "checked"
+      },
+      {
+        "name": "unknown",
+        "status": "unavailable"
+      },
+      {
+        "name": "unknown",
+        "status": "checked"
+      }
+    ],
+    "breakingChanges": [
+      {
+        "dependency": "fixture-lib",
+        "kind": "removed-export",
+        "symbols": [
+          "removedFn"
+        ],
+        "replacementSymbols": [],
+        "summary": "`removedFn` is no longer exported (was a function).",
+        "citations": [],
+        "taxonomy": {
+          "nature": "api-shape",
+          "detectability": [
+            "link-or-import",
+            "compile-time"
+          ],
+          "scope": "symbol",
+          "visibility": [
+            "direct"
+          ]
+        },
+        "verdict": "detected-not-locally-reachable"
+      }
+    ],
+    "impactSites": [],
+    "gaps": [],
+    "verificationOutcomes": [
+      {
+        "kind": "behavioural",
+        "status": "skipped"
+      }
+    ],
+    "verdict": "detected-not-locally-reachable"
+  },
+  "repair": {
+    "attempted": false,
+    "notAttemptedReason": "no-repairable-commit",
+    "resolvedByTier": [],
+    "patch": "",
+    "changedFiles": [],
+    "scopeEscapeFiles": [],
+    "scopeValidationReasons": [],
+    "patchStats": {
+      "files": 0,
+      "hunks": 0,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    "residualImpactSites": 0
+  },
+  "oracleStages": [
+    {
+      "stage": "baseline",
+      "expected": "pass",
+      "observed": "pass",
+      "matchesExpectation": true,
+      "signature": [],
+      "exitCode": 0,
+      "outputExcerpt": "> test\n> node src/app.js",
+      "durationMs": 1904
+    },
+    {
+      "stage": "broken",
+      "expected": "pass",
+      "observed": "pass",
+      "matchesExpectation": true,
+      "signature": [],
+      "exitCode": 0,
+      "outputExcerpt": "> test\n> node src/app.js",
+      "durationMs": 1616
+    }
+  ],
+  "observedCommands": [],
+  "error": null
+}
