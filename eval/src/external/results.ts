@@ -1,6 +1,7 @@
 import { execFile as execFileCallback } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { gzip as gzipCallback } from 'node:zlib';
 import { promisify } from 'node:util';
 import type { Dataset } from './dataset.ts';
 import type { EnvironmentRecord } from './environment.ts';
@@ -9,6 +10,7 @@ import type { ExternalCaseResult } from './record.ts';
 import type { Selection } from './selection.ts';
 
 const execFile = promisify(execFileCallback);
+const gzip = promisify(gzipCallback);
 
 /**
  * The canonical artifacts a run leaves behind.
@@ -23,10 +25,17 @@ const execFile = promisify(execFileCallback);
  *   manifest.json     what ran, at which Drift commit, with which command
  *   selection.json    exactly which cases, and how they were chosen
  *   environment.json  what this machine could and could not run
- *   cases.jsonl       one line per case: provenance, truth, prediction, outcome
+ *   cases.jsonl.gz    one line per case: provenance, truth, prediction, outcome
  *   metrics.json      the rates, their numerators and denominators, and the refusals
  *   exclusions.json   every case that produced no result, with its reason
  *   report.md         the human-readable rendering of exactly the above
+ *
+ * The per-case file is gzipped because it is the one that scales with the
+ * corpus: a 16,000-commit run writes 18MB of it uncompressed and 1.4MB
+ * compressed. Dropping it instead would have been the easy fix and the wrong
+ * one — it is the file that lets somebody check a number rather than believe
+ * it, and a benchmark whose per-case evidence is too big to keep has an
+ * auditability problem, not a storage problem.
  */
 
 export const RUN_MANIFEST_VERSION = 'drift-external-run-v1';
@@ -86,7 +95,21 @@ export async function writeRun(input: WriteRunInput): Promise<string> {
   };
 
   await writeJson(join(dir, 'manifest.json'), manifest);
-  await writeJson(join(dir, 'selection.json'), { ...input.selection, dataset: input.dataset });
+  await writeJson(join(dir, 'selection.json'), {
+    ...input.selection,
+    // A whole-corpus run's id list is every case in the corpus, and writing it
+    // out is a megabyte restating what `mode: 'all'` already says. A *sample's*
+    // id list is the thing a published subset figure has to be checkable
+    // against, so it is always kept.
+    ...(input.selection.mode === 'all'
+      ? {
+          ids: [],
+          idsOmitted:
+            'mode is "all": every available case was selected, and each one appears in cases.jsonl.gz. The list is omitted rather than restating the corpus.',
+        }
+      : {}),
+    dataset: input.dataset,
+  });
   await writeJson(join(dir, 'environment.json'), input.environment);
   await writeJson(join(dir, 'metrics.json'), input.metrics);
   await writeJson(
@@ -96,9 +119,8 @@ export async function writeRun(input: WriteRunInput): Promise<string> {
       .map((result) => ({ caseId: result.caseId, ...result.excluded, provenance: result.provenance })),
   );
   await writeFile(
-    join(dir, 'cases.jsonl'),
-    `${input.results.map((result) => JSON.stringify(result)).join('\n')}\n`,
-    'utf8',
+    join(dir, 'cases.jsonl.gz'),
+    await gzip(`${input.results.map((result) => JSON.stringify(result)).join('\n')}\n`),
   );
   await writeFile(join(dir, 'report.md'), renderExternalReport({ manifest, ...input }), 'utf8');
 
@@ -309,8 +331,14 @@ export function renderExternalReport(input: WriteRunInput & { manifest: RunManif
     `npm run eval:external -- ${dataset.id}${selection.limit === null ? '' : ` --limit ${selection.limit} --seed ${selection.seed}`}`,
     '```',
     '',
-    `Every case evaluated is listed in \`selection.json\`, and every per-case prediction and outcome in \`cases.jsonl\`,`,
-    'both beside this file. No number above was typed by hand; each is read out of `metrics.json`.',
+    'Every per-case prediction, label and outcome is beside this file:',
+    '',
+    '```sh',
+    'gunzip -c cases.jsonl.gz | jq .',
+    '```',
+    '',
+    'How the cases were chosen is in `selection.json`. No number above was typed by hand; each is read out of',
+    '`metrics.json`, which this file is a rendering of.',
     '',
   );
 
