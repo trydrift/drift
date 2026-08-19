@@ -16,6 +16,9 @@ export interface EvalPrediction {
   falseSafe: boolean;
   costUsd: number;
   latencyMs: number;
+  repairChangedFiles: string[];
+  repairOraclePassed: boolean;
+  repairGoldPatchExact: boolean;
 }
 
 export interface EvalMetrics {
@@ -34,6 +37,10 @@ export interface EvalMetrics {
   costUsd: number;
   latencyMs: number;
   falseSafeCount: number;
+  repairAttemptRate: number;
+  repairOraclePassRate: number;
+  repairGoldPatchExactRate: number;
+  repairChangedFiles: Prf;
   costSensitiveScore: number;
 }
 
@@ -75,11 +82,18 @@ export function scoreFixtures(fixtures: readonly EvalFixture[], predictions: rea
       pairs.flatMap(({ fixture }) => fixture.expected.gaps),
       pairs.flatMap(({ run }) => run.gaps),
     );
+    const repairExpected = pairs.filter(({ fixture }) => fixture.repair.expectation === 'fixed');
+    const repairAttempts = pairs.filter(({ run }) => run.repair !== 'not-attempted');
+    const repairPassed = repairExpected.filter(({ run }) => run.repairOraclePassed).length;
+    const goldPatchExact = repairExpected.filter(({ run }) => run.repairGoldPatchExact).length;
+    const repairChangedFiles = prf(
+      pairs.flatMap(({ fixture }) => fixture.repair.expectedChangedFiles.map((file) => `${fixture.id}:${file}`)),
+      pairs.flatMap(({ run }) => run.repairChangedFiles.map((file) => `${run.fixtureId}:${file}`)),
+    );
     const planNodeRecall = recall(
       pairs.flatMap(({ fixture }) => fixture.expected.planNodes),
       pairs.flatMap(({ run }) => run.planNodes),
     );
-    const repairAttempts = pairs.filter(({ run }) => run.repair !== 'not-attempted');
     const repairsPassed = repairAttempts.filter(({ run }) => run.repair === 'passed').length;
     const regressions = sum(pairs.map(({ run }) => run.regressions));
     const outOfScope = sum(pairs.map(({ run }) => run.outOfScopeEdits));
@@ -108,7 +122,20 @@ export function scoreFixtures(fixtures: readonly EvalFixture[], predictions: rea
       costUsd: round(cost),
       latencyMs: latency,
       falseSafeCount: falseSafe,
-      costSensitiveScore: round(Math.max(0, visibleAverage - falseSafe * 0.35 - regressions * 0.15 - outOfScope * 0.2)),
+      repairAttemptRate: round(pairs.length ? repairAttempts.length / pairs.length : 0),
+      repairOraclePassRate: round(repairExpected.length ? repairPassed / repairExpected.length : 1),
+      repairGoldPatchExactRate: round(repairExpected.length ? goldPatchExact / repairExpected.length : 1),
+      repairChangedFiles,
+      costSensitiveScore: round(
+        Math.max(
+          0,
+          visibleAverage -
+            falseSafe * 0.35 -
+            regressions * 0.15 -
+            outOfScope * 0.2 -
+            (1 - (repairExpected.length ? repairPassed / repairExpected.length : 1)) * 0.25,
+        ),
+      ),
     };
   });
 }

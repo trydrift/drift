@@ -4,8 +4,8 @@ export function markdownReport(metrics: readonly EvalMetrics[]): string {
   const lines = [
     '# Drift Evaluation Report',
     '',
-    '| Adapter | Fixtures | Upstream F1 | Impact F1 | Taxonomy | Gap Recall | Plan Recall | Edge Precision | Repair | Regressions | Out-of-scope | False-safe | Cost | Latency ms | Score |',
-    '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
+    '| Adapter | Fixtures | Upstream F1 | Impact F1 | Taxonomy | Gap Recall | Plan Recall | Edge Precision | Repair Attempt | Oracle Pass | Gold Patch | Repair Files F1 | Regressions | Out-of-scope | False-safe | Cost | Latency ms | Score |',
+    '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |',
   ];
 
   for (const metric of metrics) {
@@ -19,7 +19,10 @@ export function markdownReport(metrics: readonly EvalMetrics[]): string {
         metric.gapRecall.toFixed(3),
         metric.planNodeRecall.toFixed(3),
         metric.edgePrecision.toFixed(3),
-        metric.executableRepairRate.toFixed(3),
+        metric.repairAttemptRate.toFixed(3),
+        metric.repairOraclePassRate.toFixed(3),
+        metric.repairGoldPatchExactRate.toFixed(3),
+        metric.repairChangedFiles.f1.toFixed(3),
         metric.regressionRate.toFixed(3),
         metric.outOfScopeEditRate.toFixed(3),
         metric.falseSafeCount,
