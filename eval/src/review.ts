@@ -29,6 +29,29 @@ const repairConclusionSchema = z.object({
 });
 
 export const conclusionSchema = z.object({
+  /**
+   * D0 — the dependency updates a reviewer says a manifest diff should find,
+   * as `ecosystem:name[@workspace]:from->to`.
+   *
+   * Optional, and absent means "no reviewer ruled on this level", which the
+   * evaluator reports as `not-adjudicated` and scores in nothing. It is
+   * deliberately not defaulted to `[]`: an empty array is itself a claim —
+   * "there is no dependency update here" — and is how a control case
+   * correctly punishes a false positive. Conflating the two would score every
+   * unreviewed level as a perfect prediction of nothing.
+   */
+  dependencyChanges: z.array(z.string()).optional(),
+  /**
+   * D1 — upstream facts as the evidence layer states them, as
+   * `dependency:code:symbol` using the provider's own rule code.
+   *
+   * Distinct from `upstreamFindings` below, which despite its name records an
+   * *interpretation* (`dependency:symbol:kind`, naming a `BreakingChangeKind`)
+   * and therefore scores D2. The two are separated because "Drift never
+   * fetched the evidence" and "Drift fetched it and classified it wrongly" are
+   * different defects in different modules.
+   */
+  evidenceFindings: z.array(z.string()).optional(),
   upstreamFindings: z.array(z.string()),
   impactSites: z.array(z.string()),
   taxonomy: taxonomySchema.optional(),
@@ -220,6 +243,8 @@ export function validateConclusion(conclusion: Conclusion): string[] {
 
 /** The `Conclusion` fields `diffConclusions`/adjudication-consistency checking can name. */
 export type ConclusionField =
+  | 'dependencyChanges'
+  | 'evidenceFindings'
   | 'upstreamFindings'
   | 'impactSites'
   | 'taxonomy'
@@ -228,6 +253,12 @@ export type ConclusionField =
   | 'repair.expectedAction'
   | 'repair.expectedChangedFiles'
   | 'repair.goldPatch';
+
+/** Set equality that keeps "unstated" and "stated as empty" distinct. */
+function sameOptionalSet(a: readonly string[] | undefined, b: readonly string[] | undefined): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  return sameSet(a, b);
+}
 
 /** Order-insensitive equality for a field that is semantically a set. */
 function sameSet(a: readonly string[], b: readonly string[]): boolean {
@@ -259,6 +290,10 @@ export function sameTaxonomy(
  */
 export function diffConclusions(a: Conclusion, b: Conclusion): ConclusionField[] {
   const changed: ConclusionField[] = [];
+  // `undefined` vs `[]` is a real difference at these two levels — see the
+  // schema comment — so they are compared as optionals rather than coerced.
+  if (!sameOptionalSet(a.dependencyChanges, b.dependencyChanges)) changed.push('dependencyChanges');
+  if (!sameOptionalSet(a.evidenceFindings, b.evidenceFindings)) changed.push('evidenceFindings');
   if (!sameSet(a.upstreamFindings, b.upstreamFindings)) changed.push('upstreamFindings');
   if (!sameSet(a.impactSites, b.impactSites)) changed.push('impactSites');
   if (!sameTaxonomy(a.taxonomy, b.taxonomy)) changed.push('taxonomy');
