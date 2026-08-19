@@ -2,5 +2,7 @@
   "name": "fixture-lib",
   "version": "2.0.0",
   "type": "module",
-  "exports": "./index.js"
+  "license": "MIT",
+  "exports": "./index.js",
+  "types": "index.d.ts"
 }
