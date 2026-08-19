@@ -1,0 +1,204 @@
+{
+  "repositoryCommit": "b6a8e0111f4164ca3c62eabc797c53dfce9862df",
+  "branch": "benchmark/accuracy-harness",
+  "dirty": true,
+  "fixtureSetHash": "661a1acada1262af27df77d56e56dcdfacfa2202577b65e1985e9b2e48c21a82",
+  "fixtureHashes": {
+    "npm-member-rename": "21c2860ecc9cb030d3c17dc76d7054d6faf12ac3b593a08a02e5cfdab27241ac",
+    "npm-renamed-export": "6baab4a638bc928f101eafc08895b971262f13e6d92a57d0ee956520fe675b94",
+    "npm-return-value": "5ea28cf63fe2d1eff66435cbe7122cdbb78571d2bf80cfbd260790bb0f7391a4",
+    "npm-unused-break": "2e6f36707f7228631b45a0a3091cf5e461ab88cda4b283dcc3dd9529e88bf5f3"
+  },
+  "acceptedReviewIds": {
+    "npm-member-rename": [
+      "claude-2026-08-19-npm-member-rename-a"
+    ],
+    "npm-renamed-export": [
+      "claude-2026-08-19-npm-renamed-export-a"
+    ],
+    "npm-return-value": [
+      "claude-2026-08-19-npm-return-value-c"
+    ],
+    "npm-unused-break": [
+      "claude-2026-08-19-npm-unused-break-a"
+    ]
+  },
+  "adjudicationHashes": {
+    "npm-member-rename": "ea8ea286d91cade8c004cfade9857ae73415111ddd06c69efa9cf1ea16db4e53",
+    "npm-renamed-export": "1a43abf7197f9018ff544cf4a15b51b4cb83aa180ed70ef153d6fa9eda90fa7e",
+    "npm-return-value": "55a7851486f42d83bc3e03869b22a0c60041c03f14bf0314ae983ed903a9c9e5",
+    "npm-unused-break": "2a00a844ba49d08394e94760d35477a0721981ddc67bd98759f6448866330d0a"
+  },
+  "scoringVersion": "eval-score-v2",
+  "adapterVersions": {
+    "drift-full-pipeline": "1",
+    "drift-component-localize-repair": "1",
+    "drift-component-fixplan-application": "1"
+  },
+  "command": "npm run eval:accuracy:audit -- --record",
+  "timestamp": "2026-08-19T12:43:56.642Z",
+  "environment": {
+    "node": "v22.22.0",
+    "platform": "darwin"
+  },
+  "metrics": [
+    {
+      "adapter": "drift-component-localize-repair",
+      "fixtures": 2,
+      "upstream": {
+        "micro": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "macro": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "counts": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0
+        },
+        "excludedFromMacro": 0
+      },
+      "impact": {
+        "micro": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "macro": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "counts": {
+          "tp": 2,
+          "fp": 0,
+          "fn": 0
+        },
+        "excludedFromMacro": 0
+      },
+      "changedFiles": {
+        "micro": {
+          "precision": 0.5,
+          "recall": 1,
+          "f1": 0.667
+        },
+        "macro": {
+          "precision": 0.5,
+          "recall": 1,
+          "f1": 0.5
+        },
+        "counts": {
+          "tp": 1,
+          "fp": 1,
+          "fn": 0
+        },
+        "excludedFromMacro": 0
+      },
+      "taxonomyAccuracy": 0,
+      "gapRecall": "not-applicable",
+      "falseSafeCount": 0,
+      "unsupportedSafeCount": 0,
+      "repairOpportunities": 2,
+      "repairAttempts": 2,
+      "expectedAbstentions": 0,
+      "correctAbstentions": 0,
+      "incorrectAbstentions": 0,
+      "missedRepairOpportunities": 0,
+      "successfulRepairs": 2,
+      "failedRepairs": 0,
+      "repairedOraclePassRate": 1,
+      "regressionCounts": {
+        "repair-failed-to-fix": 0,
+        "repair-introduced-regression": 0,
+        "oracle-unavailable": 0
+      },
+      "outOfScopeEditCount": 0,
+      "outOfScopeEditRate": 0,
+      "goldPatchExactRate": 0
+    },
+    {
+      "adapter": "drift-full-pipeline",
+      "fixtures": 4,
+      "upstream": {
+        "micro": {
+          "precision": 0.6,
+          "recall": 0.6,
+          "f1": 0.6
+        },
+        "macro": {
+          "precision": 0.5,
+          "recall": 0.5,
+          "f1": 0.5
+        },
+        "counts": {
+          "tp": 3,
+          "fp": 2,
+          "fn": 2
+        },
+        "excludedFromMacro": 0
+      },
+      "impact": {
+        "micro": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "macro": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1
+        },
+        "counts": {
+          "tp": 4,
+          "fp": 0,
+          "fn": 0
+        },
+        "excludedFromMacro": 1
+      },
+      "changedFiles": {
+        "micro": {
+          "precision": 0,
+          "recall": 0,
+          "f1": 0
+        },
+        "macro": {
+          "precision": 0.75,
+          "recall": 0.75,
+          "f1": 0.75
+        },
+        "counts": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1
+        },
+        "excludedFromMacro": 0
+      },
+      "taxonomyAccuracy": 0.75,
+      "gapRecall": "not-applicable",
+      "falseSafeCount": 0,
+      "unsupportedSafeCount": 0,
+      "repairOpportunities": 1,
+      "repairAttempts": 0,
+      "expectedAbstentions": 2,
+      "correctAbstentions": 2,
+      "incorrectAbstentions": 0,
+      "missedRepairOpportunities": 1,
+      "successfulRepairs": 0,
+      "failedRepairs": 0,
+      "repairedOraclePassRate": "not-applicable",
+      "regressionCounts": {
+        "repair-failed-to-fix": 0,
+        "repair-introduced-regression": 0,
+        "oracle-unavailable": 0
+      },
+      "outOfScopeEditCount": 0,
+      "outOfScopeEditRate": 0,
+      "goldPatchExactRate": 0
+    }
+  ]
+}

@@ -1,4 +1,6 @@
 *
 !.gitignore
 !.gitkeep
-!accuracy-audit.md
+!audits/
+!audits/*.json
+!audits/*.md
