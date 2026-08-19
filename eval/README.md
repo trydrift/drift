@@ -95,6 +95,33 @@ disk with its original `status`. If a fixture's own evidence changed, its old
 review becomes stale automatically (see above) and needs a fresh review
 regardless of whether the reviewer's opinion actually changed.
 
+## Adjudication cannot silently contradict its accepted review(s)
+
+`adjudication.yml`'s `decision` must equal its single accepted review's
+`conclusion`, after canonical (order-insensitive on set-shaped fields;
+`repair.expectedAction`/`repair.goldPatch` compared exactly) normalization —
+see `diffConclusions`/`sameTaxonomy` in `eval/src/review.ts`. When it
+legitimately differs, the adjudication must say so explicitly:
+
+- **One accepted review**: an `override` block (`enabled: true`, `reason`,
+  `changedFields`) is required, and `changedFields` must name exactly the
+  fields that actually differ — no missing field (an unexplained delta) and
+  no extra field (a stale or inaccurate justification).
+- **Multiple accepted reviews**: adjudication may synthesize between
+  genuinely disagreeing reviews, but a `synthesis` block (`reason`,
+  `changedFields`) is required whenever `decision` differs from *any* one of
+  them, naming the union of every field that differs from at least one.
+
+`eval:review:validate` enforces this (`validateAdjudicationConsistency`) and
+fails a `benchmark-ready` fixture that violates it.
+`npm run eval:reviews -- <fixture-id>` shows whether the current adjudication
+exactly matches its accepted review(s) and, if not, the changed fields and
+override/synthesis reason (`--json` includes a structured
+`adjudicationDelta`). `npm run eval:review:export -- <fixture-id>` includes
+the same delta in its packet, plus per-review stale/current status, so it can
+be handed to another AI or human and asked "does this adjudication fairly
+reflect the accepted review evidence?"
+
 ## Full-pipeline vs. component adapters
 
 - **`drift-full-pipeline`** (`eval/src/adapters/full-pipeline.ts`) is the
@@ -213,6 +240,37 @@ passes the repaired oracle, introduces no regression, and only touches
 in-scope files must not fail merely because its diff text differs from the
 checked-in `expected/gold.patch`.
 
+### Production scope escape vs. ground-truth unexpected changed file
+
+Every deterministic repair adapter (`eval/src/adapters/repair-capture.ts`)
+captures the real before/after content of every file it touches — never a
+hard-coded empty list — and reports two distinct things, never conflated:
+
+- **`repairScopeEscapeFiles`** (aggregated as `productionScopeEscapeCount`) —
+  a file the repair changed that falls *outside* the union of the repairable
+  commits' own `allowedFiles`. This is Drift's own plan disobeying its own
+  declared scope: a hard production-safety failure, and CI-blocking whenever
+  it is non-zero (`eval/src/run.ts`).
+- **`changedFiles`**'s FP count (aggregated as `unexpectedChangedFileCount`)
+  — a file the repair changed that *was* within its own allowed scope, but
+  that the adjudicated `repair.expectedChangedFiles` did not expect. This is
+  a benchmark-quality signal (ground truth may be incomplete, or the repair
+  may be doing something the benchmark didn't anticipate), reported clearly
+  but never CI-blocking on its own.
+
+A file can be both, if it lies outside both `allowedFiles` and
+`expectedChangedFiles` — the two counts are not mutually exclusive. Changed-
+file precision/recall/F1 is always scored against adjudicated
+`expectedChangedFiles`, never against `allowedFiles` — `allowedFiles` is
+Drift's own production safety boundary, not benchmark ground truth.
+
+Gold-patch exactness is tri-state, not boolean: `repairGoldPatchExact` is
+`'not-applicable'` (never `false`) when no repair was attempted or the
+accepted adjudication names no gold patch, and only `true`/`false` when an
+actual comparison ran — the real captured patch, normalized (blob-hash
+`index` lines and hunk line-number ranges stripped, `+`/`-` content
+untouched), against the checked-in gold patch, normalized the same way.
+
 ## Abstention
 
 See "Repair metrics" above — abstention correctness is scored only for
@@ -226,8 +284,10 @@ policy.
 model API calls — `drift-full-pipeline` only exercises tier-1 deterministic
 repair. `ci.yml` fails on harness-integrity problems only: an
 `eval:review:validate` failure, any `falseSafe === true` on a benchmark-ready
-fixture, or a deterministic repair that edited a file outside its own claimed
-scope. It does **not** fail merely because Drift missed a detection or a
+fixture, or a real production scope escape (see "Production scope escape vs.
+ground-truth unexpected changed file" above) — never merely an unexpected-
+changed-file benchmark-quality signal. It does **not** fail merely because
+Drift missed a detection or a
 repair on a hard fixture, or produced an `unsupportedSafe` outcome — those are
 reportable product-accuracy metrics, not integrity breaks, and hiding a
 genuine miss behind a CI failure would defeat the point of a benchmark.
