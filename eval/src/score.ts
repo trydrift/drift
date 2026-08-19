@@ -1,47 +1,57 @@
 import type { EvalFixture } from './load.ts';
+import type { Adjudication } from './review.ts';
+import type { OracleStageResult } from './oracle.ts';
+
+export const SCORING_VERSION = 'eval-score-v2';
+
+/**
+ * Verdict strings a benchmark cares about, collapsed from production's two
+ * real enums (`FindingVerdict` from `src/report/confidence.ts`, used by the
+ * `drift-full-pipeline` adapter's per-finding result; `UpgradeSeverity` from
+ * `src/upgrade/severity.ts`, used where a component adapter reports a
+ * scan-level verdict instead). Only the safe-equivalent members are treated
+ * as "Drift told the user this is safe" — everything else, including every
+ * unverified/inconclusive/skipped shape, is deliberately never safe-equivalent.
+ */
+export type DriftVerdict =
+  | 'no-incompatible-change-in-checked-surfaces'
+  | 'detected-not-locally-reachable'
+  | 'locally-affected'
+  | 'insufficient-evidence'
+  | 'verification-incomplete'
+  | 'clean'
+  | 'affected'
+  | 'verification-failed'
+  | 'upstream-only'
+  | 'unchecked'
+  | 'error'
+  | 'pending';
+
+const SAFE_EQUIVALENT_VERDICTS = new Set<DriftVerdict>(['no-incompatible-change-in-checked-surfaces', 'clean']);
+
+export function isUserFacingSafeVerdict(verdict: DriftVerdict): boolean {
+  return SAFE_EQUIVALENT_VERDICTS.has(verdict);
+}
+
+export type RepairAction = 'repair-attempted' | 'abstained';
 
 export interface EvalPrediction {
   fixtureId: string;
   adapter: string;
   upstreamFindings: string[];
   impactSites: string[];
-  taxonomy?: EvalFixture['taxonomy'];
+  taxonomy?: { nature: string; detectability: string[]; scope: string; visibility: string[] };
   gaps: string[];
   planNodes: string[];
-  edges: { from: string; to: string; reason: string }[];
-  repair: 'passed' | 'failed' | 'not-attempted';
-  regressions: number;
-  outOfScopeEdits: number;
-  abstained: boolean;
-  falseSafe: boolean;
-  costUsd: number;
-  latencyMs: number;
+  verdict: DriftVerdict;
+  repairAction: RepairAction;
+  repairOutcome: 'passed' | 'failed' | 'not-attempted';
   repairChangedFiles: string[];
-  repairOraclePassed: boolean;
+  repairOutOfScopeFiles: string[];
   repairGoldPatchExact: boolean;
-}
-
-export interface EvalMetrics {
-  adapter: string;
-  fixtures: number;
-  upstream: Prf;
-  impactSites: Prf;
-  taxonomyAccuracy: number;
-  gapRecall: number;
-  planNodeRecall: number;
-  edgePrecision: number;
-  executableRepairRate: number;
-  regressionRate: number;
-  outOfScopeEditRate: number;
-  abstentionQuality: number;
+  oracleStages: OracleStageResult[];
   costUsd: number;
   latencyMs: number;
-  falseSafeCount: number;
-  repairAttemptRate: number;
-  repairOraclePassRate: number;
-  repairGoldPatchExactRate: number;
-  repairChangedFiles: Prf;
-  costSensitiveScore: number;
 }
 
 export interface Prf {
@@ -50,106 +60,136 @@ export interface Prf {
   f1: number;
 }
 
-export function scoreFixtures(fixtures: readonly EvalFixture[], predictions: readonly EvalPrediction[]): EvalMetrics[] {
-  const byAdapter = new Map<string, EvalPrediction[]>();
-  for (const prediction of predictions) {
-    const list = byAdapter.get(prediction.adapter) ?? [];
-    list.push(prediction);
-    byAdapter.set(prediction.adapter, list);
+export interface Confusion {
+  tp: number;
+  fp: number;
+  fn: number;
+}
+
+export interface FixtureScore {
+  fixtureId: string;
+  adapter: string;
+  upstream: Confusion & { applicable: boolean };
+  impact: Confusion & { applicable: boolean };
+  taxonomyCorrect: boolean | 'not-applicable';
+  gapRecall: number | 'not-applicable';
+  falseSafe: boolean;
+  unsupportedSafe: boolean;
+  correctAbstention: boolean;
+  incorrectRepairAttempt: boolean;
+  missedRepairOpportunity: boolean;
+  successfulRepair: boolean;
+  repairAttempted: boolean;
+  regressionReason: 'none' | 'repair-failed-to-fix' | 'repair-introduced-regression' | 'oracle-unavailable';
+  outOfScopeEditCount: number;
+  changedFiles: Confusion;
+  goldPatchExact: boolean | 'not-applicable';
+  verdict: DriftVerdict;
+  oracleStages: OracleStageResult[];
+}
+
+export function scoreFixture(fixture: EvalFixture, adjudication: Adjudication, prediction: EvalPrediction): FixtureScore {
+  const ns = (id: string): string => `${fixture.id}::${id}`;
+  const upstream = confusion(
+    adjudication.decision.upstreamFindings.map(ns),
+    prediction.upstreamFindings.map(ns),
+  );
+  const impact = confusion(adjudication.decision.impactSites.map(ns), prediction.impactSites.map(ns));
+
+  const taxonomyCorrect = adjudication.decision.taxonomy
+    ? prediction.taxonomy !== undefined && taxonomyEqual(adjudication.decision.taxonomy, prediction.taxonomy)
+    : ('not-applicable' as const);
+
+  const gapRecall =
+    adjudication.decision.gaps.length === 0
+      ? ('not-applicable' as const)
+      : recall(adjudication.decision.gaps, prediction.gaps);
+
+  const groundTruthSafety = adjudication.decision.groundTruthSafety;
+  const driftSaysSafe = isUserFacingSafeVerdict(prediction.verdict);
+  const falseSafe = groundTruthSafety === 'unsafe' && driftSaysSafe;
+  const unsupportedSafe = groundTruthSafety === 'uncertain' && driftSaysSafe;
+
+  const expectedAction = adjudication.decision.repair.expectedAction;
+  const attempted = prediction.repairAction === 'repair-attempted';
+  const repairedStage = prediction.oracleStages.find((s) => s.stage === 'repaired');
+  const brokenStage = prediction.oracleStages.find((s) => s.stage === 'broken');
+  const baselineStage = prediction.oracleStages.find((s) => s.stage === 'baseline');
+
+  /**
+   * Abstention correctness is a policy judgement — "should Drift have
+   * attempted this automatically?" — and only `drift-full-pipeline` makes
+   * that judgement. A component adapter like
+   * `drift-component-localize-repair` is *handed* a known finding and always
+   * attempts repair by design, because its entire purpose is testing whether
+   * repair application succeeds given a known finding, not whether Drift
+   * should have acted. Scoring it against the same expectedAction would
+   * mislabel a successful component test as an "unsafe repair attempt".
+   */
+  const policyScoped = prediction.adapter === 'drift-full-pipeline';
+  const correctAbstention = policyScoped && expectedAction === 'abstain' && !attempted;
+  const incorrectRepairAttempt = policyScoped && expectedAction === 'abstain' && attempted;
+  const missedRepairOpportunity = policyScoped && expectedAction === 'repair' && !attempted;
+  const successfulRepair =
+    (policyScoped ? expectedAction === 'repair' : true) &&
+    attempted &&
+    prediction.repairOutcome === 'passed' &&
+    (baselineStage === undefined || baselineStage.matchesExpectation) &&
+    (brokenStage === undefined || brokenStage.matchesExpectation) &&
+    repairedStage?.matchesExpectation === true &&
+    prediction.repairOutOfScopeFiles.length === 0;
+
+  let regressionReason: FixtureScore['regressionReason'] = 'none';
+  if (attempted && prediction.repairOutcome !== 'passed' && (!policyScoped || expectedAction === 'repair')) {
+    if (repairedStage?.observed === 'unable-to-run') regressionReason = 'oracle-unavailable';
+    else if (brokenStage && !brokenStage.matchesExpectation) regressionReason = 'repair-introduced-regression';
+    else regressionReason = 'repair-failed-to-fix';
   }
 
-  return [...byAdapter.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([adapter, runs]) => {
-    const pairs = runs.map((run) => {
-      const fixture = fixtures.find((candidate) => candidate.id === run.fixtureId);
-      if (!fixture) throw new Error(`Prediction references unknown fixture ${run.fixtureId}.`);
-      return { fixture, run };
-    });
+  const expectedChangedFiles = new Set(adjudication.decision.repair.expectedChangedFiles.map(ns));
+  const actualChangedFiles = new Set(prediction.repairChangedFiles.map(ns));
+  const changedFiles = confusion([...expectedChangedFiles], [...actualChangedFiles]);
 
-    const upstream = prf(
-      pairs.flatMap(({ fixture }) => fixture.expected.upstreamFindings),
-      pairs.flatMap(({ run }) => run.upstreamFindings),
-    );
-    const impactSites = prf(
-      pairs.flatMap(({ fixture }) => fixture.expected.impactSites),
-      pairs.flatMap(({ run }) => run.impactSites),
-    );
-    const edgePrecision = precision(
-      pairs.flatMap(({ fixture }) => fixture.expected.edges.map(edgeKey)),
-      pairs.flatMap(({ run }) => run.edges.map(edgeKey)),
-    );
-    const taxonomyCorrect = pairs.filter(({ fixture, run }) => taxonomyEqual(fixture.taxonomy, run.taxonomy)).length;
-    const gapRecall = recall(
-      pairs.flatMap(({ fixture }) => fixture.expected.gaps),
-      pairs.flatMap(({ run }) => run.gaps),
-    );
-    const repairExpected = pairs.filter(({ fixture }) => fixture.repair.expectation === 'fixed');
-    const repairAttempts = pairs.filter(({ run }) => run.repair !== 'not-attempted');
-    const repairPassed = repairExpected.filter(({ run }) => run.repairOraclePassed).length;
-    const goldPatchExact = repairExpected.filter(({ run }) => run.repairGoldPatchExact).length;
-    const repairChangedFiles = prf(
-      pairs.flatMap(({ fixture }) => fixture.repair.expectedChangedFiles.map((file) => `${fixture.id}:${file}`)),
-      pairs.flatMap(({ run }) => run.repairChangedFiles.map((file) => `${run.fixtureId}:${file}`)),
-    );
-    const planNodeRecall = recall(
-      pairs.flatMap(({ fixture }) => fixture.expected.planNodes),
-      pairs.flatMap(({ run }) => run.planNodes),
-    );
-    const repairsPassed = repairAttempts.filter(({ run }) => run.repair === 'passed').length;
-    const regressions = sum(pairs.map(({ run }) => run.regressions));
-    const outOfScope = sum(pairs.map(({ run }) => run.outOfScopeEdits));
-    const falseSafe = sum(pairs.map(({ run }) => (run.falseSafe ? 1 : 0)));
-    const abstentions = pairs.filter(({ run }) => run.abstained);
-    const usefulAbstentions = abstentions.filter(({ run }) => run.falseSafe === false && run.repair !== 'passed').length;
-    const cost = sum(pairs.map(({ run }) => run.costUsd));
-    const latency = sum(pairs.map(({ run }) => run.latencyMs));
+  const goldPatchApplicable = policyScoped ? expectedAction === 'repair' : attempted;
+  const goldPatchExact = goldPatchApplicable ? prediction.repairGoldPatchExact : ('not-applicable' as const);
 
-    const visibleAverage =
-      (upstream.f1 + impactSites.f1 + gapRecall + planNodeRecall + (pairs.length ? taxonomyCorrect / pairs.length : 0)) / 5;
-
-    return {
-      adapter,
-      fixtures: pairs.length,
-      upstream,
-      impactSites,
-      taxonomyAccuracy: round(pairs.length ? taxonomyCorrect / pairs.length : 0),
-      gapRecall: round(gapRecall),
-      planNodeRecall: round(planNodeRecall),
-      edgePrecision: round(edgePrecision),
-      executableRepairRate: round(repairAttempts.length ? repairsPassed / repairAttempts.length : 0),
-      regressionRate: round(pairs.length ? regressions / pairs.length : 0),
-      outOfScopeEditRate: round(pairs.length ? outOfScope / pairs.length : 0),
-      abstentionQuality: round(abstentions.length ? usefulAbstentions / abstentions.length : 1),
-      costUsd: round(cost),
-      latencyMs: latency,
-      falseSafeCount: falseSafe,
-      repairAttemptRate: round(pairs.length ? repairAttempts.length / pairs.length : 0),
-      repairOraclePassRate: round(repairExpected.length ? repairPassed / repairExpected.length : 1),
-      repairGoldPatchExactRate: round(repairExpected.length ? goldPatchExact / repairExpected.length : 1),
-      repairChangedFiles,
-      costSensitiveScore: round(
-        Math.max(
-          0,
-          visibleAverage -
-            falseSafe * 0.35 -
-            regressions * 0.15 -
-            outOfScope * 0.2 -
-            (1 - (repairExpected.length ? repairPassed / repairExpected.length : 1)) * 0.25,
-        ),
-      ),
-    };
-  });
+  return {
+    fixtureId: fixture.id,
+    adapter: prediction.adapter,
+    upstream: { ...upstream, applicable: adjudication.decision.upstreamFindings.length > 0 || prediction.upstreamFindings.length > 0 },
+    impact: { ...impact, applicable: adjudication.decision.impactSites.length > 0 || prediction.impactSites.length > 0 },
+    taxonomyCorrect,
+    gapRecall,
+    falseSafe,
+    unsupportedSafe,
+    correctAbstention,
+    incorrectRepairAttempt,
+    missedRepairOpportunity,
+    successfulRepair,
+    repairAttempted: attempted,
+    regressionReason,
+    outOfScopeEditCount: prediction.repairOutOfScopeFiles.length,
+    changedFiles,
+    goldPatchExact,
+    verdict: prediction.verdict,
+    oracleStages: prediction.oracleStages,
+  };
 }
 
-export function prf(expected: readonly string[], actual: readonly string[]): Prf {
-  const p = precision(expected, actual);
-  const r = recall(expected, actual);
-  return { precision: round(p), recall: round(r), f1: round(p + r === 0 ? 0 : (2 * p * r) / (p + r)) };
-}
-
-function precision(expected: readonly string[], actual: readonly string[]): number {
-  if (actual.length === 0) return expected.length === 0 ? 1 : 0;
+function confusion(expected: readonly string[], actual: readonly string[]): Confusion {
   const wanted = new Set(expected);
-  return actual.filter((item) => wanted.has(item)).length / actual.length;
+  const got = new Set(actual);
+  const tp = [...got].filter((id) => wanted.has(id)).length;
+  const fp = [...got].filter((id) => !wanted.has(id)).length;
+  const fn = [...wanted].filter((id) => !got.has(id)).length;
+  return { tp, fp, fn };
+}
+
+export function prfFromConfusion(c: Confusion): Prf {
+  const precision = c.tp + c.fp === 0 ? (c.tp + c.fn === 0 ? 1 : 0) : c.tp / (c.tp + c.fp);
+  const recallValue = c.tp + c.fn === 0 ? 1 : c.tp / (c.tp + c.fn);
+  const f1 = precision + recallValue === 0 ? 0 : (2 * precision * recallValue) / (precision + recallValue);
+  return { precision: round(precision), recall: round(recallValue), f1: round(f1) };
 }
 
 function recall(expected: readonly string[], actual: readonly string[]): number {
@@ -158,21 +198,143 @@ function recall(expected: readonly string[], actual: readonly string[]): number 
   return expected.filter((item) => got.has(item)).length / expected.length;
 }
 
-function taxonomyEqual(expected: EvalFixture['taxonomy'], actual: EvalFixture['taxonomy'] | undefined): boolean {
-  if (!actual) return false;
+function taxonomyEqual(
+  expected: NonNullable<Adjudication['decision']['taxonomy']>,
+  actual: NonNullable<EvalPrediction['taxonomy']>,
+): boolean {
   return JSON.stringify(sortTaxonomy(expected)) === JSON.stringify(sortTaxonomy(actual));
 }
 
-function sortTaxonomy(taxonomy: EvalFixture['taxonomy']): EvalFixture['taxonomy'] {
+function sortTaxonomy<T extends { detectability: string[]; visibility: string[] }>(taxonomy: T): T {
+  return { ...taxonomy, detectability: [...taxonomy.detectability].sort(), visibility: [...taxonomy.visibility].sort() };
+}
+
+export interface MicroMacro {
+  micro: Prf;
+  macro: Prf | 'not-applicable';
+  counts: Confusion;
+  /** Fixtures excluded from the macro mean because both expected and actual were empty. See eval/README.md's "empty-positive fixtures" policy. */
+  excludedFromMacro: number;
+}
+
+/**
+ * Micro sums raw confusion counts across every fixture, then computes one
+ * P/R/F1 — the standard corpus-level aggregation, and immune to the
+ * empty-set-inflation problem because a 0/0/0 fixture contributes nothing to
+ * either the numerator or the denominator.
+ *
+ * Macro averages each fixture's own P/R/F1 — but excludes a fixture whose
+ * expected AND actual sets were both empty ("nothing expected, nothing
+ * predicted"): including it would silently count a fixture that made no
+ * claim as a perfect positive detection, which is exactly the inflation this
+ * benchmark must not produce. A fixture with an empty expected set and a
+ * non-empty actual set (a false positive on a negative/control fixture) is
+ * never excluded — it correctly drags macro precision toward 0.
+ */
+export function aggregateDetection(entries: readonly (Confusion & { applicable: boolean })[]): MicroMacro {
+  const counts = entries.reduce(
+    (total, e) => ({ tp: total.tp + e.tp, fp: total.fp + e.fp, fn: total.fn + e.fn }),
+    { tp: 0, fp: 0, fn: 0 },
+  );
+  const micro = prfFromConfusion(counts);
+
+  const applicable = entries.filter((e) => e.applicable);
+  const macro =
+    applicable.length === 0
+      ? ('not-applicable' as const)
+      : (() => {
+          const prfs = applicable.map(prfFromConfusion);
+          return {
+            precision: round(mean(prfs.map((p) => p.precision))),
+            recall: round(mean(prfs.map((p) => p.recall))),
+            f1: round(mean(prfs.map((p) => p.f1))),
+          };
+        })();
+
+  return { micro, macro, counts, excludedFromMacro: entries.length - applicable.length };
+}
+
+export interface AdapterMetrics {
+  adapter: string;
+  fixtures: number;
+  upstream: MicroMacro;
+  impact: MicroMacro;
+  changedFiles: MicroMacro;
+  taxonomyAccuracy: number | 'not-applicable';
+  gapRecall: number | 'not-applicable';
+  falseSafeCount: number;
+  unsupportedSafeCount: number;
+  repairOpportunities: number;
+  repairAttempts: number;
+  expectedAbstentions: number;
+  correctAbstentions: number;
+  incorrectAbstentions: number;
+  missedRepairOpportunities: number;
+  successfulRepairs: number;
+  failedRepairs: number;
+  repairedOraclePassRate: number | 'not-applicable';
+  regressionCounts: Record<'repair-failed-to-fix' | 'repair-introduced-regression' | 'oracle-unavailable', number>;
+  outOfScopeEditCount: number;
+  outOfScopeEditRate: number;
+  goldPatchExactRate: number | 'not-applicable';
+}
+
+export function aggregateAdapter(adapter: string, scores: readonly FixtureScore[]): AdapterMetrics {
+  const upstream = aggregateDetection(scores.map((s) => s.upstream));
+  const impact = aggregateDetection(scores.map((s) => s.impact));
+  const changedFiles = aggregateDetection(scores.map((s) => ({ ...s.changedFiles, applicable: true })));
+
+  const taxonomyApplicable = scores.filter((s) => s.taxonomyCorrect !== 'not-applicable');
+  const taxonomyAccuracy =
+    taxonomyApplicable.length === 0
+      ? ('not-applicable' as const)
+      : round(taxonomyApplicable.filter((s) => s.taxonomyCorrect === true).length / taxonomyApplicable.length);
+
+  const gapApplicable = scores.filter((s) => s.gapRecall !== 'not-applicable') as (FixtureScore & { gapRecall: number })[];
+  const gapRecallValue =
+    gapApplicable.length === 0 ? ('not-applicable' as const) : round(mean(gapApplicable.map((s) => s.gapRecall)));
+
+  const repairOpportunities = scores.filter((s) => s.missedRepairOpportunity || s.successfulRepair || (s.repairAttempted && !s.correctAbstention)).length;
+  const expectedAbstentions = scores.filter((s) => s.correctAbstention || s.incorrectRepairAttempt).length;
+  const successfulRepairs = scores.filter((s) => s.successfulRepair).length;
+  const attempts = scores.filter((s) => s.repairAttempted);
+  const failedRepairs = attempts.filter((s) => !s.successfulRepair).length;
+  const repairedApplicable = attempts.length;
+
+  const goldApplicable = scores.filter((s) => s.goldPatchExact !== 'not-applicable') as (FixtureScore & { goldPatchExact: boolean })[];
+
   return {
-    ...taxonomy,
-    detectability: [...taxonomy.detectability].sort(),
-    visibility: [...taxonomy.visibility].sort(),
+    adapter,
+    fixtures: scores.length,
+    upstream,
+    impact,
+    changedFiles,
+    taxonomyAccuracy,
+    gapRecall: gapRecallValue,
+    falseSafeCount: scores.filter((s) => s.falseSafe).length,
+    unsupportedSafeCount: scores.filter((s) => s.unsupportedSafe).length,
+    repairOpportunities,
+    repairAttempts: attempts.length,
+    expectedAbstentions,
+    correctAbstentions: scores.filter((s) => s.correctAbstention).length,
+    incorrectAbstentions: scores.filter((s) => s.incorrectRepairAttempt).length,
+    missedRepairOpportunities: scores.filter((s) => s.missedRepairOpportunity).length,
+    successfulRepairs,
+    failedRepairs,
+    repairedOraclePassRate: repairedApplicable === 0 ? 'not-applicable' : round(successfulRepairs / repairedApplicable),
+    regressionCounts: {
+      'repair-failed-to-fix': scores.filter((s) => s.regressionReason === 'repair-failed-to-fix').length,
+      'repair-introduced-regression': scores.filter((s) => s.regressionReason === 'repair-introduced-regression').length,
+      'oracle-unavailable': scores.filter((s) => s.regressionReason === 'oracle-unavailable').length,
+    },
+    outOfScopeEditCount: sum(scores.map((s) => s.outOfScopeEditCount)),
+    outOfScopeEditRate: scores.length === 0 ? 0 : round(scores.filter((s) => s.outOfScopeEditCount > 0).length / scores.length),
+    goldPatchExactRate: goldApplicable.length === 0 ? 'not-applicable' : round(goldApplicable.filter((s) => s.goldPatchExact).length / goldApplicable.length),
   };
 }
 
-function edgeKey(edge: { from: string; to: string; reason: string }): string {
-  return `${edge.from}->${edge.to}:${edge.reason}`;
+function mean(values: readonly number[]): number {
+  return values.length === 0 ? 0 : sum(values) / values.length;
 }
 
 function sum(values: readonly number[]): number {
