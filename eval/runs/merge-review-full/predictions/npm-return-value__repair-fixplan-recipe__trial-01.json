@@ -1,0 +1,179 @@
+{
+  "schemaVersion": "drift-bench-prediction-v1",
+  "runId": "merge-review-full",
+  "caseId": "npm-return-value",
+  "publicCapsuleHash": "7f66c1305a027931bba98ccd9195d1a2cbd481fb040d05fd7efbde1a23e89966",
+  "track": "repair-fixplan-recipe",
+  "experimentMode": "conditional",
+  "provenance": {
+    "driftCommit": "a200fe91532812c5f376a8ec96142b709669300c",
+    "driftTreeDirty": false,
+    "adapterVersion": "drift-end-to-end-v1",
+    "agentId": "unavailable",
+    "agentLabel": "unavailable",
+    "provider": "unavailable",
+    "model": "unavailable",
+    "modelVersion": "unavailable",
+    "agentCliVersion": "unavailable",
+    "promptVersion": "unavailable",
+    "promptHash": "unavailable",
+    "effort": "unavailable",
+    "fastMode": "unavailable",
+    "requestedAgentId": "unavailable",
+    "requestedModel": "unavailable",
+    "requestedEffort": "unavailable",
+    "requestedFastMode": "unavailable",
+    "requestedTimeoutSeconds": "unavailable",
+    "trial": 1,
+    "trialsPlanned": 1,
+    "startedAt": "2026-08-19T21:29:18.359Z",
+    "finishedAt": "2026-08-19T21:29:22.653Z",
+    "latencyMs": 4294,
+    "costUsd": 0,
+    "inputTokens": null,
+    "outputTokens": null
+  },
+  "isolation": {
+    "audited": true,
+    "pathsAudited": 4,
+    "networkPolicy": "disabled"
+  },
+  "detection": {
+    "dependencyChanges": [
+      {
+        "name": "fixture-lib",
+        "ecosystem": "npm",
+        "from": "1.0.0",
+        "to": "2.0.0"
+      }
+    ],
+    "triageSkipped": [],
+    "upstreamFindings": [
+      {
+        "dependency": "fixture-lib",
+        "code": "signature-changed",
+        "symbol": "formatUser",
+        "detail": "The signature of `formatUser` changed."
+      },
+      {
+        "dependency": "fixture-lib",
+        "code": "behavioural-observation",
+        "symbol": "formatUser",
+        "detail": "no observed difference for this contract and generated input domain"
+      }
+    ],
+    "checkedSurfaces": [
+      {
+        "name": "behavioural-diff",
+        "status": "checked"
+      },
+      {
+        "name": "api-surface:fixture-lib",
+        "status": "checked"
+      },
+      {
+        "name": "release-notes:fixture-lib",
+        "status": "unavailable"
+      },
+      {
+        "name": "localization",
+        "status": "checked"
+      }
+    ],
+    "breakingChanges": [
+      {
+        "dependency": "fixture-lib",
+        "kind": "signature-change",
+        "symbols": [
+          "formatUser"
+        ],
+        "replacementSymbols": [],
+        "summary": "The signature of `formatUser` changed.",
+        "citations": [],
+        "taxonomy": {
+          "nature": "type-contract",
+          "detectability": [
+            "compile-time",
+            "static-semantic"
+          ],
+          "scope": "symbol",
+          "visibility": [
+            "direct"
+          ]
+        },
+        "verdict": "locally-affected"
+      }
+    ],
+    "impactSites": [
+      {
+        "breakingChangeKind": "signature-change",
+        "file": "src/app.js",
+        "line": 8,
+        "matchedSymbol": "formatUser",
+        "enclosingSymbol": "displayName",
+        "excerpt": "return formatUser(user);"
+      },
+      {
+        "breakingChangeKind": "signature-change",
+        "file": "src/app.ts",
+        "line": 3,
+        "matchedSymbol": "formatUser",
+        "enclosingSymbol": "label",
+        "excerpt": "export const label = formatUser({ name: 'Ada' });"
+      }
+    ],
+    "gaps": [
+      "No checks were run against this plan, so nothing confirms the findings were understood correctly or that a fix would compile."
+    ],
+    "verificationOutcomes": [
+      {
+        "kind": "behavioural",
+        "status": "skipped"
+      }
+    ],
+    "verdict": "locally-affected"
+  },
+  "repair": {
+    "attempted": false,
+    "notAttemptedReason": "recipe-unavailable",
+    "resolvedByTier": [],
+    "patch": "",
+    "changedFiles": [],
+    "scopeEscapeFiles": [],
+    "scopeValidationReasons": [],
+    "patchStats": {
+      "files": 0,
+      "hunks": 0,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    "residualImpactSites": 0
+  },
+  "oracleStages": [
+    {
+      "stage": "baseline",
+      "expected": "pass",
+      "observed": "pass",
+      "matchesExpectation": true,
+      "signature": [],
+      "exitCode": 0,
+      "outputExcerpt": "> test\n> node src/app.js",
+      "durationMs": 1207
+    },
+    {
+      "stage": "broken",
+      "expected": "fail",
+      "observed": "fail",
+      "matchesExpectation": true,
+      "signature": [
+        "hidden:preserves-display-name:runtime:Error:expected ADA, got [object Object]",
+        "runtime:Error:expected ADA, got [object Object]"
+      ],
+      "exitCode": 1,
+      "outputExcerpt": "> test\n> node src/app.js\n\n\nfile:///private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-eval-broken-w10Pmq/consumer/src/app.js:13\n  throw new Error(`expected ADA, got ${value}`);\n        ^\n\nError: expected ADA, got [object Object]\n    at file:///private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-eval-broken-w10Pmq/consumer/src/app.js:13:9\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async node:internal/modules/esm/loader:643:26\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)\n\nNode.js v24.19.0\n\nhidden check \"preserves-display-name\" (The consumer still exports displayName(user) and it still returns the upper-cased name as a plain string, including for an input the project's own check never uses.) expected pass, observed fail:\nfile:///private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-eval-broken-w10Pmq/consumer/src/app.js:13\n  throw new Error(`expected ADA, got ${value}`);\n        ^\n\nError: expected ADA, got [object Object]\n    at file:///private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-eval-broken-w10Pmq/consumer/src/app.js:13:9\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async node:internal/modules/esm/loader:643:26\n    at async file:///private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-eval-broken-w10Pmq/consumer/hidden/behaviour.mjs:6:13\n\nNode.js v24.19.0",
+      "durationMs": 1196
+    }
+  ],
+  "observedCommands": [],
+  "error": null
+}
