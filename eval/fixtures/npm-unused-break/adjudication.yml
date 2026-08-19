@@ -1,0 +1,26 @@
+fixtureId: npm-unused-break
+acceptedReviewIds:
+  - claude-2026-08-19-npm-unused-break-a
+decision:
+  upstreamFindings:
+    - fixture-lib:removedFn:removed-export
+  impactSites: []
+  taxonomy:
+    nature: api-shape
+    detectability:
+      - link-or-import
+      - compile-time
+    scope: symbol
+    visibility:
+      - direct
+  gaps: []
+  groundTruthSafety: safe
+  repair:
+    expectedAction: no-repair-needed
+    expectedChangedFiles: []
+status: accepted
+decidedAt: 2026-08-19T02:00:00.000Z
+decidedBy:
+  type: ai
+  name: Claude
+notes: Single independent review; accepted directly.

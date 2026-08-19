@@ -1,0 +1,90 @@
+id: claude-2026-08-19-npm-member-rename-a
+fixtureId: npm-member-rename
+createdAt: 2026-08-19T00:00:00.000Z
+reviewer:
+  type: ai
+  name: Claude
+  provider: Anthropic
+  model: claude-sonnet-5
+  modelVersion: unavailable
+  toolVersion: unavailable
+reviewedRevision:
+  fixtureMetadata: 9e4dc8869c8063fcc79ead326929b7c766ac3413823087225b91623561aeb3f4
+  upstreamOld: f438cc972572b3ff161b66a03fb3a3dfac79b5268ba5c3d9e019de0c005a53eb
+  upstreamNew: f6e49d5708e32fd59b4f16e064b3e486f0548e4cbe5b9d5a6fe292c86e438dfc
+  consumer: 12515b2f43735bc75cb8f926bf4d289a9e2a2224e0ead61020ebb25a33edfb5d
+  oracles: 8e5b05fc4d98245f6d2f9c163cb5b9be686a40fc253e2274d9001d0b3d77679c
+  goldPatch: a14e266006ec425ebc7b73b90f925ef341d4047d0bb7f4e9d8c7f6d564277db8
+evidence:
+  files:
+    - upstream/old/index.js
+    - upstream/old/index.d.ts
+    - upstream/old/package.json
+    - upstream/new/index.js
+    - upstream/new/index.d.ts
+    - upstream/new/package.json
+    - consumer/src/app.js
+    - consumer/package.json
+  commands:
+    - "npm test (baseline: consumer pointed at upstream/old)"
+    - "npm test (broken: consumer pointed at upstream/new, unmodified)"
+  artifacts: []
+  notes: Reviewed by reading every file in upstream/old, upstream/new, and
+    consumer, then running the baseline/broken oracle commands by hand in a
+    disposable copy before forming a conclusion. Did not inspect any adapter
+    prediction beforehand.
+conclusion:
+  upstreamFindings:
+    - fixture-lib:oldQuery:renamed-export
+  impactSites:
+    - src/app.js:oldQuery
+  taxonomy:
+    nature: api-shape
+    detectability:
+      - link-or-import
+      - compile-time
+    scope: symbol
+    visibility:
+      - direct
+  gaps: []
+  groundTruthSafety: unsafe
+  repair:
+    expectedAction: abstain
+    expectedChangedFiles: []
+rationale:
+  summary: "upstream/old/index.js exports oldQuery(name){return
+    name.toUpperCase()}; upstream/new/index.js exports query(name) with an
+    identical body — the same rename pattern as npm-renamed-export, just
+    accessed through a namespace import (import * as fixture from 'fixture-lib';
+    fixture.oldQuery(...)) rather than a named one. consumer/src/app.js calls
+    fixture.oldQuery('Ada'); against upstream/new this throws (fixture.oldQuery
+    is not a function). Baseline passes, broken fails — confirmed by running
+    both oracles. The underlying fact is a genuine, safe, mechanical rename
+    (fixture.oldQuery -> fixture.query), same as the other fixture. But I am
+    scoring expectedAction as abstain, not repair, for a specific reason:
+    without a migration guide or changelog stating the rename (which this
+    fixture deliberately provides no fetchable source for, since it is a local
+    synthetic package under network: disabled), nothing in the evidence
+    available to Drift links oldQuery to query except my own reading of both
+    implementations side by side. A repair tool that renames call sites based on
+    that same “identical body” inference risks matching two unrelated
+    same-shaped functions in a real, non-synthetic scenario. I am treating that
+    inference as sound for MY review (I have full access to both trees and can
+    compare bodies), but not safe to bake into automatic repair without a stated
+    source. This is a genuine judgment call, not a hedge to make scoring easier
+    — a second reviewer could reasonably disagree."
+  findingNotes:
+    - fixture-lib:oldQuery:renamed-export — same identical-body rename pattern
+      as npm-renamed-export.
+    - src/app.js:oldQuery — real, reachable via a namespace import;
+      matchedSymbol is `oldQuery` on the `fixture` namespace binding.
+  uncertainty: The safe-repair-vs-abstain line for an inferred (not documented)
+    rename is a judgment call — recorded explicitly so a second reviewer can
+    challenge it. The drift-component-localize-repair adapter is a component
+    test only (it is handed this exact rename directly) and its result must
+    never be read as evidence that full-pipeline detection or repair-generation
+    works for this case.
+status: reviewed
+reviewOf: []
+promptVersion: ground-truth-v1
+promptHash: see eval/review-prompts/ground-truth-v1.md
