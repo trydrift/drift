@@ -26,7 +26,7 @@
     "toVersion": { "type": "string" },
     "scenarioLabel": {
       "type": "string",
-      "description": "Informational/reporting only. Never read by drift-full-pipeline."
+      "description": "Informational/reporting only. Never read by the detect-end-to-end adapter."
     },
     "source": {
       "type": "object",

@@ -6,7 +6,7 @@ check on Drift's output.
 
 ## Rule zero
 
-**Do not read `drift-full-pipeline`'s or any adapter's prediction before
+**Do not read `detect-end-to-end`'s or any adapter's prediction before
 forming your own conclusion.** If you already know what Drift predicted for
 this fixture, note that explicitly in `rationale.uncertainty` — it does not
 disqualify the review, but it must be stated, not hidden.

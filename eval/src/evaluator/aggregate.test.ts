@@ -134,3 +134,58 @@ test('McNemar reports the paired disagreement when there is enough of it', () =>
   assert.equal(result.n, 14);
   assert.ok(result.pValue < 0.001);
 });
+
+/**
+ * The zero-fill trap, in the two places it can still appear.
+ *
+ * A track that could not run and a track that ran and failed must not print
+ * the same number, and a level nobody adjudicated must not print the same
+ * number as a level Drift got wrong. Both would read as measurements.
+ */
+test('a track whose every trial was unavailable reports n/a, never 0%', () => {
+  const unavailable = (reason: 'cache-unavailable' | 'recipe-unavailable' | 'model-unavailable'): RepairScore => ({
+    caseId: `c-${reason}`,
+    track: 'repair-fixplan-cache',
+    outcome: 'operational-failure',
+    scorable: false,
+    failToPass: {
+      triggerFailures: [],
+      resolvedTriggers: [],
+      unresolvedTriggers: [],
+      newFailures: [],
+      regressedChecks: [],
+      verdict: 'not-attempted',
+    },
+    attempted: false,
+    notAttemptedReason: reason,
+    productionScopeEscapes: [],
+    unexpectedChangedFiles: [],
+    changedFiles: { tp: 0, fp: 0, fn: 0 },
+    goldPatchExact: 'not-applicable',
+    patchStats: { files: 0, hunks: 0, addedLines: 0, removedLines: 0 },
+    residualImpactSites: 0,
+    resolvedByTier: [],
+  });
+
+  const aggregate = aggregateRepair('repair-fixplan-cache', [
+    unavailable('cache-unavailable'),
+    unavailable('recipe-unavailable'),
+    unavailable('model-unavailable'),
+  ]);
+
+  assert.equal(aggregate.scorable, 0);
+  assert.equal(aggregate.excluded, 3);
+  assert.equal(aggregate.repairSuccess.value, null, 'a rate over nothing is undefined, not zero');
+  assert.equal(aggregate.correctDecision.value, null);
+  assert.equal(aggregate.goldPatchExactOf.value, null);
+  // Nothing vanished: every trial is still in the outcome table.
+  assert.equal(aggregate.outcomes['operational-failure'], 3);
+});
+
+test('a level no adjudication ruled on contributes nothing to a rate rather than a zero', () => {
+  const aggregate = aggregateLevel([NOT_ADJUDICATED, NOT_ADJUDICATED, NOT_ADJUDICATED]);
+  assert.equal(aggregate.scoredCases, 0);
+  assert.equal(aggregate.notAdjudicatedCases, 3);
+  assert.equal(aggregate.macro.cases, 0, 'a macro mean over nothing has no cases behind it');
+  assert.deepEqual(aggregate.micro, { tp: 0, fp: 0, fn: 0, precision: 0, recall: 0, f1: 0 });
+});

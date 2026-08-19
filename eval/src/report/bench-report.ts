@@ -129,7 +129,7 @@ function detectionSection(result: EvaluationResult): string[] {
   for (const [id, label, pick] of levels) {
     const aggregate = aggregateLevel(scored.map(pick));
     lines.push(
-      `| ${id} | ${label} | ${aggregate.scoredCases} | ${aggregate.notAdjudicatedCases} | ${aggregate.micro.tp} | ${aggregate.micro.fp} | ${aggregate.micro.fn} | ${triple(aggregate.micro)} | ${triple(aggregate.macro)} (n=${aggregate.macro.cases}) |`,
+      `| ${id} | ${label} | ${aggregate.scoredCases} | ${aggregate.notAdjudicatedCases} | ${aggregate.micro.tp} | ${aggregate.micro.fp} | ${aggregate.micro.fn} | ${triple(aggregate.micro, aggregate.scoredCases)} | ${triple(aggregate.macro, aggregate.macro.cases)} (n=${aggregate.macro.cases}) |`,
     );
   }
   lines.push('');
@@ -332,7 +332,15 @@ function integritySection(result: EvaluationResult): string[] {
   return lines;
 }
 
-function triple(value: { precision: number; recall: number; f1: number }): string {
+/**
+ * P/R/F1, or `n/a` when nothing was scored.
+ *
+ * `0.000/0.000/0.000` over an empty denominator reads as "Drift scored zero"
+ * and means "no adjudication ruled on this level", which is the same mistake
+ * as printing `0%` for a rate over nothing.
+ */
+function triple(value: { precision: number; recall: number; f1: number }, cases: number): string {
+  if (cases === 0) return 'n/a';
   return `${value.precision.toFixed(3)}/${value.recall.toFixed(3)}/${value.f1.toFixed(3)}`;
 }
 
