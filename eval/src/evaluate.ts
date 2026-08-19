@@ -196,5 +196,19 @@ function privateCasesRootFor(root: string): string {
   return join(privateCaseDir('', root));
 }
 
+/**
+ * The results that may enter a headline number.
+ *
+ * Filtering on the artifact's own `experimentMode` rather than on a track-name
+ * check, because that is what the field is for: a capability track measures a
+ * mechanism's ceiling given that Drift routed work to it, and an ablation
+ * deliberately removes part of the pipeline. Pooling either into an end-to-end
+ * figure reports something the run did not measure. Anything that would ever
+ * compute a corpus-wide rate goes through here.
+ */
+export function endToEndOnly(evaluations: readonly CaseEvaluation[]): CaseEvaluation[] {
+  return evaluations.filter((entry) => entry.experimentMode === 'end-to-end');
+}
+
 export { readArtifacts };
 export type { PredictionArtifact };

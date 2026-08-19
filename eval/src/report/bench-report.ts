@@ -1,4 +1,4 @@
-import type { CaseEvaluation, EvaluationResult } from '../evaluate.ts';
+import { endToEndOnly, type CaseEvaluation, type EvaluationResult } from '../evaluate.ts';
 import type { PublicCase } from '../case/schema.ts';
 import { aggregateLevel, aggregateRepair, prf, trialReliability, type Rate } from '../evaluator/aggregate.ts';
 import { isPolicyScoped } from '../evaluator/repair.ts';
@@ -99,7 +99,9 @@ function exclusions(cases: readonly PublicCase[], result: EvaluationResult): str
  */
 function authoritativeDetections(result: EvaluationResult): CaseEvaluation[] {
   const byCase = new Map<string, CaseEvaluation>();
-  for (const entry of result.evaluations) {
+  // End-to-end only. A conditional or ablation artifact carries a detection
+  // too, and folding one in would put a diagnostic's numbers under a headline.
+  for (const entry of endToEndOnly(result.evaluations)) {
     if (!entry.detection) continue;
     const existing = byCase.get(entry.caseId);
     if (!existing || (entry.track === 'detect-end-to-end' && existing.track !== 'detect-end-to-end')) {
@@ -184,7 +186,18 @@ function repairSection(result: EvaluationResult): string[] {
   const scored = result.evaluations.filter((entry) => entry.repair !== null);
   if (scored.length === 0) return ['## Repair', '', 'No repair track ran in this run.', ''];
 
-  const lines = ['## Repair', '', 'One section per production mechanism. These are never pooled — they fail for different reasons and need different fixes.', ''];
+  const headlineTracks = [...new Set(endToEndOnly(scored).map((entry) => entry.track))].sort();
+  const lines = [
+    '## Repair',
+    '',
+    'One section per production mechanism. These are never pooled — they fail for different reasons and need',
+    'different fixes, and only the end-to-end track answers the question a user asks.',
+    '',
+    headlineTracks.length > 0
+      ? `Headline (\`experimentMode: end-to-end\`): ${headlineTracks.map((track) => `\`${track}\``).join(', ')}. Every other section below is a capability or ablation result.`
+      : 'No end-to-end repair track ran, so this run supports no headline repair figure — only capability results.',
+    '',
+  ];
 
   const tracks = [...new Set(scored.map((entry) => entry.track))].sort();
   for (const track of tracks) {
@@ -206,11 +219,20 @@ function repairSection(result: EvaluationResult): string[] {
     for (const [outcome, count] of Object.entries(aggregate.outcomes).sort()) lines.push(`| ${outcome} | ${count} |`);
     lines.push('');
 
+    const mode = forTrack[0]?.experimentMode ?? 'conditional';
+    if (mode !== 'end-to-end') {
+      lines.push(
+        `This track is marked \`experimentMode: ${mode}\` in every artifact it produced, and the evaluator refuses to`,
+        'fold it into an end-to-end figure. It answers a **capability** question — given Drift routed the work here,',
+        'could the mechanism repair it? — because the harness pointed it at commits the planner had already chosen.',
+        'The product question, "does Drift produce a valid migration", is answered by `repair-full-remediation`.',
+        '',
+      );
+    }
     if (!isPolicyScoped(track as Parameters<typeof isPolicyScoped>[0])) {
       lines.push(
-        'This track answers a **capability** question — given Drift routed the work here, could the mechanism repair it?',
-        'It is not scored against the adjudicated abstain/repair policy, because the harness pointed it at commits the',
-        'planner had already routed. The policy question is answered by `repair-full-remediation`.',
+        'It is also not scored against the adjudicated abstain/repair policy: the decision to act here was made',
+        'upstream by the planner, not by this mechanism.',
         '',
       );
     }

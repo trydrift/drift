@@ -18,6 +18,7 @@ import type { RepairContext, TrackOutcome } from './tiers/context.ts';
 import {
   ARTIFACT_SCHEMA_VERSION,
   deterministicProvenance,
+  experimentModeFor,
   UNAVAILABLE,
   type OracleStageArtifact,
   type PredictionArtifact,
@@ -310,7 +311,7 @@ function base(
     caseId: input.publicCase.id,
     publicCapsuleHash: input.publicCapsuleHash,
     track: input.track,
-    experimentMode: 'end-to-end',
+    experimentMode: experimentModeFor(input.track),
     provenance,
     isolation: { audited: true, pathsAudited: workspace.auditedPaths, networkPolicy: input.publicCase.networkPolicy },
     ...(parts.detection ? { detection: parts.detection } : {}),

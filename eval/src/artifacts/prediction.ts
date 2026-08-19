@@ -45,12 +45,30 @@ export const trackSchema = z.enum([
 export type Track = z.infer<typeof trackSchema>;
 
 /**
- * Conditional tracks are handed adjudicated findings to measure a mechanism's
- * ceiling ("could the codemod fix this *if* detection were correct?"). They
- * are useful and they are not the product, so they are marked at the artifact
- * level and the evaluator refuses to fold them into end-to-end metrics.
+ * What kind of claim a track's result supports.
+ *
+ * `end-to-end` — the whole chain a user actually gets, from a dependency
+ * update to a verdict or a migration. Only these results may be pooled into a
+ * headline number.
+ *
+ * `conditional` — a capability question: *given* Drift routed the work to this
+ * mechanism, could the mechanism do it? A standalone mechanism track is handed
+ * commits the planner already chose, so its result says nothing about whether
+ * Drift would have chosen it, and pooling it with end-to-end results would
+ * report a ceiling as an outcome.
+ *
+ * `ablation` — a diagnostic that deliberately removes part of the pipeline to
+ * isolate what the rest does. Never a product claim in either direction.
+ *
+ * This used to be a comment describing behaviour the code did not have: `base()`
+ * stamped `end-to-end` on every artifact regardless of track, and the report
+ * separated capability tracks by consulting `isPolicyScoped`, a set that exists
+ * to answer a different question (who made the decision to act). The field is
+ * now derived from the track by `experimentModeFor`, and the evaluator and the
+ * report read the field.
  */
 export const experimentModeSchema = z.enum(['end-to-end', 'conditional', 'ablation']);
+export type ExperimentMode = z.infer<typeof experimentModeSchema>;
 
 const provenanceSchema = z.object({
   driftCommit: z.string(),
@@ -273,6 +291,37 @@ export function deterministicProvenance(input: {
     inputTokens: null,
     outputTokens: null,
   };
+}
+
+/**
+ * The experiment mode a track's results belong to.
+ *
+ * Exhaustive over `Track` by construction, so adding a track is a compile
+ * error here rather than a silent `end-to-end` default — which is precisely
+ * how a capability number would end up in a headline.
+ */
+export function experimentModeFor(track: Track): ExperimentMode {
+  switch (track) {
+    // The user-facing chain: real `analyzeRepository()` from repository
+    // revisions, and the complete remediation hierarchy with Drift choosing
+    // its own tier.
+    case 'detect-end-to-end':
+    case 'repair-full-remediation':
+      return 'end-to-end';
+    // Detection with the dependency update supplied rather than discovered:
+    // everything upstream of evidence gathering is removed on purpose.
+    case 'detect-known-bump':
+      return 'ablation';
+    // Standalone mechanism tracks. Each is pointed at commits the production
+    // planner already routed, so each answers "could this mechanism do it",
+    // never "would Drift have used it".
+    case 'repair-codemod':
+    case 'repair-fixplan-cache':
+    case 'repair-fixplan-recipe':
+    case 'repair-fixplan-model':
+    case 'repair-agent':
+      return 'conditional';
+  }
 }
 
 /** True when this artifact records a live model or agent call. Used to assert deterministic CI made none. */
