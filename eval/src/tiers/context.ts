@@ -48,6 +48,12 @@ export interface TrackOutcome {
     promptHash: string;
     effort: string;
     fastMode: string;
+    /** What the run asked for. Never merged into the confirmed fields above. */
+    requestedAgentId: string;
+    requestedModel: string;
+    requestedEffort: string;
+    requestedFastMode: string;
+    requestedTimeoutSeconds: string;
   }>;
 }
 

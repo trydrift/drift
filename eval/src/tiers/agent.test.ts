@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { observedSelection } from './agent.ts';
+import { observedSelection } from './agent-config.ts';
 
 test('records the model and effort the agent itself reported', () => {
   const banner = [

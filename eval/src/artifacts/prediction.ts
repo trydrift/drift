@@ -20,6 +20,9 @@ import { z } from 'zod';
 
 export const ARTIFACT_SCHEMA_VERSION = 'drift-bench-prediction-v1';
 
+/** The value every provenance field takes when the environment genuinely does not expose it. */
+export const UNAVAILABLE = 'unavailable';
+
 /** Which production path produced this. Never merged in a report. */
 export const trackSchema = z.enum([
   /** Detection: real `analyzeRepository()` from repository revisions. The user-facing headline. */
@@ -64,6 +67,21 @@ const provenanceSchema = z.object({
   promptHash: z.string(),
   effort: z.string(),
   fastMode: z.string(),
+  /**
+   * What the benchmark run asked for, kept strictly apart from the four fields
+   * above, which record what was *confirmed*.
+   *
+   * A CLI coding agent resolves its own model and reasoning effort from its own
+   * configuration when the flags are absent, so a requested value written into
+   * `model` would attribute a result to a model that may never have run it.
+   * Defaulted rather than required so artifacts written before this split still
+   * parse and can still be re-scored — they simply have nothing to say here.
+   */
+  requestedAgentId: z.string().default(UNAVAILABLE),
+  requestedModel: z.string().default(UNAVAILABLE),
+  requestedEffort: z.string().default(UNAVAILABLE),
+  requestedFastMode: z.string().default(UNAVAILABLE),
+  requestedTimeoutSeconds: z.string().default(UNAVAILABLE),
   /** 1-indexed. Every trial is retained; none is ever discarded for losing. */
   trial: z.number().int().min(1),
   trialsPlanned: z.number().int().min(1),
@@ -205,9 +223,6 @@ export const predictionArtifactSchema = z
 
 export type PredictionArtifact = z.infer<typeof predictionArtifactSchema>;
 
-/** The value every provenance field takes when the environment genuinely does not expose it. */
-export const UNAVAILABLE = 'unavailable';
-
 /** A provenance block for a deterministic, model-free track — the shape that proves no live call happened. */
 export function deterministicProvenance(input: {
   driftCommit: string;
@@ -231,6 +246,11 @@ export function deterministicProvenance(input: {
     promptHash: UNAVAILABLE,
     effort: UNAVAILABLE,
     fastMode: UNAVAILABLE,
+    requestedAgentId: UNAVAILABLE,
+    requestedModel: UNAVAILABLE,
+    requestedEffort: UNAVAILABLE,
+    requestedFastMode: UNAVAILABLE,
+    requestedTimeoutSeconds: UNAVAILABLE,
     trial: 1,
     trialsPlanned: 1,
     startedAt: input.startedAt,

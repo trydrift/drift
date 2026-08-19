@@ -241,6 +241,8 @@ function repairSection(result: EvaluationResult): string[] {
       lines.push('Resolved by tier: ' + Object.entries(aggregate.resolvedByTier).sort().map(([tier, count]) => `${tier} ${count}`).join(' · '), '');
     }
 
+    lines.push(...provenanceLines(forTrack));
+
     lines.push('| Case | Outcome | Trigger failures | Resolved | New failures | Files | Patch |', '| --- | --- | --- | --- | --- | --- | --- |');
     for (const entry of forTrack) {
       const repair = entry.repair!;
@@ -252,6 +254,40 @@ function repairSection(result: EvaluationResult): string[] {
   }
 
   return lines;
+}
+
+/**
+ * What the run asked the agent for, against what the agent confirmed.
+ *
+ * Printed only when a live trial happened, and printed as two columns rather
+ * than one, because they are different claims. A CLI agent resolves its own
+ * model and reasoning effort from its own configuration when the flags are
+ * absent, so a run can legitimately request one model and be answered by
+ * another — and an artifact that showed a single `model` column could not tell
+ * a reader which of the two they were looking at.
+ */
+function provenanceLines(entries: readonly CaseEvaluation[]): string[] {
+  const live = entries.filter((entry) => entry.provenance.requestedAgentId !== 'unavailable' || entry.provenance.agentId !== 'unavailable');
+  if (live.length === 0) return [];
+
+  const rows = new Map<string, string>();
+  for (const entry of live) {
+    const p = entry.provenance;
+    rows.set(
+      `${p.requestedAgentId}|${p.requestedModel}|${p.requestedEffort}|${p.model}|${p.effort}|${p.agentCliVersion}`,
+      `| \`${p.requestedAgentId}\` | \`${p.requestedModel}\` | \`${p.requestedEffort}\` | \`${p.model}\` | \`${p.effort}\` | \`${p.agentCliVersion}\` |`,
+    );
+  }
+
+  return [
+    '**Agent selection: requested vs confirmed.** `unavailable` in a confirmed column means the provider did not',
+    'report it — never that the requested value was used.',
+    '',
+    '| Requested agent | Requested model | Requested effort | Confirmed model | Confirmed effort | Agent CLI |',
+    '| --- | --- | --- | --- | --- | --- |',
+    ...[...rows.values()].sort(),
+    '',
+  ];
 }
 
 function integritySection(result: EvaluationResult): string[] {

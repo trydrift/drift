@@ -28,6 +28,9 @@ export interface CaseEvaluation {
   stale: boolean;
   detection: DetectionScore | null;
   repair: RepairScore | null;
+  /** Carried through so a report can show what was requested against what the agent confirmed. */
+  provenance: PredictionArtifact['provenance'];
+  experimentMode: PredictionArtifact['experimentMode'];
   /** Integrity problems that make a result uninterpretable rather than merely bad. */
   integrityFailures: string[];
 }
@@ -86,7 +89,17 @@ export async function evaluateRun(runId: string, root = process.cwd()): Promise<
     const publicCase = cases.get(artifact.caseId)!;
     if (publicCase.status !== 'benchmark-ready') {
       missing.push({ caseId: artifact.caseId, reason: `case status is ${publicCase.status}: ${publicCase.statusReason ?? ''}` });
-      evaluations.push({ caseId: artifact.caseId, track: artifact.track, trial: artifact.provenance.trial, stale, detection: null, repair: null, integrityFailures: [] });
+      evaluations.push({
+        caseId: artifact.caseId,
+        track: artifact.track,
+        trial: artifact.provenance.trial,
+        stale,
+        detection: null,
+        repair: null,
+        provenance: artifact.provenance,
+        experimentMode: artifact.experimentMode,
+        integrityFailures: [],
+      });
       continue;
     }
 
@@ -129,7 +142,17 @@ export async function evaluateRun(runId: string, root = process.cwd()): Promise<
     }
 
     integrityFailures.push(...failures);
-    evaluations.push({ caseId: artifact.caseId, track: artifact.track, trial: artifact.provenance.trial, stale, detection, repair, integrityFailures: failures });
+    evaluations.push({
+      caseId: artifact.caseId,
+      track: artifact.track,
+      trial: artifact.provenance.trial,
+      stale,
+      detection,
+      repair,
+      provenance: artifact.provenance,
+      experimentMode: artifact.experimentMode,
+      integrityFailures: failures,
+    });
   }
 
   return { runId, evaluations, missing, integrityFailures };

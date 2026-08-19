@@ -1,6 +1,7 @@
 import { changedFilesAgainst, diffAgainst, initWorkspaceRepo, notAttempted, scopeEscapes, type RepairContext, type TrackOutcome } from './context.ts';
 import { patchStatsOf } from '../artifacts/prediction.ts';
-import { runAgentTrack, type AgentTrackOptions } from './agent.ts';
+import { runAgentTrack, type AgentTrackDeps, type AgentTrackOptions } from './agent.ts';
+import { agentTimeoutMs, observedSelection, requestedProvenance, withAgentSelection } from './agent-config.ts';
 import {
   CLI_AGENT_SPECS,
   CliFixAgent,
@@ -40,6 +41,7 @@ export interface FullRemediationOptions extends AgentTrackOptions {
 export async function runFullRemediationTrack(
   context: RepairContext,
   options: FullRemediationOptions = {},
+  deps: AgentTrackDeps = {},
 ): Promise<TrackOutcome> {
   if (context.plan.commits.length === 0) return { repair: notAttempted('no-repairable-commit') };
 
@@ -90,24 +92,35 @@ export async function runFullRemediationTrack(
     if (run.needsAgent.length > 0 && options.allowAgentFallback !== false) {
       const agentId = options.agentId ?? 'codex';
       const spec = CLI_AGENT_SPECS.find((candidate) => candidate.id === agentId);
-      const agent = spec ? new CliFixAgent(spec, (options.timeoutSeconds ?? context.config.remediation.agent.timeoutSeconds) * 1000) : null;
+      const timeoutMs = agentTimeoutMs(context.config, options);
+      const agent = spec ? (deps.createAgent ? deps.createAgent(spec, timeoutMs) : new CliFixAgent(spec, timeoutMs)) : null;
       const availability = agent ? await agent.detect() : { available: false, reason: `No spec for ${agentId}.` };
+      const requested = requestedProvenance(context.config, options);
 
       if (agent && availability.available) {
+        // Confirmed fields stay empty until the agent reports something; the
+        // request lives in the `requested*` block. This track previously
+        // recorded the requested model and effort *and* handed the runner
+        // `context.config`, so an artifact could name one model while another
+        // one ran.
         agentProvenance = {
           agentId,
           agentLabel: spec!.label,
           provider: spec!.label,
-          model: options.model ?? context.config.remediation.agent.model ?? 'unavailable',
           agentCliVersion: availability.detail ?? 'unavailable',
           promptVersion: 'drift-buildFixPrompt',
-          effort: String(options.effort ?? context.config.remediation.agent.effort ?? 'unavailable'),
+          ...requested,
         };
 
-        const agentRun = await runAgentCommitsInWorktree({
+        // The same config the standalone agent track builds, from the same
+        // helper. Handing the runner `context.config` here was the defect:
+        // provenance said `--model X` and the runner ran whatever the agent's
+        // own defaults resolved to.
+        const runAgentCommits = deps.runAgentCommits ?? runAgentCommitsInWorktree;
+        const agentRun = await runAgentCommits({
           repo,
           plan,
-          config: context.config,
+          config: withAgentSelection(context.config, options),
           worktree: run.worktree,
           commits: run.needsAgent,
           agent,
@@ -118,11 +131,13 @@ export async function runFullRemediationTrack(
           },
         });
 
+        Object.assign(agentProvenance, observedSelection(context.observedCommands));
+
         for (const commit of agentRun.resolved) resolvedByTier.push({ commitId: commit.id, tier: 'agent' });
         for (const failure of agentRun.unresolved) scopeValidationReasons.push(`${failure.commit.id}: ${failure.message}`);
       } else {
         scopeValidationReasons.push(`agent tier skipped: ${availability.reason ?? 'unavailable'}`);
-        agentProvenance = { agentId, agentLabel: spec?.label ?? agentId };
+        agentProvenance = { agentId, agentLabel: spec?.label ?? agentId, ...requested };
       }
     }
 

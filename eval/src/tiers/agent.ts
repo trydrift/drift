@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { changedFilesAgainst, diffAgainst, initWorkspaceRepo, notAttempted, scopeEscapes, type RepairContext, type TrackOutcome } from './context.ts';
+import { agentTimeoutMs, observedSelection, requestedProvenance, withAgentSelection, type AgentSelection } from './agent-config.ts';
 import { patchStatsOf } from '../artifacts/prediction.ts';
 import {
   CLI_AGENT_SPECS,
@@ -8,6 +9,7 @@ import {
   removeRemediationWorktree,
   runAgentCommitsInWorktree,
   type CommitUnit,
+  type FixAgent,
   type RepoContext,
 } from '../../../dist/index.js';
 
@@ -36,24 +38,35 @@ import {
 
 export const TRACK_VERSION = 'repair-agent-v1';
 
-export interface AgentTrackOptions {
-  /** Registry id from Drift's own specs. `codex` is the configured default for this benchmark. */
-  agentId?: string;
-  /** Passed through Drift's config so the agent receives it the way production sends it. */
-  model?: string;
-  effort?: 'low' | 'medium' | 'high' | 'xhigh';
-  timeoutSeconds?: number;
+export type AgentTrackOptions = AgentSelection;
+
+/**
+ * Seams for testing, and only for testing.
+ *
+ * A benchmark that mocked the production runner in its real runs would be
+ * benchmarking the mock, so these are never supplied by `bench.ts`. They exist
+ * so a test can assert what configuration `runAgentCommitsInWorktree` was
+ * actually handed — the thing that was wrong and that no amount of reading the
+ * provenance would have revealed.
+ */
+export interface AgentTrackDeps {
+  createAgent?: (spec: (typeof CLI_AGENT_SPECS)[number], timeoutMs: number) => FixAgent;
+  runAgentCommits?: typeof runAgentCommitsInWorktree;
 }
 
-export async function runAgentTrack(context: RepairContext, options: AgentTrackOptions = {}): Promise<TrackOutcome> {
+export async function runAgentTrack(
+  context: RepairContext,
+  options: AgentTrackOptions = {},
+  deps: AgentTrackDeps = {},
+): Promise<TrackOutcome> {
   const agentId = options.agentId ?? 'codex';
   const spec = CLI_AGENT_SPECS.find((candidate) => candidate.id === agentId);
   if (!spec) {
-    return { repair: notAttempted('agent-unavailable'), provenance: { agentId, agentLabel: agentId } };
+    return { repair: notAttempted('agent-unavailable'), provenance: { agentId, agentLabel: agentId, ...requestedProvenance(context.config, options) } };
   }
 
-  const timeoutMs = (options.timeoutSeconds ?? context.config.remediation.agent.timeoutSeconds) * 1000;
-  const agent = new CliFixAgent(spec, timeoutMs);
+  const timeoutMs = agentTimeoutMs(context.config, options);
+  const agent = deps.createAgent ? deps.createAgent(spec, timeoutMs) : new CliFixAgent(spec, timeoutMs);
   const availability = await agent.detect();
 
   if (!availability.available) {
@@ -63,18 +76,27 @@ export async function runAgentTrack(context: RepairContext, options: AgentTrackO
     context.observedCommands.push(`agent detect ${agentId}: unavailable — ${availability.reason ?? 'no reason given'}`);
     return {
       repair: notAttempted('agent-unavailable'),
-      provenance: { agentId, agentLabel: spec.label, provider: spec.label, agentCliVersion: 'unavailable' },
+      provenance: {
+        agentId,
+        agentLabel: spec.label,
+        provider: spec.label,
+        agentCliVersion: 'unavailable',
+        ...requestedProvenance(context.config, options),
+      },
     };
   }
 
   const commits = context.plan.commits.filter((commit) => !commit.codemod);
   if (commits.length === 0) return { repair: notAttempted('no-repairable-commit') };
 
+  // `model`, `effort` and `fastMode` stay `unavailable` here on purpose. They
+  // are the *confirmed* fields, filled only from what the agent itself
+  // reported; what this run asked for lives in the `requested*` fields, which
+  // no later merge can promote into a confirmation.
   const provenance = {
     agentId,
     agentLabel: spec.label,
     provider: spec.label,
-    model: options.model ?? context.config.remediation.agent.model ?? context.config.remediation.model ?? 'unavailable',
     modelVersion: 'unavailable',
     agentCliVersion: availability.detail ?? 'unavailable',
     // The prompt is Drift's, so the version and hash identify Drift's
@@ -82,8 +104,7 @@ export async function runAgentTrack(context: RepairContext, options: AgentTrackO
     // would change a result and therefore the thing worth pinning.
     promptVersion: 'drift-buildFixPrompt',
     promptHash: hashCommitInstructions(commits),
-    effort: String(options.effort ?? context.config.remediation.agent.effort ?? 'unavailable'),
-    fastMode: String(context.config.remediation.agent.fast ?? false),
+    ...requestedProvenance(context.config, options),
   };
 
   const afterSha = await initWorkspaceRepo(context.workspace.root);
@@ -102,8 +123,9 @@ export async function runAgentTrack(context: RepairContext, options: AgentTrackO
   try {
     worktree = await createRemediationWorktree({ repo, plan, workspace: context.workspace.root });
     const config = withAgentSelection(context.config, options);
+    const runAgentCommits = deps.runAgentCommits ?? runAgentCommitsInWorktree;
 
-    const result = await runAgentCommitsInWorktree({
+    const result = await runAgentCommits({
       repo,
       plan,
       config,
@@ -166,47 +188,6 @@ export async function runAgentTrack(context: RepairContext, options: AgentTrackO
   } finally {
     if (worktree) await removeRemediationWorktree(context.workspace.root, worktree).catch(() => undefined);
   }
-}
-
-/**
- * Model and effort are pushed through Drift's own config rather than passed to
- * the agent directly, because that is the only path production has: the
- * runner reads `config.remediation.agent`, and an agent handed a model any
- * other way would be running a code path no user reaches.
- */
-function withAgentSelection(config: RepairContext['config'], options: AgentTrackOptions): RepairContext['config'] {
-  return {
-    ...config,
-    remediation: {
-      ...config.remediation,
-      agent: {
-        ...config.remediation.agent,
-        ...(options.model ? { model: options.model } : {}),
-        ...(options.effort ? { effort: options.effort } : {}),
-        ...(options.timeoutSeconds ? { timeoutSeconds: options.timeoutSeconds } : {}),
-      },
-    },
-  };
-}
-
-/**
- * Model and effort as the agent itself reported them.
- *
- * Only fields the agent actually printed are returned, so an agent that says
- * nothing leaves the recorded value at `unavailable` rather than having a
- * requested-but-unconfirmed value written over it.
- */
-export function observedSelection(lines: readonly string[]): Partial<{ model: string; effort: string; provider: string }> {
-  const found: Partial<{ model: string; effort: string; provider: string }> = {};
-  for (const line of lines) {
-    const model = /^\s*model:\s*(?<value>\S+)\s*$/.exec(line);
-    if (model?.groups) found.model = model.groups['value']!;
-    const provider = /^\s*provider:\s*(?<value>\S+)\s*$/.exec(line);
-    if (provider?.groups) found.provider = provider.groups['value']!;
-    const effort = /^\s*reasoning effort:\s*(?<value>\S+)\s*$/.exec(line);
-    if (effort?.groups) found.effort = effort.groups['value']!;
-  }
-  return found;
 }
 
 /** Hashes exactly what the agent was asked to do, so two trials can be shown to have received the same task. */

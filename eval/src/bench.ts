@@ -262,7 +262,7 @@ async function runTrack(track: Track, context: RepairContext, agent?: AgentTrack
     case 'repair-agent':
       return runAgentTrack(context, agent);
     case 'repair-full-remediation':
-      return runFullRemediationTrack(context, agent);
+      return runFullRemediationTrack(context, agent ?? {});
     default:
       throw new Error(`Track ${track} has no runner.`);
   }
