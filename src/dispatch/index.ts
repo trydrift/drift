@@ -20,7 +20,7 @@ import { runAgentCommitsInWorktree, runWorktreeRemediation } from '../remediatio
  *
  *   nothing to fix      -> report and stop
  *   blocked or approve  -> file an issue with the full plan and stop
- *   auto and unblocked  -> create branch, hand to Copilot, open PR
+ *   auto and unblocked  -> create branch, hand unresolved work to an agent, open PR
  *
  * Even the last path stops short of merging. Drift's output is always something
  * a human opens, never something that has already landed.
@@ -34,9 +34,7 @@ export interface DispatchOptions {
   config: DriftConfig;
   github: GitHubClient;
   logger: Logger;
-  /** @deprecated Compatibility-only; surfaces should translate this into `agent`. */
-  copilotToken?: string;
-  /** Provider-neutral agent. Compatibility callers may still pass copilotToken. */
+  /** Provider-neutral agent selected by the active runtime surface. */
   agent?: FixAgent;
   /** Analyse and report, but never create branches, issues, or tasks. */
   dryRun?: boolean;
@@ -105,7 +103,7 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
   // Resolve everything Drift can prove correct itself — its own codemods
   // always, a matching community recipe only when `remediation.communityRecipes`
   // is enabled — directly on the branch, before ever considering an agent.
-  // A commit successfully committed this way is never handed to Copilot.
+  // A commit successfully committed this way is never handed to an agent.
   const { committedIds } = await applyDeterministicRemediation({
     repo,
     plan,
@@ -150,7 +148,7 @@ export async function dispatch(options: DispatchOptions): Promise<DispatchResult
         ...plan,
         blockers: [
           ...plan.blockers,
-          'No usable AI agent was available. Configure `remediation.agent.provider` or pass an explicit agent input; legacy Copilot users can still set `DRIFT_COPILOT_TOKEN` or `copilot-token`.',
+          'No usable AI agent was available. Configure `remediation.agent.provider` or pass an explicit agent input.',
         ],
       },
     });
@@ -309,7 +307,7 @@ async function dispatchViaWorkspaceAgent(options: DispatchOptions & { agent: Fix
  * a human to do the single step the automation existed to remove — and a branch
  * with no pull request is invisible to every review process a team already has.
  *
- * Copilot sometimes opens the pull request itself, which is why the task's own
+ * A cloud provider may open the pull request itself, which is why the task's own
  * number is honoured first: opening a second one for the same branch would be
  * worse than opening none.
  *

@@ -2,7 +2,7 @@ import type { DriftConfig } from '../config/schema.js';
 import type { RepoContext } from '../types.js';
 import { dispatchToCopilot, getTaskStatus, isTerminalState } from '../dispatch/copilot.js';
 import type { Logger } from '../util/logger.js';
-import type { AgentAvailability, AgentContext, FixAgent, FixOutcome, FixTask } from './types.js';
+import type { AgentAvailability, AgentContext, CloudAgentTaskRef, CloudFixAgent, FixOutcome, FixTask } from './types.js';
 
 export interface CopilotCloudAgentOptions {
   repo: RepoContext;
@@ -12,7 +12,7 @@ export interface CopilotCloudAgentOptions {
   dryRun?: boolean;
 }
 
-export class CopilotCloudAgent implements FixAgent {
+export class CopilotCloudAgent implements CloudFixAgent {
   readonly id = 'copilot-cloud';
   readonly label = 'Copilot Cloud';
   readonly description = 'Runs on GitHub through the Copilot coding-agent API.';
@@ -75,11 +75,11 @@ export class CopilotCloudAgent implements FixAgent {
     };
   }
 
-  async status(taskId: string) {
-    return getTaskStatus({ copilotToken: this.options.token ?? '', repo: this.options.repo, taskId });
+  async status(task: CloudAgentTaskRef) {
+    return getTaskStatus({ copilotToken: this.options.token ?? '', repo: this.options.repo, taskId: task.id });
   }
 
-  isTerminal(state: string): boolean {
+  isTerminalState(state: string): boolean {
     return isTerminalState(state);
   }
 }

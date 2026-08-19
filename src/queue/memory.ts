@@ -4,7 +4,7 @@ import type {
   EnqueueResult,
   Job,
   JobQueue,
-  PendingCopilotTask,
+  PendingCloudTask,
   QueueStats,
 } from './types.js';
 
@@ -24,8 +24,8 @@ export class MemoryJobQueue implements JobQueue {
   private readonly jobs = new Map<number, Job>();
   private readonly byDelivery = new Map<string, number>();
   private nextId = 1;
-  private readonly pendingCopilotTasks = new Map<number, PendingCopilotTask>();
-  private nextCopilotTaskId = 1;
+  private readonly pendingCloudTasks = new Map<number, PendingCloudTask>();
+  private nextCloudTaskId = 1;
   private readonly dispatchedPlans = new Map<string, DispatchRecord>();
 
   async enqueue(request: EnqueueRequest): Promise<EnqueueResult> {
@@ -118,17 +118,17 @@ export class MemoryJobQueue implements JobQueue {
     this.byDelivery.clear();
   }
 
-  async recordPendingCopilotTask(task: Omit<PendingCopilotTask, 'id' | 'createdAt'>): Promise<void> {
-    const id = this.nextCopilotTaskId++;
-    this.pendingCopilotTasks.set(id, { ...task, id, createdAt: new Date().toISOString() });
+  async recordPendingCloudTask(task: Omit<PendingCloudTask, 'id' | 'createdAt'>): Promise<void> {
+    const id = this.nextCloudTaskId++;
+    this.pendingCloudTasks.set(id, { ...task, id, createdAt: new Date().toISOString() });
   }
 
-  async listPendingCopilotTasks(): Promise<PendingCopilotTask[]> {
-    return [...this.pendingCopilotTasks.values()];
+  async listPendingCloudTasks(): Promise<PendingCloudTask[]> {
+    return [...this.pendingCloudTasks.values()];
   }
 
-  async resolvePendingCopilotTask(id: number): Promise<void> {
-    this.pendingCopilotTasks.delete(id);
+  async resolvePendingCloudTask(id: number): Promise<void> {
+    this.pendingCloudTasks.delete(id);
   }
 
   async recordDispatchedPlan(record: {

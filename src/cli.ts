@@ -32,9 +32,10 @@ import { execCommand } from './util/exec.js';
 import { fetchVersionDiff, unifiedDiffText } from './evidence/version-diff.js';
 import { runFix } from './remediation/cli-runner.js';
 import { runAgentCommitsInWorktree } from './remediation/worktree-runner.js';
-import { CLI_AGENT_SPECS, CliFixAgent } from './agents/cli.js';
-import { CopilotCloudAgent } from './agents/copilot-cloud.js';
+import { credentialsWithLegacyCopilot, agentConfigWithLegacyCopilot } from './agents/compat.js';
+import { defaultAgentProviderRegistry, isCloudFixAgent, type AgentProviderRegistry } from './agents/registry.js';
 import { resolveAgentSelection, type AgentSelection } from './agents/selection.js';
+import type { FixAgent } from './agents/types.js';
 import { planForCommits } from './remediation/partition.js';
 import {
   installUpgrade,
@@ -44,7 +45,7 @@ import {
   type UpgradeCandidate,
   type UpgradeScanResult,
 } from './upgrade/scan.js';
-import { AGENT_PROVIDER_IDS, opensPullRequestAsDraft, type DriftConfig, type ExplicitAgentProvider } from './config/schema.js';
+import { opensPullRequestAsDraft, type DriftConfig, type ExplicitAgentProvider } from './config/schema.js';
 import { describeSeverity, scanTitle, severityOf } from './upgrade/severity.js';
 import { ask } from './util/prompt.js';
 import { createBranchForTarget, createIssueAndBranchForTarget, createIssueForTarget } from './actions/cli-actions.js';
@@ -1287,12 +1288,10 @@ async function fixPlanAndOpenPR(args: {
       const copilotToken =
         (typeof flags['copilot-token'] === 'string' ? flags['copilot-token'] : undefined) ??
         process.env.DRIFT_COPILOT_TOKEN;
-      const localAgents = await detectLocalFixAgents(config);
       const selection = await resolveCliAgentSelection({
         config,
         flags,
         copilotToken,
-        localAgents,
         logger,
         nonInteractive: Boolean(flags['non-interactive']),
       });
@@ -1300,72 +1299,71 @@ async function fixPlanAndOpenPR(args: {
       if (!selection) {
         unresolvedAgentWork = true;
       } else {
-        const agent = createLocalFixAgent(selection.provider, selection.config.timeoutSeconds);
-        if (agent) {
-          const availability = await agent.detect().catch(() => ({ available: false }));
-          if (!availability.available) {
-            logger.warn(`${selection.provider} was selected, but that provider is not available in this CLI runtime.`);
+        const agentConfig: DriftConfig = {
+          ...config,
+          remediation: { ...config.remediation, agent: selection.config },
+        };
+        const agent = await defaultAgentProviderRegistry.create(selection.provider, {
+          repo,
+          config: agentConfig,
+          logger,
+          credentials: selection.runtime.credentials,
+          surface: 'cli',
+        });
+        const availability = agent ? await agent.detect().catch(() => ({ available: false })) : { available: false };
+        if (!agent || !availability.available) {
+          logger.warn(`${selection.provider} was selected, but that provider is not available in this CLI runtime.`);
+          unresolvedAgentWork = true;
+        } else if (agent.capabilities.execution === 'workspace') {
+          const agentRun = await runAgentCommitsInWorktree({
+            repo,
+            plan,
+            config: agentConfig,
+            worktree: fix.worktree,
+            commits: fix.needsAgent,
+            agent,
+            logger,
+          });
+          unresolvedAgentCount = agentRun.unresolved.length;
+          if (agentRun.committed) {
+            fix.pushed = true;
+            await pushWorktreeHead();
+          }
+          if (agentRun.unresolved.length > 0) {
+            for (const failure of agentRun.unresolved) {
+              logger.warn(`Commit ${failure.commit.order} remains unresolved: ${failure.message}`);
+            }
             unresolvedAgentWork = true;
           } else {
-            const agentConfig: DriftConfig = {
-              ...config,
-              remediation: { ...config.remediation, agent: selection.config },
-            };
-            const agentRun = await runAgentCommitsInWorktree({
-              repo,
-              plan,
-              config: agentConfig,
-              worktree: fix.worktree,
-              commits: fix.needsAgent,
-              agent,
-              logger,
-            });
-            unresolvedAgentCount = agentRun.unresolved.length;
-            if (agentRun.committed) {
-              fix.pushed = true;
-              await pushWorktreeHead();
-            }
-            if (agentRun.unresolved.length > 0) {
-              for (const failure of agentRun.unresolved) {
-                logger.warn(`Commit ${failure.commit.order} remains unresolved: ${failure.message}`);
-              }
-              unresolvedAgentWork = true;
-            } else {
-              logger.info(`Resolved ${agentRun.resolved.length} commit(s) with ${agent.label}.`);
+            logger.info(`Resolved ${agentRun.resolved.length} commit(s) with ${agent.label}.`);
+          }
+        } else if (isCloudFixAgent(agent)) {
+          if (!pushedBranch && !fix.pushed) {
+            // Cloud agents work from a remote branch. If every commit needed an
+            // agent, create that branch at the analysed SHA first.
+            try {
+              await run('git', ['push', 'origin', `${repo.afterSha}:refs/heads/${fix.branch}`], { cwd: workspace });
+              pushedBranch = true;
+            } catch (err) {
+              logger.error(`Could not create branch \`${fix.branch}\`: ${(err as Error).message}`);
             }
           }
-        } else if (selection.provider === 'copilot-cloud') {
-          if (!copilotToken) {
-            logger.warn('Copilot Cloud was selected, but no Copilot token is available. Set DRIFT_COPILOT_TOKEN or pass --copilot-token.');
+          const dispatched = await dispatchRemainingToCloudAgent({
+            agent,
+            repo,
+            plan,
+            commits: fix.needsAgent,
+            config: agentConfig,
+            logger,
+          });
+          if (!dispatched.ok) {
+            logger.error(`${agent.label} dispatch failed: ${dispatched.error}`);
             unresolvedAgentWork = true;
           } else {
-            if (!pushedBranch && !fix.pushed) {
-              // Cloud agents work from a remote branch. If every commit needed
-              // an agent, create that branch at the analysed SHA first.
-              try {
-                await run('git', ['push', 'origin', `${repo.afterSha}:refs/heads/${fix.branch}`], { cwd: workspace });
-                pushedBranch = true;
-              } catch (err) {
-                logger.error(`Could not create branch \`${fix.branch}\`: ${(err as Error).message}`);
-              }
-            }
-            const dispatched = await dispatchRemainingToCopilot({
-              copilotToken,
-              repo,
-              plan,
-              commits: fix.needsAgent,
-              config: { ...config, remediation: { ...config.remediation, agent: selection.config } },
-              logger,
-            });
-            if (!dispatched.ok) {
-              logger.error(`Copilot Cloud dispatch failed: ${dispatched.error}`);
-              unresolvedAgentWork = true;
-            } else {
-              logger.info(`Dispatched ${fix.needsAgent.length} commit(s) needing an agent to Copilot Cloud.`);
-            }
+            logger.info(`Dispatched ${fix.needsAgent.length} commit(s) needing an agent to ${agent.label}.`);
           }
         } else {
-          logger.warn(`${selection.provider} was selected, but that provider is not available in this CLI runtime.`);
+          logger.warn(`${agent.label} does not advertise a supported execution capability.`);
           unresolvedAgentWork = true;
         }
       }
@@ -1415,48 +1413,50 @@ async function fixPlanAndOpenPR(args: {
   }
 }
 
-async function detectLocalFixAgents(config: DriftConfig): Promise<Map<ExplicitAgentProvider, CliFixAgent>> {
-  const timeoutMs = config.remediation.agent.timeoutSeconds * 1000;
-  const entries = await Promise.all(
-    CLI_AGENT_SPECS.map(async (spec) => {
-      const agent = new CliFixAgent(spec, timeoutMs);
-      const availability = await agent.detect().catch(() => ({ available: false }));
-      return availability.available ? ([spec.id as ExplicitAgentProvider, agent] as const) : null;
-    }),
-  );
-  return new Map(entries.filter((entry): entry is readonly [ExplicitAgentProvider, CliFixAgent] => Boolean(entry)));
-}
-
 async function resolveCliAgentSelection(args: {
   config: DriftConfig;
   flags: Flags;
   copilotToken?: string;
-  localAgents: Map<ExplicitAgentProvider, CliFixAgent>;
   logger: Logger;
   nonInteractive: boolean;
+  registry?: AgentProviderRegistry;
 }): Promise<AgentSelection | null> {
   const override = agentOverrideFromFlags(args.flags, args.logger);
   if (override === null) return null;
 
-  const eligibleProviders = [...args.localAgents.keys()];
-  if (args.copilotToken) eligibleProviders.push('copilot-cloud');
+  const registry = args.registry ?? defaultAgentProviderRegistry;
+  const credentials = credentialsWithLegacyCopilot(undefined, args.copilotToken);
+  const selectionConfig = agentConfigWithLegacyCopilot(args.config.remediation.agent, {
+    token: args.copilotToken,
+    model: args.config.remediation.model,
+  });
+  const contextConfig: DriftConfig = {
+    ...args.config,
+    remediation: { ...args.config.remediation, agent: selectionConfig },
+  };
+  const available = await registry.available({
+    config: contextConfig,
+    logger: args.logger,
+    credentials,
+    surface: 'cli',
+  });
+  const eligibleProviders = [...available.keys()];
 
   const selection = resolveAgentSelection({
-    config: args.config.remediation.agent,
+    config: selectionConfig,
     override,
     runtime: {
       surface: 'cli',
       interactive: !args.nonInteractive && process.stdin.isTTY,
       eligibleProviders,
-      credentials: args.copilotToken ? { copilotToken: args.copilotToken } : undefined,
+      credentials,
     },
-    legacyCopilot: args.copilotToken || args.config.remediation.model ? { token: args.copilotToken, model: args.config.remediation.model } : undefined,
   });
 
   if (selection.source !== 'unresolved') return selection;
 
   if (!args.nonInteractive && process.stdin.isTTY && eligibleProviders.length > 1) {
-    const labels = eligibleProviders.map((provider) => labelForAgentProvider(provider, args.localAgents));
+    const labels = eligibleProviders.map((provider) => labelForAgentProvider(provider, registry));
     const answer = await ask('Choose the agent Drift should use for unresolved edits.', labels);
     const index = labels.indexOf(answer);
     const provider = eligibleProviders[index];
@@ -1479,7 +1479,7 @@ function agentOverrideFromFlags(flags: Flags, logger: Logger): Partial<DriftConf
 
   if (typeof flags.agent === 'string') {
     if (!isExplicitAgentProvider(flags.agent)) {
-      logger.warn(`Unknown agent provider \`${flags.agent}\`. Expected one of: ${AGENT_PROVIDER_IDS.filter((id) => id !== 'auto').join(', ')}.`);
+      logger.warn(`Unknown agent provider \`${flags.agent}\`. Pass a registered provider id, or omit --agent for auto selection.`);
       return null;
     }
     override.provider = flags.agent;
@@ -1506,20 +1506,15 @@ function agentOverrideFromFlags(flags: Flags, logger: Logger): Partial<DriftConf
 }
 
 function isExplicitAgentProvider(value: string): value is ExplicitAgentProvider {
-  return value !== 'auto' && (AGENT_PROVIDER_IDS as readonly string[]).includes(value);
+  return value.trim().length > 0 && value !== 'auto';
 }
 
-function labelForAgentProvider(provider: ExplicitAgentProvider, localAgents: Map<ExplicitAgentProvider, CliFixAgent>): string {
-  return localAgents.get(provider)?.label ?? (provider === 'copilot-cloud' ? 'Copilot Cloud' : provider);
+function labelForAgentProvider(provider: ExplicitAgentProvider, registry: AgentProviderRegistry): string {
+  return registry.get(provider)?.label ?? provider;
 }
 
-function createLocalFixAgent(provider: ExplicitAgentProvider, timeoutSeconds: number): CliFixAgent | undefined {
-  const spec = CLI_AGENT_SPECS.find((candidate) => candidate.id === provider);
-  return spec ? new CliFixAgent(spec, timeoutSeconds * 1000) : undefined;
-}
-
-async function dispatchRemainingToCopilot(options: {
-  copilotToken: string;
+async function dispatchRemainingToCloudAgent(options: {
+  agent: FixAgent;
   repo: RepoContext;
   plan: RemediationPlan;
   commits: readonly RemediationPlan['commits'][number][];
@@ -1528,13 +1523,7 @@ async function dispatchRemainingToCopilot(options: {
 }): Promise<{ ok: boolean; error?: string }> {
   if (options.commits.length === 0) return { ok: true };
   const agentPlan = planForCommits(options.plan, options.commits);
-  const agent = new CopilotCloudAgent({
-    repo: options.repo,
-    config: options.config,
-    token: options.copilotToken,
-    logger: options.logger,
-  });
-  const result = await agent.run(
+  const result = await options.agent.run(
     {
       plan: agentPlan,
       commit: agentPlan.commits[0]!,

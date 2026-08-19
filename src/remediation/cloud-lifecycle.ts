@@ -1,18 +1,14 @@
-import type { PendingCopilotTask } from '../queue/types.js';
+import type { PendingCloudTask } from '../queue/types.js';
 import type { RemediationPlan, RepoContext } from '../types.js';
 import type { GitHubClient } from '../github/client.js';
 import type { Logger } from '../util/logger.js';
 import { validateCloudChangedFiles } from '../agents/scope.js';
-
-export interface CloudTaskStatus {
-  state: string;
-  pullRequestUrl?: string;
-}
+import type { CloudAgentTaskRef, CloudFixAgent } from '../agents/types.js';
 
 export interface CloudTaskMonitor {
   provider: string;
   label: string;
-  status(task: PendingCopilotTask, repo: RepoContext): Promise<CloudTaskStatus | null>;
+  status(task: PendingCloudTask, repo: RepoContext): Promise<{ state: string; pullRequestUrl?: string } | null>;
   isTerminalState(state: string): boolean;
 }
 
@@ -25,12 +21,13 @@ export interface CloudTaskReconciliation {
 }
 
 export async function reconcileCloudTask(options: {
-  task: PendingCopilotTask;
-  monitor: CloudTaskMonitor;
+  task: PendingCloudTask;
+  agent: CloudFixAgent;
   github: GitHubClient;
   logger: Logger;
 }): Promise<CloudTaskReconciliation> {
-  const { task, monitor, github, logger } = options;
+  const { task, agent, github, logger } = options;
+  const label = agent.label;
   const repo: RepoContext = {
     owner: task.owner,
     repo: task.repo,
@@ -39,16 +36,22 @@ export async function reconcileCloudTask(options: {
     afterSha: task.headSha,
   };
 
-  const status = await monitor.status(task, repo);
-  if (!status || !monitor.isTerminalState(status.state)) return { terminal: false };
+  const status = await agent.status({
+    provider: task.provider,
+    id: task.taskId,
+    state: task.state ?? undefined,
+    branch: task.branchName,
+    url: task.prUrl ?? undefined,
+  });
+  if (!status || !agent.isTerminalState(status.state)) return { terminal: false };
 
   if (status.state !== 'completed') {
     return {
       terminal: true,
       state: status.state,
       conclusion: 'failure',
-      title: `${monitor.label} did not finish (${status.state})`,
-      summary: `The ${monitor.label} task ended in state \`${status.state}\` without finishing the fix. ${
+      title: `${label} did not finish (${status.state})`,
+      summary: `The ${label} task ended in state \`${status.state}\` without finishing the fix. ${
         task.prUrl ?? status.pullRequestUrl ? `See ${task.prUrl ?? status.pullRequestUrl} for what it left behind.` : 'A human needs to look at this.'
       }`,
     };
@@ -60,9 +63,9 @@ export async function reconcileCloudTask(options: {
       terminal: true,
       state: status.state,
       conclusion: 'action_required',
-      title: `${monitor.label} finished; scope validation unavailable`,
+      title: `${label} finished; scope validation unavailable`,
       summary:
-        `${monitor.label} completed, but this pending task was recorded without a remediation plan. ` +
+        `${label} completed, but this pending task was recorded without a remediation plan. ` +
         'Drift cannot validate allowed files or protected paths after completion; review the branch manually.',
     };
   }
@@ -73,7 +76,7 @@ export async function reconcileCloudTask(options: {
       terminal: true,
       state: status.state,
       conclusion: 'failure',
-      title: `${monitor.label} finished, but Drift could not inspect the branch`,
+      title: `${label} finished, but Drift could not inspect the branch`,
       summary: `Drift could not read the head of branch \`${task.branchName || '(unknown)'}\`, so it could not reconcile the cloud result.`,
     };
   }
@@ -87,8 +90,8 @@ export async function reconcileCloudTask(options: {
       terminal: true,
       state: status.state,
       conclusion: 'action_required',
-      title: `${monitor.label} finished; diff inspection failed`,
-      summary: `Drift could not inspect the branch diff after ${monitor.label} completed, so protected-path validation did not run.`,
+      title: `${label} finished; diff inspection failed`,
+      summary: `Drift could not inspect the branch diff after ${label} completed, so protected-path validation did not run.`,
     };
   }
 
@@ -99,8 +102,8 @@ export async function reconcileCloudTask(options: {
       terminal: true,
       state: status.state,
       conclusion: 'failure',
-      title: `${monitor.label} changed files outside Drift's allowed scope`,
-      summary: [`${monitor.label} completed, but Drift found post-agent scope violations:`, ...validation.reasons.map((reason) => `- ${reason}`), where ? `\nSee ${where}.` : ''].filter(Boolean).join('\n'),
+      title: `${label} changed files outside Drift's allowed scope`,
+      summary: [`${label} completed, but Drift found post-agent scope violations:`, ...validation.reasons.map((reason) => `- ${reason}`), where ? `\nSee ${where}.` : ''].filter(Boolean).join('\n'),
     };
   }
 
@@ -108,12 +111,31 @@ export async function reconcileCloudTask(options: {
     terminal: true,
     state: status.state,
     conclusion: 'success',
-    title: `${monitor.label} finished and Drift reconciled the branch`,
+    title: `${label} finished and Drift reconciled the branch`,
     summary: [
       where ? `See ${where} for the result.` : 'The cloud agent task completed.',
       ...validation.warnings.map((warning) => `\n${warning}`),
     ].join(''),
   };
+}
+
+export async function awaitTerminalCloudTask(options: {
+  agent: CloudFixAgent;
+  handle: CloudAgentTaskRef;
+  timeoutMs: number;
+  pollIntervalMs: number;
+}): Promise<{ state: string; pullRequestUrl?: string } | null> {
+  const deadline = Date.now() + options.timeoutMs;
+  let current = options.handle;
+
+  while (Date.now() <= deadline) {
+    const status = await options.agent.status(current);
+    if (status && options.agent.isTerminalState(status.state)) return status;
+    if (status) current = { ...current, state: status.state, url: status.pullRequestUrl ?? current.url };
+    await sleep(Math.min(options.pollIntervalMs, Math.max(0, deadline - Date.now())));
+  }
+
+  return null;
 }
 
 function parsePlan(json: string | null): RemediationPlan | null {
@@ -123,4 +145,8 @@ function parsePlan(json: string | null): RemediationPlan | null {
   } catch {
     return null;
   }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

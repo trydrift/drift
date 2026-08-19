@@ -6,8 +6,12 @@ import { loadConfig } from '../config/load.js';
 import { execCommand } from '../util/exec.js';
 import { analyzeRepository } from '../analysis.js';
 import { dispatch, DRIFT_LABEL } from '../dispatch/index.js';
-import { CopilotCloudAgent } from '../agents/copilot-cloud.js';
 import { reportTelemetry } from '../pipeline.js';
+import { defaultAgentProviderRegistry, type AgentProviderRegistry } from '../agents/registry.js';
+import { agentConfigWithLegacyCopilot, credentialsWithLegacyCopilot } from '../agents/compat.js';
+import { resolveAgentSelection } from '../agents/selection.js';
+import type { AgentCredentialSet } from '../agents/selection.js';
+import type { FixAgent } from '../agents/types.js';
 import { authorizeApproval, type ApprovalRequest } from './authorize.js';
 import { planDigest } from './digest.js';
 import { findPriorDispatch, renderDispatchMarker } from './metadata.js';
@@ -36,7 +40,7 @@ export type ApprovalOutcome =
   | { status: 'rejected'; reason: string; issueNumber: number }
   /** This exact plan was already applied; the earlier result is reported again. */
   | { status: 'already-applied'; issueNumber: number; message: string }
-  | { status: 'applied'; issueNumber: number; plan: RemediationPlan; dispatch: DispatchResult; config: DriftConfig };
+  | { status: 'applied'; issueNumber: number; plan: RemediationPlan; dispatch: DispatchResult; config: DriftConfig; agent?: FixAgent };
 
 export interface ApplyApprovalOptions {
   /** The raw `issue_comment` event payload. */
@@ -45,7 +49,10 @@ export interface ApplyApprovalOptions {
   repo: string;
   github: GitHubClient;
   logger: Logger;
+  /** @deprecated Boundary compatibility. Prefer `credentials`. */
   copilotToken?: string;
+  credentials?: AgentCredentialSet;
+  agentRegistry?: AgentProviderRegistry;
   dryRun?: boolean;
   /** Local checkout, when the runner has one. Enables localization. */
   workspace?: string;
@@ -222,7 +229,17 @@ export async function applyApproval(options: ApplyApprovalOptions): Promise<Appr
     github.readFile(repo, path, metadata.headSha),
   );
   for (const problem of problems) logger.warn(problem);
-  const config = options.configOverride ? { ...loaded, ...options.configOverride } : loaded;
+  const loadedConfig = options.configOverride ? { ...loaded, ...options.configOverride } : loaded;
+  const registry = options.agentRegistry ?? defaultAgentProviderRegistry;
+  const credentials = credentialsWithLegacyCopilot(options.credentials, options.copilotToken);
+  const agentConfig = agentConfigWithLegacyCopilot(loadedConfig.remediation.agent, {
+    token: options.copilotToken,
+    model: loadedConfig.remediation.model,
+  });
+  const config: DriftConfig = {
+    ...loadedConfig,
+    remediation: { ...loadedConfig.remediation, agent: agentConfig },
+  };
 
   const { plan, summary } = await analyzeRepository({
     repo,
@@ -314,18 +331,46 @@ export async function applyApproval(options: ApplyApprovalOptions): Promise<Appr
 
   // --- Dispatch -------------------------------------------------------------
 
+  const availableAgents = await registry.available({
+    repo,
+    config,
+    logger,
+    credentials,
+    dryRun: options.dryRun,
+    surface: workspace ? 'action' : 'webhook',
+  });
+  const selection = resolveAgentSelection({
+    config: config.remediation.agent,
+    runtime: {
+      surface: workspace ? 'action' : 'webhook',
+      interactive: false,
+      eligibleProviders: [...availableAgents.keys()],
+      credentials,
+    },
+  });
+  let agent: FixAgent | undefined;
+  if (selection.source === 'unresolved') {
+    logger.warn(selection.reason);
+  } else {
+    const created = await registry.create(selection.provider, {
+      repo,
+      config,
+      logger,
+      credentials,
+      dryRun: options.dryRun,
+      surface: workspace ? 'action' : 'webhook',
+    });
+    if (created) agent = created;
+    else logger.warn(`${selection.provider} was selected, but no provider adapter could create an agent.`);
+  }
+
   const result = await dispatch({
     repo,
     plan,
     config,
     github,
     logger,
-    ...(options.copilotToken
-      ? {
-          copilotToken: options.copilotToken,
-          agent: new CopilotCloudAgent({ repo, config, token: options.copilotToken, logger, dryRun: options.dryRun }),
-        }
-      : {}),
+    ...(agent ? { agent } : {}),
     ...(options.dryRun ? { dryRun: true } : {}),
     approved: true,
   });
@@ -422,7 +467,7 @@ export async function applyApproval(options: ApplyApprovalOptions): Promise<Appr
     logger,
   });
 
-  return { status: 'applied', issueNumber: decision.issueNumber, plan, dispatch: result, config };
+  return { status: 'applied', issueNumber: decision.issueNumber, plan, dispatch: result, config, ...(agent ? { agent } : {}) };
 }
 
 /**

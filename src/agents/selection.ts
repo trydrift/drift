@@ -9,8 +9,7 @@ export type AgentSelectionSource =
   | 'unresolved';
 
 export interface AgentCredentialSet {
-  /** User-scoped token for GitHub's Copilot coding-agent API. */
-  copilotToken?: string;
+  [provider: string]: unknown;
 }
 
 export interface AgentRuntimeState {
@@ -47,8 +46,6 @@ export interface ResolveAgentSelectionOptions {
    * directory itself.
    */
   localPreference?: Partial<AgentConfig>;
-  /** Compatibility input translated at the boundary, never persisted. */
-  legacyCopilot?: { token?: string; model?: string };
 }
 
 /**
@@ -72,15 +69,6 @@ export function resolveAgentSelection(options: ResolveAgentSelectionOptions): Re
   const local = compactAgentConfig(options.localPreference);
   if (runtime.surface === 'cli' && local.provider && local.provider !== 'auto') {
     return selected(local.provider, mergeAgentConfig(options.config, local, override), 'local-preference', runtime);
-  }
-
-  if (options.legacyCopilot?.token || options.legacyCopilot?.model) {
-    return selected(
-      'copilot-cloud',
-      mergeAgentConfig(options.config, { provider: 'copilot-cloud', model: options.legacyCopilot.model }, override),
-      'legacy-copilot',
-      { ...runtime, credentials: { ...runtime.credentials, copilotToken: options.legacyCopilot.token } },
-    );
   }
 
   if (runtime.eligibleProviders.length === 1) {

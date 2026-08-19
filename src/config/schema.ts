@@ -39,7 +39,7 @@ export const AGENT_PROVIDER_IDS = [
   'ollama',
 ] as const;
 
-const AGENT_PROVIDER = z.enum(AGENT_PROVIDER_IDS);
+const AGENT_PROVIDER = z.string().trim().min(1);
 const AGENT_EFFORT = z.enum(['low', 'medium', 'high', 'xhigh']);
 
 /**
@@ -756,7 +756,7 @@ export type DriftConfig = z.infer<typeof DriftConfigSchema>;
 export type LicensePolicy = DriftConfig['licenses'];
 export type AgentConfig = DriftConfig['remediation']['agent'];
 export type AgentProvider = AgentConfig['provider'];
-export type ExplicitAgentProvider = Exclude<AgentProvider, 'auto'>;
+export type ExplicitAgentProvider = string;
 
 export const DEFAULT_CONFIG: DriftConfig = DriftConfigSchema.parse({});
 

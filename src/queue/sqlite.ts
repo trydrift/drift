@@ -7,7 +7,7 @@ import type {
   EnqueueResult,
   Job,
   JobQueue,
-  PendingCopilotTask,
+  PendingCloudTask,
   QueueStats,
 } from './types.js';
 
@@ -275,7 +275,7 @@ export class SqliteJobQueue implements JobQueue {
     this.db.close();
   }
 
-  async recordPendingCopilotTask(task: Omit<PendingCopilotTask, 'id' | 'createdAt'>): Promise<void> {
+  async recordPendingCloudTask(task: Omit<PendingCloudTask, 'id' | 'createdAt'>): Promise<void> {
     this.db
       .prepare(
         `INSERT INTO pending_copilot_tasks (provider, owner, repo, task_id, head_sha, branch_name, pr_number, pr_url, plan_json, created_at)
@@ -295,14 +295,14 @@ export class SqliteJobQueue implements JobQueue {
       );
   }
 
-  async listPendingCopilotTasks(): Promise<PendingCopilotTask[]> {
+  async listPendingCloudTasks(): Promise<PendingCloudTask[]> {
     const rows = this.db
       .prepare('SELECT * FROM pending_copilot_tasks ORDER BY id')
-      .all() as unknown as PendingCopilotTaskRow[];
-    return rows.map(toPendingCopilotTask);
+      .all() as unknown as PendingCloudTaskRow[];
+    return rows.map(toPendingCloudTask);
   }
 
-  async resolvePendingCopilotTask(id: number): Promise<void> {
+  async resolvePendingCloudTask(id: number): Promise<void> {
     this.db.prepare('DELETE FROM pending_copilot_tasks WHERE id = ?').run(id);
   }
 
@@ -341,7 +341,7 @@ export class SqliteJobQueue implements JobQueue {
   }
 }
 
-interface PendingCopilotTaskRow {
+interface PendingCloudTaskRow {
   id: number;
   provider: string;
   owner: string;
@@ -355,13 +355,14 @@ interface PendingCopilotTaskRow {
   created_at: string;
 }
 
-function toPendingCopilotTask(row: PendingCopilotTaskRow): PendingCopilotTask {
+function toPendingCloudTask(row: PendingCloudTaskRow): PendingCloudTask {
   return {
     id: row.id,
     provider: row.provider,
     owner: row.owner,
     repo: row.repo,
     taskId: row.task_id,
+    state: null,
     headSha: row.head_sha,
     branchName: row.branch_name,
     prNumber: row.pr_number,

@@ -19,8 +19,7 @@ import { runWorktreeRemediation } from './worktree-runner.js';
  * unattended use and leaves the rest to an agent.
  *
  * Local CLI agents now run through `worktree-runner.ts`; this file remains as
- * the compatibility entrypoint for the CLI command and legacy Copilot Cloud
- * dispatch helper.
+ * the compatibility entrypoint for the CLI command.
  */
 
 export interface FixOptions {
@@ -29,7 +28,6 @@ export interface FixOptions {
   config: DriftConfig;
   logger: Logger;
   workspace: string;
-  copilotToken?: string;
   /**
    * Print every fix plan document and stop without applying anything.
    *

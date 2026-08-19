@@ -203,6 +203,19 @@ export interface CloudAgentHandle {
   capabilities: AgentCapabilities;
 }
 
+export interface CloudTaskStatus {
+  state: string;
+  pullRequestUrl?: string;
+}
+
+export interface CloudAgentTaskRef {
+  provider: string;
+  id: string;
+  state?: string;
+  branch?: string;
+  url?: string;
+}
+
 export interface AgentContext {
   /** Streams human-readable progress into the UI. */
   report: (message: string) => void;
@@ -263,6 +276,12 @@ export interface FixAgent {
   /** The models available inside this subscription. Absent means "just the one". */
   listModels?(): Promise<AgentModel[]>;
   run(task: FixTask, ctx: AgentContext): Promise<FixOutcome>;
+}
+
+export interface CloudFixAgent extends FixAgent {
+  readonly capabilities: AgentCapabilities & { execution: 'cloud' };
+  status(task: CloudAgentTaskRef): Promise<CloudTaskStatus | null>;
+  isTerminalState(state: string): boolean;
 }
 
 /* ------------------------------------------------------------------ */

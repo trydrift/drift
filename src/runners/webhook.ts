@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { DispatchResult, RemediationPlan, RepoContext } from '../types.js';
 import { loadConfig } from '../config/load.js';
+import { DEFAULT_CONFIG, type DriftConfig } from '../config/schema.js';
 import { GitHubClient } from '../github/client.js';
 import { runPipeline } from '../pipeline.js';
 import { createLogger, type Logger, type LogLevel } from '../util/logger.js';
@@ -11,9 +12,12 @@ import type { JobQueue } from '../queue/types.js';
 import { QueueWorker } from '../queue/worker.js';
 import { MemoryJobQueue } from '../queue/memory.js';
 import { SqliteJobQueue } from '../queue/sqlite.js';
-import { getTaskStatus, isTerminalState } from '../dispatch/copilot.js';
-import { reconcileCloudTask, type CloudTaskMonitor } from '../remediation/cloud-lifecycle.js';
-import { CopilotCloudAgent } from '../agents/copilot-cloud.js';
+import { reconcileCloudTask } from '../remediation/cloud-lifecycle.js';
+import { credentialsWithLegacyCopilot, agentConfigWithLegacyCopilot } from '../agents/compat.js';
+import { defaultAgentProviderRegistry, isCloudFixAgent, type AgentProviderRegistry } from '../agents/registry.js';
+import { resolveAgentSelection } from '../agents/selection.js';
+import type { AgentCredentialSet } from '../agents/selection.js';
+import type { FixAgent } from '../agents/types.js';
 
 /**
  * Self-hosted GitHub App webhook runner — the secondary deployment.
@@ -53,6 +57,8 @@ export interface WebhookServerOptions {
   repoToken: string;
   /** User-scoped Copilot token. Absent means approval-only operation. */
   copilotToken?: string;
+  credentials?: AgentCredentialSet;
+  agentRegistry?: AgentProviderRegistry;
   logger?: Logger;
   dryRun?: boolean;
   /**
@@ -230,16 +236,14 @@ async function handlePush(
   }
 
   logger.info(`Analysing push to ${repo.owner}/${repo.repo}@${repo.baseBranch}`);
+  const agentResolution = await resolveWebhookAgent({ repo, config, options, logger });
 
   const result = await runPipeline({
     repo,
-    config,
+    config: agentResolution.config,
     logger,
     github,
-    copilotToken: options.copilotToken,
-    agent: options.copilotToken
-      ? new CopilotCloudAgent({ repo, config, token: options.copilotToken, logger, dryRun: options.dryRun })
-      : undefined,
+    agent: agentResolution.agent,
     githubToken: options.repoToken,
     dryRun: options.dryRun,
     // No workspace: localization is unavailable here, and the pipeline warns.
@@ -288,8 +292,8 @@ async function recordDispatchedTask(
   plan?: RemediationPlan | null,
 ): Promise<void> {
   if (result.status !== 'dispatched' || !result.taskId) return;
-  await queue.recordPendingCopilotTask({
-    provider: result.taskProvider ?? 'copilot-cloud',
+  await queue.recordPendingCloudTask({
+    provider: result.taskProvider ?? '',
     owner: repo.owner,
     repo: repo.repo,
     taskId: result.taskId,
@@ -301,8 +305,62 @@ async function recordDispatchedTask(
   });
 }
 
+async function resolveWebhookAgent(args: {
+  repo: RepoContext;
+  config: DriftConfig;
+  options: WebhookServerOptions;
+  logger: Logger;
+}): Promise<{ config: DriftConfig; agent?: FixAgent }> {
+  const registry = args.options.agentRegistry ?? defaultAgentProviderRegistry;
+  const credentials = credentialsWithLegacyCopilot(args.options.credentials, args.options.copilotToken);
+  const agentConfig = agentConfigWithLegacyCopilot(args.config.remediation.agent, {
+    token: args.options.copilotToken,
+    model: args.config.remediation.model,
+  });
+  const config: DriftConfig = {
+    ...args.config,
+    remediation: { ...args.config.remediation, agent: agentConfig },
+  };
+  const available = await registry.available({
+    repo: args.repo,
+    config,
+    logger: args.logger,
+    credentials,
+    dryRun: args.options.dryRun,
+    surface: 'webhook',
+  });
+  const selection = resolveAgentSelection({
+    config: config.remediation.agent,
+    runtime: {
+      surface: 'webhook',
+      interactive: false,
+      eligibleProviders: [...available.keys()],
+      credentials,
+    },
+  });
+
+  if (selection.source === 'unresolved') {
+    args.logger.warn(selection.reason);
+    return { config };
+  }
+
+  const agent = await registry.create(selection.provider, {
+    repo: args.repo,
+    config,
+    logger: args.logger,
+    credentials,
+    dryRun: args.options.dryRun,
+    surface: 'webhook',
+  });
+  if (!agent) {
+    args.logger.warn(`${selection.provider} was selected, but no provider adapter could create an agent.`);
+    return { config };
+  }
+  return { config, agent };
+}
+
 /**
- * Ask GitHub how each still-open Copilot task turned out, and post a final
+ * Ask each cloud provider how its still-open task turned out, and post a final
  * check run when one reaches a terminal state.
  *
  * Dispatch posts a `neutral` check run the moment the task is created,
@@ -310,23 +368,18 @@ async function recordDispatchedTask(
  * the other half of that promise: without it, "Copilot is fixing…" is the
  * last word the check run ever has, whatever actually happened.
  */
-export async function reconcilePendingCopilotTasks(
-  options: Pick<WebhookServerOptions, 'copilotToken' | 'repoToken' | 'queue'>,
+export async function reconcilePendingCloudTasks(
+  options: Pick<WebhookServerOptions, 'copilotToken' | 'repoToken' | 'queue' | 'credentials' | 'agentRegistry'>,
   logger: Logger,
 ): Promise<void> {
-  if (!options.copilotToken) return;
-
-  const pending = await options.queue.listPendingCopilotTasks();
+  const pending = await options.queue.listPendingCloudTasks();
   if (pending.length === 0) return;
 
   const github = new GitHubClient({ repoToken: options.repoToken, logger });
-
-  const monitor = copilotCloudMonitor(options.copilotToken);
+  const registry = options.agentRegistry ?? defaultAgentProviderRegistry;
+  const credentials = credentialsWithLegacyCopilot(options.credentials, options.copilotToken);
 
   for (const pendingTask of pending) {
-    const reconciliation = await reconcileCloudTask({ task: pendingTask, monitor, github, logger });
-    if (!reconciliation.terminal) continue;
-
     const repo: RepoContext = {
       owner: pendingTask.owner,
       repo: pendingTask.repo,
@@ -334,32 +387,37 @@ export async function reconcilePendingCopilotTasks(
       beforeSha: '',
       afterSha: pendingTask.headSha,
     };
+    const agent = await registry.create(pendingTask.provider, {
+      repo,
+      config: DEFAULT_CONFIG,
+      logger,
+      credentials,
+      surface: 'webhook',
+    });
+    if (!agent || !isCloudFixAgent(agent)) {
+      logger.warn(`Cannot reconcile cloud task ${pendingTask.taskId}: provider \`${pendingTask.provider}\` is not available.`);
+      continue;
+    }
+
+    const reconciliation = await reconcileCloudTask({ task: pendingTask, agent, github, logger });
+    if (!reconciliation.terminal) continue;
 
     await github.createCheckRun(repo, {
       name: 'Drift',
       conclusion: reconciliation.conclusion ?? 'action_required',
-      title: reconciliation.title ?? `${monitor.label} reached ${reconciliation.state ?? 'terminal state'}`,
-      summary: reconciliation.summary ?? `${monitor.label} reached terminal state ${reconciliation.state ?? 'unknown'}.`,
+      title: reconciliation.title ?? `${agent.label} reached ${reconciliation.state ?? 'terminal state'}`,
+      summary: reconciliation.summary ?? `${agent.label} reached terminal state ${reconciliation.state ?? 'unknown'}.`,
     });
 
     logger.info(
-      `${monitor.label} task ${pendingTask.taskId} on ${pendingTask.owner}/${pendingTask.repo} reached terminal state ${reconciliation.state ?? 'unknown'}`,
+      `${agent.label} task ${pendingTask.taskId} on ${pendingTask.owner}/${pendingTask.repo} reached terminal state ${reconciliation.state ?? 'unknown'}`,
     );
-    await options.queue.resolvePendingCopilotTask(pendingTask.id);
+    await options.queue.resolvePendingCloudTask(pendingTask.id);
   }
 }
 
-function copilotCloudMonitor(copilotToken: string): CloudTaskMonitor {
-  return {
-    provider: 'copilot-cloud',
-    label: 'Copilot Cloud',
-    status: async (task, repo) => {
-      const result = await getTaskStatus({ copilotToken, repo, taskId: task.taskId });
-      return result ? { state: result.state, pullRequestUrl: result.pullRequestUrl } : null;
-    },
-    isTerminalState,
-  };
-}
+/** @deprecated Use `reconcilePendingCloudTasks`. */
+export const reconcilePendingCopilotTasks = reconcilePendingCloudTasks;
 
 /**
  * `/drift apply` on an approval issue.
@@ -391,11 +449,13 @@ async function handleIssueComment(
     github,
     logger,
     ...(options.copilotToken ? { copilotToken: options.copilotToken } : {}),
+    credentials: credentialsWithLegacyCopilot(options.credentials, options.copilotToken),
+    agentRegistry: options.agentRegistry,
     ...(options.dryRun ? { dryRun: true } : {}),
     // No checkout on this deployment, so no localization. The pipeline warns.
-    // `/drift apply` dispatches a Copilot task the same way the push path
+    // `/drift apply` dispatches a cloud task the same way the push path
     // does, and needs the same follow-up — without this, an approved plan's
-    // task was recorded nowhere and `reconcilePendingCopilotTasks` never saw
+    // task was recorded nowhere and `reconcilePendingCloudTasks` never saw
     // it.
     onDispatched: (result, dispatchRepo, plan) => recordDispatchedTask(options.queue, dispatchRepo, result, plan),
     // Durable idempotency, independent of the GitHub comment marker
@@ -631,10 +691,10 @@ export async function main(): Promise<number> {
   // Copilot tasks routinely outlive the delivery that dispatched them, so
   // nothing about their outcome is known until something checks back in.
   const runReconcile = (): void => {
-    void reconcilePendingCopilotTasks(
+    void reconcilePendingCloudTasks(
       { copilotToken: process.env.DRIFT_COPILOT_TOKEN, repoToken, queue },
       logger,
-    ).catch((err: Error) => logger.warn(`Copilot task reconciliation failed: ${err.message}`));
+    ).catch((err: Error) => logger.warn(`Cloud task reconciliation failed: ${err.message}`));
   };
   runReconcile();
   setInterval(runReconcile, 60_000).unref();

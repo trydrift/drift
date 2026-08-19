@@ -66,22 +66,23 @@ export interface QueueStats {
 }
 
 /**
- * A Copilot agent task dispatched by this runner, still awaiting a terminal
+ * A cloud agent task dispatched by this runner, still awaiting a terminal
  * state.
  *
- * Dispatch happens inside one HTTP delivery, but a Copilot task routinely
+ * Dispatch happens inside one HTTP delivery, but a cloud task routinely
  * outlives it — the agent session runs for minutes, long after the webhook
  * handler has already responded. Without recording the task id somewhere
- * durable, nothing ever asks GitHub how it turned out, and the check run
- * Drift posted at dispatch time (`neutral`, "Copilot is fixing…") is the last
+ * durable, nothing ever asks the provider how it turned out, and the check run
+ * Drift posted at dispatch time (`neutral`, "agent is fixing…") is the last
  * thing anyone ever sees, even after the agent finishes, fails, or times out.
  */
-export interface PendingCopilotTask {
+export interface PendingCloudTask {
   id: number;
   provider: string;
   owner: string;
   repo: string;
   taskId: string;
+  state?: string | null;
   /** The commit the check run should be posted against. */
   headSha: string;
   branchName: string;
@@ -96,9 +97,9 @@ export interface PendingCopilotTask {
  * A permanent record that a plan was dispatched, keyed by the repository and
  * the exact plan digest.
  *
- * This is deliberately separate from `PendingCopilotTask`: that table is
+ * This is deliberately separate from `PendingCloudTask`: that table is
  * pruned the moment a task reaches a terminal state (see
- * `resolvePendingCopilotTask`), so it cannot answer "was this plan already
+ * `resolvePendingCloudTask`), so it cannot answer "was this plan already
  * dispatched?" once the task it recorded has finished — exactly the case a
  * retry arriving after completion needs answered. It also exists independently
  * of the GitHub comment marker (`renderDispatchMarker` /
@@ -150,14 +151,14 @@ export interface JobQueue {
 
   close(): Promise<void>;
 
-  /** Record a freshly-dispatched Copilot task so its outcome is reconciled later. */
-  recordPendingCopilotTask(task: Omit<PendingCopilotTask, 'id' | 'createdAt'>): Promise<void>;
+  /** Record a freshly-dispatched cloud task so its outcome is reconciled later. */
+  recordPendingCloudTask(task: Omit<PendingCloudTask, 'id' | 'createdAt'>): Promise<void>;
 
   /** Every dispatched task not yet resolved to a terminal state. */
-  listPendingCopilotTasks(): Promise<PendingCopilotTask[]>;
+  listPendingCloudTasks(): Promise<PendingCloudTask[]>;
 
   /** Stop tracking a task once it has reached a terminal state (or been resolved another way). */
-  resolvePendingCopilotTask(id: number): Promise<void>;
+  resolvePendingCloudTask(id: number): Promise<void>;
 
   /**
    * Record a dispatch, permanently. First write for a given

@@ -192,8 +192,9 @@ export type {
   WorktreeRemediationOptions,
   WorktreeRemediationResult,
 } from './remediation/worktree-runner.js';
-export { reconcileCloudTask } from './remediation/cloud-lifecycle.js';
-export type { CloudTaskMonitor, CloudTaskReconciliation, CloudTaskStatus } from './remediation/cloud-lifecycle.js';
+export { awaitTerminalCloudTask, reconcileCloudTask } from './remediation/cloud-lifecycle.js';
+export type { CloudTaskReconciliation } from './remediation/cloud-lifecycle.js';
+export type { CloudFixAgent, CloudTaskStatus } from './agents/types.js';
 export { validateCloudChangedFiles, validateAgentWorktree } from './agents/scope.js';
 export type { CloudScopeValidationOptions, CloudScopeValidationResult, ScopeValidationResult } from './agents/scope.js';
 
