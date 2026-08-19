@@ -1,412 +1,353 @@
-# Drift accuracy benchmark
+# Drift benchmark
 
-This is a harness-validation / initial benchmark, not yet a general accuracy
-claim. It exists to answer, with independently reviewed and adjudicated
-evidence, whether Drift correctly detects an upstream breaking change,
-correctly identifies which consumer code is affected, doesn't call anything
-safe that isn't, correctly decides whether it can safely repair an issue, and
-if it repairs, whether the repair actually works. Read the "Limitations"
-section before citing any number from here.
+This measures whether Drift detects a real dependency breakage, localizes it to
+the right consumer code, decides honestly whether it can safely repair it, and —
+when it repairs — whether the repair actually works.
 
-## Purpose and what's measured
+**Read "Composition and limitations" before citing any number from here.** The
+corpus is currently four synthetic npm cases. That is enough to validate the
+harness and nothing like enough to support a general accuracy claim.
 
-Every score in this harness answers one of two questions:
+The methodology, and where it departs from BUMP, Defects4J, SWE-bench,
+swe-bump-bench, bumpgen, DepBench and UPGRADVISOR, is in
+[`docs/research/evaluation.md`](../docs/research/evaluation.md).
 
-1. **Detection/localization** (`drift-full-pipeline`): given only a fixture's
-   local `upstream/old` and `upstream/new` trees and its `consumer/` code, did
-   Drift's real production pipeline — the same `gatherEvidence` → `analyze` →
-   `localize` → `attemptCodemod` → `buildPlan` → `verdictFor` path a `drift
-   analyze` run takes — discover the break, find the right (and only the
-   right) affected code, and say something honest about safety?
-2. **Repair mechanics** (`drift-component-localize-repair`,
-   `drift-component-fixplan-application`, described below): given a *known*
-   finding, does Drift's repair machinery apply correctly?
+---
 
-These are different questions and are never combined into one number. See
-"Full-pipeline vs. component adapters."
+## Layers
 
-## Fixture vs. review vs. adjudication vs. prediction
+Five, with enforced boundaries. The boundary that matters most is between C and
+D.
 
-- **FIXTURE** (`fixture.yml` + `upstream/`/`consumer/` trees): evidence only.
-  No expected findings, no repair expectation, no review status live here —
-  the Zod schema in `eval/src/load.ts` is `.strict()`, so an `expected:` block
-  or similar cannot silently re-enter a fixture file.
-- **REVIEW** (`reviews/<review-id>.yml`): one reviewer's independently derived
-  opinion of a fixture's ground truth. Append-only — a review file is never
-  overwritten once saved (`saveReview` throws if the id already exists).
-  Reviewers can be human or AI; an AI review records `reviewer.type: ai`,
-  `reviewer.name`, `provider`, `model` honestly, using the literal string
-  `"unavailable"` for anything the environment doesn't expose — never a
-  guess.
-- **ADJUDICATION** (`adjudication.yml`): the currently accepted ground truth,
-  referencing the review id(s) it accepts. Scoring reads *only*
-  `adjudication.yml`, never a review directly and never fixture metadata.
-- **PREDICTION**: what an adapter (`drift-full-pipeline` or a component
-  adapter) actually produced for a fixture, in-memory for one run. Never
-  written back into ground truth.
+| Layer | Responsibility | May read ground truth? |
+| --- | --- | --- |
+| **A** corpus construction (`src/corpus/`) | mine and freeze candidate cases | no |
+| **B** QA and ground truth (`src/oracle/`, `src/judge/`, `src/review.ts`) | reproducibility, independent review, adjudication | writes it; never sees a prediction while reviewing |
+| **C** prediction (`src/adapters/`, `src/tiers/`) | run real Drift production paths | **no** |
+| **D** evaluation (`src/evaluate.ts`, `src/evaluator/`) | oracles, scoring, metrics | yes — only here |
+| **E** reporting (`src/report/`, `src/runs/`) | aggregation, provenance, audit | derived only |
 
-A Drift prediction can inform a reviewer's thinking, but it can never become
-accepted truth by itself — a review or adjudication is required, and
-`eval:review:validate` fails a `readiness: benchmark-ready` fixture that has
-no accepted adjudication.
+### Why C cannot reach D
 
-## AI reviewers, human reviewers, multiple reviews, second opinions
+A prediction adapter receives a `PublicCase` and a materialized workspace.
+`PrivateTruth` — adjudication references, the developer's migration patch,
+hidden oracles, the recorded trigger signature — lives in a sibling directory
+that is never mounted. Three redundant enforcements, each catching a different
+mistake:
 
-This repository's reviews so far are authored by Claude (Sonnet 5, Anthropic)
-— recorded honestly as such, not as any other tool's name. Human review,
-additional AI reviewers, and multiple independent reviews of the same fixture
-are all first-class: `reviews/` is a directory, not a single file, and
-`npm run eval:reviews -- <fixture-id>` shows every review's reviewer identity,
-status, staleness, and where reviews disagree (upstream findings, impact
-sites, taxonomy, gaps, expected repair action, expected changed files).
-Nothing about the newest review is automatically authoritative — only
-`adjudication.yml`'s `acceptedReviewIds` decides what counts, and changing
-that requires an explicit adjudication update, not deleting the review it
-used to point at.
+1. `PredictionInput` has no field that could carry truth, so an adapter cannot
+   be handed the answer. (The previous harness passed `adjudication` directly.)
+2. `PrivateTruth` is branded at its loader, so it cannot be structurally widened
+   into anything Layer C accepts.
+3. `auditWorkspaceIsolation` walks the workspace and rejects private artifacts,
+   overlap with the private root, and symlinks whose *target* leaves the
+   workspace — on **every** materialization, not only in a test.
 
-To get a second opinion, export a fixture's full context (fixture metadata,
-upstream/consumer evidence, hashes, every review, the adjudication, and a
-disagreement summary — no hidden chain-of-thought, only persisted evidence
-and rationale) with:
+The third is the only one that still holds once a coding agent with shell access
+is running in that directory, which is exactly what the agent repair track does.
+A static test also asserts nothing under `src/adapters/` or `src/tiers/` imports
+the private loader.
 
-```sh
-npm run eval:review:export -- <fixture-id>
+---
+
+## Case layout
+
+```
+eval/cases/public/<id>/
+  case.yml            immutable, reproducible description (schema: src/case/schema.ts)
+  consumer/           the BUMP-ONLY state: base commit + only the manifest/lockfile bump
+  before/             manifest and lockfile as they read pre-bump, and nothing else
+  upstream/old|new/   frozen package trees for the two exact versions
+  evidence/           frozen upstream prose (changelog, release notes), optional
+
+eval/cases/private/<id>/
+  truth.yml           developer patch, hidden oracles, recorded trigger signature
+  adjudication.yml    the accepted ground truth
+  reviews/*.yml       every independent review, append-only
 ```
 
-## Stale review detection
+`consumer/` being the bump-only state is the causal construction BUMP and
+DepBench both use: it is the state a developer lands in when a Dependabot PR
+turns red. Diffing `before/` against `consumer/` is the same operation
+production performs between two git refs, which is what makes manifest detection
+measurable rather than assumed.
 
-A review only applies to the exact fixture revision it inspected.
-`eval/src/hash.ts` computes stable SHA-256 hashes (sorted paths, no
-timestamps) over six components: fixture metadata (`fixture.yml` minus the
-`readiness` field, which is a workflow marker, not evidence), `upstream/old`,
-`upstream/new`, `consumer`, the `oracles` section, and `expected/gold.patch`.
-A review's `reviewedRevision` snapshots these at review time.
-`eval:review:validate` fails a `benchmark-ready` fixture whose accepted
-review's hashes don't match the fixture's current hashes — the fixture must
-be re-reviewed, and the stale review stays on disk, inspectable, superseded
-rather than deleted.
+A case declares **exact resolved versions**, never a range — a range stops being
+reproducible the day the registry moves, and `validateCase` rejects one. It also
+records the resolved dependency-*graph* delta, not only the direct bump, because
+a one-line manifest change is routinely not a one-package change.
 
-## Changing accepted ground truth
+### Case status
 
-Write a **new** review file (never edit an existing one), set its `reviewOf`
-to the review(s) it reconsiders, and update `adjudication.yml`'s
-`acceptedReviewIds` and `decision` to match. The superseded review remains on
-disk with its original `status`. If a fixture's own evidence changed, its old
-review becomes stale automatically (see above) and needs a fresh review
-regardless of whether the reviewer's opinion actually changed.
+Every value except `benchmark-ready` requires a reason and appears in the
+report's exclusion table. Nothing is ever silently dropped.
 
-## Adjudication cannot silently contradict its accepted review(s)
+`candidate` · `reproducibility-check` · `benchmark-ready` · `disputed` ·
+`flaky` · `invalid-baseline` · `non-causal` · `oracle-insufficient` ·
+`environment-unavailable` · `excluded-stale`
 
-`adjudication.yml`'s `decision` must equal its single accepted review's
-`conclusion`, after canonical (order-insensitive on set-shaped fields;
-`repair.expectedAction`/`repair.goldPatch` compared exactly) normalization —
-see `diffConclusions`/`sameTaxonomy` in `eval/src/review.ts`. When it
-legitimately differs, the adjudication must say so explicitly:
+---
 
-- **One accepted review**: an `override` block (`enabled: true`, `reason`,
-  `changedFields`) is required, and `changedFields` must name exactly the
-  fields that actually differ — no missing field (an unexplained delta) and
-  no extra field (a stale or inaccurate justification).
-- **Multiple accepted reviews**: adjudication may synthesize between
-  genuinely disagreeing reviews, but a `synthesis` block (`reason`,
-  `changedFields`) is required whenever `decision` differs from *any* one of
-  them, naming the union of every field that differs from at least one.
+## The reproducibility gate
 
-`eval:review:validate` enforces this (`validateAdjudicationConsistency`) and
-fails a `benchmark-ready` fixture that violates it.
-`npm run eval:reviews -- <fixture-id>` shows whether the current adjudication
-exactly matches its accepted review(s) and, if not, the changed fields and
-override/synthesis reason (`--json` includes a structured
-`adjudicationDelta`). `npm run eval:review:export -- <fixture-id>` includes
-the same delta in its packet, plus per-review stale/current status, so it can
-be handed to another AI or human and asked "does this adjudication fairly
-reflect the accepted review evidence?"
+A case is not a case because it failed once.
+`checkReproducibility` runs baseline, bump-only and (where a gold patch exists)
+gold-repaired **three times each**, and rules in this order — the order is
+load-bearing:
 
-## Full-pipeline vs. component adapters
+1. **`environment-unavailable`** — a machine that could not install cannot say
+   anything about a case.
+2. **`invalid-baseline`** — a consumer already failing its own check before the
+   upgrade makes every later observation uninterpretable. (swe-bump-bench's
+   collector warns about exactly this and keeps the task anyway.)
+3. **`flaky`** — an unstable signature cannot support a causal claim.
+4. **`non-causal`** — the bump-only state did not behave as declared.
+5. **`oracle-insufficient`** — the bump-only state failed, but with no failure
+   the baseline did not already produce, so the update cannot be shown to be the
+   cause; or the gold patch does not actually repair it.
+6. **`benchmark-ready`.**
 
-- **`drift-full-pipeline`** (`eval/src/adapters/full-pipeline.ts`) is the
-  headline, authoritative adapter. It never reads `fixture.yml`'s
-  `scenarioLabel` or any review/adjudication content. It substitutes only
-  *transport*: `installNpmFetchStub` serves the fixture's own
-  `upstream/old`/`upstream/new` trees as jsDelivr responses (the same pattern
-  `test/scan-rows.test.ts` already uses in production tests), so
-  `fetchTypeSurface`/`extractExports`/`diffSurfaces` genuinely parse and diff
-  real `.d.ts` files; `localPackageEnvironment` points behavioural
-  verification at local package directories instead of a registry install.
-  Any host other than the two jsDelivr hosts throws rather than silently
-  reaching the real network, enforcing `network: disabled`.
-  It only credits deterministic, model-free repair (`attemptCodemod`, tier
-  1). Model-authored fix-plan generation (tier 2c) and coding-agent repair
-  (tier 3) are never invoked here, so no paid model call happens in
-  deterministic CI.
-- **`drift-component-localize-repair`** (formerly `drift-structured-fixture`)
-  reads `scenarioLabel` directly to construct a *known* `BreakingChange` (and,
-  where the built-in codemod can't handle it, a *known*, hand-authored
-  `FixPlan`), then tests only localization and repair application. It never
-  contributes to headline detection metrics, and its abstention/repair-action
-  scoring is intentionally skipped (see `score.ts`'s `policyScoped` flag) —
-  it always attempts repair by design, because its entire purpose is testing
-  whether repair *application* succeeds given a known finding, not whether
-  Drift should have acted automatically. It only supports rename-shaped
-  fixtures (`renamed-export`, `member-rename`); it is skipped for any other
-  `scenarioLabel`.
-- A distinct `drift-component-fixplan-application` adapter — narrower still,
-  application only, given an already-*validated* recorded fix plan — was
-  scoped in the original plan but not split into its own file in this pass;
-  `npm-member-rename`'s repair today already exercises exactly that path
-  (a hand-authored, non-generated `FixPlan` applied via `applyCommitFixPlan`)
-  inside `drift-component-localize-repair`. Splitting it out is a clean,
-  low-risk follow-up, not a methodology gap.
+Three repetitions is the minimum because BUMP discarded 57 of 628 candidates at
+this stage: roughly one in eleven looked like a breaking update and was not.
 
-**Detection F1 in the public headline is `drift-full-pipeline`'s only.**
-Component-adapter numbers are reported in a clearly separate section and must
-never be quoted as detection accuracy.
+The gate records the platform it verified and claims nothing beyond it.
 
-## Baseline / broken / repaired oracles
+---
 
-Every repair-bearing fixture declares three oracle stages in `fixture.yml`,
-each with a `command` and an `expect: pass | fail`:
+## Failure signatures, not error counts
 
-- **baseline** — old dependency + original consumer. Normally `pass`.
-- **broken** — new dependency + original consumer, unmodified. Normally
-  `fail`; a "safe upgrade" fixture (e.g. `npm-unused-break`) may legitimately
-  set `expect: pass` here, because the point of that fixture is that the
-  upgrade genuinely doesn't break that particular consumer.
-- **repaired** — new dependency + Drift's repaired consumer. Normally `pass`,
-  and only run when a repair was actually attempted.
+Every stage's output is parsed into a set of stable diagnostic **identities** —
+diagnostic code, repo-relative file, normalized message; never line numbers,
+absolute paths, or per-run temp prefixes. Repair is then judged with set algebra:
 
-Each stage's observed result is `pass | fail | unable-to-run` —
-`unable-to-run` (e.g. `npm install` itself failed) is an infrastructure
-failure, never scored as a product success or failure. A fixture whose
-*broken* stage already passes untouched can never be credited with a
-successful repair merely because *repaired* also passes — `successfulRepair`
-in `eval/src/score.ts` requires baseline and broken to have matched their own
-expectations too.
+```
+trigger set   = broken \ baseline          what the upgrade actually broke
+resolved      = trigger \ repaired         what the repair actually fixed
+new failures  = repaired \ (baseline ∪ broken)   what the repair broke
+```
 
-## Detection metrics: micro and macro, raw counts
+This is Defects4J's trigger tests and SWE-bench's FAIL_TO_PASS / PASS_TO_PASS,
+applied to upgrades. It exists because every prior benchmark in this space
+decides success by comparing a *count*, and a count cannot distinguish a
+migration from deleting the code that called the changed API — nor catch a patch
+that swaps one real error for a different real error.
 
-Every report shows raw TP/FP/FN before any derived ratio. **Micro** sums
-confusion counts across every scored fixture for an adapter, then computes one
-precision/recall/F1 — the standard corpus-level aggregate, and immune to
-empty-set inflation because a fixture with nothing expected and nothing
-predicted contributes 0/0/0, changing neither the numerator nor the
-denominator. **Macro** averages each fixture's own precision/recall/F1, but
-excludes a fixture where *both* expected and actual were empty from that
-mean — including it would silently score "made no claim" as a perfect
-positive detection, which is exactly the empty-set-precision trap this
-harness must not fall into (see `aggregateDetection` in `eval/src/score.ts`
-and its accompanying tests). A fixture with an empty expected set and a
-*non-empty* actual set — a false positive on a negative/control fixture —
-is never excluded; it correctly drags macro precision down.
+A failure already present in baseline is pre-existing consumer breakage and can
+never be credited to a repair. A bump that broke nothing reproducibly is
+`no-trigger` and can never credit a repair for fixing nothing.
 
-All scoring is per-fixture first (`scoreFixture`), then aggregated
-(`aggregateAdapter`) — finding and impact-site ids are internally namespaced
-by fixture id before comparison, so identical ids in two different fixtures
-can never satisfy each other.
+---
 
-## False-safe, precisely
+## What is measured
 
-`falseSafe` requires two things: the accepted adjudication's
-`groundTruthSafety` is **`unsafe`** (a reviewed, evidence-backed claim, not a
-default), and Drift's real user-facing verdict
-(`verdictFor`'s `FindingVerdict`, captured directly by `drift-full-pipeline`)
-is safe-equivalent — only `no-incompatible-change-in-checked-surfaces` and
-`clean` count as safe-equivalent. Every other real verdict string
-(`insufficient-evidence`, `verification-incomplete`,
+### Detection — five independent levels
+
+Pooling them makes a miss undiagnosable: "never fetched the evidence",
+"classified a removal as a rename", "classified correctly and missed the wrapper
+that calls it", and "found everything and still called it safe" are four defects
+in four modules.
+
+| Level | Question |
+| --- | --- |
+| **D0** | Did the manifest diff find the dependency update? |
+| **D1** | Did evidence state what changed upstream? |
+| **D2** | Was that turned into the right `BreakingChange`? |
+| **D3** | Did it land on the right consumer code? (symbol view *and* line view) |
+| **D4** | Was the user told something honest? |
+
+A level the accepted adjudication does not rule on is `not-adjudicated` and
+contributes to nothing. It is never zero-filled — scoring an unstated
+expectation as an empty set turns "reviewers did not rule on this" into "Drift
+correctly predicted nothing".
+
+D3 is reported at two anchors on purpose. The **symbol** view survives harmless
+reformatting; the **line** view still catches a tool naming the right file and
+the wrong line.
+
+**D4 / false-safe** requires two things: adjudicated truth is `unsafe`, *and*
+Drift's user-facing verdict is safe-equivalent. Only
+`no-incompatible-change-in-checked-surfaces` and `clean` are safe-equivalent —
+every inconclusive verdict (`insufficient-evidence`, `verification-incomplete`,
 `detected-not-locally-reachable`, `unchecked`, `verification-failed`,
-`upstream-only`) is deliberately never treated as "Drift said safe" — an
-unverified or inconclusive result is not a safe claim.
+`upstream-only`) is not a safety claim. Widening that set is the easiest way to
+improve a false-safe rate without changing the product, which is why it is a
+named constant with a comment saying so. `unsupportedSafe` (truth uncertain,
+Drift said safe) is reported separately and never merged in.
 
-A second, distinct signal, `unsupportedSafe`, fires when `groundTruthSafety`
-is `uncertain` (the benchmark itself couldn't resolve the question) and Drift
-still claimed a safe-equivalent verdict. This is a bad product outcome and is
-reported separately — it is never merged into the `falseSafe` count, because
-calling it a factual false-safe would overstate what the benchmark actually
-established. CI fails unconditionally on any `falseSafe === true` on a
-`benchmark-ready` fixture; it does not fail on `unsupportedSafe` alone.
+### Repair — one track per production mechanism
 
-## Repair metrics
+Never pooled. They fail for different reasons and need different fixes.
 
-`correctAbstention`, `incorrectRepairAttempt`, `missedRepairOpportunity`, and
-`successfulRepair` are computed from the adjudicated `expectedAction`
-(`repair | abstain | no-repair-needed`) crossed with what was actually
-attempted and observed — never conflated with plain oracle pass/fail (an
-expected abstention is not "the repair oracle passed", it is "nothing was
-attempted and nothing should have been"). Regression failures are classified
-into `repair-failed-to-fix`, `repair-introduced-regression`, or
-`oracle-unavailable`, not lumped into one boolean. Gold-patch exact match is
-reported but is explicitly **secondary**: a semantically correct repair that
-passes the repaired oracle, introduces no regression, and only touches
-in-scope files must not fail merely because its diff text differs from the
-checked-in `expected/gold.patch`.
+| Track | What it exercises |
+| --- | --- |
+| `repair-codemod` | tier 1: deterministic, model-free rename codemod |
+| `repair-fixplan-cache` | a cached plan, through the normal revalidation gate |
+| `repair-fixplan-recipe` | a community recipe re-derived in the sandbox |
+| `repair-fixplan-model` | a model authors a *rule*; `validateFixPlan` decides; Drift applies it |
+| `repair-agent` | a coding agent through Drift's real `FixAgent` + worktree runner |
+| `repair-full-remediation` | the complete hierarchy, Drift choosing — **the headline** |
 
-### Production scope escape vs. ground-truth unexpected changed file
+`repair-fixplan-model` is architecturally unlike agent repair and is never
+reported as the same thing: the model proposes one rule per finding and never
+edited code, Drift's gate decides whether it is grounded and derivable, and
+Drift's executor applies it. The two halves are recorded separately — "the model
+declined" is a correct abstention, "the model proposed something the validator
+rejected" is the gate earning its keep.
 
-Every deterministic repair adapter (`eval/src/adapters/repair-capture.ts`)
-captures the real before/after content of every file it touches — never a
-hard-coded empty list — and reports two distinct things, never conflated:
+`repair-agent` benchmarks **Drift plus its Codex handoff, not Codex.** Nothing in
+the harness writes a prompt. The agent comes from Drift's own
+`CLI_AGENT_SPECS`, receives a `CommitUnit` the production planner built, and runs
+through `runAgentCommitsInWorktree`, which supplies Drift's `buildFixPrompt`,
+snapshots allowed files, isolates in a disposable worktree, and validates changed
+paths against the plan's declared scope before accepting anything.
 
-- **`repairScopeEscapeFiles`** (aggregated as `productionScopeEscapeCount`) —
-  a file the repair changed that falls *outside* the union of the repairable
-  commits' own `allowedFiles`. This is Drift's own plan disobeying its own
-  declared scope: a hard production-safety failure, and CI-blocking whenever
-  it is non-zero (`eval/src/run.ts`).
-- **`changedFiles`**'s FP count (aggregated as `unexpectedChangedFileCount`)
-  — a file the repair changed that *was* within its own allowed scope, but
-  that the adjudicated `repair.expectedChangedFiles` did not expect. This is
-  a benchmark-quality signal (ground truth may be incomplete, or the repair
-  may be doing something the benchmark didn't anticipate), reported clearly
-  but never CI-blocking on its own.
+#### Outcomes
 
-A file can be both, if it lies outside both `allowedFiles` and
-`expectedChangedFiles` — the two counts are not mutually exclusive. Changed-
-file precision/recall/F1 is always scored against adjudicated
-`expectedChangedFiles`, never against `allowedFiles` — `allowedFiles` is
-Drift's own production safety boundary, not benchmark ground truth.
+`repaired` · `partially-repaired` · `failed-to-fix` · `introduced-regression` ·
+`correct-abstention` · `missed-opportunity` · `unsafe-attempt` ·
+`no-repair-needed` · `operational-failure` · `no-trigger`
 
-Gold-patch exactness is tri-state, not boolean: `repairGoldPatchExact` is
-`'not-applicable'` (never `false`) when no repair was attempted or the
-accepted adjudication names no gold patch, and only `true`/`false` when an
-actual comparison ran — the real captured patch, normalized (blob-hash
-`index` lines and hunk line-number ranges stripped, `+`/`-` content
-untouched), against the checked-in gold patch, normalized the same way.
+Only `repaired` counts as a repair. `correctDecision` — repaired, correctly
+abstained, or nothing needed — is reported beside it, because a benchmark that
+scores only repairs pushes a tool toward guessing, and a wrong migration applied
+to every call site is worse than no migration.
 
-## Abstention
+Attempting where truth says abstain is `unsafe-attempt` **even when the oracle
+goes green**. A repair that edits outside its own plan's declared scope is
+disqualified however green the build.
 
-See "Repair metrics" above — abstention correctness is scored only for
-`drift-full-pipeline`; see "Full-pipeline vs. component adapters" for why a
-component adapter's designed-in repair attempt is not scored against the same
-policy.
+`operational-failure` (agent timeout, agent error, install failure, patch would
+not apply, model not configured) leaves both the numerator and the denominator.
+It is still counted in the outcome table, so nothing disappears.
 
-## Deterministic CI, and where model/agent runs would live
+Gold-patch exactness is a **diagnostic** and never a gate — a semantically
+correct migration that reads differently is still correct.
 
-`npm run eval:deterministic` and `npm test`/`npm run eval:test` make no paid
-model API calls — `drift-full-pipeline` only exercises tier-1 deterministic
-repair. `ci.yml` fails on harness-integrity problems only: an
-`eval:review:validate` failure, any `falseSafe === true` on a benchmark-ready
-fixture, or a real production scope escape (see "Production scope escape vs.
-ground-truth unexpected changed file" above) — never merely an unexpected-
-changed-file benchmark-quality signal. It does **not** fail merely because
-Drift missed a detection or a
-repair on a hard fixture, or produced an `unsupportedSafe` outcome — those are
-reportable product-accuracy metrics, not integrity breaks, and hiding a
-genuine miss behind a CI failure would defeat the point of a benchmark.
+### Conditional vs end-to-end
 
-A future model-authored fix-plan or coding-agent benchmark should record
-provenance per run — fixture id, fixture hash, repository commit, provider,
-model/tool, exact version where available, prompt version, prompt hash, run
-timestamp, patch/result, cost, latency, review status — and replay from those
-cached, reviewed artifacts in normal CI; live paid calls stay outside
-`eval:deterministic`.
+A `conditional` experiment hands a mechanism adjudicated findings to measure its
+ceiling ("could the codemod fix this *if* detection were correct?"). Useful, and
+not the product. It is marked at the artifact level and the evaluator refuses to
+fold it into end-to-end metrics.
 
-## Audit records
+---
 
-`npm run eval:accuracy:audit -- --record` writes one file per run under
-`eval/reports/audits/<commit>-<fixtureSetHash>-<scoringVersion>.json` (+
-`.md`), including commit, branch, dirty status, per-fixture hashes, accepted
-review ids, adjudication hashes, scoring version, adapter versions, command,
-timestamp, environment, and the full metrics. It refuses to silently
-overwrite an existing record for the same key if its metrics materially
-differ. Plain `npm run eval:deterministic` (no `--record`) writes nothing
-git-tracked, so an ordinary CI run never dirties the tree — the previous
-append-only `accuracy-audit.md` did, on every single run.
+## Live AI trials
 
-## Current benchmark composition
+- **Every attempt is retained.** Keeping only the successful trial of three is
+  best-of-k with extra steps. The store refuses to overwrite an artifact; a
+  repeat must take the next trial index.
+- **First-attempt success is the headline.** Reliability across trials is
+  reported beside it, never instead of it: "succeeded once in three" and
+  "succeeded three times in three" are different products that pass@3 scores
+  identically. No best-of-k number is computed at all.
+- **Provenance is exhaustive**, and anything the environment does not expose is
+  the literal string `unavailable`. Model and effort are read from what the
+  agent itself reported, not from what Drift requested — Codex resolves its own
+  model from config when flags are absent, and recording the request would
+  attribute a result to a model that never ran it.
+- **A live trial records `costUsd: null`, not `0`.** A provider that does not
+  expose cost has not told us it was free.
 
-Every report's "Benchmark composition" section states this at run time, but
-as of this PR: **4 fixtures, all synthetic, all npm, all AI-reviewed (Claude),
-zero human-reviewed, one multi-reviewed** (`npm-return-value` has two
-superseding reviews from a genuine self-correction — see its `reviews/`
-directory), **zero historical fixtures, zero disputed fixtures**. This is a
-small, honest, still-mostly-synthetic suite. Do not read any F1 number here
-as a general accuracy claim about Drift.
+---
 
-### Fixtures
+## Statistics
 
-- `npm-renamed-export` — a straightforward export rename; consumer is broken
-  against the new version.
-- `npm-member-rename` — the same rename pattern, reached through a namespace
-  import; ground truth's `expectedAction` is `abstain` (not `repair`) because
-  nothing in the evidence available to an automated tool, absent a
-  changelog/migration guide this synthetic package cannot legitimately
-  provide under `network: disabled`, actually links the old name to the new
-  one — see its `reviews/` rationale for the full argument.
-- `npm-return-value` — a genuine return-shape breaking change, corroborated by
-  both a real `.d.ts` diff and a real behavioural probe; ground truth expects
-  abstention (no deterministic tier can safely guess what the caller wants
-  from the new shape).
-- `npm-unused-break` — **negative/control fixture**: a real upstream breaking
-  change (`removedFn` removed) that the consumer never references. Ground
-  truth is `groundTruthSafety: safe`, zero impact sites, `expectedAction:
-  no-repair-needed`, and `broken.expect: pass` (a "safe upgrade" variant).
+Rates are reported at instance-micro, case-macro, repository-macro and
+dependency-macro. A historical corpus is never balanced, and one active monorepo
+contributing a dozen cases would otherwise have its characteristics reported as
+the tool's; a large gap between the four is itself the finding.
 
-### Why the two rename fixtures show as detection misses today
+- A rate over an empty denominator is `n/a (0/0)`, never `0%`.
+- Empty-expected/empty-actual cases are excluded from macro means and harmless
+  in micro. A false positive on a control case is **never** excluded.
+- Bootstrap intervals resample over cases, not trials, and return nothing below
+  20 cases. An interval from four cases is arithmetically valid and
+  rhetorically dishonest.
+- McNemar's exact test is available for comparing two tracks on identical cases,
+  and returns nothing when too few pairs disagree.
 
-`drift-full-pipeline`'s real evidence-gathering for a synthetic local npm
-package has no source of prose (migration guide/changelog) linking an old
-name to a new one — a real GitHub repository would supply that; a fixture
-under `network: disabled` cannot without fabricating a fake fetchable GitHub
-repo, which would just relocate the leaked answer rather than remove it. So
-the real `analyze()` classifies the surface diff conservatively as
-`removed-export`, not `renamed-export`, and the built-in codemod (which only
-fires on `kind === 'renamed-export'`) correctly declines to guess. Ground
-truth records the true fact (`renamed-export`, confirmed by identical
-function bodies across old/new) — so this shows up as a genuine, honest
-detection-granularity gap, not a bug in the harness or the review. This is
-exactly the kind of finding the benchmark is designed to surface rather than
-hide, and it argues for adding a fixture with real changelog/migration-guide
-evidence (fixture-local, e.g. a `CHANGELOG.md` the consumer repo itself ships)
-as a clean next step.
+---
 
-## Limitations
+## Ground truth
 
-- Four fixtures, one ecosystem (npm), all synthetic. No historical
-  real-world migration cases yet.
-- Only one negative/control fixture exists; `npm-optional-parameter-added`,
-  a local-symbol-shadowing case, and an ambiguous-migration abstention case
-  (beyond `npm-member-rename`, which already covers one abstention shape)
-  are the natural next additions.
-- Only one AI reviewer (Claude) and zero human reviewers so far — the
-  multi-reviewer/disagreement tooling (`eval:reviews`) is exercised by
-  `npm-return-value`'s two-review history, but not yet by an actual
-  disagreement between two different reviewers.
-- `drift-component-fixplan-application` is not yet split into its own
-  adapter file (see "Full-pipeline vs. component adapters").
-- Network policy enforcement is best-effort: `installNpmFetchStub` throws on
-  any unexpected host, but this is application-level interception of
-  `globalThis.fetch`, not OS-level sandboxing — a determined subprocess could
-  still reach the network. No claim of stronger isolation is made.
+**Fixture → review → adjudication → prediction**, and only adjudication counts.
 
-## Plan for historical fixtures
+- A **review** is one reviewer's independently derived conclusion. Append-only:
+  never edited, only superseded.
+- An **adjudication** is the accepted truth, referencing the review(s) it
+  accepts. Scoring reads only this — never a review directly, never case
+  metadata. Where it differs from an accepted review, it must say so in
+  machine-checked `override`/`synthesis` metadata naming exactly the fields that
+  differ.
+- A review applies only to the exact revision it inspected. Content hashes
+  detect staleness, and a stale review's case is excluded rather than re-scored.
 
-`fixture.yml`'s `provenance.kind: historical` is already a supported value.
-A historical fixture's `source.repository` should point at the real upstream
-repository, and its provenance/review evidence should reference the old/new
-tags or commits, the consumer repository and its before/after commits, and
-the real migration PR or release notes where available — captured once,
-locally, so re-running the benchmark stays deterministic and offline. None
-are added in this PR; adding a first real historical case (e.g. a well-known
-npm major-version migration with a public migration guide) is the natural
-next step once this architecture has been used for a second review cycle.
+### AI review
 
-## Adding a fixture
+Reviewers run through the same agent registry Drift's repair agents come from,
+each in a fresh empty sandbox. The packet carries the public case, both upstream
+trees, the consumer source and observed oracle output — and **excludes** any
+Drift prediction (a reviewer who has seen the tool's answer is grading it, not
+deriving truth), any other reviewer's conclusion, and the developer's patch (a
+reviewer shown it records it as *the* expected change).
 
-1. Create `eval/fixtures/<id>/` with `fixture.yml`, `upstream/old/`,
-   `upstream/new/`, `consumer/`, and (if a repair is expected)
-   `expected/gold.patch`.
-2. Set `readiness: draft` until it has an accepted adjudication.
-3. Follow `eval/review-prompts/ground-truth-v1.md` to write an independent
-   review — do not inspect any adapter's prediction first.
-4. `npm run eval:review:validate` to confirm the review/adjudication are
-   consistent, then flip `readiness` to `benchmark-ready`.
+The instruction forbids answering from prior knowledge of the package and makes
+`uncertain` an expected answer. The failure mode of an AI reviewer is not
+refusing to answer — it is answering confidently from recollection, and a
+benchmark whose ground truth is a model's memory of a package measures recall
+rather than correctness. Reviewers are never told which tool is being evaluated.
 
-## Reproduce
+Disagreement is preserved, not resolved by fiat. A disputed field is excluded
+from headline metrics.
+
+---
+
+## Commands
 
 ```sh
-npm run build
-npm test
-npm run eval:test
-npm run eval:review:validate
-npm run eval:deterministic
-npm run eval:accuracy:audit -- --record
+npm run eval:typecheck                 # the harness typechecks
+npm run eval:test                      # harness unit tests, zero model calls
+npm run eval:cases:import              # legacy fixture -> public/private case layout
+
+npm run eval:bench -- run              # deterministic tracks: detect-end-to-end, repair-codemod
+npm run eval:bench -- run --tracks repair-agent --trials 3 --agent codex   # live, costs money
+npm run eval:bench -- evaluate <run-id> [--out FILE]                       # always free, always offline
+npm run eval:bench -- runs
 ```
+
+`run` produces artifacts and may cost money. `evaluate` scores artifacts and
+never calls anything. Anyone can re-score a paid run after an evaluator fix, and
+CI validates the evaluator with zero model calls.
+
+`evaluate` fails only on an **integrity** break — a false-safe, a production
+scope escape, an unaudited workspace, or a stale artifact. A missed detection or
+a failed repair is a product result; failing CI on one is how a benchmark starts
+being tuned away from measuring the product.
+
+---
+
+## Composition and limitations
+
+Current corpus: **4 cases, all synthetic, all npm, one repository, one
+dependency, 1 negative/control.** Every report prints this before any number.
+
+- **No historical cases yet.** The miner (`src/corpus/mine-npm.ts`) builds them
+  causally from real migration PRs and the reproducibility gate rules on them,
+  but the corpus has not been populated. This is the single largest gap.
+- **One ecosystem.** The schema is ecosystem-neutral; only npm is populated.
+- **D0 and D1 are unadjudicated on every current case.** The existing reviews
+  predate those levels, and inventing an expectation for them is exactly what
+  this harness must not do.
+- **Network isolation is configuration, not a sandbox.** Drift's own `fetch` is
+  intercepted and the package manager runs offline, but a subprocess — including
+  a coding agent — is not prevented from reaching the network by either.
+- **A live agent must reach its own provider**, so `agent-service-only` is the
+  strongest honest policy for an agent trial. An agent that searches for the
+  historical PR is not currently prevented, only recorded.
+- **Only one AI reviewer so far, and zero human reviewers.** The
+  multi-reviewer/disagreement machinery exists and is exercised by one case's
+  supersession history, but not yet by two different reviewers disagreeing.
+- **The `repair-fixplan-cache` and `repair-fixplan-recipe` tracks are declared
+  but not yet implemented.** They are in the track enum and are not runnable;
+  they report nothing rather than reporting zero.
