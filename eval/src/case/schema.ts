@@ -74,6 +74,13 @@ export const failureCategorySchema = z.enum([
   'test-failure',
   'runtime-failure',
   'lockfile-failure',
+  /**
+   * The check failed and produced nothing the signature parser could read.
+   * Its own category rather than a fallback into `compile-failure`, because
+   * "we do not know what kind of failure this is" is a different fact from
+   * "this is a compile error", and only one of them is an observation.
+   */
+  'unreadable-failure',
   /** A negative/control case: nothing fails, and nothing should. */
   'none',
 ]);

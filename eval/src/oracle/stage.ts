@@ -128,6 +128,25 @@ export async function runCaseStage(
     if (run.code !== 0 && diagnostics.length === 0) diagnostics.push(processExitDiagnostic(run.code));
 
     const hidden = await runHiddenChecks(consumerDir, publicCase, options.hiddenChecks ?? []);
+
+    // A hidden check that could not execute makes the whole stage
+    // uninterpretable, and says so. It is deliberately not downgraded to "the
+    // project's own script passed, so call it a pass": the stage's job is to
+    // decide whether this state is correct, and one of the assertions that
+    // decides it did not run.
+    if (hidden.unableToRun.length > 0) {
+      return {
+        stage: options.stage,
+        expected: options.expected,
+        observed: 'unable-to-run',
+        matchesExpectation: false,
+        signature: [],
+        exitCode: run.code,
+        outputExcerpt: excerpt([...hidden.unableToRun, run.output].join('\n')),
+        durationMs: Date.now() - started,
+      };
+    }
+
     diagnostics.push(...hidden.diagnostics);
 
     // A hidden check that did not do what a correct state must do makes the
@@ -174,20 +193,43 @@ async function runHiddenChecks(
   consumerDir: string,
   publicCase: PublicCase,
   checks: readonly HiddenCheck[],
-): Promise<{ diagnostics: Diagnostic[]; violated: boolean; output: string }> {
+): Promise<{ diagnostics: Diagnostic[]; violated: boolean; unableToRun: string[]; output: string }> {
   const diagnostics: Diagnostic[] = [];
   const output: string[] = [];
+  const unableToRun: string[] = [];
   let violated = false;
 
   for (const check of checks) {
-    for (const [path, content] of Object.entries(check.files)) {
-      const target = join(consumerDir, path);
-      await mkdir(dirname(target), { recursive: true });
-      await writeFile(target, content, 'utf8');
+    try {
+      for (const [path, content] of Object.entries(check.files)) {
+        const target = join(consumerDir, path);
+        await mkdir(dirname(target), { recursive: true });
+        await writeFile(target, content, 'utf8');
+      }
+    } catch (err) {
+      // The check's own files could not be written, so the assertion never
+      // ran. That is a fact about this machine, not about the repair.
+      unableToRun.push(`hidden check "${check.id}" could not be staged: ${(err as Error).message}`);
+      continue;
     }
 
     const result = await runCommand(consumerDir, check.command, publicCase);
-    const observed = result.spawnFailed ? 'unable-to-run' : result.code === 0 ? 'pass' : 'fail';
+
+    // A check whose command could not be *started* — a missing interpreter, a
+    // permission error — has asserted nothing. Previously this compared
+    // `unable-to-run` against the check's expectation, found them unequal, and
+    // recorded an ordinary behavioural violation: a broken toolchain became a
+    // product failure, and a repair was charged for it. An assertion that
+    // could not execute and an assertion that executed and failed are
+    // different facts, and only the second is about the code.
+    if (result.spawnFailed) {
+      unableToRun.push(
+        `hidden check "${check.id}" (${check.description}) could not be executed: ${result.output.trim() || 'the command could not be started'}`,
+      );
+      continue;
+    }
+
+    const observed = result.code === 0 ? 'pass' : 'fail';
     if (observed === check.expect) continue;
 
     violated = true;
@@ -199,7 +241,7 @@ async function runHiddenChecks(
     }
   }
 
-  return { diagnostics, violated, output: output.join('\n') };
+  return { diagnostics, violated, unableToRun, output: output.join('\n') };
 }
 
 interface CommandResult {

@@ -240,8 +240,27 @@ function sameSignature(a: readonly string[], b: readonly string[]): boolean {
  */
 function categorize(triggerSignature: readonly string[]): FailureCategory {
   if (triggerSignature.length === 0) return 'none';
-  if (triggerSignature.some((id) => id.startsWith('tsc:'))) return 'type-check-failure';
-  if (triggerSignature.some((id) => id.startsWith('test:'))) return 'test-failure';
-  if (triggerSignature.some((id) => id.startsWith('runtime:'))) return 'runtime-failure';
-  return 'compile-failure';
+  const kinds = triggerSignature.map(diagnosticKindOf);
+  if (kinds.includes('tsc')) return 'type-check-failure';
+  if (kinds.includes('test')) return 'test-failure';
+  if (kinds.includes('runtime')) return 'runtime-failure';
+  // Everything left is `process:exit:<code>` — a command that failed and said
+  // nothing the signature parser could read. Calling that a compile failure,
+  // which this used to do, is a guess dressed as an observation.
+  return 'unreadable-failure';
+}
+
+/**
+ * The diagnostic kind an identity actually describes.
+ *
+ * A hidden behavioural check's diagnostics are namespaced `hidden:<id>:` and
+ * keep their own inner kind after it, so `hidden:preserves-shout:runtime:...`
+ * is a runtime failure. Matching on the raw prefix — which this used to do —
+ * matched none of the kinds and fell through to `compile-failure`, so every
+ * case whose trigger set was purely behavioural was categorised as a compile
+ * error it never produced.
+ */
+export function diagnosticKindOf(identity: string): string {
+  const inner = identity.startsWith('hidden:') ? identity.split(':').slice(2).join(':') : identity;
+  return inner.split(':')[0] ?? '';
 }
