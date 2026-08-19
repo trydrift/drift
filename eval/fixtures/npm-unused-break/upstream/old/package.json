@@ -1,0 +1,8 @@
+{
+  "name": "fixture-lib",
+  "version": "1.0.0",
+  "type": "module",
+  "license": "MIT",
+  "exports": "./index.js",
+  "types": "index.d.ts"
+}
