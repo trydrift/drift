@@ -54,8 +54,14 @@ const TSC_WITHOUT_FILE = /^error\s+(?<code>TS\d+):\s+(?<message>.*)$/;
 /** `node --test` TAP: `not ok 3 - resolves the renamed export`. Sub-tests are indented; both count. */
 const TAP_FAILURE = /^\s*not ok\s+\d+\s+-\s+(?<name>.+?)\s*(?:#.*)?$/;
 
-/** An uncaught error line, with or without Node's `Uncaught ` / `node:internal` decoration. */
-const RUNTIME_ERROR = /(?<code>[A-Z][A-Za-z]*(?:Error|Exception))(?:\s*\[[^\]]+\])?:\s+(?<message>.+)$/;
+/**
+ * An uncaught error line, with or without Node's `Uncaught ` / `[ERR_*]`
+ * decoration. The class-name prefix is optional so a bare `Error: ...` — what
+ * a hand-thrown `new Error()` in a consumer's own check produces, and one of
+ * the most common real failure shapes — is captured rather than falling
+ * through to the unreadable-failure path.
+ */
+const RUNTIME_ERROR = /(?<code>(?:[A-Z][A-Za-z]*)?(?:Error|Exception))(?:\s*\[[^\]]+\])?:\s+(?<message>.+)$/;
 
 export interface ExtractOptions {
   /**

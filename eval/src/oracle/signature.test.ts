@@ -127,3 +127,21 @@ test('the count-based rule prior benchmarks use would pass a patch this one reje
   assert.equal(repaired.length > broken.length, false, 'count-based rule would credit this patch');
   assert.equal(analyzeFailToPass({ baseline: [], broken, repaired }).verdict, 'regressed');
 });
+
+test('a bare hand-thrown Error is captured, not left as an unreadable failure', () => {
+  const output = [
+    'file:///tmp/drift-eval-broken-abc/consumer/src/app.js:5',
+    '  throw new Error(`expected ADA, got ${value}`);',
+    '        ^',
+    '',
+    'Error: expected ADA, got [object Object]',
+    '    at file:///tmp/drift-eval-broken-abc/consumer/src/app.js:5:9',
+  ].join('\n');
+  const diagnostics = extractDiagnostics(output, { cwd: '/tmp/drift-eval-broken-abc/consumer' });
+  assert.deepEqual(signatureOf(diagnostics), ['runtime:Error:expected ADA, got [object Object]']);
+});
+
+test('the echoed source line of a throw is not mistaken for a second failure', () => {
+  const diagnostics = extractDiagnostics('  throw new Error(`boom`);');
+  assert.deepEqual(diagnostics, []);
+});
