@@ -87,6 +87,24 @@ export const reviewSchema = z.object({
 });
 export type Review = z.infer<typeof reviewSchema>;
 
+/**
+ * Records that adjudication deliberately diverges from its accepted review(s)
+ * — see `diffConclusions`/`validateAdjudicationConsistency` below. Machine
+ * checked: `changedFields` must exactly match the fields that actually
+ * differ, no more (an unexplained delta) and no less (a stale/inaccurate
+ * justification).
+ */
+const overrideSchema = z.object({
+  enabled: z.literal(true),
+  reason: z.string().min(1),
+  changedFields: z.array(z.string()).min(1),
+});
+
+const synthesisSchema = z.object({
+  reason: z.string().min(1),
+  changedFields: z.array(z.string()),
+});
+
 export const adjudicationSchema = z.object({
   fixtureId: z.string(),
   acceptedReviewIds: z.array(z.string()).min(1),
@@ -95,8 +113,14 @@ export const adjudicationSchema = z.object({
   decidedAt: z.string(),
   decidedBy: z.object({ type: z.enum(['human', 'ai']), name: z.string() }),
   notes: z.string(),
+  /** Required when `decision` differs from a single accepted review's conclusion. */
+  override: overrideSchema.optional(),
+  /** Required when `decision` differs from any of multiple accepted reviews' conclusions. */
+  synthesis: synthesisSchema.optional(),
 });
 export type Adjudication = z.infer<typeof adjudicationSchema>;
+export type AdjudicationOverride = z.infer<typeof overrideSchema>;
+export type AdjudicationSynthesis = z.infer<typeof synthesisSchema>;
 
 export function fixtureDir(fixtureId: string, root = join(process.cwd(), 'eval', 'fixtures')): string {
   return join(root, fixtureId);
@@ -191,6 +215,144 @@ export function validateConclusion(conclusion: Conclusion): string[] {
     problems.push("groundTruthSafety is 'safe' but impactSites is non-empty.");
   }
 
+  return problems;
+}
+
+/** The `Conclusion` fields `diffConclusions`/adjudication-consistency checking can name. */
+export type ConclusionField =
+  | 'upstreamFindings'
+  | 'impactSites'
+  | 'taxonomy'
+  | 'gaps'
+  | 'groundTruthSafety'
+  | 'repair.expectedAction'
+  | 'repair.expectedChangedFiles'
+  | 'repair.goldPatch';
+
+/** Order-insensitive equality for a field that is semantically a set. */
+function sameSet(a: readonly string[], b: readonly string[]): boolean {
+  const as = [...new Set(a)].sort();
+  const bs = [...new Set(b)].sort();
+  return as.length === bs.length && as.every((value, i) => value === bs[i]);
+}
+
+/**
+ * Canonical taxonomy equality: `detectability`/`visibility` are sets
+ * (ordering never matters), `nature`/`scope` compare exactly. Shared by
+ * scoring (a prediction's taxonomy vs. adjudicated truth) and adjudication
+ * consistency (adjudication's taxonomy vs. an accepted review's).
+ */
+export function sameTaxonomy(
+  a: Conclusion['taxonomy'] | undefined,
+  b: Conclusion['taxonomy'] | undefined,
+): boolean {
+  if (!a && !b) return true;
+  if (!a || !b) return false;
+  return a.nature === b.nature && a.scope === b.scope && sameSet(a.detectability, b.detectability) && sameSet(a.visibility, b.visibility);
+}
+
+/**
+ * The `Conclusion` fields that differ between two conclusions, after
+ * canonical (order-insensitive, set-based where appropriate) normalization.
+ * `repair.expectedAction` and `repair.goldPatch` compare exactly — a policy
+ * decision or a gold-patch path is never a set.
+ */
+export function diffConclusions(a: Conclusion, b: Conclusion): ConclusionField[] {
+  const changed: ConclusionField[] = [];
+  if (!sameSet(a.upstreamFindings, b.upstreamFindings)) changed.push('upstreamFindings');
+  if (!sameSet(a.impactSites, b.impactSites)) changed.push('impactSites');
+  if (!sameTaxonomy(a.taxonomy, b.taxonomy)) changed.push('taxonomy');
+  if (!sameSet(a.gaps, b.gaps)) changed.push('gaps');
+  if (a.groundTruthSafety !== b.groundTruthSafety) changed.push('groundTruthSafety');
+  if (a.repair.expectedAction !== b.repair.expectedAction) changed.push('repair.expectedAction');
+  if (!sameSet(a.repair.expectedChangedFiles, b.repair.expectedChangedFiles)) changed.push('repair.expectedChangedFiles');
+  if ((a.repair.goldPatch ?? null) !== (b.repair.goldPatch ?? null)) changed.push('repair.goldPatch');
+  return changed;
+}
+
+/**
+ * Provenance gate: an adjudication cannot silently contradict the review(s)
+ * it claims to accept.
+ *
+ * One accepted review — adjudication must equal it exactly, unless an
+ * `override` is recorded whose `changedFields` exactly matches the fields
+ * that actually differ (no missing field, no field that doesn't actually
+ * differ).
+ *
+ * Multiple accepted reviews — adjudication may synthesize between them, but
+ * any field where adjudication differs from *any* accepted review must be
+ * named in `synthesis.changedFields`, exactly.
+ */
+export function validateAdjudicationConsistency(adjudication: Adjudication, acceptedReviews: readonly Review[]): string[] {
+  const problems: string[] = [];
+  if (acceptedReviews.length === 0) return problems;
+
+  if (acceptedReviews.length === 1) {
+    const review = acceptedReviews[0]!;
+    const changed = diffConclusions(review.conclusion, adjudication.decision);
+
+    if (changed.length === 0) {
+      if (adjudication.override) {
+        problems.push(
+          `adjudication declares an override, but its decision does not differ from the single accepted review '${review.id}' in any field.`,
+        );
+      }
+      return problems;
+    }
+
+    if (!adjudication.override) {
+      problems.push(
+        `adjudication decision differs from its single accepted review '${review.id}' in [${changed.join(', ')}] with no override metadata recorded.`,
+      );
+      return problems;
+    }
+
+    const declared = new Set(adjudication.override.changedFields);
+    const actual = new Set(changed);
+    const missing = changed.filter((field) => !declared.has(field));
+    const extra = [...declared].filter((field) => !actual.has(field));
+    if (missing.length > 0) {
+      problems.push(`adjudication override.changedFields is missing actually-differing field(s): ${missing.join(', ')}`);
+    }
+    if (extra.length > 0) {
+      problems.push(
+        `adjudication override.changedFields lists field(s) that do not actually differ from review '${review.id}': ${extra.join(', ')}`,
+      );
+    }
+    return problems;
+  }
+
+  // Multiple accepted reviews: adjudication may legitimately differ from any
+  // one of them (that's the whole point of synthesis), but every field where
+  // it differs from at least one accepted review must be named.
+  const unionChanged = new Set<string>();
+  for (const review of acceptedReviews) {
+    for (const field of diffConclusions(review.conclusion, adjudication.decision)) unionChanged.add(field);
+  }
+
+  if (unionChanged.size === 0) {
+    if (adjudication.synthesis) {
+      problems.push('adjudication declares synthesis metadata, but its decision does not differ from any accepted review in any field.');
+    }
+    return problems;
+  }
+
+  if (!adjudication.synthesis) {
+    problems.push(
+      `adjudication decision differs from at least one accepted review in [${[...unionChanged].sort().join(', ')}] with no synthesis metadata recorded.`,
+    );
+    return problems;
+  }
+
+  const declared = new Set(adjudication.synthesis.changedFields);
+  const missing = [...unionChanged].filter((field) => !declared.has(field));
+  const extra = [...declared].filter((field) => !unionChanged.has(field));
+  if (missing.length > 0) {
+    problems.push(`adjudication synthesis.changedFields is missing actually-differing field(s): ${missing.join(', ')}`);
+  }
+  if (extra.length > 0) {
+    problems.push(`adjudication synthesis.changedFields lists field(s) that do not actually differ from any accepted review: ${extra.join(', ')}`);
+  }
   return problems;
 }
 

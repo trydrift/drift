@@ -29,7 +29,11 @@ export interface ReviewExportPacket {
   upstreamNew: Record<string, string>;
   consumer: Record<string, string>;
   reviews: Awaited<ReturnType<typeof loadReviews>>;
+  /** Per-review current/stale status, so a reader can tell superseded evidence from what's actually accepted. */
+  reviewsStatus: Awaited<ReturnType<typeof summarizeReviews>>['reviews'];
   adjudication: Awaited<ReturnType<typeof loadAdjudication>>;
+  /** Whether `adjudication` fairly reflects the accepted review(s), and why not if it doesn't — see `eval/src/review.ts`. */
+  adjudicationDelta: Awaited<ReturnType<typeof summarizeReviews>>['adjudicationDelta'];
   disagreementSummary: Awaited<ReturnType<typeof summarizeReviews>>['disagreements'];
 }
 
@@ -67,7 +71,9 @@ export async function exportReviewPacket(fixtureId: string, root?: string): Prom
     upstreamNew,
     consumer,
     reviews,
+    reviewsStatus: summary.reviews,
     adjudication,
+    adjudicationDelta: summary.adjudicationDelta,
     disagreementSummary: summary.disagreements,
   };
 }

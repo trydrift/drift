@@ -1,4 +1,13 @@
-import { checkStaleness, loadAdjudication, loadReviews, type Review } from '../review.ts';
+import { checkStaleness, diffConclusions, loadAdjudication, loadReviews, type Review } from '../review.ts';
+
+export interface AdjudicationDelta {
+  /** True when `decision` differs from the accepted review(s) in at least one field. */
+  differs: boolean;
+  /** Union, across every accepted review, of the fields where `decision` differs from that review. */
+  changedFields: string[];
+  overrideReason?: string;
+  synthesisReason?: string;
+}
 
 export interface ReviewsSummary {
   fixtureId: string;
@@ -19,6 +28,8 @@ export interface ReviewsSummary {
     decidedBy: { type: string; name: string };
     decidedAt: string;
   } | null;
+  /** How `decision` relates to its accepted review(s) — see `eval/src/review.ts`'s `validateAdjudicationConsistency`. */
+  adjudicationDelta: AdjudicationDelta | null;
   disagreements: {
     field: 'upstreamFindings' | 'impactSites' | 'taxonomy' | 'gaps' | 'expectedAction' | 'expectedChangedFiles';
     reviewIds: string[];
@@ -51,6 +62,24 @@ export async function summarizeReviews(fixtureId: string, root?: string): Promis
     ];
   });
 
+  const acceptedReviews = adjudication
+    ? adjudication.acceptedReviewIds.map((id) => reviews.find((r) => r.id === id)).filter((r): r is Review => r !== undefined)
+    : [];
+  const adjudicationDelta: AdjudicationDelta | null = adjudication
+    ? (() => {
+        const changed = new Set<string>();
+        for (const review of acceptedReviews) {
+          for (const field of diffConclusions(review.conclusion, adjudication.decision)) changed.add(field);
+        }
+        return {
+          differs: changed.size > 0,
+          changedFields: [...changed].sort(),
+          overrideReason: adjudication.override?.reason,
+          synthesisReason: adjudication.synthesis?.reason,
+        };
+      })()
+    : null;
+
   return {
     fixtureId,
     reviews: reviews.map((r, i) => ({
@@ -72,6 +101,7 @@ export async function summarizeReviews(fixtureId: string, root?: string): Promis
           decidedAt: adjudication.decidedAt,
         }
       : null,
+    adjudicationDelta,
     disagreements,
   };
 }
@@ -121,6 +151,17 @@ export async function runReviewsCli(argv = process.argv.slice(2)): Promise<numbe
       ? `Adjudication: ${summary.adjudication.status}, accepts [${summary.adjudication.acceptedReviewIds.join(', ')}], decided by ${summary.adjudication.decidedBy.type}:${summary.adjudication.decidedBy.name}`
       : 'Adjudication: none',
   );
+  if (summary.adjudicationDelta) {
+    if (!summary.adjudicationDelta.differs) {
+      console.log('Adjudication exactly matches its accepted review(s).');
+    } else {
+      console.log(
+        `Adjudication differs from its accepted review(s) in: ${summary.adjudicationDelta.changedFields.join(', ')}` +
+          (summary.adjudicationDelta.overrideReason ? ` — override: ${summary.adjudicationDelta.overrideReason}` : '') +
+          (summary.adjudicationDelta.synthesisReason ? ` — synthesis: ${summary.adjudicationDelta.synthesisReason}` : ''),
+      );
+    }
+  }
   if (summary.disagreements.length === 0) {
     console.log('No disagreements across reviews.');
   } else {

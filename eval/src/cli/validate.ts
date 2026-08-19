@@ -1,5 +1,5 @@
 import { loadFixtures } from '../load.ts';
-import { checkStaleness, loadAdjudication, loadReviews, validateConclusion } from '../review.ts';
+import { checkStaleness, loadAdjudication, loadReviews, validateAdjudicationConsistency, validateConclusion, type Review } from '../review.ts';
 
 export interface ValidationProblem {
   fixtureId: string;
@@ -60,12 +60,14 @@ export async function validateReviews(root?: string): Promise<ValidationProblem[
     }
 
     const byId = new Map(reviews.map((r) => [r.id, r]));
+    const acceptedReviews: Review[] = [];
     for (const reviewId of adjudication.acceptedReviewIds) {
       const review = byId.get(reviewId);
       if (!review) {
         problems.push({ fixtureId: fixture.id, severity: severity(), message: `adjudication references missing review '${reviewId}'` });
         continue;
       }
+      acceptedReviews.push(review);
 
       if (review.status === 'withdrawn' || review.status === 'superseded') {
         problems.push({
@@ -94,6 +96,9 @@ export async function validateReviews(root?: string): Promise<ValidationProblem[
       }
     }
 
+    for (const message of validateAdjudicationConsistency(adjudication, acceptedReviews)) {
+      problems.push({ fixtureId: fixture.id, severity: severity(), message });
+    }
   }
 
   return problems;
