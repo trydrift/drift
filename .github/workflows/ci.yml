@@ -110,6 +110,11 @@ jobs:
       - name: Run the eval harness's own test suite
         run: npm run eval:test
 
+      # The harness is TypeScript that `node --test` strips rather than
+      # compiles, so nothing else would catch a type error in it.
+      - name: Typecheck the benchmark harness
+        run: npm run eval:typecheck
+
       # A fixture-based regression check for the deterministic pipeline.
       # Fails only on harness-integrity problems (false-safe, a production
       # scope escape — Drift's own repair edited a file outside its plan's
@@ -118,6 +123,23 @@ jobs:
       # reportable metric, not a CI break. See eval/README.md.
       - name: Run the deterministic evaluation harness
         run: npm run eval:deterministic
+
+      # The case-based benchmark, deterministic tracks only. `run` makes zero
+      # model calls here: only `detect-end-to-end` and `repair-codemod` are
+      # selected, and both are model-free by construction. `evaluate` never
+      # calls anything at all, so a live-AI run recorded on another machine is
+      # re-scored in CI for free.
+      #
+      # This fails on an integrity break only — a false-safe, a production
+      # scope escape, an unaudited prediction workspace, or an artifact scored
+      # against case evidence it never saw. A missed detection or a failed
+      # repair is a product result, and failing CI on one is how a benchmark
+      # starts being tuned away from measuring the product.
+      - name: Run the deterministic benchmark tracks
+        run: npm run eval:bench -- run --run-id ci-${{ github.sha }}
+
+      - name: Evaluate the benchmark run
+        run: npm run eval:bench -- evaluate ci-${{ github.sha }}
 
       # The workflow's trigger paths are generated from Drift's own manifest
       # registry. A hand-edit here means the Action stops starting on files
