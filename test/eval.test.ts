@@ -20,16 +20,16 @@ describe('evaluation harness', () => {
     }
   });
 
-  test('report separates full-pipeline detection from component-adapter results', async () => {
+  test('report separates known-bump detection from component-adapter results', async () => {
     const fixtures = await loadFixtures();
     const report = await buildReport(fixtures);
     const adapters = report.metrics.map((m) => m.adapter);
 
-    assert.ok(adapters.includes('drift-full-pipeline'), 'headline detection adapter must be present');
+    assert.ok(adapters.includes('drift-known-bump-analysis'), 'headline detection adapter must be present');
     // Component adapters, if present, must never be the only adapter reported —
-    // the headline number always comes from drift-full-pipeline.
+    // the headline number always comes from drift-known-bump-analysis.
     for (const adapter of adapters) {
-      if (adapter !== 'drift-full-pipeline') assert.ok(adapter.startsWith('drift-component-'), `unexpected adapter name ${adapter}`);
+      if (adapter !== 'drift-known-bump-analysis') assert.ok(adapter.startsWith('drift-component-'), `unexpected adapter name ${adapter}`);
     }
   });
 
@@ -43,8 +43,8 @@ describe('evaluation harness', () => {
   test('the negative/control fixture produces zero impact-site false positives', async () => {
     const fixtures = await loadFixtures();
     const report = await buildReport(fixtures);
-    const row = report.rows.find((r) => r.fixture.id === 'npm-unused-break' && r.score?.adapter === 'drift-full-pipeline');
-    assert.ok(row?.score, 'expected a scored drift-full-pipeline row for the negative/control fixture');
+    const row = report.rows.find((r) => r.fixture.id === 'npm-unused-break' && r.score?.adapter === 'drift-known-bump-analysis');
+    assert.ok(row?.score, 'expected a scored drift-known-bump-analysis row for the negative/control fixture');
     assert.equal(row.score!.impact.fp, 0);
   });
 
