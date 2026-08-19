@@ -31,8 +31,8 @@ D.
 
 A prediction adapter receives a `PublicCase` and a materialized workspace.
 `PrivateTruth` — adjudication references, the developer's migration patch,
-hidden oracles, the recorded trigger signature — lives in a sibling directory
-that is never mounted. Three redundant enforcements, each catching a different
+hidden behavioural checks, the recorded trigger signature — lives in a sibling
+directory that is never mounted. Three redundant enforcements, each catching a different
 mistake:
 
 1. `PredictionInput` has no field that could carry truth, so an adapter cannot
@@ -40,8 +40,9 @@ mistake:
 2. `PrivateTruth` is branded at its loader, so it cannot be structurally widened
    into anything Layer C accepts.
 3. `auditWorkspaceIsolation` walks the workspace and rejects private artifacts,
-   overlap with the private root, and symlinks whose *target* leaves the
-   workspace — on **every** materialization, not only in a test.
+   a `hidden/` directory, overlap with the private root, and symlinks whose
+   *target* leaves the workspace — on **every** materialization, not only in a
+   test.
 
 The third is the only one that still holds once a coding agent with shell access
 is running in that directory, which is exactly what the agent repair track does.
