@@ -42,6 +42,7 @@
     "build:all": "npm run build && npm run build:action",
     "docs:support": "npm run build && node scripts/generate-support-doc.mjs",
     "eval:deterministic": "npm run build && node --experimental-strip-types eval/src/run.ts --ci",
+    "eval:accuracy:audit": "npm run build && node --experimental-strip-types eval/src/audit.ts",
     "verify:action-bundle": "node scripts/verify-action-bundle.mjs",
     "smoke:packed-cli": "node scripts/smoke-test-packed-cli.mjs",
     "release:check": "node scripts/release-check.mjs",

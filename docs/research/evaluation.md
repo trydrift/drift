@@ -7,6 +7,12 @@ with:
 npm run eval:deterministic
 ```
 
+Commit-tied audit entries are appended with:
+
+```sh
+npm run eval:accuracy:audit
+```
+
 Each fixture records ecosystem, dependency, from/to version, source repository
 and licence, breaking-change taxonomy, direct/transitive exposure, expected
 upstream findings, expected impact sites, expected gaps, gold patch or validated
@@ -15,10 +21,11 @@ provenance, and review status.
 
 Reported metrics include upstream precision/recall/F1, impact-site
 precision/recall/F1, taxonomy accuracy, gap recall, plan-node recall, edge
-precision where ground truth exists, executable repair rate, regression rate,
-out-of-scope edit rate, abstention quality, cost, latency, false-safe count, and
-a cost-sensitive score with a severe false-safe penalty. Individual metrics stay
-visible.
+precision where ground truth exists, repair attempt rate, repair oracle pass
+rate, gold-patch exact match rate, changed-file precision/recall/F1, regression
+rate, out-of-scope edit rate, abstention quality, cost, latency, false-safe
+count, and a cost-sensitive score with severe penalties for false-safe outcomes
+and broken repairs. Individual metrics stay visible.
 
 Model-backed adapters are separate from normal unit tests and must cache outputs
 with provenance. Normal CI should not spend real model API money.
