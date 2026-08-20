@@ -718,6 +718,60 @@ describe('analysis', () => {
     assert.ok(result[0]?.symbols.includes('createClient'));
   });
 
+  test('module-system dedupe preserves package-wide, exact, and wildcard scopes', async () => {
+    const evidence = [
+      {
+        id: 'ev_module_a',
+        source: 'type-surface-diff' as const,
+        dependency: 'acme-sdk',
+        title: 'module diff',
+        content: 'module compatibility changed',
+        weight: 1,
+        findings: [
+          {
+            code: 'exports-require-condition-removed',
+            symbol: 'acme-sdk',
+            detail: 'The CommonJS export condition for ./foo was removed',
+            moduleSystem: {
+              from: 'dual' as const,
+              to: 'esm' as const,
+              incompatibleUsage: ['require' as const],
+              affectedSpecifiers: ['acme-sdk/foo'],
+            },
+          },
+          {
+            code: 'exports-require-condition-removed',
+            symbol: 'acme-sdk',
+            detail: 'The CommonJS export condition for ./features/* was removed',
+            moduleSystem: {
+              from: 'dual' as const,
+              to: 'esm' as const,
+              incompatibleUsage: ['require' as const],
+              affectedSpecifierPatterns: ['acme-sdk/features/*'],
+            },
+          },
+        ],
+      },
+      {
+        id: 'ev_module_b',
+        source: 'changelog' as const,
+        dependency: 'acme-sdk',
+        title: 'release notes',
+        content: 'This package is now ESM-only.',
+        weight: 0.7,
+      },
+    ];
+
+    const result = await analyze([change], evidence, { config: DEFAULT_CONFIG, logger });
+    const moduleChanges = result.filter((entry) => entry.kind === 'module-system-change');
+
+    assert.equal(moduleChanges.length, 3);
+    assert.ok(moduleChanges.some((entry) => entry.moduleSystem?.affectedSpecifiers?.includes('acme-sdk/foo')));
+    assert.ok(moduleChanges.some((entry) => entry.moduleSystem?.affectedSpecifierPatterns?.includes('acme-sdk/features/*')));
+    assert.ok(moduleChanges.some((entry) => !entry.moduleSystem?.affectedSpecifiers && !entry.moduleSystem?.affectedSpecifierPatterns));
+    assert.equal(new Set(moduleChanges.map((entry) => entry.id)).size, 3);
+  });
+
   test('a constant-value-changed finding gets constant-specific remediation, not signature wording', async () => {
     const evidence = [
       {

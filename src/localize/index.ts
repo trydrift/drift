@@ -199,6 +199,7 @@ function localizeModuleSystemChange(
   const incompatible = change.moduleSystem?.incompatibleUsage ?? [];
   if (incompatible.length === 0) return [];
   const affectedSpecifiers = change.moduleSystem?.affectedSpecifiers;
+  const affectedSpecifierPatterns = change.moduleSystem?.affectedSpecifierPatterns;
 
   const { names, exact } = candidateNames(change.dependency, ecosystemsForName, moduleMaps);
   const candidates = new Set<string>();
@@ -221,7 +222,7 @@ function localizeModuleSystemChange(
 
     for (const record of file.imports) {
       if (!matchesImportName(record, names)) continue;
-      if (affectedSpecifiers && !affectedSpecifiers.includes(record.specifier)) continue;
+      if (!specifierIsAffected(record.specifier, affectedSpecifiers, affectedSpecifierPatterns)) continue;
       if (!loadStyleIsIncompatible(record, incompatible)) continue;
 
       const line = lines[record.line - 1] ?? '';
@@ -241,6 +242,24 @@ function localizeModuleSystemChange(
   }
 
   return dedupeSites(sites);
+}
+
+function specifierIsAffected(
+  specifier: string,
+  exact: readonly string[] | undefined,
+  patterns: readonly string[] | undefined,
+): boolean {
+  if (!exact?.length && !patterns?.length) return true;
+  if (exact?.includes(specifier)) return true;
+  return patterns?.some((pattern) => specifierMatchesPattern(specifier, pattern)) ?? false;
+}
+
+function specifierMatchesPattern(specifier: string, pattern: string): boolean {
+  const stars = [...pattern.matchAll(/\*/g)];
+  if (stars.length !== 1) return false;
+  const [prefix, suffix] = pattern.split('*') as [string, string];
+  if (!specifier.startsWith(prefix) || !specifier.endsWith(suffix)) return false;
+  return specifier.length > prefix.length + suffix.length;
 }
 
 function loadStyleIsIncompatible(

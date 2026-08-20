@@ -103,11 +103,21 @@ export function remediationForFinding(finding: StructuredFinding, dependency: st
     case 'exports-require-condition-removed':
     case 'package-type-changed': {
       const affected = finding.moduleSystem?.affectedSpecifiers;
+      const patterns = finding.moduleSystem?.affectedSpecifierPatterns;
       const target =
-        affected && affected.length === 1
+        affected?.length && patterns?.length
+          ? `the affected \`require()\` sites for ${[
+              ...affected.map((specifier) => `\`${specifier}\``),
+              ...patterns.map((pattern) => `specifier pattern \`${pattern}\``),
+            ].join(', ')}`
+          : affected && affected.length === 1
           ? `\`require('${affected[0]}')\``
           : affected && affected.length > 1
             ? `the affected \`require()\` sites for ${affected.map((specifier) => `\`${specifier}\``).join(', ')}`
+            : patterns && patterns.length === 1
+              ? `\`require()\` sites whose specifier matches \`${patterns[0]}\``
+              : patterns && patterns.length > 1
+                ? `the affected \`require()\` sites matching ${patterns.map((pattern) => `\`${pattern}\``).join(', ')}`
             : `each localized \`require('${dependency}')\` site`;
       return `\`${dependency}\` no longer exposes the CommonJS loading compatibility it exposed before. Update ${target} to use an ESM-compatible loading mechanism, usually a static \`import\` in an ESM module or a dynamic \`await import()\` where the surrounding CommonJS file cannot move. Do not downgrade the dependency, and do not convert the whole repository to ESM unless that is already the intended migration path.`;
     }

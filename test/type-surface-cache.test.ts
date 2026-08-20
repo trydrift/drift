@@ -173,8 +173,41 @@ describe('npm package module metadata diffing', () => {
 
     const changes = await diffPackageModuleMetadata('demo', '1.0.0', '2.0.0');
 
-    assert.ok(changes.some((change) => change.kind === 'exports-require-condition-removed'));
-    assert.ok(changes.some((change) => change.kind === 'commonjs-entry-removed'));
+    assert.deepEqual(changes.map((change) => change.kind), ['exports-require-condition-removed']);
+    assert.deepEqual(changes[0]?.moduleSystem?.affectedSpecifiers, ['demo']);
+  });
+
+  test('exports take precedence over a remaining CommonJS main fallback', async () => {
+    reset();
+    stubFetch((url) => {
+      if (url.endsWith('/demo@1.0.0/package.json')) {
+        return new Response(JSON.stringify({
+          main: './index.cjs',
+          exports: {
+            '.': './index.cjs',
+          },
+        }), { status: 200 });
+      }
+      if (url.endsWith('/demo@2.0.0/package.json')) {
+        return new Response(JSON.stringify({
+          main: './index.cjs',
+          type: 'module',
+          exports: {
+            '.': {
+              import: './index.mjs',
+              default: './index.mjs',
+            },
+          },
+        }), { status: 200 });
+      }
+      return new Response('', { status: 404 });
+    });
+
+    const changes = await diffPackageModuleMetadata('demo', '1.0.0', '2.0.0');
+
+    assert.deepEqual(changes.map((change) => change.kind), ['commonjs-entry-removed']);
+    assert.deepEqual(changes[0]?.moduleSystem?.affectedSpecifiers, ['demo']);
+    assert.doesNotMatch(changes[0]?.after ?? '', /exports\.commonjs:.*demo/);
   });
 
   test('keeps removed require export conditions subpath-specific', async () => {
@@ -243,6 +276,121 @@ describe('npm package module metadata diffing', () => {
       changes.map((change) => change.moduleSystem?.affectedSpecifiers),
       [['demo/foo']],
     );
+  });
+
+  test('represents removed wildcard require export conditions as specifier patterns', async () => {
+    reset();
+    stubFetch((url) => {
+      if (url.endsWith('/demo@1.0.0/package.json')) {
+        return new Response(JSON.stringify({
+          exports: {
+            './features/*': {
+              import: './esm/features/*.js',
+              require: './cjs/features/*.cjs',
+            },
+          },
+        }), { status: 200 });
+      }
+      if (url.endsWith('/demo@2.0.0/package.json')) {
+        return new Response(JSON.stringify({
+          exports: {
+            './features/*': {
+              import: './esm/features/*.js',
+            },
+          },
+        }), { status: 200 });
+      }
+      return new Response('', { status: 404 });
+    });
+
+    const changes = await diffPackageModuleMetadata('demo', '1.0.0', '2.0.0');
+
+    assert.deepEqual(changes.map((change) => change.moduleSystem?.affectedSpecifierPatterns), [['demo/features/*']]);
+    assert.deepEqual(changes.map((change) => change.moduleSystem?.affectedSpecifiers), [undefined]);
+  });
+
+  test('represents scoped wildcard require export conditions as scoped specifier patterns', async () => {
+    reset();
+    stubFetch((url) => {
+      if (url.endsWith('/@scope/demo@1.0.0/package.json')) {
+        return new Response(JSON.stringify({
+          exports: {
+            './features/*': {
+              node: {
+                require: './cjs/features/*.cjs',
+                import: './esm/features/*.js',
+              },
+            },
+          },
+        }), { status: 200 });
+      }
+      if (url.endsWith('/@scope/demo@2.0.0/package.json')) {
+        return new Response(JSON.stringify({
+          exports: {
+            './features/*': {
+              node: {
+                import: './esm/features/*.js',
+              },
+            },
+          },
+        }), { status: 200 });
+      }
+      return new Response('', { status: 404 });
+    });
+
+    const changes = await diffPackageModuleMetadata('@scope/demo', '1.0.0', '2.0.0');
+
+    assert.deepEqual(changes.map((change) => change.moduleSystem?.affectedSpecifierPatterns), [['@scope/demo/features/*']]);
+  });
+
+  test('treats export arrays as alternatives when detecting CommonJS compatibility', async () => {
+    reset();
+    stubFetch((url) => {
+      if (url.endsWith('/demo@1.0.0/package.json')) {
+        return new Response(JSON.stringify({
+          exports: {
+            '.': [{ import: './index.mjs' }, { require: './index.cjs' }],
+          },
+        }), { status: 200 });
+      }
+      if (url.endsWith('/demo@2.0.0/package.json')) {
+        return new Response(JSON.stringify({
+          exports: {
+            '.': [{ import: './index.mjs' }],
+          },
+        }), { status: 200 });
+      }
+      return new Response('', { status: 404 });
+    });
+
+    const changes = await diffPackageModuleMetadata('demo', '1.0.0', '2.0.0');
+
+    assert.deepEqual(changes.map((change) => change.kind), ['exports-require-condition-removed']);
+  });
+
+  test('does not report require removal when a CommonJS default branch remains', async () => {
+    reset();
+    stubFetch((url) => {
+      if (url.endsWith('/demo@1.0.0/package.json')) {
+        return new Response(JSON.stringify({
+          exports: {
+            '.': { import: './index.mjs', require: './index.cjs' },
+          },
+        }), { status: 200 });
+      }
+      if (url.endsWith('/demo@2.0.0/package.json')) {
+        return new Response(JSON.stringify({
+          exports: {
+            '.': { import: './index.mjs', default: './index.cjs' },
+          },
+        }), { status: 200 });
+      }
+      return new Response('', { status: 404 });
+    });
+
+    const changes = await diffPackageModuleMetadata('demo', '1.0.0', '2.0.0');
+
+    assert.deepEqual(changes, []);
   });
 
   test('does not treat type module alone as loss of CommonJS support', async () => {

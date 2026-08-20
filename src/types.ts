@@ -187,6 +187,11 @@ export interface StructuredFinding {
      * the package-wide loading mode is incompatible.
      */
     affectedSpecifiers?: string[];
+    /**
+     * Consumer module specifier patterns affected by this finding, using npm's
+     * `*` subpath export wildcard shape, e.g. `pkg/features/*`.
+     */
+    affectedSpecifierPatterns?: string[];
   };
 }
 
@@ -325,6 +330,11 @@ export interface BreakingChange {
      * every specifier under the package identity is affected.
      */
     affectedSpecifiers?: string[];
+    /**
+     * Consumer module specifier patterns affected by this finding, using npm's
+     * `*` subpath export wildcard shape, e.g. `pkg/features/*`.
+     */
+    affectedSpecifierPatterns?: string[];
   };
   /**
    * Upstream confidence — did this change really happen?

@@ -123,6 +123,7 @@ function fromComputedEvidence(record: Evidence): BreakingChange[] {
         finding.code,
         finding.symbol,
         moduleSystem?.affectedSpecifiers?.join(',') ?? '',
+        moduleSystem?.affectedSpecifierPatterns?.join(',') ?? '',
       ),
       dependency: record.dependency,
       workspace: record.workspace,
@@ -139,6 +140,9 @@ function fromComputedEvidence(record: Evidence): BreakingChange[] {
               incompatibleUsage: [...moduleSystem.incompatibleUsage],
               ...(moduleSystem.affectedSpecifiers
                 ? { affectedSpecifiers: [...moduleSystem.affectedSpecifiers] }
+                : {}),
+              ...(moduleSystem.affectedSpecifierPatterns
+                ? { affectedSpecifierPatterns: [...moduleSystem.affectedSpecifierPatterns] }
                 : {}),
             },
           }
@@ -410,6 +414,9 @@ function dedupeKey(change: BreakingChange): string {
       change.moduleSystem?.affectedSpecifiers?.length
         ? [...change.moduleSystem.affectedSpecifiers].sort().join(',')
         : '*',
+      change.moduleSystem?.affectedSpecifierPatterns?.length
+        ? [...change.moduleSystem.affectedSpecifierPatterns].sort().join(',')
+        : '*',
     ].join('|');
   }
   return `${dependency}|${change.kind}|${[...change.symbols].sort().join(',')}`;
@@ -427,12 +434,17 @@ function mergeModuleSystem(
     a.affectedSpecifiers || b.affectedSpecifiers
       ? [...new Set([...(a.affectedSpecifiers ?? []), ...(b.affectedSpecifiers ?? [])])]
       : undefined;
+  const affectedPatterns =
+    a.affectedSpecifierPatterns || b.affectedSpecifierPatterns
+      ? [...new Set([...(a.affectedSpecifierPatterns ?? []), ...(b.affectedSpecifierPatterns ?? [])])]
+      : undefined;
 
   return {
     from: a.from ?? b.from,
     to: a.to ?? b.to,
     incompatibleUsage,
     ...(affected ? { affectedSpecifiers: affected } : {}),
+    ...(affectedPatterns ? { affectedSpecifierPatterns: affectedPatterns } : {}),
   };
 }
 
