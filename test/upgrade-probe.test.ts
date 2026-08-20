@@ -1429,6 +1429,31 @@ describe('what a measurement does to a plan', () => {
     failedFiles: [],
   };
 
+  const moduleSystemPlan = () => ({
+    ...plan(),
+    breakingChanges: [
+      {
+        id: 'module-system',
+        dependency: 'pkg',
+        kind: 'module-system-change' as const,
+        summary: 'The package is now ESM-only and no longer supports `require()`',
+        remediation: 'Use ESM-compatible loading.',
+        symbols: [],
+        moduleSystem: { from: 'dual' as const, to: 'esm' as const, incompatibleUsage: ['require' as const] },
+        confidence: 'high' as const,
+        citations: ['ev1'],
+      },
+    ],
+    upstreamBreakingCount: 1,
+    impactSites: [
+      { breakingChangeId: 'module-system', file: 'src/a.cjs', line: 1 } as never,
+    ],
+    commits: [
+      { id: 'c-module', breakingChangeIds: ['module-system'], dependsOn: [], dependencyReasons: [] } as never,
+    ],
+    planEdges: [],
+  });
+
   test('a green build drops what a compiler could have caught', () => {
     const verified = applyVerificationToPlan(plan(), passed);
 
@@ -1441,6 +1466,51 @@ describe('what a measurement does to a plan', () => {
     assert.deepEqual(verified.commits.map((c) => c.id), ['c2'], 'its commit unit goes with it');
     assert.deepEqual(verified.planEdges, [], 'and so do edges pointing at it');
     assert.deepEqual(verified.commits[0]?.dependsOn, [], 'no unit depends on a unit that no longer exists');
+  });
+
+  test('a green isolated compile-capable pass drops module-system predictions and their work', () => {
+    const verified = applyVerificationToPlan(moduleSystemPlan(), passed);
+
+    assert.equal(verified.breakingChanges.length, 0);
+    assert.equal(verified.impactSites.length, 0);
+    assert.equal(verified.commits.length, 0);
+    assert.equal(verified.upstreamBreakingCount, 1, 'the upstream count remains historical');
+  });
+
+  test('a batch pass does not clear module-system predictions', () => {
+    const verified = applyVerificationToPlan(moduleSystemPlan(), { ...passed, measuredWith: 2 });
+
+    assert.equal(verified.breakingChanges.length, 1);
+    assert.equal(verified.impactSites.length, 1);
+    assert.equal(verified.commits.length, 1);
+  });
+
+  test('a pass with no compile/import-capable check does not clear module-system predictions', () => {
+    const testOnly = {
+      status: 'passed' as const,
+      checks: [{ kind: 'test' as const, label: 'npm test', compileCapable: false, status: 'passed' as const, durationMs: 1, output: '' }],
+      failedFiles: [],
+    };
+    const verified = applyVerificationToPlan(moduleSystemPlan(), testOnly);
+
+    assert.equal(verified.breakingChanges.length, 1);
+    assert.equal(verified.impactSites.length, 1);
+    assert.equal(verified.commits.length, 1);
+  });
+
+  test('a failed verification keeps module-system predictions and diagnostics', () => {
+    const failed = {
+      status: 'failed' as const,
+      checks: [{ kind: 'typecheck' as const, label: 'tsc', compileCapable: true, status: 'failed' as const, durationMs: 1, output: 'ERR_REQUIRE_ESM' }],
+      diagnostics: 'ERR_REQUIRE_ESM',
+      failedFiles: ['src/a.cjs'],
+    };
+    const verified = applyVerificationToPlan(moduleSystemPlan(), failed);
+
+    assert.equal(verified.breakingChanges.length, 1);
+    assert.equal(verified.impactSites.length, 1);
+    assert.equal(verified.commits.length, 1);
+    assert.equal(verified.verification?.diagnostics, 'ERR_REQUIRE_ESM');
   });
 
   test('a green build proves nothing about behaviour, so behavioural findings survive', () => {

@@ -41,6 +41,7 @@ import { stableId, slugify } from '../util/id.js';
 const KIND_ORDER: Record<BreakingChangeKind, number> = {
   'runtime-requirement': 0,
   'config-change': 1,
+  'module-system-change': 1,
   // Ahead of the individual removals it explains: rewriting the import path is
   // what makes the symbols reachable again, so doing it first can leave the
   // per-symbol commits with nothing to do.
@@ -62,6 +63,7 @@ function commitType(kind: BreakingChangeKind): string {
   switch (kind) {
     case 'runtime-requirement':
     case 'config-change':
+    case 'module-system-change':
       return 'build';
     case 'behaviour-change':
     case 'default-change':
@@ -383,7 +385,7 @@ function deriveEdges(
       }
 
       if (
-        aChanges.some((change) => change.kind === 'config-change') &&
+        aChanges.some((change) => change.kind === 'config-change' || change.kind === 'module-system-change') &&
         bChanges.some((change) => aDeps.has(change.dependency))
       ) {
         add(a, b, 'configuration-prerequisite', aChanges.map((change) => change.summary));
@@ -706,12 +708,10 @@ function describeChange(change: BreakingChange): string {
         ? change.summary.charAt(0).toLowerCase() + change.summary.slice(1)
         : 'raise the minimum runtime version';
     case 'config-change':
-      // An ESM migration is by far the most common change of this kind, and
-      // "update configuration" tells a reviewer nothing about what to expect
-      // in the diff. Name it.
-      if (/\bESM\b/i.test(change.summary)) return 'migrate to ESM imports';
-      if (/commonjs/i.test(change.summary)) return 'replace dropped CommonJS usage';
       return 'update configuration for the new version';
+    case 'module-system-change':
+      if (/commonjs/i.test(change.summary)) return 'replace dropped CommonJS usage';
+      return 'migrate incompatible module loading';
     case 'behaviour-change':
       return symbol ? `handle changed \`${symbol}\` behaviour` : 'handle changed behaviour';
     default:

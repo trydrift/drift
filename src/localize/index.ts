@@ -1,4 +1,11 @@
-import type { BreakingChange, Confidence, DependencyChange, Ecosystem, ImpactSite } from '../types.js';
+import type {
+  BreakingChange,
+  Confidence,
+  DependencyChange,
+  Ecosystem,
+  ImpactSite,
+  ModuleIncompatibleUsage,
+} from '../types.js';
 import type { Logger } from '../util/logger.js';
 import { importKeys, unitAtLine, type FileIndex, type ImportRecord, type RepoIndex } from '../index/metarag.js';
 import { isRuntimeConfigPath, type SourceFile } from '../index/walk.js';
@@ -128,6 +135,22 @@ export function localize(
       continue;
     }
 
+    if (change.kind === 'module-system-change') {
+      sites.push(
+        ...inMember(
+          localizeModuleSystemChange(
+            change,
+            index,
+            contentByPath,
+            ecosystemsByName.get(change.dependency) ?? [],
+            moduleMaps,
+          ),
+          member,
+        ),
+      );
+      continue;
+    }
+
     const { files: candidateFileList, names, reach } = candidateFiles(
       change,
       index,
@@ -164,6 +187,97 @@ export function localize(
   }
 
   return sites;
+}
+
+function localizeModuleSystemChange(
+  change: BreakingChange,
+  index: RepoIndex,
+  contentByPath: Map<string, string>,
+  ecosystemsForName: readonly Ecosystem[],
+  moduleMaps: ModuleMaps | undefined,
+): ImpactSite[] {
+  const incompatible = change.moduleSystem?.incompatibleUsage ?? [];
+  if (incompatible.length === 0) return [];
+  const affectedSpecifiers = change.moduleSystem?.affectedSpecifiers;
+  const affectedSpecifierPatterns = change.moduleSystem?.affectedSpecifierPatterns;
+
+  const { names, exact } = candidateNames(change.dependency, ecosystemsForName, moduleMaps);
+  const candidates = new Set<string>();
+  for (const name of names) {
+    for (const path of index.importers.get(name) ?? []) candidates.add(path);
+  }
+  if (candidates.size === 0 && !exact) {
+    for (const [key, importerPaths] of index.importers) {
+      if (!matchesImportName(key, names)) continue;
+      for (const path of importerPaths) candidates.add(path);
+    }
+  }
+
+  const sites: ImpactSite[] = [];
+  for (const file of index.files) {
+    if (!candidates.has(file.path)) continue;
+    const content = contentByPath.get(file.path);
+    if (!content) continue;
+    const lines = content.split('\n');
+
+    for (const record of file.imports) {
+      if (!matchesImportName(record, names)) continue;
+      if (!specifierIsAffected(record.specifier, affectedSpecifiers, affectedSpecifierPatterns)) continue;
+      if (!loadStyleIsIncompatible(record, incompatible)) continue;
+
+      const line = lines[record.line - 1] ?? '';
+      const unit = unitAtLine(file, record.line);
+      const column = line.indexOf(record.specifier);
+      sites.push({
+        breakingChangeId: change.id,
+        file: file.path,
+        line: record.line,
+        excerpt: line.trim().slice(0, 200),
+        enclosingSymbol: unit?.name,
+        matchedSymbol: record.loadStyle === 'commonjs-require' ? 'require' : record.specifier,
+        ...(column >= 0 ? { column, matchedText: record.specifier } : {}),
+        confidence: 'high',
+      });
+    }
+  }
+
+  return dedupeSites(sites);
+}
+
+function specifierIsAffected(
+  specifier: string,
+  exact: readonly string[] | undefined,
+  patterns: readonly string[] | undefined,
+): boolean {
+  if (!exact?.length && !patterns?.length) return true;
+  if (exact?.includes(specifier)) return true;
+  return patterns?.some((pattern) => specifierMatchesPattern(specifier, pattern)) ?? false;
+}
+
+function specifierMatchesPattern(specifier: string, pattern: string): boolean {
+  const stars = [...pattern.matchAll(/\*/g)];
+  if (stars.length !== 1) return false;
+  const [prefix, suffix] = pattern.split('*') as [string, string];
+  if (!specifier.startsWith(prefix) || !specifier.endsWith(suffix)) return false;
+  return specifier.length > prefix.length + suffix.length;
+}
+
+function loadStyleIsIncompatible(
+  record: ImportRecord,
+  incompatible: readonly ModuleIncompatibleUsage[],
+): boolean {
+  switch (record.loadStyle) {
+    case 'commonjs-require':
+      return incompatible.includes('require');
+    case 'esm-static':
+      return incompatible.includes('static-import');
+    case 'esm-dynamic':
+      return incompatible.includes('dynamic-import');
+    case 're-export':
+      return incompatible.includes('re-export');
+    default:
+      return false;
+  }
 }
 
 function inMember(sites: readonly ImpactSite[], member: string | undefined): ImpactSite[] {

@@ -85,8 +85,44 @@ describe('prose rules', () => {
 
   test('catches an ESM-only migration, which renames no export', () => {
     const matches = matchProse('## This package is now pure ESM');
-    assert.equal(matches[0]?.kind, 'config-change');
+    assert.equal(matches[0]?.kind, 'module-system-change');
     assert.deepEqual(matches[0]?.symbols, [], 'a package-wide change names no symbol');
+    assert.deepEqual(matches[0]?.moduleSystem?.incompatibleUsage, ['require']);
+  });
+
+  test('does not treat dependency/helper ESM prose as a package ESM migration', () => {
+    const negatives = [
+      'perf: switch from debug to obug (smaller, esm-only)',
+      'switch to an esm-only dependency',
+      'use `foo`, which is now ESM-only',
+      'upgraded internal helper to an ESM-only package',
+    ];
+
+    for (const text of negatives) {
+      assert.equal(
+        matchProse(text).some((match) => match.kind === 'module-system-change'),
+        false,
+        text,
+      );
+    }
+  });
+
+  test('recognizes package-level CommonJS compatibility announcements', () => {
+    const positives = [
+      'This package is now pure ESM',
+      'The package is now ESM-only',
+      'Dropped CommonJS support',
+      'CommonJS is no longer supported',
+      'require() is no longer supported',
+    ];
+
+    for (const text of positives) {
+      assert.equal(
+        matchProse(text).some((match) => match.kind === 'module-system-change'),
+        true,
+        text,
+      );
+    }
   });
 
   test('catches "Required Node.js >=14.16", not just "now requires"', () => {
@@ -104,6 +140,11 @@ describe('prose rules', () => {
     const passages = extractBreakingPassages(body);
     assert.ok(passages.some((p) => /pure ESM/i.test(p)));
     assert.ok(passages.some((p) => /Required Node\.js/i.test(p)));
+  });
+
+  test('does not extract bare dependency/helper esm-only prose as breaking passage', () => {
+    const passages = extractBreakingPassages('- perf: switch from debug to obug (smaller, esm-only)');
+    assert.equal(passages.length, 0);
   });
 
   test('requires backticks, so prose does not become a search symbol', () => {
@@ -675,6 +716,60 @@ describe('analysis', () => {
     assert.equal(result[0]?.confidence, 'high');
     assert.deepEqual(result[0]?.citations, ['ev_1']);
     assert.ok(result[0]?.symbols.includes('createClient'));
+  });
+
+  test('module-system dedupe preserves package-wide, exact, and wildcard scopes', async () => {
+    const evidence = [
+      {
+        id: 'ev_module_a',
+        source: 'type-surface-diff' as const,
+        dependency: 'acme-sdk',
+        title: 'module diff',
+        content: 'module compatibility changed',
+        weight: 1,
+        findings: [
+          {
+            code: 'exports-require-condition-removed',
+            symbol: 'acme-sdk',
+            detail: 'The CommonJS export condition for ./foo was removed',
+            moduleSystem: {
+              from: 'dual' as const,
+              to: 'esm' as const,
+              incompatibleUsage: ['require' as const],
+              affectedSpecifiers: ['acme-sdk/foo'],
+            },
+          },
+          {
+            code: 'exports-require-condition-removed',
+            symbol: 'acme-sdk',
+            detail: 'The CommonJS export condition for ./features/* was removed',
+            moduleSystem: {
+              from: 'dual' as const,
+              to: 'esm' as const,
+              incompatibleUsage: ['require' as const],
+              affectedSpecifierPatterns: ['acme-sdk/features/*'],
+            },
+          },
+        ],
+      },
+      {
+        id: 'ev_module_b',
+        source: 'changelog' as const,
+        dependency: 'acme-sdk',
+        title: 'release notes',
+        content: 'This package is now ESM-only.',
+        weight: 0.7,
+      },
+    ];
+
+    const result = await analyze([change], evidence, { config: DEFAULT_CONFIG, logger });
+    const moduleChanges = result.filter((entry) => entry.kind === 'module-system-change');
+
+    assert.equal(moduleChanges.length, 3);
+    assert.ok(moduleChanges.some((entry) => entry.moduleSystem?.affectedSpecifiers?.includes('acme-sdk/foo')));
+    assert.ok(moduleChanges.some((entry) => entry.moduleSystem?.affectedSpecifierPatterns?.includes('acme-sdk/features/*')));
+    assert.ok(moduleChanges.some((entry) => !entry.moduleSystem?.affectedSpecifiers && !entry.moduleSystem?.affectedSpecifierPatterns));
+    assert.equal(new Set(moduleChanges.map((entry) => entry.id)).size, 3);
   });
 
   test('a constant-value-changed finding gets constant-specific remediation, not signature wording', async () => {

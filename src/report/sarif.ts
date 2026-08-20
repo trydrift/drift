@@ -529,6 +529,7 @@ const RULE_NAMES: Record<BreakingChangeKind, string> = {
   'required-field-added': 'New required field',
   'default-change': 'Default value changed',
   'config-change': 'Configuration shape changed',
+  'module-system-change': 'Module loading compatibility changed',
   'runtime-requirement': 'Runtime requirement changed',
   unknown: 'Unclassified breaking change',
 };
