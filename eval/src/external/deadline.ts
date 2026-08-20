@@ -25,6 +25,15 @@
  * cancelled. The stalled operation keeps its socket until the process exits.
  * That is acceptable for a benchmark run and is stated rather than implied:
  * this bounds *reporting*, not resource use.
+ *
+ * One more thing it does not bound, learned from an artifact showing a single
+ * case at 28,938 seconds under a 900-second deadline: **host sleep**. A laptop
+ * that suspends stops firing timers while `Date.now()` keeps advancing, so a
+ * case spanning a suspend records hours of wall clock without ever having been
+ * given hours of deadline. Nothing here is wrong when that happens — the case
+ * completed normally on wake — but a `durationMs` in these artifacts is wall
+ * clock, not CPU time, and is not a performance measurement. No metric this
+ * harness reports is derived from it.
  */
 
 export const DEFAULT_CASE_TIMEOUT_MS = 900_000;
