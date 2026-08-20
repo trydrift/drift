@@ -266,6 +266,14 @@ Options for \`outdated\`:
                               limit. Default: $GITHUB_TOKEN, then \`gh auth token\`
   --config <path>             Config file. Default: .github/drift.yml
   --json                      Emit the full scan result as JSON
+  --verify                    Deep Verification: after the static (Quick
+                              Scan) report, install each candidate in a
+                              throwaway worktree and run this project's own
+                              checks before reporting it. Off by default —
+                              a scan without it reports static predictions
+                              only, clearly labelled as not deeply verified.
+                              Requires verify.enabled: true in drift.yml
+                              (the default)
   --log-level <level>         debug | info | warn | error. Default: info
 
 Options for \`analyze\`:
@@ -280,6 +288,14 @@ Options for \`analyze\`:
                               default: $GITHUB_TOKEN, then \`gh auth token\`
   --config <path>             Config file. Default: .github/drift.yml
   --json                      Emit the plan as JSON instead of markdown
+  --verify                    Deep Verification: after the static (Quick
+                              Scan) report, install this change in a
+                              throwaway worktree and run this project's own
+                              checks before reporting it. Off by default —
+                              a run without it reports static predictions
+                              only, clearly labelled as not deeply verified.
+                              Requires verify.enabled: true in drift.yml
+                              (the default)
   --log-level <level>         debug | info | warn | error. Default: info
 
 Options for \`fix\` (accepts every \`analyze\` option too):
@@ -547,6 +563,13 @@ async function analyzeCommand(flags: Flags): Promise<number> {
   for (const problem of problems) logger.warn(problem);
   if (path) logger.info(`Using config from ${path}`);
 
+  // Quick Scan by default — `--verify` is the explicit opt-in into Deep
+  // Verification (install the change in a throwaway worktree, run this
+  // project's own typecheck/build/test). `config.verify.enabled` stays a
+  // hard ceiling above that: a repository with verification switched off in
+  // drift.yml stays off regardless of the flag.
+  const deepVerifyRequested = Boolean(flags.verify) && config.verify.enabled;
+
   const result = await runPipeline({
     repo,
     config,
@@ -558,6 +581,7 @@ async function analyzeCommand(flags: Flags): Promise<number> {
     // dryRun is forced, so there is no code path here that mutates anything.
     dryRun: true,
     workspace,
+    verify: { enabled: deepVerifyRequested },
   });
 
   if (!result.plan) {
@@ -576,6 +600,14 @@ async function analyzeCommand(flags: Flags): Promise<number> {
   }
 
   console.log(`\n${renderPullRequestBody(result.plan, config)}\n`);
+
+  if (!deepVerifyRequested) {
+    console.log(
+      config.verify.enabled
+        ? "Static analysis only — not deeply verified. Re-run with --verify to install this change and run this project's own checks.\n"
+        : 'Deep verification is disabled (verify.enabled: false in drift.yml).\n',
+    );
+  }
 
   if (process.stdin.isTTY && result.plan.breakingChanges.length > 0) {
     await offerIssueBranchActions({ plan: result.plan, config, repo, github, workspace, logger, flags });
@@ -794,6 +826,13 @@ async function outdatedCommand(flags: Flags): Promise<number> {
   // said what it is doing before it starts taking time over it.
   if (!flags.json) view.start(slug ? `${owner}/${repoName}` : 'this workspace', workspace);
 
+  // Quick Scan by default — `--verify` is the explicit opt-in into Deep
+  // Verification (install the change in a throwaway worktree, run this
+  // project's own typecheck/build/test). `config.verify.enabled` stays a
+  // hard ceiling above that: a repository with verification switched off in
+  // drift.yml stays off regardless of the flag.
+  const deepVerifyRequested = Boolean(flags.verify) && config.verify.enabled;
+
   let settledCount = 0;
   let toAnalyse = 0;
   const result = await scanUpgrades({
@@ -805,7 +844,7 @@ async function outdatedCommand(flags: Flags): Promise<number> {
     breadth: { includeDev: flags['no-dev'] !== true, maxSites: 40, maxPackages: 0 },
     // Running `drift outdated` twice against the same commit used to pay for
     // the same baseline typecheck, build and test suite both times.
-    verify: { baselineCache: createBaselineCache(defaultBaselineCacheDir()) },
+    verify: { enabled: deepVerifyRequested, baselineCache: createBaselineCache(defaultBaselineCacheDir()) },
     onProgress: (progress) => {
       logger.debug(`${progress.phase}: ${progress.detail}`);
       if (flags.json || !progress.phase) return;
@@ -833,7 +872,7 @@ async function outdatedCommand(flags: Flags): Promise<number> {
     onCandidate: (candidate) => {
       if (flags.json) return;
       if (candidate.status === 'pending' || candidate.status === 'checking') return;
-      if (config.verify.enabled && !candidate.verification) return;
+      if (deepVerifyRequested && !candidate.verification) return;
       settledCount += 1;
       view.settled(candidate);
       status.update(`Checked ${settledCount} of ${toAnalyse}`);
@@ -886,6 +925,17 @@ async function outdatedCommand(flags: Flags): Promise<number> {
   // the question the whole command exists to answer.
   console.log(`\n${palette('bold', scanTitle(result.candidates, result.checked, result.unchecked.length))}`);
   view.report(result.candidates, (candidate) => selectorFor(candidate, result.candidates));
+
+  if (result.candidates.length > 0 && !deepVerifyRequested) {
+    console.log(
+      `\n${palette(
+        'gray',
+        config.verify.enabled
+          ? 'Static analysis only — not deeply verified. Re-run with --verify to install each candidate and run this project\'s own checks.'
+          : 'Deep verification is disabled (verify.enabled: false in drift.yml).',
+      )}`,
+    );
+  }
 
   if (result.candidates.length > 0 && process.stdin.isTTY) {
     // Labelled, not bare names: two workspace members can both depend on
