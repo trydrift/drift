@@ -3009,7 +3009,7 @@ button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
 .pkg { border-top: 1px solid color-mix(in srgb, var(--vscode-panel-border) 55%, transparent); }
 .pkg > summary {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(min(15ch, 100%), 1fr) minmax(0, clamp(88px, 36%, 170px));
   gap: 8px;
   align-items: center;
   padding: 7px 10px;
@@ -3047,8 +3047,13 @@ button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
 .versions { font-size: 11px; color: var(--vscode-descriptionForeground); font-variant-numeric: tabular-nums; }
 .versions .arrow { opacity: .6; }
 .verdict {
+  min-width: 0;
+  max-width: 100%;
+  justify-self: end;
   font-size: 10px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   border-radius: 3px;
   padding: 1px 6px;
   color: var(--vscode-descriptionForeground);
@@ -3077,8 +3082,10 @@ button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
   white-space: normal;
   display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 5px;
   text-align: right;
+  overflow-wrap: anywhere;
 }
 /* Why a check came up short, under the verdict it explains. */
 /* The upgrade rationale. Tinted by tone, and only where there is a tone to
