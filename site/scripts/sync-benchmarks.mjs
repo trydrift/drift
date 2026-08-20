@@ -131,7 +131,18 @@ function reproductionCommand(dataset, selection) {
 
 const output = {
   $generated: 'site/scripts/sync-benchmarks.mjs — do not edit; every number here is read from eval/results/<run-id>/metrics.json',
-  generatedAt: new Date().toISOString(),
+  /*
+   * The newest run's date, not the build's.
+   *
+   * Two reasons, and the second is the one that matters. `new Date()` here
+   * rewrote this file on every build, dev start and typecheck, so the
+   * generated data showed up dirty in `git status` constantly and a real
+   * change to a number was hidden in the noise. And "generated on" is a
+   * question about the evidence rather than about the build machine: a reader
+   * wants to know how old the newest result is, not when someone last ran
+   * `next build`.
+   */
+  generatedAt: datasets.map((entry) => entry.runDate).sort().at(-1) ?? '',
   datasets,
   skipped,
 };

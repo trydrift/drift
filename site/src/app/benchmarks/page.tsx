@@ -252,7 +252,8 @@ export default function Benchmarks() {
           ) : null}
 
           <p className="mt-6 font-mono text-[11px] text-faint">
-            Generated from run artifacts on {formatDate(generatedAt)}.
+            Newest result on this page: {formatDate(generatedAt)}. Every figure is read from the run artifacts in the
+            repository, not written into this page.
           </p>
         </section>
       </main>
