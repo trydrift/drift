@@ -571,29 +571,68 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   // inputs, and they never block automatic execution on their own.
   const withGaps = behaviouralGaps.length > 0 ? { ...plan, gaps: [...plan.gaps, ...behaviouralGaps] } : plan;
 
-  // The last word, and the only measured one. Everything above predicts what
-  // this change will do to this repository by reading what the dependency
-  // published; this installs it and asks the project's own compiler. Where they
-  // disagree about something a compiler can see, the compiler is right — it
-  // read the declarations that actually shipped.
-  const finalPlan = await verifyPlan(withGaps, {
+  // This is where Quick Scan ends. Everything above predicts what this
+  // change will do to this repository by reading what the dependency
+  // published, its changelog, and a computed diff of its declarations —
+  // never installing it, never running anything from it, never touching this
+  // checkout's own toolchain. A caller that wants the stronger, measured
+  // answer calls `deepVerify` next with this result; `analyzeRepository`
+  // itself never does, so a Quick Scan is exactly that regardless of what
+  // `config.verify.enabled` says.
+  return { plan: withGaps, summary: summarize(withGaps) };
+}
+
+/**
+ * The plan's one-line summary — shared by `analyzeRepository`'s Quick Scan
+ * result and `deepVerify`'s updated one, so the two always read the same way
+ * for the same shape of plan.
+ */
+function summarize(plan: RemediationPlan): string {
+  return plan.commits.length > 0
+    ? `${plan.breakingChanges.length} breaking change(s), ${new Set(plan.impactSites.map((s) => s.file)).size} file(s) affected`
+    : plan.blockers.length > 0
+      ? `Could not establish whether this repository is affected: ${plan.blockers[0]}`
+      : 'No code in this repository is affected by these dependency changes.';
+}
+
+/**
+ * Deep Verification: install the change from a Quick Scan result and run the
+ * project's own checks against it.
+ *
+ * Takes what `analyzeRepository` already returned rather than re-running any
+ * of it — detect, evidence, analyze, localize, rationale and plan all stay
+ * exactly as Quick Scan left them. This is the one function in the pipeline
+ * that creates a worktree, runs a real install, and runs the project's own
+ * typecheck/build/test — nothing before it in `analyzeRepository` does, and
+ * nothing after it needs to.
+ *
+ * A no-op (returns `result` unchanged) when there is no plan, no local
+ * checkout to run in, or `config.verify.enabled` is `false` — a repository
+ * that has verification switched off stays off regardless of who asks.
+ *
+ * Never throws and never blocks: a failure to verify downgrades the plan to
+ * what it already was, which is a prediction, and records why.
+ */
+export async function deepVerify(result: AnalysisResult, options: AnalysisOptions): Promise<AnalysisResult> {
+  if (!result.plan) return result;
+
+  const workspace = options.workspace ?? options.repo.workspace;
+  let stageStarted = Date.now();
+  const progress = (stage: AnalysisStage, detail: string) => {
+    const now = Date.now();
+    options.logger.debug(`${stage} (+${now - stageStarted}ms): ${detail}`);
+    stageStarted = now;
+    options.onProgress?.(stage, detail);
+  };
+
+  const verifiedPlan = await verifyPlan(result.plan, {
     ...options,
     ...(workspace ? { workspace } : {}),
     progress,
   });
 
-  // Read off the verified plan, not the predicted one. A summary counting
-  // findings that verification has just disproved is the same wrong sentence
-  // this whole stage exists to stop printing.
-  return {
-    plan: finalPlan,
-    summary:
-      finalPlan.commits.length > 0
-        ? `${finalPlan.breakingChanges.length} breaking change(s), ${new Set(finalPlan.impactSites.map((s) => s.file)).size} file(s) affected`
-        : finalPlan.blockers.length > 0
-          ? `Could not establish whether this repository is affected: ${finalPlan.blockers[0]}`
-          : 'No code in this repository is affected by these dependency changes.',
-  };
+  if (verifiedPlan === result.plan) return result;
+  return { plan: verifiedPlan, summary: summarize(verifiedPlan) };
 }
 
 /**

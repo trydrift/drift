@@ -4,7 +4,7 @@ import type { Logger } from './util/logger.js';
 import type { GitHubClient } from './github/client.js';
 import type { RepoProvider } from './repo/provider.js';
 import type { FixAgent } from './agents/types.js';
-import { analyzeRepository } from './analysis.js';
+import { analyzeRepository, deepVerify, type AnalysisStage } from './analysis.js';
 import { dispatch } from './dispatch/index.js';
 import { renderSummaryLine } from './report/markdown.js';
 import { buildUpgradeOutcomeEvent, sendTelemetryEvent, telemetryEnabled } from './telemetry.js';
@@ -47,6 +47,15 @@ export interface PipelineOptions {
   approved?: boolean;
   /** Local checkout to index. Falls back to `repo.workspace`. */
   workspace?: string;
+  /**
+   * Run Deep Verification (install the change, run the project's own
+   * checks) after Quick Scan, before dispatching. Defaults to `false` — a
+   * caller has to ask, same as `scanUpgrades`'s `verify` option — and
+   * `config.verify.enabled` remains a hard ceiling above that: a repository
+   * with verification switched off in `drift.yml` stays off regardless of
+   * what a caller requests.
+   */
+  verify?: { enabled?: boolean };
 }
 
 export interface PipelineResult {
@@ -59,26 +68,46 @@ export async function runPipeline(options: PipelineOptions): Promise<PipelineRes
   const { repo, config, logger, github, githubToken, dryRun, approved, agent } = options;
   const started = Date.now();
 
-  const { plan, summary } = await logger.group('Drift: analysing', () =>
-    analyzeRepository({
-      repo,
-      config,
-      logger,
-      provider: options.provider ?? github.asRepoProvider(repo),
-      workspace: options.workspace ?? repo.workspace,
-      githubToken,
-      onProgress: (stage, detail) => logger.info(`[${stage}] ${detail}`),
-    }),
-  );
+  const analysisOptions = {
+    repo,
+    config,
+    logger,
+    provider: options.provider ?? github.asRepoProvider(repo),
+    workspace: options.workspace ?? repo.workspace,
+    githubToken,
+    onProgress: (stage: AnalysisStage, detail: string) => logger.info(`[${stage}] ${detail}`),
+  };
 
-  if (!plan) {
-    logger.info(summary);
+  let analysis = await logger.group('Drift: analysing', () => analyzeRepository(analysisOptions));
+
+  if (!analysis.plan) {
+    logger.info(analysis.summary);
     return {
       plan: null,
-      dispatch: { status: 'skipped', planId: 'none', message: summary },
-      summary,
+      dispatch: { status: 'skipped', planId: 'none', message: analysis.summary },
+      summary: analysis.summary,
     };
   }
+
+  if ((options.verify?.enabled ?? false) && config.verify.enabled) {
+    analysis = await logger.group('Drift: deep verification', () => deepVerify(analysis, analysisOptions));
+  }
+
+  // `deepVerify` never nulls a plan it was handed — it only ever adds a
+  // verification result to one — but its return type is the same
+  // `AnalysisResult` as `analyzeRepository`'s, so the plan's non-null-ness
+  // established above doesn't survive the reassignment through the type
+  // checker alone.
+  const plan = analysis.plan;
+  if (!plan) {
+    logger.info(analysis.summary);
+    return {
+      plan: null,
+      dispatch: { status: 'skipped', planId: 'none', message: analysis.summary },
+      summary: analysis.summary,
+    };
+  }
+  const { summary } = analysis;
 
   logger.info(renderSummaryLine(plan));
   for (const blocker of plan.blockers) logger.warn(`Blocker: ${blocker}`);
@@ -173,5 +202,5 @@ export async function reportTelemetry(args: {
   }
 }
 
-export { analyzeRepository } from './analysis.js';
+export { analyzeRepository, deepVerify } from './analysis.js';
 export type { AnalysisOptions, AnalysisResult, AnalysisStage } from './analysis.js';

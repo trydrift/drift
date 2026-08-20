@@ -1048,7 +1048,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
       ${
         verificationFailed.length
           ? `<section class="pkg-group">
-              <h4 class="pkg-subhead error">${ICON_ALERT}<span>Its own checks failed</span><small>${verificationFailed.length}</small></h4>
+              <h4 class="pkg-subhead error">${ICON_ALERT}<span>Verified breaking</span><small>${verificationFailed.length}</small></h4>
               <div class="pkg-list">${verificationFailed.map((c) => renderCandidate(c, verificationFailed.length === 1, showRepo)).join('')}</div>
             </section>`
           : ''
