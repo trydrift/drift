@@ -1,0 +1,107 @@
+{
+  "datasetId": "timemachine",
+  "datasetClass": "consumer-impact",
+  "available": 100,
+  "selected": 100,
+  "scored": 69,
+  "excluded": {
+    "reproduction-failed": 31
+  },
+  "missingRequirements": {},
+  "rates": {
+    "dependency-update detection rate": {
+      "numerator": 49,
+      "denominator": 69,
+      "value": 0.7101449275362319
+    },
+    "affected-repository identification rate": {
+      "numerator": 39,
+      "denominator": 69,
+      "value": 0.5652173913043478
+    },
+    "consumer localization rate": {
+      "numerator": 39,
+      "denominator": 69,
+      "value": 0.5652173913043478
+    },
+    "false-safe verdicts": {
+      "numerator": 4,
+      "denominator": 69,
+      "value": 0.057971014492753624
+    }
+  },
+  "refusals": [
+    {
+      "metric": "precision",
+      "reason": "TimeMachine-bench (human-verified subset)'s annotation is not exhaustive at the granularity Drift predicts at (project-build): Human-verified migration failures. Positives only; no non-failing control migrations."
+    },
+    {
+      "metric": "F1",
+      "reason": "F1 is a harmonic mean of precision and recall, and precision is not defined here."
+    },
+    {
+      "metric": "false-positive rate",
+      "reason": "TimeMachine-bench (human-verified subset)'s annotation is not exhaustive at the granularity Drift predicts at (project-build): Human-verified migration failures. Positives only; no non-failing control migrations."
+    }
+  ],
+  "negativeControls": 0,
+  "confusion": null,
+  "classification": null,
+  "baseline": null,
+  "breakdown": {
+    "label: migration-failure-easy": {
+      "dependency-update detection rate": {
+        "numerator": 32,
+        "denominator": 44,
+        "value": 0.7272727272727273
+      },
+      "affected-repository identification rate": {
+        "numerator": 24,
+        "denominator": 44,
+        "value": 0.5454545454545454
+      },
+      "consumer localization rate": {
+        "numerator": 24,
+        "denominator": 44,
+        "value": 0.5454545454545454
+      }
+    },
+    "label: migration-failure-medium": {
+      "dependency-update detection rate": {
+        "numerator": 15,
+        "denominator": 23,
+        "value": 0.6521739130434783
+      },
+      "affected-repository identification rate": {
+        "numerator": 13,
+        "denominator": 23,
+        "value": 0.5652173913043478
+      },
+      "consumer localization rate": {
+        "numerator": 13,
+        "denominator": 23,
+        "value": 0.5652173913043478
+      }
+    },
+    "label: migration-failure-hard": {
+      "dependency-update detection rate": {
+        "numerator": 2,
+        "denominator": 2,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 2,
+        "denominator": 2,
+        "value": 1
+      },
+      "consumer localization rate": {
+        "numerator": 2,
+        "denominator": 2,
+        "value": 1
+      }
+    }
+  },
+  "mappingCoverage": {
+    "compatible": 100
+  }
+}

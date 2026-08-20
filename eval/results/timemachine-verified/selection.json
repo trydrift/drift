@@ -1,0 +1,68 @@
+{
+  "seed": 20260819,
+  "limit": null,
+  "mode": "all",
+  "ids": [],
+  "strata": {
+    "Easy · requirements.txt": {
+      "available": 45,
+      "selected": 45
+    },
+    "Medium · requirements.txt": {
+      "available": 23,
+      "selected": 23
+    },
+    "Medium · setup.py": {
+      "available": 5,
+      "selected": 5
+    },
+    "Easy · setup.py": {
+      "available": 17,
+      "selected": 17
+    },
+    "Hard · requirements.txt": {
+      "available": 4,
+      "selected": 4
+    },
+    "Medium · pyproject.toml": {
+      "available": 2,
+      "selected": 2
+    },
+    "Hard · setup.py": {
+      "available": 2,
+      "selected": 2
+    },
+    "Easy · pyproject.toml": {
+      "available": 2,
+      "selected": 2
+    }
+  },
+  "available": 100,
+  "idsOmitted": "mode is \"all\": every available case was selected, and each one appears in cases.jsonl.gz. The list is omitted rather than restating the corpus.",
+  "dataset": {
+    "id": "timemachine",
+    "title": "TimeMachine-bench (human-verified subset)",
+    "source": {
+      "kind": "git",
+      "url": "https://github.com/tohoku-nlp/timemachine-bench",
+      "version": "unresolved"
+    },
+    "licence": "see the repository",
+    "citation": "Tohoku NLP, TimeMachine-bench, https://github.com/tohoku-nlp/timemachine-bench",
+    "ecosystem": "pypi",
+    "datasetClass": "consumer-impact",
+    "evaluationQuestion": "Given a real Python repository whose historical dependency state no longer resolves or runs, does Drift detect the dependency change and identify the repository as affected?",
+    "doesNotEstablish": "No precision and no false-positive rate, for the same reason as swe-bump-bench: the corpus is migration failures, so every case is a positive.",
+    "groundTruth": {
+      "granularity": "project-build",
+      "exhaustive": false,
+      "basis": "Human-verified migration failures. Positives only; no non-failing control migrations.",
+      "supports": [
+        "recall",
+        "repair-success",
+        "false-safe-count"
+      ]
+    },
+    "localPath": "timemachine-bench"
+  }
+}
