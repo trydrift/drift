@@ -4,9 +4,23 @@ This measures whether Drift detects a real dependency breakage, localizes it to
 the right consumer code, decides honestly whether it can safely repair it, and —
 when it repairs — whether the repair actually works.
 
-**Read "Composition and limitations" before citing any number from here.** The
-corpus is currently five synthetic npm cases. That is enough to validate the
-harness and nothing like enough to support a general accuracy claim.
+## Two things live here, and they are not the same thing
+
+**The five synthetic npm cases in `cases/` are the evaluator's regression
+suite.** They exist to prove the harness works: that a destructive repair is
+not credited, that a false-safe is caught, that D0–D4 score independently, that
+a stale artifact is refused, that the agent handoff runs through production's
+own code. They are offline, deterministic, and fast enough for CI.
+
+**They are not evidence about Drift's real-world accuracy, and no number
+derived from them is presented as such.** Five cases, one repository, one
+dependency, one ecosystem, all written by this project. A percentage over that
+would describe the fixtures.
+
+**The accuracy evidence is in `src/external/`** — five public corpora from
+other people, evaluated against the same Drift the CLI ships, with results in
+`eval/results/<run-id>/` and on the website's `/benchmarks` page. See
+[External corpora](#external-corpora) below.
 
 The methodology, and where it departs from BUMP, Defects4J, SWE-bench,
 swe-bump-bench, bumpgen, DepBench and UPGRADVISOR, is in
@@ -502,6 +516,87 @@ CI validates the evaluator with zero model calls.
 scope escape, an unaudited workspace, or a stale artifact. A missed detection or
 a failed repair is a product result; failing CI on one is how a benchmark starts
 being tuned away from measuring the product.
+
+---
+
+## External corpora
+
+Five public datasets, run against production Drift. These are where any claim
+about accuracy comes from; the five synthetic cases above are the harness's own
+regression suite and are never pooled with them.
+
+```sh
+npm run eval:external -- kong --experiment rq2-category
+npm run eval:external -- roseau
+npm run eval:external -- swe-bump
+npm run eval:external -- timemachine --experiment verified
+npm run eval:external -- bump --limit 40 --seed 20260819
+```
+
+Fetching them is [`benchmarks/README.md`](../benchmarks/README.md). Nothing is
+vendored: the data belongs to its authors, and what makes a run reproducible is
+that every artifact pins the DOI or commit it read, not a copy of the bytes.
+
+| Dataset | Ecosystem | Class | What its ground truth is like |
+| --- | --- | --- | --- |
+| Kong (DOI 10.5281/zenodo.13857646) | npm | upstream BC detection | Commit-level, exhaustive over a sample. Real negatives, so precision is defined — but the labels are close to regex-recoverable, so the trivial baseline is published beside the result |
+| Roseau accuracy kit (DOI 10.5281/zenodo.15536418) | maven | upstream BC detection | Symbol-level, exhaustive, **167 of 267 labelled not-breaking**. The only corpus here that supports a real precision |
+| swe-bump-bench | npm | consumer impact | Project-build level, positives only |
+| BUMP | maven | consumer impact | Project-build level, positives only |
+| TimeMachine-bench | pypi | consumer impact | Project-build level, positives only |
+
+### The rules the code enforces, not just documents
+
+- **Never pool the two classes.** "Did Drift read the upstream change
+  correctly?" and "did Drift see this repository is affected?" are different
+  questions over different truth. There is no combined accuracy number and no
+  way to compute one.
+- **Positives-only means no precision.** Three of the five contain only known
+  breakages. `metrics.ts` *refuses* to compute precision, F1 or a
+  false-positive rate for them and records the reason in the artifact, which
+  the report and the site print in place of the number. `exhaustivePrf` throws
+  rather than returning a placeholder.
+- **Exhaustiveness is checked against the data.** A dataset can declare itself
+  exhaustive and still supply one run no negatives; the confusion matrix is
+  built only when negatives are actually present.
+- **A vocabulary is never forced.** Every external label carries a mapping with
+  a confidence, and only `exact` and `compatible` are scored. Kong's
+  remove/rename/move families are `ambiguous` — the corpus contains removals
+  that name a successor, which is a rename to a consumer, and Kong does not
+  record which is which — and that costs the category metric nine tenths of its
+  denominator. Coverage is reported.
+- **Every exclusion has a reason and a name.** A case the machine could not run
+  is `environment-unavailable` with the exact missing requirement, never a
+  failure and never a silent drop.
+- **The environment decides what may be asked.** Whether japicmp is installed
+  changes the Java result completely, so it is probed and recorded. Where
+  Docker is absent, BUMP's and TimeMachine's oracles do not run and the repair
+  questions are *absent* from the case records rather than recorded as `false`
+  — an absent key means the question was not asked.
+
+### Selection
+
+`--ids`, `--limit` and `--seed`, deterministic and stratified. A subset names
+itself: the published figure is "the 40-case stratified subset listed here",
+never "40/571". `selection.json` carries the manifest, and a whole-corpus run
+records `mode: "all"` rather than restating the corpus.
+
+### Artifacts
+
+```
+eval/results/<run-id>/
+  manifest.json      Drift commit, dataset version, command, platform
+  selection.json     which cases, chosen how
+  environment.json   what this machine could and could not run
+  cases.jsonl.gz     one line per case: provenance, truth, prediction, outcome
+  metrics.json       rates with numerators and denominators, and the refusals
+  exclusions.json    every unscored case with its reason
+  report.md          a rendering of exactly the above
+```
+
+`eval/results/published.json` names the runs the website may show. The site
+reads their `metrics.json` at build time, so no percentage on the site was
+typed by hand and deleting a run breaks the build.
 
 ---
 
