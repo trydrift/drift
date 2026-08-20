@@ -100,10 +100,27 @@ export function BenchmarkCard({ dataset }: { dataset: BenchmarkDataset }) {
           <tbody>
             {Object.entries(dataset.rates).map(([label, rate]) => {
               const interval = dataset.intervals[label];
+              // A rate scored over fewer cases than the corpus, with a mapping
+              // coverage on record, means most of the gap is cases whose label
+              // could not be adjudicated at all — not cases that were skipped.
+              // That is not a caveat a reader should have to open the
+              // methodology details to find: see the module doc above.
+              const ambiguous = dataset.mappingCoverage["ambiguous"] ?? 0;
+              const unsupported = dataset.mappingCoverage["unsupported"] ?? 0;
+              const showMappingNote = rate.denominator < dataset.available && ambiguous + unsupported > 0;
               return (
                 <tr key={label} className="border-t border-border/70">
-                  <td className="py-1.5 pr-3 text-muted">{label}</td>
-                  <td className="py-1.5 text-right font-mono text-[12.5px] text-foreground">
+                  <td className="py-1.5 pr-3 text-muted">
+                    {label}
+                    {showMappingNote ? (
+                      <p className="mt-0.5 text-[11px] leading-snug text-faint">
+                        Scored on {rate.denominator} of {dataset.available} cases — the rest have a label this
+                        corpus does not record precisely enough to check ({ambiguous} ambiguous
+                        {unsupported > 0 ? `, ${unsupported} unsupported` : ""}), not cases that were skipped.
+                      </p>
+                    ) : null}
+                  </td>
+                  <td className="py-1.5 text-right font-mono text-[12.5px] text-foreground align-top">
                     {formatRate(rate)}
                     {interval ? (
                       <span className="ml-2 text-[11px] text-faint">

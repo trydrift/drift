@@ -1,7 +1,7 @@
 import { createGunzip } from 'node:zlib';
 import { createReadStream, existsSync } from 'node:fs';
 import { createInterface } from 'node:readline';
-import { appendFile, mkdir, readFile } from 'node:fs/promises';
+import { appendFile, mkdir, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { datasetOrThrow, DATASETS, type Dataset } from './dataset.ts';
 import { probeEnvironment } from './environment.ts';
@@ -129,6 +129,18 @@ const RUNNERS: Record<string, Runner> = {
   timemachine: runTimemachine,
 };
 
+/**
+ * A fresh (non-`--resume`) run must start from zero observations, but
+ * `checkpoint` only ever appends. A checkpoint file left over from an earlier
+ * attempt at this run id — interrupted, or abandoned in favour of a clean
+ * rerun — would otherwise sit there and merge into a later `--resume`,
+ * quietly mixing observations from an unrelated attempt into what that
+ * resume presents as one continuous run.
+ */
+export async function resetPartialUnlessResuming(partialPath: string, resume: boolean | undefined): Promise<void> {
+  if (!resume && existsSync(partialPath)) await rm(partialPath);
+}
+
 /** Every case a previous attempt recorded, or `[]` when there is no checkpoint. */
 async function readPartial(path: string): Promise<ExternalCaseResult[]> {
   if (!existsSync(path)) return [];
@@ -252,6 +264,8 @@ export async function runExternal(options: ExternalRunOptions): Promise<string> 
 
   const partialPath = join(resultsDir(runId, options.outRoot), 'cases.partial.jsonl');
   await mkdir(resultsDir(runId, options.outRoot), { recursive: true });
+
+  await resetPartialUnlessResuming(partialPath, options.resume);
 
   const carried = options.resume ? await readPartial(partialPath) : [];
   const alreadyRecorded = new Set(carried.map((result) => result.caseId));

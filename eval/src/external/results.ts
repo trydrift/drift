@@ -313,6 +313,9 @@ export function renderExternalReport(input: WriteRunInput & { manifest: RunManif
     lines.push('No rate was computed: no case produced a scored outcome. See the exclusions above.', '');
   } else {
     lines.push('| Question | Result | 95% interval |', '| --- | --- | --- |');
+    const ambiguous = metrics.mappingCoverage['ambiguous'] ?? 0;
+    const unsupported = metrics.mappingCoverage['unsupported'] ?? 0;
+    const notes: string[] = [];
     for (const [label, value] of Object.entries(metrics.rates).sort()) {
       const interval = metrics.intervals[label];
       lines.push(
@@ -320,12 +323,27 @@ export function renderExternalReport(input: WriteRunInput & { manifest: RunManif
           interval ? `${(interval.low * 100).toFixed(1)}–${(interval.high * 100).toFixed(1)}%` : 'not reported (under 20 cases)'
         } |`,
       );
+      // A denominator smaller than the corpus, with a mapping coverage on
+      // record, means most of the gap is cases whose label this corpus does
+      // not record precisely enough to check — not cases that were skipped.
+      // That distinction belongs next to the number, not several sections
+      // down in "Label mapping coverage", where a reader who stopped at the
+      // headline table would never see it.
+      if (value.denominator < metrics.available && ambiguous + unsupported > 0) {
+        notes.push(
+          `**${label}** is scored on ${value.denominator} of ${metrics.available} cases — the rest have a label ` +
+            `this corpus does not record precisely enough to check (${ambiguous} ambiguous` +
+            `${unsupported > 0 ? `, ${unsupported} unsupported` : ''}), not cases that were skipped. See ` +
+            '"Label mapping coverage" below.',
+        );
+      }
     }
     lines.push(
       '',
       'Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty',
       'cases — an interval from four cases is arithmetically valid and rhetorically dishonest.',
       '',
+      ...notes.flatMap((note) => [note, '']),
     );
   }
 

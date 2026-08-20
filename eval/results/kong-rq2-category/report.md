@@ -17,6 +17,7 @@ What a good result here does *not* establish: Nothing about whether Drift finds 
 | Benchmark class | upstream-bc-detection |
 | Drift commit | `80aa8209d62bf19bcdab50dcd7232377528f4de7` |
 | Run date | 2026-08-20T17:40:43.012Z |
+| Re-scored | 2026-08-20T21:08:51.097Z at `bfcc036fff` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
 | Command | `/Users/rudy/.nvm/versions/node/v24.19.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts kong --experiment rq2-category --run-id kong-rq2-category` |
 | Platform | darwin/x64, Node v24.19.0 |
 
@@ -41,6 +42,8 @@ Read this before any rate below.
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
+
+**category classification accuracy** is scored on 134 of 1511 cases — the rest have a label this corpus does not record precisely enough to check (1375 ambiguous, 2 unsupported), not cases that were skipped. See "Label mapping coverage" below.
 
 ### Breakdown
 
