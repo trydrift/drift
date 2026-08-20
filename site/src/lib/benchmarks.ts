@@ -1,4 +1,4 @@
-import data from "@/data/benchmarks.json";
+import data from "@/data/benchmarks/results.json";
 
 /**
  * The benchmark results, as the page reads them.

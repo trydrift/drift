@@ -28,7 +28,13 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..');
 const resultsRoot = join(repoRoot, 'eval', 'results');
-const target = join(here, '..', 'src', 'data', 'benchmarks.json');
+// A subdirectory, not `src/data/benchmarks.json`. `src/data/` is the recordings
+// directory: `test/real-repo-recordings.test.ts` reads every JSON file directly
+// inside it and asserts there is exactly one per supported ecosystem. A
+// generated file dropped in beside them fails that test, which is the test
+// working — so the generated data gets its own directory rather than the test
+// getting a new exception.
+const target = join(here, '..', 'src', 'data', 'benchmarks', 'results.json');
 
 const publishedPath = join(resultsRoot, 'published.json');
 if (!existsSync(publishedPath)) {

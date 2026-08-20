@@ -1,6 +1,6 @@
 {
   "$generated": "site/scripts/sync-benchmarks.mjs — do not edit; every number here is read from eval/results/<run-id>/metrics.json",
-  "generatedAt": "2026-08-20T00:33:20.815Z",
+  "generatedAt": "2026-08-20T00:46:10.710Z",
   "datasets": [
     {
       "runId": "roseau-accuracy",
@@ -675,6 +675,198 @@
           "neededFor": "TimeMachine's documented environment setup"
         }
       ]
+    },
+    {
+      "runId": "timemachine-verified",
+      "headline": false,
+      "why": "TimeMachine's human-verified Python subset, on the weakest manifest-pair construction in this benchmark.",
+      "title": "TimeMachine-bench (human-verified subset)",
+      "ecosystem": "pypi",
+      "datasetClass": "consumer-impact",
+      "sourceUrl": "https://github.com/tohoku-nlp/timemachine-bench",
+      "datasetVersion": "9928dbf1af1405433d2c2e40227f39fd831d3863",
+      "licence": "see the repository",
+      "citation": "Tohoku NLP, TimeMachine-bench, https://github.com/tohoku-nlp/timemachine-bench",
+      "evaluationQuestion": "Given a real Python repository whose historical dependency state no longer resolves or runs, does Drift detect the dependency change and identify the repository as affected?",
+      "doesNotEstablish": "No precision and no false-positive rate, for the same reason as swe-bump-bench: the corpus is migration failures, so every case is a positive.",
+      "groundTruth": {
+        "granularity": "project-build",
+        "exhaustive": false,
+        "basis": "Human-verified migration failures. Positives only; no non-failing control migrations.",
+        "supports": [
+          "recall",
+          "repair-success",
+          "false-safe-count"
+        ]
+      },
+      "driftCommit": "b89642f42b0daf43fb52ba666653a64157c4124a",
+      "driftTreeDirty": true,
+      "runDate": "2026-08-20T00:44:31.375Z",
+      "command": "npm run eval:external -- timemachine",
+      "platform": "darwin/x64, Node v22.22.0",
+      "notes": "Detection only, on a manifest pair this harness assembles — and that construction is the weakest in this benchmark, so it is stated on every case rather than left to be inferred. The repository is fetched at its exact historical commit; the after-state repins the requirements the project itself declares to the versions the dataset records as resolving at the migration date. It is *not* built from `patch` or `gold_patch`, which are the developer's migration and are ground truth — reading the upgrade out of the fix would hand Drift the answer and call the result detection. Only declared requirements are repinned; the rest of the resolved set is the transitive closure, and writing it into a manifest would invent declarations the project never made.\n\nNo precision and no false-positive rate: every task is a migration that fails, and the corpus contains no migrations that succeed.\n\n**Not installed here: `docker`, `uv`.** TimeMachine's own reproduction is a container per task built against a date-filtered PyPI index, which is what preserves the historical resolution each task depends on. Without it the oracle was not run and no repair question was asked — those outcomes are absent from every case record rather than recorded as failures, because Drift was never asked and did not fail.",
+      "available": 100,
+      "selected": 100,
+      "scored": 69,
+      "excluded": {
+        "reproduction-failed": 31
+      },
+      "missingRequirements": {},
+      "negativeControls": 0,
+      "selectionMode": "all",
+      "selectionSeed": 20260819,
+      "selectionLimit": null,
+      "rates": {
+        "dependency-update detection rate": {
+          "numerator": 49,
+          "denominator": 69,
+          "value": 0.7101449275362319
+        },
+        "affected-repository identification rate": {
+          "numerator": 39,
+          "denominator": 69,
+          "value": 0.5652173913043478
+        },
+        "consumer localization rate": {
+          "numerator": 39,
+          "denominator": 69,
+          "value": 0.5652173913043478
+        },
+        "false-safe verdicts": {
+          "numerator": 4,
+          "denominator": 69,
+          "value": 0.057971014492753624
+        }
+      },
+      "confusion": null,
+      "classification": null,
+      "baseline": null,
+      "refusals": [
+        {
+          "metric": "precision",
+          "reason": "TimeMachine-bench (human-verified subset)'s annotation is not exhaustive at the granularity Drift predicts at (project-build): Human-verified migration failures. Positives only; no non-failing control migrations."
+        },
+        {
+          "metric": "F1",
+          "reason": "F1 is a harmonic mean of precision and recall, and precision is not defined here."
+        },
+        {
+          "metric": "false-positive rate",
+          "reason": "TimeMachine-bench (human-verified subset)'s annotation is not exhaustive at the granularity Drift predicts at (project-build): Human-verified migration failures. Positives only; no non-failing control migrations."
+        }
+      ],
+      "mappingCoverage": {
+        "compatible": 100
+      },
+      "breakdown": {
+        "label: migration-failure-easy": {
+          "dependency-update detection rate": {
+            "numerator": 32,
+            "denominator": 44,
+            "value": 0.7272727272727273
+          },
+          "affected-repository identification rate": {
+            "numerator": 24,
+            "denominator": 44,
+            "value": 0.5454545454545454
+          },
+          "consumer localization rate": {
+            "numerator": 24,
+            "denominator": 44,
+            "value": 0.5454545454545454
+          }
+        },
+        "label: migration-failure-medium": {
+          "dependency-update detection rate": {
+            "numerator": 15,
+            "denominator": 23,
+            "value": 0.6521739130434783
+          },
+          "affected-repository identification rate": {
+            "numerator": 13,
+            "denominator": 23,
+            "value": 0.5652173913043478
+          },
+          "consumer localization rate": {
+            "numerator": 13,
+            "denominator": 23,
+            "value": 0.5652173913043478
+          }
+        },
+        "label: migration-failure-hard": {
+          "dependency-update detection rate": {
+            "numerator": 2,
+            "denominator": 2,
+            "value": 1
+          },
+          "affected-repository identification rate": {
+            "numerator": 2,
+            "denominator": 2,
+            "value": 1
+          },
+          "consumer localization rate": {
+            "numerator": 2,
+            "denominator": 2,
+            "value": 1
+          }
+        }
+      },
+      "tools": [
+        {
+          "tool": "node",
+          "available": true,
+          "version": "v22.22.0",
+          "neededFor": "every npm/TypeScript case, and Drift itself"
+        },
+        {
+          "tool": "npm",
+          "available": true,
+          "version": "10.9.4",
+          "neededFor": "installing a TypeScript consumer before its build oracle can run"
+        },
+        {
+          "tool": "git",
+          "available": true,
+          "version": "git version 2.39.5 (Apple Git-154)",
+          "neededFor": "checking out an original repository at the exact evaluated commit"
+        },
+        {
+          "tool": "java",
+          "available": true,
+          "version": "openjdk version \"19\" 2022-09-20",
+          "neededFor": "any Java case"
+        },
+        {
+          "tool": "mvn",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "BUMP's Maven oracle, and building Roseau from its replication kit"
+        },
+        {
+          "tool": "docker",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure"
+        },
+        {
+          "tool": "python3",
+          "available": true,
+          "version": "Python 3.9.6",
+          "neededFor": "any Python case"
+        },
+        {
+          "tool": "uv",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "TimeMachine's documented environment setup"
+        },
+        {
+          "tool": "japicmp",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "Drift's Java API-surface diff, which its maven capability declares it requires"
+        }
+      ]
     }
   ],
   "skipped": [
@@ -685,10 +877,6 @@
     {
       "runId": "bump-subset-40",
       "reason": "no metrics.json in eval/results/bump-subset-40"
-    },
-    {
-      "runId": "timemachine-verified",
-      "reason": "no metrics.json in eval/results/timemachine-verified"
     }
   ]
 }
