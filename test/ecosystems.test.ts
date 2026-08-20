@@ -153,6 +153,88 @@ sdks:
   });
 });
 
+describe('Cargo parser', () => {
+  test('preserves dependency placement for root and target-specific tables', () => {
+    const deps = parse(
+      'Cargo.toml',
+      `
+[dependencies]
+a = "1"
+
+[dev-dependencies]
+b = "1"
+
+[build-dependencies]
+c = "1"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+d = "1"
+
+[target.'cfg(unix)'.dev-dependencies]
+e = "1"
+
+[target.'cfg(windows)'.build-dependencies]
+f = "1"
+`,
+    );
+
+    assert.deepEqual(deps.get('a'), {
+      version: '1',
+      kind: 'runtime',
+      cargo: { section: 'dependencies' },
+    });
+    assert.deepEqual(deps.get('b'), {
+      version: '1',
+      kind: 'dev',
+      cargo: { section: 'dev-dependencies' },
+    });
+    assert.deepEqual(deps.get('c'), {
+      version: '1',
+      kind: 'dev',
+      cargo: { section: 'build-dependencies' },
+    });
+    assert.deepEqual(deps.get('d'), {
+      version: '1',
+      kind: 'runtime',
+      cargo: { section: 'dependencies', target: 'cfg(not(target_arch = "wasm32"))' },
+    });
+    assert.deepEqual(deps.get('e'), {
+      version: '1',
+      kind: 'dev',
+      cargo: { section: 'dev-dependencies', target: 'cfg(unix)' },
+    });
+    assert.deepEqual(deps.get('f'), {
+      version: '1',
+      kind: 'dev',
+      cargo: { section: 'build-dependencies', target: 'cfg(windows)' },
+    });
+  });
+
+  test('preserves placement for nested dependency tables', () => {
+    const deps = parse(
+      'Cargo.toml',
+      `
+[dependencies.a]
+version = "1"
+
+[target.'cfg(unix)'.dev-dependencies.b]
+version = "2"
+`,
+    );
+
+    assert.deepEqual(deps.get('a'), {
+      version: '1',
+      kind: 'runtime',
+      cargo: { section: 'dependencies' },
+    });
+    assert.deepEqual(deps.get('b'), {
+      version: '2',
+      kind: 'dev',
+      cargo: { section: 'dev-dependencies', target: 'cfg(unix)' },
+    });
+  });
+});
+
 describe('Bun', () => {
   // Bun 1.2 replaced the binary `bun.lockb` with a JSONC `bun.lock`. Until it
   // was parsed, a Bun project's resolved versions were invisible.
