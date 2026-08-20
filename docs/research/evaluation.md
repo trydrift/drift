@@ -9,6 +9,21 @@ Nothing on this page quotes another system's reported accuracy as evidence
 about Drift. Numbers from other benchmarks appear only where they justify a
 *methodological* choice.
 
+**Four of the systems described below are no longer only design references.**
+Drift is now evaluated against BUMP, swe-bump-bench, TimeMachine-bench and the
+Roseau accuracy dataset directly, together with Kong's npm breaking-change
+corpus, through the adapters in [`eval/src/external/`](../../eval/src/external/).
+Results are in `eval/results/<run-id>/` and on the site's `/benchmarks` page;
+the operational detail is in [`eval/README.md`](../../eval/README.md).
+
+That changes what this page is for, in one specific way. Where a section below
+says "Drift's harness departs from X because …", the departure is now testable:
+Drift runs on X's own cases, and the artifacts record what it scored. Where a
+number of X's appears here it is still X's own reported figure, quoted to
+justify a design decision, and is never presented as something reproduced here
+— including the tool labels in the Roseau replication kit, which are recorded
+in every case artifact as *recorded* rather than re-run.
+
 ---
 
 ## What the benchmark has to answer
