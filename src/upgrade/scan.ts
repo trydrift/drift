@@ -65,6 +65,7 @@ import {
 } from '../verification/upgrade-probe.js';
 import type { CheckKind } from '../detect/checks.js';
 import { applyVerification, describeVerification } from './verification.js';
+import type { CargoDependencyPlacement } from '../detect/ecosystems/types.js';
 
 const run = promisify(execFile);
 
@@ -96,6 +97,7 @@ export interface UpgradeCandidate {
   id: string;
   name: string;
   kind: DependencyKind;
+  cargo?: CargoDependencyPlacement;
   ecosystem: Ecosystem;
   /** The tool that will be run to perform this upgrade. */
   packageManager: PackageManagerId;
@@ -1375,11 +1377,7 @@ export function upgradeCommandFor(
  */
 function plannedUpgrade(candidate: UpgradeCandidate, mode: 'safe' | 'force'): Command | null {
   const manager = packageManagerById(candidate.packageManager);
-  const command = manager?.upgrade({
-    name: candidate.name,
-    version: candidate.selected,
-    kind: candidate.kind,
-  });
+  const command = manager?.upgrade(upgradeTargetForCandidate(candidate));
   if (!command) return null;
 
   // `--force` is npm's word for "install it anyway"; nothing else in the table
@@ -1387,6 +1385,15 @@ function plannedUpgrade(candidate: UpgradeCandidate, mode: 'safe' | 'force'): Co
   return mode === 'force' && candidate.packageManager === 'npm'
     ? { ...command, args: [...command.args, '--force'] }
     : command;
+}
+
+function upgradeTargetForCandidate(candidate: UpgradeCandidate) {
+  return {
+    name: candidate.name,
+    version: candidate.selected,
+    kind: candidate.kind,
+    ...(candidate.cargo ? { cargo: candidate.cargo } : {}),
+  };
 }
 
 /**
@@ -1430,7 +1437,7 @@ export async function installUpgrade(
       const original = await readFile(manifestFile, 'utf8');
       const rewritten = manager.rewriteManifest(
         original,
-        { name: candidate.name, version: candidate.selected, kind: candidate.kind },
+        upgradeTargetForCandidate(candidate),
         candidate.manifestPath,
       );
       if (rewritten !== original) await writeFile(manifestFile, rewritten, 'utf8');
@@ -1496,11 +1503,7 @@ export async function installUpgrades(
 
   const commands = upgradeMany(
     manager,
-    candidates.map((candidate) => ({
-      name: candidate.name,
-      version: candidate.selected,
-      kind: candidate.kind,
-    })),
+    candidates.map(upgradeTargetForCandidate),
   );
   if (!commands) return false;
 
@@ -1522,7 +1525,7 @@ export async function installUpgrades(
       for (const candidate of candidates) {
         rewritten = manager.rewriteManifest(
           rewritten,
-          { name: candidate.name, version: candidate.selected, kind: candidate.kind },
+          upgradeTargetForCandidate(candidate),
           candidate.manifestPath,
         );
       }
@@ -1855,6 +1858,7 @@ function pendingCandidate(args: {
     id: candidateId(dep, args.repoRoot),
     name: dep.name,
     kind: dep.kind,
+    ...(dep.cargo ? { cargo: dep.cargo } : {}),
     ecosystem: dep.target.manager.ecosystem,
     packageManager: dep.target.manager.id,
     manifestPath: dep.target.manifestPath,
@@ -1916,6 +1920,7 @@ function versionedCandidate(
 export interface ScanDependency {
   name: string;
   kind: DependencyKind;
+  cargo?: CargoDependencyPlacement;
   current: string;
   /** The constraint as written in the manifest, e.g. `^1.2.0`. */
   range: string;
@@ -1962,7 +1967,14 @@ export async function directDependencies(
     if (!kinds.includes(entry.kind)) continue;
     const current = normalizeVersion(locked?.get(name)?.version ?? entry.version);
     if (!current) continue;
-    out.push({ name, kind: entry.kind, current, range: entry.version ?? current, target });
+    out.push({
+      name,
+      kind: entry.kind,
+      ...(entry.cargo ? { cargo: entry.cargo } : {}),
+      current,
+      range: entry.version ?? current,
+      target,
+    });
   }
 
   return out;

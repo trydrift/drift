@@ -1,5 +1,6 @@
 import { basename } from 'node:path';
 import type { DependencyKind, Ecosystem } from '../types.js';
+import type { CargoDependencyPlacement } from './ecosystems/types.js';
 
 /**
  * Which tool actually owns the dependencies in a directory.
@@ -52,6 +53,7 @@ export interface UpgradeTarget {
   name: string;
   version: string;
   kind: DependencyKind;
+  cargo?: CargoDependencyPlacement;
 }
 
 export interface PackageManager {
@@ -171,6 +173,15 @@ const npmFlags = (kind: DependencyKind, dev: string, optional: string, peer?: st
   if (kind === 'optional') return [optional];
   if (kind === 'peer' && peer) return [peer];
   return [];
+};
+
+const cargoFlags = (placement?: CargoDependencyPlacement): string[] => {
+  if (!placement) return [];
+  return [
+    ...(placement.section === 'dev-dependencies' ? ['--dev'] : []),
+    ...(placement.section === 'build-dependencies' ? ['--build'] : []),
+    ...(placement.target ? ['--target', placement.target] : []),
+  ];
 };
 
 const MANAGERS: readonly PackageManager[] = [
@@ -332,9 +343,9 @@ const MANAGERS: readonly PackageManager[] = [
     // install name@version` writes package.json. A bare `name@1.2.3` writes a
     // caret requirement, which lets the resolver pick a newer compatible
     // release later — `=1.2.3` pins the exact version Drift selected.
-    upgrade: ({ name, version }) => ({
+    upgrade: ({ name, version, cargo }) => ({
       command: 'cargo',
-      args: ['add', `${name}@=${version}`],
+      args: ['add', `${name}@=${version}`, ...cargoFlags(cargo)],
     }),
   },
   {

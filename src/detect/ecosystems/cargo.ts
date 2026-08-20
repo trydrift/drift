@@ -1,6 +1,12 @@
 import type { DependencyKind } from '../../types.js';
-import { basename, type DependencyMap, type ManifestParser } from './types.js';
-import { parseTomlVersionValue, scanTomlTables } from './toml.js';
+import {
+  basename,
+  type CargoDependencyPlacement,
+  type CargoDependencySection,
+  type DependencyMap,
+  type ManifestParser,
+} from './types.js';
+import { parseTomlVersionValue, scanTomlTables, unquote } from './toml.js';
 
 export const cargoParser: ManifestParser = {
   ecosystem: 'cargo',
@@ -24,44 +30,105 @@ function parseCargoToml(content: string): DependencyMap {
   const out: DependencyMap = new Map();
 
   for (const table of scanTomlTables(content)) {
-    const kind = kindForHeader(table.header);
-    if (kind) {
+    const placement = placementForHeader(table.header);
+    if (placement && !placement.name) {
       // Table form: [dependencies] serde = "1.0"  /  serde = { version = "1.0" }
       for (const [key, value] of table.entries) {
         const version = parseTomlVersionValue(value);
-        setIfStronger(out, key, { version, kind });
+        setIfStronger(out, key, entryForPlacement(version, placement));
       }
       continue;
     }
 
     // Nested form: [dependencies.serde] \n version = "1.0"
-    const nested = /^(?:workspace\.)?(dependencies|dev-dependencies|build-dependencies)\.(.+)$/.exec(
-      table.header,
-    );
-    if (nested) {
-      const nestedKind = kindForHeader(nested[1]!) ?? 'runtime';
+    if (placement?.name) {
       const raw = table.entries.get('version');
       const version = raw ? parseTomlVersionValue(raw) ?? raw.replace(/^["']|["']$/g, '') : null;
-      setIfStronger(out, nested[2]!, { version, kind: nestedKind });
+      setIfStronger(out, placement.name, entryForPlacement(version, placement));
     }
   }
 
   return out;
 }
 
-function kindForHeader(header: string): DependencyKind | null {
-  const normalized = header.replace(/^workspace\./, '').replace(/^target\.[^.]+\./, '');
-  if (normalized === 'dependencies') return 'runtime';
-  if (normalized === 'dev-dependencies') return 'dev';
-  if (normalized === 'build-dependencies') return 'dev';
-  return null;
+type CargoDependencyLocation = CargoDependencyPlacement & { name?: string };
+
+function entryForPlacement(
+  version: string | null,
+  placement: CargoDependencyLocation,
+): { version: string | null; kind: DependencyKind; cargo: CargoDependencyPlacement } {
+  const cargo: CargoDependencyPlacement = {
+    section: placement.section,
+    ...(placement.target ? { target: placement.target } : {}),
+  };
+  return {
+    version,
+    kind: kindForSection(placement.section),
+    cargo,
+  };
+}
+
+function kindForSection(section: CargoDependencySection): DependencyKind {
+  return section === 'dependencies' ? 'runtime' : 'dev';
+}
+
+function placementForHeader(header: string): CargoDependencyLocation | null {
+  const parts = splitDottedHeader(header);
+  if (parts[0] === 'workspace') parts.shift();
+
+  if (isCargoDependencySection(parts[0])) {
+    return parts.length === 1
+      ? { section: parts[0] }
+      : parts.length === 2
+        ? { section: parts[0], name: parts[1] }
+        : null;
+  }
+
+  if (parts[0] !== 'target' || parts.length < 3) return null;
+  const target = parts[1];
+  const section = parts[2];
+  if (!target || !isCargoDependencySection(section)) return null;
+
+  return parts.length === 3
+    ? { section, target }
+    : parts.length === 4
+      ? { section, target, name: parts[3] }
+      : null;
+}
+
+function isCargoDependencySection(value: string | undefined): value is CargoDependencySection {
+  return value === 'dependencies' || value === 'dev-dependencies' || value === 'build-dependencies';
+}
+
+function splitDottedHeader(header: string): string[] {
+  const parts: string[] = [];
+  let start = 0;
+  let inSingle = false;
+  let inDouble = false;
+
+  for (let i = 0; i < header.length; i++) {
+    const ch = header[i]!;
+    if (ch === '\\') {
+      i += 1;
+      continue;
+    }
+    if (ch === "'" && !inDouble) inSingle = !inSingle;
+    else if (ch === '"' && !inSingle) inDouble = !inDouble;
+    else if (ch === '.' && !inSingle && !inDouble) {
+      parts.push(unquote(header.slice(start, i).trim()));
+      start = i + 1;
+    }
+  }
+
+  parts.push(unquote(header.slice(start).trim()));
+  return parts.filter(Boolean);
 }
 
 /** Runtime declarations take precedence over dev/build ones for the same crate. */
 function setIfStronger(
   map: DependencyMap,
   name: string,
-  entry: { version: string | null; kind: DependencyKind },
+  entry: { version: string | null; kind: DependencyKind; cargo?: CargoDependencyPlacement },
 ): void {
   const existing = map.get(name);
   if (existing && existing.kind === 'runtime' && entry.kind !== 'runtime') return;
