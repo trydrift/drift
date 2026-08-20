@@ -223,6 +223,24 @@ test('the tools menu can lead with recent conversations', () => {
   assert.match(html, />Active</);
 });
 
+test('a busy package verdict cannot steal width from the package identity column', () => {
+  const html = renderPanel(
+    model({
+      thread: [{ id: 'p1', kind: 'packages', headline: 'Testing upgrades.', ids: [candidate().id] }],
+      candidates: {
+        [candidate().id]: candidate({
+          status: 'checking',
+          phase: 'Testing 12 upgrades together against the full workspace typecheck and build suite',
+        }),
+      },
+    }),
+  );
+
+  assert.match(html, /grid-template-columns: auto minmax\(min\(15ch, 100%\), 1fr\) minmax\(0, clamp\(88px, 36%, 170px\)\)/);
+  assert.match(html, /\.verdict \{[\s\S]*?justify-self: end;[\s\S]*?overflow: hidden;/);
+  assert.match(html, /\.verdict\.pending, \.verdict\.busy \{[\s\S]*?overflow-wrap: anywhere;/);
+});
+
 const modelMenu = [
   { id: 'context', anchor: 'context', title: 'Context', items: [{ id: 'context:file', label: 'Add a file…' }] },
   {
