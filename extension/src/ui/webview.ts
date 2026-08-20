@@ -158,6 +158,8 @@ export interface ViewModel {
   busy: boolean;
   /** Whether the running operation may be interrupted. Scans may not. */
   cancellable: boolean;
+  /** The developer has asked the running operation to stop. */
+  stopping: boolean;
   awaitingAnswer: boolean;
   commands: readonly SlashCommand[];
   /** Everything the composer menu offers, in the order it is shown. */
@@ -1926,7 +1928,9 @@ function renderComposer(vm: ViewModel): string {
       ${
         vm.busy
           ? vm.cancellable
-            ? // A scan is stoppable like everything else. The risk it used to be
+            ? vm.stopping
+              ? `<button class="stop stopping" data-action="stop" disabled title="Stopping" aria-label="Stopping"><span class="spinner"></span></button>`
+              : // A scan is stoppable like everything else. The risk it used to be
               // locked for is real but belongs to the *result*, not the button:
               // what must never happen is a half-scanned repository presented as
               // a clean bill of health, and that is prevented by labelling the
@@ -2905,6 +2909,14 @@ button[data-action].is-loading::after {
 /* An icon-only button has no label to sit beside, so its spinner takes the
    icon's place rather than being added next to it. */
 button[data-action].ctl.icon.is-loading > svg { display: none; }
+button.stop.is-loading {
+  justify-content: center;
+  gap: 0;
+}
+button.stop.is-loading > svg { display: none; }
+button.stop.is-loading::after {
+  margin: 0;
+}
 button[data-action]:disabled:not(.is-loading) { opacity: .55; cursor: default; }
 
 /* Questions ------------------------------------------------------- */
@@ -3315,6 +3327,13 @@ button.send, button.stop {
 button.send:hover { background: var(--vscode-button-hoverBackground); }
 button.send svg.i, button.stop svg.i { vertical-align: 0; }
 button.stop { background: var(--vscode-editorError-foreground); color: var(--vscode-editor-background); }
+button.stop.stopping {
+  display: inline-grid;
+  place-items: center;
+}
+button.stop.stopping .spinner {
+  background: conic-gradient(from 0turn, transparent, transparent 65%, currentColor);
+}
 .commands {
   display: flex;
   flex-direction: column;
