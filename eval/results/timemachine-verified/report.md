@@ -15,11 +15,10 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Tohoku NLP, TimeMachine-bench, https://github.com/tohoku-nlp/timemachine-bench |
 | Ecosystem | pypi |
 | Benchmark class | consumer-impact |
-| Drift commit | `b89642f42b0daf43fb52ba666653a64157c4124a` (working tree dirty) |
-| Run date | 2026-08-20T00:44:31.375Z |
-| Re-scored | 2026-08-20T14:51:50.408Z at `20eccc0dc0` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
-| Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts timemachine --experiment verified --run-id timemachine-verified` |
-| Platform | darwin/x64, Node v22.22.0 |
+| Drift commit | `4dd1404ab2426dbf0d52b8c6eb3c6266d14970ca` |
+| Run date | 2026-08-20T23:02:25.365Z |
+| Command | `/Users/rudy/.nvm/versions/node/v24.19.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts timemachine --experiment verified --run-id timemachine-verified --resume` |
+| Platform | darwin/x64, Node v24.19.0 |
 
 ## Case accounting
 
@@ -46,7 +45,7 @@ Every exclusion, with its reason:
 | affected-repository identification rate | 39/69 (56.5%) | 44.9–68.1% |
 | consumer localization rate | 39/69 (56.5%) | 44.9–68.1% |
 | dependency-update detection rate | 49/69 (71.0%) | 59.4–81.2% |
-| false-safe verdicts | 4/69 (5.8%) | 1.4–11.6% |
+| false-safe verdicts | 5/69 (7.2%) | 1.4–13.0% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
@@ -95,15 +94,15 @@ how generously the mapping was written.
 
 | Tool | Version | Needed for |
 | --- | --- | --- |
-| `node` | v22.22.0 | every npm/TypeScript case, and Drift itself |
-| `npm` | 10.9.4 | installing a TypeScript consumer before its build oracle can run |
+| `node` | v24.19.0 | every npm/TypeScript case, and Drift itself |
+| `npm` | 11.12.1 | installing a TypeScript consumer before its build oracle can run |
 | `git` | git version 2.39.5 (Apple Git-154) | checking out an original repository at the exact evaluated commit |
 | `java` | openjdk version "19" 2022-09-20 | any Java case |
-| `mvn` | **not installed** | BUMP's Maven oracle, and building Roseau from its replication kit |
+| `mvn` | Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937) | BUMP's Maven oracle, and building Roseau from its replication kit |
 | `docker` | **not installed** | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
-| `python3` | Python 3.9.6 | any Python case |
+| `python3` | Python 3.14.3 | any Python case |
 | `uv` | **not installed** | TimeMachine's documented environment setup |
-| `japicmp` | **not installed** | Drift's Java API-surface diff, which its maven capability declares it requires |
+| `japicmp` | SYNOPSIS | Drift's Java API-surface diff, which its maven capability declares it requires |
 
 ## Reproduction
 
