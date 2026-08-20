@@ -175,9 +175,19 @@ export interface StructuredFinding {
    * class" (add `new` everywhere) are opposite fixes for the same finding
    * code, and neither is discoverable from `before`/`after` alone without
    * re-parsing them.
-   */
+  */
   fromKind?: string;
   toKind?: string;
+  moduleSystem?: {
+    from?: ModuleSystem;
+    to?: ModuleSystem;
+    incompatibleUsage: ModuleIncompatibleUsage[];
+    /**
+     * Exact consumer module specifiers affected by this finding. Absent means
+     * the package-wide loading mode is incompatible.
+     */
+    affectedSpecifiers?: string[];
+  };
 }
 
 /**
@@ -310,6 +320,11 @@ export interface BreakingChange {
     from?: ModuleSystem;
     to?: ModuleSystem;
     incompatibleUsage: ModuleIncompatibleUsage[];
+    /**
+     * Exact consumer module specifiers affected by this finding. Absent means
+     * every specifier under the package identity is affected.
+     */
+    affectedSpecifiers?: string[];
   };
   /**
    * Upstream confidence — did this change really happen?

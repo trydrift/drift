@@ -101,8 +101,16 @@ export function remediationForFinding(finding: StructuredFinding, dependency: st
       return `\`${symbol}\` is now required. Supply an explicit value at every construction site. Choose the value that preserves the previous default behaviour; if the previous default is not documented, leave a TODO and flag it in the PR description rather than guessing.`;
     case 'commonjs-entry-removed':
     case 'exports-require-condition-removed':
-    case 'package-type-changed':
-      return `\`${dependency}\` no longer exposes the CommonJS loading compatibility it exposed before. Update each localized \`require('${dependency}')\` site to use an ESM-compatible loading mechanism, usually a static \`import\` in an ESM module or a dynamic \`await import('${dependency}')\` where the surrounding CommonJS file cannot move. Do not downgrade the dependency, and do not convert the whole repository to ESM unless that is already the intended migration path.`;
+    case 'package-type-changed': {
+      const affected = finding.moduleSystem?.affectedSpecifiers;
+      const target =
+        affected && affected.length === 1
+          ? `\`require('${affected[0]}')\``
+          : affected && affected.length > 1
+            ? `the affected \`require()\` sites for ${affected.map((specifier) => `\`${specifier}\``).join(', ')}`
+            : `each localized \`require('${dependency}')\` site`;
+      return `\`${dependency}\` no longer exposes the CommonJS loading compatibility it exposed before. Update ${target} to use an ESM-compatible loading mechanism, usually a static \`import\` in an ESM module or a dynamic \`await import()\` where the surrounding CommonJS file cannot move. Do not downgrade the dependency, and do not convert the whole repository to ESM unless that is already the intended migration path.`;
+    }
 
     default:
       return `Review usages of \`${symbol}\` from \`${dependency}\` and update them for the new version.`;

@@ -26,6 +26,23 @@ const file = (path: string, language: string, content: string) => ({
   lineCount: content.split('\n').length,
 });
 
+const moduleSystemChange = (dependency: string, affectedSpecifiers?: string[]) => ({
+  id: `bc-module-${dependency}-${affectedSpecifiers?.join('-') ?? 'all'}`,
+  dependency,
+  kind: 'module-system-change' as const,
+  summary: 'The package no longer exposes CommonJS loading compatibility',
+  remediation: 'Use ESM-compatible loading.',
+  symbols: [],
+  moduleSystem: {
+    from: 'dual' as const,
+    to: 'esm' as const,
+    incompatibleUsage: ['require' as const],
+    ...(affectedSpecifiers ? { affectedSpecifiers } : {}),
+  },
+  confidence: 'high' as const,
+  citations: ['ev_1'],
+});
+
 describe('specifier parsing', () => {
   test('resolves subpaths to their package', () => {
     assert.equal(packageNameFromSpecifier('lodash/fp'), 'lodash');
@@ -387,6 +404,104 @@ const text = "pkg";
 
     assert.equal(sites.length, 1);
     assert.equal(sites[0]?.file, 'src/usage.js');
+  });
+
+  test('subpath module-system changes do not flag the root package require', () => {
+    const files = [
+      file(
+        'src/usage.js',
+        'javascript',
+        `const root = require('pkg');
+const foo = require('pkg/foo');`,
+      ),
+    ];
+    const change = moduleSystemChange('pkg', ['pkg/foo']);
+
+    const sites = localize([change], [dep('pkg', 'npm')], buildIndex(files), files, { logger });
+
+    assert.deepEqual(sites.map((site) => site.line), [2]);
+    assert.equal(sites[0]?.excerpt, `const foo = require('pkg/foo');`);
+  });
+
+  test('subpath module-system changes only flag the affected subpath', () => {
+    const files = [
+      file(
+        'src/usage.js',
+        'javascript',
+        `const foo = require('pkg/foo');
+const bar = require('pkg/bar');`,
+      ),
+    ];
+    const change = moduleSystemChange('pkg', ['pkg/foo']);
+
+    const sites = localize([change], [dep('pkg', 'npm')], buildIndex(files), files, { logger });
+
+    assert.deepEqual(sites.map((site) => site.line), [1]);
+  });
+
+  test('subpath module-system changes handle scoped packages', () => {
+    const files = [
+      file(
+        'src/usage.js',
+        'javascript',
+        `const root = require('@scope/pkg');
+const foo = require('@scope/pkg/foo');`,
+      ),
+    ];
+    const change = moduleSystemChange('@scope/pkg', ['@scope/pkg/foo']);
+
+    const sites = localize([change], [dep('@scope/pkg', 'npm')], buildIndex(files), files, { logger });
+
+    assert.deepEqual(sites.map((site) => site.line), [2]);
+  });
+
+  test('root module-system changes do not flag unaffected subpaths', () => {
+    const files = [
+      file(
+        'src/usage.js',
+        'javascript',
+        `const root = require('pkg');
+const foo = require('pkg/foo');`,
+      ),
+    ];
+    const change = moduleSystemChange('pkg', ['pkg']);
+
+    const sites = localize([change], [dep('pkg', 'npm')], buildIndex(files), files, { logger });
+
+    assert.deepEqual(sites.map((site) => site.line), [1]);
+  });
+
+  test('package-wide module-system changes still flag package and subpath require sites', () => {
+    const files = [
+      file(
+        'src/usage.js',
+        'javascript',
+        `const root = require('pkg');
+const foo = require('pkg/foo');`,
+      ),
+    ];
+    const change = moduleSystemChange('pkg');
+
+    const sites = localize([change], [dep('pkg', 'npm')], buildIndex(files), files, { logger });
+
+    assert.deepEqual(sites.map((site) => site.line), [1, 2]);
+  });
+
+  test('affected subpath module-system changes respect loading style', () => {
+    const files = [
+      file(
+        'src/usage.js',
+        'javascript',
+        `import x from 'pkg/foo';
+const z = await import('pkg/foo');
+const y = require('pkg/foo');`,
+      ),
+    ];
+    const change = moduleSystemChange('pkg', ['pkg/foo']);
+
+    const sites = localize([change], [dep('pkg', 'npm')], buildIndex(files), files, { logger });
+
+    assert.deepEqual(sites.map((site) => site.line), [3]);
   });
 
   test('original ESM-only helper prose regression has no finding, site, or require migration', async () => {

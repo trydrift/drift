@@ -1,5 +1,6 @@
 import { fetchJson, fetchText, mapWithConcurrency } from '../util/http.js';
 import { count, measure } from '../util/profile.js';
+import type { ModuleIncompatibleUsage, ModuleSystem } from '../types.js';
 
 /**
  * TypeScript declaration-surface diffing.
@@ -97,6 +98,12 @@ export interface SurfaceChange {
   /** See `StructuredFinding.fromKind`/`toKind`. Only ever set on `kind-changed`. */
   fromKind?: string;
   toKind?: string;
+  moduleSystem?: {
+    from?: ModuleSystem;
+    to?: ModuleSystem;
+    incompatibleUsage: ModuleIncompatibleUsage[];
+    affectedSpecifiers?: string[];
+  };
 }
 
 const JSDELIVR_DATA = 'https://data.jsdelivr.com/v1/packages/npm';
@@ -257,41 +264,60 @@ export async function diffPackageModuleMetadata(
   ]);
   if (!before || !after) return [];
 
-  const beforeCjs = commonJsCompatibility(before);
-  const afterCjs = commonJsCompatibility(after);
+  const beforeCjs = commonJsCompatibility(packageName, before);
+  const afterCjs = commonJsCompatibility(packageName, after);
   const changes: SurfaceChange[] = [];
 
   const removedRequireConditions = [...beforeCjs.requireConditions].filter(
     (condition) => !afterCjs.requireConditions.has(condition),
   );
-  if (removedRequireConditions.length > 0) {
+  for (const removed of removedRequireConditions) {
+    const affected = specifierForExportPath(packageName, removed);
     changes.push({
       kind: 'exports-require-condition-removed',
       symbol: packageName,
       detail:
-        removedRequireConditions.length === 1
-          ? `The CommonJS export condition ${removedRequireConditions[0]} was removed`
-          : `${removedRequireConditions.length} CommonJS export conditions were removed`,
+        removed === '.'
+          ? 'The root CommonJS export condition was removed'
+          : `The CommonJS export condition for ${removed} was removed`,
       before: [...beforeCjs.requireConditions].sort().join('\n'),
       after: [...afterCjs.requireConditions].sort().join('\n') || '(none)',
+      moduleSystem: {
+        from: 'dual',
+        to: 'esm',
+        incompatibleUsage: ['require'],
+        affectedSpecifiers: [affected],
+      },
     });
   }
 
-  if (beforeCjs.hasCommonJsEntry && !afterCjs.hasCommonJsEntry) {
+  if (beforeCjs.hasRootCommonJsEntry && !afterCjs.hasRootCommonJsEntry) {
     changes.push({
       kind: 'commonjs-entry-removed',
       symbol: packageName,
       detail: 'The package no longer exposes a CommonJS-compatible entry point',
       before: beforeCjs.entrySummary,
       after: afterCjs.entrySummary,
+      moduleSystem: {
+        from: 'dual',
+        to: 'esm',
+        incompatibleUsage: ['require'],
+        affectedSpecifiers: [packageName],
+      },
     });
-  } else if (before.type !== after.type && after.type === 'module' && !afterCjs.hasCommonJsEntry) {
+  } else if (before.type !== after.type && after.type === 'module' && !afterCjs.hasRootCommonJsEntry) {
     changes.push({
       kind: 'package-type-changed',
       symbol: packageName,
       detail: 'The package type changed to ESM without a CommonJS-compatible entry point',
       before: packageTypeSummary(before),
       after: packageTypeSummary(after),
+      moduleSystem: {
+        from: 'dual',
+        to: 'esm',
+        incompatibleUsage: ['require'],
+        affectedSpecifiers: [packageName],
+      },
     });
   }
 
@@ -299,28 +325,30 @@ export async function diffPackageModuleMetadata(
 }
 
 interface CommonJsCompatibility {
-  hasCommonJsEntry: boolean;
+  hasRootCommonJsEntry: boolean;
   requireConditions: Set<string>;
   entrySummary: string;
 }
 
-function commonJsCompatibility(manifest: Manifest): CommonJsCompatibility {
+function commonJsCompatibility(packageName: string, manifest: Manifest): CommonJsCompatibility {
   const requireConditions = requireConditionsIn(manifest.exports);
-  const hasRequireCondition = requireConditions.size > 0;
+  const hasRootRequireCondition = requireConditions.has('.');
   const hasMainCjs = entryLooksCommonJs(manifest.main, manifest);
   const hasBareCjsExport = bareExportLooksCommonJs(manifest.exports, manifest);
-  const hasCommonJsEntry = hasRequireCondition || hasMainCjs || hasBareCjsExport;
+  const hasRootCommonJsEntry = hasRootRequireCondition || hasMainCjs || hasBareCjsExport;
 
   const entrySummary = [
     `type: ${manifest.type ?? '(absent)'}`,
     manifest.main ? `main: ${manifest.main}` : '',
     manifest.module ? `module: ${manifest.module}` : '',
-    requireConditions.size > 0 ? `exports.require: ${[...requireConditions].sort().join(', ')}` : '',
+    requireConditions.size > 0
+      ? `exports.require: ${[...requireConditions].sort().map((path) => specifierForExportPath(packageName, path)).join(', ')}`
+      : '',
   ]
     .filter(Boolean)
     .join('\n') || '(no CommonJS-compatible entry point detected)';
 
-  return { hasCommonJsEntry, requireConditions, entrySummary };
+  return { hasRootCommonJsEntry, requireConditions, entrySummary };
 }
 
 function requireConditionsIn(exportsField: unknown): Set<string> {
@@ -336,6 +364,11 @@ function visitExports(value: unknown, path: string, out: Set<string>): void {
     if (key.startsWith('./')) visitExports(nested, key, out);
     else if (typeof nested === 'object') visitExports(nested, path, out);
   }
+}
+
+function specifierForExportPath(packageName: string, exportPath: string): string {
+  if (exportPath === '.') return packageName;
+  return `${packageName}/${exportPath.replace(/^\.\//, '')}`;
 }
 
 function bareExportLooksCommonJs(exportsField: unknown, manifest: Manifest): boolean {
@@ -364,7 +397,7 @@ function packageTypeSummary(manifest: Manifest): string {
 function dedupeModuleMetadataChanges(changes: SurfaceChange[]): SurfaceChange[] {
   const seen = new Set<string>();
   return changes.filter((change) => {
-    const key = change.kind;
+    const key = `${change.kind}:${change.moduleSystem?.affectedSpecifiers?.join(',') ?? change.symbol}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

@@ -536,6 +536,17 @@ function surfaceRecord(
       ...(c.changed ? { changed: c.changed } : {}),
       ...(c.fromKind ? { fromKind: c.fromKind } : {}),
       ...(c.toKind ? { toKind: c.toKind } : {}),
+      ...(c.moduleSystem
+        ? {
+            moduleSystem: {
+              ...c.moduleSystem,
+              incompatibleUsage: [...c.moduleSystem.incompatibleUsage],
+              ...(c.moduleSystem.affectedSpecifiers
+                ? { affectedSpecifiers: [...c.moduleSystem.affectedSpecifiers] }
+                : {}),
+            },
+          }
+        : {}),
     })),
     weight: args.weight,
   };
