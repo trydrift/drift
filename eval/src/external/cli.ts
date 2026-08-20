@@ -1,7 +1,7 @@
 import { createGunzip } from 'node:zlib';
-import { createReadStream } from 'node:fs';
+import { createReadStream, existsSync } from 'node:fs';
 import { createInterface } from 'node:readline';
-import { readFile } from 'node:fs/promises';
+import { appendFile, mkdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { datasetOrThrow, DATASETS, type Dataset } from './dataset.ts';
 import { probeEnvironment } from './environment.ts';
@@ -75,6 +75,20 @@ export interface RunnerContext {
   options: ExternalRunOptions;
   /** Applies the run's `--ids` / `--limit` / `--seed` to a candidate list, and records the choice. */
   choose: (candidates: readonly Selectable[]) => ReturnType<typeof select>;
+  /**
+   * Appends one finished case to `cases.partial.jsonl` before the run ends.
+   *
+   * A whole-corpus run of these adapters takes hours against the live network,
+   * and a run that only writes at the end converts any interruption into zero
+   * results. Two runs were lost that way — five hours each, stalled on a
+   * network call, nothing on disk. A case that is finished is evidence, and it
+   * should survive the case after it going wrong.
+   *
+   * The partial file is a sibling of the final artifacts and is exactly the
+   * shape `--rescore` reads, so an interrupted run can be turned into a
+   * reported one without re-running anything.
+   */
+  checkpoint: (result: ExternalCaseResult) => Promise<void>;
 }
 
 type Runner = (context: RunnerContext) => Promise<RunnerOutput>;
@@ -109,18 +123,42 @@ export async function rescoreExternal(options: ExternalRunOptions & { rescore: s
   const environment = JSON.parse(await readFile(join(dir, 'environment.json'), 'utf8'));
   const dataset = (selection.dataset ?? datasetOrThrow(manifest.datasetId)) as Dataset;
 
+  /*
+   * A finished run's `cases.jsonl.gz`, or an interrupted one's
+   * `cases.partial.jsonl`.
+   *
+   * The fallback is the point of checkpointing: a run killed after fifty of
+   * sixty cases has fifty real observations, and re-scoring them is strictly
+   * better than discarding them and calling the ecosystem unevaluated. The
+   * resulting artifacts say how many cases they are over, as every artifact
+   * here does, so a partial run cannot be mistaken for a whole one.
+   */
+  const finished = join(dir, 'cases.jsonl.gz');
+  const partial = join(dir, 'cases.partial.jsonl');
+  const useFinished = existsSync(finished);
+  if (!useFinished && !existsSync(partial)) {
+    throw new Error(`No per-case results in ${dir}: neither cases.jsonl.gz nor cases.partial.jsonl is present.`);
+  }
+
   const results: ExternalCaseResult[] = [];
-  const stream = createInterface({ input: createReadStream(join(dir, 'cases.jsonl.gz')).pipe(createGunzip()) });
+  const input = useFinished ? createReadStream(finished).pipe(createGunzip()) : createReadStream(partial);
+  const stream = createInterface({ input });
   for await (const line of stream) {
     if (line.trim().length > 0) results.push(JSON.parse(line) as ExternalCaseResult);
   }
 
+  // `available` is a property of the corpus the run read, not of this
+  // re-score, so it comes back from the stored metrics rather than being
+  // recomputed from a corpus that may have moved on. An interrupted run never
+  // wrote one, and falls back to the selection's own count — which is what
+  // `available` meant for that run anyway.
+  const priorMetrics = existsSync(join(dir, 'metrics.json'))
+    ? JSON.parse(await readFile(join(dir, 'metrics.json'), 'utf8'))
+    : null;
+
   const metrics = computeMetrics({
     dataset,
-    // `available` is a property of the corpus the run read, not of this
-    // re-score, so it comes back from the stored metrics rather than being
-    // recomputed from a corpus that may have moved on.
-    available: JSON.parse(await readFile(join(dir, 'metrics.json'), 'utf8')).available,
+    available: priorMetrics?.available ?? selection.available ?? results.length,
     results,
     ...(rescoreBaseline(dataset) ? { baseline: rescoreBaseline(dataset)! } : {}),
   });
@@ -164,11 +202,17 @@ export async function runExternal(options: ExternalRunOptions): Promise<string> 
   const datasetRoot = join(options.benchmarksRoot, dataset.localPath);
   const runId = options.runId ?? newRunId(dataset.id);
 
+  const partialPath = join(resultsDir(runId, options.outRoot), 'cases.partial.jsonl');
+  await mkdir(resultsDir(runId, options.outRoot), { recursive: true });
+
   let selection = select([], { seed: options.seed ?? 20260819 });
   const context: RunnerContext = {
     dataset,
     datasetRoot,
     options,
+    checkpoint: async (result) => {
+      await appendFile(partialPath, `${JSON.stringify(result)}\n`, 'utf8');
+    },
     choose: (candidates) => {
       selection = select(candidates, {
         ...(options.ids ? { ids: options.ids } : {}),

@@ -6,6 +6,7 @@ import {
   SweBumpUnavailable,
 } from '../adapters/swe-bump.ts';
 import type { RunnerContext, RunnerOutput } from '../cli.ts';
+import { CaseTimeout, withDeadline } from '../deadline.ts';
 import type { ExternalCaseResult } from '../record.ts';
 
 /**
@@ -21,25 +22,33 @@ export async function runSweBump(context: RunnerContext): Promise<RunnerOutput> 
   const wanted = new Set(selection.ids);
 
   const results: ExternalCaseResult[] = [];
+  // Recorded to disk as each case finishes, so an interrupted run still has
+  // everything it got through. See `RunnerContext.checkpoint`.
+  const recordCase = async (result: ExternalCaseResult): Promise<void> => {
+    results.push(result);
+    await context.checkpoint(result);
+  };
   for (const task of tasks) {
     if (!wanted.has(task.id)) continue;
     const started = Date.now();
     try {
-      const prediction = await predictSweBump(task);
-      results.push({
+      const prediction = await withDeadline(() => predictSweBump(task));
+      await recordCase({
         ...scoreSweBump({ task, prediction, excluded: null, datasetVersion, sourceHash, durationMs: Date.now() - started }),
       });
     } catch (err) {
-      // A case that could not be set up is excluded with its reason, never
-      // scored as a Drift miss. `SweBumpUnavailable` carries the distinction
+      // A case that could not be set up, or that ran past its deadline, is
+      // excluded with its reason, never scored as a Drift miss. `SweBumpUnavailable` carries the distinction
       // between "GitHub no longer has this commit" and "the manifest does not
       // declare this package"; anything else is an unexpected failure and says
       // so rather than being folded into one of those.
       const unavailable =
         err instanceof SweBumpUnavailable
           ? { kind: err.kind, reason: err.message, missingRequirement: err.missingRequirement }
-          : { kind: 'reproduction-failed' as const, reason: `unexpected failure: ${(err as Error).message.slice(0, 500)}`, missingRequirement: null };
-      results.push(
+          : err instanceof CaseTimeout
+            ? { kind: 'reproduction-failed' as const, reason: `timed-out: ${err.message}`, missingRequirement: null }
+            : { kind: 'reproduction-failed' as const, reason: `unexpected failure: ${(err as Error).message.slice(0, 500)}`, missingRequirement: null };
+      await recordCase(
         scoreSweBump({ task, prediction: null, excluded: unavailable, datasetVersion, sourceHash, durationMs: Date.now() - started }),
       );
     }

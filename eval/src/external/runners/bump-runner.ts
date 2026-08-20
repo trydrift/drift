@@ -1,5 +1,6 @@
 import { bumpSelectables, BumpUnavailable, loadBump, predictBump, scoreBump } from '../adapters/bump.ts';
 import type { RunnerContext, RunnerOutput } from '../cli.ts';
+import { CaseTimeout, withDeadline } from '../deadline.ts';
 import { missing, probeEnvironment } from '../environment.ts';
 import type { ExternalCaseResult } from '../record.ts';
 
@@ -21,24 +22,32 @@ export async function runBump(context: RunnerContext): Promise<RunnerOutput> {
   const withoutDocker = missing(environment, ['docker']).length > 0;
 
   const results: ExternalCaseResult[] = [];
+  // Recorded to disk as each case finishes, so an interrupted run still has
+  // everything it got through. See `RunnerContext.checkpoint`.
+  const recordCase = async (result: ExternalCaseResult): Promise<void> => {
+    results.push(result);
+    await context.checkpoint(result);
+  };
   for (const record of records) {
     if (!wanted.has(record.breakingCommit)) continue;
     const started = Date.now();
     try {
-      const prediction = await predictBump(record);
-      results.push(
+      const prediction = await withDeadline(() => predictBump(record));
+      await recordCase(
         scoreBump({ record, prediction, excluded: null, datasetVersion, sourceHash, durationMs: Date.now() - started }),
       );
     } catch (err) {
       const unavailable =
         err instanceof BumpUnavailable
           ? { kind: err.kind, reason: err.message, missingRequirement: err.missingRequirement }
+          : err instanceof CaseTimeout
+          ? { kind: 'reproduction-failed' as const, reason: `timed-out: ${err.message}`, missingRequirement: null }
           : {
               kind: 'reproduction-failed' as const,
               reason: `unexpected failure: ${(err as Error).message.slice(0, 500)}`,
               missingRequirement: null,
             };
-      results.push(
+      await recordCase(
         scoreBump({ record, prediction: null, excluded: unavailable, datasetVersion, sourceHash, durationMs: Date.now() - started }),
       );
     }
