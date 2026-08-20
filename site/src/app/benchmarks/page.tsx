@@ -158,7 +158,7 @@ export default function Benchmarks() {
 
           <div className="mt-5 space-y-3">
             <Weakness title="Drift is markedly weaker on Java than on TypeScript, in the same way">
-              The three consumer-impact corpora ask the same question of three ecosystems, and the answers are not
+              The consumer-impact corpora ask one question of TypeScript, Python and Java, and the answers are not
               close. Given a project whose build a dependency upgrade really broke, Drift identified it as affected in
               25 of 34 TypeScript cases (swe-bump-bench), 39 of 69 Python cases (TimeMachine), and 7 of 39 Java cases
               (BUMP). False-safe verdicts run the other way: 23.5%, 5.8% and 41.0%. Detection of the update itself is
