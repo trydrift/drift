@@ -15,9 +15,10 @@ What a good result here does *not* establish: Nothing about Drift on real-world 
 | Citation | Roseau replication kit, Zenodo, DOI 10.5281/zenodo.15536418; tool at https://github.com/alien-tools/roseau |
 | Ecosystem | maven |
 | Benchmark class | upstream-bc-detection |
-| Drift commit | `81faa701d4115532000ca26bc5ae4091c6f72b69` (working tree dirty) |
-| Run date | 2026-08-20T05:30:28.434Z |
-| Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts kong --rescore roseau-accuracy` |
+| Drift commit | `d34ee396fc0f8bdd50f53a6326cc658b34b55fdb` (working tree dirty) |
+| Run date | 2026-08-20T00:20:18.129Z |
+| Re-scored | 2026-08-20T13:50:37.678Z at `7efd4d29b8` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
+| Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts roseau --run-id roseau-accuracy` |
 | Platform | darwin/x64, Node v22.22.0 |
 
 ## Case accounting

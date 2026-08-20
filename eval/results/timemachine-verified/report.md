@@ -15,9 +15,10 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Tohoku NLP, TimeMachine-bench, https://github.com/tohoku-nlp/timemachine-bench |
 | Ecosystem | pypi |
 | Benchmark class | consumer-impact |
-| Drift commit | `81faa701d4115532000ca26bc5ae4091c6f72b69` (working tree dirty) |
-| Run date | 2026-08-20T05:30:16.547Z |
-| Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts kong --rescore timemachine-verified` |
+| Drift commit | `b89642f42b0daf43fb52ba666653a64157c4124a` (working tree dirty) |
+| Run date | 2026-08-20T00:44:31.375Z |
+| Re-scored | 2026-08-20T13:50:47.348Z at `7efd4d29b8` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
+| Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts timemachine --experiment verified --run-id timemachine-verified` |
 | Platform | darwin/x64, Node v22.22.0 |
 
 ## Case accounting

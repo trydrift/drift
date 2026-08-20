@@ -44,7 +44,9 @@ export interface RunManifest {
   version: string;
   runId: string;
   datasetId: string;
+  /** When the *observations* were produced. Never moved by a re-score. */
   createdAt: string;
+  /** The build that produced the observations. Never moved by a re-score. */
   driftCommit: string;
   driftTreeDirty: boolean;
   /** The benchmark harness's own revision. Identical to `driftCommit` in this repository, and recorded separately so it stays true if that stops being so. */
@@ -55,10 +57,30 @@ export interface RunManifest {
   platform: string;
   arch: string;
   notes: string;
+  /**
+   * When the metrics were last recomputed from those observations, and by
+   * which build — present only when a re-score actually happened.
+   *
+   * Kept strictly apart from `createdAt`/`driftCommit`, which describe the
+   * run. The first version of the re-score path rebuilt the whole manifest,
+   * so re-scoring a run silently restamped it with today's date and today's
+   * commit: the artifact then claimed observations had been produced by a
+   * build that never saw them. Scoring may improve after a run; what the run
+   * observed may not.
+   */
+  rescoredAt?: string;
+  rescoredAtCommit?: string;
 }
 
 export interface WriteRunInput {
   runId: string;
+  /**
+   * The manifest a previous run wrote, when this is a re-score.
+   *
+   * Passing it is what keeps the run's own provenance intact; its absence is
+   * what marks a genuine run.
+   */
+  priorManifest?: RunManifest;
   dataset: Dataset;
   datasetVersion: string;
   selection: Selection;
@@ -78,21 +100,30 @@ export async function writeRun(input: WriteRunInput): Promise<string> {
   await mkdir(dir, { recursive: true });
 
   const revision = await driftRevision();
-  const manifest: RunManifest = {
-    version: RUN_MANIFEST_VERSION,
-    runId: input.runId,
-    datasetId: input.dataset.id,
-    createdAt: new Date().toISOString(),
-    driftCommit: revision.commit,
-    driftTreeDirty: revision.dirty,
-    harnessVersion: revision.commit,
-    datasetVersion: input.datasetVersion,
-    command: process.argv.join(' '),
-    node: process.version,
-    platform: process.platform,
-    arch: process.arch,
-    notes: input.notes ?? '',
-  };
+  const manifest: RunManifest = input.priorManifest
+    ? {
+        // Everything about *how the observations were produced* comes back
+        // untouched. Only the re-score's own footprint is added.
+        ...input.priorManifest,
+        notes: input.notes ?? input.priorManifest.notes,
+        rescoredAt: new Date().toISOString(),
+        rescoredAtCommit: revision.commit,
+      }
+    : {
+        version: RUN_MANIFEST_VERSION,
+        runId: input.runId,
+        datasetId: input.dataset.id,
+        createdAt: new Date().toISOString(),
+        driftCommit: revision.commit,
+        driftTreeDirty: revision.dirty,
+        harnessVersion: revision.commit,
+        datasetVersion: input.datasetVersion,
+        command: process.argv.join(' '),
+        node: process.version,
+        platform: process.platform,
+        arch: process.arch,
+        notes: input.notes ?? '',
+      };
 
   await writeJson(join(dir, 'manifest.json'), manifest);
   await writeJson(join(dir, 'selection.json'), {
@@ -177,6 +208,11 @@ export function renderExternalReport(input: WriteRunInput & { manifest: RunManif
     `| Benchmark class | ${dataset.datasetClass} |`,
     `| Drift commit | \`${manifest.driftCommit}\`${manifest.driftTreeDirty ? ' (working tree dirty)' : ''} |`,
     `| Run date | ${manifest.createdAt} |`,
+    ...(manifest.rescoredAt
+      ? [
+          `| Re-scored | ${manifest.rescoredAt} at \`${(manifest.rescoredAtCommit ?? '').slice(0, 10)}\` — metrics recomputed from the recorded per-case results; the observations above are unchanged |`,
+        ]
+      : []),
     `| Command | \`${manifest.command}\` |`,
     `| Platform | ${manifest.platform}/${manifest.arch}, Node ${manifest.node} |`,
     '',

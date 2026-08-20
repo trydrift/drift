@@ -7,7 +7,7 @@ import { datasetOrThrow, DATASETS, type Dataset } from './dataset.ts';
 import { probeEnvironment } from './environment.ts';
 import { computeMetrics, type BaselineSpec } from './metrics.ts';
 import type { ExternalCaseResult } from './record.ts';
-import { newRunId, resultsDir, writeRun } from './results.ts';
+import { newRunId, resultsDir, writeRun, type RunManifest } from './results.ts';
 import { select, type Selectable } from './selection.ts';
 import { runKong } from './runners/kong-runner.ts';
 import { runSweBump } from './runners/swe-bump-runner.ts';
@@ -119,7 +119,7 @@ const RUNNERS: Record<string, Runner> = {
 export async function rescoreExternal(options: ExternalRunOptions & { rescore: string }): Promise<string> {
   const dir = resultsDir(options.rescore, options.outRoot);
   const selection = JSON.parse(await readFile(join(dir, 'selection.json'), 'utf8'));
-  const manifest = JSON.parse(await readFile(join(dir, 'manifest.json'), 'utf8'));
+  const manifest = JSON.parse(await readFile(join(dir, 'manifest.json'), 'utf8')) as RunManifest;
   const environment = JSON.parse(await readFile(join(dir, 'environment.json'), 'utf8'));
   const dataset = (selection.dataset ?? datasetOrThrow(manifest.datasetId)) as Dataset;
 
@@ -172,6 +172,9 @@ export async function rescoreExternal(options: ExternalRunOptions & { rescore: s
     results,
     metrics,
     notes: manifest.notes ?? '',
+    // The run's own provenance, handed back so `writeRun` preserves it rather
+    // than restamping the artifact with today's commit.
+    priorManifest: manifest,
     root: options.outRoot,
   });
 }

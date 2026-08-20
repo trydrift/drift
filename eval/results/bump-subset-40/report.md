@@ -15,9 +15,10 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Frank Reyes et al., "BUMP: A Benchmark of Reproducible Breaking Dependency Updates", arXiv:2401.09906; data at https://github.com/chains-project/bump, archive at DOI 10.5281/zenodo.10041883. |
 | Ecosystem | maven |
 | Benchmark class | consumer-impact |
-| Drift commit | `81faa701d4115532000ca26bc5ae4091c6f72b69` (working tree dirty) |
-| Run date | 2026-08-20T05:30:12.433Z |
-| Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts kong --rescore bump-subset-40` |
+| Drift commit | `f887b6fee92e04f2714d5f009f95cf3267e15036` (working tree dirty) |
+| Run date | 2026-08-20T05:19:55.347Z |
+| Re-scored | 2026-08-20T13:50:50.553Z at `7efd4d29b8` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
+| Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts bump --limit 40 --seed 20260819 --run-id bump-subset-40` |
 | Platform | darwin/x64, Node v22.22.0 |
 
 ## Case accounting
