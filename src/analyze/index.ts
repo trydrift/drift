@@ -118,6 +118,9 @@ function fromComputedEvidence(record: Evidence): BreakingChange[] {
     after: finding.after,
     remediation: remediationForFinding(finding, record.dependency),
     symbols: symbolsFromFinding(finding),
+    ...(kindForFindingCode(finding.code) === 'module-system-change'
+      ? { moduleSystem: { from: 'dual' as const, to: 'esm' as const, incompatibleUsage: ['require' as const] } }
+      : {}),
     // Provisional; `scoreUpstream` decides the real value once citations are
     // merged. A computed diff is ground truth about the upstream artefact and
     // is the only class that reaches `high` uncorroborated.
@@ -150,6 +153,8 @@ function fromComputedEvidence(record: Evidence): BreakingChange[] {
  * The owner is the second-to-last part; the leading namespace is never a symbol.
  */
 function symbolsFromFinding(finding: StructuredFinding): string[] {
+  if (kindForFindingCode(finding.code) === 'module-system-change') return [];
+
   const symbols = new Set<string>([finding.symbol]);
 
   // A symbol containing whitespace is a label, not an identifier — the counted
@@ -262,10 +267,12 @@ function fromProseEvidence(record: Evidence, dependency: string, workspace: stri
       if (seen.has(key)) continue;
       seen.add(key);
 
-      // A package-wide change (an ESM migration, say) names no export. The
-      // package itself becomes the search symbol so localization still finds
-      // the import and `require()` sites that need changing.
-      const symbols = match.symbols.length > 0 ? match.symbols : [dependency];
+      // Package-wide module-system changes name no export and must not be
+      // localized by searching for the package name. They carry structured
+      // loading semantics instead, so the localizer can find only incompatible
+      // consumer forms such as `require()`.
+      const symbols =
+        match.symbols.length > 0 || match.kind === 'module-system-change' ? match.symbols : [dependency];
 
       out.push({
         id: stableId('bc', dependency, workspace, match.ruleId, match.symbols.join(',')),
@@ -276,6 +283,7 @@ function fromProseEvidence(record: Evidence, dependency: string, workspace: stri
         remediation: remediationForProse(match, dependency),
         symbols,
         replacementSymbols: match.replacementSymbols.length ? match.replacementSymbols : undefined,
+        ...(match.moduleSystem ? { moduleSystem: match.moduleSystem } : {}),
         // Provisional; `scoreUpstream` decides the real value.
         confidence: confidenceForSource(record),
         taxonomy: classify(match.kind),

@@ -192,6 +192,24 @@ const BY_FINDING_CODE: Record<string, Omit<ChangeTaxonomy, 'origin'>> = {
     scope: 'package',
     visibility: ['direct'],
   },
+  'commonjs-entry-removed': {
+    nature: 'packaging',
+    detectability: ['link-or-import', 'compile-time'],
+    scope: 'package',
+    visibility: ['direct'],
+  },
+  'exports-require-condition-removed': {
+    nature: 'packaging',
+    detectability: ['link-or-import', 'compile-time'],
+    scope: 'package',
+    visibility: ['direct'],
+  },
+  'package-type-changed': {
+    nature: 'packaging',
+    detectability: ['manifest', 'link-or-import', 'compile-time'],
+    scope: 'package',
+    visibility: ['direct'],
+  },
   // Compiles either way — the name and type are untouched, only the value
   // underneath moved — so it belongs with the other behaviour-only class
   // rather than with the compile-time type-contract findings above.
@@ -294,6 +312,12 @@ const BY_KIND: Record<BreakingChangeKind, Omit<ChangeTaxonomy, 'origin'>> = {
     detectability: ['static-semantic', 'runtime-only'],
     scope: 'module',
     visibility: ['unknown'],
+  },
+  'module-system-change': {
+    nature: 'packaging',
+    detectability: ['link-or-import', 'compile-time'],
+    scope: 'package',
+    visibility: ['direct'],
   },
   'runtime-requirement': {
     nature: 'runtime-environment',
