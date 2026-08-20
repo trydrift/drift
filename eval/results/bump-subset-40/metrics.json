@@ -3,6 +3,8 @@
   "datasetClass": "consumer-impact",
   "available": 571,
   "selected": 40,
+  "attempted": 40,
+  "notRun": 0,
   "scored": 39,
   "excluded": {
     "source-unavailable": 1

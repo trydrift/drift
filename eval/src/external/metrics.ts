@@ -51,8 +51,20 @@ export interface DatasetMetrics {
   datasetClass: Dataset['datasetClass'];
   /** Records the dataset contains, before this run selected anything. */
   available: number;
-  /** Records this run tried to evaluate. */
+  /** Records the run's selection named. Not the same as how many it got through — see `attempted`. */
   selected: number;
+  /**
+   * Records this run actually produced a result for.
+   *
+   * Distinct from `selected` because a run can be interrupted, and an
+   * interrupted run's artifacts are publishable. Collapsing the two would make
+   * a sweep killed at case 37 of 63 report itself as a complete 37-case run —
+   * quietly shrinking the denominator to whatever it managed instead of saying
+   * what it set out to do.
+   */
+  attempted: number;
+  /** Selected records this run never reached. Zero for a completed run. */
+  notRun: number;
   /** Records that produced a scored outcome. */
   scored: number;
   /** Records excluded, and why — one entry per reason, summing to `selected - scored`. */
@@ -146,6 +158,8 @@ export function computeMetrics(input: {
   available: number;
   results: readonly ExternalCaseResult[];
   baseline?: BaselineSpec;
+  /** How many records the run's selection named. Defaults to the number of results, which is right for a completed run. */
+  selected?: number;
 }): DatasetMetrics {
   const { dataset, results } = input;
 
@@ -262,7 +276,9 @@ export function computeMetrics(input: {
     datasetId: dataset.id,
     datasetClass: dataset.datasetClass,
     available: input.available,
-    selected: results.length,
+    selected: input.selected ?? results.length,
+    attempted: results.length,
+    notRun: Math.max(0, (input.selected ?? results.length) - results.length),
     scored: scored.length,
     excluded,
     missingRequirements,

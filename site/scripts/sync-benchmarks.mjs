@@ -93,6 +93,8 @@ for (const entry of published.runs) {
 
     available: metrics.available,
     selected: metrics.selected,
+    attempted: metrics.attempted ?? metrics.selected,
+    notRun: metrics.notRun ?? 0,
     scored: metrics.scored,
     excluded: metrics.excluded ?? {},
     missingRequirements: metrics.missingRequirements ?? {},

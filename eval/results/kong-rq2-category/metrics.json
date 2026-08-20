@@ -3,6 +3,8 @@
   "datasetClass": "upstream-bc-detection",
   "available": 1511,
   "selected": 1511,
+  "attempted": 1511,
+  "notRun": 0,
   "scored": 1511,
   "excluded": {},
   "missingRequirements": {},

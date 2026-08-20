@@ -17,7 +17,7 @@ What a good result here does *not* establish: Nothing about Drift on real-world 
 | Benchmark class | upstream-bc-detection |
 | Drift commit | `d34ee396fc0f8bdd50f53a6326cc658b34b55fdb` (working tree dirty) |
 | Run date | 2026-08-20T00:20:18.129Z |
-| Re-scored | 2026-08-20T14:16:41.441Z at `42be074db9` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
+| Re-scored | 2026-08-20T14:51:59.263Z at `20eccc0dc0` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
 | Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts roseau --run-id roseau-accuracy` |
 | Platform | darwin/x64, Node v22.22.0 |
 

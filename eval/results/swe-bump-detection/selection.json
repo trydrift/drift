@@ -1,0 +1,231 @@
+{
+  "seed": 20260819,
+  "limit": null,
+  "mode": "all",
+  "ids": [
+    "Coding-Coach__coding-coach-api-uuid__^9.0.1",
+    "EnixCoda__github-code-review-notifier-firebase__^10.11.0",
+    "JoinColony__colonySDK-@colony-slash-colony-js__^7.1.0",
+    "JoinColony__colonySDK-@urql-slash-core__^5.0.1",
+    "JoinColony__colonySDK-ethers__^6.12.0",
+    "JoinColony__colonySDK-fetch-retry__^6.0.0",
+    "JoinColony__colonySDK-wonka__^6.3.4",
+    "MetaMask__eth-ledger-bridge-keyring-@ethereumjs-slash-common__^4.3.0",
+    "MetaMask__eth-ledger-bridge-keyring-@ethereumjs-slash-tx__^5.3.0",
+    "MetaMask__eth-ledger-bridge-keyring-@ethereumjs-slash-util__^9.0.3",
+    "MikeBirdTech__gpt3-vscode-extension-glob__^10.3.12",
+    "MikeBirdTech__gpt3-vscode-extension-openai__^4.38.2",
+    "MikeBirdTech__gpt3-vscode-extension-openai__^4.38.2",
+    "Minds__mobile-native-i18n-js__^4.4.3",
+    "Minds__mobile-native-i18next__^23.11.2",
+    "Minds__mobile-native-react-native-localize__^3.1.0",
+    "Minds__mobile-native-react-native-reanimated-hooks__^4.0.0",
+    "actions__labeler-@octokit-slash-plugin-retry__^7.1.0",
+    "aprilandjan__vscode-ascii-tree-generator-glob__^10.3.12",
+    "ayocodingit__boilerplate-express-service-express-jwt__^8.4.1",
+    "balena-io__open-balena-vpn-telnet-client__^2.2.0",
+    "bufferapp__ui-highlight.js__11.9.0",
+    "bufferapp__ui-markdown-to-jsx__^7.4.7",
+    "bufferapp__ui-react-router-dom__6.22.3",
+    "bufferapp__ui-styled-components__^6.1.8",
+    "che-incubator__chectl-axios__^1.6.8",
+    "che-incubator__chectl-execa__^8.0.1",
+    "che-incubator__chectl-os-locale__^6.0.2",
+    "chriscareycode__nagiostv-react-clipboard-polyfill__^4.0.2",
+    "chriscareycode__nagiostv-react-react-router-dom__^6.22.3",
+    "chriscareycode__nagiostv-react-react-tooltip__^5.26.3",
+    "creditkarma__feature-flags-ajv__^8.12.0",
+    "deepstreamIO__deepstream.io-ajv__^8.12.0",
+    "dequelabs__axe-puppeteer-axe-core__^4.9.0",
+    "dougkulak__libdefkit-meow__^13.2.0",
+    "dougkulak__libdefkit-pkg-dir__^8.0.0",
+    "edgardmessias__vscode.clipboard-manager-clipboardy__^4.0.0",
+    "edgardmessias__vscode.clipboard-manager-glob__^10.3.12",
+    "emtee40__global-agent-raycast-get-port__^7.1.0",
+    "emtee40__global-agent-raycast-got__^14.2.1",
+    "epeejs__epee-react-admin-react-router-dom__^6.22.3",
+    "functionalone__aws-least-privilege-winston__^3.13.0",
+    "getflywheel__local-components-react-markdown__^9.0.1",
+    "getflywheel__local-components-react-router-dom__^6.22.3",
+    "getflywheel__local-components-react-toastify__^10.0.5",
+    "gicentre__prettier-plugin-elm-execa__^8.0.1",
+    "hbenl__vscode-mocha-test-adapter-glob__^10.3.12",
+    "hbenl__vscode-mocha-test-adapter-minimatch__^9.0.4",
+    "hugo-cardoso__context-vue-vue__^3.4.23",
+    "hyperlane-xyz__hyperlane-warp-ui-template-@rainbow-me-slash-rainbowkit__2.0.5",
+    "hyperlane-xyz__hyperlane-warp-ui-template-@tanstack-slash-react-query__^5.29.2",
+    "hyperlane-xyz__hyperlane-warp-ui-template-react-toastify__^10.0.5",
+    "hyperlane-xyz__hyperlane-warp-ui-template-wagmi__^2.5.20",
+    "iantrich__text-divider-row-lit-element__^4.0.5",
+    "ineo6__hosts-lru-cache__^10.2.0",
+    "jmerle__zeal-user-contrib-tar__^7.0.1",
+    "jonkristian__entur-card-lit__^3.1.3",
+    "karrioapi__karrio-dashboard-axios__^1.6.8",
+    "kitce__viurr-axios__^1.6.8",
+    "kitce__viurr-filenamify__^6.0.0",
+    "kitce__viurr-filesize__^10.1.1",
+    "kitce__viurr-mkdirp__^3.0.1",
+    "lodeapp__lode-glob__^10.3.12"
+  ],
+  "strata": {
+    "yarn · che-incubator/chectl": {
+      "available": 3,
+      "selected": 3
+    },
+    "npm · JoinColony/colonySDK": {
+      "available": 5,
+      "selected": 5
+    },
+    "yarn · bufferapp/ui": {
+      "available": 4,
+      "selected": 4
+    },
+    "npm · balena-io/open-balena-vpn": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · ayocodingit/boilerplate-express-service": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · deepstreamIO/deepstream.io": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · ineo6/hosts": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · actions/labeler": {
+      "available": 1,
+      "selected": 1
+    },
+    "yarn · dougkulak/libdefkit": {
+      "available": 2,
+      "selected": 2
+    },
+    "npm · emtee40/global-agent-raycast": {
+      "available": 2,
+      "selected": 2
+    },
+    "yarn · hugo-cardoso/context-vue": {
+      "available": 1,
+      "selected": 1
+    },
+    "pnpm · jmerle/zeal-user-contrib": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · MikeBirdTech/gpt3-vscode-extension": {
+      "available": 3,
+      "selected": 3
+    },
+    "yarn · hyperlane-xyz/hyperlane-warp-ui-template": {
+      "available": 4,
+      "selected": 4
+    },
+    "yarn · Minds/mobile-native": {
+      "available": 4,
+      "selected": 4
+    },
+    "npm · functionalone/aws-least-privilege": {
+      "available": 1,
+      "selected": 1
+    },
+    "yarn · gicentre/prettier-plugin-elm": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · hbenl/vscode-mocha-test-adapter": {
+      "available": 2,
+      "selected": 2
+    },
+    "yarn · MetaMask/eth-ledger-bridge-keyring": {
+      "available": 3,
+      "selected": 3
+    },
+    "npm · chriscareycode/nagiostv-react": {
+      "available": 3,
+      "selected": 3
+    },
+    "npm · creditkarma/feature-flags": {
+      "available": 1,
+      "selected": 1
+    },
+    "pnpm · kitce/viurr": {
+      "available": 4,
+      "selected": 4
+    },
+    "yarn · getflywheel/local-components": {
+      "available": 3,
+      "selected": 3
+    },
+    "npm · EnixCoda/github-code-review-notifier": {
+      "available": 1,
+      "selected": 1
+    },
+    "yarn · lodeapp/lode": {
+      "available": 1,
+      "selected": 1
+    },
+    "pnpm · epeejs/epee-react-admin": {
+      "available": 1,
+      "selected": 1
+    },
+    "yarn · Coding-Coach/coding-coach-api": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · dequelabs/axe-puppeteer": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · edgardmessias/vscode.clipboard-manager": {
+      "available": 2,
+      "selected": 2
+    },
+    "npm · jonkristian/entur-card": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · iantrich/text-divider-row": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · karrioapi/karrio-dashboard": {
+      "available": 1,
+      "selected": 1
+    },
+    "yarn · aprilandjan/vscode-ascii-tree-generator": {
+      "available": 1,
+      "selected": 1
+    }
+  },
+  "available": 63,
+  "dataset": {
+    "id": "swe-bump",
+    "title": "swe-bump-bench",
+    "source": {
+      "kind": "git",
+      "url": "https://github.com/xeol-io/swe-bump-bench",
+      "version": "unresolved"
+    },
+    "licence": "see the repository",
+    "citation": "xeol-io, swe-bump-bench, https://github.com/xeol-io/swe-bump-bench",
+    "ecosystem": "npm",
+    "datasetClass": "consumer-impact",
+    "evaluationQuestion": "Given a real TypeScript project at a real commit and a dependency upgrade known to break its build, does Drift detect the update, decide the repository is affected, localize the code, and avoid telling the developer it is safe?",
+    "doesNotEstablish": "No precision and no false-positive rate. Every task in this corpus is a known-breaking upgrade, so there is no negative population to compute one over; a tool that answered \"affected\" unconditionally would score identically on the questions this corpus can answer.",
+    "groundTruth": {
+      "granularity": "project-build",
+      "exhaustive": false,
+      "basis": "Each task is a known-breaking dependency bump whose build oracle fails. Positives only: there are no non-breaking control upgrades, and no symbol-level annotation of what changed.",
+      "supports": [
+        "recall",
+        "repair-success",
+        "false-safe-count"
+      ]
+    },
+    "localPath": "swe-bump-bench"
+  }
+}

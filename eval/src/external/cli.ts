@@ -192,6 +192,10 @@ export async function rescoreExternal(options: ExternalRunOptions & { rescore: s
     dataset,
     available: priorMetrics?.available ?? selection.available ?? results.length,
     results,
+    // What the run set out to do, from its own selection — so re-scoring an
+    // interrupted run reports "37 of 63 attempted" rather than presenting
+    // itself as a complete 37-case sweep.
+    selected: Array.isArray(selection.ids) && selection.ids.length > 0 ? selection.ids.length : results.length,
     ...(rescoreBaseline(dataset) ? { baseline: rescoreBaseline(dataset)! } : {}),
   });
 
@@ -305,6 +309,7 @@ export async function runExternal(options: ExternalRunOptions): Promise<string> 
     dataset,
     available: output.available,
     results,
+    selected: selection.ids.length,
     ...(output.baseline ? { baseline: output.baseline } : {}),
   });
 

@@ -51,7 +51,11 @@ export function BenchmarkCard({ dataset }: { dataset: BenchmarkDataset }) {
           value={String(dataset.selected)}
           note={dataset.selectionMode === "stratified-sample" ? `stratified, seed ${dataset.selectionSeed}` : undefined}
         />
-        <Cell label="Scored" value={String(dataset.scored)} />
+        <Cell
+          label="Scored"
+          value={String(dataset.scored)}
+          note={dataset.notRun > 0 ? `${dataset.notRun} not yet run` : undefined}
+        />
         <Cell
           label="Excluded"
           value={String(excludedTotal)}

@@ -58,6 +58,9 @@ export interface BenchmarkDataset {
 
   available: number;
   selected: number;
+  /** Records the run reached. Below `selected` only when the run was interrupted. */
+  attempted: number;
+  notRun: number;
   scored: number;
   excluded: Record<string, number>;
   missingRequirements: Record<string, number>;

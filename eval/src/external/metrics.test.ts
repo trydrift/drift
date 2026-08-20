@@ -249,3 +249,33 @@ test('a false-safe count is reported for a dataset whose truth does support one'
   });
   assert.deepEqual(metrics.rates['false-safe verdicts'], { numerator: 1, denominator: 2, value: 0.5 });
 });
+
+test('an interrupted run reports what it set out to do, not only what it got through', () => {
+  // A sweep killed at case 37 of 63 must not present itself as a complete
+  // 37-case run. Collapsing "selected" into "attempted" shrinks the
+  // denominator to whatever the run managed, which is the most flattering
+  // possible reading of an interruption.
+  const done = Array.from({ length: 37 }, (_, index) =>
+    result({ caseId: `c${index}`, outcomes: { identifiedAffected: index < 25 } }),
+  );
+  const metrics = computeMetrics({ dataset: DATASETS['swe-bump']!, available: 63, results: done, selected: 63 });
+
+  assert.equal(metrics.selected, 63, 'the selection is what the run named');
+  assert.equal(metrics.attempted, 37, 'and this is what it reached');
+  assert.equal(metrics.notRun, 26);
+  assert.equal(metrics.scored, 37);
+  // The rates are still over what was actually observed — that part is honest
+  // either way; what changes is that the shortfall is visible beside them.
+  assert.deepEqual(metrics.rates['affected-repository identification rate'], {
+    numerator: 25,
+    denominator: 37,
+    value: 25 / 37,
+  });
+});
+
+test('a completed run reports no shortfall', () => {
+  const done = [result({ caseId: 'a', outcomes: { identifiedAffected: true } })];
+  const metrics = computeMetrics({ dataset: DATASETS['swe-bump']!, available: 1, results: done, selected: 1 });
+  assert.equal(metrics.notRun, 0);
+  assert.equal(metrics.selected, metrics.attempted);
+});

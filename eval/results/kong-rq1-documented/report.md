@@ -17,7 +17,7 @@ What a good result here does *not* establish: Nothing about whether Drift finds 
 | Benchmark class | upstream-bc-detection |
 | Drift commit | `a2c0b8a8b83fadcafd3f8b02f13d540abbeb26ce` (working tree dirty) |
 | Run date | 2026-08-19T23:21:48.448Z |
-| Re-scored | 2026-08-20T14:16:35.116Z at `42be074db9` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
+| Re-scored | 2026-08-20T14:51:53.639Z at `20eccc0dc0` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
 | Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts kong --experiment rq1-documented --run-id kong-rq1-documented` |
 | Platform | darwin/x64, Node v22.22.0 |
 

@@ -261,8 +261,12 @@ export function renderExternalReport(input: WriteRunInput & { manifest: RunManif
     '| --- | --- |',
     `| Available in the dataset | ${metrics.available} |`,
     `| Selected for this run (${selection.mode}${selection.limit === null ? '' : `, limit ${selection.limit}, seed ${selection.seed}`}) | ${metrics.selected} |`,
+    ...(metrics.notRun > 0
+      ? [`| **Attempted** (this run was interrupted and has not covered its whole selection) | **${metrics.attempted}** |`]
+      : []),
     `| Scored | ${metrics.scored} |`,
-    `| Excluded | ${metrics.selected - metrics.scored} |`,
+    `| Excluded | ${metrics.attempted - metrics.scored} |`,
+    ...(metrics.notRun > 0 ? [`| Not yet run | ${metrics.notRun} |`] : []),
     `| Negative/control cases among the scored | ${metrics.negativeControls} |`,
     '',
   );

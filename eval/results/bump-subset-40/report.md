@@ -17,7 +17,7 @@ What a good result here does *not* establish: No precision and no false-positive
 | Benchmark class | consumer-impact |
 | Drift commit | `f887b6fee92e04f2714d5f009f95cf3267e15036` (working tree dirty) |
 | Run date | 2026-08-20T05:19:55.347Z |
-| Re-scored | 2026-08-20T14:16:26.734Z at `42be074db9` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
+| Re-scored | 2026-08-20T14:51:47.769Z at `20eccc0dc0` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
 | Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts bump --limit 40 --seed 20260819 --run-id bump-subset-40` |
 | Platform | darwin/x64, Node v22.22.0 |
 

@@ -3,6 +3,8 @@
   "datasetClass": "consumer-impact",
   "available": 100,
   "selected": 100,
+  "attempted": 100,
+  "notRun": 0,
   "scored": 69,
   "excluded": {
     "reproduction-failed": 31

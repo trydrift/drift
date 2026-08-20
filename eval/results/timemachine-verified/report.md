@@ -17,7 +17,7 @@ What a good result here does *not* establish: No precision and no false-positive
 | Benchmark class | consumer-impact |
 | Drift commit | `b89642f42b0daf43fb52ba666653a64157c4124a` (working tree dirty) |
 | Run date | 2026-08-20T00:44:31.375Z |
-| Re-scored | 2026-08-20T14:16:31.835Z at `42be074db9` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
+| Re-scored | 2026-08-20T14:51:50.408Z at `20eccc0dc0` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
 | Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts timemachine --experiment verified --run-id timemachine-verified` |
 | Platform | darwin/x64, Node v22.22.0 |
 
