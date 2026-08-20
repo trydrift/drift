@@ -7,7 +7,7 @@ import { datasetOrThrow, DATASETS, type Dataset } from './dataset.ts';
 import { probeEnvironment } from './environment.ts';
 import { computeMetrics, type BaselineSpec } from './metrics.ts';
 import type { ExternalCaseResult } from './record.ts';
-import { newRunId, resultsDir, writeRun, type RunManifest } from './results.ts';
+import { newRunId, resultsDir, writeJson, writeProvisionalManifest, writeRun, type RunManifest } from './results.ts';
 import { select, type Selectable } from './selection.ts';
 import { runKong } from './runners/kong-runner.ts';
 import { runSweBump } from './runners/swe-bump-runner.ts';
@@ -261,11 +261,41 @@ export async function runExternal(options: ExternalRunOptions): Promise<string> 
         ...(options.limit === undefined ? {} : { limit: options.limit }),
         ...(options.seed === undefined ? {} : { seed: options.seed }),
       });
+      // Written the moment it is decided, not at the end. See below.
+      void writeJson(join(resultsDir(runId, options.outRoot), 'selection.json'), { ...selection, dataset });
       return selection;
     },
   };
 
-  const [environment, output] = await Promise.all([probeEnvironment(), runner(context)]);
+  /*
+   * The environment and a provisional manifest are written before the first
+   * case runs, and the selection the moment a runner decides it.
+   *
+   * Checkpointing per case made an interrupted run's *observations*
+   * recoverable, and left the recovery unusable anyway: `--rescore` also needs
+   * the manifest, the selection and the environment, and those were only
+   * written after the last case. A sweep killed at case 37 of 63 therefore had
+   * 37 real observations on disk and no way to turn them into a report — which
+   * is exactly the situation the checkpoint was added to survive, discovered
+   * by being in it.
+   *
+   * `writeRun` rewrites all three at the end. Nothing here is a claim about a
+   * finished run: the provisional manifest carries the same run id and commit
+   * the final one will, and the metrics that make a run *reportable* are still
+   * only written once there is something to report.
+   */
+  const environmentPromise = probeEnvironment();
+  const environmentEarly = await environmentPromise;
+  await writeJson(join(resultsDir(runId, options.outRoot), 'environment.json'), environmentEarly);
+  await writeProvisionalManifest({
+    runId,
+    datasetId: dataset.id,
+    datasetVersion: dataset.source.version,
+    notes: options.notes ?? '',
+    root: options.outRoot,
+  });
+
+  const [environment, output] = await Promise.all([environmentPromise, runner(context)]);
 
   // Carried-forward cases first, then this attempt's, so the finished artifact
   // covers the whole selection however many attempts it took.

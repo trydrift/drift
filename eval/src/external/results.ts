@@ -158,8 +158,45 @@ export async function writeRun(input: WriteRunInput): Promise<string> {
   return dir;
 }
 
-async function writeJson(path: string, value: unknown): Promise<void> {
+export async function writeJson(path: string, value: unknown): Promise<void> {
   await writeFile(path, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+}
+
+/**
+ * A manifest written before the first case, so an interrupted run is
+ * re-scorable rather than merely recoverable.
+ *
+ * It records what is already true — the run id, the dataset, the build about
+ * to do the work — and nothing about an outcome. `writeRun` overwrites it when
+ * the run finishes; if the run never finishes, this is what lets `--rescore`
+ * turn the checkpointed observations into a report.
+ */
+export async function writeProvisionalManifest(input: {
+  runId: string;
+  datasetId: string;
+  datasetVersion: string;
+  notes: string;
+  root?: string;
+}): Promise<void> {
+  const dir = resultsDir(input.runId, input.root);
+  await mkdir(dir, { recursive: true });
+  const revision = await driftRevision();
+  const manifest: RunManifest = {
+    version: RUN_MANIFEST_VERSION,
+    runId: input.runId,
+    datasetId: input.datasetId,
+    createdAt: new Date().toISOString(),
+    driftCommit: revision.commit,
+    driftTreeDirty: revision.dirty,
+    harnessVersion: revision.commit,
+    datasetVersion: input.datasetVersion,
+    command: process.argv.join(' '),
+    node: process.version,
+    platform: process.platform,
+    arch: process.arch,
+    notes: input.notes,
+  };
+  await writeJson(join(dir, 'manifest.json'), manifest);
 }
 
 export async function driftRevision(): Promise<{ commit: string; dirty: boolean }> {
