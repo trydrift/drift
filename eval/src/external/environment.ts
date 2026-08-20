@@ -43,6 +43,11 @@ const PROBES: { tool: string; args: string[]; neededFor: string }[] = [
   { tool: 'docker', args: ['--version'], neededFor: "BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure" },
   { tool: 'python3', args: ['--version'], neededFor: 'any Python case' },
   { tool: 'uv', args: ['--version'], neededFor: "TimeMachine's documented environment setup" },
+  // Drift shells out to this by name for the Java API-surface diff. Without it
+  // the surface cannot be computed, and Drift correctly declines to conclude
+  // anything — which is a different result from Drift concluding wrongly, and
+  // a report that does not say which one happened is unreadable.
+  { tool: 'japicmp', args: ['--help'], neededFor: "Drift's Java API-surface diff, which its maven capability declares it requires" },
 ];
 
 export async function probeEnvironment(): Promise<EnvironmentRecord> {
