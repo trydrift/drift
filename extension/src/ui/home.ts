@@ -112,6 +112,7 @@ type Incoming =
   | { type: 'draft'; text: string }
   | { type: 'answer'; id: string; value: string }
   | { type: 'menu'; id: string }
+  | { type: 'history'; id: string }
   | { type: 'detach'; value: string }
   | { type: 'rewind'; id: string }
   | { type: 'rescan' }
@@ -210,6 +211,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private signedInLabel: string | null = null;
   private running: vscode.CancellationTokenSource | null = null;
   private cancellable = true;
+  private stopping = false;
   private draft = '';
   private draftToken = 0;
   private scanned = false;
@@ -430,9 +432,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
    * "throw this one away".
    */
   async showHistory(): Promise<void> {
-    await this.saveConversation();
-
-    const entries = this.history.list();
+    const entries = this.recentConversations(40);
     if (entries.length === 0) {
       void vscode.window.showInformationMessage('Drift: no earlier conversations in this workspace yet.');
       return;
@@ -443,9 +443,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       [
         ...entries.map<Item>((entry) => ({
           id: entry.id,
-          label: `${entry.id === this.conversationId ? '$(comment-discussion)' : '$(history)'} ${entry.title}`,
+          label: `${entry.active ? '$(comment-discussion)' : '$(history)'} ${entry.title}`,
           description: describeWhen(entry.at),
-          detail: `${entry.messages} message${entry.messages === 1 ? '' : 's'}`,
+          detail: `${entry.messages} message${entry.messages === 1 ? '' : 's'}${entry.active ? ` · ${this.busy ? 'active now' : 'current'}` : ''}`,
         })),
         { id: '', label: '', kind: vscode.QuickPickItemKind.Separator },
         {
@@ -463,13 +463,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       return;
     }
 
-    const entry = this.history.get(picked.id);
-    if (!entry) return;
-
-    this.conversationId = entry.id;
-    this.session.restore(entry.items, entry.title);
-    this.setDraft('');
-    await this.reveal();
+    await this.restoreConversation(picked.id, { reveal: true });
   }
 
   /**
@@ -486,13 +480,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
    */
   async clearHistory(): Promise<void> {
     const entries = this.history.list();
-    if (entries.length === 0) {
+    const currentUnsaved = !this.session.isEmpty && !entries.some((entry) => entry.id === this.conversationId);
+    const count = entries.length + (currentUnsaved ? 1 : 0);
+
+    if (count === 0) {
       void vscode.window.showInformationMessage('Drift: there is no saved conversation history to clear.');
       return;
     }
 
     const choice = await vscode.window.showWarningMessage(
-      `Delete ${entries.length} saved Drift conversation${entries.length === 1 ? '' : 's'}?`,
+      `Delete ${count} Drift conversation${count === 1 ? '' : 's'}?`,
       {
         modal: true,
         detail:
@@ -506,8 +503,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     this.conversationId = newConversationId();
     this.session.clear();
     this.setDraft('');
+    this.cancelPendingSave();
     void vscode.window.showInformationMessage(
-      `Drift: deleted ${entries.length} saved conversation${entries.length === 1 ? '' : 's'}.`,
+      `Drift: deleted ${count} conversation${count === 1 ? '' : 's'}.`,
     );
   }
 
@@ -527,6 +525,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       this.saveTimer = null;
       void this.saveConversation();
     }, 2000);
+  }
+
+  private cancelPendingSave(): void {
+    if (!this.saveTimer) return;
+    clearTimeout(this.saveTimer);
+    this.saveTimer = null;
   }
 
   /** The draft belongs to the host only when the host sets it. */
@@ -626,6 +630,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       case 'menu':
         await this.runMenuItem(message.id);
         return;
+      case 'history':
+        await this.restoreConversation(message.id);
+        return;
       case 'detach':
         this.session.detach(message.value);
         return;
@@ -648,12 +655,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           this.session.notice('info', 'This step finishes before anything else can start.');
           return;
         }
+        this.stopping = true;
         this.running?.cancel();
-        // A scan's slowest work is a package manager and a compiler in a test
-        // checkout, and neither dies the instant a token flips — saying so is
-        // the difference between a stop that looks ignored and one that is
-        // understood to be in progress.
-        this.session.notice('info', 'Stopping — finishing the command that is already running.');
+        this.paint();
         return;
       case 'signIn':
         await getGitHubSession({ createIfNone: true });
@@ -3751,6 +3755,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     }
 
     sections.push(
+      { id: 'recent-conversations', anchor: 'tools', title: 'Recent conversations', items: this.conversationItems() },
       { id: 'tools', anchor: 'tools', title: 'Tools', items: this.toolItems() },
       { id: 'mode', anchor: 'permission', title: 'Mode', items: this.modeItems() },
       { id: 'permission', anchor: 'permission', title: 'Permission', items: this.permissionItems() },
@@ -3845,6 +3850,31 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       hint: command.name,
       icon: icons[command.name] ?? 'gear',
       keywords: `tool command ${command.name} ${command.description}`,
+    }));
+  }
+
+  private conversationItems(limit = 5): MenuItem[] {
+    const recent = this.recentConversations(limit);
+    if (recent.length === 0) {
+      return [
+        {
+          id: 'history:__none',
+          label: 'No conversations yet',
+          detail: 'Saved threads appear here',
+          icon: 'history',
+          keywords: 'recent conversation history',
+        },
+      ];
+    }
+
+    return recent.map<MenuItem>((entry) => ({
+      id: `history:${entry.id}`,
+      label: entry.title,
+      detail: `${describeWhen(entry.at)} · ${entry.messages} message${entry.messages === 1 ? '' : 's'}`,
+      hint: entry.active ? (this.busy ? 'Active' : 'Current') : undefined,
+      icon: 'history',
+      checked: entry.active,
+      keywords: `recent conversation history ${entry.title}`,
     }));
   }
 
@@ -4255,6 +4285,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           await this.submit(value);
         }
         return;
+      case 'history':
+        if (value !== '__none') await this.restoreConversation(value);
+        return;
       case 'permission':
         await this.session.setPermission(value as SessionPermission);
         this.session.notice('info', `Permission set to **${describePermission(value as SessionPermission)}**.`);
@@ -4299,6 +4332,59 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         else this.session.toggleRoot(value, this.state.roots.map((root) => root.path));
         return;
     }
+  }
+
+  private recentConversations(limit: number): Array<{
+    id: string;
+    title: string;
+    at: number;
+    messages: number;
+    active: boolean;
+  }> {
+    const saved = this.history.list();
+    const currentItems = this.session.snapshot();
+    const current =
+      currentItems.length === 0
+        ? null
+        : {
+            id: this.conversationId,
+            title: this.session.title,
+            at: Date.now(),
+            messages: currentItems.filter((item) => item.kind === 'user' || item.kind === 'assistant').length,
+            active: true,
+          };
+
+    return [
+      ...(current ? [current] : []),
+      ...saved
+        .filter((entry) => entry.id !== this.conversationId)
+        .map((entry) => ({
+          id: entry.id,
+          title: entry.title,
+          at: entry.at,
+          messages: entry.messages,
+          active: false,
+        })),
+    ]
+      .sort((a, b) => Number(b.active) - Number(a.active) || b.at - a.at)
+      .slice(0, limit);
+  }
+
+  private async restoreConversation(id: string, options: { reveal?: boolean } = {}): Promise<void> {
+    if (id === this.conversationId) {
+      if (options.reveal) await this.reveal();
+      return;
+    }
+
+    const entry = this.history.get(id);
+    if (!entry) return;
+
+    void this.saveConversation();
+    this.conversationId = entry.id;
+    this.session.restore(entry.items, entry.title);
+    this.setDraft('');
+    this.render();
+    if (options.reveal) await this.reveal();
   }
 
   /**
@@ -5081,6 +5167,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     const source = new vscode.CancellationTokenSource();
     this.running = source;
     this.cancellable = options.cancellable !== false;
+    this.stopping = false;
     this.render();
 
     let failed = false;
@@ -5104,6 +5191,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       source.dispose();
       this.running = null;
       this.cancellable = true;
+      this.stopping = false;
       // Anything Drift just did may have moved the branch or rewritten a
       // manifest, so the cached view of the workspace is no longer trustworthy.
       this.contextCache = null;
@@ -5305,6 +5393,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       review: totals.files > 0 ? { groups: this.review.groups(), totals } : null,
       busy: this.busy,
       cancellable: this.cancellable,
+      stopping: this.stopping,
       awaitingAnswer: this.session.awaitingAnswer,
       commands: SLASH_COMMANDS,
       menu: this.menuSections(),

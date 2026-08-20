@@ -1,8 +1,12 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { deriveTitle } from '../src/history.js';
+import * as vscode from 'vscode';
+import { DriftHistory, deriveTitle } from '../src/history.js';
 import { scanTitle } from '../src/severity.js';
-import type { ThreadItem } from '../src/session.js';
+import { DriftSession, type ThreadItem } from '../src/session.js';
+import { DriftState } from '../src/state.js';
+import { DriftReview } from '../src/review/store.js';
+import { DriftHomeView } from '../src/ui/home.js';
 
 /**
  * What a saved conversation is called.
@@ -15,6 +19,70 @@ import type { ThreadItem } from '../src/session.js';
  */
 
 const user = (text: string): ThreadItem => ({ id: 'i1', kind: 'user', text, attachments: [] });
+
+class MemoryMemento implements vscode.Memento {
+  private readonly values = new Map<string, unknown>();
+  readonly keys = () => [...this.values.keys()];
+  get<T>(key: string, fallback?: T): T {
+    return (this.values.has(key) ? this.values.get(key) : fallback) as T;
+  }
+  async update(key: string, value: unknown): Promise<void> {
+    if (value === undefined) this.values.delete(key);
+    else this.values.set(key, value);
+  }
+}
+
+function output(): vscode.LogOutputChannel {
+  return {
+    name: 'Drift Test',
+    info: () => undefined,
+    warn: () => undefined,
+    error: () => undefined,
+    debug: () => undefined,
+    trace: () => undefined,
+    append: () => undefined,
+    appendLine: () => undefined,
+    replace: () => undefined,
+    clear: () => undefined,
+    show: () => undefined,
+    hide: () => undefined,
+    dispose: () => undefined,
+    logLevel: 2,
+    onDidChangeLogLevel: () => ({ dispose: () => undefined }),
+  } as unknown as vscode.LogOutputChannel;
+}
+
+function homeFixture() {
+  const memento = new MemoryMemento();
+  const session = new DriftSession();
+  const review = new DriftReview();
+  const home = new DriftHomeView(vscode.Uri.file('/tmp/drift-test'), new DriftState(), session, review, output(), memento);
+  const history = new DriftHistory(memento);
+  return { home, session, history };
+}
+
+function installMessages() {
+  const messages = { warnings: [] as string[], infos: [] as string[] };
+  const originalWarning = vscode.window.showWarningMessage;
+  const originalInfo = vscode.window.showInformationMessage;
+  vscode.window.showWarningMessage = async (message: string) => {
+    messages.warnings.push(message);
+    return 'Delete' as never;
+  };
+  vscode.window.showInformationMessage = async (message: string) => {
+    messages.infos.push(message);
+    return undefined;
+  };
+  return {
+    messages,
+    restore: () => {
+      vscode.window.showWarningMessage = originalWarning;
+      vscode.window.showInformationMessage = originalInfo;
+    },
+  };
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 describe('naming a saved conversation', () => {
   test('a bare command becomes what the command did', () => {
@@ -93,5 +161,83 @@ describe('naming a scan by its result', () => {
 
   test('a scan that found nothing to do says so rather than reading as empty', () => {
     assert.equal(scanTitle([], 12), 'Scan — 12 up to date');
+  });
+});
+
+describe('clearing conversation history', () => {
+  test('clears a non-empty current conversation before autosave has persisted it', async () => {
+    const { home, session, history } = homeFixture();
+    const { messages, restore } = installMessages();
+    try {
+      session.user('scan this before autosave');
+      assert.equal(history.list().length, 0);
+
+      await home.clearHistory();
+
+      assert.equal(messages.warnings.length, 1);
+      assert.match(messages.warnings[0]!, /Delete 1 Drift conversation/);
+      assert.equal(session.isEmpty, true);
+      assert.equal(history.list().length, 0);
+
+      await sleep(2100);
+      assert.equal(history.list().length, 0, 'a pending autosave must not resurrect the cleared thread');
+    } finally {
+      restore();
+      home.dispose();
+    }
+  });
+
+  test('counts the current conversation and older persisted conversations once each', async () => {
+    const { home, session, history } = homeFixture();
+    const { messages, restore } = installMessages();
+    try {
+      await history.save({ id: 'old-1', title: 'Old one', items: [user('/scan')] });
+      await history.save({ id: 'old-2', title: 'Old two', items: [user('/recent')] });
+      session.user('live thread');
+
+      await home.clearHistory();
+
+      assert.match(messages.warnings[0]!, /Delete 3 Drift conversations/);
+      assert.equal(session.isEmpty, true);
+      assert.equal(history.list().length, 0);
+    } finally {
+      restore();
+      home.dispose();
+    }
+  });
+
+  test('does not double-count the current conversation when it is already persisted', async () => {
+    const { home, session, history } = homeFixture();
+    const { messages, restore } = installMessages();
+    try {
+      session.user('already saved');
+      await sleep(2100);
+      assert.equal(history.list().length, 1);
+
+      await home.clearHistory();
+
+      assert.match(messages.warnings[0]!, /Delete 1 Drift conversation\?/);
+      assert.doesNotMatch(messages.warnings[0]!, /conversations/);
+      assert.equal(session.isEmpty, true);
+      assert.equal(history.list().length, 0);
+    } finally {
+      restore();
+      home.dispose();
+    }
+  });
+
+  test('keeps the existing no-history message when saved and current history are empty', async () => {
+    const { home, history } = homeFixture();
+    const { messages, restore } = installMessages();
+    try {
+      await home.clearHistory();
+
+      assert.equal(messages.warnings.length, 0);
+      assert.deepEqual(messages.infos, ['Drift: there is no saved conversation history to clear.']);
+      assert.equal(history.list().length, 0);
+    } finally {
+      restore();
+      home.dispose();
+    }
   });
 });
