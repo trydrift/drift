@@ -565,6 +565,7 @@ Drift departs from the paper in three places, deliberately. See
 | [Trust & safety](docs/trust-and-safety.md) | Guardrails, threat model, failure modes |
 | [Agent security boundaries](docs/security/agent-boundaries.md) | How local agent output is isolated and validated |
 | [Research mapping](docs/research.md) | What Drift took from the paper, and what it changed |
+| [Benchmarks](eval/README.md) | What Drift scores on five public breaking-change corpora, and what those corpora cannot establish |
 | [Deployment](docs/deployment.md) | Action, CLI, and self-hosted webhook |
 | [Testing on a real repo](docs/testing-on-a-real-repo.md) | Four ways to try it, in ascending order of commitment |
 | [Telemetry](docs/telemetry.md) | Off by default — what it collects if you turn it on |
