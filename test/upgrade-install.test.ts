@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, writeFile, access } from 'node:fs/promises';
+import { chmod, mkdtemp, mkdir, readFile, rm, writeFile, access } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { installUpgrade, installUpgrades } from '../dist/upgrade/scan.js';
@@ -185,6 +185,68 @@ describe('installUpgrades: a whole batch in as few runs as possible', () => {
   test('an empty batch is nothing to do, not an error', async () => {
     await withRepo({ Gemfile: GEMFILE }, async (root) => {
       assert.equal(await installUpgrades(root, [] as never, 'safe', { PATH: '' }), false);
+    });
+  });
+});
+
+describe('installUpgrade: Cargo placement metadata reaches cargo add', () => {
+  const cargoCandidate = {
+    ...gemCandidate,
+    id: 'Cargo.toml#sha2@0.10.0->0.11.0',
+    name: 'sha2',
+    kind: 'runtime',
+    cargo: { section: 'dependencies', target: 'cfg(not(target_arch = "wasm32"))' },
+    ecosystem: 'cargo',
+    packageManager: 'cargo',
+    manifestPath: 'Cargo.toml',
+    current: '0.10.0',
+    range: '0.10',
+    selected: '0.11.0',
+    latest: '0.11.0',
+  };
+
+  test('target-specific dependencies are not re-added as unconditional dependencies', async () => {
+    const manifest = `[package]
+name = "probe"
+version = "0.1.0"
+edition = "2021"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+sha2 = "0.10"
+`;
+
+    await withRepo({ 'Cargo.toml': manifest }, async (root) => {
+      const bin = join(root, 'bin');
+      await mkdir(bin);
+      const fakeCargo = join(bin, 'cargo');
+      await writeFile(
+        fakeCargo,
+        `#!${process.execPath}
+import { readFileSync, writeFileSync } from 'node:fs';
+
+const args = process.argv.slice(2);
+const manifest = 'Cargo.toml';
+let content = readFileSync(manifest, 'utf8');
+if (args.includes('--target')) {
+  content = content.replace('sha2 = "0.10"', 'sha2 = "=0.11.0"');
+} else {
+  content += '\\n[dependencies]\\nsha2 = "=0.11.0"\\n';
+}
+writeFileSync(manifest, content);
+`,
+        'utf8',
+      );
+      await chmod(fakeCargo, 0o755);
+
+      await installUpgrade(root, cargoCandidate as never, 'safe', {
+        ...process.env,
+        PATH: `${bin}:${process.env.PATH ?? ''}`,
+      });
+
+      const updated = await readFile(join(root, 'Cargo.toml'), 'utf8');
+      assert.equal((updated.match(/^\[dependencies\]$/gm) ?? []).length, 0);
+      assert.match(updated, /\[target\.'cfg\(not\(target_arch = "wasm32"\)\)'\.dependencies\]/);
+      assert.match(updated, /sha2 = "=0\.11\.0"/);
     });
   });
 });
