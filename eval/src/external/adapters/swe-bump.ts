@@ -56,11 +56,17 @@ const execFile = promisify(execFileCallback);
  *
  * `versionTo` is a semver *range* (`^8.0.1`), produced by running
  * `npm-check-updates --target latest` when the corpus was collected. What
- * `^8.0.1` resolves to today is not what it resolved to then. The exact
- * version each run resolves is recorded per case, so two runs of this corpus
- * can be compared and a divergence can be seen rather than inferred. This is a
- * property of the dataset; it is stated because a benchmark that quietly
- * treats a moving range as a pin is not reproducible and does not say so.
+ * `^8.0.1` resolves to today is not what it resolved to then, so this corpus
+ * is not version-pinned and two runs of it a year apart are not strictly
+ * comparable.
+ *
+ * This track cannot close that gap and does not pretend to. It writes the
+ * range into the manifest exactly as the dataset states it and records that
+ * under `manifestVersionTo`, with `versionToIsRange` beside it. Resolving the
+ * range would mean running the package manager, which is the install step this
+ * track deliberately does not perform — so what the range resolves to is
+ * genuinely unknown here, and the artifact says `versionToIsRange: true`
+ * rather than presenting a range under a field name that implies a resolution.
  */
 
 export const ADAPTER_VERSION = 'swe-bump-detect-v1';
@@ -108,8 +114,14 @@ export interface SweBumpPrediction {
   impactSites: { file: string; line: number; matchedSymbol: string }[];
   verdict: string;
   summary: string;
-  /** What `versionTo`'s range actually resolved to in the manifest this run wrote. */
-  resolvedVersionTo: string;
+  /**
+   * The specifier written into the manifest, verbatim from the dataset.
+   *
+   * Named for what it is. It was `resolvedVersionTo` for one commit, which was
+   * a false claim in a field name: nothing resolves it, because this track
+   * runs no install.
+   */
+  manifestVersionTo: string;
   versionFrom: string | null;
 }
 
@@ -235,7 +247,7 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
       })),
       verdict: verdictFromPlan(plan),
       summary: result.summary,
-      resolvedVersionTo: task.versionTo,
+      manifestVersionTo: task.versionTo,
       versionFrom,
     };
   } finally {
@@ -311,8 +323,9 @@ export function scoreSweBump(input: ScoreSweBumpInput): ExternalCaseResult {
       sourceHash: input.sourceHash,
       extra: {
         // The corpus states a range, not a pin. See the module docstring.
+        // The corpus states a range, not a pin. See the module docstring.
         versionToIsRange: String(/[\^~><*x|\s]/.test(task.versionTo)),
-        resolvedVersionTo: prediction?.resolvedVersionTo ?? 'unavailable',
+        manifestVersionTo: prediction?.manifestVersionTo ?? 'unavailable',
       },
     },
     truth: {
