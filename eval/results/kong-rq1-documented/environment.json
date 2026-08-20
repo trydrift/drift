@@ -1,19 +1,19 @@
 {
-  "capturedAt": "2026-08-19T23:21:48.269Z",
+  "capturedAt": "2026-08-20T17:41:21.668Z",
   "platform": "darwin",
   "arch": "x64",
-  "node": "v22.22.0",
+  "node": "v24.19.0",
   "tools": [
     {
       "tool": "node",
       "available": true,
-      "version": "v22.22.0",
+      "version": "v24.19.0",
       "neededFor": "every npm/TypeScript case, and Drift itself"
     },
     {
       "tool": "npm",
       "available": true,
-      "version": "10.9.4",
+      "version": "11.12.1",
       "neededFor": "installing a TypeScript consumer before its build oracle can run"
     },
     {
@@ -30,8 +30,8 @@
     },
     {
       "tool": "mvn",
-      "available": false,
-      "version": "unavailable",
+      "available": true,
+      "version": "Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937)",
       "neededFor": "BUMP's Maven oracle, and building Roseau from its replication kit"
     },
     {
@@ -43,7 +43,7 @@
     {
       "tool": "python3",
       "available": true,
-      "version": "Python 3.9.6",
+      "version": "Python 3.14.3",
       "neededFor": "any Python case"
     },
     {
@@ -51,6 +51,12 @@
       "available": false,
       "version": "unavailable",
       "neededFor": "TimeMachine's documented environment setup"
+    },
+    {
+      "tool": "japicmp",
+      "available": false,
+      "version": "unavailable",
+      "neededFor": "Drift's Java API-surface diff, which its maven capability declares it requires"
     }
   ]
 }
