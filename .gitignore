@@ -45,3 +45,10 @@ drift-profile.json
 # tracked, and is what makes a run repeatable from a clean checkout.
 benchmarks/*
 !benchmarks/README.md
+
+# Per-case checkpoints an external run writes as it goes.
+#
+# They exist so an interrupted run is still re-scorable, and a *completed* run
+# supersedes its own with `cases.jsonl.gz`. Committing both would publish the
+# same observations twice, uncompressed.
+eval/results/*/cases.partial.jsonl

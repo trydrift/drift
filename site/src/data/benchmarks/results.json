@@ -1,6 +1,6 @@
 {
   "$generated": "site/scripts/sync-benchmarks.mjs — do not edit; every number here is read from eval/results/<run-id>/metrics.json",
-  "generatedAt": "2026-08-20T05:07:06.075Z",
+  "generatedAt": "2026-08-20T05:22:33.391Z",
   "datasets": [
     {
       "runId": "roseau-accuracy",
@@ -703,6 +703,232 @@
       ]
     },
     {
+      "runId": "bump-subset-40",
+      "headline": false,
+      "why": "A deterministic stratified subset of BUMP's Java consumer breakages, evaluated on the real historical commit pair.",
+      "title": "BUMP — reproducible breaking dependency updates in Java",
+      "ecosystem": "maven",
+      "datasetClass": "consumer-impact",
+      "sourceUrl": "https://github.com/chains-project/bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "licence": "see the repository",
+      "citation": "Frank Reyes et al., \"BUMP: A Benchmark of Reproducible Breaking Dependency Updates\", arXiv:2401.09906; data at https://github.com/chains-project/bump, archive at DOI 10.5281/zenodo.10041883.",
+      "evaluationQuestion": "Given a real Java project at the commit where a dependency update broke its Maven build, does Drift detect the update and identify the project as affected?",
+      "doesNotEstablish": "No precision and no false-positive rate. Every record is a reproduced breaking update; there are no non-breaking control updates in the corpus.",
+      "groundTruth": {
+        "granularity": "project-build",
+        "exhaustive": false,
+        "basis": "Each record is one reproduced breaking dependency update with a recorded failure category. Positives only, and no annotation of which consumer source lines the break lands on.",
+        "supports": [
+          "recall",
+          "repair-success",
+          "false-safe-count"
+        ]
+      },
+      "driftCommit": "f887b6fee92e04f2714d5f009f95cf3267e15036",
+      "driftTreeDirty": true,
+      "runDate": "2026-08-20T05:19:55.347Z",
+      "command": "npm run eval:external -- bump --limit 40 --seed 20260819",
+      "platform": "darwin/x64, Node v22.22.0",
+      "notes": "Detection only, and the commit pair is real. BUMP records the commit that changed the version in `pom.xml`, so its parent is the pre-update state — this run diffs the two revisions a developer actually received rather than a bump the harness applied. Drift reads `pom.xml` directly, so nothing has to be built for the manifest diff, evidence retrieval and localization to run exactly as they do for a user.\n\nNo precision and no false-positive rate: every record is a reproduced *breaking* update, and the corpus contains no non-breaking control updates to measure one against.\n\n**No container runtime is available on the machine that produced this run.** BUMP's authority on whether a build fails is its published `<sha>-pre` and `<sha>-breaking` images, so the Maven oracle was not run and no repair question was asked. Those outcomes are absent from every case record rather than recorded as failures — an absent key means the question was not asked, where `false` would mean Drift tried and did not manage it. Each case artifact carries both image references so a reader with Docker can run the authoritative reproduction from it.",
+      "available": 571,
+      "selected": 40,
+      "scored": 39,
+      "excluded": {
+        "source-unavailable": 1
+      },
+      "missingRequirements": {},
+      "negativeControls": 0,
+      "selectionMode": "stratified-sample",
+      "selectionSeed": 20260819,
+      "selectionLimit": 40,
+      "rates": {
+        "dependency-update detection rate": {
+          "numerator": 34,
+          "denominator": 39,
+          "value": 0.8717948717948718
+        },
+        "affected-repository identification rate": {
+          "numerator": 7,
+          "denominator": 39,
+          "value": 0.1794871794871795
+        },
+        "consumer localization rate": {
+          "numerator": 7,
+          "denominator": 39,
+          "value": 0.1794871794871795
+        },
+        "false-safe verdicts": {
+          "numerator": 16,
+          "denominator": 39,
+          "value": 0.41025641025641024
+        }
+      },
+      "confusion": null,
+      "classification": null,
+      "baseline": null,
+      "refusals": [
+        {
+          "metric": "precision",
+          "reason": "BUMP — reproducible breaking dependency updates in Java's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each record is one reproduced breaking dependency update with a recorded failure category. Positives only, and no annotation of which consumer source lines the break lands on."
+        },
+        {
+          "metric": "F1",
+          "reason": "F1 is a harmonic mean of precision and recall, and precision is not defined here."
+        },
+        {
+          "metric": "false-positive rate",
+          "reason": "BUMP — reproducible breaking dependency updates in Java's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each record is one reproduced breaking dependency update with a recorded failure category. Positives only, and no annotation of which consumer source lines the break lands on."
+        }
+      ],
+      "mappingCoverage": {
+        "compatible": 40
+      },
+      "breakdown": {
+        "label: ENFORCER_FAILURE": {
+          "dependency-update detection rate": {
+            "numerator": 7,
+            "denominator": 9,
+            "value": 0.7777777777777778
+          },
+          "affected-repository identification rate": {
+            "numerator": 0,
+            "denominator": 9,
+            "value": 0
+          },
+          "consumer localization rate": {
+            "numerator": 0,
+            "denominator": 9,
+            "value": 0
+          }
+        },
+        "label: TEST_FAILURE": {
+          "dependency-update detection rate": {
+            "numerator": 15,
+            "denominator": 16,
+            "value": 0.9375
+          },
+          "affected-repository identification rate": {
+            "numerator": 3,
+            "denominator": 16,
+            "value": 0.1875
+          },
+          "consumer localization rate": {
+            "numerator": 3,
+            "denominator": 16,
+            "value": 0.1875
+          }
+        },
+        "label: COMPILATION_FAILURE": {
+          "dependency-update detection rate": {
+            "numerator": 11,
+            "denominator": 12,
+            "value": 0.9166666666666666
+          },
+          "affected-repository identification rate": {
+            "numerator": 4,
+            "denominator": 12,
+            "value": 0.3333333333333333
+          },
+          "consumer localization rate": {
+            "numerator": 4,
+            "denominator": 12,
+            "value": 0.3333333333333333
+          }
+        },
+        "label: DEPENDENCY_LOCK_FAILURE": {
+          "dependency-update detection rate": {
+            "numerator": 1,
+            "denominator": 2,
+            "value": 0.5
+          },
+          "affected-repository identification rate": {
+            "numerator": 0,
+            "denominator": 2,
+            "value": 0
+          },
+          "consumer localization rate": {
+            "numerator": 0,
+            "denominator": 2,
+            "value": 0
+          }
+        }
+      },
+      "intervals": {
+        "dependency-update detection rate": {
+          "low": 0.7692307692307693,
+          "high": 0.9743589743589743,
+          "iterations": 2000
+        },
+        "affected-repository identification rate": {
+          "low": 0.05128205128205128,
+          "high": 0.3076923076923077,
+          "iterations": 2000
+        },
+        "consumer localization rate": {
+          "low": 0.05128205128205128,
+          "high": 0.3076923076923077,
+          "iterations": 2000
+        }
+      },
+      "tools": [
+        {
+          "tool": "node",
+          "available": true,
+          "version": "v22.22.0",
+          "neededFor": "every npm/TypeScript case, and Drift itself"
+        },
+        {
+          "tool": "npm",
+          "available": true,
+          "version": "10.9.4",
+          "neededFor": "installing a TypeScript consumer before its build oracle can run"
+        },
+        {
+          "tool": "git",
+          "available": true,
+          "version": "git version 2.39.5 (Apple Git-154)",
+          "neededFor": "checking out an original repository at the exact evaluated commit"
+        },
+        {
+          "tool": "java",
+          "available": true,
+          "version": "openjdk version \"19\" 2022-09-20",
+          "neededFor": "any Java case"
+        },
+        {
+          "tool": "mvn",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "BUMP's Maven oracle, and building Roseau from its replication kit"
+        },
+        {
+          "tool": "docker",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure"
+        },
+        {
+          "tool": "python3",
+          "available": true,
+          "version": "Python 3.9.6",
+          "neededFor": "any Python case"
+        },
+        {
+          "tool": "uv",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "TimeMachine's documented environment setup"
+        },
+        {
+          "tool": "japicmp",
+          "available": true,
+          "version": "SYNOPSIS",
+          "neededFor": "Drift's Java API-surface diff, which its maven capability declares it requires"
+        }
+      ]
+    },
+    {
       "runId": "timemachine-verified",
       "headline": false,
       "why": "TimeMachine's human-verified Python subset, on the weakest manifest-pair construction in this benchmark.",
@@ -916,10 +1142,6 @@
     {
       "runId": "swe-bump-detection",
       "reason": "no metrics.json in eval/results/swe-bump-detection"
-    },
-    {
-      "runId": "bump-subset-40",
-      "reason": "no metrics.json in eval/results/bump-subset-40"
     }
   ]
 }
