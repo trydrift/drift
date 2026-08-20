@@ -191,6 +191,11 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     description: 'Analyse the dependency change already in your git history',
   },
   {
+    name: '/verify',
+    title: 'Deep verify the last change',
+    description: 'Install the change in a throwaway worktree and run this project’s own checks against it',
+  },
+  {
     name: '/upgrade',
     args: '<package>',
     title: 'Upgrade a package',
