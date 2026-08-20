@@ -9,6 +9,7 @@ import { runKong } from './runners/kong-runner.ts';
 import { runSweBump } from './runners/swe-bump-runner.ts';
 import { runBump } from './runners/bump-runner.ts';
 import { runRoseau } from './runners/roseau-runner.ts';
+import { runTimemachine } from './runners/timemachine-runner.ts';
 
 /**
  * `npm run eval:external -- <dataset> [options]`.
@@ -74,6 +75,7 @@ const RUNNERS: Record<string, Runner> = {
   'swe-bump': runSweBump,
   bump: runBump,
   roseau: runRoseau,
+  timemachine: runTimemachine,
 };
 
 export async function runExternal(options: ExternalRunOptions): Promise<string> {
