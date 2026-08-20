@@ -36,7 +36,9 @@ describe('a real diff between two published versions', () => {
     }
 
     const archivePath = join(staging, 'archive.crate');
-    const result = await execCommand('tar', ['-czf', archivePath, '-C', staging, root]);
+    const result = await execCommand('tar', ['-czf', archivePath, '-C', staging, root], {
+      env: { ...process.env, COPYFILE_DISABLE: '1' },
+    });
     assert.equal(result.code, 0, result.stderr);
     return readFile(archivePath);
   }
@@ -70,8 +72,7 @@ describe('a real diff between two published versions', () => {
 
     globalThis.fetch = (async (input: unknown) => {
       const url = String(input);
-      const matched = /\/([\w.-]+)-([\w.-]+)\.crate$/.exec(url);
-      const body = matched?.[2] === '1.0.0' ? before : after;
+      const body = url.endsWith(`${name}-1.0.0.crate`) ? before : after;
       return new Response(body, { status: 200 });
     }) as typeof fetch;
 
@@ -111,8 +112,7 @@ describe('a real diff between two published versions', () => {
     globalThis.fetch = (async (input: unknown) => {
       calls += 1;
       const url = String(input);
-      const matched = /-([\w.-]+)\.crate$/.exec(url);
-      const body = matched?.[1] === '2.0.0' ? before : after;
+      const body = url.endsWith(`${name}-2.0.0.crate`) ? before : after;
       return new Response(body, { status: 200 });
     }) as typeof fetch;
 
