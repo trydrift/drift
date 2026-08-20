@@ -145,6 +145,33 @@ export default function Home() {
           </p>
 
           <ProofStrip proof={proof} />
+
+          {/*
+            The one place on the landing page that quotes a benchmark number,
+            and it quotes two: the best result and the worst one, from the same
+            runs. A landing page that showed only the good number would be
+            doing exactly what the benchmark page exists to argue against.
+          */}
+          <div className="mt-8 rounded-xl border border-border bg-surface p-5">
+            <p className="text-sm font-medium text-foreground">
+              Measured on public datasets, including where it does badly
+            </p>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+              On the Roseau accuracy dataset&rsquo;s 267 hand-labelled Java API changes — 167 of them labelled{" "}
+              <em>not</em> breaking, which is what makes precision meaningful at all — Drift scored 81/89 precision at
+              81/100 recall. On a 40-case stratified subset of BUMP&rsquo;s real Java build breakages it found the
+              dependency update in 34 of 39 and then told 16 of them they were not affected. Same runs; the second is
+              the worse number.
+            </p>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+              Five public corpora, every exclusion counted with its reason, and the metrics the data cannot support
+              listed as refusals rather than quietly omitted.{" "}
+              <Link href="/benchmarks/" className="text-brand-text underline decoration-dotted underline-offset-2">
+                See the benchmarks
+              </Link>
+              .
+            </p>
+          </div>
         </section>
 
         {/* ── The demo ────────────────────────────────────────────────── */}
