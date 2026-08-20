@@ -9,7 +9,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "capture": "node scripts/capture.mjs",
-    "sync": "node scripts/sync-severity.mjs && node scripts/sync-capabilities.mjs && npm run check:commands",
+    "sync": "node scripts/sync-severity.mjs && node scripts/sync-capabilities.mjs && node scripts/sync-benchmarks.mjs && npm run check:commands",
     "prebuild": "npm run sync",
     "predev": "npm run sync",
     "pretypecheck": "npm run sync",

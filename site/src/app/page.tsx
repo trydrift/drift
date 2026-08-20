@@ -56,6 +56,12 @@ export default function Home() {
           >
             Ecosystems
           </a>
+          <Link
+            href="/benchmarks/"
+            className="hidden rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:block"
+          >
+            Benchmarks
+          </Link>
           <a
             href="#action"
             className="hidden rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:block"
