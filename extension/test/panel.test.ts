@@ -112,6 +112,7 @@ function model(over: Partial<ViewModel> = {}): ViewModel {
     review: null,
     busy: false,
     cancellable: true,
+    stopping: false,
     awaitingAnswer: false,
     commands: SLASH_COMMANDS,
     menu: [
@@ -178,6 +179,48 @@ test('an empty session renders the welcome state and a composer', () => {
   assert.match(html, /data-command="\/scan"/);
   assert.match(html, /data-action="openMenu" data-anchor="context"/);
   assert.match(html, /id="menu-filter"/);
+});
+
+test('the stop button becomes a centered spinner while stopping', () => {
+  const html = renderBody(model({ busy: true, cancellable: true, stopping: true }));
+
+  assert.match(html, /class="stop stopping"[^>]*disabled/);
+  assert.match(html, /aria-label="Stopping"/);
+  assert.doesNotMatch(html, /data-action="stop"[^>]*>[\s\S]*?<svg/);
+});
+
+test('the tools menu can lead with recent conversations', () => {
+  const html = renderBody(
+    model({
+      menu: [
+        {
+          id: 'recent-conversations',
+          anchor: 'tools',
+          title: 'Recent conversations',
+          items: [
+            {
+              id: 'history:c1',
+              label: 'Scan — 2 affect this repo',
+              detail: 'just now · 4 messages',
+              hint: 'Active',
+              icon: 'history',
+              checked: true,
+            },
+          ],
+        },
+        {
+          id: 'tools',
+          anchor: 'tools',
+          title: 'Tools',
+          items: [{ id: 'tool:/scan', label: 'Scan dependencies', detail: 'Check every dependency', hint: '/scan' }],
+        },
+      ],
+    }),
+  );
+
+  assert.ok(html.indexOf('Recent conversations') < html.indexOf('Scan dependencies'));
+  assert.match(html, /data-action="menu" data-id="history:c1"/);
+  assert.match(html, />Active</);
 });
 
 const modelMenu = [
