@@ -161,6 +161,12 @@ export function BenchmarkCard({ dataset }: { dataset: BenchmarkDataset }) {
               mono
             />
             <KeyValue k="Run date" v={formatDate(dataset.runDate)} />
+            {dataset.rescoredAt ? (
+              <KeyValue
+                k="Metrics recomputed"
+                v={`${formatDate(dataset.rescoredAt)} at ${shortCommit(dataset.rescoredAtCommit ?? "unavailable")} — from the same recorded per-case results; the observations are unchanged`}
+              />
+            ) : null}
             <KeyValue k="Platform" v={dataset.platform} />
             <KeyValue k="Run id" v={dataset.runId} mono />
           </Section>

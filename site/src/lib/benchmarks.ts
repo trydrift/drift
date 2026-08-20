@@ -49,6 +49,9 @@ export interface BenchmarkDataset {
   driftCommit: string;
   driftTreeDirty: boolean;
   runDate: string;
+  /** When the metrics were last recomputed from the same observations, or `null`. */
+  rescoredAt: string | null;
+  rescoredAtCommit: string | null;
   command: string;
   platform: string;
   notes: string;

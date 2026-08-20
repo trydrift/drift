@@ -82,6 +82,11 @@ for (const entry of published.runs) {
     driftCommit: manifest.driftCommit,
     driftTreeDirty: manifest.driftTreeDirty === true,
     runDate: manifest.createdAt,
+    // Disclosed rather than folded into the run date. Scoring may improve
+    // after a run; what the run observed may not, and a reader checking
+    // provenance is entitled to both dates.
+    rescoredAt: manifest.rescoredAt ?? null,
+    rescoredAtCommit: manifest.rescoredAtCommit ?? null,
     command: reproductionCommand(dataset, selection),
     platform: `${manifest.platform}/${manifest.arch}, Node ${manifest.node}`,
     notes: manifest.notes ?? '',
