@@ -51,6 +51,12 @@ interface ActionInputs {
   configPath?: string;
   /** `diff` (default) analyses the push; `outdated` scans every installed dependency instead. */
   scanMode?: 'diff' | 'outdated';
+  /**
+   * `quick` (default) runs static analysis only; `deep` additionally
+   * installs the change and runs the project's own checks before dispatching
+   * or alerting. See `action.yml`'s `verify-mode` for the full description.
+   */
+  verifyMode?: 'quick' | 'deep';
   /** Overrides `codeScanning.granularity` in drift.yml. */
   alertGranularity?: AlertGranularity;
   /**
@@ -161,6 +167,7 @@ export async function runAction(): Promise<number> {
       // `issue_comment`, and only after `applyApproval` has verified it.
       approved: false,
       workspace: inputs.workspace,
+      verify: { enabled: inputs.verifyMode === 'deep' },
     });
 
     await writeOutputs(result.dispatch, result.summary);
@@ -357,6 +364,7 @@ async function runOutdatedScan(
       config,
       logger,
       githubToken: inputs.repoToken,
+      verify: { enabled: inputs.verifyMode === 'deep' },
     });
 
     logger.info(
@@ -384,6 +392,9 @@ async function runOutdatedScan(
     await writeOutputs({ status: 'skipped' }, summary);
     await writeJobSummary(
       `### Drift: outdated dependency scan\n\n${summary}\n\n` +
+        (inputs.verifyMode === 'deep'
+          ? 'Ran with `verify-mode: deep` — outdated candidates were installed in a throwaway worktree and checked with this project\'s own typecheck/build/test before being reported.\n\n'
+          : 'Ran with `verify-mode: quick` (the default) — this reflects static analysis only. No candidate was installed or run; see each alert for whether Drift found a computed API diff or changelog evidence for it.\n\n') +
         (findings.length > 0
           ? `${findings.length} package(s) uploaded to the Security tab, each alert listing its breaking changes, their locations, and a fix.\n\n`
           : 'Nothing rose to a Security tab alert.\n\n') +
@@ -425,9 +436,10 @@ function renderOutdatedTable(candidates: readonly UpgradeCandidate[]): string {
   ].join('\n');
 }
 
-function readInputs(): ActionInputs {
+export function readInputs(): ActionInputs {
   const mode = actionInput('mode');
   const scanMode = actionInput('scan-mode');
+  const verifyMode = actionInput('verify-mode');
   const alertGranularity = actionInput('alert-granularity');
   return {
     repoToken: actionInput('repo-token') ?? process.env.GITHUB_TOKEN ?? '',
@@ -442,6 +454,7 @@ function readInputs(): ActionInputs {
     workspace: process.env.GITHUB_WORKSPACE ?? process.cwd(),
     configPath: actionInput('config-path') || undefined,
     scanMode: scanMode === 'outdated' ? 'outdated' : scanMode === 'diff' ? 'diff' : undefined,
+    verifyMode: verifyMode === 'deep' ? 'deep' : verifyMode === 'quick' ? 'quick' : undefined,
     alertGranularity:
       alertGranularity === 'package' || alertGranularity === 'breakingChange' || alertGranularity === 'affectedSite'
         ? alertGranularity
