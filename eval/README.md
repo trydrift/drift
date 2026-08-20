@@ -306,9 +306,9 @@ tests. Two of them have no corpus input yet, and that is stated in the table
 rather than hidden behind a zero: a cache entry is a plan an *earlier* run
 authored and the gate accepted, and a recipe is a third-party package, so
 seeding either from nothing would be inventing benchmark evidence. Run without
-an input they report `cache-unavailable` / `recipe-unavailable`, which is an
-operational non-outcome excluded from every rate — a tier that was never asked
-did not decline. The cache track is populated the honest way: point a
+an input they report `cache-unavailable` / `recipe-unavailable`, which the
+evaluator classes `environment-unavailable` and excludes from every rate with
+that reason recorded — a tier that was never asked did not decline. The cache track is populated the honest way: point a
 `repair-fixplan-model` run at `--fixplan-cache DIR` and the accepted plan is
 written there through production's own cache.
 
