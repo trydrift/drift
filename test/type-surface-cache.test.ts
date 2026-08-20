@@ -177,6 +177,74 @@ describe('npm package module metadata diffing', () => {
     assert.ok(changes.some((change) => change.kind === 'commonjs-entry-removed'));
   });
 
+  test('keeps removed require export conditions subpath-specific', async () => {
+    reset();
+    stubFetch((url) => {
+      if (url.endsWith('/demo@1.0.0/package.json')) {
+        return new Response(JSON.stringify({
+          exports: {
+            '.': { import: './index.mjs', require: './index.cjs' },
+            './foo': { import: './foo.mjs', require: './foo.cjs' },
+            './bar': { import: './bar.mjs', require: './bar.cjs' },
+          },
+        }), { status: 200 });
+      }
+      if (url.endsWith('/demo@2.0.0/package.json')) {
+        return new Response(JSON.stringify({
+          exports: {
+            '.': { import: './index.mjs', require: './index.cjs' },
+            './foo': { import: './foo.mjs' },
+            './bar': { import: './bar.mjs', require: './bar.cjs' },
+          },
+        }), { status: 200 });
+      }
+      return new Response('', { status: 404 });
+    });
+
+    const changes = await diffPackageModuleMetadata('demo', '1.0.0', '2.0.0');
+    const moduleChanges = changes.filter((change) => change.kind === 'exports-require-condition-removed');
+
+    assert.deepEqual(moduleChanges.map((change) => change.moduleSystem?.affectedSpecifiers), [['demo/foo']]);
+    assert.equal(changes.some((change) => change.kind === 'commonjs-entry-removed'), false);
+  });
+
+  test('associates nested require conditions with their export path', async () => {
+    reset();
+    stubFetch((url) => {
+      if (url.endsWith('/demo@1.0.0/package.json')) {
+        return new Response(JSON.stringify({
+          exports: {
+            './foo': {
+              node: {
+                require: './foo.cjs',
+                import: './foo.mjs',
+              },
+            },
+          },
+        }), { status: 200 });
+      }
+      if (url.endsWith('/demo@2.0.0/package.json')) {
+        return new Response(JSON.stringify({
+          exports: {
+            './foo': {
+              node: {
+                import: './foo.mjs',
+              },
+            },
+          },
+        }), { status: 200 });
+      }
+      return new Response('', { status: 404 });
+    });
+
+    const changes = await diffPackageModuleMetadata('demo', '1.0.0', '2.0.0');
+
+    assert.deepEqual(
+      changes.map((change) => change.moduleSystem?.affectedSpecifiers),
+      [['demo/foo']],
+    );
+  });
+
   test('does not treat type module alone as loss of CommonJS support', async () => {
     reset();
     stubFetch((url) => {

@@ -198,6 +198,7 @@ function localizeModuleSystemChange(
 ): ImpactSite[] {
   const incompatible = change.moduleSystem?.incompatibleUsage ?? [];
   if (incompatible.length === 0) return [];
+  const affectedSpecifiers = change.moduleSystem?.affectedSpecifiers;
 
   const { names, exact } = candidateNames(change.dependency, ecosystemsForName, moduleMaps);
   const candidates = new Set<string>();
@@ -220,6 +221,7 @@ function localizeModuleSystemChange(
 
     for (const record of file.imports) {
       if (!matchesImportName(record, names)) continue;
+      if (affectedSpecifiers && !affectedSpecifiers.includes(record.specifier)) continue;
       if (!loadStyleIsIncompatible(record, incompatible)) continue;
 
       const line = lines[record.line - 1] ?? '';
