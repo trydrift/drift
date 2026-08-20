@@ -15,9 +15,9 @@ What a good result here does *not* establish: Nothing about Drift on real-world 
 | Citation | Roseau replication kit, Zenodo, DOI 10.5281/zenodo.15536418; tool at https://github.com/alien-tools/roseau |
 | Ecosystem | maven |
 | Benchmark class | upstream-bc-detection |
-| Drift commit | `d34ee396fc0f8bdd50f53a6326cc658b34b55fdb` (working tree dirty) |
-| Run date | 2026-08-20T00:20:18.129Z |
-| Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts roseau --run-id roseau-accuracy` |
+| Drift commit | `b485648aa22930cc1369a3f9eb2e5472b0c595e2` (working tree dirty) |
+| Run date | 2026-08-20T05:06:12.675Z |
+| Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts kong --rescore roseau-accuracy` |
 | Platform | darwin/x64, Node v22.22.0 |
 
 ## Case accounting
@@ -34,9 +34,12 @@ Read this before any rate below.
 
 ## Results
 
-| Question | Result |
-| --- | --- |
-| breaking-change detection recall | 81/100 (81.0%) |
+| Question | Result | 95% interval |
+| --- | --- | --- |
+| breaking-change detection recall | 81/100 (81.0%) | 73.0–88.0% |
+
+Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
+cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
 
 ### Classification
 

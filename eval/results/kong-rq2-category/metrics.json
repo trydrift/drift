@@ -259,6 +259,18 @@
       }
     }
   },
+  "intervals": {
+    "breaking-change detection recall": {
+      "low": 0.10919920582395765,
+      "high": 0.14162806088682992,
+      "iterations": 2000
+    },
+    "category classification accuracy": {
+      "low": 0,
+      "high": 0.03731343283582089,
+      "iterations": 2000
+    }
+  },
   "mappingCoverage": {
     "ambiguous": 1375,
     "exact": 134,

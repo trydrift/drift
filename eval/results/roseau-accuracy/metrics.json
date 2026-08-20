@@ -58,6 +58,13 @@
       }
     }
   },
+  "intervals": {
+    "breaking-change detection recall": {
+      "low": 0.73,
+      "high": 0.88,
+      "iterations": 2000
+    }
+  },
   "mappingCoverage": {
     "exact": 267
   }

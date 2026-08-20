@@ -15,9 +15,9 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Tohoku NLP, TimeMachine-bench, https://github.com/tohoku-nlp/timemachine-bench |
 | Ecosystem | pypi |
 | Benchmark class | consumer-impact |
-| Drift commit | `b89642f42b0daf43fb52ba666653a64157c4124a` (working tree dirty) |
-| Run date | 2026-08-20T00:44:31.375Z |
-| Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts timemachine --experiment verified --run-id timemachine-verified` |
+| Drift commit | `b485648aa22930cc1369a3f9eb2e5472b0c595e2` (working tree dirty) |
+| Run date | 2026-08-20T05:06:30.454Z |
+| Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts kong --rescore timemachine-verified` |
 | Platform | darwin/x64, Node v22.22.0 |
 
 ## Case accounting
@@ -40,12 +40,15 @@ Every exclusion, with its reason:
 
 ## Results
 
-| Question | Result |
-| --- | --- |
-| affected-repository identification rate | 39/69 (56.5%) |
-| consumer localization rate | 39/69 (56.5%) |
-| dependency-update detection rate | 49/69 (71.0%) |
-| false-safe verdicts | 4/69 (5.8%) |
+| Question | Result | 95% interval |
+| --- | --- | --- |
+| affected-repository identification rate | 39/69 (56.5%) | 44.9–68.1% |
+| consumer localization rate | 39/69 (56.5%) | 44.9–68.1% |
+| dependency-update detection rate | 49/69 (71.0%) | 59.4–81.2% |
+| false-safe verdicts | 4/69 (5.8%) | not reported (under 20 cases) |
+
+Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
+cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
 
 ### Breakdown
 

@@ -15,9 +15,9 @@ What a good result here does *not* establish: Nothing about whether Drift finds 
 | Citation | Dezhen Kong et al., "Towards Better Comprehension of Breaking Changes in the NPM Ecosystem", replication package, Zenodo, DOI 10.5281/zenodo.13857646. |
 | Ecosystem | npm |
 | Benchmark class | upstream-bc-detection |
-| Drift commit | `a2c0b8a8b83fadcafd3f8b02f13d540abbeb26ce` (working tree dirty) |
-| Run date | 2026-08-19T23:21:43.815Z |
-| Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts kong --experiment rq2-category --run-id kong-rq2-category` |
+| Drift commit | `b485648aa22930cc1369a3f9eb2e5472b0c595e2` (working tree dirty) |
+| Run date | 2026-08-20T05:06:17.787Z |
+| Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts kong --rescore kong-rq2-category` |
 | Platform | darwin/x64, Node v22.22.0 |
 
 ## Case accounting
@@ -34,10 +34,13 @@ Read this before any rate below.
 
 ## Results
 
-| Question | Result |
-| --- | --- |
-| breaking-change detection recall | 189/1511 (12.5%) |
-| category classification accuracy | 2/134 (1.5%) |
+| Question | Result | 95% interval |
+| --- | --- | --- |
+| breaking-change detection recall | 189/1511 (12.5%) | 10.9–14.2% |
+| category classification accuracy | 2/134 (1.5%) | 0.0–3.7% |
+
+Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
+cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
 
 ### Breakdown
 

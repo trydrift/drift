@@ -1,9 +1,13 @@
+import { createGunzip } from 'node:zlib';
+import { createReadStream } from 'node:fs';
+import { createInterface } from 'node:readline';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { datasetOrThrow, DATASETS, type Dataset } from './dataset.ts';
 import { probeEnvironment } from './environment.ts';
 import { computeMetrics, type BaselineSpec } from './metrics.ts';
 import type { ExternalCaseResult } from './record.ts';
-import { newRunId, writeRun } from './results.ts';
+import { newRunId, resultsDir, writeRun } from './results.ts';
 import { select, type Selectable } from './selection.ts';
 import { runKong } from './runners/kong-runner.ts';
 import { runSweBump } from './runners/swe-bump-runner.ts';
@@ -29,6 +33,18 @@ import { runTimemachine } from './runners/timemachine-runner.ts';
 
 export interface ExternalRunOptions {
   datasetId: string;
+  /**
+   * Recompute a past run's metrics and report from its own recorded per-case
+   * results, without re-running anything.
+   *
+   * The same separation the case-based harness draws between `run` and
+   * `evaluate`, and for the same reason: a run costs an hour of network and,
+   * for the agent-bearing tracks, money, so a metric fix must not require
+   * paying for the observations again. `cases.jsonl.gz` holds every
+   * prediction and label, so everything downstream of it is re-derivable
+   * offline.
+   */
+  rescore?: string;
   ids?: string[];
   limit?: number;
   seed?: number;
@@ -77,6 +93,68 @@ const RUNNERS: Record<string, Runner> = {
   roseau: runRoseau,
   timemachine: runTimemachine,
 };
+
+/**
+ * Recompute a past run's metrics and report from its stored per-case results.
+ *
+ * Reads the run's own `manifest.json`, `selection.json` and `environment.json`
+ * back and writes them out unchanged, so a re-score cannot quietly restate
+ * which Drift commit or which machine produced the observations. Only the
+ * derived files move.
+ */
+export async function rescoreExternal(options: ExternalRunOptions & { rescore: string }): Promise<string> {
+  const dir = resultsDir(options.rescore, options.outRoot);
+  const selection = JSON.parse(await readFile(join(dir, 'selection.json'), 'utf8'));
+  const manifest = JSON.parse(await readFile(join(dir, 'manifest.json'), 'utf8'));
+  const environment = JSON.parse(await readFile(join(dir, 'environment.json'), 'utf8'));
+  const dataset = (selection.dataset ?? datasetOrThrow(manifest.datasetId)) as Dataset;
+
+  const results: ExternalCaseResult[] = [];
+  const stream = createInterface({ input: createReadStream(join(dir, 'cases.jsonl.gz')).pipe(createGunzip()) });
+  for await (const line of stream) {
+    if (line.trim().length > 0) results.push(JSON.parse(line) as ExternalCaseResult);
+  }
+
+  const metrics = computeMetrics({
+    dataset,
+    // `available` is a property of the corpus the run read, not of this
+    // re-score, so it comes back from the stored metrics rather than being
+    // recomputed from a corpus that may have moved on.
+    available: JSON.parse(await readFile(join(dir, 'metrics.json'), 'utf8')).available,
+    results,
+    ...(rescoreBaseline(dataset) ? { baseline: rescoreBaseline(dataset)! } : {}),
+  });
+
+  return writeRun({
+    runId: manifest.runId,
+    dataset,
+    datasetVersion: manifest.datasetVersion,
+    selection,
+    environment,
+    results,
+    metrics,
+    notes: manifest.notes ?? '',
+    root: options.outRoot,
+  });
+}
+
+/**
+ * A baseline a re-score can rebuild from what the cases already recorded.
+ *
+ * Only Kong has one, and it is recoverable because the adapter wrote the
+ * marker's own prediction into each case's provenance at run time. A baseline
+ * that could not be recomputed from the stored artifact would silently
+ * disappear on re-score, which is worse than not having one.
+ */
+function rescoreBaseline(dataset: Dataset): BaselineSpec | null {
+  if (dataset.id !== 'kong') return null;
+  return {
+    name: 'conventional-commits marker',
+    description:
+      'Predicts "breaking" whenever the commit message contains a literal BREAKING CHANGE annotation. Not Drift, and not presented as Drift — it is here so a reader can see how much of this task is reachable without reading the text.',
+    predict: (result: ExternalCaseResult) => String(result.provenance.extra['markerBaselinePredictsBreaking']) === 'true',
+  };
+}
 
 export async function runExternal(options: ExternalRunOptions): Promise<string> {
   const dataset = datasetOrThrow(options.datasetId);
@@ -174,6 +252,10 @@ export function parseArgs(argv: readonly string[]): ExternalRunOptions {
         options.notes = value;
         index += 1;
         break;
+      case '--rescore':
+        options.rescore = value;
+        index += 1;
+        break;
       default:
         throw new Error(`Unknown flag "${flag}".`);
     }
@@ -187,6 +269,8 @@ export function parseArgs(argv: readonly string[]): ExternalRunOptions {
 
 if (process.argv[1]?.endsWith('cli.ts')) {
   const options = parseArgs(process.argv.slice(2));
-  const dir = await runExternal(options);
+  const dir = options.rescore
+    ? await rescoreExternal(options as ExternalRunOptions & { rescore: string })
+    : await runExternal(options);
   process.stdout.write(`\nWrote ${dir}\n`);
 }

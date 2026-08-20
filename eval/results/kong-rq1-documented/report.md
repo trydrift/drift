@@ -15,9 +15,9 @@ What a good result here does *not* establish: Nothing about whether Drift finds 
 | Citation | Dezhen Kong et al., "Towards Better Comprehension of Breaking Changes in the NPM Ecosystem", replication package, Zenodo, DOI 10.5281/zenodo.13857646. |
 | Ecosystem | npm |
 | Benchmark class | upstream-bc-detection |
-| Drift commit | `a2c0b8a8b83fadcafd3f8b02f13d540abbeb26ce` (working tree dirty) |
-| Run date | 2026-08-19T23:21:48.448Z |
-| Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts kong --experiment rq1-documented --run-id kong-rq1-documented` |
+| Drift commit | `b485648aa22930cc1369a3f9eb2e5472b0c595e2` (working tree dirty) |
+| Run date | 2026-08-20T05:06:23.936Z |
+| Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts kong --rescore kong-rq1-documented` |
 | Platform | darwin/x64, Node v22.22.0 |
 
 ## Case accounting
@@ -34,9 +34,12 @@ Read this before any rate below.
 
 ## Results
 
-| Question | Result |
-| --- | --- |
-| breaking-change detection recall | 23/165 (13.9%) |
+| Question | Result | 95% interval |
+| --- | --- | --- |
+| breaking-change detection recall | 23/165 (13.9%) | 9.1–19.4% |
+
+Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
+cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
 
 ### Classification
 
