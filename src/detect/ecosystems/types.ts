@@ -1,9 +1,18 @@
 import type { DependencyKind, Ecosystem } from '../../types.js';
 
+export type CargoDependencySection = 'dependencies' | 'dev-dependencies' | 'build-dependencies';
+
+export interface CargoDependencyPlacement {
+  section: CargoDependencySection;
+  target?: string;
+}
+
 export interface ParsedDependency {
   /** Version or range exactly as written in the manifest. */
   version: string | null;
   kind: DependencyKind;
+  /** Cargo.toml dependency table this entry was declared in. */
+  cargo?: CargoDependencyPlacement;
 }
 
 /** Package name -> parsed entry. */
