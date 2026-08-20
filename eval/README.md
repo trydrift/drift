@@ -627,10 +627,15 @@ typed by hand and deleting a run breaks the build.
 
 ## Composition and limitations
 
+This section is about the **regression suite** in `cases/`, not about the
+external corpora above. The two are never pooled and no number here is an
+accuracy claim.
+
 Current corpus: **5 cases, all synthetic, all npm, one repository, one
 dependency, 1 negative/control.** Every report prints this before any number.
 No accuracy figure from this corpus is representative of anything, and none is
-presented as such.
+presented as such — that is what the external corpora are for, and why they
+exist.
 
 What the five cover, chosen to exercise the benchmark's own failure modes
 rather than only Drift's:
