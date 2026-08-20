@@ -246,10 +246,19 @@ export async function runExternal(options: ExternalRunOptions): Promise<string> 
 }
 
 export function parseArgs(argv: readonly string[]): ExternalRunOptions {
-  const [datasetId, ...rest] = argv;
-  if (!datasetId || datasetId.startsWith('-')) {
+  // `--rescore` reads the dataset out of the run's own `selection.json`, so
+  // requiring a positional there would mean typing a name that is then
+  // ignored — and a command whose arguments are ignored is a command that
+  // eventually gets typed wrong without anyone noticing.
+  const rescoring = argv.includes('--rescore');
+  const [first, ...others] = argv;
+  const datasetId = first && !first.startsWith('-') ? first : '';
+  const rest = datasetId ? others : argv;
+
+  if (!datasetId && !rescoring) {
     throw new Error(
       `Usage: npm run eval:external -- <dataset> [--ids a,b] [--limit N] [--seed N] [--experiment NAME]\n` +
+        `       npm run eval:external -- --rescore <run-id>\n` +
         `Datasets: ${Object.keys(DATASETS).sort().join(', ')}`,
     );
   }

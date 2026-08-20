@@ -531,6 +531,10 @@ npm run eval:external -- roseau
 npm run eval:external -- swe-bump
 npm run eval:external -- timemachine --experiment verified
 npm run eval:external -- bump --limit 40 --seed 20260819
+
+# Recompute a past run's metrics and report from its own artifacts. Offline,
+# free, and the reason a metric fix does not require re-running anything.
+npm run eval:external -- --rescore <run-id>
 ```
 
 Fetching them is [`benchmarks/README.md`](../benchmarks/README.md). Nothing is
