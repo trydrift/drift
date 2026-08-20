@@ -103,6 +103,7 @@ for (const entry of published.runs) {
     refusals: metrics.refusals ?? [],
     mappingCoverage: metrics.mappingCoverage ?? {},
     breakdown: metrics.breakdown ?? {},
+    intervals: metrics.intervals ?? {},
 
     // Which tools were present decides what several of these runs could even
     // attempt, so the page shows it rather than leaving a reader to guess why

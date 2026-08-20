@@ -70,6 +70,8 @@ export interface BenchmarkDataset {
   refusals: { metric: string; reason: string }[];
   mappingCoverage: Record<string, number>;
   breakdown: Record<string, Record<string, Rate>>;
+  /** Case-level bootstrap intervals, present only for rates with at least twenty cases behind them. */
+  intervals: Record<string, { low: number; high: number; iterations: number }>;
 
   tools: { tool: string; available: boolean; version: string; neededFor: string }[];
 }

@@ -177,3 +177,39 @@ test('the breakdown splits every rate by label, so a pooled figure is never the 
   assert.equal(metrics.breakdown['label: rename method']!['breaking-change detection recall']!.value, 1);
   assert.equal(metrics.breakdown['label: remove method']!['breaking-change detection recall']!.value, 0);
 });
+
+test('a bootstrap interval is reported only where there are enough cases to support one', () => {
+  const many = Array.from({ length: 40 }, (_, index) =>
+    result({ caseId: `c${index}`, outcomes: { identifiedAffected: index % 3 !== 0 } }),
+  );
+  const withInterval = computeMetrics({ dataset: DATASETS['swe-bump']!, available: 40, results: many });
+  const interval = withInterval.intervals['affected-repository identification rate'];
+  assert.ok(interval, 'forty cases must support an interval');
+  assert.ok(interval.low <= interval.high);
+
+  const few = many.slice(0, 8);
+  const withoutInterval = computeMetrics({ dataset: DATASETS['swe-bump']!, available: 40, results: few });
+  assert.equal(
+    withoutInterval.intervals['affected-repository identification rate'],
+    undefined,
+    'eight cases must produce no interval rather than a narrow-looking one',
+  );
+  assert.ok(
+    withoutInterval.rates['affected-repository identification rate'],
+    'the rate itself is still reported — it is the interval that is refused',
+  );
+});
+
+test('an interval is computed over the cases its outcome was asked of, not over every scored case', () => {
+  // Twenty-five cases carry the outcome; seventy-five do not. Resampling all
+  // hundred would report an interval tighter than twenty-five observations
+  // support.
+  const asked = Array.from({ length: 25 }, (_, index) =>
+    result({ caseId: `asked-${index}`, outcomes: { identifiedAffected: index % 2 === 0 } }),
+  );
+  const silent = Array.from({ length: 75 }, (_, index) => result({ caseId: `silent-${index}` }));
+  const metrics = computeMetrics({ dataset: DATASETS['swe-bump']!, available: 100, results: [...asked, ...silent] });
+
+  assert.equal(metrics.rates['affected-repository identification rate']!.denominator, 25);
+  assert.ok(metrics.intervals['affected-repository identification rate']);
+});

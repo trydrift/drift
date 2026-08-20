@@ -94,12 +94,22 @@ export function BenchmarkCard({ dataset }: { dataset: BenchmarkDataset }) {
       {Object.keys(dataset.rates).length > 0 ? (
         <table className="mt-5 w-full text-sm">
           <tbody>
-            {Object.entries(dataset.rates).map(([label, rate]) => (
-              <tr key={label} className="border-t border-border/70">
-                <td className="py-1.5 pr-3 text-muted">{label}</td>
-                <td className="py-1.5 text-right font-mono text-[12.5px] text-foreground">{formatRate(rate)}</td>
-              </tr>
-            ))}
+            {Object.entries(dataset.rates).map(([label, rate]) => {
+              const interval = dataset.intervals[label];
+              return (
+                <tr key={label} className="border-t border-border/70">
+                  <td className="py-1.5 pr-3 text-muted">{label}</td>
+                  <td className="py-1.5 text-right font-mono text-[12.5px] text-foreground">
+                    {formatRate(rate)}
+                    {interval ? (
+                      <span className="ml-2 text-[11px] text-faint">
+                        95% {(interval.low * 100).toFixed(0)}–{(interval.high * 100).toFixed(0)}%
+                      </span>
+                    ) : null}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       ) : null}

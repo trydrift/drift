@@ -1,3 +1,4 @@
+import { bootstrapInterval } from '../evaluator/aggregate.ts';
 import type { Dataset } from './dataset.ts';
 import type { ExternalCaseResult } from './record.ts';
 
@@ -84,6 +85,18 @@ export interface DatasetMetrics {
    * expression scores.
    */
   baseline: { name: string; description: string; confusion: { tp: number; fp: number; tn: number; fn: number }; precision: Rate; recall: Rate } | null;
+  /**
+   * Case-level bootstrap intervals, for the rates that have enough cases to
+   * support one.
+   *
+   * The same policy the case-based harness uses, from the same function:
+   * resample over cases rather than trials, and return nothing below twenty
+   * cases. An interval from four cases is arithmetically valid and
+   * rhetorically dishonest — it gets printed beside a percentage and read as
+   * evidence of a precision the sample cannot supply. A rate with no entry
+   * here has too few cases, which is itself worth knowing.
+   */
+  intervals: Record<string, { low: number; high: number; iterations: number }>;
   /**
    * Every rate again, broken down by the dataset's own label and by whatever
    * strata the adapter recorded.
@@ -246,6 +259,7 @@ export function computeMetrics(input: {
     classification,
     baseline,
     breakdown: breakdownOf(scored),
+    intervals: intervalsFor(scored),
     mappingCoverage: results.reduce<Record<string, number>>((counts, result) => {
       counts[result.truth.mappingStatus] = (counts[result.truth.mappingStatus] ?? 0) + 1;
       return counts;
@@ -289,6 +303,25 @@ function breakdownOf(scored: readonly ExternalCaseResult[]): Record<string, Reco
         (out[`${dimension}: ${bucket}`] ??= {})[label] = rate(hits, asked.length);
       }
     }
+  }
+  return out;
+}
+
+/**
+ * One interval per outcome, over the cases that outcome was actually asked of.
+ *
+ * Deliberately not computed over `scored` as a whole: an outcome asked of 30
+ * of 100 cases has 30 independent observations, and resampling 100 would
+ * report a tighter interval than the data supports.
+ */
+function intervalsFor(scored: readonly ExternalCaseResult[]): Record<string, { low: number; high: number; iterations: number }> {
+  const out: Record<string, { low: number; high: number; iterations: number }> = {};
+  for (const [key, label] of Object.entries(OUTCOME_METRICS)) {
+    const asked = scored
+      .map((result) => result.outcomes[key as keyof typeof result.outcomes])
+      .filter((value): value is boolean => value !== undefined);
+    const interval = bootstrapInterval(asked, { seed: 20260819 });
+    if (interval) out[label] = interval;
   }
   return out;
 }

@@ -220,11 +220,21 @@ export function renderExternalReport(input: WriteRunInput & { manifest: RunManif
   if (Object.keys(metrics.rates).length === 0) {
     lines.push('No rate was computed: no case produced a scored outcome. See the exclusions above.', '');
   } else {
-    lines.push('| Question | Result |', '| --- | --- |');
+    lines.push('| Question | Result | 95% interval |', '| --- | --- | --- |');
     for (const [label, value] of Object.entries(metrics.rates).sort()) {
-      lines.push(`| ${label} | ${formatRate(value)} |`);
+      const interval = metrics.intervals[label];
+      lines.push(
+        `| ${label} | ${formatRate(value)} | ${
+          interval ? `${(interval.low * 100).toFixed(1)}–${(interval.high * 100).toFixed(1)}%` : 'not reported (under 20 cases)'
+        } |`,
+      );
     }
-    lines.push('');
+    lines.push(
+      '',
+      'Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty',
+      'cases — an interval from four cases is arithmetically valid and rhetorically dishonest.',
+      '',
+    );
   }
 
   if (metrics.classification && metrics.confusion) {
