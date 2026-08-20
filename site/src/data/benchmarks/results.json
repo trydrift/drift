@@ -1,6 +1,6 @@
 {
   "$generated": "site/scripts/sync-benchmarks.mjs — do not edit; every number here is read from eval/results/<run-id>/metrics.json",
-  "generatedAt": "2026-08-20T00:46:10.710Z",
+  "generatedAt": "2026-08-20T00:55:21.052Z",
   "datasets": [
     {
       "runId": "roseau-accuracy",
