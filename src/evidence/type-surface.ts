@@ -81,7 +81,10 @@ export type SurfaceChangeKind =
    * editing — only code that depends on the concrete number, zero value, or
    * serialised form does.
    */
-  | 'constant-value-changed';
+  | 'constant-value-changed'
+  | 'commonjs-entry-removed'
+  | 'exports-require-condition-removed'
+  | 'package-type-changed';
 
 export interface SurfaceChange {
   kind: SurfaceChangeKind;
@@ -231,14 +234,141 @@ export class VersionUnavailableError extends Error {
 interface Manifest {
   types?: string;
   typings?: string;
+  type?: string;
   exports?: unknown;
   main?: string;
+  module?: string;
   dependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
 }
 
 function fetchManifest(packageName: string, version: string): Promise<Manifest | null> {
   return fetchJson<Manifest>(`${JSDELIVR_CDN}/${packageName}@${version}/package.json`);
+}
+
+export async function diffPackageModuleMetadata(
+  packageName: string,
+  from: string,
+  to: string,
+): Promise<SurfaceChange[]> {
+  const [before, after] = await Promise.all([
+    fetchManifest(packageName, from),
+    fetchManifest(packageName, to),
+  ]);
+  if (!before || !after) return [];
+
+  const beforeCjs = commonJsCompatibility(before);
+  const afterCjs = commonJsCompatibility(after);
+  const changes: SurfaceChange[] = [];
+
+  const removedRequireConditions = [...beforeCjs.requireConditions].filter(
+    (condition) => !afterCjs.requireConditions.has(condition),
+  );
+  if (removedRequireConditions.length > 0) {
+    changes.push({
+      kind: 'exports-require-condition-removed',
+      symbol: packageName,
+      detail:
+        removedRequireConditions.length === 1
+          ? `The CommonJS export condition ${removedRequireConditions[0]} was removed`
+          : `${removedRequireConditions.length} CommonJS export conditions were removed`,
+      before: [...beforeCjs.requireConditions].sort().join('\n'),
+      after: [...afterCjs.requireConditions].sort().join('\n') || '(none)',
+    });
+  }
+
+  if (beforeCjs.hasCommonJsEntry && !afterCjs.hasCommonJsEntry) {
+    changes.push({
+      kind: 'commonjs-entry-removed',
+      symbol: packageName,
+      detail: 'The package no longer exposes a CommonJS-compatible entry point',
+      before: beforeCjs.entrySummary,
+      after: afterCjs.entrySummary,
+    });
+  } else if (before.type !== after.type && after.type === 'module' && !afterCjs.hasCommonJsEntry) {
+    changes.push({
+      kind: 'package-type-changed',
+      symbol: packageName,
+      detail: 'The package type changed to ESM without a CommonJS-compatible entry point',
+      before: packageTypeSummary(before),
+      after: packageTypeSummary(after),
+    });
+  }
+
+  return dedupeModuleMetadataChanges(changes);
+}
+
+interface CommonJsCompatibility {
+  hasCommonJsEntry: boolean;
+  requireConditions: Set<string>;
+  entrySummary: string;
+}
+
+function commonJsCompatibility(manifest: Manifest): CommonJsCompatibility {
+  const requireConditions = requireConditionsIn(manifest.exports);
+  const hasRequireCondition = requireConditions.size > 0;
+  const hasMainCjs = entryLooksCommonJs(manifest.main, manifest);
+  const hasBareCjsExport = bareExportLooksCommonJs(manifest.exports, manifest);
+  const hasCommonJsEntry = hasRequireCondition || hasMainCjs || hasBareCjsExport;
+
+  const entrySummary = [
+    `type: ${manifest.type ?? '(absent)'}`,
+    manifest.main ? `main: ${manifest.main}` : '',
+    manifest.module ? `module: ${manifest.module}` : '',
+    requireConditions.size > 0 ? `exports.require: ${[...requireConditions].sort().join(', ')}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n') || '(no CommonJS-compatible entry point detected)';
+
+  return { hasCommonJsEntry, requireConditions, entrySummary };
+}
+
+function requireConditionsIn(exportsField: unknown): Set<string> {
+  const out = new Set<string>();
+  visitExports(exportsField, '.', out);
+  return out;
+}
+
+function visitExports(value: unknown, path: string, out: Set<string>): void {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return;
+  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+    if (key === 'require') out.add(path);
+    if (key.startsWith('./')) visitExports(nested, key, out);
+    else if (typeof nested === 'object') visitExports(nested, path, out);
+  }
+}
+
+function bareExportLooksCommonJs(exportsField: unknown, manifest: Manifest): boolean {
+  if (typeof exportsField === 'string') return entryLooksCommonJs(exportsField, manifest);
+  if (!exportsField || typeof exportsField !== 'object' || Array.isArray(exportsField)) return false;
+  const root = (exportsField as Record<string, unknown>)['.'];
+  if (typeof root === 'string') return entryLooksCommonJs(root, manifest);
+  const defaultExport = root && typeof root === 'object'
+    ? (root as Record<string, unknown>).default
+    : (exportsField as Record<string, unknown>).default;
+  return typeof defaultExport === 'string' && entryLooksCommonJs(defaultExport, manifest);
+}
+
+function entryLooksCommonJs(entry: string | undefined, manifest: Manifest): boolean {
+  if (!entry) return false;
+  if (/\.cjs$/i.test(entry)) return true;
+  if (/\.mjs$/i.test(entry)) return false;
+  if (/\.[jt]sx?$/i.test(entry)) return manifest.type !== 'module';
+  return manifest.type !== 'module';
+}
+
+function packageTypeSummary(manifest: Manifest): string {
+  return `type: ${manifest.type ?? '(absent)'}\n${manifest.main ? `main: ${manifest.main}` : 'main: (absent)'}`;
+}
+
+function dedupeModuleMetadataChanges(changes: SurfaceChange[]): SurfaceChange[] {
+  const seen = new Set<string>();
+  return changes.filter((change) => {
+    const key = change.kind;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 /* ------------------------------------------------------------------ */

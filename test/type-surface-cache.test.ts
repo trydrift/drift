@@ -1,6 +1,6 @@
 import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { fetchTypeSurface, clearTypeSurfaceCache } from '../dist/evidence/type-surface.js';
+import { fetchTypeSurface, clearTypeSurfaceCache, diffPackageModuleMetadata } from '../dist/evidence/type-surface.js';
 import { clearHttpCache } from '../dist/util/http.js';
 
 /**
@@ -150,5 +150,53 @@ describe('remembering the type surface of a published version', () => {
         'the second ask does the work again instead of answering from a remembered absence',
       );
     })();
+  });
+});
+
+describe('npm package module metadata diffing', () => {
+  test('detects removal of CommonJS export conditions', async () => {
+    reset();
+    stubFetch((url) => {
+      if (url.endsWith('/demo@1.0.0/package.json')) {
+        return new Response(JSON.stringify({
+          exports: { '.': { import: './index.mjs', require: './index.cjs' } },
+        }), { status: 200 });
+      }
+      if (url.endsWith('/demo@2.0.0/package.json')) {
+        return new Response(JSON.stringify({
+          type: 'module',
+          exports: { '.': { import: './index.js' } },
+        }), { status: 200 });
+      }
+      return new Response('', { status: 404 });
+    });
+
+    const changes = await diffPackageModuleMetadata('demo', '1.0.0', '2.0.0');
+
+    assert.ok(changes.some((change) => change.kind === 'exports-require-condition-removed'));
+    assert.ok(changes.some((change) => change.kind === 'commonjs-entry-removed'));
+  });
+
+  test('does not treat type module alone as loss of CommonJS support', async () => {
+    reset();
+    stubFetch((url) => {
+      if (url.endsWith('/demo@1.0.0/package.json')) {
+        return new Response(JSON.stringify({ main: './index.js' }), { status: 200 });
+      }
+      if (url.endsWith('/demo@2.0.0/package.json')) {
+        return new Response(JSON.stringify({
+          type: 'module',
+          exports: { '.': { import: './index.js', require: './index.cjs' } },
+        }), { status: 200 });
+      }
+      return new Response('', { status: 404 });
+    });
+
+    const changes = await diffPackageModuleMetadata('demo', '1.0.0', '2.0.0');
+
+    assert.equal(
+      changes.some((change) => change.kind === 'commonjs-entry-removed' || change.kind === 'package-type-changed'),
+      false,
+    );
   });
 });
