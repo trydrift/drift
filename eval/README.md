@@ -336,7 +336,8 @@ paths against the plan's declared scope before accepting anything.
 
 `repaired` · `partially-repaired` · `failed-to-fix` · `introduced-regression` ·
 `correct-abstention` · `missed-opportunity` · `unsafe-attempt` ·
-`no-repair-needed` · `operational-failure` · `no-trigger`
+`no-repair-needed` · `delivery-failure` · `environment-unavailable` ·
+`case-invalid` · `no-trigger`
 
 Only `repaired` counts as a repair. `correctDecision` — repaired, correctly
 abstained, or nothing needed — is reported beside it, because a benchmark that
@@ -347,10 +348,30 @@ Attempting where truth says abstain is `unsafe-attempt` **even when the oracle
 goes green**. A repair that edits outside its own plan's declared scope is
 disqualified however green the build.
 
-`operational-failure` (agent timeout, agent error, install failure, patch would
-not apply, model not configured, no plan cache supplied, no recipe supplied)
-leaves both the numerator and the denominator. It is still counted in the
-outcome table, so nothing disappears.
+The last three are the ones a repair rate depends on, and they used to be one
+value. Pooling them let an end-to-end number improve by failing differently —
+every case Drift began and could not finish quietly stopped counting, so the
+headline described only the attempts that survived long enough to be judged.
+
+| Outcome | What happened | In the denominator? |
+| --- | --- | --- |
+| `delivery-failure` | Drift began a valid case and could not finish: the agent errored, timed out or was not there when the hierarchy reached it; a patch would not apply; a remediation-time install failed; a tier claimed a commit and emitted no diff; Drift's own scope gate rejected what came back | **yes** — an unsuccessful product outcome |
+| `environment-unavailable` | A tier was never asked, because its input or provider does not exist here: no plan cache, no recipe, no configured model, no agent CLI for a track whose subject *is* the agent | no, with the reason recorded |
+| `case-invalid` | The case did not behave as declared before Drift was judged on it: baseline did not pass, bump-only did not fail, or the repaired stage could not run | no, with the reason recorded |
+
+The two exclusions are kept apart because they call for opposite reactions: a
+large `environment-unavailable` count means this machine could not measure the
+product, and a large `case-invalid` count means the corpus is not reproducing
+here. Neither is a result about Drift. The report prints trials produced,
+denominator, numerator, unsuccessful outcomes, how many of those Drift could
+not finish, and every exclusion with its reason — so nothing disappears and no
+percentage has to be reverse-engineered.
+
+One consequence worth stating: on the end-to-end track, a hierarchy that routes
+work to the agent tier and finds no agent there records
+`agent-required-unavailable` and counts as a delivery failure. It used to
+record `abstained-by-policy` — a missing binary presented to a reader as a
+considered product decision to decline.
 
 ### What ground truth says Drift may do
 
