@@ -315,8 +315,18 @@ export function scoreBump(input: ScoreBumpInput): ExternalCaseResult {
     ...base,
     prediction: { ...prediction } as Record<string, unknown>,
     outcomes: {
+      /*
+       * Matched on the full coordinate, or on the artifact as a whole segment.
+       *
+       * The fallback used to be `endsWith(artifactId)` with no separator,
+       * which credits a detection for the wrong dependency: `endsWith('core')`
+       * matches `com.example:jackson-core` and `com.other:core` alike. It
+       * happened to change nothing on this subset — 34 of 39 either way — but
+       * a matcher that can credit the wrong package is not one to leave in
+       * because it has not misfired yet.
+       */
       detectedUpdate: prediction.dependencyChanges.some(
-        (change) => change.name === dependency || change.name.endsWith(record.updatedDependency.dependencyArtifactID),
+        (change) => change.name === dependency || change.name.endsWith(`:${record.updatedDependency.dependencyArtifactID}`),
       ),
       identifiedAffected: prediction.verdict === 'locally-affected',
       localized: prediction.impactSites.length > 0,
