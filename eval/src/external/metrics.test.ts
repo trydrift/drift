@@ -227,3 +227,25 @@ test('the false-safe rate gets an interval like any other rate over enough cases
   assert.deepEqual(metrics.rates['false-safe verdicts'], { numerator: 16, denominator: 39, value: 16 / 39 });
   assert.ok(metrics.intervals['false-safe verdicts'], 'thirty-nine cases support an interval');
 });
+
+test('a false-safe count is refused for a dataset whose truth does not support one', () => {
+  // Roseau labels API changes, not whether a consumer is broken, so a
+  // false-safe count from it would not mean what it says. The safety number is
+  // the last one that should escape the support check.
+  const metrics = computeMetrics({
+    dataset: DATASETS['roseau']!,
+    available: 2,
+    results: [result({ caseId: 'a', outcomes: { falseSafe: true } }), result({ caseId: 'b', outcomes: { falseSafe: false } })],
+  });
+  assert.ok(!('false-safe verdicts' in metrics.rates));
+  assert.ok(metrics.refusals.some((refusal) => refusal.metric === 'false-safe verdicts'));
+});
+
+test('a false-safe count is reported for a dataset whose truth does support one', () => {
+  const metrics = computeMetrics({
+    dataset: DATASETS['bump']!,
+    available: 2,
+    results: [result({ caseId: 'a', outcomes: { falseSafe: true } }), result({ caseId: 'b', outcomes: { falseSafe: false } })],
+  });
+  assert.deepEqual(metrics.rates['false-safe verdicts'], { numerator: 1, denominator: 2, value: 0.5 });
+});

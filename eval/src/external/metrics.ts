@@ -178,7 +178,21 @@ export function computeMetrics(input: {
   // makes it look smaller than it is.
   const safetyAsked = scored.filter((result) => result.outcomes.falseSafe !== undefined);
   if (safetyAsked.length > 0) {
-    rates['false-safe verdicts'] = rate(safetyAsked.filter((result) => result.outcomes.falseSafe === true).length, safetyAsked.length);
+    // Gated like every other metric. It was not, which meant an adapter could
+    // report a safety number from a dataset whose ground truth never claimed
+    // to support one — and the safety number is the last one that should
+    // escape the check.
+    if (dataset.groundTruth.supports.includes('false-safe-count')) {
+      rates['false-safe verdicts'] = rate(
+        safetyAsked.filter((result) => result.outcomes.falseSafe === true).length,
+        safetyAsked.length,
+      );
+    } else {
+      refusals.push({
+        metric: 'false-safe verdicts',
+        reason: `${dataset.title}'s ground truth does not state whether a case is genuinely broken in a way that makes a safe verdict wrong, so a false-safe count from it would not mean what it says.`,
+      });
+    }
   }
 
   /*

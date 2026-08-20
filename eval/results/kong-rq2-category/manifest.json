@@ -12,6 +12,6 @@
   "platform": "darwin",
   "arch": "x64",
   "notes": "This is a **conditional** experiment on one production stage: Drift's prose interpreter (`extractBreakingPassages` + `analyze`, imported from the shipped build). The corpus is commit messages — it contains no consumer repositories, no version pairs and no build oracles — so it establishes nothing about detection in a repository, localization, or repair.",
-  "rescoredAt": "2026-08-20T13:50:44.206Z",
-  "rescoredAtCommit": "7efd4d29b8a41d5d5a1f7d4c8968a7fb37d83313"
+  "rescoredAt": "2026-08-20T14:16:38.320Z",
+  "rescoredAtCommit": "42be074db911df10af9234e237ced8dfb1e9b0ce"
 }

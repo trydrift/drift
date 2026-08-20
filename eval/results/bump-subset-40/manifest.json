@@ -12,6 +12,6 @@
   "platform": "darwin",
   "arch": "x64",
   "notes": "Detection only, and the commit pair is real. BUMP records the commit that changed the version in `pom.xml`, so its parent is the pre-update state — this run diffs the two revisions a developer actually received rather than a bump the harness applied. Drift reads `pom.xml` directly, so nothing has to be built for the manifest diff, evidence retrieval and localization to run exactly as they do for a user.\n\nNo precision and no false-positive rate: every record is a reproduced *breaking* update, and the corpus contains no non-breaking control updates to measure one against.\n\n**No container runtime is available on the machine that produced this run.** BUMP's authority on whether a build fails is its published `<sha>-pre` and `<sha>-breaking` images, so the Maven oracle was not run and no repair question was asked. Those outcomes are absent from every case record rather than recorded as failures — an absent key means the question was not asked, where `false` would mean Drift tried and did not manage it. Each case artifact carries both image references so a reader with Docker can run the authoritative reproduction from it.",
-  "rescoredAt": "2026-08-20T13:50:50.553Z",
-  "rescoredAtCommit": "7efd4d29b8a41d5d5a1f7d4c8968a7fb37d83313"
+  "rescoredAt": "2026-08-20T14:16:26.734Z",
+  "rescoredAtCommit": "42be074db911df10af9234e237ced8dfb1e9b0ce"
 }
