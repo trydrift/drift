@@ -1,0 +1,64 @@
+{
+  "datasetId": "roseau",
+  "datasetClass": "upstream-bc-detection",
+  "available": 267,
+  "selected": 267,
+  "scored": 267,
+  "excluded": {},
+  "missingRequirements": {},
+  "rates": {
+    "breaking-change detection recall": {
+      "numerator": 81,
+      "denominator": 100,
+      "value": 0.81
+    }
+  },
+  "refusals": [],
+  "negativeControls": 167,
+  "confusion": {
+    "tp": 81,
+    "fp": 8,
+    "tn": 159,
+    "fn": 19
+  },
+  "classification": {
+    "precision": {
+      "numerator": 81,
+      "denominator": 89,
+      "value": 0.9101123595505618
+    },
+    "recall": {
+      "numerator": 81,
+      "denominator": 100,
+      "value": 0.81
+    },
+    "f1": 0.8571428571428572
+  },
+  "baseline": null,
+  "breakdown": {
+    "label: binary-breaking": {
+      "breaking-change detection recall": {
+        "numerator": 81,
+        "denominator": 100,
+        "value": 0.81
+      }
+    },
+    "groundTruthSourceBreaking: true": {
+      "breaking-change detection recall": {
+        "numerator": 61,
+        "denominator": 79,
+        "value": 0.7721518987341772
+      }
+    },
+    "groundTruthSourceBreaking: false": {
+      "breaking-change detection recall": {
+        "numerator": 20,
+        "denominator": 21,
+        "value": 0.9523809523809523
+      }
+    }
+  },
+  "mappingCoverage": {
+    "exact": 267
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "seed": 20260819,
+  "limit": null,
+  "mode": "all",
+  "ids": [],
+  "strata": {
+    "breaking · access": {
+      "available": 21,
+      "selected": 21
+    },
+    "not-breaking · access": {
+      "available": 13,
+      "selected": 13
+    },
+    "breaking · data": {
+      "available": 46,
+      "selected": 46
+    },
+    "not-breaking · data": {
+      "available": 3,
+      "selected": 3
+    },
+    "not-breaking · exception": {
+      "available": 15,
+      "selected": 15
+    },
+    "breaking · exception": {
+      "available": 1,
+      "selected": 1
+    },
+    "not-breaking · generics": {
+      "available": 88,
+      "selected": 88
+    },
+    "breaking · inheritance": {
+      "available": 5,
+      "selected": 5
+    },
+    "not-breaking · inheritance": {
+      "available": 11,
+      "selected": 11
+    },
+    "not-breaking · members": {
+      "available": 17,
+      "selected": 17
+    },
+    "breaking · members": {
+      "available": 11,
+      "selected": 11
+    },
+    "not-breaking · modifier": {
+      "available": 18,
+      "selected": 18
+    },
+    "breaking · modifier": {
+      "available": 12,
+      "selected": 12
+    },
+    "not-breaking · other": {
+      "available": 2,
+      "selected": 2
+    },
+    "breaking · other": {
+      "available": 4,
+      "selected": 4
+    }
+  },
+  "available": 267,
+  "idsOmitted": "mode is \"all\": every available case was selected, and each one appears in cases.jsonl.gz. The list is omitted rather than restating the corpus.",
+  "dataset": {
+    "id": "roseau",
+    "title": "Roseau accuracy dataset (replication kit)",
+    "source": {
+      "kind": "zenodo",
+      "url": "https://zenodo.org/records/15536418",
+      "version": "10.5281/zenodo.15536418"
+    },
+    "licence": "see the replication kit",
+    "citation": "Roseau replication kit, Zenodo, DOI 10.5281/zenodo.15536418; tool at https://github.com/alien-tools/roseau",
+    "ecosystem": "maven",
+    "datasetClass": "upstream-bc-detection",
+    "evaluationQuestion": "On hand-built Java library version pairs with exhaustively enumerated API breaking changes, does Drift produce the same set?",
+    "doesNotEstablish": "Nothing about Drift on real-world Java projects: this dataset is constructed to enumerate API change kinds exhaustively, which is what makes precision meaningful and also what makes it unrepresentative of an actual upgrade.",
+    "groundTruth": {
+      "granularity": "api-symbol",
+      "exhaustive": true,
+      "basis": "Constructed library pairs with every API breaking change enumerated at symbol level, which is what supports precision and F1.",
+      "supports": [
+        "recall",
+        "precision",
+        "f1",
+        "category-accuracy"
+      ]
+    },
+    "localPath": "roseau"
+  }
+}
