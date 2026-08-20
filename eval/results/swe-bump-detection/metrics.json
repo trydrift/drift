@@ -1,0 +1,132 @@
+{
+  "datasetId": "swe-bump",
+  "datasetClass": "consumer-impact",
+  "available": 63,
+  "selected": 63,
+  "attempted": 37,
+  "notRun": 26,
+  "scored": 34,
+  "excluded": {
+    "source-unavailable": 1,
+    "reproduction-failed": 2
+  },
+  "missingRequirements": {},
+  "rates": {
+    "dependency-update detection rate": {
+      "numerator": 34,
+      "denominator": 34,
+      "value": 1
+    },
+    "affected-repository identification rate": {
+      "numerator": 25,
+      "denominator": 34,
+      "value": 0.7352941176470589
+    },
+    "consumer localization rate": {
+      "numerator": 25,
+      "denominator": 34,
+      "value": 0.7352941176470589
+    },
+    "false-safe verdicts": {
+      "numerator": 8,
+      "denominator": 34,
+      "value": 0.23529411764705882
+    }
+  },
+  "refusals": [
+    {
+      "metric": "precision",
+      "reason": "swe-bump-bench's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each task is a known-breaking dependency bump whose build oracle fails. Positives only: there are no non-breaking control upgrades, and no symbol-level annotation of what changed."
+    },
+    {
+      "metric": "F1",
+      "reason": "F1 is a harmonic mean of precision and recall, and precision is not defined here."
+    },
+    {
+      "metric": "false-positive rate",
+      "reason": "swe-bump-bench's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each task is a known-breaking dependency bump whose build oracle fails. Positives only: there are no non-breaking control upgrades, and no symbol-level annotation of what changed."
+    }
+  ],
+  "negativeControls": 0,
+  "confusion": null,
+  "classification": null,
+  "baseline": null,
+  "breakdown": {
+    "label: known-breaking-upgrade": {
+      "dependency-update detection rate": {
+        "numerator": 34,
+        "denominator": 34,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 25,
+        "denominator": 34,
+        "value": 0.7352941176470589
+      },
+      "consumer localization rate": {
+        "numerator": 25,
+        "denominator": 34,
+        "value": 0.7352941176470589
+      }
+    },
+    "versionToIsRange: true": {
+      "dependency-update detection rate": {
+        "numerator": 32,
+        "denominator": 32,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 23,
+        "denominator": 32,
+        "value": 0.71875
+      },
+      "consumer localization rate": {
+        "numerator": 23,
+        "denominator": 32,
+        "value": 0.71875
+      }
+    },
+    "versionToIsRange: false": {
+      "dependency-update detection rate": {
+        "numerator": 2,
+        "denominator": 2,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 2,
+        "denominator": 2,
+        "value": 1
+      },
+      "consumer localization rate": {
+        "numerator": 2,
+        "denominator": 2,
+        "value": 1
+      }
+    }
+  },
+  "intervals": {
+    "dependency-update detection rate": {
+      "low": 1,
+      "high": 1,
+      "iterations": 2000
+    },
+    "affected-repository identification rate": {
+      "low": 0.5882352941176471,
+      "high": 0.8823529411764706,
+      "iterations": 2000
+    },
+    "consumer localization rate": {
+      "low": 0.5882352941176471,
+      "high": 0.8823529411764706,
+      "iterations": 2000
+    },
+    "false-safe verdicts": {
+      "low": 0.08823529411764706,
+      "high": 0.38235294117647056,
+      "iterations": 2000
+    }
+  },
+  "mappingCoverage": {
+    "exact": 37
+  }
+}

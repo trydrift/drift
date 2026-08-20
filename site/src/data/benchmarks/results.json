@@ -1,6 +1,6 @@
 {
   "$generated": "site/scripts/sync-benchmarks.mjs — do not edit; every number here is read from eval/results/<run-id>/metrics.json",
-  "generatedAt": "2026-08-20T05:19:55.347Z",
+  "generatedAt": "2026-08-20T14:37:09.964Z",
   "datasets": [
     {
       "runId": "roseau-accuracy",
@@ -715,6 +715,225 @@
       ]
     },
     {
+      "runId": "swe-bump-detection",
+      "headline": false,
+      "why": "Real TypeScript projects at historical commits whose build a dependency upgrade breaks.",
+      "title": "swe-bump-bench",
+      "ecosystem": "npm",
+      "datasetClass": "consumer-impact",
+      "sourceUrl": "https://github.com/xeol-io/swe-bump-bench",
+      "datasetVersion": "unresolved",
+      "licence": "see the repository",
+      "citation": "xeol-io, swe-bump-bench, https://github.com/xeol-io/swe-bump-bench",
+      "evaluationQuestion": "Given a real TypeScript project at a real commit and a dependency upgrade known to break its build, does Drift detect the update, decide the repository is affected, localize the code, and avoid telling the developer it is safe?",
+      "doesNotEstablish": "No precision and no false-positive rate. Every task in this corpus is a known-breaking upgrade, so there is no negative population to compute one over; a tool that answered \"affected\" unconditionally would score identically on the questions this corpus can answer.",
+      "groundTruth": {
+        "granularity": "project-build",
+        "exhaustive": false,
+        "basis": "Each task is a known-breaking dependency bump whose build oracle fails. Positives only: there are no non-breaking control upgrades, and no symbol-level annotation of what changed.",
+        "supports": [
+          "recall",
+          "repair-success",
+          "false-safe-count"
+        ]
+      },
+      "driftCommit": "ecb41c3a2a4439215c25aa7f402687b636dc2c85",
+      "driftTreeDirty": true,
+      "runDate": "2026-08-20T14:37:09.964Z",
+      "rescoredAt": "2026-08-20T14:52:54.520Z",
+      "rescoredAtCommit": "aaaa5f8e8787e80d70986e9f41314f46b8b10b5e",
+      "command": "npm run eval:external -- swe-bump",
+      "platform": "darwin/x64, Node v22.22.0",
+      "notes": "",
+      "available": 63,
+      "selected": 63,
+      "attempted": 37,
+      "notRun": 26,
+      "scored": 34,
+      "excluded": {
+        "source-unavailable": 1,
+        "reproduction-failed": 2
+      },
+      "missingRequirements": {},
+      "negativeControls": 0,
+      "selectionMode": "all",
+      "selectionSeed": 20260819,
+      "selectionLimit": null,
+      "rates": {
+        "dependency-update detection rate": {
+          "numerator": 34,
+          "denominator": 34,
+          "value": 1
+        },
+        "affected-repository identification rate": {
+          "numerator": 25,
+          "denominator": 34,
+          "value": 0.7352941176470589
+        },
+        "consumer localization rate": {
+          "numerator": 25,
+          "denominator": 34,
+          "value": 0.7352941176470589
+        },
+        "false-safe verdicts": {
+          "numerator": 8,
+          "denominator": 34,
+          "value": 0.23529411764705882
+        }
+      },
+      "confusion": null,
+      "classification": null,
+      "baseline": null,
+      "refusals": [
+        {
+          "metric": "precision",
+          "reason": "swe-bump-bench's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each task is a known-breaking dependency bump whose build oracle fails. Positives only: there are no non-breaking control upgrades, and no symbol-level annotation of what changed."
+        },
+        {
+          "metric": "F1",
+          "reason": "F1 is a harmonic mean of precision and recall, and precision is not defined here."
+        },
+        {
+          "metric": "false-positive rate",
+          "reason": "swe-bump-bench's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each task is a known-breaking dependency bump whose build oracle fails. Positives only: there are no non-breaking control upgrades, and no symbol-level annotation of what changed."
+        }
+      ],
+      "mappingCoverage": {
+        "exact": 37
+      },
+      "breakdown": {
+        "label: known-breaking-upgrade": {
+          "dependency-update detection rate": {
+            "numerator": 34,
+            "denominator": 34,
+            "value": 1
+          },
+          "affected-repository identification rate": {
+            "numerator": 25,
+            "denominator": 34,
+            "value": 0.7352941176470589
+          },
+          "consumer localization rate": {
+            "numerator": 25,
+            "denominator": 34,
+            "value": 0.7352941176470589
+          }
+        },
+        "versionToIsRange: true": {
+          "dependency-update detection rate": {
+            "numerator": 32,
+            "denominator": 32,
+            "value": 1
+          },
+          "affected-repository identification rate": {
+            "numerator": 23,
+            "denominator": 32,
+            "value": 0.71875
+          },
+          "consumer localization rate": {
+            "numerator": 23,
+            "denominator": 32,
+            "value": 0.71875
+          }
+        },
+        "versionToIsRange: false": {
+          "dependency-update detection rate": {
+            "numerator": 2,
+            "denominator": 2,
+            "value": 1
+          },
+          "affected-repository identification rate": {
+            "numerator": 2,
+            "denominator": 2,
+            "value": 1
+          },
+          "consumer localization rate": {
+            "numerator": 2,
+            "denominator": 2,
+            "value": 1
+          }
+        }
+      },
+      "intervals": {
+        "dependency-update detection rate": {
+          "low": 1,
+          "high": 1,
+          "iterations": 2000
+        },
+        "affected-repository identification rate": {
+          "low": 0.5882352941176471,
+          "high": 0.8823529411764706,
+          "iterations": 2000
+        },
+        "consumer localization rate": {
+          "low": 0.5882352941176471,
+          "high": 0.8823529411764706,
+          "iterations": 2000
+        },
+        "false-safe verdicts": {
+          "low": 0.08823529411764706,
+          "high": 0.38235294117647056,
+          "iterations": 2000
+        }
+      },
+      "tools": [
+        {
+          "tool": "node",
+          "available": true,
+          "version": "v22.22.0",
+          "neededFor": "every npm/TypeScript case, and Drift itself"
+        },
+        {
+          "tool": "npm",
+          "available": true,
+          "version": "10.9.4",
+          "neededFor": "installing a TypeScript consumer before its build oracle can run"
+        },
+        {
+          "tool": "git",
+          "available": true,
+          "version": "git version 2.39.5 (Apple Git-154)",
+          "neededFor": "checking out an original repository at the exact evaluated commit"
+        },
+        {
+          "tool": "java",
+          "available": true,
+          "version": "openjdk version \"19\" 2022-09-20",
+          "neededFor": "any Java case"
+        },
+        {
+          "tool": "mvn",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "BUMP's Maven oracle, and building Roseau from its replication kit"
+        },
+        {
+          "tool": "docker",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure"
+        },
+        {
+          "tool": "python3",
+          "available": true,
+          "version": "Python 3.9.6",
+          "neededFor": "any Python case"
+        },
+        {
+          "tool": "uv",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "TimeMachine's documented environment setup"
+        },
+        {
+          "tool": "japicmp",
+          "available": true,
+          "version": "SYNOPSIS",
+          "neededFor": "Drift's Java API-surface diff, which its maven capability declares it requires"
+        }
+      ]
+    },
+    {
       "runId": "bump-subset-40",
       "headline": false,
       "why": "A deterministic stratified subset of BUMP's Java consumer breakages, evaluated on the real historical commit pair.",
@@ -1168,10 +1387,5 @@
       ]
     }
   ],
-  "skipped": [
-    {
-      "runId": "swe-bump-detection",
-      "reason": "no metrics.json in eval/results/swe-bump-detection"
-    }
-  ]
+  "skipped": []
 }
