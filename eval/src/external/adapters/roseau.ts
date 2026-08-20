@@ -244,7 +244,11 @@ export function installMavenFetchStub(jars: { from: string; to: string }): () =>
         return new Response(new Uint8Array(bytes), { status: 200 });
       }
     }
-    if (url.includes('repo1.maven.org')) return new Response(null, { status: 404 });
+    try {
+      if (new URL(url).hostname === 'repo1.maven.org') return new Response(null, { status: 404 });
+    } catch {
+      // Non-absolute or malformed URL: defer to original fetch behavior.
+    }
     return original(input, init);
   }) as typeof fetch;
 
