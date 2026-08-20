@@ -51,7 +51,7 @@ const VERDICT_STYLE: Record<UpgradeSeverity, string> = {
 /** The short form for the pill. `describeSeverity` writes the long one. */
 const VERDICT_PILL: Record<UpgradeSeverity, string> = {
   affected: "Affects You",
-  "verification-failed": "Checks Failed",
+  "verification-failed": "Verified Breaking",
   "upstream-only": "None Used Here",
   unchecked: "Not Verified",
   clean: "Safe",

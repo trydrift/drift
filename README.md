@@ -168,11 +168,16 @@ writes anything.
 No token, and no account. `analyze` reads your local checkout directly and
 fetches public release notes, changelogs and registry metadata anonymously.
 `drift outdated` is the same: read-only against your working tree, and
-tokenless. ("Read-only" is about your checkout and GitHub, not about the
-machine: verification, on by default, installs each candidate and runs your
-project's own build/typecheck/test in a disposable worktree before reporting
-it — never in the checkout you're looking at. See
-[trust-and-safety.md](docs/trust-and-safety.md#a-compromised-candidate-dependency-during-verification).)
+tokenless.
+
+Both default to Quick Scan: static analysis only — nothing from a dependency
+is ever installed or executed. Pass `--verify` for Deep Verification, which
+installs each candidate and runs your project's own build/typecheck/test in
+a disposable worktree before reporting it — never in the checkout you're
+looking at. See
+[trust-and-safety.md](docs/trust-and-safety.md#a-compromised-candidate-dependency-during-verification)
+and [Quick Scan vs Deep
+Verification](docs/configuration.md#quick-scan-vs-deep-verification).
 A credential is worth setting only if you hit GitHub's anonymous API rate
 limit mid-scan, in which case Drift picks one up on its own from
 `$GITHUB_TOKEN` or a signed-in `gh`:
@@ -207,7 +212,7 @@ package settled.
 
   ✔ @anthropic-ai/sdk 0.68.0 → 0.117.1  Safe for your code · 2 upstream changes, none used here
   ✔ graphql 16.14.2 → 17.0.2  Safe for your code · 1 upstream change, none used here
-  ▲ some-lib 2.1.0 → 3.0.0  Affects your code · 12 sites in 4 files
+  ▲ some-lib 2.1.0 → 3.0.0  Affects your code · 12 sites in 4 files — not deeply verified
   …
 
 Scan — 1 of 14 affect this repo
@@ -220,11 +225,13 @@ Scan — 1 of 14 affect this repo
     npm · package.json
     Review before upgrading. 12 places in this repository use an API that
     some-lib changed.
-    ✔ npm run typecheck, npm test passed with this upgrade installed
     src/client.ts:88  (7 sites)
     src/retry.ts:24   (5 sites)
     · some-lib 3.0.0 release notes
     drift outdated --upgrade some-lib
+
+Static analysis only — not deeply verified. Re-run with --verify to install
+each candidate and run this project's own checks.
 ```
 
 `Wanted` is the newest release your declared range already permits and `Latest`
@@ -299,6 +306,8 @@ They don't behave identically. What each surface actually does:
 | --- | --- | --- | --- |
 | Scan for available upgrades | Yes (`/scan`) | Yes (`drift outdated`) | Yes — on a `schedule` trigger, or `scan-mode: outdated` on manual dispatch; see [`examples/workflows/drift-outdated.yml`](examples/workflows/drift-outdated.yml) |
 | Analyse a dependency change that already happened | Yes | Yes (`drift analyze`) | Yes |
+| Quick Scan (static analysis, nothing installed or run) | Yes — the default | Yes — the default | Yes — the default (`verify-mode: quick`) |
+| Deep Verification (installs the change, runs your own checks) | Yes — "Verify" per package, "Verify all", or `/verify` | Yes — `--verify`, on top of either command | Yes — `verify-mode: deep` |
 | Evidence / localization | Yes | Yes | Yes |
 | Deterministic remediation | Yes | Yes (`drift fix`) | Yes |
 | Fix plans | Yes — shows the plan and asks before applying | Yes — `drift fix --plan` to read, `drift fix` to apply | Yes — applies what `remediation.fixPlans.autoApply` clears, and files the rest for review, since it cannot prompt |
