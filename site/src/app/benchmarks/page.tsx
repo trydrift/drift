@@ -119,6 +119,37 @@ export default function Benchmarks() {
         ))}
 
         <section className="pt-12">
+          <h2 className={`${instrumentSerif.className} text-2xl text-landing`}>What these runs did not measure</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+            Listed because an absent number and a bad number look the same on a results page, and only one of them is a
+            result. None of the following is reported as a zero anywhere above.
+          </p>
+
+          <div className="mt-5 space-y-3">
+            <Weakness title="Repair, on every external corpus">
+              These runs evaluate detection only. Repair can only be judged by the dataset&rsquo;s own oracle — BUMP&rsquo;s
+              published container images, TimeMachine&rsquo;s date-filtered PyPI index, swe-bump-bench&rsquo;s{" "}
+              <code className="font-mono text-[12px]">tsc</code> run after a real install — and the machine that produced
+              these runs has no container runtime. The repair outcomes are <em>absent</em> from the case records rather
+              than recorded as failures: an absent key means the question was not asked, where{" "}
+              <code className="font-mono text-[12px]">false</code> would mean Drift tried and did not manage it.
+            </Weakness>
+
+            <Weakness title="Anything involving a coding agent">
+              Drift&rsquo;s remediation hierarchy ends in a coding-agent handoff. No agent provider was configured for
+              these runs, so no agent tier ran and no agent result is reported — not as zero, and not by quietly leaving
+              the track out of the page. The harness distinguishes &ldquo;the agent was never asked&rdquo; from
+              &ldquo;the agent was asked and failed&rdquo;, and only the second may enter a success rate.
+            </Weakness>
+
+            <Weakness title="Any general claim about an ecosystem">
+              Each result is over the cases named on its card, from one corpus, evaluated on one machine on one date.
+              &ldquo;Drift is X% accurate on Java&rdquo; does not follow from any of them, and is not claimed.
+            </Weakness>
+          </div>
+        </section>
+
+        <section className="pt-12">
           <h2 className={`${instrumentSerif.className} text-2xl text-landing`}>Known weaknesses these runs found</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
             Listed here rather than left in the per-dataset detail, because a benchmark page that only surfaces its good
