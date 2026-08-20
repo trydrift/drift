@@ -2,6 +2,8 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildIndex, unitAtLine, packageNameFromSpecifier } from '../dist/index/metarag.js';
 import { localize } from '../dist/localize/index.js';
+import { analyze } from '../dist/analyze/index.js';
+import { DEFAULT_CONFIG } from '../dist/config/schema.js';
 import { createLogger } from '../dist/util/logger.js';
 
 const logger = createLogger('error');
@@ -61,6 +63,29 @@ export function makeClient(options: Options) {
       file('src/legacy.js', 'javascript', `const { createClient } = require('acme-sdk');`),
     ]);
     assert.ok(index.files[0]!.imports[0]?.bindings.includes('createClient'));
+  });
+
+  test('preserves JavaScript and TypeScript loading forms', () => {
+    const index = buildIndex([
+      file(
+        'src/loads.js',
+        'javascript',
+        `import x from 'pkg';
+const y = require('pkg');
+const z = await import('pkg');
+export { q } from 'pkg';`,
+      ),
+    ]);
+
+    assert.deepEqual(
+      index.files[0]!.imports.map((record) => [record.line, record.loadStyle]),
+      [
+        [1, 'esm-static'],
+        [2, 'commonjs-require'],
+        [3, 'esm-dynamic'],
+        [4, 're-export'],
+      ],
+    );
   });
 
   test('builds a reverse importer map', () => {
@@ -309,6 +334,106 @@ const c = createClient();`,
       sites.length > 0,
       '`\\b@scope/pkg\\b` never matches, because \\b is defined against word characters',
     );
+  });
+
+  test('module-system changes only localize incompatible CommonJS require sites', () => {
+    const files = [
+      file(
+        'src/usage.js',
+        'javascript',
+        `import x from 'pkg';
+const y = require('pkg');
+const z = await import('pkg');
+export { q } from 'pkg';
+const text = "pkg";
+// require('pkg') in a comment`,
+      ),
+    ];
+    const change = {
+      id: 'bc-module',
+      dependency: 'pkg',
+      kind: 'module-system-change' as const,
+      summary: 'The package is now ESM-only and no longer supports `require()`',
+      remediation: 'Use ESM-compatible loading.',
+      symbols: [],
+      moduleSystem: { from: 'dual' as const, to: 'esm' as const, incompatibleUsage: ['require' as const] },
+      confidence: 'high' as const,
+      citations: ['ev_1'],
+    };
+
+    const sites = localize([change], [dep('pkg', 'npm')], buildIndex(files), files, { logger });
+
+    assert.deepEqual(sites.map((site) => site.line), [2]);
+    assert.equal(sites[0]?.matchedSymbol, 'require');
+  });
+
+  test('module-system changes support scoped package require sites', () => {
+    const files = [
+      file('src/usage.js', 'javascript', `const plugin = require('@scope/pkg');`),
+    ];
+    const change = {
+      id: 'bc-module-scoped',
+      dependency: '@scope/pkg',
+      kind: 'module-system-change' as const,
+      summary: 'The package is now ESM-only and no longer supports `require()`',
+      remediation: 'Use ESM-compatible loading.',
+      symbols: [],
+      moduleSystem: { from: 'dual' as const, to: 'esm' as const, incompatibleUsage: ['require' as const] },
+      confidence: 'high' as const,
+      citations: ['ev_1'],
+    };
+
+    const sites = localize([change], [dep('@scope/pkg', 'npm')], buildIndex(files), files, { logger });
+
+    assert.equal(sites.length, 1);
+    assert.equal(sites[0]?.file, 'src/usage.js');
+  });
+
+  test('original ESM-only helper prose regression has no finding, site, or require migration', async () => {
+    const evidence = [{
+      id: 'ev_svelte_like',
+      source: 'changelog' as const,
+      dependency: '@example/plugin',
+      title: '@example/plugin release notes',
+      content: 'perf: switch from debug to obug (smaller, esm-only)',
+      weight: 0.65,
+    }];
+    const changes = [dep('@example/plugin', 'npm')];
+    const breaking = await analyze(changes, evidence, { config: DEFAULT_CONFIG, logger });
+    const files = [
+      file('package.json', 'config', `{"type":"module"}`),
+      file('src/svelte.config.js', 'javascript', `import { vitePreprocess } from '@example/plugin';`),
+    ];
+    const sites = localize(breaking, changes, buildIndex(files), files, { logger });
+
+    assert.equal(breaking.some((change) => change.kind === 'module-system-change'), false);
+    assert.equal(sites.length, 0);
+    assert.equal(breaking.some((change) => /require\(/i.test(change.remediation)), false);
+  });
+
+  test('genuine ESM-only prose localizes require and generates matching remediation', async () => {
+    const evidence = [{
+      id: 'ev_esm',
+      source: 'changelog' as const,
+      dependency: '@example/plugin',
+      title: '@example/plugin release notes',
+      content: 'This package is now ESM-only.',
+      weight: 0.65,
+    }];
+    const changes = [dep('@example/plugin', 'npm')];
+    const breaking = await analyze(changes, evidence, { config: DEFAULT_CONFIG, logger });
+    const files = [
+      file('src/config.cjs', 'javascript', `const { plugin } = require('@example/plugin');`),
+    ];
+    const sites = localize(breaking, changes, buildIndex(files), files, { logger });
+    const moduleChange = breaking.find((change) => change.kind === 'module-system-change');
+
+    assert.ok(moduleChange);
+    assert.deepEqual(moduleChange.symbols, []);
+    assert.match(moduleChange.remediation, /require\('@example\/plugin'\)/);
+    assert.equal(sites.length, 1);
+    assert.equal(sites[0]?.line, 1);
+    assert.equal(sites[0]?.matchedSymbol, 'require');
   });
 
   test('locates a runtime requirement in config, not in source prose', () => {
