@@ -3,6 +3,7 @@ import type { Ecosystem } from '../types.js';
 import { normalizeVersion } from '../detect/version.js';
 import type { RegistryInfo, RepositoryStatus, VersionInfo } from '../evidence/registry.js';
 import type { MaintenanceAssessment, MaintenanceFact } from './types.js';
+import { checkNodeCompatibility, type RuntimeDeclaration } from './runtime.js';
 
 /**
  * Whether this package is still looked after — stated, not scored.
@@ -31,6 +32,14 @@ export interface MaintenanceInput {
   targetVersion: VersionInfo | null;
   /** Evaluated against this instant, so the output is testable. */
   now?: Date;
+  /**
+   * Where this repository itself declares its Node.js version --
+   * `package.json#engines`, `.nvmrc`, Dockerfiles, CI workflows -- so a
+   * raised floor can be checked against this repository instead of merely
+   * flagged for the developer to check by hand. Omitted when that has not
+   * been gathered, in which case the fact falls back to the generic prompt.
+   */
+  repoRuntime?: readonly RuntimeDeclaration[];
 }
 
 export function assessMaintenance(input: MaintenanceInput): MaintenanceAssessment {
@@ -85,7 +94,7 @@ export function assessMaintenance(input: MaintenanceInput): MaintenanceAssessmen
     facts.push({ statement: `The target version was released ${describeAge(targetVersion.releasedAt, now)}.` });
   }
 
-  const runtimeChange = describeRuntimeChange(currentVersion, targetVersion);
+  const runtimeChange = describeRuntimeChange(currentVersion, targetVersion, input.repoRuntime ?? []);
   if (runtimeChange) facts.push(runtimeChange);
 
   const releaseLine = describeReleaseLine(input, latestStable);
@@ -110,6 +119,7 @@ export function assessMaintenance(input: MaintenanceInput): MaintenanceAssessmen
 function describeRuntimeChange(
   current: VersionInfo | null,
   target: VersionInfo | null,
+  repoRuntime: readonly RuntimeDeclaration[],
 ): MaintenanceFact | null {
   const before = current?.runtime;
   const after = target?.runtime;
@@ -120,9 +130,17 @@ function describeRuntimeChange(
   }
   if (before.requirement === after.requirement) return null;
 
+  const concerning = raisesMinimum(before.requirement, after.requirement);
+  const statement = `The required ${after.name} version changed from ${before.requirement} to ${after.requirement}.`;
+  // `repoRuntime` is Node-only (see `findNodeDeclarations`); checking a Python
+  // or Go floor against it would compare two languages' version numbers as if
+  // they meant the same thing.
+  const verified = after.name === 'Node.js' ? describeRuntimeVerification(repoRuntime, after.requirement) : null;
+  if (verified) return { statement: `${statement} ${verified.statement}`, concerning: verified.concerning };
+
   return {
-    statement: `The required ${after.name} version changed from ${before.requirement} to ${after.requirement}. Check this against the runtimes this repository builds and deploys on.`,
-    concerning: raisesMinimum(before.requirement, after.requirement),
+    statement: `${statement} Check this against the runtimes this repository builds and deploys on.`,
+    concerning,
   };
 }
 
@@ -191,4 +209,35 @@ export function describeAge(iso: string, now: Date): string {
   const months = Math.round(days / 30.44);
   if (months < 24) return `about ${months} months ago`;
   return `about ${Math.round(days / 365.25)} years ago`;
+}
+
+/**
+ * Turn a raised Node.js floor from something the reader has to go check into
+ * something Drift already checked, wherever it found this repository's own
+ * declaration of that floor.
+ */
+function describeRuntimeVerification(
+  repoRuntime: readonly RuntimeDeclaration[],
+  requirement: string,
+): { statement: string; concerning: boolean } | null {
+  const results = checkNodeCompatibility(repoRuntime, requirement);
+  if (results.length === 0) return null;
+
+  const incompatible = results.filter((r) => r.verdict === 'incompatible');
+  if (incompatible.length > 0) {
+    const where = incompatible.map((r) => `${r.file} (declares ${r.requirement})`).join(', ');
+    return { statement: `This repository does not satisfy it: ${where}.`, concerning: true };
+  }
+
+  const partial = results.filter((r) => r.verdict === 'partial');
+  if (partial.length > 0) {
+    const where = partial.map((r) => `${r.file} (declares ${r.requirement})`).join(', ');
+    return {
+      statement: `This repository's declared range is only partially compatible: ${where} allows versions the new floor rejects.`,
+      concerning: true,
+    };
+  }
+
+  const where = [...new Set(results.map((r) => r.file))].join(', ');
+  return { statement: `This repository already satisfies it (${where}).`, concerning: false };
 }
