@@ -138,6 +138,7 @@
     }
   },
   "available": 63,
+  "idsOmitted": "mode is \"all\": every available case was selected, and each one appears in cases.jsonl.gz. The list is omitted rather than restating the corpus.",
   "dataset": {
     "id": "swe-bump",
     "title": "swe-bump-bench",
@@ -163,6 +164,5 @@
       ]
     },
     "localPath": "swe-bump-bench"
-  },
-  "idsOmitted": "mode is \"all\": every available case was selected, and each one appears in cases.jsonl.gz. The list is omitted rather than restating the corpus."
+  }
 }

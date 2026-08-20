@@ -10,16 +10,15 @@ What a good result here does *not* establish: No precision and no false-positive
 | --- | --- |
 | Dataset | swe-bump-bench |
 | Source | https://github.com/xeol-io/swe-bump-bench |
-| Dataset version | `unresolved` |
+| Dataset version | `d4504129fd9b536ad5aca2e74f35f5d51e3362e4` |
 | Licence | see the repository |
 | Citation | xeol-io, swe-bump-bench, https://github.com/xeol-io/swe-bump-bench |
 | Ecosystem | npm |
 | Benchmark class | consumer-impact |
-| Drift commit | `ecb41c3a2a4439215c25aa7f402687b636dc2c85` (working tree dirty) |
-| Run date | 2026-08-20T14:37:09.964Z |
-| Re-scored | 2026-08-20T14:52:54.520Z at `aaaa5f8e87` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
-| Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts swe-bump --run-id swe-bump-detection --resume` |
-| Platform | darwin/x64, Node v22.22.0 |
+| Drift commit | `49c081ee5712d59ed3e006b0586145450b1a5ef6` |
+| Run date | 2026-08-20T19:09:44.578Z |
+| Command | `/Users/rudy/.nvm/versions/node/v24.19.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts swe-bump --run-id swe-bump-detection` |
+| Platform | darwin/x64, Node v24.19.0 |
 
 ## Case accounting
 
@@ -29,27 +28,25 @@ Read this before any rate below.
 | --- | --- |
 | Available in the dataset | 63 |
 | Selected for this run (all) | 63 |
-| **Attempted** (this run was interrupted and has not covered its whole selection) | **37** |
-| Scored | 34 |
-| Excluded | 3 |
-| Not yet run | 26 |
+| Scored | 58 |
+| Excluded | 5 |
 | Negative/control cases among the scored | 0 |
 
 Every exclusion, with its reason:
 
 | Reason | Cases |
 | --- | --- |
-| `reproduction-failed` | 2 |
-| `source-unavailable` | 1 |
+| `reproduction-failed` | 3 |
+| `source-unavailable` | 2 |
 
 ## Results
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| affected-repository identification rate | 25/34 (73.5%) | 58.8–88.2% |
-| consumer localization rate | 25/34 (73.5%) | 58.8–88.2% |
-| dependency-update detection rate | 34/34 (100.0%) | 100.0–100.0% |
-| false-safe verdicts | 8/34 (23.5%) | 8.8–38.2% |
+| affected-repository identification rate | 38/58 (65.5%) | 53.4–77.6% |
+| consumer localization rate | 38/58 (65.5%) | 53.4–77.6% |
+| dependency-update detection rate | 58/58 (100.0%) | 100.0–100.0% |
+| false-safe verdicts | 17/58 (29.3%) | 19.0–41.4% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
@@ -61,9 +58,9 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | affected-repository identification rate | consumer localization rate | dependency-update detection rate |
 | --- | --- | --- | --- |
-| label: known-breaking-upgrade | 25/34 (73.5%) | 25/34 (73.5%) | 34/34 (100.0%) |
-| versionToIsRange: false | 2/2 (100.0%) | 2/2 (100.0%) | 2/2 (100.0%) |
-| versionToIsRange: true | 23/32 (71.9%) | 23/32 (71.9%) | 32/32 (100.0%) |
+| label: known-breaking-upgrade | 38/58 (65.5%) | 38/58 (65.5%) | 58/58 (100.0%) |
+| versionToIsRange: false | 3/3 (100.0%) | 3/3 (100.0%) | 3/3 (100.0%) |
+| versionToIsRange: true | 35/55 (63.6%) | 35/55 (63.6%) | 55/55 (100.0%) |
 
 ## What is deliberately not reported
 
@@ -85,7 +82,7 @@ how generously the mapping was written.
 
 | Mapping status | Cases |
 | --- | --- |
-| `exact` | 37 |
+| `exact` | 63 |
 
 ## Ground truth
 
@@ -98,15 +95,15 @@ how generously the mapping was written.
 
 | Tool | Version | Needed for |
 | --- | --- | --- |
-| `node` | v22.22.0 | every npm/TypeScript case, and Drift itself |
-| `npm` | 10.9.4 | installing a TypeScript consumer before its build oracle can run |
+| `node` | v24.19.0 | every npm/TypeScript case, and Drift itself |
+| `npm` | 11.12.1 | installing a TypeScript consumer before its build oracle can run |
 | `git` | git version 2.39.5 (Apple Git-154) | checking out an original repository at the exact evaluated commit |
 | `java` | openjdk version "19" 2022-09-20 | any Java case |
-| `mvn` | **not installed** | BUMP's Maven oracle, and building Roseau from its replication kit |
+| `mvn` | Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937) | BUMP's Maven oracle, and building Roseau from its replication kit |
 | `docker` | **not installed** | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
-| `python3` | Python 3.9.6 | any Python case |
+| `python3` | Python 3.14.3 | any Python case |
 | `uv` | **not installed** | TimeMachine's documented environment setup |
-| `japicmp` | SYNOPSIS | Drift's Java API-surface diff, which its maven capability declares it requires |
+| `japicmp` | **not installed** | Drift's Java API-surface diff, which its maven capability declares it requires |
 
 ## Reproduction
 

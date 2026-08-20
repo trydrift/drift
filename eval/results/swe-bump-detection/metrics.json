@@ -3,34 +3,34 @@
   "datasetClass": "consumer-impact",
   "available": 63,
   "selected": 63,
-  "attempted": 37,
-  "notRun": 26,
-  "scored": 34,
+  "attempted": 63,
+  "notRun": 0,
+  "scored": 58,
   "excluded": {
-    "source-unavailable": 1,
-    "reproduction-failed": 2
+    "source-unavailable": 2,
+    "reproduction-failed": 3
   },
   "missingRequirements": {},
   "rates": {
     "dependency-update detection rate": {
-      "numerator": 34,
-      "denominator": 34,
+      "numerator": 58,
+      "denominator": 58,
       "value": 1
     },
     "affected-repository identification rate": {
-      "numerator": 25,
-      "denominator": 34,
-      "value": 0.7352941176470589
+      "numerator": 38,
+      "denominator": 58,
+      "value": 0.6551724137931034
     },
     "consumer localization rate": {
-      "numerator": 25,
-      "denominator": 34,
-      "value": 0.7352941176470589
+      "numerator": 38,
+      "denominator": 58,
+      "value": 0.6551724137931034
     },
     "false-safe verdicts": {
-      "numerator": 8,
-      "denominator": 34,
-      "value": 0.23529411764705882
+      "numerator": 17,
+      "denominator": 58,
+      "value": 0.29310344827586204
     }
   },
   "refusals": [
@@ -54,52 +54,52 @@
   "breakdown": {
     "label: known-breaking-upgrade": {
       "dependency-update detection rate": {
-        "numerator": 34,
-        "denominator": 34,
+        "numerator": 58,
+        "denominator": 58,
         "value": 1
       },
       "affected-repository identification rate": {
-        "numerator": 25,
-        "denominator": 34,
-        "value": 0.7352941176470589
+        "numerator": 38,
+        "denominator": 58,
+        "value": 0.6551724137931034
       },
       "consumer localization rate": {
-        "numerator": 25,
-        "denominator": 34,
-        "value": 0.7352941176470589
+        "numerator": 38,
+        "denominator": 58,
+        "value": 0.6551724137931034
       }
     },
     "versionToIsRange: true": {
       "dependency-update detection rate": {
-        "numerator": 32,
-        "denominator": 32,
+        "numerator": 55,
+        "denominator": 55,
         "value": 1
       },
       "affected-repository identification rate": {
-        "numerator": 23,
-        "denominator": 32,
-        "value": 0.71875
+        "numerator": 35,
+        "denominator": 55,
+        "value": 0.6363636363636364
       },
       "consumer localization rate": {
-        "numerator": 23,
-        "denominator": 32,
-        "value": 0.71875
+        "numerator": 35,
+        "denominator": 55,
+        "value": 0.6363636363636364
       }
     },
     "versionToIsRange: false": {
       "dependency-update detection rate": {
-        "numerator": 2,
-        "denominator": 2,
+        "numerator": 3,
+        "denominator": 3,
         "value": 1
       },
       "affected-repository identification rate": {
-        "numerator": 2,
-        "denominator": 2,
+        "numerator": 3,
+        "denominator": 3,
         "value": 1
       },
       "consumer localization rate": {
-        "numerator": 2,
-        "denominator": 2,
+        "numerator": 3,
+        "denominator": 3,
         "value": 1
       }
     }
@@ -111,22 +111,22 @@
       "iterations": 2000
     },
     "affected-repository identification rate": {
-      "low": 0.5882352941176471,
-      "high": 0.8823529411764706,
+      "low": 0.5344827586206896,
+      "high": 0.7758620689655172,
       "iterations": 2000
     },
     "consumer localization rate": {
-      "low": 0.5882352941176471,
-      "high": 0.8823529411764706,
+      "low": 0.5344827586206896,
+      "high": 0.7758620689655172,
       "iterations": 2000
     },
     "false-safe verdicts": {
-      "low": 0.08823529411764706,
-      "high": 0.38235294117647056,
+      "low": 0.1896551724137931,
+      "high": 0.41379310344827586,
       "iterations": 2000
     }
   },
   "mappingCoverage": {
-    "exact": 37
+    "exact": 63
   }
 }
