@@ -213,3 +213,17 @@ test('an interval is computed over the cases its outcome was asked of, not over 
   assert.equal(metrics.rates['affected-repository identification rate']!.denominator, 25);
   assert.ok(metrics.intervals['affected-repository identification rate']);
 });
+
+test('the false-safe rate gets an interval like any other rate over enough cases', () => {
+  // Regression: this printed "not reported (under 20 cases)" beside a rate
+  // over 39 cases, because the safety metric was not in the interval loop. A
+  // wrong explanation is worse than a missing interval, and the safety number
+  // is the one a reader scrutinises hardest.
+  const cases = Array.from({ length: 39 }, (_, index) =>
+    result({ caseId: `c${index}`, outcomes: { falseSafe: index < 16 } }),
+  );
+  const metrics = computeMetrics({ dataset: DATASETS['bump']!, available: 571, results: cases });
+
+  assert.deepEqual(metrics.rates['false-safe verdicts'], { numerator: 16, denominator: 39, value: 16 / 39 });
+  assert.ok(metrics.intervals['false-safe verdicts'], 'thirty-nine cases support an interval');
+});

@@ -116,6 +116,11 @@
       "low": 0.4492753623188406,
       "high": 0.6811594202898551,
       "iterations": 2000
+    },
+    "false-safe verdicts": {
+      "low": 0.014492753623188406,
+      "high": 0.11594202898550725,
+      "iterations": 2000
     }
   },
   "mappingCoverage": {

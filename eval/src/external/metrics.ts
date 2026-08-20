@@ -316,7 +316,12 @@ function breakdownOf(scored: readonly ExternalCaseResult[]): Record<string, Reco
  */
 function intervalsFor(scored: readonly ExternalCaseResult[]): Record<string, { low: number; high: number; iterations: number }> {
   const out: Record<string, { low: number; high: number; iterations: number }> = {};
-  for (const [key, label] of Object.entries(OUTCOME_METRICS)) {
+  // The false-safe rate is included here even though it is not in
+  // `OUTCOME_METRICS`, which is not cosmetic: without it the report printed
+  // "not reported (under 20 cases)" beside a rate over 39 cases. A false
+  // explanation in a report whose subject is honesty is worse than no
+  // interval, and the safety number is the one a reader scrutinises hardest.
+  for (const [key, label] of Object.entries({ ...OUTCOME_METRICS, falseSafe: 'false-safe verdicts' })) {
     const asked = scored
       .map((result) => result.outcomes[key as keyof typeof result.outcomes])
       .filter((value): value is boolean => value !== undefined);
