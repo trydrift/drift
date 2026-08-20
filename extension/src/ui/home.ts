@@ -480,13 +480,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
    */
   async clearHistory(): Promise<void> {
     const entries = this.history.list();
-    if (entries.length === 0) {
+    const currentUnsaved = !this.session.isEmpty && !entries.some((entry) => entry.id === this.conversationId);
+    const count = entries.length + (currentUnsaved ? 1 : 0);
+
+    if (count === 0) {
       void vscode.window.showInformationMessage('Drift: there is no saved conversation history to clear.');
       return;
     }
 
     const choice = await vscode.window.showWarningMessage(
-      `Delete ${entries.length} saved Drift conversation${entries.length === 1 ? '' : 's'}?`,
+      `Delete ${count} Drift conversation${count === 1 ? '' : 's'}?`,
       {
         modal: true,
         detail:
@@ -500,8 +503,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     this.conversationId = newConversationId();
     this.session.clear();
     this.setDraft('');
+    this.cancelPendingSave();
     void vscode.window.showInformationMessage(
-      `Drift: deleted ${entries.length} saved conversation${entries.length === 1 ? '' : 's'}.`,
+      `Drift: deleted ${count} conversation${count === 1 ? '' : 's'}.`,
     );
   }
 
@@ -521,6 +525,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       this.saveTimer = null;
       void this.saveConversation();
     }, 2000);
+  }
+
+  private cancelPendingSave(): void {
+    if (!this.saveTimer) return;
+    clearTimeout(this.saveTimer);
+    this.saveTimer = null;
   }
 
   /** The draft belongs to the host only when the host sets it. */

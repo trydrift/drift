@@ -55,6 +55,7 @@ export class TreeItem {
 }
 
 export const TreeItemCollapsibleState = { None: 0, Collapsed: 1, Expanded: 2 } as const;
+export const QuickPickItemKind = { Separator: -1 } as const;
 
 export class Range {
   constructor(
@@ -174,6 +175,15 @@ export const workspace = {
   textDocuments: [] as { uri: { fsPath: string }; getText(): string }[],
   onDidChangeTextDocument: () => ({ dispose: () => undefined }),
   onDidChangeConfiguration: () => ({ dispose: () => undefined }),
+  onDidSaveTextDocument: () => ({ dispose: () => undefined }),
+  onDidCreateFiles: () => ({ dispose: () => undefined }),
+  onDidDeleteFiles: () => ({ dispose: () => undefined }),
+  onDidRenameFiles: () => ({ dispose: () => undefined }),
+  createFileSystemWatcher: () => ({
+    onDidChange: () => ({ dispose: () => undefined }),
+    onDidCreate: () => ({ dispose: () => undefined }),
+    dispose: () => undefined,
+  }),
   registerTextDocumentContentProvider: () => ({ dispose: () => undefined }),
   applyEdit: async (edit: WorkspaceEdit) => {
     for (const entry of edit.edits) writeFileSync(entry.uri.fsPath, entry.text);
