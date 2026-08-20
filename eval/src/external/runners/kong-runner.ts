@@ -28,6 +28,8 @@ export async function runKong(context: RunnerContext): Promise<RunnerOutput> {
   const results: ExternalCaseResult[] = [];
   for (const record of corpus.records) {
     if (!wanted.has(record.id)) continue;
+    // Recorded by an earlier attempt at this run id. See `--resume`.
+    if (context.alreadyRecorded.has(record.id)) continue;
     const started = Date.now();
     const prediction = await predictKong(record);
     results.push(

@@ -111,3 +111,48 @@ test('the report names the build that produced the observations, not the one tha
     await rm(root, { recursive: true, force: true });
   }
 });
+
+/*
+ * Resume.
+ *
+ * The property that matters is that resuming produces one artifact covering
+ * the whole selection with each case exactly once. A resume that duplicated a
+ * case would inflate every denominator it appears in, and a resume that
+ * dropped the earlier attempt's work would make the feature pointless.
+ */
+test('a resumed run carries the earlier attempt forward exactly once', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'drift-resume-test-'));
+  try {
+    const dataset = DATASETS['roseau']!;
+    const earlier: ExternalCaseResult[] = [
+      { ...CASE, caseId: 'a' },
+      { ...CASE, caseId: 'b' },
+    ];
+    const thisAttempt: ExternalCaseResult[] = [{ ...CASE, caseId: 'c' }];
+    const results = [...earlier, ...thisAttempt];
+
+    await writeRun({
+      runId: 'resumed',
+      dataset,
+      datasetVersion: 'doi',
+      selection: select([
+        { id: 'a', strata: [] },
+        { id: 'b', strata: [] },
+        { id: 'c', strata: [] },
+      ]),
+      environment: { capturedAt: 'now', platform: 'test', arch: 'test', node: 'v0', tools: [] },
+      results,
+      metrics: computeMetrics({ dataset, available: 3, results }),
+      root,
+    });
+
+    const metrics = JSON.parse(
+      await readFile(join(resultsDir('resumed', root), 'metrics.json'), 'utf8'),
+    ) as { selected: number; scored: number };
+    assert.equal(metrics.selected, 3, 'the artifact covers the whole selection');
+    assert.equal(metrics.scored, 3);
+    assert.equal(new Set(results.map((entry) => entry.caseId)).size, results.length, 'and no case appears twice');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

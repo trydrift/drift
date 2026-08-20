@@ -42,6 +42,8 @@ export async function runTimemachine(context: RunnerContext): Promise<RunnerOutp
   for (const task of tasks) {
     const id = `${task.repo_name}@${task.commit_hash.slice(0, 12)}`;
     if (!wanted.has(id)) continue;
+    // Recorded by an earlier attempt at this run id. See `--resume`.
+    if (context.alreadyRecorded.has(id)) continue;
     const started = Date.now();
     try {
       const prediction = await withDeadline(() => predictTimemachine(task));

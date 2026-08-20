@@ -30,6 +30,8 @@ export async function runBump(context: RunnerContext): Promise<RunnerOutput> {
   };
   for (const record of records) {
     if (!wanted.has(record.breakingCommit)) continue;
+    // Recorded by an earlier attempt at this run id. See `--resume`.
+    if (context.alreadyRecorded.has(record.breakingCommit)) continue;
     const started = Date.now();
     try {
       const prediction = await withDeadline(() => predictBump(record));

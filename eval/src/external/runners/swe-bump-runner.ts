@@ -30,6 +30,8 @@ export async function runSweBump(context: RunnerContext): Promise<RunnerOutput> 
   };
   for (const task of tasks) {
     if (!wanted.has(task.id)) continue;
+    // Recorded by an earlier attempt at this run id. See `--resume`.
+    if (context.alreadyRecorded.has(task.id)) continue;
     const started = Date.now();
     try {
       const prediction = await withDeadline(() => predictSweBump(task));

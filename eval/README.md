@@ -553,6 +553,11 @@ npm run eval:external -- swe-bump
 npm run eval:external -- timemachine --experiment verified
 npm run eval:external -- bump --limit 40 --seed 20260819
 
+# Continue a run that was interrupted. Cases the earlier attempt recorded are
+# skipped and carried into the finished artifact, so an interruption two thirds
+# of the way through a multi-hour sweep does not mean starting over.
+npm run eval:external -- swe-bump --run-id swe-bump-detection --resume
+
 # Recompute a past run's metrics and report from its own artifacts. Offline,
 # free, and the reason a metric fix does not require re-running anything.
 npm run eval:external -- --rescore <run-id>

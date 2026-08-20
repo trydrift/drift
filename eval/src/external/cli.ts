@@ -45,6 +45,20 @@ export interface ExternalRunOptions {
    * offline.
    */
   rescore?: string;
+  /**
+   * Skip cases a previous attempt at this run id already recorded.
+   *
+   * These runs take hours against the live network, and an interruption two
+   * thirds of the way through should not mean starting over. The checkpoint
+   * file is the resume log: a case in it has a recorded observation, and
+   * re-running it would spend an hour re-deriving results already on disk.
+   *
+   * Deliberately keyed on the run id rather than the dataset, so resuming is
+   * always resuming *that run* — one whose selection, seed and dataset version
+   * are already fixed on disk — and cannot silently merge observations from
+   * two differently-parameterised sweeps into one artifact.
+   */
+  resume?: boolean;
   ids?: string[];
   limit?: number;
   seed?: number;
@@ -75,6 +89,13 @@ export interface RunnerContext {
   options: ExternalRunOptions;
   /** Applies the run's `--ids` / `--limit` / `--seed` to a candidate list, and records the choice. */
   choose: (candidates: readonly Selectable[]) => ReturnType<typeof select>;
+  /**
+   * Case ids a previous attempt at this run already recorded, when `--resume`
+   * is set. Empty otherwise. A runner skips these and the CLI folds their
+   * stored results back in, so the finished artifact covers the whole
+   * selection regardless of how many attempts it took.
+   */
+  alreadyRecorded: ReadonlySet<string>;
   /**
    * Appends one finished case to `cases.partial.jsonl` before the run ends.
    *
@@ -107,6 +128,17 @@ const RUNNERS: Record<string, Runner> = {
   roseau: runRoseau,
   timemachine: runTimemachine,
 };
+
+/** Every case a previous attempt recorded, or `[]` when there is no checkpoint. */
+async function readPartial(path: string): Promise<ExternalCaseResult[]> {
+  if (!existsSync(path)) return [];
+  const results: ExternalCaseResult[] = [];
+  const stream = createInterface({ input: createReadStream(path) });
+  for await (const line of stream) {
+    if (line.trim().length > 0) results.push(JSON.parse(line) as ExternalCaseResult);
+  }
+  return results;
+}
 
 /**
  * Recompute a past run's metrics and report from its stored per-case results.
@@ -208,11 +240,18 @@ export async function runExternal(options: ExternalRunOptions): Promise<string> 
   const partialPath = join(resultsDir(runId, options.outRoot), 'cases.partial.jsonl');
   await mkdir(resultsDir(runId, options.outRoot), { recursive: true });
 
+  const carried = options.resume ? await readPartial(partialPath) : [];
+  const alreadyRecorded = new Set(carried.map((result) => result.caseId));
+  if (carried.length > 0) {
+    process.stderr.write(`[eval:external] resuming ${runId}: ${carried.length} case(s) already recorded\n`);
+  }
+
   let selection = select([], { seed: options.seed ?? 20260819 });
   const context: RunnerContext = {
     dataset,
     datasetRoot,
     options,
+    alreadyRecorded,
     checkpoint: async (result) => {
       await appendFile(partialPath, `${JSON.stringify(result)}\n`, 'utf8');
     },
@@ -228,10 +267,14 @@ export async function runExternal(options: ExternalRunOptions): Promise<string> 
 
   const [environment, output] = await Promise.all([probeEnvironment(), runner(context)]);
 
+  // Carried-forward cases first, then this attempt's, so the finished artifact
+  // covers the whole selection however many attempts it took.
+  const results = [...carried, ...output.results];
+
   const metrics = computeMetrics({
     dataset,
     available: output.available,
-    results: output.results,
+    results,
     ...(output.baseline ? { baseline: output.baseline } : {}),
   });
 
@@ -241,7 +284,7 @@ export async function runExternal(options: ExternalRunOptions): Promise<string> 
     datasetVersion: output.datasetVersion,
     selection,
     environment,
-    results: output.results,
+    results,
     metrics,
     notes: [options.notes, output.notes].filter(Boolean).join('\n\n'),
     root: options.outRoot,
@@ -261,6 +304,7 @@ export function parseArgs(argv: readonly string[]): ExternalRunOptions {
   if (!datasetId && !rescoring) {
     throw new Error(
       `Usage: npm run eval:external -- <dataset> [--ids a,b] [--limit N] [--seed N] [--experiment NAME]\n` +
+        `       npm run eval:external -- <dataset> --run-id <id> --resume\n` +
         `       npm run eval:external -- --rescore <run-id>\n` +
         `Datasets: ${Object.keys(DATASETS).sort().join(', ')}`,
     );
@@ -311,6 +355,9 @@ export function parseArgs(argv: readonly string[]): ExternalRunOptions {
       case '--rescore':
         options.rescore = value;
         index += 1;
+        break;
+      case '--resume':
+        options.resume = true;
         break;
       default:
         throw new Error(`Unknown flag "${flag}".`);
