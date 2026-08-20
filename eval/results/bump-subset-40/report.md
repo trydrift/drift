@@ -15,11 +15,10 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Frank Reyes et al., "BUMP: A Benchmark of Reproducible Breaking Dependency Updates", arXiv:2401.09906; data at https://github.com/chains-project/bump, archive at DOI 10.5281/zenodo.10041883. |
 | Ecosystem | maven |
 | Benchmark class | consumer-impact |
-| Drift commit | `f887b6fee92e04f2714d5f009f95cf3267e15036` (working tree dirty) |
-| Run date | 2026-08-20T05:19:55.347Z |
-| Re-scored | 2026-08-20T14:51:47.769Z at `20eccc0dc0` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
-| Command | `/Users/rudy/.nvm/versions/node/v22.22.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts bump --limit 40 --seed 20260819 --run-id bump-subset-40` |
-| Platform | darwin/x64, Node v22.22.0 |
+| Drift commit | `aa6d136b48f5c9c317e566a296e3893cbdc817ec` |
+| Run date | 2026-08-20T22:37:33.741Z |
+| Command | `/Users/rudy/.nvm/versions/node/v24.19.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts bump --limit 40 --seed 20260819 --run-id bump-subset-40` |
+| Platform | darwin/x64, Node v24.19.0 |
 
 ## Case accounting
 
@@ -96,13 +95,13 @@ how generously the mapping was written.
 
 | Tool | Version | Needed for |
 | --- | --- | --- |
-| `node` | v22.22.0 | every npm/TypeScript case, and Drift itself |
-| `npm` | 10.9.4 | installing a TypeScript consumer before its build oracle can run |
+| `node` | v24.19.0 | every npm/TypeScript case, and Drift itself |
+| `npm` | 11.12.1 | installing a TypeScript consumer before its build oracle can run |
 | `git` | git version 2.39.5 (Apple Git-154) | checking out an original repository at the exact evaluated commit |
 | `java` | openjdk version "19" 2022-09-20 | any Java case |
-| `mvn` | **not installed** | BUMP's Maven oracle, and building Roseau from its replication kit |
+| `mvn` | Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937) | BUMP's Maven oracle, and building Roseau from its replication kit |
 | `docker` | **not installed** | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
-| `python3` | Python 3.9.6 | any Python case |
+| `python3` | Python 3.14.3 | any Python case |
 | `uv` | **not installed** | TimeMachine's documented environment setup |
 | `japicmp` | SYNOPSIS | Drift's Java API-surface diff, which its maven capability declares it requires |
 
