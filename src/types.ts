@@ -230,8 +230,12 @@ export type BreakingChangeKind =
   | 'required-field-added'
   | 'default-change'
   | 'config-change'
+  | 'module-system-change'
   | 'runtime-requirement'
   | 'unknown';
+
+export type ModuleSystem = 'commonjs' | 'esm' | 'dual';
+export type ModuleIncompatibleUsage = 'require' | 'static-import' | 'dynamic-import' | 're-export';
 
 /**
  * How sure Drift is that this is real and actionable.
@@ -293,6 +297,20 @@ export interface BreakingChange {
   symbols: string[];
   /** Replacement identifiers when the change is a rename/move. */
   replacementSymbols?: string[];
+  /**
+   * Structured package loading compatibility semantics.
+   *
+   * Package-wide module changes are not symbol changes. A package becoming
+   * ESM-only affects CommonJS loading sites, not every import/reference to the
+   * package name. This metadata lets localization match the consumer syntax
+   * that is actually incompatible instead of smuggling the package name through
+   * `symbols`.
+   */
+  moduleSystem?: {
+    from?: ModuleSystem;
+    to?: ModuleSystem;
+    incompatibleUsage: ModuleIncompatibleUsage[];
+  };
   /**
    * Upstream confidence — did this change really happen?
    *

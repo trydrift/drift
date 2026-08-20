@@ -85,8 +85,44 @@ describe('prose rules', () => {
 
   test('catches an ESM-only migration, which renames no export', () => {
     const matches = matchProse('## This package is now pure ESM');
-    assert.equal(matches[0]?.kind, 'config-change');
+    assert.equal(matches[0]?.kind, 'module-system-change');
     assert.deepEqual(matches[0]?.symbols, [], 'a package-wide change names no symbol');
+    assert.deepEqual(matches[0]?.moduleSystem?.incompatibleUsage, ['require']);
+  });
+
+  test('does not treat dependency/helper ESM prose as a package ESM migration', () => {
+    const negatives = [
+      'perf: switch from debug to obug (smaller, esm-only)',
+      'switch to an esm-only dependency',
+      'use `foo`, which is now ESM-only',
+      'upgraded internal helper to an ESM-only package',
+    ];
+
+    for (const text of negatives) {
+      assert.equal(
+        matchProse(text).some((match) => match.kind === 'module-system-change'),
+        false,
+        text,
+      );
+    }
+  });
+
+  test('recognizes package-level CommonJS compatibility announcements', () => {
+    const positives = [
+      'This package is now pure ESM',
+      'The package is now ESM-only',
+      'Dropped CommonJS support',
+      'CommonJS is no longer supported',
+      'require() is no longer supported',
+    ];
+
+    for (const text of positives) {
+      assert.equal(
+        matchProse(text).some((match) => match.kind === 'module-system-change'),
+        true,
+        text,
+      );
+    }
   });
 
   test('catches "Required Node.js >=14.16", not just "now requires"', () => {
@@ -104,6 +140,11 @@ describe('prose rules', () => {
     const passages = extractBreakingPassages(body);
     assert.ok(passages.some((p) => /pure ESM/i.test(p)));
     assert.ok(passages.some((p) => /Required Node\.js/i.test(p)));
+  });
+
+  test('does not extract bare dependency/helper esm-only prose as breaking passage', () => {
+    const passages = extractBreakingPassages('- perf: switch from debug to obug (smaller, esm-only)');
+    assert.equal(passages.length, 0);
   });
 
   test('requires backticks, so prose does not become a search symbol', () => {
