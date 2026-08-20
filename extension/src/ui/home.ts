@@ -59,6 +59,7 @@ import {
   reanalyzeUpgrade,
   scanUpgrades,
   upgradeCommandFor,
+  verifyUpgradeCandidates,
   severityOf,
   type ManagerPreferences,
   type UncheckedDependency,
@@ -129,6 +130,10 @@ type Incoming =
   | { type: 'pickVersion'; id: string }
   | { type: 'selectVersion'; id: string; version: string }
   | { type: 'recheck'; id: string }
+  /** Deep Verification for one package's row — see `verifyOne`. */
+  | { type: 'verifyOne'; id: string }
+  /** Deep Verification for every eligible row on screen — see `verifyAll`. */
+  | { type: 'verifyAll' }
   | { type: 'installTool'; id: string; value: string }
   | { type: 'upgrade'; id: string; mode: 'safe' | 'force' }
   | { type: 'fixPackage'; id: string }
@@ -729,6 +734,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       case 'recheck':
         await this.recheck(message.id);
         return;
+      case 'verifyOne':
+        await this.verifyOne(message.id);
+        return;
+      case 'verifyAll':
+        await this.verifyAll();
+        return;
       case 'installTool':
         await this.installTool(message.id, message.value);
         return;
@@ -1318,6 +1329,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
             root: ctx.root,
             repo: ctx.repo,
             managers,
+            // Quick Scan: the panel's default scan never installs anything or
+            // runs this repository's own checks. Deep Verification is a
+            // separate, explicit action — see `verifyOne`/`verifyAll` — so a
+            // developer sees static results immediately and chooses per
+            // package, or all at once, whether to pay for the real thing.
+            verify: { enabled: false },
             output: this.output,
             // Every direct dependency, every time. What counts as a dependency
             // worth checking is a settings question — `drift.analysis.includeDev`
@@ -1619,6 +1636,96 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     const candidate = this.candidates.get(id);
     if (!candidate) return;
     await this.retarget(id, candidate.selected, { refreshVersions: true });
+  }
+
+  /**
+   * Deep Verification for one row: install this candidate in a throwaway
+   * worktree and run this project's own checks against it.
+   *
+   * Its own `this.run()` call, separate from the Quick Scan that produced
+   * `candidate` — Stop during this cancels only this verification, and the
+   * rest of `this.candidates` (including this one, if it never finishes) is
+   * left exactly as the scan reported it. Nothing here re-runs the static
+   * analysis that already found `candidate`'s evidence and impact sites.
+   */
+  private async verifyOne(id: string): Promise<void> {
+    const candidate = this.candidates.get(id);
+    if (!candidate) return;
+    await this.verifyCandidates([candidate], `Verifying ${candidate.name}`);
+  }
+
+  /** Deep Verification for every row that hasn't been measured yet. */
+  private async verifyAll(): Promise<void> {
+    const eligible = [...this.candidates.values()].filter(
+      (c) => !c.verification && c.status !== 'pending' && c.status !== 'checking' && c.status !== 'upgrading',
+    );
+    if (eligible.length === 0) {
+      this.session.notice('info', 'Nothing left to verify — every package has already been checked or measured.');
+      return;
+    }
+    await this.verifyCandidates(eligible, `Verifying ${eligible.length} package${eligible.length === 1 ? '' : 's'}`);
+  }
+
+  private async verifyCandidates(targets: UpgradeCandidate[], label: string): Promise<void> {
+    const ctx = await this.context();
+    if (!ctx) return;
+
+    const byRoot = new Map<string, { ctx: WorkspaceContext; candidates: UpgradeCandidate[] }>();
+    for (const candidate of targets) {
+      const candidateCtx = await this.contextForCandidate(candidate, ctx);
+      if (!candidateCtx.config.verify.enabled) {
+        this.session.notice(
+          'warn',
+          `Deep Verification is disabled for ${candidate.repoLabel ?? 'this repository'} (\`verify.enabled: false\` in drift.yml).`,
+        );
+        continue;
+      }
+      const entry = byRoot.get(candidateCtx.root);
+      if (entry) entry.candidates.push(candidate);
+      else byRoot.set(candidateCtx.root, { ctx: candidateCtx, candidates: [candidate] });
+    }
+    if (byRoot.size === 0) return;
+
+    const step = this.session.step(label, { key: 'verify' });
+
+    await this.run(async (token) => {
+      for (const [root, { ctx: candidateCtx, candidates }] of byRoot) {
+        for (const candidate of candidates) {
+          this.candidates.set(candidate.id, { ...candidate, status: 'checking', phase: 'Waiting to be installed and tested' });
+        }
+        this.state.setCandidates([...this.candidates.values()]);
+        this.refreshPackageList();
+
+        try {
+          await verifyUpgradeCandidates({
+            root,
+            candidates,
+            config: candidateCtx.config,
+            token,
+            onProgress: ({ phase, detail, done, total }) => step.progress(phase, detail, done, total),
+            onCandidate: (verified) => {
+              this.candidates.set(verified.id, verified);
+              this.state.setCandidates([...this.candidates.values()]);
+              this.refreshPackageList();
+            },
+          });
+        } catch (err) {
+          this.session.notice('error', (err as Error).message);
+        }
+      }
+
+      const verified = targets.filter((c) => this.candidates.get(c.id)?.verification?.status === 'passed').length;
+      const failed = targets.filter((c) => this.candidates.get(c.id)?.verification?.status === 'failed').length;
+      if (token.isCancellationRequested) {
+        step.fail('Deep Verification stopped — the packages it never reached fall back to their Quick Scan result.');
+      } else {
+        step.done(
+          `Verified ${targets.length} package${targets.length === 1 ? '' : 's'}` +
+            (failed > 0 ? ` · ${failed} breaking` : '') +
+            (verified > 0 ? ` · ${verified} safe` : ''),
+        );
+      }
+    });
   }
 
   private async installTool(id: string, requestId: string): Promise<void> {
