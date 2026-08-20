@@ -37,6 +37,8 @@ export interface CodeUnit {
 }
 
 /** An import of an external module, with the names it brings into scope. */
+export type JsLoadStyle = 'esm-static' | 'commonjs-require' | 'esm-dynamic' | 're-export';
+
 export interface ImportRecord {
   /** The module specifier exactly as written, e.g. `@scope/pkg/sub`. */
   specifier: string;
@@ -45,6 +47,8 @@ export interface ImportRecord {
   /** Names bound locally by this import. `*` for namespace/wildcard imports. */
   bindings: string[];
   line: number;
+  /** JavaScript/TypeScript loading form, when this import came from JS syntax. */
+  loadStyle?: JsLoadStyle;
   /**
    * Every name this import should be findable under, `packageName` included.
    *
@@ -520,6 +524,7 @@ function extractJsImports(content: string): ImportRecord[] {
       packageName: packageNameFromSpecifier(specifier),
       bindings,
       line: lineOf(match.index ?? 0),
+      loadStyle: 'esm-static',
     });
   }
 
@@ -533,6 +538,7 @@ function extractJsImports(content: string): ImportRecord[] {
       packageName: packageNameFromSpecifier(specifier),
       bindings: requireBindings(match[1]!),
       line: lineOf(match.index ?? 0),
+      loadStyle: 'commonjs-require',
     });
   }
 
@@ -545,6 +551,7 @@ function extractJsImports(content: string): ImportRecord[] {
       packageName: packageNameFromSpecifier(specifier),
       bindings: [],
       line: lineOf(match.index ?? 0),
+      loadStyle: 'esm-dynamic',
     });
   }
 
@@ -562,6 +569,7 @@ function extractJsImports(content: string): ImportRecord[] {
       bindings: importBindings(undefined, match[1], undefined, undefined),
       line: lineOf(match.index ?? 0),
       reExport: true,
+      loadStyle: 're-export',
     });
   }
 
@@ -576,6 +584,7 @@ function extractJsImports(content: string): ImportRecord[] {
       bindings: ['*', match[1]!],
       line: lineOf(match.index ?? 0),
       reExport: true,
+      loadStyle: 're-export',
     });
   }
 
@@ -593,6 +602,7 @@ function extractJsImports(content: string): ImportRecord[] {
       bindings: ['*'],
       line: lineOf(match.index ?? 0),
       reExport: true,
+      loadStyle: 're-export',
     });
   }
 

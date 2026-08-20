@@ -175,9 +175,24 @@ export interface StructuredFinding {
    * class" (add `new` everywhere) are opposite fixes for the same finding
    * code, and neither is discoverable from `before`/`after` alone without
    * re-parsing them.
-   */
+  */
   fromKind?: string;
   toKind?: string;
+  moduleSystem?: {
+    from?: ModuleSystem;
+    to?: ModuleSystem;
+    incompatibleUsage: ModuleIncompatibleUsage[];
+    /**
+     * Exact consumer module specifiers affected by this finding. Absent means
+     * the package-wide loading mode is incompatible.
+     */
+    affectedSpecifiers?: string[];
+    /**
+     * Consumer module specifier patterns affected by this finding, using npm's
+     * `*` subpath export wildcard shape, e.g. `pkg/features/*`.
+     */
+    affectedSpecifierPatterns?: string[];
+  };
 }
 
 /**
@@ -230,8 +245,12 @@ export type BreakingChangeKind =
   | 'required-field-added'
   | 'default-change'
   | 'config-change'
+  | 'module-system-change'
   | 'runtime-requirement'
   | 'unknown';
+
+export type ModuleSystem = 'commonjs' | 'esm' | 'dual';
+export type ModuleIncompatibleUsage = 'require' | 'static-import' | 'dynamic-import' | 're-export';
 
 /**
  * How sure Drift is that this is real and actionable.
@@ -293,6 +312,30 @@ export interface BreakingChange {
   symbols: string[];
   /** Replacement identifiers when the change is a rename/move. */
   replacementSymbols?: string[];
+  /**
+   * Structured package loading compatibility semantics.
+   *
+   * Package-wide module changes are not symbol changes. A package becoming
+   * ESM-only affects CommonJS loading sites, not every import/reference to the
+   * package name. This metadata lets localization match the consumer syntax
+   * that is actually incompatible instead of smuggling the package name through
+   * `symbols`.
+   */
+  moduleSystem?: {
+    from?: ModuleSystem;
+    to?: ModuleSystem;
+    incompatibleUsage: ModuleIncompatibleUsage[];
+    /**
+     * Exact consumer module specifiers affected by this finding. Absent means
+     * every specifier under the package identity is affected.
+     */
+    affectedSpecifiers?: string[];
+    /**
+     * Consumer module specifier patterns affected by this finding, using npm's
+     * `*` subpath export wildcard shape, e.g. `pkg/features/*`.
+     */
+    affectedSpecifierPatterns?: string[];
+  };
   /**
    * Upstream confidence — did this change really happen?
    *

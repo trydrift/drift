@@ -85,6 +85,13 @@ describe('package manager ambiguity', () => {
 describe('upgrade commands', () => {
   const upgrade = (id: string, kind = 'runtime') =>
     packageManagerById(id as never)!.upgrade({ name: 'left-pad', version: '2.0.0', kind: kind as never });
+  const cargoUpgrade = (cargo: { section: 'dependencies' | 'dev-dependencies' | 'build-dependencies'; target?: string }) =>
+    packageManagerById('cargo')!.upgrade({
+      name: 'left-pad',
+      version: '2.0.0',
+      kind: cargo.section === 'dependencies' ? 'runtime' : 'dev',
+      cargo,
+    })!;
 
   test('pins the chosen version, per manager', () => {
     assert.equal(describeCommand(upgrade('npm')!), 'npm install left-pad@2.0.0');
@@ -141,6 +148,38 @@ describe('upgrade commands', () => {
 
   test('gradle admits it cannot pin a version from the command line', () => {
     assert.equal(upgrade('gradle'), null);
+  });
+
+  test('cargo keeps the dependency table and target it came from', () => {
+    assert.deepEqual(cargoUpgrade({ section: 'dependencies' }).args, ['add', 'left-pad@=2.0.0']);
+    assert.deepEqual(cargoUpgrade({ section: 'dev-dependencies' }).args, [
+      'add',
+      'left-pad@=2.0.0',
+      '--dev',
+    ]);
+    assert.deepEqual(cargoUpgrade({ section: 'build-dependencies' }).args, [
+      'add',
+      'left-pad@=2.0.0',
+      '--build',
+    ]);
+    assert.deepEqual(
+      cargoUpgrade({ section: 'dependencies', target: 'cfg(not(target_arch = "wasm32"))' }).args,
+      ['add', 'left-pad@=2.0.0', '--target', 'cfg(not(target_arch = "wasm32"))'],
+    );
+    assert.deepEqual(cargoUpgrade({ section: 'dev-dependencies', target: 'cfg(unix)' }).args, [
+      'add',
+      'left-pad@=2.0.0',
+      '--dev',
+      '--target',
+      'cfg(unix)',
+    ]);
+    assert.deepEqual(cargoUpgrade({ section: 'build-dependencies', target: 'cfg(windows)' }).args, [
+      'add',
+      'left-pad@=2.0.0',
+      '--build',
+      '--target',
+      'cfg(windows)',
+    ]);
   });
 });
 
@@ -207,6 +246,22 @@ describe('moving several packages at once', () => {
       packageManagerById(id as never)!,
       targets.map(([name, version, kind]) => ({ name, version, kind: (kind ?? 'runtime') as never })),
     )?.map((command) => [command.command, ...command.args].join(' '));
+  const cargoMany = (
+    targets: Array<{
+      name: string;
+      version: string;
+      cargo?: { section: 'dependencies' | 'dev-dependencies' | 'build-dependencies'; target?: string };
+    }>,
+  ) =>
+    upgradeMany(
+      packageManagerById('cargo')!,
+      targets.map(({ name, version, cargo }) => ({
+        name,
+        version,
+        kind: cargo?.section === 'dev-dependencies' || cargo?.section === 'build-dependencies' ? 'dev' : 'runtime',
+        ...(cargo ? { cargo } : {}),
+      })),
+    )?.map((command) => [command.command, ...command.args]);
 
   test('merges into one invocation', () => {
     assert.deepEqual(many('npm', [['react', '19.2.0'], ['vite', '7.1.0']]), [
@@ -233,6 +288,57 @@ describe('moving several packages at once', () => {
         ['vite', '7.1.0'],
       ]),
       ['npm install react@19.2.0 vite@7.1.0', 'npm install vitest@3.0.0 --save-dev'],
+    );
+  });
+
+  test('cargo batches only dependencies with compatible placement flags', () => {
+    assert.deepEqual(
+      cargoMany([
+        { name: 'serde', version: '1.0.2' },
+        { name: 'tokio', version: '1.40.0' },
+      ]),
+      [['cargo', 'add', 'serde@=1.0.2', 'tokio@=1.40.0']],
+    );
+
+    assert.deepEqual(
+      cargoMany([
+        { name: 'sha2', version: '0.11.0', cargo: { section: 'dependencies', target: 'cfg(unix)' } },
+        { name: 'digest', version: '0.11.0', cargo: { section: 'dependencies', target: 'cfg(unix)' } },
+      ]),
+      [['cargo', 'add', 'sha2@=0.11.0', 'digest@=0.11.0', '--target', 'cfg(unix)']],
+    );
+
+    assert.deepEqual(
+      cargoMany([
+        { name: 'sha2', version: '0.11.0', cargo: { section: 'dependencies', target: 'cfg(unix)' } },
+        { name: 'digest', version: '0.11.0', cargo: { section: 'dependencies', target: 'cfg(windows)' } },
+      ]),
+      [
+        ['cargo', 'add', 'sha2@=0.11.0', '--target', 'cfg(unix)'],
+        ['cargo', 'add', 'digest@=0.11.0', '--target', 'cfg(windows)'],
+      ],
+    );
+
+    assert.deepEqual(
+      cargoMany([
+        { name: 'serde', version: '1.0.2' },
+        { name: 'sha2', version: '0.11.0', cargo: { section: 'dependencies', target: 'cfg(unix)' } },
+      ]),
+      [
+        ['cargo', 'add', 'serde@=1.0.2'],
+        ['cargo', 'add', 'sha2@=0.11.0', '--target', 'cfg(unix)'],
+      ],
+    );
+
+    assert.deepEqual(
+      cargoMany([
+        { name: 'criterion', version: '0.6.0', cargo: { section: 'dev-dependencies' } },
+        { name: 'cc', version: '1.2.0', cargo: { section: 'build-dependencies' } },
+      ]),
+      [
+        ['cargo', 'add', 'criterion@=0.6.0', '--dev'],
+        ['cargo', 'add', 'cc@=1.2.0', '--build'],
+      ],
     );
   });
 

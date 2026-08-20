@@ -409,14 +409,17 @@ export function extractBreakingPassages(body: string): string[] {
       continue;
     }
 
-    if (BREAKING_INLINE.test(trimmed)) passages.push(trimmed);
+    if (isBreakingInline(trimmed)) passages.push(trimmed);
   }
 
   return dedupe(passages);
 }
 
+const PACKAGE_MODULE_SYSTEM =
+  /\b(?:this|the)\s+(?:package|project|library|module)\s+(?:is\s+)?now\s+(?:pure\s+ESM|ESM[\s-]only|an?\s+ESM\s+package)\b|\b(?:migrated|converted|switched)\s+(?:this|the)\s+(?:package|project|library|module)\s+to\s+ESM\b|\b(?:dropped|removed)\s+CommonJS\s+support\b|\b(?:dropped|removed|no longer (?:supports|provides))\s+CommonJS\b|\bCommonJS\s+(?:is\s+)?no\s+longer\s+supported\b|\brequire\(\)\s+(?:is\s+)?no\s+longer\s+supported\b/i;
+
 const BREAKING_HEADING =
-  /breaking|incompatib|removed|migration|upgrade\s+guide|deprecat|pure esm|esm[\s-]only|commonjs/i;
+  /breaking|incompatib|removed|migration|upgrade\s+guide|deprecat|commonjs/i;
 
 /**
  * Inline breakage markers.
@@ -431,7 +434,11 @@ const BREAKING_HEADING =
  * notes say "**Required Node.js >=14.16**", not "now requires Node.js".
  */
 const BREAKING_INLINE =
-  /\b(BREAKING(\s+CHANGE)?|breaking change|no longer|has been removed|have been removed|was removed|were removed|is removed|renamed to|renamed from|replaced by|replaced with|now requires?|required\s+node|must now|dropped support|drop support|removed support|is now required|are now required|moved to|deprecated in favou?r of|pure ESM|ESM[\s-]only|now ESM|dropped CommonJS|no longer (?:supports|provides) CommonJS|minimum\s+(?:supported\s+)?(?:node|python|go|ruby|java|rust))\b/i;
+  /\b(BREAKING(\s+CHANGE)?|breaking change|no longer|has been removed|have been removed|was removed|were removed|is removed|renamed to|renamed from|replaced by|replaced with|now requires?|required\s+node|must now|dropped support|drop support|removed support|is now required|are now required|moved to|deprecated in favou?r of|minimum\s+(?:supported\s+)?(?:node|python|go|ruby|java|rust))\b/i;
+
+function isBreakingInline(text: string): boolean {
+  return BREAKING_INLINE.test(text) || PACKAGE_MODULE_SYSTEM.test(text);
+}
 
 function dedupe(values: readonly string[]): string[] {
   return [...new Set(values.map((v) => v.trim()).filter(Boolean))];

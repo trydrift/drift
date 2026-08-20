@@ -1,4 +1,4 @@
-import type { BreakingChangeKind, StructuredFinding } from '../types.js';
+import type { BreakingChangeKind, ModuleIncompatibleUsage, StructuredFinding } from '../types.js';
 import { specCodeFor } from '../evidence/spec/index.js';
 
 /**
@@ -37,6 +37,10 @@ export function kindForFindingCode(code: string): BreakingChangeKind {
     case 'entry-point-moved':
     case 'package-removed':
       return 'moved-export';
+    case 'commonjs-entry-removed':
+    case 'exports-require-condition-removed':
+    case 'package-type-changed':
+      return 'module-system-change';
 
     default:
       return 'unknown';
@@ -95,6 +99,28 @@ export function remediationForFinding(finding: StructuredFinding, dependency: st
       return `The package \`${symbol}\` no longer exists in \`${dependency}\`. Update the import path in every file that imports it to whichever package now provides the same API. Do not re-implement or stub the symbols it exported — if you cannot determine the replacement package, leave the import in place with a \`TODO(drift):\` comment naming it rather than guessing.`;
     case 'member-now-required':
       return `\`${symbol}\` is now required. Supply an explicit value at every construction site. Choose the value that preserves the previous default behaviour; if the previous default is not documented, leave a TODO and flag it in the PR description rather than guessing.`;
+    case 'commonjs-entry-removed':
+    case 'exports-require-condition-removed':
+    case 'package-type-changed': {
+      const affected = finding.moduleSystem?.affectedSpecifiers;
+      const patterns = finding.moduleSystem?.affectedSpecifierPatterns;
+      const target =
+        affected?.length && patterns?.length
+          ? `the affected \`require()\` sites for ${[
+              ...affected.map((specifier) => `\`${specifier}\``),
+              ...patterns.map((pattern) => `specifier pattern \`${pattern}\``),
+            ].join(', ')}`
+          : affected && affected.length === 1
+          ? `\`require('${affected[0]}')\``
+          : affected && affected.length > 1
+            ? `the affected \`require()\` sites for ${affected.map((specifier) => `\`${specifier}\``).join(', ')}`
+            : patterns && patterns.length === 1
+              ? `\`require()\` sites whose specifier matches \`${patterns[0]}\``
+              : patterns && patterns.length > 1
+                ? `the affected \`require()\` sites matching ${patterns.map((pattern) => `\`${pattern}\``).join(', ')}`
+            : `each localized \`require('${dependency}')\` site`;
+      return `\`${dependency}\` no longer exposes the CommonJS loading compatibility it exposed before. Update ${target} to use an ESM-compatible loading mechanism, usually a static \`import\` in an ESM module or a dynamic \`await import()\` where the surrounding CommonJS file cannot move. Do not downgrade the dependency, and do not convert the whole repository to ESM unless that is already the intended migration path.`;
+    }
 
     default:
       return `Review usages of \`${symbol}\` from \`${dependency}\` and update them for the new version.`;
@@ -150,6 +176,11 @@ interface ProseRule {
   symbolGroup: number;
   /** Replacement symbol group index, for renames. */
   replacementGroup?: number;
+  moduleSystem?: {
+    from?: 'commonjs' | 'esm' | 'dual';
+    to?: 'commonjs' | 'esm' | 'dual';
+    incompatibleUsage: ModuleIncompatibleUsage[];
+  };
 }
 
 /**
@@ -269,17 +300,21 @@ const PROSE_RULES: ProseRule[] = [
      * needs a rule of its own rather than falling out of the removal patterns.
      */
     id: 'prose-esm-only',
-    kind: 'config-change',
-    pattern: /\b(?:is now |now )?(?:pure ESM|ESM[\s-]only|ESM package)\b/i,
+    kind: 'module-system-change',
+    pattern:
+      /\b(?:this|the)\s+(?:package|project|library|module)\s+(?:is\s+)?now\s+(?:pure\s+ESM|ESM[\s-]only|an?\s+ESM\s+package)\b|\b(?:migrated|converted|switched)\s+(?:this|the)\s+(?:package|project|library|module)\s+to\s+ESM\b/i,
     symbolGroup: 0,
     summarize: () => 'The package is now ESM-only and no longer supports `require()`',
+    moduleSystem: { from: 'dual', to: 'esm', incompatibleUsage: ['require'] },
   },
   {
     id: 'prose-dropped-commonjs',
-    kind: 'config-change',
-    pattern: /\b(?:dropped|removed|no longer (?:supports|provides))\s+CommonJS\b/i,
+    kind: 'module-system-change',
+    pattern:
+      /\b(?:dropped|removed)\s+CommonJS\s+support\b|\b(?:dropped|removed|no longer (?:supports|provides))\s+CommonJS\b|\bCommonJS\s+(?:is\s+)?no\s+longer\s+supported\b|\brequire\(\)\s+(?:is\s+)?no\s+longer\s+supported\b/i,
     symbolGroup: 0,
     summarize: () => 'CommonJS support was dropped',
+    moduleSystem: { from: 'dual', to: 'esm', incompatibleUsage: ['require'] },
   },
   {
     id: 'prose-dropped-support',
@@ -296,6 +331,11 @@ export interface ProseMatch {
   summary: string;
   symbols: string[];
   replacementSymbols: string[];
+  moduleSystem?: {
+    from?: 'commonjs' | 'esm' | 'dual';
+    to?: 'commonjs' | 'esm' | 'dual';
+    incompatibleUsage: ModuleIncompatibleUsage[];
+  };
   /** The line the match came from, kept verbatim for the report. */
   passage: string;
 }
@@ -322,6 +362,14 @@ export function matchProse(passage: string): ProseMatch[] {
       summary: rule.summarize(match),
       symbols: symbol ? [symbol] : [],
       replacementSymbols: replacement ? [replacement] : [],
+      ...(rule.moduleSystem
+        ? {
+            moduleSystem: {
+              ...rule.moduleSystem,
+              incompatibleUsage: [...rule.moduleSystem.incompatibleUsage],
+            },
+          }
+        : {}),
       passage: text,
     });
   }
@@ -349,10 +397,9 @@ export function remediationForProse(match: ProseMatch, dependency: string): stri
       return `Behaviour changed: ${match.summary}. Review call sites for assumptions that no longer hold. Prefer making the assumption explicit over silently adapting to the new behaviour.`;
     case 'runtime-requirement':
       return `${match.summary}. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.`;
+    case 'module-system-change':
+      return `\`${dependency}\` no longer exposes a CommonJS-compatible entry point. Update each localized \`require('${dependency}')\` site to use an ESM-compatible loading mechanism, usually a static \`import\` in an ESM module or a dynamic \`await import('${dependency}')\` where the surrounding CommonJS file cannot move. Do not downgrade the dependency, and do not convert the whole repository to ESM unless that is already the intended migration path.`;
     case 'config-change':
-      if (match.ruleId === 'prose-esm-only' || match.ruleId === 'prose-dropped-commonjs') {
-        return `\`${dependency}\` is now ESM-only. Every \`require('${dependency}')\` must become a static \`import\`, and the importing files must themselves be ESM. If this repository is CommonJS, the smallest correct change is usually a dynamic \`await import('${dependency}')\` at the call site — do NOT downgrade the dependency, and do NOT convert the whole repository to ESM as part of this fix. If neither option works cleanly, stop and explain the situation in the pull request description rather than forcing it.`;
-      }
       return `Configuration must change: ${match.summary}.`;
     default:
       return `Review usages of \`${symbol}\` and update them: ${match.summary}`;

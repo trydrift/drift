@@ -27,6 +27,7 @@ import {
 } from './spec/index.js';
 import {
   diffSurfaces,
+  diffPackageModuleMetadata,
   entryPointMoved,
   fetchTypeSurface,
   VersionUnavailableError,
@@ -362,8 +363,24 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
   const to = change.to!;
 
   if (change.ecosystem === 'npm') {
-    const surface = await diffTypeSurfaces(change.name, from, to, logger);
+    const [moduleMetadataChanges, surface] = await Promise.all([
+      diffPackageModuleMetadata(change.name, from, to).catch((err) => {
+        logger.debug(`Package module metadata diff failed for ${change.name}: ${(err as Error).message}`);
+        return [] as SurfaceChange[];
+      }),
+      diffTypeSurfaces(change.name, from, to, logger),
+    ]);
     if (!surface) {
+      if (moduleMetadataChanges.length > 0) {
+        return surfaceRecord(change, {
+          changes: moduleMetadataChanges,
+          weight: WEIGHTS['type-surface-diff'],
+          locator: `${change.name}@${from}:package.json → ${change.name}@${to}:package.json`,
+          url: jsdelivrDeclarationUrl(change.name, to, 'package.json'),
+          beforeUrl: jsdelivrDeclarationUrl(change.name, from, 'package.json'),
+          afterUrl: jsdelivrDeclarationUrl(change.name, to, 'package.json'),
+        });
+      }
       ctx.onUnavailableSurface?.(
         change,
         unavailable(
@@ -396,7 +413,8 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
       );
       return null;
     }
-    if (surface.changes.length === 0) {
+    const computedChanges = [...moduleMetadataChanges, ...surface.changes];
+    if (computedChanges.length === 0) {
       if (!surface.comparable) {
         ctx.onUnavailableSurface?.(
           change,
@@ -423,9 +441,9 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
     }
 
     return surfaceRecord(change, {
-      changes: surface.changes,
+      changes: computedChanges,
       weight: WEIGHTS['type-surface-diff'],
-      locator: `${change.name}@${from}:${surface.beforeEntryPath} → ${change.name}@${to}:${surface.afterEntryPath}`,
+      locator: `${change.name}@${from}:${surface.beforeEntryPath} + package.json → ${change.name}@${to}:${surface.afterEntryPath} + package.json`,
       url: jsdelivrDeclarationUrl(change.name, to, surface.afterEntryPath),
       beforeUrl: jsdelivrDeclarationUrl(change.name, from, surface.beforeEntryPath),
       afterUrl: jsdelivrDeclarationUrl(change.name, to, surface.afterEntryPath),
@@ -518,6 +536,20 @@ function surfaceRecord(
       ...(c.changed ? { changed: c.changed } : {}),
       ...(c.fromKind ? { fromKind: c.fromKind } : {}),
       ...(c.toKind ? { toKind: c.toKind } : {}),
+      ...(c.moduleSystem
+        ? {
+            moduleSystem: {
+              ...c.moduleSystem,
+              incompatibleUsage: [...c.moduleSystem.incompatibleUsage],
+              ...(c.moduleSystem.affectedSpecifiers
+                ? { affectedSpecifiers: [...c.moduleSystem.affectedSpecifiers] }
+                : {}),
+              ...(c.moduleSystem.affectedSpecifierPatterns
+                ? { affectedSpecifierPatterns: [...c.moduleSystem.affectedSpecifierPatterns] }
+                : {}),
+            },
+          }
+        : {}),
     })),
     weight: args.weight,
   };

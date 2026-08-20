@@ -108,25 +108,55 @@ function analyzeDependency(
 
 /** Computed findings map one-to-one onto breaking changes; no inference needed. */
 function fromComputedEvidence(record: Evidence): BreakingChange[] {
-  return (record.findings ?? []).map((finding) => ({
-    id: stableId('bc', record.dependency, record.workspace, finding.code, finding.symbol),
-    dependency: record.dependency,
-    workspace: record.workspace,
-    kind: kindForFindingCode(finding.code),
-    summary: finding.detail,
-    before: finding.before,
-    after: finding.after,
-    remediation: remediationForFinding(finding, record.dependency),
-    symbols: symbolsFromFinding(finding),
-    // Provisional; `scoreUpstream` decides the real value once citations are
-    // merged. A computed diff is ground truth about the upstream artefact and
-    // is the only class that reaches `high` uncorroborated.
-    confidence: 'high' as Confidence,
-    // The finding code names exactly what the differ observed, so this is the
-    // one place a precise classification is available without inference.
-    taxonomy: classify(kindForFindingCode(finding.code), finding.code),
-    citations: [record.id],
-  }));
+  return (record.findings ?? []).map((finding) => {
+    const kind = kindForFindingCode(finding.code);
+    const moduleSystem =
+      kind === 'module-system-change'
+        ? (finding.moduleSystem ?? { from: 'dual' as const, to: 'esm' as const, incompatibleUsage: ['require' as const] })
+        : undefined;
+
+    return {
+      id: stableId(
+        'bc',
+        record.dependency,
+        record.workspace,
+        finding.code,
+        finding.symbol,
+        moduleSystem?.affectedSpecifiers?.join(',') ?? '',
+        moduleSystem?.affectedSpecifierPatterns?.join(',') ?? '',
+      ),
+      dependency: record.dependency,
+      workspace: record.workspace,
+      kind,
+      summary: finding.detail,
+      before: finding.before,
+      after: finding.after,
+      remediation: remediationForFinding(finding, record.dependency),
+      symbols: symbolsFromFinding(finding),
+      ...(moduleSystem
+        ? {
+            moduleSystem: {
+              ...moduleSystem,
+              incompatibleUsage: [...moduleSystem.incompatibleUsage],
+              ...(moduleSystem.affectedSpecifiers
+                ? { affectedSpecifiers: [...moduleSystem.affectedSpecifiers] }
+                : {}),
+              ...(moduleSystem.affectedSpecifierPatterns
+                ? { affectedSpecifierPatterns: [...moduleSystem.affectedSpecifierPatterns] }
+                : {}),
+            },
+          }
+        : {}),
+      // Provisional; `scoreUpstream` decides the real value once citations are
+      // merged. A computed diff is ground truth about the upstream artefact and
+      // is the only class that reaches `high` uncorroborated.
+      confidence: 'high' as Confidence,
+      // The finding code names exactly what the differ observed, so this is the
+      // one place a precise classification is available without inference.
+      taxonomy: classify(kind, finding.code),
+      citations: [record.id],
+    };
+  });
 }
 
 /**
@@ -150,6 +180,8 @@ function fromComputedEvidence(record: Evidence): BreakingChange[] {
  * The owner is the second-to-last part; the leading namespace is never a symbol.
  */
 function symbolsFromFinding(finding: StructuredFinding): string[] {
+  if (kindForFindingCode(finding.code) === 'module-system-change') return [];
+
   const symbols = new Set<string>([finding.symbol]);
 
   // A symbol containing whitespace is a label, not an identifier — the counted
@@ -262,10 +294,12 @@ function fromProseEvidence(record: Evidence, dependency: string, workspace: stri
       if (seen.has(key)) continue;
       seen.add(key);
 
-      // A package-wide change (an ESM migration, say) names no export. The
-      // package itself becomes the search symbol so localization still finds
-      // the import and `require()` sites that need changing.
-      const symbols = match.symbols.length > 0 ? match.symbols : [dependency];
+      // Package-wide module-system changes name no export and must not be
+      // localized by searching for the package name. They carry structured
+      // loading semantics instead, so the localizer can find only incompatible
+      // consumer forms such as `require()`.
+      const symbols =
+        match.symbols.length > 0 || match.kind === 'module-system-change' ? match.symbols : [dependency];
 
       out.push({
         id: stableId('bc', dependency, workspace, match.ruleId, match.symbols.join(',')),
@@ -276,6 +310,7 @@ function fromProseEvidence(record: Evidence, dependency: string, workspace: stri
         remediation: remediationForProse(match, dependency),
         symbols,
         replacementSymbols: match.replacementSymbols.length ? match.replacementSymbols : undefined,
+        ...(match.moduleSystem ? { moduleSystem: match.moduleSystem } : {}),
         // Provisional; `scoreUpstream` decides the real value.
         confidence: confidenceForSource(record),
         taxonomy: classify(match.kind),
@@ -335,7 +370,7 @@ function dedupe(changes: readonly BreakingChange[]): BreakingChange[] {
   const merged = new Map<string, BreakingChange>();
 
   for (const change of changes) {
-    const key = `${dependencyKey({ name: change.dependency, workspace: change.workspace })}|${change.kind}|${[...change.symbols].sort().join(',')}`;
+    const key = dedupeKey(change);
     const existing = merged.get(key);
 
     if (!existing) {
@@ -354,6 +389,7 @@ function dedupe(changes: readonly BreakingChange[]): BreakingChange[] {
       ].filter(Boolean).length
         ? [...new Set([...(existing.replacementSymbols ?? []), ...(change.replacementSymbols ?? [])])]
         : undefined,
+      moduleSystem: mergeModuleSystem(existing.moduleSystem, change.moduleSystem),
       confidence: maxConfidence(existing.confidence, change.confidence),
       // The more precisely-derived classification wins. A computed differ knows
       // exactly what it saw; a prose rule inferred it from a sentence.
@@ -366,6 +402,50 @@ function dedupe(changes: readonly BreakingChange[]): BreakingChange[] {
   return [...merged.values()].sort(
     (a, b) => order[a.confidence] - order[b.confidence] || a.dependency.localeCompare(b.dependency),
   );
+}
+
+function dedupeKey(change: BreakingChange): string {
+  const dependency = dependencyKey({ name: change.dependency, workspace: change.workspace });
+  if (change.kind === 'module-system-change') {
+    return [
+      dependency,
+      change.kind,
+      [...(change.moduleSystem?.incompatibleUsage ?? [])].sort().join(','),
+      change.moduleSystem?.affectedSpecifiers?.length
+        ? [...change.moduleSystem.affectedSpecifiers].sort().join(',')
+        : '*',
+      change.moduleSystem?.affectedSpecifierPatterns?.length
+        ? [...change.moduleSystem.affectedSpecifierPatterns].sort().join(',')
+        : '*',
+    ].join('|');
+  }
+  return `${dependency}|${change.kind}|${[...change.symbols].sort().join(',')}`;
+}
+
+function mergeModuleSystem(
+  a: BreakingChange['moduleSystem'],
+  b: BreakingChange['moduleSystem'],
+): BreakingChange['moduleSystem'] | undefined {
+  if (!a) return b;
+  if (!b) return a;
+
+  const incompatibleUsage = [...new Set([...a.incompatibleUsage, ...b.incompatibleUsage])];
+  const affected =
+    a.affectedSpecifiers || b.affectedSpecifiers
+      ? [...new Set([...(a.affectedSpecifiers ?? []), ...(b.affectedSpecifiers ?? [])])]
+      : undefined;
+  const affectedPatterns =
+    a.affectedSpecifierPatterns || b.affectedSpecifierPatterns
+      ? [...new Set([...(a.affectedSpecifierPatterns ?? []), ...(b.affectedSpecifierPatterns ?? [])])]
+      : undefined;
+
+  return {
+    from: a.from ?? b.from,
+    to: a.to ?? b.to,
+    incompatibleUsage,
+    ...(affected ? { affectedSpecifiers: affected } : {}),
+    ...(affectedPatterns ? { affectedSpecifierPatterns: affectedPatterns } : {}),
+  };
 }
 
 /** `computed` beats `rule` beats `llm-normalized` beats `default`. */

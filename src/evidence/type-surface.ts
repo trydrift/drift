@@ -1,5 +1,6 @@
 import { fetchJson, fetchText, mapWithConcurrency } from '../util/http.js';
 import { count, measure } from '../util/profile.js';
+import type { ModuleIncompatibleUsage, ModuleSystem } from '../types.js';
 
 /**
  * TypeScript declaration-surface diffing.
@@ -81,7 +82,10 @@ export type SurfaceChangeKind =
    * editing — only code that depends on the concrete number, zero value, or
    * serialised form does.
    */
-  | 'constant-value-changed';
+  | 'constant-value-changed'
+  | 'commonjs-entry-removed'
+  | 'exports-require-condition-removed'
+  | 'package-type-changed';
 
 export interface SurfaceChange {
   kind: SurfaceChangeKind;
@@ -94,6 +98,13 @@ export interface SurfaceChange {
   /** See `StructuredFinding.fromKind`/`toKind`. Only ever set on `kind-changed`. */
   fromKind?: string;
   toKind?: string;
+  moduleSystem?: {
+    from?: ModuleSystem;
+    to?: ModuleSystem;
+    incompatibleUsage: ModuleIncompatibleUsage[];
+    affectedSpecifiers?: string[];
+    affectedSpecifierPatterns?: string[];
+  };
 }
 
 const JSDELIVR_DATA = 'https://data.jsdelivr.com/v1/packages/npm';
@@ -231,14 +242,214 @@ export class VersionUnavailableError extends Error {
 interface Manifest {
   types?: string;
   typings?: string;
+  type?: string;
   exports?: unknown;
   main?: string;
+  module?: string;
   dependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
 }
 
 function fetchManifest(packageName: string, version: string): Promise<Manifest | null> {
   return fetchJson<Manifest>(`${JSDELIVR_CDN}/${packageName}@${version}/package.json`);
+}
+
+export async function diffPackageModuleMetadata(
+  packageName: string,
+  from: string,
+  to: string,
+): Promise<SurfaceChange[]> {
+  const [before, after] = await Promise.all([
+    fetchManifest(packageName, from),
+    fetchManifest(packageName, to),
+  ]);
+  if (!before || !after) return [];
+
+  const beforeCjs = commonJsCompatibility(packageName, before);
+  const afterCjs = commonJsCompatibility(packageName, after);
+  const changes: SurfaceChange[] = [];
+
+  const removedRequireConditions = [...beforeCjs.requireConditions].filter(
+    (condition) => !afterCjs.requireConditions.has(condition) && !afterCjs.commonJsExports.has(condition),
+  );
+  for (const removed of removedRequireConditions) {
+    const affected = specifierForExportPath(packageName, removed);
+    const affectedKey = isExportPattern(removed) ? 'affectedSpecifierPatterns' : 'affectedSpecifiers';
+    changes.push({
+      kind: 'exports-require-condition-removed',
+      symbol: packageName,
+      detail:
+        removed === '.'
+          ? 'The root CommonJS export condition was removed'
+          : `The CommonJS export condition for ${removed} was removed`,
+      before: [...beforeCjs.requireConditions].sort().join('\n'),
+      after: [...afterCjs.requireConditions].sort().join('\n') || '(none)',
+      moduleSystem: {
+        from: 'dual',
+        to: 'esm',
+        incompatibleUsage: ['require'],
+        [affectedKey]: [affected],
+      },
+    });
+  }
+
+  const rootRequireConditionRemoved = removedRequireConditions.includes('.');
+  if (beforeCjs.hasRootCommonJsEntry && !afterCjs.hasRootCommonJsEntry && !rootRequireConditionRemoved) {
+    changes.push({
+      kind: 'commonjs-entry-removed',
+      symbol: packageName,
+      detail: 'The package no longer exposes a CommonJS-compatible entry point',
+      before: beforeCjs.entrySummary,
+      after: afterCjs.entrySummary,
+      moduleSystem: {
+        from: 'dual',
+        to: 'esm',
+        incompatibleUsage: ['require'],
+        affectedSpecifiers: [packageName],
+      },
+    });
+  } else if (
+    before.type !== after.type
+    && after.type === 'module'
+    && !afterCjs.hasRootCommonJsEntry
+    && !rootRequireConditionRemoved
+  ) {
+    changes.push({
+      kind: 'package-type-changed',
+      symbol: packageName,
+      detail: 'The package type changed to ESM without a CommonJS-compatible entry point',
+      before: packageTypeSummary(before),
+      after: packageTypeSummary(after),
+      moduleSystem: {
+        from: 'dual',
+        to: 'esm',
+        incompatibleUsage: ['require'],
+        affectedSpecifiers: [packageName],
+      },
+    });
+  }
+
+  return dedupeModuleMetadataChanges(changes);
+}
+
+interface CommonJsCompatibility {
+  hasRootCommonJsEntry: boolean;
+  requireConditions: Set<string>;
+  commonJsExports: Set<string>;
+  entrySummary: string;
+}
+
+function commonJsCompatibility(packageName: string, manifest: Manifest): CommonJsCompatibility {
+  const requireConditions = requireConditionsIn(manifest.exports);
+  const commonJsExports = commonJsExportsIn(manifest.exports, manifest);
+  const hasRootCommonJsEntry =
+    manifest.exports !== undefined
+      ? commonJsExports.has('.')
+      : entryLooksCommonJs(manifest.main, manifest) || entryLooksCommonJs('./index.js', manifest);
+
+  const entrySummary = [
+    `type: ${manifest.type ?? '(absent)'}`,
+    manifest.exports === undefined && manifest.main ? `main: ${manifest.main}` : '',
+    manifest.module ? `module: ${manifest.module}` : '',
+    requireConditions.size > 0
+      ? `exports.require: ${[...requireConditions].sort().map((path) => specifierForExportPath(packageName, path)).join(', ')}`
+      : '',
+    commonJsExports.size > 0
+      ? `exports.commonjs: ${[...commonJsExports].sort().map((path) => specifierForExportPath(packageName, path)).join(', ')}`
+      : '',
+  ]
+    .filter(Boolean)
+    .join('\n') || '(no CommonJS-compatible entry point detected)';
+
+  return { hasRootCommonJsEntry, requireConditions, commonJsExports, entrySummary };
+}
+
+function requireConditionsIn(exportsField: unknown): Set<string> {
+  const out = new Set<string>();
+  visitExports(exportsField, '.', out);
+  return out;
+}
+
+function visitExports(value: unknown, path: string, out: Set<string>): void {
+  if (Array.isArray(value)) {
+    for (const nested of value) visitExports(nested, path, out);
+    return;
+  }
+  if (!value || typeof value !== 'object') return;
+  const entries = Object.entries(value as Record<string, unknown>);
+  const isSubpathMap = entries.some(([key]) => key === '.' || key.startsWith('./'));
+  for (const [key, nested] of entries) {
+    if (key === 'require') out.add(path);
+    if (isSubpathMap && (key === '.' || key.startsWith('./'))) visitExports(nested, key, out);
+    else if (typeof nested === 'object') visitExports(nested, path, out);
+  }
+}
+
+function commonJsExportsIn(exportsField: unknown, manifest: Manifest): Set<string> {
+  const out = new Set<string>();
+  visitCommonJsExports(exportsField, '.', manifest, out);
+  return out;
+}
+
+function visitCommonJsExports(value: unknown, path: string, manifest: Manifest, out: Set<string>): void {
+  if (exportValueLooksCommonJs(value, manifest)) out.add(path);
+  if (Array.isArray(value)) {
+    for (const nested of value) visitCommonJsExports(nested, path, manifest, out);
+    return;
+  }
+  if (!value || typeof value !== 'object') return;
+
+  const entries = Object.entries(value as Record<string, unknown>);
+  const isSubpathMap = entries.some(([key]) => key === '.' || key.startsWith('./'));
+  if (!isSubpathMap) return;
+  for (const [key, nested] of entries) {
+    if (key === '.' || key.startsWith('./')) visitCommonJsExports(nested, key, manifest, out);
+  }
+}
+
+function specifierForExportPath(packageName: string, exportPath: string): string {
+  if (exportPath === '.') return packageName;
+  return `${packageName}/${exportPath.replace(/^\.\//, '')}`;
+}
+
+function isExportPattern(exportPath: string): boolean {
+  return exportPath.includes('*');
+}
+
+function exportValueLooksCommonJs(value: unknown, manifest: Manifest): boolean {
+  if (typeof value === 'string') return entryLooksCommonJs(value, manifest);
+  if (Array.isArray(value)) return value.some((nested) => exportValueLooksCommonJs(nested, manifest));
+  if (!value || typeof value !== 'object') return false;
+
+  const record = value as Record<string, unknown>;
+  if ('require' in record) return exportValueLooksCommonJs(record.require, manifest);
+  if ('node' in record && exportValueLooksCommonJs(record.node, manifest)) return true;
+  if ('default' in record) return exportValueLooksCommonJs(record.default, manifest);
+  return false;
+}
+
+function entryLooksCommonJs(entry: string | undefined, manifest: Manifest): boolean {
+  if (!entry) return false;
+  if (/\.cjs$/i.test(entry)) return true;
+  if (/\.mjs$/i.test(entry)) return false;
+  if (/\.[jt]sx?$/i.test(entry)) return manifest.type !== 'module';
+  return manifest.type !== 'module';
+}
+
+function packageTypeSummary(manifest: Manifest): string {
+  return `type: ${manifest.type ?? '(absent)'}\n${manifest.main ? `main: ${manifest.main}` : 'main: (absent)'}`;
+}
+
+function dedupeModuleMetadataChanges(changes: SurfaceChange[]): SurfaceChange[] {
+  const seen = new Set<string>();
+  return changes.filter((change) => {
+    const exact = change.moduleSystem?.affectedSpecifiers?.join(',') ?? '';
+    const patterns = change.moduleSystem?.affectedSpecifierPatterns?.join(',') ?? '';
+    const key = `${change.kind}:${exact}:${patterns}:${change.symbol}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 /* ------------------------------------------------------------------ */

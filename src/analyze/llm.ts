@@ -77,6 +77,7 @@ const RESPONSE_SCHEMA = {
               'required-field-added',
               'default-change',
               'config-change',
+              'module-system-change',
               'runtime-requirement',
               'unknown',
             ],
@@ -416,6 +417,7 @@ const KNOWN_KINDS = new Set([
   'required-field-added',
   'default-change',
   'config-change',
+  'module-system-change',
   'runtime-requirement',
 ]);
 
