@@ -7,6 +7,7 @@ import { newRunId, writeRun } from './results.ts';
 import { select, type Selectable } from './selection.ts';
 import { runKong } from './runners/kong-runner.ts';
 import { runSweBump } from './runners/swe-bump-runner.ts';
+import { runBump } from './runners/bump-runner.ts';
 
 /**
  * `npm run eval:external -- <dataset> [options]`.
@@ -70,6 +71,7 @@ type Runner = (context: RunnerContext) => Promise<RunnerOutput>;
 const RUNNERS: Record<string, Runner> = {
   kong: runKong,
   'swe-bump': runSweBump,
+  bump: runBump,
 };
 
 export async function runExternal(options: ExternalRunOptions): Promise<string> {
