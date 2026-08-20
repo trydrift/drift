@@ -6,11 +6,14 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { EXTERNAL_RECORD_VERSION, type ExclusionKind, type ExternalCaseResult } from '../record.ts';
 import type { Selectable } from '../selection.ts';
+import { reduceVerdict, type CheckedSurfaceLike } from '../../adapters/end-to-end.ts';
 import {
   DriftConfigSchema,
   LocalGitProvider,
   analyzeRepository,
+  verdictFor,
   type Logger,
+  type RemediationPlan,
   type RepoContext,
 } from '../../../../dist/index.js';
 
@@ -230,7 +233,7 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
         line: site.line,
         matchedSymbol: site.matchedSymbol,
       })),
-      verdict: verdictOf(plan),
+      verdict: verdictFromPlan(plan),
       summary: result.summary,
       resolvedVersionTo: task.versionTo,
       versionFrom,
@@ -241,21 +244,39 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
 }
 
 /**
- * One user-facing conclusion from a plan.
+ * The user-facing verdict, derived exactly as the case-based harness derives
+ * it — by calling the same function.
  *
- * Kept minimal and conservative: anything short of a localized finding is
- * *not* read as a safety claim, so a run that fell over mid-pipeline cannot
- * accidentally count as Drift saying "you are fine". The one judgement that
- * matters here is the false-safe one, and it must never be produced by an
- * incomplete check.
+ * The first version of this adapter had its own three-line reduction: sites
+ * means affected, findings means detected-not-reachable, otherwise
+ * no-incompatible-change. That third branch is wrong and it is wrong in the
+ * one direction that matters. An absence of findings is a *safety claim* only
+ * when the API surface was genuinely computed and the repository genuinely
+ * searched; where the surface could not be computed — which is the ordinary
+ * state for an ecosystem whose surface diff needs a tool this machine does not
+ * have — nothing was established and the honest verdict is
+ * `insufficient-evidence`.
+ *
+ * Left as it was, the adapter would have manufactured a false-safe out of
+ * every case where Drift correctly declined to conclude anything, and reported
+ * it as Drift telling a developer with a broken build that they were fine.
+ * Reusing `reduceVerdict` is what stops the two halves of this harness from
+ * disagreeing about what Drift said.
  */
-function verdictOf(plan: { breakingChanges?: unknown[]; impactSites?: unknown[] } | null | undefined): string {
+function verdictFromPlan(plan: RemediationPlan | null | undefined): string {
   if (!plan) return 'insufficient-evidence';
-  const breaking = plan.breakingChanges?.length ?? 0;
-  const sites = plan.impactSites?.length ?? 0;
-  if (sites > 0) return 'locally-affected';
-  if (breaking > 0) return 'detected-not-locally-reachable';
-  return 'no-incompatible-change-in-checked-surfaces';
+  const verdictByChange = plan.breakingChanges.map((change) => String(verdictFor(change)));
+  return reduceVerdict(verdictByChange, plan.breakingChanges.length === 0, checkedSurfacesOf(plan));
+}
+
+/** The surfaces production recorded, in the shape `reduceVerdict` reads. */
+function checkedSurfacesOf(plan: RemediationPlan): CheckedSurfaceLike[] {
+  const surfaces = (plan as unknown as { checkedSurfaces?: CheckedSurfaceLike[] }).checkedSurfaces ?? [];
+  return surfaces.map((surface) => ({
+    surface: surface.surface,
+    ...(surface.dependency ? { dependency: surface.dependency } : {}),
+    status: surface.status,
+  }));
 }
 
 export interface ScoreSweBumpInput {
