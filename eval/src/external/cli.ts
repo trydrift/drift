@@ -7,7 +7,7 @@ import { datasetOrThrow, DATASETS, type Dataset } from './dataset.ts';
 import { probeEnvironment } from './environment.ts';
 import { computeMetrics, type BaselineSpec } from './metrics.ts';
 import type { ExternalCaseResult } from './record.ts';
-import { newRunId, resultsDir, writeJson, writeProvisionalManifest, writeRun, type RunManifest } from './results.ts';
+import { driftRevision, newRunId, resultsDir, writeJson, writeProvisionalManifest, writeRun, type RunManifest } from './results.ts';
 import { select, type Selectable } from './selection.ts';
 import { runKong } from './runners/kong-runner.ts';
 import { runSweBump } from './runners/swe-bump-runner.ts';
@@ -238,6 +238,15 @@ export async function runExternal(options: ExternalRunOptions): Promise<string> 
   const runner = RUNNERS[dataset.id];
   if (!runner) throw new Error(`No runner is implemented for dataset "${dataset.id}".`);
 
+  /*
+   * Captured before this run writes anything. `eval/results/<runId>/` is
+   * tracked, and a republished run id already has committed contents there —
+   * a `git status` taken after this run's own provisional manifest and
+   * environment snapshot land would see them as uncommitted changes and call
+   * a perfectly clean checkout dirty.
+   */
+  const revision = await driftRevision();
+
   const datasetRoot = join(options.benchmarksRoot, dataset.localPath);
   const runId = options.runId ?? newRunId(dataset.id);
 
@@ -297,6 +306,7 @@ export async function runExternal(options: ExternalRunOptions): Promise<string> 
     datasetVersion: dataset.source.version,
     notes: options.notes ?? '',
     root: options.outRoot,
+    revision,
   });
 
   const [environment, output] = await Promise.all([environmentPromise, runner(context)]);
@@ -323,6 +333,7 @@ export async function runExternal(options: ExternalRunOptions): Promise<string> 
     metrics,
     notes: [options.notes, output.notes].filter(Boolean).join('\n\n'),
     root: options.outRoot,
+    revision,
   });
 }
 

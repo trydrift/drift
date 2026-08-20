@@ -89,6 +89,19 @@ export interface WriteRunInput {
   metrics: DatasetMetrics;
   notes?: string;
   root?: string;
+  /**
+   * The commit and dirty state to stamp, captured by the caller before this
+   * run wrote anything.
+   *
+   * `writeRun` itself writes into `eval/results/<runId>/` — a tracked
+   * directory a republished run id already has committed contents in — so a
+   * `git status` taken at this point would see this run's own provisional
+   * manifest and environment snapshot as uncommitted changes and report
+   * `dirty: true` regardless of how clean the checkout was when the run
+   * started. Falling back to a fresh `driftRevision()` keeps this optional
+   * for callers, such as a re-score, that write nothing beforehand.
+   */
+  revision?: { commit: string; dirty: boolean };
 }
 
 export function resultsDir(runId: string, root = process.cwd()): string {
@@ -99,7 +112,7 @@ export async function writeRun(input: WriteRunInput): Promise<string> {
   const dir = resultsDir(input.runId, input.root);
   await mkdir(dir, { recursive: true });
 
-  const revision = await driftRevision();
+  const revision = input.revision ?? (await driftRevision());
   const manifest: RunManifest = input.priorManifest
     ? {
         // Everything about *how the observations were produced* comes back
@@ -177,10 +190,12 @@ export async function writeProvisionalManifest(input: {
   datasetVersion: string;
   notes: string;
   root?: string;
+  /** See {@link WriteRunInput.revision}: captured by the caller before this or any other write. */
+  revision?: { commit: string; dirty: boolean };
 }): Promise<void> {
   const dir = resultsDir(input.runId, input.root);
   await mkdir(dir, { recursive: true });
-  const revision = await driftRevision();
+  const revision = input.revision ?? (await driftRevision());
   const manifest: RunManifest = {
     version: RUN_MANIFEST_VERSION,
     runId: input.runId,

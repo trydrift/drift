@@ -99,6 +99,41 @@ test('a genuine run stamps itself and carries no re-score footprint', async () =
   }
 });
 
+test('a caller-supplied revision is stamped as-is, not re-derived from git status', async () => {
+  /*
+   * `writeRun` writes into `eval/results/<runId>/`, a tracked directory. A
+   * republished run id already has committed contents there, so a `git
+   * status` taken *inside* `writeRun` — after the caller's own provisional
+   * manifest and environment snapshot already landed there — sees this run's
+   * own writes as uncommitted changes and reports `dirty: true` no matter how
+   * clean the checkout was when the run started. The fix is that a caller who
+   * captured the revision before writing anything can hand it to `writeRun`
+   * and have it stamped verbatim.
+   */
+  const root = await mkdtemp(join(tmpdir(), 'drift-results-test-'));
+  try {
+    const dataset = DATASETS['roseau']!;
+    await writeRun({
+      runId: 'run-revision',
+      dataset,
+      datasetVersion: 'doi',
+      selection: select([{ id: 'c', strata: [] }]),
+      environment: { capturedAt: 'now', platform: 'test', arch: 'test', node: 'v0', tools: [] },
+      results: [CASE],
+      metrics: computeMetrics({ dataset, available: 1, results: [CASE] }),
+      root,
+      revision: { commit: 'cafecafecafecafecafecafecafecafecafecafe', dirty: false },
+    });
+    const manifest = JSON.parse(
+      await readFile(join(resultsDir('run-revision', root), 'manifest.json'), 'utf8'),
+    ) as RunManifest;
+    assert.equal(manifest.driftCommit, 'cafecafecafecafecafecafecafecafecafecafe');
+    assert.equal(manifest.driftTreeDirty, false);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test('the report names the build that produced the observations, not the one that scored them', async () => {
   const root = await mkdtemp(join(tmpdir(), 'drift-results-test-'));
   try {
