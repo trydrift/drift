@@ -103,6 +103,7 @@ export interface SurfaceChange {
     to?: ModuleSystem;
     incompatibleUsage: ModuleIncompatibleUsage[];
     affectedSpecifiers?: string[];
+    affectedSpecifierPatterns?: string[];
   };
 }
 
@@ -269,10 +270,11 @@ export async function diffPackageModuleMetadata(
   const changes: SurfaceChange[] = [];
 
   const removedRequireConditions = [...beforeCjs.requireConditions].filter(
-    (condition) => !afterCjs.requireConditions.has(condition),
+    (condition) => !afterCjs.requireConditions.has(condition) && !afterCjs.commonJsExports.has(condition),
   );
   for (const removed of removedRequireConditions) {
     const affected = specifierForExportPath(packageName, removed);
+    const affectedKey = isExportPattern(removed) ? 'affectedSpecifierPatterns' : 'affectedSpecifiers';
     changes.push({
       kind: 'exports-require-condition-removed',
       symbol: packageName,
@@ -286,12 +288,13 @@ export async function diffPackageModuleMetadata(
         from: 'dual',
         to: 'esm',
         incompatibleUsage: ['require'],
-        affectedSpecifiers: [affected],
+        [affectedKey]: [affected],
       },
     });
   }
 
-  if (beforeCjs.hasRootCommonJsEntry && !afterCjs.hasRootCommonJsEntry) {
+  const rootRequireConditionRemoved = removedRequireConditions.includes('.');
+  if (beforeCjs.hasRootCommonJsEntry && !afterCjs.hasRootCommonJsEntry && !rootRequireConditionRemoved) {
     changes.push({
       kind: 'commonjs-entry-removed',
       symbol: packageName,
@@ -305,7 +308,12 @@ export async function diffPackageModuleMetadata(
         affectedSpecifiers: [packageName],
       },
     });
-  } else if (before.type !== after.type && after.type === 'module' && !afterCjs.hasRootCommonJsEntry) {
+  } else if (
+    before.type !== after.type
+    && after.type === 'module'
+    && !afterCjs.hasRootCommonJsEntry
+    && !rootRequireConditionRemoved
+  ) {
     changes.push({
       kind: 'package-type-changed',
       symbol: packageName,
@@ -327,28 +335,33 @@ export async function diffPackageModuleMetadata(
 interface CommonJsCompatibility {
   hasRootCommonJsEntry: boolean;
   requireConditions: Set<string>;
+  commonJsExports: Set<string>;
   entrySummary: string;
 }
 
 function commonJsCompatibility(packageName: string, manifest: Manifest): CommonJsCompatibility {
   const requireConditions = requireConditionsIn(manifest.exports);
-  const hasRootRequireCondition = requireConditions.has('.');
-  const hasMainCjs = entryLooksCommonJs(manifest.main, manifest);
-  const hasBareCjsExport = bareExportLooksCommonJs(manifest.exports, manifest);
-  const hasRootCommonJsEntry = hasRootRequireCondition || hasMainCjs || hasBareCjsExport;
+  const commonJsExports = commonJsExportsIn(manifest.exports, manifest);
+  const hasRootCommonJsEntry =
+    manifest.exports !== undefined
+      ? commonJsExports.has('.')
+      : entryLooksCommonJs(manifest.main, manifest) || entryLooksCommonJs('./index.js', manifest);
 
   const entrySummary = [
     `type: ${manifest.type ?? '(absent)'}`,
-    manifest.main ? `main: ${manifest.main}` : '',
+    manifest.exports === undefined && manifest.main ? `main: ${manifest.main}` : '',
     manifest.module ? `module: ${manifest.module}` : '',
     requireConditions.size > 0
       ? `exports.require: ${[...requireConditions].sort().map((path) => specifierForExportPath(packageName, path)).join(', ')}`
+      : '',
+    commonJsExports.size > 0
+      ? `exports.commonjs: ${[...commonJsExports].sort().map((path) => specifierForExportPath(packageName, path)).join(', ')}`
       : '',
   ]
     .filter(Boolean)
     .join('\n') || '(no CommonJS-compatible entry point detected)';
 
-  return { hasRootCommonJsEntry, requireConditions, entrySummary };
+  return { hasRootCommonJsEntry, requireConditions, commonJsExports, entrySummary };
 }
 
 function requireConditionsIn(exportsField: unknown): Set<string> {
@@ -358,11 +371,39 @@ function requireConditionsIn(exportsField: unknown): Set<string> {
 }
 
 function visitExports(value: unknown, path: string, out: Set<string>): void {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return;
-  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+  if (Array.isArray(value)) {
+    for (const nested of value) visitExports(nested, path, out);
+    return;
+  }
+  if (!value || typeof value !== 'object') return;
+  const entries = Object.entries(value as Record<string, unknown>);
+  const isSubpathMap = entries.some(([key]) => key === '.' || key.startsWith('./'));
+  for (const [key, nested] of entries) {
     if (key === 'require') out.add(path);
-    if (key.startsWith('./')) visitExports(nested, key, out);
+    if (isSubpathMap && (key === '.' || key.startsWith('./'))) visitExports(nested, key, out);
     else if (typeof nested === 'object') visitExports(nested, path, out);
+  }
+}
+
+function commonJsExportsIn(exportsField: unknown, manifest: Manifest): Set<string> {
+  const out = new Set<string>();
+  visitCommonJsExports(exportsField, '.', manifest, out);
+  return out;
+}
+
+function visitCommonJsExports(value: unknown, path: string, manifest: Manifest, out: Set<string>): void {
+  if (exportValueLooksCommonJs(value, manifest)) out.add(path);
+  if (Array.isArray(value)) {
+    for (const nested of value) visitCommonJsExports(nested, path, manifest, out);
+    return;
+  }
+  if (!value || typeof value !== 'object') return;
+
+  const entries = Object.entries(value as Record<string, unknown>);
+  const isSubpathMap = entries.some(([key]) => key === '.' || key.startsWith('./'));
+  if (!isSubpathMap) return;
+  for (const [key, nested] of entries) {
+    if (key === '.' || key.startsWith('./')) visitCommonJsExports(nested, key, manifest, out);
   }
 }
 
@@ -371,15 +412,20 @@ function specifierForExportPath(packageName: string, exportPath: string): string
   return `${packageName}/${exportPath.replace(/^\.\//, '')}`;
 }
 
-function bareExportLooksCommonJs(exportsField: unknown, manifest: Manifest): boolean {
-  if (typeof exportsField === 'string') return entryLooksCommonJs(exportsField, manifest);
-  if (!exportsField || typeof exportsField !== 'object' || Array.isArray(exportsField)) return false;
-  const root = (exportsField as Record<string, unknown>)['.'];
-  if (typeof root === 'string') return entryLooksCommonJs(root, manifest);
-  const defaultExport = root && typeof root === 'object'
-    ? (root as Record<string, unknown>).default
-    : (exportsField as Record<string, unknown>).default;
-  return typeof defaultExport === 'string' && entryLooksCommonJs(defaultExport, manifest);
+function isExportPattern(exportPath: string): boolean {
+  return exportPath.includes('*');
+}
+
+function exportValueLooksCommonJs(value: unknown, manifest: Manifest): boolean {
+  if (typeof value === 'string') return entryLooksCommonJs(value, manifest);
+  if (Array.isArray(value)) return value.some((nested) => exportValueLooksCommonJs(nested, manifest));
+  if (!value || typeof value !== 'object') return false;
+
+  const record = value as Record<string, unknown>;
+  if ('require' in record) return exportValueLooksCommonJs(record.require, manifest);
+  if ('node' in record && exportValueLooksCommonJs(record.node, manifest)) return true;
+  if ('default' in record) return exportValueLooksCommonJs(record.default, manifest);
+  return false;
 }
 
 function entryLooksCommonJs(entry: string | undefined, manifest: Manifest): boolean {
@@ -397,7 +443,9 @@ function packageTypeSummary(manifest: Manifest): string {
 function dedupeModuleMetadataChanges(changes: SurfaceChange[]): SurfaceChange[] {
   const seen = new Set<string>();
   return changes.filter((change) => {
-    const key = `${change.kind}:${change.moduleSystem?.affectedSpecifiers?.join(',') ?? change.symbol}`;
+    const exact = change.moduleSystem?.affectedSpecifiers?.join(',') ?? '';
+    const patterns = change.moduleSystem?.affectedSpecifierPatterns?.join(',') ?? '';
+    const key = `${change.kind}:${exact}:${patterns}:${change.symbol}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

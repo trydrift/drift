@@ -544,6 +544,9 @@ function surfaceRecord(
               ...(c.moduleSystem.affectedSpecifiers
                 ? { affectedSpecifiers: [...c.moduleSystem.affectedSpecifiers] }
                 : {}),
+              ...(c.moduleSystem.affectedSpecifierPatterns
+                ? { affectedSpecifierPatterns: [...c.moduleSystem.affectedSpecifierPatterns] }
+                : {}),
             },
           }
         : {}),

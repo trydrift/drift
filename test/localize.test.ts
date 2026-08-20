@@ -26,8 +26,12 @@ const file = (path: string, language: string, content: string) => ({
   lineCount: content.split('\n').length,
 });
 
-const moduleSystemChange = (dependency: string, affectedSpecifiers?: string[]) => ({
-  id: `bc-module-${dependency}-${affectedSpecifiers?.join('-') ?? 'all'}`,
+const moduleSystemChange = (
+  dependency: string,
+  affectedSpecifiers?: string[],
+  affectedSpecifierPatterns?: string[],
+) => ({
+  id: `bc-module-${dependency}-${affectedSpecifiers?.join('-') ?? affectedSpecifierPatterns?.join('-') ?? 'all'}`,
   dependency,
   kind: 'module-system-change' as const,
   summary: 'The package no longer exposes CommonJS loading compatibility',
@@ -38,6 +42,7 @@ const moduleSystemChange = (dependency: string, affectedSpecifiers?: string[]) =
     to: 'esm' as const,
     incompatibleUsage: ['require' as const],
     ...(affectedSpecifiers ? { affectedSpecifiers } : {}),
+    ...(affectedSpecifierPatterns ? { affectedSpecifierPatterns } : {}),
   },
   confidence: 'high' as const,
   citations: ['ev_1'],
@@ -494,6 +499,7 @@ const foo = require('pkg/foo');`,
         'javascript',
         `import x from 'pkg/foo';
 const z = await import('pkg/foo');
+export { x } from 'pkg/foo';
 const y = require('pkg/foo');`,
       ),
     ];
@@ -501,7 +507,60 @@ const y = require('pkg/foo');`,
 
     const sites = localize([change], [dep('pkg', 'npm')], buildIndex(files), files, { logger });
 
-    assert.deepEqual(sites.map((site) => site.line), [3]);
+    assert.deepEqual(sites.map((site) => site.line), [4]);
+  });
+
+  test('wildcard subpath module-system changes flag matching require sites only', () => {
+    const files = [
+      file(
+        'src/usage.js',
+        'javascript',
+        `const root = require('pkg');
+const a = require('pkg/features/foo');
+const b = require('pkg/features/bar');
+const deep = require('pkg/features/deep/path');
+const other = require('pkg/other');
+const typo = require('pkg/feature/foo');
+const external = require('other/features/foo');`,
+      ),
+    ];
+    const change = moduleSystemChange('pkg', undefined, ['pkg/features/*']);
+
+    const sites = localize([change], [dep('pkg', 'npm')], buildIndex(files), files, { logger });
+
+    assert.deepEqual(sites.map((site) => site.line), [2, 3, 4]);
+  });
+
+  test('scoped wildcard subpath module-system changes stay inside the scoped package', () => {
+    const files = [
+      file(
+        'src/usage.js',
+        'javascript',
+        `const root = require('@scope/pkg');
+const a = require('@scope/pkg/features/foo');
+const other = require('@scope/other/features/foo');`,
+      ),
+    ];
+    const change = moduleSystemChange('@scope/pkg', undefined, ['@scope/pkg/features/*']);
+
+    const sites = localize([change], [dep('@scope/pkg', 'npm')], buildIndex(files), files, { logger });
+
+    assert.deepEqual(sites.map((site) => site.line), [2]);
+  });
+
+  test('exact and wildcard metadata does not create duplicate impact sites', () => {
+    const files = [
+      file(
+        'src/usage.js',
+        'javascript',
+        `const a = require('pkg/features/foo');`,
+      ),
+    ];
+    const change = moduleSystemChange('pkg', ['pkg/features/foo'], ['pkg/features/*']);
+
+    const sites = localize([change], [dep('pkg', 'npm')], buildIndex(files), files, { logger });
+
+    assert.deepEqual(sites.map((site) => site.line), [1]);
   });
 
   test('original ESM-only helper prose regression has no finding, site, or require migration', async () => {
