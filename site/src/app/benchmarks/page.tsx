@@ -157,6 +157,16 @@ export default function Benchmarks() {
           </p>
 
           <div className="mt-5 space-y-3">
+            <Weakness title="On Java, Drift finds the upstream change and then fails to find it in your code">
+              The worst result in this benchmark. On a 40-case stratified subset of BUMP — real Java projects whose
+              Maven build a dependency update broke — Drift detected the update in 34 of 39 scored cases and then told
+              16 of them they were not affected. Thirteen of those sixteen are{" "}
+              <code className="font-mono text-[12px]">detected-not-locally-reachable</code>: Drift found the upstream
+              breaking changes and no consumer code using them, so localization is the weak link rather than detection.
+              Stratifying by BUMP&rsquo;s own failure categories sharpens it — ten of the sixteen are test failures,
+              where the break is behavioural and an API-surface diff cannot see it by construction.
+            </Weakness>
+
             <Weakness title="Drift's japicmp output parser drops class-level changes">
               On the Roseau accuracy dataset, Drift&rsquo;s recall (0.810) trails the japicmp labels the replication kit
               records (0.980), even though Drift&rsquo;s Java surface diff <em>is</em> japicmp. Seventeen of the
@@ -167,7 +177,9 @@ export default function Benchmarks() {
               japicmp&rsquo;s <code className="font-mono text-[12px]">PUBLIC(-)</code> access notation defeats. The same
               split can mislabel the member that follows.{" "}
               <strong className="font-medium text-foreground">Not fixed before this run.</strong> Changing the analyser
-              after seeing the score and re-running would publish a number tuned on its own test set.
+              after seeing the score and re-running would publish a number tuned on its own test set. It is very likely
+              the same defect as the row above: a symbol the parser drops never reaches localization, so it cannot be
+              found in a consumer either — one cause, two corpora, two different-looking symptoms.
             </Weakness>
 
             <Weakness title="Drift's prose rules generalise poorly beyond changelog phrasing">
