@@ -5,10 +5,10 @@
   "language": "TypeScript",
   "repo": "https://github.com/supabase/supabase-js",
   "blurb": "The official Supabase client for JavaScript and TypeScript.",
-  "capturedAt": "2026-08-18T04:07:18.119Z",
+  "capturedAt": "2026-08-21T05:51:39.948Z",
   "commit": "a249594bc5790929ff090baa64f2d5bb3a40c286",
-  "engine": "81044c47297efc90",
-  "durationMs": 15426,
+  "engine": "09153dd336cd8676",
+  "durationMs": 18429,
   "packagesChecked": 22,
   "manifests": [
     "package.json",
@@ -25,721 +25,679 @@
   "nestedGitRepos": [],
   "events": [
     {
-      "at": 22,
+      "at": 14,
       "phase": "Looking for manifests",
       "detail": "supabase/supabase-js",
       "done": 0,
       "total": 0
     },
     {
-      "at": 56,
+      "at": 38,
       "phase": "Reading the workspace",
       "detail": "10 packages · pnpm-workspace",
       "done": 0,
       "total": 0
     },
     {
-      "at": 60,
+      "at": 47,
       "phase": "Reading manifest",
       "detail": "package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 860,
+      "at": 1007,
       "phase": "Reading manifest",
       "detail": "packages/core/auth-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 861,
+      "at": 1008,
       "phase": "Reading manifest",
       "detail": "packages/core/auth-js/example/react/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 861,
+      "at": 1008,
       "phase": "Reading manifest",
       "detail": "packages/core/functions-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 861,
+      "at": 1008,
       "phase": "Reading manifest",
       "detail": "packages/core/postgrest-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 862,
+      "at": 1008,
       "phase": "Reading manifest",
       "detail": "packages/core/realtime-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 862,
+      "at": 1008,
       "phase": "Reading manifest",
       "detail": "packages/core/realtime-js/example/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 862,
+      "at": 1009,
       "phase": "Reading manifest",
       "detail": "packages/core/storage-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 863,
+      "at": 1009,
       "phase": "Reading manifest",
       "detail": "packages/core/supabase-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 863,
+      "at": 1009,
       "phase": "Reading manifest",
       "detail": "packages/shared/tracing/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 863,
+      "at": 1009,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 22
     },
     {
-      "at": 863,
+      "at": 1009,
       "phase": "Checking registries",
       "detail": "22 direct dependencies",
       "done": 0,
       "total": 22
     },
     {
-      "at": 1283,
+      "at": 1397,
       "phase": "Up to date",
       "detail": "@supabase/phoenix@0.4.5",
       "done": 1,
       "total": 22
     },
     {
-      "at": 1307,
+      "at": 1428,
       "phase": "Up to date",
       "detail": "clsx@2.1.1",
       "done": 2,
       "total": 22
     },
     {
-      "at": 1334,
+      "at": 1455,
       "phase": "Up to date",
       "detail": "class-variance-authority@0.7.1",
       "done": 3,
       "total": 22
     },
     {
-      "at": 1344,
+      "at": 1465,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 4,
       "total": 22
     },
     {
-      "at": 1344,
+      "at": 1465,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 5,
       "total": 22
     },
     {
-      "at": 1344,
+      "at": 1466,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 6,
       "total": 22
     },
     {
-      "at": 1344,
+      "at": 1466,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 7,
       "total": 22
     },
     {
-      "at": 1345,
+      "at": 1466,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 8,
       "total": 22
     },
     {
-      "at": 1345,
+      "at": 1466,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 9,
       "total": 22
     },
     {
-      "at": 1411,
-      "phase": "Up to date",
-      "detail": "next-themes@0.4.6",
+      "at": 1530,
+      "phase": "Outdated",
+      "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 10,
       "total": 22
     },
     {
-      "at": 1428,
-      "phase": "Outdated",
-      "detail": "iceberg-js 0.8.1 → 1.0.0",
+      "at": 1535,
+      "phase": "Up to date",
+      "detail": "next-themes@0.4.6",
       "done": 11,
       "total": 22
     },
     {
-      "at": 1527,
+      "at": 1635,
       "phase": "Outdated",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
       "done": 12,
       "total": 22
     },
     {
-      "at": 1596,
+      "at": 1707,
       "phase": "Outdated",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
       "done": 13,
       "total": 22
     },
     {
-      "at": 1639,
+      "at": 1764,
       "phase": "Outdated",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 14,
       "total": 22
     },
     {
-      "at": 1690,
+      "at": 1817,
       "phase": "Outdated",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 15,
       "total": 22
     },
     {
-      "at": 1750,
-      "phase": "Outdated",
-      "detail": "tailwind-merge 3.3.0 → 3.6.0",
-      "done": 16,
-      "total": 22
-    },
-    {
-      "at": 1764,
-      "phase": "Outdated",
-      "detail": "lucide-react 0.511.0 → 1.31.0",
-      "done": 17,
-      "total": 22
-    },
-    {
-      "at": 2065,
-      "phase": "Outdated",
-      "detail": "react 19.2.0 → 19.2.8",
-      "done": 18,
-      "total": 22
-    },
-    {
-      "at": 2065,
-      "phase": "Outdated",
-      "detail": "react 19.0.0 → 19.2.8",
-      "done": 19,
-      "total": 22
-    },
-    {
-      "at": 2150,
-      "phase": "Outdated",
-      "detail": "react-dom 19.2.0 → 19.2.8",
-      "done": 20,
-      "total": 22
-    },
-    {
-      "at": 2150,
-      "phase": "Outdated",
-      "detail": "react-dom 19.0.0 → 19.2.8",
-      "done": 21,
-      "total": 22
-    },
-    {
-      "at": 4576,
-      "phase": "Outdated",
-      "detail": "next 16.2.11 → 16.3.1",
-      "done": 22,
-      "total": 22
-    },
-    {
-      "at": 4577,
-      "phase": "Preparing a test checkout of packages/core/auth-js/example/react",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 4585,
-      "phase": "Preparing a test checkout of packages/core/realtime-js/example",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 4592,
-      "phase": "Reading release notes and changelog",
-      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
-      "done": 0,
-      "total": 12
-    },
-    {
-      "at": 4593,
-      "phase": "Reading release notes and changelog",
-      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
-      "done": 0,
-      "total": 12
-    },
-    {
-      "at": 4593,
-      "phase": "Reading release notes and changelog",
-      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
-      "done": 0,
-      "total": 12
-    },
-    {
-      "at": 4593,
-      "phase": "Reading release notes and changelog",
-      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
-      "done": 0,
-      "total": 12
-    },
-    {
-      "at": 4593,
-      "phase": "Reading release notes and changelog",
-      "detail": "iceberg-js 0.8.1 → 1.0.0",
-      "done": 0,
-      "total": 12
-    },
-    {
-      "at": 4594,
-      "phase": "Reading release notes and changelog",
-      "detail": "lucide-react 0.511.0 → 1.31.0",
-      "done": 0,
-      "total": 12
-    },
-    {
-      "at": 4594,
-      "phase": "Reading release notes and changelog",
-      "detail": "next 16.2.11 → 16.3.1",
-      "done": 0,
-      "total": 12
-    },
-    {
-      "at": 4594,
-      "phase": "Reading release notes and changelog",
-      "detail": "react 19.2.0 → 19.2.8",
-      "done": 0,
-      "total": 12
-    },
-    {
-      "at": 4789,
-      "phase": "Installing packages/core/auth-js/example/react's dependencies",
-      "detail": "`pnpm install`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 4808,
-      "phase": "Installing packages/core/realtime-js/example's dependencies",
-      "detail": "`pnpm install`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 4861,
-      "phase": "Preparing a test checkout of packages/core/storage-js",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 4988,
+      "at": 1852,
       "phase": "Indexing your code",
       "detail": "383 files indexed · 22 direct dependencies to check",
       "done": 0,
       "total": 22
     },
     {
-      "at": 5201,
-      "phase": "Installing packages/core/storage-js's dependencies",
-      "detail": "`pnpm install`",
-      "done": 0,
-      "total": 0
+      "at": 2043,
+      "phase": "Outdated",
+      "detail": "lucide-react 0.511.0 → 1.33.0",
+      "done": 16,
+      "total": 22
     },
     {
-      "at": 5514,
+      "at": 2055,
+      "phase": "Outdated",
+      "detail": "tailwind-merge 3.3.0 → 3.6.0",
+      "done": 17,
+      "total": 22
+    },
+    {
+      "at": 2476,
+      "phase": "Outdated",
+      "detail": "react 19.2.0 → 19.2.8",
+      "done": 18,
+      "total": 22
+    },
+    {
+      "at": 2476,
+      "phase": "Outdated",
+      "detail": "react 19.0.0 → 19.2.8",
+      "done": 19,
+      "total": 22
+    },
+    {
+      "at": 2567,
+      "phase": "Outdated",
+      "detail": "react-dom 19.2.0 → 19.2.8",
+      "done": 20,
+      "total": 22
+    },
+    {
+      "at": 2567,
+      "phase": "Outdated",
+      "detail": "react-dom 19.0.0 → 19.2.8",
+      "done": 21,
+      "total": 22
+    },
+    {
+      "at": 4928,
+      "phase": "Outdated",
+      "detail": "next 16.2.11 → 16.3.1",
+      "done": 22,
+      "total": 22
+    },
+    {
+      "at": 4929,
+      "phase": "Reading release notes and changelog",
+      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
+      "done": 0,
+      "total": 12
+    },
+    {
+      "at": 4929,
+      "phase": "Reading release notes and changelog",
+      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
+      "done": 0,
+      "total": 12
+    },
+    {
+      "at": 4930,
+      "phase": "Reading release notes and changelog",
+      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
+      "done": 0,
+      "total": 12
+    },
+    {
+      "at": 4930,
+      "phase": "Reading release notes and changelog",
+      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
+      "done": 0,
+      "total": 12
+    },
+    {
+      "at": 4930,
+      "phase": "Reading release notes and changelog",
+      "detail": "iceberg-js 0.8.1 → 1.0.0",
+      "done": 0,
+      "total": 12
+    },
+    {
+      "at": 4932,
+      "phase": "Reading release notes and changelog",
+      "detail": "lucide-react 0.511.0 → 1.33.0",
+      "done": 0,
+      "total": 12
+    },
+    {
+      "at": 4932,
+      "phase": "Reading release notes and changelog",
+      "detail": "next 16.2.11 → 16.3.1",
+      "done": 0,
+      "total": 12
+    },
+    {
+      "at": 4932,
+      "phase": "Reading release notes and changelog",
+      "detail": "react 19.2.0 → 19.2.8",
+      "done": 0,
+      "total": 12
+    },
+    {
+      "at": 5363,
       "phase": "Comparing the public API surface",
       "detail": "iceberg-js 0.8.1 → 1.0.0 · 5 evidence sources",
       "done": 0,
       "total": 12
     },
     {
-      "at": 5527,
+      "at": 5399,
       "phase": "Searching your code for 26 breaking changes",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
       "total": 12
     },
     {
-      "at": 5555,
+      "at": 5422,
       "phase": "Weighing what this upgrade is worth",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
       "total": 12
     },
     {
-      "at": 10138,
+      "at": 5820,
       "phase": "Checked",
       "detail": "iceberg-js 0.8.1 → 1.0.0 · safe for your code · 26 upstream changes, none used here",
       "done": 1,
       "total": 12
     },
     {
-      "at": 10138,
+      "at": 5820,
       "phase": "Reading release notes and changelog",
       "detail": "react 19.0.0 → 19.2.8",
       "done": 1,
       "total": 12
     },
     {
-      "at": 11070,
-      "phase": "Comparing the public API surface",
-      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15 · 1 evidence source",
-      "done": 1,
-      "total": 12
-    },
-    {
-      "at": 11070,
+      "at": 5989,
       "phase": "Comparing the public API surface",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3 · 2 evidence sources",
       "done": 1,
       "total": 12
     },
     {
-      "at": 11070,
+      "at": 5990,
       "phase": "Comparing the public API surface",
-      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11 · 1 evidence source",
+      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15 · 1 evidence source",
       "done": 1,
       "total": 12
     },
     {
-      "at": 11070,
-      "phase": "Comparing the public API surface",
-      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24 · 1 evidence source",
-      "done": 1,
-      "total": 12
-    },
-    {
-      "at": 11070,
-      "phase": "No breaking changes to look for",
-      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
-      "done": 1,
-      "total": 12
-    },
-    {
-      "at": 11070,
+      "at": 5990,
       "phase": "Searching your code for 4 breaking changes",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
       "done": 1,
       "total": 12
     },
     {
-      "at": 11070,
+      "at": 5990,
       "phase": "No breaking changes to look for",
-      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
+      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
       "done": 1,
       "total": 12
     },
     {
-      "at": 11070,
-      "phase": "No breaking changes to look for",
-      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
-      "done": 1,
-      "total": 12
-    },
-    {
-      "at": 11071,
+      "at": 5990,
       "phase": "Weighing what this upgrade is worth",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
       "done": 1,
       "total": 12
     },
     {
-      "at": 11071,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
-      "done": 1,
-      "total": 12
-    },
-    {
-      "at": 11072,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
-      "done": 1,
-      "total": 12
-    },
-    {
-      "at": 11074,
+      "at": 5997,
       "phase": "Weighing what this upgrade is worth",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
       "done": 1,
       "total": 12
     },
     {
-      "at": 11100,
+      "at": 6313,
       "phase": "Comparing the public API surface",
-      "detail": "react 19.2.0 → 19.2.8 · 1 evidence source",
+      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11 · 1 evidence source",
       "done": 1,
       "total": 12
     },
     {
-      "at": 11100,
+      "at": 6314,
       "phase": "Comparing the public API surface",
-      "detail": "react 19.0.0 → 19.2.8 · 4 evidence sources",
+      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24 · 1 evidence source",
       "done": 1,
       "total": 12
     },
     {
-      "at": 11101,
+      "at": 6314,
       "phase": "No breaking changes to look for",
-      "detail": "react 19.2.0 → 19.2.8",
+      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 1,
       "total": 12
     },
     {
-      "at": 11101,
-      "phase": "Searching your code for 2 breaking changes",
-      "detail": "react 19.0.0 → 19.2.8",
+      "at": 6314,
+      "phase": "No breaking changes to look for",
+      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 1,
       "total": 12
     },
     {
-      "at": 11101,
+      "at": 6314,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "react 19.2.0 → 19.2.8",
+      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 1,
       "total": 12
     },
     {
-      "at": 11105,
+      "at": 6318,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "react 19.0.0 → 19.2.8",
+      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 1,
       "total": 12
     },
     {
-      "at": 11483,
-      "phase": "Comparing the public API surface",
-      "detail": "lucide-react 0.511.0 → 1.31.0 · 2 evidence sources",
-      "done": 1,
-      "total": 12
-    },
-    {
-      "at": 11516,
-      "phase": "Searching your code for 107 breaking changes",
-      "detail": "lucide-react 0.511.0 → 1.31.0",
-      "done": 1,
-      "total": 12
-    },
-    {
-      "at": 11547,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "lucide-react 0.511.0 → 1.31.0",
-      "done": 1,
-      "total": 12
-    },
-    {
-      "at": 11684,
+      "at": 6412,
       "phase": "Checked",
-      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24 · safe for your code · no breaking changes found",
+      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15 · safe for your code · no breaking changes found",
       "done": 2,
       "total": 12
     },
     {
-      "at": 11684,
+      "at": 6412,
       "phase": "Checked",
-      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11 · safe for your code · no breaking changes found",
+      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3 · safe for your code · 4 upstream changes, none used here",
       "done": 3,
       "total": 12
     },
     {
-      "at": 11684,
+      "at": 6412,
+      "phase": "Reading release notes and changelog",
+      "detail": "react-dom 19.2.0 → 19.2.8",
+      "done": 3,
+      "total": 12
+    },
+    {
+      "at": 6412,
+      "phase": "Reading release notes and changelog",
+      "detail": "react-dom 19.0.0 → 19.2.8",
+      "done": 3,
+      "total": 12
+    },
+    {
+      "at": 6585,
       "phase": "Checked",
-      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3 · safe for your code · 4 upstream changes, none used here",
+      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24 · safe for your code · no breaking changes found",
       "done": 4,
       "total": 12
     },
     {
-      "at": 11684,
+      "at": 6585,
+      "phase": "Reading release notes and changelog",
+      "detail": "tailwind-merge 3.3.0 → 3.6.0",
+      "done": 4,
+      "total": 12
+    },
+    {
+      "at": 6588,
       "phase": "Checked",
-      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15 · safe for your code · no breaking changes found",
+      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11 · safe for your code · no breaking changes found",
       "done": 5,
       "total": 12
     },
     {
-      "at": 11684,
-      "phase": "Reading release notes and changelog",
-      "detail": "react-dom 19.2.0 → 19.2.8",
+      "at": 7178,
+      "phase": "Comparing the public API surface",
+      "detail": "lucide-react 0.511.0 → 1.33.0 · 3 evidence sources",
       "done": 5,
       "total": 12
     },
     {
-      "at": 11684,
-      "phase": "Reading release notes and changelog",
-      "detail": "react-dom 19.0.0 → 19.2.8",
+      "at": 7208,
+      "phase": "Searching your code for 107 breaking changes",
+      "detail": "lucide-react 0.511.0 → 1.33.0",
       "done": 5,
       "total": 12
     },
     {
-      "at": 11684,
-      "phase": "Reading release notes and changelog",
+      "at": 7222,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "lucide-react 0.511.0 → 1.33.0",
+      "done": 5,
+      "total": 12
+    },
+    {
+      "at": 7715,
+      "phase": "Comparing the public API surface",
+      "detail": "tailwind-merge 3.3.0 → 3.6.0 · 2 evidence sources",
+      "done": 5,
+      "total": 12
+    },
+    {
+      "at": 7719,
+      "phase": "Searching your code for 2 breaking changes",
       "detail": "tailwind-merge 3.3.0 → 3.6.0",
       "done": 5,
       "total": 12
     },
     {
-      "at": 11701,
+      "at": 7720,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "tailwind-merge 3.3.0 → 3.6.0",
+      "done": 5,
+      "total": 12
+    },
+    {
+      "at": 8747,
+      "phase": "Comparing the public API surface",
+      "detail": "react 19.2.0 → 19.2.8 · 1 evidence source",
+      "done": 5,
+      "total": 12
+    },
+    {
+      "at": 8747,
+      "phase": "Comparing the public API surface",
+      "detail": "react 19.0.0 → 19.2.8 · 4 evidence sources",
+      "done": 5,
+      "total": 12
+    },
+    {
+      "at": 8754,
+      "phase": "No breaking changes to look for",
+      "detail": "react 19.2.0 → 19.2.8",
+      "done": 5,
+      "total": 12
+    },
+    {
+      "at": 8754,
+      "phase": "Searching your code for 2 breaking changes",
+      "detail": "react 19.0.0 → 19.2.8",
+      "done": 5,
+      "total": 12
+    },
+    {
+      "at": 8754,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "react 19.2.0 → 19.2.8",
+      "done": 5,
+      "total": 12
+    },
+    {
+      "at": 8770,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "react 19.0.0 → 19.2.8",
+      "done": 5,
+      "total": 12
+    },
+    {
+      "at": 8788,
       "phase": "Checked",
-      "detail": "react 19.2.0 → 19.2.8 · safe for your code · no breaking changes found",
+      "detail": "tailwind-merge 3.3.0 → 3.6.0 · safe for your code · 2 upstream changes, none used here",
       "done": 6,
       "total": 12
     },
     {
-      "at": 11701,
+      "at": 8934,
       "phase": "Checked",
-      "detail": "react 19.0.0 → 19.2.8 · safe for your code · 2 upstream changes, none used here",
+      "detail": "lucide-react 0.511.0 → 1.33.0 · safe for your code · 107 upstream changes, none used here",
       "done": 7,
       "total": 12
     },
     {
-      "at": 11955,
+      "at": 9245,
       "phase": "Checked",
-      "detail": "lucide-react 0.511.0 → 1.31.0 · safe for your code · 107 upstream changes, none used here",
+      "detail": "react 19.2.0 → 19.2.8 · safe for your code · no breaking changes found",
       "done": 8,
       "total": 12
     },
     {
-      "at": 12532,
-      "phase": "Comparing the public API surface",
-      "detail": "react-dom 19.2.0 → 19.2.8 · 1 evidence source",
-      "done": 8,
-      "total": 12
-    },
-    {
-      "at": 12532,
-      "phase": "No breaking changes to look for",
-      "detail": "react-dom 19.2.0 → 19.2.8",
-      "done": 8,
-      "total": 12
-    },
-    {
-      "at": 12533,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "react-dom 19.2.0 → 19.2.8",
-      "done": 8,
-      "total": 12
-    },
-    {
-      "at": 12709,
+      "at": 9245,
       "phase": "Checked",
-      "detail": "react-dom 19.2.0 → 19.2.8 · safe for your code · no breaking changes found",
+      "detail": "react 19.0.0 → 19.2.8 · safe for your code · 2 upstream changes, none used here",
       "done": 9,
       "total": 12
     },
     {
-      "at": 12742,
+      "at": 10694,
+      "phase": "Comparing the public API surface",
+      "detail": "react-dom 19.2.0 → 19.2.8 · 1 evidence source",
+      "done": 9,
+      "total": 12
+    },
+    {
+      "at": 10694,
+      "phase": "No breaking changes to look for",
+      "detail": "react-dom 19.2.0 → 19.2.8",
+      "done": 9,
+      "total": 12
+    },
+    {
+      "at": 10694,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "react-dom 19.2.0 → 19.2.8",
+      "done": 9,
+      "total": 12
+    },
+    {
+      "at": 10725,
       "phase": "Comparing the public API surface",
       "detail": "react-dom 19.0.0 → 19.2.8 · 4 evidence sources",
       "done": 9,
       "total": 12
     },
     {
-      "at": 12743,
+      "at": 10725,
       "phase": "Searching your code for 2 breaking changes",
       "detail": "react-dom 19.0.0 → 19.2.8",
       "done": 9,
       "total": 12
     },
     {
-      "at": 12746,
+      "at": 10727,
       "phase": "Weighing what this upgrade is worth",
       "detail": "react-dom 19.0.0 → 19.2.8",
       "done": 9,
       "total": 12
     },
     {
-      "at": 12894,
+      "at": 10837,
+      "phase": "Checked",
+      "detail": "react-dom 19.2.0 → 19.2.8 · safe for your code · no breaking changes found",
+      "done": 10,
+      "total": 12
+    },
+    {
+      "at": 10866,
       "phase": "Checked",
       "detail": "react-dom 19.0.0 → 19.2.8 · safe for your code · 2 upstream changes, none used here",
-      "done": 10,
-      "total": 12
-    },
-    {
-      "at": 13808,
-      "phase": "Comparing the public API surface",
-      "detail": "tailwind-merge 3.3.0 → 3.6.0 · 2 evidence sources",
-      "done": 10,
-      "total": 12
-    },
-    {
-      "at": 13808,
-      "phase": "Searching your code for 2 breaking changes",
-      "detail": "tailwind-merge 3.3.0 → 3.6.0",
-      "done": 10,
-      "total": 12
-    },
-    {
-      "at": 13809,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "tailwind-merge 3.3.0 → 3.6.0",
-      "done": 10,
-      "total": 12
-    },
-    {
-      "at": 14140,
-      "phase": "Checked",
-      "detail": "tailwind-merge 3.3.0 → 3.6.0 · safe for your code · 2 upstream changes, none used here",
       "done": 11,
       "total": 12
     },
     {
-      "at": 14833,
+      "at": 18068,
       "phase": "Comparing the public API surface",
       "detail": "next 16.2.11 → 16.3.1 · 2 evidence sources",
       "done": 11,
       "total": 12
     },
     {
-      "at": 14833,
+      "at": 18068,
       "phase": "No breaking changes to look for",
       "detail": "next 16.2.11 → 16.3.1",
       "done": 11,
       "total": 12
     },
     {
-      "at": 14833,
+      "at": 18068,
       "phase": "Weighing what this upgrade is worth",
       "detail": "next 16.2.11 → 16.3.1",
       "done": 11,
       "total": 12
     },
     {
-      "at": 15423,
+      "at": 18425,
       "phase": "Checked",
       "detail": "next 16.2.11 → 16.3.1 · safe for your code · no breaking changes found",
       "done": 12,
@@ -754,8 +712,8 @@
       "workspace": "packages/core/realtime-js/example",
       "workspaceName": null,
       "current": "0.511.0",
-      "latest": "1.31.0",
-      "selected": "1.31.0",
+      "latest": "1.33.0",
+      "selected": "1.33.0",
       "safeLatest": null,
       "status": "checking",
       "risk": "none",
@@ -764,10 +722,8 @@
       "breakingCount": 107,
       "impactCount": 0,
       "impactFiles": 0,
-      "evidenceCount": 2,
-      "gaps": [
-        "Drift read 25 sets of release notes ([Version 0.540.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.540.0), [Version 0.539.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.539.0), [Version 0.538.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.538.0), [Version 0.537.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.537.0), [Version 0.536.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.536.0), [Version 0.535.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.535.0), [Version 0.534.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.534.0), [Version 0.533.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.533.0), [Version 0.532.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.532.0), [Version 0.531.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.531.0), [Version 0.530.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.530.0), [Version 0.529.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.529.0), [Version 0.528.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.528.0), [Version 0.527.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.527.0), [Version 0.526.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.526.0), [Version 0.525.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.525.0), [Version 0.524.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.524.0), [Version 0.523.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.523.0), [Version 0.522.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.522.0), [Version 0.521.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.521.0), [Version 0.520.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.520.0), [Version 0.519.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.519.0), [Version 0.518.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.518.0), [Version 0.517.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.517.0), [Version 0.516.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.516.0)) for lucide-react 1.31.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
-      ],
+      "evidenceCount": 3,
+      "gaps": [],
       "breaking": [
         {
           "kind": "signature-change",
@@ -786,8 +742,8 @@
             {
               "source": "type-surface-diff",
               "title": "107 API surface change(s) in lucide-react",
-              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.31.0/dist/lucide-react.d.ts",
-              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts → lucide-react@1.31.0:dist/lucide-react.d.ts"
+              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.33.0/dist/lucide-react.d.ts",
+              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts + package.json → lucide-react@1.33.0:dist/lucide-react.d.ts + package.json"
             }
           ],
           "sites": []
@@ -809,8 +765,8 @@
             {
               "source": "type-surface-diff",
               "title": "107 API surface change(s) in lucide-react",
-              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.31.0/dist/lucide-react.d.ts",
-              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts → lucide-react@1.31.0:dist/lucide-react.d.ts"
+              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.33.0/dist/lucide-react.d.ts",
+              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts + package.json → lucide-react@1.33.0:dist/lucide-react.d.ts + package.json"
             }
           ],
           "sites": []
@@ -832,8 +788,8 @@
             {
               "source": "type-surface-diff",
               "title": "107 API surface change(s) in lucide-react",
-              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.31.0/dist/lucide-react.d.ts",
-              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts → lucide-react@1.31.0:dist/lucide-react.d.ts"
+              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.33.0/dist/lucide-react.d.ts",
+              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts + package.json → lucide-react@1.33.0:dist/lucide-react.d.ts + package.json"
             }
           ],
           "sites": []
@@ -855,8 +811,8 @@
             {
               "source": "type-surface-diff",
               "title": "107 API surface change(s) in lucide-react",
-              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.31.0/dist/lucide-react.d.ts",
-              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts → lucide-react@1.31.0:dist/lucide-react.d.ts"
+              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.33.0/dist/lucide-react.d.ts",
+              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts + package.json → lucide-react@1.33.0:dist/lucide-react.d.ts + package.json"
             }
           ],
           "sites": []
@@ -870,8 +826,8 @@
       "workspace": "packages/core/realtime-js/example",
       "workspaceName": null,
       "current": "0.511.0",
-      "latest": "1.31.0",
-      "selected": "1.31.0",
+      "latest": "1.33.0",
+      "selected": "1.33.0",
       "safeLatest": null,
       "status": "ready",
       "risk": "none",
@@ -880,10 +836,8 @@
       "breakingCount": 107,
       "impactCount": 0,
       "impactFiles": 0,
-      "evidenceCount": 2,
-      "gaps": [
-        "Drift read 25 sets of release notes ([Version 0.540.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.540.0), [Version 0.539.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.539.0), [Version 0.538.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.538.0), [Version 0.537.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.537.0), [Version 0.536.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.536.0), [Version 0.535.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.535.0), [Version 0.534.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.534.0), [Version 0.533.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.533.0), [Version 0.532.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.532.0), [Version 0.531.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.531.0), [Version 0.530.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.530.0), [Version 0.529.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.529.0), [Version 0.528.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.528.0), [Version 0.527.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.527.0), [Version 0.526.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.526.0), [Version 0.525.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.525.0), [Version 0.524.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.524.0), [Version 0.523.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.523.0), [Version 0.522.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.522.0), [Version 0.521.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.521.0), [Version 0.520.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.520.0), [Version 0.519.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.519.0), [Version 0.518.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.518.0), [Version 0.517.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.517.0), [Version 0.516.0 release notes](https://github.com/lucide-icons/lucide/releases/tag/0.516.0)) for lucide-react 1.31.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
-      ],
+      "evidenceCount": 3,
+      "gaps": [],
       "breaking": [
         {
           "kind": "signature-change",
@@ -902,8 +856,8 @@
             {
               "source": "type-surface-diff",
               "title": "107 API surface change(s) in lucide-react",
-              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.31.0/dist/lucide-react.d.ts",
-              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts → lucide-react@1.31.0:dist/lucide-react.d.ts"
+              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.33.0/dist/lucide-react.d.ts",
+              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts + package.json → lucide-react@1.33.0:dist/lucide-react.d.ts + package.json"
             }
           ],
           "sites": []
@@ -925,8 +879,8 @@
             {
               "source": "type-surface-diff",
               "title": "107 API surface change(s) in lucide-react",
-              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.31.0/dist/lucide-react.d.ts",
-              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts → lucide-react@1.31.0:dist/lucide-react.d.ts"
+              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.33.0/dist/lucide-react.d.ts",
+              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts + package.json → lucide-react@1.33.0:dist/lucide-react.d.ts + package.json"
             }
           ],
           "sites": []
@@ -948,8 +902,8 @@
             {
               "source": "type-surface-diff",
               "title": "107 API surface change(s) in lucide-react",
-              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.31.0/dist/lucide-react.d.ts",
-              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts → lucide-react@1.31.0:dist/lucide-react.d.ts"
+              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.33.0/dist/lucide-react.d.ts",
+              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts + package.json → lucide-react@1.33.0:dist/lucide-react.d.ts + package.json"
             }
           ],
           "sites": []
@@ -971,8 +925,8 @@
             {
               "source": "type-surface-diff",
               "title": "107 API surface change(s) in lucide-react",
-              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.31.0/dist/lucide-react.d.ts",
-              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts → lucide-react@1.31.0:dist/lucide-react.d.ts"
+              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.33.0/dist/lucide-react.d.ts",
+              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts + package.json → lucide-react@1.33.0:dist/lucide-react.d.ts + package.json"
             }
           ],
           "sites": []
@@ -991,8 +945,8 @@
       "safeLatest": null,
       "status": "checking",
       "risk": "none",
-      "summary": "Upgrade recommended. 26 upstream breaking changes, none of which this repository uses.",
-      "recommendation": "upgrade-recommended",
+      "summary": "Safe to upgrade. 26 upstream breaking changes, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
       "breakingCount": 26,
       "impactCount": 0,
       "impactFiles": 0,
@@ -1017,7 +971,7 @@
               "source": "type-surface-diff",
               "title": "26 API surface change(s) in iceberg-js",
               "url": "https://cdn.jsdelivr.net/npm/iceberg-js@1.0.0/dist/index.d.ts",
-              "locator": "iceberg-js@0.8.1:dist/index.d.ts → iceberg-js@1.0.0:dist/index.d.ts"
+              "locator": "iceberg-js@0.8.1:dist/index.d.ts + package.json → iceberg-js@1.0.0:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1040,7 +994,7 @@
               "source": "type-surface-diff",
               "title": "26 API surface change(s) in iceberg-js",
               "url": "https://cdn.jsdelivr.net/npm/iceberg-js@1.0.0/dist/index.d.ts",
-              "locator": "iceberg-js@0.8.1:dist/index.d.ts → iceberg-js@1.0.0:dist/index.d.ts"
+              "locator": "iceberg-js@0.8.1:dist/index.d.ts + package.json → iceberg-js@1.0.0:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1063,7 +1017,7 @@
               "source": "type-surface-diff",
               "title": "26 API surface change(s) in iceberg-js",
               "url": "https://cdn.jsdelivr.net/npm/iceberg-js@1.0.0/dist/index.d.ts",
-              "locator": "iceberg-js@0.8.1:dist/index.d.ts → iceberg-js@1.0.0:dist/index.d.ts"
+              "locator": "iceberg-js@0.8.1:dist/index.d.ts + package.json → iceberg-js@1.0.0:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1086,7 +1040,7 @@
               "source": "type-surface-diff",
               "title": "26 API surface change(s) in iceberg-js",
               "url": "https://cdn.jsdelivr.net/npm/iceberg-js@1.0.0/dist/index.d.ts",
-              "locator": "iceberg-js@0.8.1:dist/index.d.ts → iceberg-js@1.0.0:dist/index.d.ts"
+              "locator": "iceberg-js@0.8.1:dist/index.d.ts + package.json → iceberg-js@1.0.0:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1105,8 +1059,8 @@
       "safeLatest": null,
       "status": "ready",
       "risk": "none",
-      "summary": "Upgrade recommended. 26 upstream breaking changes, none of which this repository uses.",
-      "recommendation": "upgrade-recommended",
+      "summary": "Safe to upgrade. 26 upstream breaking changes, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
       "breakingCount": 26,
       "impactCount": 0,
       "impactFiles": 0,
@@ -1131,7 +1085,7 @@
               "source": "type-surface-diff",
               "title": "26 API surface change(s) in iceberg-js",
               "url": "https://cdn.jsdelivr.net/npm/iceberg-js@1.0.0/dist/index.d.ts",
-              "locator": "iceberg-js@0.8.1:dist/index.d.ts → iceberg-js@1.0.0:dist/index.d.ts"
+              "locator": "iceberg-js@0.8.1:dist/index.d.ts + package.json → iceberg-js@1.0.0:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1154,7 +1108,7 @@
               "source": "type-surface-diff",
               "title": "26 API surface change(s) in iceberg-js",
               "url": "https://cdn.jsdelivr.net/npm/iceberg-js@1.0.0/dist/index.d.ts",
-              "locator": "iceberg-js@0.8.1:dist/index.d.ts → iceberg-js@1.0.0:dist/index.d.ts"
+              "locator": "iceberg-js@0.8.1:dist/index.d.ts + package.json → iceberg-js@1.0.0:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1177,7 +1131,7 @@
               "source": "type-surface-diff",
               "title": "26 API surface change(s) in iceberg-js",
               "url": "https://cdn.jsdelivr.net/npm/iceberg-js@1.0.0/dist/index.d.ts",
-              "locator": "iceberg-js@0.8.1:dist/index.d.ts → iceberg-js@1.0.0:dist/index.d.ts"
+              "locator": "iceberg-js@0.8.1:dist/index.d.ts + package.json → iceberg-js@1.0.0:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1200,7 +1154,7 @@
               "source": "type-surface-diff",
               "title": "26 API surface change(s) in iceberg-js",
               "url": "https://cdn.jsdelivr.net/npm/iceberg-js@1.0.0/dist/index.d.ts",
-              "locator": "iceberg-js@0.8.1:dist/index.d.ts → iceberg-js@1.0.0:dist/index.d.ts"
+              "locator": "iceberg-js@0.8.1:dist/index.d.ts + package.json → iceberg-js@1.0.0:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1247,7 +1201,7 @@
               "source": "type-surface-diff",
               "title": "4 API surface change(s) in @radix-ui/react-slot",
               "url": "https://cdn.jsdelivr.net/npm/@radix-ui/react-slot@1.3.3/dist/index.d.ts",
-              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts → @radix-ui/react-slot@1.3.3:dist/index.d.ts"
+              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts + package.json → @radix-ui/react-slot@1.3.3:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1270,7 +1224,7 @@
               "source": "type-surface-diff",
               "title": "4 API surface change(s) in @radix-ui/react-slot",
               "url": "https://cdn.jsdelivr.net/npm/@radix-ui/react-slot@1.3.3/dist/index.d.ts",
-              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts → @radix-ui/react-slot@1.3.3:dist/index.d.ts"
+              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts + package.json → @radix-ui/react-slot@1.3.3:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1293,7 +1247,7 @@
               "source": "type-surface-diff",
               "title": "4 API surface change(s) in @radix-ui/react-slot",
               "url": "https://cdn.jsdelivr.net/npm/@radix-ui/react-slot@1.3.3/dist/index.d.ts",
-              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts → @radix-ui/react-slot@1.3.3:dist/index.d.ts"
+              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts + package.json → @radix-ui/react-slot@1.3.3:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1316,7 +1270,7 @@
               "source": "type-surface-diff",
               "title": "4 API surface change(s) in @radix-ui/react-slot",
               "url": "https://cdn.jsdelivr.net/npm/@radix-ui/react-slot@1.3.3/dist/index.d.ts",
-              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts → @radix-ui/react-slot@1.3.3:dist/index.d.ts"
+              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts + package.json → @radix-ui/react-slot@1.3.3:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1363,7 +1317,7 @@
               "source": "type-surface-diff",
               "title": "4 API surface change(s) in @radix-ui/react-slot",
               "url": "https://cdn.jsdelivr.net/npm/@radix-ui/react-slot@1.3.3/dist/index.d.ts",
-              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts → @radix-ui/react-slot@1.3.3:dist/index.d.ts"
+              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts + package.json → @radix-ui/react-slot@1.3.3:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1386,7 +1340,7 @@
               "source": "type-surface-diff",
               "title": "4 API surface change(s) in @radix-ui/react-slot",
               "url": "https://cdn.jsdelivr.net/npm/@radix-ui/react-slot@1.3.3/dist/index.d.ts",
-              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts → @radix-ui/react-slot@1.3.3:dist/index.d.ts"
+              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts + package.json → @radix-ui/react-slot@1.3.3:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1409,7 +1363,7 @@
               "source": "type-surface-diff",
               "title": "4 API surface change(s) in @radix-ui/react-slot",
               "url": "https://cdn.jsdelivr.net/npm/@radix-ui/react-slot@1.3.3/dist/index.d.ts",
-              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts → @radix-ui/react-slot@1.3.3:dist/index.d.ts"
+              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts + package.json → @radix-ui/react-slot@1.3.3:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1432,7 +1386,7 @@
               "source": "type-surface-diff",
               "title": "4 API surface change(s) in @radix-ui/react-slot",
               "url": "https://cdn.jsdelivr.net/npm/@radix-ui/react-slot@1.3.3/dist/index.d.ts",
-              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts → @radix-ui/react-slot@1.3.3:dist/index.d.ts"
+              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts + package.json → @radix-ui/react-slot@1.3.3:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1783,7 +1737,7 @@
               "source": "type-surface-diff",
               "title": "2 API surface change(s) in tailwind-merge",
               "url": "https://cdn.jsdelivr.net/npm/tailwind-merge@3.6.0/dist/types.d.ts",
-              "locator": "tailwind-merge@3.3.0:dist/types.d.ts → tailwind-merge@3.6.0:dist/types.d.ts"
+              "locator": "tailwind-merge@3.3.0:dist/types.d.ts + package.json → tailwind-merge@3.6.0:dist/types.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1806,7 +1760,7 @@
               "source": "type-surface-diff",
               "title": "2 API surface change(s) in tailwind-merge",
               "url": "https://cdn.jsdelivr.net/npm/tailwind-merge@3.6.0/dist/types.d.ts",
-              "locator": "tailwind-merge@3.3.0:dist/types.d.ts → tailwind-merge@3.6.0:dist/types.d.ts"
+              "locator": "tailwind-merge@3.3.0:dist/types.d.ts + package.json → tailwind-merge@3.6.0:dist/types.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1853,7 +1807,7 @@
               "source": "type-surface-diff",
               "title": "2 API surface change(s) in tailwind-merge",
               "url": "https://cdn.jsdelivr.net/npm/tailwind-merge@3.6.0/dist/types.d.ts",
-              "locator": "tailwind-merge@3.3.0:dist/types.d.ts → tailwind-merge@3.6.0:dist/types.d.ts"
+              "locator": "tailwind-merge@3.3.0:dist/types.d.ts + package.json → tailwind-merge@3.6.0:dist/types.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1876,7 +1830,7 @@
               "source": "type-surface-diff",
               "title": "2 API surface change(s) in tailwind-merge",
               "url": "https://cdn.jsdelivr.net/npm/tailwind-merge@3.6.0/dist/types.d.ts",
-              "locator": "tailwind-merge@3.3.0:dist/types.d.ts → tailwind-merge@3.6.0:dist/types.d.ts"
+              "locator": "tailwind-merge@3.3.0:dist/types.d.ts + package.json → tailwind-merge@3.6.0:dist/types.d.ts + package.json"
             }
           ],
           "sites": []
@@ -2931,8 +2885,8 @@
       "workspace": "packages/core/realtime-js/example",
       "workspaceName": null,
       "current": "0.511.0",
-      "latest": "1.31.0",
-      "selected": "1.31.0",
+      "latest": "1.33.0",
+      "selected": "1.33.0",
       "safeLatest": null,
       "status": "pending",
       "risk": "unknown",
@@ -3823,6 +3777,69 @@
       "current": "19.2.0",
       "latest": "19.2.0",
       "selected": "19.2.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "react-dom",
+      "ecosystem": "npm",
+      "manifestPath": "packages/core/realtime-js/example/package.json",
+      "workspace": "packages/core/realtime-js/example",
+      "workspaceName": null,
+      "current": "19.0.0",
+      "latest": "19.0.0",
+      "selected": "19.0.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "react-dom",
+      "ecosystem": "npm",
+      "manifestPath": "packages/core/realtime-js/example/package.json",
+      "workspace": "packages/core/realtime-js/example",
+      "workspaceName": null,
+      "current": "19.0.0",
+      "latest": "19.0.0",
+      "selected": "19.0.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "react-dom",
+      "ecosystem": "npm",
+      "manifestPath": "packages/core/realtime-js/example/package.json",
+      "workspace": "packages/core/realtime-js/example",
+      "workspaceName": null,
+      "current": "19.0.0",
+      "latest": "19.0.0",
+      "selected": "19.0.0",
       "safeLatest": null,
       "status": "pending",
       "risk": "unknown",
@@ -3856,69 +3873,6 @@
       "gaps": [
         "react-dom publishes no TypeScript declarations Drift could compare, so this upgrade rests on prose evidence. Drift read 8 sets of release notes ([19.2.8 (July 21st, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.8), [19.2.7 (June 1st, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.7), [19.2.6 (May 6th, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.6), [19.2.5 (April 8th, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.5), [19.2.4 (January 26th, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.4), [19.2.3 (December 11th, 2025) release notes](https://github.com/react/react/releases/tag/v19.2.3), [19.2.2 (December 11th, 2025) release notes](https://github.com/react/react/releases/tag/v19.2.2), [19.2.1 (December 3rd, 2025) release notes](https://github.com/react/react/releases/tag/v19.2.1)) and the changelog ([CHANGELOG.md](https://github.com/react/react/blob/main/CHANGELOG.md)) for react-dom 19.2.8 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
       ],
-      "breaking": []
-    },
-    {
-      "name": "react-dom",
-      "ecosystem": "npm",
-      "manifestPath": "packages/core/realtime-js/example/package.json",
-      "workspace": "packages/core/realtime-js/example",
-      "workspaceName": null,
-      "current": "19.0.0",
-      "latest": "19.0.0",
-      "selected": "19.0.0",
-      "safeLatest": null,
-      "status": "pending",
-      "risk": "unknown",
-      "summary": "",
-      "recommendation": null,
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 0,
-      "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "react-dom",
-      "ecosystem": "npm",
-      "manifestPath": "packages/core/realtime-js/example/package.json",
-      "workspace": "packages/core/realtime-js/example",
-      "workspaceName": null,
-      "current": "19.0.0",
-      "latest": "19.0.0",
-      "selected": "19.0.0",
-      "safeLatest": null,
-      "status": "pending",
-      "risk": "unknown",
-      "summary": "",
-      "recommendation": null,
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 0,
-      "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "react-dom",
-      "ecosystem": "npm",
-      "manifestPath": "packages/core/realtime-js/example/package.json",
-      "workspace": "packages/core/realtime-js/example",
-      "workspaceName": null,
-      "current": "19.0.0",
-      "latest": "19.0.0",
-      "selected": "19.0.0",
-      "safeLatest": null,
-      "status": "pending",
-      "risk": "unknown",
-      "summary": "",
-      "recommendation": null,
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 0,
-      "gaps": [],
       "breaking": []
     },
     {

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { analyzeRepository } from '../../src/analysis.js';
+import { analyzeRepository, type AnalysisOptions } from '../../src/analysis.js';
 import { DriftConfigSchema, type DriftConfig } from '../../src/config/schema.js';
 import { parseConfig } from '../../src/config/load.js';
 import { LocalGitProvider, chooseManifestRange, inspectLocalRepo } from '../../src/repo/local-git.js';
@@ -37,6 +37,15 @@ export interface AnalyzeOptions {
 export interface AnalyzeResult {
   plan: RemediationPlan | null;
   summary: string;
+  /**
+   * What produced this result — present only when analysis actually ran (not
+   * on the early "no folder"/"not a git repo" exits). Lets a caller run Deep
+   * Verification afterwards with `deepVerify` from `src/analysis.js` without
+   * re-deriving the commit range, the config, or the provider: the exact
+   * options `analyzeRepository` used, so continuing costs nothing beyond the
+   * verification itself.
+   */
+  context?: AnalysisOptions;
 }
 
 export async function runAnalysis(options: AnalyzeOptions): Promise<AnalyzeResult> {
@@ -78,23 +87,27 @@ export async function runAnalysis(options: AnalyzeOptions): Promise<AnalyzeResul
 
   state.set({ kind: 'analysing', detail: 'Reading dependency changes' });
 
+  const analysisOptions: AnalysisOptions = {
+    repo: {
+      owner: info.slug?.split('/')[0] ?? 'local',
+      repo: info.slug?.split('/')[1] ?? 'workspace',
+      baseBranch: info.branch,
+      beforeSha: range.before,
+      afterSha: range.after,
+      workspace: root,
+    },
+    config,
+    logger,
+    provider: new LocalGitProvider(root, range),
+    workspace: root,
+    env: await envWithShellPath(),
+    // Signed out is fine — this only raises the public rate limit.
+    githubToken: await getRateLimitToken(),
+  };
+
   try {
     const result = await analyzeRepository({
-      repo: {
-        owner: info.slug?.split('/')[0] ?? 'local',
-        repo: info.slug?.split('/')[1] ?? 'workspace',
-        baseBranch: info.branch,
-        beforeSha: range.before,
-        afterSha: range.after,
-        workspace: root,
-      },
-      config,
-      logger,
-      provider: new LocalGitProvider(root, range),
-      workspace: root,
-      env: await envWithShellPath(),
-      // Signed out is fine — this only raises the public rate limit.
-      githubToken: await getRateLimitToken(),
+      ...analysisOptions,
       onProgress: (_stage, detail) => {
         if (token?.isCancellationRequested) return;
         progress?.report({ message: detail });
@@ -109,11 +122,11 @@ export async function runAnalysis(options: AnalyzeOptions): Promise<AnalyzeResul
 
     if (!result.plan || result.plan.breakingChanges.length === 0) {
       state.set({ kind: 'clean', summary: result.summary, plan: result.plan ?? undefined, at: Date.now() });
-      return result;
+      return { ...result, context: analysisOptions };
     }
 
     state.set({ kind: 'findings', plan: result.plan, at: Date.now() });
-    return result;
+    return { ...result, context: analysisOptions };
   } catch (err) {
     const message = (err as Error)?.message ?? String(err);
     state.set({ kind: 'error', message });

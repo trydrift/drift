@@ -228,13 +228,23 @@ Rotate by replacing the secret. Nothing to purge, because nothing is stored.
 
 **Real, and distinct from the changelog-injection threat above** — that one is
 about attacker-controlled *text* reaching an agent prompt; this one is about
-attacker-controlled *code* actually running. Verification (`verify.enabled`,
-on by default) installs each candidate upgrade into a disposable git worktree
-and runs the project's own install/build/typecheck/test against it, before a
-developer has chosen to take that upgrade. A malicious version published to a
+attacker-controlled *code* actually running. This is Deep Verification: it
+installs each candidate upgrade into a disposable git worktree and runs the
+project's own install/build/typecheck/test against it, before a developer
+has chosen to take that upgrade. A malicious version published to a
 registry can ship package-manager lifecycle scripts (`postinstall` and
 friends) or code reached by the project's own test suite, and that code runs
 with whatever the verification process itself can see.
+
+This is why Deep Verification is opt-in per run rather than automatic: Quick
+Scan (Drift's default everywhere — `drift analyze`/`drift outdated` without
+`--verify`, the extension's dependency panel until "Verify" is pressed, the
+Action's default `verify-mode: quick`) never installs or executes anything
+from a candidate dependency at all — it only reads what the registry
+publishes. Everything below applies once Deep Verification has actually been
+asked for; `verify.enabled: false` in `drift.yml` disables it outright,
+regardless of what asks for it. See [Quick Scan vs Deep
+Verification](configuration.md#quick-scan-vs-deep-verification).
 
 Mitigations:
 

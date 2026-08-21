@@ -151,6 +151,11 @@ export async function scanUpgrades(args: {
   token?: { isCancellationRequested: boolean };
   repoLabel?: string;
   output?: vscode.LogOutputChannel;
+  /**
+   * Defaults to `{ enabled: false }` — Quick Scan. Deep Verification runs
+   * separately, on demand, via `verifyUpgradeCandidates`.
+   */
+  verify?: { enabled?: boolean };
 }): Promise<UpgradeScanResult> {
   const limit = concurrency();
   return core.scanUpgrades({
@@ -159,10 +164,14 @@ export async function scanUpgrades(args: {
     fs: vscodeWorkspaceFs(),
     env: await envWithShellPath(),
     ...(limit === undefined ? {} : { concurrency: limit }),
-    // Scanning the same commit twice — which the panel's refresh button does
-    // constantly — used to re-run the project's whole typecheck, build and test
-    // suite each time just to re-establish what was already green.
-    ...(baselineCacheDir ? { verify: { baselineCache: core.createBaselineCache(baselineCacheDir) } } : {}),
+    verify: {
+      enabled: false,
+      ...args.verify,
+      // Scanning the same commit twice — which the panel's refresh button does
+      // constantly — used to re-run the project's whole typecheck, build and
+      // test suite each time just to re-establish what was already green.
+      ...(baselineCacheDir ? { baselineCache: core.createBaselineCache(baselineCacheDir) } : {}),
+    },
   });
 }
 
@@ -182,6 +191,42 @@ export async function reanalyzeUpgrade(args: {
     logger: scanLogger(args.output),
     fs: vscodeWorkspaceFs(),
     env: await envWithShellPath(),
+  });
+}
+
+/**
+ * Deep Verification, on its own: install one or more already-scanned
+ * candidates in a throwaway worktree and run this project's own checks
+ * against them, without repeating the scan that produced them.
+ *
+ * This is what "Verify" (one row) and "Verify all" call — the panel's Quick
+ * Scan already ran with verification off, so this is the only place in the
+ * extension that creates a worktree, installs anything, or runs a project's
+ * own typecheck/build/test for the dependency-scan flow.
+ */
+export async function verifyUpgradeCandidates(args: {
+  root: string;
+  candidates: UpgradeCandidate[];
+  config: DriftConfig;
+  token?: { isCancellationRequested: boolean };
+  onProgress?: (progress: ScanProgress) => void;
+  onCandidate?: (candidate: UpgradeCandidate) => void;
+  output?: vscode.LogOutputChannel;
+}): Promise<void> {
+  return core.verifyUpgradeCandidates({
+    root: args.root,
+    candidates: args.candidates,
+    checks: args.config.verify.checks,
+    timeoutMs: args.config.verify.timeoutMs,
+    ...(args.config.verify.generatedSourceGlobs.length > 0
+      ? { generatedSourceGlobs: args.config.verify.generatedSourceGlobs }
+      : {}),
+    ...(baselineCacheDir ? { baselineCache: core.createBaselineCache(baselineCacheDir) } : {}),
+    env: await envWithShellPath(),
+    logger: scanLogger(args.output),
+    ...(args.token ? { token: args.token } : {}),
+    ...(args.onProgress ? { onProgress: args.onProgress } : {}),
+    ...(args.onCandidate ? { onCandidate: args.onCandidate } : {}),
   });
 }
 

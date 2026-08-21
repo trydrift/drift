@@ -260,6 +260,58 @@ Cap on release notes fetched per dependency.
 
 ## Verification
 
+### Quick Scan vs Deep Verification
+
+Every surface — `drift analyze`, `drift outdated`, the VS Code extension's
+dependency panel, and the GitHub Action — runs in two phases now instead of
+one.
+
+**Quick Scan** is Drift's static/evidence pipeline: dependency and version
+discovery, changelog and release-note evidence, a computed API/type-surface
+comparison where one is available, security/maintenance rationale,
+repository indexing and localization, and the fix plan. It never installs
+anything, never creates a worktree, and never runs this project's own
+build, typecheck, or test suite. Results are reported as predictions —
+labelled "not deeply verified" — because that's what static analysis is.
+This is the default everywhere, and it's what you see first.
+
+**Deep Verification** additionally installs the change (or candidate
+upgrade) in a throwaway worktree and runs this project's own
+typecheck/build/test, per `verify.checks` below, before reporting the
+result as measured. It's always opt-in per run:
+
+- CLI: pass `--verify` to `drift analyze` or `drift outdated`.
+- VS Code extension: press "Verify" on one package or "Verify all" in the
+  dependency panel, or run `/verify` after `/recent`.
+- GitHub Action: set `verify-mode: deep` (default is `quick`).
+
+`verify.enabled` below is a hard ceiling above all of that, not the trigger
+for it — set it to `false` and Deep Verification is unavailable everywhere,
+regardless of a `--verify` flag, a "Verify" click, or `verify-mode: deep`.
+Set to `true` (the default), it stays off until one of those explicitly asks
+for it.
+
+### `verify`
+
+```yaml
+verify:
+  enabled: true
+  checks: [typecheck, build, test]
+  timeoutMs: 900000
+  generatedSourceGlobs: []
+```
+
+- **`enabled`** (`boolean`, default `true`) — whether Deep Verification may
+  run at all. See above.
+- **`checks`** (default `[typecheck, build, test]`) — which of the
+  project's own checks to run, when it runs. Drift discovers the actual
+  command per ecosystem (`npm run typecheck`, `tsc -p .`, `gradle test`,
+  and so on) — this list only selects which kinds to run.
+- **`timeoutMs`** (default **15 minutes**) — per-check timeout.
+- **`generatedSourceGlobs`** — paths a verification worktree is allowed to
+  carry over even though they'd normally be excluded as regenerable (a
+  committed `dist/` a build step doesn't regenerate, say).
+
 ### `verification.behavioural`
 
 Experimental, npm/TypeScript only, and off by default.

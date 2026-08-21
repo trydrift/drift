@@ -13,6 +13,8 @@ import { renderPullRequestBody } from '../../../src/report/markdown.js';
 import { inspectLocalRepo, WORKING_TREE } from '../../../src/repo/local-git.js';
 import { DriftConfigSchema, opensPullRequestAsDraft, type DriftConfig } from '../../../src/config/schema.js';
 import { loadWorkspaceConfig, runAnalysis } from '../analyze.js';
+import { deepVerify, type AnalysisOptions } from '../../../src/analysis.js';
+import { describeVerification } from '../../../src/verification/apply.js';
 import { envWithShellPath } from '../shell-path.js';
 import { clearedByCompiler, runFix, type FixResult } from '../fix.js';
 import type { DriftState, RepoRoot } from '../state.js';
@@ -59,6 +61,7 @@ import {
   reanalyzeUpgrade,
   scanUpgrades,
   upgradeCommandFor,
+  verifyUpgradeCandidates,
   severityOf,
   type ManagerPreferences,
   type UncheckedDependency,
@@ -129,6 +132,10 @@ type Incoming =
   | { type: 'pickVersion'; id: string }
   | { type: 'selectVersion'; id: string; version: string }
   | { type: 'recheck'; id: string }
+  /** Deep Verification for one package's row — see `verifyOne`. */
+  | { type: 'verifyOne'; id: string }
+  /** Deep Verification for every eligible row on screen — see `verifyAll`. */
+  | { type: 'verifyAll' }
   | { type: 'installTool'; id: string; value: string }
   | { type: 'upgrade'; id: string; mode: 'safe' | 'force' }
   | { type: 'fixPackage'; id: string }
@@ -223,6 +230,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
    * back to "some dependency files changed" once the offer scrolls out of view.
    */
   private lastUpgraded: UpgradeCandidate[] = [];
+  /**
+   * What produced the current `findings`/`clean` plan from `/recent` —
+   * carried so `/verify` can run Deep Verification straight from it via
+   * `deepVerify`, without re-detecting the commit range or re-running any of
+   * the analysis that already found it. Cleared on every fresh `/recent`.
+   */
+  private lastAnalysisContext: AnalysisOptions | null = null;
   /**
    * One `Checkpoints` per root, not one for the panel.
    *
@@ -729,6 +743,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       case 'recheck':
         await this.recheck(message.id);
         return;
+      case 'verifyOne':
+        await this.verifyOne(message.id);
+        return;
+      case 'verifyAll':
+        await this.verifyAll();
+        return;
       case 'installTool':
         await this.installTool(message.id, message.value);
         return;
@@ -817,6 +837,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         return;
       case '/recent':
         await this.analyzeRecent();
+        return;
+      case '/verify':
+        await this.deepVerifyRecent();
         return;
       case '/upgrade':
         await this.upgradeByName(argument);
@@ -1318,6 +1341,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
             root: ctx.root,
             repo: ctx.repo,
             managers,
+            // Quick Scan: the panel's default scan never installs anything or
+            // runs this repository's own checks. Deep Verification is a
+            // separate, explicit action — see `verifyOne`/`verifyAll` — so a
+            // developer sees static results immediately and chooses per
+            // package, or all at once, whether to pay for the real thing.
+            verify: { enabled: false },
             output: this.output,
             // Every direct dependency, every time. What counts as a dependency
             // worth checking is a settings question — `drift.analysis.includeDev`
@@ -1510,6 +1539,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         progress: { report: ({ message }) => step.progress(message ?? 'Working', '') },
       });
 
+      this.lastAnalysisContext = result.context ?? null;
+
       const plan = result.plan;
       if (!plan || plan.breakingChanges.length === 0) {
         step.done('Nothing breaking found');
@@ -1528,20 +1559,90 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         `Recent — ${namesOf(plan.changes.map((change) => change.name))}${files > 0 ? `, ${files} file${files === 1 ? '' : 's'} affected` : ''}`,
       );
 
+      // Static analysis only — Deep Verification has not run yet, and
+      // nothing here should read as though it had.
+      const deepVerifyAction = this.lastAnalysisContext?.config.verify.enabled
+        ? [{ label: 'Deep verify', command: '/verify' }]
+        : [];
+
       // The distinction that matters, stated first.
       if (files === 0) {
         this.session.say(
           [
-            `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them, and **none of them touch this repository**. Nothing to do.`,
+            `The dependencies that moved have ${plan.breakingChanges.length} breaking change${plan.breakingChanges.length === 1 ? '' : 's'} between them, and **none of them touch this repository** — static analysis only, not deeply verified.`,
             '',
             'Open the report if you want to see the reasoning and the sources.',
           ].join('\n'),
+          deepVerifyAction,
         );
       } else {
         this.session.say(
-          `**${files} file${files === 1 ? '' : 's'}** in this repository use an API that changed, across ${plan.impactSites.length} site${plan.impactSites.length === 1 ? '' : 's'}. Say \`/fix\` and **${this.agentLabel()}** will work through them, one commit per concern.`,
+          `**${files} file${files === 1 ? '' : 's'}** in this repository use an API that changed, across ${plan.impactSites.length} site${plan.impactSites.length === 1 ? '' : 's'} — static analysis only, not deeply verified. Say \`/fix\` and **${this.agentLabel()}** will work through them, one commit per concern.`,
+          deepVerifyAction,
         );
       }
+    });
+  }
+
+  /**
+   * Deep Verification for the plan `/recent` last found: install the change
+   * in a throwaway worktree and run this project's own checks against it,
+   * continuing from the existing plan rather than re-running the analysis
+   * that produced it.
+   */
+  private async deepVerifyRecent(): Promise<void> {
+    const context = this.lastAnalysisContext;
+    const plan = this.state.plan;
+    if (!context || !plan) {
+      this.session.notice('warn', 'Nothing to verify yet — run `/recent` first.');
+      return;
+    }
+    if (!context.config.verify.enabled) {
+      this.session.notice('warn', 'Deep Verification is disabled (`verify.enabled: false` in drift.yml).');
+      return;
+    }
+
+    const step = this.session.step('Installing the change and running your checks against it');
+
+    await this.run(async (token) => {
+      const verified = await deepVerify(
+        { plan, summary: '' },
+        {
+          ...context,
+          onProgress: (_stage, detail) => {
+            if (token.isCancellationRequested) return;
+            step.progress('Verifying', detail);
+          },
+        },
+      );
+
+      if (token.isCancellationRequested) {
+        step.fail('Deep Verification stopped — falling back to the static result from `/recent`.');
+        this.session.notice('warn', 'Deep Verification was cancelled; the findings above remain static predictions.');
+        return;
+      }
+
+      if (!verified.plan) {
+        step.done('Nothing to verify');
+        return;
+      }
+
+      this.state.set({ kind: 'findings', plan: verified.plan, at: Date.now() });
+
+      const verification = verified.plan.verification;
+      if (!verification) {
+        step.fail('Deep Verification could not run here — no local checkout to test in.');
+        return;
+      }
+
+      step.done(
+        verification.status === 'passed'
+          ? 'Verified safe'
+          : verification.status === 'failed'
+            ? 'Verified breaking'
+            : 'Could not verify',
+      );
+      this.session.say(describeVerification(verification));
     });
   }
 
@@ -1619,6 +1720,96 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     const candidate = this.candidates.get(id);
     if (!candidate) return;
     await this.retarget(id, candidate.selected, { refreshVersions: true });
+  }
+
+  /**
+   * Deep Verification for one row: install this candidate in a throwaway
+   * worktree and run this project's own checks against it.
+   *
+   * Its own `this.run()` call, separate from the Quick Scan that produced
+   * `candidate` — Stop during this cancels only this verification, and the
+   * rest of `this.candidates` (including this one, if it never finishes) is
+   * left exactly as the scan reported it. Nothing here re-runs the static
+   * analysis that already found `candidate`'s evidence and impact sites.
+   */
+  private async verifyOne(id: string): Promise<void> {
+    const candidate = this.candidates.get(id);
+    if (!candidate) return;
+    await this.verifyCandidates([candidate], `Verifying ${candidate.name}`);
+  }
+
+  /** Deep Verification for every row that hasn't been measured yet. */
+  private async verifyAll(): Promise<void> {
+    const eligible = [...this.candidates.values()].filter(
+      (c) => !c.verification && c.status !== 'pending' && c.status !== 'checking' && c.status !== 'upgrading',
+    );
+    if (eligible.length === 0) {
+      this.session.notice('info', 'Nothing left to verify — every package has already been checked or measured.');
+      return;
+    }
+    await this.verifyCandidates(eligible, `Verifying ${eligible.length} package${eligible.length === 1 ? '' : 's'}`);
+  }
+
+  private async verifyCandidates(targets: UpgradeCandidate[], label: string): Promise<void> {
+    const ctx = await this.context();
+    if (!ctx) return;
+
+    const byRoot = new Map<string, { ctx: WorkspaceContext; candidates: UpgradeCandidate[] }>();
+    for (const candidate of targets) {
+      const candidateCtx = await this.contextForCandidate(candidate, ctx);
+      if (!candidateCtx.config.verify.enabled) {
+        this.session.notice(
+          'warn',
+          `Deep Verification is disabled for ${candidate.repoLabel ?? 'this repository'} (\`verify.enabled: false\` in drift.yml).`,
+        );
+        continue;
+      }
+      const entry = byRoot.get(candidateCtx.root);
+      if (entry) entry.candidates.push(candidate);
+      else byRoot.set(candidateCtx.root, { ctx: candidateCtx, candidates: [candidate] });
+    }
+    if (byRoot.size === 0) return;
+
+    const step = this.session.step(label, { key: 'verify' });
+
+    await this.run(async (token) => {
+      for (const [root, { ctx: candidateCtx, candidates }] of byRoot) {
+        for (const candidate of candidates) {
+          this.candidates.set(candidate.id, { ...candidate, status: 'checking', phase: 'Waiting to be installed and tested' });
+        }
+        this.state.setCandidates([...this.candidates.values()]);
+        this.refreshPackageList();
+
+        try {
+          await verifyUpgradeCandidates({
+            root,
+            candidates,
+            config: candidateCtx.config,
+            token,
+            onProgress: ({ phase, detail, done, total }) => step.progress(phase, detail, done, total),
+            onCandidate: (verified) => {
+              this.candidates.set(verified.id, verified);
+              this.state.setCandidates([...this.candidates.values()]);
+              this.refreshPackageList();
+            },
+          });
+        } catch (err) {
+          this.session.notice('error', (err as Error).message);
+        }
+      }
+
+      const verified = targets.filter((c) => this.candidates.get(c.id)?.verification?.status === 'passed').length;
+      const failed = targets.filter((c) => this.candidates.get(c.id)?.verification?.status === 'failed').length;
+      if (token.isCancellationRequested) {
+        step.fail('Deep Verification stopped — the packages it never reached fall back to their Quick Scan result.');
+      } else {
+        step.done(
+          `Verified ${targets.length} package${targets.length === 1 ? '' : 's'}` +
+            (failed > 0 ? ` · ${failed} breaking` : '') +
+            (verified > 0 ? ` · ${verified} safe` : ''),
+        );
+      }
+    });
   }
 
   private async installTool(id: string, requestId: string): Promise<void> {
@@ -3826,6 +4017,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     const icons: Record<string, MenuItem['icon']> = {
       '/scan': 'search',
       '/recent': 'history',
+      '/verify': 'shield',
       '/upgrade': 'package',
       '/upgrade-all': 'package',
       '/fix': 'agent',

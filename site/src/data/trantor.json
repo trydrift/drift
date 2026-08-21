@@ -5,10 +5,10 @@
   "language": "C++",
   "repo": "https://github.com/an-tao/trantor",
   "blurb": "The C++ network library underneath Drogon, with a conanfile.txt.",
-  "capturedAt": "2026-08-18T04:01:52.585Z",
-  "commit": "63a4e5e164e219dc3bf30cdbfa1462ae5602fa97",
-  "engine": "81044c47297efc90",
-  "durationMs": 9284,
+  "capturedAt": "2026-08-21T07:22:44.848Z",
+  "commit": "0f45310fbbb692f3eb222b4229a631c0c6745172",
+  "engine": "09153dd336cd8676",
+  "durationMs": 3987,
   "packagesChecked": 3,
   "manifests": [
     "conanfile.txt"
@@ -16,184 +16,163 @@
   "nestedGitRepos": [],
   "events": [
     {
-      "at": 125,
+      "at": 79,
       "phase": "Looking for manifests",
       "detail": "an-tao/trantor",
       "done": 0,
       "total": 0
     },
     {
-      "at": 133,
+      "at": 90,
       "phase": "Reading manifest",
       "detail": "conanfile.txt",
       "done": 0,
       "total": 0
     },
     {
-      "at": 135,
+      "at": 91,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 3
     },
     {
-      "at": 136,
+      "at": 92,
       "phase": "Checking registries",
       "detail": "3 direct dependencies",
       "done": 0,
       "total": 3
     },
     {
-      "at": 332,
+      "at": 172,
       "phase": "Indexing your code",
       "detail": "131 files indexed · 3 direct dependencies to check",
       "done": 0,
       "total": 3
     },
     {
-      "at": 764,
+      "at": 327,
       "phase": "Outdated",
-      "detail": "gtest 1.10.0 → 1.18.0",
+      "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 1,
       "total": 3
     },
     {
-      "at": 781,
+      "at": 328,
       "phase": "Outdated",
-      "detail": "spdlog 1.12.0 → 1.17.0",
+      "detail": "openssl 1.1.1 → 4.0.1",
       "done": 2,
       "total": 3
     },
     {
-      "at": 799,
+      "at": 329,
       "phase": "Outdated",
-      "detail": "openssl 1.1.1 → 4.0.1",
+      "detail": "gtest 1.10.0 → 1.18.0",
       "done": 3,
       "total": 3
     },
     {
-      "at": 800,
-      "phase": "Preparing a test checkout of trantor",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 808,
+      "at": 330,
       "phase": "Reading release notes and changelog",
       "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
       "total": 3
     },
     {
-      "at": 809,
+      "at": 336,
       "phase": "Reading release notes and changelog",
       "detail": "openssl 1.1.1 → 4.0.1",
       "done": 0,
       "total": 3
     },
     {
-      "at": 809,
+      "at": 336,
       "phase": "Reading release notes and changelog",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 0,
       "total": 3
     },
     {
-      "at": 1339,
-      "phase": "Checking trantor as it is",
-      "detail": "conan build .",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 1339,
-      "phase": "Checking trantor as it is",
-      "detail": "`conan build .`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 3141,
+      "at": 1616,
       "phase": "Comparing the public API surface",
-      "detail": "openssl 1.1.1 → 4.0.1 · 18 evidence sources",
+      "detail": "gtest 1.10.0 → 1.18.0 · 6 evidence sources",
       "done": 0,
       "total": 3
     },
     {
-      "at": 3148,
-      "phase": "Searching your code for 10 breaking changes",
-      "detail": "openssl 1.1.1 → 4.0.1",
+      "at": 2177,
+      "phase": "Searching your code for 212 breaking changes",
+      "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
       "total": 3
     },
     {
-      "at": 3319,
+      "at": 2766,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "openssl 1.1.1 → 4.0.1",
+      "detail": "gtest 1.10.0 → 1.18.0",
       "done": 0,
       "total": 3
     },
     {
-      "at": 3595,
+      "at": 3261,
       "phase": "Needs your attention",
-      "detail": "openssl 1.1.1 → 4.0.1 · may affect your code · 3 sites in 1 file",
+      "detail": "gtest 1.10.0 → 1.18.0 · may affect your code · 8 sites in 6 files",
       "done": 1,
       "total": 3
     },
     {
-      "at": 3941,
+      "at": 3345,
       "phase": "Comparing the public API surface",
       "detail": "spdlog 1.12.0 → 1.17.0 · 2 evidence sources",
       "done": 1,
       "total": 3
     },
     {
-      "at": 3960,
+      "at": 3369,
       "phase": "Searching your code for 170 breaking changes",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 1,
       "total": 3
     },
     {
-      "at": 6087,
+      "at": 3630,
       "phase": "Weighing what this upgrade is worth",
       "detail": "spdlog 1.12.0 → 1.17.0",
       "done": 1,
       "total": 3
     },
     {
-      "at": 6091,
+      "at": 3745,
       "phase": "Comparing the public API surface",
-      "detail": "gtest 1.10.0 → 1.18.0 · 6 evidence sources",
+      "detail": "openssl 1.1.1 → 4.0.1 · 18 evidence sources",
       "done": 1,
       "total": 3
     },
     {
-      "at": 6808,
-      "phase": "Searching your code for 212 breaking changes",
-      "detail": "gtest 1.10.0 → 1.18.0",
+      "at": 3749,
+      "phase": "Searching your code for 10 breaking changes",
+      "detail": "openssl 1.1.1 → 4.0.1",
       "done": 1,
       "total": 3
     },
     {
-      "at": 8287,
+      "at": 3775,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "gtest 1.10.0 → 1.18.0",
+      "detail": "openssl 1.1.1 → 4.0.1",
       "done": 1,
       "total": 3
     },
     {
-      "at": 8738,
+      "at": 3911,
       "phase": "Needs your attention",
       "detail": "spdlog 1.12.0 → 1.17.0 · may affect your code · 29 sites in 1 file",
       "done": 2,
       "total": 3
     },
     {
-      "at": 9278,
+      "at": 3983,
       "phase": "Needs your attention",
-      "detail": "gtest 1.10.0 → 1.18.0 · may affect your code · 8 sites in 6 files",
+      "detail": "openssl 1.1.1 → 4.0.1 · may affect your code · 3 sites in 1 file",
       "done": 3,
       "total": 3
     }
@@ -1025,8 +1004,8 @@
             {
               "source": "changelog",
               "title": "openssl CHANGELOG § 3.6.0",
-              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1600",
-              "locator": "CHANGES.md:1600"
+              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1610",
+              "locator": "CHANGES.md:1610"
             }
           ],
           "sites": [
@@ -1063,8 +1042,8 @@
             {
               "source": "changelog",
               "title": "openssl CHANGELOG § 3.6.0",
-              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1600",
-              "locator": "CHANGES.md:1600"
+              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1610",
+              "locator": "CHANGES.md:1610"
             }
           ],
           "sites": [
@@ -1100,8 +1079,8 @@
             {
               "source": "changelog",
               "title": "openssl CHANGELOG § 3.6.0",
-              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1600",
-              "locator": "CHANGES.md:1600"
+              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1610",
+              "locator": "CHANGES.md:1610"
             }
           ],
           "sites": []
@@ -1171,8 +1150,8 @@
             {
               "source": "changelog",
               "title": "openssl CHANGELOG § 3.6.0",
-              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1600",
-              "locator": "CHANGES.md:1600"
+              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1610",
+              "locator": "CHANGES.md:1610"
             }
           ],
           "sites": [
@@ -1209,8 +1188,8 @@
             {
               "source": "changelog",
               "title": "openssl CHANGELOG § 3.6.0",
-              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1600",
-              "locator": "CHANGES.md:1600"
+              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1610",
+              "locator": "CHANGES.md:1610"
             }
           ],
           "sites": [
@@ -1246,8 +1225,8 @@
             {
               "source": "changelog",
               "title": "openssl CHANGELOG § 3.6.0",
-              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1600",
-              "locator": "CHANGES.md:1600"
+              "url": "https://github.com/openssl/openssl/blob/master/CHANGES.md#L1610",
+              "locator": "CHANGES.md:1610"
             }
           ],
           "sites": []
