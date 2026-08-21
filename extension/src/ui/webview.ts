@@ -191,6 +191,11 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
     description: 'Analyse the dependency change already in your git history',
   },
   {
+    name: '/verify',
+    title: 'Deep verify the last change',
+    description: 'Install the change in a throwaway worktree and run this project’s own checks against it',
+  },
+  {
     name: '/upgrade',
     args: '<package>',
     title: 'Upgrade a package',
@@ -1026,6 +1031,14 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
           ${failed.length ? tally(failed.length, 'unknown', 'error') : ''}
           ${checking.length ? tally(checking.length, 'in progress', 'unchecked') : ''}
         </span>
+        ${
+          // Only offered once there is something Deep Verification hasn't
+          // already settled — a scan with everything already `verified` or
+          // `error` would offer an action with nothing eligible for it to do.
+          candidates.some((c) => !c.verification && c.status !== 'pending' && c.status !== 'checking' && c.status !== 'upgrading')
+            ? `<button class="ctl bordered" data-action="verifyAll" title="Install and run this project's own checks against every unmeasured candidate">Verify all</button>`
+            : ''
+        }
         <button class="ctl icon" data-action="rescan" title="Check every dependency again" aria-label="Rescan">${ICON_REFRESH}</button>
       </div>
 
@@ -1048,7 +1061,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
       ${
         verificationFailed.length
           ? `<section class="pkg-group">
-              <h4 class="pkg-subhead error">${ICON_ALERT}<span>Its own checks failed</span><small>${verificationFailed.length}</small></h4>
+              <h4 class="pkg-subhead error">${ICON_ALERT}<span>Verified breaking</span><small>${verificationFailed.length}</small></h4>
               <div class="pkg-list">${verificationFailed.map((c) => renderCandidate(c, verificationFailed.length === 1, showRepo)).join('')}</div>
             </section>`
           : ''
@@ -1335,19 +1348,20 @@ function busyLabel(candidate: UpgradeCandidate): string {
 }
 
 function shortVerdict(candidate: UpgradeCandidate, severity: UpgradeSeverity): string {
+  const verified = candidate.verification?.status === 'passed';
   switch (severity) {
     case 'pending':
       return candidate.phase ?? 'Not checked yet';
     case 'affected':
       return `${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'} here`;
     case 'verification-failed':
-      return 'Its checks failed';
+      return 'Verified breaking';
     case 'upstream-only':
-      return 'Safe here';
+      return verified ? 'Verified safe' : 'Safe here';
     case 'unchecked':
       return 'Not verified';
     case 'clean':
-      return 'Safe';
+      return verified ? 'Verified safe' : 'Safe';
     case 'error':
       return 'Unknown';
   }
@@ -1500,7 +1514,14 @@ function renderVerification(candidate: UpgradeCandidate): string {
   }
 
   const verification = candidate.verification;
-  if (!verification) return '';
+  if (!verification) {
+    // Quick Scan's own state: static analysis ran, nothing has been
+    // installed or run yet. A small note plus the one action that moves this
+    // row into Deep Verification, rather than leaving the absence of a
+    // verification block to be read as "nothing to say".
+    return `<p class="verification unverified"><span>Static analysis only — not deeply verified.</span>
+      <button class="ctl" data-action="verifyOne" data-id="${escapeAttr(candidate.id)}" title="Install ${escapeAttr(candidate.name)} in a throwaway worktree and run this project's own checks against it">Verify</button></p>`;
+  }
 
   const ran = verification.checks
     .filter((check) => check.status === 'passed' || check.status === 'failed')
@@ -1523,7 +1544,8 @@ function renderVerification(candidate: UpgradeCandidate): string {
   // paragraph, where a multi-line build log read as an unbroken wall of text.
   const [summary, ...detailParts] = (verification.reason ?? 'Drift could not test this upgrade.').split('\n\n');
   const detail = detailParts.join('\n\n');
-  return `<p class="verification skipped">${ICON_ALERT}<span>Not verified — ${escapeHtml(summary ?? '')} The findings below are predictions.</span></p>
+  return `<p class="verification skipped">${ICON_ALERT}<span>Could not verify — ${escapeHtml(summary ?? '')} The findings below are static predictions.</span>
+    <button class="ctl" data-action="verifyOne" data-id="${escapeAttr(candidate.id)}" title="Try Deep Verification again">Try again</button></p>
   ${detail ? `<pre class="activity-io"><code>${escapeHtml(detail)}</code></pre>` : ''}`;
 }
 

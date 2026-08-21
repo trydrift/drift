@@ -604,8 +604,15 @@ export async function scanUpgrades(args: {
   // spends the whole scan mostly idle.
   const concurrency = Math.max(1, Math.min(32, Math.floor(args.concurrency ?? analysisConcurrency(env)) || 1));
   logger.debug(`Scan parallelism: ${describeParallelism(env)}`);
+  // Quick Scan is the default: verification only runs when a caller asks for
+  // it explicitly (`verify.enabled: true`), and `config.verify.enabled`
+  // remains a hard ceiling above that request — a repository that has turned
+  // verification off entirely stays off no matter what a caller asks for.
+  // Before this, an unset `args.verify.enabled` fell back to
+  // `config.verify.enabled` (default `true`), so verification ran
+  // automatically on every scan.
   const verify = {
-    enabled: args.verify?.enabled ?? config.verify.enabled,
+    enabled: (args.verify?.enabled ?? false) && config.verify.enabled,
     checks: args.verify?.checks ?? (config.verify.checks as readonly CheckKind[]),
     timeoutMs: args.verify?.timeoutMs ?? config.verify.timeoutMs,
     generatedSourceGlobs: args.verify?.generatedSourceGlobs ?? config.verify.generatedSourceGlobs,
@@ -1033,7 +1040,7 @@ export async function scanUpgrades(args: {
     const verifyPhase = span('phase', 'verification');
     try {
       if (verify.enabled && candidates.length > 0 && !token?.isCancellationRequested) {
-        await verifyCandidates({
+        await verifyUpgradeCandidates({
           root,
           candidates,
           checks: verify.checks,
@@ -1136,8 +1143,14 @@ export async function scanUpgrades(args: {
  * Every candidate is released to `onCandidate` here — verified, disproved, or
  * skipped with a reason — because this is the first moment any of them is a
  * statement about this repository rather than a guess about it.
+ *
+ * Exported so a caller can run Deep Verification on its own, after a Quick
+ * Scan already returned — on one candidate ("Verify"), or every candidate
+ * from a scan ("Verify all") — without repeating the analysis phase that
+ * produced them. `scanUpgrades` itself calls this the same way, as its own
+ * verification phase, whenever `verify.enabled` is true.
  */
-async function verifyCandidates(args: {
+export async function verifyUpgradeCandidates(args: {
   root: string;
   candidates: UpgradeCandidate[];
   checks: readonly CheckKind[];

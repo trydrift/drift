@@ -94,6 +94,29 @@ export interface SeverityInput {
 }
 
 /**
+ * Whether this candidate's prediction has been checked against the project's
+ * own toolchain — a throwaway worktree, a real install, and typecheck/build/
+ * test — as opposed to read off the dependency's own published declarations
+ * and changelog.
+ *
+ * Orthogonal to {@link UpgradeSeverity}: a candidate can be `clean` and
+ * `not-run` (nothing installed yet, Quick Scan only), `clean` and `passed`
+ * (Deep Verification confirmed it), or `affected` and `skipped` (a location
+ * was found statically, and separately an attempt to install and check it
+ * did not finish). `unchecked` severity is unaffected by this — it means no
+ * *static* evidence was reachable at all, which is a different gap than
+ * whether the toolchain ran.
+ */
+export type VerificationState = 'not-run' | 'skipped' | 'passed' | 'failed';
+
+export function verificationState(candidate: SeverityInput): VerificationState {
+  if (!candidate.verification) return 'not-run';
+  if (candidate.verification.status === 'passed') return 'passed';
+  if (candidate.verification.status === 'failed') return 'failed';
+  return 'skipped';
+}
+
+/**
  * The verdict.
  *
  * `unchecked` exists because the alternative is a lie Drift told once and must
@@ -136,6 +159,19 @@ export function severityOf(candidate: SeverityInput): UpgradeSeverity {
  * tool teaches people to ignore it.
  */
 export function describeSeverity(candidate: SeverityInput): string {
+  const state = verificationState(candidate);
+  // Appended to a prediction that Deep Verification has not (yet, or not
+  // successfully) confirmed, so a Quick Scan result never reads the same as
+  // one the project's own toolchain has actually stood behind. Never applied
+  // to `verification-failed`/`unchecked`, which already say something
+  // stronger and more specific about why nothing here can be called safe.
+  const deepNote =
+    state === 'not-run'
+      ? ' — not deeply verified'
+      : state === 'skipped'
+        ? ' — deep verification did not complete'
+        : '';
+
   switch (severityOf(candidate)) {
     case 'pending':
       return 'Not checked yet';
@@ -158,26 +194,42 @@ export function describeSeverity(candidate: SeverityInput): string {
       const unconfirmed = candidate.impactPendingIsolatedClearance
         ? ' — not yet confirmed alone: a batch check passed without testing this package in isolation'
         : '';
-      return `${verb} your code · ${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'} in ${files} file${files === 1 ? '' : 's'}${unconfirmed}`;
+      // A located impact site that Deep Verification also measured as
+      // breaking is stronger than either fact alone — said explicitly rather
+      // than left to the generic `deepNote`, which only speaks to whether
+      // verification ran, not to what it found.
+      const measured = state === 'failed' ? ' — and its own checks fail with this installed, measured not predicted' : deepNote;
+      return `${verb} your code · ${candidate.impactCount} site${candidate.impactCount === 1 ? '' : 's'} in ${files} file${files === 1 ? '' : 's'}${unconfirmed}${measured}`;
     }
     case 'verification-failed': {
       const failing = (candidate.verification?.checks ?? [])
         .filter((check) => check.status === 'failed')
         .map((check) => check.label);
       return failing.length > 0
-        ? `Its own checks failed · ${failing.join(', ')} failed with this upgrade installed — measured, not predicted`
-        : "Its own checks failed · this upgrade broke the project's own checks — measured, not predicted";
+        ? `Verified breaking · ${failing.join(', ')} failed with this upgrade installed — measured, not predicted`
+        : "Verified breaking · this upgrade broke the project's own checks — measured, not predicted";
     }
-    case 'upstream-only':
-      return `Safe for your code · ${candidate.breakingCount} upstream change${candidate.breakingCount === 1 ? '' : 's'}, none used here`;
+    case 'upstream-only': {
+      const base = `${candidate.breakingCount} upstream change${candidate.breakingCount === 1 ? '' : 's'}, none used here`;
+      return state === 'passed'
+        ? `Verified safe · ${base}, and your own checks pass`
+        : `Safe for your code · ${base}${deepNote}`;
+    }
     case 'unchecked':
       return 'Not verified · Drift found nothing it could check this version against';
-    case 'clean':
+    case 'clean': {
       // "Safe for your code" and "you should take this" are different things,
       // and an upgrade that closes a known advisory deserves the stronger word.
-      return candidate.recommendation === 'upgrade-recommended'
-        ? 'Worth taking · no breaking changes, and it improves on what you have'
-        : 'Safe for your code · no breaking changes found';
+      const upgradeRecommended = candidate.recommendation === 'upgrade-recommended';
+      if (state === 'passed') {
+        return upgradeRecommended
+          ? 'Verified worth taking · no breaking changes, it improves on what you have, and your own checks pass'
+          : 'Verified safe · no breaking changes found, and your own checks pass';
+      }
+      return upgradeRecommended
+        ? `Worth taking · no breaking changes, and it improves on what you have${deepNote}`
+        : `Safe for your code · no breaking changes found${deepNote}`;
+    }
   }
 }
 

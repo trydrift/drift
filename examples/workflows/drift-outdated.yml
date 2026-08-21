@@ -83,6 +83,12 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           scan-mode: outdated
+          # "quick" (the default) reports static analysis only — nothing from
+          # a candidate upgrade is installed or executed. Set this to "deep"
+          # to additionally install each candidate in a throwaway worktree and
+          # run this repository's own checks before alerting, at the cost of
+          # a much longer scheduled run.
+          verify-mode: quick
           alert-granularity: ${{ inputs.alert-granularity }}
           cache-dir: .drift-cache
 

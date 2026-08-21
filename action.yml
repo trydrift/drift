@@ -98,6 +98,22 @@ inputs:
       Requires `outdated.enabled: true` in drift.yml.
     required: false
 
+  verify-mode:
+    description: >-
+      "quick" (default) runs Drift's static analysis only — dependency and
+      version discovery, changelog/release-note evidence, a computed API-
+      surface comparison where available, security/maintenance rationale,
+      repository localization, and the fix plan. Nothing from the dependency
+      is installed or executed, and results are reported as predictions.
+      "deep" additionally installs the change in a throwaway worktree and
+      runs the project's own typecheck/build/test (as configured by
+      `verify.checks` in drift.yml) before dispatching or alerting, so
+      results are reported as measured. Applies to both `scan-mode: diff`
+      and `scan-mode: outdated`. Requires `verify.enabled: true` in
+      drift.yml (the default) — a repository that has turned verification
+      off there stays off regardless of this input.
+    required: false
+
   alert-granularity:
     description: >-
       How code scanning alerts are grouped: "package" (default) files one

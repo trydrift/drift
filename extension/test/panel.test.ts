@@ -1,4 +1,4 @@
-import { test } from 'node:test';
+import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   crossesMajor,
@@ -2059,4 +2059,127 @@ test('next steps are buttons, not instructions to retype a command', () => {
   assert.match(html, /Fix them with Codex/);
   // The panel no longer asks the reader to notice that prose was an instruction.
   assert.ok(!/[Ss]ay `\/fix`/.test(html), 'the panel still tells people to type a command');
+});
+
+/**
+ * Quick Scan vs Deep Verification.
+ *
+ * A row with no `verification` is a Quick Scan result — static analysis
+ * only. It must offer the one action that moves it into Deep Verification,
+ * and say plainly that nothing has been installed or run yet, so it can
+ * never be mistaken for a measured "safe".
+ */
+describe('Quick Scan vs Deep Verification', () => {
+  test('an unmeasured row offers Verify and says it is static analysis only', () => {
+    const c = candidate({ breakingCount: 0, impactCount: 0, impactFiles: 0 });
+    assert.equal(c.verification, undefined);
+
+    const html = renderPanel(
+      model({
+        thread: [{ id: 'i1', kind: 'packages', headline: 'One upgrade available.', ids: [c.id] }],
+        candidates: { [c.id]: c },
+      }),
+    );
+
+    assert.match(html, /Static analysis only — not deeply verified/);
+    assert.match(html, /data-action="verifyOne"/);
+  });
+
+  test('a passed verification reads "Verified safe", not the Quick Scan wording', () => {
+    const c = candidate({
+      breakingCount: 2,
+      impactCount: 0,
+      impactFiles: 0,
+      verification: {
+        status: 'passed',
+        checks: [
+          {
+            kind: 'typecheck',
+            label: 'npm run typecheck',
+            status: 'passed',
+            compileCapable: true,
+            durationMs: 1000,
+            output: '',
+          },
+        ],
+        failedFiles: [],
+      },
+    });
+
+    const html = renderPanel(
+      model({
+        thread: [{ id: 'i1', kind: 'packages', headline: 'One upgrade available.', ids: [c.id] }],
+        candidates: { [c.id]: c },
+      }),
+    );
+
+    assert.match(html, /Verified safe/);
+    assert.ok(!/Static analysis only/.test(html), 'a measured pass must not still read as unmeasured');
+    assert.ok(!/data-action="verifyOne"/.test(html), 'nothing left to verify once it has passed');
+  });
+
+  test('a skipped verification reads "Could not verify", distinct from never having tried', () => {
+    const c = candidate({
+      breakingCount: 0,
+      impactCount: 0,
+      impactFiles: 0,
+      verification: {
+        status: 'skipped',
+        reason: 'The scan was stopped before this could be installed.',
+        checks: [],
+        failedFiles: [],
+      },
+    });
+
+    const html = renderPanel(
+      model({
+        thread: [{ id: 'i1', kind: 'packages', headline: 'One upgrade available.', ids: [c.id] }],
+        candidates: { [c.id]: c },
+      }),
+    );
+
+    assert.match(html, /Could not verify/);
+    assert.ok(!/Static analysis only — not deeply verified/.test(html), 'a skipped attempt is not the same as no attempt');
+    assert.ok(!/Verified safe/.test(html), 'an incomplete verification must never read as a pass');
+    // Offers to try again rather than leaving the row a dead end.
+    assert.match(html, /data-action="verifyOne"/);
+  });
+
+  test('a row still installing and checking is never left claiming a stale verdict', () => {
+    const c = candidate({ status: 'checking', phase: 'npm install' });
+    const html = renderPanel(
+      model({
+        thread: [{ id: 'i1', kind: 'packages', headline: 'One upgrade available.', ids: [c.id] }],
+        candidates: { [c.id]: c },
+      }),
+    );
+
+    assert.match(html, /Installing this version and running your checks against it/);
+    assert.ok(!/data-action="verifyOne"/.test(html), 'no second Verify button while one is already running');
+  });
+
+  test('"Verify all" is offered only while something is actually eligible for it', () => {
+    const nothingToVerify = candidate({
+      verification: { status: 'passed', checks: [], failedFiles: [] },
+    });
+    const withVerify = candidate({ id: 'other@1->2' });
+
+    const noneEligible = renderPanel(
+      model({
+        thread: [{ id: 'i1', kind: 'packages', headline: 'One upgrade available.', ids: [nothingToVerify.id] }],
+        candidates: { [nothingToVerify.id]: nothingToVerify },
+      }),
+    );
+    assert.ok(!/data-action="verifyAll"/.test(noneEligible));
+
+    const someEligible = renderPanel(
+      model({
+        thread: [
+          { id: 'i1', kind: 'packages', headline: 'Two upgrades available.', ids: [nothingToVerify.id, withVerify.id] },
+        ],
+        candidates: { [nothingToVerify.id]: nothingToVerify, [withVerify.id]: withVerify },
+      }),
+    );
+    assert.match(someEligible, /data-action="verifyAll"/);
+  });
 });
