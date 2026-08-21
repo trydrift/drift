@@ -629,6 +629,11 @@ async function verifyPlan(
   let verifiedPlan = plan;
   const parts: (UpgradeVerification | undefined)[] = [];
   const failedGroups: string[] = [];
+  // Dependency changes a failure can be pinned on without ambiguity — see
+  // `RemediationPlan.confirmedRegressions`. Only ever populated from a group
+  // that moved exactly one dependency, so a batch of several simultaneous
+  // bumps in one manifest never has its failure blamed on all of them.
+  const confirmedRegressions: string[] = [];
 
   for (const [dir, changes] of groups) {
     const manager = await managerFor(workspace, dir, changes[0]!.ecosystem);
@@ -657,7 +662,16 @@ async function verifyPlan(
 
     options.logger.info(`Verification (${dir || 'root'}): ${describeVerification(verification)}`);
     parts.push(verification);
-    if (verification.status === 'failed') failedGroups.push(dir || 'the repository root');
+    if (verification.status === 'failed') {
+      failedGroups.push(dir || 'the repository root');
+      // `probeDependencyChange` already compares against a passing baseline
+      // (see `reconcileAgainstBaseline`), so `failed` here already means "this
+      // check passed before and fails now" — the only thing this adds is
+      // ruling out the one remaining ambiguity: several dependencies moving
+      // together in the same manifest, where a red result cannot be
+      // attributed to any one of them.
+      if (changes.length === 1) confirmedRegressions.push(dependencyEcosystemKey(changes[0]!));
+    }
     verifiedPlan = applyVerificationToPlan(verifiedPlan, verification, dir);
   }
 
@@ -679,6 +693,18 @@ async function verifyPlan(
         ...verifiedPlan.blockers,
         `The project's own checks failed after this change was applied in ${failedGroups.join(', ')}, which static analysis did not predict. See the verification output for what broke.`,
       ],
+    };
+  }
+
+  // Prose in `blockers` stops automatic dispatch (see `isAutoDispatchable`),
+  // but nothing reads it to decide what a *report* says — a reader could see
+  // "no incompatible change in the checked surfaces" right above a blocker
+  // saying the opposite. `confirmedRegressions` is the structured half of the
+  // same fact, for `resolvePlanVerdict` to fold into the verdict itself.
+  if (confirmedRegressions.length > 0) {
+    verifiedPlan = {
+      ...verifiedPlan,
+      confirmedRegressions: [...verifiedPlan.confirmedRegressions, ...confirmedRegressions],
     };
   }
 

@@ -157,6 +157,8 @@ export {
   verdictFor,
   verdictText,
   VERDICT_TEXT,
+  reduceVerdict,
+  resolvePlanVerdict,
   overallConfidenceLine,
   evidenceStrengthLabel,
   bandBadge,

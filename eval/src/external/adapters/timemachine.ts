@@ -6,12 +6,11 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { EXTERNAL_RECORD_VERSION, type ExclusionKind, type ExternalCaseResult } from '../record.ts';
 import type { Selectable } from '../selection.ts';
-import { reduceVerdict, type CheckedSurfaceLike } from '../../adapters/end-to-end.ts';
 import {
   DriftConfigSchema,
   LocalGitProvider,
   analyzeRepository,
-  verdictFor,
+  resolvePlanVerdict,
   type Logger,
   type RemediationPlan,
   type RepoContext,
@@ -283,16 +282,9 @@ export async function predictTimemachine(task: TimemachineTask): Promise<Timemac
   }
 }
 
-/** Production's own reduction. See the note in `swe-bump.ts` about why this is not reimplemented. */
+/** Production's own reduction — see the note in `bump.ts` about why this is not reimplemented. */
 function verdictFromPlan(plan: RemediationPlan | null | undefined): string {
-  if (!plan) return 'insufficient-evidence';
-  const verdicts = plan.breakingChanges.map((change) => String(verdictFor(change)));
-  const surfaces = ((plan as unknown as { checkedSurfaces?: CheckedSurfaceLike[] }).checkedSurfaces ?? []).map((surface) => ({
-    surface: surface.surface,
-    ...(surface.dependency ? { dependency: surface.dependency } : {}),
-    status: surface.status,
-  }));
-  return reduceVerdict(verdicts, plan.breakingChanges.length === 0, surfaces);
+  return plan ? resolvePlanVerdict(plan) : 'insufficient-evidence';
 }
 
 export interface ScoreTimemachineInput {

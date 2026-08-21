@@ -16,7 +16,7 @@ import {
 import { bandFor } from '../dist/confidence/types.js';
 import { buildPlan, isAutoDispatchable } from '../dist/plan/index.js';
 import { renderApprovalIssue, renderPullRequestBody } from '../dist/report/markdown.js';
-import { verdictFor } from '../dist/report/confidence.js';
+import { verdictFor, reduceVerdict, resolvePlanVerdict } from '../dist/report/confidence.js';
 import { DriftConfigSchema, DEFAULT_CONFIG } from '../dist/config/schema.js';
 
 /**
@@ -603,6 +603,102 @@ describe('reporting never turns an absence into an all-clear', () => {
   test('a located finding says the repository is affected', () => {
     const affected = planWith({ impactSites: [site()] }).breakingChanges[0]!;
     assert.equal(verdictFor(affected), 'locally-affected');
+  });
+
+  describe('reduceVerdict', () => {
+    // The one-repository-wide-conclusion reduction, moved here from the
+    // benchmark harness (`eval/src/adapters/end-to-end.ts`) so production has
+    // exactly one implementation and the harness imports it rather than
+    // re-deriving it. The load-bearing property is that "no findings" is not
+    // the same fact as "nothing was checked", and the two must not collapse
+    // into one verdict.
+    const CHECKED = [
+      { surface: 'api-surface', dependency: 'fixture-lib', status: 'checked' },
+      { surface: 'localization', status: 'checked' },
+    ];
+
+    test('no breaking change, surfaces genuinely checked: the honest verdict is a safe one', () => {
+      assert.equal(reduceVerdict([], true, CHECKED), 'no-incompatible-change-in-checked-surfaces');
+    });
+
+    test('no breaking change and no computed surface is insufficient evidence, never safe', () => {
+      assert.equal(
+        reduceVerdict([], true, [
+          { surface: 'api-surface', dependency: 'fixture-lib', status: 'unavailable' },
+          { surface: 'localization', status: 'checked' },
+        ]),
+        'insufficient-evidence',
+      );
+    });
+
+    test('no breaking change and an unsearched repository is insufficient evidence', () => {
+      assert.equal(
+        reduceVerdict([], true, [
+          { surface: 'api-surface', dependency: 'fixture-lib', status: 'checked' },
+          { surface: 'localization', status: 'skipped' },
+        ]),
+        'insufficient-evidence',
+      );
+    });
+
+    test('an empty surface list can never produce a safe verdict', () => {
+      assert.equal(reduceVerdict([], true, []), 'insufficient-evidence');
+    });
+
+    test('an inconclusive finding never outranks a positive one', () => {
+      assert.equal(reduceVerdict(['insufficient-evidence', 'locally-affected'], false, CHECKED), 'locally-affected');
+      assert.equal(
+        reduceVerdict(['no-incompatible-change-in-checked-surfaces', 'insufficient-evidence'], false, CHECKED),
+        'insufficient-evidence',
+      );
+    });
+  });
+
+  describe('resolvePlanVerdict', () => {
+    test('a confirmed regression overrides a safe-equivalent static verdict', () => {
+      // Detected upstream, not found in this repository's code — the exact
+      // shape `verifyPlan` producing `confirmedRegressions` exists to correct.
+      const plan = planWith({ localizationRan: true, confirmedRegressions: ['npm acme-sdk'] });
+      assert.equal(verdictFor(plan.breakingChanges[0]!), 'detected-not-locally-reachable');
+      assert.equal(resolvePlanVerdict(plan), 'locally-affected');
+    });
+
+    test('a confirmed regression with no breaking changes at all still overrides "safe"', () => {
+      // Static analysis predicted nothing to worry about, but the project's
+      // own checks disagree — the case a green-looking scan must not report
+      // as clean.
+      const plan = planWith({
+        breakingChanges: [],
+        impactSites: [],
+        confirmedRegressions: ['npm acme-sdk'],
+        checkedSurfaces: [
+          { surface: 'api-surface', dependency: 'acme-sdk', status: 'checked', detail: 'diffed' },
+          { surface: 'localization', status: 'checked', detail: 'searched' },
+        ],
+      });
+      assert.equal(resolvePlanVerdict(plan), 'locally-affected');
+    });
+
+    test('an already-affected verdict is left alone, not double-counted', () => {
+      const plan = planWith({ impactSites: [site()], confirmedRegressions: ['npm acme-sdk'] });
+      assert.equal(resolvePlanVerdict(plan), 'locally-affected');
+    });
+
+    test('no confirmed regression leaves the static verdict untouched', () => {
+      const plan = planWith({ localizationRan: true });
+      assert.equal(resolvePlanVerdict(plan), 'detected-not-locally-reachable');
+    });
+
+    test('a confirmed regression never upgrades genuine insufficient-evidence into a claim', () => {
+      // Upstream itself was never established — a measured failure elsewhere
+      // in the manifest must not be read as proof of *this* unproven change.
+      const plan = planWith({
+        breakingChanges: [breaking({ citations: [] })],
+        confirmedRegressions: ['npm acme-sdk'],
+      });
+      assert.equal(verdictFor(plan.breakingChanges[0]!), 'insufficient-evidence');
+      assert.equal(resolvePlanVerdict(plan), 'insufficient-evidence');
+    });
   });
 
   test('the report never calls an upgrade safe', () => {

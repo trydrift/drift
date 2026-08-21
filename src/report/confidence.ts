@@ -1,5 +1,5 @@
 import type { BreakingChange, RemediationPlan } from '../types.js';
-import type { AnalysisGap, ConfidenceAssessment, ConfidenceScore } from '../confidence/types.js';
+import type { AnalysisGap, CheckedSurface, ConfidenceAssessment, ConfidenceScore } from '../confidence/types.js';
 import { taxonomyOf } from '../confidence/taxonomy.js';
 import { deriveOverallConfidence } from '../confidence/calibrate.js';
 
@@ -78,6 +78,86 @@ export function verdictFor(change: BreakingChange): FindingVerdict {
   }
 
   return 'locally-affected';
+}
+
+/** The two verdicts that tell a developer this upgrade does not affect them. */
+const SAFE_EQUIVALENT_VERDICTS = new Set<FindingVerdict>([
+  'no-incompatible-change-in-checked-surfaces',
+  'detected-not-locally-reachable',
+]);
+
+/**
+ * One verdict for a whole plan, not just one finding.
+ *
+ * `verdictFor` answers per finding, and production otherwise leaves the
+ * questions "were any findings safe-equivalent" and "was the surface actually
+ * checked" for a caller to combine by hand. This is that combination, done
+ * once, so the CLI, the Action, the extension panel and the benchmark harness
+ * cannot quietly disagree about what Drift told a developer.
+ *
+ * A repository-wide absence of findings is only a safe claim when the API
+ * surface was genuinely computed *and* the repository was genuinely searched
+ * — `checkedSurfaces` is what lets that be distinguished from a surface that
+ * could not be computed at all, where the honest verdict stays
+ * `insufficient-evidence`.
+ */
+export function reduceVerdict(
+  verdicts: readonly FindingVerdict[],
+  noBreakingChanges: boolean,
+  checkedSurfaces: readonly Pick<CheckedSurface, 'surface' | 'status'>[],
+): FindingVerdict {
+  if (noBreakingChanges) {
+    if (verdicts.length > 0) return verdicts[0]!;
+    const surfaceChecked = checkedSurfaces.some(
+      (surface) => surface.surface === 'api-surface' && surface.status === 'checked',
+    );
+    const searched = checkedSurfaces.some(
+      (surface) => surface.surface === 'localization' && surface.status === 'checked',
+    );
+    return surfaceChecked && searched ? 'no-incompatible-change-in-checked-surfaces' : 'insufficient-evidence';
+  }
+
+  const precedence: FindingVerdict[] = [
+    'locally-affected',
+    'insufficient-evidence',
+    'verification-incomplete',
+    'detected-not-locally-reachable',
+    'no-incompatible-change-in-checked-surfaces',
+  ];
+  return precedence.find((verdict) => verdicts.includes(verdict)) ?? verdicts[0] ?? 'insufficient-evidence';
+}
+
+/**
+ * `reduceVerdict`, folding in what the project's own toolchain measured.
+ *
+ * Static analysis and measurement can disagree, and when they do the
+ * measurement wins — but only the specific shape of measurement that earns
+ * it. `plan.confirmedRegressions` is deliberately narrow: an entry only lands
+ * there when a check passed against this exact dependency's *absence* and
+ * then failed against its presence, isolated from every other change in the
+ * same manifest (see `verifyPlan` in `analysis.ts`). That rules out the two
+ * ways a naive "verification failed → affected" rule would manufacture false
+ * positives: an environment that could not install or run at all, and a
+ * repository whose build was already red before Drift touched anything.
+ * Neither produces a `confirmedRegressions` entry, so neither can move this
+ * verdict — an inconclusive or pre-existing failure leaves the static
+ * conclusion exactly where it was.
+ *
+ * The override only ever *replaces a safe-equivalent claim*. A plan already
+ * reporting `locally-affected` on static grounds is left alone, and a plan
+ * genuinely `insufficient-evidence` — upstream itself unproven — stays that
+ * way: a confirmed regression says this repository broke, not that Drift
+ * understands why.
+ */
+export function resolvePlanVerdict(plan: RemediationPlan): FindingVerdict {
+  const verdicts = plan.breakingChanges.map((change) => verdictFor(change));
+  const reduced = reduceVerdict(verdicts, plan.breakingChanges.length === 0, plan.checkedSurfaces);
+
+  if (plan.confirmedRegressions.length > 0 && SAFE_EQUIVALENT_VERDICTS.has(reduced)) {
+    return 'locally-affected';
+  }
+
+  return reduced;
 }
 
 const BAND_BADGE: Record<string, string> = {
