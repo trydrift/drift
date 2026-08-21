@@ -507,6 +507,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       surface: 'api-surface',
       dependency: change.name,
       ecosystem: change.ecosystem,
+      workspace: change.workspace,
       status: gap ? 'unavailable' : computed ? 'checked' : 'unavailable',
       detail: gap
         ? gap.reason
@@ -522,6 +523,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       surface: 'release-notes',
       dependency: change.name,
       ecosystem: change.ecosystem,
+      workspace: change.workspace,
       status: proseRead && proseRead.length > 0 ? 'checked' : 'unavailable',
       detail:
         proseRead && proseRead.length > 0

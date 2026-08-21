@@ -803,6 +803,91 @@ describe('reporting never turns an absence into an all-clear', () => {
   });
 
   /**
+   * The same package, bumped in two workspace members, is two distinct
+   * `DependencyChange`s — `dependencyEcosystemKey` already says so everywhere
+   * else in the pipeline. `CheckedSurface` now carries `workspace` for exactly
+   * this reason: without it, `foo`'s checked surface in `packages/web` could
+   * stand in as evidence for `foo`'s unavailable surface in `packages/api`,
+   * ecosystem+name alone being unable to tell the two apart.
+   */
+  describe('resolvePlanVerdict distinguishes the same package across workspace members', () => {
+    const fooWeb = { ...dependencyChange, name: 'foo', workspace: 'packages/web' };
+    const fooApi = { ...dependencyChange, name: 'foo', workspace: 'packages/api' };
+
+    function twoWorkspacePlan(overrides: Record<string, unknown>) {
+      return planWith({ changes: [fooWeb, fooApi], ...overrides });
+    }
+
+    test('1. one workspace member unchecked: stays insufficient-evidence', () => {
+      const plan = twoWorkspacePlan({
+        breakingChanges: [],
+        impactSites: [],
+        checkedSurfaces: [
+          { surface: 'api-surface', dependency: 'foo', ecosystem: 'npm', workspace: 'packages/web', status: 'checked', detail: 'diffed' },
+          { surface: 'api-surface', dependency: 'foo', ecosystem: 'npm', workspace: 'packages/api', status: 'unavailable', detail: 'no diff available' },
+          { surface: 'localization', status: 'checked', detail: 'searched' },
+        ],
+      });
+      assert.equal(resolvePlanVerdict(plan), 'insufficient-evidence');
+    });
+
+    test('2. both workspace members checked: genuinely safe', () => {
+      const plan = twoWorkspacePlan({
+        breakingChanges: [],
+        impactSites: [],
+        checkedSurfaces: [
+          { surface: 'api-surface', dependency: 'foo', ecosystem: 'npm', workspace: 'packages/web', status: 'checked', detail: 'diffed' },
+          { surface: 'api-surface', dependency: 'foo', ecosystem: 'npm', workspace: 'packages/api', status: 'checked', detail: 'diffed' },
+          { surface: 'localization', status: 'checked', detail: 'searched' },
+        ],
+      });
+      assert.equal(resolvePlanVerdict(plan), 'no-incompatible-change-in-checked-surfaces');
+    });
+
+    test('3. one workspace member has a safe-equivalent finding, the other is unchecked: the has-findings branch cannot hide it either', () => {
+      const plan = twoWorkspacePlan({
+        localizationRan: true,
+        breakingChanges: [breaking({ workspace: 'packages/web' })],
+        checkedSurfaces: [
+          { surface: 'api-surface', dependency: 'foo', ecosystem: 'npm', workspace: 'packages/web', status: 'checked', detail: 'diffed' },
+          { surface: 'api-surface', dependency: 'foo', ecosystem: 'npm', workspace: 'packages/api', status: 'unavailable', detail: 'no diff available' },
+        ],
+      });
+      assert.equal(verdictFor(plan.breakingChanges[0]!), 'detected-not-locally-reachable');
+      assert.equal(resolvePlanVerdict(plan), 'insufficient-evidence');
+    });
+
+    test('4. a confirmed regression on the checked member still overrides, even while the sibling member is unchecked', () => {
+      const plan = twoWorkspacePlan({
+        breakingChanges: [],
+        impactSites: [],
+        confirmedRegressions: ['npm packages/web foo'],
+        checkedSurfaces: [
+          { surface: 'api-surface', dependency: 'foo', ecosystem: 'npm', workspace: 'packages/web', status: 'checked', detail: 'diffed' },
+          { surface: 'api-surface', dependency: 'foo', ecosystem: 'npm', workspace: 'packages/api', status: 'unavailable', detail: 'no diff available' },
+          { surface: 'localization', status: 'checked', detail: 'searched' },
+        ],
+      });
+      assert.equal(resolvePlanVerdict(plan), 'locally-affected');
+    });
+
+    test('single-package behaviour is unchanged: no workspace on either side still matches', () => {
+      // The common case — `workspace: undefined` on both the change and the
+      // surface row — must keep working exactly as it did before `workspace`
+      // existed on `CheckedSurface` at all.
+      const plan = planWith({
+        breakingChanges: [],
+        impactSites: [],
+        checkedSurfaces: [
+          { surface: 'api-surface', dependency: 'acme-sdk', ecosystem: 'npm', status: 'checked', detail: 'diffed' },
+          { surface: 'localization', status: 'checked', detail: 'searched' },
+        ],
+      });
+      assert.equal(resolvePlanVerdict(plan), 'no-incompatible-change-in-checked-surfaces');
+    });
+  });
+
+  /**
    * The production report used to reconstruct its own repository-level
    * conclusion from `plan.commits.length === 0` alone, independently of
    * `resolvePlanVerdict` — so a plan with a confirmed regression but no

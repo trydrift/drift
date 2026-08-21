@@ -62,6 +62,22 @@ export interface CheckedSurface {
   surface: string;
   dependency?: string;
   ecosystem?: Ecosystem;
+  /**
+   * The workspace member this row is about, mirroring
+   * `DependencyChange.workspace` — absent in a single-package repository,
+   * `''` for the workspace root. Only set on a row that actually corresponds
+   * to one `DependencyChange` (`api-surface`, `release-notes`); a row that
+   * is not dependency-scoped (`localization`, `behavioural-diff`,
+   * `contract-document`, which is keyed by file path, not package) leaves
+   * this absent rather than guessing which member it was about.
+   *
+   * Without this, `dependency` + `ecosystem` alone let the same package
+   * bumped in two workspace members collapse to one identity — one member's
+   * checked surface reading as evidence for the other's, which never ran at
+   * all. See `everyDependencySurfaceChecked` in `report/confidence.ts`, the
+   * one place this is read back.
+   */
+  workspace?: string;
   status: 'checked' | 'unavailable' | 'skipped';
   detail: string;
 }

@@ -182,32 +182,27 @@ export function resolvePlanVerdict(plan: RemediationPlan): FindingVerdict {
  * Does every dependency change this plan touches have a *checked*
  * `api-surface` row — not merely "some dependency does"?
  *
- * Matched by ecosystem and name, not the full `dependencyEcosystemKey`
- * (which also folds in workspace): `CheckedSurface` carries no workspace
- * field at all, so a key built with one would never match anything on the
- * `checkedSurfaces` side. That is a real, known limitation this stops short
- * of — the same package bumped in two workspace members collapses to one
- * identity here, so one member's failed surface diff can still read as
- * "checked" if the other member's succeeded. Fixing that fully would mean
- * adding a workspace field to `CheckedSurface` and threading it through every
- * place one gets constructed, which is a larger change than this warrants;
- * ecosystem+name already closes the gap this function exists for — a
- * dependency whose surface was never computed at all being silently absent
- * from a safe conclusion.
+ * Matched by `dependencyEcosystemKey` — ecosystem, name, *and* workspace —
+ * the same identity `analysis.ts` already keys `surfaceComputed`/`surfaceGaps`
+ * by. The same package bumped in two workspace members is two separate
+ * `DependencyChange`s with two separate `CheckedSurface` rows
+ * (`CheckedSurface.workspace` mirrors `DependencyChange.workspace` for
+ * exactly this), so one member's checked surface can never stand in as
+ * evidence for a sibling member's unavailable one.
  */
 function everyDependencySurfaceChecked(plan: RemediationPlan): boolean {
   const checked = new Set(
     plan.checkedSurfaces
       .filter((surface) => surface.surface === 'api-surface' && surface.status === 'checked')
-      .map((surface) => surfaceIdentity(surface.dependency, surface.ecosystem)),
+      .map((surface) => surfaceIdentity(surface.dependency, surface.ecosystem, surface.workspace)),
   );
 
-  return plan.changes.every((change) => checked.has(surfaceIdentity(change.name, change.ecosystem)));
+  return plan.changes.every((change) => checked.has(surfaceIdentity(change.name, change.ecosystem, change.workspace)));
 }
 
-/** `dependencyEcosystemKey`'s ecosystem+name half, workspace deliberately dropped — see `everyDependencySurfaceChecked`. */
-function surfaceIdentity(name: string | undefined, ecosystem: Ecosystem | undefined): string {
-  return dependencyEcosystemKey({ name: name ?? '', ecosystem: ecosystem as Ecosystem, workspace: undefined });
+/** `dependencyEcosystemKey`, tolerant of the pieces a `CheckedSurface` row may not have recorded. */
+function surfaceIdentity(name: string | undefined, ecosystem: Ecosystem | undefined, workspace: string | undefined): string {
+  return dependencyEcosystemKey({ name: name ?? '', ecosystem: ecosystem as Ecosystem, workspace });
 }
 
 /**
