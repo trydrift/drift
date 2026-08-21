@@ -352,6 +352,7 @@ describe('japicmp output', () => {
       changes.map((c) => [c.kind, c.symbol]),
       [
         ['export-removed', 'com.example.Legacy'],
+        ['signature-changed', 'com.example.Client'],
         ['member-removed', 'com.example.Client.close'],
         ['signature-changed', 'com.example.Client.send'],
       ],
@@ -380,6 +381,10 @@ describe('japicmp output', () => {
       [
         [
           'signature-changed',
+          'testing_lib.accessModifierClazzAccessDecrease.AccessModifierClazzAccessDecrease',
+        ],
+        [
+          'signature-changed',
           'testing_lib.accessModifierClazzAccessDecrease.AccessModifierClazzAccessDecrease.AccessModifierClazzAccessDecrease',
         ],
         ['export-removed', 'testing_lib.membersClazzNestedClazzDelete.MembersClazzNestedClazzDelete$NestedClazz'],
@@ -390,6 +395,81 @@ describe('japicmp output', () => {
         ],
       ],
     );
+  });
+
+  // The fixtures below are verbatim japicmp output, captured by compiling two
+  // real versions of a scratch jar and diffing them with the same japicmp
+  // binary `benchmarks/README.md` documents — not hand-written, so the marker
+  // characters are exactly what japicmp emits rather than what this parser
+  // assumes it emits.
+  describe('the fourth marker character (compatibility), read from real japicmp output', () => {
+    test('a class made abstract is reported — a binary-incompatible modification', () => {
+      const changes = parseJapicmp(`Comparing source compatibility of new.jar against old.jar
+***! MODIFIED CLASS: PUBLIC ABSTRACT (<- NON_ABSTRACT) STATIC com.example.Sample$WillBeAbstract  (not serializable)
+	===  CLASS FILE FORMAT VERSION: 63.0 <- 63.0
+`);
+      assert.deepEqual(changes.map((c) => [c.kind, c.symbol]), [
+        ['signature-changed', 'com.example.Sample$WillBeAbstract'],
+      ]);
+    });
+
+    test('a class made final is reported — a binary-incompatible modification', () => {
+      const changes = parseJapicmp(`Comparing source compatibility of new.jar against old.jar
+***! MODIFIED CLASS: PUBLIC STATIC FINAL (<- NON_FINAL) com.example.Sample$WillBeFinal  (not serializable)
+	===  CLASS FILE FORMAT VERSION: 63.0 <- 63.0
+`);
+      assert.deepEqual(changes.map((c) => [c.kind, c.symbol]), [
+        ['signature-changed', 'com.example.Sample$WillBeFinal'],
+      ]);
+    });
+
+    test('an interface gaining only a default method is not reported — japicmp itself found it compatible', () => {
+      // No `!` and no trailing `*`: `***  MODIFIED INTERFACE` (two spaces).
+      // Existing implementors keep compiling and keep working, so this must
+      // stay silent the same way a plain addition does.
+      const changes = parseJapicmp(`Comparing source compatibility of new.jar against old.jar
+***  MODIFIED INTERFACE: PUBLIC ABSTRACT STATIC com.example.Sample$WillGainMethod  (not serializable)
+	===  CLASS FILE FORMAT VERSION: 63.0 <- 63.0
+	+++  NEW METHOD: PUBLIC(+) void added()
+`);
+      assert.deepEqual(changes, []);
+    });
+
+    test('an annotation gaining a member is reported via the previously-unmatched **** marker', () => {
+      const changes = parseJapicmp(`Comparing source compatibility of new.jar against old.jar
+**** MODIFIED ANNOTATION: PUBLIC ABSTRACT STATIC com.example.Sample$WillChangeAnnotation  (not serializable)
+	===  CLASS FILE FORMAT VERSION: 63.0 <- 63.0
+	+++* NEW METHOD: PUBLIC(+) ABSTRACT(+) int extra()
+`);
+      assert.deepEqual(changes.map((c) => [c.kind, c.symbol]), [
+        ['signature-changed', 'com.example.Sample$WillChangeAnnotation'],
+      ]);
+    });
+
+    test('a newly checked exception is reported at both the class and the method, via ****', () => {
+      const changes = parseJapicmp(`Comparing source compatibility of new.jar against old.jar
+**** MODIFIED CLASS: PUBLIC STATIC com.example.Sample$WillGetCheckedException  (not serializable)
+	===  CLASS FILE FORMAT VERSION: 63.0 <- 63.0
+	**** MODIFIED METHOD: PUBLIC void risky()
+		+++  NEW EXCEPTION: java.io.IOException
+`);
+      assert.deepEqual(changes.map((c) => [c.kind, c.symbol]), [
+        ['signature-changed', 'com.example.Sample$WillGetCheckedException'],
+        ['signature-changed', 'com.example.Sample$WillGetCheckedException.risky'],
+      ]);
+    });
+
+    test('a binary-incompatible class change and a source-incompatible one carry different detail text', () => {
+      const [binary] = parseJapicmp(`Comparing source compatibility of new.jar against old.jar
+***! MODIFIED CLASS: PUBLIC ABSTRACT (<- NON_ABSTRACT) STATIC com.example.Sample$WillBeAbstract  (not serializable)
+`);
+      const [source] = parseJapicmp(`Comparing source compatibility of new.jar against old.jar
+**** MODIFIED ANNOTATION: PUBLIC ABSTRACT STATIC com.example.Sample$WillChangeAnnotation  (not serializable)
+`);
+      assert.match(binary!.detail, /binary-compatible/);
+      assert.match(source!.detail, /recompiled/);
+      assert.notEqual(binary!.detail, source!.detail);
+    });
   });
 });
 

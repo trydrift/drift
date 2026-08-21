@@ -151,8 +151,8 @@ async function downloadJar(
 /**
  * Parse japicmp's default report.
  *
- * The format is a marker, a change word, a kind, and a name, with members
- * indented under their class:
+ * The format is a four-character marker, a change word, a kind, and a name,
+ * with members indented under their class:
  *
  * ```
  * ---! REMOVED CLASS: PUBLIC com.example.Legacy
@@ -163,6 +163,21 @@ async function downloadJar(
  * Only removals and modifications are reported onwards, matching every other
  * evidence source: an addition cannot break a caller, and reporting one costs a
  * reviewer attention they will need elsewhere.
+ *
+ * The marker's first three characters repeat the verb's own symbol (`-` / `*`
+ * / `+`) and carry no extra information; the fourth is what actually says
+ * whether the change is compatible, and it is read here rather than treated as
+ * decoration. Confirmed against real japicmp output (see `test/surface.test.ts`
+ * for the fixtures this was generated from), the fourth character is:
+ *
+ *   `!`      binary-incompatible — an existing compiled caller can break at
+ *            runtime (a class made `abstract` or `final`, a visibility
+ *            reduction).
+ *   `*`      source-incompatible only — existing compiled callers keep
+ *            working, but code recompiled against the new version may not
+ *            (a newly checked exception, a new required annotation member).
+ *   absent   fully compatible (an interface gaining a default method), and
+ *            never reported — the same rule that already applies to `+++`.
  */
 export function parseJapicmp(output: string): SurfaceChange[] {
   const changes: SurfaceChange[] = [];
@@ -170,12 +185,16 @@ export function parseJapicmp(output: string): SurfaceChange[] {
 
   for (const raw of output.split('\n')) {
     const line = raw.trim();
-    const match = /^(\*\*\*!|---!|\+\+\+)\s*(\w+)\s+(CLASS|METHOD|FIELD|CONSTRUCTOR|INTERFACE|ANNOTATION|SUPERCLASS):\s*(.+)$/.exec(
-      line,
-    );
+    // `([-+*])\1\1` requires the three marker characters to be identical,
+    // which they always are for a given verb; the compatibility flag is then
+    // whatever immediately follows, with no `\s*` between them to swallow it.
+    const match =
+      /^([-+*])\1\1([!*])?\s+(\w+)\s+(CLASS|METHOD|FIELD|CONSTRUCTOR|INTERFACE|ANNOTATION|SUPERCLASS):\s*(.+)$/.exec(
+        line,
+      );
     if (!match) continue;
 
-    const [, , verb, kind, rest] = match;
+    const [, , flag, verb, kind, rest] = match;
     const isClass = kind === 'CLASS' || kind === 'INTERFACE' || kind === 'ANNOTATION';
     const name = symbolName(rest!);
     if (!name) continue;
@@ -199,6 +218,19 @@ export function parseJapicmp(output: string): SurfaceChange[] {
         kind: 'signature-changed',
         symbol,
         detail: `The signature of \`${symbol}\` changed.`,
+        after: rest!.trim(),
+      });
+    } else if (verb === 'MODIFIED' && isClass && flag) {
+      // A class/interface/annotation modification with no flag (japicmp found
+      // it fully compatible, e.g. an interface gaining a default method) is
+      // deliberately not reported here — same rule as an addition.
+      changes.push({
+        kind: 'signature-changed',
+        symbol,
+        detail:
+          flag === '!'
+            ? `The declaration of \`${symbol}\` changed in a way an existing compiled caller may not be binary-compatible with.`
+            : `The declaration of \`${symbol}\` changed in a way that only breaks code recompiled against it; already-compiled callers are unaffected.`,
         after: rest!.trim(),
       });
     }
