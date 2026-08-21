@@ -85,8 +85,6 @@ export interface BenchmarkDataset {
 export interface Benchmarks {
   generatedAt: string;
   datasets: BenchmarkDataset[];
-  /** Rows `published.json` names whose run directory is missing. Shown, not hidden. */
-  skipped: { runId: string; reason: string }[];
 }
 
 export function loadBenchmarks(): Benchmarks {
@@ -94,7 +92,83 @@ export function loadBenchmarks(): Benchmarks {
 }
 
 /**
- * `81/89 (91.0%)`, or `n/a (0/0)`.
+ * A published dataset by its `runId`, or a loud failure.
+ *
+ * Every quantitative claim on the site traces back to one of these calls. A
+ * silent fallback here — an empty dataset, a zeroed rate — would let a run
+ * that was renamed or dropped from `published.json` keep being cited by copy
+ * that no longer has anything backing it. Better a broken build than a
+ * confident number nobody can find the evidence for.
+ */
+export function requireDataset(datasets: readonly BenchmarkDataset[], runId: string): BenchmarkDataset {
+  const dataset = datasets.find((d) => d.runId === runId);
+  if (!dataset) {
+    throw new Error(
+      `requireDataset: no published run "${runId}" in results.json. ` +
+        `Available: ${datasets.map((d) => d.runId).join(", ") || "(none)"}.`,
+    );
+  }
+  return dataset;
+}
+
+/** A named rate off a dataset, or a loud failure — same reasoning as {@link requireDataset}. */
+export function requireRate(dataset: BenchmarkDataset, label: string): Rate {
+  const rate = dataset.rates[label];
+  if (!rate) {
+    throw new Error(
+      `requireRate: dataset "${dataset.runId}" has no rate "${label}". ` +
+        `Available: ${Object.keys(dataset.rates).join(", ") || "(none)"}.`,
+    );
+  }
+  return rate;
+}
+
+/** The precision/recall/F1 block, or a loud failure when a dataset has no negative controls. */
+export function requireClassification(
+  dataset: BenchmarkDataset,
+): { precision: Rate; recall: Rate; f1: number | null } {
+  if (!dataset.classification) {
+    throw new Error(
+      `requireClassification: dataset "${dataset.runId}" has no classification block ` +
+        `(it likely has no negative controls, so precision/recall are not defined).`,
+    );
+  }
+  return dataset.classification;
+}
+
+/** The confusion matrix, or a loud failure — see {@link requireClassification}. */
+export function requireConfusion(dataset: BenchmarkDataset): Confusion {
+  if (!dataset.confusion) {
+    throw new Error(`requireConfusion: dataset "${dataset.runId}" has no confusion matrix.`);
+  }
+  return dataset.confusion;
+}
+
+/** The "false-safe verdicts" rate every consumer-impact dataset publishes. */
+export function falseSafeRate(dataset: BenchmarkDataset): Rate {
+  return requireRate(dataset, "false-safe verdicts");
+}
+
+/** Whether a dataset's confusion matrix reflects real negative controls (as opposed to positives-only). */
+export function hasRealNegatives(dataset: BenchmarkDataset): boolean {
+  return dataset.confusion !== null && dataset.negativeControls > 0;
+}
+
+/** A rate from one slice of a dataset's own `breakdown`, or a loud failure. */
+export function requireBreakdownRate(dataset: BenchmarkDataset, slice: string, label: string): Rate {
+  const row = dataset.breakdown[slice];
+  const rate = row?.[label];
+  if (!rate) {
+    throw new Error(
+      `requireBreakdownRate: dataset "${dataset.runId}" has no "${label}" under breakdown slice "${slice}". ` +
+        `Available slices: ${Object.keys(dataset.breakdown).join(", ") || "(none)"}.`,
+    );
+  }
+  return rate;
+}
+
+/**
+ * `13/17 (76.5%)`, or `n/a (0/0)`.
  *
  * The only way a rate is ever rendered on this site. A bare percentage invites
  * a reader to supply their own denominator, and on a benchmark whose
