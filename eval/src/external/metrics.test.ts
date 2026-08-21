@@ -151,6 +151,28 @@ test('a metric the dataset says its annotation cannot support is dropped, with t
   assert.ok(metrics.refusals.some((refusal) => refusal.metric === 'category classification accuracy'));
 });
 
+test('a metric the dataset cannot support is also absent from the breakdown, not just the headline rates', () => {
+  // Regression: breakdownOf used to recompute every OUTCOME_METRICS metric
+  // without checking dataset.groundTruth.supports, so a metric refused in the
+  // headline rates could still surface in the per-label breakdown table.
+  const metrics = computeMetrics({
+    dataset: DATASETS['bump']!,
+    available: 2,
+    results: [
+      result({ caseId: 'a', truth: { ...result().truth, label: 'rename method' }, outcomes: { categoryCorrect: true } }),
+      result({ caseId: 'b', truth: { ...result().truth, label: 'remove method' }, outcomes: { categoryCorrect: false } }),
+    ],
+  });
+
+  assert.ok(!('category classification accuracy' in metrics.rates));
+  for (const bucket of Object.values(metrics.breakdown)) {
+    assert.ok(
+      !('category classification accuracy' in bucket),
+      'a metric refused at the headline must not reappear in the breakdown',
+    );
+  }
+});
+
 test('a false-safe is reported with its denominator rather than as a bare percentage', () => {
   const metrics = computeMetrics({
     dataset: DATASETS['swe-bump']!,

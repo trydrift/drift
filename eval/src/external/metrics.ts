@@ -288,7 +288,7 @@ export function computeMetrics(input: {
     confusion,
     classification,
     baseline,
-    breakdown: breakdownOf(scored),
+    breakdown: breakdownOf(dataset, scored),
     intervals: intervalsFor(scored),
     mappingCoverage: results.reduce<Record<string, number>>((counts, result) => {
       counts[result.truth.mappingStatus] = (counts[result.truth.mappingStatus] ?? 0) + 1;
@@ -305,7 +305,7 @@ export function computeMetrics(input: {
  * records a new dimension gets it reported without this file having to learn
  * about it.
  */
-function breakdownOf(scored: readonly ExternalCaseResult[]): Record<string, Record<string, Rate>> {
+function breakdownOf(dataset: Dataset, scored: readonly ExternalCaseResult[]): Record<string, Record<string, Rate>> {
   const dimensions = new Map<string, Map<string, ExternalCaseResult[]>>();
 
   const put = (dimension: string, bucket: string, result: ExternalCaseResult): void => {
@@ -327,6 +327,7 @@ function breakdownOf(scored: readonly ExternalCaseResult[]): Record<string, Reco
   for (const [dimension, byBucket] of dimensions) {
     for (const [bucket, entries] of byBucket) {
       for (const [key, label] of Object.entries(OUTCOME_METRICS)) {
+        if (!supportsMetric(dataset, key)) continue;
         const asked = entries.filter((entry) => entry.outcomes[key as keyof typeof entry.outcomes] !== undefined);
         if (asked.length === 0) continue;
         const hits = asked.filter((entry) => entry.outcomes[key as keyof typeof entry.outcomes] === true).length;
