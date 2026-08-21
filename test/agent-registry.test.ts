@@ -78,6 +78,7 @@ function plan(branchName = 'drift/acme-agent'): RemediationPlan {
     risk: 'low',
     gaps: [],
     checkedSurfaces: [],
+    confirmedRegressions: [],
     blockers: [],
     warnings: [],
     createdAt: new Date(0).toISOString(),

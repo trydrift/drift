@@ -39,6 +39,7 @@ import { detectPackageManagers, type PackageManagerId } from './detect/package-m
 import type { CheckKind } from './detect/checks.js';
 import { dependencyEcosystemKey } from './util/id.js';
 import { mapWithConcurrency } from './util/http.js';
+import { repositoryConclusion, VERIFICATION_FAILURE_BLOCKER_PREFIX } from './report/confidence.js';
 
 /**
  * Stages 1–7: everything up to, but not including, acting.
@@ -506,6 +507,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       surface: 'api-surface',
       dependency: change.name,
       ecosystem: change.ecosystem,
+      workspace: change.workspace,
       status: gap ? 'unavailable' : computed ? 'checked' : 'unavailable',
       detail: gap
         ? gap.reason
@@ -521,6 +523,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       surface: 'release-notes',
       dependency: change.name,
       ecosystem: change.ecosystem,
+      workspace: change.workspace,
       status: proseRead && proseRead.length > 0 ? 'checked' : 'unavailable',
       detail:
         proseRead && proseRead.length > 0
@@ -586,13 +589,16 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
  * The plan's one-line summary — shared by `analyzeRepository`'s Quick Scan
  * result and `deepVerify`'s updated one, so the two always read the same way
  * for the same shape of plan.
+ *
+ * The "nothing else to show" case defers to `repositoryConclusion`, which is
+ * also what the Markdown report and the check-run summary use — this string
+ * is what the CLI prints standalone when there is nothing to fix, so it must
+ * not disagree with `resolvePlanVerdict` any more than those do.
  */
 function summarize(plan: RemediationPlan): string {
   return plan.commits.length > 0
     ? `${plan.breakingChanges.length} breaking change(s), ${new Set(plan.impactSites.map((s) => s.file)).size} file(s) affected`
-    : plan.blockers.length > 0
-      ? `Could not establish whether this repository is affected: ${plan.blockers[0]}`
-      : 'No code in this repository is affected by these dependency changes.';
+    : repositoryConclusion(plan);
 }
 
 /**
@@ -668,6 +674,11 @@ async function verifyPlan(
   let verifiedPlan = plan;
   const parts: (UpgradeVerification | undefined)[] = [];
   const failedGroups: string[] = [];
+  // Dependency changes a failure can be pinned on without ambiguity — see
+  // `RemediationPlan.confirmedRegressions`. Only ever populated from a group
+  // that moved exactly one dependency, so a batch of several simultaneous
+  // bumps in one manifest never has its failure blamed on all of them.
+  const confirmedRegressions: string[] = [];
 
   for (const [dir, changes] of groups) {
     const manager = await managerFor(workspace, dir, changes[0]!.ecosystem);
@@ -696,7 +707,16 @@ async function verifyPlan(
 
     options.logger.info(`Verification (${dir || 'root'}): ${describeVerification(verification)}`);
     parts.push(verification);
-    if (verification.status === 'failed') failedGroups.push(dir || 'the repository root');
+    if (verification.status === 'failed') {
+      failedGroups.push(dir || 'the repository root');
+      // `probeDependencyChange` already compares against a passing baseline
+      // (see `reconcileAgainstBaseline`), so `failed` here already means "this
+      // check passed before and fails now" — the only thing this adds is
+      // ruling out the one remaining ambiguity: several dependencies moving
+      // together in the same manifest, where a red result cannot be
+      // attributed to any one of them.
+      if (changes.length === 1) confirmedRegressions.push(dependencyEcosystemKey(changes[0]!));
+    }
     verifiedPlan = applyVerificationToPlan(verifiedPlan, verification, dir);
   }
 
@@ -716,8 +736,20 @@ async function verifyPlan(
       ...verifiedPlan,
       blockers: [
         ...verifiedPlan.blockers,
-        `The project's own checks failed after this change was applied in ${failedGroups.join(', ')}, which static analysis did not predict. See the verification output for what broke.`,
+        `${VERIFICATION_FAILURE_BLOCKER_PREFIX}${failedGroups.join(', ')}, which static analysis did not predict. See the verification output for what broke.`,
       ],
+    };
+  }
+
+  // Prose in `blockers` stops automatic dispatch (see `isAutoDispatchable`),
+  // but nothing reads it to decide what a *report* says — a reader could see
+  // "no incompatible change in the checked surfaces" right above a blocker
+  // saying the opposite. `confirmedRegressions` is the structured half of the
+  // same fact, for `resolvePlanVerdict` to fold into the verdict itself.
+  if (confirmedRegressions.length > 0) {
+    verifiedPlan = {
+      ...verifiedPlan,
+      confirmedRegressions: [...verifiedPlan.confirmedRegressions, ...confirmedRegressions],
     };
   }
 

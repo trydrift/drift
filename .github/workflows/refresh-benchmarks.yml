@@ -1,0 +1,176 @@
+name: Refresh benchmark metrics
+
+# The site (site/src/lib/benchmark-narrative.ts) reads its numbers straight out
+# of eval/results/, committed artifacts from runs done on someone's laptop.
+# A logic change that moves a metric does not move that file, so the site can
+# go on quoting a stale precision or recall indefinitely unless someone
+# remembers to rerun the harness by hand and open a PR for it.
+#
+# This automates exactly that manual step: rerun every published external
+# benchmark against the code that just landed on main, and open a PR with
+# whatever changed. It does not touch eval/results/ directly on main — every
+# other workflow here that commits generated output does the same, because
+# main requires a reviewed PR.
+#
+# Deliberately scoped to paths that can move a benchmark result. A docs or
+# site-only change cannot change what Drift detects, so it does not trigger a
+# multi-hour rerun of datasets fetched fresh from the network.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'eval/src/**'
+      - '!eval/src/**/*.test.ts'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'Rerun a single published benchmark (its run id), instead of all six.'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: refresh-benchmarks
+  cancel-in-progress: false
+
+jobs:
+  run:
+    # Fetching a dataset from Zenodo/GitHub, building Roseau's japicmp
+    # baseline, and installing real consumer projects at historical commits is
+    # slow and occasionally flaky by nature (this is live third-party
+    # infrastructure, not a fixture) — 6h is the run-level ceiling that has
+    # actually been observed locally for the slowest of these, not a guess.
+    timeout-minutes: 360
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # runId matches eval/results/published.json exactly, so the run
+          # overwrites the directory the site reads rather than creating a
+          # new, unpublished one.
+          - runId: roseau-accuracy
+            args: roseau
+            needsJapicmp: true
+          - runId: kong-rq1-documented
+            args: kong --experiment rq1-documented
+            needsJapicmp: false
+          - runId: kong-rq2-category
+            args: kong --experiment rq2-category
+            needsJapicmp: false
+          - runId: swe-bump-detection
+            args: swe-bump
+            needsJapicmp: false
+          - runId: bump-subset-40
+            # Selection is deterministic (fixed seed), so a rerun samples the
+            # same 40 cases the published run did rather than a fresh subset.
+            args: bump --limit 40 --seed 20260819
+            needsJapicmp: true
+          - runId: timemachine-verified
+            args: timemachine --experiment verified
+            needsJapicmp: false
+
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - if: github.event_name == 'workflow_dispatch' && inputs.run_id != '' && inputs.run_id != matrix.runId
+        run: echo "SKIP=1" >> "$GITHUB_ENV"
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        if: env.SKIP != '1'
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        if: env.SKIP != '1' && matrix.needsJapicmp
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - run: npm ci && npm run build
+        if: env.SKIP != '1'
+
+      # japicmp ships as a fat jar, not a binary, and is not something
+      # Drift's own dependencies pull in — the adapters shell out to it by
+      # name, same as benchmarks/README.md documents for a local run.
+      - name: Install japicmp
+        if: env.SKIP != '1' && matrix.needsJapicmp
+        run: |
+          mkdir -p benchmarks/tools/bin
+          curl -sSLo benchmarks/tools/japicmp.jar \
+            "https://repo1.maven.org/maven2/com/github/siom79/japicmp/japicmp/0.26.1/japicmp-0.26.1-jar-with-dependencies.jar"
+          printf '#!/bin/sh\nexec java -jar "$(cd "$(dirname "$0")/.." && pwd)/japicmp.jar" "$@"\n' > benchmarks/tools/bin/japicmp
+          chmod +x benchmarks/tools/bin/japicmp
+          echo "$PWD/benchmarks/tools/bin" >> "$GITHUB_PATH"
+
+      - name: Fetch the dataset this run needs
+        if: env.SKIP != '1'
+        run: benchmarks/fetch.sh ${{ matrix.args }}
+
+      - name: Run the benchmark
+        if: env.SKIP != '1'
+        run: npm run eval:external -- ${{ matrix.args }} --run-id ${{ matrix.runId }}
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: env.SKIP != '1'
+        with:
+          name: benchmark-${{ matrix.runId }}
+          path: eval/results/${{ matrix.runId }}/
+          if-no-files-found: error
+          retention-days: 14
+
+  open-pr:
+    needs: run
+    if: always() && needs.run.result != 'skipped'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: benchmark-*
+          path: /tmp/benchmark-artifacts
+
+      # Each artifact is one run's directory contents; lay them back onto the
+      # paths the site actually reads. A matrix leg that failed or was
+      # skipped (single-run workflow_dispatch) simply has no artifact, and its
+      # published directory is left exactly as it was.
+      - name: Apply refreshed results
+        run: |
+          shopt -s nullglob
+          dirs=(/tmp/benchmark-artifacts/benchmark-*)
+          if [ ${#dirs[@]} -eq 0 ]; then
+            echo "No benchmark artifacts were produced (every matrix leg failed or was skipped) — nothing to apply."
+            exit 0
+          fi
+          for dir in "${dirs[@]}"; do
+            runId="$(basename "$dir" | sed 's/^benchmark-//')"
+            rm -rf "eval/results/$runId"
+            mkdir -p "eval/results/$runId"
+            cp -r "$dir"/. "eval/results/$runId/"
+          done
+
+      - name: Open a PR with refreshed benchmark results
+        uses: peter-evans/create-pull-request@271a8d0340265f705b14b6d32b9829c1cb33d45e # v7.0.8
+        with:
+          commit-message: "chore(eval): refresh benchmark metrics"
+          title: "chore(eval): refresh benchmark metrics"
+          body: |
+            Automated rerun of the published external benchmarks against
+            `main` at ${{ github.sha }}, triggered by ${{ github.event_name }}.
+
+            Review the diffs in `eval/results/*/metrics.json` and `report.md`
+            before merging — this changes numbers the site publishes as fact.
+          branch: refresh-benchmarks
+          delete-branch: true
+          add-paths: eval/results/**

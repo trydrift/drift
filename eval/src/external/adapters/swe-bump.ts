@@ -6,16 +6,18 @@ import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { EXTERNAL_RECORD_VERSION, type ExclusionKind, type ExternalCaseResult } from '../record.ts';
 import type { Selectable } from '../selection.ts';
-import { reduceVerdict, type CheckedSurfaceLike } from '../../adapters/end-to-end.ts';
 import {
   DriftConfigSchema,
   LocalGitProvider,
   analyzeRepository,
-  verdictFor,
+  resolvePlanVerdict,
   type Logger,
   type RemediationPlan,
   type RepoContext,
 } from '../../../../dist/index.js';
+// Not part of the public package surface — see the note in
+// `eval/src/adapters/end-to-end.ts`.
+import { deepVerify } from '../../../../dist/analysis.js';
 
 const execFile = promisify(execFileCallback);
 
@@ -221,13 +223,19 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
       workspace: repo,
     };
 
-    const result = await analyzeRepository({
+    const analysisOptions = {
       repo: context,
       config,
       logger: SILENT_LOGGER,
       provider: new LocalGitProvider(repo, { before: beforeSha, after: afterSha }),
       workspace: repo,
-    });
+    };
+
+    // Deep Verification: install the change and run the project's own
+    // checks, exactly as `runPipeline` does when a caller asks for it —
+    // always, here, matching what this harness measured before PR #69 split
+    // Quick Scan from Deep Verification into two calls.
+    const result = await deepVerify(await analyzeRepository(analysisOptions), analysisOptions);
 
     const plan = result.plan;
     return {
@@ -256,39 +264,22 @@ export async function predictSweBump(task: SweBumpTask): Promise<SweBumpPredicti
 }
 
 /**
- * The user-facing verdict, derived exactly as the case-based harness derives
- * it — by calling the same function.
+ * The user-facing verdict, derived exactly as production derives it — by
+ * calling production's own `resolvePlanVerdict` rather than reconstructing
+ * the reduction here. That includes the confirmed-regression override: a
+ * project whose own build measurably broke after this change scores as
+ * affected even where static localization found nothing to point at.
  *
  * The first version of this adapter had its own three-line reduction: sites
  * means affected, findings means detected-not-reachable, otherwise
- * no-incompatible-change. That third branch is wrong and it is wrong in the
- * one direction that matters. An absence of findings is a *safety claim* only
- * when the API surface was genuinely computed and the repository genuinely
- * searched; where the surface could not be computed — which is the ordinary
- * state for an ecosystem whose surface diff needs a tool this machine does not
- * have — nothing was established and the honest verdict is
- * `insufficient-evidence`.
- *
- * Left as it was, the adapter would have manufactured a false-safe out of
- * every case where Drift correctly declined to conclude anything, and reported
- * it as Drift telling a developer with a broken build that they were fine.
- * Reusing `reduceVerdict` is what stops the two halves of this harness from
- * disagreeing about what Drift said.
+ * no-incompatible-change. That third branch was wrong in the one direction
+ * that matters — an absence of findings is a *safety claim* only when the API
+ * surface was genuinely computed and the repository genuinely searched, and
+ * reading it as safe regardless would have manufactured a false-safe out of
+ * every case where Drift correctly declined to conclude anything.
  */
 function verdictFromPlan(plan: RemediationPlan | null | undefined): string {
-  if (!plan) return 'insufficient-evidence';
-  const verdictByChange = plan.breakingChanges.map((change) => String(verdictFor(change)));
-  return reduceVerdict(verdictByChange, plan.breakingChanges.length === 0, checkedSurfacesOf(plan));
-}
-
-/** The surfaces production recorded, in the shape `reduceVerdict` reads. */
-function checkedSurfacesOf(plan: RemediationPlan): CheckedSurfaceLike[] {
-  const surfaces = (plan as unknown as { checkedSurfaces?: CheckedSurfaceLike[] }).checkedSurfaces ?? [];
-  return surfaces.map((surface) => ({
-    surface: surface.surface,
-    ...(surface.dependency ? { dependency: surface.dependency } : {}),
-    status: surface.status,
-  }));
+  return plan ? resolvePlanVerdict(plan) : 'insufficient-evidence';
 }
 
 export interface ScoreSweBumpInput {

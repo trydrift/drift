@@ -239,8 +239,9 @@ anything, so they show why symbol-diffing alone is insufficient.
 Confirm `fetch-depth: 2` is set, and that the manifest actually changed in the
 commit being analysed.
 
-**"No affected code found"** — often correct: the bump genuinely doesn't touch
-you. Verify with `--json` and check `evidence` — if the only source is
+**"No incompatible change detected in the surfaces that were checked"** —
+often correct: the bump genuinely doesn't touch you. Verify with `--json` and
+check `evidence` — if the only source is
 `semver-heuristic`, Drift found no changelog or API diff to reason from.
 
 **Action fails with `Cannot find module`** — the committed bundle is stale or

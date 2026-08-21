@@ -645,6 +645,22 @@ export interface RemediationPlan {
    * never a silent "it passed".
    */
   verification?: UpgradeVerification;
+  /**
+   * Dependency changes verification proved actually broke the project —
+   * baseline passed, this change installed, the same check failed — keyed by
+   * {@link dependencyEcosystemKey}.
+   *
+   * Deliberately narrower than "verification failed": that can mean an
+   * install timed out, a tool was missing, or the repository was already red,
+   * none of which says anything about this dependency. An entry only lands
+   * here when the failure was isolated to one dependency change and measured
+   * against a passing baseline for that exact check — the one shape of
+   * verification result strong enough to say a repository is affected even
+   * when static localization found nothing to point at. See `verifyPlan` in
+   * `analysis.ts` and `resolvePlanVerdict` in `report/confidence.ts`, the one
+   * place this is read.
+   */
+  confirmedRegressions: string[];
   /** Reasons Drift refused to proceed automatically, if any. */
   blockers: string[];
   /** Non-fatal caveats surfaced to the reviewer. */

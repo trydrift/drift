@@ -37,6 +37,7 @@ const plan = (): RemediationPlan => ({
   schemaVersion: 3,
   gaps: [],
   checkedSurfaces: [],
+  confirmedRegressions: [],
   id: 'plan1',
   branchName: 'drift/upgrade-zod',
   baseBranch: 'main',

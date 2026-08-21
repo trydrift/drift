@@ -17,6 +17,7 @@ import {
   renderEligibility,
   renderGaps,
   renderTaxonomy,
+  repositoryConclusion,
   verdictFor,
   verdictText,
 } from './confidence.js';
@@ -141,7 +142,7 @@ function renderHeader(plan: RemediationPlan): string {
     '',
     plan.commits.length > 0
       ? `Drift found **${plan.breakingChanges.length} breaking change(s)** affecting **${new Set(plan.impactSites.map((s) => s.file)).size} file(s)** in this repository, and planned **${plan.commits.length} commit(s)** to fix them.`
-      : `Drift found no code in this repository affected by this change.`,
+      : repositoryConclusion(plan),
   ].join('\n');
 }
 
@@ -312,7 +313,7 @@ function capitalize(text: string): string {
 
 function renderCommitPlan(plan: RemediationPlan): string {
   if (plan.commits.length === 0) {
-    return ['## Commit plan', '', 'No commits planned — nothing in this repository is affected.'].join('\n');
+    return ['## Commit plan', '', `No commits planned. ${repositoryConclusion(plan)}`].join('\n');
   }
 
   const lines: string[] = [
@@ -503,7 +504,7 @@ function truncate(text: string, max: number): string {
 /** Compact single-line summary for check-run titles and log output. */
 export function renderSummaryLine(plan: RemediationPlan): string {
   if (plan.commits.length === 0) {
-    return `No affected code found for ${plan.changes.length} dependency change(s)`;
+    return `${repositoryConclusion(plan)} (${plan.changes.length} dependency change(s) checked)`;
   }
   const files = new Set(plan.impactSites.map((s) => s.file)).size;
   return `${plan.breakingChanges.length} breaking change(s), ${files} file(s) affected, ${plan.commits.length} commit(s) planned (risk: ${plan.risk})`;

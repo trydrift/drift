@@ -118,17 +118,24 @@ export function upgradeCommitMessage(candidates: readonly UpgradeCandidate[]): C
 
   const breaking = candidates.reduce((total, c) => total + c.breakingCount, 0);
   const impacted = candidates.reduce((total, c) => total + c.impactCount, 0);
+  // A measured build failure with nothing statically localized is a stronger,
+  // different fact than "no breaking changes" or "nothing uses the affected
+  // APIs" — see `severityOf`'s own `verification-failed` tier, reused here
+  // rather than reconstructing the same distinction badly.
+  const verificationFailed = candidates.some((c) => severityOf(c) === 'verification-failed');
 
   const body = [
     ...lines,
     '',
-    breaking === 0
-      ? 'Drift found no breaking changes upstream for these versions.'
-      : `Drift found ${count(breaking, 'breaking change')} upstream and ${
-          impacted === 0
-            ? 'no code in this repository that uses the affected APIs'
-            : `${count(impacted, 'place')} in this repository that use the affected APIs`
-        }.`,
+    verificationFailed
+      ? "Drift installed this upgrade and the project's own checks failed, even though static analysis found no specific location to point at. Review the failure before shipping this."
+      : breaking === 0
+        ? 'Drift found no breaking changes upstream for these versions.'
+        : `Drift found ${count(breaking, 'breaking change')} upstream and ${
+            impacted === 0
+              ? 'no code in this repository that uses the affected APIs'
+              : `${count(impacted, 'place')} in this repository that use the affected APIs`
+          }.`,
   ].join('\n');
 
   return { subject, body };
@@ -156,7 +163,15 @@ function describeUpgrade(candidate: UpgradeCandidate): string {
  * reviewer would otherwise have to find by reading the whole diff.
  */
 export function pullRequestBody(candidates: readonly UpgradeCandidate[]): string {
-  const affected = candidates.filter((c) => severityOf(c) === 'affected');
+  // `verification-failed` is included alongside `affected`: a measured build
+  // failure with nothing statically localized needs a reviewer's attention at
+  // least as much as a located site does, and `describeSeverity` already
+  // shows it a different way in the table above — this section must not
+  // silently drop it while claiming to name everything worth reviewing.
+  const needsReview = candidates.filter((c) => {
+    const severity = severityOf(c);
+    return severity === 'affected' || severity === 'verification-failed';
+  });
 
   const rows = candidates.map((candidate) => {
     const scope = candidate.workspace ? ` \`${candidate.workspace}\`` : '';
@@ -174,13 +189,14 @@ export function pullRequestBody(candidates: readonly UpgradeCandidate[]): string
     '',
   ];
 
-  if (affected.length > 0) {
+  if (needsReview.length > 0) {
     lines.push(
       `### Needs review`,
       '',
-      ...affected.map(
-        (candidate) =>
-          `- **${candidate.name}** — ${count(candidate.impactCount, 'place')} across ${count(candidate.impactFiles, 'file')} use an API this version changed.`,
+      ...needsReview.map((candidate) =>
+        severityOf(candidate) === 'verification-failed'
+          ? `- **${candidate.name}** — installed and the project's own checks failed. Static analysis found no specific location to point at; see the verification output for what broke.`
+          : `- **${candidate.name}** — ${count(candidate.impactCount, 'place')} across ${count(candidate.impactFiles, 'file')} use an API this version changed.`,
       ),
       '',
     );

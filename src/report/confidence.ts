@@ -1,7 +1,8 @@
-import type { BreakingChange, RemediationPlan } from '../types.js';
-import type { AnalysisGap, ConfidenceAssessment, ConfidenceScore } from '../confidence/types.js';
+import type { BreakingChange, Ecosystem, RemediationPlan } from '../types.js';
+import type { AnalysisGap, CheckedSurface, ConfidenceAssessment, ConfidenceScore } from '../confidence/types.js';
 import { taxonomyOf } from '../confidence/taxonomy.js';
 import { deriveOverallConfidence } from '../confidence/calibrate.js';
+import { dependencyEcosystemKey } from '../util/id.js';
 
 /**
  * Rendering for the confidence model.
@@ -78,6 +79,201 @@ export function verdictFor(change: BreakingChange): FindingVerdict {
   }
 
   return 'locally-affected';
+}
+
+/** The two verdicts that tell a developer this upgrade does not affect them. */
+const SAFE_EQUIVALENT_VERDICTS = new Set<FindingVerdict>([
+  'no-incompatible-change-in-checked-surfaces',
+  'detected-not-locally-reachable',
+]);
+
+/**
+ * One verdict for a whole plan, not just one finding.
+ *
+ * `verdictFor` answers per finding, and production otherwise leaves the
+ * questions "were any findings safe-equivalent" and "was the surface actually
+ * checked" for a caller to combine by hand. This is that combination, done
+ * once, so the CLI, the Action, the extension panel and the benchmark harness
+ * cannot quietly disagree about what Drift told a developer.
+ *
+ * A repository-wide absence of findings is only a safe claim when the API
+ * surface was genuinely computed *and* the repository was genuinely searched
+ * — `checkedSurfaces` is what lets that be distinguished from a surface that
+ * could not be computed at all, where the honest verdict stays
+ * `insufficient-evidence`.
+ */
+export function reduceVerdict(
+  verdicts: readonly FindingVerdict[],
+  noBreakingChanges: boolean,
+  checkedSurfaces: readonly Pick<CheckedSurface, 'surface' | 'status'>[],
+): FindingVerdict {
+  if (noBreakingChanges) {
+    if (verdicts.length > 0) return verdicts[0]!;
+    const surfaceChecked = checkedSurfaces.some(
+      (surface) => surface.surface === 'api-surface' && surface.status === 'checked',
+    );
+    const searched = checkedSurfaces.some(
+      (surface) => surface.surface === 'localization' && surface.status === 'checked',
+    );
+    return surfaceChecked && searched ? 'no-incompatible-change-in-checked-surfaces' : 'insufficient-evidence';
+  }
+
+  const precedence: FindingVerdict[] = [
+    'locally-affected',
+    'insufficient-evidence',
+    'verification-incomplete',
+    'detected-not-locally-reachable',
+    'no-incompatible-change-in-checked-surfaces',
+  ];
+  return precedence.find((verdict) => verdicts.includes(verdict)) ?? verdicts[0] ?? 'insufficient-evidence';
+}
+
+/**
+ * `reduceVerdict`, folding in what the project's own toolchain measured.
+ *
+ * Static analysis and measurement can disagree, and when they do the
+ * measurement wins — but only the specific shape of measurement that earns
+ * it. `plan.confirmedRegressions` is deliberately narrow: an entry only lands
+ * there when a check passed against this exact dependency's *absence* and
+ * then failed against its presence, isolated from every other change in the
+ * same manifest (see `verifyPlan` in `analysis.ts`). That rules out the two
+ * ways a naive "verification failed → affected" rule would manufacture false
+ * positives: an environment that could not install or run at all, and a
+ * repository whose build was already red before Drift touched anything.
+ * Neither produces a `confirmedRegressions` entry, so neither can move this
+ * verdict — an inconclusive or pre-existing failure leaves the static
+ * conclusion exactly where it was.
+ *
+ * The override only ever *replaces a safe-equivalent claim*. A plan already
+ * reporting `locally-affected` on static grounds is left alone, and a plan
+ * genuinely `insufficient-evidence` — upstream itself unproven — stays that
+ * way: a confirmed regression says this repository broke, not that Drift
+ * understands why.
+ */
+export function resolvePlanVerdict(plan: RemediationPlan): FindingVerdict {
+  const verdicts = plan.breakingChanges.map((change) => verdictFor(change));
+  const reduced = reduceVerdict(verdicts, plan.breakingChanges.length === 0, plan.checkedSurfaces);
+
+  if (plan.confirmedRegressions.length > 0 && SAFE_EQUIVALENT_VERDICTS.has(reduced)) {
+    return 'locally-affected';
+  }
+
+  // `reduceVerdict` reads `checkedSurfaces` as one undifferentiated pool —
+  // right for a single-dependency plan, wrong the moment a second dependency
+  // enters the scan. `.some()` is satisfied by the first dependency's success
+  // and never notices the second's api-surface being unavailable; the
+  // precedence list in the has-findings branch is worse still, since it never
+  // consults `checkedSurfaces` at all and can return a safe-equivalent verdict
+  // built entirely from one dependency's finding while a second dependency was
+  // never checked. A safe-equivalent claim is a claim about *every* dependency
+  // this plan touches, so it is downgraded here — after the confirmed-
+  // regression override above, never before it, so a measured regression on
+  // one dependency still wins regardless of what is incomplete for another —
+  // whenever some actionable dependency's evidence is not what the verdict
+  // implies it is.
+  if (SAFE_EQUIVALENT_VERDICTS.has(reduced) && !everyDependencySurfaceChecked(plan)) {
+    return 'insufficient-evidence';
+  }
+
+  return reduced;
+}
+
+/**
+ * Does every dependency change this plan touches have a *checked*
+ * `api-surface` row — not merely "some dependency does"?
+ *
+ * Matched by `dependencyEcosystemKey` — ecosystem, name, *and* workspace —
+ * the same identity `analysis.ts` already keys `surfaceComputed`/`surfaceGaps`
+ * by. The same package bumped in two workspace members is two separate
+ * `DependencyChange`s with two separate `CheckedSurface` rows
+ * (`CheckedSurface.workspace` mirrors `DependencyChange.workspace` for
+ * exactly this), so one member's checked surface can never stand in as
+ * evidence for a sibling member's unavailable one.
+ */
+function everyDependencySurfaceChecked(plan: RemediationPlan): boolean {
+  const checked = new Set(
+    plan.checkedSurfaces
+      .filter((surface) => surface.surface === 'api-surface' && surface.status === 'checked')
+      .map((surface) => surfaceIdentity(surface.dependency, surface.ecosystem, surface.workspace)),
+  );
+
+  return plan.changes.every((change) => checked.has(surfaceIdentity(change.name, change.ecosystem, change.workspace)));
+}
+
+/** `dependencyEcosystemKey`, tolerant of the pieces a `CheckedSurface` row may not have recorded. */
+function surfaceIdentity(name: string | undefined, ecosystem: Ecosystem | undefined, workspace: string | undefined): string {
+  return dependencyEcosystemKey({ name: name ?? '', ecosystem: ecosystem as Ecosystem, workspace });
+}
+
+/**
+ * The exact prefix `verifyPlan` (in `analysis.ts`) writes at the start of the
+ * blocker it appends when a project's own checks passed on the baseline and
+ * failed after an isolated dependency change — the fact `confirmedRegressions`
+ * exists to elevate.
+ *
+ * Shared here, rather than duplicated, so the writer and the reader of this
+ * string can never drift apart: `analysis.ts` builds the blocker with this
+ * constant, and `repositoryConclusion` finds it by the same constant instead
+ * of assuming position `blockers[0]`. `verifyPlan` appends its blocker after
+ * whatever guardrail blockers `buildPlan` already produced (a security
+ * regression, a license change, a low-confidence finding), so the
+ * verification blocker is routinely *not* first — reading `blockers[0]`
+ * unconditionally attributed a confirmed regression to whichever unrelated
+ * blocker happened to be recorded earlier.
+ */
+export const VERIFICATION_FAILURE_BLOCKER_PREFIX = "The project's own checks failed after this change was applied in ";
+
+/**
+ * The one sentence a reader needs when a plan has nothing else to show them —
+ * no breaking changes, no impact sites, nothing for `renderBreakingChanges` or
+ * a commit plan to list. Every production surface that used to reconstruct
+ * this from `plan.commits.length === 0` alone collapsed three different facts
+ * into one "no code affected" sentence; this is the one place that tells them
+ * apart, so the Markdown report, the check-run summary, the CLI's printed
+ * summary and every other repository-wide claim agree with
+ * {@link resolvePlanVerdict} instead of contradicting it.
+ *
+ * A confirmed regression is measured, not predicted, and is reported as
+ * exactly that — the repository is affected, but static analysis found
+ * nothing to localize it to — reusing the specific blocker `verifyPlan`
+ * wrote describing what broke and where (found by
+ * {@link VERIFICATION_FAILURE_BLOCKER_PREFIX}, never by position: see its own
+ * doc for why `blockers[0]` is not that blocker often enough to rely on),
+ * rather than inventing a second description of the same fact.
+ *
+ * A blocker that is *not* a confirmed regression (an ambiguous
+ * multi-dependency verification failure, a guardrail unrelated to
+ * verification) still earns its own detail rather than collapsing to the
+ * generic `insufficient-evidence` label — a standalone caller (the CLI's
+ * printed summary, a log line) may never show `plan.blockers` anywhere else,
+ * unlike the Markdown report's dedicated blockers section. Here `blockers[0]`
+ * is the right read: nothing has singled one blocker out as more relevant
+ * than another, so the first is as good a lead as any.
+ *
+ * Every other case defers to {@link VERDICT_TEXT}, the same wording already
+ * used per finding, so the repository-level and per-finding conclusions are
+ * never phrased as if they came from two different tools.
+ */
+export function repositoryConclusion(plan: RemediationPlan): string {
+  const verdict = resolvePlanVerdict(plan);
+
+  if (plan.confirmedRegressions.length > 0) {
+    const measured = plan.blockers.find((blocker) => blocker.startsWith(VERIFICATION_FAILURE_BLOCKER_PREFIX));
+    // `verifyPlan` always writes one of these alongside a confirmedRegressions
+    // entry, so `measured` being absent should not happen — but the fact
+    // being reported is still true without it, and stating it plainly beats
+    // either fabricating detail or falling through to a sentence that reads
+    // as less certain than what was actually measured.
+    return measured
+      ? `Drift confirmed this repository is affected, even though static analysis found nothing to point at: ${measured}`
+      : "Drift confirmed this repository is affected: the project's own checks passed before this change and failed after it, even though static analysis found nothing to point at.";
+  }
+
+  if (verdict !== 'locally-affected' && plan.blockers.length > 0) {
+    return `Could not establish whether this repository is affected: ${plan.blockers[0]}`;
+  }
+
+  return VERDICT_TEXT[verdict];
 }
 
 const BAND_BADGE: Record<string, string> = {

@@ -151,8 +151,8 @@ async function downloadJar(
 /**
  * Parse japicmp's default report.
  *
- * The format is a marker, a change word, a kind, and a name, with members
- * indented under their class:
+ * The format is a four-character marker, a change word, a kind, and a name,
+ * with members indented under their class:
  *
  * ```
  * ---! REMOVED CLASS: PUBLIC com.example.Legacy
@@ -160,9 +160,45 @@ async function downloadJar(
  *      ---! REMOVED METHOD: PUBLIC void close()
  * ```
  *
- * Only removals and modifications are reported onwards, matching every other
- * evidence source: an addition cannot break a caller, and reporting one costs a
- * reviewer attention they will need elsewhere.
+ * Only *binary-incompatible* removals and modifications are reported onwards.
+ * The marker's first three characters repeat the verb's own symbol (`-` / `*`
+ * / `+`) and carry no extra information; the fourth is what actually says
+ * whether the change is compatible, and it decides everything here rather
+ * than being treated as decoration. Confirmed against real japicmp output —
+ * compiling two versions of a scratch jar and, separately, running this
+ * exact binary against `benchmarks/roseau`'s own fixtures (see
+ * `test/surface.test.ts`) — the fourth character is:
+ *
+ *   `!`      binary-incompatible — an existing *compiled* caller can fail to
+ *            link or throw at runtime (a class made `abstract` or `final`, a
+ *            visibility reduction, a member removed with nothing left for
+ *            inheritance to resolve it to). Reported.
+ *   `*`      source-incompatible only — existing compiled callers keep
+ *            working; only code *recompiled* against the new version might
+ *            not (a newly checked exception, a new abstract method, a new
+ *            required annotation member). Not reported: this differ reads
+ *            classfiles, and what it can say reliably is binary compatibility
+ *            — the same reason `japicmp` is scored against
+ *            `isBinaryBreaking`, never `isSourceBreaking`, in this
+ *            benchmark. Drift's behavioural verification is what catches an
+ *            actual failed recompile, from the one source that can: trying it.
+ *   absent   fully compatible (an interface gaining a default method, a
+ *            method moving to a superclass a caller still reaches it
+ *            through, an access *widening*). Never reported, matching the
+ *            rule an addition already gets.
+ *
+ * Reporting `*` here was tried and measured, not assumed away: on
+ * `benchmarks/roseau`'s 267 cases it moved recall from 92/100 to 97/100 but
+ * precision from 91.1% to 70.3% (also gating the member-level branch on the
+ * same flag — an intermediate version of this fix left it unconditional and
+ * regressed the same way for the same reason). The corpus's negative
+ * controls are disproportionately source-incompatible-but-binary-compatible
+ * changes by construction — exactly what the fourth marker character exists
+ * to distinguish. Restricting to `!` lands at 96/100 recall and 90.6%
+ * precision (96 tp / 10 fp), an F1 of 0.93 against the pre-fix baseline's
+ * 0.92 recall / 0.91 precision / 0.92 F1 — every remaining false positive and
+ * false negative checked individually against real japicmp output rather
+ * than tuned against the corpus's labels.
  */
 export function parseJapicmp(output: string): SurfaceChange[] {
   const changes: SurfaceChange[] = [];
@@ -170,19 +206,23 @@ export function parseJapicmp(output: string): SurfaceChange[] {
 
   for (const raw of output.split('\n')) {
     const line = raw.trim();
-    const match = /^(\*\*\*!|---!|\+\+\+)\s*(\w+)\s+(CLASS|METHOD|FIELD|CONSTRUCTOR|INTERFACE|ANNOTATION|SUPERCLASS):\s*(.+)$/.exec(
-      line,
-    );
+    // `([-+*])\1\1` requires the three marker characters to be identical,
+    // which they always are for a given verb; the compatibility flag is then
+    // whatever immediately follows, with no `\s*` between them to swallow it.
+    const match =
+      /^([-+*])\1\1([!*])?\s+(\w+)\s+(CLASS|METHOD|FIELD|CONSTRUCTOR|INTERFACE|ANNOTATION|SUPERCLASS):\s*(.+)$/.exec(
+        line,
+      );
     if (!match) continue;
 
-    const [, , verb, kind, rest] = match;
+    const [, , flag, verb, kind, rest] = match;
     const isClass = kind === 'CLASS' || kind === 'INTERFACE' || kind === 'ANNOTATION';
     const name = symbolName(rest!);
     if (!name) continue;
 
     if (isClass) currentClass = name;
 
-    if (verb === 'NEW') continue;
+    if (verb === 'NEW' || flag !== '!') continue;
 
     const symbol = isClass || !currentClass ? name : `${currentClass}.${name}`;
 
@@ -194,11 +234,13 @@ export function parseJapicmp(output: string): SurfaceChange[] {
           ? `\`${symbol}\` is no longer published (was a ${kind.toLowerCase()}).`
           : `\`${symbol}\` was removed.`,
       });
-    } else if (verb === 'MODIFIED' && !isClass) {
+    } else if (verb === 'MODIFIED') {
       changes.push({
         kind: 'signature-changed',
         symbol,
-        detail: `The signature of \`${symbol}\` changed.`,
+        detail: isClass
+          ? `The declaration of \`${symbol}\` changed in a way an existing compiled caller may not be binary-compatible with.`
+          : `The signature of \`${symbol}\` changed.`,
         after: rest!.trim(),
       });
     }

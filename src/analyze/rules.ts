@@ -184,6 +184,33 @@ interface ProseRule {
 }
 
 /**
+ * One verb, every mood a maintainer actually writes it in.
+ *
+ * A changelog favours the passive past participle — "`x` was removed" — and a
+ * commit subject favours the bare imperative Git's own convention asks for —
+ * "Remove `x`", never "Removed `x`". Same fact, different grammar, and a rule
+ * table that spelled out `remove`/`removed`/`drop`/`dropped`/`delete`/`deleted`
+ * as six near-identical regexes would rot the moment a seventh synonym turned
+ * up. Naming the synonyms once, here, and generating every mood from each is
+ * the alternative: add a verb to the array and every rule that calls this
+ * gets a new mood for free.
+ */
+function verbForms(...stems: readonly string[]): string {
+  // English's own irregularity means "generate a mood by suffix" only gets a
+  // rule so far — `drop` doubles its consonant, `delete` drops a vowel — so
+  // each stem lists its own participle explicitly rather than trusting a
+  // shared suffix rule to guess it.
+  const forms = stems.flatMap((stem) => {
+    const [imperative, participle] = stem.split('|');
+    return [imperative!, participle!, `${imperative}s`];
+  });
+  return `(?:${[...new Set(forms)].join('|')})`;
+}
+
+/** Every mood "remove" is written in across a changelog or a commit subject. */
+const REMOVED_VERB = verbForms('remove|removed', 'drop|dropped', 'delete|deleted');
+
+/**
  * Prose rules.
  *
  * These only fire on *backtick-quoted* identifiers. That restriction is the
@@ -202,7 +229,10 @@ const PROSE_RULES: ProseRule[] = [
   {
     id: 'prose-removed-passive',
     kind: 'removed-export',
-    pattern: /\bremoved\s+(?:the\s+)?`([\w$.]+)`/i,
+    // Covers both moods `REMOVED_VERB` generates: "removed `x`" (changelog
+    // past tense) and "Remove `x`" (a commit subject's bare imperative,
+    // conventionally the sentence's very first word).
+    pattern: new RegExp(`\\b${REMOVED_VERB}\\s+(?:the\\s+)?\`([\\w$.]+)\``, 'i'),
     symbolGroup: 1,
     summarize: (m) => `\`${m[1]}\` was removed`,
   },
@@ -322,6 +352,25 @@ const PROSE_RULES: ProseRule[] = [
     pattern: /\b(?:dropped|drops|removed)\s+support\s+for\s+(.{3,60}?)(?:[.;]|$)/i,
     symbolGroup: 1,
     summarize: (m) => `Dropped support for ${m[1]?.trim()}`,
+  },
+  {
+    /**
+     * Conventional Commits' standardised breaking-change footer/trailer.
+     *
+     * `BREAKING CHANGE:` (and the equally valid `BREAKING-CHANGE:`) is a
+     * maintainer stating outright, in a format this specific, that the
+     * commit breaks something — a real, widely-used convention independent
+     * of any one project's phrasing, and worth recognising for the marker
+     * alone. A backtick-quoted symbol in the same description is still
+     * caught by whichever rule above already matches that phrasing; this
+     * rule exists for the description that doesn't match any of them, so a
+     * maintainer's explicit declaration is never silently worth nothing.
+     */
+    id: 'prose-breaking-change-footer',
+    kind: 'behaviour-change',
+    pattern: /^BREAKING[ -]CHANGE:\s*(.{3,160}?)(?:[.;]|$)/i,
+    symbolGroup: 0,
+    summarize: (m) => `Declared as a breaking change: ${m[1]?.trim()}`,
   },
 ];
 

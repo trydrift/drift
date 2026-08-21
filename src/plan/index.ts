@@ -64,6 +64,16 @@ export interface BuildPlanInput {
   verification?: readonly VerificationOutcome[];
   /** Surfaces the earlier stages looked at, and how that went. */
   checkedSurfaces?: readonly CheckedSurface[];
+  /**
+   * Dependency changes verification has already proven broke the project.
+   *
+   * Always empty at plan-build time in production — `verifyPlan` in
+   * `analysis.ts` is what populates this, and it runs after `buildPlan`. The
+   * field exists on the input here only so a test can construct the plan
+   * `resolvePlanVerdict` would see after verification, without standing up
+   * verification itself.
+   */
+  confirmedRegressions?: readonly string[];
   /** Deterministic fixes already computed for individual findings, by `BreakingChange.id`. */
   codemods?: ReadonlyMap<string, CodemodResult>;
   /** Community recipe candidates matched for individual findings, by `BreakingChange.id`. */
@@ -123,6 +133,7 @@ export function buildPlan(input: BuildPlanInput): RemediationPlan {
     risk,
     gaps,
     checkedSurfaces: [...(input.checkedSurfaces ?? [])],
+    confirmedRegressions: [...(input.confirmedRegressions ?? [])],
     blockers: [...graph.blockers, ...blockers],
     warnings,
     createdAt: new Date().toISOString(),

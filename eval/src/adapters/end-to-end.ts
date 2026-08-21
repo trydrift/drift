@@ -10,12 +10,19 @@ import {
   DriftConfigSchema,
   analyzeRepository,
   buildPlan,
+  resolvePlanVerdict,
   verdictFor,
   type DriftConfig,
   type Logger,
   type RemediationPlan,
   type RepoContext,
 } from '../../../dist/index.js';
+// Not part of the public package surface (`dist/index.js`) — this benchmark
+// reaches it the same way the VS Code extension does, by importing straight
+// from `analysis.js`. See the module docstring: Quick Scan and Deep
+// Verification are two separate calls since PR #69, and this harness has
+// always measured both.
+import { deepVerify } from '../../../dist/analysis.js';
 import { clearHttpCache } from '../../../dist/util/http.js';
 import { clearTypeSurfaceCache } from '../../../dist/evidence/type-surface.js';
 
@@ -24,7 +31,9 @@ import { clearTypeSurfaceCache } from '../../../dist/evidence/type-surface.js';
  *
  * This runs `analyzeRepository()` — the actual production orchestrator, the
  * same entry point the CLI, the GitHub Action, the webhook runner and the VS
- * Code extension all call — over a benchmark `RepoProvider`. It never
+ * Code extension all call — followed by `deepVerify()`, exactly as a caller
+ * that wants the stronger, measured answer is required to since PR #69 split
+ * Quick Scan from Deep Verification into two separate calls. It never
  * constructs a `DependencyChange`. Everything before evidence gathering is
  * therefore under measurement rather than assumed correct:
  *
@@ -117,7 +126,7 @@ export async function runEndToEndDetection(
   const triageSkipped: { dependency: string; reason: string }[] = [];
 
   try {
-    const result = await analyzeRepository({
+    const analysisOptions = {
       repo,
       config,
       logger: {
@@ -136,7 +145,9 @@ export async function runEndToEndDetection(
       provider,
       workspace: workspace.root,
       env: offlineEnv(),
-    });
+    };
+
+    let result = await analyzeRepository(analysisOptions);
 
     if (!result.plan) {
       // A run that produced no plan is a real, reportable detection outcome —
@@ -152,21 +163,38 @@ export async function runEndToEndDetection(
       };
     }
 
+    // Deep Verification: install the change and run the project's own
+    // checks, exactly as `runPipeline` does when a caller asks for it. This
+    // harness has always measured the result of that probe — see the module
+    // docstring — so it always asks, unconditionally; `deepVerify` itself
+    // still no-ops when `config.verify.enabled` is false or there is no
+    // checkout to run in.
+    result = await deepVerify(result, analysisOptions);
+    if (!result.plan) {
+      return {
+        detection: emptyDetection(triageSkipped, result.summary),
+        plan: emptyPlan(repo, config),
+        summary: result.summary,
+      };
+    }
+
     const plan = result.plan;
     const verdictByChangeId = new Map(
       plan.breakingChanges.map((change) => [change.id, String(verdictFor(change))] as const),
     );
 
-    const checkedSurfaces = checkedSurfacesOf(result.plan);
-
     return {
       detection: toDetectionArtifact(plan, {
         includeDependencyChanges: true,
         triageSkipped,
-        checkedSurfaces,
+        checkedSurfaces: plan.checkedSurfaces,
         verificationOutcomes: verificationOutcomesOf(result.plan),
         verdictByChangeId,
-        verdict: reduceVerdict([...verdictByChangeId.values()], plan.breakingChanges.length === 0, checkedSurfaces),
+        // Production's own repository-level verdict, not a benchmark-local
+        // reconstruction of one — see `resolvePlanVerdict` for why a measured
+        // regression (`plan.confirmedRegressions`) can override what the
+        // per-finding verdicts above would otherwise say on their own.
+        verdict: resolvePlanVerdict(plan),
       }),
       plan,
       summary: result.summary,
@@ -176,72 +204,6 @@ export async function runEndToEndDetection(
   }
 }
 
-export interface CheckedSurfaceLike {
-  surface: string;
-  dependency?: string;
-  status: string;
-}
-
-/**
- * The single user-facing conclusion, derived from what production actually
- * produced.
- *
- * Production states a verdict per *finding* (`verdictFor`) and, separately,
- * what it looked at (`checkedSurfaces`); it has no repository-level verdict
- * function, so this is the one place the two are combined. Two rules govern
- * it, and both are safety-relevant.
- *
- * An inconclusive result never outranks a positive one. That is the precedence
- * list, unchanged.
- *
- * And an *absence* of findings is not a safe claim by itself — but neither is
- * it automatically inconclusive, which is what this used to get wrong. A
- * dependency update with no breaking change is the ordinary case, and reading
- * it as `insufficient-evidence` made a genuine control structurally incapable
- * of ever scoring `correctSafe`: the benchmark could only ever fail to catch
- * Drift being wrong, never confirm it being right. So the distinction is made
- * on the evidence production already recorded: if the API surface for the
- * dependency was genuinely computed (`status: 'checked'`) and the repository
- * was genuinely searched, "no incompatible change in the surfaces that were
- * checked" is exactly what happened and is what a user is told. If the surface
- * could not be computed, nothing was established and the verdict stays
- * `insufficient-evidence`.
- */
-export function reduceVerdict(
-  verdicts: readonly string[],
-  noBreakingChanges: boolean,
-  checkedSurfaces: readonly CheckedSurfaceLike[],
-): string {
-  if (noBreakingChanges) {
-    if (verdicts.length > 0) return verdicts[0]!;
-    const surfaceChecked = checkedSurfaces.some(
-      (surface) => surface.surface === 'api-surface' && surface.status === 'checked',
-    );
-    const searched = checkedSurfaces.some(
-      (surface) => surface.surface === 'localization' && surface.status === 'checked',
-    );
-    return surfaceChecked && searched ? 'no-incompatible-change-in-checked-surfaces' : 'insufficient-evidence';
-  }
-
-  const precedence = [
-    'locally-affected',
-    'insufficient-evidence',
-    'verification-incomplete',
-    'detected-not-locally-reachable',
-    'no-incompatible-change-in-checked-surfaces',
-  ];
-  return precedence.find((verdict) => verdicts.includes(verdict)) ?? verdicts[0] ?? 'unchecked';
-}
-
-/**
- * The surfaces production recorded, named by production's own field.
- *
- * This previously read `surface.name ?? surface.kind`, neither of which exists
- * on a `CheckedSurface`, so every surface in every artifact was recorded as
- * `unknown` — which is also why the verdict reduction above had nothing to
- * consult. The dependency is carried through because a monorepo has one row
- * per dependency and "the surface was checked" is a per-dependency fact.
- */
 /** Production's plan for a repository where nothing was found. */
 function emptyPlan(repo: RepoContext, config: DriftConfig): RemediationPlan {
   return buildPlan({ repo, config, changes: [], evidence: [], breakingChanges: [], impactSites: [] });
@@ -259,15 +221,6 @@ async function upstreamGitHubRepo(upstreamDir: string): Promise<string | null> {
   } catch {
     return null;
   }
-}
-
-function checkedSurfacesOf(plan: unknown): CheckedSurfaceLike[] {
-  const surfaces = (plan as { checkedSurfaces?: CheckedSurfaceLike[] }).checkedSurfaces ?? [];
-  return surfaces.map((surface) => ({
-    surface: surface.surface,
-    ...(surface.dependency ? { dependency: surface.dependency } : {}),
-    status: surface.status,
-  }));
 }
 
 function verificationOutcomesOf(plan: unknown): { kind: string; status: string }[] {

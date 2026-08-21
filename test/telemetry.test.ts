@@ -142,6 +142,7 @@ function planFixture(): RemediationPlan {
       },
     ],
     checkedSurfaces: [],
+    confirmedRegressions: [],
     blockers: [],
     warnings: [],
     createdAt: '2026-08-02T00:00:00Z',

@@ -15,6 +15,7 @@ function plan(): RemediationPlan {
     schemaVersion: 3,
     gaps: [],
     checkedSurfaces: [],
+    confirmedRegressions: [],
     id: 'p1',
     branchName: 'drift/upgrade-react',
     baseBranch: 'main',
