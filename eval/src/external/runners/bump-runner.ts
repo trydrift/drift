@@ -1,6 +1,7 @@
 import { bumpSelectables, BumpUnavailable, loadBump, predictBump, scoreBump } from '../adapters/bump.ts';
 import type { RunnerContext, RunnerOutput } from '../cli.ts';
 import { CaseTimeout, withDeadline } from '../deadline.ts';
+import { safeEvidenceCaseId, withEvidenceSnapshot, type EvidenceRunMetadata } from '../evidence-snapshot.ts';
 import { missing, probeEnvironment } from '../environment.ts';
 import type { ExternalCaseResult } from '../record.ts';
 
@@ -34,9 +35,19 @@ export async function runBump(context: RunnerContext): Promise<RunnerOutput> {
     if (context.alreadyRecorded.has(record.breakingCommit)) continue;
     const started = Date.now();
     try {
-      const prediction = await withDeadline(() => predictBump(record));
+      const { value: prediction, evidence } = await withDeadline(() =>
+        withEvidenceSnapshot(
+          {
+            mode: context.evidenceMode,
+            caseId: record.breakingCommit,
+            caseDir: `${context.evidenceRoot}/${safeEvidenceCaseId(record.breakingCommit)}`,
+            blobDir: `${context.evidenceRoot}/blobs`,
+          },
+          () => predictBump(record),
+        ),
+      );
       await recordCase(
-        scoreBump({ record, prediction, excluded: null, datasetVersion, sourceHash, durationMs: Date.now() - started }),
+        withEvidenceMetadata(scoreBump({ record, prediction, excluded: null, datasetVersion, sourceHash, durationMs: Date.now() - started }), evidence),
       );
     } catch (err) {
       const unavailable =
@@ -60,6 +71,22 @@ export async function runBump(context: RunnerContext): Promise<RunnerOutput> {
     available: records.length,
     datasetVersion,
     notes: withoutDocker ? `${NOTES}\n\n${NO_DOCKER}` : NOTES,
+  };
+}
+
+function withEvidenceMetadata(result: ExternalCaseResult, evidence: EvidenceRunMetadata): ExternalCaseResult {
+  return {
+    ...result,
+    provenance: {
+      ...result.provenance,
+      extra: {
+        ...result.provenance.extra,
+        evidenceMode: evidence.mode,
+        evidenceSnapshotHash: evidence.snapshotHash ?? '',
+        evidenceSnapshotPath: evidence.snapshotPath ?? '',
+        evidenceRequestCount: String(evidence.requestCount),
+      },
+    },
   };
 }
 

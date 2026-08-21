@@ -89,6 +89,8 @@ export interface RoseauCase {
 
 export interface RoseauCorpus {
   cases: RoseauCase[];
+  /** Package directories present in the source tree, including packages the kit did not put in the 267-case truth table. */
+  sourcePackages: string[];
   datasetVersion: string;
   sourceHash: string;
   v1Dir: string;
@@ -130,14 +132,29 @@ export async function loadRoseau(root: string): Promise<RoseauCorpus> {
     };
   });
 
+  const v1Dir = join(root, 'accuracy-dataset', 'v1', 'src');
+  const v2Dir = join(root, 'accuracy-dataset', 'v2', 'src');
+
   return {
     cases,
+    sourcePackages: await roseauSourcePackages(v1Dir, v2Dir),
     // The kit is a Zenodo record with a fixed md5, so its DOI *is* its version.
     datasetVersion: '10.5281/zenodo.15536418',
     sourceHash: createHash('sha256').update(bytes).digest('hex'),
-    v1Dir: join(root, 'accuracy-dataset', 'v1', 'src'),
-    v2Dir: join(root, 'accuracy-dataset', 'v2', 'src'),
+    v1Dir,
+    v2Dir,
   };
+}
+
+async function roseauSourcePackages(...roots: string[]): Promise<string[]> {
+  const packages = new Set<string>();
+  for (const root of roots) {
+    const dir = join(root, 'testing_lib');
+    for (const entry of await readdir(dir, { withFileTypes: true }).catch(() => [])) {
+      if (entry.isDirectory()) packages.add(entry.name);
+    }
+  }
+  return [...packages].sort();
 }
 
 export function roseauSelectables(cases: readonly RoseauCase[]): Selectable[] {
@@ -260,9 +277,19 @@ export function installMavenFetchStub(jars: { from: string; to: string }): () =>
 export interface RoseauDiff {
   /** Every change the surface diff produced, with the case each belongs to. */
   byCase: Map<string, { kind: string; symbol: string; detail: string }[]>;
+  /** Changes that were not scored against a case, with the reason. */
+  unmatched: RoseauUnmatchedChange[];
   /** Present when the diff could not be produced at all. */
   unavailable: { reason: string; detail: string } | null;
   toolLocator: string;
+}
+
+export interface RoseauUnmatchedChange {
+  kind: string;
+  symbol: string;
+  detail: string;
+  classification: 'non-benchmark-source-package' | 'unknown';
+  reason: string;
 }
 
 /**
@@ -273,7 +300,11 @@ export interface RoseauDiff {
  * than dropped — it would mean the attribution rule had stopped matching the
  * dataset's layout, and a silently empty bucket is how that goes unnoticed.
  */
-export async function runRoseauDiff(jars: { from: string; to: string }, caseNames: readonly string[]): Promise<RoseauDiff> {
+export async function runRoseauDiff(
+  jars: { from: string; to: string },
+  caseNames: readonly string[],
+  sourcePackages: readonly string[] = caseNames,
+): Promise<RoseauDiff> {
   const uninstall = installMavenFetchStub(jars);
   const workdir = await mkdtemp(join(tmpdir(), 'drift-roseau-'));
   clearHttpCache();
@@ -294,21 +325,33 @@ export async function runRoseauDiff(jars: { from: string; to: string }, caseName
     if (!outcome.available) {
       return {
         byCase: new Map(),
+        unmatched: [],
         unavailable: { reason: outcome.reason, detail: outcome.detail },
         toolLocator: outcome.tool,
       };
     }
 
     const known = new Set(caseNames);
+    const sourcePackageSet = new Set(sourcePackages);
     const byCase = new Map<string, { kind: string; symbol: string; detail: string }[]>();
+    const unmatched: RoseauUnmatchedChange[] = [];
     for (const change of outcome.changes) {
-      const bucket = caseOf(change.symbol, known) ?? '(unattributed)';
-      const entries = byCase.get(bucket) ?? [];
-      entries.push({ kind: String(change.kind), symbol: change.symbol, detail: change.detail });
-      byCase.set(bucket, entries);
+      const entry = { kind: String(change.kind), symbol: change.symbol, detail: change.detail };
+      const bucket = caseOf(change.symbol, known);
+      if (bucket) {
+        const entries = byCase.get(bucket) ?? [];
+        entries.push(entry);
+        byCase.set(bucket, entries);
+      } else {
+        const classified = classifyUnmatchedRoseau(entry, known, sourcePackageSet);
+        unmatched.push(classified);
+        const entries = byCase.get('(unattributed)') ?? [];
+        entries.push(entry);
+        byCase.set('(unattributed)', entries);
+      }
     }
 
-    return { byCase, unavailable: null, toolLocator: outcome.locator ?? outcome.tool };
+    return { byCase, unmatched, unavailable: null, toolLocator: outcome.locator ?? outcome.tool };
   } finally {
     uninstall();
     await rm(workdir, { recursive: true, force: true });
@@ -317,10 +360,35 @@ export async function runRoseauDiff(jars: { from: string; to: string }, caseName
 
 /** `testing_lib.accessModifierClazzAccessDecrease.Foo#bar` -> `accessModifierClazzAccessDecrease`. */
 export function caseOf(symbol: string, known: ReadonlySet<string>): string | null {
+  const packageMatch = /^testing_lib\.([A-Za-z0-9_]+)(?:[.$#(]|$)/.exec(symbol);
+  if (packageMatch && known.has(packageMatch[1]!)) return packageMatch[1]!;
+
   for (const segment of symbol.split(/[.#(]/)) {
     if (known.has(segment)) return segment;
   }
   return null;
+}
+
+export function classifyUnmatchedRoseau(
+  change: { kind: string; symbol: string; detail: string },
+  known: ReadonlySet<string>,
+  sourcePackages: ReadonlySet<string>,
+): RoseauUnmatchedChange {
+  const packageMatch = /^testing_lib\.([A-Za-z0-9_]+)(?:[.$#(]|$)/.exec(change.symbol);
+  const packageName = packageMatch?.[1] ?? null;
+  if (packageName && sourcePackages.has(packageName) && !known.has(packageName)) {
+    return {
+      ...change,
+      classification: 'non-benchmark-source-package',
+      reason: `${packageName} is present in the Roseau source tree but absent from results/bench/jezek_dietrich.json, so it is not one of the 267 labelled benchmark cases and cannot change a per-case TP/FP/TN/FN assignment.`,
+    };
+  }
+
+  return {
+    ...change,
+    classification: 'unknown',
+    reason: 'No Roseau benchmark case package or known non-benchmark source package matched this symbol.',
+  };
 }
 
 export interface ScoreRoseauInput {

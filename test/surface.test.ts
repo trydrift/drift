@@ -365,6 +365,32 @@ describe('japicmp output', () => {
   test('members are attributed to the class they were nested under', () => {
     assert.ok(parseJapicmp(sample).every((c) => !c.symbol.startsWith('.')));
   });
+
+  test('keeps qualified Roseau symbols when japicmp reports modifier deltas', () => {
+    const changes = parseJapicmp(`Comparing source compatibility of new.jar against old.jar
+***! MODIFIED CLASS: PACKAGE_PROTECTED (<- PUBLIC) testing_lib.accessModifierClazzAccessDecrease.AccessModifierClazzAccessDecrease  (not serializable)
+\t***! MODIFIED CONSTRUCTOR: PACKAGE_PROTECTED (<- PUBLIC) AccessModifierClazzAccessDecrease()
+---! REMOVED CLASS: PUBLIC(-) testing_lib.membersClazzNestedClazzDelete.MembersClazzNestedClazzDelete$NestedClazz  (not serializable)
+\t---! REMOVED SUPERCLASS: java.lang.Object
+\t---! REMOVED CONSTRUCTOR: PUBLIC(-) MembersClazzNestedClazzDelete$NestedClazz(testing_lib.membersClazzNestedClazzDelete.MembersClazzNestedClazzDelete)
+`);
+
+    assert.deepEqual(
+      changes.map((c) => [c.kind, c.symbol]),
+      [
+        [
+          'signature-changed',
+          'testing_lib.accessModifierClazzAccessDecrease.AccessModifierClazzAccessDecrease.AccessModifierClazzAccessDecrease',
+        ],
+        ['export-removed', 'testing_lib.membersClazzNestedClazzDelete.MembersClazzNestedClazzDelete$NestedClazz'],
+        ['member-removed', 'testing_lib.membersClazzNestedClazzDelete.MembersClazzNestedClazzDelete$NestedClazz.java.lang.Object'],
+        [
+          'member-removed',
+          'testing_lib.membersClazzNestedClazzDelete.MembersClazzNestedClazzDelete$NestedClazz.MembersClazzNestedClazzDelete$NestedClazz',
+        ],
+      ],
+    );
+  });
 });
 
 describe('maven coordinates', () => {

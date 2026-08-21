@@ -4,6 +4,7 @@ import { createInterface } from 'node:readline';
 import { appendFile, mkdir, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { datasetOrThrow, DATASETS, type Dataset } from './dataset.ts';
+import type { EvidenceMode } from './evidence-snapshot.ts';
 import { probeEnvironment } from './environment.ts';
 import { computeMetrics, type BaselineSpec } from './metrics.ts';
 import type { ExternalCaseResult } from './record.ts';
@@ -68,6 +69,12 @@ export interface ExternalRunOptions {
   outRoot: string;
   runId?: string;
   notes?: string;
+  /**
+   * Capture freezes production HTTP evidence, replay refuses network misses,
+   * and fresh intentionally creates a new live observation without pretending
+   * to reproduce an old one.
+   */
+  evidenceMode?: EvidenceMode;
 }
 
 export interface RunnerOutput {
@@ -110,6 +117,10 @@ export interface RunnerContext {
    * reported one without re-running anything.
    */
   checkpoint: (result: ExternalCaseResult) => Promise<void>;
+  /** Where benchmark-only immutable evidence snapshots for this run live. */
+  evidenceRoot: string;
+  /** Capture, replay, or deliberate fresh evidence retrieval. */
+  evidenceMode: EvidenceMode;
 }
 
 type Runner = (context: RunnerContext) => Promise<RunnerOutput>;
@@ -279,6 +290,8 @@ export async function runExternal(options: ExternalRunOptions): Promise<string> 
     datasetRoot,
     options,
     alreadyRecorded,
+    evidenceRoot: join(resultsDir(runId, options.outRoot), 'evidence'),
+    evidenceMode: options.evidenceMode ?? 'capture',
     checkpoint: async (result) => {
       await appendFile(partialPath, `${JSON.stringify(result)}\n`, 'utf8');
     },
@@ -363,7 +376,7 @@ export function parseArgs(argv: readonly string[]): ExternalRunOptions {
 
   if (!datasetId && !rescoring) {
     throw new Error(
-      `Usage: npm run eval:external -- <dataset> [--ids a,b] [--limit N] [--seed N] [--experiment NAME]\n` +
+      `Usage: npm run eval:external -- <dataset> [--ids a,b] [--limit N] [--seed N] [--experiment NAME] [--evidence capture|replay|fresh]\n` +
         `       npm run eval:external -- <dataset> --run-id <id> --resume\n` +
         `       npm run eval:external -- --rescore <run-id>\n` +
         `Datasets: ${Object.keys(DATASETS).sort().join(', ')}`,
@@ -410,6 +423,13 @@ export function parseArgs(argv: readonly string[]): ExternalRunOptions {
         break;
       case '--notes':
         options.notes = value;
+        index += 1;
+        break;
+      case '--evidence':
+        if (value !== 'capture' && value !== 'replay' && value !== 'fresh') {
+          throw new Error(`--evidence must be capture, replay or fresh, got "${value}".`);
+        }
+        options.evidenceMode = value;
         index += 1;
         break;
       case '--rescore':

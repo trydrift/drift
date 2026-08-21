@@ -561,6 +561,13 @@ npm run eval:external -- swe-bump --run-id swe-bump-detection --resume
 # Recompute a past run's metrics and report from its own artifacts. Offline,
 # free, and the reason a metric fix does not require re-running anything.
 npm run eval:external -- --rescore <run-id>
+
+# External evidence policy. The default captures the exact HTTP evidence Drift
+# consumed. Replay refuses uncaptured network requests, and fresh intentionally
+# records a new live observation with its own snapshot/provenance.
+npm run eval:external -- timemachine --experiment verified --evidence capture
+npm run eval:external -- timemachine --experiment verified --evidence replay
+npm run eval:external -- timemachine --experiment verified --evidence fresh
 ```
 
 Fetching them is [`benchmarks/README.md`](../benchmarks/README.md). Nothing is
@@ -603,6 +610,13 @@ that every artifact pins the DOI or commit it read, not a copy of the bytes.
   Docker is absent, BUMP's and TimeMachine's oracles do not run and the repair
   questions are *absent* from the case records rather than recorded as `false`
   — an absent key means the question was not asked.
+- **Live upstream evidence is frozen at the benchmark boundary.** BUMP,
+  swe-bump-bench and TimeMachine still run production Drift analysis, including
+  production evidence retrieval, but the harness captures the exact HTTP
+  responses Drift consumed as content-addressed evidence snapshots. Replaying
+  a run uses those bytes and refuses network misses. A deliberate fresh rerun
+  is a new observation with new evidence provenance, not a reproduction of the
+  old one.
 
 ### Selection
 
@@ -618,6 +632,7 @@ eval/results/<run-id>/
   manifest.json      Drift commit, dataset version, command, platform
   selection.json     which cases, chosen how
   environment.json   what this machine could and could not run
+  evidence/          content-addressed HTTP evidence snapshots for external cases
   cases.jsonl.gz     one line per case: provenance, truth, prediction, outcome
   metrics.json       rates with numerators and denominators, and the refusals
   exclusions.json    every unscored case with its reason
@@ -627,6 +642,12 @@ eval/results/<run-id>/
 `eval/results/published.json` names the runs the website may show. The site
 reads their `metrics.json` at build time, so no percentage on the site was
 typed by hand and deleting a run breaks the build.
+
+`manifest.driftCommit` is the exact code that produced the original
+observations. `manifest.rescoredAtCommit`, when present, is only the code that
+later recomputed metrics from unchanged observations. The current PR head may
+differ from both, and docs or PR text must not describe an artifact as
+generated from the final/current commit unless the manifest actually says so.
 
 ---
 

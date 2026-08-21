@@ -7,6 +7,7 @@ import {
 } from '../adapters/swe-bump.ts';
 import type { RunnerContext, RunnerOutput } from '../cli.ts';
 import { CaseTimeout, withDeadline } from '../deadline.ts';
+import { safeEvidenceCaseId, withEvidenceSnapshot, type EvidenceRunMetadata } from '../evidence-snapshot.ts';
 import type { ExternalCaseResult } from '../record.ts';
 
 /**
@@ -34,9 +35,22 @@ export async function runSweBump(context: RunnerContext): Promise<RunnerOutput> 
     if (context.alreadyRecorded.has(task.id)) continue;
     const started = Date.now();
     try {
-      const prediction = await withDeadline(() => predictSweBump(task));
+      const { value: prediction, evidence } = await withDeadline(() =>
+        withEvidenceSnapshot(
+          {
+            mode: context.evidenceMode,
+            caseId: task.id,
+            caseDir: `${context.evidenceRoot}/${safeEvidenceCaseId(task.id)}`,
+            blobDir: `${context.evidenceRoot}/blobs`,
+          },
+          () => predictSweBump(task),
+        ),
+      );
       await recordCase({
-        ...scoreSweBump({ task, prediction, excluded: null, datasetVersion, sourceHash, durationMs: Date.now() - started }),
+        ...withEvidenceMetadata(
+          scoreSweBump({ task, prediction, excluded: null, datasetVersion, sourceHash, durationMs: Date.now() - started }),
+          evidence,
+        ),
       });
     } catch (err) {
       // A case that could not be set up, or that ran past its deadline, is
@@ -57,6 +71,22 @@ export async function runSweBump(context: RunnerContext): Promise<RunnerOutput> 
   }
 
   return { results, available: tasks.length, datasetVersion, notes: NOTES };
+}
+
+function withEvidenceMetadata(result: ExternalCaseResult, evidence: EvidenceRunMetadata): ExternalCaseResult {
+  return {
+    ...result,
+    provenance: {
+      ...result.provenance,
+      extra: {
+        ...result.provenance.extra,
+        evidenceMode: evidence.mode,
+        evidenceSnapshotHash: evidence.snapshotHash ?? '',
+        evidenceSnapshotPath: evidence.snapshotPath ?? '',
+        evidenceRequestCount: String(evidence.requestCount),
+      },
+    },
+  };
 }
 
 const NOTES =

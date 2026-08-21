@@ -54,7 +54,11 @@ export async function runRoseau(context: RunnerContext): Promise<RunnerOutput> {
     };
   }
 
-  const diff = await runRoseauDiff(jars, corpus.cases.map((entry) => entry.name));
+  const diff = await runRoseauDiff(
+    jars,
+    corpus.cases.map((entry) => entry.name),
+    corpus.sourcePackages,
+  );
   const durationMs = Date.now() - started;
 
   const results: ExternalCaseResult[] = selected.map((entry) =>
@@ -72,12 +76,15 @@ export async function runRoseau(context: RunnerContext): Promise<RunnerOutput> {
     }),
   );
 
-  const unattributed = diff.byCase.get('(unattributed)')?.length ?? 0;
+  const unexplained = diff.unmatched.filter((change) => change.classification === 'unknown');
   return {
     results,
     available: corpus.cases.length,
     datasetVersion: corpus.datasetVersion,
-    notes: unattributed > 0 ? `${NOTES}\n\n${unattributedNote(unattributed)}` : NOTES,
+    notes:
+      diff.unmatched.length > 0
+        ? `${NOTES}\n\n${unattributedNote(diff.unmatched.length, unexplained.length, diff.unmatched)}`
+        : NOTES,
   };
 }
 
@@ -96,7 +103,16 @@ const NOTES =
   'labels **as recorded in the kit**, produced on the authors\' machines with their tool versions — not re-run here — ' +
   'and any comparison drawn from them should say so.';
 
-const unattributedNote = (count: number): string =>
-  `**${count} reported change(s) could not be attributed to any of the 267 case packages.** The attribution rule reads ` +
-  "the dataset's own package layout, so this means the layout and the rule have diverged. The count is reported rather " +
-  'than dropped, because a silently empty bucket is how that goes unnoticed.';
+const unattributedNote = (
+  count: number,
+  unexplained: number,
+  changes: readonly { symbol: string; classification: string; reason: string }[],
+): string => {
+  const lines = [
+    `**${count} reported change(s) did not belong to any of the 267 labelled case packages; ${unexplained} are unexplained.**`,
+    'Each remaining unmatched change is classified below rather than silently discarded:',
+    '',
+    ...changes.map((change) => `- \`${change.symbol}\` — ${change.classification}: ${change.reason}`),
+  ];
+  return lines.join('\n');
+};

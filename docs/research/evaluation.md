@@ -15,6 +15,10 @@ Roseau accuracy dataset directly, together with Kong's npm breaking-change
 corpus, through the adapters in [`eval/src/external/`](../../eval/src/external/).
 Results are in `eval/results/<run-id>/` and on the site's `/benchmarks` page;
 the operational detail is in [`eval/README.md`](../../eval/README.md).
+Each run's `manifest.driftCommit` names the exact code that produced the
+observations; `rescoredAtCommit`, when present, names only a later metrics
+recompute over unchanged observations. The current PR head is not implied by
+either field.
 
 That changes what this page is for, in one specific way. Where a section below
 says "Drift's harness departs from X because …", the departure is now testable:

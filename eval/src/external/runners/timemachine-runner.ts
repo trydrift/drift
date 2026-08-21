@@ -8,6 +8,7 @@ import {
 } from '../adapters/timemachine.ts';
 import type { RunnerContext, RunnerOutput } from '../cli.ts';
 import { CaseTimeout, withDeadline } from '../deadline.ts';
+import { safeEvidenceCaseId, withEvidenceSnapshot, type EvidenceRunMetadata } from '../evidence-snapshot.ts';
 import { missing, probeEnvironment } from '../environment.ts';
 import type { ExternalCaseResult } from '../record.ts';
 
@@ -46,9 +47,22 @@ export async function runTimemachine(context: RunnerContext): Promise<RunnerOutp
     if (context.alreadyRecorded.has(id)) continue;
     const started = Date.now();
     try {
-      const prediction = await withDeadline(() => predictTimemachine(task));
+      const { value: prediction, evidence } = await withDeadline(() =>
+        withEvidenceSnapshot(
+          {
+            mode: context.evidenceMode,
+            caseId: id,
+            caseDir: `${context.evidenceRoot}/${safeEvidenceCaseId(id)}`,
+            blobDir: `${context.evidenceRoot}/blobs`,
+          },
+          () => predictTimemachine(task),
+        ),
+      );
       await recordCase(
-        scoreTimemachine({ task, subset, prediction, excluded: null, datasetVersion, sourceHash, durationMs: Date.now() - started }),
+        withEvidenceMetadata(
+          scoreTimemachine({ task, subset, prediction, excluded: null, datasetVersion, sourceHash, durationMs: Date.now() - started }),
+          evidence,
+        ),
       );
     } catch (err) {
       const unavailable =
@@ -72,6 +86,22 @@ export async function runTimemachine(context: RunnerContext): Promise<RunnerOutp
     available: tasks.length,
     datasetVersion,
     notes: absent.length > 0 ? `${NOTES}\n\n${missingNote(absent)}` : NOTES,
+  };
+}
+
+function withEvidenceMetadata(result: ExternalCaseResult, evidence: EvidenceRunMetadata): ExternalCaseResult {
+  return {
+    ...result,
+    provenance: {
+      ...result.provenance,
+      extra: {
+        ...result.provenance.extra,
+        evidenceMode: evidence.mode,
+        evidenceSnapshotHash: evidence.snapshotHash ?? '',
+        evidenceSnapshotPath: evidence.snapshotPath ?? '',
+        evidenceRequestCount: String(evidence.requestCount),
+      },
+    },
   };
 }
 
