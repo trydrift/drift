@@ -90,6 +90,6 @@
     "developer-tools"
   ],
   "optionalDependencies": {
-    "@anthropic-ai/sdk": "^0.68.0"
+    "@anthropic-ai/sdk": "^0.117.1"
   }
 }
