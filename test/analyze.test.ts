@@ -155,6 +155,54 @@ describe('prose rules', () => {
     );
     assert.equal(matchProse('The old behaviour has been removed.').length, 0);
   });
+
+  test('catches the imperative mood a commit subject is conventionally written in', () => {
+    // Git convention is "Remove x", never "Removed x" — a bare imperative,
+    // usually the sentence's first word. The changelog-oriented past
+    // participle above does not cover this at all.
+    for (const text of ['Remove `createClient`', 'remove the `createClient` helper']) {
+      const matches = matchProse(text);
+      assert.equal(matches[0]?.kind, 'removed-export', text);
+      assert.deepEqual(matches[0]?.symbols, ['createClient'], text);
+    }
+  });
+
+  test('extends the removal verb to its common synonyms, in every mood', () => {
+    for (const text of ['Drop `oldFlag`', 'Dropped `oldFlag`', 'Delete `oldFlag`', 'deletes the `oldFlag` option']) {
+      const matches = matchProse(text);
+      assert.equal(matches[0]?.kind, 'removed-export', text);
+      assert.deepEqual(matches[0]?.symbols, ['oldFlag'], text);
+    }
+  });
+
+  test('recognises the Conventional Commits BREAKING CHANGE footer, symbol or not', () => {
+    const withSymbol = matchProse('BREAKING CHANGE: the `createClient` factory now throws on invalid input');
+    assert.ok(withSymbol.some((m) => m.kind === 'behaviour-change' && m.ruleId === 'prose-breaking-change-footer'));
+    // The hyphenated spelling Conventional Commits also permits.
+    assert.ok(
+      matchProse('BREAKING-CHANGE: internal storage format changed').some(
+        (m) => m.kind === 'behaviour-change' && m.ruleId === 'prose-breaking-change-footer',
+      ),
+    );
+
+    // No backtick-quoted symbol at all — still a real declared break, not
+    // silently worth nothing. `symbolGroup: 0` means an empty `symbols` here;
+    // `fromProseEvidence` is what falls back to the dependency name.
+    const freeform = matchProse('BREAKING CHANGE: internal storage format changed, migrate your data first');
+    const footer = freeform.find((m) => m.ruleId === 'prose-breaking-change-footer');
+    assert.ok(footer);
+    assert.deepEqual(footer!.symbols, []);
+    assert.match(footer!.summary, /internal storage format changed/);
+  });
+
+  test('the BREAKING CHANGE footer must be the marker, not just the words appearing in prose', () => {
+    assert.equal(
+      matchProse('This is a breaking change for some users.').some(
+        (m) => m.ruleId === 'prose-breaking-change-footer',
+      ),
+      false,
+    );
+  });
 });
 
 describe('OpenAPI diffing', () => {
