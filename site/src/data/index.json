@@ -7,7 +7,7 @@
     "repo": "https://github.com/supabase/supabase-js",
     "blurb": "The official Supabase client for JavaScript and TypeScript.",
     "commit": "a249594bc5790929ff090baa64f2d5bb3a40c286",
-    "capturedAt": "2026-08-18T04:07:18.119Z",
+    "capturedAt": "2026-08-21T05:51:39.948Z",
     "packagesChecked": 22,
     "candidates": 128
   },
@@ -18,10 +18,10 @@
     "language": "Python",
     "repo": "https://github.com/scrapy/scrapy",
     "blurb": "The web crawling framework that most Python scrapers are built on.",
-    "commit": "488a762d7173922190ea027e0fb6f6d9d3b59880",
-    "capturedAt": "2026-08-18T04:08:07.130Z",
-    "packagesChecked": 87,
-    "candidates": 496
+    "commit": "da7c2fc59e286e796d0f8cfe01d4363d6fa3729f",
+    "capturedAt": "2026-08-21T05:51:42.399Z",
+    "packagesChecked": 88,
+    "candidates": 505
   },
   {
     "id": "gitlab",
@@ -42,10 +42,10 @@
     "language": "Go",
     "repo": "https://github.com/kubernetes/kubernetes",
     "blurb": "The container orchestrator. One of the largest Go codebases in the open.",
-    "commit": "a231bf3f37761e8955eefba61855da1a526a3eb9",
-    "capturedAt": "2026-08-15T00:08:28.555Z",
+    "commit": "e81f39c0e03ce8ed8e2660c9147b391edd9e262b",
+    "capturedAt": "2026-08-21T07:15:31.644Z",
     "packagesChecked": 545,
-    "candidates": 506
+    "candidates": 5622
   },
   {
     "id": "deno",
@@ -66,8 +66,8 @@
     "language": "Java",
     "repo": "https://github.com/elastic/elasticsearch-java",
     "blurb": "Elasticsearch's official Java API client.",
-    "commit": "3d37d4d683e2c5d3f3449173847c46c95329fc50",
-    "capturedAt": "2026-08-18T04:17:14.128Z",
+    "commit": "8be02330d48758e2708a00f18cc87587df2a2520",
+    "capturedAt": "2026-08-21T06:01:40.241Z",
     "packagesChecked": 19,
     "candidates": 136
   },
@@ -91,7 +91,7 @@
     "repo": "https://github.com/restsharp/RestSharp",
     "blurb": "The HTTP client most .NET codebases reach for first.",
     "commit": "6a5082169257438cd085f822f050d93256a8e499",
-    "capturedAt": "2026-08-18T05:45:42.763Z",
+    "capturedAt": "2026-08-21T07:21:34.193Z",
     "packagesChecked": 34,
     "candidates": 373
   },
@@ -103,7 +103,7 @@
     "repo": "https://github.com/guzzle/guzzle",
     "blurb": "PHP's HTTP client, and a dependency of a large share of the ecosystem.",
     "commit": "d1cbca76970939a9c2ced55b1e25ea26f34fc773",
-    "capturedAt": "2026-08-18T05:38:10.733Z",
+    "capturedAt": "2026-08-21T07:22:05.332Z",
     "packagesChecked": 10,
     "candidates": 69
   },
@@ -114,10 +114,10 @@
     "language": "Elixir",
     "repo": "https://github.com/phoenixframework/phoenix",
     "blurb": "The web framework nearly every production Elixir application is built on.",
-    "commit": "52aa2cbd3b9283830ddfaf03173e20350c0b1d22",
-    "capturedAt": "2026-08-18T05:38:09.608Z",
+    "commit": "167c46950cf53aef363d672687cc653267c20aa6",
+    "capturedAt": "2026-08-21T07:21:42.091Z",
     "packagesChecked": 44,
-    "candidates": 172
+    "candidates": 195
   },
   {
     "id": "dio",
@@ -126,8 +126,8 @@
     "language": "Dart",
     "repo": "https://github.com/cfug/dio",
     "blurb": "Dart's most-used HTTP client, in the package that declares its dependencies.",
-    "commit": "6d39187e982d4ff2904ec654ac906d200701546b",
-    "capturedAt": "2026-08-18T05:38:32.703Z",
+    "commit": "6c1033ef0adbb53892192b8406e49af214909dfe",
+    "capturedAt": "2026-08-21T07:21:45.019Z",
     "packagesChecked": 25,
     "candidates": 218
   },
@@ -139,7 +139,7 @@
     "repo": "https://github.com/pointfreeco/swift-composable-architecture",
     "blurb": "The state-management library much of the Swift app ecosystem builds on.",
     "commit": "269d6457986d163557ea2601275b1117e4dee3c0",
-    "capturedAt": "2026-08-18T05:44:41.776Z",
+    "capturedAt": "2026-08-21T07:26:07.643Z",
     "packagesChecked": 17,
     "candidates": 118
   },
@@ -151,7 +151,7 @@
     "repo": "https://github.com/layoutBox/FlexLayout",
     "blurb": "A Swift flexbox layout library, with the Podfile that pins its pods.",
     "commit": "b1fcc81828e4b735c79d4c3fac35ef0754be0060",
-    "capturedAt": "2026-08-18T05:39:55.544Z",
+    "capturedAt": "2026-08-21T07:22:48.632Z",
     "packagesChecked": 5,
     "candidates": 38
   },
@@ -162,8 +162,8 @@
     "language": "OCaml",
     "repo": "https://github.com/mirage/ocaml-cohttp",
     "blurb": "OCaml's HTTP library, from the MirageOS project.",
-    "commit": "2932040b0d6ad4a0b7699c354f78c1ebd865d597",
-    "capturedAt": "2026-08-18T05:39:57.275Z",
+    "commit": "7b77cc7f18778967cbe3f64742290f268782fb7d",
+    "capturedAt": "2026-08-21T07:22:40.856Z",
     "packagesChecked": 22,
     "candidates": 170
   },
@@ -174,8 +174,8 @@
     "language": "C++",
     "repo": "https://github.com/an-tao/trantor",
     "blurb": "The C++ network library underneath Drogon, with a conanfile.txt.",
-    "commit": "63a4e5e164e219dc3bf30cdbfa1462ae5602fa97",
-    "capturedAt": "2026-08-18T04:01:52.585Z",
+    "commit": "0f45310fbbb692f3eb222b4229a631c0c6745172",
+    "capturedAt": "2026-08-21T07:22:44.848Z",
     "packagesChecked": 3,
     "candidates": 27
   },
@@ -186,8 +186,8 @@
     "language": "C++",
     "repo": "https://github.com/royshil/obs-backgroundremoval",
     "blurb": "An OBS plugin that pins its native dependencies through vcpkg.",
-    "commit": "0d74d839c27d8344f093116c5b9e3722736e4505",
-    "capturedAt": "2026-08-18T05:42:24.184Z",
+    "commit": "f777e037c9f7efff604e17651931b60d6e41d4cc",
+    "capturedAt": "2026-08-21T07:24:25.109Z",
     "packagesChecked": 4,
     "candidates": 18
   }
