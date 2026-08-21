@@ -1,0 +1,106 @@
+{
+  "datasetId": "kong",
+  "datasetClass": "upstream-bc-detection",
+  "available": 16333,
+  "selected": 16333,
+  "attempted": 16333,
+  "notRun": 0,
+  "scored": 16333,
+  "excluded": {},
+  "missingRequirements": {},
+  "rates": {
+    "breaking-change detection recall": {
+      "numerator": 23,
+      "denominator": 165,
+      "value": 0.1393939393939394
+    }
+  },
+  "refusals": [],
+  "negativeControls": 16168,
+  "confusion": {
+    "tp": 23,
+    "fp": 11,
+    "tn": 16157,
+    "fn": 142
+  },
+  "classification": {
+    "precision": {
+      "numerator": 23,
+      "denominator": 34,
+      "value": 0.6764705882352942
+    },
+    "recall": {
+      "numerator": 23,
+      "denominator": 165,
+      "value": 0.1393939393939394
+    },
+    "f1": 0.2311557788944724
+  },
+  "baseline": {
+    "name": "conventional-commits marker",
+    "description": "Predicts \"breaking\" whenever the commit message contains a literal BREAKING CHANGE annotation. Not Drift, and not presented as Drift — it is here so a reader can see how much of this task is reachable without reading the text.",
+    "confusion": {
+      "tp": 164,
+      "fp": 29,
+      "tn": 16139,
+      "fn": 1
+    },
+    "precision": {
+      "numerator": 164,
+      "denominator": 193,
+      "value": 0.8497409326424871
+    },
+    "recall": {
+      "numerator": 164,
+      "denominator": 165,
+      "value": 0.9939393939393939
+    }
+  },
+  "breakdown": {
+    "label: documents-breaking-change": {
+      "breaking-change detection recall": {
+        "numerator": 23,
+        "denominator": 165,
+        "value": 0.1393939393939394
+      }
+    },
+    "markerBaselinePredictsBreaking: true": {
+      "breaking-change detection recall": {
+        "numerator": 23,
+        "denominator": 164,
+        "value": 0.1402439024390244
+      }
+    },
+    "markerBaselinePredictsBreaking: false": {
+      "breaking-change detection recall": {
+        "numerator": 0,
+        "denominator": 1,
+        "value": 0
+      }
+    },
+    "messageStatesDetail: false": {
+      "breaking-change detection recall": {
+        "numerator": 6,
+        "denominator": 48,
+        "value": 0.125
+      }
+    },
+    "messageStatesDetail: true": {
+      "breaking-change detection recall": {
+        "numerator": 17,
+        "denominator": 117,
+        "value": 0.1452991452991453
+      }
+    }
+  },
+  "intervals": {
+    "breaking-change detection recall": {
+      "low": 0.09090909090909091,
+      "high": 0.19393939393939394,
+      "iterations": 2000
+    }
+  },
+  "mappingCoverage": {
+    "exact": 16333
+  }
+}

@@ -1,0 +1,1402 @@
+{
+  "$generated": "site/scripts/sync-benchmarks.mjs — do not edit; every number here is read from eval/results/<run-id>/metrics.json",
+  "generatedAt": "2026-08-21T04:23:41.470Z",
+  "datasets": [
+    {
+      "runId": "roseau-accuracy",
+      "headline": true,
+      "why": "The only corpus here with real negatives, so the only one that can support a precision, a false-positive rate or an F1.",
+      "title": "Roseau accuracy dataset (replication kit)",
+      "ecosystem": "maven",
+      "datasetClass": "upstream-bc-detection",
+      "sourceUrl": "https://zenodo.org/records/15536418",
+      "datasetVersion": "10.5281/zenodo.15536418",
+      "licence": "see the replication kit",
+      "citation": "Roseau replication kit, Zenodo, DOI 10.5281/zenodo.15536418; tool at https://github.com/alien-tools/roseau",
+      "evaluationQuestion": "On hand-built Java library version pairs with exhaustively enumerated API breaking changes, does Drift produce the same set?",
+      "doesNotEstablish": "Nothing about Drift on real-world Java projects: this dataset is constructed to enumerate API change kinds exhaustively, which is what makes precision meaningful and also what makes it unrepresentative of an actual upgrade.",
+      "groundTruth": {
+        "granularity": "api-symbol",
+        "exhaustive": true,
+        "basis": "Constructed library pairs with every API breaking change enumerated at symbol level, which is what supports precision and F1.",
+        "supports": [
+          "recall",
+          "precision",
+          "f1",
+          "category-accuracy"
+        ]
+      },
+      "driftCommit": "7af6c8697cb4b95e370f66d384da4c1c91b6ca82",
+      "driftTreeDirty": false,
+      "runDate": "2026-08-21T04:23:41.470Z",
+      "rescoredAt": null,
+      "rescoredAtCommit": null,
+      "command": "npm run eval:external -- roseau",
+      "platform": "darwin/x64, Node v24.19.0",
+      "notes": "The one corpus here with real negatives. 267 hand-built Java version pairs, each labelled by hand for whether the change is binary-breaking, and roughly half labelled *not* breaking — which is what makes precision, a false-positive rate and F1 defined here and nowhere else in this benchmark.\n\nDrift runs its real Java surface diff: `computeSurfaceDiff` from the shipped build, routed to the japicmp provider, shelling out to the japicmp binary. The dataset ships source rather than jars, so both trees are compiled with `javac` and served to production's own `fetchArchive` as though Maven Central had them. The substitution is transport; every line of analysis between the download and the result is production's.\n\nScored against the `isBinaryBreaking` column, because japicmp compares classfiles and binary compatibility is the question it answers. The source-compatibility label is carried in every case artifact for anyone who wants to score it the other way.\n\nThe replication kit's own recorded labels for Roseau, Japicmp and Revapi travel in each artifact. They are labels **as recorded in the kit**, produced on the authors' machines with their tool versions — not re-run here — and any comparison drawn from them should say so.\n\n**2 reported change(s) did not belong to any of the 267 labelled case packages; 0 are unexplained.**\nEach remaining unmatched change is classified below rather than silently discarded:\n\n- `testing_lib.accessModifierClazzNestedClazzAccessDecreaseProtectedToNon.AccessModifierClazzNestedClazzAccessDecreaseProtectedToNon$Clazz.AccessModifierClazzNestedClazzAccessDecreaseProtectedToNon$Clazz` — non-benchmark-source-package: accessModifierClazzNestedClazzAccessDecreaseProtectedToNon is present in the Roseau source tree but absent from results/bench/jezek_dietrich.json, so it is not one of the 267 labelled benchmark cases and cannot change a per-case TP/FP/TN/FN assignment.\n- `testing_lib.accessModifierClazzNestedClazzAccessDecreaseProtectedToPrivate.AccessModifierClazzNestedClazzAccessDecreaseProtectedToPrivate$Clazz.AccessModifierClazzNestedClazzAccessDecreaseProtectedToPrivate$Clazz` — non-benchmark-source-package: accessModifierClazzNestedClazzAccessDecreaseProtectedToPrivate is present in the Roseau source tree but absent from results/bench/jezek_dietrich.json, so it is not one of the 267 labelled benchmark cases and cannot change a per-case TP/FP/TN/FN assignment.",
+      "available": 267,
+      "selected": 267,
+      "attempted": 267,
+      "notRun": 0,
+      "scored": 267,
+      "excluded": {},
+      "missingRequirements": {},
+      "negativeControls": 167,
+      "selectionMode": "all",
+      "selectionSeed": 20260819,
+      "selectionLimit": null,
+      "rates": {
+        "breaking-change detection recall": {
+          "numerator": 92,
+          "denominator": 100,
+          "value": 0.92
+        }
+      },
+      "confusion": {
+        "tp": 92,
+        "fp": 9,
+        "tn": 158,
+        "fn": 8
+      },
+      "classification": {
+        "precision": {
+          "numerator": 92,
+          "denominator": 101,
+          "value": 0.9108910891089109
+        },
+        "recall": {
+          "numerator": 92,
+          "denominator": 100,
+          "value": 0.92
+        },
+        "f1": 0.9154228855721394
+      },
+      "baseline": null,
+      "refusals": [],
+      "mappingCoverage": {
+        "exact": 267
+      },
+      "breakdown": {
+        "label: binary-breaking": {
+          "breaking-change detection recall": {
+            "numerator": 92,
+            "denominator": 100,
+            "value": 0.92
+          }
+        },
+        "groundTruthSourceBreaking: true": {
+          "breaking-change detection recall": {
+            "numerator": 72,
+            "denominator": 79,
+            "value": 0.9113924050632911
+          }
+        },
+        "groundTruthSourceBreaking: false": {
+          "breaking-change detection recall": {
+            "numerator": 20,
+            "denominator": 21,
+            "value": 0.9523809523809523
+          }
+        }
+      },
+      "intervals": {
+        "breaking-change detection recall": {
+          "low": 0.86,
+          "high": 0.97,
+          "iterations": 2000
+        }
+      },
+      "tools": [
+        {
+          "tool": "node",
+          "available": true,
+          "version": "v24.19.0",
+          "neededFor": "every npm/TypeScript case, and Drift itself"
+        },
+        {
+          "tool": "npm",
+          "available": true,
+          "version": "11.12.1",
+          "neededFor": "installing a TypeScript consumer before its build oracle can run"
+        },
+        {
+          "tool": "git",
+          "available": true,
+          "version": "git version 2.39.5 (Apple Git-154)",
+          "neededFor": "checking out an original repository at the exact evaluated commit"
+        },
+        {
+          "tool": "java",
+          "available": true,
+          "version": "openjdk version \"19\" 2022-09-20",
+          "neededFor": "any Java case"
+        },
+        {
+          "tool": "mvn",
+          "available": true,
+          "version": "Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937)",
+          "neededFor": "BUMP's Maven oracle, and building Roseau from its replication kit"
+        },
+        {
+          "tool": "docker",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure"
+        },
+        {
+          "tool": "python3",
+          "available": true,
+          "version": "Python 3.14.3",
+          "neededFor": "any Python case"
+        },
+        {
+          "tool": "uv",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "TimeMachine's documented environment setup"
+        },
+        {
+          "tool": "japicmp",
+          "available": true,
+          "version": "SYNOPSIS",
+          "neededFor": "Drift's Java API-surface diff, which its maven capability declares it requires"
+        }
+      ]
+    },
+    {
+      "runId": "kong-rq2-category",
+      "headline": false,
+      "why": "Real upstream prose from 1,511 annotated npm breaking changes, against the production prose interpreter.",
+      "title": "Towards Better Comprehension of Breaking Changes in the NPM Ecosystem",
+      "ecosystem": "npm",
+      "datasetClass": "upstream-bc-detection",
+      "sourceUrl": "https://zenodo.org/records/13857646",
+      "datasetVersion": "10.5281/zenodo.13857646",
+      "licence": "CC-BY-4.0",
+      "citation": "Dezhen Kong et al., \"Towards Better Comprehension of Breaking Changes in the NPM Ecosystem\", replication package, Zenodo, DOI 10.5281/zenodo.13857646.",
+      "evaluationQuestion": "Given the real prose an upstream JavaScript maintainer wrote about a commit, does Drift read a breaking change out of it, and does it read the right kind of breaking change?",
+      "doesNotEstablish": "Nothing about whether Drift finds these changes in a consumer repository, nothing about repair, and nothing about the published-artefact API diff — this corpus supplies prose, so only the prose interpreter is under test.",
+      "groundTruth": {
+        "granularity": "commit",
+        "exhaustive": true,
+        "basis": "RQ1's detected_bc_are_documented.csv labels every sampled commit yes/no for whether developers documented a breaking change, so the negatives are real and precision is defined. RQ2's analyzed_breaking_changes.csv annotates a category per breaking change on commits already known to be breaking, which supports category accuracy and nothing else.",
+        "supports": [
+          "recall",
+          "precision",
+          "f1",
+          "category-accuracy"
+        ]
+      },
+      "driftCommit": "80aa8209d62bf19bcdab50dcd7232377528f4de7",
+      "driftTreeDirty": false,
+      "runDate": "2026-08-20T17:40:43.012Z",
+      "rescoredAt": "2026-08-20T21:08:51.097Z",
+      "rescoredAtCommit": "bfcc036fff0752028fa16b287592eded4f18cbd3",
+      "command": "npm run eval:external -- kong",
+      "platform": "darwin/x64, Node v24.19.0",
+      "notes": "This is a **conditional** experiment on one production stage: Drift's prose interpreter (`extractBreakingPassages` + `analyze`, imported from the shipped build). The corpus is commit messages — it contains no consumer repositories, no version pairs and no build oracles — so it establishes nothing about detection in a repository, localization, or repair.",
+      "available": 1511,
+      "selected": 1511,
+      "attempted": 1511,
+      "notRun": 0,
+      "scored": 1511,
+      "excluded": {},
+      "missingRequirements": {},
+      "negativeControls": 0,
+      "selectionMode": "all",
+      "selectionSeed": 20260819,
+      "selectionLimit": null,
+      "rates": {
+        "breaking-change detection recall": {
+          "numerator": 189,
+          "denominator": 1511,
+          "value": 0.12508272667107875
+        },
+        "category classification accuracy": {
+          "numerator": 2,
+          "denominator": 134,
+          "value": 0.014925373134328358
+        }
+      },
+      "confusion": null,
+      "classification": null,
+      "baseline": null,
+      "refusals": [
+        {
+          "metric": "precision",
+          "reason": "Towards Better Comprehension of Breaking Changes in the NPM Ecosystem contributed no negative/control cases to this run, so there is no population a false positive could be measured against."
+        },
+        {
+          "metric": "F1",
+          "reason": "F1 is a harmonic mean of precision and recall, and precision is not defined here."
+        },
+        {
+          "metric": "false-positive rate",
+          "reason": "Towards Better Comprehension of Breaking Changes in the NPM Ecosystem contributed no negative/control cases to this run, so there is no population a false positive could be measured against."
+        }
+      ],
+      "mappingCoverage": {
+        "ambiguous": 1375,
+        "exact": 134,
+        "unsupported": 2
+      },
+      "breakdown": {
+        "label: rename class": {
+          "breaking-change detection recall": {
+            "numerator": 1,
+            "denominator": 22,
+            "value": 0.045454545454545456
+          }
+        },
+        "label: remove method": {
+          "breaking-change detection recall": {
+            "numerator": 36,
+            "denominator": 126,
+            "value": 0.2857142857142857
+          }
+        },
+        "label: change_behavior": {
+          "breaking-change detection recall": {
+            "numerator": 83,
+            "denominator": 1026,
+            "value": 0.08089668615984405
+          }
+        },
+        "label: remove constant": {
+          "breaking-change detection recall": {
+            "numerator": 4,
+            "denominator": 10,
+            "value": 0.4
+          }
+        },
+        "label: rename method": {
+          "breaking-change detection recall": {
+            "numerator": 5,
+            "denominator": 50,
+            "value": 0.1
+          }
+        },
+        "label: remove class": {
+          "breaking-change detection recall": {
+            "numerator": 8,
+            "denominator": 26,
+            "value": 0.3076923076923077
+          }
+        },
+        "label: remove field": {
+          "breaking-change detection recall": {
+            "numerator": 8,
+            "denominator": 27,
+            "value": 0.2962962962962963
+          }
+        },
+        "label: change_signature": {
+          "breaking-change detection recall": {
+            "numerator": 27,
+            "denominator": 134,
+            "value": 0.20149253731343283
+          },
+          "category classification accuracy": {
+            "numerator": 2,
+            "denominator": 134,
+            "value": 0.014925373134328358
+          }
+        },
+        "label: move class": {
+          "breaking-change detection recall": {
+            "numerator": 1,
+            "denominator": 7,
+            "value": 0.14285714285714285
+          }
+        },
+        "label: move": {
+          "breaking-change detection recall": {
+            "numerator": 0,
+            "denominator": 2,
+            "value": 0
+          }
+        },
+        "label: rename constant": {
+          "breaking-change detection recall": {
+            "numerator": 0,
+            "denominator": 1,
+            "value": 0
+          }
+        },
+        "label: remove interface": {
+          "breaking-change detection recall": {
+            "numerator": 1,
+            "denominator": 2,
+            "value": 0.5
+          }
+        },
+        "label: rename field": {
+          "breaking-change detection recall": {
+            "numerator": 5,
+            "denominator": 29,
+            "value": 0.1724137931034483
+          }
+        },
+        "label: move field": {
+          "breaking-change detection recall": {
+            "numerator": 0,
+            "denominator": 1,
+            "value": 0
+          }
+        },
+        "label: rename interface": {
+          "breaking-change detection recall": {
+            "numerator": 0,
+            "denominator": 4,
+            "value": 0
+          }
+        },
+        "label: rename package": {
+          "breaking-change detection recall": {
+            "numerator": 0,
+            "denominator": 1,
+            "value": 0
+          }
+        },
+        "label: remove module": {
+          "breaking-change detection recall": {
+            "numerator": 8,
+            "denominator": 17,
+            "value": 0.47058823529411764
+          }
+        },
+        "label: rename module": {
+          "breaking-change detection recall": {
+            "numerator": 0,
+            "denominator": 3,
+            "value": 0
+          }
+        },
+        "label: move method": {
+          "breaking-change detection recall": {
+            "numerator": 1,
+            "denominator": 12,
+            "value": 0.08333333333333333
+          }
+        },
+        "label: move module": {
+          "breaking-change detection recall": {
+            "numerator": 0,
+            "denominator": 5,
+            "value": 0
+          }
+        },
+        "label: inline": {
+          "breaking-change detection recall": {
+            "numerator": 0,
+            "denominator": 2,
+            "value": 0
+          }
+        },
+        "label: remove": {
+          "breaking-change detection recall": {
+            "numerator": 0,
+            "denominator": 2,
+            "value": 0
+          }
+        },
+        "label: remove type": {
+          "breaking-change detection recall": {
+            "numerator": 1,
+            "denominator": 1,
+            "value": 1
+          }
+        },
+        "label: rename": {
+          "breaking-change detection recall": {
+            "numerator": 0,
+            "denominator": 1,
+            "value": 0
+          }
+        },
+        "markerBaselinePredictsBreaking: true": {
+          "breaking-change detection recall": {
+            "numerator": 189,
+            "denominator": 1464,
+            "value": 0.1290983606557377
+          },
+          "category classification accuracy": {
+            "numerator": 2,
+            "denominator": 129,
+            "value": 0.015503875968992248
+          }
+        },
+        "markerBaselinePredictsBreaking: false": {
+          "breaking-change detection recall": {
+            "numerator": 0,
+            "denominator": 47,
+            "value": 0
+          },
+          "category classification accuracy": {
+            "numerator": 0,
+            "denominator": 5,
+            "value": 0
+          }
+        },
+        "messageStatesDetail: true": {
+          "breaking-change detection recall": {
+            "numerator": 169,
+            "denominator": 1120,
+            "value": 0.15089285714285713
+          },
+          "category classification accuracy": {
+            "numerator": 1,
+            "denominator": 97,
+            "value": 0.010309278350515464
+          }
+        },
+        "messageStatesDetail: false": {
+          "breaking-change detection recall": {
+            "numerator": 20,
+            "denominator": 391,
+            "value": 0.05115089514066496
+          },
+          "category classification accuracy": {
+            "numerator": 1,
+            "denominator": 37,
+            "value": 0.02702702702702703
+          }
+        }
+      },
+      "intervals": {
+        "breaking-change detection recall": {
+          "low": 0.10919920582395765,
+          "high": 0.14162806088682992,
+          "iterations": 2000
+        },
+        "category classification accuracy": {
+          "low": 0,
+          "high": 0.03731343283582089,
+          "iterations": 2000
+        }
+      },
+      "tools": [
+        {
+          "tool": "node",
+          "available": true,
+          "version": "v24.19.0",
+          "neededFor": "every npm/TypeScript case, and Drift itself"
+        },
+        {
+          "tool": "npm",
+          "available": true,
+          "version": "11.12.1",
+          "neededFor": "installing a TypeScript consumer before its build oracle can run"
+        },
+        {
+          "tool": "git",
+          "available": true,
+          "version": "git version 2.39.5 (Apple Git-154)",
+          "neededFor": "checking out an original repository at the exact evaluated commit"
+        },
+        {
+          "tool": "java",
+          "available": true,
+          "version": "openjdk version \"19\" 2022-09-20",
+          "neededFor": "any Java case"
+        },
+        {
+          "tool": "mvn",
+          "available": true,
+          "version": "Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937)",
+          "neededFor": "BUMP's Maven oracle, and building Roseau from its replication kit"
+        },
+        {
+          "tool": "docker",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure"
+        },
+        {
+          "tool": "python3",
+          "available": true,
+          "version": "Python 3.14.3",
+          "neededFor": "any Python case"
+        },
+        {
+          "tool": "uv",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "TimeMachine's documented environment setup"
+        },
+        {
+          "tool": "japicmp",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "Drift's Java API-surface diff, which its maven capability declares it requires"
+        }
+      ]
+    },
+    {
+      "runId": "kong-rq1-documented",
+      "headline": false,
+      "why": "The binary form of the same question, published mainly for its trivial-marker baseline: the labels are close to regex-recoverable, and the comparison says so.",
+      "title": "Towards Better Comprehension of Breaking Changes in the NPM Ecosystem",
+      "ecosystem": "npm",
+      "datasetClass": "upstream-bc-detection",
+      "sourceUrl": "https://zenodo.org/records/13857646",
+      "datasetVersion": "10.5281/zenodo.13857646",
+      "licence": "CC-BY-4.0",
+      "citation": "Dezhen Kong et al., \"Towards Better Comprehension of Breaking Changes in the NPM Ecosystem\", replication package, Zenodo, DOI 10.5281/zenodo.13857646.",
+      "evaluationQuestion": "Given the real prose an upstream JavaScript maintainer wrote about a commit, does Drift read a breaking change out of it, and does it read the right kind of breaking change?",
+      "doesNotEstablish": "Nothing about whether Drift finds these changes in a consumer repository, nothing about repair, and nothing about the published-artefact API diff — this corpus supplies prose, so only the prose interpreter is under test.",
+      "groundTruth": {
+        "granularity": "commit",
+        "exhaustive": true,
+        "basis": "RQ1's detected_bc_are_documented.csv labels every sampled commit yes/no for whether developers documented a breaking change, so the negatives are real and precision is defined. RQ2's analyzed_breaking_changes.csv annotates a category per breaking change on commits already known to be breaking, which supports category accuracy and nothing else.",
+        "supports": [
+          "recall",
+          "precision",
+          "f1",
+          "category-accuracy"
+        ]
+      },
+      "driftCommit": "4a8017f5965881d692320a8133001a05427a6ebf",
+      "driftTreeDirty": false,
+      "runDate": "2026-08-20T17:41:23.626Z",
+      "rescoredAt": null,
+      "rescoredAtCommit": null,
+      "command": "npm run eval:external -- kong",
+      "platform": "darwin/x64, Node v24.19.0",
+      "notes": "This is a **conditional** experiment on one production stage, and its labels are close to trivially recoverable: Kong collected breaking commits by looking for a conventional-commits `BREAKING CHANGE` annotation, so 164 of the 165 positives contain that literal marker and so do 29 of the negatives. The marker baseline is reported beside Drift's result for exactly that reason. Read the two together; a score a regular expression also achieves is not evidence about a tool.",
+      "available": 16333,
+      "selected": 16333,
+      "attempted": 16333,
+      "notRun": 0,
+      "scored": 16333,
+      "excluded": {},
+      "missingRequirements": {},
+      "negativeControls": 16168,
+      "selectionMode": "all",
+      "selectionSeed": 20260819,
+      "selectionLimit": null,
+      "rates": {
+        "breaking-change detection recall": {
+          "numerator": 23,
+          "denominator": 165,
+          "value": 0.1393939393939394
+        }
+      },
+      "confusion": {
+        "tp": 23,
+        "fp": 11,
+        "tn": 16157,
+        "fn": 142
+      },
+      "classification": {
+        "precision": {
+          "numerator": 23,
+          "denominator": 34,
+          "value": 0.6764705882352942
+        },
+        "recall": {
+          "numerator": 23,
+          "denominator": 165,
+          "value": 0.1393939393939394
+        },
+        "f1": 0.2311557788944724
+      },
+      "baseline": {
+        "name": "conventional-commits marker",
+        "description": "Predicts \"breaking\" whenever the commit message contains a literal BREAKING CHANGE annotation. Not Drift, and not presented as Drift — it is here so a reader can see how much of this task is reachable without reading the text.",
+        "confusion": {
+          "tp": 164,
+          "fp": 29,
+          "tn": 16139,
+          "fn": 1
+        },
+        "precision": {
+          "numerator": 164,
+          "denominator": 193,
+          "value": 0.8497409326424871
+        },
+        "recall": {
+          "numerator": 164,
+          "denominator": 165,
+          "value": 0.9939393939393939
+        }
+      },
+      "refusals": [],
+      "mappingCoverage": {
+        "exact": 16333
+      },
+      "breakdown": {
+        "label: documents-breaking-change": {
+          "breaking-change detection recall": {
+            "numerator": 23,
+            "denominator": 165,
+            "value": 0.1393939393939394
+          }
+        },
+        "markerBaselinePredictsBreaking: true": {
+          "breaking-change detection recall": {
+            "numerator": 23,
+            "denominator": 164,
+            "value": 0.1402439024390244
+          }
+        },
+        "markerBaselinePredictsBreaking: false": {
+          "breaking-change detection recall": {
+            "numerator": 0,
+            "denominator": 1,
+            "value": 0
+          }
+        },
+        "messageStatesDetail: false": {
+          "breaking-change detection recall": {
+            "numerator": 6,
+            "denominator": 48,
+            "value": 0.125
+          }
+        },
+        "messageStatesDetail: true": {
+          "breaking-change detection recall": {
+            "numerator": 17,
+            "denominator": 117,
+            "value": 0.1452991452991453
+          }
+        }
+      },
+      "intervals": {
+        "breaking-change detection recall": {
+          "low": 0.09090909090909091,
+          "high": 0.19393939393939394,
+          "iterations": 2000
+        }
+      },
+      "tools": [
+        {
+          "tool": "node",
+          "available": true,
+          "version": "v24.19.0",
+          "neededFor": "every npm/TypeScript case, and Drift itself"
+        },
+        {
+          "tool": "npm",
+          "available": true,
+          "version": "11.12.1",
+          "neededFor": "installing a TypeScript consumer before its build oracle can run"
+        },
+        {
+          "tool": "git",
+          "available": true,
+          "version": "git version 2.39.5 (Apple Git-154)",
+          "neededFor": "checking out an original repository at the exact evaluated commit"
+        },
+        {
+          "tool": "java",
+          "available": true,
+          "version": "openjdk version \"19\" 2022-09-20",
+          "neededFor": "any Java case"
+        },
+        {
+          "tool": "mvn",
+          "available": true,
+          "version": "Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937)",
+          "neededFor": "BUMP's Maven oracle, and building Roseau from its replication kit"
+        },
+        {
+          "tool": "docker",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure"
+        },
+        {
+          "tool": "python3",
+          "available": true,
+          "version": "Python 3.14.3",
+          "neededFor": "any Python case"
+        },
+        {
+          "tool": "uv",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "TimeMachine's documented environment setup"
+        },
+        {
+          "tool": "japicmp",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "Drift's Java API-surface diff, which its maven capability declares it requires"
+        }
+      ]
+    },
+    {
+      "runId": "swe-bump-detection",
+      "headline": false,
+      "why": "Real TypeScript projects at historical commits whose build a dependency upgrade breaks.",
+      "title": "swe-bump-bench",
+      "ecosystem": "npm",
+      "datasetClass": "consumer-impact",
+      "sourceUrl": "https://github.com/xeol-io/swe-bump-bench",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "licence": "see the repository",
+      "citation": "xeol-io, swe-bump-bench, https://github.com/xeol-io/swe-bump-bench",
+      "evaluationQuestion": "Given a real TypeScript project at a real commit and a dependency upgrade known to break its build, does Drift detect the update, decide the repository is affected, localize the code, and avoid telling the developer it is safe?",
+      "doesNotEstablish": "No precision and no false-positive rate. Every task in this corpus is a known-breaking upgrade, so there is no negative population to compute one over; a tool that answered \"affected\" unconditionally would score identically on the questions this corpus can answer.",
+      "groundTruth": {
+        "granularity": "project-build",
+        "exhaustive": false,
+        "basis": "Each task is a known-breaking dependency bump whose build oracle fails. Positives only: there are no non-breaking control upgrades, and no symbol-level annotation of what changed.",
+        "supports": [
+          "recall",
+          "repair-success",
+          "false-safe-count"
+        ]
+      },
+      "driftCommit": "49c081ee5712d59ed3e006b0586145450b1a5ef6",
+      "driftTreeDirty": false,
+      "runDate": "2026-08-20T19:09:44.578Z",
+      "rescoredAt": null,
+      "rescoredAtCommit": null,
+      "command": "npm run eval:external -- swe-bump",
+      "platform": "darwin/x64, Node v24.19.0",
+      "notes": "Detection only. Every task here is a known-breaking upgrade — the corpus was collected by bumping packages until `tsc` failed — so there is no negative population and no precision or false-positive rate can be computed from it. The questions it does answer are whether Drift sees the update, decides the repository is affected, points at consumer code, and above all whether it ever tells a developer with a broken build that they are fine.\n\nInstallation and the `tsc` oracle are not run in this track. These projects pin four different Node majors and three package managers against lockfiles from 2022–2024, and a `yarn install` that fails in 2026 is a fact about the registry and this machine rather than about Drift. Keeping the oracle separate lets an install failure exclude a case from repair questions without discarding the detection answer.",
+      "available": 63,
+      "selected": 63,
+      "attempted": 63,
+      "notRun": 0,
+      "scored": 58,
+      "excluded": {
+        "source-unavailable": 2,
+        "reproduction-failed": 3
+      },
+      "missingRequirements": {},
+      "negativeControls": 0,
+      "selectionMode": "all",
+      "selectionSeed": 20260819,
+      "selectionLimit": null,
+      "rates": {
+        "dependency-update detection rate": {
+          "numerator": 58,
+          "denominator": 58,
+          "value": 1
+        },
+        "affected-repository identification rate": {
+          "numerator": 38,
+          "denominator": 58,
+          "value": 0.6551724137931034
+        },
+        "consumer localization rate": {
+          "numerator": 38,
+          "denominator": 58,
+          "value": 0.6551724137931034
+        },
+        "false-safe verdicts": {
+          "numerator": 17,
+          "denominator": 58,
+          "value": 0.29310344827586204
+        }
+      },
+      "confusion": null,
+      "classification": null,
+      "baseline": null,
+      "refusals": [
+        {
+          "metric": "precision",
+          "reason": "swe-bump-bench's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each task is a known-breaking dependency bump whose build oracle fails. Positives only: there are no non-breaking control upgrades, and no symbol-level annotation of what changed."
+        },
+        {
+          "metric": "F1",
+          "reason": "F1 is a harmonic mean of precision and recall, and precision is not defined here."
+        },
+        {
+          "metric": "false-positive rate",
+          "reason": "swe-bump-bench's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each task is a known-breaking dependency bump whose build oracle fails. Positives only: there are no non-breaking control upgrades, and no symbol-level annotation of what changed."
+        }
+      ],
+      "mappingCoverage": {
+        "exact": 63
+      },
+      "breakdown": {
+        "label: known-breaking-upgrade": {
+          "dependency-update detection rate": {
+            "numerator": 58,
+            "denominator": 58,
+            "value": 1
+          },
+          "affected-repository identification rate": {
+            "numerator": 38,
+            "denominator": 58,
+            "value": 0.6551724137931034
+          },
+          "consumer localization rate": {
+            "numerator": 38,
+            "denominator": 58,
+            "value": 0.6551724137931034
+          }
+        },
+        "versionToIsRange: true": {
+          "dependency-update detection rate": {
+            "numerator": 55,
+            "denominator": 55,
+            "value": 1
+          },
+          "affected-repository identification rate": {
+            "numerator": 35,
+            "denominator": 55,
+            "value": 0.6363636363636364
+          },
+          "consumer localization rate": {
+            "numerator": 35,
+            "denominator": 55,
+            "value": 0.6363636363636364
+          }
+        },
+        "versionToIsRange: false": {
+          "dependency-update detection rate": {
+            "numerator": 3,
+            "denominator": 3,
+            "value": 1
+          },
+          "affected-repository identification rate": {
+            "numerator": 3,
+            "denominator": 3,
+            "value": 1
+          },
+          "consumer localization rate": {
+            "numerator": 3,
+            "denominator": 3,
+            "value": 1
+          }
+        }
+      },
+      "intervals": {
+        "dependency-update detection rate": {
+          "low": 1,
+          "high": 1,
+          "iterations": 2000
+        },
+        "affected-repository identification rate": {
+          "low": 0.5344827586206896,
+          "high": 0.7758620689655172,
+          "iterations": 2000
+        },
+        "consumer localization rate": {
+          "low": 0.5344827586206896,
+          "high": 0.7758620689655172,
+          "iterations": 2000
+        },
+        "false-safe verdicts": {
+          "low": 0.1896551724137931,
+          "high": 0.41379310344827586,
+          "iterations": 2000
+        }
+      },
+      "tools": [
+        {
+          "tool": "node",
+          "available": true,
+          "version": "v24.19.0",
+          "neededFor": "every npm/TypeScript case, and Drift itself"
+        },
+        {
+          "tool": "npm",
+          "available": true,
+          "version": "11.12.1",
+          "neededFor": "installing a TypeScript consumer before its build oracle can run"
+        },
+        {
+          "tool": "git",
+          "available": true,
+          "version": "git version 2.39.5 (Apple Git-154)",
+          "neededFor": "checking out an original repository at the exact evaluated commit"
+        },
+        {
+          "tool": "java",
+          "available": true,
+          "version": "openjdk version \"19\" 2022-09-20",
+          "neededFor": "any Java case"
+        },
+        {
+          "tool": "mvn",
+          "available": true,
+          "version": "Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937)",
+          "neededFor": "BUMP's Maven oracle, and building Roseau from its replication kit"
+        },
+        {
+          "tool": "docker",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure"
+        },
+        {
+          "tool": "python3",
+          "available": true,
+          "version": "Python 3.14.3",
+          "neededFor": "any Python case"
+        },
+        {
+          "tool": "uv",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "TimeMachine's documented environment setup"
+        },
+        {
+          "tool": "japicmp",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "Drift's Java API-surface diff, which its maven capability declares it requires"
+        }
+      ]
+    },
+    {
+      "runId": "bump-subset-40",
+      "headline": false,
+      "why": "A deterministic stratified subset of BUMP's Java consumer breakages, evaluated on the real historical commit pair.",
+      "title": "BUMP — reproducible breaking dependency updates in Java",
+      "ecosystem": "maven",
+      "datasetClass": "consumer-impact",
+      "sourceUrl": "https://github.com/chains-project/bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "licence": "see the repository",
+      "citation": "Frank Reyes et al., \"BUMP: A Benchmark of Reproducible Breaking Dependency Updates\", arXiv:2401.09906; data at https://github.com/chains-project/bump, archive at DOI 10.5281/zenodo.10041883.",
+      "evaluationQuestion": "Given a real Java project at the commit where a dependency update broke its Maven build, does Drift detect the update and identify the project as affected?",
+      "doesNotEstablish": "No precision and no false-positive rate. Every record is a reproduced breaking update; there are no non-breaking control updates in the corpus.",
+      "groundTruth": {
+        "granularity": "project-build",
+        "exhaustive": false,
+        "basis": "Each record is one reproduced breaking dependency update with a recorded failure category. Positives only, and no annotation of which consumer source lines the break lands on.",
+        "supports": [
+          "recall",
+          "repair-success",
+          "false-safe-count"
+        ]
+      },
+      "driftCommit": "aa6d136b48f5c9c317e566a296e3893cbdc817ec",
+      "driftTreeDirty": false,
+      "runDate": "2026-08-20T22:37:33.741Z",
+      "rescoredAt": null,
+      "rescoredAtCommit": null,
+      "command": "npm run eval:external -- bump --limit 40 --seed 20260819",
+      "platform": "darwin/x64, Node v24.19.0",
+      "notes": "Detection only, and the commit pair is real. BUMP records the commit that changed the version in `pom.xml`, so its parent is the pre-update state — this run diffs the two revisions a developer actually received rather than a bump the harness applied. Drift reads `pom.xml` directly, so nothing has to be built for the manifest diff, evidence retrieval and localization to run exactly as they do for a user.\n\nNo precision and no false-positive rate: every record is a reproduced *breaking* update, and the corpus contains no non-breaking control updates to measure one against.\n\n**No container runtime is available on the machine that produced this run.** BUMP's authority on whether a build fails is its published `<sha>-pre` and `<sha>-breaking` images, so the Maven oracle was not run and no repair question was asked. Those outcomes are absent from every case record rather than recorded as failures — an absent key means the question was not asked, where `false` would mean Drift tried and did not manage it. Each case artifact carries both image references so a reader with Docker can run the authoritative reproduction from it.",
+      "available": 571,
+      "selected": 40,
+      "attempted": 40,
+      "notRun": 0,
+      "scored": 39,
+      "excluded": {
+        "source-unavailable": 1
+      },
+      "missingRequirements": {},
+      "negativeControls": 0,
+      "selectionMode": "stratified-sample",
+      "selectionSeed": 20260819,
+      "selectionLimit": 40,
+      "rates": {
+        "dependency-update detection rate": {
+          "numerator": 34,
+          "denominator": 39,
+          "value": 0.8717948717948718
+        },
+        "affected-repository identification rate": {
+          "numerator": 7,
+          "denominator": 39,
+          "value": 0.1794871794871795
+        },
+        "consumer localization rate": {
+          "numerator": 7,
+          "denominator": 39,
+          "value": 0.1794871794871795
+        },
+        "false-safe verdicts": {
+          "numerator": 16,
+          "denominator": 39,
+          "value": 0.41025641025641024
+        }
+      },
+      "confusion": null,
+      "classification": null,
+      "baseline": null,
+      "refusals": [
+        {
+          "metric": "precision",
+          "reason": "BUMP — reproducible breaking dependency updates in Java's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each record is one reproduced breaking dependency update with a recorded failure category. Positives only, and no annotation of which consumer source lines the break lands on."
+        },
+        {
+          "metric": "F1",
+          "reason": "F1 is a harmonic mean of precision and recall, and precision is not defined here."
+        },
+        {
+          "metric": "false-positive rate",
+          "reason": "BUMP — reproducible breaking dependency updates in Java's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each record is one reproduced breaking dependency update with a recorded failure category. Positives only, and no annotation of which consumer source lines the break lands on."
+        }
+      ],
+      "mappingCoverage": {
+        "compatible": 40
+      },
+      "breakdown": {
+        "label: ENFORCER_FAILURE": {
+          "dependency-update detection rate": {
+            "numerator": 7,
+            "denominator": 9,
+            "value": 0.7777777777777778
+          },
+          "affected-repository identification rate": {
+            "numerator": 0,
+            "denominator": 9,
+            "value": 0
+          },
+          "consumer localization rate": {
+            "numerator": 0,
+            "denominator": 9,
+            "value": 0
+          }
+        },
+        "label: TEST_FAILURE": {
+          "dependency-update detection rate": {
+            "numerator": 15,
+            "denominator": 16,
+            "value": 0.9375
+          },
+          "affected-repository identification rate": {
+            "numerator": 3,
+            "denominator": 16,
+            "value": 0.1875
+          },
+          "consumer localization rate": {
+            "numerator": 3,
+            "denominator": 16,
+            "value": 0.1875
+          }
+        },
+        "label: COMPILATION_FAILURE": {
+          "dependency-update detection rate": {
+            "numerator": 11,
+            "denominator": 12,
+            "value": 0.9166666666666666
+          },
+          "affected-repository identification rate": {
+            "numerator": 4,
+            "denominator": 12,
+            "value": 0.3333333333333333
+          },
+          "consumer localization rate": {
+            "numerator": 4,
+            "denominator": 12,
+            "value": 0.3333333333333333
+          }
+        },
+        "label: DEPENDENCY_LOCK_FAILURE": {
+          "dependency-update detection rate": {
+            "numerator": 1,
+            "denominator": 2,
+            "value": 0.5
+          },
+          "affected-repository identification rate": {
+            "numerator": 0,
+            "denominator": 2,
+            "value": 0
+          },
+          "consumer localization rate": {
+            "numerator": 0,
+            "denominator": 2,
+            "value": 0
+          }
+        }
+      },
+      "intervals": {
+        "dependency-update detection rate": {
+          "low": 0.7692307692307693,
+          "high": 0.9743589743589743,
+          "iterations": 2000
+        },
+        "affected-repository identification rate": {
+          "low": 0.05128205128205128,
+          "high": 0.3076923076923077,
+          "iterations": 2000
+        },
+        "consumer localization rate": {
+          "low": 0.05128205128205128,
+          "high": 0.3076923076923077,
+          "iterations": 2000
+        },
+        "false-safe verdicts": {
+          "low": 0.2564102564102564,
+          "high": 0.5641025641025641,
+          "iterations": 2000
+        }
+      },
+      "tools": [
+        {
+          "tool": "node",
+          "available": true,
+          "version": "v24.19.0",
+          "neededFor": "every npm/TypeScript case, and Drift itself"
+        },
+        {
+          "tool": "npm",
+          "available": true,
+          "version": "11.12.1",
+          "neededFor": "installing a TypeScript consumer before its build oracle can run"
+        },
+        {
+          "tool": "git",
+          "available": true,
+          "version": "git version 2.39.5 (Apple Git-154)",
+          "neededFor": "checking out an original repository at the exact evaluated commit"
+        },
+        {
+          "tool": "java",
+          "available": true,
+          "version": "openjdk version \"19\" 2022-09-20",
+          "neededFor": "any Java case"
+        },
+        {
+          "tool": "mvn",
+          "available": true,
+          "version": "Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937)",
+          "neededFor": "BUMP's Maven oracle, and building Roseau from its replication kit"
+        },
+        {
+          "tool": "docker",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure"
+        },
+        {
+          "tool": "python3",
+          "available": true,
+          "version": "Python 3.14.3",
+          "neededFor": "any Python case"
+        },
+        {
+          "tool": "uv",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "TimeMachine's documented environment setup"
+        },
+        {
+          "tool": "japicmp",
+          "available": true,
+          "version": "SYNOPSIS",
+          "neededFor": "Drift's Java API-surface diff, which its maven capability declares it requires"
+        }
+      ]
+    },
+    {
+      "runId": "timemachine-verified",
+      "headline": false,
+      "why": "TimeMachine's human-verified Python subset, on the weakest manifest-pair construction in this benchmark.",
+      "title": "TimeMachine-bench (human-verified subset)",
+      "ecosystem": "pypi",
+      "datasetClass": "consumer-impact",
+      "sourceUrl": "https://github.com/tohoku-nlp/timemachine-bench",
+      "datasetVersion": "9928dbf1af1405433d2c2e40227f39fd831d3863",
+      "licence": "see the repository",
+      "citation": "Tohoku NLP, TimeMachine-bench, https://github.com/tohoku-nlp/timemachine-bench",
+      "evaluationQuestion": "Given a real Python repository whose historical dependency state no longer resolves or runs, does Drift detect the dependency change and identify the repository as affected?",
+      "doesNotEstablish": "No precision and no false-positive rate, for the same reason as swe-bump-bench: the corpus is migration failures, so every case is a positive.",
+      "groundTruth": {
+        "granularity": "project-build",
+        "exhaustive": false,
+        "basis": "Human-verified migration failures. Positives only; no non-failing control migrations.",
+        "supports": [
+          "recall",
+          "repair-success",
+          "false-safe-count"
+        ]
+      },
+      "driftCommit": "4dd1404ab2426dbf0d52b8c6eb3c6266d14970ca",
+      "driftTreeDirty": false,
+      "runDate": "2026-08-20T23:02:25.365Z",
+      "rescoredAt": null,
+      "rescoredAtCommit": null,
+      "command": "npm run eval:external -- timemachine",
+      "platform": "darwin/x64, Node v24.19.0",
+      "notes": "Detection only, on a manifest pair this harness assembles — and that construction is the weakest in this benchmark, so it is stated on every case rather than left to be inferred. The repository is fetched at its exact historical commit; the after-state repins the requirements the project itself declares to the versions the dataset records as resolving at the migration date. It is *not* built from `patch` or `gold_patch`, which are the developer's migration and are ground truth — reading the upgrade out of the fix would hand Drift the answer and call the result detection. Only declared requirements are repinned; the rest of the resolved set is the transitive closure, and writing it into a manifest would invent declarations the project never made.\n\nNo precision and no false-positive rate: every task is a migration that fails, and the corpus contains no migrations that succeed.\n\n**Not installed here: `docker`, `uv`.** TimeMachine's own reproduction is a container per task built against a date-filtered PyPI index, which is what preserves the historical resolution each task depends on. Without it the oracle was not run and no repair question was asked — those outcomes are absent from every case record rather than recorded as failures, because Drift was never asked and did not fail.",
+      "available": 100,
+      "selected": 100,
+      "attempted": 100,
+      "notRun": 0,
+      "scored": 69,
+      "excluded": {
+        "reproduction-failed": 31
+      },
+      "missingRequirements": {},
+      "negativeControls": 0,
+      "selectionMode": "all",
+      "selectionSeed": 20260819,
+      "selectionLimit": null,
+      "rates": {
+        "dependency-update detection rate": {
+          "numerator": 49,
+          "denominator": 69,
+          "value": 0.7101449275362319
+        },
+        "affected-repository identification rate": {
+          "numerator": 39,
+          "denominator": 69,
+          "value": 0.5652173913043478
+        },
+        "consumer localization rate": {
+          "numerator": 39,
+          "denominator": 69,
+          "value": 0.5652173913043478
+        },
+        "false-safe verdicts": {
+          "numerator": 5,
+          "denominator": 69,
+          "value": 0.07246376811594203
+        }
+      },
+      "confusion": null,
+      "classification": null,
+      "baseline": null,
+      "refusals": [
+        {
+          "metric": "precision",
+          "reason": "TimeMachine-bench (human-verified subset)'s annotation is not exhaustive at the granularity Drift predicts at (project-build): Human-verified migration failures. Positives only; no non-failing control migrations."
+        },
+        {
+          "metric": "F1",
+          "reason": "F1 is a harmonic mean of precision and recall, and precision is not defined here."
+        },
+        {
+          "metric": "false-positive rate",
+          "reason": "TimeMachine-bench (human-verified subset)'s annotation is not exhaustive at the granularity Drift predicts at (project-build): Human-verified migration failures. Positives only; no non-failing control migrations."
+        }
+      ],
+      "mappingCoverage": {
+        "compatible": 100
+      },
+      "breakdown": {
+        "label: migration-failure-easy": {
+          "dependency-update detection rate": {
+            "numerator": 32,
+            "denominator": 44,
+            "value": 0.7272727272727273
+          },
+          "affected-repository identification rate": {
+            "numerator": 24,
+            "denominator": 44,
+            "value": 0.5454545454545454
+          },
+          "consumer localization rate": {
+            "numerator": 24,
+            "denominator": 44,
+            "value": 0.5454545454545454
+          }
+        },
+        "label: migration-failure-medium": {
+          "dependency-update detection rate": {
+            "numerator": 15,
+            "denominator": 23,
+            "value": 0.6521739130434783
+          },
+          "affected-repository identification rate": {
+            "numerator": 13,
+            "denominator": 23,
+            "value": 0.5652173913043478
+          },
+          "consumer localization rate": {
+            "numerator": 13,
+            "denominator": 23,
+            "value": 0.5652173913043478
+          }
+        },
+        "label: migration-failure-hard": {
+          "dependency-update detection rate": {
+            "numerator": 2,
+            "denominator": 2,
+            "value": 1
+          },
+          "affected-repository identification rate": {
+            "numerator": 2,
+            "denominator": 2,
+            "value": 1
+          },
+          "consumer localization rate": {
+            "numerator": 2,
+            "denominator": 2,
+            "value": 1
+          }
+        }
+      },
+      "intervals": {
+        "dependency-update detection rate": {
+          "low": 0.5942028985507246,
+          "high": 0.8115942028985508,
+          "iterations": 2000
+        },
+        "affected-repository identification rate": {
+          "low": 0.4492753623188406,
+          "high": 0.6811594202898551,
+          "iterations": 2000
+        },
+        "consumer localization rate": {
+          "low": 0.4492753623188406,
+          "high": 0.6811594202898551,
+          "iterations": 2000
+        },
+        "false-safe verdicts": {
+          "low": 0.014492753623188406,
+          "high": 0.13043478260869565,
+          "iterations": 2000
+        }
+      },
+      "tools": [
+        {
+          "tool": "node",
+          "available": true,
+          "version": "v24.19.0",
+          "neededFor": "every npm/TypeScript case, and Drift itself"
+        },
+        {
+          "tool": "npm",
+          "available": true,
+          "version": "11.12.1",
+          "neededFor": "installing a TypeScript consumer before its build oracle can run"
+        },
+        {
+          "tool": "git",
+          "available": true,
+          "version": "git version 2.39.5 (Apple Git-154)",
+          "neededFor": "checking out an original repository at the exact evaluated commit"
+        },
+        {
+          "tool": "java",
+          "available": true,
+          "version": "openjdk version \"19\" 2022-09-20",
+          "neededFor": "any Java case"
+        },
+        {
+          "tool": "mvn",
+          "available": true,
+          "version": "Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937)",
+          "neededFor": "BUMP's Maven oracle, and building Roseau from its replication kit"
+        },
+        {
+          "tool": "docker",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure"
+        },
+        {
+          "tool": "python3",
+          "available": true,
+          "version": "Python 3.14.3",
+          "neededFor": "any Python case"
+        },
+        {
+          "tool": "uv",
+          "available": false,
+          "version": "unavailable",
+          "neededFor": "TimeMachine's documented environment setup"
+        },
+        {
+          "tool": "japicmp",
+          "available": true,
+          "version": "SYNOPSIS",
+          "neededFor": "Drift's Java API-surface diff, which its maven capability declares it requires"
+        }
+      ]
+    }
+  ]
+}

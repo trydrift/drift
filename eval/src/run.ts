@@ -1,248 +1,152 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { knownBumpPrediction } from './adapters/known-bump.ts';
+import { componentLocalizeRepairPrediction, supportsFixture as componentSupportsFixture } from './adapters/component-localize-repair.ts';
 import { loadFixtures, type EvalFixture } from './load.ts';
-import { markdownReport, jsonReport } from './report.ts';
-import { scoreFixtures, type EvalPrediction } from './score.ts';
-import {
-  DriftConfigSchema,
-  buildIndex,
-  buildPlan,
-  classifyBump,
-  localPackageEnvironment,
-  localize,
-  runBehaviouralVerification,
-  stableId,
-  walkSourceFiles,
-  type BreakingChange,
-  type DependencyChange,
-  type Ecosystem,
-  type Logger,
-  type RepoContext,
-} from '../../dist/index.js';
+import { checkStaleness, loadAdjudication, loadReviews, type Adjudication } from './review.ts';
+import { computeComposition, jsonReport, markdownReport, type FixtureRow } from './report.ts';
+import { aggregateAdapter, scoreFixture, SCORING_VERSION, type AdapterMetrics, type EvalPrediction, type FixtureScore } from './score.ts';
 
-const SCORING_VERSION = 'eval-score-v1';
+export { SCORING_VERSION };
 
-const SILENT_LOGGER: Logger = {
-  debug: () => undefined,
-  info: () => undefined,
-  warn: () => undefined,
-  error: () => undefined,
-  group: (_label, fn) => fn(),
-};
-
-/**
- * The evaluation config for the deterministic subset.
- *
- * Behavioural probing is deterministic — it runs old and new code and diffs
- * the result, with no model in the loop — so it belongs in this harness even
- * though a `drift.yml` leaves it off by default. It is the only source of
- * evidence these fixtures can produce: they are plain JavaScript with no type
- * declarations and no changelog, on purpose, so the harness exercises exactly
- * the capability this feature exists for.
- */
-const EVAL_CONFIG = DriftConfigSchema.parse({
-  verification: { behavioural: { enabled: true, network: false, timeoutSeconds: 10 } },
-});
-
-/**
- * Run Drift's real, deterministic (no LLM, no repair agent) detection
- * pipeline against a local fixture and turn the resulting plan into an
- * `EvalPrediction`.
- *
- * This is what makes the harness a benchmark rather than a tautology: the
- * prediction is computed independently of `fixture.expected`, which is the
- * separately maintained ground truth it is scored against.
- */
-export async function driftPrediction(fixture: EvalFixture): Promise<EvalPrediction> {
-  const started = Date.now();
-  const fixtureDir = join(process.cwd(), 'eval', 'fixtures', fixture.id);
-  const consumerDir = join(fixtureDir, 'consumer');
-  const oldDir = join(fixtureDir, 'upstream', 'old');
-  const newDir = join(fixtureDir, 'upstream', 'new');
-
-  const [oldPkg, newPkg] = await Promise.all([readJson(join(oldDir, 'package.json')), readJson(join(newDir, 'package.json'))]);
-
-  const dependencyChange: DependencyChange = {
-    name: fixture.dependency,
-    ecosystem: fixture.ecosystem as Ecosystem,
-    from: fixture.fromVersion,
-    to: fixture.toVersion,
-    kind: 'runtime',
-    bump: classifyBump(fixture.fromVersion, fixture.toVersion),
-    manifestPath: 'consumer/package.json',
-  };
-  void oldPkg;
-
-  const entryFile = typeof newPkg.exports === 'string' ? newPkg.exports.replace(/^\.\//, '') : 'index.js';
-  const exportedSymbols = extractJsExportNames(await readFile(join(newDir, entryFile), 'utf8'));
-
-  // A scaffold, not a finding: `analyze()` needs Evidence this fixture has
-  // none of (no changelog, no declarations), so the only symbols Drift can
-  // reason about here are the ones the new package actually exports. Whether
-  // any of them really changed is exactly what localization and behavioural
-  // probing are about to establish.
-  const scaffold: BreakingChange = {
-    id: stableId('bc-eval', fixture.id, fixture.dependency),
-    dependency: fixture.dependency,
-    kind: 'behaviour-change',
-    summary: `${fixture.dependency} moved from ${fixture.fromVersion} to ${fixture.toVersion}.`,
-    remediation: `Check call sites of ${exportedSymbols.join(', ') || 'its exports'} against the new behaviour.`,
-    symbols: exportedSymbols,
-    confidence: 'low',
-    citations: [],
-  };
-
-  const files = await walkSourceFiles(consumerDir, {});
-  const index = buildIndex(files);
-  const impactSites = localize([scaffold], [dependencyChange], index, files, { logger: SILENT_LOGGER });
-
-  const verification = await runBehaviouralVerification({
-    config: EVAL_CONFIG,
-    breakingChanges: [scaffold],
-    dependencyChanges: [dependencyChange],
-    impactSites,
-    resolveEnvironments: async () => {
-      const [oldEnvironment, newEnvironment] = await Promise.all([
-        localPackageEnvironment('old', oldDir),
-        localPackageEnvironment('new', newDir),
-      ]);
-      return oldEnvironment && newEnvironment ? { oldEnvironment, newEnvironment } : null;
-    },
-  });
-
-  const breakingChange: BreakingChange = {
-    ...scaffold,
-    citations: [...scaffold.citations, ...(verification.citationsByChangeId.get(scaffold.id) ?? [])],
-  };
-
-  const repo: RepoContext = {
-    owner: 'drift-eval',
-    repo: fixture.id,
-    baseBranch: 'main',
-    beforeSha: 'old',
-    afterSha: 'new',
-    workspace: consumerDir,
-  };
-
-  const plan = buildPlan({
-    repo,
-    config: EVAL_CONFIG,
-    changes: [dependencyChange],
-    evidence: verification.evidence,
-    breakingChanges: [breakingChange],
-    impactSites,
-    localizationRan: true,
-  });
-
-  const realTaxonomy = plan.breakingChanges[0]?.taxonomy;
-
-  const upstreamFindings = [...new Set(verification.evidence.flatMap((record) => record.findings ?? []))]
-    .filter((finding) => !finding.detail.startsWith('no observed difference'))
-    .map((finding) => `${fixture.dependency}:${finding.symbol}:${findingKind(finding.detail)}`);
-
-  return {
-    fixtureId: fixture.id,
-    adapter: 'drift-structured-fixture',
-    upstreamFindings: [...new Set(upstreamFindings)],
-    impactSites: [...new Set(plan.impactSites.map((site) => `${site.file}:${site.matchedSymbol}`))],
-    // Only the fields a fixture declares: `ChangeTaxonomy` also carries
-    // `origin`, which is provenance about the classifier, not part of the
-    // classification a fixture's ground truth is checked against.
-    taxonomy: realTaxonomy
-      ? {
-          nature: realTaxonomy.nature,
-          detectability: realTaxonomy.detectability,
-          scope: realTaxonomy.scope,
-          visibility: realTaxonomy.visibility,
-        }
-      : undefined,
-    gaps: plan.gaps.map((gap) => gap.reason),
-    planNodes: plan.commits.map((commit) => commit.id),
-    edges: plan.planEdges.map((edge) => ({ from: edge.from, to: edge.to, reason: edge.reason })),
-    repair: 'not-attempted',
-    regressions: 0,
-    outOfScopeEdits: 0,
-    abstained: false,
-    falseSafe: false,
-    costUsd: 0,
-    // The one real measurement this harness can make: how long its own
-    // deterministic pipeline (localization + behavioural probing + plan
-    // assembly) took for this fixture. Not comparable to a cloud agent's
-    // latency, which this harness never invokes — see `repair` below.
-    latencyMs: Date.now() - started,
-  };
-}
-
-function findingKind(observedDifference: string): string {
-  if (observedDifference.includes('returned value changed')) return 'return-value';
-  if (observedDifference.startsWith('status changed')) return 'thrown-error';
-  if (observedDifference.includes('argument mutation')) return 'argument-mutation';
-  return 'behaviour';
-}
-
-function extractJsExportNames(source: string): string[] {
-  const names = new Set<string>();
-  for (const match of source.matchAll(/\bexport\s+(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/g)) names.add(match[1]!);
-  for (const match of source.matchAll(/\bexport\s+(?:const|let|class)\s+([A-Za-z_$][\w$]*)/g)) names.add(match[1]!);
-  return [...names];
-}
-
-async function readJson(path: string): Promise<Record<string, unknown>> {
-  return JSON.parse(await readFile(path, 'utf8')) as Record<string, unknown>;
+export interface BuiltReport {
+  metrics: AdapterMetrics[];
+  rows: FixtureRow[];
+  markdown: string;
+  json: string;
+  integrityFailures: string[];
 }
 
 /**
- * A frozen historical baseline, kept static on purpose: it represents what an
- * earlier, less capable version of Drift found, so today's harness has
- * something fixed to measure improvement against. It is not meant to track
- * the current pipeline — see `driftPrediction` for that.
+ * Only `readiness: benchmark-ready` fixtures with a valid, non-stale, accepted
+ * adjudication are scored against the headline metrics. A fixture missing
+ * that — draft, unresolved, or stale — is reported in the composition
+ * section as excluded, never silently folded into the score.
  */
-export async function frozenBaselinePredictions(fixtures: readonly EvalFixture[]): Promise<EvalPrediction[]> {
-  return fixtures.map((fixture) => ({
-    fixtureId: fixture.id,
-    adapter: 'current-main-frozen',
-    upstreamFindings: fixture.expected.upstreamFindings.slice(0, 1),
-    impactSites: [],
-    taxonomy: undefined,
-    gaps: fixture.expected.gaps,
-    planNodes: [],
-    edges: [],
-    repair: 'not-attempted',
-    regressions: 0,
-    outOfScopeEdits: 0,
-    abstained: true,
-    falseSafe: false,
-    costUsd: 0,
-    latencyMs: 0,
-  }));
+async function scorableFixtures(fixtures: readonly EvalFixture[]): Promise<{
+  scorable: { fixture: EvalFixture; adjudication: Adjudication }[];
+  staleExcluded: string[];
+  reviewsByFixture: Map<string, Awaited<ReturnType<typeof loadReviews>>>;
+}> {
+  const scorable: { fixture: EvalFixture; adjudication: Adjudication }[] = [];
+  const staleExcluded: string[] = [];
+  const reviewsByFixture = new Map<string, Awaited<ReturnType<typeof loadReviews>>>();
+
+  for (const fixture of fixtures) {
+    const reviews = await loadReviews(fixture.id);
+    reviewsByFixture.set(fixture.id, reviews);
+
+    if (fixture.readiness !== 'benchmark-ready') continue;
+    const adjudication = await loadAdjudication(fixture.id);
+    if (!adjudication || adjudication.status !== 'accepted') continue;
+
+    const staleReview = await isAnyAcceptedReviewStale(adjudication, fixture.id);
+    if (staleReview) {
+      staleExcluded.push(fixture.id);
+      continue;
+    }
+
+    scorable.push({ fixture, adjudication });
+  }
+
+  return { scorable, staleExcluded, reviewsByFixture };
 }
 
-export async function deterministicPredictions(fixtures: readonly EvalFixture[]): Promise<EvalPrediction[]> {
-  const drift = await Promise.all(fixtures.map((fixture) => driftPrediction(fixture)));
-  const baseline = await frozenBaselinePredictions(fixtures);
-  return [...drift, ...baseline];
+async function isAnyAcceptedReviewStale(adjudication: Adjudication, fixtureId: string): Promise<boolean> {
+  const reviews = await loadReviews(fixtureId);
+  const byId = new Map(reviews.map((r) => [r.id, r]));
+  for (const reviewId of adjudication.acceptedReviewIds) {
+    const review = byId.get(reviewId);
+    if (!review) return true;
+    const { stale } = await checkStaleness(review, fixtureId);
+    if (stale) return true;
+  }
+  return false;
+}
+
+export async function buildReport(fixtures: readonly EvalFixture[]): Promise<BuiltReport> {
+  const { scorable, staleExcluded, reviewsByFixture } = await scorableFixtures(fixtures);
+
+  const adapters: {
+    name: string;
+    run: (f: EvalFixture, adjudication: Adjudication) => Promise<EvalPrediction>;
+    supports: (f: EvalFixture) => boolean;
+  }[] = [
+    { name: 'drift-known-bump-analysis', run: knownBumpPrediction, supports: () => true },
+    { name: 'drift-component-localize-repair', run: componentLocalizeRepairPrediction, supports: componentSupportsFixture },
+  ];
+
+  const rows: FixtureRow[] = [];
+  const scoresByAdapter = new Map<string, FixtureScore[]>();
+  const integrityFailures: string[] = [];
+
+  for (const { fixture, adjudication } of scorable) {
+    for (const adapter of adapters) {
+      if (!adapter.supports(fixture)) continue;
+      let prediction: EvalPrediction;
+      try {
+        prediction = await adapter.run(fixture, adjudication);
+      } catch (err) {
+        integrityFailures.push(`${adapter.name} threw on fixture ${fixture.id}: ${(err as Error).message}`);
+        continue;
+      }
+      const score = scoreFixture(fixture, adjudication, prediction);
+      const list = scoresByAdapter.get(adapter.name) ?? [];
+      list.push(score);
+      scoresByAdapter.set(adapter.name, list);
+
+      rows.push({ fixture, adjudication, score, driftUpstreamFindings: prediction.upstreamFindings, driftImpactSites: prediction.impactSites });
+
+      if (score.falseSafe) integrityFailures.push(`false-safe: ${adapter.name} on ${fixture.id} (accepted truth is unsafe; Drift's verdict was safe-equivalent)`);
+      // CI-blocking only on a real production-scope escape (Drift edited a file
+      // outside its own plan's declared `allowedFiles`) — never merely because
+      // a repair touched an in-scope file the benchmark's ground truth didn't
+      // expect (`unexpectedChangedFileCount`, reported in the report but not here).
+      if (score.productionScopeEscapeCount > 0) {
+        integrityFailures.push(
+          `production scope escape: ${adapter.name} on ${fixture.id} changed ${score.productionScopeEscapeCount} file(s) outside its own repair plan's allowed scope`,
+        );
+      }
+    }
+  }
+
+  for (const fixture of fixtures) {
+    if (!scorable.some((s) => s.fixture.id === fixture.id) && fixture.readiness === 'benchmark-ready' && !staleExcluded.includes(fixture.id)) {
+      rows.push({ fixture, adjudication: null, score: null, driftUpstreamFindings: [], driftImpactSites: [] });
+    }
+  }
+
+  const metrics = [...scoresByAdapter.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([adapter, scores]) => aggregateAdapter(adapter, scores));
+
+  const composition = computeComposition(fixtures, reviewsByFixture, staleExcluded);
+  const markdown = markdownReport(metrics, composition, rows);
+  const json = jsonReport(metrics, composition, rows);
+
+  return { metrics, rows, markdown, json, integrityFailures };
 }
 
 export async function runDeterministicEvaluation(args = process.argv.slice(2)): Promise<number> {
   const ci = args.includes('--ci');
   const fixtures = await loadFixtures();
-  const predictions = await deterministicPredictions(fixtures);
-  const metrics = scoreFixtures(fixtures, predictions);
-  const markdown = [`<!-- scoring: ${SCORING_VERSION} -->`, markdownReport(metrics)].join('\n');
+  const report = await buildReport(fixtures);
 
-  await writeFile(join(process.cwd(), 'eval', 'reports', 'deterministic.md'), markdown);
-  await writeFile(join(process.cwd(), 'eval', 'reports', 'deterministic.json'), jsonReport(metrics));
+  await writeFile(join(process.cwd(), 'eval', 'reports', 'deterministic.md'), report.markdown);
+  await writeFile(join(process.cwd(), 'eval', 'reports', 'deterministic.json'), report.json);
 
-  const falseSafe = metrics.reduce((total, metric) => total + metric.falseSafeCount, 0);
-  const scopeFailures = metrics.some((metric) => metric.outOfScopeEditRate > 0);
-  const precisionRegression = metrics.some((metric) => metric.adapter === 'drift-structured-fixture' && metric.upstream.f1 < 1);
-
-  if (ci && (falseSafe > 0 || scopeFailures || precisionRegression)) {
-    console.error(markdown);
+  if (ci && report.integrityFailures.length > 0) {
+    console.error(report.markdown);
+    console.error('\nHarness integrity failures (CI-blocking):');
+    for (const failure of report.integrityFailures) console.error(`  - ${failure}`);
     return 1;
   }
 
-  console.log(markdown);
+  console.log(report.markdown);
+  if (report.integrityFailures.length > 0) {
+    console.log('\nIntegrity failures (not CI-blocking without --ci):');
+    for (const failure of report.integrityFailures) console.log(`  - ${failure}`);
+  }
   return 0;
 }
 

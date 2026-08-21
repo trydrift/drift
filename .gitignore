@@ -29,3 +29,26 @@ drift-profile.json
 
 # A second build, kept only while A/B-ing two engine commits.
 .oldbuild/
+
+# Third-party benchmark corpora, cloned or downloaded on demand.
+#
+# These are other people's datasets — Git repositories, Zenodo replication
+# kits, Docker image metadata, and the package caches an actual reproduction
+# leaves behind. Committing them would add hundreds of megabytes this
+# repository has no right to redistribute, and the adapters that read them
+# already record the exact DOI, commit or image digest they were fetched at,
+# so the pinning that makes a run reproducible lives in the artifact rather
+# than in a vendored copy.
+#
+# Everything under `eval/external/` — the adapters, the label mappings, the
+# deterministic selection manifests, the small frozen truth extracts — IS
+# tracked, and is what makes a run repeatable from a clean checkout.
+benchmarks/*
+!benchmarks/README.md
+
+# Per-case checkpoints an external run writes as it goes.
+#
+# They exist so an interrupted run is still re-scorable, and a *completed* run
+# supersedes its own with `cases.jsonl.gz`. Committing both would publish the
+# same observations twice, uncompressed.
+eval/results/*/cases.partial.jsonl

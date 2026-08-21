@@ -1,0 +1,148 @@
+{
+  "datasetId": "bump",
+  "datasetClass": "consumer-impact",
+  "available": 571,
+  "selected": 40,
+  "attempted": 40,
+  "notRun": 0,
+  "scored": 39,
+  "excluded": {
+    "source-unavailable": 1
+  },
+  "missingRequirements": {},
+  "rates": {
+    "dependency-update detection rate": {
+      "numerator": 34,
+      "denominator": 39,
+      "value": 0.8717948717948718
+    },
+    "affected-repository identification rate": {
+      "numerator": 7,
+      "denominator": 39,
+      "value": 0.1794871794871795
+    },
+    "consumer localization rate": {
+      "numerator": 7,
+      "denominator": 39,
+      "value": 0.1794871794871795
+    },
+    "false-safe verdicts": {
+      "numerator": 16,
+      "denominator": 39,
+      "value": 0.41025641025641024
+    }
+  },
+  "refusals": [
+    {
+      "metric": "precision",
+      "reason": "BUMP — reproducible breaking dependency updates in Java's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each record is one reproduced breaking dependency update with a recorded failure category. Positives only, and no annotation of which consumer source lines the break lands on."
+    },
+    {
+      "metric": "F1",
+      "reason": "F1 is a harmonic mean of precision and recall, and precision is not defined here."
+    },
+    {
+      "metric": "false-positive rate",
+      "reason": "BUMP — reproducible breaking dependency updates in Java's annotation is not exhaustive at the granularity Drift predicts at (project-build): Each record is one reproduced breaking dependency update with a recorded failure category. Positives only, and no annotation of which consumer source lines the break lands on."
+    }
+  ],
+  "negativeControls": 0,
+  "confusion": null,
+  "classification": null,
+  "baseline": null,
+  "breakdown": {
+    "label: ENFORCER_FAILURE": {
+      "dependency-update detection rate": {
+        "numerator": 7,
+        "denominator": 9,
+        "value": 0.7777777777777778
+      },
+      "affected-repository identification rate": {
+        "numerator": 0,
+        "denominator": 9,
+        "value": 0
+      },
+      "consumer localization rate": {
+        "numerator": 0,
+        "denominator": 9,
+        "value": 0
+      }
+    },
+    "label: TEST_FAILURE": {
+      "dependency-update detection rate": {
+        "numerator": 15,
+        "denominator": 16,
+        "value": 0.9375
+      },
+      "affected-repository identification rate": {
+        "numerator": 3,
+        "denominator": 16,
+        "value": 0.1875
+      },
+      "consumer localization rate": {
+        "numerator": 3,
+        "denominator": 16,
+        "value": 0.1875
+      }
+    },
+    "label: COMPILATION_FAILURE": {
+      "dependency-update detection rate": {
+        "numerator": 11,
+        "denominator": 12,
+        "value": 0.9166666666666666
+      },
+      "affected-repository identification rate": {
+        "numerator": 4,
+        "denominator": 12,
+        "value": 0.3333333333333333
+      },
+      "consumer localization rate": {
+        "numerator": 4,
+        "denominator": 12,
+        "value": 0.3333333333333333
+      }
+    },
+    "label: DEPENDENCY_LOCK_FAILURE": {
+      "dependency-update detection rate": {
+        "numerator": 1,
+        "denominator": 2,
+        "value": 0.5
+      },
+      "affected-repository identification rate": {
+        "numerator": 0,
+        "denominator": 2,
+        "value": 0
+      },
+      "consumer localization rate": {
+        "numerator": 0,
+        "denominator": 2,
+        "value": 0
+      }
+    }
+  },
+  "intervals": {
+    "dependency-update detection rate": {
+      "low": 0.7692307692307693,
+      "high": 0.9743589743589743,
+      "iterations": 2000
+    },
+    "affected-repository identification rate": {
+      "low": 0.05128205128205128,
+      "high": 0.3076923076923077,
+      "iterations": 2000
+    },
+    "consumer localization rate": {
+      "low": 0.05128205128205128,
+      "high": 0.3076923076923077,
+      "iterations": 2000
+    },
+    "false-safe verdicts": {
+      "low": 0.2564102564102564,
+      "high": 0.5641025641025641,
+      "iterations": 2000
+    }
+  },
+  "mappingCoverage": {
+    "compatible": 40
+  }
+}

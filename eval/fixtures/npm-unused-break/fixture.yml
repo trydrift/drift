@@ -1,0 +1,36 @@
+id: npm-unused-break
+ecosystem: npm
+dependency: fixture-lib
+fromVersion: 1.0.0
+toVersion: 2.0.0
+scenarioLabel: unused-upstream-break
+source:
+  repository: fixture-local
+  licence: MIT
+exposure: direct
+oracles:
+  baseline:
+    command: npm test
+    expect: pass
+  broken:
+    command: npm test
+    expect: pass
+  repaired:
+    command: npm test
+    expect: pass
+complexity: small
+network: disabled
+readiness: benchmark-ready
+provenance:
+  kind: synthetic
+  author: eval-harness
+  createdAt: 2026-08-19
+  notes: >
+    Negative/control fixture. fixture-lib removes removedFn between 1.0.0 and
+    2.0.0 — a real, upstream breaking change — but consumer/src/app.js only
+    ever imports and calls usedFn, which is unchanged. The upgrade is
+    therefore safe for this specific consumer even though the dependency has
+    a real breaking change: the broken oracle is expected to PASS (this is a
+    "safe upgrade" variant, not the usual baseline-pass/broken-fail shape —
+    see eval/README.md's oracle section). Ground truth lives in reviews/ and
+    adjudication.yml; not here.

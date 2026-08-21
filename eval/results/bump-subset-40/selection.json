@@ -1,0 +1,972 @@
+{
+  "seed": 20260819,
+  "limit": 40,
+  "mode": "stratified-sample",
+  "ids": [
+    "1280336ece95fdbbed78274a754f90694f52ae56",
+    "13fd75e233a5cb2771a6cb186c0decaed6d6545a",
+    "24d59062ad4e93aa8054b9d3a8f97a30e77ab785",
+    "25926ea2f0e0adaec0238bc7623d0a78e70c96bd",
+    "2bc88ebc6046473426ebb029c33d7050662d4c2b",
+    "3572a1ecc0154c61e05505aed56055b9c5e539a6",
+    "441f7f07d9265cc1d4c4f369ee6524973d9c6e17",
+    "474422dcefb61cf1460c9f218a11b7ba693725c2",
+    "4d4a773e3498e14932bfaf82f957c2a3f5c2cfe3",
+    "4ef12d5388d4d32000a9e598c2ae29a5842e80df",
+    "51e103fc80aec2526ab5dd3bcc2d4d5ce4177842",
+    "5287fc631fa78e7f11d39983824cdd4215b9a03b",
+    "59849004763ffd66d14047d51908192ba0551a73",
+    "5e6846a50737c240be6fedb6626f0d32906d10ad",
+    "65200df71d5f6ab1c5502f74a5dc7bcbda459563",
+    "732226b0d9e52a355dc50143faeba6a84bb2aedc",
+    "735c2ce3d22b03d5781de4584a6b5f5dff8f9a05",
+    "78252d13ff355a0205fff6fb7c19791412bc6478",
+    "7c90c61e90e9936d8a7e355de8900214c759cb61",
+    "88c1f903cede03ff371059cdaf009dab12007043",
+    "8c4d6c00ba37fa1d09faa90798f0c33e97d0fb69",
+    "8e1f0f08eef839903067c7c11432117c4897d0cd",
+    "940214f7419c564431163c4599d24ce3152a2ca0",
+    "99a43573c3ea90d8b942627b8ea947933d229863",
+    "a698299490d70ce07b7af6e29ebf4627d412f4dd",
+    "a80dac86d1caa3958c45c036d93a7d9231d88fbf",
+    "aa14451c6f218af9c08e846345d83259eb7d46a8",
+    "abe29340c60b0bfe93b13b638838163cf355eb03",
+    "ad80bdff62b1b0520d3fb9e8d627532a38a7c60c",
+    "add76d2702720eec58110eb133a1511af7455f97",
+    "ae0c985ae9bd343310b66c5d9895aa068b5ef505",
+    "b736ca80eab43feae1b3224f8402e0d2420fd035",
+    "b7e4be7e46c5360726104023156ae726da6c972e",
+    "bab3a3c5b1aa9ee57dcbff7f146576f2c0c7251d",
+    "bfe01b1632ae11371134a34066ad2d9e23e374b3",
+    "d2fb00d2a9b8268caf773f70985f39be6eae8ea7",
+    "dc7825479563597d41c2b2fef1540a29d8b8ab36",
+    "f6aa80590030f7109e6ae80b58fd32fd176308c4",
+    "ff77ec9ef379e9fee5f45f4fd88230e9bbbe4b89",
+    "ff98f9e99811cd3186d3819d19b5b7f8143a0632"
+  ],
+  "strata": {
+    "COMPILATION_FAILURE · minor · quickfix-j/quickfixj": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · other · jenkinsci/publish-over-ssh-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · International-Data-Spaces-Association/IDS-Messaging-Services": {
+      "available": 35,
+      "selected": 1
+    },
+    "ENFORCER_FAILURE · minor · googleapis/java-storage-nio": {
+      "available": 4,
+      "selected": 1
+    },
+    "TEST_FAILURE · major · retest/recheck": {
+      "available": 8,
+      "selected": 1
+    },
+    "COMPILATION_FAILURE · major · feedzai/pdb": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · major · feedzai/pdb": {
+      "available": 3,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · minor · snowflakedb/snowflake-jdbc": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · other · versly/wsdoc": {
+      "available": 3,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · International-Data-Spaces-Association/IDS-Messaging-Services": {
+      "available": 5,
+      "selected": 1
+    },
+    "COMPILATION_FAILURE · minor · pinterest/singer": {
+      "available": 4,
+      "selected": 1
+    },
+    "COMPILATION_FAILURE · other · jenkinsci/code-coverage-api-plugin": {
+      "available": 12,
+      "selected": 1
+    },
+    "TEST_FAILURE · major · s4u/sign-maven-plugin": {
+      "available": 8,
+      "selected": 1
+    },
+    "ENFORCER_FAILURE · major · apache/opennlp": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · alphagov/pay-adminusers": {
+      "available": 7,
+      "selected": 1
+    },
+    "COMPILATION_FAILURE · major · camunda-community-hub/camunda-platform-7-mockito": {
+      "available": 12,
+      "selected": 1
+    },
+    "ENFORCER_FAILURE · minor · assertj/assertj-guava": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · major · dadoonet/fscrawler": {
+      "available": 13,
+      "selected": 1
+    },
+    "ENFORCER_FAILURE · other · jenkinsci/pull-request-monitoring-plugin": {
+      "available": 7,
+      "selected": 1
+    },
+    "COMPILATION_FAILURE · major · simplelocalize/simplelocalize-cli": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · xdev-software/biapi": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · major · fmtn/a": {
+      "available": 2,
+      "selected": 0
+    },
+    "TEST_FAILURE · other · pac4j/dropwizard-pac4j": {
+      "available": 13,
+      "selected": 1
+    },
+    "ENFORCER_FAILURE · minor · googleapis/java-pubsub-group-kafka-connector": {
+      "available": 9,
+      "selected": 1
+    },
+    "COMPILATION_FAILURE · major · Samsung/LPVS": {
+      "available": 9,
+      "selected": 1
+    },
+    "COMPILATION_FAILURE · other · jadler-mocking/jadler": {
+      "available": 9,
+      "selected": 1
+    },
+    "ENFORCER_FAILURE · major · apache/causeway": {
+      "available": 3,
+      "selected": 0
+    },
+    "TEST_FAILURE · major · pholser/junit-quickcheck": {
+      "available": 4,
+      "selected": 1
+    },
+    "WERROR_FAILURE · minor · jcabi/jcabi-maven-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · wireapp/lithium": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · pac4j/dropwizard-pac4j": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · other · International-Data-Spaces-Association/IDS-Messaging-Services": {
+      "available": 7,
+      "selected": 1
+    },
+    "TEST_FAILURE · major · leonardehrenfried/jspc-maven-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · major · alphagov/pay-adminusers": {
+      "available": 7,
+      "selected": 1
+    },
+    "TEST_FAILURE · minor · damianszczepanik/cucumber-reporting": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · other · jenkinsci/config-file-provider-plugin": {
+      "available": 6,
+      "selected": 1
+    },
+    "TEST_FAILURE · major · geosolutions-it/geostore": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · other · artipie/docker-adapter": {
+      "available": 11,
+      "selected": 1
+    },
+    "ENFORCER_FAILURE · other · jenkinsci/forensics-api-plugin": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · NemProject/nem": {
+      "available": 14,
+      "selected": 1
+    },
+    "DEPENDENCY_RESOLUTION_FAILURE · major · introproventures/graphql-jpa-query": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · btrplace/scheduler": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · allure-framework/allure-maven": {
+      "available": 3,
+      "selected": 1
+    },
+    "ENFORCER_FAILURE · other · jenkinsci/amazon-ecr-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · micycle1/PGS": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · other · ORCID/ORCID-Source": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · s4u/pgpverify-maven-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · patch · apache/logging-chainsaw": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · premium-minds/wicket-crudifier": {
+      "available": 3,
+      "selected": 0
+    },
+    "DEPENDENCY_LOCK_FAILURE · patch · vandmo/dependency-lock-maven-plugin": {
+      "available": 8,
+      "selected": 1
+    },
+    "COMPILATION_FAILURE · minor · mathieucarbou/license-maven-plugin": {
+      "available": 2,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · tokuhirom/avans": {
+      "available": 3,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · assertj/assertj-vavr": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · other · jenkinsci/github-oauth-plugin": {
+      "available": 12,
+      "selected": 1
+    },
+    "ENFORCER_FAILURE · minor · codehaus-plexus/plexus-compiler": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · takari/polyglot-maven": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · elimu-ai/webapp": {
+      "available": 6,
+      "selected": 1
+    },
+    "COMPILATION_FAILURE · minor · knaufk/flink-faker": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · minor · googleapis/java-firestore": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · other · alphagov/pay-cardid": {
+      "available": 8,
+      "selected": 1
+    },
+    "COMPILATION_FAILURE · minor · takari/polyglot-maven": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · jcabi/jcabi-s3": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · other · pac4j/dropwizard-pac4j": {
+      "available": 5,
+      "selected": 1
+    },
+    "ENFORCER_FAILURE · patch · googleapis/google-cloud-java": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · other · jenkinsci/github-checks-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · mathieucarbou/license-maven-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · minor · googleapis/google-cloud-java": {
+      "available": 3,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · minor · quick-perf/quickperf": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · igniterealtime/openfire-hazelcast-plugin": {
+      "available": 2,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · matteobaccan/html2pop3": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · other · qqxx6661/log-record": {
+      "available": 3,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · apache/bval": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · ASSERT-KTH/depclean": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · major · apache/directory-scimple": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · major · International-Data-Spaces-Association/IDS-Messaging-Services": {
+      "available": 8,
+      "selected": 1
+    },
+    "COMPILATION_FAILURE · major · premium-minds/billy": {
+      "available": 3,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · zold-io/java-api": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · major · camunda-community-hub/camunda-platform-7-camel": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · volodya-lombrozo/jtcop": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · pac4j/dropwizard-pac4j": {
+      "available": 5,
+      "selected": 1
+    },
+    "TEST_FAILURE · major · mathieucarbou/license-maven-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · patch · googleapis/java-pubsub-group-kafka-connector": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · sabomichal/jooq-meta-postgres-flyway": {
+      "available": 6,
+      "selected": 1
+    },
+    "COMPILATION_FAILURE · other · ASSERT-KTH/sorald": {
+      "available": 4,
+      "selected": 1
+    },
+    "ENFORCER_FAILURE · minor · charite/jannovar": {
+      "available": 2,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · other · quick-perf/quickperf": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · other · jenkinsci/rest-list-parameter-plugin": {
+      "available": 6,
+      "selected": 1
+    },
+    "COMPILATION_FAILURE · other · googleapis/google-cloud-java": {
+      "available": 3,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · guhilling/cdi-test": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · other · codehaus-plexus/plexus-archiver": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · games647/ChangeSkin": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · uPortal-Project/CoursesPortlet": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · retest/recheck.cli": {
+      "available": 6,
+      "selected": 1
+    },
+    "COMPILATION_FAILURE · other · kstateome/lti-launch": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · major · searls/jasmine-maven-plugin": {
+      "available": 7,
+      "selected": 1
+    },
+    "COMPILATION_FAILURE · major · maxmind/minfraud-api-java": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · patch · googleapis/java-translate": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · minor · jenkinsci/nexus-artifact-uploader-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · feedzai/pdb": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · pkiraly/qa-catalogue": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · Refactoring-Bot/Refactoring-Bot": {
+      "available": 4,
+      "selected": 1
+    },
+    "COMPILATION_FAILURE · major · kokuwaio/micronaut-openapi-codegen": {
+      "available": 6,
+      "selected": 1
+    },
+    "TEST_FAILURE · minor · codehaus-plexus/plexus-archiver": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · other · premium-minds/billy": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · open-pdf-sign/open-pdf-sign": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · other · artipie/http": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · major · googleapis/java-datastore": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · major · pmckeown/dependency-track-maven-plugin": {
+      "available": 4,
+      "selected": 1
+    },
+    "ENFORCER_FAILURE · other · jenkinsci/sloccount-plugin": {
+      "available": 7,
+      "selected": 1
+    },
+    "ENFORCER_FAILURE · major · googleapis/java-firestore": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · hantsy/jakartaee-mvc-sample": {
+      "available": 2,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · minor · googleapis/java-pubsublite": {
+      "available": 2,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · minor · s4u/pgpverify-maven-plugin": {
+      "available": 3,
+      "selected": 0
+    },
+    "TEST_FAILURE · other · lukas-krecan/JsonUnit": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · other · jenkinsci/github-checks-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · patch · matteobaccan/html2pop3": {
+      "available": 3,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · minor · googleapis/java-bigtable": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · btrplace/scheduler": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · jcabi/jcabi-ssh": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · other · splunk/kafka-connect-splunk": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · minor · pac4j/dropwizard-pac4j": {
+      "available": 3,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · fmtn/a": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · other · jericks/geoserver-shell": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · googleapis/java-pubsublite": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · jenkinsci/incrementals-tools": {
+      "available": 2,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · other · jenkinsci/cppcheck-plugin": {
+      "available": 6,
+      "selected": 1
+    },
+    "DEPENDENCY_LOCK_FAILURE · other · vandmo/dependency-lock-maven-plugin": {
+      "available": 5,
+      "selected": 1
+    },
+    "ENFORCER_FAILURE · other · googleapis/java-translate": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · Wmaarts/pitest-mutation-testing-elements-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · artipie/http": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · minor · googleapis/gax-java": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · apache/myfaces-tobago": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · hap-java/HAP-Java": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · google/guice": {
+      "available": 3,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · other · wesleyosantos91/poc-multi-module-arch-hexagonal-springboot": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · other · premium-minds/billy": {
+      "available": 3,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · lukas-krecan/future-converter": {
+      "available": 2,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · other · jenkinsci/webhook-step-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "WERROR_FAILURE · other · artipie/http": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · other · simplelocalize/simplelocalize-cli": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · other · googleapis/java-datastore": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · major · spotify/missinglink": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · other · OneBusAway/onebusaway-gtfs-modules": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · major · dadoonet/fscrawler": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · jcabi/jcabi-simpledb": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · 1and1/snmpman": {
+      "available": 2,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · major · googleapis/java-bigquery": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · other · BadSkater0729/WorldwideChat": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · facebook/facebook-java-business-sdk": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · spotify/semantic-metrics": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · minor · googleapis/java-datastore": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · other · pkiraly/qa-catalogue": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · googleapis/java-pubsub-group-kafka-connector": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · major · pac4j/dropwizard-pac4j": {
+      "available": 2,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · other · jenkinsci/file-operations-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · major · jadler-mocking/jadler": {
+      "available": 3,
+      "selected": 0
+    },
+    "TEST_FAILURE · major · citerus/dddsample-core": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · internetofwater/nldi-services": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · patch · googleapis/gax-java": {
+      "available": 2,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · open-pdf-sign/open-pdf-sign": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · quick-perf/quickperf": {
+      "available": 1,
+      "selected": 0
+    },
+    "DEPENDENCY_RESOLUTION_FAILURE · patch · funkemunky/Kauri": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · patch · s4u/pgpverify-maven-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · jcabi/jcabi-http": {
+      "available": 2,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · jcabi/jcabi-ssh": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · jcabi/jcabi-github": {
+      "available": 1,
+      "selected": 0
+    },
+    "WERROR_FAILURE · other · artipie/docker-adapter": {
+      "available": 3,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · other · googleapis/java-storage": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · geosolutions-it/geostore": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · major · googleapis/gax-java": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · informatici/openhospital-core": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · jenkinsci/incrementals-tools": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · jiangxincode/ApkToolBoxGUI": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · getgauge/gauge-java": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · patch · apache/ws-wss4j": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · other · NemProject/nem": {
+      "available": 2,
+      "selected": 0
+    },
+    "TEST_FAILURE · other · simplelocalize/simplelocalize-cli": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · other · spotify/github-java-client": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · other · tamtam-chat/tamtam-bot-api": {
+      "available": 2,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · oripa/oripa": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · other · googleapis/java-storage-nio": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · v12technology/fluxtion": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · apache/jclouds": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · jenkinsci/artifactory-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · minor · googleapis/java-spanner-jdbc": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · equinor/neqsim": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · other · ASSERT-KTH/flacoco": {
+      "available": 1,
+      "selected": 0
+    },
+    "DEPENDENCY_RESOLUTION_FAILURE · other · googleapis/google-cloud-java": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · versly/wsdoc": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · other · OCR4all/OCR4all": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · jcabi/jcabi-http": {
+      "available": 1,
+      "selected": 0
+    },
+    "DEPENDENCY_RESOLUTION_FAILURE · other · kiegroup/optaplanner-wb": {
+      "available": 1,
+      "selected": 0
+    },
+    "WERROR_FAILURE · other · NemProject/nem": {
+      "available": 2,
+      "selected": 0
+    },
+    "DEPENDENCY_LOCK_FAILURE · minor · vandmo/dependency-lock-maven-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · scoverage/scoverage-maven-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · smoketurner/dropwizard-graphql": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · s4u/pgpverify-maven-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · patch · lookfirst/sardine": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · googleapis/java-pubsub-group-kafka-connector": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · patch · getgauge/gauge-java": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · other · equinor/neqsim": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · takari/polyglot-maven": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · minor · sitture/env-config": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · patch · btrplace/scheduler": {
+      "available": 2,
+      "selected": 0
+    },
+    "TEST_FAILURE · other · jcabi/jcabi-simpledb": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · saucelabs/ci-sauce": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · patch · arextest/arex-agent-java": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · major · googleapis/java-vision": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · other · artipie/files-adapter": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · minor · googleapis/java-bigquery": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · micycle1/PGS": {
+      "available": 2,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · RedisGraph/JRedisGraph": {
+      "available": 1,
+      "selected": 0
+    },
+    "WERROR_FAILURE · patch · jcabi/jcabi-maven-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · codehaus-plexus/plexus-archiver": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · apache/myfaces-tobago": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · other · kstateome/lti-launch": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · minor · premium-minds/billy": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · knowm/XChange": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · other · P2P-Develop/PeyangSuperbAntiCheat": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · minor · SPARQL-Anything/sparql.anything": {
+      "available": 1,
+      "selected": 0
+    },
+    "TEST_FAILURE · major · quarkiverse/quarkus-micrometer-registry": {
+      "available": 1,
+      "selected": 0
+    },
+    "ENFORCER_FAILURE · other · jenkinsci/postbuildscript-plugin": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · sabomichal/liquibase-mssql": {
+      "available": 1,
+      "selected": 0
+    },
+    "COMPILATION_FAILURE · major · pholser/junit-quickcheck": {
+      "available": 1,
+      "selected": 0
+    }
+  },
+  "available": 571,
+  "dataset": {
+    "id": "bump",
+    "title": "BUMP — reproducible breaking dependency updates in Java",
+    "source": {
+      "kind": "git",
+      "url": "https://github.com/chains-project/bump",
+      "version": "unresolved"
+    },
+    "licence": "see the repository",
+    "citation": "Frank Reyes et al., \"BUMP: A Benchmark of Reproducible Breaking Dependency Updates\", arXiv:2401.09906; data at https://github.com/chains-project/bump, archive at DOI 10.5281/zenodo.10041883.",
+    "ecosystem": "maven",
+    "datasetClass": "consumer-impact",
+    "evaluationQuestion": "Given a real Java project at the commit where a dependency update broke its Maven build, does Drift detect the update and identify the project as affected?",
+    "doesNotEstablish": "No precision and no false-positive rate. Every record is a reproduced breaking update; there are no non-breaking control updates in the corpus.",
+    "groundTruth": {
+      "granularity": "project-build",
+      "exhaustive": false,
+      "basis": "Each record is one reproduced breaking dependency update with a recorded failure category. Positives only, and no annotation of which consumer source lines the break lands on.",
+      "supports": [
+        "recall",
+        "repair-success",
+        "false-safe-count"
+      ]
+    },
+    "localPath": "bump"
+  }
+}

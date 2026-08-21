@@ -1,0 +1,18 @@
+schemaVersion: drift-bench-case-v1
+caseId: npm-unused-break
+adjudicationRef: adjudication.yml
+developerPatch: null
+developerPatchFiles: []
+hiddenChecks:
+  - id: preserves-shout
+    description: The consumer still exports shout(name) and it still returns the
+      upper-cased name, including for an input the project's own check never
+      uses.
+    files:
+      - behaviour.mjs
+    command: node hidden/behaviour.mjs
+    expect: pass
+    provenance: benchmark-added
+triggerSignature: []
+baselineSignature: []
+notes: Imported from eval/fixtures/npm-unused-break by fixture-import-v1.

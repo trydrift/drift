@@ -1,0 +1,327 @@
+import { execFile as execFileCallback } from 'node:child_process';
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+import { promisify } from 'node:util';
+import type { HiddenCheck, PublicCase } from '../case/schema.ts';
+import type { MaterializedCase } from '../case/materialize.ts';
+import type { OracleStageArtifact } from '../artifacts/prediction.ts';
+import { extractDiagnostics, processExitDiagnostic, signatureOf, type Diagnostic } from './signature.ts';
+import { parseCommand, type ParsedCommand } from './command.ts';
+
+const execFile = promisify(execFileCallback);
+
+/**
+ * Runs one oracle stage against a disposable copy of the case, and records
+ * *what* failed rather than only whether something did.
+ *
+ * Three stages, not two, and the middle one is the one benchmarks usually
+ * skip. BASELINE (old dependency, original consumer) proves the consumer
+ * worked before the upgrade, so a later repaired pass means the repair did
+ * something rather than the check being trivially green. BROKEN (new
+ * dependency, original consumer, untouched) proves the upgrade actually breaks
+ * this consumer — without it, a "successful repair" can be a repair of
+ * nothing. REPAIRED runs only when a repair was genuinely attempted.
+ *
+ * Every stage's output is parsed into a failure signature, so the evaluator
+ * can require that a repair resolves the *specific* failures the upgrade
+ * introduced and introduces none of its own, instead of comparing counts.
+ *
+ * `unable-to-run` is a first-class outcome and never matches an expectation.
+ * An install that could not complete is an infrastructure fact about this
+ * machine, and scoring it as either a product success or a product failure
+ * would be reporting a fiction in both directions.
+ */
+
+export type StageName = 'baseline' | 'broken' | 'repaired' | 'full-ci';
+
+export interface StageRunOptions {
+  stage: StageName;
+  command: string;
+  expected: 'pass' | 'fail';
+  /** Which frozen upstream tree the consumer is pointed at for this stage. */
+  dependencyVersion: 'old' | 'new';
+  /** Applies a repair to the disposable consumer copy before install. Baseline and broken pass through untouched. */
+  prepareConsumer?: (consumerDir: string) => Promise<void>;
+  /** Overrides the case's install command, for a stage that needs a different one. */
+  installCommand?: string;
+  /**
+   * Benchmark-added behavioural assertions, run after the project's own check
+   * in the same disposable copy.
+   *
+   * Supplied by the caller rather than read here, for the same reason the
+   * reproducibility gate takes `goldRepair` as a callback: this module is
+   * Layer B machinery and must stay unable to reach private truth on its own.
+   * The files a check ships are written into the *copy*, never into the
+   * materialized workspace a prediction adapter or a coding agent sees.
+   */
+  hiddenChecks?: readonly HiddenCheck[];
+}
+
+const MAX_EXCERPT = 4000;
+const MAX_BUFFER = 32 * 1024 * 1024;
+
+export async function runCaseStage(
+  publicCase: PublicCase,
+  materialized: MaterializedCase,
+  options: StageRunOptions,
+): Promise<OracleStageArtifact> {
+  const started = Date.now();
+  const temp = await mkdtemp(join(tmpdir(), `drift-eval-${options.stage}-`));
+
+  try {
+    const consumerDir = join(temp, 'consumer');
+    const upstreamDir = join(temp, 'upstream', options.dependencyVersion);
+    await cp(materialized.root, consumerDir, { recursive: true });
+    await cp(
+      options.dependencyVersion === 'old' ? materialized.upstreamOldDir : materialized.upstreamNewDir,
+      upstreamDir,
+      { recursive: true },
+    );
+
+    // The manifest declares a real published version so that *detection* has
+    // something to diff; installation has to resolve it somewhere, and for an
+    // offline case that somewhere is the frozen tree. Rewriting the specifier
+    // here — rather than in the case data — is what lets both be true at once.
+    await repointDependency(consumerDir, publicCase.dependency.name, `../upstream/${options.dependencyVersion}`);
+
+    if (options.prepareConsumer) {
+      try {
+        await options.prepareConsumer(consumerDir);
+      } catch (err) {
+        // A repair or gold patch that will not apply is a real, reportable
+        // outcome about that patch -- never an exception that takes down the
+        // sweep. `unable-to-run` keeps it out of both the success and the
+        // failure column, and the reason travels in the excerpt.
+        return {
+          stage: options.stage,
+          expected: options.expected,
+          observed: 'unable-to-run',
+          matchesExpectation: false,
+          signature: [],
+          exitCode: null,
+          outputExcerpt: `prepareConsumer failed: ${(err as Error).message}`,
+          durationMs: Date.now() - started,
+        };
+      }
+    }
+
+    const install = await runCommand(consumerDir, options.installCommand ?? publicCase.oracles.install, publicCase);
+    if (install.code !== 0) {
+      return {
+        stage: options.stage,
+        expected: options.expected,
+        observed: 'unable-to-run',
+        matchesExpectation: false,
+        signature: [],
+        exitCode: install.code,
+        outputExcerpt: excerpt(install.output),
+        durationMs: Date.now() - started,
+      };
+    }
+
+    const run = await runCommand(consumerDir, options.command, publicCase);
+    const diagnostics = extractDiagnostics(run.output, { cwd: consumerDir });
+    // A failure that produced nothing this parser recognizes still has to be
+    // *some* identity, or two unrelated unreadable failures would compare
+    // equal to each other and to nothing. `process:exit:<code>` is that
+    // identity, and it reads as "failed for an unreadable reason" in a report.
+    if (run.code !== 0 && diagnostics.length === 0) diagnostics.push(processExitDiagnostic(run.code));
+
+    const hidden = await runHiddenChecks(consumerDir, publicCase, options.hiddenChecks ?? []);
+
+    // A hidden check that could not execute makes the whole stage
+    // uninterpretable, and says so. It is deliberately not downgraded to "the
+    // project's own script passed, so call it a pass": the stage's job is to
+    // decide whether this state is correct, and one of the assertions that
+    // decides it did not run.
+    if (hidden.unableToRun.length > 0) {
+      return {
+        stage: options.stage,
+        expected: options.expected,
+        observed: 'unable-to-run',
+        matchesExpectation: false,
+        signature: [],
+        exitCode: run.code,
+        outputExcerpt: excerpt([...hidden.unableToRun, run.output].join('\n')),
+        durationMs: Date.now() - started,
+      };
+    }
+
+    diagnostics.push(...hidden.diagnostics);
+
+    // A hidden check that did not do what a correct state must do makes the
+    // stage a failure, whatever the project's own script said. That is the
+    // whole point: a destructive "repair" leaves the project's script green.
+    const observed: OracleStageArtifact['observed'] = run.spawnFailed
+      ? 'unable-to-run'
+      : run.code === 0 && !hidden.violated
+        ? 'pass'
+        : 'fail';
+
+    return {
+      stage: options.stage,
+      expected: options.expected,
+      observed,
+      matchesExpectation: observed !== 'unable-to-run' && observed === options.expected,
+      signature: signatureOf(diagnostics),
+      exitCode: run.code,
+      outputExcerpt: excerpt(hidden.output ? `${run.output}\n${hidden.output}` : run.output),
+      durationMs: Date.now() - started,
+    };
+  } finally {
+    await rm(temp, { recursive: true, force: true });
+  }
+}
+
+/**
+ * Runs each hidden check in the same disposable consumer copy and returns the
+ * diagnostics it produced.
+ *
+ * Identities are namespaced with `hidden:<check id>:` so a hidden failure is a
+ * distinct member of a stage's signature and flows through the existing
+ * fail-to-pass set algebra untouched. Nothing new has to know about hidden
+ * checks: a behaviour the upgrade broke appears in the trigger set, and a
+ * repair that deleted the behaviour instead of migrating it leaves that
+ * identity unresolved (or replaces it with a new one), so it can reach
+ * `partially-repaired` or `introduced-regression` but never `repaired`.
+ *
+ * A check that produced no parseable diagnostic still gets one, for the same
+ * reason the project's own command does: two unreadable failures must not
+ * compare equal to each other and to nothing.
+ */
+async function runHiddenChecks(
+  consumerDir: string,
+  publicCase: PublicCase,
+  checks: readonly HiddenCheck[],
+): Promise<{ diagnostics: Diagnostic[]; violated: boolean; unableToRun: string[]; output: string }> {
+  const diagnostics: Diagnostic[] = [];
+  const output: string[] = [];
+  const unableToRun: string[] = [];
+  let violated = false;
+
+  for (const check of checks) {
+    try {
+      for (const [path, content] of Object.entries(check.files)) {
+        const target = join(consumerDir, path);
+        await mkdir(dirname(target), { recursive: true });
+        await writeFile(target, content, 'utf8');
+      }
+    } catch (err) {
+      // The check's own files could not be written, so the assertion never
+      // ran. That is a fact about this machine, not about the repair.
+      unableToRun.push(`hidden check "${check.id}" could not be staged: ${(err as Error).message}`);
+      continue;
+    }
+
+    const result = await runCommand(consumerDir, check.command, publicCase);
+
+    // A check whose command could not be *started* — a missing interpreter, a
+    // permission error — has asserted nothing. Previously this compared
+    // `unable-to-run` against the check's expectation, found them unequal, and
+    // recorded an ordinary behavioural violation: a broken toolchain became a
+    // product failure, and a repair was charged for it. An assertion that
+    // could not execute and an assertion that executed and failed are
+    // different facts, and only the second is about the code.
+    if (result.spawnFailed) {
+      unableToRun.push(
+        `hidden check "${check.id}" (${check.description}) could not be executed: ${result.output.trim() || 'the command could not be started'}`,
+      );
+      continue;
+    }
+
+    const observed = result.code === 0 ? 'pass' : 'fail';
+    if (observed === check.expect) continue;
+
+    violated = true;
+    output.push(`hidden check "${check.id}" (${check.description}) expected ${check.expect}, observed ${observed}:\n${result.output.trim()}`);
+    const found = extractDiagnostics(result.output, { cwd: consumerDir });
+    const raised = found.length > 0 ? found : [processExitDiagnostic(result.code)];
+    for (const diagnostic of raised) {
+      diagnostics.push({ ...diagnostic, identity: `hidden:${check.id}:${diagnostic.identity}` });
+    }
+  }
+
+  return { diagnostics, violated, unableToRun, output: output.join('\n') };
+}
+
+interface CommandResult {
+  code: number;
+  output: string;
+  /** The binary could not be started at all — distinct from it running and failing. */
+  spawnFailed: boolean;
+}
+
+async function runCommand(cwd: string, command: string, publicCase: PublicCase): Promise<CommandResult> {
+  let parsed: ParsedCommand;
+  try {
+    parsed = parseCommand(command);
+  } catch (err) {
+    // A command this harness cannot turn into a process never ran. Reported as
+    // a spawn failure so it becomes `unable-to-run` rather than a product
+    // result about the code under test.
+    return { code: -1, output: `command could not be parsed: ${(err as Error).message}`, spawnFailed: true };
+  }
+
+  const env = {
+    ...process.env,
+    // Pinned per case, because both silently change test outcomes and neither
+    // is obvious when it does. Defects4J pins the same two for the same reason.
+    TZ: publicCase.environment.timezone,
+    LC_ALL: publicCase.environment.locale,
+    npm_config_audit: 'false',
+    npm_config_fund: 'false',
+    npm_config_update_notifier: 'false',
+    ...(publicCase.networkPolicy === 'disabled' ? { npm_config_offline: 'true' } : {}),
+  };
+
+  try {
+    // A command that needs a shell gets one explicitly, and only because its
+    // own text says it does. Everything else is spawned without one, so a
+    // filename with a space or a `$` in an argument cannot be reinterpreted.
+    const { stdout, stderr } = parsed.needsShell
+      ? await execFile(shellProgram(), [shellFlag(), parsed.command], { cwd, env, maxBuffer: MAX_BUFFER })
+      : await execFile(parsed.program, parsed.args, { cwd, env, maxBuffer: MAX_BUFFER });
+    return { code: 0, output: `${stdout}\n${stderr}`, spawnFailed: false };
+  } catch (err) {
+    const error = err as NodeJS.ErrnoException & { stdout?: string; stderr?: string; code?: number | string };
+    const output = `${error.stdout ?? ''}\n${error.stderr ?? ''}`;
+    // A string `code` is a spawn errno (ENOENT, EACCES): the consumer's own
+    // check never ran. A number is the process's exit status: it ran and
+    // failed, which is a product result.
+    if (typeof error.code === 'string') return { code: -1, output: output || error.message, spawnFailed: true };
+    return { code: typeof error.code === 'number' ? error.code : 1, output, spawnFailed: false };
+  }
+}
+
+async function repointDependency(consumerDir: string, dependency: string, relativePath: string): Promise<void> {
+  const path = join(consumerDir, 'package.json');
+  const manifest = JSON.parse(await readFile(path, 'utf8')) as {
+    dependencies?: Record<string, string>;
+    devDependencies?: Record<string, string>;
+  };
+  for (const section of [manifest.dependencies, manifest.devDependencies]) {
+    if (section?.[dependency]) section[dependency] = `file:${relativePath}`;
+  }
+  await writeFile(path, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+}
+
+function excerpt(output: string): string {
+  const trimmed = output.trim();
+  return trimmed.length <= MAX_EXCERPT ? trimmed : `${trimmed.slice(0, MAX_EXCERPT)}\n… (${trimmed.length - MAX_EXCERPT} more characters)`;
+}
+
+/**
+ * The shell a `kind: 'shell'` command runs in.
+ *
+ * Named rather than left to `execFile`'s `shell: true`, so the report can say
+ * what actually interpreted the command, and so the choice is one place rather
+ * than a boolean at each call site.
+ */
+function shellProgram(): string {
+  return process.platform === 'win32' ? (process.env['COMSPEC'] ?? 'cmd.exe') : '/bin/sh';
+}
+
+function shellFlag(): string {
+  return process.platform === 'win32' ? '/d/s/c' : '-c';
+}

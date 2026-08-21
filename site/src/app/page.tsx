@@ -11,6 +11,8 @@ import { Terminal } from "@/components/terminal";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { loadRecordings } from "@/lib/load";
 import { totalsOf, type Recording } from "@/lib/recordings";
+import { loadBenchmarks } from "@/lib/benchmarks";
+import { buildNarrative } from "@/lib/benchmark-narrative";
 
 /**
  * The landing page.
@@ -36,6 +38,7 @@ export default function Home() {
   const recordings = loadRecordings();
   const languages = [...new Set(recordings.map((r) => r.language))];
   const proof = summarizeRecordings(recordings);
+  const narrative = buildNarrative(loadBenchmarks());
 
   return (
     <div className="relative min-h-screen">
@@ -56,6 +59,12 @@ export default function Home() {
           >
             Ecosystems
           </a>
+          <Link
+            href="/benchmarks/"
+            className="hidden rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:block"
+          >
+            Benchmarks
+          </Link>
           <a
             href="#action"
             className="hidden rounded-md px-2.5 py-1.5 text-sm text-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:block"
@@ -139,6 +148,35 @@ export default function Home() {
           </p>
 
           <ProofStrip proof={proof} />
+
+          {/*
+            The one place on the landing page that quotes a benchmark number,
+            and it quotes two: the best result and the worst one, from the same
+            runs. A landing page that showed only the good number would be
+            doing exactly what the benchmark page exists to argue against.
+          */}
+          <div className="mt-8 rounded-xl border border-border bg-surface p-5">
+            <p className="text-sm font-medium text-foreground">
+              Measured on public datasets, including where it does badly
+            </p>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+              On the Roseau accuracy dataset&rsquo;s {narrative.roseau.available} hand-labelled Java API changes —{" "}
+              {narrative.roseau.negativeControls} of them labelled <em>not</em> breaking, which is what makes
+              precision meaningful at all — Drift scored {narrative.roseau.precisionFraction} precision at{" "}
+              {narrative.roseau.recallFraction} recall. On a {narrative.bumpSubset.selected}-case stratified subset
+              of BUMP&rsquo;s real Java build breakages it found the dependency update in{" "}
+              {narrative.bumpSubset.detectionFraction} and then told {narrative.bumpSubset.falseSafeFraction} of
+              them they were not affected. Same runs; the second is the worse number.
+            </p>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+              Five public corpora, every exclusion counted with its reason, and the metrics the data cannot support
+              listed as refusals rather than quietly omitted.{" "}
+              <Link href="/benchmarks/" className="text-brand-text underline decoration-dotted underline-offset-2">
+                See the benchmarks
+              </Link>
+              .
+            </p>
+          </div>
         </section>
 
         {/* ── The demo ────────────────────────────────────────────────── */}

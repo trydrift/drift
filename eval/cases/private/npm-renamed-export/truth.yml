@@ -1,0 +1,40 @@
+schemaVersion: drift-bench-case-v1
+caseId: npm-renamed-export
+adjudicationRef: adjudication.yml
+developerPatch: |
+  diff --git a/src/app.js b/src/app.js
+  --- a/src/app.js
+  +++ b/src/app.js
+  @@ -1,11 +1,11 @@
+  -import { oldName } from 'fixture-lib';
+  +import { newName } from 'fixture-lib';
+   
+   /**
+    * The application's own behaviour, exported so it can be exercised
+    * independently of this file's own self-check.
+    */
+   export function shout(name) {
+  -  return oldName(name);
+  +  return newName(name);
+   }
+   
+   const value = shout('Ada');
+developerPatchFiles:
+  - src/app.js
+hiddenChecks:
+  - id: preserves-shout
+    description: The consumer still exports shout(name) and it still returns the
+      upper-cased name, including for an input the project's own check never
+      uses.
+    files:
+      - behaviour.mjs
+    command: node hidden/behaviour.mjs
+    expect: pass
+    provenance: benchmark-added
+triggerSignature:
+  - hidden:preserves-shout:runtime:SyntaxError:The requested module
+    'fixture-lib' does not provide an export named 'oldName'
+  - runtime:SyntaxError:The requested module 'fixture-lib' does not provide an
+    export named 'oldName'
+baselineSignature: []
+notes: Imported from eval/fixtures/npm-renamed-export by fixture-import-v1.

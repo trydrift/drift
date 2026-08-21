@@ -1,0 +1,35 @@
+{
+  "version": "drift-bench-run-v1",
+  "runId": "merge-review-full",
+  "createdAt": "2026-08-19T21:18:31.829Z",
+  "driftCommit": "a200fe91532812c5f376a8ec96142b709669300c",
+  "driftTreeDirty": false,
+  "scoringVersion": "drift-bench-v1",
+  "command": "/Users/rudy/.nvm/versions/node/v24.19.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/cli/bench.ts run --run-id merge-review-full --tracks repair-full-remediation,repair-fixplan-cache,repair-fixplan-recipe --trials 1",
+  "node": "v24.19.0",
+  "platform": "darwin",
+  "arch": "x64",
+  "cases": [
+    {
+      "caseId": "npm-documented-rename",
+      "publicCapsuleHash": "bfeef7103e0808a880c75dc030bd54a92130889f1276ff3bbf33ac338aa13451"
+    },
+    {
+      "caseId": "npm-member-rename",
+      "publicCapsuleHash": "2a5de66bf77793a998576b0c7a3f660bea9fdb6383dc9b41c2cfb3eb6e4d93b9"
+    },
+    {
+      "caseId": "npm-renamed-export",
+      "publicCapsuleHash": "d0b84591c28b31870b9cc354505a6092e086070dcc0965d34964ec7e1c03f498"
+    },
+    {
+      "caseId": "npm-return-value",
+      "publicCapsuleHash": "7f66c1305a027931bba98ccd9195d1a2cbd481fb040d05fd7efbde1a23e89966"
+    },
+    {
+      "caseId": "npm-unused-break",
+      "publicCapsuleHash": "6c6d106ed409ae40e241a04cab1c901a83182f1f2c010554849af5d7635056fd"
+    }
+  ],
+  "notes": ""
+}

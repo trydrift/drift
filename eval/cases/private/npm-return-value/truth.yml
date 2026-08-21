@@ -1,0 +1,42 @@
+schemaVersion: drift-bench-case-v1
+caseId: npm-return-value
+adjudicationRef: adjudication.yml
+developerPatch: |
+  diff --git a/src/app.js b/src/app.js
+  --- a/src/app.js
+  +++ b/src/app.js
+  @@ -5,7 +5,7 @@
+    * independently of this file's own self-check.
+    */
+   export function displayName(user) {
+  -  return formatUser(user);
+  +  return formatUser(user).label;
+   }
+   
+   const value = displayName({ name: 'Ada' });
+  diff --git a/src/app.ts b/src/app.ts
+  --- a/src/app.ts
+  +++ b/src/app.ts
+  @@ -1,3 +1,3 @@
+   import { formatUser } from 'fixture-lib';
+   
+  -export const label = formatUser({ name: 'Ada' });
+  +export const label = formatUser({ name: 'Ada' }).label;
+developerPatchFiles:
+  - src/app.js
+  - src/app.ts
+hiddenChecks:
+  - id: preserves-display-name
+    description: The consumer still exports displayName(user) and it still returns
+      the upper-cased name as a plain string, including for an input the
+      project's own check never uses.
+    files:
+      - behaviour.mjs
+    command: node hidden/behaviour.mjs
+    expect: pass
+    provenance: benchmark-added
+triggerSignature:
+  - hidden:preserves-display-name:runtime:Error:expected ADA, got [object Object]
+  - runtime:Error:expected ADA, got [object Object]
+baselineSignature: []
+notes: Imported from eval/fixtures/npm-return-value by fixture-import-v1.

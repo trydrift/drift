@@ -1,0 +1,46 @@
+id: npm-documented-rename
+ecosystem: npm
+dependency: fixture-lib
+fromVersion: 1.0.0
+toVersion: 2.0.0
+scenarioLabel: documented-rename
+source:
+  repository: fixture-local
+  licence: MIT
+exposure: direct
+oracles:
+  baseline:
+    command: npm test
+    expect: pass
+  broken:
+    command: npm test
+    expect: fail
+  repaired:
+    command: npm test
+    expect: pass
+complexity: small
+network: disabled
+readiness: benchmark-ready
+provenance:
+  kind: synthetic
+  createdAt: 2026-08-19
+  author: eval-harness
+  notes: >
+    Synthetic local fixture, and the first one whose rename is actually
+    *documented*. oldQuery was renamed to query between 1.0.0 and 2.0.0, and
+    evidence/CHANGELOG.md states the linkage in the upstream project's own
+    words. The upstream manifest declares a repository, so Drift's real
+    evidence chain — npm registry metadata names a GitHub repository, the
+    changelog is probed on raw.githubusercontent — reaches the frozen
+    document offline through the same code path a networked run uses.
+
+    Its purpose is to separate two things every other fixture conflates.
+    npm-member-rename and npm-renamed-export deliberately have no fetchable
+    prose, so a replacement name is never attested and Drift's fix-plan gate
+    is *right* to reject any rule that introduces one. That makes those
+    fixtures unable to distinguish "the mechanism cannot author a plan" from
+    "the evidence did not support one". This fixture supplies the evidence and
+    leaves everything else identical, so the model fix-plan tier is measured
+    on a case where an accepted plan is possible.
+
+    Ground truth lives in reviews/ and adjudication.yml, not here.

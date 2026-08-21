@@ -1,0 +1,74 @@
+schemaVersion: drift-bench-case-v1
+id: npm-member-rename
+provenanceKind: synthetic
+ecosystem: npm
+status: benchmark-ready
+consumer:
+  repository: fixture-local
+  licence: MIT
+  baseCommit: synthetic
+  migrationCommit: null
+  manifestPaths:
+    - package.json
+  lockfilePaths: []
+  workspaceDir: ""
+dependency:
+  name: fixture-lib
+  fromVersion: 1.0.0
+  toVersion: 2.0.0
+  updateClass: major
+  section: dependencies
+  exposure: direct
+  upstreamRepository: unavailable
+  upstreamFromRef: unavailable
+  upstreamToRef: unavailable
+graph:
+  before:
+    - name: fixture-lib
+      version: 1.0.0
+  after:
+    - name: fixture-lib
+      version: 2.0.0
+  effectiveChanges:
+    - name: fixture-lib
+      from: 1.0.0
+      to: 2.0.0
+environment:
+  runtimeVersion: v24.19.0
+  packageManager: npm
+  packageManagerVersion: unavailable
+  containerDigest: unavailable
+  platform: darwin
+  arch: x64
+  timezone: UTC
+  locale: C
+oracles:
+  install: npm install --package-lock=false --ignore-scripts
+  baseline:
+    command: npm test
+    expect: pass
+    provenance: project-native
+  broken:
+    command: npm test
+    expect: fail
+    provenance: project-native
+  repaired:
+    command: npm test
+    expect: pass
+    provenance: project-native
+networkPolicy: disabled
+discovery:
+  source: synthetic
+  reference: eval/fixtures/npm-member-rename
+  minedAt: 2026-08-19
+  minerVersion: fixture-import-v1
+  importedFrom: ""
+failureCategory: runtime-failure
+migrationComplexity: direct
+artifactHashes:
+  consumerTree: e76097507705ec931369b3962d6379f75ebe6e2b2f1e51116d88f19d34e316f1
+  upstreamOld: f438cc972572b3ff161b66a03fb3a3dfac79b5268ba5c3d9e019de0c005a53eb
+  upstreamNew: f6e49d5708e32fd59b4f16e064b3e486f0548e4cbe5b9d5a6fe292c86e438dfc
+  lockfileBefore: unavailable
+  lockfileAfter: unavailable
+  evidenceBundle: unavailable

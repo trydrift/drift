@@ -1,0 +1,35 @@
+fixtureId: npm-member-rename
+acceptedReviewIds:
+  - claude-2026-08-19-npm-member-rename-b
+decision:
+  upstreamFindings:
+    - fixture-lib:oldQuery:renamed-export
+  impactSites:
+    - src/app.js:oldQuery
+  taxonomy:
+    nature: api-shape
+    detectability:
+      - link-or-import
+      - compile-time
+    scope: symbol
+    visibility:
+      - direct
+  gaps: []
+  groundTruthSafety: unsafe
+  repair:
+    expectedAction: agent-delegation
+    expectedChangedFiles:
+      - src/app.js
+status: accepted
+decidedAt: 2026-08-19T12:30:00.000Z
+decidedBy:
+  type: ai
+  name: Claude
+notes: >-
+  Accepts review b, which re-derived the same upstream facts and impact site on
+  the revised fixture and re-expressed the policy under the widened
+  expectedAction enum. The previous adjudication recorded abstain because the
+  enum had no way to say "no deterministic rule, but a delegated fix under human
+  review is correct", which is what review a actually argued in prose. Nothing
+  about what a deterministic tier is allowed to do has been relaxed: a
+  deterministic mechanism that renames here is still scored unsafe-attempt.

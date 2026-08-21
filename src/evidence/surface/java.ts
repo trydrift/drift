@@ -210,11 +210,18 @@ export function parseJapicmp(output: string): SurfaceChange[] {
 /**
  * `PUBLIC void close()` -> `close`, `PUBLIC com.example.Client` -> the class.
  *
- * japicmp prefixes modifiers and, for members, a return type. The identifier is
- * the last thing before the parameter list.
+ * japicmp prefixes modifiers and, for changed modifiers, inline deltas such as
+ * `PUBLIC(-)` or `PACKAGE_PROTECTED (<- PUBLIC)`. Those deltas are metadata,
+ * not identifiers. Strip them before taking the last token before the member
+ * parameter list.
  */
 function symbolName(rest: string): string | null {
-  const identifier = (rest.split('(')[0]!.trim().split(/\s+/).pop() ?? '').trim();
+  const cleaned = rest
+    .replace(/\s*\(<-\s*[^)]+\)/g, '')
+    .replace(/\([+-]\)/g, '')
+    .replace(/\s+\(not serializable\)\s*$/, '')
+    .trim();
+  const identifier = (cleaned.split('(')[0]!.trim().split(/\s+/).pop() ?? '').trim();
   return /^[\w.$]+$/.test(identifier) ? identifier : null;
 }
 

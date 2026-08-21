@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://drift.local/eval/fixture.schema.json",
+  "description": "Documentation mirror of the Zod schema in eval/src/load.ts, which is authoritative at runtime. Keep in sync by hand.",
   "type": "object",
   "required": [
     "id",
@@ -8,13 +9,13 @@
     "dependency",
     "fromVersion",
     "toVersion",
+    "scenarioLabel",
     "source",
-    "taxonomy",
     "exposure",
-    "expected",
     "oracles",
     "complexity",
     "network",
+    "readiness",
     "provenance"
   ],
   "properties": {
@@ -23,6 +24,10 @@
     "dependency": { "type": "string" },
     "fromVersion": { "type": "string" },
     "toVersion": { "type": "string" },
+    "scenarioLabel": {
+      "type": "string",
+      "description": "Informational/reporting only. Never read by the detect-end-to-end adapter."
+    },
     "source": {
       "type": "object",
       "required": ["repository", "licence"],
@@ -32,63 +37,45 @@
       },
       "additionalProperties": false
     },
-    "taxonomy": {
-      "type": "object",
-      "required": ["nature", "detectability", "scope", "visibility"],
-      "properties": {
-        "nature": { "type": "string" },
-        "detectability": { "type": "array", "items": { "type": "string" } },
-        "scope": { "type": "string" },
-        "visibility": { "type": "array", "items": { "type": "string" } }
-      },
-      "additionalProperties": false
-    },
     "exposure": { "enum": ["direct", "transitive"] },
-    "expected": {
-      "type": "object",
-      "required": ["upstreamFindings", "impactSites", "gaps", "planNodes", "edges", "goldPatch"],
-      "properties": {
-        "upstreamFindings": { "type": "array", "items": { "type": "string" } },
-        "impactSites": { "type": "array", "items": { "type": "string" } },
-        "gaps": { "type": "array", "items": { "type": "string" } },
-        "planNodes": { "type": "array", "items": { "type": "string" } },
-        "edges": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["from", "to", "reason"],
-            "properties": {
-              "from": { "type": "string" },
-              "to": { "type": "string" },
-              "reason": { "type": "string" }
-            },
-            "additionalProperties": false
-          }
-        },
-        "goldPatch": { "type": "string" }
-      },
-      "additionalProperties": false
-    },
     "oracles": {
       "type": "object",
-      "required": ["negative", "positive"],
+      "required": ["baseline", "broken", "repaired"],
       "properties": {
-        "negative": { "type": "string" },
-        "positive": { "type": "string" }
+        "baseline": { "$ref": "#/$defs/oracleStage" },
+        "broken": { "$ref": "#/$defs/oracleStage" },
+        "repaired": { "$ref": "#/$defs/oracleStage" }
       },
       "additionalProperties": false
     },
     "complexity": { "enum": ["small", "medium", "large"] },
     "network": { "enum": ["disabled", "fixture-local", "allowed"] },
+    "readiness": {
+      "enum": ["draft", "benchmark-ready"],
+      "description": "Workflow marker only. eval:review:validate is what actually gates benchmark-ready status."
+    },
     "provenance": {
       "type": "object",
-      "required": ["reviewStatus"],
+      "required": ["kind", "createdAt", "author"],
       "properties": {
-        "notes": { "type": "string" },
-        "reviewStatus": { "enum": ["draft", "reviewed", "archived"] }
+        "kind": { "enum": ["synthetic", "historical"] },
+        "createdAt": { "type": "string" },
+        "author": { "type": "string" },
+        "notes": { "type": "string" }
       },
       "additionalProperties": false
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "oracleStage": {
+      "type": "object",
+      "required": ["command", "expect"],
+      "properties": {
+        "command": { "type": "string" },
+        "expect": { "enum": ["pass", "fail"] }
+      },
+      "additionalProperties": false
+    }
+  }
 }

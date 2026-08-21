@@ -1,0 +1,1282 @@
+{
+  "seed": 20260819,
+  "limit": null,
+  "mode": "all",
+  "ids": [],
+  "strata": {
+    "true · adonisjs/adonis-framework": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · adonisjs/adonis-framework": {
+      "available": 37,
+      "selected": 37
+    },
+    "false · adonisjs/adonis-lucid": {
+      "available": 13,
+      "selected": 13
+    },
+    "false · adonisjs/persona": {
+      "available": 2,
+      "selected": 2
+    },
+    "false · airbnb/react-dates": {
+      "available": 39,
+      "selected": 39
+    },
+    "false · algolia/angular-instantsearch": {
+      "available": 13,
+      "selected": 13
+    },
+    "true · algolia/instantsearch": {
+      "available": 3,
+      "selected": 3
+    },
+    "false · algolia/instantsearch": {
+      "available": 211,
+      "selected": 211
+    },
+    "false · algolia/react-element-to-jsx-string": {
+      "available": 20,
+      "selected": 20
+    },
+    "true · algolia/react-instantsearch": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · algolia/react-instantsearch": {
+      "available": 74,
+      "selected": 74
+    },
+    "false · alibaba/bindingx": {
+      "available": 12,
+      "selected": 12
+    },
+    "false · alibaba/rax": {
+      "available": 123,
+      "selected": 123
+    },
+    "false · aligay/jsonuri": {
+      "available": 2,
+      "selected": 2
+    },
+    "true · angular/angular": {
+      "available": 7,
+      "selected": 7
+    },
+    "false · angular/angular": {
+      "available": 545,
+      "selected": 545
+    },
+    "true · antvis/g": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · antvis/g": {
+      "available": 18,
+      "selected": 18
+    },
+    "false · apache/cordova-lib": {
+      "available": 63,
+      "selected": 63
+    },
+    "false · apiaryio/dredd": {
+      "available": 60,
+      "selected": 60
+    },
+    "false · appium/appium-adb": {
+      "available": 23,
+      "selected": 23
+    },
+    "false · arnog/mathlive": {
+      "available": 69,
+      "selected": 69
+    },
+    "true · aurelia/framework": {
+      "available": 2,
+      "selected": 2
+    },
+    "false · aurelia/framework": {
+      "available": 17,
+      "selected": 17
+    },
+    "false · auth0/node-jsonwebtoken": {
+      "available": 5,
+      "selected": 5
+    },
+    "true · automattic/mongoose": {
+      "available": 12,
+      "selected": 12
+    },
+    "false · automattic/mongoose": {
+      "available": 430,
+      "selected": 430
+    },
+    "true · aws/aws-cdk": {
+      "available": 4,
+      "selected": 4
+    },
+    "false · aws/aws-cdk": {
+      "available": 240,
+      "selected": 240
+    },
+    "true · aws/jsii": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · aws/jsii": {
+      "available": 71,
+      "selected": 71
+    },
+    "false · Azure/azure-iot-sdk-node": {
+      "available": 31,
+      "selected": 31
+    },
+    "true · bigcommerce/checkout-sdk-js": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · bigcommerce/checkout-sdk-js": {
+      "available": 79,
+      "selected": 79
+    },
+    "false · bootprint/bootprint-openapi": {
+      "available": 5,
+      "selected": 5
+    },
+    "false · brainhubeu/react-carousel": {
+      "available": 24,
+      "selected": 24
+    },
+    "false · caolan/async": {
+      "available": 35,
+      "selected": 35
+    },
+    "true · carbon-design-system/carbon": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · carbon-design-system/carbon": {
+      "available": 190,
+      "selected": 190
+    },
+    "false · cerebral/cerebral": {
+      "available": 39,
+      "selected": 39
+    },
+    "true · cerebral/overmind": {
+      "available": 2,
+      "selected": 2
+    },
+    "false · cerebral/overmind": {
+      "available": 29,
+      "selected": 29
+    },
+    "false · cheeriojs/cheerio": {
+      "available": 57,
+      "selected": 57
+    },
+    "false · Chimeejs/chimee": {
+      "available": 8,
+      "selected": 8
+    },
+    "false · clarkdo/hare": {
+      "available": 15,
+      "selected": 15
+    },
+    "false · cloverfield-tools/cf-package": {
+      "available": 2,
+      "selected": 2
+    },
+    "true · coinbase/rest-hooks": {
+      "available": 6,
+      "selected": 6
+    },
+    "false · coinbase/rest-hooks": {
+      "available": 68,
+      "selected": 68
+    },
+    "false · contentful/contentful-export": {
+      "available": 42,
+      "selected": 42
+    },
+    "false · contentful/contentful-import": {
+      "available": 20,
+      "selected": 20
+    },
+    "false · contentful/contentful-migration": {
+      "available": 18,
+      "selected": 18
+    },
+    "false · conventional-changelog/commitlint": {
+      "available": 49,
+      "selected": 49
+    },
+    "true · conventional-changelog/conventional-changelog": {
+      "available": 3,
+      "selected": 3
+    },
+    "false · conventional-changelog/conventional-changelog": {
+      "available": 31,
+      "selected": 31
+    },
+    "false · conventional-changelog/releaser-tools": {
+      "available": 7,
+      "selected": 7
+    },
+    "true · cube-js/cube.js": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · cube-js/cube.js": {
+      "available": 149,
+      "selected": 149
+    },
+    "false · cyclejs/cyclejs": {
+      "available": 71,
+      "selected": 71
+    },
+    "false · cypress-io/cypress": {
+      "available": 386,
+      "selected": 386
+    },
+    "false · d3fc/d3fc": {
+      "available": 20,
+      "selected": 20
+    },
+    "false · dadi/cdn": {
+      "available": 37,
+      "selected": 37
+    },
+    "false · daybrush/scenejs": {
+      "available": 8,
+      "selected": 8
+    },
+    "false · dcloudio/uni-app": {
+      "available": 183,
+      "selected": 183
+    },
+    "false · denali-js/core": {
+      "available": 28,
+      "selected": 28
+    },
+    "true · diez/diez": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · diez/diez": {
+      "available": 9,
+      "selected": 9
+    },
+    "false · discordjs/discord.js": {
+      "available": 138,
+      "selected": 138
+    },
+    "false · docsifyjs/docsify": {
+      "available": 34,
+      "selected": 34
+    },
+    "false · doczjs/docz": {
+      "available": 35,
+      "selected": 35
+    },
+    "false · drcmda/react-with-gesture": {
+      "available": 28,
+      "selected": 28
+    },
+    "false · dwyl/aws-sdk-mock": {
+      "available": 21,
+      "selected": 21
+    },
+    "false · eggjs/egg-mysql": {
+      "available": 2,
+      "selected": 2
+    },
+    "false · egoist/poi": {
+      "available": 9,
+      "selected": 9
+    },
+    "false · eheikes/tts": {
+      "available": 11,
+      "selected": 11
+    },
+    "true · elastic/apm-agent-nodejs": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · elastic/apm-agent-nodejs": {
+      "available": 63,
+      "selected": 63
+    },
+    "false · ElemeFE/element": {
+      "available": 71,
+      "selected": 71
+    },
+    "false · elementary/houston": {
+      "available": 12,
+      "selected": 12
+    },
+    "true · ember-animation/ember-animated": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · ember-animation/ember-animated": {
+      "available": 65,
+      "selected": 65
+    },
+    "false · emotion-js/emotion": {
+      "available": 26,
+      "selected": 26
+    },
+    "false · eslint/eslint": {
+      "available": 187,
+      "selected": 187
+    },
+    "false · eslint/espree": {
+      "available": 12,
+      "selected": 12
+    },
+    "true · exegesis-js/exegesis": {
+      "available": 2,
+      "selected": 2
+    },
+    "false · exegesis-js/exegesis": {
+      "available": 7,
+      "selected": 7
+    },
+    "true · expo/expo-cli": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · expo/expo-cli": {
+      "available": 122,
+      "selected": 122
+    },
+    "false · expressjs/express": {
+      "available": 93,
+      "selected": 93
+    },
+    "false · expressjs/session": {
+      "available": 12,
+      "selected": 12
+    },
+    "false · fabricjs/fabric.js": {
+      "available": 109,
+      "selected": 109
+    },
+    "false · facebook/docusaurus": {
+      "available": 99,
+      "selected": 99
+    },
+    "false · faviator/faviator": {
+      "available": 1,
+      "selected": 1
+    },
+    "true · feathersjs/feathers": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · feathersjs/feathers": {
+      "available": 74,
+      "selected": 74
+    },
+    "true · formatjs/formatjs": {
+      "available": 2,
+      "selected": 2
+    },
+    "false · formatjs/formatjs": {
+      "available": 94,
+      "selected": 94
+    },
+    "false · gaearon/react-dnd": {
+      "available": 44,
+      "selected": 44
+    },
+    "true · gajus/eslint-config-canonical": {
+      "available": 2,
+      "selected": 2
+    },
+    "false · gajus/eslint-config-canonical": {
+      "available": 18,
+      "selected": 18
+    },
+    "false · gajus/eslint-plugin-flowtype": {
+      "available": 7,
+      "selected": 7
+    },
+    "true · gajus/eslint-plugin-jsdoc": {
+      "available": 3,
+      "selected": 3
+    },
+    "false · gajus/eslint-plugin-jsdoc": {
+      "available": 42,
+      "selected": 42
+    },
+    "true · gajus/mightyql": {
+      "available": 2,
+      "selected": 2
+    },
+    "false · gajus/mightyql": {
+      "available": 27,
+      "selected": 27
+    },
+    "false · gajus/roarr": {
+      "available": 4,
+      "selected": 4
+    },
+    "true · gajus/slonik": {
+      "available": 3,
+      "selected": 3
+    },
+    "false · gajus/slonik": {
+      "available": 17,
+      "selected": 17
+    },
+    "false · gajus/surgeon": {
+      "available": 3,
+      "selected": 3
+    },
+    "true · gatsbyjs/gatsby": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · gatsbyjs/gatsby": {
+      "available": 472,
+      "selected": 472
+    },
+    "true · gemini-testing/testplane": {
+      "available": 2,
+      "selected": 2
+    },
+    "false · gemini-testing/testplane": {
+      "available": 37,
+      "selected": 37
+    },
+    "false · goodmind/treact": {
+      "available": 10,
+      "selected": 10
+    },
+    "false · google/zx": {
+      "available": 10,
+      "selected": 10
+    },
+    "true · graphql-compose/graphql-compose-mongoose": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · graphql-compose/graphql-compose-mongoose": {
+      "available": 9,
+      "selected": 9
+    },
+    "false · handsontable/formula.js": {
+      "available": 13,
+      "selected": 13
+    },
+    "false · hanzoai/hanzo.js": {
+      "available": 5,
+      "selected": 5
+    },
+    "false · harttle/liquidjs": {
+      "available": 18,
+      "selected": 18
+    },
+    "false · heroku/cli": {
+      "available": 148,
+      "selected": 148
+    },
+    "false · heyui/heyui": {
+      "available": 45,
+      "selected": 45
+    },
+    "false · hoodiehq/hoodie": {
+      "available": 19,
+      "selected": 19
+    },
+    "false · ibitcy/eo-locale": {
+      "available": 13,
+      "selected": 13
+    },
+    "false · IgniteUI/igniteui-cli": {
+      "available": 68,
+      "selected": 68
+    },
+    "false · image-js/image-js": {
+      "available": 29,
+      "selected": 29
+    },
+    "true · immerjs/immer": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · immerjs/immer": {
+      "available": 29,
+      "selected": 29
+    },
+    "false · immutable-js/immutable-js": {
+      "available": 38,
+      "selected": 38
+    },
+    "false · isomorphic-git/isomorphic-git": {
+      "available": 22,
+      "selected": 22
+    },
+    "false · jamesmcnamara/shades": {
+      "available": 3,
+      "selected": 3
+    },
+    "false · jaredpalmer/formik": {
+      "available": 37,
+      "selected": 37
+    },
+    "true · jeffijoe/awilix": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · jeffijoe/awilix": {
+      "available": 16,
+      "selected": 16
+    },
+    "false · jest-community/jest-extended": {
+      "available": 17,
+      "selected": 17
+    },
+    "false · jestjs/jest": {
+      "available": 150,
+      "selected": 150
+    },
+    "false · jondot/hygen": {
+      "available": 4,
+      "selected": 4
+    },
+    "false · jquery/jquery": {
+      "available": 114,
+      "selected": 114
+    },
+    "true · jsdoc/jsdoc": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · jsdoc/jsdoc": {
+      "available": 48,
+      "selected": 48
+    },
+    "false · juji-io/editscript": {
+      "available": 6,
+      "selected": 6
+    },
+    "false · kamilkisiela/graphql-inspector": {
+      "available": 39,
+      "selected": 39
+    },
+    "false · karma-runner/karma": {
+      "available": 54,
+      "selected": 54
+    },
+    "false · karma-runner/karma-mocha": {
+      "available": 8,
+      "selected": 8
+    },
+    "false · kevinchappell/formBuilder": {
+      "available": 15,
+      "selected": 15
+    },
+    "false · kitware/itk-vtk-image-viewer": {
+      "available": 26,
+      "selected": 26
+    },
+    "true · kitware/itk-vtk-viewer": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · kitware/itk-vtk-viewer": {
+      "available": 44,
+      "selected": 44
+    },
+    "false · kitware/vtk-js": {
+      "available": 90,
+      "selected": 90
+    },
+    "false · kmalakoff/mixin": {
+      "available": 2,
+      "selected": 2
+    },
+    "false · krasimir/lsbridge": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · kutyel/linq.ts": {
+      "available": 9,
+      "selected": 9
+    },
+    "false · kuzzleio/kuzzle": {
+      "available": 150,
+      "selected": 150
+    },
+    "true · lerna/lerna": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · lerna/lerna": {
+      "available": 57,
+      "selected": 57
+    },
+    "true · lint-staged/lint-staged": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · lint-staged/lint-staged": {
+      "available": 20,
+      "selected": 20
+    },
+    "false · lodash/lodash": {
+      "available": 146,
+      "selected": 146
+    },
+    "false · logdna/nodejs": {
+      "available": 2,
+      "selected": 2
+    },
+    "true · luin/ioredis": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · luin/ioredis": {
+      "available": 23,
+      "selected": 23
+    },
+    "false · lukeed/dset": {
+      "available": 3,
+      "selected": 3
+    },
+    "false · madhums/node-genem": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · mapbox/mapbox-tile-copy": {
+      "available": 7,
+      "selected": 7
+    },
+    "false · marnusw/date-fns-tz": {
+      "available": 6,
+      "selected": 6
+    },
+    "false · matsp/material-components-vue": {
+      "available": 31,
+      "selected": 31
+    },
+    "true · mattlewis92/angular-calendar": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · mattlewis92/angular-calendar": {
+      "available": 34,
+      "selected": 34
+    },
+    "false · mattlewis92/angular-confirmation-popover": {
+      "available": 6,
+      "selected": 6
+    },
+    "false · mattlewis92/angular-draggable-droppable": {
+      "available": 4,
+      "selected": 4
+    },
+    "false · meritt/easymongo": {
+      "available": 6,
+      "selected": 6
+    },
+    "false · mgonto/restangular": {
+      "available": 18,
+      "selected": 18
+    },
+    "false · middyjs/middy": {
+      "available": 33,
+      "selected": 33
+    },
+    "false · mikro-orm/mikro-orm": {
+      "available": 93,
+      "selected": 93
+    },
+    "false · milesj/aesthetic": {
+      "available": 13,
+      "selected": 13
+    },
+    "false · mlaursen/react-md": {
+      "available": 114,
+      "selected": 114
+    },
+    "false · mochajs/mocha": {
+      "available": 80,
+      "selected": 80
+    },
+    "false · mongodb-js/mongodb-core": {
+      "available": 26,
+      "selected": 26
+    },
+    "false · mozilla/fxa": {
+      "available": 615,
+      "selected": 615
+    },
+    "false · mysqljs/mysql": {
+      "available": 22,
+      "selected": 22
+    },
+    "false · NativeScript/NativeScript": {
+      "available": 152,
+      "selected": 152
+    },
+    "false · neoclide/coc-tsserver": {
+      "available": 6,
+      "selected": 6
+    },
+    "false · nestjs/nest": {
+      "available": 273,
+      "selected": 273
+    },
+    "false · nestjs/schematics": {
+      "available": 53,
+      "selected": 53
+    },
+    "false · newsuk/times-components": {
+      "available": 75,
+      "selected": 75
+    },
+    "false · ng-alain/delon": {
+      "available": 35,
+      "selected": 35
+    },
+    "false · ng-packagr/ng-packagr": {
+      "available": 32,
+      "selected": 32
+    },
+    "true · ngx-formly/ngx-formly": {
+      "available": 2,
+      "selected": 2
+    },
+    "false · ngx-formly/ngx-formly": {
+      "available": 35,
+      "selected": 35
+    },
+    "false · nhn/tui.calendar": {
+      "available": 64,
+      "selected": 64
+    },
+    "false · nmarus/flint": {
+      "available": 5,
+      "selected": 5
+    },
+    "false · nock/nock": {
+      "available": 44,
+      "selected": 44
+    },
+    "true · nodkz/mongodb-memory-server": {
+      "available": 2,
+      "selected": 2
+    },
+    "false · nodkz/mongodb-memory-server": {
+      "available": 45,
+      "selected": 45
+    },
+    "true · npm/cli": {
+      "available": 3,
+      "selected": 3
+    },
+    "false · npm/cli": {
+      "available": 245,
+      "selected": 245
+    },
+    "false · nytimes/kyt": {
+      "available": 13,
+      "selected": 13
+    },
+    "false · oclif/cli-ux": {
+      "available": 9,
+      "selected": 9
+    },
+    "false · oclif/oclif": {
+      "available": 31,
+      "selected": 31
+    },
+    "false · octokit/fixtures": {
+      "available": 21,
+      "selected": 21
+    },
+    "false · octokit/graphql-schema": {
+      "available": 14,
+      "selected": 14
+    },
+    "false · octokit/rest.js": {
+      "available": 48,
+      "selected": 48
+    },
+    "false · okoala/egg-jwt": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · orbitdb/orbitdb": {
+      "available": 46,
+      "selected": 46
+    },
+    "false · orgapp/orgajs": {
+      "available": 20,
+      "selected": 20
+    },
+    "true · panva/node-oidc-provider": {
+      "available": 4,
+      "selected": 4
+    },
+    "false · panva/node-oidc-provider": {
+      "available": 49,
+      "selected": 49
+    },
+    "false · parse-community/parse-server": {
+      "available": 75,
+      "selected": 75
+    },
+    "false · patternfly/angular-patternfly": {
+      "available": 27,
+      "selected": 27
+    },
+    "true · patternfly/patternfly-ng": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · patternfly/patternfly-ng": {
+      "available": 8,
+      "selected": 8
+    },
+    "false · patw0929/react-intl-tel-input": {
+      "available": 27,
+      "selected": 27
+    },
+    "false · paypal/fullstack-phone": {
+      "available": 11,
+      "selected": 11
+    },
+    "false · pixijs/pixijs": {
+      "available": 179,
+      "selected": 179
+    },
+    "true · pnpm/pnpm": {
+      "available": 11,
+      "selected": 11
+    },
+    "false · pnpm/pnpm": {
+      "available": 150,
+      "selected": 150
+    },
+    "false · positive-js/mosaic": {
+      "available": 23,
+      "selected": 23
+    },
+    "false · prettier/prettier-eslint": {
+      "available": 7,
+      "selected": 7
+    },
+    "false · prisma/prisma": {
+      "available": 169,
+      "selected": 169
+    },
+    "false · puppeteer/puppeteer": {
+      "available": 96,
+      "selected": 96
+    },
+    "false · pybee/batavia": {
+      "available": 34,
+      "selected": 34
+    },
+    "true · ramda/ramda": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · ramda/ramda": {
+      "available": 53,
+      "selected": 53
+    },
+    "false · react-component/tooltip": {
+      "available": 3,
+      "selected": 3
+    },
+    "true · reactivex/rxjs": {
+      "available": 13,
+      "selected": 13
+    },
+    "false · reactivex/rxjs": {
+      "available": 89,
+      "selected": 89
+    },
+    "false · ream/ream": {
+      "available": 7,
+      "selected": 7
+    },
+    "false · reg-viz/reg-cli": {
+      "available": 9,
+      "selected": 9
+    },
+    "true · renovatebot/renovate": {
+      "available": 5,
+      "selected": 5
+    },
+    "false · renovatebot/renovate": {
+      "available": 308,
+      "selected": 308
+    },
+    "false · restify/node-restify": {
+      "available": 34,
+      "selected": 34
+    },
+    "false · revery-ui/revery": {
+      "available": 15,
+      "selected": 15
+    },
+    "false · ronco/ember-cli-head": {
+      "available": 4,
+      "selected": 4
+    },
+    "true · router5/router5": {
+      "available": 3,
+      "selected": 3
+    },
+    "false · router5/router5": {
+      "available": 25,
+      "selected": 25
+    },
+    "true · runk/node-maxmind": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · runk/node-maxmind": {
+      "available": 22,
+      "selected": 22
+    },
+    "true · Sage/carbon": {
+      "available": 8,
+      "selected": 8
+    },
+    "false · Sage/carbon": {
+      "available": 425,
+      "selected": 425
+    },
+    "false · sahat/satellizer": {
+      "available": 43,
+      "selected": 43
+    },
+    "false · sanack/node-jq": {
+      "available": 14,
+      "selected": 14
+    },
+    "false · sanity-io/sanity": {
+      "available": 282,
+      "selected": 282
+    },
+    "false · SAP/fundamental": {
+      "available": 31,
+      "selected": 31
+    },
+    "true · SAP/fundamental-ngx": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · SAP/fundamental-ngx": {
+      "available": 149,
+      "selected": 149
+    },
+    "true · seek-oss/sku": {
+      "available": 3,
+      "selected": 3
+    },
+    "false · seek-oss/sku": {
+      "available": 9,
+      "selected": 9
+    },
+    "true · sequelize/sequelize": {
+      "available": 3,
+      "selected": 3
+    },
+    "false · sequelize/sequelize": {
+      "available": 240,
+      "selected": 240
+    },
+    "true · serverless/serverless": {
+      "available": 4,
+      "selected": 4
+    },
+    "false · serverless/serverless": {
+      "available": 331,
+      "selected": 331
+    },
+    "false · shelljs/shelljs": {
+      "available": 18,
+      "selected": 18
+    },
+    "false · skidding/react-mock": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · snyk/snyk": {
+      "available": 115,
+      "selected": 115
+    },
+    "true · socketio/socket.io": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · socketio/socket.io": {
+      "available": 35,
+      "selected": 35
+    },
+    "false · soenkekluth/sticky-state": {
+      "available": 2,
+      "selected": 2
+    },
+    "false · softwaretailoring/hybicon": {
+      "available": 3,
+      "selected": 3
+    },
+    "false · sorrycc/dva": {
+      "available": 16,
+      "selected": 16
+    },
+    "false · SpoonX/wetland": {
+      "available": 18,
+      "selected": 18
+    },
+    "false · srijs/rusha": {
+      "available": 3,
+      "selected": 3
+    },
+    "false · streamich/react-use": {
+      "available": 69,
+      "selected": 69
+    },
+    "false · strongloop/express": {
+      "available": 110,
+      "selected": 110
+    },
+    "true · stryker-mutator/stryker": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · stryker-mutator/stryker": {
+      "available": 76,
+      "selected": 76
+    },
+    "false · stylus/stylus": {
+      "available": 74,
+      "selected": 74
+    },
+    "false · sveltejs/svelte": {
+      "available": 139,
+      "selected": 139
+    },
+    "false · syuilo/misskey": {
+      "available": 484,
+      "selected": 484
+    },
+    "false · tabrindle/envinfo": {
+      "available": 8,
+      "selected": 8
+    },
+    "false · tdeekens/promster": {
+      "available": 34,
+      "selected": 34
+    },
+    "false · teambit/bit": {
+      "available": 268,
+      "selected": 268
+    },
+    "false · tediousjs/node-mssql": {
+      "available": 24,
+      "selected": 24
+    },
+    "false · Tencent/wepy": {
+      "available": 43,
+      "selected": 43
+    },
+    "true · thi-ng/umbrella": {
+      "available": 8,
+      "selected": 8
+    },
+    "false · thi-ng/umbrella": {
+      "available": 197,
+      "selected": 197
+    },
+    "false · timhagn/gatsby-background-image": {
+      "available": 22,
+      "selected": 22
+    },
+    "true · tivac/modular-css": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · tivac/modular-css": {
+      "available": 23,
+      "selected": 23
+    },
+    "false · tj/commander.js": {
+      "available": 21,
+      "selected": 21
+    },
+    "false · Tomtomgo/phearjs": {
+      "available": 1,
+      "selected": 1
+    },
+    "true · trs/ftp-srv": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · trs/ftp-srv": {
+      "available": 8,
+      "selected": 8
+    },
+    "false · tweenjs/tween.js": {
+      "available": 15,
+      "selected": 15
+    },
+    "true · valor-software/ngx-bootstrap": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · valor-software/ngx-bootstrap": {
+      "available": 54,
+      "selected": 54
+    },
+    "false · vercel/vercel": {
+      "available": 158,
+      "selected": 158
+    },
+    "true · videojs/http-streaming": {
+      "available": 2,
+      "selected": 2
+    },
+    "false · videojs/http-streaming": {
+      "available": 42,
+      "selected": 42
+    },
+    "true · videojs/video.js": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · videojs/video.js": {
+      "available": 77,
+      "selected": 77
+    },
+    "false · visionmedia/node-actorify": {
+      "available": 4,
+      "selected": 4
+    },
+    "false · vuejs/core": {
+      "available": 109,
+      "selected": 109
+    },
+    "true · vuetifyjs/vuetify": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · vuetifyjs/vuetify": {
+      "available": 295,
+      "selected": 295
+    },
+    "false · webiny/webiny-js": {
+      "available": 305,
+      "selected": 305
+    },
+    "false · webpack/webpack": {
+      "available": 362,
+      "selected": 362
+    },
+    "false · webpack-contrib/file-loader": {
+      "available": 2,
+      "selected": 2
+    },
+    "false · webpack-contrib/sass-loader": {
+      "available": 16,
+      "selected": 16
+    },
+    "false · web-perf/react-worker-dom": {
+      "available": 2,
+      "selected": 2
+    },
+    "false · websockets/bufferutil": {
+      "available": 6,
+      "selected": 6
+    },
+    "false · Wikiki/bulma-carousel": {
+      "available": 6,
+      "selected": 6
+    },
+    "false · windingtree/lif-token": {
+      "available": 14,
+      "selected": 14
+    },
+    "false · wix/lerna-script": {
+      "available": 13,
+      "selected": 13
+    },
+    "false · wooorm/emphasize": {
+      "available": 2,
+      "selected": 2
+    },
+    "true · xing/hops": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · xing/hops": {
+      "available": 72,
+      "selected": 72
+    },
+    "true · yahoo/react-intl": {
+      "available": 4,
+      "selected": 4
+    },
+    "false · yahoo/react-intl": {
+      "available": 101,
+      "selected": 101
+    },
+    "false · yang/reactive-coffee": {
+      "available": 15,
+      "selected": 15
+    },
+    "true · yargs/yargs": {
+      "available": 1,
+      "selected": 1
+    },
+    "false · yargs/yargs": {
+      "available": 40,
+      "selected": 40
+    },
+    "false · youzan/vant-weapp": {
+      "available": 39,
+      "selected": 39
+    }
+  },
+  "available": 16333,
+  "idsOmitted": "mode is \"all\": every available case was selected, and each one appears in cases.jsonl.gz. The list is omitted rather than restating the corpus.",
+  "dataset": {
+    "id": "kong",
+    "title": "Towards Better Comprehension of Breaking Changes in the NPM Ecosystem",
+    "source": {
+      "kind": "zenodo",
+      "url": "https://zenodo.org/records/13857646",
+      "version": "10.5281/zenodo.13857646",
+      "conceptVersion": "10.5281/zenodo.13219136"
+    },
+    "licence": "CC-BY-4.0",
+    "citation": "Dezhen Kong et al., \"Towards Better Comprehension of Breaking Changes in the NPM Ecosystem\", replication package, Zenodo, DOI 10.5281/zenodo.13857646.",
+    "ecosystem": "npm",
+    "datasetClass": "upstream-bc-detection",
+    "evaluationQuestion": "Given the real prose an upstream JavaScript maintainer wrote about a commit, does Drift read a breaking change out of it, and does it read the right kind of breaking change?",
+    "doesNotEstablish": "Nothing about whether Drift finds these changes in a consumer repository, nothing about repair, and nothing about the published-artefact API diff — this corpus supplies prose, so only the prose interpreter is under test.",
+    "groundTruth": {
+      "granularity": "commit",
+      "exhaustive": true,
+      "basis": "RQ1's detected_bc_are_documented.csv labels every sampled commit yes/no for whether developers documented a breaking change, so the negatives are real and precision is defined. RQ2's analyzed_breaking_changes.csv annotates a category per breaking change on commits already known to be breaking, which supports category accuracy and nothing else.",
+      "supports": [
+        "recall",
+        "precision",
+        "f1",
+        "category-accuracy"
+      ]
+    },
+    "localPath": "kong-zenodo-13857646"
+  }
+}

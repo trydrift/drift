@@ -1,0 +1,94 @@
+id: claude-2026-08-19-npm-return-value-c
+fixtureId: npm-return-value
+createdAt: 2026-08-19T03:00:00.000Z
+reviewer:
+  type: ai
+  name: Claude
+  provider: Anthropic
+  model: claude-sonnet-5
+  modelVersion: unavailable
+  toolVersion: unavailable
+reviewedRevision:
+  fixtureMetadata: 9f369ed14d11a1614ae84ec64f242646861fe8e52cad77d5def309933755e1f0
+  upstreamOld: 3f122a65d0117d37b6107f73993ba1936cc9808309b39c113c4f08dacfa79608
+  upstreamNew: f80f688094c439539cc96467960b45012c260ca6b84235a46741f9b2db1b35f6
+  consumer: dad02f8074b5a8a6d033a0ec255aceed9a143c9de760dba45ee9fa689d5c0a0c
+  oracles: 8e5b05fc4d98245f6d2f9c163cb5b9be686a40fc253e2274d9001d0b3d77679c
+  goldPatch: 9fc72de57c0835a983c1d838599ee0a121bb2b638e70a4f5caf675e29c3f7f11
+  hiddenChecks: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  evidence: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+evidence:
+  files:
+    - upstream/old/index.js
+    - upstream/old/index.d.ts
+    - upstream/new/index.js
+    - upstream/new/index.d.ts
+    - consumer/src/app.js
+    - consumer/src/app.ts
+  commands: []
+  artifacts:
+    - "drift-full-pipeline output for npm-return-value: upstreamFindings
+      included both fixture-lib:formatUser:signature-change and
+      fixture-lib:formatUser:return-value"
+  notes: Fixture.yml's provenance.notes text was reworded (to avoid tripping the
+    circular-ground-truth-language integrity test on an accidental phrase match)
+    with no change to upstream/old, upstream/new, consumer, or oracles.
+    Re-verified all evidence files are unchanged from review b; conclusion is
+    unchanged.
+conclusion:
+  upstreamFindings:
+    - fixture-lib:formatUser:signature-change
+    - fixture-lib:formatUser:return-value
+  impactSites:
+    - src/app.js:formatUser
+    - src/app.ts:formatUser
+  taxonomy:
+    nature: behaviour
+    detectability:
+      - static-semantic
+      - test-time
+      - runtime-only
+    scope: symbol
+    visibility:
+      - direct
+  gaps: []
+  groundTruthSafety: unsafe
+  repair:
+    expectedAction: abstain
+    expectedChangedFiles: []
+rationale:
+  summary: "My first review (claude-2026-08-19-npm-return-value-a) recorded only
+    'return-value' as the ground-truth upstream finding, treating the
+    type-surface signature-changed fact and the behavioural return-value-changed
+    fact as the same finding reported once. Rerunning the deterministic
+    benchmark, drift-full-pipeline correctly produced BOTH as separate findings,
+    from two independently-computed evidence sources (a real .d.ts diff via
+    fetchTypeSurface, and a real runtime probe via localPackageEnvironment). On
+    reflection this is correct, not an over-report: they are two independently
+    obtained pieces of evidence for the same underlying break, exactly analogous
+    to two different reviewers independently confirming the same fact —
+    production Drift's own evidence model treats them as distinct
+    StructuredFindings for a reason (a repository with types but no working
+    install would only get one of the two; a repository that can run the code
+    but has no .d.ts would only get the other). Ground truth should credit both,
+    not collapse them. This is a review correction, not a case of accepting
+    Drift's output as truth: I re-examined the same fixture evidence I already
+    had (the .d.ts diff and the behaviour of both formatUser implementations)
+    and concluded my original single-finding model under-specified what a full
+    and complete review should state."
+  findingNotes:
+    - "fixture-lib:formatUser:signature-change — the .d.ts-level fact: return
+      type string -> FormattedUser."
+    - "fixture-lib:formatUser:return-value — the runtime fact: the returned
+      value changed shape, confirmed by direct execution."
+    - "Everything else (impact sites, taxonomy, groundTruthSafety,
+      repair.expectedAction) is unchanged from the first review — see that
+      review for the reasoning behind expectedAction: abstain."
+  uncertainty: None. This re-review exists solely because any fixture.yml change
+    stales the accepted review by design (see eval/README.md) — the underlying
+    evidence and conclusion are identical to review b.
+status: reviewed
+reviewOf:
+  - claude-2026-08-19-npm-return-value-b
+promptVersion: ground-truth-v1
+promptHash: see eval/review-prompts/ground-truth-v1.md

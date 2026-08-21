@@ -1,0 +1,197 @@
+{
+  "schemaVersion": "drift-bench-prediction-v1",
+  "runId": "merge-review-full",
+  "caseId": "npm-documented-rename",
+  "publicCapsuleHash": "bfeef7103e0808a880c75dc030bd54a92130889f1276ff3bbf33ac338aa13451",
+  "track": "repair-fixplan-cache",
+  "experimentMode": "conditional",
+  "provenance": {
+    "driftCommit": "a200fe91532812c5f376a8ec96142b709669300c",
+    "driftTreeDirty": false,
+    "adapterVersion": "drift-end-to-end-v1",
+    "agentId": "unavailable",
+    "agentLabel": "unavailable",
+    "provider": "unavailable",
+    "model": "unavailable",
+    "modelVersion": "unavailable",
+    "agentCliVersion": "unavailable",
+    "promptVersion": "unavailable",
+    "promptHash": "unavailable",
+    "effort": "unavailable",
+    "fastMode": "unavailable",
+    "requestedAgentId": "unavailable",
+    "requestedModel": "unavailable",
+    "requestedEffort": "unavailable",
+    "requestedFastMode": "unavailable",
+    "requestedTimeoutSeconds": "unavailable",
+    "trial": 1,
+    "trialsPlanned": 1,
+    "startedAt": "2026-08-19T21:22:48.319Z",
+    "finishedAt": "2026-08-19T21:22:54.483Z",
+    "latencyMs": 6164,
+    "costUsd": 0,
+    "inputTokens": null,
+    "outputTokens": null
+  },
+  "isolation": {
+    "audited": true,
+    "pathsAudited": 3,
+    "networkPolicy": "disabled"
+  },
+  "detection": {
+    "dependencyChanges": [
+      {
+        "name": "fixture-lib",
+        "ecosystem": "npm",
+        "from": "1.0.0",
+        "to": "2.0.0"
+      }
+    ],
+    "triageSkipped": [],
+    "upstreamFindings": [
+      {
+        "dependency": "fixture-lib",
+        "code": "export-removed",
+        "symbol": "oldQuery",
+        "detail": "`oldQuery` is no longer exported (was a function)."
+      }
+    ],
+    "checkedSurfaces": [
+      {
+        "name": "behavioural-diff",
+        "status": "checked"
+      },
+      {
+        "name": "api-surface:fixture-lib",
+        "status": "checked"
+      },
+      {
+        "name": "release-notes:fixture-lib",
+        "status": "checked"
+      },
+      {
+        "name": "localization",
+        "status": "checked"
+      }
+    ],
+    "breakingChanges": [
+      {
+        "dependency": "fixture-lib",
+        "kind": "removed-export",
+        "symbols": [
+          "oldQuery"
+        ],
+        "replacementSymbols": [],
+        "summary": "`oldQuery` is no longer exported (was a function).",
+        "citations": [],
+        "taxonomy": {
+          "nature": "api-shape",
+          "detectability": [
+            "link-or-import",
+            "compile-time"
+          ],
+          "scope": "symbol",
+          "visibility": [
+            "direct"
+          ]
+        },
+        "verdict": "locally-affected"
+      },
+      {
+        "dependency": "fixture-lib",
+        "kind": "renamed-export",
+        "symbols": [
+          "oldQuery"
+        ],
+        "replacementSymbols": [
+          "query"
+        ],
+        "summary": "`oldQuery` was renamed to `query`",
+        "citations": [],
+        "taxonomy": {
+          "nature": "api-shape",
+          "detectability": [
+            "link-or-import",
+            "compile-time"
+          ],
+          "scope": "symbol",
+          "visibility": [
+            "unknown"
+          ]
+        },
+        "verdict": "locally-affected"
+      }
+    ],
+    "impactSites": [
+      {
+        "breakingChangeKind": "removed-export",
+        "file": "src/app.js",
+        "line": 8,
+        "matchedSymbol": "oldQuery",
+        "enclosingSymbol": "shout",
+        "excerpt": "return fixture.oldQuery(name);"
+      },
+      {
+        "breakingChangeKind": "renamed-export",
+        "file": "src/app.js",
+        "line": 8,
+        "matchedSymbol": "oldQuery",
+        "enclosingSymbol": "shout",
+        "excerpt": "return fixture.oldQuery(name);"
+      }
+    ],
+    "gaps": [
+      "No checks were run against this plan, so nothing confirms the findings were understood correctly or that a fix would compile."
+    ],
+    "verificationOutcomes": [
+      {
+        "kind": "behavioural",
+        "status": "skipped"
+      }
+    ],
+    "verdict": "locally-affected"
+  },
+  "repair": {
+    "attempted": false,
+    "notAttemptedReason": "cache-unavailable",
+    "resolvedByTier": [],
+    "patch": "",
+    "changedFiles": [],
+    "scopeEscapeFiles": [],
+    "scopeValidationReasons": [],
+    "patchStats": {
+      "files": 0,
+      "hunks": 0,
+      "addedLines": 0,
+      "removedLines": 0
+    },
+    "residualImpactSites": 0
+  },
+  "oracleStages": [
+    {
+      "stage": "baseline",
+      "expected": "pass",
+      "observed": "pass",
+      "matchesExpectation": true,
+      "signature": [],
+      "exitCode": 0,
+      "outputExcerpt": "> test\n> node src/app.js",
+      "durationMs": 1199
+    },
+    {
+      "stage": "broken",
+      "expected": "fail",
+      "observed": "fail",
+      "matchesExpectation": true,
+      "signature": [
+        "hidden:preserves-shout:runtime:TypeError:fixture.oldQuery is not a function",
+        "runtime:TypeError:fixture.oldQuery is not a function"
+      ],
+      "exitCode": 1,
+      "outputExcerpt": "> test\n> node src/app.js\n\n\nfile:///private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-eval-broken-I9nNvK/consumer/src/app.js:8\n  return fixture.oldQuery(name);\n                 ^\n\nTypeError: fixture.oldQuery is not a function\n    at shout (file:///private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-eval-broken-I9nNvK/consumer/src/app.js:8:18)\n    at file:///private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-eval-broken-I9nNvK/consumer/src/app.js:11:15\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async node:internal/modules/esm/loader:643:26\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)\n\nNode.js v24.19.0\n\nhidden check \"preserves-shout\" (The consumer still exports shout(name) and it still returns the upper-cased name, including for an input the project's own check never uses.) expected pass, observed fail:\nfile:///private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-eval-broken-I9nNvK/consumer/src/app.js:8\n  return fixture.oldQuery(name);\n                 ^\n\nTypeError: fixture.oldQuery is not a function\n    at shout (file:///private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-eval-broken-I9nNvK/consumer/src/app.js:8:18)\n    at file:///private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-eval-broken-I9nNvK/consumer/src/app.js:11:15\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async node:internal/modules/esm/loader:643:26\n    at async file:///private/var/folders/fb/8_94nlb1621ccjvzsqck1dr00000gn/T/drift-eval-broken-I9nNvK/consumer/hidden/behaviour.mjs:6:13\n\nNode.js v24.19.0",
+      "durationMs": 1490
+    }
+  ],
+  "observedCommands": [],
+  "error": null
+}

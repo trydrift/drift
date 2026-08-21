@@ -1,0 +1,97 @@
+id: claude-2026-08-19-npm-return-value-a
+fixtureId: npm-return-value
+createdAt: 2026-08-19T00:00:00.000Z
+reviewer:
+  type: ai
+  name: Claude
+  provider: Anthropic
+  model: claude-sonnet-5
+  modelVersion: unavailable
+  toolVersion: unavailable
+reviewedRevision:
+  fixtureMetadata: d5768d9c450dd5f0ff29917a6e391c1b6171ace5072d904f4b51ce1faebc8c13
+  upstreamOld: 3f122a65d0117d37b6107f73993ba1936cc9808309b39c113c4f08dacfa79608
+  upstreamNew: f80f688094c439539cc96467960b45012c260ca6b84235a46741f9b2db1b35f6
+  consumer: dad02f8074b5a8a6d033a0ec255aceed9a143c9de760dba45ee9fa689d5c0a0c
+  oracles: 8e5b05fc4d98245f6d2f9c163cb5b9be686a40fc253e2274d9001d0b3d77679c
+  goldPatch: 9fc72de57c0835a983c1d838599ee0a121bb2b638e70a4f5caf675e29c3f7f11
+  hiddenChecks: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  evidence: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+evidence:
+  files:
+    - upstream/old/index.js
+    - upstream/old/index.d.ts
+    - upstream/old/package.json
+    - upstream/new/index.js
+    - upstream/new/index.d.ts
+    - upstream/new/package.json
+    - consumer/src/app.js
+    - consumer/package.json
+  commands:
+    - "npm test (baseline: consumer pointed at upstream/old)"
+    - "npm test (broken: consumer pointed at upstream/new, unmodified)"
+  artifacts: []
+  notes: Reviewed by reading every file in upstream/old, upstream/new, and
+    consumer, then running the baseline/broken oracle commands by hand in a
+    disposable copy before forming a conclusion. Did not inspect any adapter
+    prediction beforehand.
+conclusion:
+  upstreamFindings:
+    - fixture-lib:formatUser:return-value
+  impactSites:
+    - src/app.js:formatUser
+    - src/app.ts:formatUser
+  taxonomy:
+    nature: behaviour
+    detectability:
+      - static-semantic
+      - test-time
+      - runtime-only
+    scope: symbol
+    visibility:
+      - direct
+  gaps: []
+  groundTruthSafety: unsafe
+  repair:
+    expectedAction: abstain
+    expectedChangedFiles: []
+rationale:
+  summary: "upstream/old/index.js: formatUser(user){return
+    user.name.toUpperCase()} returns a string. upstream/new/index.js:
+    formatUser(user){return {label: user.name.toUpperCase()}} returns an object.
+    Both the .d.ts (string -> FormattedUser) and the runtime behaviour changed
+    identically — this is a genuine return-shape breaking change, not just a
+    type annotation change. consumer/src/app.js calls formatUser({name:'Ada'})
+    and compares the result directly to the string 'ADA'; against upstream/new
+    this comparison is false (an object !== a string) and the script throws.
+    consumer/src/app.ts separately declares `export const label =
+    formatUser({name:'Ada'})` and does nothing else with it — it type-checks
+    against either shape (it is just an assignment with no property access), so
+    it is not actually broken by this change in a way that fails at runtime, but
+    it IS a real reference to the changed symbol, so it belongs in impactSites
+    as a site that must be reviewed even though its own oracle (there is none
+    for .ts — only src/app.js is the npm test entry point) would not catch a
+    regression there. Baseline passes; broken fails (confirmed by running
+    both)."
+  findingNotes:
+    - "fixture-lib:formatUser:return-value — return type changed from string to
+      { label: string }, confirmed both structurally (.d.ts) and behaviourally
+      (implementation)."
+    - src/app.js:formatUser — real impact; the only oracle-covered call site,
+      and the one that actually fails.
+    - src/app.ts:formatUser — real reference to the changed symbol, but not
+      exercised by any oracle in this fixture; flagged so a repair tool does not
+      silently skip it just because nothing currently tests it.
+  uncertainty: expectedAction is abstain because the correct fix for src/app.js
+    depends on what the caller actually wants from the new object (here,
+    .label), which is a judgment about intent, not a mechanical rename — there
+    is no deterministic codemod tier for a return-shape change in production
+    Drift, and generating one would require model-authored fix-plan tier 2c,
+    which this benchmark deliberately keeps out of deterministic CI. Whether
+    src/app.ts also needs an edit is genuinely unresolved by the evidence here
+    (its current one-line body does not fail either way), which is exactly why
+    it stays a listed impact site rather than being dropped.
+status: reviewed
+reviewOf: []
+promptVersion: ground-truth-v1
+promptHash: see eval/review-prompts/ground-truth-v1.md

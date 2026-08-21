@@ -1,0 +1,31 @@
+[
+  {
+    "caseId": "13fd75e233a5cb2771a6cb186c0decaed6d6545a",
+    "kind": "source-unavailable",
+    "reason": "commit 13fd75e233a5cb2771a6cb186c0decaed6d6545a could not be fetched from artipie/docker-adapter: Command failed: git fetch --quiet --depth 2 origin 13fd75e233a5cb2771a6cb186c0decaed6d6545a\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/docker-adapter.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "bump",
+      "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
+      "recordId": "13fd75e233a5cb2771a6cb186c0decaed6d6545a",
+      "repository": "https://github.com/artipie/docker-adapter",
+      "commit": "13fd75e233a5cb2771a6cb186c0decaed6d6545a",
+      "baseCommit": "13fd75e233a5cb2771a6cb186c0decaed6d6545a^",
+      "dependency": "com.artipie:asto-core",
+      "fromVersion": "v1.13.0",
+      "toVersion": "v1.15.4",
+      "packageManager": "maven",
+      "requiredRuntime": "java 11",
+      "oracleCommand": "mvn test (inside the published image)",
+      "containerImage": "ghcr.io/chains-project/breaking-updates:13fd75e233a5cb2771a6cb186c0decaed6d6545a-breaking",
+      "sourceHash": "d4f8882c87acd05cd5815e2f95b6ae31a7958e7de9ab8679d0a58fad6023af96",
+      "extra": {
+        "failureCategory": "COMPILATION_FAILURE",
+        "versionUpdateType": "other",
+        "dependencyScope": "compile",
+        "pullRequest": "https://github.com/artipie/docker-adapter/pull/544",
+        "preImage": "ghcr.io/chains-project/breaking-updates:13fd75e233a5cb2771a6cb186c0decaed6d6545a-pre"
+      }
+    }
+  }
+]

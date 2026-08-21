@@ -1,0 +1,168 @@
+{
+  "seed": 20260819,
+  "limit": null,
+  "mode": "all",
+  "ids": [],
+  "strata": {
+    "yarn · che-incubator/chectl": {
+      "available": 3,
+      "selected": 3
+    },
+    "npm · JoinColony/colonySDK": {
+      "available": 5,
+      "selected": 5
+    },
+    "yarn · bufferapp/ui": {
+      "available": 4,
+      "selected": 4
+    },
+    "npm · balena-io/open-balena-vpn": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · ayocodingit/boilerplate-express-service": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · deepstreamIO/deepstream.io": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · ineo6/hosts": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · actions/labeler": {
+      "available": 1,
+      "selected": 1
+    },
+    "yarn · dougkulak/libdefkit": {
+      "available": 2,
+      "selected": 2
+    },
+    "npm · emtee40/global-agent-raycast": {
+      "available": 2,
+      "selected": 2
+    },
+    "yarn · hugo-cardoso/context-vue": {
+      "available": 1,
+      "selected": 1
+    },
+    "pnpm · jmerle/zeal-user-contrib": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · MikeBirdTech/gpt3-vscode-extension": {
+      "available": 3,
+      "selected": 3
+    },
+    "yarn · hyperlane-xyz/hyperlane-warp-ui-template": {
+      "available": 4,
+      "selected": 4
+    },
+    "yarn · Minds/mobile-native": {
+      "available": 4,
+      "selected": 4
+    },
+    "npm · functionalone/aws-least-privilege": {
+      "available": 1,
+      "selected": 1
+    },
+    "yarn · gicentre/prettier-plugin-elm": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · hbenl/vscode-mocha-test-adapter": {
+      "available": 2,
+      "selected": 2
+    },
+    "yarn · MetaMask/eth-ledger-bridge-keyring": {
+      "available": 3,
+      "selected": 3
+    },
+    "npm · chriscareycode/nagiostv-react": {
+      "available": 3,
+      "selected": 3
+    },
+    "npm · creditkarma/feature-flags": {
+      "available": 1,
+      "selected": 1
+    },
+    "pnpm · kitce/viurr": {
+      "available": 4,
+      "selected": 4
+    },
+    "yarn · getflywheel/local-components": {
+      "available": 3,
+      "selected": 3
+    },
+    "npm · EnixCoda/github-code-review-notifier": {
+      "available": 1,
+      "selected": 1
+    },
+    "yarn · lodeapp/lode": {
+      "available": 1,
+      "selected": 1
+    },
+    "pnpm · epeejs/epee-react-admin": {
+      "available": 1,
+      "selected": 1
+    },
+    "yarn · Coding-Coach/coding-coach-api": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · dequelabs/axe-puppeteer": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · edgardmessias/vscode.clipboard-manager": {
+      "available": 2,
+      "selected": 2
+    },
+    "npm · jonkristian/entur-card": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · iantrich/text-divider-row": {
+      "available": 1,
+      "selected": 1
+    },
+    "npm · karrioapi/karrio-dashboard": {
+      "available": 1,
+      "selected": 1
+    },
+    "yarn · aprilandjan/vscode-ascii-tree-generator": {
+      "available": 1,
+      "selected": 1
+    }
+  },
+  "available": 63,
+  "idsOmitted": "mode is \"all\": every available case was selected, and each one appears in cases.jsonl.gz. The list is omitted rather than restating the corpus.",
+  "dataset": {
+    "id": "swe-bump",
+    "title": "swe-bump-bench",
+    "source": {
+      "kind": "git",
+      "url": "https://github.com/xeol-io/swe-bump-bench",
+      "version": "unresolved"
+    },
+    "licence": "see the repository",
+    "citation": "xeol-io, swe-bump-bench, https://github.com/xeol-io/swe-bump-bench",
+    "ecosystem": "npm",
+    "datasetClass": "consumer-impact",
+    "evaluationQuestion": "Given a real TypeScript project at a real commit and a dependency upgrade known to break its build, does Drift detect the update, decide the repository is affected, localize the code, and avoid telling the developer it is safe?",
+    "doesNotEstablish": "No precision and no false-positive rate. Every task in this corpus is a known-breaking upgrade, so there is no negative population to compute one over; a tool that answered \"affected\" unconditionally would score identically on the questions this corpus can answer.",
+    "groundTruth": {
+      "granularity": "project-build",
+      "exhaustive": false,
+      "basis": "Each task is a known-breaking dependency bump whose build oracle fails. Positives only: there are no non-breaking control upgrades, and no symbol-level annotation of what changed.",
+      "supports": [
+        "recall",
+        "repair-success",
+        "false-safe-count"
+      ]
+    },
+    "localPath": "swe-bump-bench"
+  }
+}

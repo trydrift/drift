@@ -1,0 +1,220 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { aggregateLevel, aggregateRepair, bootstrapInterval, mcnemar, prf, rate, trialReliability } from './aggregate.ts';
+import type { LevelScore } from './detection.ts';
+import type { RepairScore } from './repair.ts';
+
+function level(tp: number, fp: number, fn: number, vacuous = false): LevelScore {
+  return { status: 'scored', confusion: { tp, fp, fn }, truePositives: [], falsePositives: [], falseNegatives: [], vacuous };
+}
+
+const NOT_ADJUDICATED: LevelScore = {
+  status: 'not-adjudicated',
+  confusion: { tp: 0, fp: 0, fn: 0 },
+  truePositives: [],
+  falsePositives: [],
+  falseNegatives: [],
+  vacuous: false,
+};
+
+test('an empty-expected empty-actual case is excluded from macro and harmless in micro', () => {
+  const aggregate = aggregateLevel([level(1, 0, 0), level(0, 0, 0, true)]);
+  assert.equal(aggregate.macro.cases, 1);
+  assert.equal(aggregate.vacuousExcluded, 1);
+  assert.equal(aggregate.micro.tp, 1);
+  assert.equal(aggregate.macro.f1, 1);
+});
+
+test('a false positive on a control case is never excluded and drags precision down', () => {
+  const aggregate = aggregateLevel([level(1, 0, 0), level(0, 2, 0)]);
+  assert.equal(aggregate.vacuousExcluded, 0);
+  assert.equal(aggregate.macro.cases, 2);
+  assert.ok(aggregate.micro.precision < 1);
+  assert.equal(aggregate.macro.precision, 0.5);
+});
+
+test('a level no adjudication ruled on is counted apart, never scored as a perfect empty prediction', () => {
+  const aggregate = aggregateLevel([NOT_ADJUDICATED, NOT_ADJUDICATED]);
+  assert.equal(aggregate.scoredCases, 0);
+  assert.equal(aggregate.notAdjudicatedCases, 2);
+  assert.equal(aggregate.micro.f1, 0);
+  assert.equal(aggregate.macro.cases, 0);
+});
+
+test('a rate over nothing is undefined, not zero', () => {
+  assert.equal(rate(0, 0).value, null);
+  assert.equal(rate(0, 4).value, 0);
+});
+
+test('precision and recall of an all-empty confusion are zero, not NaN', () => {
+  assert.deepEqual(prf({ tp: 0, fp: 0, fn: 0 }), { precision: 0, recall: 0, f1: 0 });
+});
+
+function repairScore(caseId: string, outcome: RepairScore['outcome'], scorable: boolean, trial = 1): RepairScore & { trial: number } {
+  return {
+    caseId,
+    track: 'repair-agent',
+    outcome,
+    scorable,
+    exclusionReason: scorable ? null : outcome,
+    trial,
+    failToPass: { triggerFailures: [], resolvedTriggers: [], unresolvedTriggers: [], newFailures: [], regressedChecks: [], verdict: 'resolved' },
+    attempted: true,
+    notAttemptedReason: null,
+    productionScopeEscapes: [],
+    unexpectedChangedFiles: [],
+    changedFiles: { tp: 0, fp: 0, fn: 0 },
+    goldPatchExact: 'not-applicable',
+    patchStats: { files: 0, hunks: 0, addedLines: 0, removedLines: 0 },
+    residualImpactSites: 0,
+    resolvedByTier: [],
+  };
+}
+
+test('a tier that was never asked leaves both the numerator and the denominator, with its reason kept', () => {
+  const aggregate = aggregateRepair('repair-agent', [
+    repairScore('a', 'repaired', true),
+    repairScore('b', 'failed-to-fix', true),
+    repairScore('c', 'environment-unavailable', false),
+  ]);
+  assert.deepEqual(aggregate.repairSuccess, { numerator: 1, denominator: 2, value: 0.5 });
+  assert.equal(aggregate.excluded, 1);
+  assert.equal(aggregate.outcomes['environment-unavailable'], 1, 'still visible in the exclusion table');
+  assert.equal(aggregate.exclusionReasons['environment-unavailable'], 1, 'and its reason is counted');
+});
+
+test('a case Drift began and could not finish stays in the denominator', () => {
+  const aggregate = aggregateRepair('repair-full-remediation', [
+    repairScore('a', 'repaired', true),
+    repairScore('b', 'delivery-failure', true),
+    repairScore('c', 'delivery-failure', true),
+  ]);
+  assert.deepEqual(
+    aggregate.repairSuccess,
+    { numerator: 1, denominator: 3, value: 1 / 3 },
+    'excluding the two would report 1/1 for a run that delivered one repair out of three',
+  );
+  assert.equal(aggregate.excluded, 0);
+  assert.deepEqual(aggregate.delivery, { successful: 1, unsuccessful: 2, deliveryFailures: 2, denominator: 3 });
+});
+
+test('a case the benchmark could not set up leaves the denominator, and is not a delivery failure', () => {
+  const aggregate = aggregateRepair('repair-full-remediation', [
+    repairScore('a', 'repaired', true),
+    repairScore('b', 'case-invalid', false),
+  ]);
+  assert.deepEqual(aggregate.repairSuccess, { numerator: 1, denominator: 1, value: 1 });
+  assert.equal(aggregate.delivery.deliveryFailures, 0);
+  assert.equal(aggregate.exclusionReasons['case-invalid'], 1);
+  assert.equal(aggregate.attempted, 2, 'and nothing has disappeared: attempted still counts it');
+});
+
+test('a correct abstention counts as a correct decision but not as a repair', () => {
+  const aggregate = aggregateRepair('repair-codemod', [repairScore('a', 'correct-abstention', true)]);
+  assert.equal(aggregate.repairSuccess.value, 0);
+  assert.equal(aggregate.correctDecision.value, 1);
+});
+
+test('reliability separates first-attempt success from succeeding once in three', () => {
+  const [flaky, solid] = trialReliability([
+    repairScore('flaky', 'failed-to-fix', true, 1),
+    repairScore('flaky', 'repaired', true, 2),
+    repairScore('flaky', 'failed-to-fix', true, 3),
+    repairScore('solid', 'repaired', true, 1),
+    repairScore('solid', 'repaired', true, 2),
+    repairScore('solid', 'repaired', true, 3),
+  ]);
+  assert.equal(flaky?.firstAttemptSuccess, false);
+  assert.equal(flaky?.successes, 1);
+  assert.equal(flaky?.allTrialsSucceeded, false);
+  assert.equal(solid?.firstAttemptSuccess, true);
+  assert.equal(solid?.allTrialsSucceeded, true);
+});
+
+test('a bootstrap interval is refused on a corpus too small to support one', () => {
+  assert.equal(bootstrapInterval([true, false, true, true]), null);
+});
+
+test('a bootstrap interval is deterministic given a seed', () => {
+  const outcomes = Array.from({ length: 40 }, (_, index) => index % 3 !== 0);
+  const first = bootstrapInterval(outcomes, { seed: 7, iterations: 500 });
+  const second = bootstrapInterval(outcomes, { seed: 7, iterations: 500 });
+  assert.deepEqual(first, second);
+  assert.ok(first!.low <= first!.high);
+});
+
+test('McNemar refuses to report on too few discordant pairs', () => {
+  const a = new Map([['x', true], ['y', false]]);
+  const b = new Map([['x', false], ['y', false]]);
+  assert.equal(mcnemar(a, b), null);
+});
+
+test('McNemar reports the paired disagreement when there is enough of it', () => {
+  const a = new Map<string, boolean>();
+  const b = new Map<string, boolean>();
+  for (let index = 0; index < 14; index += 1) {
+    a.set(`c${index}`, true);
+    b.set(`c${index}`, false);
+  }
+  const result = mcnemar(a, b)!;
+  assert.equal(result.aOnly, 14);
+  assert.equal(result.bOnly, 0);
+  assert.equal(result.n, 14);
+  assert.ok(result.pValue < 0.001);
+});
+
+/**
+ * The zero-fill trap, in the two places it can still appear.
+ *
+ * A track that could not run and a track that ran and failed must not print
+ * the same number, and a level nobody adjudicated must not print the same
+ * number as a level Drift got wrong. Both would read as measurements.
+ */
+test('a track whose every trial was unavailable reports n/a, never 0%', () => {
+  const unavailable = (reason: 'cache-unavailable' | 'recipe-unavailable' | 'model-unavailable'): RepairScore => ({
+    caseId: `c-${reason}`,
+    track: 'repair-fixplan-cache',
+    outcome: 'environment-unavailable',
+    scorable: false,
+    exclusionReason: reason,
+    failToPass: {
+      triggerFailures: [],
+      resolvedTriggers: [],
+      unresolvedTriggers: [],
+      newFailures: [],
+      regressedChecks: [],
+      verdict: 'not-attempted',
+    },
+    attempted: false,
+    notAttemptedReason: reason,
+    productionScopeEscapes: [],
+    unexpectedChangedFiles: [],
+    changedFiles: { tp: 0, fp: 0, fn: 0 },
+    goldPatchExact: 'not-applicable',
+    patchStats: { files: 0, hunks: 0, addedLines: 0, removedLines: 0 },
+    residualImpactSites: 0,
+    resolvedByTier: [],
+  });
+
+  const aggregate = aggregateRepair('repair-fixplan-cache', [
+    unavailable('cache-unavailable'),
+    unavailable('recipe-unavailable'),
+    unavailable('model-unavailable'),
+  ]);
+
+  assert.equal(aggregate.scorable, 0);
+  assert.equal(aggregate.excluded, 3);
+  assert.equal(aggregate.repairSuccess.value, null, 'a rate over nothing is undefined, not zero');
+  assert.equal(aggregate.correctDecision.value, null);
+  assert.equal(aggregate.goldPatchExactOf.value, null);
+  // Nothing vanished: every trial is still in the outcome table.
+  assert.equal(aggregate.outcomes['environment-unavailable'], 3);
+});
+
+test('a level no adjudication ruled on contributes nothing to a rate rather than a zero', () => {
+  const aggregate = aggregateLevel([NOT_ADJUDICATED, NOT_ADJUDICATED, NOT_ADJUDICATED]);
+  assert.equal(aggregate.scoredCases, 0);
+  assert.equal(aggregate.notAdjudicatedCases, 3);
+  assert.equal(aggregate.macro.cases, 0, 'a macro mean over nothing has no cases behind it');
+  assert.deepEqual(aggregate.micro, { tp: 0, fp: 0, fn: 0, precision: 0, recall: 0, f1: 0 });
+});

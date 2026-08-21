@@ -1,0 +1,1230 @@
+{
+  "seed": 20260819,
+  "limit": null,
+  "mode": "all",
+  "ids": [],
+  "strata": {
+    "rename class · adonisjs/adonis-framework": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove method · adonisjs/adonis-framework": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · adonisjs/adonis-framework": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove method · adonisjs/adonis-lucid": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · adonisjs/adonis-lucid": {
+      "available": 5,
+      "selected": 5
+    },
+    "change_behavior · algolia/angular-instantsearch": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove method · algolia/instantsearch": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · algolia/instantsearch": {
+      "available": 2,
+      "selected": 2
+    },
+    "remove constant · algolia/instantsearch": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · algolia/react-element-to-jsx-string": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · algolia/react-instantsearch": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename method · algolia/react-instantsearch": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove class · angular/angular": {
+      "available": 7,
+      "selected": 7
+    },
+    "remove method · angular/angular": {
+      "available": 14,
+      "selected": 14
+    },
+    "change_behavior · angular/angular": {
+      "available": 13,
+      "selected": 13
+    },
+    "remove field · angular/angular": {
+      "available": 3,
+      "selected": 3
+    },
+    "remove constant · angular/angular": {
+      "available": 5,
+      "selected": 5
+    },
+    "rename class · angular/angular": {
+      "available": 6,
+      "selected": 6
+    },
+    "change_signature · angular/angular": {
+      "available": 3,
+      "selected": 3
+    },
+    "move class · angular/angular": {
+      "available": 1,
+      "selected": 1
+    },
+    "move · angular/angular": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename method · angular/angular": {
+      "available": 3,
+      "selected": 3
+    },
+    "rename constant · angular/angular": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · antvis/g": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove interface · apache/cordova-lib": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · apiaryio/dredd": {
+      "available": 13,
+      "selected": 13
+    },
+    "change_behavior · appium/appium-adb": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename method · arnog/mathlive": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · aurelia/framework": {
+      "available": 3,
+      "selected": 3
+    },
+    "change_behavior · auth0/node-jsonwebtoken": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · automattic/mongoose": {
+      "available": 80,
+      "selected": 80
+    },
+    "change_signature · automattic/mongoose": {
+      "available": 10,
+      "selected": 10
+    },
+    "rename class · automattic/mongoose": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove method · automattic/mongoose": {
+      "available": 4,
+      "selected": 4
+    },
+    "remove field · automattic/mongoose": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · aws/aws-cdk": {
+      "available": 13,
+      "selected": 13
+    },
+    "rename field · aws/aws-cdk": {
+      "available": 9,
+      "selected": 9
+    },
+    "move class · aws/aws-cdk": {
+      "available": 2,
+      "selected": 2
+    },
+    "remove class · aws/aws-cdk": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_signature · aws/aws-cdk": {
+      "available": 6,
+      "selected": 6
+    },
+    "move field · aws/aws-cdk": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename method · aws/aws-cdk": {
+      "available": 2,
+      "selected": 2
+    },
+    "remove field · aws/aws-cdk": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename class · aws/aws-cdk": {
+      "available": 2,
+      "selected": 2
+    },
+    "rename interface · aws/aws-cdk": {
+      "available": 2,
+      "selected": 2
+    },
+    "rename package · aws/aws-cdk": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove method · aws/aws-cdk": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename field · aws/jsii": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove field · bigcommerce/checkout-sdk-js": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · bigcommerce/checkout-sdk-js": {
+      "available": 19,
+      "selected": 19
+    },
+    "remove method · bigcommerce/checkout-sdk-js": {
+      "available": 2,
+      "selected": 2
+    },
+    "rename method · bigcommerce/checkout-sdk-js": {
+      "available": 5,
+      "selected": 5
+    },
+    "remove class · bigcommerce/checkout-sdk-js": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · caolan/async": {
+      "available": 2,
+      "selected": 2
+    },
+    "remove module · caolan/async": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · carbon-design-system/carbon": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_signature · cerebral/overmind": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · cerebral/overmind": {
+      "available": 30,
+      "selected": 30
+    },
+    "rename method · cerebral/overmind": {
+      "available": 2,
+      "selected": 2
+    },
+    "remove method · cerebral/overmind": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove class · coinbase/rest-hooks": {
+      "available": 6,
+      "selected": 6
+    },
+    "change_behavior · coinbase/rest-hooks": {
+      "available": 9,
+      "selected": 9
+    },
+    "remove field · coinbase/rest-hooks": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename field · coinbase/rest-hooks": {
+      "available": 2,
+      "selected": 2
+    },
+    "remove method · coinbase/rest-hooks": {
+      "available": 9,
+      "selected": 9
+    },
+    "change_signature · coinbase/rest-hooks": {
+      "available": 11,
+      "selected": 11
+    },
+    "rename method · coinbase/rest-hooks": {
+      "available": 3,
+      "selected": 3
+    },
+    "change_behavior · contentful/contentful-export": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · contentful/contentful-import": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · contentful/contentful-migration": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · conventional-changelog/commitlint": {
+      "available": 8,
+      "selected": 8
+    },
+    "change_signature · conventional-changelog/conventional-changelog": {
+      "available": 4,
+      "selected": 4
+    },
+    "change_behavior · conventional-changelog/conventional-changelog": {
+      "available": 30,
+      "selected": 30
+    },
+    "change_behavior · conventional-changelog/releaser-tools": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · cube-js/cube.js": {
+      "available": 5,
+      "selected": 5
+    },
+    "change_behavior · cyclejs/cyclejs": {
+      "available": 4,
+      "selected": 4
+    },
+    "remove module · cyclejs/cyclejs": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove method · cyclejs/cyclejs": {
+      "available": 2,
+      "selected": 2
+    },
+    "rename class · cyclejs/cyclejs": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · cypress-io/cypress": {
+      "available": 8,
+      "selected": 8
+    },
+    "change_behavior · d3fc/d3fc": {
+      "available": 22,
+      "selected": 22
+    },
+    "change_signature · d3fc/d3fc": {
+      "available": 2,
+      "selected": 2
+    },
+    "rename method · d3fc/d3fc": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename class · d3fc/d3fc": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · dadi/cdn": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · diez/diez": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · discordjs/discord.js": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove method · discordjs/discord.js": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · doczjs/docz": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · drcmda/react-with-gesture": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · egoist/poi": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · elastic/apm-agent-nodejs": {
+      "available": 8,
+      "selected": 8
+    },
+    "rename method · elastic/apm-agent-nodejs": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · ember-animation/ember-animated": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · expo/expo-cli": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove method · expo/expo-cli": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_signature · fabricjs/fabric.js": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · fabricjs/fabric.js": {
+      "available": 2,
+      "selected": 2
+    },
+    "rename module · fabricjs/fabric.js": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · formatjs/formatjs": {
+      "available": 46,
+      "selected": 46
+    },
+    "change_behavior · gajus/eslint-config-canonical": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · gajus/eslint-plugin-flowtype": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · gajus/eslint-plugin-jsdoc": {
+      "available": 20,
+      "selected": 20
+    },
+    "change_signature · gajus/eslint-plugin-jsdoc": {
+      "available": 2,
+      "selected": 2
+    },
+    "remove module · gajus/eslint-plugin-jsdoc": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove method · gajus/mightyql": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · gajus/mightyql": {
+      "available": 10,
+      "selected": 10
+    },
+    "change_signature · gajus/mightyql": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename field · gajus/mightyql": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename class · gajus/mightyql": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · gajus/roarr": {
+      "available": 4,
+      "selected": 4
+    },
+    "remove method · gajus/slonik": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · gajus/slonik": {
+      "available": 13,
+      "selected": 13
+    },
+    "change_signature · gajus/slonik": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename field · gajus/slonik": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename class · gajus/slonik": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove module · gajus/slonik": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · gajus/surgeon": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · gatsbyjs/gatsby": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · gemini-testing/testplane": {
+      "available": 14,
+      "selected": 14
+    },
+    "move method · graphql-compose/graphql-compose-mongoose": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove method · graphql-compose/graphql-compose-mongoose": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · graphql-compose/graphql-compose-mongoose": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · harttle/liquidjs": {
+      "available": 5,
+      "selected": 5
+    },
+    "remove method · harttle/liquidjs": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove field · harttle/liquidjs": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename method · harttle/liquidjs": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · hoodiehq/hoodie": {
+      "available": 6,
+      "selected": 6
+    },
+    "rename class · IgniteUI/igniteui-cli": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · image-js/image-js": {
+      "available": 6,
+      "selected": 6
+    },
+    "change_behavior · immerjs/immer": {
+      "available": 6,
+      "selected": 6
+    },
+    "change_behavior · immutable-js/immutable-js": {
+      "available": 7,
+      "selected": 7
+    },
+    "remove method · immutable-js/immutable-js": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · isomorphic-git/isomorphic-git": {
+      "available": 9,
+      "selected": 9
+    },
+    "remove method · isomorphic-git/isomorphic-git": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_signature · isomorphic-git/isomorphic-git": {
+      "available": 3,
+      "selected": 3
+    },
+    "remove module · isomorphic-git/isomorphic-git": {
+      "available": 2,
+      "selected": 2
+    },
+    "rename method · isomorphic-git/isomorphic-git": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · jeffijoe/awilix": {
+      "available": 2,
+      "selected": 2
+    },
+    "rename method · jeffijoe/awilix": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · jondot/hygen": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · jsdoc/jsdoc": {
+      "available": 6,
+      "selected": 6
+    },
+    "remove module · jsdoc/jsdoc": {
+      "available": 2,
+      "selected": 2
+    },
+    "move · jsdoc/jsdoc": {
+      "available": 1,
+      "selected": 1
+    },
+    "move module · jsdoc/jsdoc": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · kamilkisiela/graphql-inspector": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · kevinchappell/formBuilder": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · kitware/itk-vtk-image-viewer": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_signature · kitware/itk-vtk-image-viewer": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · kitware/itk-vtk-viewer": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename method · kitware/vtk-js": {
+      "available": 6,
+      "selected": 6
+    },
+    "change_signature · kitware/vtk-js": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · kuzzleio/kuzzle": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · lerna/lerna": {
+      "available": 15,
+      "selected": 15
+    },
+    "remove method · lerna/lerna": {
+      "available": 10,
+      "selected": 10
+    },
+    "inline · lerna/lerna": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_signature · lerna/lerna": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · lint-staged/lint-staged": {
+      "available": 6,
+      "selected": 6
+    },
+    "change_behavior · luin/ioredis": {
+      "available": 9,
+      "selected": 9
+    },
+    "change_behavior · mattlewis92/angular-calendar": {
+      "available": 8,
+      "selected": 8
+    },
+    "change_behavior · mattlewis92/angular-confirmation-popover": {
+      "available": 3,
+      "selected": 3
+    },
+    "rename field · mattlewis92/angular-confirmation-popover": {
+      "available": 2,
+      "selected": 2
+    },
+    "rename class · mattlewis92/angular-confirmation-popover": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove class · mattlewis92/angular-confirmation-popover": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · mattlewis92/angular-draggable-droppable": {
+      "available": 5,
+      "selected": 5
+    },
+    "change_signature · mikro-orm/mikro-orm": {
+      "available": 3,
+      "selected": 3
+    },
+    "change_behavior · mikro-orm/mikro-orm": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · milesj/aesthetic": {
+      "available": 3,
+      "selected": 3
+    },
+    "change_signature · milesj/aesthetic": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · mlaursen/react-md": {
+      "available": 2,
+      "selected": 2
+    },
+    "rename class · mlaursen/react-md": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_signature · mlaursen/react-md": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · mochajs/mocha": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · mozilla/fxa": {
+      "available": 4,
+      "selected": 4
+    },
+    "rename class · NativeScript/NativeScript": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · NativeScript/NativeScript": {
+      "available": 7,
+      "selected": 7
+    },
+    "change_behavior · nestjs/nest": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove method · newsuk/times-components": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · ng-alain/delon": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · ng-packagr/ng-packagr": {
+      "available": 7,
+      "selected": 7
+    },
+    "change_behavior · ngx-formly/ngx-formly": {
+      "available": 7,
+      "selected": 7
+    },
+    "move module · ngx-formly/ngx-formly": {
+      "available": 2,
+      "selected": 2
+    },
+    "remove field · ngx-formly/ngx-formly": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · nhn/tui.calendar": {
+      "available": 3,
+      "selected": 3
+    },
+    "rename class · nhn/tui.calendar": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename field · nodkz/mongodb-memory-server": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · nodkz/mongodb-memory-server": {
+      "available": 16,
+      "selected": 16
+    },
+    "remove method · nodkz/mongodb-memory-server": {
+      "available": 15,
+      "selected": 15
+    },
+    "change_signature · nodkz/mongodb-memory-server": {
+      "available": 12,
+      "selected": 12
+    },
+    "remove · nodkz/mongodb-memory-server": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename method · nodkz/mongodb-memory-server": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove constant · nodkz/mongodb-memory-server": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove field · nodkz/mongodb-memory-server": {
+      "available": 1,
+      "selected": 1
+    },
+    "move method · nodkz/mongodb-memory-server": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename interface · nodkz/mongodb-memory-server": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · npm/cli": {
+      "available": 20,
+      "selected": 20
+    },
+    "change_behavior · octokit/fixtures": {
+      "available": 6,
+      "selected": 6
+    },
+    "remove method · octokit/graphql-schema": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · octokit/graphql-schema": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · octokit/rest.js": {
+      "available": 15,
+      "selected": 15
+    },
+    "remove method · octokit/rest.js": {
+      "available": 3,
+      "selected": 3
+    },
+    "change_signature · octokit/rest.js": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · orgapp/orgajs": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · panva/node-oidc-provider": {
+      "available": 55,
+      "selected": 55
+    },
+    "change_signature · panva/node-oidc-provider": {
+      "available": 5,
+      "selected": 5
+    },
+    "remove field · panva/node-oidc-provider": {
+      "available": 6,
+      "selected": 6
+    },
+    "rename method · panva/node-oidc-provider": {
+      "available": 5,
+      "selected": 5
+    },
+    "remove method · panva/node-oidc-provider": {
+      "available": 4,
+      "selected": 4
+    },
+    "rename field · panva/node-oidc-provider": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · parse-community/parse-server": {
+      "available": 17,
+      "selected": 17
+    },
+    "change_signature · parse-community/parse-server": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · patternfly/patternfly-ng": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · pnpm/pnpm": {
+      "available": 72,
+      "selected": 72
+    },
+    "rename interface · pnpm/pnpm": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename field · pnpm/pnpm": {
+      "available": 6,
+      "selected": 6
+    },
+    "change_signature · pnpm/pnpm": {
+      "available": 4,
+      "selected": 4
+    },
+    "remove method · pnpm/pnpm": {
+      "available": 3,
+      "selected": 3
+    },
+    "rename method · pnpm/pnpm": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove module · pnpm/pnpm": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename class · pnpm/pnpm": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · positive-js/mosaic": {
+      "available": 2,
+      "selected": 2
+    },
+    "remove class · positive-js/mosaic": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · reactivex/rxjs": {
+      "available": 23,
+      "selected": 23
+    },
+    "change_signature · reactivex/rxjs": {
+      "available": 29,
+      "selected": 29
+    },
+    "remove method · reactivex/rxjs": {
+      "available": 30,
+      "selected": 30
+    },
+    "remove module · reactivex/rxjs": {
+      "available": 6,
+      "selected": 6
+    },
+    "remove interface · reactivex/rxjs": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove class · reactivex/rxjs": {
+      "available": 2,
+      "selected": 2
+    },
+    "remove type · reactivex/rxjs": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove field · reactivex/rxjs": {
+      "available": 1,
+      "selected": 1
+    },
+    "move method · reactivex/rxjs": {
+      "available": 10,
+      "selected": 10
+    },
+    "remove · reactivex/rxjs": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename · reactivex/rxjs": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename method · reactivex/rxjs": {
+      "available": 3,
+      "selected": 3
+    },
+    "rename module · reactivex/rxjs": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename class · reactivex/rxjs": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · renovatebot/renovate": {
+      "available": 73,
+      "selected": 73
+    },
+    "rename field · renovatebot/renovate": {
+      "available": 3,
+      "selected": 3
+    },
+    "change_signature · renovatebot/renovate": {
+      "available": 2,
+      "selected": 2
+    },
+    "remove field · renovatebot/renovate": {
+      "available": 3,
+      "selected": 3
+    },
+    "remove constant · renovatebot/renovate": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · router5/router5": {
+      "available": 16,
+      "selected": 16
+    },
+    "change_signature · router5/router5": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · runk/node-maxmind": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · Sage/carbon": {
+      "available": 5,
+      "selected": 5
+    },
+    "remove class · Sage/carbon": {
+      "available": 6,
+      "selected": 6
+    },
+    "remove field · Sage/carbon": {
+      "available": 1,
+      "selected": 1
+    },
+    "move class · Sage/carbon": {
+      "available": 3,
+      "selected": 3
+    },
+    "change_behavior · sanack/node-jq": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · sanity-io/sanity": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · SAP/fundamental-ngx": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · seek-oss/sku": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · sequelize/sequelize": {
+      "available": 14,
+      "selected": 14
+    },
+    "remove field · sequelize/sequelize": {
+      "available": 1,
+      "selected": 1
+    },
+    "move module · sequelize/sequelize": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · serverless/serverless": {
+      "available": 28,
+      "selected": 28
+    },
+    "change_behavior · snyk/snyk": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_signature · socketio/socket.io": {
+      "available": 2,
+      "selected": 2
+    },
+    "remove method · socketio/socket.io": {
+      "available": 2,
+      "selected": 2
+    },
+    "rename method · socketio/socket.io": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove field · socketio/socket.io": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · socketio/socket.io": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · SpoonX/wetland": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_signature · streamich/react-use": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename module · streamich/react-use": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · streamich/react-use": {
+      "available": 3,
+      "selected": 3
+    },
+    "move class · stryker-mutator/stryker": {
+      "available": 1,
+      "selected": 1
+    },
+    "remove field · stryker-mutator/stryker": {
+      "available": 3,
+      "selected": 3
+    },
+    "remove class · stryker-mutator/stryker": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · stryker-mutator/stryker": {
+      "available": 5,
+      "selected": 5
+    },
+    "remove module · stryker-mutator/stryker": {
+      "available": 2,
+      "selected": 2
+    },
+    "remove constant · stryker-mutator/stryker": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · sveltejs/svelte": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_signature · sveltejs/svelte": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · tabrindle/envinfo": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · tdeekens/promster": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · teambit/bit": {
+      "available": 5,
+      "selected": 5
+    },
+    "change_signature · thi-ng/umbrella": {
+      "available": 17,
+      "selected": 17
+    },
+    "change_behavior · thi-ng/umbrella": {
+      "available": 8,
+      "selected": 8
+    },
+    "remove method · thi-ng/umbrella": {
+      "available": 7,
+      "selected": 7
+    },
+    "rename method · thi-ng/umbrella": {
+      "available": 10,
+      "selected": 10
+    },
+    "rename class · thi-ng/umbrella": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · tj/commander.js": {
+      "available": 5,
+      "selected": 5
+    },
+    "change_behavior · trs/ftp-srv": {
+      "available": 3,
+      "selected": 3
+    },
+    "change_behavior · tweenjs/tween.js": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · valor-software/ngx-bootstrap": {
+      "available": 1,
+      "selected": 1
+    },
+    "rename field · valor-software/ngx-bootstrap": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · vercel/vercel": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · videojs/http-streaming": {
+      "available": 3,
+      "selected": 3
+    },
+    "remove method · videojs/http-streaming": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · videojs/video.js": {
+      "available": 16,
+      "selected": 16
+    },
+    "remove method · videojs/video.js": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · webiny/webiny-js": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_behavior · webpack-contrib/file-loader": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · xing/hops": {
+      "available": 13,
+      "selected": 13
+    },
+    "remove method · xing/hops": {
+      "available": 1,
+      "selected": 1
+    },
+    "change_signature · xing/hops": {
+      "available": 2,
+      "selected": 2
+    },
+    "change_behavior · yargs/yargs": {
+      "available": 25,
+      "selected": 25
+    }
+  },
+  "available": 1511,
+  "idsOmitted": "mode is \"all\": every available case was selected, and each one appears in cases.jsonl.gz. The list is omitted rather than restating the corpus.",
+  "dataset": {
+    "id": "kong",
+    "title": "Towards Better Comprehension of Breaking Changes in the NPM Ecosystem",
+    "source": {
+      "kind": "zenodo",
+      "url": "https://zenodo.org/records/13857646",
+      "version": "10.5281/zenodo.13857646",
+      "conceptVersion": "10.5281/zenodo.13219136"
+    },
+    "licence": "CC-BY-4.0",
+    "citation": "Dezhen Kong et al., \"Towards Better Comprehension of Breaking Changes in the NPM Ecosystem\", replication package, Zenodo, DOI 10.5281/zenodo.13857646.",
+    "ecosystem": "npm",
+    "datasetClass": "upstream-bc-detection",
+    "evaluationQuestion": "Given the real prose an upstream JavaScript maintainer wrote about a commit, does Drift read a breaking change out of it, and does it read the right kind of breaking change?",
+    "doesNotEstablish": "Nothing about whether Drift finds these changes in a consumer repository, nothing about repair, and nothing about the published-artefact API diff — this corpus supplies prose, so only the prose interpreter is under test.",
+    "groundTruth": {
+      "granularity": "commit",
+      "exhaustive": true,
+      "basis": "RQ1's detected_bc_are_documented.csv labels every sampled commit yes/no for whether developers documented a breaking change, so the negatives are real and precision is defined. RQ2's analyzed_breaking_changes.csv annotates a category per breaking change on commits already known to be breaking, which supports category accuracy and nothing else.",
+      "supports": [
+        "recall",
+        "precision",
+        "f1",
+        "category-accuracy"
+      ]
+    },
+    "localPath": "kong-zenodo-13857646"
+  }
+}

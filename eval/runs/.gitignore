@@ -1,0 +1,6 @@
+# Deterministic smoke runs are reproducible from source and are not evidence.
+# Live-AI trial artifacts ARE evidence and must be committed: they cost money,
+# cannot be reproduced by re-running, and every number in a report is derived
+# from them. Commit those explicitly with `git add -f`.
+*
+!.gitignore

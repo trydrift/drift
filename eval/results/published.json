@@ -1,0 +1,50 @@
+{
+  "$comment": [
+    "Which benchmark runs the website is allowed to show, and in what order.",
+    "",
+    "Explicit rather than a glob over eval/results/. A glob would publish whatever",
+    "happened to be on disk — a smoke run, an aborted sweep, a re-run left over from",
+    "debugging — and the difference between 'a run exists' and 'this run is the one",
+    "we stand behind' is exactly the difference this file records.",
+    "",
+    "Adding a row is a decision. The sync script reads the run's own metrics.json",
+    "and refuses to publish a row whose directory is missing, so a deleted run",
+    "fails the build instead of silently vanishing from the page.",
+    "",
+    "Order is editorial: the result with real negatives goes first, because it is",
+    "the only one that supports a precision and a reader should meet it before the",
+    "recall-only ones. Nothing here reorders by how good the numbers are."
+  ],
+  "runs": [
+    {
+      "runId": "roseau-accuracy",
+      "headline": true,
+      "why": "The only corpus here with real negatives, so the only one that can support a precision, a false-positive rate or an F1."
+    },
+    {
+      "runId": "kong-rq2-category",
+      "headline": false,
+      "why": "Real upstream prose from 1,511 annotated npm breaking changes, against the production prose interpreter."
+    },
+    {
+      "runId": "kong-rq1-documented",
+      "headline": false,
+      "why": "The binary form of the same question, published mainly for its trivial-marker baseline: the labels are close to regex-recoverable, and the comparison says so."
+    },
+    {
+      "runId": "swe-bump-detection",
+      "headline": false,
+      "why": "Real TypeScript projects at historical commits whose build a dependency upgrade breaks."
+    },
+    {
+      "runId": "bump-subset-40",
+      "headline": false,
+      "why": "A deterministic stratified subset of BUMP's Java consumer breakages, evaluated on the real historical commit pair."
+    },
+    {
+      "runId": "timemachine-verified",
+      "headline": false,
+      "why": "TimeMachine's human-verified Python subset, on the weakest manifest-pair construction in this benchmark."
+    }
+  ]
+}

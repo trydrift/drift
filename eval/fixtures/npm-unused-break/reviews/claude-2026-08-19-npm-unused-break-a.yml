@@ -1,0 +1,70 @@
+id: claude-2026-08-19-npm-unused-break-a
+fixtureId: npm-unused-break
+createdAt: 2026-08-19T02:00:00.000Z
+reviewer:
+  type: ai
+  name: Claude
+  provider: Anthropic
+  model: claude-sonnet-5
+  modelVersion: unavailable
+  toolVersion: unavailable
+reviewedRevision:
+  fixtureMetadata: 4875baa555934b8d6ee4244682868aa18e09f5c618dc5fd465ddb92c831db629
+  upstreamOld: 7ccdef9733105b682c0599a99f87f7e932b2dcf0f0e7a90d8c9b2b5f1894d73e
+  upstreamNew: eb82ee7c71cf95543dffeaa9a4b16924f50cf8cfcd7e2fecc4c6045586fb62bb
+  consumer: 30040114c42fcfe4be03ff99e13d47b45fda2cce508e6671c2d914bc7def1bca
+  oracles: 96ea95f6287b899730658af104331b1fbbfb5348121ef39874990955332ed1d6
+  goldPatch: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  hiddenChecks: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  evidence: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+evidence:
+  files:
+    - upstream/old/index.js
+    - upstream/old/index.d.ts
+    - upstream/new/index.js
+    - upstream/new/index.d.ts
+    - consumer/src/app.js
+  commands:
+    - "npm test (baseline: consumer pointed at upstream/old)"
+    - "npm test (broken: consumer pointed at upstream/new, unmodified)"
+  artifacts: []
+  notes: Negative/control fixture, reviewed before inspecting any adapter prediction.
+conclusion:
+  upstreamFindings:
+    - fixture-lib:removedFn:removed-export
+  impactSites: []
+  taxonomy:
+    nature: api-shape
+    detectability:
+      - link-or-import
+      - compile-time
+    scope: symbol
+    visibility:
+      - direct
+  gaps: []
+  groundTruthSafety: safe
+  repair:
+    expectedAction: no-repair-needed
+    expectedChangedFiles: []
+rationale:
+  summary: "upstream/old exports usedFn and removedFn; upstream/new exports only
+    usedFn — removedFn is a real, upstream breaking change (export-removed).
+    consumer/src/app.js contains exactly one import statement, `import { usedFn
+    } from 'fixture-lib'`, and never references removedFn anywhere in the file.
+    I grepped the whole consumer/ tree (one file) to confirm there is no other
+    reference. Both baseline and broken oracle runs pass — confirmed
+    empirically, not just by inspection: this consumer is genuinely unaffected
+    by the upgrade despite the real upstream break. groundTruthSafety is safe
+    (not merely uncertain) because impactSites is empty for a reason I directly
+    verified (no reference exists anywhere in the one-file consumer), not
+    because I failed to find one."
+  findingNotes:
+    - fixture-lib:removedFn:removed-export — real upstream break, confirmed
+      present in old/index.d.ts and absent from new/index.d.ts.
+    - Zero impact sites — confirmed by reading the entire (one-file) consumer,
+      not merely by absence of a match.
+  uncertainty: None — this fixture is intentionally small and fully inspectable in one pass.
+status: reviewed
+reviewOf: []
+promptVersion: ground-truth-v1
+promptHash: see eval/review-prompts/ground-truth-v1.md

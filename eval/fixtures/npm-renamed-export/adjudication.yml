@@ -1,0 +1,32 @@
+fixtureId: npm-renamed-export
+acceptedReviewIds:
+  - claude-2026-08-19-npm-renamed-export-b
+decision:
+  upstreamFindings:
+    - fixture-lib:oldName:renamed-export
+  impactSites:
+    - src/app.js:oldName
+  taxonomy:
+    nature: api-shape
+    detectability:
+      - link-or-import
+      - compile-time
+    scope: symbol
+    visibility:
+      - direct
+  gaps: []
+  groundTruthSafety: unsafe
+  repair:
+    expectedAction: deterministic-repair
+    expectedChangedFiles:
+      - src/app.js
+    goldPatch: expected/gold.patch
+status: accepted
+decidedAt: 2026-08-19T12:30:00.000Z
+decidedBy:
+  type: ai
+  name: Claude
+notes: >-
+  Accepts review b, a re-derivation on the revised fixture. The policy is
+  unchanged from the previous adjudication; `repair` was renamed to
+  `deterministic-repair` when the enum was widened.

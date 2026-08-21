@@ -3,41 +3,34 @@ ecosystem: npm
 dependency: fixture-lib
 fromVersion: 1.0.0
 toVersion: 2.0.0
+scenarioLabel: behaviour-return-value
 source:
   repository: fixture-local
   licence: MIT
-taxonomy:
-  nature: behaviour
-  detectability:
-    - test-time
-    - runtime-only
-  scope: symbol
-  visibility:
-    - unknown
 exposure: direct
-expected:
-  upstreamFindings:
-    - fixture-lib:formatUser:return-value
-  impactSites:
-    - src/app.js:formatUser
-    - src/app.ts:formatUser
-  gaps:
-    - No checks were run against this plan, so nothing confirms the findings were understood correctly or that a fix would compile.
-  planNodes:
-    - unit_b31ac9b2f1
-  edges: []
-  goldPatch: expected/gold.patch
 oracles:
-  negative: npm test
-  positive: npm test
+  baseline:
+    command: npm test
+    expect: pass
+  broken:
+    command: npm test
+    expect: fail
+  repaired:
+    command: npm test
+    expect: pass
 complexity: small
 network: disabled
+readiness: benchmark-ready
 provenance:
-  reviewStatus: reviewed
+  kind: synthetic
+  createdAt: 2026-08-19
+  author: eval-harness
   notes: >
     Synthetic local fixture; no external code or licence obligations.
-    `expected` is the verified output of eval/src/run.ts's deterministic
-    adapter, which runs Drift's real detection, localization, and bounded
-    behavioural-probing pipeline against upstream/old and upstream/new — it is
-    not hand-authored. Regenerate it by running the harness and copying the
-    prediction if the pipeline's output for this fixture legitimately changes.
+    formatUser's return type changed from a string to { label: string }
+    between 1.0.0 and 2.0.0, both in the .d.ts (a genuine type-surface
+    signature-changed finding) and observably at runtime (a genuine
+    behavioural-diff finding via localPackageEnvironment). Ground truth lives
+    in reviews/ and adjudication.yml, not here — see eval/README.md. It is
+    derived independently by review, per eval/review-prompts/ground-truth-v1.md,
+    never sourced from a harness run's own output.

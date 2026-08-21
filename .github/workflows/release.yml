@@ -61,6 +61,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      - run: npm run eval:review:validate
+      - run: npm run eval:test
       - run: npm run eval:deterministic
 
       # Rebuilds action/index.cjs, fails if the committed bundle is stale,

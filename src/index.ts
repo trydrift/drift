@@ -58,6 +58,12 @@ export type { LocalizeOptions } from './localize/index.js';
 
 export { buildPlan, planCommits, assessRisk, isAutoDispatchable, isTestPath, branchNameFor } from './plan/index.js';
 export type { BuildPlanInput } from './plan/index.js';
+export { attemptCodemod, applyCodemodTransform } from './codemod/index.js';
+export type { CodemodResult, CodemodTransform } from './codemod/index.js';
+export { validateFixPlan } from './fixplan/validate.js';
+export type { FixPlan, FixPlanAssessment } from './fixplan/schema.js';
+export { applyBuiltinCodemod, applyCommitFixPlan } from './remediation/apply.js';
+export type { ApplyCodemodResult } from './remediation/apply.js';
 
 export { dispatch, dispatchToCopilot, buildTaskPrompt, getTaskStatus, isTerminalState } from './dispatch/index.js';
 export type { DispatchOptions, CopilotDispatchResult, CopilotTask } from './dispatch/index.js';
@@ -188,6 +194,7 @@ export type {
 export {
   applyBuiltinCommit,
   applyFixPlanCommit,
+  assessmentOf,
   createRemediationWorktree,
   removeRemediationWorktree,
   runAgentCommitsInWorktree,

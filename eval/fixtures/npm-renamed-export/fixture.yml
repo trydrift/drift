@@ -1,0 +1,32 @@
+id: npm-renamed-export
+ecosystem: npm
+dependency: fixture-lib
+fromVersion: 1.0.0
+toVersion: 2.0.0
+scenarioLabel: renamed-export
+source:
+  repository: fixture-local
+  licence: MIT
+exposure: direct
+oracles:
+  baseline:
+    command: npm test
+    expect: pass
+  broken:
+    command: npm test
+    expect: fail
+  repaired:
+    command: npm test
+    expect: pass
+complexity: small
+network: disabled
+readiness: benchmark-ready
+provenance:
+  kind: synthetic
+  createdAt: 2026-08-19
+  author: eval-harness
+  notes: >
+    Synthetic local fixture. oldName was renamed to newName between 1.0.0 and
+    2.0.0; the consumer depends on 2.0.0 while still calling oldName, so the
+    broken oracle fails until it is renamed. Ground truth lives in
+    reviews/ and adjudication.yml, not here — see eval/README.md.

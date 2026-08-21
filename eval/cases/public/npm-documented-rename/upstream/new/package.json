@@ -1,0 +1,12 @@
+{
+  "name": "fixture-lib",
+  "version": "2.0.0",
+  "type": "module",
+  "license": "MIT",
+  "exports": "./index.js",
+  "types": "index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/drift-bench/fixture-lib"
+  }
+}

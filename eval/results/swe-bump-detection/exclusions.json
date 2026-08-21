@@ -1,0 +1,132 @@
+[
+  {
+    "caseId": "ayocodingit__boilerplate-express-service-express-jwt__^8.4.1",
+    "kind": "source-unavailable",
+    "reason": "commit 3d80009b32c9fe6bfe93f67ffcf396013949afaa could not be fetched from https://github.com/ayocodingit/boilerplate-express-service.git: Command failed: git fetch --quiet --depth 1 origin 3d80009b32c9fe6bfe93f67ffcf396013949afaa\nremote: Repository not found.\nfatal: repository 'https://github.com/ayocodingit/boilerplate-express-service.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "ayocodingit__boilerplate-express-service-express-jwt__^8.4.1",
+      "repository": "https://github.com/ayocodingit/boilerplate-express-service",
+      "commit": "3d80009b32c9fe6bfe93f67ffcf396013949afaa",
+      "baseCommit": null,
+      "dependency": "express-jwt",
+      "fromVersion": null,
+      "toVersion": "^8.4.1",
+      "packageManager": "npm",
+      "requiredRuntime": "v20.12.2",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable"
+      }
+    }
+  },
+  {
+    "caseId": "chriscareycode__nagiostv-react-clipboard-polyfill__^4.0.2",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "chriscareycode__nagiostv-react-clipboard-polyfill__^4.0.2",
+      "repository": "https://github.com/chriscareycode/nagiostv-react",
+      "commit": "f6685c1060065b00ab1ea2af896802ba9d6f2981",
+      "baseCommit": null,
+      "dependency": "clipboard-polyfill",
+      "fromVersion": null,
+      "toVersion": "^4.0.2",
+      "packageManager": "npm",
+      "requiredRuntime": "v20.12.2",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable"
+      }
+    }
+  },
+  {
+    "caseId": "chriscareycode__nagiostv-react-react-router-dom__^6.22.3",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "chriscareycode__nagiostv-react-react-router-dom__^6.22.3",
+      "repository": "https://github.com/chriscareycode/nagiostv-react",
+      "commit": "f6685c1060065b00ab1ea2af896802ba9d6f2981",
+      "baseCommit": null,
+      "dependency": "react-router-dom",
+      "fromVersion": null,
+      "toVersion": "^6.22.3",
+      "packageManager": "npm",
+      "requiredRuntime": "v20.12.2",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable"
+      }
+    }
+  },
+  {
+    "caseId": "chriscareycode__nagiostv-react-react-tooltip__^5.26.3",
+    "kind": "reproduction-failed",
+    "reason": "timed-out: the case exceeded its 900s deadline and was abandoned so the run could continue",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "chriscareycode__nagiostv-react-react-tooltip__^5.26.3",
+      "repository": "https://github.com/chriscareycode/nagiostv-react",
+      "commit": "f6685c1060065b00ab1ea2af896802ba9d6f2981",
+      "baseCommit": null,
+      "dependency": "react-tooltip",
+      "fromVersion": null,
+      "toVersion": "^5.26.3",
+      "packageManager": "npm",
+      "requiredRuntime": "v20.12.2",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable"
+      }
+    }
+  },
+  {
+    "caseId": "karrioapi__karrio-dashboard-axios__^1.6.8",
+    "kind": "source-unavailable",
+    "reason": "commit 00ef3e6f7f4e368310b1ce3ae99284a07734ae84 could not be fetched from https://github.com/karrioapi/karrio-dashboard.git: Command failed: git fetch --quiet --depth 1 origin 00ef3e6f7f4e368310b1ce3ae99284a07734ae84\nremote: Repository not found.\nfatal: repository 'https://github.com/karrioapi/karrio-dashboard.git/' not found\n",
+    "missingRequirement": null,
+    "provenance": {
+      "dataset": "swe-bump",
+      "datasetVersion": "d4504129fd9b536ad5aca2e74f35f5d51e3362e4",
+      "recordId": "karrioapi__karrio-dashboard-axios__^1.6.8",
+      "repository": "https://github.com/karrioapi/karrio-dashboard",
+      "commit": "00ef3e6f7f4e368310b1ce3ae99284a07734ae84",
+      "baseCommit": null,
+      "dependency": "axios",
+      "fromVersion": null,
+      "toVersion": "^1.6.8",
+      "packageManager": "npm",
+      "requiredRuntime": "v20.12.2",
+      "oracleCommand": "tsc --noEmit",
+      "containerImage": null,
+      "sourceHash": "3c4c9b5ff41a41520353285a1ceb3718dea4ed98d7eb95d67478aaa06b14ad4a",
+      "extra": {
+        "versionToIsRange": "true",
+        "manifestVersionTo": "unavailable"
+      }
+    }
+  }
+]

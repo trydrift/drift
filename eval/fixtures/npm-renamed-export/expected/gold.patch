@@ -1,0 +1,17 @@
+diff --git a/src/app.js b/src/app.js
+--- a/src/app.js
++++ b/src/app.js
+@@ -1,11 +1,11 @@
+-import { oldName } from 'fixture-lib';
++import { newName } from 'fixture-lib';
+ 
+ /**
+  * The application's own behaviour, exported so it can be exercised
+  * independently of this file's own self-check.
+  */
+ export function shout(name) {
+-  return oldName(name);
++  return newName(name);
+ }
+ 
+ const value = shout('Ada');

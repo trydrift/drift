@@ -1,0 +1,42 @@
+fixtureId: npm-return-value
+acceptedReviewIds:
+  - claude-2026-08-19-npm-return-value-d
+decision:
+  upstreamFindings:
+    - fixture-lib:formatUser:signature-change
+    - fixture-lib:formatUser:return-value
+  impactSites:
+    - src/app.js:formatUser
+    - src/app.ts:formatUser
+  taxonomy:
+    nature: behaviour
+    detectability:
+      - static-semantic
+      - test-time
+      - runtime-only
+    scope: symbol
+    visibility:
+      - direct
+  gaps: []
+  groundTruthSafety: unsafe
+  repair:
+    expectedAction: agent-delegation
+    expectedChangedFiles:
+      - src/app.js
+      - src/app.ts
+    goldPatch: expected/gold.patch
+status: accepted
+decidedAt: 2026-08-19T12:30:00.000Z
+decidedBy:
+  type: ai
+  name: Claude
+notes: >-
+  Accepts review d. Two case defects were corrected rather than scored around:
+  the recorded gold patch only touched src/app.ts while the project's own check
+  runs src/app.js, which is why the reproducibility gate ruled the case
+  oracle-insufficient and stopped scoring it; and expectedChangedFiles was empty
+  because earlier reviews expected no change at all. The policy reasoning behind
+  the previous `abstain` is unchanged and is now recorded as `agent-delegation`,
+  which says the same thing the widened enum can express: a real repair exists
+  and an agent under human review should produce it, while a deterministic tier
+  inventing the rule is still an unsafe-attempt.

@@ -1,3 +1,6 @@
 *
 !.gitignore
 !.gitkeep
+!audits/
+!audits/*.json
+!audits/*.md

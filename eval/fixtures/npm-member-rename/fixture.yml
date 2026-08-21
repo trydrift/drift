@@ -1,0 +1,40 @@
+id: npm-member-rename
+ecosystem: npm
+dependency: fixture-lib
+fromVersion: 1.0.0
+toVersion: 2.0.0
+scenarioLabel: member-rename
+source:
+  repository: fixture-local
+  licence: MIT
+exposure: direct
+oracles:
+  baseline:
+    command: npm test
+    expect: pass
+  broken:
+    command: npm test
+    expect: fail
+  repaired:
+    command: npm test
+    expect: pass
+complexity: small
+network: disabled
+readiness: benchmark-ready
+provenance:
+  kind: synthetic
+  createdAt: 2026-08-19
+  author: eval-harness
+  notes: >
+    Synthetic local fixture. oldQuery was renamed to query between 1.0.0 and
+    2.0.0; the consumer imports the package via a namespace import and calls
+    fixture.oldQuery(...), so the broken oracle fails until it is renamed.
+    Ground truth lives in reviews/ and adjudication.yml, not here — see
+    eval/README.md. The drift-full-pipeline adapter's real production
+    evidence-gathering has no source of the rename linkage (no migration
+    guide or changelog is fetchable for a synthetic local package without
+    reaching the real network, which network: disabled forbids); it can only
+    see the .d.ts surface diff, which proves oldQuery was removed but not
+    what replaced it. Whether that correctly yields a missed-repair or a
+    correct abstention depends on the accepted adjudication — see
+    adjudication.yml.
