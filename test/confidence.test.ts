@@ -44,6 +44,9 @@ const dependencyChange = {
   manifestPath: 'package.json',
 };
 
+/** A second, independent dependency change, for the multi-dependency verdict tests. */
+const dependencyChangeB = { ...dependencyChange, name: 'other-sdk' };
+
 function evidence(overrides: Record<string, unknown> = {}) {
   return {
     id: 'ev_1',
@@ -685,7 +688,10 @@ describe('reporting never turns an absence into an all-clear', () => {
     });
 
     test('no confirmed regression leaves the static verdict untouched', () => {
-      const plan = planWith({ localizationRan: true });
+      const plan = planWith({
+        localizationRan: true,
+        checkedSurfaces: [{ surface: 'api-surface', dependency: 'acme-sdk', ecosystem: 'npm', status: 'checked', detail: 'diffed' }],
+      });
       assert.equal(resolvePlanVerdict(plan), 'detected-not-locally-reachable');
     });
 
@@ -702,6 +708,101 @@ describe('reporting never turns an absence into an all-clear', () => {
   });
 
   /**
+   * `reduceVerdict` reads `checkedSurfaces` as one undifferentiated pool, which
+   * is right for a single-dependency plan and wrong the moment a second
+   * dependency enters the scan: `.some()` over the pool is satisfied by the
+   * first dependency's success and never notices the second's api-surface
+   * being unavailable. A safe-equivalent verdict is a claim about *every*
+   * dependency the plan touches, not just the one a finding happened to name.
+   */
+  describe('resolvePlanVerdict over more than one dependency change', () => {
+    function twoDependencyPlan(overrides: Record<string, unknown>) {
+      return planWith({ changes: [dependencyChange, dependencyChangeB], ...overrides });
+    }
+
+    test('1. one dependency unchecked: a no-findings plan stays insufficient-evidence, never safe', () => {
+      const plan = twoDependencyPlan({
+        breakingChanges: [],
+        impactSites: [],
+        checkedSurfaces: [
+          { surface: 'api-surface', dependency: 'acme-sdk', ecosystem: 'npm', status: 'checked', detail: 'diffed' },
+          { surface: 'api-surface', dependency: 'other-sdk', ecosystem: 'npm', status: 'unavailable', detail: 'no diff available' },
+          { surface: 'localization', status: 'checked', detail: 'searched' },
+        ],
+      });
+      assert.equal(resolvePlanVerdict(plan), 'insufficient-evidence');
+    });
+
+    test('2. one dependency has a safe-equivalent finding, the other is unchecked: stays insufficient-evidence', () => {
+      // `breaking()` defaults to dependency `acme-sdk`; `other-sdk` produced no
+      // finding at all — exactly what "its surface was never computed" looks
+      // like from the finding list alone, which is why checkedSurfaces is the
+      // only place this is distinguishable from "checked and clean".
+      const plan = twoDependencyPlan({
+        localizationRan: true,
+        checkedSurfaces: [
+          { surface: 'api-surface', dependency: 'acme-sdk', ecosystem: 'npm', status: 'checked', detail: 'diffed' },
+          { surface: 'api-surface', dependency: 'other-sdk', ecosystem: 'npm', status: 'unavailable', detail: 'no diff available' },
+        ],
+      });
+      assert.equal(verdictFor(plan.breakingChanges[0]!), 'detected-not-locally-reachable');
+      assert.equal(resolvePlanVerdict(plan), 'insufficient-evidence');
+    });
+
+    test('3. both dependencies checked, zero findings: genuinely safe', () => {
+      const plan = twoDependencyPlan({
+        breakingChanges: [],
+        impactSites: [],
+        checkedSurfaces: [
+          { surface: 'api-surface', dependency: 'acme-sdk', ecosystem: 'npm', status: 'checked', detail: 'diffed' },
+          { surface: 'api-surface', dependency: 'other-sdk', ecosystem: 'npm', status: 'checked', detail: 'diffed' },
+          { surface: 'localization', status: 'checked', detail: 'searched' },
+        ],
+      });
+      assert.equal(resolvePlanVerdict(plan), 'no-incompatible-change-in-checked-surfaces');
+    });
+
+    test('4. both dependencies checked, one upstream-only finding: safe-equivalent behaviour is unchanged', () => {
+      const plan = twoDependencyPlan({
+        localizationRan: true,
+        checkedSurfaces: [
+          { surface: 'api-surface', dependency: 'acme-sdk', ecosystem: 'npm', status: 'checked', detail: 'diffed' },
+          { surface: 'api-surface', dependency: 'other-sdk', ecosystem: 'npm', status: 'checked', detail: 'diffed' },
+        ],
+      });
+      assert.equal(resolvePlanVerdict(plan), 'detected-not-locally-reachable');
+    });
+
+    test('5. a confirmed regression still overrides, even while another dependency is unchecked', () => {
+      // The measured fact wins regardless of what is incomplete elsewhere —
+      // confirmedRegressions is checked before the multi-dependency downgrade,
+      // not after it.
+      const plan = twoDependencyPlan({
+        breakingChanges: [],
+        impactSites: [],
+        confirmedRegressions: ['npm acme-sdk'],
+        checkedSurfaces: [
+          { surface: 'api-surface', dependency: 'acme-sdk', ecosystem: 'npm', status: 'checked', detail: 'diffed' },
+          { surface: 'api-surface', dependency: 'other-sdk', ecosystem: 'npm', status: 'unavailable', detail: 'no diff available' },
+          { surface: 'localization', status: 'checked', detail: 'searched' },
+        ],
+      });
+      assert.equal(resolvePlanVerdict(plan), 'locally-affected');
+    });
+
+    test('a locally-affected finding still outranks incomplete evidence elsewhere', () => {
+      const plan = twoDependencyPlan({
+        impactSites: [site()],
+        checkedSurfaces: [
+          { surface: 'api-surface', dependency: 'acme-sdk', ecosystem: 'npm', status: 'checked', detail: 'diffed' },
+          { surface: 'api-surface', dependency: 'other-sdk', ecosystem: 'npm', status: 'unavailable', detail: 'no diff available' },
+        ],
+      });
+      assert.equal(resolvePlanVerdict(plan), 'locally-affected');
+    });
+  });
+
+  /**
    * The production report used to reconstruct its own repository-level
    * conclusion from `plan.commits.length === 0` alone, independently of
    * `resolvePlanVerdict` — so a plan with a confirmed regression but no
@@ -713,7 +814,7 @@ describe('reporting never turns an absence into an all-clear', () => {
    */
   describe('the report agrees with resolvePlanVerdict when there is nothing else to show', () => {
     const CLEAN_CHECKED_SURFACES = [
-      { surface: 'api-surface', dependency: 'acme-sdk', status: 'checked', detail: 'diffed' },
+      { surface: 'api-surface', dependency: 'acme-sdk', ecosystem: 'npm', status: 'checked', detail: 'diffed' },
       { surface: 'localization', status: 'checked', detail: 'searched' },
     ];
 
@@ -742,6 +843,37 @@ describe('reporting never turns an absence into an all-clear', () => {
       // Reuses the measured blocker text rather than inventing a second
       // description of the same fact.
       assert.match(body, /checks failed after this change was applied/i);
+    });
+
+    test('A2. an unrelated blocker recorded before the measured one is never mistaken for it', () => {
+      // `verifyPlan` appends its verification blocker after whatever
+      // guardrail blockers `buildPlan` already produced, so `blockers[0]` is
+      // routinely *not* the measured regression — see
+      // `VERIFICATION_FAILURE_BLOCKER_PREFIX`'s own doc.
+      const unrelatedBlocker = 'The plan graph contains an unresolved dependency and cannot be applied.';
+      const plan = {
+        ...planWith({
+          breakingChanges: [],
+          impactSites: [],
+          checkedSurfaces: CLEAN_CHECKED_SURFACES,
+          confirmedRegressions: ['npm acme-sdk'],
+        }),
+        blockers: [unrelatedBlocker, MEASURED_BLOCKER],
+      };
+
+      assert.equal(resolvePlanVerdict(plan), 'locally-affected');
+
+      const body = renderPullRequestBody(plan, DEFAULT_CONFIG);
+      assert.match(body, /confirmed this repository is affected/i);
+      // The actual verification detail is used —
+      assert.match(body, /checks failed after this change was applied/i);
+      // — and the unrelated blocker is never presented as the explanation for
+      // the confirmed regression, even though it comes first in the array.
+      // (It is still shown elsewhere, in the report's own blockers section —
+      // this only asserts it is not *attributed* to the regression.)
+      const confirmedLine = body.split('\n').find((line) => /confirmed this repository is affected/i.test(line));
+      assert.ok(confirmedLine);
+      assert.doesNotMatch(confirmedLine!, /unresolved dependency/i);
     });
 
     test('B. a safe-equivalent finding alongside a confirmed regression: per-finding stays honest, repo-level is not contradicted', () => {

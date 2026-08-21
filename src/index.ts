@@ -160,6 +160,7 @@ export {
   reduceVerdict,
   resolvePlanVerdict,
   repositoryConclusion,
+  VERIFICATION_FAILURE_BLOCKER_PREFIX,
   overallConfidenceLine,
   evidenceStrengthLabel,
   bandBadge,

@@ -39,7 +39,7 @@ import { detectPackageManagers, type PackageManagerId } from './detect/package-m
 import type { CheckKind } from './detect/checks.js';
 import { dependencyEcosystemKey } from './util/id.js';
 import { mapWithConcurrency } from './util/http.js';
-import { repositoryConclusion } from './report/confidence.js';
+import { repositoryConclusion, VERIFICATION_FAILURE_BLOCKER_PREFIX } from './report/confidence.js';
 
 /**
  * Stages 1–7: everything up to, but not including, acting.
@@ -734,7 +734,7 @@ async function verifyPlan(
       ...verifiedPlan,
       blockers: [
         ...verifiedPlan.blockers,
-        `The project's own checks failed after this change was applied in ${failedGroups.join(', ')}, which static analysis did not predict. See the verification output for what broke.`,
+        `${VERIFICATION_FAILURE_BLOCKER_PREFIX}${failedGroups.join(', ')}, which static analysis did not predict. See the verification output for what broke.`,
       ],
     };
   }
