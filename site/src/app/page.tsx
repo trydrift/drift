@@ -11,6 +11,8 @@ import { Terminal } from "@/components/terminal";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { loadRecordings } from "@/lib/load";
 import { totalsOf, type Recording } from "@/lib/recordings";
+import { loadBenchmarks } from "@/lib/benchmarks";
+import { buildNarrative } from "@/lib/benchmark-narrative";
 
 /**
  * The landing page.
@@ -36,6 +38,7 @@ export default function Home() {
   const recordings = loadRecordings();
   const languages = [...new Set(recordings.map((r) => r.language))];
   const proof = summarizeRecordings(recordings);
+  const narrative = buildNarrative(loadBenchmarks());
 
   return (
     <div className="relative min-h-screen">
@@ -157,11 +160,13 @@ export default function Home() {
               Measured on public datasets, including where it does badly
             </p>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-              On the Roseau accuracy dataset&rsquo;s 267 hand-labelled Java API changes — 167 of them labelled{" "}
-              <em>not</em> breaking, which is what makes precision meaningful at all — Drift scored 81/89 precision at
-              81/100 recall. On a 40-case stratified subset of BUMP&rsquo;s real Java build breakages it found the
-              dependency update in 34 of 39 and then told 16 of them they were not affected. Same runs; the second is
-              the worse number.
+              On the Roseau accuracy dataset&rsquo;s {narrative.roseau.available} hand-labelled Java API changes —{" "}
+              {narrative.roseau.negativeControls} of them labelled <em>not</em> breaking, which is what makes
+              precision meaningful at all — Drift scored {narrative.roseau.precisionFraction} precision at{" "}
+              {narrative.roseau.recallFraction} recall. On a {narrative.bumpSubset.selected}-case stratified subset
+              of BUMP&rsquo;s real Java build breakages it found the dependency update in{" "}
+              {narrative.bumpSubset.detectionFraction} and then told {narrative.bumpSubset.falseSafeFraction} of
+              them they were not affected. Same runs; the second is the worse number.
             </p>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
               Five public corpora, every exclusion counted with its reason, and the metrics the data cannot support
