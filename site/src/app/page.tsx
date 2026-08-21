@@ -12,7 +12,8 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { loadRecordings } from "@/lib/load";
 import { totalsOf, type Recording } from "@/lib/recordings";
 import { loadBenchmarks } from "@/lib/benchmarks";
-import { buildNarrative } from "@/lib/benchmark-narrative";
+import { buildNarrative, type BenchmarkNarrative } from "@/lib/benchmark-narrative";
+import { NPM_BREAKING_CHANGE_STUDY } from "@/lib/external-citations";
 
 /**
  * The landing page.
@@ -22,10 +23,18 @@ import { buildNarrative } from "@/lib/benchmark-narrative";
  * right here, on a repository you have heard of, without asking you to install
  * anything first.
  *
- * The demo is deliberately above the feature list. A visitor who watches thirty
- * seconds of a real analysis of Kubernetes understands the product better than
- * any three paragraphs could explain it, and the paragraphs are there for the
- * ones who want to know how it works after they already believe it does.
+ * The hero has to carry the whole pitch in about fifteen seconds: the problem
+ * (a sourced, external number — semver-compliant updates that still break
+ * something), how Drift does against it (a sourced, internal number — linked
+ * to `/benchmarks`, not asserted), and two unmissable next steps, install and
+ * watch it work. "Three Ways In" sits directly under that, not at the bottom
+ * of the page, because a visitor who is already sold by the headline should
+ * not have to scroll past four more sections to find out how to get it.
+ *
+ * The demo still comes right after. A visitor who watches thirty seconds of a
+ * real analysis of Kubernetes understands the product better than any three
+ * paragraphs could explain it, and the paragraphs below it are for the ones
+ * who want to know how it works after they already believe it does.
  */
 
 const GITHUB = "https://github.com/trydrift/Drift";
@@ -127,6 +136,12 @@ export default function Home() {
             >
               Watch a Real Analysis
             </a>
+            <Link
+              href="/benchmarks/"
+              className="rounded-full border border-border bg-surface px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover"
+            >
+              See the Benchmarks
+            </Link>
             <a
               href={GITHUB}
               target="_blank"
@@ -147,36 +162,67 @@ export default function Home() {
             {languages.join(" · ")}
           </p>
 
-          <ProofStrip proof={proof} />
-
           {/*
-            The one place on the landing page that quotes a benchmark number,
-            and it quotes two: the best result and the worst one, from the same
-            runs. A landing page that showed only the good number would be
-            doing exactly what the benchmark page exists to argue against.
+            Two numbers, not four recording counts — the scale of the problem
+            Drift exists for, and Drift's own measured accuracy at solving it.
+            Both link straight to the source: a reader should be able to check
+            either claim in one click, not take it on faith.
           */}
-          <div className="mt-8 rounded-xl border border-border bg-surface p-5">
-            <p className="text-sm font-medium text-foreground">
-              Measured on public datasets, including where it does badly
-            </p>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-              On the Roseau accuracy dataset&rsquo;s {narrative.roseau.available} hand-labelled Java API changes —{" "}
-              {narrative.roseau.negativeControls} of them labelled <em>not</em> breaking, which is what makes
-              precision meaningful at all — Drift scored {narrative.roseau.precisionFraction} precision at{" "}
-              {narrative.roseau.recallFraction} recall. On a {narrative.bumpSubset.selected}-case stratified subset
-              of BUMP&rsquo;s real Java build breakages it found the dependency update in{" "}
-              {narrative.bumpSubset.detectionFraction} and then told {narrative.bumpSubset.falseSafeFraction} of
-              them they were not affected. Same runs; the second is the worse number.
-            </p>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-              Five public corpora, every exclusion counted with its reason, and the metrics the data cannot support
-              listed as refusals rather than quietly omitted.{" "}
-              <Link href="/benchmarks/" className="text-brand-text underline decoration-dotted underline-offset-2">
-                See the benchmarks
-              </Link>
-              .
-            </p>
+          <ProblemAndProof narrative={narrative} />
+
+          <p className="mt-4 max-w-2xl text-[13px] leading-relaxed text-muted">
+            Same runs also show the worse number: on a {narrative.bumpSubset.selected}-case subset of real Java
+            build breakages, Drift found the update in {narrative.bumpSubset.detectionFraction} of them and still
+            called {narrative.bumpSubset.falseSafeFraction} safe.{" "}
+            <Link href="/benchmarks/" className="text-brand-text underline decoration-dotted underline-offset-2">
+              Full methodology
+            </Link>
+            .
+          </p>
+        </section>
+
+        {/* ── Get it ──────────────────────────────────────────────────── */}
+        {/*
+          Moved directly under the hero: a visitor already sold by the
+          headline and the two numbers above should not have to scroll past
+          four more sections to find out how to actually install this.
+        */}
+        <section id="install" className="scroll-mt-8 pt-14 sm:pt-20">
+          <h2 className={`${instrumentSerif.className} text-2xl text-landing sm:text-3xl`}>
+            Three Ways In
+          </h2>
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            <EntryPoint
+              icon="editor"
+              title="VS Code"
+              command="Drift for VS Code"
+              action={{ label: "Install from the Marketplace", href: MARKETPLACE, external: true }}
+            >
+              Affected lines inline, each linked to the upstream change that caused it. Nothing to
+              configure — open a repo and it starts.
+            </EntryPoint>
+            <EntryPoint
+              icon="terminal"
+              title="CLI"
+              commands={["npm install -g @usedrift/cli", "drift analyze"]}
+              action={{ label: "Read the CLI Docs", href: `${GITHUB}#try-it-with-zero-permissions`, external: true }}
+            >
+              Full report against your working tree. <code className="font-mono text-brand-text">analyze</code> writes
+              nothing and needs no token — the safe first command.
+            </EntryPoint>
+            <EntryPoint
+              icon="action"
+              title="GitHub Action"
+              command="uses: trydrift/drift@v0"
+              action={{ label: "Copy the Example Workflow", href: `${GITHUB}/blob/main/examples/workflows/drift.yml`, external: true }}
+            >
+              Checks first, approval next, pull request only after you allow it.{" "}
+              <a href="#action" className="text-brand-text underline decoration-dotted underline-offset-2">See the run.</a>{" "}
+              Or <Link href="/configure/" className="text-brand-text underline decoration-dotted underline-offset-2">build your own drift.yml</Link>.
+            </EntryPoint>
           </div>
+
+          <Terminal />
         </section>
 
         {/* ── The demo ────────────────────────────────────────────────── */}
@@ -187,9 +233,9 @@ export default function Home() {
             Not a Mock-Up. A Recording.
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-            Drift clones repos, calls registries, and runs package managers — none of that works in
-            a browser. So each panel below is a recording of a real run against a real project,
-            replayed here at its original pace. The commit is linked; go check it.
+            None of this works in a browser — cloning repos, calling registries, running package
+            managers. So each panel is a recording of a real run, replayed at its original pace, commit
+            linked.
           </p>
 
           <div className="mt-7">
@@ -206,10 +252,9 @@ export default function Home() {
             How Far Drift Gets, per Ecosystem
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-            Every ecosystem below has a recording above, including the ones where Drift does less.
-            The grade is computed, not hand-typed, from three things: whether Drift can diff the
-            real API, whether it resolves module names from the package itself rather than a
-            guess, and whether it can run the ecosystem&rsquo;s own build and tests.
+            Every ecosystem below has a recording above, including where Drift does less. The grade is
+            computed &mdash; not hand-typed &mdash; from whether Drift can diff the real API, resolve
+            module names from the package itself, and run the ecosystem&rsquo;s own build and tests.
           </p>
 
           <div className="mt-7">
@@ -278,17 +323,11 @@ export default function Home() {
             The Same Analysis, Running Without You
           </h2>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-            The Action is the only surface where Drift runs unattended, so here&rsquo;s exactly what
-            it&rsquo;s allowed to do. By default it opens no pull request — it analyzes, posts a
-            check, files an issue with the plan, and waits for a yes. Autonomy is opt-in per
-            repository, and every guardrail downgrades a run to an approval request instead of
-            skipping it.
-          </p>
-          <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-            It&rsquo;s the same pipeline, but not always the same result: Drift&rsquo;s strongest
-            evidence needs that ecosystem&rsquo;s toolchain on the runner. Where it&rsquo;s missing,
-            Drift falls back to release notes and says so. The shipped workflow sets up Go, with
-            commented-out steps for the rest.
+            By default the Action opens no pull request — it analyzes, posts a check, files an issue
+            with the plan, and waits for a yes. Autonomy is opt-in per repository, and every guardrail
+            downgrades a run to an approval request rather than skipping it. Evidence strength still
+            depends on the runner&rsquo;s toolchain; where a build tool is missing, Drift falls back to
+            release notes and says so.
           </p>
 
           <div className="mt-7 grid gap-4 lg:grid-cols-[1.15fr_1fr] lg:items-start">
@@ -353,45 +392,6 @@ export default function Home() {
             </div>
           </div>
         </section>
-
-        {/* ── Get it ──────────────────────────────────────────────────── */}
-        <section id="install" className="scroll-mt-8 pt-16 sm:pt-24">
-          <h2 className={`${instrumentSerif.className} text-2xl text-landing sm:text-3xl`}>
-            Three Ways In
-          </h2>
-          <div className="mt-6 grid gap-4 sm:grid-cols-3">
-            <EntryPoint
-              icon="editor"
-              title="VS Code"
-              command="Drift for VS Code"
-              action={{ label: "Install from the Marketplace", href: MARKETPLACE, external: true }}
-            >
-              Affected lines inline, each linked to the upstream change that caused it. Nothing to
-              configure — open a repo and it starts.
-            </EntryPoint>
-            <EntryPoint
-              icon="terminal"
-              title="CLI"
-              commands={["npm install -g @usedrift/cli", "drift analyze"]}
-              action={{ label: "Read the CLI Docs", href: `${GITHUB}#try-it-with-zero-permissions`, external: true }}
-            >
-              Full report against your working tree. <code className="font-mono text-brand-text">analyze</code> writes
-              nothing and needs no token — the safe first command.
-            </EntryPoint>
-            <EntryPoint
-              icon="action"
-              title="GitHub Action"
-              command="uses: trydrift/drift@v0"
-              action={{ label: "Copy the Example Workflow", href: `${GITHUB}/blob/main/examples/workflows/drift.yml`, external: true }}
-            >
-              Checks first, approval next, pull request only after you allow it.{" "}
-              <a href="#action" className="text-brand-text underline decoration-dotted underline-offset-2">See the run.</a>{" "}
-              Or <Link href="/configure/" className="text-brand-text underline decoration-dotted underline-offset-2">build your own drift.yml</Link>.
-            </EntryPoint>
-          </div>
-
-          <Terminal />
-        </section>
       </main>
 
       <footer className="relative z-10 border-t border-border bg-background/60">
@@ -451,22 +451,45 @@ function summarizeRecordings(recordings: Recording[]): ProofSummary {
   );
 }
 
-function ProofStrip({ proof }: { proof: ProofSummary }) {
-  const items = [
-    { value: proof.recordings, label: "recorded runs" },
-    { value: proof.ecosystems, label: "ecosystems" },
-    { value: proof.packages, label: "packages checked" },
-    { value: proof.sites, label: "linked code sites" },
-  ];
-
+/**
+ * The problem, sized — and Drift, measured against it. Both numbers link
+ * straight to where they came from: a peer-reviewed study for the first
+ * ({@link NPM_BREAKING_CHANGE_STUDY}, not a Drift result and never read from
+ * `loadBenchmarks()`), the `/benchmarks` methodology for the second. Neither
+ * is asserted without a source a reader can check in one click.
+ */
+function ProblemAndProof({ narrative }: { narrative: BenchmarkNarrative }) {
   return (
-    <div className="mt-8 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-4">
-      {items.map((item) => (
-        <div key={item.label} className="bg-surface/75 px-4 py-3">
-          <p className="font-mono text-2xl text-landing tabular">{item.value}</p>
-          <p className="mt-1 text-[11px] uppercase tracking-[0.16em] text-faint">{item.label}</p>
-        </div>
-      ))}
+    <div className="mt-8 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2">
+      <a
+        href={NPM_BREAKING_CHANGE_STUDY.url}
+        target="_blank"
+        rel="noreferrer"
+        className="group bg-surface/75 px-5 py-4 transition-colors hover:bg-surface-hover"
+        title={NPM_BREAKING_CHANGE_STUDY.title}
+      >
+        <p className="font-mono text-3xl text-landing tabular">{NPM_BREAKING_CHANGE_STUDY.rate}</p>
+        <p className="mt-1.5 text-[13px] leading-snug text-muted">
+          of semver-compliant npm updates still break a dependent &mdash; on a minor or patch release, the kind a
+          bot calls safe.
+        </p>
+        <p className="mt-2.5 text-[11px] uppercase tracking-[0.14em] text-faint group-hover:text-brand-text">
+          Ruan et al., ACM TOSEM 2023 ↗
+        </p>
+      </a>
+      <Link
+        href="/benchmarks/"
+        className="group bg-surface/75 px-5 py-4 transition-colors hover:bg-surface-hover"
+      >
+        <p className="font-mono text-3xl text-landing tabular">{narrative.roseau.recallPercent}</p>
+        <p className="mt-1.5 text-[13px] leading-snug text-muted">
+          recall on {narrative.roseau.available} hand-labelled real Java API changes ({narrative.roseau.precisionPercent}{" "}
+          precision &mdash; {narrative.roseau.negativeControls} of them genuinely not breaking).
+        </p>
+        <p className="mt-2.5 text-[11px] uppercase tracking-[0.14em] text-faint group-hover:text-brand-text">
+          Drift, measured &mdash; full benchmarks →
+        </p>
+      </Link>
     </div>
   );
 }
