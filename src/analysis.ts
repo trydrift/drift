@@ -39,6 +39,7 @@ import { detectPackageManagers, type PackageManagerId } from './detect/package-m
 import type { CheckKind } from './detect/checks.js';
 import { dependencyEcosystemKey } from './util/id.js';
 import { mapWithConcurrency } from './util/http.js';
+import { repositoryConclusion } from './report/confidence.js';
 
 /**
  * Stages 1–7: everything up to, but not including, acting.
@@ -586,13 +587,16 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
  * The plan's one-line summary — shared by `analyzeRepository`'s Quick Scan
  * result and `deepVerify`'s updated one, so the two always read the same way
  * for the same shape of plan.
+ *
+ * The "nothing else to show" case defers to `repositoryConclusion`, which is
+ * also what the Markdown report and the check-run summary use — this string
+ * is what the CLI prints standalone when there is nothing to fix, so it must
+ * not disagree with `resolvePlanVerdict` any more than those do.
  */
 function summarize(plan: RemediationPlan): string {
   return plan.commits.length > 0
     ? `${plan.breakingChanges.length} breaking change(s), ${new Set(plan.impactSites.map((s) => s.file)).size} file(s) affected`
-    : plan.blockers.length > 0
-      ? `Could not establish whether this repository is affected: ${plan.blockers[0]}`
-      : 'No code in this repository is affected by these dependency changes.';
+    : repositoryConclusion(plan);
 }
 
 /**

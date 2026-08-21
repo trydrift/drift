@@ -15,6 +15,9 @@ import {
   type RemediationPlan,
   type RepoContext,
 } from '../../../../dist/index.js';
+// Not part of the public package surface — see the note in
+// `eval/src/adapters/end-to-end.ts`.
+import { deepVerify } from '../../../../dist/analysis.js';
 
 const execFile = promisify(execFileCallback);
 
@@ -197,13 +200,20 @@ export async function predictBump(record: BumpRecord): Promise<BumpPrediction> {
       workspace: repo,
     };
 
-    const result = await analyzeRepository({
+    const analysisOptions = {
       repo: context,
       config,
       logger: SILENT_LOGGER,
       provider: new LocalGitProvider(repo, { before: beforeSha, after: record.breakingCommit }),
       workspace: repo,
-    });
+    };
+
+    // Deep Verification: install the change and run the project's own build,
+    // exactly as `runPipeline` does when a caller asks for it — always, here,
+    // matching what this harness measured before PR #69 split Quick Scan from
+    // Deep Verification into two calls. `deepVerify` itself still no-ops
+    // without `mvn` on the host or a checkout to run it in.
+    const result = await deepVerify(await analyzeRepository(analysisOptions), analysisOptions);
 
     const plan = result.plan;
     return {

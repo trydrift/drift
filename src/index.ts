@@ -159,6 +159,7 @@ export {
   VERDICT_TEXT,
   reduceVerdict,
   resolvePlanVerdict,
+  repositoryConclusion,
   overallConfidenceLine,
   evidenceStrengthLabel,
   bandBadge,

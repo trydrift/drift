@@ -17,6 +17,12 @@ import {
   type RemediationPlan,
   type RepoContext,
 } from '../../../dist/index.js';
+// Not part of the public package surface (`dist/index.js`) — this benchmark
+// reaches it the same way the VS Code extension does, by importing straight
+// from `analysis.js`. See the module docstring: Quick Scan and Deep
+// Verification are two separate calls since PR #69, and this harness has
+// always measured both.
+import { deepVerify } from '../../../dist/analysis.js';
 import { clearHttpCache } from '../../../dist/util/http.js';
 import { clearTypeSurfaceCache } from '../../../dist/evidence/type-surface.js';
 
@@ -25,7 +31,9 @@ import { clearTypeSurfaceCache } from '../../../dist/evidence/type-surface.js';
  *
  * This runs `analyzeRepository()` — the actual production orchestrator, the
  * same entry point the CLI, the GitHub Action, the webhook runner and the VS
- * Code extension all call — over a benchmark `RepoProvider`. It never
+ * Code extension all call — followed by `deepVerify()`, exactly as a caller
+ * that wants the stronger, measured answer is required to since PR #69 split
+ * Quick Scan from Deep Verification into two separate calls. It never
  * constructs a `DependencyChange`. Everything before evidence gathering is
  * therefore under measurement rather than assumed correct:
  *
@@ -118,7 +126,7 @@ export async function runEndToEndDetection(
   const triageSkipped: { dependency: string; reason: string }[] = [];
 
   try {
-    const result = await analyzeRepository({
+    const analysisOptions = {
       repo,
       config,
       logger: {
@@ -137,7 +145,9 @@ export async function runEndToEndDetection(
       provider,
       workspace: workspace.root,
       env: offlineEnv(),
-    });
+    };
+
+    let result = await analyzeRepository(analysisOptions);
 
     if (!result.plan) {
       // A run that produced no plan is a real, reportable detection outcome —
@@ -148,6 +158,21 @@ export async function runEndToEndDetection(
         // Production's own empty plan, built by production's own builder, so a
         // no-findings run hands a repair track the same shape a findings run
         // does rather than a hand-assembled stand-in.
+        plan: emptyPlan(repo, config),
+        summary: result.summary,
+      };
+    }
+
+    // Deep Verification: install the change and run the project's own
+    // checks, exactly as `runPipeline` does when a caller asks for it. This
+    // harness has always measured the result of that probe — see the module
+    // docstring — so it always asks, unconditionally; `deepVerify` itself
+    // still no-ops when `config.verify.enabled` is false or there is no
+    // checkout to run in.
+    result = await deepVerify(result, analysisOptions);
+    if (!result.plan) {
+      return {
+        detection: emptyDetection(triageSkipped, result.summary),
         plan: emptyPlan(repo, config),
         summary: result.summary,
       };

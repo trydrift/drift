@@ -15,7 +15,7 @@ import {
 } from '../dist/confidence/calibrate.js';
 import { bandFor } from '../dist/confidence/types.js';
 import { buildPlan, isAutoDispatchable } from '../dist/plan/index.js';
-import { renderApprovalIssue, renderPullRequestBody } from '../dist/report/markdown.js';
+import { renderApprovalIssue, renderPullRequestBody, renderSummaryLine } from '../dist/report/markdown.js';
 import { verdictFor, reduceVerdict, resolvePlanVerdict } from '../dist/report/confidence.js';
 import { DriftConfigSchema, DEFAULT_CONFIG } from '../dist/config/schema.js';
 
@@ -698,6 +698,135 @@ describe('reporting never turns an absence into an all-clear', () => {
       });
       assert.equal(verdictFor(plan.breakingChanges[0]!), 'insufficient-evidence');
       assert.equal(resolvePlanVerdict(plan), 'insufficient-evidence');
+    });
+  });
+
+  /**
+   * The production report used to reconstruct its own repository-level
+   * conclusion from `plan.commits.length === 0` alone, independently of
+   * `resolvePlanVerdict` — so a plan with a confirmed regression but no
+   * localized site could render "Drift found no code in this repository
+   * affected by this change" right alongside a verdict that says the
+   * opposite. `repositoryConclusion` is the single place that decision is
+   * made now; these pin the Markdown report (and, by extension, every other
+   * caller of it) against it.
+   */
+  describe('the report agrees with resolvePlanVerdict when there is nothing else to show', () => {
+    const CLEAN_CHECKED_SURFACES = [
+      { surface: 'api-surface', dependency: 'acme-sdk', status: 'checked', detail: 'diffed' },
+      { surface: 'localization', status: 'checked', detail: 'searched' },
+    ];
+
+    const NO_ALL_CLEAR = /no code in this repository (is|was) affected|nothing (in this repository )?is affected/i;
+
+    /** A blocker shaped like `verifyPlan`'s own — reused, not reinvented. */
+    const MEASURED_BLOCKER =
+      "The project's own checks failed after this change was applied in the repository root, which static analysis did not predict. See the verification output for what broke.";
+
+    test('A. a confirmed regression with nothing localized never renders an all-clear', () => {
+      const plan = {
+        ...planWith({
+          breakingChanges: [],
+          impactSites: [],
+          checkedSurfaces: CLEAN_CHECKED_SURFACES,
+          confirmedRegressions: ['npm acme-sdk'],
+        }),
+        blockers: [MEASURED_BLOCKER],
+      };
+
+      assert.equal(resolvePlanVerdict(plan), 'locally-affected');
+
+      const body = renderPullRequestBody(plan, DEFAULT_CONFIG);
+      assert.doesNotMatch(body, NO_ALL_CLEAR);
+      assert.match(body, /confirmed this repository is affected/i);
+      // Reuses the measured blocker text rather than inventing a second
+      // description of the same fact.
+      assert.match(body, /checks failed after this change was applied/i);
+    });
+
+    test('B. a safe-equivalent finding alongside a confirmed regression: per-finding stays honest, repo-level is not contradicted', () => {
+      const plan = {
+        ...planWith({
+          // `localizationRan: true` + no impact sites is exactly what
+          // `verdictFor` reads as `detected-not-locally-reachable` for this
+          // one finding.
+          localizationRan: true,
+          checkedSurfaces: CLEAN_CHECKED_SURFACES,
+          confirmedRegressions: ['npm acme-sdk'],
+        }),
+        blockers: [MEASURED_BLOCKER],
+      };
+
+      // The per-finding verdict is not touched by this fix, and must not be:
+      // verification proved *the repository* broke, not that *this specific*
+      // finding is the cause.
+      assert.equal(verdictFor(plan.breakingChanges[0]!), 'detected-not-locally-reachable');
+      assert.equal(resolvePlanVerdict(plan), 'locally-affected');
+
+      const body = renderPullRequestBody(plan, DEFAULT_CONFIG);
+      // The individual finding's own honest, hedged verdict is still there —
+      assert.match(body, /not reachable from this repository/i);
+      // — alongside the repository-level measured fact: no impact site means
+      // no commit, so the header/commit-plan fallback carries it, reusing the
+      // same blocker text the per-finding section does not repeat.
+      assert.match(body, /checks failed after this change was applied/i);
+      // And neither ever claims the repository is clear.
+      assert.doesNotMatch(body, NO_ALL_CLEAR);
+    });
+
+    test('C. control: a genuinely clean, checked plan still renders the honest clean conclusion', () => {
+      const plan = planWith({
+        breakingChanges: [],
+        impactSites: [],
+        checkedSurfaces: CLEAN_CHECKED_SURFACES,
+      });
+
+      assert.equal(resolvePlanVerdict(plan), 'no-incompatible-change-in-checked-surfaces');
+
+      const body = renderPullRequestBody(plan, DEFAULT_CONFIG);
+      assert.match(body, /no incompatible change detected in the surfaces that were checked/i);
+      assert.doesNotMatch(body, /confirmed this repository is affected/i);
+    });
+
+    test('the compact check-run summary line agrees too', () => {
+      const affected = {
+        ...planWith({
+          breakingChanges: [],
+          impactSites: [],
+          checkedSurfaces: CLEAN_CHECKED_SURFACES,
+          confirmedRegressions: ['npm acme-sdk'],
+        }),
+        blockers: [MEASURED_BLOCKER],
+      };
+      assert.doesNotMatch(renderSummaryLine(affected), NO_ALL_CLEAR);
+      assert.match(renderSummaryLine(affected), /confirmed this repository is affected/i);
+
+      const clean = planWith({ breakingChanges: [], impactSites: [], checkedSurfaces: CLEAN_CHECKED_SURFACES });
+      assert.match(renderSummaryLine(clean), /no incompatible change detected/i);
+    });
+
+    test('D. an inconclusive verification failure must not become locally-affected', () => {
+      // Shaped like an ambiguous multi-dependency batch failure or an
+      // environment that could not install at all: a blocker exists, but
+      // `verifyPlan` never populated `confirmedRegressions` for it — the
+      // narrower signal `resolvePlanVerdict` requires before it will assert
+      // impact.
+      const plan = {
+        ...planWith({
+          breakingChanges: [],
+          impactSites: [],
+          checkedSurfaces: CLEAN_CHECKED_SURFACES,
+        }),
+        blockers: ['This upgrade could not be installed in a clean checkout, so it could not be tested.'],
+      };
+
+      assert.deepEqual(plan.confirmedRegressions, []);
+      assert.notEqual(resolvePlanVerdict(plan), 'locally-affected');
+
+      const body = renderPullRequestBody(plan, DEFAULT_CONFIG);
+      assert.doesNotMatch(body, /confirmed this repository is affected/i);
+      assert.doesNotMatch(body, NO_ALL_CLEAR);
+      assert.match(body, /could not be installed in a clean checkout/i);
     });
   });
 

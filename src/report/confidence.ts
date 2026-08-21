@@ -160,6 +160,47 @@ export function resolvePlanVerdict(plan: RemediationPlan): FindingVerdict {
   return reduced;
 }
 
+/**
+ * The one sentence a reader needs when a plan has nothing else to show them —
+ * no breaking changes, no impact sites, nothing for `renderBreakingChanges` or
+ * a commit plan to list. Every production surface that used to reconstruct
+ * this from `plan.commits.length === 0` alone collapsed three different facts
+ * into one "no code affected" sentence; this is the one place that tells them
+ * apart, so the Markdown report, the check-run summary, the CLI's printed
+ * summary and every other repository-wide claim agree with
+ * {@link resolvePlanVerdict} instead of contradicting it.
+ *
+ * A confirmed regression is measured, not predicted, and is reported as
+ * exactly that — the repository is affected, but static analysis found
+ * nothing to localize it to — reusing `plan.blockers[0]`, the one sentence
+ * `verifyPlan` already wrote describing what broke and where, rather than
+ * inventing a second description of the same fact.
+ *
+ * A blocker that is *not* a confirmed regression (an ambiguous
+ * multi-dependency verification failure, a guardrail unrelated to
+ * verification) still earns its own detail rather than collapsing to the
+ * generic `insufficient-evidence` label — a standalone caller (the CLI's
+ * printed summary, a log line) may never show `plan.blockers` anywhere else,
+ * unlike the Markdown report's dedicated blockers section.
+ *
+ * Every other case defers to {@link VERDICT_TEXT}, the same wording already
+ * used per finding, so the repository-level and per-finding conclusions are
+ * never phrased as if they came from two different tools.
+ */
+export function repositoryConclusion(plan: RemediationPlan): string {
+  const verdict = resolvePlanVerdict(plan);
+
+  if (plan.confirmedRegressions.length > 0 && plan.blockers.length > 0) {
+    return `Drift confirmed this repository is affected, even though static analysis found nothing to point at: ${plan.blockers[0]}`;
+  }
+
+  if (verdict !== 'locally-affected' && plan.blockers.length > 0) {
+    return `Could not establish whether this repository is affected: ${plan.blockers[0]}`;
+  }
+
+  return VERDICT_TEXT[verdict];
+}
+
 const BAND_BADGE: Record<string, string> = {
   high: '🟢',
   medium: '🟡',

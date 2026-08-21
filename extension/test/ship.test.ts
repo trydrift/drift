@@ -159,6 +159,19 @@ describe('writing the commit', () => {
     ]);
     assert.match(body, /in @acme\/web/);
   });
+
+  test('a measured build failure with nothing localized is never reported as "no code uses the affected APIs"', () => {
+    // impactCount 0 is exactly the shape that used to fall through to "no
+    // code in this repository that uses the affected APIs" — the same all-
+    // clear-shaped bug the production Markdown report had, for the same
+    // reason: a measured verification failure and "nothing to point at"
+    // collapsed into the same message.
+    const { body } = upgradeCommitMessage([
+      candidate({ breakingCount: 1, impactCount: 0, verification: { status: 'failed', checks: [], failedFiles: [] } }),
+    ]);
+    assert.doesNotMatch(body, /no code in this repository that uses the affected APIs/i);
+    assert.match(body, /own checks failed/i);
+  });
 });
 
 describe('the pull request body', () => {
@@ -177,6 +190,14 @@ describe('the pull request body', () => {
     assert.match(affected, /5 places across 2 files/);
 
     assert.doesNotMatch(pullRequestBody([candidate()]), /### Needs review/);
+  });
+
+  test('a verification-failed candidate needs review too, even with nothing localized', () => {
+    const body = pullRequestBody([
+      candidate({ breakingCount: 1, impactCount: 0, verification: { status: 'failed', checks: [], failedFiles: [] } }),
+    ]);
+    assert.match(body, /### Needs review/);
+    assert.match(body, /own checks failed/i);
   });
 });
 
