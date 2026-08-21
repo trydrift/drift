@@ -5,10 +5,10 @@
   "language": "TypeScript",
   "repo": "https://github.com/supabase/supabase-js",
   "blurb": "The official Supabase client for JavaScript and TypeScript.",
-  "capturedAt": "2026-08-21T05:51:39.948Z",
+  "capturedAt": "2026-08-21T20:02:00.581Z",
   "commit": "a249594bc5790929ff090baa64f2d5bb3a40c286",
-  "engine": "09153dd336cd8676",
-  "durationMs": 18429,
+  "engine": "60b4d3156139a4db",
+  "durationMs": 14265,
   "packagesChecked": 22,
   "manifests": [
     "package.json",
@@ -25,681 +25,681 @@
   "nestedGitRepos": [],
   "events": [
     {
-      "at": 14,
+      "at": 16,
       "phase": "Looking for manifests",
       "detail": "supabase/supabase-js",
       "done": 0,
       "total": 0
     },
     {
-      "at": 38,
+      "at": 37,
       "phase": "Reading the workspace",
       "detail": "10 packages · pnpm-workspace",
       "done": 0,
       "total": 0
     },
     {
-      "at": 47,
+      "at": 41,
       "phase": "Reading manifest",
       "detail": "package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1007,
+      "at": 743,
       "phase": "Reading manifest",
       "detail": "packages/core/auth-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1008,
+      "at": 744,
       "phase": "Reading manifest",
       "detail": "packages/core/auth-js/example/react/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1008,
+      "at": 745,
       "phase": "Reading manifest",
       "detail": "packages/core/functions-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1008,
+      "at": 745,
       "phase": "Reading manifest",
       "detail": "packages/core/postgrest-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1008,
+      "at": 745,
       "phase": "Reading manifest",
       "detail": "packages/core/realtime-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1008,
+      "at": 745,
       "phase": "Reading manifest",
       "detail": "packages/core/realtime-js/example/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1009,
+      "at": 745,
       "phase": "Reading manifest",
       "detail": "packages/core/storage-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1009,
+      "at": 746,
       "phase": "Reading manifest",
       "detail": "packages/core/supabase-js/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1009,
+      "at": 746,
       "phase": "Reading manifest",
       "detail": "packages/shared/tracing/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 1009,
+      "at": 746,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 22
     },
     {
-      "at": 1009,
+      "at": 746,
       "phase": "Checking registries",
       "detail": "22 direct dependencies",
       "done": 0,
       "total": 22
     },
     {
-      "at": 1397,
+      "at": 1134,
       "phase": "Up to date",
       "detail": "@supabase/phoenix@0.4.5",
       "done": 1,
       "total": 22
     },
     {
-      "at": 1428,
+      "at": 1161,
       "phase": "Up to date",
       "detail": "clsx@2.1.1",
       "done": 2,
       "total": 22
     },
     {
-      "at": 1455,
+      "at": 1194,
       "phase": "Up to date",
       "detail": "class-variance-authority@0.7.1",
       "done": 3,
       "total": 22
     },
     {
-      "at": 1465,
+      "at": 1223,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 4,
       "total": 22
     },
     {
-      "at": 1465,
+      "at": 1223,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 5,
       "total": 22
     },
     {
-      "at": 1466,
+      "at": 1223,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 6,
       "total": 22
     },
     {
-      "at": 1466,
+      "at": 1223,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 7,
       "total": 22
     },
     {
-      "at": 1466,
+      "at": 1223,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 8,
       "total": 22
     },
     {
-      "at": 1466,
+      "at": 1223,
       "phase": "Up to date",
       "detail": "tslib@2.8.1",
       "done": 9,
       "total": 22
     },
     {
-      "at": 1530,
-      "phase": "Outdated",
-      "detail": "iceberg-js 0.8.1 → 1.0.0",
+      "at": 1277,
+      "phase": "Up to date",
+      "detail": "next-themes@0.4.6",
       "done": 10,
       "total": 22
     },
     {
-      "at": 1535,
-      "phase": "Up to date",
-      "detail": "next-themes@0.4.6",
+      "at": 1285,
+      "phase": "Outdated",
+      "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 11,
       "total": 22
     },
     {
-      "at": 1635,
+      "at": 1370,
       "phase": "Outdated",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
       "done": 12,
       "total": 22
     },
     {
-      "at": 1707,
+      "at": 1467,
       "phase": "Outdated",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
       "done": 13,
       "total": 22
     },
     {
-      "at": 1764,
+      "at": 1528,
       "phase": "Outdated",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 14,
       "total": 22
     },
     {
-      "at": 1817,
+      "at": 1558,
       "phase": "Outdated",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 15,
       "total": 22
     },
     {
-      "at": 1852,
+      "at": 1630,
       "phase": "Indexing your code",
       "detail": "383 files indexed · 22 direct dependencies to check",
       "done": 0,
       "total": 22
     },
     {
-      "at": 2043,
+      "at": 1871,
       "phase": "Outdated",
-      "detail": "lucide-react 0.511.0 → 1.33.0",
+      "detail": "tailwind-merge 3.3.0 → 3.6.0",
       "done": 16,
       "total": 22
     },
     {
-      "at": 2055,
+      "at": 1897,
       "phase": "Outdated",
-      "detail": "tailwind-merge 3.3.0 → 3.6.0",
+      "detail": "lucide-react 0.511.0 → 1.33.0",
       "done": 17,
       "total": 22
     },
     {
-      "at": 2476,
+      "at": 2298,
       "phase": "Outdated",
       "detail": "react 19.2.0 → 19.2.8",
       "done": 18,
       "total": 22
     },
     {
-      "at": 2476,
+      "at": 2298,
       "phase": "Outdated",
       "detail": "react 19.0.0 → 19.2.8",
       "done": 19,
       "total": 22
     },
     {
-      "at": 2567,
+      "at": 2392,
       "phase": "Outdated",
       "detail": "react-dom 19.2.0 → 19.2.8",
       "done": 20,
       "total": 22
     },
     {
-      "at": 2567,
+      "at": 2392,
       "phase": "Outdated",
       "detail": "react-dom 19.0.0 → 19.2.8",
       "done": 21,
       "total": 22
     },
     {
-      "at": 4928,
+      "at": 4349,
       "phase": "Outdated",
-      "detail": "next 16.2.11 → 16.3.1",
+      "detail": "next 16.2.11 → 16.3.2",
       "done": 22,
       "total": 22
     },
     {
-      "at": 4929,
+      "at": 4350,
       "phase": "Reading release notes and changelog",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
       "done": 0,
       "total": 12
     },
     {
-      "at": 4929,
+      "at": 4350,
       "phase": "Reading release notes and changelog",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 0,
       "total": 12
     },
     {
-      "at": 4930,
+      "at": 4351,
       "phase": "Reading release notes and changelog",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
       "done": 0,
       "total": 12
     },
     {
-      "at": 4930,
+      "at": 4351,
       "phase": "Reading release notes and changelog",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
       "done": 0,
       "total": 12
     },
     {
-      "at": 4930,
+      "at": 4351,
       "phase": "Reading release notes and changelog",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
       "total": 12
     },
     {
-      "at": 4932,
+      "at": 4351,
       "phase": "Reading release notes and changelog",
       "detail": "lucide-react 0.511.0 → 1.33.0",
       "done": 0,
       "total": 12
     },
     {
-      "at": 4932,
+      "at": 4352,
       "phase": "Reading release notes and changelog",
-      "detail": "next 16.2.11 → 16.3.1",
+      "detail": "next 16.2.11 → 16.3.2",
       "done": 0,
       "total": 12
     },
     {
-      "at": 4932,
+      "at": 4352,
       "phase": "Reading release notes and changelog",
       "detail": "react 19.2.0 → 19.2.8",
       "done": 0,
       "total": 12
     },
     {
-      "at": 5363,
+      "at": 5060,
       "phase": "Comparing the public API surface",
       "detail": "iceberg-js 0.8.1 → 1.0.0 · 5 evidence sources",
       "done": 0,
       "total": 12
     },
     {
-      "at": 5399,
+      "at": 5103,
       "phase": "Searching your code for 26 breaking changes",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
       "total": 12
     },
     {
-      "at": 5422,
+      "at": 5123,
       "phase": "Weighing what this upgrade is worth",
       "detail": "iceberg-js 0.8.1 → 1.0.0",
       "done": 0,
       "total": 12
     },
     {
-      "at": 5820,
+      "at": 5686,
       "phase": "Checked",
-      "detail": "iceberg-js 0.8.1 → 1.0.0 · safe for your code · 26 upstream changes, none used here",
+      "detail": "iceberg-js 0.8.1 → 1.0.0 · safe for your code · 26 upstream changes, none used here — not deeply verified",
       "done": 1,
       "total": 12
     },
     {
-      "at": 5820,
+      "at": 5686,
       "phase": "Reading release notes and changelog",
       "detail": "react 19.0.0 → 19.2.8",
       "done": 1,
       "total": 12
     },
     {
-      "at": 5989,
-      "phase": "Comparing the public API surface",
-      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3 · 2 evidence sources",
-      "done": 1,
-      "total": 12
-    },
-    {
-      "at": 5990,
+      "at": 6426,
       "phase": "Comparing the public API surface",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15 · 1 evidence source",
       "done": 1,
       "total": 12
     },
     {
-      "at": 5990,
+      "at": 6426,
+      "phase": "Comparing the public API surface",
+      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3 · 2 evidence sources",
+      "done": 1,
+      "total": 12
+    },
+    {
+      "at": 6426,
+      "phase": "Comparing the public API surface",
+      "detail": "lucide-react 0.511.0 → 1.33.0 · 3 evidence sources",
+      "done": 1,
+      "total": 12
+    },
+    {
+      "at": 6445,
+      "phase": "No breaking changes to look for",
+      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
+      "done": 1,
+      "total": 12
+    },
+    {
+      "at": 6445,
       "phase": "Searching your code for 4 breaking changes",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
       "done": 1,
       "total": 12
     },
     {
-      "at": 5990,
-      "phase": "No breaking changes to look for",
-      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
+      "at": 6445,
+      "phase": "Searching your code for 107 breaking changes",
+      "detail": "lucide-react 0.511.0 → 1.33.0",
       "done": 1,
       "total": 12
     },
     {
-      "at": 5990,
+      "at": 6445,
       "phase": "Weighing what this upgrade is worth",
       "detail": "@radix-ui/react-label 2.1.6 → 2.1.15",
       "done": 1,
       "total": 12
     },
     {
-      "at": 5997,
+      "at": 6448,
       "phase": "Weighing what this upgrade is worth",
       "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3",
       "done": 1,
       "total": 12
     },
     {
-      "at": 6313,
+      "at": 6462,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "lucide-react 0.511.0 → 1.33.0",
+      "done": 1,
+      "total": 12
+    },
+    {
+      "at": 6836,
       "phase": "Comparing the public API surface",
       "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11 · 1 evidence source",
       "done": 1,
       "total": 12
     },
     {
-      "at": 6314,
+      "at": 6837,
+      "phase": "No breaking changes to look for",
+      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
+      "done": 1,
+      "total": 12
+    },
+    {
+      "at": 6837,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
+      "done": 1,
+      "total": 12
+    },
+    {
+      "at": 6983,
       "phase": "Comparing the public API surface",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24 · 1 evidence source",
       "done": 1,
       "total": 12
     },
     {
-      "at": 6314,
-      "phase": "No breaking changes to look for",
-      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
-      "done": 1,
-      "total": 12
-    },
-    {
-      "at": 6314,
+      "at": 6983,
       "phase": "No breaking changes to look for",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 1,
       "total": 12
     },
     {
-      "at": 6314,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11",
-      "done": 1,
-      "total": 12
-    },
-    {
-      "at": 6318,
+      "at": 6983,
       "phase": "Weighing what this upgrade is worth",
       "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24",
       "done": 1,
       "total": 12
     },
     {
-      "at": 6412,
+      "at": 7007,
       "phase": "Checked",
-      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15 · safe for your code · no breaking changes found",
+      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3 · safe for your code · 4 upstream changes, none used here — not deeply verified",
       "done": 2,
       "total": 12
     },
     {
-      "at": 6412,
+      "at": 7007,
       "phase": "Checked",
-      "detail": "@radix-ui/react-slot 1.2.2 → 1.3.3 · safe for your code · 4 upstream changes, none used here",
+      "detail": "@radix-ui/react-label 2.1.6 → 2.1.15 · safe for your code · no breaking changes found — not deeply verified",
       "done": 3,
       "total": 12
     },
     {
-      "at": 6412,
+      "at": 7007,
       "phase": "Reading release notes and changelog",
       "detail": "react-dom 19.2.0 → 19.2.8",
       "done": 3,
       "total": 12
     },
     {
-      "at": 6412,
+      "at": 7007,
       "phase": "Reading release notes and changelog",
       "detail": "react-dom 19.0.0 → 19.2.8",
       "done": 3,
       "total": 12
     },
     {
-      "at": 6585,
+      "at": 7010,
       "phase": "Checked",
-      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24 · safe for your code · no breaking changes found",
+      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11 · safe for your code · no breaking changes found — not deeply verified",
       "done": 4,
       "total": 12
     },
     {
-      "at": 6585,
+      "at": 7010,
       "phase": "Reading release notes and changelog",
       "detail": "tailwind-merge 3.3.0 → 3.6.0",
       "done": 4,
       "total": 12
     },
     {
-      "at": 6588,
-      "phase": "Checked",
-      "detail": "@radix-ui/react-checkbox 1.3.1 → 1.3.11 · safe for your code · no breaking changes found",
-      "done": 5,
-      "total": 12
-    },
-    {
-      "at": 7178,
-      "phase": "Comparing the public API surface",
-      "detail": "lucide-react 0.511.0 → 1.33.0 · 3 evidence sources",
-      "done": 5,
-      "total": 12
-    },
-    {
-      "at": 7208,
-      "phase": "Searching your code for 107 breaking changes",
-      "detail": "lucide-react 0.511.0 → 1.33.0",
-      "done": 5,
-      "total": 12
-    },
-    {
-      "at": 7222,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "lucide-react 0.511.0 → 1.33.0",
-      "done": 5,
-      "total": 12
-    },
-    {
-      "at": 7715,
-      "phase": "Comparing the public API surface",
-      "detail": "tailwind-merge 3.3.0 → 3.6.0 · 2 evidence sources",
-      "done": 5,
-      "total": 12
-    },
-    {
-      "at": 7719,
-      "phase": "Searching your code for 2 breaking changes",
-      "detail": "tailwind-merge 3.3.0 → 3.6.0",
-      "done": 5,
-      "total": 12
-    },
-    {
-      "at": 7720,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "tailwind-merge 3.3.0 → 3.6.0",
-      "done": 5,
-      "total": 12
-    },
-    {
-      "at": 8747,
+      "at": 7130,
       "phase": "Comparing the public API surface",
       "detail": "react 19.2.0 → 19.2.8 · 1 evidence source",
-      "done": 5,
+      "done": 4,
       "total": 12
     },
     {
-      "at": 8747,
+      "at": 7130,
       "phase": "Comparing the public API surface",
       "detail": "react 19.0.0 → 19.2.8 · 4 evidence sources",
-      "done": 5,
+      "done": 4,
       "total": 12
     },
     {
-      "at": 8754,
+      "at": 7131,
       "phase": "No breaking changes to look for",
       "detail": "react 19.2.0 → 19.2.8",
-      "done": 5,
+      "done": 4,
       "total": 12
     },
     {
-      "at": 8754,
+      "at": 7131,
       "phase": "Searching your code for 2 breaking changes",
       "detail": "react 19.0.0 → 19.2.8",
-      "done": 5,
+      "done": 4,
       "total": 12
     },
     {
-      "at": 8754,
+      "at": 7131,
       "phase": "Weighing what this upgrade is worth",
       "detail": "react 19.2.0 → 19.2.8",
-      "done": 5,
+      "done": 4,
       "total": 12
     },
     {
-      "at": 8770,
+      "at": 7137,
       "phase": "Weighing what this upgrade is worth",
       "detail": "react 19.0.0 → 19.2.8",
+      "done": 4,
+      "total": 12
+    },
+    {
+      "at": 7145,
+      "phase": "Checked",
+      "detail": "@radix-ui/react-dropdown-menu 2.1.14 → 2.1.24 · safe for your code · no breaking changes found — not deeply verified",
       "done": 5,
       "total": 12
     },
     {
-      "at": 8788,
+      "at": 7209,
       "phase": "Checked",
-      "detail": "tailwind-merge 3.3.0 → 3.6.0 · safe for your code · 2 upstream changes, none used here",
+      "detail": "lucide-react 0.511.0 → 1.33.0 · safe for your code · 107 upstream changes, none used here — not deeply verified",
       "done": 6,
       "total": 12
     },
     {
-      "at": 8934,
+      "at": 8101,
       "phase": "Checked",
-      "detail": "lucide-react 0.511.0 → 1.33.0 · safe for your code · 107 upstream changes, none used here",
+      "detail": "react 19.2.0 → 19.2.8 · safe for your code · no breaking changes found — not deeply verified",
       "done": 7,
       "total": 12
     },
     {
-      "at": 9245,
+      "at": 8101,
       "phase": "Checked",
-      "detail": "react 19.2.0 → 19.2.8 · safe for your code · no breaking changes found",
+      "detail": "react 19.0.0 → 19.2.8 · safe for your code · 2 upstream changes, none used here — not deeply verified",
       "done": 8,
       "total": 12
     },
     {
-      "at": 9245,
-      "phase": "Checked",
-      "detail": "react 19.0.0 → 19.2.8 · safe for your code · 2 upstream changes, none used here",
-      "done": 9,
+      "at": 8900,
+      "phase": "Comparing the public API surface",
+      "detail": "tailwind-merge 3.3.0 → 3.6.0 · 2 evidence sources",
+      "done": 8,
       "total": 12
     },
     {
-      "at": 10694,
+      "at": 8901,
+      "phase": "Searching your code for 2 breaking changes",
+      "detail": "tailwind-merge 3.3.0 → 3.6.0",
+      "done": 8,
+      "total": 12
+    },
+    {
+      "at": 8902,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "tailwind-merge 3.3.0 → 3.6.0",
+      "done": 8,
+      "total": 12
+    },
+    {
+      "at": 9503,
       "phase": "Comparing the public API surface",
       "detail": "react-dom 19.2.0 → 19.2.8 · 1 evidence source",
-      "done": 9,
+      "done": 8,
       "total": 12
     },
     {
-      "at": 10694,
-      "phase": "No breaking changes to look for",
-      "detail": "react-dom 19.2.0 → 19.2.8",
-      "done": 9,
-      "total": 12
-    },
-    {
-      "at": 10694,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "react-dom 19.2.0 → 19.2.8",
-      "done": 9,
-      "total": 12
-    },
-    {
-      "at": 10725,
+      "at": 9503,
       "phase": "Comparing the public API surface",
       "detail": "react-dom 19.0.0 → 19.2.8 · 4 evidence sources",
-      "done": 9,
+      "done": 8,
       "total": 12
     },
     {
-      "at": 10725,
+      "at": 9504,
+      "phase": "No breaking changes to look for",
+      "detail": "react-dom 19.2.0 → 19.2.8",
+      "done": 8,
+      "total": 12
+    },
+    {
+      "at": 9504,
       "phase": "Searching your code for 2 breaking changes",
       "detail": "react-dom 19.0.0 → 19.2.8",
-      "done": 9,
+      "done": 8,
       "total": 12
     },
     {
-      "at": 10727,
+      "at": 9504,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "react-dom 19.2.0 → 19.2.8",
+      "done": 8,
+      "total": 12
+    },
+    {
+      "at": 9509,
       "phase": "Weighing what this upgrade is worth",
       "detail": "react-dom 19.0.0 → 19.2.8",
+      "done": 8,
+      "total": 12
+    },
+    {
+      "at": 9555,
+      "phase": "Checked",
+      "detail": "tailwind-merge 3.3.0 → 3.6.0 · safe for your code · 2 upstream changes, none used here — not deeply verified",
       "done": 9,
       "total": 12
     },
     {
-      "at": 10837,
+      "at": 9705,
       "phase": "Checked",
-      "detail": "react-dom 19.2.0 → 19.2.8 · safe for your code · no breaking changes found",
+      "detail": "react-dom 19.0.0 → 19.2.8 · safe for your code · 2 upstream changes, none used here — not deeply verified",
       "done": 10,
       "total": 12
     },
     {
-      "at": 10866,
+      "at": 9719,
       "phase": "Checked",
-      "detail": "react-dom 19.0.0 → 19.2.8 · safe for your code · 2 upstream changes, none used here",
+      "detail": "react-dom 19.2.0 → 19.2.8 · safe for your code · no breaking changes found — not deeply verified",
       "done": 11,
       "total": 12
     },
     {
-      "at": 18068,
+      "at": 13669,
       "phase": "Comparing the public API surface",
-      "detail": "next 16.2.11 → 16.3.1 · 2 evidence sources",
+      "detail": "next 16.2.11 → 16.3.2 · 2 evidence sources",
       "done": 11,
       "total": 12
     },
     {
-      "at": 18068,
+      "at": 13669,
       "phase": "No breaking changes to look for",
-      "detail": "next 16.2.11 → 16.3.1",
+      "detail": "next 16.2.11 → 16.3.2",
       "done": 11,
       "total": 12
     },
     {
-      "at": 18068,
+      "at": 13670,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "next 16.2.11 → 16.3.1",
+      "detail": "next 16.2.11 → 16.3.2",
       "done": 11,
       "total": 12
     },
     {
-      "at": 18425,
+      "at": 14265,
       "phase": "Checked",
-      "detail": "next 16.2.11 → 16.3.1 · safe for your code · no breaking changes found",
+      "detail": "next 16.2.11 → 16.3.2 · safe for your code · no breaking changes found — not deeply verified",
       "done": 12,
       "total": 12
     }
@@ -715,120 +715,6 @@
       "latest": "1.33.0",
       "selected": "1.33.0",
       "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. 107 upstream breaking changes, none of which this repository uses.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 107,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 3,
-      "gaps": [],
-      "breaking": [
-        {
-          "kind": "signature-change",
-          "summary": "The signature of `AlignCenter` changed.",
-          "remediation": "The signature of `AlignCenter` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
-          "confidence": "high",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "AlignCenter"
-          ],
-          "evidence": [
-            {
-              "source": "type-surface-diff",
-              "title": "107 API surface change(s) in lucide-react",
-              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.33.0/dist/lucide-react.d.ts",
-              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts + package.json → lucide-react@1.33.0:dist/lucide-react.d.ts + package.json"
-            }
-          ],
-          "sites": []
-        },
-        {
-          "kind": "signature-change",
-          "summary": "The signature of `AlignJustify` changed.",
-          "remediation": "The signature of `AlignJustify` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
-          "confidence": "high",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "AlignJustify"
-          ],
-          "evidence": [
-            {
-              "source": "type-surface-diff",
-              "title": "107 API surface change(s) in lucide-react",
-              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.33.0/dist/lucide-react.d.ts",
-              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts + package.json → lucide-react@1.33.0:dist/lucide-react.d.ts + package.json"
-            }
-          ],
-          "sites": []
-        },
-        {
-          "kind": "signature-change",
-          "summary": "The signature of `AlignLeft` changed.",
-          "remediation": "The signature of `AlignLeft` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
-          "confidence": "high",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "AlignLeft"
-          ],
-          "evidence": [
-            {
-              "source": "type-surface-diff",
-              "title": "107 API surface change(s) in lucide-react",
-              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.33.0/dist/lucide-react.d.ts",
-              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts + package.json → lucide-react@1.33.0:dist/lucide-react.d.ts + package.json"
-            }
-          ],
-          "sites": []
-        },
-        {
-          "kind": "signature-change",
-          "summary": "The signature of `AlignRight` changed.",
-          "remediation": "The signature of `AlignRight` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
-          "confidence": "high",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "AlignRight"
-          ],
-          "evidence": [
-            {
-              "source": "type-surface-diff",
-              "title": "107 API surface change(s) in lucide-react",
-              "url": "https://cdn.jsdelivr.net/npm/lucide-react@1.33.0/dist/lucide-react.d.ts",
-              "locator": "lucide-react@0.511.0:dist/lucide-react.d.ts + package.json → lucide-react@1.33.0:dist/lucide-react.d.ts + package.json"
-            }
-          ],
-          "sites": []
-        }
-      ]
-    },
-    {
-      "name": "lucide-react",
-      "ecosystem": "npm",
-      "manifestPath": "packages/core/realtime-js/example/package.json",
-      "workspace": "packages/core/realtime-js/example",
-      "workspaceName": null,
-      "current": "0.511.0",
-      "latest": "1.33.0",
-      "selected": "1.33.0",
-      "safeLatest": null,
       "status": "ready",
       "risk": "none",
       "summary": "Safe to upgrade. 107 upstream breaking changes, none of which this repository uses.",
@@ -943,120 +829,6 @@
       "latest": "1.0.0",
       "selected": "1.0.0",
       "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. 26 upstream breaking changes, none of which this repository uses.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 26,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 5,
-      "gaps": [],
-      "breaking": [
-        {
-          "kind": "signature-change",
-          "summary": "The signature of `AccessDelegation` changed.",
-          "remediation": "The signature of `AccessDelegation` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
-          "confidence": "high",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "AccessDelegation"
-          ],
-          "evidence": [
-            {
-              "source": "type-surface-diff",
-              "title": "26 API surface change(s) in iceberg-js",
-              "url": "https://cdn.jsdelivr.net/npm/iceberg-js@1.0.0/dist/index.d.ts",
-              "locator": "iceberg-js@0.8.1:dist/index.d.ts + package.json → iceberg-js@1.0.0:dist/index.d.ts + package.json"
-            }
-          ],
-          "sites": []
-        },
-        {
-          "kind": "signature-change",
-          "summary": "The signature of `AuthConfig` changed.",
-          "remediation": "The signature of `AuthConfig` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
-          "confidence": "high",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "AuthConfig"
-          ],
-          "evidence": [
-            {
-              "source": "type-surface-diff",
-              "title": "26 API surface change(s) in iceberg-js",
-              "url": "https://cdn.jsdelivr.net/npm/iceberg-js@1.0.0/dist/index.d.ts",
-              "locator": "iceberg-js@0.8.1:dist/index.d.ts + package.json → iceberg-js@1.0.0:dist/index.d.ts + package.json"
-            }
-          ],
-          "sites": []
-        },
-        {
-          "kind": "signature-change",
-          "summary": "The signature of `CommitTableResponse` changed.",
-          "remediation": "The signature of `CommitTableResponse` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
-          "confidence": "high",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "CommitTableResponse"
-          ],
-          "evidence": [
-            {
-              "source": "type-surface-diff",
-              "title": "26 API surface change(s) in iceberg-js",
-              "url": "https://cdn.jsdelivr.net/npm/iceberg-js@1.0.0/dist/index.d.ts",
-              "locator": "iceberg-js@0.8.1:dist/index.d.ts + package.json → iceberg-js@1.0.0:dist/index.d.ts + package.json"
-            }
-          ],
-          "sites": []
-        },
-        {
-          "kind": "signature-change",
-          "summary": "The signature of `CreateNamespaceResponse` changed.",
-          "remediation": "The signature of `CreateNamespaceResponse` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
-          "confidence": "high",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "CreateNamespaceResponse"
-          ],
-          "evidence": [
-            {
-              "source": "type-surface-diff",
-              "title": "26 API surface change(s) in iceberg-js",
-              "url": "https://cdn.jsdelivr.net/npm/iceberg-js@1.0.0/dist/index.d.ts",
-              "locator": "iceberg-js@0.8.1:dist/index.d.ts + package.json → iceberg-js@1.0.0:dist/index.d.ts + package.json"
-            }
-          ],
-          "sites": []
-        }
-      ]
-    },
-    {
-      "name": "iceberg-js",
-      "ecosystem": "npm",
-      "manifestPath": "packages/core/storage-js/package.json",
-      "workspace": "packages/core/storage-js",
-      "workspaceName": "@supabase/storage-js",
-      "current": "0.8.1",
-      "latest": "1.0.0",
-      "selected": "1.0.0",
-      "safeLatest": null,
       "status": "ready",
       "risk": "none",
       "summary": "Safe to upgrade. 26 upstream breaking changes, none of which this repository uses.",
@@ -1155,122 +927,6 @@
               "title": "26 API surface change(s) in iceberg-js",
               "url": "https://cdn.jsdelivr.net/npm/iceberg-js@1.0.0/dist/index.d.ts",
               "locator": "iceberg-js@0.8.1:dist/index.d.ts + package.json → iceberg-js@1.0.0:dist/index.d.ts + package.json"
-            }
-          ],
-          "sites": []
-        }
-      ]
-    },
-    {
-      "name": "@radix-ui/react-slot",
-      "ecosystem": "npm",
-      "manifestPath": "packages/core/realtime-js/example/package.json",
-      "workspace": "packages/core/realtime-js/example",
-      "workspaceName": null,
-      "current": "1.2.2",
-      "latest": "1.3.3",
-      "selected": "1.3.3",
-      "safeLatest": "1.3.3",
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. 4 upstream breaking changes, none of which this repository uses.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 4,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 2,
-      "gaps": [
-        "No release notes, changelog, or migration guide was reachable for @radix-ui/react-slot 1.3.3."
-      ],
-      "breaking": [
-        {
-          "kind": "signature-change",
-          "summary": "The signature of `Root` changed.",
-          "remediation": "The signature of `Root` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
-          "confidence": "high",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "Root"
-          ],
-          "evidence": [
-            {
-              "source": "type-surface-diff",
-              "title": "4 API surface change(s) in @radix-ui/react-slot",
-              "url": "https://cdn.jsdelivr.net/npm/@radix-ui/react-slot@1.3.3/dist/index.d.ts",
-              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts + package.json → @radix-ui/react-slot@1.3.3:dist/index.d.ts + package.json"
-            }
-          ],
-          "sites": []
-        },
-        {
-          "kind": "signature-change",
-          "summary": "The signature of `Slot` changed.",
-          "remediation": "The signature of `Slot` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
-          "confidence": "high",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "Slot"
-          ],
-          "evidence": [
-            {
-              "source": "type-surface-diff",
-              "title": "4 API surface change(s) in @radix-ui/react-slot",
-              "url": "https://cdn.jsdelivr.net/npm/@radix-ui/react-slot@1.3.3/dist/index.d.ts",
-              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts + package.json → @radix-ui/react-slot@1.3.3:dist/index.d.ts + package.json"
-            }
-          ],
-          "sites": []
-        },
-        {
-          "kind": "signature-change",
-          "summary": "The signature of `SlotProps` changed.",
-          "remediation": "The signature of `SlotProps` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
-          "confidence": "high",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "SlotProps"
-          ],
-          "evidence": [
-            {
-              "source": "type-surface-diff",
-              "title": "4 API surface change(s) in @radix-ui/react-slot",
-              "url": "https://cdn.jsdelivr.net/npm/@radix-ui/react-slot@1.3.3/dist/index.d.ts",
-              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts + package.json → @radix-ui/react-slot@1.3.3:dist/index.d.ts + package.json"
-            }
-          ],
-          "sites": []
-        },
-        {
-          "kind": "signature-change",
-          "summary": "The signature of `createSlot` changed.",
-          "remediation": "The return type of `createSlot` changed; its parameters did not, so no call site needs its arguments touched. What changed is what a caller gets back. In a statically typed language, a call site that assigns or passes the result on will fail to compile and point you straight at the fix; nothing here needs a source change beyond letting the type checker find those. In a dynamically typed one (plain JavaScript, Python, Ruby), nothing will catch this automatically — search for call sites that store, destructure, or pass along the result of `createSlot` and check each one against the new type by hand.",
-          "confidence": "high",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "createSlot"
-          ],
-          "evidence": [
-            {
-              "source": "type-surface-diff",
-              "title": "4 API surface change(s) in @radix-ui/react-slot",
-              "url": "https://cdn.jsdelivr.net/npm/@radix-ui/react-slot@1.3.3/dist/index.d.ts",
-              "locator": "@radix-ui/react-slot@1.2.2:dist/index.d.ts + package.json → @radix-ui/react-slot@1.3.3:dist/index.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1403,82 +1059,6 @@
       "latest": "19.2.8",
       "selected": "19.2.8",
       "safeLatest": "19.2.8",
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. 2 upstream breaking changes, none of which this repository uses.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 2,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 4,
-      "gaps": [
-        "react publishes no TypeScript declarations Drift could compare, so this upgrade rests on prose evidence."
-      ],
-      "breaking": [
-        {
-          "kind": "runtime-requirement",
-          "summary": "Minimum Node.js version raised to 18",
-          "remediation": "Minimum Node.js version raised to 18. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
-          "confidence": "medium",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "Node.js"
-          ],
-          "evidence": [
-            {
-              "source": "github-release",
-              "title": "react 19.2.0 (Oct 1, 2025) release notes",
-              "url": "https://github.com/react/react/releases/tag/v19.2.0",
-              "locator": null
-            }
-          ],
-          "sites": []
-        },
-        {
-          "kind": "runtime-requirement",
-          "summary": "Dropped support for using HTML comments (e",
-          "remediation": "Dropped support for using HTML comments (e. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
-          "confidence": "medium",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "using HTML comments (e"
-          ],
-          "evidence": [
-            {
-              "source": "github-release",
-              "title": "react 19.1.0 (March 28, 2025) release notes",
-              "url": "https://github.com/react/react/releases/tag/v19.1.0",
-              "locator": null
-            },
-            {
-              "source": "changelog",
-              "title": "react CHANGELOG § 19.1.0",
-              "url": "https://github.com/react/react/blob/main/CHANGELOG.md#L165",
-              "locator": "CHANGELOG.md:165"
-            }
-          ],
-          "sites": []
-        }
-      ]
-    },
-    {
-      "name": "react",
-      "ecosystem": "npm",
-      "manifestPath": "packages/core/realtime-js/example/package.json",
-      "workspace": "packages/core/realtime-js/example",
-      "workspaceName": null,
-      "current": "19.0.0",
-      "latest": "19.2.8",
-      "selected": "19.2.8",
-      "safeLatest": "19.2.8",
       "status": "ready",
       "risk": "none",
       "summary": "Safe to upgrade. 2 upstream breaking changes, none of which this repository uses.",
@@ -1537,82 +1117,6 @@
             {
               "source": "changelog",
               "title": "react CHANGELOG § 19.1.0",
-              "url": "https://github.com/react/react/blob/main/CHANGELOG.md#L165",
-              "locator": "CHANGELOG.md:165"
-            }
-          ],
-          "sites": []
-        }
-      ]
-    },
-    {
-      "name": "react-dom",
-      "ecosystem": "npm",
-      "manifestPath": "packages/core/realtime-js/example/package.json",
-      "workspace": "packages/core/realtime-js/example",
-      "workspaceName": null,
-      "current": "19.0.0",
-      "latest": "19.2.8",
-      "selected": "19.2.8",
-      "safeLatest": "19.2.8",
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. 2 upstream breaking changes, none of which this repository uses.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 2,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 4,
-      "gaps": [
-        "react-dom publishes no TypeScript declarations Drift could compare, so this upgrade rests on prose evidence."
-      ],
-      "breaking": [
-        {
-          "kind": "runtime-requirement",
-          "summary": "Minimum Node.js version raised to 18",
-          "remediation": "Minimum Node.js version raised to 18. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
-          "confidence": "medium",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "Node.js"
-          ],
-          "evidence": [
-            {
-              "source": "github-release",
-              "title": "react-dom 19.2.0 (Oct 1, 2025) release notes",
-              "url": "https://github.com/react/react/releases/tag/v19.2.0",
-              "locator": null
-            }
-          ],
-          "sites": []
-        },
-        {
-          "kind": "runtime-requirement",
-          "summary": "Dropped support for using HTML comments (e",
-          "remediation": "Dropped support for using HTML comments (e. Update the runtime version declared in CI workflows, engine fields, and container images. Do not change application logic for this.",
-          "confidence": "medium",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "using HTML comments (e"
-          ],
-          "evidence": [
-            {
-              "source": "github-release",
-              "title": "react-dom 19.1.0 (March 28, 2025) release notes",
-              "url": "https://github.com/react/react/releases/tag/v19.1.0",
-              "locator": null
-            },
-            {
-              "source": "changelog",
-              "title": "react-dom CHANGELOG § 19.1.0",
               "url": "https://github.com/react/react/blob/main/CHANGELOG.md#L165",
               "locator": "CHANGELOG.md:165"
             }
@@ -1691,76 +1195,6 @@
               "title": "react-dom CHANGELOG § 19.1.0",
               "url": "https://github.com/react/react/blob/main/CHANGELOG.md#L165",
               "locator": "CHANGELOG.md:165"
-            }
-          ],
-          "sites": []
-        }
-      ]
-    },
-    {
-      "name": "tailwind-merge",
-      "ecosystem": "npm",
-      "manifestPath": "packages/core/realtime-js/example/package.json",
-      "workspace": "packages/core/realtime-js/example",
-      "workspaceName": null,
-      "current": "3.3.0",
-      "latest": "3.6.0",
-      "selected": "3.6.0",
-      "safeLatest": "3.6.0",
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. 2 upstream breaking changes, none of which this repository uses.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 2,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 2,
-      "gaps": [
-        "Drift read 5 sets of release notes ([v3.6.0 release notes](https://github.com/dcastil/tailwind-merge/releases/tag/v3.6.0), [v3.5.0 release notes](https://github.com/dcastil/tailwind-merge/releases/tag/v3.5.0), [v3.4.1 release notes](https://github.com/dcastil/tailwind-merge/releases/tag/v3.4.1), [v3.4.0 release notes](https://github.com/dcastil/tailwind-merge/releases/tag/v3.4.0), [v3.3.1 release notes](https://github.com/dcastil/tailwind-merge/releases/tag/v3.3.1)) for tailwind-merge 3.6.0 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
-      ],
-      "breaking": [
-        {
-          "kind": "signature-change",
-          "summary": "The signature of `getDefaultConfig` changed.",
-          "remediation": "The return type of `getDefaultConfig` changed; its parameters did not, so no call site needs its arguments touched. What changed is what a caller gets back. In a statically typed language, a call site that assigns or passes the result on will fail to compile and point you straight at the fix; nothing here needs a source change beyond letting the type checker find those. In a dynamically typed one (plain JavaScript, Python, Ruby), nothing will catch this automatically — search for call sites that store, destructure, or pass along the result of `getDefaultConfig` and check each one against the new type by hand.",
-          "confidence": "high",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "getDefaultConfig"
-          ],
-          "evidence": [
-            {
-              "source": "type-surface-diff",
-              "title": "2 API surface change(s) in tailwind-merge",
-              "url": "https://cdn.jsdelivr.net/npm/tailwind-merge@3.6.0/dist/types.d.ts",
-              "locator": "tailwind-merge@3.3.0:dist/types.d.ts + package.json → tailwind-merge@3.6.0:dist/types.d.ts + package.json"
-            }
-          ],
-          "sites": []
-        },
-        {
-          "kind": "signature-change",
-          "summary": "The signature of `DefaultClassGroupIds` changed.",
-          "remediation": "The signature of `DefaultClassGroupIds` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
-          "confidence": "high",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "DefaultClassGroupIds"
-          ],
-          "evidence": [
-            {
-              "source": "type-surface-diff",
-              "title": "2 API surface change(s) in tailwind-merge",
-              "url": "https://cdn.jsdelivr.net/npm/tailwind-merge@3.6.0/dist/types.d.ts",
-              "locator": "tailwind-merge@3.3.0:dist/types.d.ts + package.json → tailwind-merge@3.6.0:dist/types.d.ts + package.json"
             }
           ],
           "sites": []
@@ -1994,29 +1428,6 @@
       "latest": "1.3.11",
       "selected": "1.3.11",
       "safeLatest": "1.3.11",
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. No release notes, changelog, or migration guide was reachable for @radix-ui/react-checkbox 1.3.11.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "No release notes, changelog, or migration guide was reachable for @radix-ui/react-checkbox 1.3.11."
-      ],
-      "breaking": []
-    },
-    {
-      "name": "@radix-ui/react-checkbox",
-      "ecosystem": "npm",
-      "manifestPath": "packages/core/realtime-js/example/package.json",
-      "workspace": "packages/core/realtime-js/example",
-      "workspaceName": null,
-      "current": "1.3.1",
-      "latest": "1.3.11",
-      "selected": "1.3.11",
-      "safeLatest": "1.3.11",
       "status": "clean",
       "risk": "none",
       "summary": "Safe to upgrade. No release notes, changelog, or migration guide was reachable for @radix-ui/react-checkbox 1.3.11.",
@@ -2187,29 +1598,6 @@
       "latest": "2.1.24",
       "selected": "2.1.24",
       "safeLatest": "2.1.24",
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. No release notes, changelog, or migration guide was reachable for @radix-ui/react-dropdown-menu 2.1.24.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "No release notes, changelog, or migration guide was reachable for @radix-ui/react-dropdown-menu 2.1.24."
-      ],
-      "breaking": []
-    },
-    {
-      "name": "@radix-ui/react-dropdown-menu",
-      "ecosystem": "npm",
-      "manifestPath": "packages/core/realtime-js/example/package.json",
-      "workspace": "packages/core/realtime-js/example",
-      "workspaceName": null,
-      "current": "2.1.14",
-      "latest": "2.1.24",
-      "selected": "2.1.24",
-      "safeLatest": "2.1.24",
       "status": "clean",
       "risk": "none",
       "summary": "Safe to upgrade. No release notes, changelog, or migration guide was reachable for @radix-ui/react-dropdown-menu 2.1.24.",
@@ -2368,29 +1756,6 @@
       "impactFiles": 0,
       "evidenceCount": 0,
       "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "@radix-ui/react-label",
-      "ecosystem": "npm",
-      "manifestPath": "packages/core/realtime-js/example/package.json",
-      "workspace": "packages/core/realtime-js/example",
-      "workspaceName": null,
-      "current": "2.1.6",
-      "latest": "2.1.15",
-      "selected": "2.1.15",
-      "safeLatest": "2.1.15",
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. No release notes, changelog, or migration guide was reachable for @radix-ui/react-label 2.1.15.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "No release notes, changelog, or migration guide was reachable for @radix-ui/react-label 2.1.15."
-      ],
       "breaking": []
     },
     {
@@ -3032,9 +2397,9 @@
       "workspace": "packages/core/realtime-js/example",
       "workspaceName": null,
       "current": "16.2.11",
-      "latest": "16.3.1",
-      "selected": "16.3.1",
-      "safeLatest": "16.3.1",
+      "latest": "16.3.2",
+      "selected": "16.3.2",
+      "safeLatest": "16.3.2",
       "status": "pending",
       "risk": "unknown",
       "summary": "",
@@ -3137,32 +2502,9 @@
       "workspace": "packages/core/realtime-js/example",
       "workspaceName": null,
       "current": "16.2.11",
-      "latest": "16.3.1",
-      "selected": "16.3.1",
-      "safeLatest": "16.3.1",
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. next ships no declarations of its own; its types live in @types/next, which versions separately and does not move with this upgrade. Nothing was compared.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 2,
-      "gaps": [
-        "next ships no declarations of its own; its types live in @types/next, which versions separately and does not move with this upgrade. Nothing was compared."
-      ],
-      "breaking": []
-    },
-    {
-      "name": "next",
-      "ecosystem": "npm",
-      "manifestPath": "packages/core/realtime-js/example/package.json",
-      "workspace": "packages/core/realtime-js/example",
-      "workspaceName": null,
-      "current": "16.2.11",
-      "latest": "16.3.1",
-      "selected": "16.3.1",
-      "safeLatest": "16.3.1",
+      "latest": "16.3.2",
+      "selected": "16.3.2",
+      "safeLatest": "16.3.2",
       "status": "clean",
       "risk": "none",
       "summary": "Safe to upgrade. next ships no declarations of its own; its types live in @types/next, which versions separately and does not move with this upgrade. Nothing was compared.",
@@ -3522,29 +2864,6 @@
       "latest": "19.2.8",
       "selected": "19.2.8",
       "safeLatest": "19.2.8",
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. react publishes no TypeScript declarations Drift could compare, so this upgrade rests on prose evidence. Drift read 8 sets of release notes ([19.2.8 (July 21st, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.8), [19.2.7 (June 1st, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.7), [19.2.6 (May 6th, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.6), [19.2.5 (April 8th, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.5), [19.2.4 (January 26th, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.4), [19.2.3 (December 11th, 2025) release notes](https://github.com/react/react/releases/tag/v19.2.3), [19.2.2 (December 11th, 2025) release notes](https://github.com/react/react/releases/tag/v19.2.2), [19.2.1 (December 3rd, 2025) release notes](https://github.com/react/react/releases/tag/v19.2.1)) and the changelog ([CHANGELOG.md](https://github.com/react/react/blob/main/CHANGELOG.md)) for react 19.2.8 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "react publishes no TypeScript declarations Drift could compare, so this upgrade rests on prose evidence. Drift read 8 sets of release notes ([19.2.8 (July 21st, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.8), [19.2.7 (June 1st, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.7), [19.2.6 (May 6th, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.6), [19.2.5 (April 8th, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.5), [19.2.4 (January 26th, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.4), [19.2.3 (December 11th, 2025) release notes](https://github.com/react/react/releases/tag/v19.2.3), [19.2.2 (December 11th, 2025) release notes](https://github.com/react/react/releases/tag/v19.2.2), [19.2.1 (December 3rd, 2025) release notes](https://github.com/react/react/releases/tag/v19.2.1)) and the changelog ([CHANGELOG.md](https://github.com/react/react/blob/main/CHANGELOG.md)) for react 19.2.8 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
-      ],
-      "breaking": []
-    },
-    {
-      "name": "react",
-      "ecosystem": "npm",
-      "manifestPath": "packages/core/auth-js/example/react/package.json",
-      "workspace": "packages/core/auth-js/example/react",
-      "workspaceName": "auth-js-example-react",
-      "current": "19.2.0",
-      "latest": "19.2.8",
-      "selected": "19.2.8",
-      "safeLatest": "19.2.8",
       "status": "clean",
       "risk": "none",
       "summary": "Safe to upgrade. react publishes no TypeScript declarations Drift could compare, so this upgrade rests on prose evidence. Drift read 8 sets of release notes ([19.2.8 (July 21st, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.8), [19.2.7 (June 1st, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.7), [19.2.6 (May 6th, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.6), [19.2.5 (April 8th, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.5), [19.2.4 (January 26th, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.4), [19.2.3 (December 11th, 2025) release notes](https://github.com/react/react/releases/tag/v19.2.3), [19.2.2 (December 11th, 2025) release notes](https://github.com/react/react/releases/tag/v19.2.2), [19.2.1 (December 3rd, 2025) release notes](https://github.com/react/react/releases/tag/v19.2.1)) and the changelog ([CHANGELOG.md](https://github.com/react/react/blob/main/CHANGELOG.md)) for react 19.2.8 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
@@ -3750,6 +3069,27 @@
     {
       "name": "react-dom",
       "ecosystem": "npm",
+      "manifestPath": "packages/core/realtime-js/example/package.json",
+      "workspace": "packages/core/realtime-js/example",
+      "workspaceName": null,
+      "current": "19.0.0",
+      "latest": "19.0.0",
+      "selected": "19.0.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "react-dom",
+      "ecosystem": "npm",
       "manifestPath": "packages/core/auth-js/example/react/package.json",
       "workspace": "packages/core/auth-js/example/react",
       "workspaceName": "auth-js-example-react",
@@ -3771,6 +3111,27 @@
     {
       "name": "react-dom",
       "ecosystem": "npm",
+      "manifestPath": "packages/core/realtime-js/example/package.json",
+      "workspace": "packages/core/realtime-js/example",
+      "workspaceName": null,
+      "current": "19.0.0",
+      "latest": "19.0.0",
+      "selected": "19.0.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "react-dom",
+      "ecosystem": "npm",
       "manifestPath": "packages/core/auth-js/example/react/package.json",
       "workspace": "packages/core/auth-js/example/react",
       "workspaceName": "auth-js-example-react",
@@ -3808,71 +3169,6 @@
       "impactFiles": 0,
       "evidenceCount": 0,
       "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "react-dom",
-      "ecosystem": "npm",
-      "manifestPath": "packages/core/realtime-js/example/package.json",
-      "workspace": "packages/core/realtime-js/example",
-      "workspaceName": null,
-      "current": "19.0.0",
-      "latest": "19.0.0",
-      "selected": "19.0.0",
-      "safeLatest": null,
-      "status": "pending",
-      "risk": "unknown",
-      "summary": "",
-      "recommendation": null,
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 0,
-      "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "react-dom",
-      "ecosystem": "npm",
-      "manifestPath": "packages/core/realtime-js/example/package.json",
-      "workspace": "packages/core/realtime-js/example",
-      "workspaceName": null,
-      "current": "19.0.0",
-      "latest": "19.0.0",
-      "selected": "19.0.0",
-      "safeLatest": null,
-      "status": "pending",
-      "risk": "unknown",
-      "summary": "",
-      "recommendation": null,
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 0,
-      "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "react-dom",
-      "ecosystem": "npm",
-      "manifestPath": "packages/core/auth-js/example/react/package.json",
-      "workspace": "packages/core/auth-js/example/react",
-      "workspaceName": "auth-js-example-react",
-      "current": "19.2.0",
-      "latest": "19.2.8",
-      "selected": "19.2.8",
-      "safeLatest": "19.2.8",
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. react-dom publishes no TypeScript declarations Drift could compare, so this upgrade rests on prose evidence. Drift read 8 sets of release notes ([19.2.8 (July 21st, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.8), [19.2.7 (June 1st, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.7), [19.2.6 (May 6th, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.6), [19.2.5 (April 8th, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.5), [19.2.4 (January 26th, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.4), [19.2.3 (December 11th, 2025) release notes](https://github.com/react/react/releases/tag/v19.2.3), [19.2.2 (December 11th, 2025) release notes](https://github.com/react/react/releases/tag/v19.2.2), [19.2.1 (December 3rd, 2025) release notes](https://github.com/react/react/releases/tag/v19.2.1)) and the changelog ([CHANGELOG.md](https://github.com/react/react/blob/main/CHANGELOG.md)) for react-dom 19.2.8 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "react-dom publishes no TypeScript declarations Drift could compare, so this upgrade rests on prose evidence. Drift read 8 sets of release notes ([19.2.8 (July 21st, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.8), [19.2.7 (June 1st, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.7), [19.2.6 (May 6th, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.6), [19.2.5 (April 8th, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.5), [19.2.4 (January 26th, 2026) release notes](https://github.com/react/react/releases/tag/v19.2.4), [19.2.3 (December 11th, 2025) release notes](https://github.com/react/react/releases/tag/v19.2.3), [19.2.2 (December 11th, 2025) release notes](https://github.com/react/react/releases/tag/v19.2.2), [19.2.1 (December 3rd, 2025) release notes](https://github.com/react/react/releases/tag/v19.2.1)) and the changelog ([CHANGELOG.md](https://github.com/react/react/blob/main/CHANGELOG.md)) for react-dom 19.2.8 and found nothing in them that announces a breaking change. That is weaker than a clean API comparison: it means nothing was flagged, not that nothing broke."
-      ],
       "breaking": []
     },
     {

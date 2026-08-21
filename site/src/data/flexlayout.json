@@ -5,10 +5,10 @@
   "language": "Swift",
   "repo": "https://github.com/layoutBox/FlexLayout",
   "blurb": "A Swift flexbox layout library, with the Podfile that pins its pods.",
-  "capturedAt": "2026-08-21T07:22:48.632Z",
+  "capturedAt": "2026-08-21T20:04:56.832Z",
   "commit": "b1fcc81828e4b735c79d4c3fac35ef0754be0060",
-  "engine": "09153dd336cd8676",
-  "durationMs": 43295,
+  "engine": "60b4d3156139a4db",
+  "durationMs": 2663,
   "packagesChecked": 5,
   "manifests": [
     "Package.swift",
@@ -17,500 +17,220 @@
   "nestedGitRepos": [],
   "events": [
     {
-      "at": 73,
+      "at": 46,
       "phase": "Looking for manifests",
       "detail": "layoutBox/FlexLayout",
       "done": 0,
       "total": 0
     },
     {
-      "at": 99,
+      "at": 50,
       "phase": "Reading manifest",
       "detail": "Package.swift",
       "done": 0,
       "total": 0
     },
     {
-      "at": 99,
+      "at": 50,
       "phase": "Reading manifest",
       "detail": "Podfile",
       "done": 0,
       "total": 0
     },
     {
-      "at": 100,
+      "at": 51,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 5
     },
     {
-      "at": 100,
+      "at": 51,
       "phase": "Checking registries",
       "detail": "5 direct dependencies",
       "done": 0,
       "total": 5
     },
     {
-      "at": 123,
+      "at": 91,
       "phase": "Indexing your code",
       "detail": "59 files indexed · 5 direct dependencies to check",
       "done": 0,
       "total": 5
     },
     {
-      "at": 290,
+      "at": 514,
       "phase": "Outdated",
       "detail": "SwiftLint 0.55.1 → 0.65.0",
       "done": 1,
       "total": 5
     },
     {
-      "at": 345,
+      "at": 729,
       "phase": "Up to date",
       "detail": "Yoga@3.2.1",
       "done": 2,
       "total": 5
     },
     {
-      "at": 351,
+      "at": 729,
       "phase": "Outdated",
-      "detail": "FlexLayout 2.2.1 → 2.2.3",
+      "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 3,
       "total": 5
     },
     {
-      "at": 445,
+      "at": 762,
       "phase": "Outdated",
-      "detail": "facebook/yoga 3.2.1 → 2016.12.26",
+      "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 4,
       "total": 5
     },
     {
-      "at": 620,
+      "at": 871,
       "phase": "Outdated",
-      "detail": "PinLayout 1.10.5 → 1.10.6",
+      "detail": "facebook/yoga 3.2.1 → 2016.12.26",
       "done": 5,
       "total": 5
     },
     {
-      "at": 620,
+      "at": 871,
       "phase": "Reading release notes and changelog",
       "detail": "facebook/yoga 3.2.1 → 2016.12.26",
       "done": 0,
       "total": 4
     },
     {
-      "at": 620,
+      "at": 871,
       "phase": "Reading release notes and changelog",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
       "total": 4
     },
     {
-      "at": 620,
+      "at": 871,
       "phase": "Reading release notes and changelog",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
       "total": 4
     },
     {
-      "at": 620,
+      "at": 872,
       "phase": "Reading release notes and changelog",
       "detail": "SwiftLint 0.55.1 → 0.65.0",
       "done": 0,
       "total": 4
     },
     {
-      "at": 642,
+      "at": 872,
       "phase": "Comparing the public API surface",
       "detail": "FlexLayout 2.2.1 → 2.2.3 · 1 evidence source",
       "done": 0,
       "total": 4
     },
     {
-      "at": 642,
+      "at": 872,
       "phase": "Comparing the public API surface",
       "detail": "PinLayout 1.10.5 → 1.10.6 · 1 evidence source",
       "done": 0,
       "total": 4
     },
     {
-      "at": 642,
+      "at": 872,
       "phase": "Comparing the public API surface",
       "detail": "SwiftLint 0.55.1 → 0.65.0 · 1 evidence source",
       "done": 0,
       "total": 4
     },
     {
-      "at": 642,
+      "at": 872,
       "phase": "No breaking changes to look for",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
       "total": 4
     },
     {
-      "at": 642,
+      "at": 872,
       "phase": "No breaking changes to look for",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
       "total": 4
     },
     {
-      "at": 642,
+      "at": 872,
       "phase": "No breaking changes to look for",
       "detail": "SwiftLint 0.55.1 → 0.65.0",
       "done": 0,
       "total": 4
     },
     {
-      "at": 642,
+      "at": 872,
       "phase": "Weighing what this upgrade is worth",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
       "total": 4
     },
     {
-      "at": 642,
+      "at": 873,
       "phase": "Weighing what this upgrade is worth",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
       "total": 4
     },
     {
-      "at": 642,
+      "at": 883,
       "phase": "Weighing what this upgrade is worth",
       "detail": "SwiftLint 0.55.1 → 0.65.0",
       "done": 0,
       "total": 4
     },
     {
-      "at": 644,
+      "at": 891,
       "phase": "Checked",
       "detail": "FlexLayout 2.2.1 → 2.2.3 · not verified · drift found nothing it could check this version against",
       "done": 1,
       "total": 4
     },
     {
-      "at": 644,
+      "at": 891,
       "phase": "Checked",
       "detail": "PinLayout 1.10.5 → 1.10.6 · not verified · drift found nothing it could check this version against",
       "done": 2,
       "total": 4
     },
     {
-      "at": 644,
+      "at": 891,
       "phase": "Checked",
       "detail": "SwiftLint 0.55.1 → 0.65.0 · not verified · drift found nothing it could check this version against",
       "done": 3,
       "total": 4
     },
     {
-      "at": 698,
-      "phase": "Preparing a test checkout of flexlayout",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 824,
-      "phase": "Installing flexlayout's dependencies",
-      "detail": "`pod install`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 1067,
+      "at": 1762,
       "phase": "Comparing the public API surface",
       "detail": "facebook/yoga 3.2.1 → 2016.12.26 · 1 evidence source",
       "done": 3,
       "total": 4
     },
     {
-      "at": 1067,
+      "at": 1762,
       "phase": "No breaking changes to look for",
       "detail": "facebook/yoga 3.2.1 → 2016.12.26",
       "done": 3,
       "total": 4
     },
     {
-      "at": 1067,
+      "at": 1762,
       "phase": "Weighing what this upgrade is worth",
       "detail": "facebook/yoga 3.2.1 → 2016.12.26",
       "done": 3,
       "total": 4
     },
     {
-      "at": 1649,
+      "at": 2663,
       "phase": "Checked",
-      "detail": "facebook/yoga 3.2.1 → 2016.12.26 · safe for your code · no breaking changes found",
+      "detail": "facebook/yoga 3.2.1 → 2016.12.26 · safe for your code · no breaking changes found — not deeply verified",
       "done": 4,
-      "total": 4
-    },
-    {
-      "at": 1719,
-      "phase": "Preparing a test checkout of flexlayout",
-      "detail": "checking out a clean copy",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 1805,
-      "phase": "Checking flexlayout as it is",
-      "detail": "swift build, swift test",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 1805,
-      "phase": "Checking flexlayout as it is",
-      "detail": "`swift build`",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 19757,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 20488,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 24896,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 24902,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 25260,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 25362,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 25740,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 27004,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 27189,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 31425,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 31660,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 32545,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 33575,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 33618,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 34001,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 34798,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 35928,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 36000,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 36850,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 38791,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 39172,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 40016,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 40187,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 41488,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 41856,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 41877,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 41904,
-      "phase": "Checking flexlayout as it is",
-      "detail": "`swift test`",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 42763,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 42793,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 42797,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 43064,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 43068,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 43070,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 43070,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 43129,
-      "phase": "",
-      "detail": "",
-      "done": 3,
       "total": 4
     }
   ],
@@ -672,29 +392,6 @@
       "latest": "2016.12.26",
       "selected": "2016.12.26",
       "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for facebook/yoga 2016.12.26.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for facebook/yoga 2016.12.26."
-      ],
-      "breaking": []
-    },
-    {
-      "name": "facebook/yoga",
-      "ecosystem": "swift",
-      "manifestPath": "Package.swift",
-      "workspace": null,
-      "workspaceName": null,
-      "current": "3.2.1",
-      "latest": "2016.12.26",
-      "selected": "2016.12.26",
-      "safeLatest": null,
       "status": "clean",
       "risk": "none",
       "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for facebook/yoga 2016.12.26.",
@@ -853,30 +550,6 @@
       "impactFiles": 0,
       "evidenceCount": 0,
       "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "FlexLayout",
-      "ecosystem": "cocoapods",
-      "manifestPath": "Podfile",
-      "workspace": null,
-      "workspaceName": null,
-      "current": "2.2.1",
-      "latest": "2.2.3",
-      "selected": "2.2.3",
-      "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Insufficient evidence. Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for FlexLayout 2.2.3, and no source repository could be resolved for it. OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
-      "recommendation": "insufficient-evidence",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for FlexLayout 2.2.3, and no source repository could be resolved for it.",
-        "OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up."
-      ],
       "breaking": []
     },
     {
@@ -1060,30 +733,6 @@
       "latest": "1.10.6",
       "selected": "1.10.6",
       "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Insufficient evidence. Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for PinLayout 1.10.6, and no source repository could be resolved for it. OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
-      "recommendation": "insufficient-evidence",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for PinLayout 1.10.6, and no source repository could be resolved for it.",
-        "OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up."
-      ],
-      "breaking": []
-    },
-    {
-      "name": "PinLayout",
-      "ecosystem": "cocoapods",
-      "manifestPath": "Podfile",
-      "workspace": null,
-      "workspaceName": null,
-      "current": "1.10.5",
-      "latest": "1.10.6",
-      "selected": "1.10.6",
-      "safeLatest": null,
       "status": "clean",
       "risk": "none",
       "summary": "Insufficient evidence. Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for PinLayout 1.10.6, and no source repository could be resolved for it. OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
@@ -1243,30 +892,6 @@
       "impactFiles": 0,
       "evidenceCount": 0,
       "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "SwiftLint",
-      "ecosystem": "cocoapods",
-      "manifestPath": "Podfile",
-      "workspace": null,
-      "workspaceName": null,
-      "current": "0.55.1",
-      "latest": "0.65.0",
-      "selected": "0.65.0",
-      "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Insufficient evidence. Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for SwiftLint 0.65.0, and no source repository could be resolved for it. OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
-      "recommendation": "insufficient-evidence",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift has no computed API-surface diff for cocoapods; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for SwiftLint 0.65.0, and no source repository could be resolved for it.",
-        "OSV has no advisory coverage for cocoapods packages, so this upgrade's effect on known vulnerabilities could not be looked up."
-      ],
       "breaking": []
     },
     {
