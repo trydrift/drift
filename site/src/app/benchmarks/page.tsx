@@ -5,6 +5,7 @@ import { Backdrop } from "@/components/backdrop";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BenchmarkCard } from "@/components/benchmark-card";
 import { byClass, classLabel, formatDate, loadBenchmarks } from "@/lib/benchmarks";
+import { buildNarrative } from "@/lib/benchmark-narrative";
 
 export const metadata: Metadata = {
   title: "Drift benchmarks",
@@ -34,8 +35,10 @@ const GITHUB = "https://github.com/trydrift/Drift";
  * informed than one who only reads the results.
  */
 export default function Benchmarks() {
-  const { datasets, skipped, generatedAt } = loadBenchmarks();
+  const benchmarks = loadBenchmarks();
+  const { datasets, generatedAt } = benchmarks;
   const groups = byClass(datasets);
+  const narrative = buildNarrative(benchmarks);
 
   return (
     <div className="relative min-h-screen">
@@ -90,10 +93,24 @@ export default function Benchmarks() {
             <h2 className="text-sm font-medium text-foreground">There is no single accuracy number here</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted">
               These corpora answer two different questions — <em>did Drift read the upstream change correctly?</em> and{" "}
-              <em>did Drift see that this repository is affected?</em> — over ground truth of different kinds. Four of
-              the five contain only known breakages, so they have no negative population and cannot support a precision
-              or a false-positive rate at any sample size. Averaging across them would produce a figure that describes
-              neither question.
+              <em>did Drift see that this repository is affected?</em> — over ground truth of different kinds.
+              Negative controls are a property of the experiment, not the corpus: of the {datasets.length} runs
+              below, only{" "}
+              {narrative.negativeControls.withRealNegatives.map((d, i) => (
+                <span key={d.runId}>
+                  {i > 0 ? (i === narrative.negativeControls.withRealNegatives.length - 1 ? " and " : ", ") : ""}
+                  <strong className="font-medium text-foreground">{d.title}</strong>
+                </span>
+              ))}{" "}
+              carry real negative/control cases and can support a precision or a false-positive rate. The rest —{" "}
+              {narrative.negativeControls.positiveOnly.map((d, i) => (
+                <span key={d.runId}>
+                  {i > 0 ? (i === narrative.negativeControls.positiveOnly.length - 1 ? " and " : ", ") : ""}
+                  {d.title}
+                </span>
+              ))}{" "}
+              — are positives only, including one of Kong&rsquo;s own two experiments here. Averaging across them
+              would produce a figure that describes neither question.
             </p>
             <p className="mt-2 text-sm leading-relaxed text-muted">
               So the results are grouped by question, each with its own denominator, and the metrics that the data
@@ -159,44 +176,74 @@ export default function Benchmarks() {
           <div className="mt-5 space-y-3">
             <Weakness title="Drift is markedly weaker on Java than on TypeScript, in the same way">
               The consumer-impact corpora ask one question of TypeScript, Python and Java, and the answers are not
-              close. Given a project whose build a dependency upgrade really broke, Drift identified it as affected in
-              25 of 34 TypeScript cases (swe-bump-bench), 39 of 69 Python cases (TimeMachine), and 7 of 39 Java cases
-              (BUMP). False-safe verdicts run the other way: 23.5%, 5.8% and 41.0%. Detection of the update itself is
-              strong everywhere — 34/34, 49/69, 34/39 — so the gap is entirely in what happens after detection.
-              Drift&rsquo;s own capability matrix predicts this shape: npm module names are declared by the manifest,
-              where Java&rsquo;s must be recovered from a published artefact through japicmp.
+              close. Given a project whose build a dependency upgrade really broke, Drift identified it as affected in{" "}
+              {narrative.javaVsTypeScript.sweBump.affectedFraction} TypeScript cases (swe-bump-bench),{" "}
+              {narrative.javaVsTypeScript.timeMachine.affectedFraction} Python cases (TimeMachine), and{" "}
+              {narrative.javaVsTypeScript.bump.affectedFraction} Java cases (BUMP). False-safe verdicts run the other
+              way: {narrative.javaVsTypeScript.sweBump.falseSafePercent}, {narrative.javaVsTypeScript.timeMachine.falseSafePercent}{" "}
+              and {narrative.javaVsTypeScript.bump.falseSafePercent}. Detection of the update itself is strong
+              everywhere — {narrative.javaVsTypeScript.sweBump.detectionFraction},{" "}
+              {narrative.javaVsTypeScript.timeMachine.detectionFraction},{" "}
+              {narrative.javaVsTypeScript.bump.detectionFraction} — so the gap is entirely in what happens after
+              detection. Drift&rsquo;s own capability matrix predicts this shape: npm module names are declared by
+              the manifest, where Java&rsquo;s must be recovered from a published artefact through japicmp.
             </Weakness>
 
             <Weakness title="On Java, Drift finds the upstream change and then fails to find it in your code">
-              The worst result in this benchmark. On a 40-case stratified subset of BUMP — real Java projects whose
-              Maven build a dependency update broke — Drift detected the update in 34 of 39 scored cases and then told
-              16 of them they were not affected. Thirteen of those sixteen are{" "}
-              <code className="font-mono text-[12px]">detected-not-locally-reachable</code>: Drift found the upstream
-              breaking changes and no consumer code using them, so localization is the weak link rather than detection.
-              Stratifying by BUMP&rsquo;s own failure categories sharpens it — ten of the sixteen are test failures,
-              where the break is behavioural and an API-surface diff cannot see it by construction.
+              The worst result in this benchmark. On a {narrative.bumpSubset.selected}-case stratified subset of BUMP —
+              real Java projects whose Maven build a dependency update broke — Drift detected the update in{" "}
+              {narrative.bumpSubset.detectionFraction} scored cases and then told{" "}
+              {narrative.bumpSubset.falseSafeFraction} of them they were not affected (
+              {narrative.bumpSubset.falseSafePercent} false-safe). Stratifying by BUMP&rsquo;s own failure category —
+              shown in full in this card&rsquo;s breakdown table below — shows where: Drift found the affected
+              consumer in{" "}
+              {narrative.bumpSubset.affectedByCategory.map((row, i) => (
+                <span key={row.slice}>
+                  {i > 0 ? (i === narrative.bumpSubset.affectedByCategory.length - 1 ? ", and " : ", ") : ""}
+                  {row.rate} of the corpus&rsquo;s <code className="font-mono text-[12px]">{row.slice.replace("label: ", "")}</code> cases
+                </span>
+              ))}
+              . Localization succeeds least on the categories where the break is not visible in a public API surface
+              at all — a failed build-plugin rule or a behavioural test failure — which an API-surface diff cannot see
+              by construction.
             </Weakness>
 
             <Weakness title="Drift's japicmp output parser drops class-level changes">
-              On the Roseau accuracy dataset, Drift&rsquo;s recall (0.810) trails the japicmp labels the replication kit
-              records (0.980), even though Drift&rsquo;s Java surface diff <em>is</em> japicmp. Seventeen of the
-              nineteen misses are class-level changes. Reading{" "}
-              <code className="font-mono text-[12px] text-brand-text">parseJapicmp</code> against japicmp&rsquo;s real
-              output shows why: a <code className="font-mono text-[12px]">MODIFIED CLASS</code> line produces no finding
-              at all, and the symbol parser splits on the first <code className="font-mono text-[12px]">(</code>, which
-              japicmp&rsquo;s <code className="font-mono text-[12px]">PUBLIC(-)</code> access notation defeats. The same
-              split can mislabel the member that follows.{" "}
-              <strong className="font-medium text-foreground">Not fixed before this run.</strong> Changing the analyser
-              after seeing the score and re-running would publish a number tuned on its own test set. It is very likely
-              the same defect as the row above: a symbol the parser drops never reaches localization, so it cannot be
-              found in a consumer either — one cause, two corpora, two different-looking symptoms.
+              On the current Roseau run, Drift&rsquo;s recall is {narrative.roseau.recallFraction} (
+              {narrative.roseau.recallPercent}) — {narrative.roseau.fn} misses out of{" "}
+              {narrative.roseau.recallDenominator} true positives. Every one of the {narrative.roseau.fn} misses
+              was checked directly against japicmp&rsquo;s raw report for this jar pair, not inferred from the case
+              label. Seven of the eight trace to one confirmed cause in{" "}
+              <code className="font-mono text-[12px] text-brand-text">parseJapicmp</code>: the parser only turns a{" "}
+              <code className="font-mono text-[12px]">MODIFIED METHOD</code>/<code className="font-mono text-[12px]">FIELD</code>/
+              <code className="font-mono text-[12px]">CONSTRUCTOR</code> line into a finding — a{" "}
+              <code className="font-mono text-[12px]">MODIFIED CLASS</code> or{" "}
+              <code className="font-mono text-[12px]">MODIFIED INTERFACE</code> line produces nothing at all, even
+              though japicmp itself reported it. That silently drops a class made abstract or final, a class changed
+              to an interface (or back), and a nested interface whose access was reduced. One of those seven also
+              carries a second, independent gap: its nested member line uses japicmp&rsquo;s{" "}
+              <code className="font-mono text-[12px]">****</code> marker for a source-incompatible-but-binary-compatible
+              change (a newly checked exception), which the parser&rsquo;s regex does not match at all — it only
+              recognises <code className="font-mono text-[12px]">***!</code>, <code className="font-mono text-[12px]">---!</code> and{" "}
+              <code className="font-mono text-[12px]">+++</code>.{" "}
+              <strong className="font-medium text-foreground">The eighth miss is not this bug</strong> — a
+              method&rsquo;s non-native-to-native change — because japicmp itself reports that method as unchanged for
+              this pair; there is nothing in japicmp&rsquo;s own output for Drift to read. Both findings came from
+              running japicmp directly against this benchmark&rsquo;s jars, not from re-reading the case labels.{" "}
+              <strong className="font-medium text-foreground">Not fixed for this run.</strong> Changing the analyser
+              after seeing the score and re-running would publish a number tuned on its own test set. The class-level
+              drop plausibly also costs BUMP&rsquo;s localization rate above — a class-level change the parser never
+              emits can&rsquo;t reach localization either — but that link is not independently confirmed the way the
+              Roseau cause is, since it would require the same raw-output check against BUMP&rsquo;s own jars.
             </Weakness>
 
             <Weakness title="Drift's prose rules generalise poorly beyond changelog phrasing">
-              On 1,511 human-annotated real npm breaking changes, Drift read a breaking change out of the
-              maintainer&rsquo;s own commit message in 12.5% of cases — and 15.1% where the message says more than the
-              bare marker, so most of the gap is Drift rather than the corpus. The rules are shaped for changelog and
-              release-note phrasing.
+              On {narrative.kong.rq2.dataset.available.toLocaleString()} human-annotated real npm breaking changes,
+              Drift read a breaking change out of the maintainer&rsquo;s own commit message in{" "}
+              {narrative.kong.rq2.overallPercent} of cases — and {narrative.kong.rq2.withDetailPercent} where the
+              message says more than the bare marker (versus {narrative.kong.rq2.withoutDetailPercent} where it
+              doesn&rsquo;t), so most of the gap is Drift rather than the corpus. The rules are shaped for changelog
+              and release-note phrasing.
             </Weakness>
 
             <Weakness title="Whether japicmp is installed changes the Java result completely">
@@ -243,23 +290,6 @@ export default function Benchmarks() {
               .
             </p>
           </div>
-
-          {skipped.length > 0 ? (
-            <div className="mt-5 max-w-2xl rounded-lg border border-border bg-surface p-4">
-              <p className="text-xs font-medium text-foreground">Runs this page expected and did not find</p>
-              <ul className="mt-1 font-mono text-[11.5px] text-faint">
-                {skipped.map((entry) => (
-                  <li key={entry.runId}>
-                    {entry.runId} — {entry.reason}
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-2 text-xs leading-relaxed text-muted">
-                Shown rather than hidden: a dataset that quietly disappears from a results page is indistinguishable
-                from one that was never run.
-              </p>
-            </div>
-          ) : null}
 
           <p className="mt-6 font-mono text-[11px] text-faint">
             Newest result on this page: {formatDate(generatedAt)}. Every figure is read from the run artifacts in the
