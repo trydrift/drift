@@ -15,8 +15,8 @@ What a good result here does *not* establish: Nothing about Drift on real-world 
 | Citation | Roseau replication kit, Zenodo, DOI 10.5281/zenodo.15536418; tool at https://github.com/alien-tools/roseau |
 | Ecosystem | maven |
 | Benchmark class | upstream-bc-detection |
-| Drift commit | `02b277379082b9c936cc9579636fd60c8fa07981` |
-| Run date | 2026-08-20T17:39:44.727Z |
+| Drift commit | `7af6c8697cb4b95e370f66d384da4c1c91b6ca82` |
+| Run date | 2026-08-21T04:23:41.470Z |
 | Command | `/Users/rudy/.nvm/versions/node/v24.19.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts roseau --run-id roseau-accuracy` |
 | Platform | darwin/x64, Node v24.19.0 |
 
@@ -36,7 +36,7 @@ Read this before any rate below.
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| breaking-change detection recall | 81/100 (81.0%) | 73.0–88.0% |
+| breaking-change detection recall | 92/100 (92.0%) | 86.0–97.0% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
@@ -47,13 +47,13 @@ Computed because this corpus supplies real negatives, so a false positive has a 
 
 | | |
 | --- | --- |
-| True positives | 81 |
-| False positives | 8 |
-| True negatives | 159 |
-| False negatives | 19 |
-| Precision | 81/89 (91.0%) |
-| Recall | 81/100 (81.0%) |
-| F1 | 0.857 |
+| True positives | 92 |
+| False positives | 9 |
+| True negatives | 158 |
+| False negatives | 8 |
+| Precision | 92/101 (91.1%) |
+| Recall | 92/100 (92.0%) |
+| F1 | 0.915 |
 
 ### Breakdown
 
@@ -63,8 +63,8 @@ hides both directions of the interesting result, so it is never the only number 
 | Slice | breaking-change detection recall |
 | --- | --- |
 | groundTruthSourceBreaking: false | 20/21 (95.2%) |
-| groundTruthSourceBreaking: true | 61/79 (77.2%) |
-| label: binary-breaking | 81/100 (81.0%) |
+| groundTruthSourceBreaking: true | 72/79 (91.1%) |
+| label: binary-breaking | 92/100 (92.0%) |
 
 ## Label mapping coverage
 

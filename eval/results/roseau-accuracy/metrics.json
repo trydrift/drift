@@ -10,46 +10,46 @@
   "missingRequirements": {},
   "rates": {
     "breaking-change detection recall": {
-      "numerator": 81,
+      "numerator": 92,
       "denominator": 100,
-      "value": 0.81
+      "value": 0.92
     }
   },
   "refusals": [],
   "negativeControls": 167,
   "confusion": {
-    "tp": 81,
-    "fp": 8,
-    "tn": 159,
-    "fn": 19
+    "tp": 92,
+    "fp": 9,
+    "tn": 158,
+    "fn": 8
   },
   "classification": {
     "precision": {
-      "numerator": 81,
-      "denominator": 89,
-      "value": 0.9101123595505618
+      "numerator": 92,
+      "denominator": 101,
+      "value": 0.9108910891089109
     },
     "recall": {
-      "numerator": 81,
+      "numerator": 92,
       "denominator": 100,
-      "value": 0.81
+      "value": 0.92
     },
-    "f1": 0.8571428571428572
+    "f1": 0.9154228855721394
   },
   "baseline": null,
   "breakdown": {
     "label: binary-breaking": {
       "breaking-change detection recall": {
-        "numerator": 81,
+        "numerator": 92,
         "denominator": 100,
-        "value": 0.81
+        "value": 0.92
       }
     },
     "groundTruthSourceBreaking: true": {
       "breaking-change detection recall": {
-        "numerator": 61,
+        "numerator": 72,
         "denominator": 79,
-        "value": 0.7721518987341772
+        "value": 0.9113924050632911
       }
     },
     "groundTruthSourceBreaking: false": {
@@ -62,8 +62,8 @@
   },
   "intervals": {
     "breaking-change detection recall": {
-      "low": 0.73,
-      "high": 0.88,
+      "low": 0.86,
+      "high": 0.97,
       "iterations": 2000
     }
   },
