@@ -1,6 +1,10 @@
 # External benchmark corpora
 
-Nothing in this directory is committed except this file.
+Nothing in this directory is committed except this file and `fetch.sh`, which
+runs the commands below non-interactively — it's what
+`.github/workflows/refresh-benchmarks.yml` uses to reproduce a corpus on a
+clean CI checkout, and a human can run it the same way (`benchmarks/fetch.sh
+<dataset>`) instead of copying commands out of this doc.
 
 These are other people's datasets. Vendoring them would add hundreds of
 megabytes this repository has no right to redistribute, and it would not make a
