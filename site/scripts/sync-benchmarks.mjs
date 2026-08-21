@@ -17,6 +17,11 @@
  * would publish whatever was on disk, including a smoke run left over from
  * debugging.
  *
+ * A published row whose run directory is gone, or is missing one of its
+ * canonical artifacts, is a broken provenance chain — not a smaller page. This
+ * script fails the build in that case rather than quietly dropping the row:
+ * see `requireRunArtifacts` below.
+ *
  * Run before every build, dev start and typecheck; the output is committed, so
  * a fresh checkout typechecks before anything runs.
  */
@@ -44,18 +49,35 @@ if (!existsSync(publishedPath)) {
 
 const published = JSON.parse(await readFile(publishedPath, 'utf8'));
 
+/** The canonical artifacts every published run must have. Checked before anything is read. */
+const REQUIRED_ARTIFACTS = ['metrics.json', 'manifest.json', 'selection.json', 'environment.json'];
+
+/**
+ * Fail loudly, naming the run and the exact missing path, rather than
+ * skip the row.
+ *
+ * `published.json` is an editorial decision that a run is fit to publish. If
+ * its directory is deleted or moved after that decision, the page has lost
+ * the evidence for numbers it would otherwise still show — the failure has to
+ * be as visible as the build itself, not a line in a "runs not found" box
+ * nobody scrolls to.
+ */
+function requireRunArtifacts(runId, dir) {
+  const missing = REQUIRED_ARTIFACTS.filter((name) => !existsSync(join(dir, name)));
+  if (missing.length > 0) {
+    throw new Error(
+      `[sync-benchmarks] published run "${runId}" is missing required artifact(s): ` +
+        `${missing.map((name) => join(dir, name)).join(', ')}. ` +
+        `Either restore the run's artifacts or remove its entry from eval/results/published.json.`,
+    );
+  }
+}
+
 const datasets = [];
-const skipped = [];
 
 for (const entry of published.runs) {
   const dir = join(resultsRoot, entry.runId);
-  if (!existsSync(join(dir, 'metrics.json'))) {
-    // Recorded rather than silently dropped. A published row whose run is gone
-    // is a broken provenance chain, and the page should say so out loud rather
-    // than quietly showing one fewer dataset.
-    skipped.push({ runId: entry.runId, reason: 'no metrics.json in eval/results/' + entry.runId });
-    continue;
-  }
+  requireRunArtifacts(entry.runId, dir);
 
   const metrics = JSON.parse(await readFile(join(dir, 'metrics.json'), 'utf8'));
   const manifest = JSON.parse(await readFile(join(dir, 'manifest.json'), 'utf8'));
@@ -146,10 +168,7 @@ const output = {
    */
   generatedAt: datasets.map((entry) => entry.runDate).sort().at(-1) ?? '',
   datasets,
-  skipped,
 };
 
 await writeFile(target, `${JSON.stringify(output, null, 2)}\n`, 'utf8');
-process.stderr.write(
-  `[sync-benchmarks] wrote ${datasets.length} dataset(s)${skipped.length > 0 ? `, ${skipped.length} skipped` : ''}\n`,
-);
+process.stderr.write(`[sync-benchmarks] wrote ${datasets.length} dataset(s)\n`);
