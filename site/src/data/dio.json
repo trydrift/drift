@@ -5,10 +5,10 @@
   "language": "Dart",
   "repo": "https://github.com/cfug/dio",
   "blurb": "Dart's most-used HTTP client, in the package that declares its dependencies.",
-  "capturedAt": "2026-08-18T05:38:32.703Z",
-  "commit": "6d39187e982d4ff2904ec654ac906d200701546b",
-  "engine": "81044c47297efc90",
-  "durationMs": 23084,
+  "capturedAt": "2026-08-21T07:21:45.019Z",
+  "commit": "6c1033ef0adbb53892192b8406e49af214909dfe",
+  "engine": "09153dd336cd8676",
+  "durationMs": 2927,
   "packagesChecked": 25,
   "manifests": [
     "pubspec.yaml",
@@ -32,1267 +32,1169 @@
   "nestedGitRepos": [],
   "events": [
     {
-      "at": 168,
+      "at": 28,
       "phase": "Looking for manifests",
       "detail": "cfug/dio",
       "done": 0,
       "total": 0
     },
     {
-      "at": 317,
+      "at": 74,
       "phase": "Reading the workspace",
       "detail": "17 packages · undeclared",
       "done": 0,
       "total": 0
     },
     {
-      "at": 345,
+      "at": 80,
       "phase": "Reading manifest",
       "detail": "pubspec.yaml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 347,
+      "at": 81,
       "phase": "Reading manifest",
       "detail": "dio/pubspec.yaml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 348,
+      "at": 81,
       "phase": "Reading manifest",
       "detail": "dio_test/pubspec.yaml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 348,
+      "at": 81,
       "phase": "Reading manifest",
       "detail": "example_dart/pubspec.yaml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 348,
+      "at": 81,
       "phase": "Reading manifest",
       "detail": "example_flutter_app/pubspec.yaml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 348,
+      "at": 81,
       "phase": "Reading manifest",
       "detail": "example_flutter_app/android/build.gradle.kts",
       "done": 0,
       "total": 0
     },
     {
-      "at": 349,
+      "at": 82,
       "phase": "Reading manifest",
       "detail": "example_flutter_app/android/app/build.gradle.kts",
       "done": 0,
       "total": 0
     },
     {
-      "at": 349,
+      "at": 82,
       "phase": "Reading manifest",
       "detail": "plugins/compatibility_layer/pubspec.yaml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 349,
+      "at": 82,
       "phase": "Reading manifest",
       "detail": "plugins/cookie_manager/pubspec.yaml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 349,
+      "at": 82,
       "phase": "Reading manifest",
       "detail": "plugins/http2_adapter/pubspec.yaml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 350,
+      "at": 82,
       "phase": "Reading manifest",
       "detail": "plugins/native_dio_adapter/pubspec.yaml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 378,
+      "at": 82,
       "phase": "Reading manifest",
       "detail": "plugins/native_dio_adapter/example/pubspec.yaml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 378,
+      "at": 82,
       "phase": "Reading manifest",
       "detail": "plugins/native_dio_adapter/example/android/build.gradle",
       "done": 0,
       "total": 0
     },
     {
-      "at": 378,
+      "at": 82,
       "phase": "Reading manifest",
       "detail": "plugins/native_dio_adapter/example/android/app/build.gradle",
       "done": 0,
       "total": 0
     },
     {
-      "at": 378,
+      "at": 83,
       "phase": "Reading manifest",
       "detail": "plugins/native_dio_adapter/example/ios/Podfile",
       "done": 0,
       "total": 0
     },
     {
-      "at": 383,
+      "at": 85,
       "phase": "Reading manifest",
       "detail": "plugins/native_dio_adapter/example/macos/Podfile",
       "done": 0,
       "total": 0
     },
     {
-      "at": 383,
+      "at": 85,
       "phase": "Reading manifest",
       "detail": "plugins/web_adapter/pubspec.yaml",
       "done": 0,
       "total": 0
     },
     {
-      "at": 384,
+      "at": 85,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 25
     },
     {
-      "at": 391,
+      "at": 85,
       "phase": "Checking registries",
       "detail": "25 direct dependencies",
       "done": 0,
       "total": 25
     },
     {
-      "at": 665,
+      "at": 146,
       "phase": "Outdated",
-      "detail": "cookie_jar 4.0.0 → 4.0.9",
+      "detail": "http_parser 4.0.0 → 4.1.2",
       "done": 1,
       "total": 25
     },
     {
-      "at": 675,
-      "phase": "Outdated",
-      "detail": "collection 1.16.0 → 1.19.1",
-      "done": 2,
-      "total": 25
-    },
-    {
-      "at": 678,
-      "phase": "Outdated",
-      "detail": "dio_web_adapter 1.1.0 → 2.2.1",
-      "done": 3,
-      "total": 25
-    },
-    {
-      "at": 679,
-      "phase": "Outdated",
-      "detail": "http_parser 4.0.0 → 4.1.2",
-      "done": 4,
-      "total": 25
-    },
-    {
-      "at": 680,
-      "phase": "Outdated",
-      "detail": "http2 2.1.0 → 2.3.1",
-      "done": 5,
-      "total": 25
-    },
-    {
-      "at": 692,
-      "phase": "Outdated",
-      "detail": "cupertino_http 2.3.0 → 3.0.2",
-      "done": 6,
-      "total": 25
-    },
-    {
-      "at": 701,
-      "phase": "Outdated",
-      "detail": "mime 1.0.0 → 2.0.0",
-      "done": 7,
-      "total": 25
-    },
-    {
-      "at": 702,
-      "phase": "Outdated",
-      "detail": "http_parser 4.0.0 → 4.1.2",
-      "done": 8,
-      "total": 25
-    },
-    {
-      "at": 710,
-      "phase": "Outdated",
-      "detail": "async 2.8.2 → 2.13.1",
-      "done": 9,
-      "total": 25
-    },
-    {
-      "at": 714,
-      "phase": "Outdated",
-      "detail": "path 1.8.0 → 1.9.1",
-      "done": 10,
-      "total": 25
-    },
-    {
-      "at": 738,
-      "phase": "Outdated",
-      "detail": "meta 1.5.0 → 1.19.0",
-      "done": 11,
-      "total": 25
-    },
-    {
-      "at": 738,
-      "phase": "Outdated",
-      "detail": "meta 1.9.1 → 1.19.0",
-      "done": 12,
-      "total": 25
-    },
-    {
-      "at": 738,
-      "phase": "Outdated",
-      "detail": "meta 1.5.0 → 1.19.0",
-      "done": 13,
-      "total": 25
-    },
-    {
-      "at": 741,
-      "phase": "Outdated",
-      "detail": "http 1.0.0 → 1.6.0",
-      "done": 14,
-      "total": 25
-    },
-    {
-      "at": 741,
-      "phase": "Outdated",
-      "detail": "http 1.5.0 → 1.6.0",
-      "done": 15,
-      "total": 25
-    },
-    {
-      "at": 767,
-      "phase": "Outdated",
-      "detail": "dio 5.2.0 → 5.11.0",
-      "done": 16,
-      "total": 25
-    },
-    {
-      "at": 767,
-      "phase": "Outdated",
-      "detail": "dio 5.2.0 → 5.11.0",
-      "done": 17,
-      "total": 25
-    },
-    {
-      "at": 767,
-      "phase": "Outdated",
-      "detail": "dio 5.2.0 → 5.11.0",
-      "done": 18,
-      "total": 25
-    },
-    {
-      "at": 767,
-      "phase": "Outdated",
-      "detail": "dio 5.4.0 → 5.11.0",
-      "done": 19,
-      "total": 25
-    },
-    {
-      "at": 767,
-      "phase": "Outdated",
-      "detail": "dio 5.0.0 → 5.11.0",
-      "done": 20,
-      "total": 25
-    },
-    {
-      "at": 767,
-      "phase": "Outdated",
-      "detail": "dio 5.8.0 → 5.11.0",
-      "done": 21,
-      "total": 25
-    },
-    {
-      "at": 785,
-      "phase": "Up to date",
-      "detail": "cronet_http@1.9.0",
-      "done": 22,
-      "total": 25
-    },
-    {
-      "at": 789,
-      "phase": "Outdated",
-      "detail": "cupertino_icons 1.0.2 → 1.0.9",
-      "done": 23,
-      "total": 25
-    },
-    {
-      "at": 791,
-      "phase": "Outdated",
-      "detail": "jni 1.0.0 → 1.0.3",
-      "done": 24,
-      "total": 25
-    },
-    {
-      "at": 794,
-      "phase": "Outdated",
-      "detail": "web 0.5.0 → 1.1.1",
-      "done": 25,
-      "total": 25
-    },
-    {
-      "at": 795,
-      "phase": "Preparing a test checkout of dio",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 817,
-      "phase": "Preparing a test checkout of plugins/compatibility_layer",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 840,
-      "phase": "Reading release notes and changelog",
-      "detail": "async 2.8.2 → 2.13.1",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 840,
-      "phase": "Reading release notes and changelog",
-      "detail": "collection 1.16.0 → 1.19.1",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 840,
-      "phase": "Reading release notes and changelog",
-      "detail": "cookie_jar 4.0.0 → 4.0.9",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 840,
-      "phase": "Reading release notes and changelog",
-      "detail": "cupertino_http 2.3.0 → 3.0.2",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 841,
-      "phase": "Reading release notes and changelog",
-      "detail": "cupertino_icons 1.0.2 → 1.0.9",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 841,
-      "phase": "Reading release notes and changelog",
-      "detail": "dio 5.2.0 → 5.11.0",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 841,
-      "phase": "Reading release notes and changelog",
-      "detail": "dio 5.2.0 → 5.11.0",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 841,
-      "phase": "Reading release notes and changelog",
-      "detail": "dio 5.2.0 → 5.11.0",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 1900,
-      "phase": "Installing plugins/compatibility_layer's dependencies",
-      "detail": "`dart pub get`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 2238,
-      "phase": "Installing dio's dependencies",
-      "detail": "`dart pub get`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 2436,
-      "phase": "Preparing a test checkout of plugins/cookie_manager",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 2650,
-      "phase": "Preparing a test checkout of plugins/http2_adapter",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 3174,
-      "phase": "Installing plugins/cookie_manager's dependencies",
-      "detail": "`dart pub get`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 3690,
-      "phase": "Installing plugins/http2_adapter's dependencies",
-      "detail": "`dart pub get`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 3758,
-      "phase": "Preparing a test checkout of plugins/native_dio_adapter",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 4157,
-      "phase": "Preparing a test checkout of plugins/native_dio_adapter/example",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 4673,
-      "phase": "Installing plugins/native_dio_adapter's dependencies",
-      "detail": "`flutter pub get`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 5254,
-      "phase": "Installing plugins/native_dio_adapter/example's dependencies",
-      "detail": "`flutter pub get`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 5436,
-      "phase": "Preparing a test checkout of plugins/web_adapter",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 5948,
-      "phase": "Comparing the public API surface",
-      "detail": "cookie_jar 4.0.0 → 4.0.9 · 1 evidence source",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 5949,
-      "phase": "No breaking changes to look for",
-      "detail": "cookie_jar 4.0.0 → 4.0.9",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 6136,
-      "phase": "Installing plugins/web_adapter's dependencies",
-      "detail": "`dart pub get`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 6660,
-      "phase": "Comparing the public API surface",
-      "detail": "cupertino_http 2.3.0 → 3.0.2 · 2 evidence sources",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 7294,
-      "phase": "Searching your code for 5356 breaking changes",
-      "detail": "cupertino_http 2.3.0 → 3.0.2",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 7359,
-      "phase": "Comparing the public API surface",
-      "detail": "async 2.8.2 → 2.13.1 · 1 evidence source",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 7360,
-      "phase": "Comparing the public API surface",
-      "detail": "collection 1.16.0 → 1.19.1 · 1 evidence source",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 7360,
-      "phase": "No breaking changes to look for",
-      "detail": "async 2.8.2 → 2.13.1",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 7360,
-      "phase": "No breaking changes to look for",
-      "detail": "collection 1.16.0 → 1.19.1",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 7360,
-      "phase": "Comparing the public API surface",
-      "detail": "dio 5.2.0 → 5.11.0 · 2 evidence sources",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 7360,
-      "phase": "Comparing the public API surface",
-      "detail": "dio 5.2.0 → 5.11.0 · 2 evidence sources",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 7360,
-      "phase": "Comparing the public API surface",
-      "detail": "dio 5.2.0 → 5.11.0 · 2 evidence sources",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 7360,
-      "phase": "Searching your code for 4 breaking changes",
-      "detail": "dio 5.2.0 → 5.11.0",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 7360,
-      "phase": "Searching your code for 4 breaking changes",
-      "detail": "dio 5.2.0 → 5.11.0",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 7360,
-      "phase": "Searching your code for 4 breaking changes",
-      "detail": "dio 5.2.0 → 5.11.0",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 7531,
-      "phase": "Comparing the public API surface",
-      "detail": "cupertino_icons 1.0.2 → 1.0.9 · 1 evidence source",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 7531,
-      "phase": "No breaking changes to look for",
-      "detail": "cupertino_icons 1.0.2 → 1.0.9",
-      "done": 0,
-      "total": 24
-    },
-    {
-      "at": 7574,
+      "at": 149,
       "phase": "Indexing your code",
       "detail": "210 files indexed · 25 direct dependencies to check",
       "done": 0,
       "total": 25
     },
     {
-      "at": 7604,
+      "at": 164,
+      "phase": "Outdated",
+      "detail": "dio_web_adapter 1.1.0 → 2.2.1",
+      "done": 2,
+      "total": 25
+    },
+    {
+      "at": 166,
+      "phase": "Outdated",
+      "detail": "collection 1.16.0 → 1.19.1",
+      "done": 3,
+      "total": 25
+    },
+    {
+      "at": 168,
+      "phase": "Outdated",
+      "detail": "mime 1.0.0 → 2.0.0",
+      "done": 4,
+      "total": 25
+    },
+    {
+      "at": 168,
+      "phase": "Outdated",
+      "detail": "path 1.8.0 → 1.9.1",
+      "done": 5,
+      "total": 25
+    },
+    {
+      "at": 170,
+      "phase": "Outdated",
+      "detail": "cookie_jar 4.0.0 → 4.0.9",
+      "done": 6,
+      "total": 25
+    },
+    {
+      "at": 171,
+      "phase": "Outdated",
+      "detail": "async 2.8.2 → 2.13.1",
+      "done": 7,
+      "total": 25
+    },
+    {
+      "at": 171,
+      "phase": "Outdated",
+      "detail": "http_parser 4.0.0 → 4.1.2",
+      "done": 8,
+      "total": 25
+    },
+    {
+      "at": 173,
+      "phase": "Outdated",
+      "detail": "meta 1.5.0 → 1.19.0",
+      "done": 9,
+      "total": 25
+    },
+    {
+      "at": 173,
+      "phase": "Outdated",
+      "detail": "meta 1.9.1 → 1.19.0",
+      "done": 10,
+      "total": 25
+    },
+    {
+      "at": 173,
+      "phase": "Outdated",
+      "detail": "meta 1.5.0 → 1.19.0",
+      "done": 11,
+      "total": 25
+    },
+    {
+      "at": 175,
+      "phase": "Outdated",
+      "detail": "http 1.0.0 → 1.6.0",
+      "done": 12,
+      "total": 25
+    },
+    {
+      "at": 175,
+      "phase": "Outdated",
+      "detail": "http 1.5.0 → 1.6.0",
+      "done": 13,
+      "total": 25
+    },
+    {
+      "at": 185,
+      "phase": "Outdated",
+      "detail": "dio 5.2.0 → 5.11.0",
+      "done": 14,
+      "total": 25
+    },
+    {
+      "at": 185,
+      "phase": "Outdated",
+      "detail": "dio 5.2.0 → 5.11.0",
+      "done": 15,
+      "total": 25
+    },
+    {
+      "at": 185,
+      "phase": "Outdated",
+      "detail": "dio 5.2.0 → 5.11.0",
+      "done": 16,
+      "total": 25
+    },
+    {
+      "at": 185,
+      "phase": "Outdated",
+      "detail": "dio 5.4.0 → 5.11.0",
+      "done": 17,
+      "total": 25
+    },
+    {
+      "at": 185,
+      "phase": "Outdated",
+      "detail": "dio 5.0.0 → 5.11.0",
+      "done": 18,
+      "total": 25
+    },
+    {
+      "at": 185,
+      "phase": "Outdated",
+      "detail": "dio 5.8.0 → 5.11.0",
+      "done": 19,
+      "total": 25
+    },
+    {
+      "at": 185,
+      "phase": "Outdated",
+      "detail": "http2 2.1.0 → 2.3.1",
+      "done": 20,
+      "total": 25
+    },
+    {
+      "at": 186,
+      "phase": "Outdated",
+      "detail": "cupertino_http 2.3.0 → 3.0.2",
+      "done": 21,
+      "total": 25
+    },
+    {
+      "at": 187,
+      "phase": "Up to date",
+      "detail": "cronet_http@1.9.0",
+      "done": 22,
+      "total": 25
+    },
+    {
+      "at": 206,
+      "phase": "Outdated",
+      "detail": "jni 1.0.0 → 1.0.3",
+      "done": 23,
+      "total": 25
+    },
+    {
+      "at": 210,
+      "phase": "Outdated",
+      "detail": "cupertino_icons 1.0.2 → 1.0.9",
+      "done": 24,
+      "total": 25
+    },
+    {
+      "at": 221,
+      "phase": "Outdated",
+      "detail": "web 0.5.0 → 1.1.1",
+      "done": 25,
+      "total": 25
+    },
+    {
+      "at": 222,
+      "phase": "Reading release notes and changelog",
+      "detail": "async 2.8.2 → 2.13.1",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 222,
+      "phase": "Reading release notes and changelog",
+      "detail": "collection 1.16.0 → 1.19.1",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 222,
+      "phase": "Reading release notes and changelog",
+      "detail": "cookie_jar 4.0.0 → 4.0.9",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 222,
+      "phase": "Reading release notes and changelog",
+      "detail": "cupertino_http 2.3.0 → 3.0.2",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 222,
+      "phase": "Reading release notes and changelog",
+      "detail": "cupertino_icons 1.0.2 → 1.0.9",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 222,
+      "phase": "Reading release notes and changelog",
+      "detail": "dio 5.2.0 → 5.11.0",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 222,
+      "phase": "Reading release notes and changelog",
+      "detail": "dio 5.2.0 → 5.11.0",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 222,
+      "phase": "Reading release notes and changelog",
+      "detail": "dio 5.2.0 → 5.11.0",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 631,
+      "phase": "Comparing the public API surface",
+      "detail": "cookie_jar 4.0.0 → 4.0.9 · 1 evidence source",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 631,
+      "phase": "No breaking changes to look for",
+      "detail": "cookie_jar 4.0.0 → 4.0.9",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 631,
       "phase": "Weighing what this upgrade is worth",
       "detail": "cookie_jar 4.0.0 → 4.0.9",
       "done": 0,
       "total": 24
     },
     {
-      "at": 16446,
+      "at": 644,
+      "phase": "Comparing the public API surface",
+      "detail": "cupertino_http 2.3.0 → 3.0.2 · 2 evidence sources",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 928,
+      "phase": "Searching your code for 5356 breaking changes",
+      "detail": "cupertino_http 2.3.0 → 3.0.2",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 1331,
       "phase": "Weighing what this upgrade is worth",
       "detail": "cupertino_http 2.3.0 → 3.0.2",
       "done": 0,
       "total": 24
     },
     {
-      "at": 16447,
+      "at": 1338,
+      "phase": "Comparing the public API surface",
+      "detail": "async 2.8.2 → 2.13.1 · 1 evidence source",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 1339,
+      "phase": "Comparing the public API surface",
+      "detail": "collection 1.16.0 → 1.19.1 · 1 evidence source",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 1339,
+      "phase": "No breaking changes to look for",
+      "detail": "async 2.8.2 → 2.13.1",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 1339,
+      "phase": "No breaking changes to look for",
+      "detail": "collection 1.16.0 → 1.19.1",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 1339,
       "phase": "Weighing what this upgrade is worth",
       "detail": "async 2.8.2 → 2.13.1",
       "done": 0,
       "total": 24
     },
     {
-      "at": 16447,
+      "at": 1339,
       "phase": "Weighing what this upgrade is worth",
       "detail": "collection 1.16.0 → 1.19.1",
       "done": 0,
       "total": 24
     },
     {
-      "at": 16454,
+      "at": 1340,
+      "phase": "Comparing the public API surface",
+      "detail": "dio 5.2.0 → 5.11.0 · 2 evidence sources",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 1340,
+      "phase": "Comparing the public API surface",
+      "detail": "dio 5.2.0 → 5.11.0 · 2 evidence sources",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 1340,
+      "phase": "Comparing the public API surface",
+      "detail": "dio 5.2.0 → 5.11.0 · 2 evidence sources",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 1340,
+      "phase": "Searching your code for 4 breaking changes",
+      "detail": "dio 5.2.0 → 5.11.0",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 1340,
+      "phase": "Searching your code for 4 breaking changes",
+      "detail": "dio 5.2.0 → 5.11.0",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 1340,
+      "phase": "Searching your code for 4 breaking changes",
+      "detail": "dio 5.2.0 → 5.11.0",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 1342,
       "phase": "Weighing what this upgrade is worth",
       "detail": "dio 5.2.0 → 5.11.0",
       "done": 0,
       "total": 24
     },
     {
-      "at": 16485,
+      "at": 1350,
       "phase": "Weighing what this upgrade is worth",
       "detail": "dio 5.2.0 → 5.11.0",
       "done": 0,
       "total": 24
     },
     {
-      "at": 16525,
+      "at": 1357,
       "phase": "Weighing what this upgrade is worth",
       "detail": "dio 5.2.0 → 5.11.0",
       "done": 0,
       "total": 24
     },
     {
-      "at": 16526,
+      "at": 1415,
+      "phase": "Comparing the public API surface",
+      "detail": "cupertino_icons 1.0.2 → 1.0.9 · 1 evidence source",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 1415,
+      "phase": "No breaking changes to look for",
+      "detail": "cupertino_icons 1.0.2 → 1.0.9",
+      "done": 0,
+      "total": 24
+    },
+    {
+      "at": 1415,
       "phase": "Weighing what this upgrade is worth",
       "detail": "cupertino_icons 1.0.2 → 1.0.9",
       "done": 0,
       "total": 24
     },
     {
-      "at": 16871,
+      "at": 1597,
       "phase": "Checked",
       "detail": "cookie_jar 4.0.0 → 4.0.9 · safe for your code · no breaking changes found",
       "done": 1,
       "total": 24
     },
     {
-      "at": 16871,
+      "at": 1597,
       "phase": "Reading release notes and changelog",
       "detail": "dio 5.4.0 → 5.11.0",
       "done": 1,
       "total": 24
     },
     {
-      "at": 16926,
+      "at": 1637,
+      "phase": "Comparing the public API surface",
+      "detail": "dio 5.4.0 → 5.11.0 · 2 evidence sources",
+      "done": 1,
+      "total": 24
+    },
+    {
+      "at": 1637,
+      "phase": "Searching your code for 2 breaking changes",
+      "detail": "dio 5.4.0 → 5.11.0",
+      "done": 1,
+      "total": 24
+    },
+    {
+      "at": 1639,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "dio 5.4.0 → 5.11.0",
+      "done": 1,
+      "total": 24
+    },
+    {
+      "at": 1986,
       "phase": "Checked",
-      "detail": "async 2.8.2 → 2.13.1 · safe for your code · no breaking changes found",
+      "detail": "cupertino_http 2.3.0 → 3.0.2 · safe for your code · 5356 upstream changes, none used here",
       "done": 2,
       "total": 24
     },
     {
-      "at": 16926,
+      "at": 1986,
+      "phase": "Reading release notes and changelog",
+      "detail": "dio 5.0.0 → 5.11.0",
+      "done": 2,
+      "total": 24
+    },
+    {
+      "at": 1991,
       "phase": "Checked",
       "detail": "collection 1.16.0 → 1.19.1 · safe for your code · no breaking changes found",
       "done": 3,
       "total": 24
     },
     {
-      "at": 16926,
-      "phase": "Reading release notes and changelog",
-      "detail": "dio 5.0.0 → 5.11.0",
-      "done": 3,
-      "total": 24
-    },
-    {
-      "at": 16927,
-      "phase": "Reading release notes and changelog",
-      "detail": "dio 5.8.0 → 5.11.0",
-      "done": 3,
-      "total": 24
-    },
-    {
-      "at": 17018,
+      "at": 1991,
       "phase": "Checked",
-      "detail": "cupertino_icons 1.0.2 → 1.0.9 · safe for your code · no breaking changes found",
+      "detail": "async 2.8.2 → 2.13.1 · safe for your code · no breaking changes found",
       "done": 4,
       "total": 24
     },
     {
-      "at": 17018,
+      "at": 1991,
+      "phase": "Reading release notes and changelog",
+      "detail": "dio 5.8.0 → 5.11.0",
+      "done": 4,
+      "total": 24
+    },
+    {
+      "at": 1991,
       "phase": "Reading release notes and changelog",
       "detail": "dio_web_adapter 1.1.0 → 2.2.1",
       "done": 4,
       "total": 24
     },
     {
-      "at": 17037,
+      "at": 1993,
       "phase": "Checked",
-      "detail": "dio 5.2.0 → 5.11.0 · safe for your code · 4 upstream changes, none used here",
+      "detail": "cupertino_icons 1.0.2 → 1.0.9 · safe for your code · no breaking changes found",
       "done": 5,
       "total": 24
     },
     {
-      "at": 17037,
+      "at": 1993,
+      "phase": "Reading release notes and changelog",
+      "detail": "http 1.0.0 → 1.6.0",
+      "done": 5,
+      "total": 24
+    },
+    {
+      "at": 1996,
       "phase": "Checked",
       "detail": "dio 5.2.0 → 5.11.0 · safe for your code · 4 upstream changes, none used here",
       "done": 6,
       "total": 24
     },
     {
-      "at": 17038,
+      "at": 1996,
       "phase": "Checked",
       "detail": "dio 5.2.0 → 5.11.0 · safe for your code · 4 upstream changes, none used here",
       "done": 7,
       "total": 24
     },
     {
-      "at": 17038,
-      "phase": "Reading release notes and changelog",
-      "detail": "http 1.0.0 → 1.6.0",
-      "done": 7,
-      "total": 24
-    },
-    {
-      "at": 17038,
-      "phase": "Reading release notes and changelog",
-      "detail": "http 1.5.0 → 1.6.0",
-      "done": 7,
-      "total": 24
-    },
-    {
-      "at": 17038,
-      "phase": "Reading release notes and changelog",
-      "detail": "http_parser 4.0.0 → 4.1.2",
-      "done": 7,
-      "total": 24
-    },
-    {
-      "at": 17845,
+      "at": 1996,
       "phase": "Checked",
-      "detail": "cupertino_http 2.3.0 → 3.0.2 · safe for your code · 5356 upstream changes, none used here",
+      "detail": "dio 5.2.0 → 5.11.0 · safe for your code · 4 upstream changes, none used here",
       "done": 8,
       "total": 24
     },
     {
-      "at": 17846,
-      "phase": "Reading release notes and changelog",
-      "detail": "http_parser 4.0.0 → 4.1.2",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 17941,
-      "phase": "Comparing the public API surface",
-      "detail": "dio 5.4.0 → 5.11.0 · 2 evidence sources",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 17941,
-      "phase": "Searching your code for 2 breaking changes",
-      "detail": "dio 5.4.0 → 5.11.0",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 17977,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "dio 5.4.0 → 5.11.0",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 17995,
-      "phase": "Comparing the public API surface",
-      "detail": "dio_web_adapter 1.1.0 → 2.2.1 · 2 evidence sources",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 17995,
-      "phase": "No breaking changes to look for",
-      "detail": "dio_web_adapter 1.1.0 → 2.2.1",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 17995,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "dio_web_adapter 1.1.0 → 2.2.1",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18080,
-      "phase": "Comparing the public API surface",
-      "detail": "dio 5.8.0 → 5.11.0 · 1 evidence source",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18080,
-      "phase": "No breaking changes to look for",
-      "detail": "dio 5.8.0 → 5.11.0",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18081,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "dio 5.8.0 → 5.11.0",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18102,
-      "phase": "Comparing the public API surface",
-      "detail": "http_parser 4.0.0 → 4.1.2 · 1 evidence source",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18102,
-      "phase": "No breaking changes to look for",
-      "detail": "http_parser 4.0.0 → 4.1.2",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18102,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "http_parser 4.0.0 → 4.1.2",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18103,
-      "phase": "Comparing the public API surface",
-      "detail": "http_parser 4.0.0 → 4.1.2 · 1 evidence source",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18103,
-      "phase": "No breaking changes to look for",
-      "detail": "http_parser 4.0.0 → 4.1.2",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18103,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "http_parser 4.0.0 → 4.1.2",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18107,
-      "phase": "Comparing the public API surface",
-      "detail": "dio 5.0.0 → 5.11.0 · 3 evidence sources",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18107,
-      "phase": "Searching your code for 8 breaking changes",
-      "detail": "dio 5.0.0 → 5.11.0",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18121,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "dio 5.0.0 → 5.11.0",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18121,
-      "phase": "Comparing the public API surface",
-      "detail": "http 1.5.0 → 1.6.0 · 1 evidence source",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18121,
-      "phase": "No breaking changes to look for",
-      "detail": "http 1.5.0 → 1.6.0",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18121,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "http 1.5.0 → 1.6.0",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18125,
-      "phase": "Comparing the public API surface",
-      "detail": "http 1.0.0 → 1.6.0 · 1 evidence source",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18125,
-      "phase": "No breaking changes to look for",
-      "detail": "http 1.0.0 → 1.6.0",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18125,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "http 1.0.0 → 1.6.0",
-      "done": 8,
-      "total": 24
-    },
-    {
-      "at": 18134,
+      "at": 1996,
       "phase": "Checked",
       "detail": "dio 5.4.0 → 5.11.0 · safe for your code · 2 upstream changes, none used here",
       "done": 9,
       "total": 24
     },
     {
-      "at": 18134,
+      "at": 1996,
+      "phase": "Reading release notes and changelog",
+      "detail": "http 1.5.0 → 1.6.0",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 1996,
+      "phase": "Reading release notes and changelog",
+      "detail": "http_parser 4.0.0 → 4.1.2",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 1996,
+      "phase": "Reading release notes and changelog",
+      "detail": "http_parser 4.0.0 → 4.1.2",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 1996,
       "phase": "Reading release notes and changelog",
       "detail": "http2 2.1.0 → 2.3.1",
       "done": 9,
       "total": 24
     },
     {
-      "at": 18159,
+      "at": 2021,
+      "phase": "Comparing the public API surface",
+      "detail": "dio 5.8.0 → 5.11.0 · 1 evidence source",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2021,
+      "phase": "No breaking changes to look for",
+      "detail": "dio 5.8.0 → 5.11.0",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2021,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "dio 5.8.0 → 5.11.0",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2028,
+      "phase": "Comparing the public API surface",
+      "detail": "http 1.0.0 → 1.6.0 · 1 evidence source",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2028,
+      "phase": "No breaking changes to look for",
+      "detail": "http 1.0.0 → 1.6.0",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2028,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "http 1.0.0 → 1.6.0",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2029,
+      "phase": "Comparing the public API surface",
+      "detail": "http 1.5.0 → 1.6.0 · 1 evidence source",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2029,
+      "phase": "No breaking changes to look for",
+      "detail": "http 1.5.0 → 1.6.0",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2029,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "http 1.5.0 → 1.6.0",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2032,
+      "phase": "Comparing the public API surface",
+      "detail": "http_parser 4.0.0 → 4.1.2 · 1 evidence source",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2032,
+      "phase": "No breaking changes to look for",
+      "detail": "http_parser 4.0.0 → 4.1.2",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2032,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "http_parser 4.0.0 → 4.1.2",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2032,
+      "phase": "Comparing the public API surface",
+      "detail": "http_parser 4.0.0 → 4.1.2 · 1 evidence source",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2032,
+      "phase": "No breaking changes to look for",
+      "detail": "http_parser 4.0.0 → 4.1.2",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2032,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "http_parser 4.0.0 → 4.1.2",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2044,
+      "phase": "Comparing the public API surface",
+      "detail": "dio 5.0.0 → 5.11.0 · 3 evidence sources",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2045,
+      "phase": "Searching your code for 8 breaking changes",
+      "detail": "dio 5.0.0 → 5.11.0",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2045,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "dio 5.0.0 → 5.11.0",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2056,
+      "phase": "Comparing the public API surface",
+      "detail": "dio_web_adapter 1.1.0 → 2.2.1 · 2 evidence sources",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2056,
+      "phase": "No breaking changes to look for",
+      "detail": "dio_web_adapter 1.1.0 → 2.2.1",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2056,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "dio_web_adapter 1.1.0 → 2.2.1",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2058,
+      "phase": "Comparing the public API surface",
+      "detail": "http2 2.1.0 → 2.3.1 · 1 evidence source",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2058,
+      "phase": "No breaking changes to look for",
+      "detail": "http2 2.1.0 → 2.3.1",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2058,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "http2 2.1.0 → 2.3.1",
+      "done": 9,
+      "total": 24
+    },
+    {
+      "at": 2145,
       "phase": "Checked",
-      "detail": "dio_web_adapter 1.1.0 → 2.2.1 · safe for your code · no breaking changes found",
+      "detail": "dio 5.8.0 → 5.11.0 · safe for your code · no breaking changes found",
       "done": 10,
       "total": 24
     },
     {
-      "at": 18159,
+      "at": 2145,
       "phase": "Reading release notes and changelog",
       "detail": "jni 1.0.0 → 1.0.3",
       "done": 10,
       "total": 24
     },
     {
-      "at": 18936,
+      "at": 2158,
       "phase": "Checked",
-      "detail": "dio 5.8.0 → 5.11.0 · safe for your code · no breaking changes found",
+      "detail": "http 1.0.0 → 1.6.0 · safe for your code · no breaking changes found",
       "done": 11,
       "total": 24
     },
     {
-      "at": 18936,
+      "at": 2158,
       "phase": "Reading release notes and changelog",
       "detail": "meta 1.5.0 → 1.19.0",
       "done": 11,
       "total": 24
     },
     {
-      "at": 18940,
+      "at": 2169,
       "phase": "Checked",
       "detail": "http 1.5.0 → 1.6.0 · safe for your code · no breaking changes found",
       "done": 12,
       "total": 24
     },
     {
-      "at": 18940,
+      "at": 2169,
       "phase": "Reading release notes and changelog",
       "detail": "meta 1.9.1 → 1.19.0",
       "done": 12,
       "total": 24
     },
     {
-      "at": 18945,
+      "at": 2199,
       "phase": "Checked",
-      "detail": "dio 5.0.0 → 5.11.0 · safe for your code · 8 upstream changes, none used here",
+      "detail": "http_parser 4.0.0 → 4.1.2 · safe for your code · no breaking changes found",
       "done": 13,
       "total": 24
     },
     {
-      "at": 18945,
+      "at": 2199,
       "phase": "Reading release notes and changelog",
       "detail": "meta 1.5.0 → 1.19.0",
       "done": 13,
       "total": 24
     },
     {
-      "at": 18953,
+      "at": 2200,
       "phase": "Checked",
-      "detail": "http 1.0.0 → 1.6.0 · safe for your code · no breaking changes found",
+      "detail": "dio_web_adapter 1.1.0 → 2.2.1 · safe for your code · no breaking changes found",
       "done": 14,
       "total": 24
     },
     {
-      "at": 18953,
+      "at": 2200,
       "phase": "Reading release notes and changelog",
       "detail": "mime 1.0.0 → 2.0.0",
       "done": 14,
       "total": 24
     },
     {
-      "at": 18955,
+      "at": 2201,
       "phase": "Checked",
-      "detail": "http_parser 4.0.0 → 4.1.2 · safe for your code · no breaking changes found",
+      "detail": "dio 5.0.0 → 5.11.0 · safe for your code · 8 upstream changes, none used here",
       "done": 15,
       "total": 24
     },
     {
-      "at": 18955,
+      "at": 2201,
       "phase": "Reading release notes and changelog",
       "detail": "path 1.8.0 → 1.9.1",
       "done": 15,
       "total": 24
     },
     {
-      "at": 18958,
+      "at": 2210,
       "phase": "Checked",
-      "detail": "http_parser 4.0.0 → 4.1.2 · safe for your code · no breaking changes found",
+      "detail": "http2 2.1.0 → 2.3.1 · safe for your code · no breaking changes found",
       "done": 16,
       "total": 24
     },
     {
-      "at": 18958,
+      "at": 2210,
       "phase": "Reading release notes and changelog",
       "detail": "web 0.5.0 → 1.1.1",
       "done": 16,
       "total": 24
     },
     {
-      "at": 19103,
-      "phase": "Comparing the public API surface",
-      "detail": "http2 2.1.0 → 2.3.1 · 1 evidence source",
-      "done": 16,
-      "total": 24
-    },
-    {
-      "at": 19103,
-      "phase": "No breaking changes to look for",
-      "detail": "http2 2.1.0 → 2.3.1",
-      "done": 16,
-      "total": 24
-    },
-    {
-      "at": 19103,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "http2 2.1.0 → 2.3.1",
-      "done": 16,
-      "total": 24
-    },
-    {
-      "at": 19367,
-      "phase": "Checked",
-      "detail": "http2 2.1.0 → 2.3.1 · safe for your code · no breaking changes found",
-      "done": 17,
-      "total": 24
-    },
-    {
-      "at": 19380,
+      "at": 2287,
       "phase": "Comparing the public API surface",
       "detail": "path 1.8.0 → 1.9.1 · 2 evidence sources",
-      "done": 17,
+      "done": 16,
       "total": 24
     },
     {
-      "at": 19380,
+      "at": 2287,
       "phase": "Searching your code for 2 breaking changes",
       "detail": "path 1.8.0 → 1.9.1",
-      "done": 17,
+      "done": 16,
       "total": 24
     },
     {
-      "at": 19381,
+      "at": 2287,
       "phase": "Weighing what this upgrade is worth",
       "detail": "path 1.8.0 → 1.9.1",
+      "done": 16,
+      "total": 24
+    },
+    {
+      "at": 2289,
+      "phase": "Checked",
+      "detail": "http_parser 4.0.0 → 4.1.2 · safe for your code · no breaking changes found",
       "done": 17,
       "total": 24
     },
     {
-      "at": 19726,
+      "at": 2413,
+      "phase": "Comparing the public API surface",
+      "detail": "meta 1.5.0 → 1.19.0 · 13 evidence sources",
+      "done": 17,
+      "total": 24
+    },
+    {
+      "at": 2415,
+      "phase": "Comparing the public API surface",
+      "detail": "meta 1.9.1 → 1.19.0 · 12 evidence sources",
+      "done": 17,
+      "total": 24
+    },
+    {
+      "at": 2416,
+      "phase": "Comparing the public API surface",
+      "detail": "meta 1.5.0 → 1.19.0 · 13 evidence sources",
+      "done": 17,
+      "total": 24
+    },
+    {
+      "at": 2417,
+      "phase": "Searching your code for 29 breaking changes",
+      "detail": "meta 1.5.0 → 1.19.0",
+      "done": 17,
+      "total": 24
+    },
+    {
+      "at": 2417,
+      "phase": "Searching your code for 28 breaking changes",
+      "detail": "meta 1.9.1 → 1.19.0",
+      "done": 17,
+      "total": 24
+    },
+    {
+      "at": 2417,
+      "phase": "Searching your code for 29 breaking changes",
+      "detail": "meta 1.5.0 → 1.19.0",
+      "done": 17,
+      "total": 24
+    },
+    {
+      "at": 2455,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "meta 1.5.0 → 1.19.0",
+      "done": 17,
+      "total": 24
+    },
+    {
+      "at": 2462,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "meta 1.9.1 → 1.19.0",
+      "done": 17,
+      "total": 24
+    },
+    {
+      "at": 2472,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "meta 1.5.0 → 1.19.0",
+      "done": 17,
+      "total": 24
+    },
+    {
+      "at": 2478,
       "phase": "Checked",
       "detail": "path 1.8.0 → 1.9.1 · safe for your code · 2 upstream changes, none used here",
       "done": 18,
       "total": 24
     },
     {
-      "at": 20446,
+      "at": 2522,
       "phase": "Comparing the public API surface",
-      "detail": "meta 1.5.0 → 1.19.0 · 13 evidence sources",
+      "detail": "web 0.5.0 → 1.1.1 · 2 evidence sources",
       "done": 18,
       "total": 24
     },
     {
-      "at": 20450,
+      "at": 2526,
+      "phase": "Searching your code for 71 breaking changes",
+      "detail": "web 0.5.0 → 1.1.1",
+      "done": 18,
+      "total": 24
+    },
+    {
+      "at": 2538,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "web 0.5.0 → 1.1.1",
+      "done": 18,
+      "total": 24
+    },
+    {
+      "at": 2567,
       "phase": "Comparing the public API surface",
-      "detail": "meta 1.9.1 → 1.19.0 · 12 evidence sources",
+      "detail": "mime 1.0.0 → 2.0.0 · 3 evidence sources",
       "done": 18,
       "total": 24
     },
     {
-      "at": 20454,
+      "at": 2567,
+      "phase": "Searching your code for 2 breaking changes",
+      "detail": "mime 1.0.0 → 2.0.0",
+      "done": 18,
+      "total": 24
+    },
+    {
+      "at": 2568,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "mime 1.0.0 → 2.0.0",
+      "done": 18,
+      "total": 24
+    },
+    {
+      "at": 2604,
       "phase": "Comparing the public API surface",
-      "detail": "meta 1.5.0 → 1.19.0 · 13 evidence sources",
+      "detail": "jni 1.0.0 → 1.0.3 · 4 evidence sources",
       "done": 18,
       "total": 24
     },
     {
-      "at": 20456,
-      "phase": "Searching your code for 29 breaking changes",
-      "detail": "meta 1.5.0 → 1.19.0",
+      "at": 2604,
+      "phase": "Searching your code for 15 breaking changes",
+      "detail": "jni 1.0.0 → 1.0.3",
       "done": 18,
       "total": 24
     },
     {
-      "at": 20456,
-      "phase": "Searching your code for 28 breaking changes",
-      "detail": "meta 1.9.1 → 1.19.0",
-      "done": 18,
-      "total": 24
-    },
-    {
-      "at": 20456,
-      "phase": "Searching your code for 29 breaking changes",
-      "detail": "meta 1.5.0 → 1.19.0",
-      "done": 18,
-      "total": 24
-    },
-    {
-      "at": 21184,
+      "at": 2606,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "meta 1.5.0 → 1.19.0",
+      "detail": "jni 1.0.0 → 1.0.3",
       "done": 18,
       "total": 24
     },
     {
-      "at": 21310,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "meta 1.9.1 → 1.19.0",
-      "done": 18,
-      "total": 24
-    },
-    {
-      "at": 21472,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "meta 1.5.0 → 1.19.0",
-      "done": 18,
-      "total": 24
-    },
-    {
-      "at": 21839,
+      "at": 2833,
       "phase": "Checked",
       "detail": "meta 1.5.0 → 1.19.0 · safe for your code · 29 upstream changes, none used here",
       "done": 19,
       "total": 24
     },
     {
-      "at": 21839,
+      "at": 2833,
       "phase": "Checked",
-      "detail": "meta 1.9.1 → 1.19.0 · safe for your code · 28 upstream changes, none used here",
+      "detail": "meta 1.5.0 → 1.19.0 · safe for your code · 29 upstream changes, none used here",
       "done": 20,
       "total": 24
     },
     {
-      "at": 21839,
+      "at": 2833,
       "phase": "Checked",
-      "detail": "meta 1.5.0 → 1.19.0 · safe for your code · 29 upstream changes, none used here",
+      "detail": "meta 1.9.1 → 1.19.0 · safe for your code · 28 upstream changes, none used here",
       "done": 21,
       "total": 24
     },
     {
-      "at": 22040,
-      "phase": "Comparing the public API surface",
-      "detail": "mime 1.0.0 → 2.0.0 · 3 evidence sources",
-      "done": 21,
-      "total": 24
-    },
-    {
-      "at": 22041,
-      "phase": "Searching your code for 2 breaking changes",
-      "detail": "mime 1.0.0 → 2.0.0",
-      "done": 21,
-      "total": 24
-    },
-    {
-      "at": 22047,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "mime 1.0.0 → 2.0.0",
-      "done": 21,
-      "total": 24
-    },
-    {
-      "at": 22149,
-      "phase": "Comparing the public API surface",
-      "detail": "web 0.5.0 → 1.1.1 · 2 evidence sources",
-      "done": 21,
-      "total": 24
-    },
-    {
-      "at": 22168,
-      "phase": "Searching your code for 71 breaking changes",
-      "detail": "web 0.5.0 → 1.1.1",
-      "done": 21,
-      "total": 24
-    },
-    {
-      "at": 22628,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "web 0.5.0 → 1.1.1",
-      "done": 21,
-      "total": 24
-    },
-    {
-      "at": 22687,
-      "phase": "Comparing the public API surface",
-      "detail": "jni 1.0.0 → 1.0.3 · 4 evidence sources",
-      "done": 21,
-      "total": 24
-    },
-    {
-      "at": 22688,
-      "phase": "Searching your code for 15 breaking changes",
-      "detail": "jni 1.0.0 → 1.0.3",
-      "done": 21,
-      "total": 24
-    },
-    {
-      "at": 22703,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "jni 1.0.0 → 1.0.3",
-      "done": 21,
-      "total": 24
-    },
-    {
-      "at": 22814,
-      "phase": "Checked",
-      "detail": "mime 1.0.0 → 2.0.0 · safe for your code · 2 upstream changes, none used here",
+      "at": 2869,
+      "phase": "Needs your attention",
+      "detail": "web 0.5.0 → 1.1.1 · may affect your code · 5 sites in 1 file",
       "done": 22,
       "total": 24
     },
     {
-      "at": 22991,
-      "phase": "Needs your attention",
-      "detail": "web 0.5.0 → 1.1.1 · may affect your code · 5 sites in 1 file",
+      "at": 2913,
+      "phase": "Checked",
+      "detail": "mime 1.0.0 → 2.0.0 · safe for your code · 2 upstream changes, none used here",
       "done": 23,
       "total": 24
     },
     {
-      "at": 23080,
+      "at": 2925,
       "phase": "Checked",
       "detail": "jni 1.0.0 → 1.0.3 · safe for your code · 15 upstream changes, none used here",
       "done": 24,
@@ -1843,8 +1745,8 @@
     {
       "name": "meta",
       "ecosystem": "pub",
-      "manifestPath": "dio/pubspec.yaml",
-      "workspace": "dio",
+      "manifestPath": "plugins/web_adapter/pubspec.yaml",
+      "workspace": "plugins/web_adapter",
       "workspaceName": null,
       "current": "1.5.0",
       "latest": "1.19.0",
@@ -1957,8 +1859,8 @@
     {
       "name": "meta",
       "ecosystem": "pub",
-      "manifestPath": "plugins/web_adapter/pubspec.yaml",
-      "workspace": "plugins/web_adapter",
+      "manifestPath": "dio/pubspec.yaml",
+      "workspace": "dio",
       "workspaceName": null,
       "current": "1.5.0",
       "latest": "1.19.0",
@@ -2989,6 +2891,120 @@
     {
       "name": "dio",
       "ecosystem": "pub",
+      "manifestPath": "plugins/http2_adapter/pubspec.yaml",
+      "workspace": "plugins/http2_adapter",
+      "workspaceName": null,
+      "current": "5.2.0",
+      "latest": "5.11.0",
+      "selected": "5.11.0",
+      "safeLatest": "5.11.0",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. 4 upstream breaking changes, none of which this repository uses.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 4,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 2,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`BrowserHttpClientAdapter` is no longer exported (was a class).",
+          "remediation": "Every use of `BrowserHttpClientAdapter` from `dio` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `BrowserHttpClientAdapter` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "BrowserHttpClientAdapter"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "4 API surface change(s) in dio",
+              "url": null,
+              "locator": "dio 5.2.0 → 5.11.0 (published lib/) · computed by pub source"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`DioForBrowser` is no longer exported (was a class).",
+          "remediation": "Every use of `DioForBrowser` from `dio` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `DioForBrowser` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "DioForBrowser"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "4 API surface change(s) in dio",
+              "url": null,
+              "locator": "dio 5.2.0 → 5.11.0 (published lib/) · computed by pub source"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `ResponseDecoder` changed.",
+          "remediation": "The signature of `ResponseDecoder` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "ResponseDecoder"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "4 API surface change(s) in dio",
+              "url": null,
+              "locator": "dio 5.2.0 → 5.11.0 (published lib/) · computed by pub source"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "signature-change",
+          "summary": "The signature of `RequestEncoder` changed.",
+          "remediation": "The signature of `RequestEncoder` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "RequestEncoder"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "4 API surface change(s) in dio",
+              "url": null,
+              "locator": "dio 5.2.0 → 5.11.0 (published lib/) · computed by pub source"
+            }
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "dio",
+      "ecosystem": "pub",
       "manifestPath": "plugins/cookie_manager/pubspec.yaml",
       "workspace": "plugins/cookie_manager",
       "workspaceName": null,
@@ -3217,120 +3233,6 @@
     {
       "name": "dio",
       "ecosystem": "pub",
-      "manifestPath": "plugins/http2_adapter/pubspec.yaml",
-      "workspace": "plugins/http2_adapter",
-      "workspaceName": null,
-      "current": "5.2.0",
-      "latest": "5.11.0",
-      "selected": "5.11.0",
-      "safeLatest": "5.11.0",
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. 4 upstream breaking changes, none of which this repository uses.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 4,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 2,
-      "gaps": [],
-      "breaking": [
-        {
-          "kind": "removed-export",
-          "summary": "`BrowserHttpClientAdapter` is no longer exported (was a class).",
-          "remediation": "Every use of `BrowserHttpClientAdapter` from `dio` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `BrowserHttpClientAdapter` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
-          "confidence": "high",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "BrowserHttpClientAdapter"
-          ],
-          "evidence": [
-            {
-              "source": "type-surface-diff",
-              "title": "4 API surface change(s) in dio",
-              "url": null,
-              "locator": "dio 5.2.0 → 5.11.0 (published lib/) · computed by pub source"
-            }
-          ],
-          "sites": []
-        },
-        {
-          "kind": "removed-export",
-          "summary": "`DioForBrowser` is no longer exported (was a class).",
-          "remediation": "Every use of `DioForBrowser` from `dio` must be replaced. Find the supported replacement in the new version's exports and migrate each call site. Do not stub `DioForBrowser` out or re-implement it locally unless no replacement exists — if none exists, say so in the PR description rather than inventing one.",
-          "confidence": "high",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "DioForBrowser"
-          ],
-          "evidence": [
-            {
-              "source": "type-surface-diff",
-              "title": "4 API surface change(s) in dio",
-              "url": null,
-              "locator": "dio 5.2.0 → 5.11.0 (published lib/) · computed by pub source"
-            }
-          ],
-          "sites": []
-        },
-        {
-          "kind": "signature-change",
-          "summary": "The signature of `ResponseDecoder` changed.",
-          "remediation": "The signature of `ResponseDecoder` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
-          "confidence": "high",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "ResponseDecoder"
-          ],
-          "evidence": [
-            {
-              "source": "type-surface-diff",
-              "title": "4 API surface change(s) in dio",
-              "url": null,
-              "locator": "dio 5.2.0 → 5.11.0 (published lib/) · computed by pub source"
-            }
-          ],
-          "sites": []
-        },
-        {
-          "kind": "signature-change",
-          "summary": "The signature of `RequestEncoder` changed.",
-          "remediation": "The signature of `RequestEncoder` changed. Update every call site to match the new signature exactly. Pay attention to argument order, argument count, and whether an options object replaced positional arguments.",
-          "confidence": "high",
-          "overall": {
-            "score": 55,
-            "band": "medium",
-            "label": "Fairly confident"
-          },
-          "symbols": [
-            "RequestEncoder"
-          ],
-          "evidence": [
-            {
-              "source": "type-surface-diff",
-              "title": "4 API surface change(s) in dio",
-              "url": null,
-              "locator": "dio 5.2.0 → 5.11.0 (published lib/) · computed by pub source"
-            }
-          ],
-          "sites": []
-        }
-      ]
-    },
-    {
-      "name": "dio",
-      "ecosystem": "pub",
       "manifestPath": "plugins/cookie_manager/pubspec.yaml",
       "workspace": "plugins/cookie_manager",
       "workspaceName": null,
@@ -3445,8 +3347,8 @@
     {
       "name": "dio",
       "ecosystem": "pub",
-      "manifestPath": "plugins/compatibility_layer/pubspec.yaml",
-      "workspace": "plugins/compatibility_layer",
+      "manifestPath": "plugins/http2_adapter/pubspec.yaml",
+      "workspace": "plugins/http2_adapter",
       "workspaceName": null,
       "current": "5.2.0",
       "latest": "5.11.0",
@@ -3559,8 +3461,8 @@
     {
       "name": "dio",
       "ecosystem": "pub",
-      "manifestPath": "plugins/http2_adapter/pubspec.yaml",
-      "workspace": "plugins/http2_adapter",
+      "manifestPath": "plugins/compatibility_layer/pubspec.yaml",
+      "workspace": "plugins/compatibility_layer",
       "workspaceName": null,
       "current": "5.2.0",
       "latest": "5.11.0",
@@ -5683,6 +5585,69 @@
     {
       "name": "dio",
       "ecosystem": "pub",
+      "manifestPath": "plugins/native_dio_adapter/pubspec.yaml",
+      "workspace": "plugins/native_dio_adapter",
+      "workspaceName": null,
+      "current": "5.4.0",
+      "latest": "5.4.0",
+      "selected": "5.4.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "dio",
+      "ecosystem": "pub",
+      "manifestPath": "plugins/native_dio_adapter/pubspec.yaml",
+      "workspace": "plugins/native_dio_adapter",
+      "workspaceName": null,
+      "current": "5.4.0",
+      "latest": "5.4.0",
+      "selected": "5.4.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "dio",
+      "ecosystem": "pub",
+      "manifestPath": "plugins/native_dio_adapter/pubspec.yaml",
+      "workspace": "plugins/native_dio_adapter",
+      "workspaceName": null,
+      "current": "5.4.0",
+      "latest": "5.4.0",
+      "selected": "5.4.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "dio",
+      "ecosystem": "pub",
       "manifestPath": "plugins/native_dio_adapter/example/pubspec.yaml",
       "workspace": "plugins/native_dio_adapter/example",
       "workspaceName": null,
@@ -5710,69 +5675,6 @@
       "current": "5.8.0",
       "latest": "5.8.0",
       "selected": "5.8.0",
-      "safeLatest": null,
-      "status": "pending",
-      "risk": "unknown",
-      "summary": "",
-      "recommendation": null,
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 0,
-      "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "dio",
-      "ecosystem": "pub",
-      "manifestPath": "plugins/native_dio_adapter/pubspec.yaml",
-      "workspace": "plugins/native_dio_adapter",
-      "workspaceName": null,
-      "current": "5.4.0",
-      "latest": "5.4.0",
-      "selected": "5.4.0",
-      "safeLatest": null,
-      "status": "pending",
-      "risk": "unknown",
-      "summary": "",
-      "recommendation": null,
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 0,
-      "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "dio",
-      "ecosystem": "pub",
-      "manifestPath": "plugins/native_dio_adapter/pubspec.yaml",
-      "workspace": "plugins/native_dio_adapter",
-      "workspaceName": null,
-      "current": "5.4.0",
-      "latest": "5.4.0",
-      "selected": "5.4.0",
-      "safeLatest": null,
-      "status": "pending",
-      "risk": "unknown",
-      "summary": "",
-      "recommendation": null,
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 0,
-      "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "dio",
-      "ecosystem": "pub",
-      "manifestPath": "plugins/native_dio_adapter/pubspec.yaml",
-      "workspace": "plugins/native_dio_adapter",
-      "workspaceName": null,
-      "current": "5.4.0",
-      "latest": "5.4.0",
-      "selected": "5.4.0",
       "safeLatest": null,
       "status": "pending",
       "risk": "unknown",
@@ -6313,6 +6215,69 @@
     {
       "name": "http",
       "ecosystem": "pub",
+      "manifestPath": "plugins/compatibility_layer/pubspec.yaml",
+      "workspace": "plugins/compatibility_layer",
+      "workspaceName": null,
+      "current": "1.0.0",
+      "latest": "1.0.0",
+      "selected": "1.0.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "http",
+      "ecosystem": "pub",
+      "manifestPath": "plugins/compatibility_layer/pubspec.yaml",
+      "workspace": "plugins/compatibility_layer",
+      "workspaceName": null,
+      "current": "1.0.0",
+      "latest": "1.0.0",
+      "selected": "1.0.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "http",
+      "ecosystem": "pub",
+      "manifestPath": "plugins/compatibility_layer/pubspec.yaml",
+      "workspace": "plugins/compatibility_layer",
+      "workspaceName": null,
+      "current": "1.0.0",
+      "latest": "1.0.0",
+      "selected": "1.0.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "http",
+      "ecosystem": "pub",
       "manifestPath": "plugins/native_dio_adapter/pubspec.yaml",
       "workspace": "plugins/native_dio_adapter",
       "workspaceName": null,
@@ -6380,59 +6345,17 @@
       "workspace": "plugins/compatibility_layer",
       "workspaceName": null,
       "current": "1.0.0",
-      "latest": "1.0.0",
-      "selected": "1.0.0",
-      "safeLatest": null,
-      "status": "pending",
-      "risk": "unknown",
-      "summary": "",
-      "recommendation": null,
+      "latest": "1.6.0",
+      "selected": "1.6.0",
+      "safeLatest": "1.6.0",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. No breaking changes found for this version of http.",
+      "recommendation": "safe-to-upgrade",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
-      "evidenceCount": 0,
-      "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "http",
-      "ecosystem": "pub",
-      "manifestPath": "plugins/compatibility_layer/pubspec.yaml",
-      "workspace": "plugins/compatibility_layer",
-      "workspaceName": null,
-      "current": "1.0.0",
-      "latest": "1.0.0",
-      "selected": "1.0.0",
-      "safeLatest": null,
-      "status": "pending",
-      "risk": "unknown",
-      "summary": "",
-      "recommendation": null,
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 0,
-      "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "http",
-      "ecosystem": "pub",
-      "manifestPath": "plugins/compatibility_layer/pubspec.yaml",
-      "workspace": "plugins/compatibility_layer",
-      "workspaceName": null,
-      "current": "1.0.0",
-      "latest": "1.0.0",
-      "selected": "1.0.0",
-      "safeLatest": null,
-      "status": "pending",
-      "risk": "unknown",
-      "summary": "",
-      "recommendation": null,
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 0,
+      "evidenceCount": 1,
       "gaps": [],
       "breaking": []
     },
@@ -6462,48 +6385,6 @@
     {
       "name": "http",
       "ecosystem": "pub",
-      "manifestPath": "plugins/compatibility_layer/pubspec.yaml",
-      "workspace": "plugins/compatibility_layer",
-      "workspaceName": null,
-      "current": "1.0.0",
-      "latest": "1.6.0",
-      "selected": "1.6.0",
-      "safeLatest": "1.6.0",
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. No breaking changes found for this version of http.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "http",
-      "ecosystem": "pub",
-      "manifestPath": "plugins/compatibility_layer/pubspec.yaml",
-      "workspace": "plugins/compatibility_layer",
-      "workspaceName": null,
-      "current": "1.0.0",
-      "latest": "1.6.0",
-      "selected": "1.6.0",
-      "safeLatest": "1.6.0",
-      "status": "clean",
-      "risk": "none",
-      "summary": "Safe to upgrade. No breaking changes found for this version of http.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "http",
-      "ecosystem": "pub",
       "manifestPath": "plugins/native_dio_adapter/pubspec.yaml",
       "workspace": "plugins/native_dio_adapter",
       "workspaceName": null,
@@ -6522,6 +6403,27 @@
       "gaps": [
         "No release notes, changelog, or migration guide was reachable for http 1.6.0."
       ],
+      "breaking": []
+    },
+    {
+      "name": "http",
+      "ecosystem": "pub",
+      "manifestPath": "plugins/compatibility_layer/pubspec.yaml",
+      "workspace": "plugins/compatibility_layer",
+      "workspaceName": null,
+      "current": "1.0.0",
+      "latest": "1.6.0",
+      "selected": "1.6.0",
+      "safeLatest": "1.6.0",
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. No breaking changes found for this version of http.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [],
       "breaking": []
     },
     {
@@ -6821,8 +6723,8 @@
     {
       "name": "http_parser",
       "ecosystem": "pub",
-      "manifestPath": "dio/pubspec.yaml",
-      "workspace": "dio",
+      "manifestPath": "plugins/web_adapter/pubspec.yaml",
+      "workspace": "plugins/web_adapter",
       "workspaceName": null,
       "current": "4.0.0",
       "latest": "4.1.2",
@@ -6842,8 +6744,8 @@
     {
       "name": "http_parser",
       "ecosystem": "pub",
-      "manifestPath": "plugins/web_adapter/pubspec.yaml",
-      "workspace": "plugins/web_adapter",
+      "manifestPath": "dio/pubspec.yaml",
+      "workspace": "dio",
       "workspaceName": null,
       "current": "4.0.0",
       "latest": "4.1.2",

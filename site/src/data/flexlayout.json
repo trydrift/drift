@@ -5,10 +5,10 @@
   "language": "Swift",
   "repo": "https://github.com/layoutBox/FlexLayout",
   "blurb": "A Swift flexbox layout library, with the Podfile that pins its pods.",
-  "capturedAt": "2026-08-18T05:39:55.544Z",
+  "capturedAt": "2026-08-21T07:22:48.632Z",
   "commit": "b1fcc81828e4b735c79d4c3fac35ef0754be0060",
-  "engine": "81044c47297efc90",
-  "durationMs": 82838,
+  "engine": "09153dd336cd8676",
+  "durationMs": 43295,
   "packagesChecked": 5,
   "manifests": [
     "Package.swift",
@@ -17,581 +17,497 @@
   "nestedGitRepos": [],
   "events": [
     {
-      "at": 101,
+      "at": 73,
       "phase": "Looking for manifests",
       "detail": "layoutBox/FlexLayout",
       "done": 0,
       "total": 0
     },
     {
-      "at": 165,
+      "at": 99,
       "phase": "Reading manifest",
       "detail": "Package.swift",
       "done": 0,
       "total": 0
     },
     {
-      "at": 168,
+      "at": 99,
       "phase": "Reading manifest",
       "detail": "Podfile",
       "done": 0,
       "total": 0
     },
     {
-      "at": 169,
+      "at": 100,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 5
     },
     {
-      "at": 169,
+      "at": 100,
       "phase": "Checking registries",
       "detail": "5 direct dependencies",
       "done": 0,
       "total": 5
     },
     {
-      "at": 354,
+      "at": 123,
       "phase": "Indexing your code",
       "detail": "59 files indexed · 5 direct dependencies to check",
       "done": 0,
       "total": 5
     },
     {
-      "at": 463,
-      "phase": "Up to date",
-      "detail": "Yoga@3.2.1",
+      "at": 290,
+      "phase": "Outdated",
+      "detail": "SwiftLint 0.55.1 → 0.65.0",
       "done": 1,
       "total": 5
     },
     {
-      "at": 536,
-      "phase": "Outdated",
-      "detail": "facebook/yoga 3.2.1 → 2016.12.26",
+      "at": 345,
+      "phase": "Up to date",
+      "detail": "Yoga@3.2.1",
       "done": 2,
       "total": 5
     },
     {
-      "at": 548,
+      "at": 351,
       "phase": "Outdated",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 3,
       "total": 5
     },
     {
-      "at": 579,
+      "at": 445,
       "phase": "Outdated",
-      "detail": "SwiftLint 0.55.1 → 0.65.0",
+      "detail": "facebook/yoga 3.2.1 → 2016.12.26",
       "done": 4,
       "total": 5
     },
     {
-      "at": 590,
+      "at": 620,
       "phase": "Outdated",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 5,
       "total": 5
     },
     {
-      "at": 590,
-      "phase": "Preparing a test checkout of flexlayout",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 618,
+      "at": 620,
       "phase": "Reading release notes and changelog",
       "detail": "facebook/yoga 3.2.1 → 2016.12.26",
       "done": 0,
       "total": 4
     },
     {
-      "at": 619,
+      "at": 620,
       "phase": "Reading release notes and changelog",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
       "total": 4
     },
     {
-      "at": 619,
+      "at": 620,
       "phase": "Reading release notes and changelog",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
       "total": 4
     },
     {
-      "at": 619,
+      "at": 620,
       "phase": "Reading release notes and changelog",
       "detail": "SwiftLint 0.55.1 → 0.65.0",
       "done": 0,
       "total": 4
     },
     {
-      "at": 622,
+      "at": 642,
       "phase": "Comparing the public API surface",
       "detail": "FlexLayout 2.2.1 → 2.2.3 · 1 evidence source",
       "done": 0,
       "total": 4
     },
     {
-      "at": 622,
+      "at": 642,
       "phase": "Comparing the public API surface",
       "detail": "PinLayout 1.10.5 → 1.10.6 · 1 evidence source",
       "done": 0,
       "total": 4
     },
     {
-      "at": 623,
+      "at": 642,
       "phase": "Comparing the public API surface",
       "detail": "SwiftLint 0.55.1 → 0.65.0 · 1 evidence source",
       "done": 0,
       "total": 4
     },
     {
-      "at": 623,
+      "at": 642,
       "phase": "No breaking changes to look for",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
       "total": 4
     },
     {
-      "at": 623,
+      "at": 642,
       "phase": "No breaking changes to look for",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
       "total": 4
     },
     {
-      "at": 623,
+      "at": 642,
       "phase": "No breaking changes to look for",
       "detail": "SwiftLint 0.55.1 → 0.65.0",
       "done": 0,
       "total": 4
     },
     {
-      "at": 623,
+      "at": 642,
       "phase": "Weighing what this upgrade is worth",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
       "total": 4
     },
     {
-      "at": 624,
+      "at": 642,
       "phase": "Weighing what this upgrade is worth",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
       "total": 4
     },
     {
-      "at": 624,
+      "at": 642,
       "phase": "Weighing what this upgrade is worth",
       "detail": "SwiftLint 0.55.1 → 0.65.0",
       "done": 0,
       "total": 4
     },
     {
-      "at": 627,
+      "at": 644,
       "phase": "Checked",
       "detail": "FlexLayout 2.2.1 → 2.2.3 · not verified · drift found nothing it could check this version against",
       "done": 1,
       "total": 4
     },
     {
-      "at": 627,
+      "at": 644,
       "phase": "Checked",
       "detail": "PinLayout 1.10.5 → 1.10.6 · not verified · drift found nothing it could check this version against",
       "done": 2,
       "total": 4
     },
     {
-      "at": 627,
+      "at": 644,
       "phase": "Checked",
       "detail": "SwiftLint 0.55.1 → 0.65.0 · not verified · drift found nothing it could check this version against",
       "done": 3,
       "total": 4
     },
     {
-      "at": 846,
+      "at": 698,
+      "phase": "Preparing a test checkout of flexlayout",
+      "detail": "checking out a clean copy",
+      "done": 0,
+      "total": 0
+    },
+    {
+      "at": 824,
       "phase": "Installing flexlayout's dependencies",
       "detail": "`pod install`",
       "done": 0,
       "total": 0
     },
     {
-      "at": 2297,
+      "at": 1067,
       "phase": "Comparing the public API surface",
       "detail": "facebook/yoga 3.2.1 → 2016.12.26 · 1 evidence source",
       "done": 3,
       "total": 4
     },
     {
-      "at": 2297,
+      "at": 1067,
       "phase": "No breaking changes to look for",
       "detail": "facebook/yoga 3.2.1 → 2016.12.26",
       "done": 3,
       "total": 4
     },
     {
-      "at": 2297,
+      "at": 1067,
       "phase": "Weighing what this upgrade is worth",
       "detail": "facebook/yoga 3.2.1 → 2016.12.26",
       "done": 3,
       "total": 4
     },
     {
-      "at": 2857,
+      "at": 1649,
       "phase": "Checked",
       "detail": "facebook/yoga 3.2.1 → 2016.12.26 · safe for your code · no breaking changes found",
       "done": 4,
       "total": 4
     },
     {
-      "at": 2862,
+      "at": 1719,
       "phase": "Preparing a test checkout of flexlayout",
       "detail": "checking out a clean copy",
-      "done": 0,
+      "done": 3,
       "total": 4
     },
     {
-      "at": 3232,
+      "at": 1805,
       "phase": "Checking flexlayout as it is",
       "detail": "swift build, swift test",
       "done": 3,
       "total": 4
     },
     {
-      "at": 3232,
+      "at": 1805,
       "phase": "Checking flexlayout as it is",
       "detail": "`swift build`",
       "done": 3,
       "total": 4
     },
     {
-      "at": 22283,
+      "at": 19757,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 23325,
+      "at": 20488,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 37514,
+      "at": 24896,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 38458,
+      "at": 24902,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 38552,
+      "at": 25260,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 39242,
+      "at": 25362,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 41434,
+      "at": 25740,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 53573,
+      "at": 27004,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 54084,
+      "at": 27189,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 56951,
+      "at": 31425,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 56953,
+      "at": 31660,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 61115,
+      "at": 32545,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 63317,
+      "at": 33575,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 65130,
+      "at": 33618,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 65689,
+      "at": 34001,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 71117,
+      "at": 34798,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 73020,
+      "at": 35928,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 73495,
+      "at": 36000,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 74196,
+      "at": 36850,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 75366,
+      "at": 38791,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 78602,
+      "at": 39172,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 79323,
+      "at": 40016,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 79521,
+      "at": 40187,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 79832,
+      "at": 41488,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 80400,
+      "at": 41856,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 80419,
+      "at": 41877,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 80422,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 80432,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 80516,
+      "at": 41904,
       "phase": "Checking flexlayout as it is",
       "detail": "`swift test`",
       "done": 3,
       "total": 4
     },
     {
-      "at": 81902,
+      "at": 42763,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 81919,
+      "at": 42793,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 82432,
+      "at": 42797,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 82447,
+      "at": 43064,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 82448,
+      "at": 43068,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 82451,
+      "at": 43070,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 82536,
+      "at": 43070,
       "phase": "",
       "detail": "",
       "done": 3,
       "total": 4
     },
     {
-      "at": 82536,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 82536,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 82536,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 82536,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 82536,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 82536,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 82537,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 82537,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 82537,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 82537,
-      "phase": "",
-      "detail": "",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "at": 82539,
+      "at": 43129,
       "phase": "",
       "detail": "",
       "done": 3,

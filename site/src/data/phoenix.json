@@ -5,10 +5,10 @@
   "language": "Elixir",
   "repo": "https://github.com/phoenixframework/phoenix",
   "blurb": "The web framework nearly every production Elixir application is built on.",
-  "capturedAt": "2026-08-18T05:38:09.608Z",
-  "commit": "52aa2cbd3b9283830ddfaf03173e20350c0b1d22",
-  "engine": "81044c47297efc90",
-  "durationMs": 5472,
+  "capturedAt": "2026-08-21T07:21:42.091Z",
+  "commit": "167c46950cf53aef363d672687cc653267c20aa6",
+  "engine": "09153dd336cd8676",
+  "durationMs": 2115,
   "packagesChecked": 44,
   "manifests": [
     "package.json",
@@ -20,799 +20,1388 @@
   "nestedGitRepos": [],
   "events": [
     {
-      "at": 91,
+      "at": 29,
       "phase": "Looking for manifests",
       "detail": "phoenixframework/phoenix",
       "done": 0,
       "total": 0
     },
     {
-      "at": 185,
+      "at": 62,
       "phase": "Reading the workspace",
       "detail": "4 packages · undeclared",
       "done": 0,
       "total": 0
     },
     {
-      "at": 189,
+      "at": 63,
       "phase": "Reading manifest",
       "detail": "package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 212,
+      "at": 71,
       "phase": "Reading manifest",
       "detail": "mix.exs",
       "done": 0,
       "total": 0
     },
     {
-      "at": 214,
+      "at": 73,
       "phase": "Reading manifest",
       "detail": "assets/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 214,
+      "at": 73,
       "phase": "Reading manifest",
       "detail": "installer/mix.exs",
       "done": 0,
       "total": 0
     },
     {
-      "at": 217,
+      "at": 73,
       "phase": "Reading manifest",
       "detail": "integration_test/mix.exs",
       "done": 0,
       "total": 0
     },
     {
-      "at": 218,
+      "at": 74,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 44
     },
     {
-      "at": 218,
+      "at": 74,
       "phase": "Checking registries",
       "detail": "44 direct dependencies",
       "done": 0,
       "total": 44
     },
     {
-      "at": 577,
+      "at": 130,
       "phase": "Up to date",
       "detail": "plug_crypto@2.2.0",
       "done": 1,
       "total": 44
     },
     {
-      "at": 603,
+      "at": 131,
       "phase": "Up to date",
-      "detail": "plug@1.20.3",
+      "detail": "telemetry@1.4.2",
       "done": 2,
       "total": 44
     },
     {
-      "at": 623,
-      "phase": "Outdated",
-      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "at": 131,
+      "phase": "Up to date",
+      "detail": "phoenix_pubsub@2.2.0",
       "done": 3,
       "total": 44
     },
     {
-      "at": 623,
+      "at": 138,
       "phase": "Up to date",
-      "detail": "phoenix_template@1.0.4",
+      "detail": "plug@1.20.3",
       "done": 4,
       "total": 44
     },
     {
-      "at": 624,
-      "phase": "Outdated",
-      "detail": "plug_cowboy 2.8.1 → 2.9.0",
+      "at": 145,
+      "phase": "Up to date",
+      "detail": "websock_adapter@0.6.0",
       "done": 5,
       "total": 44
     },
     {
-      "at": 624,
+      "at": 147,
       "phase": "Up to date",
-      "detail": "phoenix_pubsub@2.2.0",
+      "detail": "phoenix_template@1.0.4",
       "done": 6,
       "total": 44
     },
     {
-      "at": 624,
+      "at": 148,
       "phase": "Up to date",
-      "detail": "telemetry@1.4.2",
+      "detail": "makeup_elixir@1.0.1",
       "done": 7,
       "total": 44
     },
     {
-      "at": 625,
+      "at": 151,
       "phase": "Up to date",
-      "detail": "bandit@1.12.4",
+      "detail": "makeup_eex@2.0.2",
       "done": 8,
       "total": 44
     },
     {
-      "at": 671,
-      "phase": "Up to date",
-      "detail": "websock_adapter@0.6.0",
-      "done": 9,
-      "total": 44
-    },
-    {
-      "at": 672,
-      "phase": "Up to date",
-      "detail": "phoenix_view@2.0.4",
-      "done": 10,
-      "total": 44
-    },
-    {
-      "at": 677,
-      "phase": "Up to date",
-      "detail": "ex_doc@0.40.3",
-      "done": 11,
-      "total": 44
-    },
-    {
-      "at": 677,
-      "phase": "Up to date",
-      "detail": "ex_doc@0.40.3",
-      "done": 12,
-      "total": 44
-    },
-    {
-      "at": 682,
-      "phase": "Outdated",
-      "detail": "ecto 3.14.0 → 3.14.2",
-      "done": 13,
-      "total": 44
-    },
-    {
-      "at": 696,
-      "phase": "Up to date",
-      "detail": "ecto_sql@3.14.0",
-      "done": 14,
-      "total": 44
-    },
-    {
-      "at": 696,
-      "phase": "Up to date",
-      "detail": "ecto_sql@3.14.0",
-      "done": 15,
-      "total": 44
-    },
-    {
-      "at": 696,
-      "phase": "Up to date",
-      "detail": "telemetry_metrics@1.1.0",
-      "done": 16,
-      "total": 44
-    },
-    {
-      "at": 696,
-      "phase": "Up to date",
-      "detail": "gettext@1.0.2",
-      "done": 17,
-      "total": 44
-    },
-    {
-      "at": 707,
-      "phase": "Up to date",
-      "detail": "telemetry_poller@1.3.0",
-      "done": 18,
-      "total": 44
-    },
-    {
-      "at": 707,
-      "phase": "Up to date",
-      "detail": "telemetry_metrics@1.1.0",
-      "done": 19,
-      "total": 44
-    },
-    {
-      "at": 707,
-      "phase": "Up to date",
-      "detail": "telemetry_poller@1.3.0",
-      "done": 20,
-      "total": 44
-    },
-    {
-      "at": 708,
-      "phase": "Up to date",
-      "detail": "gettext@1.0.2",
-      "done": 21,
-      "total": 44
-    },
-    {
-      "at": 708,
-      "phase": "Outdated",
-      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
-      "done": 22,
-      "total": 44
-    },
-    {
-      "at": 708,
-      "phase": "Up to date",
-      "detail": "makeup_eex@2.0.2",
-      "done": 23,
-      "total": 44
-    },
-    {
-      "at": 709,
-      "phase": "Up to date",
-      "detail": "bandit@1.12.4",
-      "done": 24,
-      "total": 44
-    },
-    {
-      "at": 714,
-      "phase": "Up to date",
-      "detail": "makeup_elixir@1.0.1",
-      "done": 25,
-      "total": 44
-    },
-    {
-      "at": 762,
-      "phase": "Up to date",
-      "detail": "phoenix_ecto@4.7.0",
-      "done": 26,
-      "total": 44
-    },
-    {
-      "at": 786,
-      "phase": "Up to date",
-      "detail": "makeup_syntect@0.1.4",
-      "done": 27,
-      "total": 44
-    },
-    {
-      "at": 786,
-      "phase": "Up to date",
-      "detail": "esbuild@0.10.0",
-      "done": 28,
-      "total": 44
-    },
-    {
-      "at": 787,
-      "phase": "Outdated",
-      "detail": "postgrex 0.22.3 → 0.22.4",
-      "done": 29,
-      "total": 44
-    },
-    {
-      "at": 787,
-      "phase": "Up to date",
-      "detail": "myxql@0.9.0",
-      "done": 30,
-      "total": 44
-    },
-    {
-      "at": 792,
-      "phase": "Up to date",
-      "detail": "tds@2.3.8",
-      "done": 31,
-      "total": 44
-    },
-    {
-      "at": 808,
-      "phase": "Outdated",
-      "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
-      "done": 32,
-      "total": 44
-    },
-    {
-      "at": 809,
-      "phase": "Up to date",
-      "detail": "phoenix_html@4.3.0",
-      "done": 33,
-      "total": 44
-    },
-    {
-      "at": 817,
-      "phase": "Outdated",
-      "detail": "phoenix_live_view 1.2.0 → 1.2.9",
-      "done": 34,
-      "total": 44
-    },
-    {
-      "at": 819,
-      "phase": "Outdated",
-      "detail": "lazy_html 0.1.11 → 0.1.12",
-      "done": 35,
-      "total": 44
-    },
-    {
-      "at": 819,
-      "phase": "Up to date",
-      "detail": "dns_cluster@0.2.0",
-      "done": 36,
-      "total": 44
-    },
-    {
-      "at": 819,
-      "phase": "Outdated",
-      "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
-      "done": 37,
-      "total": 44
-    },
-    {
-      "at": 820,
-      "phase": "Outdated",
-      "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
-      "done": 38,
-      "total": 44
-    },
-    {
-      "at": 820,
-      "phase": "Up to date",
-      "detail": "bcrypt_elixir@3.3.2",
-      "done": 39,
-      "total": 44
-    },
-    {
-      "at": 830,
-      "phase": "Outdated",
-      "detail": "swoosh 1.27.0 → 1.27.1",
-      "done": 40,
-      "total": 44
-    },
-    {
-      "at": 830,
-      "phase": "Up to date",
-      "detail": "argon2_elixir@4.1.3",
-      "done": 41,
-      "total": 44
-    },
-    {
-      "at": 836,
-      "phase": "Up to date",
-      "detail": "pbkdf2_elixir@2.3.1",
-      "done": 42,
-      "total": 44
-    },
-    {
-      "at": 836,
-      "phase": "Up to date",
-      "detail": "tailwind@0.5.1",
-      "done": 43,
-      "total": 44
-    },
-    {
-      "at": 837,
-      "phase": "Up to date",
-      "detail": "req@0.7.2",
-      "done": 44,
-      "total": 44
-    },
-    {
-      "at": 855,
-      "phase": "Preparing a test checkout of phoenix",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 950,
-      "phase": "Preparing a test checkout of integration_test",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 1030,
-      "phase": "Reading release notes and changelog",
-      "detail": "ecto 3.14.0 → 3.14.2",
-      "done": 0,
-      "total": 11
-    },
-    {
-      "at": 1031,
-      "phase": "Reading release notes and changelog",
-      "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
-      "done": 0,
-      "total": 11
-    },
-    {
-      "at": 1031,
-      "phase": "Reading release notes and changelog",
-      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
-      "done": 0,
-      "total": 11
-    },
-    {
-      "at": 1031,
-      "phase": "Reading release notes and changelog",
-      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
-      "done": 0,
-      "total": 11
-    },
-    {
-      "at": 1031,
-      "phase": "Reading release notes and changelog",
-      "detail": "lazy_html 0.1.11 → 0.1.12",
-      "done": 0,
-      "total": 11
-    },
-    {
-      "at": 1031,
-      "phase": "Reading release notes and changelog",
-      "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
-      "done": 0,
-      "total": 11
-    },
-    {
-      "at": 1031,
-      "phase": "Reading release notes and changelog",
-      "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
-      "done": 0,
-      "total": 11
-    },
-    {
-      "at": 1031,
-      "phase": "Reading release notes and changelog",
-      "detail": "phoenix_live_view 1.2.0 → 1.2.9",
-      "done": 0,
-      "total": 11
-    },
-    {
-      "at": 1816,
-      "phase": "Installing phoenix's dependencies",
-      "detail": "`mix deps.get`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 1992,
-      "phase": "Installing integration_test's dependencies",
-      "detail": "`mix deps.get`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 3500,
-      "phase": "Comparing the public API surface",
-      "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0 · 2 evidence sources",
-      "done": 0,
-      "total": 11
-    },
-    {
-      "at": 3500,
-      "phase": "No breaking changes to look for",
-      "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
-      "done": 0,
-      "total": 11
-    },
-    {
-      "at": 3539,
-      "phase": "Comparing the public API surface",
-      "detail": "jason 1.4.5 → 1.5.0-alpha.2 · 1 evidence source",
-      "done": 0,
-      "total": 11
-    },
-    {
-      "at": 3539,
-      "phase": "Comparing the public API surface",
-      "detail": "jason 1.4.5 → 1.5.0-alpha.2 · 1 evidence source",
-      "done": 0,
-      "total": 11
-    },
-    {
-      "at": 3539,
-      "phase": "No breaking changes to look for",
-      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
-      "done": 0,
-      "total": 11
-    },
-    {
-      "at": 3539,
-      "phase": "No breaking changes to look for",
-      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
-      "done": 0,
-      "total": 11
-    },
-    {
-      "at": 3549,
+      "at": 157,
       "phase": "Indexing your code",
       "detail": "209 files indexed · 44 direct dependencies to check",
       "done": 0,
       "total": 44
     },
     {
-      "at": 3742,
-      "phase": "Weighing what this upgrade is worth",
+      "at": 262,
+      "phase": "Up to date",
+      "detail": "makeup_syntect@0.1.4",
+      "done": 9,
+      "total": 44
+    },
+    {
+      "at": 263,
+      "phase": "Up to date",
+      "detail": "esbuild@0.10.0",
+      "done": 10,
+      "total": 44
+    },
+    {
+      "at": 263,
+      "phase": "Up to date",
+      "detail": "phoenix_ecto@4.7.0",
+      "done": 11,
+      "total": 44
+    },
+    {
+      "at": 320,
+      "phase": "Up to date",
+      "detail": "phoenix_view@2.0.4",
+      "done": 12,
+      "total": 44
+    },
+    {
+      "at": 321,
+      "phase": "Up to date",
+      "detail": "ecto_sql@3.14.0",
+      "done": 13,
+      "total": 44
+    },
+    {
+      "at": 321,
+      "phase": "Up to date",
+      "detail": "ecto_sql@3.14.0",
+      "done": 14,
+      "total": 44
+    },
+    {
+      "at": 321,
+      "phase": "Up to date",
+      "detail": "gettext@1.0.2",
+      "done": 15,
+      "total": 44
+    },
+    {
+      "at": 323,
+      "phase": "Outdated",
+      "detail": "ecto 3.14.0 → 3.14.2",
+      "done": 16,
+      "total": 44
+    },
+    {
+      "at": 323,
+      "phase": "Outdated",
+      "detail": "postgrex 0.22.3 → 0.22.4",
+      "done": 17,
+      "total": 44
+    },
+    {
+      "at": 324,
+      "phase": "Up to date",
+      "detail": "myxql@0.9.0",
+      "done": 18,
+      "total": 44
+    },
+    {
+      "at": 324,
+      "phase": "Up to date",
+      "detail": "telemetry_poller@1.3.0",
+      "done": 19,
+      "total": 44
+    },
+    {
+      "at": 324,
+      "phase": "Up to date",
+      "detail": "telemetry_poller@1.3.0",
+      "done": 20,
+      "total": 44
+    },
+    {
+      "at": 325,
+      "phase": "Up to date",
+      "detail": "gettext@1.0.2",
+      "done": 21,
+      "total": 44
+    },
+    {
+      "at": 326,
+      "phase": "Outdated",
+      "detail": "bandit 1.12.4 → 1.12.5",
+      "done": 22,
+      "total": 44
+    },
+    {
+      "at": 327,
+      "phase": "Up to date",
+      "detail": "telemetry_metrics@1.1.0",
+      "done": 23,
+      "total": 44
+    },
+    {
+      "at": 327,
+      "phase": "Up to date",
+      "detail": "telemetry_metrics@1.1.0",
+      "done": 24,
+      "total": 44
+    },
+    {
+      "at": 328,
+      "phase": "Outdated",
+      "detail": "bandit 1.12.4 → 1.12.5",
+      "done": 25,
+      "total": 44
+    },
+    {
+      "at": 329,
+      "phase": "Outdated",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "done": 26,
+      "total": 44
+    },
+    {
+      "at": 329,
+      "phase": "Outdated",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "done": 27,
+      "total": 44
+    },
+    {
+      "at": 330,
+      "phase": "Up to date",
+      "detail": "ex_doc@0.40.3",
+      "done": 28,
+      "total": 44
+    },
+    {
+      "at": 330,
+      "phase": "Up to date",
+      "detail": "ex_doc@0.40.3",
+      "done": 29,
+      "total": 44
+    },
+    {
+      "at": 333,
+      "phase": "Outdated",
+      "detail": "plug_cowboy 2.8.1 → 2.9.0",
+      "done": 30,
+      "total": 44
+    },
+    {
+      "at": 333,
+      "phase": "Up to date",
+      "detail": "tds@2.3.8",
+      "done": 31,
+      "total": 44
+    },
+    {
+      "at": 333,
+      "phase": "Outdated",
+      "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
+      "done": 32,
+      "total": 44
+    },
+    {
+      "at": 341,
+      "phase": "Outdated",
+      "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
+      "done": 33,
+      "total": 44
+    },
+    {
+      "at": 346,
+      "phase": "Up to date",
+      "detail": "dns_cluster@0.2.0",
+      "done": 34,
+      "total": 44
+    },
+    {
+      "at": 346,
+      "phase": "Up to date",
+      "detail": "argon2_elixir@4.1.3",
+      "done": 35,
+      "total": 44
+    },
+    {
+      "at": 347,
+      "phase": "Outdated",
+      "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
+      "done": 36,
+      "total": 44
+    },
+    {
+      "at": 348,
+      "phase": "Outdated",
+      "detail": "lazy_html 0.1.11 → 0.1.12",
+      "done": 37,
+      "total": 44
+    },
+    {
+      "at": 348,
+      "phase": "Outdated",
+      "detail": "swoosh 1.27.0 → 1.27.1",
+      "done": 38,
+      "total": 44
+    },
+    {
+      "at": 351,
+      "phase": "Up to date",
+      "detail": "bcrypt_elixir@3.3.2",
+      "done": 39,
+      "total": 44
+    },
+    {
+      "at": 351,
+      "phase": "Up to date",
+      "detail": "phoenix_html@4.3.0",
+      "done": 40,
+      "total": 44
+    },
+    {
+      "at": 352,
+      "phase": "Up to date",
+      "detail": "pbkdf2_elixir@2.3.1",
+      "done": 41,
+      "total": 44
+    },
+    {
+      "at": 352,
+      "phase": "Up to date",
+      "detail": "tailwind@0.5.1",
+      "done": 42,
+      "total": 44
+    },
+    {
+      "at": 353,
+      "phase": "Outdated",
+      "detail": "phoenix_live_view 1.2.0 → 1.2.10",
+      "done": 43,
+      "total": 44
+    },
+    {
+      "at": 353,
+      "phase": "Outdated",
+      "detail": "req 0.7.2 → 0.7.3",
+      "done": 44,
+      "total": 44
+    },
+    {
+      "at": 354,
+      "phase": "Reading release notes and changelog",
+      "detail": "bandit 1.12.4 → 1.12.5",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 354,
+      "phase": "Reading release notes and changelog",
+      "detail": "bandit 1.12.4 → 1.12.5",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 354,
+      "phase": "Reading release notes and changelog",
+      "detail": "ecto 3.14.0 → 3.14.2",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 354,
+      "phase": "Reading release notes and changelog",
+      "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 354,
+      "phase": "Reading release notes and changelog",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 355,
+      "phase": "Reading release notes and changelog",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 355,
+      "phase": "Reading release notes and changelog",
+      "detail": "lazy_html 0.1.11 → 0.1.12",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 355,
+      "phase": "Reading release notes and changelog",
       "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
       "done": 0,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 3745,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "at": 499,
+      "phase": "Preparing a test checkout of phoenix",
+      "detail": "checking out a clean copy",
       "done": 0,
-      "total": 11
+      "total": 0
     },
     {
-      "at": 3746,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "at": 791,
+      "phase": "Installing phoenix's dependencies",
+      "detail": "`mix deps.get`",
       "done": 0,
-      "total": 11
+      "total": 0
     },
     {
-      "at": 3752,
+      "at": 846,
       "phase": "Comparing the public API surface",
-      "detail": "phoenix_live_reload 1.6.2 → 1.7.0 · 2 evidence sources",
+      "detail": "bandit 1.12.4 → 1.12.5 · 3 evidence sources",
       "done": 0,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 3752,
-      "phase": "No breaking changes to look for",
-      "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
+      "at": 846,
+      "phase": "Searching your code for 1 breaking change",
+      "detail": "bandit 1.12.4 → 1.12.5",
       "done": 0,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 3752,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
-      "done": 0,
-      "total": 11
-    },
-    {
-      "at": 3759,
+      "at": 847,
       "phase": "Comparing the public API surface",
-      "detail": "phoenix_live_view 1.2.0 → 1.2.9 · 2 evidence sources",
+      "detail": "bandit 1.12.4 → 1.12.5 · 3 evidence sources",
       "done": 0,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 3759,
-      "phase": "No breaking changes to look for",
-      "detail": "phoenix_live_view 1.2.0 → 1.2.9",
+      "at": 847,
+      "phase": "Searching your code for 1 breaking change",
+      "detail": "bandit 1.12.4 → 1.12.5",
       "done": 0,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 3763,
+      "at": 874,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "phoenix_live_view 1.2.0 → 1.2.9",
+      "detail": "bandit 1.12.4 → 1.12.5",
       "done": 0,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 3825,
+      "at": 874,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "bandit 1.12.4 → 1.12.5",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 886,
       "phase": "Comparing the public API surface",
       "detail": "ecto_sqlite3 0.24.0 → 0.24.1 · 2 evidence sources",
       "done": 0,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 3825,
+      "at": 886,
       "phase": "No breaking changes to look for",
       "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
       "done": 0,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 3825,
+      "at": 886,
       "phase": "Weighing what this upgrade is worth",
       "detail": "ecto_sqlite3 0.24.0 → 0.24.1",
       "done": 0,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 3828,
+      "at": 887,
       "phase": "Comparing the public API surface",
-      "detail": "lazy_html 0.1.11 → 0.1.12 · 1 evidence source",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2 · 1 evidence source",
       "done": 0,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 3828,
+      "at": 887,
+      "phase": "Comparing the public API surface",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2 · 1 evidence source",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 887,
       "phase": "No breaking changes to look for",
-      "detail": "lazy_html 0.1.11 → 0.1.12",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 0,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 3829,
+      "at": 887,
+      "phase": "No breaking changes to look for",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 887,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "lazy_html 0.1.11 → 0.1.12",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
       "done": 0,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 3840,
+      "at": 887,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 892,
       "phase": "Comparing the public API surface",
       "detail": "ecto 3.14.0 → 3.14.2 · 1 evidence source",
       "done": 0,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 3840,
+      "at": 892,
       "phase": "No breaking changes to look for",
       "detail": "ecto 3.14.0 → 3.14.2",
       "done": 0,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 3840,
+      "at": 892,
       "phase": "Weighing what this upgrade is worth",
       "detail": "ecto 3.14.0 → 3.14.2",
       "done": 0,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 4131,
-      "phase": "Checked",
-      "detail": "phoenix_live_reload 1.6.2 → 1.7.0 · safe for your code · no breaking changes found",
-      "done": 1,
-      "total": 11
+      "at": 898,
+      "phase": "Comparing the public API surface",
+      "detail": "lazy_html 0.1.11 → 0.1.12 · 1 evidence source",
+      "done": 0,
+      "total": 14
     },
     {
-      "at": 4131,
-      "phase": "Reading release notes and changelog",
-      "detail": "plug_cowboy 2.8.1 → 2.9.0",
-      "done": 1,
-      "total": 11
+      "at": 898,
+      "phase": "No breaking changes to look for",
+      "detail": "lazy_html 0.1.11 → 0.1.12",
+      "done": 0,
+      "total": 14
     },
     {
-      "at": 4134,
-      "phase": "Checked",
-      "detail": "jason 1.4.5 → 1.5.0-alpha.2 · safe for your code · no breaking changes found",
-      "done": 2,
-      "total": 11
+      "at": 898,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "lazy_html 0.1.11 → 0.1.12",
+      "done": 0,
+      "total": 14
     },
     {
-      "at": 4134,
-      "phase": "Checked",
-      "detail": "jason 1.4.5 → 1.5.0-alpha.2 · safe for your code · no breaking changes found",
-      "done": 3,
-      "total": 11
+      "at": 899,
+      "phase": "Comparing the public API surface",
+      "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0 · 2 evidence sources",
+      "done": 0,
+      "total": 14
     },
     {
-      "at": 4134,
-      "phase": "Reading release notes and changelog",
-      "detail": "postgrex 0.22.3 → 0.22.4",
-      "done": 3,
-      "total": 11
+      "at": 899,
+      "phase": "No breaking changes to look for",
+      "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
+      "done": 0,
+      "total": 14
     },
     {
-      "at": 4134,
-      "phase": "Reading release notes and changelog",
-      "detail": "swoosh 1.27.0 → 1.27.1",
-      "done": 3,
-      "total": 11
+      "at": 899,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0",
+      "done": 0,
+      "total": 14
     },
     {
-      "at": 4142,
-      "phase": "Checked",
-      "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0 · safe for your code · no breaking changes found",
-      "done": 4,
-      "total": 11
-    },
-    {
-      "at": 4255,
-      "phase": "Checked",
-      "detail": "phoenix_live_view 1.2.0 → 1.2.9 · safe for your code · no breaking changes found",
-      "done": 5,
-      "total": 11
-    },
-    {
-      "at": 4260,
-      "phase": "Checked",
-      "detail": "lazy_html 0.1.11 → 0.1.12 · safe for your code · no breaking changes found",
-      "done": 6,
-      "total": 11
-    },
-    {
-      "at": 4261,
-      "phase": "Checked",
-      "detail": "ecto 3.14.0 → 3.14.2 · safe for your code · no breaking changes found",
-      "done": 7,
-      "total": 11
-    },
-    {
-      "at": 4282,
+      "at": 1351,
       "phase": "Checked",
       "detail": "ecto_sqlite3 0.24.0 → 0.24.1 · safe for your code · no breaking changes found",
-      "done": 8,
-      "total": 11
+      "done": 1,
+      "total": 14
     },
     {
-      "at": 5021,
+      "at": 1351,
+      "phase": "Reading release notes and changelog",
+      "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
+      "done": 1,
+      "total": 14
+    },
+    {
+      "at": 1369,
+      "phase": "Checked",
+      "detail": "lazy_html 0.1.11 → 0.1.12 · safe for your code · no breaking changes found",
+      "done": 2,
+      "total": 14
+    },
+    {
+      "at": 1369,
+      "phase": "Reading release notes and changelog",
+      "detail": "phoenix_live_view 1.2.0 → 1.2.10",
+      "done": 2,
+      "total": 14
+    },
+    {
+      "at": 1381,
+      "phase": "Checked",
+      "detail": "bandit 1.12.4 → 1.12.5 · safe for your code · 1 upstream change, none used here",
+      "done": 3,
+      "total": 14
+    },
+    {
+      "at": 1381,
+      "phase": "Checked",
+      "detail": "bandit 1.12.4 → 1.12.5 · safe for your code · 1 upstream change, none used here",
+      "done": 4,
+      "total": 14
+    },
+    {
+      "at": 1381,
+      "phase": "Reading release notes and changelog",
+      "detail": "plug_cowboy 2.8.1 → 2.9.0",
+      "done": 4,
+      "total": 14
+    },
+    {
+      "at": 1381,
+      "phase": "Reading release notes and changelog",
+      "detail": "postgrex 0.22.3 → 0.22.4",
+      "done": 4,
+      "total": 14
+    },
+    {
+      "at": 1393,
+      "phase": "Checked",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2 · safe for your code · no breaking changes found",
+      "done": 5,
+      "total": 14
+    },
+    {
+      "at": 1393,
+      "phase": "Checked",
+      "detail": "jason 1.4.5 → 1.5.0-alpha.2 · safe for your code · no breaking changes found",
+      "done": 6,
+      "total": 14
+    },
+    {
+      "at": 1393,
+      "phase": "Reading release notes and changelog",
+      "detail": "req 0.7.2 → 0.7.3",
+      "done": 6,
+      "total": 14
+    },
+    {
+      "at": 1393,
+      "phase": "Reading release notes and changelog",
+      "detail": "swoosh 1.27.0 → 1.27.1",
+      "done": 6,
+      "total": 14
+    },
+    {
+      "at": 1431,
+      "phase": "Checked",
+      "detail": "phoenix_live_dashboard 0.8.7 → 0.9.0 · safe for your code · no breaking changes found",
+      "done": 7,
+      "total": 14
+    },
+    {
+      "at": 1431,
+      "phase": "Checked",
+      "detail": "ecto 3.14.0 → 3.14.2 · safe for your code · no breaking changes found",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 1630,
       "phase": "Comparing the public API surface",
-      "detail": "swoosh 1.27.0 → 1.27.1 · 2 evidence sources",
+      "detail": "phoenix_live_view 1.2.0 → 1.2.10 · 3 evidence sources",
       "done": 8,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 5022,
+      "at": 1630,
+      "phase": "Searching your code for 2 breaking changes",
+      "detail": "phoenix_live_view 1.2.0 → 1.2.10",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 1632,
+      "phase": "Comparing the public API surface",
+      "detail": "phoenix_live_reload 1.6.2 → 1.7.0 · 2 evidence sources",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 1632,
       "phase": "No breaking changes to look for",
-      "detail": "swoosh 1.27.0 → 1.27.1",
+      "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
       "done": 8,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 5022,
+      "at": 1632,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "swoosh 1.27.0 → 1.27.1",
+      "detail": "phoenix_live_reload 1.6.2 → 1.7.0",
       "done": 8,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 5089,
+      "at": 1646,
       "phase": "Comparing the public API surface",
       "detail": "postgrex 0.22.3 → 0.22.4 · 2 evidence sources",
       "done": 8,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 5089,
+      "at": 1646,
       "phase": "No breaking changes to look for",
       "detail": "postgrex 0.22.3 → 0.22.4",
       "done": 8,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 5092,
+      "at": 1646,
       "phase": "Weighing what this upgrade is worth",
       "detail": "postgrex 0.22.3 → 0.22.4",
       "done": 8,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 5121,
+      "at": 1714,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "phoenix_live_view 1.2.0 → 1.2.10",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 1739,
       "phase": "Comparing the public API surface",
       "detail": "plug_cowboy 2.8.1 → 2.9.0 · 2 evidence sources",
       "done": 8,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 5121,
+      "at": 1739,
       "phase": "No breaking changes to look for",
       "detail": "plug_cowboy 2.8.1 → 2.9.0",
       "done": 8,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 5121,
+      "at": 1739,
       "phase": "Weighing what this upgrade is worth",
       "detail": "plug_cowboy 2.8.1 → 2.9.0",
       "done": 8,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 5392,
+      "at": 1745,
+      "phase": "Comparing the public API surface",
+      "detail": "req 0.7.2 → 0.7.3 · 1 evidence source",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 1745,
+      "phase": "No breaking changes to look for",
+      "detail": "req 0.7.2 → 0.7.3",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 1745,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "req 0.7.2 → 0.7.3",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 1828,
+      "phase": "Comparing the public API surface",
+      "detail": "swoosh 1.27.0 → 1.27.1 · 2 evidence sources",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 1828,
+      "phase": "No breaking changes to look for",
+      "detail": "swoosh 1.27.0 → 1.27.1",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 1828,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "swoosh 1.27.0 → 1.27.1",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 1972,
       "phase": "Checked",
-      "detail": "swoosh 1.27.0 → 1.27.1 · safe for your code · no breaking changes found",
+      "detail": "phoenix_live_reload 1.6.2 → 1.7.0 · safe for your code · no breaking changes found",
       "done": 9,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 5424,
+      "at": 2027,
       "phase": "Checked",
       "detail": "postgrex 0.22.3 → 0.22.4 · safe for your code · no breaking changes found",
       "done": 10,
-      "total": 11
+      "total": 14
     },
     {
-      "at": 5471,
+      "at": 2028,
+      "phase": "Checked",
+      "detail": "req 0.7.2 → 0.7.3 · safe for your code · no breaking changes found",
+      "done": 11,
+      "total": 14
+    },
+    {
+      "at": 2071,
       "phase": "Checked",
       "detail": "plug_cowboy 2.8.1 → 2.9.0 · safe for your code · no breaking changes found",
-      "done": 11,
-      "total": 11
+      "done": 12,
+      "total": 14
+    },
+    {
+      "at": 2084,
+      "phase": "Checked",
+      "detail": "phoenix_live_view 1.2.0 → 1.2.10 · safe for your code · 2 upstream changes, none used here",
+      "done": 13,
+      "total": 14
+    },
+    {
+      "at": 2114,
+      "phase": "Checked",
+      "detail": "swoosh 1.27.0 → 1.27.1 · safe for your code · no breaking changes found",
+      "done": 14,
+      "total": 14
     }
   ],
   "candidates": [
     {
+      "name": "phoenix_live_view",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
+      "current": "1.2.0",
+      "latest": "1.2.10",
+      "selected": "1.2.10",
+      "safeLatest": "1.2.10",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Do not upgrade yet. 2 upstream breaking changes, none of which this repository uses; fixes 1 known vulnerability.",
+      "recommendation": "do-not-upgrade-yet",
+      "breakingCount": 2,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 3,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`Phoenix.LiveView.Upload.drop_upload_entries/3` was removed.",
+          "remediation": "The member `Phoenix.LiveView.Upload.drop_upload_entries/3` no longer exists in `phoenix_live_view`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "Phoenix.LiveView.Upload.drop_upload_entries/3",
+            "drop_upload_entries/3",
+            "Upload.drop_upload_entries/3"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "2 API surface change(s) in phoenix_live_view",
+              "url": null,
+              "locator": "phoenix_live_view 1.2.0 → 1.2.10 (published sources) · computed by hex sources"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`Phoenix.LiveView.Channel.drop_upload_entries/2` was removed.",
+          "remediation": "The member `Phoenix.LiveView.Channel.drop_upload_entries/2` no longer exists in `phoenix_live_view`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "Phoenix.LiveView.Channel.drop_upload_entries/2",
+            "drop_upload_entries/2",
+            "Channel.drop_upload_entries/2"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "2 API surface change(s) in phoenix_live_view",
+              "url": null,
+              "locator": "phoenix_live_view 1.2.0 → 1.2.10 (published sources) · computed by hex sources"
+            }
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "phoenix_live_view",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
+      "current": "1.2.0",
+      "latest": "1.2.10",
+      "selected": "1.2.10",
+      "safeLatest": "1.2.10",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Do not upgrade yet. 2 upstream breaking changes, none of which this repository uses; fixes 1 known vulnerability.",
+      "recommendation": "do-not-upgrade-yet",
+      "breakingCount": 2,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 3,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`Phoenix.LiveView.Upload.drop_upload_entries/3` was removed.",
+          "remediation": "The member `Phoenix.LiveView.Upload.drop_upload_entries/3` no longer exists in `phoenix_live_view`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "Phoenix.LiveView.Upload.drop_upload_entries/3",
+            "drop_upload_entries/3",
+            "Upload.drop_upload_entries/3"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "2 API surface change(s) in phoenix_live_view",
+              "url": null,
+              "locator": "phoenix_live_view 1.2.0 → 1.2.10 (published sources) · computed by hex sources"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`Phoenix.LiveView.Channel.drop_upload_entries/2` was removed.",
+          "remediation": "The member `Phoenix.LiveView.Channel.drop_upload_entries/2` no longer exists in `phoenix_live_view`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "Phoenix.LiveView.Channel.drop_upload_entries/2",
+            "drop_upload_entries/2",
+            "Channel.drop_upload_entries/2"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "2 API surface change(s) in phoenix_live_view",
+              "url": null,
+              "locator": "phoenix_live_view 1.2.0 → 1.2.10 (published sources) · computed by hex sources"
+            }
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "phoenix_live_view",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
+      "current": "1.2.0",
+      "latest": "1.2.10",
+      "selected": "1.2.10",
+      "safeLatest": "1.2.10",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Do not upgrade yet. 2 upstream breaking changes, none of which this repository uses; fixes 1 known vulnerability.",
+      "recommendation": "do-not-upgrade-yet",
+      "breakingCount": 2,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 3,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`Phoenix.LiveView.Upload.drop_upload_entries/3` was removed.",
+          "remediation": "The member `Phoenix.LiveView.Upload.drop_upload_entries/3` no longer exists in `phoenix_live_view`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "Phoenix.LiveView.Upload.drop_upload_entries/3",
+            "drop_upload_entries/3",
+            "Upload.drop_upload_entries/3"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "2 API surface change(s) in phoenix_live_view",
+              "url": null,
+              "locator": "phoenix_live_view 1.2.0 → 1.2.10 (published sources) · computed by hex sources"
+            }
+          ],
+          "sites": []
+        },
+        {
+          "kind": "removed-export",
+          "summary": "`Phoenix.LiveView.Channel.drop_upload_entries/2` was removed.",
+          "remediation": "The member `Phoenix.LiveView.Channel.drop_upload_entries/2` no longer exists in `phoenix_live_view`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "Phoenix.LiveView.Channel.drop_upload_entries/2",
+            "drop_upload_entries/2",
+            "Channel.drop_upload_entries/2"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "2 API surface change(s) in phoenix_live_view",
+              "url": null,
+              "locator": "phoenix_live_view 1.2.0 → 1.2.10 (published sources) · computed by hex sources"
+            }
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "bandit",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
+      "current": "1.12.4",
+      "latest": "1.12.5",
+      "selected": "1.12.5",
+      "safeLatest": "1.12.5",
+      "status": "checking",
+      "risk": "none",
+      "summary": "Do not upgrade yet. 1 upstream breaking change, none of which this repository uses; fixes 2 known vulnerabilities.",
+      "recommendation": "do-not-upgrade-yet",
+      "breakingCount": 1,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 3,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`Bandit.HTTP2.Stream.init/4` was removed.",
+          "remediation": "The member `Bandit.HTTP2.Stream.init/4` no longer exists in `bandit`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "Bandit.HTTP2.Stream.init/4",
+            "init/4",
+            "Stream.init/4"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "1 API surface change(s) in bandit",
+              "url": null,
+              "locator": "bandit 1.12.4 → 1.12.5 (published sources) · computed by hex sources"
+            }
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "bandit",
+      "ecosystem": "hex",
+      "manifestPath": "mix.exs",
+      "workspace": "",
+      "workspaceName": "phoenix",
+      "current": "1.12.4",
+      "latest": "1.12.5",
+      "selected": "1.12.5",
+      "safeLatest": null,
+      "status": "checking",
+      "risk": "none",
+      "summary": "Do not upgrade yet. 1 upstream breaking change, none of which this repository uses; fixes 2 known vulnerabilities.",
+      "recommendation": "do-not-upgrade-yet",
+      "breakingCount": 1,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 3,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`Bandit.HTTP2.Stream.init/4` was removed.",
+          "remediation": "The member `Bandit.HTTP2.Stream.init/4` no longer exists in `bandit`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "Bandit.HTTP2.Stream.init/4",
+            "init/4",
+            "Stream.init/4"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "1 API surface change(s) in bandit",
+              "url": null,
+              "locator": "bandit 1.12.4 → 1.12.5 (published sources) · computed by hex sources"
+            }
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "bandit",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
+      "current": "1.12.4",
+      "latest": "1.12.5",
+      "selected": "1.12.5",
+      "safeLatest": "1.12.5",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Do not upgrade yet. 1 upstream breaking change, none of which this repository uses; fixes 2 known vulnerabilities.",
+      "recommendation": "do-not-upgrade-yet",
+      "breakingCount": 1,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 3,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`Bandit.HTTP2.Stream.init/4` was removed.",
+          "remediation": "The member `Bandit.HTTP2.Stream.init/4` no longer exists in `bandit`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "Bandit.HTTP2.Stream.init/4",
+            "init/4",
+            "Stream.init/4"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "1 API surface change(s) in bandit",
+              "url": null,
+              "locator": "bandit 1.12.4 → 1.12.5 (published sources) · computed by hex sources"
+            }
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "bandit",
+      "ecosystem": "hex",
+      "manifestPath": "mix.exs",
+      "workspace": "",
+      "workspaceName": "phoenix",
+      "current": "1.12.4",
+      "latest": "1.12.5",
+      "selected": "1.12.5",
+      "safeLatest": null,
+      "status": "ready",
+      "risk": "none",
+      "summary": "Do not upgrade yet. 1 upstream breaking change, none of which this repository uses; fixes 2 known vulnerabilities.",
+      "recommendation": "do-not-upgrade-yet",
+      "breakingCount": 1,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 3,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`Bandit.HTTP2.Stream.init/4` was removed.",
+          "remediation": "The member `Bandit.HTTP2.Stream.init/4` no longer exists in `bandit`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "Bandit.HTTP2.Stream.init/4",
+            "init/4",
+            "Stream.init/4"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "1 API surface change(s) in bandit",
+              "url": null,
+              "locator": "bandit 1.12.4 → 1.12.5 (published sources) · computed by hex sources"
+            }
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "bandit",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
+      "current": "1.12.4",
+      "latest": "1.12.5",
+      "selected": "1.12.5",
+      "safeLatest": "1.12.5",
+      "status": "ready",
+      "risk": "none",
+      "summary": "Do not upgrade yet. 1 upstream breaking change, none of which this repository uses; fixes 2 known vulnerabilities.",
+      "recommendation": "do-not-upgrade-yet",
+      "breakingCount": 1,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 3,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`Bandit.HTTP2.Stream.init/4` was removed.",
+          "remediation": "The member `Bandit.HTTP2.Stream.init/4` no longer exists in `bandit`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "Bandit.HTTP2.Stream.init/4",
+            "init/4",
+            "Stream.init/4"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "1 API surface change(s) in bandit",
+              "url": null,
+              "locator": "bandit 1.12.4 → 1.12.5 (published sources) · computed by hex sources"
+            }
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
+      "name": "bandit",
+      "ecosystem": "hex",
+      "manifestPath": "mix.exs",
+      "workspace": "",
+      "workspaceName": "phoenix",
+      "current": "1.12.4",
+      "latest": "1.12.5",
+      "selected": "1.12.5",
+      "safeLatest": null,
+      "status": "ready",
+      "risk": "none",
+      "summary": "Do not upgrade yet. 1 upstream breaking change, none of which this repository uses; fixes 2 known vulnerabilities.",
+      "recommendation": "do-not-upgrade-yet",
+      "breakingCount": 1,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 3,
+      "gaps": [],
+      "breaking": [
+        {
+          "kind": "removed-export",
+          "summary": "`Bandit.HTTP2.Stream.init/4` was removed.",
+          "remediation": "The member `Bandit.HTTP2.Stream.init/4` no longer exists in `bandit`. Update each access to use the replacement member, or restructure the calling code if the capability was removed outright.",
+          "confidence": "high",
+          "overall": {
+            "score": 55,
+            "band": "medium",
+            "label": "Fairly confident"
+          },
+          "symbols": [
+            "Bandit.HTTP2.Stream.init/4",
+            "init/4",
+            "Stream.init/4"
+          ],
+          "evidence": [
+            {
+              "source": "type-surface-diff",
+              "title": "1 API surface change(s) in bandit",
+              "url": null,
+              "locator": "bandit 1.12.4 → 1.12.5 (published sources) · computed by hex sources"
+            }
+          ],
+          "sites": []
+        }
+      ]
+    },
+    {
       "name": "argon2_elixir",
       "ecosystem": "hex",
       "manifestPath": "integration_test/mix.exs",
@@ -860,6 +1449,216 @@
       "manifestPath": "mix.exs",
       "workspace": "",
       "workspaceName": "phoenix",
+      "current": "1.12.4",
+      "latest": "1.12.4",
+      "selected": "1.12.4",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "bandit",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
+      "current": "1.12.4",
+      "latest": "1.12.4",
+      "selected": "1.12.4",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "bandit",
+      "ecosystem": "hex",
+      "manifestPath": "mix.exs",
+      "workspace": "",
+      "workspaceName": "phoenix",
+      "current": "1.12.4",
+      "latest": "1.12.4",
+      "selected": "1.12.4",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "bandit",
+      "ecosystem": "hex",
+      "manifestPath": "mix.exs",
+      "workspace": "",
+      "workspaceName": "phoenix",
+      "current": "1.12.4",
+      "latest": "1.12.5",
+      "selected": "1.12.5",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "bandit",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
+      "current": "1.12.4",
+      "latest": "1.12.4",
+      "selected": "1.12.4",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "bandit",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
+      "current": "1.12.4",
+      "latest": "1.12.5",
+      "selected": "1.12.5",
+      "safeLatest": "1.12.5",
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "bandit",
+      "ecosystem": "hex",
+      "manifestPath": "mix.exs",
+      "workspace": "",
+      "workspaceName": "phoenix",
+      "current": "1.12.4",
+      "latest": "1.12.4",
+      "selected": "1.12.4",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "bandit",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
+      "current": "1.12.4",
+      "latest": "1.12.4",
+      "selected": "1.12.4",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "bandit",
+      "ecosystem": "hex",
+      "manifestPath": "mix.exs",
+      "workspace": "",
+      "workspaceName": "phoenix",
+      "current": "1.12.4",
+      "latest": "1.12.4",
+      "selected": "1.12.4",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "bandit",
+      "ecosystem": "hex",
+      "manifestPath": "mix.exs",
+      "workspace": "",
+      "workspaceName": "phoenix",
+      "current": "1.12.4",
+      "latest": "1.12.4",
+      "selected": "1.12.4",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "bandit",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
       "current": "1.12.4",
       "latest": "1.12.4",
       "selected": "1.12.4",
@@ -1763,6 +2562,27 @@
       "manifestPath": "mix.exs",
       "workspace": "",
       "workspaceName": "phoenix",
+      "current": "1.4.5",
+      "latest": "1.4.5",
+      "selected": "1.4.5",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "jason",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
       "current": "1.4.5",
       "latest": "1.4.5",
       "selected": "1.4.5",
@@ -1787,27 +2607,6 @@
       "current": "1.4.5",
       "latest": "1.5.0-alpha.2",
       "selected": "1.5.0-alpha.2",
-      "safeLatest": null,
-      "status": "pending",
-      "risk": "unknown",
-      "summary": "",
-      "recommendation": null,
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 0,
-      "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "jason",
-      "ecosystem": "hex",
-      "manifestPath": "integration_test/mix.exs",
-      "workspace": "integration_test",
-      "workspaceName": null,
-      "current": "1.4.5",
-      "latest": "1.4.5",
-      "selected": "1.4.5",
       "safeLatest": null,
       "status": "pending",
       "risk": "unknown",
@@ -3045,9 +3844,9 @@
       "workspace": "integration_test",
       "workspaceName": null,
       "current": "1.2.0",
-      "latest": "1.2.9",
-      "selected": "1.2.9",
-      "safeLatest": "1.2.9",
+      "latest": "1.2.10",
+      "selected": "1.2.10",
+      "safeLatest": "1.2.10",
       "status": "pending",
       "risk": "unknown",
       "summary": "",
@@ -3140,69 +3939,6 @@
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 0,
-      "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "phoenix_live_view",
-      "ecosystem": "hex",
-      "manifestPath": "integration_test/mix.exs",
-      "workspace": "integration_test",
-      "workspaceName": null,
-      "current": "1.2.0",
-      "latest": "1.2.9",
-      "selected": "1.2.9",
-      "safeLatest": "1.2.9",
-      "status": "checking",
-      "risk": "none",
-      "summary": "Do not upgrade yet. Fixes 1 known vulnerability.",
-      "recommendation": "do-not-upgrade-yet",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 2,
-      "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "phoenix_live_view",
-      "ecosystem": "hex",
-      "manifestPath": "integration_test/mix.exs",
-      "workspace": "integration_test",
-      "workspaceName": null,
-      "current": "1.2.0",
-      "latest": "1.2.9",
-      "selected": "1.2.9",
-      "safeLatest": "1.2.9",
-      "status": "clean",
-      "risk": "none",
-      "summary": "Do not upgrade yet. Fixes 1 known vulnerability.",
-      "recommendation": "do-not-upgrade-yet",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 2,
-      "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "phoenix_live_view",
-      "ecosystem": "hex",
-      "manifestPath": "integration_test/mix.exs",
-      "workspace": "integration_test",
-      "workspaceName": null,
-      "current": "1.2.0",
-      "latest": "1.2.9",
-      "selected": "1.2.9",
-      "safeLatest": "1.2.9",
-      "status": "clean",
-      "risk": "none",
-      "summary": "Do not upgrade yet. Fixes 1 known vulnerability.",
-      "recommendation": "do-not-upgrade-yet",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 2,
       "gaps": [],
       "breaking": []
     },
@@ -3875,6 +4611,153 @@
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "req",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
+      "current": "0.7.2",
+      "latest": "0.7.3",
+      "selected": "0.7.3",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "req",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
+      "current": "0.7.2",
+      "latest": "0.7.2",
+      "selected": "0.7.2",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "req",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
+      "current": "0.7.2",
+      "latest": "0.7.2",
+      "selected": "0.7.2",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "req",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
+      "current": "0.7.2",
+      "latest": "0.7.2",
+      "selected": "0.7.2",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "req",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
+      "current": "0.7.2",
+      "latest": "0.7.2",
+      "selected": "0.7.2",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "req",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
+      "current": "0.7.2",
+      "latest": "0.7.3",
+      "selected": "0.7.3",
+      "safeLatest": null,
+      "status": "checking",
+      "risk": "none",
+      "summary": "Safe to upgrade. No breaking changes found for this version of req.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "req",
+      "ecosystem": "hex",
+      "manifestPath": "integration_test/mix.exs",
+      "workspace": "integration_test",
+      "workspaceName": null,
+      "current": "0.7.2",
+      "latest": "0.7.3",
+      "selected": "0.7.3",
+      "safeLatest": null,
+      "status": "clean",
+      "risk": "none",
+      "summary": "Safe to upgrade. No breaking changes found for this version of req.",
+      "recommendation": "safe-to-upgrade",
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 1,
       "gaps": [],
       "breaking": []
     },

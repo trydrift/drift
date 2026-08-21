@@ -5,10 +5,10 @@
   "language": "OCaml",
   "repo": "https://github.com/mirage/ocaml-cohttp",
   "blurb": "OCaml's HTTP library, from the MirageOS project.",
-  "capturedAt": "2026-08-18T05:39:57.275Z",
-  "commit": "2932040b0d6ad4a0b7699c354f78c1ebd865d597",
-  "engine": "81044c47297efc90",
-  "durationMs": 1730,
+  "capturedAt": "2026-08-21T07:22:40.856Z",
+  "commit": "7b77cc7f18778967cbe3f64742290f268782fb7d",
+  "engine": "09153dd336cd8676",
+  "durationMs": 768,
   "packagesChecked": 22,
   "manifests": [
     "dune-project",
@@ -17,868 +17,833 @@
   "nestedGitRepos": [],
   "events": [
     {
-      "at": 60,
+      "at": 100,
       "phase": "Looking for manifests",
       "detail": "mirage/ocaml-cohttp",
       "done": 0,
       "total": 0
     },
     {
-      "at": 101,
+      "at": 127,
       "phase": "Reading the workspace",
       "detail": "2 packages · undeclared",
       "done": 0,
       "total": 0
     },
     {
-      "at": 107,
+      "at": 130,
       "phase": "Reading manifest",
       "detail": "dune-project",
       "done": 0,
       "total": 0
     },
     {
-      "at": 119,
+      "at": 142,
       "phase": "Reading manifest",
       "detail": "cohttp-lwt-jsoo/test/package.json",
       "done": 0,
       "total": 0
     },
     {
-      "at": 119,
+      "at": 142,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 22
     },
     {
-      "at": 119,
+      "at": 142,
       "phase": "Checking registries",
       "detail": "22 direct dependencies",
       "done": 0,
       "total": 22
     },
     {
-      "at": 353,
+      "at": 389,
       "phase": "Outdated",
-      "detail": "base64 3.1.0 → 3.5.2",
+      "detail": "re 1.9.0 → 1.14.0",
       "done": 1,
       "total": 22
     },
     {
-      "at": 371,
+      "at": 397,
       "phase": "Outdated",
-      "detail": "js_of_ocaml 3.3.0 → 6.4.1",
+      "detail": "base64 3.1.0 → 3.5.2",
       "done": 2,
       "total": 22
     },
     {
-      "at": 372,
+      "at": 413,
       "phase": "Outdated",
-      "detail": "re 1.9.0 → 1.14.0",
+      "detail": "ipaddr 5.6.0 → 5.6.2",
       "done": 3,
       "total": 22
     },
     {
-      "at": 383,
+      "at": 435,
       "phase": "Outdated",
-      "detail": "async 0.16.0 → 0.17.0",
+      "detail": "lwt 5.3.0 → 6.1.2",
       "done": 4,
       "total": 22
     },
     {
-      "at": 388,
+      "at": 445,
       "phase": "Outdated",
-      "detail": "core 0.13.0 → 0.17.2",
+      "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1",
       "done": 5,
       "total": 22
     },
     {
-      "at": 393,
+      "at": 453,
       "phase": "Outdated",
-      "detail": "mirage-channel 4.0.0 → 5.0.0",
+      "detail": "js_of_ocaml 3.3.0 → 6.4.1",
       "done": 6,
       "total": 22
     },
     {
-      "at": 461,
+      "at": 453,
       "phase": "Outdated",
       "detail": "cmdliner 2.0.0 → 2.1.1",
       "done": 7,
       "total": 22
     },
     {
-      "at": 488,
+      "at": 454,
       "phase": "Outdated",
-      "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1",
+      "detail": "async 0.16.0 → 0.17.0",
       "done": 8,
       "total": 22
     },
     {
-      "at": 488,
+      "at": 466,
       "phase": "Outdated",
-      "detail": "core_unix 0.14.0 → 0.17.1",
+      "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1",
       "done": 9,
       "total": 22
     },
     {
-      "at": 498,
+      "at": 479,
       "phase": "Outdated",
-      "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1",
+      "detail": "base 0.16.0 → 0.17.3",
       "done": 10,
       "total": 22
     },
     {
-      "at": 498,
+      "at": 485,
       "phase": "Outdated",
-      "detail": "conduit-async 1.2.0 → 8.0.0",
+      "detail": "core 0.13.0 → 0.17.2",
       "done": 11,
       "total": 22
     },
     {
-      "at": 510,
+      "at": 504,
       "phase": "Outdated",
-      "detail": "mirage-flow 2.0.0 → 5.0.0",
+      "detail": "core_unix 0.14.0 → 0.17.1",
       "done": 12,
       "total": 22
     },
     {
-      "at": 510,
+      "at": 508,
       "phase": "Outdated",
-      "detail": "base 0.16.0 → 0.17.3",
+      "detail": "mirage-flow 2.0.0 → 5.0.0",
       "done": 13,
       "total": 22
     },
     {
       "at": 510,
-      "phase": "Up to date",
-      "detail": "conduit@8.0.0",
+      "phase": "Outdated",
+      "detail": "mirage-channel 4.0.0 → 5.0.0",
       "done": 14,
       "total": 22
     },
     {
-      "at": 517,
-      "phase": "Outdated",
-      "detail": "ipaddr 5.6.0 → 5.6.2",
+      "at": 529,
+      "phase": "Up to date",
+      "detail": "conduit@8.0.0",
       "done": 15,
       "total": 22
     },
     {
-      "at": 522,
+      "at": 539,
       "phase": "Outdated",
-      "detail": "lwt 5.3.0 → 6.1.2",
+      "detail": "conduit-async 1.2.0 → 8.0.0",
       "done": 16,
       "total": 22
     },
     {
-      "at": 528,
-      "phase": "Outdated",
-      "detail": "mirage-kv 3.0.0 → 6.1.1",
+      "at": 542,
+      "phase": "Up to date",
+      "detail": "xmlhttprequest@1.8.0",
       "done": 17,
       "total": 22
     },
     {
-      "at": 535,
+      "at": 555,
+      "phase": "Indexing your code",
+      "detail": "182 files indexed · 22 direct dependencies to check",
+      "done": 0,
+      "total": 22
+    },
+    {
+      "at": 687,
       "phase": "Up to date",
       "detail": "conduit-mirage@8.0.0",
       "done": 18,
       "total": 22
     },
     {
-      "at": 538,
+      "at": 691,
       "phase": "Outdated",
-      "detail": "cstruct 6.0.0 → 6.2.0",
+      "detail": "mirage-kv 6.0.1 → 6.1.1",
       "done": 19,
       "total": 22
     },
     {
-      "at": 538,
-      "phase": "Up to date",
-      "detail": "ocurl@0.9.2",
+      "at": 696,
+      "phase": "Outdated",
+      "detail": "cstruct 6.0.0 → 6.2.0",
       "done": 20,
       "total": 22
     },
     {
-      "at": 539,
-      "phase": "Outdated",
-      "detail": "eio 0.12.0 → 1.4.0",
+      "at": 696,
+      "phase": "Up to date",
+      "detail": "curl@0.10.0",
       "done": 21,
       "total": 22
     },
     {
-      "at": 540,
-      "phase": "Up to date",
-      "detail": "xmlhttprequest@1.8.0",
+      "at": 697,
+      "phase": "Outdated",
+      "detail": "eio 0.12.0 → 1.5.0",
       "done": 22,
       "total": 22
     },
     {
-      "at": 540,
-      "phase": "Preparing a test checkout of cohttp",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 579,
+      "at": 699,
       "phase": "Reading release notes and changelog",
       "detail": "async 0.16.0 → 0.17.0",
       "done": 0,
       "total": 18
     },
     {
-      "at": 579,
+      "at": 699,
       "phase": "Reading release notes and changelog",
       "detail": "base 0.16.0 → 0.17.3",
       "done": 0,
       "total": 18
     },
     {
-      "at": 579,
+      "at": 699,
       "phase": "Reading release notes and changelog",
       "detail": "base64 3.1.0 → 3.5.2",
       "done": 0,
       "total": 18
     },
     {
-      "at": 579,
+      "at": 700,
       "phase": "Reading release notes and changelog",
       "detail": "cmdliner 2.0.0 → 2.1.1",
       "done": 0,
       "total": 18
     },
     {
-      "at": 579,
+      "at": 700,
       "phase": "Reading release notes and changelog",
       "detail": "conduit-async 1.2.0 → 8.0.0",
       "done": 0,
       "total": 18
     },
     {
-      "at": 579,
+      "at": 700,
       "phase": "Reading release notes and changelog",
       "detail": "core 0.13.0 → 0.17.2",
       "done": 0,
       "total": 18
     },
     {
-      "at": 580,
+      "at": 700,
       "phase": "Reading release notes and changelog",
       "detail": "core_unix 0.14.0 → 0.17.1",
       "done": 0,
       "total": 18
     },
     {
-      "at": 580,
+      "at": 702,
       "phase": "Reading release notes and changelog",
       "detail": "cstruct 6.0.0 → 6.2.0",
       "done": 0,
       "total": 18
     },
     {
-      "at": 580,
+      "at": 742,
       "phase": "Comparing the public API surface",
       "detail": "async 0.16.0 → 0.17.0 · 1 evidence source",
       "done": 0,
       "total": 18
     },
     {
-      "at": 593,
+      "at": 742,
       "phase": "Comparing the public API surface",
       "detail": "base 0.16.0 → 0.17.3 · 1 evidence source",
       "done": 0,
       "total": 18
     },
     {
-      "at": 593,
+      "at": 742,
       "phase": "Comparing the public API surface",
       "detail": "base64 3.1.0 → 3.5.2 · 1 evidence source",
       "done": 0,
       "total": 18
     },
     {
-      "at": 593,
+      "at": 742,
       "phase": "Comparing the public API surface",
       "detail": "cmdliner 2.0.0 → 2.1.1 · 1 evidence source",
       "done": 0,
       "total": 18
     },
     {
-      "at": 593,
+      "at": 742,
       "phase": "Comparing the public API surface",
       "detail": "conduit-async 1.2.0 → 8.0.0 · 1 evidence source",
       "done": 0,
       "total": 18
     },
     {
-      "at": 593,
+      "at": 742,
       "phase": "Comparing the public API surface",
       "detail": "core 0.13.0 → 0.17.2 · 1 evidence source",
       "done": 0,
       "total": 18
     },
     {
-      "at": 593,
+      "at": 742,
       "phase": "Comparing the public API surface",
       "detail": "core_unix 0.14.0 → 0.17.1 · 1 evidence source",
       "done": 0,
       "total": 18
     },
     {
-      "at": 593,
+      "at": 742,
       "phase": "Comparing the public API surface",
       "detail": "cstruct 6.0.0 → 6.2.0 · 1 evidence source",
       "done": 0,
       "total": 18
     },
     {
-      "at": 594,
+      "at": 742,
       "phase": "No breaking changes to look for",
       "detail": "async 0.16.0 → 0.17.0",
       "done": 0,
       "total": 18
     },
     {
-      "at": 594,
+      "at": 742,
       "phase": "No breaking changes to look for",
       "detail": "base 0.16.0 → 0.17.3",
       "done": 0,
       "total": 18
     },
     {
-      "at": 594,
+      "at": 743,
       "phase": "No breaking changes to look for",
       "detail": "base64 3.1.0 → 3.5.2",
       "done": 0,
       "total": 18
     },
     {
-      "at": 594,
+      "at": 743,
       "phase": "No breaking changes to look for",
       "detail": "cmdliner 2.0.0 → 2.1.1",
       "done": 0,
       "total": 18
     },
     {
-      "at": 594,
+      "at": 743,
       "phase": "No breaking changes to look for",
       "detail": "conduit-async 1.2.0 → 8.0.0",
       "done": 0,
       "total": 18
     },
     {
-      "at": 594,
+      "at": 743,
       "phase": "No breaking changes to look for",
       "detail": "core 0.13.0 → 0.17.2",
       "done": 0,
       "total": 18
     },
     {
-      "at": 594,
+      "at": 743,
       "phase": "No breaking changes to look for",
       "detail": "core_unix 0.14.0 → 0.17.1",
       "done": 0,
       "total": 18
     },
     {
-      "at": 594,
+      "at": 743,
       "phase": "No breaking changes to look for",
       "detail": "cstruct 6.0.0 → 6.2.0",
       "done": 0,
       "total": 18
     },
     {
-      "at": 955,
-      "phase": "Checking cohttp as it is",
-      "detail": "dune build @check, dune runtest, dune build",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 955,
-      "phase": "Checking cohttp as it is",
-      "detail": "`dune build @check`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 1015,
-      "phase": "Checking cohttp as it is",
-      "detail": "`dune runtest`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 1077,
-      "phase": "Checking cohttp as it is",
-      "detail": "`dune build`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 1553,
-      "phase": "Indexing your code",
-      "detail": "179 files indexed · 22 direct dependencies to check",
-      "done": 0,
-      "total": 22
-    },
-    {
-      "at": 1707,
+      "at": 743,
       "phase": "Weighing what this upgrade is worth",
       "detail": "async 0.16.0 → 0.17.0",
       "done": 0,
       "total": 18
     },
     {
-      "at": 1707,
+      "at": 743,
       "phase": "Weighing what this upgrade is worth",
       "detail": "base 0.16.0 → 0.17.3",
       "done": 0,
       "total": 18
     },
     {
-      "at": 1708,
+      "at": 743,
       "phase": "Weighing what this upgrade is worth",
       "detail": "base64 3.1.0 → 3.5.2",
       "done": 0,
       "total": 18
     },
     {
-      "at": 1708,
+      "at": 743,
       "phase": "Weighing what this upgrade is worth",
       "detail": "cmdliner 2.0.0 → 2.1.1",
       "done": 0,
       "total": 18
     },
     {
-      "at": 1708,
+      "at": 744,
       "phase": "Weighing what this upgrade is worth",
       "detail": "conduit-async 1.2.0 → 8.0.0",
       "done": 0,
       "total": 18
     },
     {
-      "at": 1708,
+      "at": 744,
       "phase": "Weighing what this upgrade is worth",
       "detail": "core 0.13.0 → 0.17.2",
       "done": 0,
       "total": 18
     },
     {
-      "at": 1708,
+      "at": 744,
       "phase": "Weighing what this upgrade is worth",
       "detail": "core_unix 0.14.0 → 0.17.1",
       "done": 0,
       "total": 18
     },
     {
-      "at": 1708,
+      "at": 744,
       "phase": "Weighing what this upgrade is worth",
       "detail": "cstruct 6.0.0 → 6.2.0",
       "done": 0,
       "total": 18
     },
     {
-      "at": 1714,
+      "at": 749,
       "phase": "Checked",
       "detail": "async 0.16.0 → 0.17.0 · not verified · drift found nothing it could check this version against",
       "done": 1,
       "total": 18
     },
     {
-      "at": 1714,
+      "at": 749,
       "phase": "Checked",
       "detail": "base 0.16.0 → 0.17.3 · not verified · drift found nothing it could check this version against",
       "done": 2,
       "total": 18
     },
     {
-      "at": 1714,
+      "at": 749,
       "phase": "Checked",
       "detail": "base64 3.1.0 → 3.5.2 · not verified · drift found nothing it could check this version against",
       "done": 3,
       "total": 18
     },
     {
-      "at": 1714,
+      "at": 749,
       "phase": "Checked",
       "detail": "cmdliner 2.0.0 → 2.1.1 · not verified · drift found nothing it could check this version against",
       "done": 4,
       "total": 18
     },
     {
-      "at": 1714,
+      "at": 749,
       "phase": "Checked",
       "detail": "conduit-async 1.2.0 → 8.0.0 · not verified · drift found nothing it could check this version against",
       "done": 5,
       "total": 18
     },
     {
-      "at": 1714,
+      "at": 749,
       "phase": "Checked",
       "detail": "core 0.13.0 → 0.17.2 · not verified · drift found nothing it could check this version against",
       "done": 6,
       "total": 18
     },
     {
-      "at": 1714,
+      "at": 749,
       "phase": "Checked",
       "detail": "core_unix 0.14.0 → 0.17.1 · not verified · drift found nothing it could check this version against",
       "done": 7,
       "total": 18
     },
     {
-      "at": 1714,
+      "at": 749,
       "phase": "Checked",
       "detail": "cstruct 6.0.0 → 6.2.0 · not verified · drift found nothing it could check this version against",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1715,
+      "at": 749,
       "phase": "Reading release notes and changelog",
-      "detail": "eio 0.12.0 → 1.4.0",
+      "detail": "eio 0.12.0 → 1.5.0",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1715,
+      "at": 749,
       "phase": "Reading release notes and changelog",
       "detail": "ipaddr 5.6.0 → 5.6.2",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 749,
       "phase": "Reading release notes and changelog",
       "detail": "js_of_ocaml 3.3.0 → 6.4.1",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 749,
       "phase": "Reading release notes and changelog",
       "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 749,
       "phase": "Reading release notes and changelog",
       "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 749,
       "phase": "Reading release notes and changelog",
       "detail": "lwt 5.3.0 → 6.1.2",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 749,
       "phase": "Reading release notes and changelog",
       "detail": "mirage-channel 4.0.0 → 5.0.0",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 750,
       "phase": "Reading release notes and changelog",
       "detail": "mirage-flow 2.0.0 → 5.0.0",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 750,
       "phase": "Comparing the public API surface",
-      "detail": "eio 0.12.0 → 1.4.0 · 1 evidence source",
+      "detail": "eio 0.12.0 → 1.5.0 · 1 evidence source",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 750,
       "phase": "Comparing the public API surface",
       "detail": "ipaddr 5.6.0 → 5.6.2 · 1 evidence source",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 750,
       "phase": "Comparing the public API surface",
       "detail": "js_of_ocaml 3.3.0 → 6.4.1 · 1 evidence source",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 750,
       "phase": "Comparing the public API surface",
       "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1 · 1 evidence source",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 750,
       "phase": "Comparing the public API surface",
       "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1 · 1 evidence source",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 750,
       "phase": "Comparing the public API surface",
       "detail": "lwt 5.3.0 → 6.1.2 · 1 evidence source",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 750,
       "phase": "Comparing the public API surface",
       "detail": "mirage-channel 4.0.0 → 5.0.0 · 1 evidence source",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 750,
       "phase": "Comparing the public API surface",
       "detail": "mirage-flow 2.0.0 → 5.0.0 · 1 evidence source",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 750,
       "phase": "No breaking changes to look for",
-      "detail": "eio 0.12.0 → 1.4.0",
+      "detail": "eio 0.12.0 → 1.5.0",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 750,
       "phase": "No breaking changes to look for",
       "detail": "ipaddr 5.6.0 → 5.6.2",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 750,
       "phase": "No breaking changes to look for",
       "detail": "js_of_ocaml 3.3.0 → 6.4.1",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 750,
       "phase": "No breaking changes to look for",
       "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 750,
       "phase": "No breaking changes to look for",
       "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 750,
       "phase": "No breaking changes to look for",
       "detail": "lwt 5.3.0 → 6.1.2",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 750,
       "phase": "No breaking changes to look for",
       "detail": "mirage-channel 4.0.0 → 5.0.0",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 750,
       "phase": "No breaking changes to look for",
       "detail": "mirage-flow 2.0.0 → 5.0.0",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1718,
+      "at": 750,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "eio 0.12.0 → 1.4.0",
+      "detail": "eio 0.12.0 → 1.5.0",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1719,
+      "at": 750,
       "phase": "Weighing what this upgrade is worth",
       "detail": "ipaddr 5.6.0 → 5.6.2",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1719,
+      "at": 751,
       "phase": "Weighing what this upgrade is worth",
       "detail": "js_of_ocaml 3.3.0 → 6.4.1",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1719,
+      "at": 751,
       "phase": "Weighing what this upgrade is worth",
       "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1719,
+      "at": 754,
       "phase": "Weighing what this upgrade is worth",
       "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1719,
+      "at": 754,
       "phase": "Weighing what this upgrade is worth",
       "detail": "lwt 5.3.0 → 6.1.2",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1719,
+      "at": 755,
       "phase": "Weighing what this upgrade is worth",
       "detail": "mirage-channel 4.0.0 → 5.0.0",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1719,
+      "at": 755,
       "phase": "Weighing what this upgrade is worth",
       "detail": "mirage-flow 2.0.0 → 5.0.0",
       "done": 8,
       "total": 18
     },
     {
-      "at": 1724,
+      "at": 765,
       "phase": "Checked",
-      "detail": "eio 0.12.0 → 1.4.0 · not verified · drift found nothing it could check this version against",
+      "detail": "eio 0.12.0 → 1.5.0 · not verified · drift found nothing it could check this version against",
       "done": 9,
       "total": 18
     },
     {
-      "at": 1724,
+      "at": 765,
       "phase": "Checked",
       "detail": "ipaddr 5.6.0 → 5.6.2 · not verified · drift found nothing it could check this version against",
       "done": 10,
       "total": 18
     },
     {
-      "at": 1724,
+      "at": 765,
       "phase": "Checked",
       "detail": "js_of_ocaml 3.3.0 → 6.4.1 · not verified · drift found nothing it could check this version against",
       "done": 11,
       "total": 18
     },
     {
-      "at": 1724,
+      "at": 765,
       "phase": "Checked",
       "detail": "js_of_ocaml-lwt 3.5.0 → 6.4.1 · not verified · drift found nothing it could check this version against",
       "done": 12,
       "total": 18
     },
     {
-      "at": 1724,
+      "at": 765,
       "phase": "Checked",
       "detail": "js_of_ocaml-ppx 3.3.0 → 6.4.1 · not verified · drift found nothing it could check this version against",
       "done": 13,
       "total": 18
     },
     {
-      "at": 1724,
+      "at": 765,
       "phase": "Checked",
       "detail": "lwt 5.3.0 → 6.1.2 · not verified · drift found nothing it could check this version against",
       "done": 14,
       "total": 18
     },
     {
-      "at": 1724,
+      "at": 765,
       "phase": "Checked",
       "detail": "mirage-channel 4.0.0 → 5.0.0 · not verified · drift found nothing it could check this version against",
       "done": 15,
       "total": 18
     },
     {
-      "at": 1724,
+      "at": 765,
       "phase": "Checked",
       "detail": "mirage-flow 2.0.0 → 5.0.0 · not verified · drift found nothing it could check this version against",
       "done": 16,
       "total": 18
     },
     {
-      "at": 1724,
+      "at": 765,
       "phase": "Reading release notes and changelog",
-      "detail": "mirage-kv 3.0.0 → 6.1.1",
+      "detail": "mirage-kv 6.0.1 → 6.1.1",
       "done": 16,
       "total": 18
     },
     {
-      "at": 1724,
+      "at": 765,
       "phase": "Reading release notes and changelog",
       "detail": "re 1.9.0 → 1.14.0",
       "done": 16,
       "total": 18
     },
     {
-      "at": 1725,
+      "at": 765,
       "phase": "Comparing the public API surface",
-      "detail": "mirage-kv 3.0.0 → 6.1.1 · 1 evidence source",
+      "detail": "mirage-kv 6.0.1 → 6.1.1 · 1 evidence source",
       "done": 16,
       "total": 18
     },
     {
-      "at": 1725,
+      "at": 765,
       "phase": "Comparing the public API surface",
       "detail": "re 1.9.0 → 1.14.0 · 1 evidence source",
       "done": 16,
       "total": 18
     },
     {
-      "at": 1725,
+      "at": 765,
       "phase": "No breaking changes to look for",
-      "detail": "mirage-kv 3.0.0 → 6.1.1",
+      "detail": "mirage-kv 6.0.1 → 6.1.1",
       "done": 16,
       "total": 18
     },
     {
-      "at": 1725,
+      "at": 765,
       "phase": "No breaking changes to look for",
       "detail": "re 1.9.0 → 1.14.0",
       "done": 16,
       "total": 18
     },
     {
-      "at": 1729,
+      "at": 765,
       "phase": "Weighing what this upgrade is worth",
-      "detail": "mirage-kv 3.0.0 → 6.1.1",
+      "detail": "mirage-kv 6.0.1 → 6.1.1",
       "done": 16,
       "total": 18
     },
     {
-      "at": 1729,
+      "at": 766,
       "phase": "Weighing what this upgrade is worth",
       "detail": "re 1.9.0 → 1.14.0",
       "done": 16,
       "total": 18
     },
     {
-      "at": 1729,
+      "at": 766,
       "phase": "Checked",
-      "detail": "mirage-kv 3.0.0 → 6.1.1 · not verified · drift found nothing it could check this version against",
+      "detail": "mirage-kv 6.0.1 → 6.1.1 · not verified · drift found nothing it could check this version against",
       "done": 17,
       "total": 18
     },
     {
-      "at": 1729,
+      "at": 766,
       "phase": "Checked",
       "detail": "re 1.9.0 → 1.14.0 · not verified · drift found nothing it could check this version against",
       "done": 18,
@@ -2531,14 +2496,14 @@
       "breaking": []
     },
     {
-      "name": "eio",
+      "name": "curl",
       "ecosystem": "opam",
       "manifestPath": "dune-project",
       "workspace": "",
       "workspaceName": null,
-      "current": "0.12.0",
-      "latest": "0.12.0",
-      "selected": "0.12.0",
+      "current": "0.10.0",
+      "latest": "0.10.0",
+      "selected": "0.10.0",
       "safeLatest": null,
       "status": "pending",
       "risk": "unknown",
@@ -2552,56 +2517,14 @@
       "breaking": []
     },
     {
-      "name": "eio",
+      "name": "curl",
       "ecosystem": "opam",
       "manifestPath": "dune-project",
       "workspace": "",
       "workspaceName": null,
-      "current": "0.12.0",
-      "latest": "0.12.0",
-      "selected": "0.12.0",
-      "safeLatest": null,
-      "status": "pending",
-      "risk": "unknown",
-      "summary": "",
-      "recommendation": null,
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 0,
-      "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "eio",
-      "ecosystem": "opam",
-      "manifestPath": "dune-project",
-      "workspace": "",
-      "workspaceName": null,
-      "current": "0.12.0",
-      "latest": "1.4.0",
-      "selected": "1.4.0",
-      "safeLatest": "1.4.0",
-      "status": "pending",
-      "risk": "unknown",
-      "summary": "",
-      "recommendation": null,
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 0,
-      "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "eio",
-      "ecosystem": "opam",
-      "manifestPath": "dune-project",
-      "workspace": "",
-      "workspaceName": null,
-      "current": "0.12.0",
-      "latest": "0.12.0",
-      "selected": "0.12.0",
+      "current": "0.10.0",
+      "latest": "0.10.0",
+      "selected": "0.10.0",
       "safeLatest": null,
       "status": "pending",
       "risk": "unknown",
@@ -2663,6 +2586,27 @@
       "workspace": "",
       "workspaceName": null,
       "current": "0.12.0",
+      "latest": "1.5.0",
+      "selected": "1.5.0",
+      "safeLatest": "1.5.0",
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "eio",
+      "ecosystem": "opam",
+      "manifestPath": "dune-project",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "0.12.0",
       "latest": "0.12.0",
       "selected": "0.12.0",
       "safeLatest": null,
@@ -2684,19 +2628,82 @@
       "workspace": "",
       "workspaceName": null,
       "current": "0.12.0",
-      "latest": "1.4.0",
-      "selected": "1.4.0",
-      "safeLatest": "1.4.0",
+      "latest": "0.12.0",
+      "selected": "0.12.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "eio",
+      "ecosystem": "opam",
+      "manifestPath": "dune-project",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "0.12.0",
+      "latest": "0.12.0",
+      "selected": "0.12.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "eio",
+      "ecosystem": "opam",
+      "manifestPath": "dune-project",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "0.12.0",
+      "latest": "0.12.0",
+      "selected": "0.12.0",
+      "safeLatest": null,
+      "status": "pending",
+      "risk": "unknown",
+      "summary": "",
+      "recommendation": null,
+      "breakingCount": 0,
+      "impactCount": 0,
+      "impactFiles": 0,
+      "evidenceCount": 0,
+      "gaps": [],
+      "breaking": []
+    },
+    {
+      "name": "eio",
+      "ecosystem": "opam",
+      "manifestPath": "dune-project",
+      "workspace": "",
+      "workspaceName": null,
+      "current": "0.12.0",
+      "latest": "1.5.0",
+      "selected": "1.5.0",
+      "safeLatest": "1.5.0",
       "status": "checking",
       "risk": "none",
-      "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for eio 1.4.0, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
+      "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for eio 1.5.0, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for eio 1.4.0, and no source repository could be resolved for it.",
+        "Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for eio 1.5.0, and no source repository could be resolved for it.",
         "OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up."
       ],
       "breaking": []
@@ -2708,19 +2715,19 @@
       "workspace": "",
       "workspaceName": null,
       "current": "0.12.0",
-      "latest": "1.4.0",
-      "selected": "1.4.0",
-      "safeLatest": "1.4.0",
+      "latest": "1.5.0",
+      "selected": "1.5.0",
+      "safeLatest": "1.5.0",
       "status": "clean",
       "risk": "none",
-      "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for eio 1.4.0, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
+      "summary": "Insufficient evidence. Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for eio 1.5.0, and no source repository could be resolved for it. OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up.",
       "recommendation": "insufficient-evidence",
       "breakingCount": 0,
       "impactCount": 0,
       "impactFiles": 0,
       "evidenceCount": 1,
       "gaps": [
-        "Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for eio 1.4.0, and no source repository could be resolved for it.",
+        "Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for eio 1.5.0, and no source repository could be resolved for it.",
         "OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up."
       ],
       "breaking": []
@@ -4096,9 +4103,9 @@
       "manifestPath": "dune-project",
       "workspace": "",
       "workspaceName": null,
-      "current": "3.0.0",
-      "latest": "3.0.0",
-      "selected": "3.0.0",
+      "current": "6.0.1",
+      "latest": "6.0.1",
+      "selected": "6.0.1",
       "safeLatest": null,
       "status": "pending",
       "risk": "unknown",
@@ -4117,9 +4124,9 @@
       "manifestPath": "dune-project",
       "workspace": "",
       "workspaceName": null,
-      "current": "3.0.0",
-      "latest": "3.0.0",
-      "selected": "3.0.0",
+      "current": "6.0.1",
+      "latest": "6.0.1",
+      "selected": "6.0.1",
       "safeLatest": null,
       "status": "pending",
       "risk": "unknown",
@@ -4138,7 +4145,7 @@
       "manifestPath": "dune-project",
       "workspace": "",
       "workspaceName": null,
-      "current": "3.0.0",
+      "current": "6.0.1",
       "latest": "6.1.1",
       "selected": "6.1.1",
       "safeLatest": "6.1.1",
@@ -4159,9 +4166,9 @@
       "manifestPath": "dune-project",
       "workspace": "",
       "workspaceName": null,
-      "current": "3.0.0",
-      "latest": "3.0.0",
-      "selected": "3.0.0",
+      "current": "6.0.1",
+      "latest": "6.0.1",
+      "selected": "6.0.1",
       "safeLatest": null,
       "status": "pending",
       "risk": "unknown",
@@ -4180,9 +4187,9 @@
       "manifestPath": "dune-project",
       "workspace": "",
       "workspaceName": null,
-      "current": "3.0.0",
-      "latest": "3.0.0",
-      "selected": "3.0.0",
+      "current": "6.0.1",
+      "latest": "6.0.1",
+      "selected": "6.0.1",
       "safeLatest": null,
       "status": "pending",
       "risk": "unknown",
@@ -4201,9 +4208,9 @@
       "manifestPath": "dune-project",
       "workspace": "",
       "workspaceName": null,
-      "current": "3.0.0",
-      "latest": "3.0.0",
-      "selected": "3.0.0",
+      "current": "6.0.1",
+      "latest": "6.0.1",
+      "selected": "6.0.1",
       "safeLatest": null,
       "status": "pending",
       "risk": "unknown",
@@ -4222,9 +4229,9 @@
       "manifestPath": "dune-project",
       "workspace": "",
       "workspaceName": null,
-      "current": "3.0.0",
-      "latest": "3.0.0",
-      "selected": "3.0.0",
+      "current": "6.0.1",
+      "latest": "6.0.1",
+      "selected": "6.0.1",
       "safeLatest": null,
       "status": "pending",
       "risk": "unknown",
@@ -4243,7 +4250,7 @@
       "manifestPath": "dune-project",
       "workspace": "",
       "workspaceName": null,
-      "current": "3.0.0",
+      "current": "6.0.1",
       "latest": "6.1.1",
       "selected": "6.1.1",
       "safeLatest": "6.1.1",
@@ -4267,7 +4274,7 @@
       "manifestPath": "dune-project",
       "workspace": "",
       "workspaceName": null,
-      "current": "3.0.0",
+      "current": "6.0.1",
       "latest": "6.1.1",
       "selected": "6.1.1",
       "safeLatest": "6.1.1",
@@ -4283,48 +4290,6 @@
         "Drift has no computed API-surface diff for opam; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for mirage-kv 6.1.1, and no source repository could be resolved for it.",
         "OSV has no advisory coverage for opam packages, so this upgrade's effect on known vulnerabilities could not be looked up."
       ],
-      "breaking": []
-    },
-    {
-      "name": "ocurl",
-      "ecosystem": "opam",
-      "manifestPath": "dune-project",
-      "workspace": "",
-      "workspaceName": null,
-      "current": "0.9.2",
-      "latest": "0.9.2",
-      "selected": "0.9.2",
-      "safeLatest": null,
-      "status": "pending",
-      "risk": "unknown",
-      "summary": "",
-      "recommendation": null,
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 0,
-      "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "ocurl",
-      "ecosystem": "opam",
-      "manifestPath": "dune-project",
-      "workspace": "",
-      "workspaceName": null,
-      "current": "0.9.2",
-      "latest": "0.9.2",
-      "selected": "0.9.2",
-      "safeLatest": null,
-      "status": "pending",
-      "risk": "unknown",
-      "summary": "",
-      "recommendation": null,
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 0,
-      "gaps": [],
       "breaking": []
     },
     {
