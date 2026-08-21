@@ -17,6 +17,7 @@ import { assessLicense } from './license.js';
 import { describeAdditions, improvementsFrom, summarizeRelease } from './summary.js';
 import { assessUpgrade } from './assess.js';
 import type { SecurityAssessment, UpgradeRationale } from './types.js';
+import type { RuntimeDeclaration } from './runtime.js';
 
 /**
  * Stage 3b — why this upgrade might be worth taking.
@@ -47,6 +48,8 @@ export interface RationaleContext {
   prose?: Map<string, ProseSource[]>;
   /** Precomputed security assessments, keyed by the exact upgrade object. */
   security?: Map<DependencyChange, SecurityAssessment>;
+  /** Where this repository declares its own Node.js version. See {@link RuntimeDeclaration}. */
+  repoRuntime?: readonly RuntimeDeclaration[];
 }
 
 export interface RationaleInput {
@@ -123,6 +126,7 @@ async function rationaleFor(
         repository,
         currentVersion,
         targetVersion,
+        repoRuntime: ctx.repoRuntime,
       })
     : { facts: [] };
 
@@ -372,6 +376,7 @@ function degraded(change: DependencyChange, reason: string): UpgradeRationale {
 export * from './types.js';
 export { assessSecurity, assessSecurityBatch, mergeAliases, cvssBaseScore } from './osv.js';
 export { assessMaintenance, describeAge, raisesMinimum } from './maintenance.js';
+export { checkNodeCompatibility, findNodeDeclarations } from './runtime.js';
 export { assessLicense, isAllowed } from './license.js';
 export { summarizeRelease, classify, bulletLines, improvementsFrom, describeAdditions } from './summary.js';
 export { assessUpgrade, RECOMMENDATION_LABEL } from './assess.js';

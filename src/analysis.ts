@@ -28,6 +28,7 @@ import { findCommunityRecipe } from './remediation/registry.js';
 import type { CommunityRecipeCandidate } from './remediation/types.js';
 import { buildPlan } from './plan/index.js';
 import { buildRationale } from './rationale/index.js';
+import { findNodeDeclarations, type RuntimeDeclaration } from './rationale/runtime.js';
 import type { SurfaceAddition, SurfaceUnavailable } from './evidence/surface/types.js';
 import type { AnalysisGap, CheckedSurface, VerificationOutcome } from './confidence/types.js';
 import { behaviouralFindingKind, runBehaviouralVerification } from './verification/behavioural.js';
@@ -227,6 +228,11 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
 
   /* Stage 5 — localize */
   const impactSites: RemediationPlan['impactSites'] = [];
+  // Populated below, in the same pass that reads the repository for
+  // localization -- a dependency's runtime floor is a property of this
+  // repository, not of any one breaking change, so it is gathered once and
+  // handed to every maintenance assessment rather than re-read per change.
+  let repoRuntime: RuntimeDeclaration[] = [];
   // Whether the search actually happened, which is a different fact from
   // whether it found anything. Without this the plan cannot tell a reader that
   // zero impact sites meant "not searched".
@@ -258,6 +264,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     // manifest moved.
     const files = await walkSourceFiles(workspace, { members });
     const index = buildIndex(files);
+    repoRuntime = findNodeDeclarations(files);
 
     // What each package calls itself in source, read from the artefact the
     // registry published. Resolved once for the whole run — every dependency
@@ -534,7 +541,7 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   progress('rationale', 'Weighing what each upgrade is worth');
   const rationale = await buildRationale(
     { changes: actionable, evidence, breakingChanges, impactSites },
-    { config, logger, githubToken, additions, surfaceCompared: surfaceComputed, surfaceGaps, prose },
+    { config, logger, githubToken, additions, surfaceCompared: surfaceComputed, surfaceGaps, prose, repoRuntime },
   );
 
   /* Stage 8 — plan */
