@@ -1,6 +1,11 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkNodeCompatibility, findNodeDeclarations } from '../dist/rationale/index.js';
+import {
+  checkNodeCompatibility,
+  checkPythonCompatibility,
+  findNodeDeclarations,
+  findPythonDeclarations,
+} from '../dist/rationale/index.js';
 import { assessMaintenance } from '../dist/rationale/index.js';
 
 describe("finding this repository's own Node.js declarations", () => {
@@ -55,6 +60,72 @@ describe("finding this repository's own Node.js declarations", () => {
     const files = [{ path: 'src/index.ts', content: 'engines.node = "22"' }];
     assert.deepEqual(findNodeDeclarations(files), []);
   });
+
+  test('a workspace scope excludes a sibling workspace’s own declaration', () => {
+    const files = [
+      { path: 'packages/api/.nvmrc', content: '20.19.0' },
+      { path: 'packages/worker/.nvmrc', content: '18.0.0' },
+      { path: '.nvmrc', content: '22.6.0' },
+    ];
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api'), [
+      { file: 'packages/api/.nvmrc', line: 1, requirement: '20.19.0' },
+      { file: '.nvmrc', line: 1, requirement: '22.6.0' },
+    ]);
+  });
+});
+
+describe("finding this repository's own Python declarations", () => {
+  test('reads requires-python out of pyproject.toml’s [project] table', () => {
+    const files = [
+      {
+        path: 'pyproject.toml',
+        content: ['[project]', 'name = "demo"', 'requires-python = ">=3.9"', '', '[tool.poetry]', 'name = "demo"'].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: 'pyproject.toml', line: 3, requirement: '>=3.9' }]);
+  });
+
+  test('a requires-python-looking key outside [project] is not read as the declaration', () => {
+    const files = [
+      {
+        path: 'pyproject.toml',
+        content: ['[tool.other]', 'requires-python = ">=2.7"', '', '[project]', 'name = "demo"'].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), []);
+  });
+
+  test('reads python_requires out of setup.cfg’s [options] section', () => {
+    const files = [
+      { path: 'setup.cfg', content: ['[metadata]', 'name = demo', '', '[options]', 'python_requires = >=3.8,<4'].join('\n') },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: 'setup.cfg', line: 5, requirement: '>=3.8,<4' }]);
+  });
+
+  test('reads only a literal python_requires keyword argument out of setup.py', () => {
+    const files = [
+      {
+        path: 'setup.py',
+        content: ['from setuptools import setup', '', 'setup(', '    name="demo",', '    python_requires=">=3.10",', ')'].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: 'setup.py', line: 5, requirement: '>=3.10' }]);
+  });
+
+  test('a computed python_requires in setup.py is left out rather than evaluated', () => {
+    const files = [{ path: 'setup.py', content: 'setup(python_requires=MIN_PYTHON)' }];
+    assert.deepEqual(findPythonDeclarations(files), []);
+  });
+
+  test('reads .python-version as a pin', () => {
+    const files = [{ path: '.python-version', content: '3.11\n' }];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: '.python-version', line: 1, requirement: '3.11' }]);
+  });
+
+  test('reads runtime.txt, stripping the "python-" prefix some platforms use', () => {
+    const files = [{ path: 'runtime.txt', content: 'python-3.11.4' }];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: 'runtime.txt', line: 1, requirement: '3.11.4' }]);
+  });
 });
 
 describe('checking this repository against a raised requirement', () => {
@@ -87,6 +158,23 @@ describe('checking this repository against a raised requirement', () => {
       checkNodeCompatibility([{ file: 'Dockerfile', line: 1, requirement: 'lts' }], '>=22.13.0'),
       [],
     );
+  });
+});
+
+describe('checking this repository against a raised Python requirement', () => {
+  test('a floor entirely inside the new range is compatible', () => {
+    const results = checkPythonCompatibility([{ file: 'pyproject.toml', line: 1, requirement: '>=3.11' }], '>=3.9');
+    assert.equal(results[0].verdict, 'compatible');
+  });
+
+  test('a floor with no overlap at all is incompatible', () => {
+    const results = checkPythonCompatibility([{ file: '.python-version', line: 1, requirement: '3.6' }], '>=3.9');
+    assert.equal(results[0].verdict, 'incompatible');
+  });
+
+  test('a declared floor that admits versions the new floor rejects is only partial, not compatible', () => {
+    const results = checkPythonCompatibility([{ file: 'pyproject.toml', line: 1, requirement: '>=3.8' }], '>=3.9,<4');
+    assert.equal(results[0].verdict, 'partial');
   });
 });
 
