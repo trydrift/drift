@@ -154,6 +154,10 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
   return (
     <div
       ref={root}
+      // The run resizes this panel on a timer while a visitor may still be
+      // scrolling past it; the browser's scroll anchoring overcorrects for
+      // that into a visible jump, so this panel opts out of it.
+      style={{ overflowAnchor: "none" }}
       className="overflow-hidden rounded-2xl border border-border bg-surface/60 shadow-lg backdrop-blur-sm"
     >
       {/* Title bar — editor chrome, so the panel reads as a tool rather than a
