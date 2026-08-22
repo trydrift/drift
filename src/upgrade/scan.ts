@@ -1340,9 +1340,23 @@ export async function reanalyzeUpgrade(args: {
   const indexing = walkSourceFiles(args.root).then((files) => ({ files, index: buildIndex(files) }));
   indexing.catch(() => undefined);
   const fs = args.fs ?? nodeWorkspaceFs();
-  const allMembers = await detectWorkspaces(args.root, fs)
-    .then(memberDirectories)
-    .catch(() => (args.candidate.workspace === undefined ? [] : [args.candidate.workspace]));
+  // Must match the member universe `scanUpgrades` computed for the original
+  // scan — declared workspace members *and* undeclared nested projects (this
+  // repository's own layout: a root `package.json` plus an undeclared
+  // `extension/package.json`) — via the same `scanDirectories` helper, or a
+  // package correctly scoped during the scan gets incorrectly scoped the
+  // moment it is reanalyzed. `detectWorkspaces` alone only sees declared
+  // members and would silently drop an undeclared one like `extension`
+  // from `allMembers`, which then can't own its own runtime declarations.
+  //
+  // This does not account for the original scan having been restricted to a
+  // caller-supplied subset of directories (`scanUpgrades({ dirs })`) — that
+  // restriction is not persisted on the candidate, so a reanalysis after a
+  // custom-`dirs` scan re-derives the full repository's member universe
+  // rather than the narrower one actually scanned.
+  const allMembers = await scanDirectories(args.root, fs).catch(() =>
+    args.candidate.workspace === undefined ? [] : [args.candidate.workspace],
+  );
 
   return analyzeUpgrade({
     dep,
