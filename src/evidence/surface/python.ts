@@ -5,7 +5,9 @@ import { readArchive } from '../../util/archive.js';
 import { isAvailable } from '../../util/exec.js';
 import { fetchArchive, fetchJson } from '../../util/http.js';
 import { readComputed, writeComputed } from '../../util/artifact-cache.js';
+import { fetchRegistryInfo } from '../registry.js';
 import { diffSurfaces, type SurfaceApi, type SurfaceEntry, type SurfaceKind } from '../type-surface.js';
+import { matchesVersion } from './c.js';
 import { unavailable, type SurfaceProvider, type SurfaceRequest, type SurfaceOutcome } from './types.js';
 
 /**
@@ -65,17 +67,26 @@ export const pythonSurface: SurfaceProvider = {
     const after = await surfaceOf(request, request.to, scriptPath, analyzer);
     if (!after.ok) return after.failure;
 
+    // PyPI's sdist/wheel is the artifact actually installed; a GitHub tag is
+    // only reached when that archive could not be read, and is never a
+    // guaranteed match for it — so a reader comparing this diff against PyPI
+    // is told when the source underneath it was the fallback, not the
+    // canonical published artifact.
+    const fallbackNote = before.usedGitHubFallback || after.usedGitHubFallback ? '; source: GitHub tag mirror, PyPI archive was unreadable' : '';
+
     return {
       available: true,
       changes: diffSurfaces(before.api, after.api),
       tool: TOOL,
       weight: WEIGHT,
-      locator: `${request.name} ${request.from} → ${request.to} (public symbols, best-effort)`,
+      locator: `${request.name} ${request.from} → ${request.to} (public symbols, best-effort${fallbackNote})`,
     };
   },
 };
 
-type SurfaceAttempt = { ok: true; api: SurfaceApi } | { ok: false; failure: SurfaceOutcome };
+type SurfaceAttempt =
+  | { ok: true; api: SurfaceApi; usedGitHubFallback: boolean }
+  | { ok: false; failure: SurfaceOutcome };
 
 /**
  * The parsed public surface of one published version, computed at most once
@@ -106,7 +117,7 @@ async function surfaceOf(
   // Stored as entry pairs: a `Map` is not JSON, and every field of a
   // `SurfaceEntry` is a string or an array of them, so the round trip is exact.
   const remembered = await readComputed<[string, SurfaceEntry][]>(key);
-  if (remembered) return { ok: true, api: new Map(remembered) };
+  if (remembered) return { ok: true, api: new Map(remembered), usedGitHubFallback: false };
 
   const computed = await computeSurfaceOf(request, version, scriptPath);
   if (computed.ok) await writeComputed(key, [...computed.api]);
@@ -133,25 +144,38 @@ async function computeSurfaceOf(
   const dir = join(request.workdir, `probe-${version.replace(/[^\w.-]/g, '_')}`);
 
   let bytes: Buffer;
+  let usedGitHubFallback = false;
   try {
     await mkdir(dir, { recursive: true });
     const downloaded = await fetchArchive(source.url, { timeoutMs: request.timeoutMs, retries: 2 });
-    if (!downloaded.ok) {
-      return downloaded.status === 0
-        ? {
-            ok: false,
-            failure: unavailable(
-              TOOL,
-              'toolchain-failed',
-              `Could not download ${source.url}: ${downloaded.error ?? 'the request did not complete'}`,
-            ),
-          }
-        : {
-            ok: false,
-            failure: unavailable(TOOL, 'version-unavailable', `PyPI returned ${downloaded.status} for ${source.url}.`),
-          };
+    if (downloaded.ok) {
+      bytes = downloaded.bytes;
+    } else {
+      // PyPI's own archive is the canonical artifact — the one actually
+      // installed — so it is always tried first and never skipped in its
+      // favour. Only once it is genuinely unreadable is a GitHub tag tried,
+      // as a best-effort mirror: a tag can be missing, misnamed, or not
+      // bit-for-bit what PyPI published, so this is never preferred over a
+      // working PyPI response.
+      const fallback = await githubArchiveFallback(request.name, version, request.timeoutMs);
+      if (!fallback) {
+        return downloaded.status === 0
+          ? {
+              ok: false,
+              failure: unavailable(
+                TOOL,
+                'toolchain-failed',
+                `Could not download ${source.url}: ${downloaded.error ?? 'the request did not complete'}`,
+              ),
+            }
+          : {
+              ok: false,
+              failure: unavailable(TOOL, 'version-unavailable', `PyPI returned ${downloaded.status} for ${source.url}.`),
+            };
+      }
+      bytes = fallback;
+      usedGitHubFallback = true;
     }
-    bytes = downloaded.bytes;
   } catch (err) {
     return {
       ok: false,
@@ -232,7 +256,7 @@ async function computeSurfaceOf(
     };
   }
 
-  return { ok: true, api };
+  return { ok: true, api, usedGitHubFallback };
 }
 
 /**
@@ -262,6 +286,30 @@ export function safeRelativePath(entryPath: string): string | null {
 export interface SourceArchive {
   url: string;
   filename: string;
+}
+
+/**
+ * A best-effort mirror of a version's source, from its GitHub repository,
+ * for use only once PyPI's own archive is confirmed unreadable.
+ *
+ * Never preferred over PyPI: a git tag can be missing, misnamed, or scoped
+ * to a monorepo, so it is not guaranteed to be the exact artifact PyPI
+ * published — it is a fallback so a transient PyPI failure does not silently
+ * drop the surface diff, not a replacement source.
+ */
+async function githubArchiveFallback(name: string, version: string, timeoutMs: number): Promise<Buffer | null> {
+  const info = await fetchRegistryInfo(name, 'pypi', version);
+  if (!info?.githubRepo) return null;
+
+  const tags = await fetchJson<{ name?: string }[]>(`https://api.github.com/repos/${info.githubRepo}/tags?per_page=100`);
+  const tag = (tags ?? []).find((entry) => Boolean(entry.name) && matchesVersion(entry.name!, version))?.name;
+  if (!tag) return null;
+
+  const downloaded = await fetchArchive(`https://codeload.github.com/${info.githubRepo}/tar.gz/refs/tags/${tag}`, {
+    timeoutMs,
+    retries: 2,
+  });
+  return downloaded.ok ? downloaded.bytes : null;
 }
 
 /** The sdist if there is one, else a wheel — both are archives `tar` can open. */
