@@ -11,12 +11,7 @@ import { loadRecordings } from "@/lib/load";
 import { totalsOf, type Recording } from "@/lib/recordings";
 import { loadBenchmarks } from "@/lib/benchmarks";
 import { buildNarrative } from "@/lib/benchmark-narrative";
-import {
-  MAVEN_BREAKING_CHANGE_STUDY,
-  NPM_BREAKING_CHANGE_STUDY,
-  ELASTIC_DEPENDENCY_MAINTENANCE_CASE_STUDY,
-  WAGE_EQUIVALENT_ILLUSTRATION,
-} from "@/lib/external-citations";
+import { MAVEN_BREAKING_CHANGE_STUDY } from "@/lib/external-citations";
 
 /**
  * The landing page.
@@ -171,7 +166,7 @@ export default function Home() {
             <span className="text-faint">//</span> problem scale
           </p>
 
-          <div className="mt-5 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-3">
+          <div className="mt-5 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2">
             <StatCard
               value={MAVEN_BREAKING_CHANGE_STUDY.clientBreakRate}
               description="of dependency updates broke client code"
@@ -185,13 +180,6 @@ export default function Home() {
               sourceLine="same peer-reviewed study"
               title={`${MAVEN_BREAKING_CHANGE_STUDY.title} ${MAVEN_BREAKING_CHANGE_STUDY.scope}`}
               url={MAVEN_BREAKING_CHANGE_STUDY.url}
-            />
-            <StatCard
-              value={ELASTIC_DEPENDENCY_MAINTENANCE_CASE_STUDY.value}
-              description={ELASTIC_DEPENDENCY_MAINTENANCE_CASE_STUDY.description}
-              sourceLine={ELASTIC_DEPENDENCY_MAINTENANCE_CASE_STUDY.sourceLine}
-              title={`${ELASTIC_DEPENDENCY_MAINTENANCE_CASE_STUDY.title} ${ELASTIC_DEPENDENCY_MAINTENANCE_CASE_STUDY.scope}`}
-              url={ELASTIC_DEPENDENCY_MAINTENANCE_CASE_STUDY.url}
             />
           </div>
 
@@ -212,24 +200,6 @@ export default function Home() {
               </span>
             </p>
           </div>
-
-          <p className="mt-4 max-w-2xl text-[12.5px] leading-relaxed text-faint">
-            Corroborated in a second ecosystem:{" "}
-            <a
-              href={NPM_BREAKING_CHANGE_STUDY.url}
-              target="_blank"
-              rel="noreferrer"
-              className="underline decoration-dotted underline-offset-2 hover:text-muted"
-              title={NPM_BREAKING_CHANGE_STUDY.scope}
-            >
-              {NPM_BREAKING_CHANGE_STUDY.rate} of npm packages impacted by non-major breaking updates
-            </a>
-            . And the Elastic estimate, converted transparently — never a Drift savings claim:{" "}
-            <span className="font-medium text-foreground">{WAGE_EQUIVALENT_ILLUSTRATION.value}</span>{" "}
-            {WAGE_EQUIVALENT_ILLUSTRATION.label}
-            <br />
-            <span className="text-faint/80">*{WAGE_EQUIVALENT_ILLUSTRATION.footnote}</span>
-          </p>
         </section>
 
         {/* ── The demo, the outcome distribution, and the benchmark proof ─ */}
