@@ -13,9 +13,8 @@ import { loadBenchmarks } from "@/lib/benchmarks";
 import { buildNarrative } from "@/lib/benchmark-narrative";
 import {
   MAVEN_BREAKING_CHANGE_STUDY,
-  NPM_BREAKING_CHANGE_STUDY,
-  ELASTIC_DEPENDENCY_MAINTENANCE_CASE_STUDY,
-  WAGE_EQUIVALENT_ILLUSTRATION,
+  OUTDATED_SOFTWARE_COST_STUDY,
+  VULNERABLE_DEPENDENCIES_STUDY,
 } from "@/lib/external-citations";
 
 /**
@@ -112,8 +111,9 @@ export default function Home() {
             API diffs → exact call sites → reviewable fixes. Every finding linked to evidence.
           </p>
 
-          {/* Compact entry points, not a paragraph per surface — VS Code, CLI,
-              and the Action are all one click or one copy away right here. */}
+          {/* Compact entry points, not a paragraph per surface — VS Code and
+              the demo are the two actions, side by side; everything else
+              (benchmarks, the Action, the repo) is a link, not a button. */}
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <a
               href={MARKETPLACE}
@@ -129,10 +129,16 @@ export default function Home() {
             >
               Watch a Real Analysis
             </a>
-            <a href="#action" className="text-sm font-medium text-brand-text underline decoration-dotted underline-offset-2">
-              GitHub Action
-            </a>
           </div>
+
+          <p className="mt-3">
+            <Link
+              href="/benchmarks/"
+              className="text-sm font-medium text-brand-text underline decoration-dotted underline-offset-2"
+            >
+              See the benchmarks
+            </Link>
+          </p>
 
           <p className="mt-4 font-mono text-xs text-muted">
             <CopyCommand text="npm install -g @usedrift/cli">
@@ -142,9 +148,6 @@ export default function Home() {
 
           <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs text-faint">
             <span>{languages.join(" · ")}</span>
-            <Link href="/benchmarks/" className="text-brand-text underline decoration-dotted underline-offset-2">
-              See the benchmarks
-            </Link>
             <a
               href={GITHUB}
               target="_blank"
@@ -153,25 +156,29 @@ export default function Home() {
             >
               View on GitHub
             </a>
+            <a href="#action" className="text-brand-text underline decoration-dotted underline-offset-2">
+              GitHub Action
+            </a>
           </p>
         </section>
 
         {/* ── Problem scale ───────────────────────────────────────────── */}
         {/*
           Why an update bot's "it's semver-compliant" isn't the same claim as
-          "it's safe" — three sourced figures, no introductory paragraph. The
+          "it's safe" — four sourced figures, no introductory paragraph. The
           Maven study is the primary source (large, peer-reviewed, and about
-          breaking updates specifically); Elastic is a named case study, not
-          an industry average; both label their scope inline and in the
-          tooltip. Drift's own measured accuracy lives in its own section
-          later, not mixed in with these.
+          breaking updates specifically); the cost and vulnerability figures
+          are named, US-wide/industry studies, not Drift's own claims — every
+          card labels its scope inline and in the tooltip. Drift's own
+          measured accuracy lives in its own section later, not mixed in with
+          these.
         */}
         <section className="pt-14 sm:pt-20">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
             <span className="text-faint">//</span> problem scale
           </p>
 
-          <div className="mt-5 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-3">
+          <div className="mt-5 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               value={MAVEN_BREAKING_CHANGE_STUDY.clientBreakRate}
               description="of dependency updates broke client code"
@@ -187,11 +194,18 @@ export default function Home() {
               url={MAVEN_BREAKING_CHANGE_STUDY.url}
             />
             <StatCard
-              value={ELASTIC_DEPENDENCY_MAINTENANCE_CASE_STUDY.value}
-              description={ELASTIC_DEPENDENCY_MAINTENANCE_CASE_STUDY.description}
-              sourceLine={ELASTIC_DEPENDENCY_MAINTENANCE_CASE_STUDY.sourceLine}
-              title={`${ELASTIC_DEPENDENCY_MAINTENANCE_CASE_STUDY.title} ${ELASTIC_DEPENDENCY_MAINTENANCE_CASE_STUDY.scope}`}
-              url={ELASTIC_DEPENDENCY_MAINTENANCE_CASE_STUDY.url}
+              value={OUTDATED_SOFTWARE_COST_STUDY.value}
+              description={OUTDATED_SOFTWARE_COST_STUDY.description}
+              sourceLine={OUTDATED_SOFTWARE_COST_STUDY.sourceLine}
+              title={`${OUTDATED_SOFTWARE_COST_STUDY.title} ${OUTDATED_SOFTWARE_COST_STUDY.scope}`}
+              url={OUTDATED_SOFTWARE_COST_STUDY.url}
+            />
+            <StatCard
+              value={VULNERABLE_DEPENDENCIES_STUDY.value}
+              description={VULNERABLE_DEPENDENCIES_STUDY.description}
+              sourceLine={VULNERABLE_DEPENDENCIES_STUDY.sourceLine}
+              title={`${VULNERABLE_DEPENDENCIES_STUDY.title} ${VULNERABLE_DEPENDENCIES_STUDY.scope}`}
+              url={VULNERABLE_DEPENDENCIES_STUDY.url}
             />
           </div>
 
@@ -212,24 +226,6 @@ export default function Home() {
               </span>
             </p>
           </div>
-
-          <p className="mt-4 max-w-2xl text-[12.5px] leading-relaxed text-faint">
-            Corroborated in a second ecosystem:{" "}
-            <a
-              href={NPM_BREAKING_CHANGE_STUDY.url}
-              target="_blank"
-              rel="noreferrer"
-              className="underline decoration-dotted underline-offset-2 hover:text-muted"
-              title={NPM_BREAKING_CHANGE_STUDY.scope}
-            >
-              {NPM_BREAKING_CHANGE_STUDY.rate} of npm packages impacted by non-major breaking updates
-            </a>
-            . And the Elastic estimate, converted transparently — never a Drift savings claim:{" "}
-            <span className="font-medium text-foreground">{WAGE_EQUIVALENT_ILLUSTRATION.value}</span>{" "}
-            {WAGE_EQUIVALENT_ILLUSTRATION.label}
-            <br />
-            <span className="text-faint/80">*{WAGE_EQUIVALENT_ILLUSTRATION.footnote}</span>
-          </p>
         </section>
 
         {/* ── The demo, the outcome distribution, and the benchmark proof ─ */}

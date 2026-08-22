@@ -394,10 +394,10 @@ export function Pipeline() {
           always-open cards. */}
       <details className="group mt-4 rounded-2xl border border-border bg-surface/50">
         <summary className="flex cursor-pointer list-none items-center gap-3 p-4 sm:p-5 [&::-webkit-details-marker]:hidden">
-          <span className="min-w-0 flex-1 text-sm font-semibold text-foreground">
+          <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
             Verification rules &amp; confidence
           </span>
-          <span className="shrink-0 text-[12px] text-muted">
+          <span className="hidden min-w-0 shrink text-right text-[12px] text-muted md:block md:truncate">
             what counts as a gap, six silenced patterns, three confidence levels
           </span>
           <ChevronIcon className="size-4 shrink-0 text-faint transition-transform group-open:rotate-180" />
