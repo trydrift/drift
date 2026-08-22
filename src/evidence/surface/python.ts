@@ -103,9 +103,19 @@ type SurfaceAttempt =
  * parser would keep serving the answer it got wrong — a silent accuracy
  * regression, and the reason there is no TTL here instead.
  *
- * Only a *successful* surface is remembered. Every failure path below is either
- * a fact about this machine (no `python3`) or a transient one (a download that
- * did not land), and neither is a property of the version being asked about.
+ * Only a *successful* surface computed from PyPI's own archive is remembered.
+ * Every failure path below is either a fact about this machine (no `python3`)
+ * or a transient one (a download that did not land), and neither is a
+ * property of the version being asked about — but a surface computed from
+ * the GitHub-tag fallback (see `githubArchiveFallback`) is a property of
+ * *this run's* transient PyPI failure, not of the version, and is
+ * deliberately never written here. Caching it would let a single transient
+ * PyPI outage convert into a permanent, indefinitely-reused substitute for
+ * the canonical artifact — there is no TTL on this cache to age it back out
+ * — and every later scan would keep re-serving GitHub-derived data on a
+ * package whose real PyPI archive may have been reachable the whole time
+ * since. Leaving it uncached means the next call simply tries PyPI again
+ * first, the same as any other call.
  */
 async function surfaceOf(
   request: SurfaceRequest,
@@ -117,10 +127,12 @@ async function surfaceOf(
   // Stored as entry pairs: a `Map` is not JSON, and every field of a
   // `SurfaceEntry` is a string or an array of them, so the round trip is exact.
   const remembered = await readComputed<[string, SurfaceEntry][]>(key);
+  // Always `false`: a fallback-derived surface is never written under `key`
+  // below, so anything read back from it is guaranteed to be PyPI-derived.
   if (remembered) return { ok: true, api: new Map(remembered), usedGitHubFallback: false };
 
   const computed = await computeSurfaceOf(request, version, scriptPath);
-  if (computed.ok) await writeComputed(key, [...computed.api]);
+  if (computed.ok && !computed.usedGitHubFallback) await writeComputed(key, [...computed.api]);
   return computed;
 }
 
