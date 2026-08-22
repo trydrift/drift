@@ -605,6 +605,17 @@ avoid. MIT becoming AGPL inside a version bump is only surfaced this way when
 a policy that denies AGPL is actually configured, the same as any other
 violation.
 
+Enabling this with neither `allow` nor `deny` set denies nothing — there is no
+policy to violate — but it still changes what gets reported: a version where
+Drift could not read a license at all now surfaces as `unknown` rather than
+staying silent, because "no policy could be checked" is itself worth knowing
+once checking was asked for. That is distinct from a version whose license
+*stopped being readable between* the two versions, which is surfaced either
+way `enabled` is set — that is a fact about the metadata changing, not a
+policy question. Neither of these requires `requireDeclared`, which is a
+separate, stricter setting below: it turns an unreadable license into an
+outright policy violation rather than an `unknown` finding.
+
 ### `licenses.allow` · `licenses.deny`
 
 `string[]` — default **`[]`**
