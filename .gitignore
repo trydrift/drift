@@ -53,3 +53,8 @@ benchmarks/*
 # supersedes its own with `cases.jsonl.gz`. Committing both would publish the
 # same observations twice, uncompressed.
 eval/results/*/cases.partial.jsonl
+
+# Raw upstream evidence an external run fetches into its own results dir
+# (eval/src/external/cli.ts's evidenceRoot). Per-run, large, and reproducible
+# from the pinned source the run's manifest records — not worth redistributing.
+eval/results/*/evidence/
