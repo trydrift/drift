@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cn } from "@/lib/cn";
 import {
   CAPABILITY_STAGES,
@@ -8,6 +9,54 @@ import {
   type SupportLevel,
   type SupportTier,
 } from "@/lib/capabilities";
+
+/**
+ * The homepage summary of the same capability data the full matrix below
+ * renders — a count and the four stages that matter most to a first-time
+ * reader, not a retyped guess at them. `evidence`, `static-analysis`,
+ * `verify`, and `fix` are read out of `STAGE_LABEL`, the same generated
+ * labels the full matrix uses, so a stage rename in the core updates both
+ * places at once.
+ */
+const SUMMARY_STAGES: readonly (typeof CAPABILITY_STAGES)[number][] = [
+  "evidence",
+  "static-analysis",
+  "verify",
+  "fix",
+];
+
+export function EcosystemsSummary({ href }: { href: string }) {
+  return (
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <p className="font-mono text-3xl text-landing tabular">{ECOSYSTEM_CAPABILITIES.length}</p>
+        <p className="mt-1 text-[13px] text-muted">
+          ecosystems &mdash; {SUMMARY_STAGES.map((stage) => STAGE_LABEL[stage].toLowerCase()).join(" · ")}
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5 sm:max-w-md sm:justify-end">
+        {ECOSYSTEM_CAPABILITIES.map((capability) => (
+          <span
+            key={capability.ecosystem}
+            title={`${capability.label} — ${TIER_DESCRIPTION[capability.tier]}`}
+            className="flex items-center gap-1.5 rounded-md border border-border bg-surface-hover/50 px-2 py-1 font-mono text-[11px] text-muted"
+          >
+            <span className={cn("size-1.5 rounded-full", TIER_STYLE[capability.tier].dot)} />
+            {capability.ecosystem}
+          </span>
+        ))}
+      </div>
+
+      <Link
+        href={href}
+        className="shrink-0 text-[13px] font-medium text-brand-text underline decoration-dotted underline-offset-2"
+      >
+        Full support matrix →
+      </Link>
+    </div>
+  );
+}
 
 /**
  * Every ecosystem, and how far Drift actually gets in each.
