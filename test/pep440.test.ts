@@ -4,27 +4,77 @@ import { parseSpecifierSet, isSubsetInterval, intersectsInterval } from '../dist
 
 describe('parsing a PEP 440 specifier set into an interval', () => {
   test('a bare floor has no ceiling', () => {
-    assert.deepEqual(parseSpecifierSet('>=3.8'), { min: [3, 8], maxExclusive: null, imprecise: false });
+    assert.deepEqual(parseSpecifierSet('>=3.8'), {
+      min: { value: [3, 8], inclusive: true },
+      max: null,
+      imprecise: false,
+    });
   });
 
   test('a floor and a ceiling combine', () => {
-    assert.deepEqual(parseSpecifierSet('>=3.9,<4'), { min: [3, 9], maxExclusive: [4], imprecise: false });
+    assert.deepEqual(parseSpecifierSet('>=3.9,<4'), {
+      min: { value: [3, 9], inclusive: true },
+      max: { value: [4], inclusive: false },
+      imprecise: false,
+    });
   });
 
   test('a compatible-release operator becomes a floor and an exclusive ceiling', () => {
-    assert.deepEqual(parseSpecifierSet('~=3.10'), { min: [3, 10], maxExclusive: [4], imprecise: false });
+    assert.deepEqual(parseSpecifierSet('~=3.10'), {
+      min: { value: [3, 10], inclusive: true },
+      max: { value: [4], inclusive: false },
+      imprecise: false,
+    });
   });
 
   test('a more precise compatible-release operator only bumps its own precision', () => {
-    assert.deepEqual(parseSpecifierSet('~=3.10.2'), { min: [3, 10, 2], maxExclusive: [3, 11], imprecise: false });
+    assert.deepEqual(parseSpecifierSet('~=3.10.2'), {
+      min: { value: [3, 10, 2], inclusive: true },
+      max: { value: [3, 11], inclusive: false },
+      imprecise: false,
+    });
   });
 
-  test('a wildcard equality pins the whole minor line', () => {
-    assert.deepEqual(parseSpecifierSet('==3.8.*'), { min: [3, 8], maxExclusive: [3, 9], imprecise: false });
+  test('an explicit wildcard equality pins the whole minor line', () => {
+    assert.deepEqual(parseSpecifierSet('==3.8.*'), {
+      min: { value: [3, 8], inclusive: true },
+      max: { value: [3, 9], inclusive: false },
+      imprecise: false,
+    });
   });
 
-  test('a bare version with no operator is a pin, not a floor', () => {
-    assert.deepEqual(parseSpecifierSet('3.11'), { min: [3, 11], maxExclusive: [3, 12], imprecise: false });
+  test('an explicit exact equality with no wildcard is a single release, not a whole line', () => {
+    assert.deepEqual(parseSpecifierSet('==3.11'), {
+      min: { value: [3, 11], inclusive: true },
+      max: { value: [3, 11], inclusive: true },
+      imprecise: false,
+    });
+  });
+
+  test('an explicit exact equality at micro precision is just as narrow', () => {
+    assert.deepEqual(parseSpecifierSet('==3.11.4'), {
+      min: { value: [3, 11, 4], inclusive: true },
+      max: { value: [3, 11, 4], inclusive: true },
+      imprecise: false,
+    });
+  });
+
+  test('<=3.11 does not admit 3.11.x patch releases above it', () => {
+    const interval = parseSpecifierSet('<=3.11');
+    assert.deepEqual(interval, { min: null, max: { value: [3, 11], inclusive: true }, imprecise: false });
+    // The bug this guards: 3.11.4 must not satisfy <=3.11.
+    assert.equal(
+      isSubsetInterval({ min: { value: [3, 11, 4], inclusive: true }, max: { value: [3, 11, 4], inclusive: true }, imprecise: false }, interval),
+      false,
+    );
+  });
+
+  test('a bare version with no operator widens to the whole release line, not an exact pin', () => {
+    assert.deepEqual(parseSpecifierSet('3.11'), {
+      min: { value: [3, 11], inclusive: true },
+      max: { value: [3, 12], inclusive: false },
+      imprecise: false,
+    });
   });
 
   test('an exclusion alone cannot be expressed as an interval', () => {
@@ -34,9 +84,31 @@ describe('parsing a PEP 440 specifier set into an interval', () => {
 
   test('an exclusion alongside real bounds still keeps the bounds, marked imprecise', () => {
     const parsed = parseSpecifierSet('>=3.9,!=3.9.7,<4');
-    assert.deepEqual(parsed.min, [3, 9]);
-    assert.deepEqual(parsed.maxExclusive, [4]);
+    assert.deepEqual(parsed.min, { value: [3, 9], inclusive: true });
+    assert.deepEqual(parsed.max, { value: [4], inclusive: false });
     assert.equal(parsed.imprecise, true);
+  });
+
+  test('a prerelease suffix is never read as if it were the plain release', () => {
+    for (const spec of ['>=3.11.0rc1', '==3.11.0a1', '>=3.11.0b2', '==3.11.0.dev0']) {
+      assert.equal(parseSpecifierSet(spec).imprecise, true, `expected ${spec} to be imprecise`);
+    }
+  });
+
+  test('a post-release suffix is never read as if it were the plain release', () => {
+    assert.equal(parseSpecifierSet('>=3.11.0.post1').imprecise, true);
+  });
+
+  test('a local version identifier is never read as if it were the plain release', () => {
+    assert.equal(parseSpecifierSet('==3.11.0+local.1').imprecise, true);
+  });
+
+  test('an epoch is never silently dropped', () => {
+    assert.equal(parseSpecifierSet('>=1!3.11').imprecise, true);
+  });
+
+  test('unsupported syntax marks the set imprecise rather than being guessed at', () => {
+    assert.equal(parseSpecifierSet('not a specifier').imprecise, true);
   });
 });
 
@@ -67,8 +139,33 @@ describe('deciding whether one interval satisfies another', () => {
     assert.equal(isSubsetInterval(declared, required), false);
   });
 
+  test('an imprecise required interval is never confirmed as a subset either', () => {
+    const declared = parseSpecifierSet('>=3.11');
+    const required = parseSpecifierSet('>=3.9,!=3.9.7');
+    assert.equal(isSubsetInterval(declared, required), false);
+  });
+
   test('a pinned single version is a subset exactly when it falls inside the required range', () => {
     assert.equal(isSubsetInterval(parseSpecifierSet('3.9'), parseSpecifierSet('>=3.8,<4')), true);
     assert.equal(isSubsetInterval(parseSpecifierSet('3.7'), parseSpecifierSet('>=3.8,<4')), false);
+  });
+
+  test('an exact ==3.11 is not a subset of a floor it falls short of', () => {
+    assert.equal(isSubsetInterval(parseSpecifierSet('==3.11'), parseSpecifierSet('>=3.11.1')), false);
+  });
+
+  test('an exact ==3.11 is a subset of a range that contains it, and only it', () => {
+    const declared = parseSpecifierSet('==3.11');
+    assert.equal(isSubsetInterval(declared, parseSpecifierSet('>=3.9,<4')), true);
+    assert.equal(isSubsetInterval(declared, parseSpecifierSet('>=3.11.1,<4')), false);
+  });
+
+  test('inclusive and exclusive bounds at the same value are told apart', () => {
+    // declared <=3.11 is not a subset of required <3.11 — the boundary point
+    // 3.11 itself is allowed by the declared floor but not by the required one.
+    assert.equal(isSubsetInterval(parseSpecifierSet('<=3.11'), parseSpecifierSet('<3.11')), false);
+    // declared <3.11 is a subset of required <=3.11 — every point declared allows
+    // is strictly below 3.11, which required also allows.
+    assert.equal(isSubsetInterval(parseSpecifierSet('<3.11'), parseSpecifierSet('<=3.11')), true);
   });
 });
