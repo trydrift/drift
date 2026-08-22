@@ -11,7 +11,7 @@ import { loadRecordings } from "@/lib/load";
 import { totalsOf, type Recording } from "@/lib/recordings";
 import { loadBenchmarks } from "@/lib/benchmarks";
 import { buildNarrative } from "@/lib/benchmark-narrative";
-import { MAVEN_BREAKING_CHANGE_STUDY } from "@/lib/external-citations";
+import { MAVEN_BREAKING_CHANGE_STUDY, OUTDATED_SOFTWARE_COST_STUDY } from "@/lib/external-citations";
 
 /**
  * The landing page.
@@ -166,7 +166,7 @@ export default function Home() {
             <span className="text-faint">//</span> problem scale
           </p>
 
-          <div className="mt-5 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2">
+          <div className="mt-5 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-3">
             <StatCard
               value={MAVEN_BREAKING_CHANGE_STUDY.clientBreakRate}
               description="of dependency updates broke client code"
@@ -180,6 +180,13 @@ export default function Home() {
               sourceLine="same peer-reviewed study"
               title={`${MAVEN_BREAKING_CHANGE_STUDY.title} ${MAVEN_BREAKING_CHANGE_STUDY.scope}`}
               url={MAVEN_BREAKING_CHANGE_STUDY.url}
+            />
+            <StatCard
+              value={OUTDATED_SOFTWARE_COST_STUDY.value}
+              description={OUTDATED_SOFTWARE_COST_STUDY.description}
+              sourceLine={OUTDATED_SOFTWARE_COST_STUDY.sourceLine}
+              title={`${OUTDATED_SOFTWARE_COST_STUDY.title} ${OUTDATED_SOFTWARE_COST_STUDY.scope}`}
+              url={OUTDATED_SOFTWARE_COST_STUDY.url}
             />
           </div>
 

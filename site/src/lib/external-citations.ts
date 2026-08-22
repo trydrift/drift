@@ -34,6 +34,23 @@ export const MAVEN_BREAKING_CHANGE_STUDY = {
 } as const;
 
 /**
+ * Macro cost of outdated, poorly-maintained software across the US economy —
+ * cybersecurity incidents, operational failures, and technical-debt
+ * maintenance combined. A US-wide estimate, not a per-company figure, and
+ * labelled as such everywhere it's shown.
+ */
+export const OUTDATED_SOFTWARE_COST_STUDY = {
+  value: "$2.41T/year",
+  description:
+    "in cybersecurity incidents, operational failures, and maintenance of outdated systems, annually in the US.",
+  sourceLine: "CISQ / Synopsys, via American Enterprise Institute",
+  title:
+    'Consortium for Information & Software Quality (CISQ) and Synopsys research, as reported by the American Enterprise Institute, "Inside Tech’s $2 Trillion Technical Debt", January 2026.',
+  url: "https://www.aei.org/technology-and-innovation/inside-techs-2-trillion-technical-debt/",
+  scope: "US-wide estimate across the economy — not a claim about any single company or dependency.",
+} as const;
+
+/**
  * Support for structured dependency context as a useful input to automated
  * repair — not a claim that Drift has been evaluated head-to-head against
  * this benchmark.
