@@ -11,7 +11,11 @@ import { loadRecordings } from "@/lib/load";
 import { totalsOf, type Recording } from "@/lib/recordings";
 import { loadBenchmarks } from "@/lib/benchmarks";
 import { buildNarrative } from "@/lib/benchmark-narrative";
-import { MAVEN_BREAKING_CHANGE_STUDY, OUTDATED_SOFTWARE_COST_STUDY } from "@/lib/external-citations";
+import {
+  MAVEN_BREAKING_CHANGE_STUDY,
+  OUTDATED_SOFTWARE_COST_STUDY,
+  VULNERABLE_DEPENDENCIES_STUDY,
+} from "@/lib/external-citations";
 
 /**
  * The landing page.
@@ -187,6 +191,13 @@ export default function Home() {
               sourceLine={OUTDATED_SOFTWARE_COST_STUDY.sourceLine}
               title={`${OUTDATED_SOFTWARE_COST_STUDY.title} ${OUTDATED_SOFTWARE_COST_STUDY.scope}`}
               url={OUTDATED_SOFTWARE_COST_STUDY.url}
+            />
+            <StatCard
+              value={VULNERABLE_DEPENDENCIES_STUDY.value}
+              description={VULNERABLE_DEPENDENCIES_STUDY.description}
+              sourceLine={VULNERABLE_DEPENDENCIES_STUDY.sourceLine}
+              title={`${VULNERABLE_DEPENDENCIES_STUDY.title} ${VULNERABLE_DEPENDENCIES_STUDY.scope}`}
+              url={VULNERABLE_DEPENDENCIES_STUDY.url}
             />
           </div>
 

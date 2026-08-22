@@ -51,6 +51,21 @@ export const OUTDATED_SOFTWARE_COST_STUDY = {
 } as const;
 
 /**
+ * Open-source dependency risk at the codebase level — the security
+ * complement to the Maven/npm breaking-change studies above, which measure
+ * risk at the update level.
+ */
+export const VULNERABLE_DEPENDENCIES_STUDY = {
+  value: "86%",
+  description: "of commercial codebases contain at least one vulnerable open-source dependency.",
+  sourceLine: "Black Duck 2025 OSSRA report",
+  title: 'Black Duck Software, "2025 Open Source Security and Risk Analysis (OSSRA) Report", February 25, 2025.',
+  url: "https://news.blackduck.com/2025-02-25-New-Black-Duck-Report-86-of-Commercial-Codebases-Contain-Vulnerable-Open-Source,-Exposing-Organizations-to-Security-Risks",
+  scope:
+    "Audit of commercial codebases across industries. A vulnerable dependency, not necessarily a breaking or actively exploited one.",
+} as const;
+
+/**
  * Support for structured dependency context as a useful input to automated
  * repair — not a claim that Drift has been evaluated head-to-head against
  * this benchmark.
