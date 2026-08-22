@@ -392,7 +392,7 @@ export type ArchiveResult =
 
 export function fetchArchive(
   url: string,
-  options: { timeoutMs?: number; retries?: number } = {},
+  options: { timeoutMs?: number; retries?: number; maxBytes?: number } = {},
 ): Promise<ArchiveResult> {
   const cacheKey = `archive:${url}`;
   return coalesce(cacheKey, () => fetchArchiveUncoalesced(url, cacheKey, options));
@@ -401,7 +401,7 @@ export function fetchArchive(
 async function fetchArchiveUncoalesced(
   url: string,
   cacheKey: string,
-  options: { timeoutMs?: number; retries?: number },
+  options: { timeoutMs?: number; retries?: number; maxBytes?: number },
 ): Promise<ArchiveResult> {
   const host = profiling() ? hostOf(url) : '';
   const path = archivePath(cacheKey);
@@ -417,7 +417,7 @@ async function fetchArchiveUncoalesced(
   }
 
   const timeoutMs = options.timeoutMs ?? 60_000;
-  const { retries = 2 } = options;
+  const { retries = 2, maxBytes } = options;
   count('http.archive');
   for (let attempt = 0; attempt <= retries; attempt++) {
     const request = span('archive', host, attempt > 0 ? { attempt } : undefined);
@@ -430,7 +430,23 @@ async function fetchArchiveUncoalesced(
         await sleep(backoffMs(attempt, response.headers.get('retry-after')));
         continue;
       }
+      // Checked against the header before buffering the whole body, and never
+      // retried: a server that says up front it is sending more than the
+      // caller is willing to hold is not a transient failure to retry past.
+      const declaredLength = Number(response.headers.get('content-length'));
+      if (maxBytes !== undefined && Number.isFinite(declaredLength) && declaredLength > maxBytes) {
+        request.end({ status: response.status, bytes: declaredLength, oversized: true });
+        return { ok: false, status: response.status, error: `Response of ${declaredLength} bytes exceeds the ${maxBytes}-byte limit for this archive.` };
+      }
       const bytes = Buffer.from(await response.arrayBuffer());
+      // A server can omit or understate Content-Length, so the actual byte
+      // count is checked too — after buffering, since there is no way to cap
+      // `arrayBuffer()` mid-stream, but before it is ever written to the disk
+      // cache or handed to a caller that will decompress and unpack it.
+      if (maxBytes !== undefined && bytes.length > maxBytes) {
+        request.end({ status: response.status, bytes: bytes.length, oversized: true });
+        return { ok: false, status: response.status, error: `Response of ${bytes.length} bytes exceeds the ${maxBytes}-byte limit for this archive.` };
+      }
       request.end({ status: response.status, bytes: bytes.length });
       if (path) {
         try {

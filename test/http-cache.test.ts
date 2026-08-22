@@ -192,6 +192,38 @@ describe('downloading an immutable archive', () => {
     assert.match(result.error ?? '', /ECONNRESET/);
   });
 
+  test('a maxBytes ceiling rejects a response whose declared Content-Length is over it', async () => {
+    stub(() => new Response(new Uint8Array(10), { status: 200, headers: { 'Content-Length': String(100 * 1024 * 1024) } }));
+    const result = await fetchArchive('https://example.com/huge.tar.gz', { maxBytes: 1024, retries: 0 });
+    assert.equal(result.ok, false);
+    assert.match((result as { error?: string }).error ?? '', /exceeds the 1024-byte limit/);
+  });
+
+  test('a maxBytes ceiling also rejects a response with no (or an understated) Content-Length once the actual bytes exceed it', async () => {
+    stub(() => new Response(new Uint8Array(2048), { status: 200 }));
+    const result = await fetchArchive('https://example.com/undeclared.tar.gz', { maxBytes: 1024, retries: 0 });
+    assert.equal(result.ok, false);
+    assert.match((result as { error?: string }).error ?? '', /exceeds the 1024-byte limit/);
+  });
+
+  test('a response within the ceiling is unaffected by it', async () => {
+    stub(() => new Response(new Uint8Array([1, 2, 3]), { status: 200 }));
+    const result = await fetchArchive('https://example.com/small.tar.gz', { maxBytes: 1024 });
+    assert.ok(result.ok && result.bytes.length === 3);
+  });
+
+  test('an oversized response is not cached, so a later raised ceiling can still fetch it', async () => {
+    stub(() => new Response(new Uint8Array(2048), { status: 200 }));
+    const rejected = await fetchArchive('https://example.com/grows-into-limit.tar.gz', { maxBytes: 1024, retries: 0 });
+    assert.equal(rejected.ok, false);
+
+    clearHttpCache();
+    const retry = stub(() => new Response(new Uint8Array(2048), { status: 200 }));
+    const accepted = await fetchArchive('https://example.com/grows-into-limit.tar.gz', { maxBytes: 4096 });
+    assert.ok(accepted.ok && accepted.bytes.length === 2048);
+    assert.equal(retry.calls(), 1);
+  });
+
   test('two callers asking at once share one download', async () => {
     let calls = 0;
     globalThis.fetch = (() => {

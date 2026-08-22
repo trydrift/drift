@@ -314,6 +314,19 @@ export interface SourceArchive {
 }
 
 /**
+ * A generous ceiling for a repository archive fetched only as a last-resort
+ * mirror. A PyPI sdist is typically a few hundred KB to a few MB; a whole
+ * GitHub repository tarball for a large monorepo can be orders of magnitude
+ * larger, and unlike a registry artifact there is no separate size Drift
+ * already trusts going in. Buffering and decompressing an unbounded archive
+ * for a best-effort fallback is not a cost this is worth paying — a
+ * repository past this size fails the fallback the same way an unreadable
+ * PyPI archive already does, rather than risking memory/disk pressure on
+ * whatever happens to be checked out at that tag.
+ */
+const MAX_FALLBACK_ARCHIVE_BYTES = 25 * 1024 * 1024;
+
+/**
  * A best-effort mirror of a version's source, from its GitHub repository,
  * for use only once PyPI's own archive is confirmed unreadable.
  *
@@ -326,13 +339,26 @@ async function githubArchiveFallback(name: string, version: string, timeoutMs: n
   const info = await fetchRegistryInfo(name, 'pypi', version);
   if (!info?.githubRepo) return null;
 
-  const tags = await fetchJson<{ name?: string }[]>(`https://api.github.com/repos/${info.githubRepo}/tags?per_page=100`);
+  const tags = await fetchJson<{ name?: string; commit?: { sha?: string } }[]>(
+    `https://api.github.com/repos/${info.githubRepo}/tags?per_page=100`,
+  );
   const tag = matchingTag(tags ?? [], name, version);
   if (!tag) return null;
 
-  const downloaded = await fetchArchive(`https://codeload.github.com/${info.githubRepo}/tar.gz/refs/tags/${tag}`, {
+  // A tag ref is mutable — a maintainer can force-move it to point at a
+  // different commit at any time — so downloading by tag name would make the
+  // archive cache below (keyed by URL, with no TTL: see `fetchArchive`) able
+  // to permanently serve bytes from a commit the tag no longer points at.
+  // Resolving to the commit SHA the tags API already returned makes the
+  // download URL genuinely content-addressed, the same invariant every other
+  // archive in that cache relies on.
+  const sha = tags?.find((entry) => entry.name === tag)?.commit?.sha;
+  const ref = sha ?? `refs/tags/${tag}`;
+
+  const downloaded = await fetchArchive(`https://codeload.github.com/${info.githubRepo}/tar.gz/${ref}`, {
     timeoutMs,
     retries: 2,
+    maxBytes: MAX_FALLBACK_ARCHIVE_BYTES,
   });
   return downloaded.ok ? downloaded.bytes : null;
 }

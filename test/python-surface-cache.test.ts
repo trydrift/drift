@@ -244,6 +244,70 @@ describe('caching a Python surface computed via the GitHub fallback', () => {
   });
 });
 
+describe('the fallback archive is fetched by commit SHA, not by the mutable tag ref', () => {
+  test('downloads from the tag’s resolved commit SHA when the tags API supplies one', async () => {
+    // Both `from` and `to` are fetched, each its own tag and sha.
+    const name = 'demo-fallback-sha';
+    const shaFor = { 'v1.0.0': 'a'.repeat(40), 'v2.0.0': 'b'.repeat(40) };
+    const codeloadUrls: string[] = [];
+    stubFetch((url) => {
+      if (url === `https://pypi.org/pypi/${name}/json`) return new Response(JSON.stringify(pypiJson(name)), { status: 200 });
+      if (url.startsWith('https://files.pythonhosted.org/')) return new Response('unavailable', { status: 500 });
+      if (url.startsWith('https://api.github.com/repos/demo-org/'))
+        return new Response(
+          JSON.stringify([
+            { name: 'v1.0.0', commit: { sha: shaFor['v1.0.0'] } },
+            { name: 'v2.0.0', commit: { sha: shaFor['v2.0.0'] } },
+          ]),
+          { status: 200 },
+        );
+      if (url.startsWith('https://codeload.github.com/')) {
+        codeloadUrls.push(url);
+        return new Response(sdistBytes(name.replace(/-/g, '_')), { status: 200 });
+      }
+      return null;
+    });
+
+    const workdir = await mkdtemp(join(tmpdir(), 'drift-python-work-'));
+    const outcome = await pythonSurface.compute(await request(name, workdir));
+    await rm(workdir, { recursive: true, force: true });
+
+    assert.equal(outcome.available, true);
+    assert.equal(codeloadUrls.length, 2, 'both versions should have been downloaded via the fallback');
+    // A git tag can be force-moved to a different commit at any time. Caching
+    // the archive by URL (as fetchArchive does, with no TTL) is only safe
+    // once the URL is genuinely content-addressed — which a tag name alone
+    // is not, but a resolved commit SHA is.
+    assert.ok(codeloadUrls.some((url) => url.endsWith(`/${shaFor['v1.0.0']}`)));
+    assert.ok(codeloadUrls.some((url) => url.endsWith(`/${shaFor['v2.0.0']}`)));
+    assert.ok(codeloadUrls.every((url) => !url.includes('refs/tags')));
+  });
+
+  test('falls back to the tag ref when the tags API supplies no commit sha', async () => {
+    const name = 'demo-fallback-nosha';
+    const codeloadUrls: string[] = [];
+    stubFetch((url) => {
+      if (url === `https://pypi.org/pypi/${name}/json`) return new Response(JSON.stringify(pypiJson(name)), { status: 200 });
+      if (url.startsWith('https://files.pythonhosted.org/')) return new Response('unavailable', { status: 500 });
+      if (url.startsWith('https://api.github.com/repos/demo-org/'))
+        return new Response(JSON.stringify([{ name: 'v1.0.0' }, { name: 'v2.0.0' }]), { status: 200 });
+      if (url.startsWith('https://codeload.github.com/')) {
+        codeloadUrls.push(url);
+        return new Response(sdistBytes(name.replace(/-/g, '_')), { status: 200 });
+      }
+      return null;
+    });
+
+    const workdir = await mkdtemp(join(tmpdir(), 'drift-python-work-'));
+    const outcome = await pythonSurface.compute(await request(name, workdir));
+    await rm(workdir, { recursive: true, force: true });
+
+    assert.equal(outcome.available, true);
+    assert.ok(codeloadUrls.some((url) => url.endsWith('refs/tags/v1.0.0')));
+    assert.ok(codeloadUrls.some((url) => url.endsWith('refs/tags/v2.0.0')));
+  });
+});
+
 describe('picking the right repository tag for a PyPI fallback, in a repo hosting more than one package', () => {
   test('prefers a tag that names this package over an equally version-matching sibling', () => {
     const tags = [{ name: 'package-a-v1.0.0' }, { name: 'package-b-v1.0.0' }];
