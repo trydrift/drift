@@ -1,4 +1,4 @@
-import { test, describe } from 'node:test';
+import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   assessLicense,
@@ -396,6 +396,94 @@ describe('license policy', () => {
     });
     assert.equal(finding.verdict, 'ok');
   });
+
+  test('requireDeclared turns a missing license into a violation, not an unknown', async () => {
+    const finding = await assessLicense({
+      name: 'pkg',
+      ecosystem: 'go',
+      from: 'v1',
+      to: 'v2',
+      currentVersion: null,
+      targetVersion: null,
+      repository: null,
+      policy: policy({ allow: ['MIT'], requireDeclared: true }),
+    });
+    assert.equal(finding.verdict, 'policy-violation');
+    assert.match(finding.statement, /declares a license Drift could read/);
+  });
+
+  describe('introduced-dependency violations survive the early returns', () => {
+    const realFetch = globalThis.fetch;
+    const npmPackument = (license: string) => ({
+      versions: { latest: { license } },
+      time: {},
+    });
+
+    afterEach(() => {
+      globalThis.fetch = realFetch;
+    });
+
+    test('an allowed license change does not hide a denied introduced dependency', async () => {
+      globalThis.fetch = (() =>
+        Promise.resolve(new Response(JSON.stringify(npmPackument('AGPL-3.0'))))) as typeof fetch;
+
+      const version = (license: string, dependencies: string[] = []) => ({
+        version: 'v',
+        license,
+        releasedAt: null,
+        runtime: null,
+        dependencies,
+        withdrawn: null,
+      });
+
+      const finding = await assessLicense({
+        name: 'pkg',
+        ecosystem: 'npm',
+        from: '1.0.0',
+        to: '2.0.0',
+        currentVersion: version('MIT'),
+        targetVersion: version('BSD-3-Clause', ['bad-dep']),
+        repository: null,
+        policy: policy({ allow: ['MIT', 'BSD-3-Clause'], deny: ['AGPL-3.0'] }),
+      });
+
+      // Both versions are on the allowlist, so absent the introduced-dependency
+      // check this would be 'changed'. The regression was the early return in
+      // the license-change branch skipping `violating` entirely.
+      assert.equal(finding.verdict, 'policy-violation');
+      assert.match(finding.statement, /bad-dep/);
+    });
+
+    test('a missing own license does not hide a denied introduced dependency', async () => {
+      globalThis.fetch = (() =>
+        Promise.resolve(new Response(JSON.stringify(npmPackument('AGPL-3.0'))))) as typeof fetch;
+
+      const finding = await assessLicense({
+        name: 'pkg',
+        ecosystem: 'npm',
+        from: '1.0.0',
+        to: '2.0.0',
+        currentVersion: { version: 'v', license: 'MIT', releasedAt: null, runtime: null, dependencies: [], withdrawn: null },
+        targetVersion: {
+          version: 'v2',
+          license: null,
+          releasedAt: null,
+          runtime: null,
+          dependencies: ['bad-dep'],
+          withdrawn: null,
+        },
+        repository: null,
+        policy: policy({ allow: ['MIT'], deny: ['AGPL-3.0'] }),
+      });
+
+      // Own license going missing (MIT -> unreadable) would independently earn
+      // 'unknown'; the regression under test is that the denied introduced
+      // dependency must not be lost regardless, so the verdict escalates to a
+      // policy violation rather than settling for 'unknown'.
+      assert.equal(finding.verdict, 'policy-violation');
+      assert.match(finding.statement, /bad-dep/);
+    });
+  });
 });
 
 describe('release summaries', () => {
@@ -590,6 +678,23 @@ describe('the upgrade assessment', () => {
       input({ license: { verdict: 'policy-violation', statement: 'AGPL now', introduced: [] } }),
     );
     assert.equal(result.recommendation, 'do-not-upgrade-yet');
+  });
+
+  test('a benign license change is silent in reasons too, not just the rendered section', () => {
+    // renderLicense() suppresses 'changed' from the License section. If
+    // assessUpgrade still pushed the statement into `reasons`, it would
+    // resurface under "Why Drift concluded this" — the suppression would be
+    // cosmetic only.
+    const result = assessUpgrade(
+      input({
+        license: {
+          verdict: 'changed',
+          statement: 'The declared license changed from MIT to BSD-3-Clause.',
+          introduced: [],
+        },
+      }),
+    );
+    assert.equal(result.reasons.some((r: string) => /declared license changed/.test(r)), false);
   });
 
   test('mechanical impact needs review; a behaviour change needs a person', () => {

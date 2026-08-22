@@ -42,8 +42,27 @@ export async function assessLicense(input: LicenseInput): Promise<LicenseFinding
   const after = targetVersion?.license ?? repository?.license ?? null;
 
   const introduced = policy.enabled ? await introducedDependencies(input) : [];
+  const allowed = (license: string | null) => isAllowed(license, policy);
+  const violating = introduced.filter((dep) => !dep.allowed);
+  const introducedStatement = () =>
+    `This upgrade newly introduces ${violating.map((d) => `${d.name} (${d.license ?? 'no declared license'})`).join(', ')}, which the repository policy does not permit.`;
 
   if (!after && !before) {
+    // requireDeclared means a missing license is itself a violation, and that
+    // must be checked before the "nothing to report" shortcut below — the
+    // whole point of the flag is to stop a missing license from going quiet.
+    if (!allowed(after) || violating.length > 0) {
+      const parts: string[] = [];
+      if (!allowed(after)) {
+        parts.push(
+          `Neither ${name} ${input.from} nor ${input.to} declares a license Drift could read. The repository policy requires a declared license.`,
+        );
+      }
+      if (violating.length > 0) parts.push(introducedStatement());
+      parts.push(`The policy permits ${describePolicy(policy)}.`);
+      return { verdict: 'policy-violation', statement: parts.join(' '), introduced };
+    }
+
     // With no policy configured there is nothing this could have violated, and
     // "Go publishes no license metadata" printed against every Go dependency is
     // noise that trains people to skip the section. Only a repository that
@@ -57,18 +76,27 @@ export async function assessLicense(input: LicenseInput): Promise<LicenseFinding
     };
   }
 
-  const allowed = (license: string | null) => isAllowed(license, policy);
-  const violating = introduced.filter((dep) => !dep.allowed);
-
   if (before && after && !equivalent(before, after)) {
-    const statement = allowed(after)
-      ? `The declared license changed from ${before} to ${after}. It remains within this repository's configured policy.`
-      : `The declared license changed from ${before} to ${after}. This conflicts with the repository policy, which permits ${describePolicy(policy)}.`;
+    // A license change and a newly denied introduced dependency can both be
+    // true of the same upgrade; check both before deciding this is merely
+    // 'changed', so neither can hide behind the other's early return.
+    const ownViolation = !allowed(after);
+    if (ownViolation || violating.length > 0) {
+      const parts: string[] = [];
+      parts.push(
+        ownViolation
+          ? `The declared license changed from ${before} to ${after}, which the repository policy does not permit.`
+          : `The declared license changed from ${before} to ${after}.`,
+      );
+      if (violating.length > 0) parts.push(introducedStatement());
+      parts.push(`The policy permits ${describePolicy(policy)}.`);
+      return { verdict: 'policy-violation', from: before, to: after, statement: parts.join(' '), introduced };
+    }
     return {
-      verdict: allowed(after) ? 'changed' : 'policy-violation',
+      verdict: 'changed',
       from: before,
       to: after,
-      statement,
+      statement: `The declared license changed from ${before} to ${after}. It remains within this repository's configured policy.`,
       introduced,
     };
   }
@@ -78,7 +106,9 @@ export async function assessLicense(input: LicenseInput): Promise<LicenseFinding
       verdict: 'policy-violation',
       ...(before ? { from: before } : {}),
       ...(after ? { to: after } : {}),
-      statement: `${name} is licensed ${after}, which the repository policy does not permit. The policy permits ${describePolicy(policy)}.`,
+      statement: after
+        ? `${name} is licensed ${after}, which the repository policy does not permit. The policy permits ${describePolicy(policy)}.`
+        : `${name} ${input.to} declares no license Drift could read, though ${input.from} declared ${before}. The repository policy requires a declared license.`,
       introduced,
     };
   }
@@ -88,7 +118,7 @@ export async function assessLicense(input: LicenseInput): Promise<LicenseFinding
       verdict: 'policy-violation',
       ...(before ? { from: before } : {}),
       ...(after ? { to: after } : {}),
-      statement: `This upgrade newly introduces ${violating.map((d) => `${d.name} (${d.license ?? 'no declared license'})`).join(', ')}, which the repository policy does not permit. The policy permits ${describePolicy(policy)}.`,
+      statement: `${introducedStatement()} The policy permits ${describePolicy(policy)}.`,
       introduced,
     };
   }

@@ -120,7 +120,10 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     if (fact.concerning) reasons.push(fact.statement);
   }
 
-  if (license.verdict === 'policy-violation' || license.verdict === 'changed') {
+  // 'changed' is deliberately silent in the rendered License section for a
+  // benign change — reasons must not leak it back in through the details
+  // block, or the suppression is cosmetic only.
+  if (license.verdict === 'policy-violation') {
     reasons.push(license.statement);
   }
 

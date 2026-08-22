@@ -160,10 +160,13 @@ export const DriftConfigSchema = z.object({
    * compare against, and a tool that reports "the license is MIT" on every
    * upgrade is noise. A change of license between versions is always
    * detected, but only surfaced on its own when `enabled` is on and it
-   * actually violates the configured `allow`/`deny` — enabling this with
-   * neither list set reports nothing new, since nothing is denied. A
-   * license that stopped being readable between versions is surfaced either
-   * way; that is a fact about the metadata, not a policy question.
+   * actually violates the configured `allow`/`deny`. Enabling this with
+   * neither list set denies nothing, but still surfaces a version that
+   * declares no license Drift could read as `unknown` — that is new output,
+   * because "no policy could be checked" is itself worth knowing once
+   * checking was asked for. A license that stopped being readable between
+   * versions is surfaced either way; that is a fact about the metadata, not
+   * a policy question.
    */
   licenses: z
     .object({
