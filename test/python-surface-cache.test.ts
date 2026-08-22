@@ -244,6 +244,59 @@ describe('caching a Python surface computed via the GitHub fallback', () => {
   });
 });
 
+describe('timeoutMs is one shared deadline for the whole computation, not a per-attempt allowance', () => {
+  test('time already spent on the "from" version comes out of the budget left for "to"', async () => {
+    const name = 'demo-deadline';
+    stubFetch((url) => {
+      if (url === `https://pypi.org/pypi/${name}/json`) return new Response(JSON.stringify(pypiJson(name)), { status: 200 });
+      if (url.startsWith('https://files.pythonhosted.org/')) return new Response(sdistBytes(name.replace(/-/g, '_')), { status: 200 });
+      return null;
+    });
+
+    const parseTimeouts: number[] = [];
+    const slowExec: SurfaceRequest['exec'] = async (command, args, options) => {
+      if (command === 'python3' && args[0] === '--version') return { code: 0, stdout: 'Python 3.11.0', stderr: '' };
+      if (command === 'python3') {
+        parseTimeouts.push(options?.timeoutMs ?? -1);
+        // Simulates the "from" version's parse taking real wall-clock time —
+        // a large archive, a slow disk, a loaded machine — which is exactly
+        // the kind of time the old per-attempt timeout would have let the
+        // "to" version's own full budget re-appear after.
+        if (parseTimeouts.length === 1) await new Promise((resolve) => setTimeout(resolve, 300));
+        return {
+          code: 0,
+          stdout: JSON.stringify([{ name: 'thing', kind: 'function', signature: 'def thing()' }]),
+          stderr: '',
+        };
+      }
+      return { code: 1, stdout: '', stderr: 'unexpected command' };
+    };
+
+    const workdir = await mkdtemp(join(tmpdir(), 'drift-python-work-'));
+    const outcome = await pythonSurface.compute({
+      name,
+      from: '1.0.0',
+      to: '2.0.0',
+      exec: slowExec,
+      workdir,
+      logger: createLogger('error'),
+      timeoutMs: 1000,
+    });
+    await rm(workdir, { recursive: true, force: true });
+
+    assert.equal(outcome.available, true);
+    assert.equal(parseTimeouts.length, 2, 'both versions should have reached the parse step');
+    // A shared deadline means the second call's remaining budget must be
+    // meaningfully less than the full 1000ms the first call also received —
+    // a per-attempt timeout would hand the "to" version its own full 1000ms
+    // again regardless of how long "from" took.
+    assert.ok(
+      parseTimeouts[1]! < 1000 - 200,
+      `expected the second parse's timeout (${parseTimeouts[1]}) to reflect time already spent, not a fresh 1000ms`,
+    );
+  });
+});
+
 describe('the fallback archive is fetched by commit SHA, not by the mutable tag ref', () => {
   test('downloads from the tag’s resolved commit SHA when the tags API supplies one', async () => {
     // Both `from` and `to` are fetched, each its own tag and sha.

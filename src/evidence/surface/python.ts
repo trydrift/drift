@@ -71,9 +71,18 @@ export const pythonSurface: SurfaceProvider = {
     // script that reads it, and the interpreter that runs the script.
     const analyzer = `${SCRIPT_FINGERPRINT}/${await interpreterVersion(request)}`;
 
-    const before = await surfaceOf(request, request.from, scriptPath, analyzer);
+    // `timeoutMs` is documented as the wall-clock budget for the *whole*
+    // computation, not a per-attempt allowance to be handed out again at
+    // every retry. Below this point every PyPI attempt, GitHub-fallback
+    // attempt and parser invocation — for both `from` and `to` — draws down
+    // one shared deadline instead of each separately receiving the full
+    // budget, which is how a nominal three-minute computation could run for
+    // a very large multiple of three minutes under network failure.
+    const deadline = Date.now() + request.timeoutMs;
+
+    const before = await surfaceOf(request, request.from, scriptPath, analyzer, deadline);
     if (!before.ok) return before.failure;
-    const after = await surfaceOf(request, request.to, scriptPath, analyzer);
+    const after = await surfaceOf(request, request.to, scriptPath, analyzer, deadline);
     if (!after.ok) return after.failure;
 
     // PyPI's sdist/wheel is the artifact actually installed; a GitHub tag is
@@ -130,11 +139,17 @@ type SurfaceAttempt =
  * since. Leaving it uncached means the next call simply tries PyPI again
  * first, the same as any other call.
  */
+/** Time left before `deadline`, never negative. */
+function remainingMs(deadline: number): number {
+  return Math.max(0, deadline - Date.now());
+}
+
 async function surfaceOf(
   request: SurfaceRequest,
   version: string,
   scriptPath: string,
   analyzer: string,
+  deadline: number,
 ): Promise<SurfaceAttempt> {
   const key = `python-surface:${analyzer}:${request.name}@${version}`;
   // Stored as entry pairs: a `Map` is not JSON, and every field of a
@@ -144,7 +159,7 @@ async function surfaceOf(
   // below, so anything read back from it is guaranteed to be PyPI-derived.
   if (remembered) return { ok: true, api: new Map(remembered), usedGitHubFallback: false };
 
-  const computed = await computeSurfaceOf(request, version, scriptPath);
+  const computed = await computeSurfaceOf(request, version, scriptPath, deadline);
   if (computed.ok && !computed.usedGitHubFallback) await writeComputed(key, [...computed.api]);
   return computed;
 }
@@ -153,7 +168,24 @@ async function computeSurfaceOf(
   request: SurfaceRequest,
   version: string,
   scriptPath: string,
+  deadline: number,
 ): Promise<SurfaceAttempt> {
+  if (remainingMs(deadline) <= 0) {
+    // The other version (`from` or `to`) already spent the whole request
+    // budget — most likely retrying a download that kept failing. Starting
+    // this one anyway would mean a zero-timeout request whose only possible
+    // outcome is an abort, worded as if the network had just failed rather
+    // than as what actually happened.
+    return {
+      ok: false,
+      failure: unavailable(
+        TOOL,
+        'toolchain-failed',
+        `Ran out of time comparing ${request.name}'s public symbols before ${version} could be checked.`,
+      ),
+    };
+  }
+
   const source = await sourceArchiveUrl(request.name, version);
   if (!source) {
     return {
@@ -172,7 +204,7 @@ async function computeSurfaceOf(
   let usedGitHubFallback = false;
   try {
     await mkdir(dir, { recursive: true });
-    const downloaded = await fetchArchive(source.url, { timeoutMs: request.timeoutMs, retries: 2 });
+    const downloaded = await fetchArchive(source.url, { timeoutMs: remainingMs(deadline), retries: 2 });
     if (downloaded.ok) {
       bytes = downloaded.bytes;
     } else {
@@ -182,7 +214,11 @@ async function computeSurfaceOf(
       // as a best-effort mirror: a tag can be missing, misnamed, or not
       // bit-for-bit what PyPI published, so this is never preferred over a
       // working PyPI response.
-      const fallback = await githubArchiveFallback(request.name, version, request.timeoutMs);
+      // No point starting a fresh multi-retry network operation (tag lookup,
+      // then the archive itself) with nothing left of the budget to spend on
+      // it — the PyPI failure just recorded is the honest reason either way.
+      const fallback =
+        remainingMs(deadline) > 0 ? await githubArchiveFallback(request.name, version, remainingMs(deadline)) : null;
       if (!fallback) {
         return downloaded.status === 0
           ? {
@@ -251,7 +287,22 @@ async function computeSurfaceOf(
     };
   }
 
-  const read = await request.exec('python3', [scriptPath, dir], { timeoutMs: request.timeoutMs });
+  // `exec`'s underlying `child_process` `timeout` option treats `0` as
+  // "disabled" rather than "expired" — the opposite of what an exhausted
+  // budget must mean here — so this is checked explicitly rather than
+  // handing a possibly-zero `remainingMs(deadline)` straight through.
+  if (remainingMs(deadline) <= 0) {
+    return {
+      ok: false,
+      failure: unavailable(
+        TOOL,
+        'toolchain-failed',
+        `Ran out of time comparing ${request.name}'s public symbols before ${version}'s source could be parsed.`,
+      ),
+    };
+  }
+
+  const read = await request.exec('python3', [scriptPath, dir], { timeoutMs: remainingMs(deadline) });
   if (read.code !== 0) {
     return {
       ok: false,
