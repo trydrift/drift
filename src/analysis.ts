@@ -29,7 +29,7 @@ import type { CommunityRecipeCandidate } from './remediation/types.js';
 import { buildPlan } from './plan/index.js';
 import { buildRationale } from './rationale/index.js';
 import { findNodeDeclarations, findPythonDeclarations, type RuntimeDeclaration } from './rationale/runtime.js';
-import type { SurfaceAddition, SurfaceUnavailable } from './evidence/surface/types.js';
+import { CONFIDENT_SURFACE_WEIGHT, type SurfaceAddition, type SurfaceUnavailable } from './evidence/surface/types.js';
 import type { AnalysisGap, CheckedSurface, VerificationOutcome } from './confidence/types.js';
 import { behaviouralFindingKind, runBehaviouralVerification } from './verification/behavioural.js';
 import { fetchedPackageEnvironment } from './verification/environment.js';
@@ -197,7 +197,11 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     ...(workspace ? { workspaceRoot: workspace } : {}),
     onSurfaceComputed: (change, diff) => {
       const key = dependencyEcosystemKey(change);
-      surfaceComputed.add(key);
+      // A diff below this weight (currently only Python's GitHub-tag
+      // fallback) is too approximate to earn the automatic high confidence
+      // `judgeConfidence` gives any dependency it believes had a real
+      // computed API diff — see `CONFIDENT_SURFACE_WEIGHT`.
+      if (diff.weight >= CONFIDENT_SURFACE_WEIGHT) surfaceComputed.add(key);
       additions.set(key, { additions: diff.additions ?? [], locator: diff.locator });
     },
     onUnavailableSurface: (change, reason) => surfaceGaps.set(dependencyEcosystemKey(change), reason),

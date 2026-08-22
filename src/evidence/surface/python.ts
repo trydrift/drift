@@ -39,6 +39,15 @@ const REMEDY = 'Install Python 3 and make `python3` available on PATH.';
  */
 const WEIGHT = 0.9;
 
+/**
+ * Below `CONFIDENT_SURFACE_WEIGHT`, deliberately: a diff computed from the
+ * GitHub-tag fallback layers an unverified, possibly mismatched archive (see
+ * `matchingTag`) on top of the same static-reconstruction limitations `WEIGHT`
+ * already discounts for. The PyPI-sourced path is never downgraded — only
+ * the fallback used when PyPI's own archive was genuinely unreadable.
+ */
+const FALLBACK_WEIGHT = 0.6;
+
 export const pythonSurface: SurfaceProvider = {
   ecosystem: 'pypi',
   tool: TOOL,
@@ -72,13 +81,17 @@ export const pythonSurface: SurfaceProvider = {
     // guaranteed match for it — so a reader comparing this diff against PyPI
     // is told when the source underneath it was the fallback, not the
     // canonical published artifact.
-    const fallbackNote = before.usedGitHubFallback || after.usedGitHubFallback ? '; source: GitHub tag mirror, PyPI archive was unreadable' : '';
+    const usedFallback = before.usedGitHubFallback || after.usedGitHubFallback;
+    const fallbackNote = usedFallback ? '; source: GitHub tag mirror, PyPI archive was unreadable' : '';
 
     return {
       available: true,
       changes: diffSurfaces(before.api, after.api),
       tool: TOOL,
-      weight: WEIGHT,
+      // Genuinely lower confidence, not merely a note in the citation: below
+      // `CONFIDENT_SURFACE_WEIGHT`, so a fallback-derived diff does not earn
+      // the same automatic high confidence a real computed diff does.
+      weight: usedFallback ? FALLBACK_WEIGHT : WEIGHT,
       locator: `${request.name} ${request.from} → ${request.to} (public symbols, best-effort${fallbackNote})`,
     };
   },
@@ -314,7 +327,7 @@ async function githubArchiveFallback(name: string, version: string, timeoutMs: n
   if (!info?.githubRepo) return null;
 
   const tags = await fetchJson<{ name?: string }[]>(`https://api.github.com/repos/${info.githubRepo}/tags?per_page=100`);
-  const tag = (tags ?? []).find((entry) => Boolean(entry.name) && matchesVersion(entry.name!, version))?.name;
+  const tag = matchingTag(tags ?? [], name, version);
   if (!tag) return null;
 
   const downloaded = await fetchArchive(`https://codeload.github.com/${info.githubRepo}/tar.gz/refs/tags/${tag}`, {
@@ -322,6 +335,36 @@ async function githubArchiveFallback(name: string, version: string, timeoutMs: n
     retries: 2,
   });
   return downloaded.ok ? downloaded.bytes : null;
+}
+
+/**
+ * Which repository tag is this version, when a repository can host more than
+ * one PyPI distribution.
+ *
+ * `matchesVersion` strips a tag down to its trailing numeric run, so in a
+ * monorepo both `package-a-v1.0.0` and `package-b-v1.0.0` match version
+ * `1.0.0` equally — whichever tag happened to sort first would otherwise win,
+ * and the archive downloaded and parsed could be a sibling package's source
+ * with nothing to do with the PyPI distribution actually being diffed. A tag
+ * that also names this package is preferred; absent one, a bare version match
+ * is only trusted when there is exactly one candidate across the whole
+ * repository — more than one *is* the ambiguity this guards against, and
+ * guessing which one is correct is worse than not falling back at all.
+ */
+export function matchingTag(
+  tags: readonly { name?: string }[],
+  name: string,
+  version: string,
+): string | null {
+  const candidates = tags.filter(
+    (entry): entry is { name: string } => Boolean(entry.name) && matchesVersion(entry.name!, version),
+  );
+
+  const slug = name.toLowerCase().replace(/[_.]/g, '-');
+  const named = candidates.find((entry) => entry.name.toLowerCase().replace(/[_.]/g, '-').includes(slug));
+  if (named) return named.name;
+
+  return candidates.length === 1 ? candidates[0]!.name : null;
 }
 
 /** The sdist if there is one, else a wheel — both are archives `tar` can open. */

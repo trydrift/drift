@@ -4,10 +4,10 @@ import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
-import { pythonSurface } from '../dist/evidence/surface/python.js';
+import { matchingTag, pythonSurface } from '../dist/evidence/surface/python.js';
 import { clearHttpCache, configureHttpDiskCache } from '../dist/util/http.js';
 import { createLogger } from '../dist/util/logger.js';
-import type { SurfaceRequest } from '../dist/evidence/surface/types.js';
+import { CONFIDENT_SURFACE_WEIGHT, type SurfaceRequest } from '../dist/evidence/surface/types.js';
 
 /**
  * Provenance must survive caching.
@@ -196,5 +196,75 @@ describe('caching a Python surface computed via the GitHub fallback', () => {
     // The archive was never re-downloaded: the parsed surface came from the
     // artifact cache instead.
     assert.equal(pypiArchiveCalls, callsAfterFirst);
+  });
+
+  test('a fallback-derived diff carries a genuinely lower weight, not just a note in the citation', async () => {
+    const name = 'demo-fallback-weight';
+    stubFetch((url) => {
+      if (url === `https://pypi.org/pypi/${name}/json`) return new Response(JSON.stringify(pypiJson(name)), { status: 200 });
+      if (url.startsWith('https://files.pythonhosted.org/')) return new Response('unavailable', { status: 500 });
+      if (url.startsWith('https://api.github.com/repos/demo-org/'))
+        return new Response(JSON.stringify([{ name: 'v1.0.0' }, { name: 'v2.0.0' }]), { status: 200 });
+      if (url.startsWith('https://codeload.github.com/')) return new Response(sdistBytes(name.replace(/-/g, '_')), { status: 200 });
+      return null;
+    });
+
+    const workdir = await mkdtemp(join(tmpdir(), 'drift-python-work-'));
+    const outcome = await pythonSurface.compute(await request(name, workdir));
+    await rm(workdir, { recursive: true, force: true });
+
+    assert.equal(outcome.available, true);
+    if (!outcome.available) return;
+    // The PR description called this "lower-confidence", but the weight
+    // stayed the same 0.9 as a canonical PyPI diff -- so `judgeConfidence`
+    // (which treats any surface diff at or above CONFIDENT_SURFACE_WEIGHT as
+    // "a computed API diff ran", automatic high confidence) never actually
+    // downgraded anything.
+    assert.ok(
+      outcome.weight < CONFIDENT_SURFACE_WEIGHT,
+      `fallback-derived weight ${outcome.weight} must fall below the confident-surface threshold`,
+    );
+  });
+
+  test('a canonical PyPI-derived diff keeps its normal weight, at or above the confident threshold', async () => {
+    const name = 'demo-canonical-weight';
+    stubFetch((url) => {
+      if (url === `https://pypi.org/pypi/${name}/json`) return new Response(JSON.stringify(pypiJson(name)), { status: 200 });
+      if (url.startsWith('https://files.pythonhosted.org/')) return new Response(sdistBytes(name.replace(/-/g, '_')), { status: 200 });
+      return null;
+    });
+
+    const workdir = await mkdtemp(join(tmpdir(), 'drift-python-work-'));
+    const outcome = await pythonSurface.compute(await request(name, workdir));
+    await rm(workdir, { recursive: true, force: true });
+
+    assert.equal(outcome.available, true);
+    if (!outcome.available) return;
+    assert.ok(outcome.weight >= CONFIDENT_SURFACE_WEIGHT);
+  });
+});
+
+describe('picking the right repository tag for a PyPI fallback, in a repo hosting more than one package', () => {
+  test('prefers a tag that names this package over an equally version-matching sibling', () => {
+    const tags = [{ name: 'package-a-v1.0.0' }, { name: 'package-b-v1.0.0' }];
+    assert.equal(matchingTag(tags, 'package-a', '1.0.0'), 'package-a-v1.0.0');
+    assert.equal(matchingTag(tags, 'package-b', '1.0.0'), 'package-b-v1.0.0');
+  });
+
+  test('an unqualified bare-version match is trusted only when it is the sole candidate', () => {
+    assert.equal(matchingTag([{ name: 'v1.0.0' }], 'anything', '1.0.0'), 'v1.0.0');
+  });
+
+  test('two equally-plausible, unqualified tags are declined rather than guessed at', () => {
+    // Neither tag names the package Drift is actually looking for -- picking
+    // whichever sorted first used to mean the wrong sibling's source could be
+    // downloaded and diffed as if it were the PyPI distribution.
+    const tags = [{ name: 'v1.0.0' }, { name: 'release-1.0.0' }];
+    assert.equal(matchingTag(tags, 'some-package', '1.0.0'), null);
+  });
+
+  test('an exact tag match still wins even with an underscore/dash mismatch in the name', () => {
+    const tags = [{ name: 'my_package-1.2.3' }];
+    assert.equal(matchingTag(tags, 'my-package', '1.2.3'), 'my_package-1.2.3');
   });
 });

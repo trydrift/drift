@@ -95,6 +95,20 @@ export interface SurfaceDiff {
 
 export type SurfaceOutcome = SurfaceDiff | SurfaceUnavailable;
 
+/**
+ * Below this, a surface diff is too approximate to count as the strong
+ * "a computed API diff actually ran" signal `judgeConfidence` otherwise gives
+ * automatic `high` confidence to. Every provider's ordinary weight (0.8 and
+ * above — reconstructed-from-source providers like Python, Dart and Hex sit
+ * at 0.8–0.9; a true compiler-verified diff is 1.0) clears this, so nothing
+ * about their existing behavior changes. It exists for a diff that is
+ * approximate *and* was computed from a source the provider cannot vouch for
+ * — currently only Python's GitHub-tag fallback (see `python.ts`), which
+ * layers an unverified, possibly mismatched archive on top of an already
+ * approximate static reconstruction.
+ */
+export const CONFIDENT_SURFACE_WEIGHT = 0.8;
+
 export function isSurfaceDiff(outcome: SurfaceOutcome): outcome is SurfaceDiff {
   return outcome.available;
 }

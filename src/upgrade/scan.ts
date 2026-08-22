@@ -41,7 +41,12 @@ import { gatherEvidence } from '../evidence/index.js';
 import { buildRationale } from '../rationale/index.js';
 import { findNodeDeclarations, findPythonDeclarations } from '../rationale/runtime.js';
 import type { UpgradeRationale } from '../rationale/types.js';
-import type { SurfaceAddition, SurfaceUnavailable, ToolInstallRequest } from '../evidence/surface/types.js';
+import {
+  CONFIDENT_SURFACE_WEIGHT,
+  type SurfaceAddition,
+  type SurfaceUnavailable,
+  type ToolInstallRequest,
+} from '../evidence/surface/types.js';
 import type { ProseSource } from '../evidence/index.js';
 import { analyze } from '../analyze/index.js';
 import { walkSourceFiles } from '../index/walk.js';
@@ -1735,7 +1740,11 @@ async function analyzeUpgrade(args: {
       workspaceRoot: args.root,
       onSurfaceComputed: (computedChange, diff) => {
         const key = dependencyEcosystemKey(computedChange);
-        surfaceCompared.add(key);
+        // A diff below this weight (currently only Python's GitHub-tag
+        // fallback) is too approximate to earn the automatic high confidence
+        // `judgeConfidence` gives any dependency it believes had a real
+        // computed API diff — see `CONFIDENT_SURFACE_WEIGHT`.
+        if (diff.weight >= CONFIDENT_SURFACE_WEIGHT) surfaceCompared.add(key);
         additions.set(key, { additions: diff.additions ?? [], locator: diff.locator });
       },
       onUnavailableSurface: (unavailableChange, reason) =>
