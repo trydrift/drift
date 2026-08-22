@@ -224,6 +224,55 @@ describe('downloading an immutable archive', () => {
     assert.equal(retry.calls(), 1);
   });
 
+  test('a hanging server cannot make a 1s timeout take ~3s across three independent 1s retries', async () => {
+    // `timeoutMs` is the *whole* wall-clock budget, not a per-attempt
+    // allowance re-granted at every retry. A stub that never resolves except
+    // when its AbortSignal fires stands in for a hung connection: if each of
+    // the three attempts (`retries: 2`) got its own full 300ms timeout, this
+    // would take roughly 900ms plus backoff sleeps. One shared deadline means
+    // the budget is gone after (about) the first attempt, and every attempt
+    // after that returns immediately rather than starting a fresh 300ms wait.
+    globalThis.fetch = ((_url: string, opts?: { signal?: AbortSignal }) =>
+      new Promise((_resolve, reject) => {
+        const signal = opts?.signal;
+        if (!signal) return;
+        if (signal.aborted) {
+          reject(new DOMException('The operation was aborted.', 'AbortError'));
+          return;
+        }
+        signal.addEventListener('abort', () =>
+          reject(new DOMException('The operation was aborted.', 'AbortError')),
+        );
+      })) as typeof fetch;
+
+    const start = Date.now();
+    const result = await fetchArchive('https://example.com/hangs-forever.tar.gz', { timeoutMs: 300, retries: 2 });
+    const elapsed = Date.now() - start;
+
+    assert.equal(result.ok, false);
+    assert.ok(
+      elapsed < 900,
+      `expected well under the 3×300ms=900ms three independent full-timeout retries would take; took ${elapsed}ms`,
+    );
+  });
+
+  test('a cached archive larger than the current caller’s maxBytes is rejected, not silently served', async () => {
+    const first = stub(() => new Response(new Uint8Array(2048), { status: 200 }));
+    const cached = await fetchArchive('https://example.com/was-fine-before.tar.gz');
+    assert.ok(cached.ok && cached.bytes.length === 2048);
+    assert.equal(first.calls(), 1);
+
+    // Same URL, same disk-cache entry, but this caller's own ceiling is
+    // tighter than what got cached. The disk-cache read path must apply
+    // `maxBytes` too, not only the network path — and since the entry is
+    // still on disk, this necessarily goes back to the network rather than
+    // silently handing back the oversized cached bytes.
+    const second = stub(() => new Response(new Uint8Array(2048), { status: 200 }));
+    const result = await fetchArchive('https://example.com/was-fine-before.tar.gz', { maxBytes: 1024, retries: 0 });
+    assert.equal(result.ok, false);
+    assert.equal(second.calls(), 1, 'a caller with a tighter ceiling must not be served the oversized cache entry silently');
+  });
+
   test('two callers asking at once share one download', async () => {
     let calls = 0;
     globalThis.fetch = (() => {

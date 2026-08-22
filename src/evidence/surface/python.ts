@@ -186,7 +186,7 @@ async function computeSurfaceOf(
     };
   }
 
-  const source = await sourceArchiveUrl(request.name, version);
+  const source = await sourceArchiveUrl(request.name, version, remainingMs(deadline));
   if (!source) {
     return {
       ok: false,
@@ -218,7 +218,7 @@ async function computeSurfaceOf(
       // then the archive itself) with nothing left of the budget to spend on
       // it — the PyPI failure just recorded is the honest reason either way.
       const fallback =
-        remainingMs(deadline) > 0 ? await githubArchiveFallback(request.name, version, remainingMs(deadline)) : null;
+        remainingMs(deadline) > 0 ? await githubArchiveFallback(request.name, version, deadline) : null;
       if (!fallback) {
         return downloaded.status === 0
           ? {
@@ -412,15 +412,23 @@ const MAX_FALLBACK_ARCHIVE_BYTES = 25 * 1024 * 1024;
  * published — it is a fallback so a transient PyPI failure does not silently
  * drop the surface diff, not a replacement source.
  */
-async function githubArchiveFallback(name: string, version: string, timeoutMs: number): Promise<Buffer | null> {
+async function githubArchiveFallback(name: string, version: string, deadline: number): Promise<Buffer | null> {
+  // `deadline` is threaded through rather than a `timeoutMs` snapshot, so
+  // every step below — the tags lookup and the eventual archive download —
+  // draws down what is actually left of the *outer* budget at the moment it
+  // runs, instead of each independently re-spending a fixed allowance taken
+  // once at the top of this function.
   const info = await fetchRegistryInfo(name, 'pypi', version);
   if (!info?.githubRepo) return null;
+  if (remainingMs(deadline) <= 0) return null;
 
   const tags = await fetchJson<{ name?: string; commit?: { sha?: string } }[]>(
     `https://api.github.com/repos/${info.githubRepo}/tags?per_page=100`,
+    { timeoutMs: remainingMs(deadline) },
   );
   const tag = matchingTag(tags ?? [], name, version);
   if (!tag) return null;
+  if (remainingMs(deadline) <= 0) return null;
 
   // A tag ref is mutable — a maintainer can force-move it to point at a
   // different commit at any time — so downloading by tag name would make the
@@ -433,7 +441,7 @@ async function githubArchiveFallback(name: string, version: string, timeoutMs: n
   const ref = sha ?? `refs/tags/${tag}`;
 
   const downloaded = await fetchArchive(`https://codeload.github.com/${info.githubRepo}/tar.gz/${ref}`, {
-    timeoutMs,
+    timeoutMs: remainingMs(deadline),
     retries: 2,
     maxBytes: MAX_FALLBACK_ARCHIVE_BYTES,
   });
@@ -530,10 +538,14 @@ export function packageSubtree(paths: readonly string[], name: string): string |
 }
 
 /** The sdist if there is one, else a wheel — both are archives `tar` can open. */
-export async function sourceArchiveUrl(name: string, version: string): Promise<SourceArchive | null> {
+export async function sourceArchiveUrl(
+  name: string,
+  version: string,
+  timeoutMs?: number,
+): Promise<SourceArchive | null> {
   const data = await fetchJson<{
     releases?: Record<string, { url: string; filename: string; packagetype: string }[]>;
-  }>(`https://pypi.org/pypi/${encodeURIComponent(name)}/json`);
+  }>(`https://pypi.org/pypi/${encodeURIComponent(name)}/json`, timeoutMs !== undefined ? { timeoutMs } : {});
 
   const files = data?.releases?.[version] ?? [];
   const sdist = files.find((f) => f.packagetype === 'sdist');

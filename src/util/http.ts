@@ -419,29 +419,55 @@ async function fetchArchiveUncoalesced(
 ): Promise<ArchiveResult> {
   const host = profiling() ? hostOf(url) : '';
   const path = archivePath(cacheKey);
+  const { retries = 2, maxBytes } = options;
 
   if (path) {
     try {
       const cached = await readFile(path);
-      count('http.cache.archive');
-      return { ok: true, bytes: cached };
+      // `maxBytes` bounds this read too: a caller's size ceiling exists to
+      // protect what happens *after* this returns (decompression, an
+      // in-memory unpack) as much as the download itself, and a disk cache
+      // hit from an earlier, looser-limited call must not silently bypass
+      // whatever limit the *current* caller actually asked for.
+      if (maxBytes === undefined || cached.length <= maxBytes) {
+        count('http.cache.archive');
+        return { ok: true, bytes: cached };
+      }
     } catch {
       // Not cached yet, or unreadable. Either way, fetch it.
     }
   }
 
+  // `timeoutMs` is the whole wall-clock budget for this call, never a
+  // per-attempt allowance re-granted at every retry — a caller passing a 1s
+  // timeout with `retries: 2` must not be able to take up to 3s (three
+  // independent 1s attempts, each timing out on its own) before this
+  // returns. One absolute deadline is computed once; every attempt's fetch
+  // timeout and the backoff sleep between attempts both draw down whatever
+  // is left of it, and no new attempt starts once nothing meaningful remains.
   const timeoutMs = options.timeoutMs ?? 60_000;
-  const { retries = 2, maxBytes } = options;
+  const deadline = Date.now() + timeoutMs;
+  const remaining = () => deadline - Date.now();
+
   count('http.archive');
   for (let attempt = 0; attempt <= retries; attempt++) {
+    const budget = remaining();
+    if (budget <= 0) {
+      return { ok: false, status: 0, error: 'Timed out before this attempt could start.' };
+    }
+
     const request = span('archive', host, attempt > 0 ? { attempt } : undefined);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), budget);
     try {
-      const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+      const response = await fetch(url, { signal: controller.signal });
       if (!response.ok) {
         request.end({ status: response.status });
         const retryable = response.status === 429 || response.status >= 500;
         if (!retryable || attempt === retries) return { ok: false, status: response.status };
-        await sleep(backoffMs(attempt, response.headers.get('retry-after')));
+        const wait = Math.min(backoffMs(attempt, response.headers.get('retry-after')), remaining());
+        if (wait <= 0) return { ok: false, status: response.status };
+        await sleep(wait);
         continue;
       }
       // Checked against the header before buffering the whole body, and never
@@ -452,15 +478,17 @@ async function fetchArchiveUncoalesced(
         request.end({ status: response.status, bytes: declaredLength, oversized: true });
         return { ok: false, status: response.status, error: `Response of ${declaredLength} bytes exceeds the ${maxBytes}-byte limit for this archive.` };
       }
-      const bytes = Buffer.from(await response.arrayBuffer());
+
       // A server can omit or understate Content-Length, so the actual byte
-      // count is checked too — after buffering, since there is no way to cap
-      // `arrayBuffer()` mid-stream, but before it is ever written to the disk
-      // cache or handed to a caller that will decompress and unpack it.
-      if (maxBytes !== undefined && bytes.length > maxBytes) {
-        request.end({ status: response.status, bytes: bytes.length, oversized: true });
-        return { ok: false, status: response.status, error: `Response of ${bytes.length} bytes exceeds the ${maxBytes}-byte limit for this archive.` };
+      // count is enforced independently of it — streamed, so an oversized
+      // body is abandoned the moment it crosses the limit rather than fully
+      // buffered into memory first and only checked afterward.
+      const bytes = await readBounded(response, maxBytes, controller);
+      if (bytes === 'oversized') {
+        request.end({ status: response.status, oversized: true });
+        return { ok: false, status: response.status, error: `Response exceeds the ${maxBytes}-byte limit for this archive.` };
       }
+
       request.end({ status: response.status, bytes: bytes.length });
       if (path) {
         try {
@@ -479,11 +507,52 @@ async function fetchArchiveUncoalesced(
     } catch (err) {
       request.end({ status: 0 });
       if (attempt === retries) return { ok: false, status: 0, error: (err as Error).message };
-      await sleep(backoffMs(attempt, null));
+      const wait = Math.min(backoffMs(attempt, null), remaining());
+      if (wait <= 0) return { ok: false, status: 0, error: (err as Error).message };
+      await sleep(wait);
+    } finally {
+      clearTimeout(timer);
     }
   }
   // Unreachable: every loop iteration returns on its final attempt.
   return { ok: false, status: 0 };
+}
+
+/**
+ * Buffer a response body, aborting the moment it crosses `maxBytes` rather
+ * than after the whole thing has already been pulled into memory.
+ *
+ * `Content-Length` is checked before this runs, but a server can omit or
+ * understate it, and `response.arrayBuffer()` has no way to be capped
+ * mid-stream — it buffers everything unconditionally and only then hands
+ * back a size to check, by which point the memory (and the time spent
+ * receiving it) is already spent. Reading the body's own stream in chunks
+ * means an unbounded or merely-lying response is abandoned as soon as it is
+ * caught, not after.
+ */
+async function readBounded(
+  response: Response,
+  maxBytes: number | undefined,
+  controller: AbortController,
+): Promise<Buffer | 'oversized'> {
+  if (maxBytes === undefined || !response.body) {
+    return Buffer.from(await response.arrayBuffer());
+  }
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      controller.abort();
+      return 'oversized';
+    }
+    chunks.push(value);
+  }
+  return Buffer.concat(chunks);
 }
 
 function archivePath(key: string): string | null {
