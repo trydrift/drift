@@ -133,6 +133,38 @@ describe('scoping a runtime declaration to the workspace that owns it', () => {
     assert.equal(findNodeDeclarations(files, '', allMembers).length, 1);
   });
 
+  test('a root package.json engines field does not leak into a sibling member when the root is itself a member', () => {
+    // The root directory being a registered workspace member (allMembers
+    // includes '') means memberOf() attributes root-owned files to '' rather
+    // than null, the same as any other member's own files. A root package
+    // manifest describes the root package's own runtime, not the whole
+    // repository's, so it must not be treated as global the way a root
+    // .nvmrc or CI workflow is.
+    const files = [{ path: 'package.json', content: JSON.stringify({ engines: { node: '>=18' } }) }];
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), []);
+  });
+
+  test('the root package still sees its own package.json engines field', () => {
+    const files = [{ path: 'package.json', content: JSON.stringify({ engines: { node: '>=18' } }) }];
+    assert.deepEqual(findNodeDeclarations(files, '', allMembers), [
+      { file: 'package.json', line: 1, requirement: '>=18' },
+    ]);
+  });
+
+  test('a root pyproject.toml requires-python does not leak into a sibling member', () => {
+    const files = [
+      { path: 'pyproject.toml', content: ['[project]', 'requires-python = ">=3.9"'].join('\n') },
+    ];
+    assert.deepEqual(findPythonDeclarations(files, 'packages/api', allMembers), []);
+  });
+
+  test('a root-level .nvmrc still applies globally even when the root is itself a member', () => {
+    const files = [{ path: '.nvmrc', content: '18.18.0' }];
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
+      { file: '.nvmrc', line: 1, requirement: '18.18.0' },
+    ]);
+  });
+
   test('with no member list supplied, scoping is skipped rather than guessed at', () => {
     const files = [{ path: 'packages/worker/.nvmrc', content: '18.0.0' }];
     // `member` is known ('packages/api') but `allMembers` was never gathered —
@@ -190,6 +222,84 @@ describe("finding this repository's own Python declarations", () => {
   test('reads .python-version as a pin', () => {
     const files = [{ path: '.python-version', content: '3.11\n' }];
     assert.deepEqual(findPythonDeclarations(files), [{ file: '.python-version', line: 1, requirement: '3.11' }]);
+  });
+
+  test('.python-version reads every version pyenv lists, not just the first line', () => {
+    // Pyenv accepts multiple versions in this file, one per line or several
+    // whitespace-separated on one line, and treats `#`-prefixed lines as
+    // comments. Reading only the first line can miss an older version this
+    // repository still builds and runs on.
+    const files = [{ path: '.python-version', content: ['3.11', '# a comment', '3.8 3.9', ''].join('\n') }];
+    assert.deepEqual(findPythonDeclarations(files), [
+      { file: '.python-version', line: 1, requirement: '3.11' },
+      { file: '.python-version', line: 3, requirement: '3.8' },
+      { file: '.python-version', line: 3, requirement: '3.9' },
+    ]);
+  });
+
+  test('a stray older .python-version entry fails a raised floor even though the first line is compatible', () => {
+    const files = [{ path: '.python-version', content: '3.11\n3.8' }];
+    const declarations = findPythonDeclarations(files);
+    const results = checkPythonCompatibility(declarations, '>=3.10');
+    assert.deepEqual(
+      results.map((r) => r.verdict),
+      ['compatible', 'incompatible'],
+    );
+  });
+
+  test('setup.py ignores a commented-out python_requires', () => {
+    const files = [
+      {
+        path: 'setup.py',
+        content: [
+          'from setuptools import setup',
+          '',
+          '# python_requires=">=2.7"  (legacy, dropped)',
+          'setup(',
+          '    name="demo",',
+          ')',
+        ].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), []);
+  });
+
+  test('setup.py ignores a python_requires-looking assignment that is not an argument to setup()', () => {
+    const files = [
+      {
+        path: 'setup.py',
+        content: [
+          'from setuptools import setup',
+          '',
+          '# Not actually passed to setup() below -- a leftover from a refactor.',
+          'python_requires = ">=2.7"',
+          '',
+          'setup(',
+          '    name="demo",',
+          ')',
+        ].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), []);
+  });
+
+  test('setup.py still finds python_requires when the setup() call spans multiple lines with other kwargs', () => {
+    const files = [
+      {
+        path: 'setup.py',
+        content: [
+          'from setuptools import setup',
+          '',
+          'setup(',
+          '    name="demo",',
+          '    version="1.0",',
+          '    python_requires=">=3.10",',
+          '    packages=["demo"],',
+          ')',
+        ].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: 'setup.py', line: 6, requirement: '>=3.10' }]);
   });
 
   test('reads runtime.txt, stripping the "python-" prefix some platforms use', () => {

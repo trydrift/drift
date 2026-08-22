@@ -100,6 +100,16 @@ export function findNodeDeclarations(
  * attributes a dependency's own manifest to a workspace elsewhere in Drift,
  * rather than a second, independent guess at path prefixes.
  */
+/**
+ * Root-owned files that declare *a package's own* runtime, not the whole
+ * repository's. When the root directory is itself a workspace member,
+ * `memberOf` attributes these to `''` the same way it would attribute
+ * `packages/api/package.json` to `'packages/api'` — that is correct for
+ * finding the root package's own declaration, but wrong to then treat as
+ * repository-global the way a root `.nvmrc` or CI workflow is.
+ */
+const MANIFEST_BASENAMES = new Set(['package.json', 'pyproject.toml', 'setup.cfg', 'setup.py']);
+
 function scopedTo<T extends { path: string }>(
   files: readonly T[],
   member: string | undefined,
@@ -109,11 +119,21 @@ function scopedTo<T extends { path: string }>(
   const members = allMembers ?? [];
   return files.filter((f) => {
     const owner = memberOf(f.path, members);
-    // `owner === null`: no member directory claims this file — repository-
-    // global by construction. `owner === ''`: the root workspace's own
-    // files, which — like a top-level CI workflow or `.nvmrc` — conventionally
-    // describe the whole build, not just the root package's own runtime.
-    return owner === member || owner === null || owner === '';
+    if (owner === member) return true;
+    // No member directory claims this file at all — genuinely repository-
+    // global by construction (or the root is not itself a registered member).
+    if (owner === null) return true;
+    if (owner === '') {
+      // The root workspace's own files. A CI workflow, `.nvmrc`, or Dockerfile
+      // at the root conventionally governs the whole build regardless of
+      // which member happens to own the root directory — but a root package
+      // manifest is that package's own declared runtime, and must not leak
+      // into a sibling member's compatibility check just because the root
+      // happens to also be a workspace member.
+      const base = (f.path.split('/').pop() ?? '').toLowerCase();
+      return !MANIFEST_BASENAMES.has(base);
+    }
+    return false;
   });
 }
 
@@ -200,15 +220,25 @@ export function findPythonDeclarations(
     }
 
     if (base === 'setup.py') {
-      const line = lineOf(content, /python_requires\s*=/);
-      const match = /python_requires\s*=\s*(['"])([^'"]+)\1/.exec(content);
-      if (match?.[2]) out.push({ file: path, line, requirement: match[2] });
+      const call = extractSetupCall(content);
+      const match = call ? /\bpython_requires\s*=\s*(['"])([^'"]+)\1/.exec(call) : null;
+      if (match?.[2]) out.push({ file: path, line: lineOf(content, /python_requires\s*=/), requirement: match[2] });
       continue;
     }
 
     if (base === '.python-version') {
-      const requirement = content.trim().split('\n')[0]?.trim();
-      if (requirement) out.push({ file: path, line: 1, requirement });
+      // Pyenv allows more than one version in this file — one per line, or
+      // several whitespace-separated on one line — and treats a `#` line as a
+      // comment. Reading only the first line can miss an older version this
+      // repository also builds and runs on, which is exactly the version a
+      // compatibility verdict needs to fail against.
+      for (const [i, line] of content.split('\n').entries()) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+        for (const token of trimmed.split(/\s+/)) {
+          out.push({ file: path, line: i + 1, requirement: token });
+        }
+      }
       continue;
     }
 
@@ -249,6 +279,41 @@ function requiresPythonFromPyproject(content: string): { requirement: string; li
     if (requirement) return { requirement, line: i + 1 };
   }
 
+  return null;
+}
+
+/**
+ * Isolate the `setup(...)` invocation's argument list, so a `python_requires`
+ * mentioned in a comment or an unrelated assignment elsewhere in the file is
+ * never read as the package's declaration.
+ *
+ * Comment lines are blanked out first (a `#`-prefixed line only — a `#`
+ * appearing after code on the same line is left alone, since a bare regex
+ * cannot tell that apart from a `#` inside a string literal). The last
+ * `setup(`/`setuptools.setup(` call in the file is taken, since that is
+ * conventionally the actual invocation; anything named `def setup(...)` is
+ * excluded so a helper function of the same name is not mistaken for it.
+ */
+function extractSetupCall(content: string): string | null {
+  const withoutCommentLines = content
+    .split('\n')
+    .map((line) => (/^\s*#/.test(line) ? '' : line))
+    .join('\n');
+
+  const calls = [...withoutCommentLines.matchAll(/(?<!def\s+)\bsetup\s*\(/g)];
+  const last = calls.at(-1);
+  if (!last) return null;
+
+  const openIndex = last.index + last[0].length - 1;
+  let depth = 0;
+  for (let i = openIndex; i < withoutCommentLines.length; i++) {
+    const ch = withoutCommentLines[i];
+    if (ch === '(') depth++;
+    else if (ch === ')') {
+      depth--;
+      if (depth === 0) return withoutCommentLines.slice(openIndex, i + 1);
+    }
+  }
   return null;
 }
 
