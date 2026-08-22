@@ -111,8 +111,9 @@ export default function Home() {
             API diffs → exact call sites → reviewable fixes. Every finding linked to evidence.
           </p>
 
-          {/* Compact entry points, not a paragraph per surface — VS Code, CLI,
-              and the Action are all one click or one copy away right here. */}
+          {/* Compact entry points, not a paragraph per surface — VS Code and
+              the demo are the two actions, side by side; everything else
+              (benchmarks, the Action, the repo) is a link, not a button. */}
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <a
               href={MARKETPLACE}
@@ -128,10 +129,16 @@ export default function Home() {
             >
               Watch a Real Analysis
             </a>
-            <a href="#action" className="text-sm font-medium text-brand-text underline decoration-dotted underline-offset-2">
-              GitHub Action
-            </a>
           </div>
+
+          <p className="mt-3">
+            <Link
+              href="/benchmarks/"
+              className="text-sm font-medium text-brand-text underline decoration-dotted underline-offset-2"
+            >
+              See the benchmarks
+            </Link>
+          </p>
 
           <p className="mt-4 font-mono text-xs text-muted">
             <CopyCommand text="npm install -g @usedrift/cli">
@@ -141,9 +148,6 @@ export default function Home() {
 
           <p className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-xs text-faint">
             <span>{languages.join(" · ")}</span>
-            <Link href="/benchmarks/" className="text-brand-text underline decoration-dotted underline-offset-2">
-              See the benchmarks
-            </Link>
             <a
               href={GITHUB}
               target="_blank"
@@ -151,6 +155,9 @@ export default function Home() {
               className="text-brand-text underline decoration-dotted underline-offset-2"
             >
               View on GitHub
+            </a>
+            <a href="#action" className="text-brand-text underline decoration-dotted underline-offset-2">
+              GitHub Action
             </a>
           </p>
         </section>
