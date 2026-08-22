@@ -22,3 +22,46 @@ export const NPM_BREAKING_CHANGE_STUDY = {
   title: 'Ruan, H. et al., "I Depended on You and You Broke Me: An Empirical Study of Manifesting Breaking Changes in Client Packages", ACM TOSEM, 2023.',
   url: "https://arxiv.org/abs/2301.04563",
 } as const;
+
+/**
+ * General developer-maintenance time, not dependency-specific. The report
+ * puts the average developer's week at 17.3 hours on maintenance work —
+ * "debugging, refactoring code, or improving code quality" — of a 41.1-hour
+ * week. Quoted as a rounded "17+ hours" so the figure reads as what the
+ * report actually measured rather than a suspiciously precise decimal.
+ */
+export const DEVELOPER_MAINTENANCE_TIME_STUDY = {
+  value: "17+ hours/week",
+  description: "the average developer spends on maintenance such as debugging and refactoring.",
+  sourceLine: "Stripe, The Developer Coefficient",
+  title: 'Stripe, "The Developer Coefficient", 2018.',
+  url: "https://stripe.com/files/reports/the-developer-coefficient.pdf",
+  scope: "Survey of ~1,000 senior software developers and C-suite executives across the US, UK, France, Germany, Singapore, Ireland and India.",
+} as const;
+
+/**
+ * The same report's global opportunity-cost estimate from time spent on
+ * "bad code" — not narrowed to dependency upgrades specifically, because the
+ * report does not narrow it either.
+ */
+export const BAD_CODE_OPPORTUNITY_COST_STUDY = {
+  value: "~$85B/year",
+  description: 'estimated annual opportunity cost from developer time spent dealing with "bad code."',
+  sourceLine: "Stripe, The Developer Coefficient",
+  title: 'Stripe, "The Developer Coefficient", 2018.',
+  url: "https://stripe.com/files/reports/the-developer-coefficient.pdf",
+  scope: "Survey of ~1,000 senior software developers and C-suite executives across the US, UK, France, Germany, Singapore, Ireland and India.",
+} as const;
+
+/**
+ * Optional third figure. Kept out of the primary problem-scale pairing so
+ * the section doesn't grow past two numbers unless there's room for it.
+ */
+export const TECH_DEBT_BUDGET_DIVERSION_STUDY = {
+  value: "10–20%",
+  description: "of new-product technology budgets that CIOs report being diverted to resolving technical-debt issues.",
+  sourceLine: "McKinsey, Tech debt: Reclaiming tech equity",
+  title: 'McKinsey & Company, "Tech debt: Reclaiming tech equity", 2020.',
+  url: "https://www.mckinsey.com/capabilities/tech-and-ai/our-insights/tech-debt-reclaiming-tech-equity",
+  scope: "Survey of 50 CIOs at financial-services and technology firms with more than $1B in annual revenue.",
+} as const;
