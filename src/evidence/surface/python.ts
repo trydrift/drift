@@ -257,7 +257,33 @@ async function computeSurfaceOf(
   // which the parser opens, so this writes a fraction of what it did.
   let written = 0;
   try {
-    for (const entry of readArchive(bytes)) {
+    const entries = readArchive(bytes);
+
+    // Only for the GitHub-tag fallback: PyPI's own sdist/wheel is already
+    // scoped to exactly this package, but a GitHub repository can be a
+    // monorepo hosting several PyPI distributions side by side, and parsing
+    // every .py/.pyi in it would misattribute a sibling package's API to this
+    // one. Declining (rather than diffing the whole repository) when the
+    // subtree cannot be confidently identified is deliberate — see
+    // `packageSubtree`.
+    let selected = entries;
+    if (usedGitHubFallback) {
+      const subtree = packageSubtree(entries.map((entry) => entry.path), request.name);
+      if (!subtree) {
+        return {
+          ok: false,
+          failure: unavailable(
+            TOOL,
+            'no-public-surface',
+            `Could not confidently identify ${request.name}'s own source directory inside its GitHub repository, so the fallback was declined rather than comparing the whole repository.`,
+          ),
+        };
+      }
+      const prefix = `${subtree}/`;
+      selected = entries.filter((entry) => entry.path.startsWith(prefix));
+    }
+
+    for (const entry of selected) {
       const path = safeRelativePath(entry.path);
       if (!path) continue;
       const target = join(dir, path);
@@ -427,6 +453,16 @@ async function githubArchiveFallback(name: string, version: string, timeoutMs: n
  * is only trusted when there is exactly one candidate across the whole
  * repository — more than one *is* the ambiguity this guards against, and
  * guessing which one is correct is worse than not falling back at all.
+ *
+ * "Names this package" is delimiter/token-aware, not a bare substring test: a
+ * short project name like `api`, `core` or `client` is a substring of any
+ * number of unrelated words (`capitalize`, `scored`, `clients`), so a plain
+ * `.includes()` could match a tag with nothing to do with this package. A tag
+ * only counts as naming the package when the normalized name appears as its
+ * own token, bounded by the start/end of the tag or a non-alphanumeric
+ * separator. And more than one such named match is still ambiguity, not a
+ * winner — it no longer short-circuits past the single-candidate check the
+ * unqualified case already had to satisfy.
  */
 export function matchingTag(
   tags: readonly { name?: string }[],
@@ -438,10 +474,59 @@ export function matchingTag(
   );
 
   const slug = name.toLowerCase().replace(/[_.]/g, '-');
-  const named = candidates.find((entry) => entry.name.toLowerCase().replace(/[_.]/g, '-').includes(slug));
-  if (named) return named.name;
+  const slugPattern = new RegExp(`(^|[^a-z0-9])${escapeRegExp(slug)}([^a-z0-9]|$)`);
+  const named = candidates.filter((entry) => slugPattern.test(entry.name.toLowerCase().replace(/[_.]/g, '-')));
+  if (named.length === 1) return named[0]!.name;
+  if (named.length > 1) return null;
 
   return candidates.length === 1 ? candidates[0]!.name : null;
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Which directory inside a GitHub-fallback archive is this PyPI project's own
+ * source, so parsing is restricted to it rather than the whole repository —
+ * a monorepo's sibling packages must never be diffed as though they belonged
+ * to the package actually being compared.
+ *
+ * PyPI's JSON metadata does not expose a project's installed file list (that
+ * would require successfully downloading the very archive this fallback
+ * exists because PyPI's own copy could not be read), so this cannot consult
+ * a published sdist/wheel file listing the way a healthier download would
+ * allow. It falls back to the standard Python packaging convention instead:
+ * the top-level importable package is the project name normalized to a valid
+ * identifier (hyphens/dots become underscores), optionally nested under
+ * `src/`, at whatever depth a repository happens to nest it at (a bare
+ * top-level directory, or one more level in under the archive's own
+ * `owner-repo-sha/` wrapper).
+ *
+ * If that directory does not appear at a single, consistent path across the
+ * whole archive, there is no accountable way to scope the diff to the right
+ * package — this returns `null`, and the caller declines the fallback
+ * entirely rather than guessing across the whole repository.
+ */
+export function packageSubtree(paths: readonly string[], name: string): string | null {
+  const normalized = name.toLowerCase().replace(/[-.]+/g, '_');
+  const candidates = new Set<string>();
+
+  for (const entryPath of paths) {
+    const parts = entryPath.split('/').filter((part) => part !== '');
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (parts[i] === normalized) {
+        candidates.add(parts.slice(0, i + 1).join('/'));
+        break;
+      }
+      if (parts[i] === 'src' && parts[i + 1] === normalized) {
+        candidates.add(parts.slice(0, i + 2).join('/'));
+        break;
+      }
+    }
+  }
+
+  return candidates.size === 1 ? [...candidates][0]! : null;
 }
 
 /** The sdist if there is one, else a wheel — both are archives `tar` can open. */
@@ -501,7 +586,7 @@ export function parsePythonSurface(json: string): SurfaceApi | null {
  * to inspect it runs its module-level code, and Drift will not run a
  * dependency's code to describe it.
  */
-const SURFACE_SCRIPT = `import ast, json, os, sys
+export const SURFACE_SCRIPT = `import ast, json, os, sys
 
 def public(name):
     return not name.startswith('_') or (name.startswith('__') and name.endswith('__'))
@@ -531,6 +616,24 @@ def members(node):
             for target in item.targets:
                 if isinstance(target, ast.Name) and public(target.id): out.append(target.id)
     return out
+
+def module_name(root, path):
+    # A basename alone collides across subpackages -- pkg/a/module.py and
+    # pkg/b/module.py are different modules with potentially different public
+    # symbols, and reporting both under the bare key 'module' would silently
+    # merge (or clobber) one's symbols with the other's. This keeps enough of
+    # the path relative to the walked root to tell them apart, the same way
+    # Python's own import system would: pkg/a/module.py -> 'pkg.a.module'.
+    rel = os.path.relpath(path, root).replace(os.sep, '/')
+    parts = [p for p in rel.split('/') if p not in ('', '.')]
+    if not parts:
+        parts = [rel]
+    last = parts[-1]
+    if last in ('__init__.py', '__init__.pyi'):
+        parts = parts[:-1]
+    else:
+        parts[-1] = last.rsplit('.', 1)[0]
+    return '.'.join(parts) if parts else '__main__'
 
 def declared_all(tree):
     for node in tree.body:
@@ -564,8 +667,8 @@ for path in sorted(sources.values()):
         continue
 
     exported = declared_all(tree)
-    module = os.path.basename(path).rsplit('.', 1)[0]
-    prefix = '' if module in ('__init__', '__main__') else module + '.'
+    module = module_name(sys.argv[1], path)
+    prefix = '' if module in ('', '__init__', '__main__') else module + '.'
 
     for node in tree.body:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
