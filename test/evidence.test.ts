@@ -304,6 +304,65 @@ describe('a package-level change with no declarations to compare it against', ()
       `the declaration gap must name the metadata-only finding; got ${JSON.stringify(gaps)}`,
     );
   });
+
+  test('a version Drift could not fetch at all is reported as unreachable, never worded as "publishes no declarations"', async () => {
+    // Two different gaps must never share wording. The test above is the
+    // first: a genuine absence (a real 404 from every avenue Drift tries) is
+    // "publishes no TypeScript declarations Drift could compare". This is
+    // the second: a version this whole comparison could never reach at all
+    // (package.json itself never answers, so `fetchTypeSurface` throws
+    // `VersionUnavailableError` rather than quietly returning `null`) must
+    // read as "could not be fetched", not as a fact about the package's
+    // declarations -- otherwise a registry outage on the `to` version would
+    // silently misreport as "this upgrade adds no new declarations to
+    // review", the opposite of what actually happened.
+    reset();
+    stubFetch((url) => {
+      if (url.endsWith('/demo3@1.0.0/package.json')) {
+        return new Response(JSON.stringify({ types: 'index.d.ts' }), { status: 200 });
+      }
+      if (isMetadataApi(url) && url.includes('demo3@1.0.0')) {
+        return new Response(JSON.stringify({ files: [{ name: '/index.d.ts' }] }), { status: 200 });
+      }
+      if (url.endsWith('/demo3@1.0.0/index.d.ts')) {
+        return new Response('export declare function go(): void;', { status: 200 });
+      }
+      // demo3@2.0.0: every avenue fails, including retries -- not a 404
+      // (which would be a real, conclusive absence) but a server error, so
+      // this is genuinely "could not be reached", not "confirmed absent".
+      if (url.includes('demo3@2.0.0') || (isMetadataApi(url) && url.includes('demo3@2.0.0'))) {
+        return new Response('', { status: 503 });
+      }
+      return new Response('', { status: 404 });
+    });
+
+    const gaps: { detail: string; reason: string }[] = [];
+    await gatherEvidence(
+      [
+        {
+          name: 'demo3',
+          ecosystem: 'npm',
+          from: '1.0.0',
+          to: '2.0.0',
+          kind: 'runtime',
+          bump: 'major',
+          manifestPath: 'package.json',
+        },
+      ],
+      {
+        config: DEFAULT_CONFIG,
+        logger: createLogger('error'),
+        onUnavailableSurface: (_change, reason) => gaps.push({ detail: reason.detail, reason: reason.reason }),
+      },
+    );
+
+    const gap = gaps.find((g) => g.reason === 'version-unavailable');
+    assert.ok(gap, `expected a version-unavailable gap for the unreachable version; got ${JSON.stringify(gaps)}`);
+    assert.match(gap!.detail, /could not be fetched, so nothing was compared/);
+    // The specific lie this must never tell: wording indistinguishable from
+    // the genuine-absence case above.
+    assert.doesNotMatch(gap!.detail, /publishes no TypeScript declarations Drift could compare/);
+  });
 });
 
 describe('an upgrade that moved the API instead of removing it', () => {
