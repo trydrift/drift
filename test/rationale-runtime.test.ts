@@ -283,6 +283,94 @@ describe("finding this repository's own Python declarations", () => {
     assert.deepEqual(findPythonDeclarations(files), []);
   });
 
+  test('a real setup() call followed by an unrelated helper.setup() call still uses the real one', () => {
+    // The bug: taking the literal "last setup( in the file" without excluding
+    // a member call on some unrelated object picked up `helper.setup(...)`
+    // instead of the actual package declaration.
+    const files = [
+      {
+        path: 'setup.py',
+        content: [
+          'from setuptools import setup',
+          '',
+          'setup(',
+          '    name="demo",',
+          '    python_requires=">=3.10",',
+          ')',
+          '',
+          'helper.setup(other="thing")',
+        ].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: 'setup.py', line: 5, requirement: '>=3.10' }]);
+  });
+
+  test('a setuptools.setup(...) call is recognised the same as a bare setup(...) call', () => {
+    const files = [
+      {
+        path: 'setup.py',
+        content: ['import setuptools', '', 'setuptools.setup(', '    python_requires=">=3.11",', ')'].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: 'setup.py', line: 4, requirement: '>=3.11' }]);
+  });
+
+  test('a string argument containing a close paren does not truncate the call early', () => {
+    // The bug: a bare character-count paren scan treated the ")" inside
+    // "(details)" as closing the whole setup() call, silently dropping every
+    // keyword argument after it -- python_requires included.
+    const files = [
+      {
+        path: 'setup.py',
+        content: [
+          'from setuptools import setup',
+          '',
+          'setup(',
+          '    name="demo",',
+          '    long_description="See the docs (details here) for more.",',
+          '    python_requires=">=3.11",',
+          ')',
+        ].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: 'setup.py', line: 6, requirement: '>=3.11' }]);
+  });
+
+  test('a triple-quoted string argument containing a close paren does not truncate the call early', () => {
+    const files = [
+      {
+        path: 'setup.py',
+        content: [
+          'from setuptools import setup',
+          '',
+          'setup(',
+          '    name="demo",',
+          '    long_description="""',
+          '    See the docs (and this parenthetical) for details.',
+          '    """,',
+          '    python_requires=">=3.9",',
+          ')',
+        ].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: 'setup.py', line: 8, requirement: '>=3.9' }]);
+  });
+
+  test('an entirely commented-out setup() call is never read as the declaration', () => {
+    const files = [
+      {
+        path: 'setup.py',
+        content: [
+          '# setup(',
+          '#     name="demo",',
+          '#     python_requires=">=2.7",',
+          '# )',
+        ].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), []);
+  });
+
   test('setup.py still finds python_requires when the setup() call spans multiple lines with other kwargs', () => {
     const files = [
       {

@@ -284,35 +284,87 @@ function requiresPythonFromPyproject(content: string): { requirement: string; li
 
 /**
  * Isolate the `setup(...)` invocation's argument list, so a `python_requires`
- * mentioned in a comment or an unrelated assignment elsewhere in the file is
- * never read as the package's declaration.
+ * mentioned in a comment, an unrelated assignment, or someone else's `setup`
+ * method is never read as the package's declaration.
  *
  * Comment lines are blanked out first (a `#`-prefixed line only — a `#`
  * appearing after code on the same line is left alone, since a bare regex
- * cannot tell that apart from a `#` inside a string literal). The last
- * `setup(`/`setuptools.setup(` call in the file is taken, since that is
- * conventionally the actual invocation; anything named `def setup(...)` is
- * excluded so a helper function of the same name is not mistaken for it.
+ * cannot tell that apart from a `#` inside a string literal). Only a bare
+ * `setup(` or a `setuptools.setup(` call counts as the invocation —
+ * `helper.setup(...)`, a call on some unrelated object that merely shares the
+ * method name, is excluded by requiring the call not be preceded by a `.` or
+ * another identifier character (see `CALL_PATTERN`). The last matching call in
+ * the file is taken, since that is conventionally the actual invocation;
+ * anything named `def setup(...)` is excluded so a helper function of the
+ * same name is not mistaken for it.
+ *
+ * The argument list itself is then isolated with a string-aware scan for the
+ * matching close paren, rather than a bare character count — a `)` inside a
+ * string argument (`long_description="See docs (v2)."`) must not be read as
+ * ending the call early, which would silently drop every keyword argument
+ * after it, `python_requires` very much included.
  */
+const CALL_PATTERN = /(?<!def\s+)(?:(?<![.\w])setup|(?<!\w)setuptools\.setup)\s*\(/g;
+
 function extractSetupCall(content: string): string | null {
   const withoutCommentLines = content
     .split('\n')
     .map((line) => (/^\s*#/.test(line) ? '' : line))
     .join('\n');
 
-  const calls = [...withoutCommentLines.matchAll(/(?<!def\s+)\bsetup\s*\(/g)];
+  const calls = [...withoutCommentLines.matchAll(CALL_PATTERN)];
   const last = calls.at(-1);
   if (!last) return null;
 
   const openIndex = last.index + last[0].length - 1;
+  const closeIndex = matchingParenIndex(withoutCommentLines, openIndex);
+  return closeIndex === null ? null : withoutCommentLines.slice(openIndex, closeIndex + 1);
+}
+
+/**
+ * The index of the `)` that closes the `(` at `openIndex`, skipping over the
+ * contents of any string literal along the way — single- or double-quoted,
+ * plain or triple-quoted, with escapes honoured in the non-triple forms.
+ *
+ * Returns `null` on anything this cannot confidently resolve (an unterminated
+ * string, no matching close paren before the file ends), which is the safe
+ * failure here: `extractSetupCall` then reports no call at all, and the
+ * caller reports no declaration rather than one sliced at the wrong place.
+ */
+function matchingParenIndex(text: string, openIndex: number): number | null {
   let depth = 0;
-  for (let i = openIndex; i < withoutCommentLines.length; i++) {
-    const ch = withoutCommentLines[i];
+  let i = openIndex;
+  while (i < text.length) {
+    const ch = text[i]!;
+
+    if (ch === "'" || ch === '"') {
+      const triple = text.slice(i, i + 3) === ch.repeat(3);
+      const closer = triple ? ch.repeat(3) : ch;
+      let j = i + closer.length;
+      let terminated = false;
+      while (j < text.length) {
+        if (!triple && text[j] === '\\') {
+          j += 2;
+          continue;
+        }
+        if (text.startsWith(closer, j)) {
+          j += closer.length;
+          terminated = true;
+          break;
+        }
+        j += 1;
+      }
+      if (!terminated) return null;
+      i = j;
+      continue;
+    }
+
     if (ch === '(') depth++;
     else if (ch === ')') {
       depth--;
-      if (depth === 0) return withoutCommentLines.slice(openIndex, i + 1);
+      if (depth === 0) return i;
     }
+    i++;
   }
   return null;
 }
