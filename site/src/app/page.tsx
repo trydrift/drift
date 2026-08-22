@@ -158,19 +158,20 @@ export default function Home() {
         {/* ── Problem scale ───────────────────────────────────────────── */}
         {/*
           Why an update bot's "it's semver-compliant" isn't the same claim as
-          "it's safe" — three sourced figures, no introductory paragraph. The
+          "it's safe" — four sourced figures, no introductory paragraph. The
           Maven study is the primary source (large, peer-reviewed, and about
-          breaking updates specifically); Elastic is a named case study, not
-          an industry average; both label their scope inline and in the
-          tooltip. Drift's own measured accuracy lives in its own section
-          later, not mixed in with these.
+          breaking updates specifically); the cost and vulnerability figures
+          are named, US-wide/industry studies, not Drift's own claims — every
+          card labels its scope inline and in the tooltip. Drift's own
+          measured accuracy lives in its own section later, not mixed in with
+          these.
         */}
         <section className="pt-14 sm:pt-20">
           <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted">
             <span className="text-faint">//</span> problem scale
           </p>
 
-          <div className="mt-5 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-3">
+          <div className="mt-5 grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               value={MAVEN_BREAKING_CHANGE_STUDY.clientBreakRate}
               description="of dependency updates broke client code"
