@@ -372,6 +372,22 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
     ]);
     if (!surface) {
       if (moduleMetadataChanges.length > 0) {
+        // A real but partial result: package.json-level changes were found and
+        // are counted below, but the TypeScript declarations themselves could
+        // not be fetched, so this is not the clean API comparison it would
+        // look like if nothing were recorded here. Recording the gap keeps
+        // `collectGaps` from treating this the same as "nothing was checked at
+        // all" — the failure mode that made a changelog-only prose note read
+        // as though it were the *only* evidence, when a structural finding
+        // already existed.
+        ctx.onUnavailableSurface?.(
+          change,
+          unavailable(
+            'TypeScript declarations',
+            'no-public-surface',
+            `${change.name} publishes no TypeScript declarations Drift could compare, though its package.json changed between versions — that metadata-level change is counted below, but nothing about its public API could be verified.`,
+          ),
+        );
         return surfaceRecord(change, {
           changes: moduleMetadataChanges,
           weight: WEIGHTS['type-surface-diff'],
