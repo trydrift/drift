@@ -998,6 +998,7 @@ export async function scanUpgrades(args: {
         env,
         maxSites: breadth.maxSites,
         member: multiPackage ? dep.target.dir : undefined,
+        allMembers: multiPackage ? dirs : undefined,
         // Paired with `member` above: a name without a directory would put a
         // label on every row of a single-package repository, which is one more
         // thing to read past on every line and never varies.
@@ -1338,11 +1339,16 @@ export async function reanalyzeUpgrade(args: {
   // is awaited inside it at the one point that needs it.
   const indexing = walkSourceFiles(args.root).then((files) => ({ files, index: buildIndex(files) }));
   indexing.catch(() => undefined);
+  const fs = args.fs ?? nodeWorkspaceFs();
+  const allMembers = await detectWorkspaces(args.root, fs)
+    .then(memberDirectories)
+    .catch(() => (args.candidate.workspace === undefined ? [] : [args.candidate.workspace]));
 
   return analyzeUpgrade({
     dep,
     selected: version,
     member: args.candidate.workspace,
+    allMembers: args.candidate.workspace === undefined ? undefined : allMembers,
     memberName: args.candidate.workspaceName,
     repoRoot: args.candidate.repoRoot,
     repoLabel: args.candidate.repoLabel,
@@ -1635,6 +1641,17 @@ async function analyzeUpgrade(args: {
   maxSites?: number;
   /** Workspace member to scope impact sites to. Absent in a single package. */
   member?: string;
+  /**
+   * Every workspace member directory in the repository, `member` included —
+   * declared workspaces plus any undeclared nested project. Lets runtime
+   * declarations be scoped correctly: a file under a *different* member's
+   * directory is that member's business, not this one's, while a file that
+   * belongs to no member directory at all (root-level config, a CI workflow)
+   * is legitimately repository-wide. Absent only when the caller has not
+   * gathered a member list, in which case scoping falls back to the old,
+   * unscoped behavior rather than guessing.
+   */
+  allMembers?: readonly string[];
   memberName?: string;
   /** Set when scanning more than one open root, so candidate ids stay unique across them. */
   repoRoot?: string;
@@ -1763,8 +1780,8 @@ async function analyzeUpgrade(args: {
         surfaceCompared,
         surfaceGaps,
         prose,
-        repoRuntime: findNodeDeclarations(files, args.member),
-        pythonRuntime: findPythonDeclarations(files, args.member),
+        repoRuntime: findNodeDeclarations(files, args.member, args.allMembers),
+        pythonRuntime: findPythonDeclarations(files, args.member, args.allMembers),
         // Replaces the single opaque phase above with the actual named stage
         // rationaleFor is in, so a slow scan shows which network call it is
         // waiting on instead of one frozen label.

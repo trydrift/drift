@@ -61,15 +61,85 @@ describe("finding this repository's own Node.js declarations", () => {
     assert.deepEqual(findNodeDeclarations(files), []);
   });
 
-  test('a workspace scope excludes a sibling workspace’s own declaration', () => {
+  test('member undefined (no workspace context) keeps every declaration, unscoped', () => {
     const files = [
       { path: 'packages/api/.nvmrc', content: '20.19.0' },
       { path: 'packages/worker/.nvmrc', content: '18.0.0' },
       { path: '.nvmrc', content: '22.6.0' },
     ];
-    assert.deepEqual(findNodeDeclarations(files, 'packages/api'), [
+    assert.deepEqual(findNodeDeclarations(files), [
       { file: 'packages/api/.nvmrc', line: 1, requirement: '20.19.0' },
+      { file: 'packages/worker/.nvmrc', line: 1, requirement: '18.0.0' },
       { file: '.nvmrc', line: 1, requirement: '22.6.0' },
+    ]);
+  });
+});
+
+describe('scoping a runtime declaration to the workspace that owns it', () => {
+  const allMembers = ['', 'packages/api', 'packages/worker'];
+
+  test('a non-root member sees its own declaration', () => {
+    const files = [{ path: 'packages/api/.nvmrc', content: '20.19.0' }];
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
+      { file: 'packages/api/.nvmrc', line: 1, requirement: '20.19.0' },
+    ]);
+  });
+
+  test('a non-root member does not see a sibling member’s declaration', () => {
+    const files = [{ path: 'packages/worker/.nvmrc', content: '18.0.0' }];
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), []);
+  });
+
+  test('a non-root member still sees a repo-global CI workflow declaration', () => {
+    const files = [
+      {
+        path: '.github/workflows/ci.yml',
+        content: ['jobs:', '  test:', '    steps:', "      - uses: actions/setup-node@v5", '        with:', "          node-version: '22'"].join('\n'),
+      },
+    ];
+    const declarations = findNodeDeclarations(files, 'packages/api', allMembers);
+    assert.equal(declarations.length, 1);
+    assert.equal(declarations[0].file, '.github/workflows/ci.yml');
+  });
+
+  test('a non-root member still sees a root-level declaration', () => {
+    const files = [{ path: '.nvmrc', content: '22.6.0' }];
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
+      { file: '.nvmrc', line: 1, requirement: '22.6.0' },
+    ]);
+  });
+
+  test('the root workspace (member === "") does not inherit a sibling’s .nvmrc', () => {
+    const files = [{ path: 'packages/worker/.nvmrc', content: '18.0.0' }];
+    assert.deepEqual(findNodeDeclarations(files, '', allMembers), []);
+  });
+
+  test('the root workspace (member === "") does not inherit a sibling’s .python-version', () => {
+    const files = [{ path: 'packages/worker/.python-version', content: '3.9' }];
+    assert.deepEqual(findPythonDeclarations(files, '', allMembers), []);
+  });
+
+  test('the root workspace still sees its own root-level declaration', () => {
+    const files = [{ path: '.nvmrc', content: '22.6.0' }];
+    assert.deepEqual(findNodeDeclarations(files, '', allMembers), [
+      { file: '.nvmrc', line: 1, requirement: '22.6.0' },
+    ]);
+  });
+
+  test('the root workspace still sees a repo-global CI workflow declaration', () => {
+    const files = [
+      { path: '.github/workflows/ci.yml', content: "          node-version: '22'" },
+    ];
+    assert.equal(findNodeDeclarations(files, '', allMembers).length, 1);
+  });
+
+  test('with no member list supplied, scoping is skipped rather than guessed at', () => {
+    const files = [{ path: 'packages/worker/.nvmrc', content: '18.0.0' }];
+    // `member` is known ('packages/api') but `allMembers` was never gathered —
+    // falls back to the original unscoped behavior rather than assuming every
+    // other file belongs to a sibling.
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api'), [
+      { file: 'packages/worker/.nvmrc', line: 1, requirement: '18.0.0' },
     ]);
   });
 });

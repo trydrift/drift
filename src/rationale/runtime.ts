@@ -1,5 +1,6 @@
 import semver from 'semver';
 import { isRuntimeConfigPath } from '../index/walk.js';
+import { memberOf } from '../detect/workspace.js';
 import { intersectsInterval, isSubsetInterval, parseSpecifierSet } from './pep440.js';
 
 /**
@@ -31,10 +32,11 @@ export interface RuntimeCompatibility extends RuntimeDeclaration {
 export function findNodeDeclarations(
   files: readonly { path: string; content: string }[],
   member?: string,
+  allMembers?: readonly string[],
 ): RuntimeDeclaration[] {
   const out: RuntimeDeclaration[] = [];
 
-  for (const { path, content } of scopedTo(files, member)) {
+  for (const { path, content } of scopedTo(files, member, allMembers)) {
     if (!isRuntimeConfigPath(path)) continue;
     const base = (path.split('/').pop() ?? '').toLowerCase();
 
@@ -76,21 +78,43 @@ export function findNodeDeclarations(
 
 /**
  * Narrow a repository's files to the ones a runtime declaration for `member`
- * should actually be read from: the workspace's own directory, plus
- * repo-root files that plausibly apply to every workspace.
+ * should actually be read from: that workspace's own directory, plus
+ * anything that is not any workspace's business in particular — a root
+ * config file in a repository where the root itself is not a package, or a
+ * CI workflow, which conventionally governs the whole build regardless of
+ * which member happens to own its directory.
  *
- * Without this, a runtime finder handed the whole repository's file list —
- * as every call site here used to pass it — can resolve a monorepo's Python
- * service's `.python-version` against a sibling Node package's dependency
- * upgrade, because both files simply appear in the same flat list. `member`
- * is the workspace directory the dependency being analyzed actually belongs
- * to; when it is known, a declaration nested inside a *different*
- * workspace's directory is not this workspace's floor and is left out.
+ * Without this, a runtime finder handed the whole repository's file list can
+ * resolve a monorepo's Python service's `.python-version` against a sibling
+ * Node package's dependency upgrade, because both files simply appear in the
+ * same flat list.
+ *
+ * `member === undefined` means no workspace context is known at all (a
+ * single-package repository, or a caller that has not gathered one) — every
+ * file is kept, matching the tool's original behavior before workspace
+ * scoping existed. `member === ''` is a real, meaningful case: the *root*
+ * workspace of a multi-package repository, which must not inherit a sibling
+ * member's declarations just because `''` is falsy.
+ *
+ * Ownership is resolved with `memberOf`, the same helper that already
+ * attributes a dependency's own manifest to a workspace elsewhere in Drift,
+ * rather than a second, independent guess at path prefixes.
  */
-function scopedTo<T extends { path: string }>(files: readonly T[], member: string | undefined): readonly T[] {
-  if (!member) return files;
-  const prefix = `${member.replace(/\/$/, '')}/`;
-  return files.filter((f) => f.path.startsWith(prefix) || !f.path.includes('/'));
+function scopedTo<T extends { path: string }>(
+  files: readonly T[],
+  member: string | undefined,
+  allMembers: readonly string[] | undefined,
+): readonly T[] {
+  if (member === undefined) return files;
+  const members = allMembers ?? [];
+  return files.filter((f) => {
+    const owner = memberOf(f.path, members);
+    // `owner === null`: no member directory claims this file — repository-
+    // global by construction. `owner === ''`: the root workspace's own
+    // files, which — like a top-level CI workflow or `.nvmrc` — conventionally
+    // describe the whole build, not just the root package's own runtime.
+    return owner === member || owner === null || owner === '';
+  });
 }
 
 function engineFromPackageJson(content: string): string | null {
@@ -155,10 +179,11 @@ export function checkNodeCompatibility(
 export function findPythonDeclarations(
   files: readonly { path: string; content: string }[],
   member?: string,
+  allMembers?: readonly string[],
 ): RuntimeDeclaration[] {
   const out: RuntimeDeclaration[] = [];
 
-  for (const { path, content } of scopedTo(files, member)) {
+  for (const { path, content } of scopedTo(files, member, allMembers)) {
     if (!isRuntimeConfigPath(path)) continue;
     const base = (path.split('/').pop() ?? '').toLowerCase();
 
