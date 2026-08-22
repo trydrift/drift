@@ -40,15 +40,36 @@ export function isZip(data: Buffer): boolean {
 }
 
 /**
+ * A ceiling on any single decompression this module performs, independent of
+ * what an archive's own headers claim the decompressed size will be.
+ *
+ * Every archive this reads is a third party's bytes — a PyPI sdist, a GitHub
+ * tag mirror, a Maven sources jar. A gzip or zip member's declared
+ * uncompressed size is exactly that: declared, by the same untrusted archive,
+ * and a crafted or merely unlucky one can expand to gigabytes from a
+ * download that was well within `maxBytes` on the wire. Node's zlib accepts
+ * `maxOutputLength` and aborts a sync decompression the moment it would be
+ * exceeded, rather than fully allocating first and checking after — the
+ * cheap, built-in equivalent of streaming with a running byte count.
+ */
+const DEFAULT_MAX_DECOMPRESSED_BYTES = 200 * 1024 * 1024;
+
+export interface ReadArchiveOptions {
+  /** Overrides `DEFAULT_MAX_DECOMPRESSED_BYTES` for this read. */
+  maxDecompressedBytes?: number;
+}
+
+/**
  * Read any archive Drift downloads: zip, tar, or tar.gz.
  *
  * Sniffed from the bytes rather than the filename. A CDN that serves a `.zip`
  * URL as a gzipped tarball is not hypothetical, and the file's own first two
  * bytes are never wrong about what it is.
  */
-export function readArchive(data: Buffer): ArchiveEntry[] {
-  if (isZip(data)) return readZip(data);
-  return readTar(isGzip(data) ? gunzipSync(data) : data);
+export function readArchive(data: Buffer, options: ReadArchiveOptions = {}): ArchiveEntry[] {
+  const maxDecompressedBytes = options.maxDecompressedBytes ?? DEFAULT_MAX_DECOMPRESSED_BYTES;
+  if (isZip(data)) return readZip(data, { maxDecompressedBytes });
+  return readTar(isGzip(data) ? gunzipSync(data, { maxOutputLength: maxDecompressedBytes }) : data);
 }
 
 /* ---------------- zip ---------------- */
@@ -65,7 +86,8 @@ const CENTRAL_SIGNATURE = 0x02014b50;
  * parsed without already knowing where the entry ends. The central directory
  * always has the true sizes.
  */
-export function readZip(data: Buffer): ArchiveEntry[] {
+export function readZip(data: Buffer, options: ReadArchiveOptions = {}): ArchiveEntry[] {
+  const maxDecompressedBytes = options.maxDecompressedBytes ?? DEFAULT_MAX_DECOMPRESSED_BYTES;
   const eocd = findEocd(data);
   if (eocd === -1) return [];
 
@@ -94,14 +116,20 @@ export function readZip(data: Buffer): ArchiveEntry[] {
     entries.push({
       path,
       size: uncompressedSize,
-      read: () => readZipEntry(data, localOffset, method, compressedSize),
+      read: () => readZipEntry(data, localOffset, method, compressedSize, maxDecompressedBytes),
     });
   }
 
   return entries;
 }
 
-function readZipEntry(data: Buffer, localOffset: number, method: number, compressedSize: number): Buffer {
+function readZipEntry(
+  data: Buffer,
+  localOffset: number,
+  method: number,
+  compressedSize: number,
+  maxDecompressedBytes: number,
+): Buffer {
   // The local header repeats the name and extra fields at its own lengths,
   // which are not required to match the central directory's — so the start of
   // the data is computed from the local header, never from the central one.
@@ -110,8 +138,17 @@ function readZipEntry(data: Buffer, localOffset: number, method: number, compres
   const start = localOffset + 30 + nameLength + extraLength;
   const body = data.subarray(start, start + compressedSize);
 
-  if (method === 0) return Buffer.from(body);
-  if (method === 8) return inflateRawSync(body);
+  // The central directory's `uncompressedSize` (used only for `size` above,
+  // never for allocation) is exactly as untrusted as everything else this
+  // archive declares about itself — `maxOutputLength` bounds what actually
+  // comes out, regardless of what was claimed going in.
+  if (method === 0) {
+    if (body.length > maxDecompressedBytes) {
+      throw new Error(`Stored zip entry exceeds the ${maxDecompressedBytes}-byte decompressed-size limit.`);
+    }
+    return Buffer.from(body);
+  }
+  if (method === 8) return inflateRawSync(body, { maxOutputLength: maxDecompressedBytes });
   throw new Error(`Unsupported zip compression method ${method}`);
 }
 

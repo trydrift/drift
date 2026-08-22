@@ -1,4 +1,4 @@
-import { test, describe } from 'node:test';
+import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   diffSurfaces,
@@ -18,6 +18,8 @@ import { selectReleases } from '../dist/evidence/releases.js';
 import { matchProse } from '../dist/analyze/rules.js';
 import { DEFAULT_CONFIG } from '../dist/config/schema.js';
 import { createLogger } from '../dist/util/logger.js';
+import { clearHttpCache } from '../dist/util/http.js';
+import { clearTypeSurfaceCache } from '../dist/evidence/type-surface.js';
 
 /**
  * Regression tests for a scan that lied.
@@ -211,6 +213,155 @@ describe('an empty diff that was never a comparison', () => {
       ),
       `an unfetchable comparison must be reported as one; got ${JSON.stringify(gaps)}`,
     );
+  });
+});
+
+describe('a package-level change with no declarations to compare it against', () => {
+  const realFetch = globalThis.fetch;
+
+  function isMetadataApi(url: string): boolean {
+    try {
+      return new URL(url).hostname === 'data.jsdelivr.com';
+    } catch {
+      return false;
+    }
+  }
+
+  function stubFetch(responder: (url: string) => Response): void {
+    globalThis.fetch = ((input: string | URL | Request) => Promise.resolve(responder(String(input)))) as typeof fetch;
+  }
+
+  function reset(): void {
+    clearHttpCache();
+    clearTypeSurfaceCache();
+  }
+
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+    reset();
+  });
+
+  test('a metadata-only finding is recorded as a partial comparison, not silently dropped', async () => {
+    // Reproduces the graphql-inspector report: a package.json-level change was
+    // found and counted as a breaking change, but neither published version
+    // has TypeScript declarations Drift could fetch. Before this fix, that
+    // combination called neither onSurfaceComputed nor onUnavailableSurface,
+    // so the rationale's gap note read as though nothing had been checked at
+    // all — contradicting the "N upstream breaking changes" count it sat next
+    // to.
+    reset();
+    stubFetch((url) => {
+      if (url.endsWith('/demo@1.0.0/package.json')) {
+        return new Response(
+          JSON.stringify({ exports: { '.': { import: './index.mjs', require: './index.cjs' } } }),
+          { status: 200 },
+        );
+      }
+      if (url.endsWith('/demo@2.0.0/package.json')) {
+        return new Response(JSON.stringify({ type: 'module', exports: { '.': { import: './index.js' } } }), {
+          status: 200,
+        });
+      }
+      // No listing, no declaration file, no DefinitelyTyped package: this
+      // package has never shipped types.
+      return new Response('', { status: 404 });
+    });
+
+    const gaps: { detail: string; reason: string }[] = [];
+    let computed = false;
+    const evidence = await gatherEvidence(
+      [
+        {
+          name: 'demo',
+          ecosystem: 'npm',
+          from: '1.0.0',
+          to: '2.0.0',
+          kind: 'runtime',
+          bump: 'major',
+          manifestPath: 'package.json',
+        },
+      ],
+      {
+        config: DEFAULT_CONFIG,
+        logger: createLogger('error'),
+        onSurfaceComputed: () => {
+          computed = true;
+        },
+        onUnavailableSurface: (_change, reason) => gaps.push({ detail: reason.detail, reason: reason.reason }),
+      },
+    );
+
+    // The metadata-level change is still counted as evidence...
+    assert.ok(
+      evidence.some((e) => e.source === 'type-surface-diff' && e.dependency === 'demo'),
+      'the package.json-level change must still be recorded as evidence',
+    );
+    // ...but the declaration comparison itself is honestly reported as never
+    // having run, not folded silently into a "clean" or "computed" outcome.
+    assert.equal(computed, false);
+    assert.ok(
+      gaps.some((gap) => gap.reason === 'no-public-surface' && /package\.json changed/.test(gap.detail)),
+      `the declaration gap must name the metadata-only finding; got ${JSON.stringify(gaps)}`,
+    );
+  });
+
+  test('a version Drift could not fetch at all is reported as unreachable, never worded as "publishes no declarations"', async () => {
+    // Two different gaps must never share wording. The test above is the
+    // first: a genuine absence (a real 404 from every avenue Drift tries) is
+    // "publishes no TypeScript declarations Drift could compare". This is
+    // the second: a version this whole comparison could never reach at all
+    // (package.json itself never answers, so `fetchTypeSurface` throws
+    // `VersionUnavailableError` rather than quietly returning `null`) must
+    // read as "could not be fetched", not as a fact about the package's
+    // declarations -- otherwise a registry outage on the `to` version would
+    // silently misreport as "this upgrade adds no new declarations to
+    // review", the opposite of what actually happened.
+    reset();
+    stubFetch((url) => {
+      if (url.endsWith('/demo3@1.0.0/package.json')) {
+        return new Response(JSON.stringify({ types: 'index.d.ts' }), { status: 200 });
+      }
+      if (isMetadataApi(url) && url.includes('demo3@1.0.0')) {
+        return new Response(JSON.stringify({ files: [{ name: '/index.d.ts' }] }), { status: 200 });
+      }
+      if (url.endsWith('/demo3@1.0.0/index.d.ts')) {
+        return new Response('export declare function go(): void;', { status: 200 });
+      }
+      // demo3@2.0.0: every avenue fails, including retries -- not a 404
+      // (which would be a real, conclusive absence) but a server error, so
+      // this is genuinely "could not be reached", not "confirmed absent".
+      if (url.includes('demo3@2.0.0') || (isMetadataApi(url) && url.includes('demo3@2.0.0'))) {
+        return new Response('', { status: 503 });
+      }
+      return new Response('', { status: 404 });
+    });
+
+    const gaps: { detail: string; reason: string }[] = [];
+    await gatherEvidence(
+      [
+        {
+          name: 'demo3',
+          ecosystem: 'npm',
+          from: '1.0.0',
+          to: '2.0.0',
+          kind: 'runtime',
+          bump: 'major',
+          manifestPath: 'package.json',
+        },
+      ],
+      {
+        config: DEFAULT_CONFIG,
+        logger: createLogger('error'),
+        onUnavailableSurface: (_change, reason) => gaps.push({ detail: reason.detail, reason: reason.reason }),
+      },
+    );
+
+    const gap = gaps.find((g) => g.reason === 'version-unavailable');
+    assert.ok(gap, `expected a version-unavailable gap for the unreachable version; got ${JSON.stringify(gaps)}`);
+    assert.match(gap!.detail, /could not be fetched, so nothing was compared/);
+    // The specific lie this must never tell: wording indistinguishable from
+    // the genuine-absence case above.
+    assert.doesNotMatch(gap!.detail, /publishes no TypeScript declarations Drift could compare/);
   });
 });
 

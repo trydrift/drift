@@ -2156,10 +2156,10 @@ describe('Quick Scan vs Deep Verification', () => {
     );
 
     assert.match(html, /Installing this version and running your checks against it/);
-    assert.ok(!/data-action="verifyOne"/.test(html), 'no second Verify button while one is already running');
+    assert.ok(!/data-action="verifyOne"/.test(html), 'no second Deep Verify button while one is already running');
   });
 
-  test('"Verify all" is offered only while something is actually eligible for it', () => {
+  test('"Deep Verify All" is offered only while something is actually eligible for it', () => {
     const nothingToVerify = candidate({
       verification: { status: 'passed', checks: [], failedFiles: [] },
     });

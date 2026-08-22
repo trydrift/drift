@@ -372,6 +372,22 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
     ]);
     if (!surface) {
       if (moduleMetadataChanges.length > 0) {
+        // A real but partial result: package.json-level changes were found and
+        // are counted below, but the TypeScript declarations themselves could
+        // not be fetched, so this is not the clean API comparison it would
+        // look like if nothing were recorded here. Recording the gap keeps
+        // `collectGaps` from treating this the same as "nothing was checked at
+        // all" — the failure mode that made a changelog-only prose note read
+        // as though it were the *only* evidence, when a structural finding
+        // already existed.
+        ctx.onUnavailableSurface?.(
+          change,
+          unavailable(
+            'TypeScript declarations',
+            'no-public-surface',
+            `${change.name} publishes no TypeScript declarations Drift could compare, though its package.json changed between versions — that metadata-level change is counted below, but nothing about its public API could be verified.`,
+          ),
+        );
         return surfaceRecord(change, {
           changes: moduleMetadataChanges,
           weight: WEIGHTS['type-surface-diff'],
@@ -389,6 +405,29 @@ async function surfaceEvidence(change: DependencyChange, ctx: EvidenceContext): 
           `${change.name} publishes no TypeScript declarations Drift could compare, so this upgrade rests on prose evidence.`,
         ),
       );
+      return null;
+    }
+    if (surface.comparisonFailed) {
+      // Distinct from the `!surface` branch above on purpose: this is Drift's
+      // own comparison breaking (a parser bug, a malformed CDN response, an
+      // unexpected error), not a fact about what the package publishes. Saying
+      // "publishes no declarations" here would misreport the reason for every
+      // future reader of this evidence, exactly backwards from what this PR
+      // otherwise exists to fix — evidence gaps must state what is actually
+      // known, not paper over an internal failure as an external fact.
+      const detail = `Comparing ${change.name}'s TypeScript declarations failed unexpectedly (${surface.comparisonFailed}). This does not mean ${change.name} publishes no declarations.`;
+      if (moduleMetadataChanges.length > 0) {
+        ctx.onUnavailableSurface?.(change, unavailable('TypeScript declarations', 'toolchain-failed', detail));
+        return surfaceRecord(change, {
+          changes: moduleMetadataChanges,
+          weight: WEIGHTS['type-surface-diff'],
+          locator: `${change.name}@${from}:package.json → ${change.name}@${to}:package.json`,
+          url: jsdelivrDeclarationUrl(change.name, to, 'package.json'),
+          beforeUrl: jsdelivrDeclarationUrl(change.name, from, 'package.json'),
+          afterUrl: jsdelivrDeclarationUrl(change.name, to, 'package.json'),
+        });
+      }
+      ctx.onUnavailableSurface?.(change, unavailable('TypeScript declarations', 'toolchain-failed', detail));
       return null;
     }
     if (surface.unreachable) {
@@ -589,6 +628,20 @@ async function diffTypeSurfaces(
    * reported as a clean comparison. Nothing was compared at all.
    */
   definitelyTyped?: boolean;
+  /**
+   * An unexpected failure while comparing, not a fact about the package.
+   *
+   * `fetchTypeSurface` returning `null` (no `types`/`typings` field, no
+   * resolvable `.d.ts`) is a genuine "this version publishes no
+   * declarations" — that stays a bare `null` return below. This field is for
+   * everything else that can throw inside this comparison — a parser bug, a
+   * malformed CDN response, an unexpected error in `entryPointMoved` or
+   * `diffSurfaces` — which used to be caught and turned into the exact same
+   * bare `null`, so the caller could not tell "this package has no
+   * declarations" from "Drift's own comparison broke" and reported the
+   * former as fact either way.
+   */
+  comparisonFailed?: string;
 } | null> {
   try {
     const [before, after] = await Promise.all([
@@ -633,7 +686,13 @@ async function diffTypeSurfaces(
         unreachable: `${err.packageName}@${err.version}`,
       };
     }
-    return null;
+    return {
+      changes: [],
+      comparable: false,
+      beforeEntryPath: '',
+      afterEntryPath: '',
+      comparisonFailed: (err as Error).message,
+    };
   }
 }
 

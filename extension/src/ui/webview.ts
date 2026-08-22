@@ -1036,7 +1036,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
           // already settled — a scan with everything already `verified` or
           // `error` would offer an action with nothing eligible for it to do.
           candidates.some((c) => !c.verification && c.status !== 'pending' && c.status !== 'checking' && c.status !== 'upgrading')
-            ? `<button class="ctl bordered" data-action="verifyAll" title="Install and run this project's own checks against every unmeasured candidate">Verify all</button>`
+            ? `<button class="ctl bordered" data-action="verifyAll" title="Deep Verify: install and run this project's own checks against every unmeasured candidate">Deep Verify All</button>`
             : ''
         }
         <button class="ctl icon" data-action="rescan" title="Check every dependency again" aria-label="Rescan">${ICON_REFRESH}</button>
@@ -1413,7 +1413,7 @@ function renderRationale(candidate: UpgradeCandidate): string {
     blocks.push(renderFacts('bad', 'Maintenance', concerning.map((fact) => fact.statement)));
   }
 
-  if (rationale.license.verdict === 'policy-violation' || rationale.license.verdict === 'changed') {
+  if (rationale.license.verdict === 'policy-violation' || rationale.license.verdict === 'unknown') {
     blocks.push(
       renderFacts(
         rationale.license.verdict === 'policy-violation' ? 'bad' : 'neutral',
@@ -1520,7 +1520,7 @@ function renderVerification(candidate: UpgradeCandidate): string {
     // row into Deep Verification, rather than leaving the absence of a
     // verification block to be read as "nothing to say".
     return `<p class="verification unverified"><span>Static analysis only — not deeply verified.</span>
-      <button class="ctl" data-action="verifyOne" data-id="${escapeAttr(candidate.id)}" title="Install ${escapeAttr(candidate.name)} in a throwaway worktree and run this project's own checks against it">Verify</button></p>`;
+      <button class="ctl bordered" data-action="verifyOne" data-id="${escapeAttr(candidate.id)}" title="Install ${escapeAttr(candidate.name)} in a throwaway worktree and run this project's own checks against it">Deep Verify</button></p>`;
   }
 
   const ran = verification.checks
@@ -1545,7 +1545,7 @@ function renderVerification(candidate: UpgradeCandidate): string {
   const [summary, ...detailParts] = (verification.reason ?? 'Drift could not test this upgrade.').split('\n\n');
   const detail = detailParts.join('\n\n');
   return `<p class="verification skipped">${ICON_ALERT}<span>Could not verify — ${escapeHtml(summary ?? '')} The findings below are static predictions.</span>
-    <button class="ctl" data-action="verifyOne" data-id="${escapeAttr(candidate.id)}" title="Try Deep Verification again">Try again</button></p>
+    <button class="ctl bordered" data-action="verifyOne" data-id="${escapeAttr(candidate.id)}" title="Try Deep Verification again">Try Deep Verify Again</button></p>
   ${detail ? `<pre class="activity-io"><code>${escapeHtml(detail)}</code></pre>` : ''}`;
 }
 

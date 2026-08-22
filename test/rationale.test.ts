@@ -1,4 +1,4 @@
-import { test, describe } from 'node:test';
+import { test, describe, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   assessLicense,
@@ -19,6 +19,7 @@ import {
 import { renderOne } from '../dist/report/rationale.js';
 import { DriftConfigSchema } from '../dist/config/schema.js';
 import { createLogger } from '../dist/util/logger.js';
+import { clearHttpCache } from '../dist/util/http.js';
 
 /**
  * The upgrade rationale.
@@ -396,6 +397,94 @@ describe('license policy', () => {
     });
     assert.equal(finding.verdict, 'ok');
   });
+
+  test('requireDeclared turns a missing license into a violation, not an unknown', async () => {
+    const finding = await assessLicense({
+      name: 'pkg',
+      ecosystem: 'go',
+      from: 'v1',
+      to: 'v2',
+      currentVersion: null,
+      targetVersion: null,
+      repository: null,
+      policy: policy({ allow: ['MIT'], requireDeclared: true }),
+    });
+    assert.equal(finding.verdict, 'policy-violation');
+    assert.match(finding.statement, /declares a license Drift could read/);
+  });
+
+  describe('introduced-dependency violations survive the early returns', () => {
+    const realFetch = globalThis.fetch;
+    const npmPackument = (license: string) => ({
+      versions: { latest: { license } },
+      time: {},
+    });
+
+    afterEach(() => {
+      globalThis.fetch = realFetch;
+    });
+
+    test('an allowed license change does not hide a denied introduced dependency', async () => {
+      globalThis.fetch = (() =>
+        Promise.resolve(new Response(JSON.stringify(npmPackument('AGPL-3.0'))))) as typeof fetch;
+
+      const version = (license: string, dependencies: string[] = []) => ({
+        version: 'v',
+        license,
+        releasedAt: null,
+        runtime: null,
+        dependencies,
+        withdrawn: null,
+      });
+
+      const finding = await assessLicense({
+        name: 'pkg',
+        ecosystem: 'npm',
+        from: '1.0.0',
+        to: '2.0.0',
+        currentVersion: version('MIT'),
+        targetVersion: version('BSD-3-Clause', ['bad-dep']),
+        repository: null,
+        policy: policy({ allow: ['MIT', 'BSD-3-Clause'], deny: ['AGPL-3.0'] }),
+      });
+
+      // Both versions are on the allowlist, so absent the introduced-dependency
+      // check this would be 'changed'. The regression was the early return in
+      // the license-change branch skipping `violating` entirely.
+      assert.equal(finding.verdict, 'policy-violation');
+      assert.match(finding.statement, /bad-dep/);
+    });
+
+    test('a missing own license does not hide a denied introduced dependency', async () => {
+      globalThis.fetch = (() =>
+        Promise.resolve(new Response(JSON.stringify(npmPackument('AGPL-3.0'))))) as typeof fetch;
+
+      const finding = await assessLicense({
+        name: 'pkg',
+        ecosystem: 'npm',
+        from: '1.0.0',
+        to: '2.0.0',
+        currentVersion: { version: 'v', license: 'MIT', releasedAt: null, runtime: null, dependencies: [], withdrawn: null },
+        targetVersion: {
+          version: 'v2',
+          license: null,
+          releasedAt: null,
+          runtime: null,
+          dependencies: ['bad-dep'],
+          withdrawn: null,
+        },
+        repository: null,
+        policy: policy({ allow: ['MIT'], deny: ['AGPL-3.0'] }),
+      });
+
+      // Own license going missing (MIT -> unreadable) would independently earn
+      // 'unknown'; the regression under test is that the denied introduced
+      // dependency must not be lost regardless, so the verdict escalates to a
+      // policy violation rather than settling for 'unknown'.
+      assert.equal(finding.verdict, 'policy-violation');
+      assert.match(finding.statement, /bad-dep/);
+    });
+  });
 });
 
 describe('release summaries', () => {
@@ -590,6 +679,114 @@ describe('the upgrade assessment', () => {
       input({ license: { verdict: 'policy-violation', statement: 'AGPL now', introduced: [] } }),
     );
     assert.equal(result.recommendation, 'do-not-upgrade-yet');
+  });
+
+  test('a maintenance fact that blocks the upgrade is never safe-to-upgrade or upgrade-recommended', () => {
+    // e.g. this repository's declared runtime does not satisfy the target's
+    // raised floor. `concerning: true` alone must not be read as "recommend
+    // it" -- only `polarity: 'blocks'` may veto, and it must veto hard.
+    const result = assessUpgrade(
+      input({
+        maintenance: {
+          facts: [
+            {
+              statement: 'The required Node.js version changed from >=18 to >=22. This repository does not satisfy it: .nvmrc (declares 18.18.0).',
+              concerning: true,
+              polarity: 'blocks',
+            },
+          ],
+        },
+      }),
+    );
+    assert.notEqual(result.recommendation, 'safe-to-upgrade');
+    assert.notEqual(result.recommendation, 'upgrade-recommended');
+    assert.equal(result.recommendation, 'do-not-upgrade-yet');
+  });
+
+  test('a partially-compatible declared runtime also blocks, not just outright incompatibility', () => {
+    const result = assessUpgrade(
+      input({
+        maintenance: {
+          facts: [
+            {
+              statement: "This repository's declared range is only partially compatible: package.json (declares >=18) allows versions the new floor rejects.",
+              concerning: true,
+              polarity: 'blocks',
+            },
+          ],
+        },
+      }),
+    );
+    assert.notEqual(result.recommendation, 'safe-to-upgrade');
+    assert.notEqual(result.recommendation, 'upgrade-recommended');
+  });
+
+  test('a runtime fact confirming this repository already satisfies the new floor does not block the upgrade', () => {
+    const result = assessUpgrade(
+      input({
+        maintenance: {
+          facts: [
+            {
+              statement: 'The required Node.js version changed from >=18 to >=22. This repository already satisfies it (package.json).',
+              concerning: false,
+              polarity: 'context',
+            },
+          ],
+        },
+      }),
+    );
+    assert.equal(result.recommendation, 'safe-to-upgrade');
+  });
+
+  test('a genuinely positive maintenance fact (installed version withdrawn) can still recommend the upgrade', () => {
+    const result = assessUpgrade(
+      input({
+        maintenance: {
+          facts: [
+            {
+              statement: 'The version currently installed, 1.0.0, has been withdrawn: security issue.',
+              concerning: true,
+              polarity: 'favors',
+            },
+          ],
+        },
+      }),
+    );
+    assert.equal(result.recommendation, 'upgrade-recommended');
+  });
+
+  test('an unverified "check by hand" runtime fact is merely context: it neither blocks nor recommends', () => {
+    const result = assessUpgrade(
+      input({
+        maintenance: {
+          facts: [
+            {
+              statement: 'The required Node.js version changed from >=18 to >=22. Check this against the runtimes this repository builds and deploys on.',
+              concerning: true,
+              polarity: 'context',
+            },
+          ],
+        },
+      }),
+    );
+    assert.equal(result.recommendation, 'safe-to-upgrade');
+  });
+
+  test('a benign license change is silent in reasons too, not just the rendered section', () => {
+    // renderLicense() suppresses 'changed' from the License section. If
+    // assessUpgrade still pushed the statement into `reasons`, it would
+    // resurface under "Why Drift concluded this" — the suppression would be
+    // cosmetic only.
+    const result = assessUpgrade(
+      input({
+        license: {
+          verdict: 'changed',
+          statement: 'The declared license changed from MIT to BSD-3-Clause.',
+          introduced: [],
+        },
+      }),
+    );
+    assert.equal(result.reasons.some((r: string) => /declared license changed/.test(r)), false);
   });
 
   test('mechanical impact needs review; a behaviour change needs a person', () => {
@@ -832,13 +1029,78 @@ describe('assembling the rationale', () => {
     assert.doesNotMatch(stated, /and \d+ more/, 'nothing is hidden behind an unlinked count anymore');
   });
 
+  test('repoRuntimeByWorkspace scopes a runtime declaration per member, even inside one buildRationale batch', async () => {
+    // analyzeRepository's main path gathers changes from every workspace
+    // member into a single buildRationale call. A flat repoRuntime applied
+    // to all of them would let one member's declared Node floor leak into a
+    // sibling member's compatibility verdict — this is what
+    // repoRuntimeByWorkspace exists to prevent.
+    //
+    // fetchJson caches by URL for the lifetime of the process, and earlier
+    // tests in this file already asked the (offline) network for this same
+    // package and cached the miss — cleared here so the mock below is
+    // actually consulted, and again after so later tests still see a miss
+    // rather than this test's mocked packument.
+    clearHttpCache();
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            versions: {
+              '1.0.0': { engines: { node: '>=14' } },
+              '2.0.0': { engines: { node: '>=22.13.0' } },
+            },
+            time: {},
+          }),
+        ),
+      )) as typeof fetch;
+
+    try {
+      const apiChange = { ...change, workspace: 'packages/api' };
+      const workerChange = { ...change, workspace: 'packages/worker' };
+
+      const rationales = await buildRationale(
+        { changes: [apiChange, workerChange], evidence: [], breakingChanges: [], impactSites: [] },
+        {
+          config,
+          logger,
+          osv: noNetwork,
+          repoRuntimeByWorkspace: new Map([
+            ['packages/api', [{ file: 'packages/api/package.json', line: 1, requirement: '>=22.13.0' }]],
+            ['packages/worker', [{ file: 'packages/worker/package.json', line: 1, requirement: '>=14' }]],
+          ]),
+        },
+      );
+
+      const factFor = (r: (typeof rationales)[number]) =>
+        r.maintenance.facts.find((f) => /Node\.js version changed/.test(f.statement));
+
+      assert.equal(factFor(rationales[0]!)?.concerning, false, 'the api workspace already satisfies the new floor');
+      assert.equal(
+        factFor(rationales[1]!)?.concerning,
+        true,
+        "the worker workspace does not, and must not borrow the api workspace's declaration",
+      );
+    } finally {
+      globalThis.fetch = realFetch;
+      clearHttpCache();
+    }
+  });
+
   test('an unreadable dependency is insufficient evidence, and says so', async () => {
     const [rationale] = await buildRationale(
       { changes: [change], evidence: [], breakingChanges: [], impactSites: [] },
       { config, logger, osv: noNetwork },
     );
 
-    assert.equal(rationale!.assessment.recommendation, 'insufficient-evidence');
+    // 'pkg' (vercel/pkg on GitHub) is archived upstream, which is itself a
+    // confirmed, `polarity: 'blocks'` maintenance fact -- a real finding, not
+    // an absence of one -- so it outranks "insufficient evidence" the same
+    // way a known incompatibility would. The gap this test actually exercises
+    // (OSV being unreachable) still has to surface regardless of which
+    // recommendation wins.
+    assert.equal(rationale!.assessment.recommendation, 'do-not-upgrade-yet');
     assert.ok(rationale!.gaps.some((g) => /OSV advisory database could not be reached/.test(g)));
   });
 
@@ -875,6 +1137,47 @@ describe('assembling the rationale', () => {
     assert.deepEqual(rationales.find((r) => r.dependency === 'pkg')!.security.resolved.map((v) => v.id), ['GHSA-fixed']);
   });
 
+  test('the OSV batch runs concurrently with each dependency’s own metadata lookups, not in front of them', async () => {
+    // buildRationale used to `await` the whole OSV batch before starting
+    // rationaleFor for even the first dependency, so the registry/version
+    // fetches for every dependency were serialized entirely behind OSV.
+    clearHttpCache();
+    const realFetch = globalThis.fetch;
+    let osvResolved = false;
+    let registryFetchObservedWhileOsvPending = false;
+
+    globalThis.fetch = (() => {
+      if (!osvResolved) registryFetchObservedWhileOsvPending = true;
+      return Promise.resolve(new Response('not found', { status: 404 }));
+    }) as typeof fetch;
+
+    try {
+      await buildRationale(
+        { changes: [change], evidence: [], breakingChanges: [], impactSites: [] },
+        {
+          config,
+          logger,
+          osv: {
+            batchFetch: async (queries) => {
+              await new Promise((resolve) => setTimeout(resolve, 50));
+              osvResolved = true;
+              return queries.map(() => osvResponse([]));
+            },
+          },
+        },
+      );
+
+      assert.equal(
+        registryFetchObservedWhileOsvPending,
+        true,
+        'the registry lookup must start while the OSV batch is still in flight, not wait for it to resolve first',
+      );
+    } finally {
+      globalThis.fetch = realFetch;
+      clearHttpCache();
+    }
+  });
+
   test('switching a source off leaves it unchecked rather than clean', async () => {
     const quiet = DriftConfigSchema.parse({ rationale: { security: false } });
     const [rationale] = await buildRationale(
@@ -893,7 +1196,68 @@ describe('assembling the rationale', () => {
     const markdown = renderOne(rationale!);
     const lines = markdown.split('\n').filter(Boolean);
     assert.match(lines[0]!, /^### `pkg` 1\.0\.0 → 2\.0\.0$/);
-    assert.match(lines[1]!, /^\*\*Recommendation: Insufficient evidence\*\*$/);
+    // 'pkg' is archived upstream (see the test above), a confirmed
+    // `polarity: 'blocks'` fact that now outranks "insufficient evidence".
+    assert.match(lines[1]!, /^\*\*Recommendation: Do not upgrade yet\*\*$/);
     assert.match(markdown, /Why Drift concluded this/);
+  });
+
+  test('progress is reported in named stages, not as one opaque phase', async () => {
+    const phases: string[] = [];
+    await buildRationale(
+      { changes: [change], evidence: [], breakingChanges: [], impactSites: [] },
+      { config, logger, osv: noNetwork, onProgress: (_change, phase) => phases.push(phase) },
+    );
+
+    assert.deepEqual(phases, [
+      'Checking package metadata',
+      'Checking repository status',
+      'Checking security advisories',
+      'Checking maintenance signals',
+      'Checking license',
+    ]);
+  });
+});
+
+describe('rendering the license section', () => {
+  const baseRationale = (license: import('../dist/rationale/types.js').LicenseFinding) =>
+    ({
+      dependency: 'pkg',
+      from: '1.0.0',
+      to: '2.0.0',
+      security: { checked: false, current: [], target: [], resolved: [], introduced: [], carried: [], direction: 'preserves' },
+      maintenance: { facts: [] },
+      improvements: [],
+      license,
+      summary: { changes: [], unrelated: 0 },
+      assessment: {
+        recommendation: 'safe-to-upgrade',
+        reasons: [],
+        confidence: 'low',
+        confidenceBasis: '',
+      },
+      gaps: [],
+    }) as unknown as import('../dist/rationale/types.js').UpgradeRationale;
+
+  test('a benign license change is silent', () => {
+    const markdown = renderOne(baseRationale({ verdict: 'changed', statement: 'The declared license changed from MIT to BSD-3-Clause.', introduced: [] }));
+    assert.doesNotMatch(markdown, /License/);
+  });
+
+  test('an unchanged license is silent', () => {
+    const markdown = renderOne(baseRationale({ verdict: 'ok', statement: 'The license is unchanged.', introduced: [] }));
+    assert.doesNotMatch(markdown, /License/);
+  });
+
+  test('a license that stopped being readable is shown', () => {
+    const markdown = renderOne(baseRationale({ verdict: 'unknown', statement: 'pkg 2.0.0 declares no license Drift could read.', introduced: [] }));
+    assert.match(markdown, /\*\*License\*\*/);
+    assert.match(markdown, /declares no license Drift could read/);
+  });
+
+  test('a policy violation is shown, with its own heading', () => {
+    const markdown = renderOne(baseRationale({ verdict: 'policy-violation', statement: 'AGPL now.', introduced: [] }));
+    assert.match(markdown, /\*\*License review required\*\*/);
+    assert.match(markdown, /AGPL now\./);
   });
 });

@@ -238,7 +238,7 @@ with whatever the verification process itself can see.
 
 This is why Deep Verification is opt-in per run rather than automatic: Quick
 Scan (Drift's default everywhere — `drift analyze`/`drift outdated` without
-`--verify`, the extension's dependency panel until "Verify" is pressed, the
+`--verify`, the extension's dependency panel until "Deep Verify" is pressed, the
 Action's default `verify-mode: quick`) never installs or executes anything
 from a candidate dependency at all — it only reads what the registry
 publishes. Everything below applies once Deep Verification has actually been

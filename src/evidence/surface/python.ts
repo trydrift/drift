@@ -5,7 +5,9 @@ import { readArchive } from '../../util/archive.js';
 import { isAvailable } from '../../util/exec.js';
 import { fetchArchive, fetchJson } from '../../util/http.js';
 import { readComputed, writeComputed } from '../../util/artifact-cache.js';
+import { fetchRegistryInfo } from '../registry.js';
 import { diffSurfaces, type SurfaceApi, type SurfaceEntry, type SurfaceKind } from '../type-surface.js';
+import { matchesVersion } from './c.js';
 import { unavailable, type SurfaceProvider, type SurfaceRequest, type SurfaceOutcome } from './types.js';
 
 /**
@@ -37,6 +39,15 @@ const REMEDY = 'Install Python 3 and make `python3` available on PATH.';
  */
 const WEIGHT = 0.9;
 
+/**
+ * Below `CONFIDENT_SURFACE_WEIGHT`, deliberately: a diff computed from the
+ * GitHub-tag fallback layers an unverified, possibly mismatched archive (see
+ * `matchingTag`) on top of the same static-reconstruction limitations `WEIGHT`
+ * already discounts for. The PyPI-sourced path is never downgraded — only
+ * the fallback used when PyPI's own archive was genuinely unreadable.
+ */
+const FALLBACK_WEIGHT = 0.6;
+
 export const pythonSurface: SurfaceProvider = {
   ecosystem: 'pypi',
   tool: TOOL,
@@ -60,22 +71,44 @@ export const pythonSurface: SurfaceProvider = {
     // script that reads it, and the interpreter that runs the script.
     const analyzer = `${SCRIPT_FINGERPRINT}/${await interpreterVersion(request)}`;
 
-    const before = await surfaceOf(request, request.from, scriptPath, analyzer);
+    // `timeoutMs` is documented as the wall-clock budget for the *whole*
+    // computation, not a per-attempt allowance to be handed out again at
+    // every retry. Below this point every PyPI attempt, GitHub-fallback
+    // attempt and parser invocation — for both `from` and `to` — draws down
+    // one shared deadline instead of each separately receiving the full
+    // budget, which is how a nominal three-minute computation could run for
+    // a very large multiple of three minutes under network failure.
+    const deadline = Date.now() + request.timeoutMs;
+
+    const before = await surfaceOf(request, request.from, scriptPath, analyzer, deadline);
     if (!before.ok) return before.failure;
-    const after = await surfaceOf(request, request.to, scriptPath, analyzer);
+    const after = await surfaceOf(request, request.to, scriptPath, analyzer, deadline);
     if (!after.ok) return after.failure;
+
+    // PyPI's sdist/wheel is the artifact actually installed; a GitHub tag is
+    // only reached when that archive could not be read, and is never a
+    // guaranteed match for it — so a reader comparing this diff against PyPI
+    // is told when the source underneath it was the fallback, not the
+    // canonical published artifact.
+    const usedFallback = before.usedGitHubFallback || after.usedGitHubFallback;
+    const fallbackNote = usedFallback ? '; source: GitHub tag mirror, PyPI archive was unreadable' : '';
 
     return {
       available: true,
       changes: diffSurfaces(before.api, after.api),
       tool: TOOL,
-      weight: WEIGHT,
-      locator: `${request.name} ${request.from} → ${request.to} (public symbols, best-effort)`,
+      // Genuinely lower confidence, not merely a note in the citation: below
+      // `CONFIDENT_SURFACE_WEIGHT`, so a fallback-derived diff does not earn
+      // the same automatic high confidence a real computed diff does.
+      weight: usedFallback ? FALLBACK_WEIGHT : WEIGHT,
+      locator: `${request.name} ${request.from} → ${request.to} (public symbols, best-effort${fallbackNote})`,
     };
   },
 };
 
-type SurfaceAttempt = { ok: true; api: SurfaceApi } | { ok: false; failure: SurfaceOutcome };
+type SurfaceAttempt =
+  | { ok: true; api: SurfaceApi; usedGitHubFallback: boolean }
+  | { ok: false; failure: SurfaceOutcome };
 
 /**
  * The parsed public surface of one published version, computed at most once
@@ -92,24 +125,42 @@ type SurfaceAttempt = { ok: true; api: SurfaceApi } | { ok: false; failure: Surf
  * parser would keep serving the answer it got wrong — a silent accuracy
  * regression, and the reason there is no TTL here instead.
  *
- * Only a *successful* surface is remembered. Every failure path below is either
- * a fact about this machine (no `python3`) or a transient one (a download that
- * did not land), and neither is a property of the version being asked about.
+ * Only a *successful* surface computed from PyPI's own archive is remembered.
+ * Every failure path below is either a fact about this machine (no `python3`)
+ * or a transient one (a download that did not land), and neither is a
+ * property of the version being asked about — but a surface computed from
+ * the GitHub-tag fallback (see `githubArchiveFallback`) is a property of
+ * *this run's* transient PyPI failure, not of the version, and is
+ * deliberately never written here. Caching it would let a single transient
+ * PyPI outage convert into a permanent, indefinitely-reused substitute for
+ * the canonical artifact — there is no TTL on this cache to age it back out
+ * — and every later scan would keep re-serving GitHub-derived data on a
+ * package whose real PyPI archive may have been reachable the whole time
+ * since. Leaving it uncached means the next call simply tries PyPI again
+ * first, the same as any other call.
  */
+/** Time left before `deadline`, never negative. */
+function remainingMs(deadline: number): number {
+  return Math.max(0, deadline - Date.now());
+}
+
 async function surfaceOf(
   request: SurfaceRequest,
   version: string,
   scriptPath: string,
   analyzer: string,
+  deadline: number,
 ): Promise<SurfaceAttempt> {
   const key = `python-surface:${analyzer}:${request.name}@${version}`;
   // Stored as entry pairs: a `Map` is not JSON, and every field of a
   // `SurfaceEntry` is a string or an array of them, so the round trip is exact.
   const remembered = await readComputed<[string, SurfaceEntry][]>(key);
-  if (remembered) return { ok: true, api: new Map(remembered) };
+  // Always `false`: a fallback-derived surface is never written under `key`
+  // below, so anything read back from it is guaranteed to be PyPI-derived.
+  if (remembered) return { ok: true, api: new Map(remembered), usedGitHubFallback: false };
 
-  const computed = await computeSurfaceOf(request, version, scriptPath);
-  if (computed.ok) await writeComputed(key, [...computed.api]);
+  const computed = await computeSurfaceOf(request, version, scriptPath, deadline);
+  if (computed.ok && !computed.usedGitHubFallback) await writeComputed(key, [...computed.api]);
   return computed;
 }
 
@@ -117,8 +168,25 @@ async function computeSurfaceOf(
   request: SurfaceRequest,
   version: string,
   scriptPath: string,
+  deadline: number,
 ): Promise<SurfaceAttempt> {
-  const source = await sourceArchiveUrl(request.name, version);
+  if (remainingMs(deadline) <= 0) {
+    // The other version (`from` or `to`) already spent the whole request
+    // budget — most likely retrying a download that kept failing. Starting
+    // this one anyway would mean a zero-timeout request whose only possible
+    // outcome is an abort, worded as if the network had just failed rather
+    // than as what actually happened.
+    return {
+      ok: false,
+      failure: unavailable(
+        TOOL,
+        'toolchain-failed',
+        `Ran out of time comparing ${request.name}'s public symbols before ${version} could be checked.`,
+      ),
+    };
+  }
+
+  const source = await sourceArchiveUrl(request.name, version, remainingMs(deadline));
   if (!source) {
     return {
       ok: false,
@@ -133,25 +201,42 @@ async function computeSurfaceOf(
   const dir = join(request.workdir, `probe-${version.replace(/[^\w.-]/g, '_')}`);
 
   let bytes: Buffer;
+  let usedGitHubFallback = false;
   try {
     await mkdir(dir, { recursive: true });
-    const downloaded = await fetchArchive(source.url, { timeoutMs: 60_000 });
-    if (!downloaded.ok) {
-      return downloaded.status === 0
-        ? {
-            ok: false,
-            failure: unavailable(
-              TOOL,
-              'toolchain-failed',
-              `Could not download ${source.url}: ${downloaded.error ?? 'the request did not complete'}`,
-            ),
-          }
-        : {
-            ok: false,
-            failure: unavailable(TOOL, 'version-unavailable', `PyPI returned ${downloaded.status} for ${source.url}.`),
-          };
+    const downloaded = await fetchArchive(source.url, { timeoutMs: remainingMs(deadline), retries: 2 });
+    if (downloaded.ok) {
+      bytes = downloaded.bytes;
+    } else {
+      // PyPI's own archive is the canonical artifact — the one actually
+      // installed — so it is always tried first and never skipped in its
+      // favour. Only once it is genuinely unreadable is a GitHub tag tried,
+      // as a best-effort mirror: a tag can be missing, misnamed, or not
+      // bit-for-bit what PyPI published, so this is never preferred over a
+      // working PyPI response.
+      // No point starting a fresh multi-retry network operation (tag lookup,
+      // then the archive itself) with nothing left of the budget to spend on
+      // it — the PyPI failure just recorded is the honest reason either way.
+      const fallback =
+        remainingMs(deadline) > 0 ? await githubArchiveFallback(request.name, version, deadline) : null;
+      if (!fallback) {
+        return downloaded.status === 0
+          ? {
+              ok: false,
+              failure: unavailable(
+                TOOL,
+                'toolchain-failed',
+                `Could not download ${source.url}: ${downloaded.error ?? 'the request did not complete'}`,
+              ),
+            }
+          : {
+              ok: false,
+              failure: unavailable(TOOL, 'version-unavailable', `PyPI returned ${downloaded.status} for ${source.url}.`),
+            };
+      }
+      bytes = fallback;
+      usedGitHubFallback = true;
     }
-    bytes = downloaded.bytes;
   } catch (err) {
     return {
       ok: false,
@@ -172,7 +257,33 @@ async function computeSurfaceOf(
   // which the parser opens, so this writes a fraction of what it did.
   let written = 0;
   try {
-    for (const entry of readArchive(bytes)) {
+    const entries = readArchive(bytes);
+
+    // Only for the GitHub-tag fallback: PyPI's own sdist/wheel is already
+    // scoped to exactly this package, but a GitHub repository can be a
+    // monorepo hosting several PyPI distributions side by side, and parsing
+    // every .py/.pyi in it would misattribute a sibling package's API to this
+    // one. Declining (rather than diffing the whole repository) when the
+    // subtree cannot be confidently identified is deliberate — see
+    // `packageSubtree`.
+    let selected = entries;
+    if (usedGitHubFallback) {
+      const subtree = packageSubtree(entries.map((entry) => entry.path), request.name);
+      if (!subtree) {
+        return {
+          ok: false,
+          failure: unavailable(
+            TOOL,
+            'no-public-surface',
+            `Could not confidently identify ${request.name}'s own source directory inside its GitHub repository, so the fallback was declined rather than comparing the whole repository.`,
+          ),
+        };
+      }
+      const prefix = `${subtree}/`;
+      selected = entries.filter((entry) => entry.path.startsWith(prefix));
+    }
+
+    for (const entry of selected) {
       const path = safeRelativePath(entry.path);
       if (!path) continue;
       const target = join(dir, path);
@@ -202,7 +313,22 @@ async function computeSurfaceOf(
     };
   }
 
-  const read = await request.exec('python3', [scriptPath, dir], { timeoutMs: request.timeoutMs });
+  // `exec`'s underlying `child_process` `timeout` option treats `0` as
+  // "disabled" rather than "expired" — the opposite of what an exhausted
+  // budget must mean here — so this is checked explicitly rather than
+  // handing a possibly-zero `remainingMs(deadline)` straight through.
+  if (remainingMs(deadline) <= 0) {
+    return {
+      ok: false,
+      failure: unavailable(
+        TOOL,
+        'toolchain-failed',
+        `Ran out of time comparing ${request.name}'s public symbols before ${version}'s source could be parsed.`,
+      ),
+    };
+  }
+
+  const read = await request.exec('python3', [scriptPath, dir], { timeoutMs: remainingMs(deadline) });
   if (read.code !== 0) {
     return {
       ok: false,
@@ -232,7 +358,7 @@ async function computeSurfaceOf(
     };
   }
 
-  return { ok: true, api };
+  return { ok: true, api, usedGitHubFallback };
 }
 
 /**
@@ -264,11 +390,162 @@ export interface SourceArchive {
   filename: string;
 }
 
+/**
+ * A generous ceiling for a repository archive fetched only as a last-resort
+ * mirror. A PyPI sdist is typically a few hundred KB to a few MB; a whole
+ * GitHub repository tarball for a large monorepo can be orders of magnitude
+ * larger, and unlike a registry artifact there is no separate size Drift
+ * already trusts going in. Buffering and decompressing an unbounded archive
+ * for a best-effort fallback is not a cost this is worth paying — a
+ * repository past this size fails the fallback the same way an unreadable
+ * PyPI archive already does, rather than risking memory/disk pressure on
+ * whatever happens to be checked out at that tag.
+ */
+const MAX_FALLBACK_ARCHIVE_BYTES = 25 * 1024 * 1024;
+
+/**
+ * A best-effort mirror of a version's source, from its GitHub repository,
+ * for use only once PyPI's own archive is confirmed unreadable.
+ *
+ * Never preferred over PyPI: a git tag can be missing, misnamed, or scoped
+ * to a monorepo, so it is not guaranteed to be the exact artifact PyPI
+ * published — it is a fallback so a transient PyPI failure does not silently
+ * drop the surface diff, not a replacement source.
+ */
+async function githubArchiveFallback(name: string, version: string, deadline: number): Promise<Buffer | null> {
+  // `deadline` is threaded through rather than a `timeoutMs` snapshot, so
+  // every step below — the tags lookup and the eventual archive download —
+  // draws down what is actually left of the *outer* budget at the moment it
+  // runs, instead of each independently re-spending a fixed allowance taken
+  // once at the top of this function.
+  const info = await fetchRegistryInfo(name, 'pypi', version);
+  if (!info?.githubRepo) return null;
+  if (remainingMs(deadline) <= 0) return null;
+
+  const tags = await fetchJson<{ name?: string; commit?: { sha?: string } }[]>(
+    `https://api.github.com/repos/${info.githubRepo}/tags?per_page=100`,
+    { timeoutMs: remainingMs(deadline) },
+  );
+  const tag = matchingTag(tags ?? [], name, version);
+  if (!tag) return null;
+  if (remainingMs(deadline) <= 0) return null;
+
+  // A tag ref is mutable — a maintainer can force-move it to point at a
+  // different commit at any time — so downloading by tag name would make the
+  // archive cache below (keyed by URL, with no TTL: see `fetchArchive`) able
+  // to permanently serve bytes from a commit the tag no longer points at.
+  // Resolving to the commit SHA the tags API already returned makes the
+  // download URL genuinely content-addressed, the same invariant every other
+  // archive in that cache relies on.
+  const sha = tags?.find((entry) => entry.name === tag)?.commit?.sha;
+  const ref = sha ?? `refs/tags/${tag}`;
+
+  const downloaded = await fetchArchive(`https://codeload.github.com/${info.githubRepo}/tar.gz/${ref}`, {
+    timeoutMs: remainingMs(deadline),
+    retries: 2,
+    maxBytes: MAX_FALLBACK_ARCHIVE_BYTES,
+  });
+  return downloaded.ok ? downloaded.bytes : null;
+}
+
+/**
+ * Which repository tag is this version, when a repository can host more than
+ * one PyPI distribution.
+ *
+ * `matchesVersion` strips a tag down to its trailing numeric run, so in a
+ * monorepo both `package-a-v1.0.0` and `package-b-v1.0.0` match version
+ * `1.0.0` equally — whichever tag happened to sort first would otherwise win,
+ * and the archive downloaded and parsed could be a sibling package's source
+ * with nothing to do with the PyPI distribution actually being diffed. A tag
+ * that also names this package is preferred; absent one, a bare version match
+ * is only trusted when there is exactly one candidate across the whole
+ * repository — more than one *is* the ambiguity this guards against, and
+ * guessing which one is correct is worse than not falling back at all.
+ *
+ * "Names this package" is delimiter/token-aware, not a bare substring test: a
+ * short project name like `api`, `core` or `client` is a substring of any
+ * number of unrelated words (`capitalize`, `scored`, `clients`), so a plain
+ * `.includes()` could match a tag with nothing to do with this package. A tag
+ * only counts as naming the package when the normalized name appears as its
+ * own token, bounded by the start/end of the tag or a non-alphanumeric
+ * separator. And more than one such named match is still ambiguity, not a
+ * winner — it no longer short-circuits past the single-candidate check the
+ * unqualified case already had to satisfy.
+ */
+export function matchingTag(
+  tags: readonly { name?: string }[],
+  name: string,
+  version: string,
+): string | null {
+  const candidates = tags.filter(
+    (entry): entry is { name: string } => Boolean(entry.name) && matchesVersion(entry.name!, version),
+  );
+
+  const slug = name.toLowerCase().replace(/[_.]/g, '-');
+  const slugPattern = new RegExp(`(^|[^a-z0-9])${escapeRegExp(slug)}([^a-z0-9]|$)`);
+  const named = candidates.filter((entry) => slugPattern.test(entry.name.toLowerCase().replace(/[_.]/g, '-')));
+  if (named.length === 1) return named[0]!.name;
+  if (named.length > 1) return null;
+
+  return candidates.length === 1 ? candidates[0]!.name : null;
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Which directory inside a GitHub-fallback archive is this PyPI project's own
+ * source, so parsing is restricted to it rather than the whole repository —
+ * a monorepo's sibling packages must never be diffed as though they belonged
+ * to the package actually being compared.
+ *
+ * PyPI's JSON metadata does not expose a project's installed file list (that
+ * would require successfully downloading the very archive this fallback
+ * exists because PyPI's own copy could not be read), so this cannot consult
+ * a published sdist/wheel file listing the way a healthier download would
+ * allow. It falls back to the standard Python packaging convention instead:
+ * the top-level importable package is the project name normalized to a valid
+ * identifier (hyphens/dots become underscores), optionally nested under
+ * `src/`, at whatever depth a repository happens to nest it at (a bare
+ * top-level directory, or one more level in under the archive's own
+ * `owner-repo-sha/` wrapper).
+ *
+ * If that directory does not appear at a single, consistent path across the
+ * whole archive, there is no accountable way to scope the diff to the right
+ * package — this returns `null`, and the caller declines the fallback
+ * entirely rather than guessing across the whole repository.
+ */
+export function packageSubtree(paths: readonly string[], name: string): string | null {
+  const normalized = name.toLowerCase().replace(/[-.]+/g, '_');
+  const candidates = new Set<string>();
+
+  for (const entryPath of paths) {
+    const parts = entryPath.split('/').filter((part) => part !== '');
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (parts[i] === normalized) {
+        candidates.add(parts.slice(0, i + 1).join('/'));
+        break;
+      }
+      if (parts[i] === 'src' && parts[i + 1] === normalized) {
+        candidates.add(parts.slice(0, i + 2).join('/'));
+        break;
+      }
+    }
+  }
+
+  return candidates.size === 1 ? [...candidates][0]! : null;
+}
+
 /** The sdist if there is one, else a wheel — both are archives `tar` can open. */
-export async function sourceArchiveUrl(name: string, version: string): Promise<SourceArchive | null> {
+export async function sourceArchiveUrl(
+  name: string,
+  version: string,
+  timeoutMs?: number,
+): Promise<SourceArchive | null> {
   const data = await fetchJson<{
     releases?: Record<string, { url: string; filename: string; packagetype: string }[]>;
-  }>(`https://pypi.org/pypi/${encodeURIComponent(name)}/json`);
+  }>(`https://pypi.org/pypi/${encodeURIComponent(name)}/json`, timeoutMs !== undefined ? { timeoutMs } : {});
 
   const files = data?.releases?.[version] ?? [];
   const sdist = files.find((f) => f.packagetype === 'sdist');
@@ -321,7 +598,7 @@ export function parsePythonSurface(json: string): SurfaceApi | null {
  * to inspect it runs its module-level code, and Drift will not run a
  * dependency's code to describe it.
  */
-const SURFACE_SCRIPT = `import ast, json, os, sys
+export const SURFACE_SCRIPT = `import ast, json, os, sys
 
 def public(name):
     return not name.startswith('_') or (name.startswith('__') and name.endswith('__'))
@@ -351,6 +628,24 @@ def members(node):
             for target in item.targets:
                 if isinstance(target, ast.Name) and public(target.id): out.append(target.id)
     return out
+
+def module_name(root, path):
+    # A basename alone collides across subpackages -- pkg/a/module.py and
+    # pkg/b/module.py are different modules with potentially different public
+    # symbols, and reporting both under the bare key 'module' would silently
+    # merge (or clobber) one's symbols with the other's. This keeps enough of
+    # the path relative to the walked root to tell them apart, the same way
+    # Python's own import system would: pkg/a/module.py -> 'pkg.a.module'.
+    rel = os.path.relpath(path, root).replace(os.sep, '/')
+    parts = [p for p in rel.split('/') if p not in ('', '.')]
+    if not parts:
+        parts = [rel]
+    last = parts[-1]
+    if last in ('__init__.py', '__init__.pyi'):
+        parts = parts[:-1]
+    else:
+        parts[-1] = last.rsplit('.', 1)[0]
+    return '.'.join(parts) if parts else '__main__'
 
 def declared_all(tree):
     for node in tree.body:
@@ -384,8 +679,8 @@ for path in sorted(sources.values()):
         continue
 
     exported = declared_all(tree)
-    module = os.path.basename(path).rsplit('.', 1)[0]
-    prefix = '' if module in ('__init__', '__main__') else module + '.'
+    module = module_name(sys.argv[1], path)
+    prefix = '' if module in ('', '__init__', '__main__') else module + '.'
 
     for node in tree.body:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):

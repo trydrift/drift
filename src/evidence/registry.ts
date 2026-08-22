@@ -691,6 +691,7 @@ export interface RepositoryStatus {
 export async function fetchRepositoryStatus(
   githubRepo: string,
   token?: string,
+  onRetry?: (attempt: number, reason: 'rate-limited' | 'server-error' | 'network-error') => void,
 ): Promise<RepositoryStatus | null> {
   const headers: Record<string, string> = {
     Accept: 'application/vnd.github+json',
@@ -703,7 +704,7 @@ export async function fetchRepositoryStatus(
     pushed_at?: string;
     license?: { spdx_id?: string } | null;
     html_url?: string;
-  }>(`https://api.github.com/repos/${githubRepo}`, { headers });
+  }>(`https://api.github.com/repos/${githubRepo}`, { headers, ...(onRetry ? { onRetry } : {}) });
   if (!data) return null;
 
   const spdx = data.license?.spdx_id;

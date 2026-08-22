@@ -192,6 +192,87 @@ describe('downloading an immutable archive', () => {
     assert.match(result.error ?? '', /ECONNRESET/);
   });
 
+  test('a maxBytes ceiling rejects a response whose declared Content-Length is over it', async () => {
+    stub(() => new Response(new Uint8Array(10), { status: 200, headers: { 'Content-Length': String(100 * 1024 * 1024) } }));
+    const result = await fetchArchive('https://example.com/huge.tar.gz', { maxBytes: 1024, retries: 0 });
+    assert.equal(result.ok, false);
+    assert.match((result as { error?: string }).error ?? '', /exceeds the 1024-byte limit/);
+  });
+
+  test('a maxBytes ceiling also rejects a response with no (or an understated) Content-Length once the actual bytes exceed it', async () => {
+    stub(() => new Response(new Uint8Array(2048), { status: 200 }));
+    const result = await fetchArchive('https://example.com/undeclared.tar.gz', { maxBytes: 1024, retries: 0 });
+    assert.equal(result.ok, false);
+    assert.match((result as { error?: string }).error ?? '', /exceeds the 1024-byte limit/);
+  });
+
+  test('a response within the ceiling is unaffected by it', async () => {
+    stub(() => new Response(new Uint8Array([1, 2, 3]), { status: 200 }));
+    const result = await fetchArchive('https://example.com/small.tar.gz', { maxBytes: 1024 });
+    assert.ok(result.ok && result.bytes.length === 3);
+  });
+
+  test('an oversized response is not cached, so a later raised ceiling can still fetch it', async () => {
+    stub(() => new Response(new Uint8Array(2048), { status: 200 }));
+    const rejected = await fetchArchive('https://example.com/grows-into-limit.tar.gz', { maxBytes: 1024, retries: 0 });
+    assert.equal(rejected.ok, false);
+
+    clearHttpCache();
+    const retry = stub(() => new Response(new Uint8Array(2048), { status: 200 }));
+    const accepted = await fetchArchive('https://example.com/grows-into-limit.tar.gz', { maxBytes: 4096 });
+    assert.ok(accepted.ok && accepted.bytes.length === 2048);
+    assert.equal(retry.calls(), 1);
+  });
+
+  test('a hanging server cannot make a 1s timeout take ~3s across three independent 1s retries', async () => {
+    // `timeoutMs` is the *whole* wall-clock budget, not a per-attempt
+    // allowance re-granted at every retry. A stub that never resolves except
+    // when its AbortSignal fires stands in for a hung connection: if each of
+    // the three attempts (`retries: 2`) got its own full 300ms timeout, this
+    // would take roughly 900ms plus backoff sleeps. One shared deadline means
+    // the budget is gone after (about) the first attempt, and every attempt
+    // after that returns immediately rather than starting a fresh 300ms wait.
+    globalThis.fetch = ((_url: string, opts?: { signal?: AbortSignal }) =>
+      new Promise((_resolve, reject) => {
+        const signal = opts?.signal;
+        if (!signal) return;
+        if (signal.aborted) {
+          reject(new DOMException('The operation was aborted.', 'AbortError'));
+          return;
+        }
+        signal.addEventListener('abort', () =>
+          reject(new DOMException('The operation was aborted.', 'AbortError')),
+        );
+      })) as typeof fetch;
+
+    const start = Date.now();
+    const result = await fetchArchive('https://example.com/hangs-forever.tar.gz', { timeoutMs: 300, retries: 2 });
+    const elapsed = Date.now() - start;
+
+    assert.equal(result.ok, false);
+    assert.ok(
+      elapsed < 900,
+      `expected well under the 3×300ms=900ms three independent full-timeout retries would take; took ${elapsed}ms`,
+    );
+  });
+
+  test('a cached archive larger than the current caller’s maxBytes is rejected, not silently served', async () => {
+    const first = stub(() => new Response(new Uint8Array(2048), { status: 200 }));
+    const cached = await fetchArchive('https://example.com/was-fine-before.tar.gz');
+    assert.ok(cached.ok && cached.bytes.length === 2048);
+    assert.equal(first.calls(), 1);
+
+    // Same URL, same disk-cache entry, but this caller's own ceiling is
+    // tighter than what got cached. The disk-cache read path must apply
+    // `maxBytes` too, not only the network path — and since the entry is
+    // still on disk, this necessarily goes back to the network rather than
+    // silently handing back the oversized cached bytes.
+    const second = stub(() => new Response(new Uint8Array(2048), { status: 200 }));
+    const result = await fetchArchive('https://example.com/was-fine-before.tar.gz', { maxBytes: 1024, retries: 0 });
+    assert.equal(result.ok, false);
+    assert.equal(second.calls(), 1, 'a caller with a tighter ceiling must not be served the oversized cache entry silently');
+  });
+
   test('two callers asking at once share one download', async () => {
     let calls = 0;
     globalThis.fetch = (() => {
@@ -207,5 +288,112 @@ describe('downloading an immutable archive', () => {
     ]);
     assert.ok(a.ok && b.ok);
     assert.equal(calls, 1);
+  });
+});
+
+describe('reporting a retry as it happens', () => {
+  test('a 429 is reported as rate-limited, before the caller has any other way to know', async () => {
+    stub(() => new Response('slow down', { status: 429 }));
+    const retries: { attempt: number; reason: string }[] = [];
+    await fetchText('https://example.com/e.md', {
+      retries: 1,
+      onRetry: (attempt, reason) => retries.push({ attempt, reason }),
+    });
+    assert.deepEqual(retries, [{ attempt: 1, reason: 'rate-limited' }]);
+  });
+
+  test('a 500 is reported as a server error', async () => {
+    stub(() => new Response('boom', { status: 500 }));
+    const retries: { attempt: number; reason: string }[] = [];
+    await fetchText('https://example.com/f.md', {
+      retries: 1,
+      onRetry: (attempt, reason) => retries.push({ attempt, reason }),
+    });
+    assert.deepEqual(retries, [{ attempt: 1, reason: 'server-error' }]);
+  });
+
+  test('a thrown network error is reported distinctly from an HTTP error', async () => {
+    globalThis.fetch = (() => Promise.reject(new Error('ECONNRESET'))) as typeof fetch;
+    const retries: { attempt: number; reason: string }[] = [];
+    await fetchText('https://example.com/g.md', {
+      retries: 1,
+      onRetry: (attempt, reason) => retries.push({ attempt, reason }),
+    });
+    assert.deepEqual(retries, [{ attempt: 1, reason: 'network-error' }]);
+  });
+
+  test('a call that never retries never reports one', async () => {
+    stub(() => new Response('# ok', { status: 200 }));
+    const retries: unknown[] = [];
+    await fetchText('https://example.com/h.md', { onRetry: (attempt, reason) => retries.push({ attempt, reason }) });
+    assert.deepEqual(retries, []);
+  });
+
+  test('a 403 with x-ratelimit-remaining: 0 is GitHub\'s primary rate limit, and is retried', async () => {
+    let calls = 0;
+    globalThis.fetch = (() => {
+      calls += 1;
+      if (calls === 1) {
+        return Promise.resolve(
+          new Response('rate limited', { status: 403, headers: { 'x-ratelimit-remaining': '0' } }),
+        );
+      }
+      return Promise.resolve(new Response('# ok', { status: 200 }));
+    }) as typeof fetch;
+
+    const retries: { attempt: number; reason: string }[] = [];
+    const result = await fetchText('https://api.github.com/repos/o/r', {
+      retries: 1,
+      onRetry: (attempt, reason) => retries.push({ attempt, reason }),
+    });
+    assert.equal(result, '# ok');
+    assert.deepEqual(retries, [{ attempt: 1, reason: 'rate-limited' }]);
+  });
+
+  test('a 403 with a Retry-After header is GitHub\'s secondary rate limit, and is retried', async () => {
+    let calls = 0;
+    globalThis.fetch = (() => {
+      calls += 1;
+      if (calls === 1) {
+        return Promise.resolve(
+          new Response('secondary rate limit', { status: 403, headers: { 'Retry-After': '0' } }),
+        );
+      }
+      return Promise.resolve(new Response('# ok', { status: 200 }));
+    }) as typeof fetch;
+
+    const retries: { attempt: number; reason: string }[] = [];
+    const result = await fetchText('https://api.github.com/repos/o/r2', {
+      retries: 1,
+      onRetry: (attempt, reason) => retries.push({ attempt, reason }),
+    });
+    assert.equal(result, '# ok');
+    assert.deepEqual(retries, [{ attempt: 1, reason: 'rate-limited' }]);
+  });
+
+  test('a 403 with neither rate-limit signal is a genuine refusal, and is never retried', async () => {
+    const refusal = stub(() => new Response('forbidden', { status: 403 }));
+    const retries: unknown[] = [];
+    const result = await fetchText('https://api.github.com/repos/o/private', {
+      retries: 2,
+      onRetry: (attempt, reason) => retries.push({ attempt, reason }),
+    });
+    assert.equal(result, null);
+    assert.deepEqual(retries, []);
+    assert.equal(refusal.calls(), 1);
+  });
+
+  test('a 403 rate limit that never clears is not retried past the configured limit', async () => {
+    const limited = stub(
+      () => new Response('rate limited', { status: 403, headers: { 'x-ratelimit-remaining': '0' } }),
+    );
+    const retries: unknown[] = [];
+    const result = await fetchText('https://api.github.com/repos/o/stuck', {
+      retries: 1,
+      onRetry: (attempt, reason) => retries.push({ attempt, reason }),
+    });
+    assert.equal(result, null);
+    assert.equal(retries.length, 1, 'one retry is attempted, then the configured limit is respected');
+    assert.equal(limited.calls(), 2);
   });
 });

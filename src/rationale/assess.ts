@@ -120,7 +120,10 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
     if (fact.concerning) reasons.push(fact.statement);
   }
 
-  if (license.verdict === 'policy-violation' || license.verdict === 'changed') {
+  // 'changed' is deliberately silent in the rendered License section for a
+  // benign change — reasons must not leak it back in through the details
+  // block, or the suppression is cosmetic only.
+  if (license.verdict === 'policy-violation') {
     reasons.push(license.statement);
   }
 
@@ -151,6 +154,12 @@ function decide(
   if (security.checked && security.introduced.length > 0) return 'do-not-upgrade-yet';
   if (maintenance.deprecated) return 'do-not-upgrade-yet';
   if (license.verdict === 'policy-violation') return 'do-not-upgrade-yet';
+  // A fact this repository cannot get past -- most commonly a runtime floor
+  // this repository's own declared Node/Python version does not satisfy --
+  // must never be papered over as "recommended" or "safe". `concerning` alone
+  // cannot carry this: it also flags unverified, merely-worth-a-look facts
+  // that must NOT block. Only `polarity: 'blocks'` may.
+  if (maintenance.facts.some((fact) => fact.polarity === 'blocks')) return 'do-not-upgrade-yet';
 
   if (counts.affected > 0) {
     return counts.decisions > 0 ? 'manual-migration-required' : 'upgrade-after-review';
@@ -165,7 +174,7 @@ function decide(
 
   if (
     (security.checked && security.resolved.length > 0) ||
-    maintenance.facts.some((fact) => fact.concerning)
+    maintenance.facts.some((fact) => fact.polarity === 'favors')
   ) {
     return 'upgrade-recommended';
   }

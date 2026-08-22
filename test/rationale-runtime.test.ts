@@ -1,6 +1,11 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkNodeCompatibility, findNodeDeclarations } from '../dist/rationale/index.js';
+import {
+  checkNodeCompatibility,
+  checkPythonCompatibility,
+  findNodeDeclarations,
+  findPythonDeclarations,
+} from '../dist/rationale/index.js';
 import { assessMaintenance } from '../dist/rationale/index.js';
 
 describe("finding this repository's own Node.js declarations", () => {
@@ -55,6 +60,340 @@ describe("finding this repository's own Node.js declarations", () => {
     const files = [{ path: 'src/index.ts', content: 'engines.node = "22"' }];
     assert.deepEqual(findNodeDeclarations(files), []);
   });
+
+  test('member undefined (no workspace context) keeps every declaration, unscoped', () => {
+    const files = [
+      { path: 'packages/api/.nvmrc', content: '20.19.0' },
+      { path: 'packages/worker/.nvmrc', content: '18.0.0' },
+      { path: '.nvmrc', content: '22.6.0' },
+    ];
+    assert.deepEqual(findNodeDeclarations(files), [
+      { file: 'packages/api/.nvmrc', line: 1, requirement: '20.19.0' },
+      { file: 'packages/worker/.nvmrc', line: 1, requirement: '18.0.0' },
+      { file: '.nvmrc', line: 1, requirement: '22.6.0' },
+    ]);
+  });
+});
+
+describe('scoping a runtime declaration to the workspace that owns it', () => {
+  const allMembers = ['', 'packages/api', 'packages/worker'];
+
+  test('a non-root member sees its own declaration', () => {
+    const files = [{ path: 'packages/api/.nvmrc', content: '20.19.0' }];
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
+      { file: 'packages/api/.nvmrc', line: 1, requirement: '20.19.0' },
+    ]);
+  });
+
+  test('a non-root member does not see a sibling member’s declaration', () => {
+    const files = [{ path: 'packages/worker/.nvmrc', content: '18.0.0' }];
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), []);
+  });
+
+  test('a non-root member still sees a repo-global CI workflow declaration', () => {
+    const files = [
+      {
+        path: '.github/workflows/ci.yml',
+        content: ['jobs:', '  test:', '    steps:', "      - uses: actions/setup-node@v5", '        with:', "          node-version: '22'"].join('\n'),
+      },
+    ];
+    const declarations = findNodeDeclarations(files, 'packages/api', allMembers);
+    assert.equal(declarations.length, 1);
+    assert.equal(declarations[0].file, '.github/workflows/ci.yml');
+  });
+
+  test('a non-root member still sees a root-level declaration', () => {
+    const files = [{ path: '.nvmrc', content: '22.6.0' }];
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
+      { file: '.nvmrc', line: 1, requirement: '22.6.0' },
+    ]);
+  });
+
+  test('the root workspace (member === "") does not inherit a sibling’s .nvmrc', () => {
+    const files = [{ path: 'packages/worker/.nvmrc', content: '18.0.0' }];
+    assert.deepEqual(findNodeDeclarations(files, '', allMembers), []);
+  });
+
+  test('the root workspace (member === "") does not inherit a sibling’s .python-version', () => {
+    const files = [{ path: 'packages/worker/.python-version', content: '3.9' }];
+    assert.deepEqual(findPythonDeclarations(files, '', allMembers), []);
+  });
+
+  test('the root workspace still sees its own root-level declaration', () => {
+    const files = [{ path: '.nvmrc', content: '22.6.0' }];
+    assert.deepEqual(findNodeDeclarations(files, '', allMembers), [
+      { file: '.nvmrc', line: 1, requirement: '22.6.0' },
+    ]);
+  });
+
+  test('the root workspace still sees a repo-global CI workflow declaration', () => {
+    const files = [
+      { path: '.github/workflows/ci.yml', content: "          node-version: '22'" },
+    ];
+    assert.equal(findNodeDeclarations(files, '', allMembers).length, 1);
+  });
+
+  test('a root package.json engines field does not leak into a sibling member when the root is itself a member', () => {
+    // The root directory being a registered workspace member (allMembers
+    // includes '') means memberOf() attributes root-owned files to '' rather
+    // than null, the same as any other member's own files. A root package
+    // manifest describes the root package's own runtime, not the whole
+    // repository's, so it must not be treated as global the way a root
+    // .nvmrc or CI workflow is.
+    const files = [{ path: 'package.json', content: JSON.stringify({ engines: { node: '>=18' } }) }];
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), []);
+  });
+
+  test('the root package still sees its own package.json engines field', () => {
+    const files = [{ path: 'package.json', content: JSON.stringify({ engines: { node: '>=18' } }) }];
+    assert.deepEqual(findNodeDeclarations(files, '', allMembers), [
+      { file: 'package.json', line: 1, requirement: '>=18' },
+    ]);
+  });
+
+  test('a root pyproject.toml requires-python does not leak into a sibling member', () => {
+    const files = [
+      { path: 'pyproject.toml', content: ['[project]', 'requires-python = ">=3.9"'].join('\n') },
+    ];
+    assert.deepEqual(findPythonDeclarations(files, 'packages/api', allMembers), []);
+  });
+
+  test('a root-level .nvmrc still applies globally even when the root is itself a member', () => {
+    const files = [{ path: '.nvmrc', content: '18.18.0' }];
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api', allMembers), [
+      { file: '.nvmrc', line: 1, requirement: '18.18.0' },
+    ]);
+  });
+
+  test('with no member list supplied, scoping is skipped rather than guessed at', () => {
+    const files = [{ path: 'packages/worker/.nvmrc', content: '18.0.0' }];
+    // `member` is known ('packages/api') but `allMembers` was never gathered —
+    // falls back to the original unscoped behavior rather than assuming every
+    // other file belongs to a sibling.
+    assert.deepEqual(findNodeDeclarations(files, 'packages/api'), [
+      { file: 'packages/worker/.nvmrc', line: 1, requirement: '18.0.0' },
+    ]);
+  });
+});
+
+describe("finding this repository's own Python declarations", () => {
+  test('reads requires-python out of pyproject.toml’s [project] table', () => {
+    const files = [
+      {
+        path: 'pyproject.toml',
+        content: ['[project]', 'name = "demo"', 'requires-python = ">=3.9"', '', '[tool.poetry]', 'name = "demo"'].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: 'pyproject.toml', line: 3, requirement: '>=3.9' }]);
+  });
+
+  test('a requires-python-looking key outside [project] is not read as the declaration', () => {
+    const files = [
+      {
+        path: 'pyproject.toml',
+        content: ['[tool.other]', 'requires-python = ">=2.7"', '', '[project]', 'name = "demo"'].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), []);
+  });
+
+  test('reads python_requires out of setup.cfg’s [options] section', () => {
+    const files = [
+      { path: 'setup.cfg', content: ['[metadata]', 'name = demo', '', '[options]', 'python_requires = >=3.8,<4'].join('\n') },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: 'setup.cfg', line: 5, requirement: '>=3.8,<4' }]);
+  });
+
+  test('reads only a literal python_requires keyword argument out of setup.py', () => {
+    const files = [
+      {
+        path: 'setup.py',
+        content: ['from setuptools import setup', '', 'setup(', '    name="demo",', '    python_requires=">=3.10",', ')'].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: 'setup.py', line: 5, requirement: '>=3.10' }]);
+  });
+
+  test('a computed python_requires in setup.py is left out rather than evaluated', () => {
+    const files = [{ path: 'setup.py', content: 'setup(python_requires=MIN_PYTHON)' }];
+    assert.deepEqual(findPythonDeclarations(files), []);
+  });
+
+  test('reads .python-version as a pin', () => {
+    const files = [{ path: '.python-version', content: '3.11\n' }];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: '.python-version', line: 1, requirement: '3.11' }]);
+  });
+
+  test('.python-version reads every version pyenv lists, not just the first line', () => {
+    // Pyenv accepts multiple versions in this file, one per line or several
+    // whitespace-separated on one line, and treats `#`-prefixed lines as
+    // comments. Reading only the first line can miss an older version this
+    // repository still builds and runs on.
+    const files = [{ path: '.python-version', content: ['3.11', '# a comment', '3.8 3.9', ''].join('\n') }];
+    assert.deepEqual(findPythonDeclarations(files), [
+      { file: '.python-version', line: 1, requirement: '3.11' },
+      { file: '.python-version', line: 3, requirement: '3.8' },
+      { file: '.python-version', line: 3, requirement: '3.9' },
+    ]);
+  });
+
+  test('a stray older .python-version entry fails a raised floor even though the first line is compatible', () => {
+    const files = [{ path: '.python-version', content: '3.11\n3.8' }];
+    const declarations = findPythonDeclarations(files);
+    const results = checkPythonCompatibility(declarations, '>=3.10');
+    assert.deepEqual(
+      results.map((r) => r.verdict),
+      ['compatible', 'incompatible'],
+    );
+  });
+
+  test('setup.py ignores a commented-out python_requires', () => {
+    const files = [
+      {
+        path: 'setup.py',
+        content: [
+          'from setuptools import setup',
+          '',
+          '# python_requires=">=2.7"  (legacy, dropped)',
+          'setup(',
+          '    name="demo",',
+          ')',
+        ].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), []);
+  });
+
+  test('setup.py ignores a python_requires-looking assignment that is not an argument to setup()', () => {
+    const files = [
+      {
+        path: 'setup.py',
+        content: [
+          'from setuptools import setup',
+          '',
+          '# Not actually passed to setup() below -- a leftover from a refactor.',
+          'python_requires = ">=2.7"',
+          '',
+          'setup(',
+          '    name="demo",',
+          ')',
+        ].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), []);
+  });
+
+  test('a real setup() call followed by an unrelated helper.setup() call still uses the real one', () => {
+    // The bug: taking the literal "last setup( in the file" without excluding
+    // a member call on some unrelated object picked up `helper.setup(...)`
+    // instead of the actual package declaration.
+    const files = [
+      {
+        path: 'setup.py',
+        content: [
+          'from setuptools import setup',
+          '',
+          'setup(',
+          '    name="demo",',
+          '    python_requires=">=3.10",',
+          ')',
+          '',
+          'helper.setup(other="thing")',
+        ].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: 'setup.py', line: 5, requirement: '>=3.10' }]);
+  });
+
+  test('a setuptools.setup(...) call is recognised the same as a bare setup(...) call', () => {
+    const files = [
+      {
+        path: 'setup.py',
+        content: ['import setuptools', '', 'setuptools.setup(', '    python_requires=">=3.11",', ')'].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: 'setup.py', line: 4, requirement: '>=3.11' }]);
+  });
+
+  test('a string argument containing a close paren does not truncate the call early', () => {
+    // The bug: a bare character-count paren scan treated the ")" inside
+    // "(details)" as closing the whole setup() call, silently dropping every
+    // keyword argument after it -- python_requires included.
+    const files = [
+      {
+        path: 'setup.py',
+        content: [
+          'from setuptools import setup',
+          '',
+          'setup(',
+          '    name="demo",',
+          '    long_description="See the docs (details here) for more.",',
+          '    python_requires=">=3.11",',
+          ')',
+        ].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: 'setup.py', line: 6, requirement: '>=3.11' }]);
+  });
+
+  test('a triple-quoted string argument containing a close paren does not truncate the call early', () => {
+    const files = [
+      {
+        path: 'setup.py',
+        content: [
+          'from setuptools import setup',
+          '',
+          'setup(',
+          '    name="demo",',
+          '    long_description="""',
+          '    See the docs (and this parenthetical) for details.',
+          '    """,',
+          '    python_requires=">=3.9",',
+          ')',
+        ].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: 'setup.py', line: 8, requirement: '>=3.9' }]);
+  });
+
+  test('an entirely commented-out setup() call is never read as the declaration', () => {
+    const files = [
+      {
+        path: 'setup.py',
+        content: [
+          '# setup(',
+          '#     name="demo",',
+          '#     python_requires=">=2.7",',
+          '# )',
+        ].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), []);
+  });
+
+  test('setup.py still finds python_requires when the setup() call spans multiple lines with other kwargs', () => {
+    const files = [
+      {
+        path: 'setup.py',
+        content: [
+          'from setuptools import setup',
+          '',
+          'setup(',
+          '    name="demo",',
+          '    version="1.0",',
+          '    python_requires=">=3.10",',
+          '    packages=["demo"],',
+          ')',
+        ].join('\n'),
+      },
+    ];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: 'setup.py', line: 6, requirement: '>=3.10' }]);
+  });
+
+  test('reads runtime.txt, stripping the "python-" prefix some platforms use', () => {
+    const files = [{ path: 'runtime.txt', content: 'python-3.11.4' }];
+    assert.deepEqual(findPythonDeclarations(files), [{ file: 'runtime.txt', line: 1, requirement: '3.11.4' }]);
+  });
 });
 
 describe('checking this repository against a raised requirement', () => {
@@ -87,6 +426,23 @@ describe('checking this repository against a raised requirement', () => {
       checkNodeCompatibility([{ file: 'Dockerfile', line: 1, requirement: 'lts' }], '>=22.13.0'),
       [],
     );
+  });
+});
+
+describe('checking this repository against a raised Python requirement', () => {
+  test('a floor entirely inside the new range is compatible', () => {
+    const results = checkPythonCompatibility([{ file: 'pyproject.toml', line: 1, requirement: '>=3.11' }], '>=3.9');
+    assert.equal(results[0].verdict, 'compatible');
+  });
+
+  test('a floor with no overlap at all is incompatible', () => {
+    const results = checkPythonCompatibility([{ file: '.python-version', line: 1, requirement: '3.6' }], '>=3.9');
+    assert.equal(results[0].verdict, 'incompatible');
+  });
+
+  test('a declared floor that admits versions the new floor rejects is only partial, not compatible', () => {
+    const results = checkPythonCompatibility([{ file: 'pyproject.toml', line: 1, requirement: '>=3.8' }], '>=3.9,<4');
+    assert.equal(results[0].verdict, 'partial');
   });
 });
 
@@ -143,6 +499,86 @@ describe('the runtime-requirement maintenance fact', () => {
     assert.match(fact.statement, /Check this against the runtimes this repository builds and deploys on/);
   });
 
+  test('an installed version with no runtime requirement is still checked when the target introduces one (Node incompatible)', () => {
+    // Regression: describeRuntimeChange() used to return immediately when
+    // `before` was undefined, before ever calling checkNodeCompatibility --
+    // so a newly-introduced floor was never verified against this
+    // repository's own declaration, even when Drift had gathered one.
+    const result = assessMaintenance({
+      ...base,
+      currentVersion: { ...version('unused', 'Node.js'), runtime: null },
+      targetVersion: version('>=22', 'Node.js'),
+      repoRuntime: [{ file: '.nvmrc', line: 1, requirement: '18.0.0' }],
+    });
+    const fact = result.facts.find((f) => /requires Node\.js/.test(f.statement));
+    assert.equal(fact.concerning, true);
+    assert.equal(fact.polarity, 'blocks');
+    assert.match(fact.statement, /does not satisfy it: \.nvmrc/);
+  });
+
+  test('an installed version with no runtime requirement, target introduces a floor this repository already meets (Node compatible)', () => {
+    const result = assessMaintenance({
+      ...base,
+      currentVersion: { ...version('unused', 'Node.js'), runtime: null },
+      targetVersion: version('>=22', 'Node.js'),
+      repoRuntime: [{ file: '.nvmrc', line: 1, requirement: '22.6.0' }],
+    });
+    const fact = result.facts.find((f) => /requires Node\.js/.test(f.statement));
+    assert.equal(fact.concerning, false);
+    assert.equal(fact.polarity, 'context');
+    assert.match(fact.statement, /already satisfies it \(\.nvmrc\)/);
+  });
+
+  test('an installed version with no runtime requirement is checked when the target introduces one (Python incompatible)', () => {
+    const result = assessMaintenance({
+      ...base,
+      currentVersion: { ...version('unused', 'Python'), runtime: null },
+      targetVersion: version('>=3.11', 'Python'),
+      pythonRuntime: [{ file: '.python-version', line: 1, requirement: '3.9' }],
+    });
+    const fact = result.facts.find((f) => /requires Python/.test(f.statement));
+    assert.equal(fact.concerning, true);
+    assert.equal(fact.polarity, 'blocks');
+    assert.match(fact.statement, /does not satisfy it: \.python-version/);
+  });
+
+  test('an installed version with no runtime requirement, target introduces a Python floor this repository already meets', () => {
+    const result = assessMaintenance({
+      ...base,
+      currentVersion: { ...version('unused', 'Python'), runtime: null },
+      targetVersion: version('>=3.11', 'Python'),
+      pythonRuntime: [{ file: '.python-version', line: 1, requirement: '3.11' }],
+    });
+    const fact = result.facts.find((f) => /requires Python/.test(f.statement));
+    assert.equal(fact.concerning, false);
+    assert.equal(fact.polarity, 'context');
+  });
+
+  test('runtime facts verified as incompatible or partial carry polarity blocks; verified-compatible and unverified do not', () => {
+    const incompatible = assessMaintenance({
+      ...base,
+      currentVersion: version('^18.18.0 || ^20.9.0 || >=21.1.0'),
+      targetVersion: version('^20.19.0 || ^22.13.0 || >=24'),
+      repoRuntime: [{ file: '.nvmrc', line: 1, requirement: '18.18.0' }],
+    }).facts.find((f) => /Node\.js version changed/.test(f.statement));
+    assert.equal(incompatible.polarity, 'blocks');
+
+    const partial = assessMaintenance({
+      ...base,
+      currentVersion: version('^18.18.0 || ^20.9.0 || >=21.1.0'),
+      targetVersion: version('^20.19.0 || ^22.13.0 || >=24'),
+      repoRuntime: [{ file: 'package.json', line: 1, requirement: '>=22.6.0' }],
+    }).facts.find((f) => /Node\.js version changed/.test(f.statement));
+    assert.equal(partial.polarity, 'blocks');
+
+    const unverified = assessMaintenance({
+      ...base,
+      currentVersion: version('^18.18.0 || ^20.9.0 || >=21.1.0'),
+      targetVersion: version('^20.19.0 || ^22.13.0 || >=24'),
+    }).facts.find((f) => /Node\.js version changed/.test(f.statement));
+    assert.equal(unverified.polarity, 'context');
+  });
+
   test("a non-Node runtime bump is never checked against this repository's Node declarations", () => {
     const result = assessMaintenance({
       ...base,
@@ -151,6 +587,41 @@ describe('the runtime-requirement maintenance fact', () => {
       repoRuntime: [{ file: 'package.json', line: 1, requirement: '>=22.13.0' }],
     });
     const fact = result.facts.find((f) => /Go version changed/.test(f.statement));
+    assert.match(fact.statement, /Check this against the runtimes this repository builds and deploys on/);
+  });
+
+  test('a raised Python floor is verified automatically, the same way Node is', () => {
+    const result = assessMaintenance({
+      ...base,
+      currentVersion: version('>=3.8', 'Python'),
+      targetVersion: version('>=3.9', 'Python'),
+      pythonRuntime: [{ file: 'pyproject.toml', line: 3, requirement: '>=3.11' }],
+    });
+    const fact = result.facts.find((f) => /Python version changed/.test(f.statement));
+    assert.equal(fact.concerning, false);
+    assert.match(fact.statement, /already satisfies it \(pyproject\.toml\)/);
+  });
+
+  test('a Python floor this repository falls short of is concerning, and names the file', () => {
+    const result = assessMaintenance({
+      ...base,
+      currentVersion: version('>=3.6', 'Python'),
+      targetVersion: version('>=3.9', 'Python'),
+      pythonRuntime: [{ file: '.python-version', line: 1, requirement: '3.6' }],
+    });
+    const fact = result.facts.find((f) => /Python version changed/.test(f.statement));
+    assert.equal(fact.concerning, true);
+    assert.match(fact.statement, /does not satisfy it: \.python-version/);
+  });
+
+  test('a Python bump is never checked against this repository’s Node declarations', () => {
+    const result = assessMaintenance({
+      ...base,
+      currentVersion: version('>=3.8', 'Python'),
+      targetVersion: version('>=3.9', 'Python'),
+      repoRuntime: [{ file: 'package.json', line: 1, requirement: '>=3.9' }],
+    });
+    const fact = result.facts.find((f) => /Python version changed/.test(f.statement));
     assert.match(fact.statement, /Check this against the runtimes this repository builds and deploys on/);
   });
 });

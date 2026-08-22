@@ -46,10 +46,48 @@ export interface RationaleContext {
   surfaceGaps?: Map<string, SurfaceUnavailable>;
   /** Prose documents that were actually read, keyed by `dependencyEcosystemKey` when available. */
   prose?: Map<string, ProseSource[]>;
-  /** Precomputed security assessments, keyed by the exact upgrade object. */
-  security?: Map<DependencyChange, SecurityAssessment>;
-  /** Where this repository declares its own Node.js version. See {@link RuntimeDeclaration}. */
+  /**
+   * The OSV batch lookup for every change in this call, keyed by the exact
+   * upgrade object.
+   *
+   * A promise rather than an already-resolved `Map`: `buildRationale` starts
+   * this fetch and hands it straight through without awaiting it, so it runs
+   * concurrently with each change's own independent registry/version
+   * lookups instead of gating the start of all of them.
+   */
+  security?: Promise<Map<DependencyChange, SecurityAssessment>>;
+  /**
+   * Where this repository declares its own Node.js version.
+   *
+   * The fallback used when a change carries no workspace (`change.workspace`
+   * is `undefined`) or `repoRuntimeByWorkspace` has no entry for it.
+   */
   repoRuntime?: readonly RuntimeDeclaration[];
+  /** Where this repository declares its own Python version. See {@link repoRuntime}. */
+  pythonRuntime?: readonly RuntimeDeclaration[];
+  /**
+   * Node.js declarations already scoped per workspace member, keyed by
+   * `change.workspace` (`''` for the root member of a monorepo). A single
+   * `buildRationale` call can cover changes from several members at once —
+   * `analyzeRepository`'s main path does exactly this — and a flat
+   * `repoRuntime` applied to all of them would let one member's declared
+   * runtime leak into another's compatibility check. Absent (or missing a
+   * key) falls back to `repoRuntime`.
+   */
+  repoRuntimeByWorkspace?: ReadonlyMap<string, readonly RuntimeDeclaration[]>;
+  /** See {@link repoRuntimeByWorkspace}; the Python equivalent. */
+  pythonRuntimeByWorkspace?: ReadonlyMap<string, readonly RuntimeDeclaration[]>;
+  /**
+   * Called as `rationaleFor` moves through its stages, one dependency at a
+   * time.
+   *
+   * `rationaleFor` used to be reported as one opaque phase — "weighing what
+   * this upgrade is worth" — for its entire duration, whether it was
+   * fetching the registry, waiting on GitHub, or querying OSV. That made a
+   * slow stage indistinguishable from a hung one. This is the seam a caller
+   * uses to show which stage is actually running.
+   */
+  onProgress?: (change: DependencyChange, phase: string) => void;
 }
 
 export interface RationaleInput {
@@ -70,16 +108,20 @@ export async function buildRationale(
     from: change.from!,
     to: change.to!,
   }));
-  const security = ctx.config.rationale.security
-    ? await assessSecurityBatch(lookups, ctx.osv ?? {})
-    : undefined;
-  const securityByChange = security
-    ? new Map(upgrades.map((change, index) => [change, security.get(lookups[index]!)!]))
+  // Started here and handed through unresolved, so it runs alongside each
+  // change's own independent registry/version lookups in `rationaleFor`
+  // rather than in front of all of them. Awaiting the whole batch here first
+  // meant not one dependency's metadata fetch could even start until OSV had
+  // already answered for every dependency in this call.
+  const securityBatchPromise = ctx.config.rationale.security
+    ? assessSecurityBatch(lookups, ctx.osv ?? {}).then(
+        (security) => new Map(upgrades.map((change, index) => [change, security.get(lookups[index]!)!])),
+      )
     : undefined;
 
   return mapWithConcurrency(upgrades, 4, async (change) => {
     try {
-      return await rationaleFor(change, input, { ...ctx, security: securityByChange });
+      return await rationaleFor(change, input, { ...ctx, security: securityBatchPromise });
     } catch (err) {
       // A crash here is a bug in Drift, not a fact about the dependency — and
       // it must not cost the developer the analysis of the other thirty.
@@ -89,6 +131,12 @@ export async function buildRationale(
   });
 }
 
+const RETRY_LABEL = {
+  'rate-limited': 'rate limited',
+  'server-error': 'server error',
+  'network-error': 'network error',
+} as const;
+
 async function rationaleFor(
   change: DependencyChange,
   input: RationaleInput,
@@ -97,25 +145,45 @@ async function rationaleFor(
   const { config, logger } = ctx;
   const from = change.from!;
   const to = change.to!;
+  const report = (phase: string) => ctx.onProgress?.(change, phase);
 
-  const registry = await fetchRegistryInfo(change.name, change.ecosystem, to);
-
-  const [currentVersion, targetVersion, repository] = await Promise.all([
-    fetchVersionInfo(change.name, change.ecosystem, from).catch(() => null),
-    fetchVersionInfo(change.name, change.ecosystem, to).catch(() => null),
-    registry?.githubRepo
-      ? fetchRepositoryStatus(registry.githubRepo, ctx.githubToken).catch(() => null)
-      : Promise.resolve(null),
-  ]);
-
-  const security = config.rationale.security
-    ? (ctx.security?.get(change) ?? (await assessSecurity(change.name, change.ecosystem, from, to, ctx.osv ?? {})))
+  // Registry resolution, both versions' own metadata, and the security
+  // lookup are independent of one another and started together rather than
+  // one after another — only the repository-status fetch actually depends on
+  // anything here (the GitHub repo the registry resolves), so it is the one
+  // fetch that has to wait.
+  report('Checking package metadata');
+  const registryPromise = fetchRegistryInfo(change.name, change.ecosystem, to);
+  const currentVersionPromise = fetchVersionInfo(change.name, change.ecosystem, from).catch(() => null);
+  const targetVersionPromise = fetchVersionInfo(change.name, change.ecosystem, to).catch(() => null);
+  const securityPromise: Promise<SecurityAssessment> = config.rationale.security
+    ? Promise.resolve(ctx.security)
+        .then((batch) => batch?.get(change))
+        .then((cached) => cached ?? assessSecurity(change.name, change.ecosystem, from, to, ctx.osv ?? {}))
     : // Switched off, not unreachable. Saying "could not be reached" here sent
       // developers looking for a network problem behind their own setting.
-      unchecked(
-        'Advisory lookup is switched off for this repository (`rationale.security`), so this upgrade’s effect on known vulnerabilities was not checked.',
+      Promise.resolve(
+        unchecked(
+          'Advisory lookup is switched off for this repository (`rationale.security`), so this upgrade’s effect on known vulnerabilities was not checked.',
+        ),
       );
 
+  const registry = await registryPromise;
+  report('Checking repository status');
+  const repository = registry?.githubRepo
+    ? await fetchRepositoryStatus(registry.githubRepo, ctx.githubToken, (attempt, reason) =>
+        report(`Checking repository status (${RETRY_LABEL[reason]}, retrying — attempt ${attempt})`),
+      ).catch(() => null)
+    : null;
+
+  report('Checking security advisories');
+  const [currentVersion, targetVersion, security] = await Promise.all([
+    currentVersionPromise,
+    targetVersionPromise,
+    securityPromise,
+  ]);
+
+  report('Checking maintenance signals');
   const maintenance = config.rationale.maintenance
     ? assessMaintenance({
         name: change.name,
@@ -126,10 +194,16 @@ async function rationaleFor(
         repository,
         currentVersion,
         targetVersion,
-        repoRuntime: ctx.repoRuntime,
+        repoRuntime:
+          (change.workspace !== undefined ? ctx.repoRuntimeByWorkspace?.get(change.workspace) : undefined) ??
+          ctx.repoRuntime,
+        pythonRuntime:
+          (change.workspace !== undefined ? ctx.pythonRuntimeByWorkspace?.get(change.workspace) : undefined) ??
+          ctx.pythonRuntime,
       })
     : { facts: [] };
 
+  report('Checking license');
   const license = await assessLicense({
     name: change.name,
     ecosystem: change.ecosystem,
@@ -376,7 +450,12 @@ function degraded(change: DependencyChange, reason: string): UpgradeRationale {
 export * from './types.js';
 export { assessSecurity, assessSecurityBatch, mergeAliases, cvssBaseScore } from './osv.js';
 export { assessMaintenance, describeAge, raisesMinimum } from './maintenance.js';
-export { checkNodeCompatibility, findNodeDeclarations } from './runtime.js';
+export {
+  checkNodeCompatibility,
+  checkPythonCompatibility,
+  findNodeDeclarations,
+  findPythonDeclarations,
+} from './runtime.js';
 export { assessLicense, isAllowed } from './license.js';
 export { summarizeRelease, classify, bulletLines, improvementsFrom, describeAdditions } from './summary.js';
 export { assessUpgrade, RECOMMENDATION_LABEL } from './assess.js';
