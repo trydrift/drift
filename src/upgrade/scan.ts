@@ -1146,8 +1146,8 @@ export async function scanUpgrades(args: {
  * statement about this repository rather than a guess about it.
  *
  * Exported so a caller can run Deep Verification on its own, after a Quick
- * Scan already returned — on one candidate ("Verify"), or every candidate
- * from a scan ("Verify all") — without repeating the analysis phase that
+ * Scan already returned — on one candidate ("Deep Verify"), or every candidate
+ * from a scan ("Deep Verify All") — without repeating the analysis phase that
  * produced them. `scanUpgrades` itself calls this the same way, as its own
  * verification phase, whenever `verify.enabled` is true.
  */

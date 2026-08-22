@@ -199,7 +199,7 @@ export async function reanalyzeUpgrade(args: {
  * candidates in a throwaway worktree and run this project's own checks
  * against them, without repeating the scan that produced them.
  *
- * This is what "Verify" (one row) and "Verify all" call — the panel's Quick
+ * This is what "Deep Verify" (one row) and "Deep Verify All" call — the panel's Quick
  * Scan already ran with verification off, so this is the only place in the
  * extension that creates a worktree, installs anything, or runs a project's
  * own typecheck/build/test for the dependency-scan flow.

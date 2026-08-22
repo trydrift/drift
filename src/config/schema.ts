@@ -158,9 +158,12 @@ export const DriftConfigSchema = z.object({
    *
    * Opt-in because a license check with no configured policy has nothing to
    * compare against, and a tool that reports "the license is MIT" on every
-   * upgrade is noise. Enabling it without an `allow` or `deny` list still
-   * reports a *change* of license, which is the part that matters on an
-   * upgrade regardless of policy.
+   * upgrade is noise. A change of license between versions is always
+   * detected, but only surfaced on its own when `enabled` is on and it
+   * actually violates the configured `allow`/`deny` — enabling this with
+   * neither list set reports nothing new, since nothing is denied. A
+   * license that stopped being readable between versions is surfaced either
+   * way; that is a fact about the metadata, not a policy question.
    */
   licenses: z
     .object({

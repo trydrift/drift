@@ -307,7 +307,7 @@ They don't behave identically. What each surface actually does:
 | Scan for available upgrades | Yes (`/scan`) | Yes (`drift outdated`) | Yes — on a `schedule` trigger, or `scan-mode: outdated` on manual dispatch; see [`examples/workflows/drift-outdated.yml`](examples/workflows/drift-outdated.yml) |
 | Analyse a dependency change that already happened | Yes | Yes (`drift analyze`) | Yes |
 | Quick Scan (static analysis, nothing installed or run) | Yes — the default | Yes — the default | Yes — the default (`verify-mode: quick`) |
-| Deep Verification (installs the change, runs your own checks) | Yes — "Verify" per package, "Verify all", or `/verify` | Yes — `--verify`, on top of either command | Yes — `verify-mode: deep` |
+| Deep Verification (installs the change, runs your own checks) | Yes — "Deep Verify" per package, "Deep Verify All", or `/verify` | Yes — `--verify`, on top of either command | Yes — `verify-mode: deep` |
 | Evidence / localization | Yes | Yes | Yes |
 | Deterministic remediation | Yes | Yes (`drift fix`) | Yes |
 | Fix plans | Yes — shows the plan and asks before applying | Yes — `drift fix --plan` to read, `drift fix` to apply | Yes — applies what `remediation.fixPlans.autoApply` clears, and files the rest for review, since it cannot prompt |

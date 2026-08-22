@@ -12,8 +12,8 @@ import { createLogger } from '../dist/util/logger.js';
 /**
  * `verifyUpgradeCandidates` is Deep Verification on its own: given candidates
  * a Quick Scan already produced, it installs and checks a subset of them
- * without repeating the scan. This is exactly the seam "Verify one" and
- * "Verify all" call from the extension, and the same seam a cancelled
+ * without repeating the scan. This is exactly the seam "Deep Verify" and
+ * "Deep Verify All" call from the extension, and the same seam a cancelled
  * verification has to leave clean — the packages it never reached must fall
  * back to their Quick Scan result, not a stuck "checking" state.
  */

@@ -281,13 +281,13 @@ typecheck/build/test, per `verify.checks` below, before reporting the
 result as measured. It's always opt-in per run:
 
 - CLI: pass `--verify` to `drift analyze` or `drift outdated`.
-- VS Code extension: press "Verify" on one package or "Verify all" in the
-  dependency panel, or run `/verify` after `/recent`.
+- VS Code extension: press "Deep Verify" on one package or "Deep Verify All"
+  in the dependency panel, or run `/verify` after `/recent`.
 - GitHub Action: set `verify-mode: deep` (default is `quick`).
 
 `verify.enabled` below is a hard ceiling above all of that, not the trigger
 for it — set it to `false` and Deep Verification is unavailable everywhere,
-regardless of a `--verify` flag, a "Verify" click, or `verify-mode: deep`.
+regardless of a `--verify` flag, a "Deep Verify" click, or `verify-mode: deep`.
 Set to `true` (the default), it stays off until one of those explicitly asks
 for it.
 
@@ -594,10 +594,16 @@ file. **It does not give legal advice.**
 
 `boolean` — default **`false`**
 
-Turn on license checking. Note that a *change* of declared license between the
-two versions is reported whether or not this is enabled — MIT becoming AGPL
-inside a version bump is a decision being made silently, and that is worth
-surfacing regardless of policy.
+Turn on policy checking against `allow`/`deny`. A *change* of declared license
+between the two versions is always detected, whether or not this is enabled —
+but only surfaced on its own when it matters: when `enabled` is on and the new
+license violates the configured `allow`/`deny`, or when the license stopped
+being readable between versions. A benign change — one that stays permitted,
+or one detected while `enabled` is off — is silent, the same as an unchanged
+license; reporting every such change is exactly the noise this file exists to
+avoid. MIT becoming AGPL inside a version bump is only surfaced this way when
+a policy that denies AGPL is actually configured, the same as any other
+violation.
 
 ### `licenses.allow` · `licenses.deny`
 
