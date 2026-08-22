@@ -1520,7 +1520,7 @@ function renderVerification(candidate: UpgradeCandidate): string {
     // row into Deep Verification, rather than leaving the absence of a
     // verification block to be read as "nothing to say".
     return `<p class="verification unverified"><span>Static analysis only — not deeply verified.</span>
-      <button class="ctl" data-action="verifyOne" data-id="${escapeAttr(candidate.id)}" title="Install ${escapeAttr(candidate.name)} in a throwaway worktree and run this project's own checks against it">Verify</button></p>`;
+      <button class="ctl bordered" data-action="verifyOne" data-id="${escapeAttr(candidate.id)}" title="Install ${escapeAttr(candidate.name)} in a throwaway worktree and run this project's own checks against it">Verify</button></p>`;
   }
 
   const ran = verification.checks
@@ -1545,7 +1545,7 @@ function renderVerification(candidate: UpgradeCandidate): string {
   const [summary, ...detailParts] = (verification.reason ?? 'Drift could not test this upgrade.').split('\n\n');
   const detail = detailParts.join('\n\n');
   return `<p class="verification skipped">${ICON_ALERT}<span>Could not verify — ${escapeHtml(summary ?? '')} The findings below are static predictions.</span>
-    <button class="ctl" data-action="verifyOne" data-id="${escapeAttr(candidate.id)}" title="Try Deep Verification again">Try again</button></p>
+    <button class="ctl bordered" data-action="verifyOne" data-id="${escapeAttr(candidate.id)}" title="Try Deep Verification again">Try again</button></p>
   ${detail ? `<pre class="activity-io"><code>${escapeHtml(detail)}</code></pre>` : ''}`;
 }
 
