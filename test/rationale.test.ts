@@ -897,3 +897,46 @@ describe('assembling the rationale', () => {
     assert.match(markdown, /Why Drift concluded this/);
   });
 });
+
+describe('rendering the license section', () => {
+  const baseRationale = (license: import('../dist/rationale/types.js').LicenseFinding) =>
+    ({
+      dependency: 'pkg',
+      from: '1.0.0',
+      to: '2.0.0',
+      security: { checked: false, current: [], target: [], resolved: [], introduced: [], carried: [], direction: 'preserves' },
+      maintenance: { facts: [] },
+      improvements: [],
+      license,
+      summary: { changes: [], unrelated: 0 },
+      assessment: {
+        recommendation: 'safe-to-upgrade',
+        reasons: [],
+        confidence: 'low',
+        confidenceBasis: '',
+      },
+      gaps: [],
+    }) as unknown as import('../dist/rationale/types.js').UpgradeRationale;
+
+  test('a benign license change is silent', () => {
+    const markdown = renderOne(baseRationale({ verdict: 'changed', statement: 'The declared license changed from MIT to BSD-3-Clause.', introduced: [] }));
+    assert.doesNotMatch(markdown, /License/);
+  });
+
+  test('an unchanged license is silent', () => {
+    const markdown = renderOne(baseRationale({ verdict: 'ok', statement: 'The license is unchanged.', introduced: [] }));
+    assert.doesNotMatch(markdown, /License/);
+  });
+
+  test('a license that stopped being readable is shown', () => {
+    const markdown = renderOne(baseRationale({ verdict: 'unknown', statement: 'pkg 2.0.0 declares no license Drift could read.', introduced: [] }));
+    assert.match(markdown, /\*\*License\*\*/);
+    assert.match(markdown, /declares no license Drift could read/);
+  });
+
+  test('a policy violation is shown, with its own heading', () => {
+    const markdown = renderOne(baseRationale({ verdict: 'policy-violation', statement: 'AGPL now.', introduced: [] }));
+    assert.match(markdown, /\*\*License review required\*\*/);
+    assert.match(markdown, /AGPL now\./);
+  });
+});

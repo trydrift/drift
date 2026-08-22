@@ -1413,7 +1413,7 @@ function renderRationale(candidate: UpgradeCandidate): string {
     blocks.push(renderFacts('bad', 'Maintenance', concerning.map((fact) => fact.statement)));
   }
 
-  if (rationale.license.verdict === 'policy-violation' || rationale.license.verdict === 'changed') {
+  if (rationale.license.verdict === 'policy-violation' || rationale.license.verdict === 'unknown') {
     blocks.push(
       renderFacts(
         rationale.license.verdict === 'policy-violation' ? 'bad' : 'neutral',

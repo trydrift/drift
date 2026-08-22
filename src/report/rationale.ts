@@ -165,9 +165,12 @@ function renderMaintenance(maintenance: MaintenanceAssessment): string {
 }
 
 function renderLicense(license: LicenseFinding): string {
-  // Silence when nothing changed and no policy was violated: an upgrade report
-  // that says "the license is still MIT" every time is one people stop reading.
-  if (license.verdict === 'ok') return '';
+  // Silence for 'ok' (nothing changed) and 'changed' (changed but still
+  // within policy) alike: an upgrade report that flags every benign license
+  // note is one people stop reading. 'unknown' and 'policy-violation' are
+  // kept — a license that stopped being readable, or one that conflicts with
+  // policy, is worth a reader's attention even when nothing else is wrong.
+  if (license.verdict === 'ok' || license.verdict === 'changed') return '';
 
   const heading = license.verdict === 'policy-violation' ? '**License review required**' : '**License**';
   const lines = [heading, '', license.statement];
