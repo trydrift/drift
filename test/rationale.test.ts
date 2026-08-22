@@ -19,6 +19,7 @@ import {
 import { renderOne } from '../dist/report/rationale.js';
 import { DriftConfigSchema } from '../dist/config/schema.js';
 import { createLogger } from '../dist/util/logger.js';
+import { clearHttpCache } from '../dist/util/http.js';
 
 /**
  * The upgrade rationale.
@@ -935,6 +936,65 @@ describe('assembling the rationale', () => {
     assert.match(stated, /\[v2\.0\.2 release notes\]/);
     assert.match(stated, /\[v2\.0\.4 release notes\]/, 'the fifth is still a link, not a dead-end count');
     assert.doesNotMatch(stated, /and \d+ more/, 'nothing is hidden behind an unlinked count anymore');
+  });
+
+  test('repoRuntimeByWorkspace scopes a runtime declaration per member, even inside one buildRationale batch', async () => {
+    // analyzeRepository's main path gathers changes from every workspace
+    // member into a single buildRationale call. A flat repoRuntime applied
+    // to all of them would let one member's declared Node floor leak into a
+    // sibling member's compatibility verdict — this is what
+    // repoRuntimeByWorkspace exists to prevent.
+    //
+    // fetchJson caches by URL for the lifetime of the process, and earlier
+    // tests in this file already asked the (offline) network for this same
+    // package and cached the miss — cleared here so the mock below is
+    // actually consulted, and again after so later tests still see a miss
+    // rather than this test's mocked packument.
+    clearHttpCache();
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (() =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            versions: {
+              '1.0.0': { engines: { node: '>=14' } },
+              '2.0.0': { engines: { node: '>=22.13.0' } },
+            },
+            time: {},
+          }),
+        ),
+      )) as typeof fetch;
+
+    try {
+      const apiChange = { ...change, workspace: 'packages/api' };
+      const workerChange = { ...change, workspace: 'packages/worker' };
+
+      const rationales = await buildRationale(
+        { changes: [apiChange, workerChange], evidence: [], breakingChanges: [], impactSites: [] },
+        {
+          config,
+          logger,
+          osv: noNetwork,
+          repoRuntimeByWorkspace: new Map([
+            ['packages/api', [{ file: 'packages/api/package.json', line: 1, requirement: '>=22.13.0' }]],
+            ['packages/worker', [{ file: 'packages/worker/package.json', line: 1, requirement: '>=14' }]],
+          ]),
+        },
+      );
+
+      const factFor = (r: (typeof rationales)[number]) =>
+        r.maintenance.facts.find((f) => /Node\.js version changed/.test(f.statement));
+
+      assert.equal(factFor(rationales[0]!)?.concerning, false, 'the api workspace already satisfies the new floor');
+      assert.equal(
+        factFor(rationales[1]!)?.concerning,
+        true,
+        "the worker workspace does not, and must not borrow the api workspace's declaration",
+      );
+    } finally {
+      globalThis.fetch = realFetch;
+      clearHttpCache();
+    }
   });
 
   test('an unreadable dependency is insufficient evidence, and says so', async () => {

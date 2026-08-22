@@ -28,7 +28,7 @@ import { findCommunityRecipe } from './remediation/registry.js';
 import type { CommunityRecipeCandidate } from './remediation/types.js';
 import { buildPlan } from './plan/index.js';
 import { buildRationale } from './rationale/index.js';
-import { findNodeDeclarations, type RuntimeDeclaration } from './rationale/runtime.js';
+import { findNodeDeclarations, findPythonDeclarations, type RuntimeDeclaration } from './rationale/runtime.js';
 import type { SurfaceAddition, SurfaceUnavailable } from './evidence/surface/types.js';
 import type { AnalysisGap, CheckedSurface, VerificationOutcome } from './confidence/types.js';
 import { behaviouralFindingKind, runBehaviouralVerification } from './verification/behavioural.js';
@@ -233,7 +233,16 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   // localization -- a dependency's runtime floor is a property of this
   // repository, not of any one breaking change, so it is gathered once and
   // handed to every maintenance assessment rather than re-read per change.
+  // The flat arrays are the fallback for a repository with no workspace
+  // layout (`change.workspace` is `undefined` for every change there, so
+  // there is nothing to scope by); the by-workspace maps are what a monorepo
+  // actually needs, so one member's dependency upgrade is never checked
+  // against a sibling member's declared runtime — see `scopedTo` in
+  // `rationale/runtime.ts`.
   let repoRuntime: RuntimeDeclaration[] = [];
+  let pythonRuntime: RuntimeDeclaration[] = [];
+  let repoRuntimeByWorkspace: Map<string, RuntimeDeclaration[]> | undefined;
+  let pythonRuntimeByWorkspace: Map<string, RuntimeDeclaration[]> | undefined;
   // Whether the search actually happened, which is a different fact from
   // whether it found anything. Without this the plan cannot tell a reader that
   // zero impact sites meant "not searched".
@@ -266,6 +275,11 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
     const files = await walkSourceFiles(workspace, { members });
     const index = buildIndex(files);
     repoRuntime = findNodeDeclarations(files);
+    pythonRuntime = findPythonDeclarations(files);
+    if (layouts.length > 0) {
+      repoRuntimeByWorkspace = new Map(members.map((m) => [m, findNodeDeclarations(files, m, members)]));
+      pythonRuntimeByWorkspace = new Map(members.map((m) => [m, findPythonDeclarations(files, m, members)]));
+    }
 
     // What each package calls itself in source, read from the artefact the
     // registry published. Resolved once for the whole run — every dependency
@@ -544,7 +558,19 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   progress('rationale', 'Weighing what each upgrade is worth');
   const rationale = await buildRationale(
     { changes: actionable, evidence, breakingChanges, impactSites },
-    { config, logger, githubToken, additions, surfaceCompared: surfaceComputed, surfaceGaps, prose, repoRuntime },
+    {
+      config,
+      logger,
+      githubToken,
+      additions,
+      surfaceCompared: surfaceComputed,
+      surfaceGaps,
+      prose,
+      repoRuntime,
+      pythonRuntime,
+      repoRuntimeByWorkspace,
+      pythonRuntimeByWorkspace,
+    },
   );
 
   /* Stage 8 — plan */

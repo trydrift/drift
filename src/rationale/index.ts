@@ -48,10 +48,27 @@ export interface RationaleContext {
   prose?: Map<string, ProseSource[]>;
   /** Precomputed security assessments, keyed by the exact upgrade object. */
   security?: Map<DependencyChange, SecurityAssessment>;
-  /** Where this repository declares its own Node.js version. See {@link RuntimeDeclaration}. */
+  /**
+   * Where this repository declares its own Node.js version.
+   *
+   * The fallback used when a change carries no workspace (`change.workspace`
+   * is `undefined`) or `repoRuntimeByWorkspace` has no entry for it.
+   */
   repoRuntime?: readonly RuntimeDeclaration[];
-  /** Where this repository declares its own Python version. See {@link RuntimeDeclaration}. */
+  /** Where this repository declares its own Python version. See {@link repoRuntime}. */
   pythonRuntime?: readonly RuntimeDeclaration[];
+  /**
+   * Node.js declarations already scoped per workspace member, keyed by
+   * `change.workspace` (`''` for the root member of a monorepo). A single
+   * `buildRationale` call can cover changes from several members at once —
+   * `analyzeRepository`'s main path does exactly this — and a flat
+   * `repoRuntime` applied to all of them would let one member's declared
+   * runtime leak into another's compatibility check. Absent (or missing a
+   * key) falls back to `repoRuntime`.
+   */
+  repoRuntimeByWorkspace?: ReadonlyMap<string, readonly RuntimeDeclaration[]>;
+  /** See {@link repoRuntimeByWorkspace}; the Python equivalent. */
+  pythonRuntimeByWorkspace?: ReadonlyMap<string, readonly RuntimeDeclaration[]>;
   /**
    * Called as `rationaleFor` moves through its stages, one dependency at a
    * time.
@@ -165,8 +182,12 @@ async function rationaleFor(
         repository,
         currentVersion,
         targetVersion,
-        repoRuntime: ctx.repoRuntime,
-        pythonRuntime: ctx.pythonRuntime,
+        repoRuntime:
+          (change.workspace !== undefined ? ctx.repoRuntimeByWorkspace?.get(change.workspace) : undefined) ??
+          ctx.repoRuntime,
+        pythonRuntime:
+          (change.workspace !== undefined ? ctx.pythonRuntimeByWorkspace?.get(change.workspace) : undefined) ??
+          ctx.pythonRuntime,
       })
     : { facts: [] };
 
