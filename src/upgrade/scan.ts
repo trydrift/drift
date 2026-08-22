@@ -1765,6 +1765,10 @@ async function analyzeUpgrade(args: {
         prose,
         repoRuntime: findNodeDeclarations(files, args.member),
         pythonRuntime: findPythonDeclarations(files, args.member),
+        // Replaces the single opaque phase above with the actual named stage
+        // rationaleFor is in, so a slow scan shows which network call it is
+        // waiting on instead of one frozen label.
+        onProgress: (_change, phase) => report(phase, label),
       },
     ));
 

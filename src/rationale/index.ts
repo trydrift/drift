@@ -52,6 +52,17 @@ export interface RationaleContext {
   repoRuntime?: readonly RuntimeDeclaration[];
   /** Where this repository declares its own Python version. See {@link RuntimeDeclaration}. */
   pythonRuntime?: readonly RuntimeDeclaration[];
+  /**
+   * Called as `rationaleFor` moves through its stages, one dependency at a
+   * time.
+   *
+   * `rationaleFor` used to be reported as one opaque phase — "weighing what
+   * this upgrade is worth" — for its entire duration, whether it was
+   * fetching the registry, waiting on GitHub, or querying OSV. That made a
+   * slow stage indistinguishable from a hung one. This is the seam a caller
+   * uses to show which stage is actually running.
+   */
+  onProgress?: (change: DependencyChange, phase: string) => void;
 }
 
 export interface RationaleInput {
@@ -99,25 +110,43 @@ async function rationaleFor(
   const { config, logger } = ctx;
   const from = change.from!;
   const to = change.to!;
+  const report = (phase: string) => ctx.onProgress?.(change, phase);
 
-  const registry = await fetchRegistryInfo(change.name, change.ecosystem, to);
-
-  const [currentVersion, targetVersion, repository] = await Promise.all([
-    fetchVersionInfo(change.name, change.ecosystem, from).catch(() => null),
-    fetchVersionInfo(change.name, change.ecosystem, to).catch(() => null),
-    registry?.githubRepo
-      ? fetchRepositoryStatus(registry.githubRepo, ctx.githubToken).catch(() => null)
-      : Promise.resolve(null),
-  ]);
-
-  const security = config.rationale.security
-    ? (ctx.security?.get(change) ?? (await assessSecurity(change.name, change.ecosystem, from, to, ctx.osv ?? {})))
+  // Registry resolution, both versions' own metadata, and the security
+  // lookup are independent of one another and started together rather than
+  // one after another — only the repository-status fetch actually depends on
+  // anything here (the GitHub repo the registry resolves), so it is the one
+  // fetch that has to wait.
+  report('Checking package metadata');
+  const registryPromise = fetchRegistryInfo(change.name, change.ecosystem, to);
+  const currentVersionPromise = fetchVersionInfo(change.name, change.ecosystem, from).catch(() => null);
+  const targetVersionPromise = fetchVersionInfo(change.name, change.ecosystem, to).catch(() => null);
+  const securityPromise: Promise<SecurityAssessment> = config.rationale.security
+    ? Promise.resolve(ctx.security?.get(change)).then(
+        (cached) => cached ?? assessSecurity(change.name, change.ecosystem, from, to, ctx.osv ?? {}),
+      )
     : // Switched off, not unreachable. Saying "could not be reached" here sent
       // developers looking for a network problem behind their own setting.
-      unchecked(
-        'Advisory lookup is switched off for this repository (`rationale.security`), so this upgrade’s effect on known vulnerabilities was not checked.',
+      Promise.resolve(
+        unchecked(
+          'Advisory lookup is switched off for this repository (`rationale.security`), so this upgrade’s effect on known vulnerabilities was not checked.',
+        ),
       );
 
+  const registry = await registryPromise;
+  report('Checking repository status');
+  const repository = registry?.githubRepo
+    ? await fetchRepositoryStatus(registry.githubRepo, ctx.githubToken).catch(() => null)
+    : null;
+
+  report('Checking security advisories');
+  const [currentVersion, targetVersion, security] = await Promise.all([
+    currentVersionPromise,
+    targetVersionPromise,
+    securityPromise,
+  ]);
+
+  report('Checking maintenance signals');
   const maintenance = config.rationale.maintenance
     ? assessMaintenance({
         name: change.name,
@@ -133,6 +162,7 @@ async function rationaleFor(
       })
     : { facts: [] };
 
+  report('Checking license');
   const license = await assessLicense({
     name: change.name,
     ecosystem: change.ecosystem,

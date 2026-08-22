@@ -896,6 +896,22 @@ describe('assembling the rationale', () => {
     assert.match(lines[1]!, /^\*\*Recommendation: Insufficient evidence\*\*$/);
     assert.match(markdown, /Why Drift concluded this/);
   });
+
+  test('progress is reported in named stages, not as one opaque phase', async () => {
+    const phases: string[] = [];
+    await buildRationale(
+      { changes: [change], evidence: [], breakingChanges: [], impactSites: [] },
+      { config, logger, osv: noNetwork, onProgress: (_change, phase) => phases.push(phase) },
+    );
+
+    assert.deepEqual(phases, [
+      'Checking package metadata',
+      'Checking repository status',
+      'Checking security advisories',
+      'Checking maintenance signals',
+      'Checking license',
+    ]);
+  });
 });
 
 describe('rendering the license section', () => {
