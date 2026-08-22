@@ -112,6 +112,21 @@ export interface UpgradeCandidate {
   workspace?: string;
   /** That member's own package name, when its manifest declares one. */
   workspaceName?: string;
+  /**
+   * Every workspace member directory this candidate was scanned against —
+   * declared workspaces plus undeclared nested projects — the same universe
+   * `analyzeUpgrade` used to scope this candidate's runtime declarations.
+   *
+   * Persisted so a reanalysis (`reanalyzeUpgrade`) can reuse the exact
+   * ownership universe the original scan used, rather than re-deriving the
+   * repository's full member set from scratch. That distinction matters
+   * specifically after a `scanUpgrades({ dirs })` custom-directory scan: the
+   * full repository can have more members than were actually scanned, and
+   * re-deriving from scratch would silently widen (or otherwise change) the
+   * scope a reanalysis reasons about compared to the original scan. Absent
+   * only when the repository is a single package and no scoping was needed.
+   */
+  allMembers?: readonly string[];
   /** Absolute path of the root this candidate was scanned from. Set when more than one root is open. */
   repoRoot?: string;
   /** That root's display label. */
@@ -641,7 +656,15 @@ export async function scanUpgrades(args: {
   report('Looking for manifests', root);
   // A monorepo is many packages sharing a checkout. Each member is scanned as
   // itself: its own manifest, its own package manager, its own impact sites.
-  const workspaces = args.dirs ? [] : await detectWorkspaces(root, fs);
+  // Computed unconditionally -- even when `args.dirs` restricts what is
+  // actually scanned below -- because this is the *ownership* universe, not
+  // the scan target list. A directory left out of `args.dirs` still exists in
+  // the repository and still owns its own files; if it were left out here
+  // too, `memberOf` would attribute its files to no member at all, and
+  // runtime scoping would treat them as repository-global (a sibling
+  // package's `.nvmrc` bleeding into every other package's compatibility
+  // check). See `allMembers` below and `UpgradeCandidate.allMembers`.
+  const workspaces = await detectWorkspaces(root, fs);
   const declaredMembers = memberDirectories(workspaces);
 
   // A repository can be multi-project without ever declaring it — a root
@@ -650,11 +673,15 @@ export async function scanUpgrades(args: {
   // `package.json` and an undeclared `extension/package.json`). Those are
   // found the same way a formal workspace member would be, so a scan covers
   // them without being pointed at them by hand.
-  const nested = args.dirs ? [] : await discoverNestedProjects(root, fs, declaredMembers).catch(() => []);
+  const nested = await discoverNestedProjects(root, fs, declaredMembers).catch(() => []);
   const nestedGitRepos = nested.filter((project) => project.hasOwnGit);
   const undeclaredDirs = nested.filter((project) => !project.hasOwnGit).map((project) => project.dir);
 
-  const dirs = args.dirs ?? [...declaredMembers, ...undeclaredDirs];
+  // The full ownership universe: every member this repository actually has,
+  // regardless of which subset is about to be scanned.
+  const allMembers = [...declaredMembers, ...undeclaredDirs];
+  // The subset actually scanned below. Defaults to the full universe.
+  const dirs = args.dirs ?? allMembers;
   if (workspaces.length > 0 || undeclaredDirs.length > 0) {
     const kinds = [...workspaces.map((w) => w.kind), ...(undeclaredDirs.length > 0 ? ['undeclared'] : [])];
     report(
@@ -702,7 +729,14 @@ export async function scanUpgrades(args: {
 
   discovery.end({ targets: targets.length });
   const enabled = new Set(config.ecosystems);
-  const multiPackage = new Set(targets.map((t) => t.dir)).size > 1;
+  // Whether *this repository* is multi-package, not merely whether the
+  // targets actually being scanned this run happen to span more than one
+  // directory. A `scanUpgrades({ dirs })` custom scan can legitimately touch
+  // only one member of an otherwise multi-package repository -- using only
+  // `targets` here would then leave `member`/`allMembers` both undefined for
+  // that member, which disables scoping entirely rather than narrowing it,
+  // letting a sibling member's runtime declarations read as repository-global.
+  const multiPackage = allMembers.length > 1 || new Set(targets.map((t) => t.dir)).size > 1;
 
   /**
    * Every row this scan has put on screen and not yet taken back.
@@ -1003,7 +1037,13 @@ export async function scanUpgrades(args: {
         env,
         maxSites: breadth.maxSites,
         member: multiPackage ? dep.target.dir : undefined,
-        allMembers: multiPackage ? dirs : undefined,
+        // The full ownership universe, not `dirs` (the subset this run is
+        // actually scanning) -- a member left out of a custom `dirs` scan
+        // must still be known here, or its runtime files fall out of
+        // `allMembers` entirely and get attributed to no member, which
+        // `findNodeDeclarations`/`findPythonDeclarations` then treat as
+        // repository-global instead of that member's own business.
+        allMembers: multiPackage ? allMembers : undefined,
         // Paired with `member` above: a name without a directory would put a
         // label on every row of a single-package repository, which is one more
         // thing to read past on every line and never varies.
@@ -1348,20 +1388,23 @@ export async function reanalyzeUpgrade(args: {
   // Must match the member universe `scanUpgrades` computed for the original
   // scan — declared workspace members *and* undeclared nested projects (this
   // repository's own layout: a root `package.json` plus an undeclared
-  // `extension/package.json`) — via the same `scanDirectories` helper, or a
-  // package correctly scoped during the scan gets incorrectly scoped the
-  // moment it is reanalyzed. `detectWorkspaces` alone only sees declared
-  // members and would silently drop an undeclared one like `extension`
-  // from `allMembers`, which then can't own its own runtime declarations.
+  // `extension/package.json`) — or a package correctly scoped during the scan
+  // gets incorrectly scoped the moment it is reanalyzed.
   //
-  // This does not account for the original scan having been restricted to a
-  // caller-supplied subset of directories (`scanUpgrades({ dirs })`) — that
-  // restriction is not persisted on the candidate, so a reanalysis after a
-  // custom-`dirs` scan re-derives the full repository's member universe
-  // rather than the narrower one actually scanned.
-  const allMembers = await scanDirectories(args.root, fs).catch(() =>
-    args.candidate.workspace === undefined ? [] : [args.candidate.workspace],
-  );
+  // The candidate itself is the source of truth when it has one:
+  // `UpgradeCandidate.allMembers` is exactly the universe the original scan
+  // used, persisted for this reason — including after a `scanUpgrades({
+  // dirs })` custom-directory scan, where re-deriving from scratch via
+  // `scanDirectories` would silently widen the universe back out to the
+  // whole repository instead of the (possibly narrower, possibly identical)
+  // one the original scan actually reasoned about. `scanDirectories` remains
+  // the fallback for a candidate from before this field existed, or one a
+  // caller constructed by hand.
+  const allMembers =
+    args.candidate.allMembers ??
+    (await scanDirectories(args.root, fs).catch(() =>
+      args.candidate.workspace === undefined ? [] : [args.candidate.workspace],
+    ));
 
   return analyzeUpgrade({
     dep,
@@ -1705,6 +1748,10 @@ async function analyzeUpgrade(args: {
     ...(args.member === undefined ? {} : { workspace: args.member }),
     ...(args.memberName ? { workspaceName: args.memberName } : {}),
     ...(args.repoRoot ? { repoRoot: args.repoRoot, repoLabel: args.repoLabel } : {}),
+    // Persisted so a later `reanalyzeUpgrade` can reuse the exact ownership
+    // universe this candidate was scoped against, rather than re-deriving it
+    // (potentially differently, after a custom-`dirs` scan) from scratch.
+    ...(args.allMembers ? { allMembers: args.allMembers } : {}),
     current: args.dep.current,
     range: args.dep.range,
     // Passed in, never recomputed here: `args.versions` is the list the caller
