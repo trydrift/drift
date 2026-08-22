@@ -1040,6 +1040,47 @@ describe('assembling the rationale', () => {
     assert.deepEqual(rationales.find((r) => r.dependency === 'pkg')!.security.resolved.map((v) => v.id), ['GHSA-fixed']);
   });
 
+  test('the OSV batch runs concurrently with each dependency’s own metadata lookups, not in front of them', async () => {
+    // buildRationale used to `await` the whole OSV batch before starting
+    // rationaleFor for even the first dependency, so the registry/version
+    // fetches for every dependency were serialized entirely behind OSV.
+    clearHttpCache();
+    const realFetch = globalThis.fetch;
+    let osvResolved = false;
+    let registryFetchObservedWhileOsvPending = false;
+
+    globalThis.fetch = (() => {
+      if (!osvResolved) registryFetchObservedWhileOsvPending = true;
+      return Promise.resolve(new Response('not found', { status: 404 }));
+    }) as typeof fetch;
+
+    try {
+      await buildRationale(
+        { changes: [change], evidence: [], breakingChanges: [], impactSites: [] },
+        {
+          config,
+          logger,
+          osv: {
+            batchFetch: async (queries) => {
+              await new Promise((resolve) => setTimeout(resolve, 50));
+              osvResolved = true;
+              return queries.map(() => osvResponse([]));
+            },
+          },
+        },
+      );
+
+      assert.equal(
+        registryFetchObservedWhileOsvPending,
+        true,
+        'the registry lookup must start while the OSV batch is still in flight, not wait for it to resolve first',
+      );
+    } finally {
+      globalThis.fetch = realFetch;
+      clearHttpCache();
+    }
+  });
+
   test('switching a source off leaves it unchecked rather than clean', async () => {
     const quiet = DriftConfigSchema.parse({ rationale: { security: false } });
     const [rationale] = await buildRationale(

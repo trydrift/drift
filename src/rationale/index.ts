@@ -46,8 +46,16 @@ export interface RationaleContext {
   surfaceGaps?: Map<string, SurfaceUnavailable>;
   /** Prose documents that were actually read, keyed by `dependencyEcosystemKey` when available. */
   prose?: Map<string, ProseSource[]>;
-  /** Precomputed security assessments, keyed by the exact upgrade object. */
-  security?: Map<DependencyChange, SecurityAssessment>;
+  /**
+   * The OSV batch lookup for every change in this call, keyed by the exact
+   * upgrade object.
+   *
+   * A promise rather than an already-resolved `Map`: `buildRationale` starts
+   * this fetch and hands it straight through without awaiting it, so it runs
+   * concurrently with each change's own independent registry/version
+   * lookups instead of gating the start of all of them.
+   */
+  security?: Promise<Map<DependencyChange, SecurityAssessment>>;
   /**
    * Where this repository declares its own Node.js version.
    *
@@ -100,16 +108,20 @@ export async function buildRationale(
     from: change.from!,
     to: change.to!,
   }));
-  const security = ctx.config.rationale.security
-    ? await assessSecurityBatch(lookups, ctx.osv ?? {})
-    : undefined;
-  const securityByChange = security
-    ? new Map(upgrades.map((change, index) => [change, security.get(lookups[index]!)!]))
+  // Started here and handed through unresolved, so it runs alongside each
+  // change's own independent registry/version lookups in `rationaleFor`
+  // rather than in front of all of them. Awaiting the whole batch here first
+  // meant not one dependency's metadata fetch could even start until OSV had
+  // already answered for every dependency in this call.
+  const securityBatchPromise = ctx.config.rationale.security
+    ? assessSecurityBatch(lookups, ctx.osv ?? {}).then(
+        (security) => new Map(upgrades.map((change, index) => [change, security.get(lookups[index]!)!])),
+      )
     : undefined;
 
   return mapWithConcurrency(upgrades, 4, async (change) => {
     try {
-      return await rationaleFor(change, input, { ...ctx, security: securityByChange });
+      return await rationaleFor(change, input, { ...ctx, security: securityBatchPromise });
     } catch (err) {
       // A crash here is a bug in Drift, not a fact about the dependency — and
       // it must not cost the developer the analysis of the other thirty.
@@ -145,9 +157,9 @@ async function rationaleFor(
   const currentVersionPromise = fetchVersionInfo(change.name, change.ecosystem, from).catch(() => null);
   const targetVersionPromise = fetchVersionInfo(change.name, change.ecosystem, to).catch(() => null);
   const securityPromise: Promise<SecurityAssessment> = config.rationale.security
-    ? Promise.resolve(ctx.security?.get(change)).then(
-        (cached) => cached ?? assessSecurity(change.name, change.ecosystem, from, to, ctx.osv ?? {}),
-      )
+    ? Promise.resolve(ctx.security)
+        .then((batch) => batch?.get(change))
+        .then((cached) => cached ?? assessSecurity(change.name, change.ecosystem, from, to, ctx.osv ?? {}))
     : // Switched off, not unreachable. Saying "could not be reached" here sent
       // developers looking for a network problem behind their own setting.
       Promise.resolve(
