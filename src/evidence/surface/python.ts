@@ -135,7 +135,7 @@ async function computeSurfaceOf(
   let bytes: Buffer;
   try {
     await mkdir(dir, { recursive: true });
-    const downloaded = await fetchArchive(source.url, { timeoutMs: 60_000 });
+    const downloaded = await fetchArchive(source.url, { timeoutMs: request.timeoutMs, retries: 2 });
     if (!downloaded.ok) {
       return downloaded.status === 0
         ? {

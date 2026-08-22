@@ -379,7 +379,10 @@ export type ArchiveResult =
    */
   | { ok: false; status: number; error?: string };
 
-export function fetchArchive(url: string, options: { timeoutMs?: number } = {}): Promise<ArchiveResult> {
+export function fetchArchive(
+  url: string,
+  options: { timeoutMs?: number; retries?: number } = {},
+): Promise<ArchiveResult> {
   const cacheKey = `archive:${url}`;
   return coalesce(cacheKey, () => fetchArchiveUncoalesced(url, cacheKey, options));
 }
@@ -387,7 +390,7 @@ export function fetchArchive(url: string, options: { timeoutMs?: number } = {}):
 async function fetchArchiveUncoalesced(
   url: string,
   cacheKey: string,
-  options: { timeoutMs?: number },
+  options: { timeoutMs?: number; retries?: number },
 ): Promise<ArchiveResult> {
   const host = profiling() ? hostOf(url) : '';
   const path = archivePath(cacheKey);
@@ -402,34 +405,44 @@ async function fetchArchiveUncoalesced(
     }
   }
 
+  const timeoutMs = options.timeoutMs ?? 60_000;
+  const { retries = 2 } = options;
   count('http.archive');
-  const request = span('archive', host);
-  try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(options.timeoutMs ?? 60_000) });
-    if (!response.ok) {
-      request.end({ status: response.status });
-      return { ok: false, status: response.status };
-    }
-    const bytes = Buffer.from(await response.arrayBuffer());
-    request.end({ status: response.status, bytes: bytes.length });
-    if (path) {
-      try {
-        await mkdir(diskCacheDir!, { recursive: true });
-        // Written under a temporary name and moved into place, so a scan killed
-        // mid-download cannot leave a truncated archive that every later run
-        // reads as the real thing.
-        const staging = `${path}.${process.pid}.partial`;
-        await writeFile(staging, bytes);
-        await rename(staging, path);
-      } catch {
-        // Best-effort, exactly like the text cache.
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const request = span('archive', host, attempt > 0 ? { attempt } : undefined);
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+      if (!response.ok) {
+        request.end({ status: response.status });
+        const retryable = response.status === 429 || response.status >= 500;
+        if (!retryable || attempt === retries) return { ok: false, status: response.status };
+        await sleep(backoffMs(attempt, response.headers.get('retry-after')));
+        continue;
       }
+      const bytes = Buffer.from(await response.arrayBuffer());
+      request.end({ status: response.status, bytes: bytes.length });
+      if (path) {
+        try {
+          await mkdir(diskCacheDir!, { recursive: true });
+          // Written under a temporary name and moved into place, so a scan killed
+          // mid-download cannot leave a truncated archive that every later run
+          // reads as the real thing.
+          const staging = `${path}.${process.pid}.partial`;
+          await writeFile(staging, bytes);
+          await rename(staging, path);
+        } catch {
+          // Best-effort, exactly like the text cache.
+        }
+      }
+      return { ok: true, bytes };
+    } catch (err) {
+      request.end({ status: 0 });
+      if (attempt === retries) return { ok: false, status: 0, error: (err as Error).message };
+      await sleep(backoffMs(attempt, null));
     }
-    return { ok: true, bytes };
-  } catch (err) {
-    request.end({ status: 0 });
-    return { ok: false, status: 0, error: (err as Error).message };
   }
+  // Unreachable: every loop iteration returns on its final attempt.
+  return { ok: false, status: 0 };
 }
 
 function archivePath(key: string): string | null {
