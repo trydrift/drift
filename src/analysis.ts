@@ -270,14 +270,15 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
   const fixPlans = new Map<string, FixPlanAssessment>();
   const rejectedFixPlans = new Map<string, FixPlanAssessment>();
 
-  if (breakingChanges.length > 0 && workspace) {
-    progress('localize', 'Searching for affected code');
+  if (workspace) {
+    // This repository's own declared runtime is a property of the checkout,
+    // not of any breaking change -- registry metadata alone (a raised Node or
+    // Python floor) can call for this even when zero API/prose breaking
+    // findings exist, so it must not be gated behind `breakingChanges.length`
+    // the way localization legitimately is. One walk covers both this and
+    // localization below; nothing here duplicates that I/O.
     const members = memberDirectories(layouts);
-    // The index stays repository-wide so an import crossing a package boundary
-    // still resolves; it is the *sites* that are scoped to the member whose
-    // manifest moved.
     const files = await walkSourceFiles(workspace, { members });
-    const index = buildIndex(files);
     repoRuntime = findNodeDeclarations(files);
     pythonRuntime = findPythonDeclarations(files);
     if (layouts.length > 0) {
@@ -285,122 +286,130 @@ export async function analyzeRepository(options: AnalysisOptions): Promise<Analy
       pythonRuntimeByWorkspace = new Map(members.map((m) => [m, findPythonDeclarations(files, m, members)]));
     }
 
-    // What each package calls itself in source, read from the artefact the
-    // registry published. Resolved once for the whole run — every dependency
-    // that moved, concurrently — because the alternative is one round trip per
-    // breaking change against packages that repeat across findings.
-    const moduleMaps = await resolveModuleMaps(actionable, { logger });
+    if (breakingChanges.length > 0) {
+      progress('localize', 'Searching for affected code');
+      // The index stays repository-wide so an import crossing a package
+      // boundary still resolves; it is the *sites* that are scoped to the
+      // member whose manifest moved.
+      const index = buildIndex(files);
 
-    for (const [member, changesHere] of groupByMember(actionable)) {
-      const ids = new Set(changesHere.map((c) => c.name));
-      // `b.workspace === member` matters as much as the name: two members can
-      // depend on the same package, and without it this member's search would
-      // also pick up — and search for — the other member's findings.
-      const relevant = breakingChanges.filter((b) => ids.has(b.dependency) && b.workspace === member);
-      if (relevant.length === 0) continue;
-      impactSites.push(
-        ...localize(relevant, changesHere, index, files, { logger, member, moduleMaps }),
-      );
-    }
+      // What each package calls itself in source, read from the artefact the
+      // registry published. Resolved once for the whole run — every dependency
+      // that moved, concurrently — because the alternative is one round trip per
+      // breaking change against packages that repeat across findings.
+      const moduleMaps = await resolveModuleMaps(actionable, { logger });
 
-    logger.info(`Found ${impactSites.length} impact site(s)`);
-
-    /* Stage 5.5 — codemod: deterministic fixes where they can be proven safe
-     *
-     * Every edit a codemod makes is anchored to one of the impact sites just
-     * localized above — never to "everywhere this word appears in the file" —
-     * so a codemod's result set is a subset of what localization already
-     * proved was relevant to this exact finding. Reuses the same in-memory
-     * file contents `localize` just read; no extra I/O.
-     */
-    const sitesByChange = new Map<string, ImpactSite[]>();
-    for (const site of impactSites) {
-      const existing = sitesByChange.get(site.breakingChangeId);
-      if (existing) existing.push(site);
-      else sitesByChange.set(site.breakingChangeId, [site]);
-    }
-
-    const fileContents = new Map(files.map((f) => [f.path, f.content]));
-    const dependencyChangeByKey = new Map(
-      actionable.map((c) => [`${c.workspace ?? ''}::${c.name}`, c] as const),
-    );
-
-    // Findings the built-in codemod engine declined, in case community
-    // recipes are enabled — the built-in fix always wins when both could
-    // apply, so there is no reason to query a registry for one it already
-    // resolved.
-    const needsRecipeLookup: typeof breakingChanges = [];
-    for (const change of breakingChanges) {
-      const sitesHere = sitesByChange.get(change.id);
-      if (!sitesHere || sitesHere.length === 0) continue;
-
-      const result = attemptCodemod(change, sitesHere, fileContents);
-      if (result) codemods.set(change.id, result);
-      else needsRecipeLookup.push(change);
-    }
-
-    // A community recipe requires a real network call to a third-party
-    // registry, unlike the built-in codemod check above — so, unlike that
-    // check, this only runs when the operator has explicitly opted in.
-    // Bounded concurrency keeps a slow registry from serializing an
-    // otherwise-fast analysis; `findCommunityRecipe` itself never throws.
-    if (config.remediation.communityRecipes && needsRecipeLookup.length > 0) {
-      const found = await mapWithConcurrency(needsRecipeLookup, 4, async (change) => {
-        const dependencyChange = dependencyChangeByKey.get(`${change.workspace ?? ''}::${change.dependency}`);
-        return [change.id, await findCommunityRecipe(change, dependencyChange)] as const;
-      });
-      for (const [changeId, recipe] of found) {
-        if (recipe) recipes.set(changeId, recipe);
+      for (const [member, changesHere] of groupByMember(actionable)) {
+        const ids = new Set(changesHere.map((c) => c.name));
+        // `b.workspace === member` matters as much as the name: two members can
+        // depend on the same package, and without it this member's search would
+        // also pick up — and search for — the other member's findings.
+        const relevant = breakingChanges.filter((b) => ids.has(b.dependency) && b.workspace === member);
+        if (relevant.length === 0) continue;
+        impactSites.push(
+          ...localize(relevant, changesHere, index, files, { logger, member, moduleMaps }),
+        );
       }
-    }
 
-    /* Stage 5.6 — fix plans: one validated rule per finding, applied everywhere
-     *
-     * Only for findings the built-in engine declined: a codemod Drift derived
-     * unaided could not have been wrong by construction, so there is nothing
-     * a validated plan could add to it and a model call would be spent for
-     * nothing.
-     *
-     * Every proposal source runs through the same gate (`validateFixPlan`),
-     * and the sources are ordered by cost — a cache hit is free, a recipe
-     * costs a sandbox, authoring costs a model call. See `fixplan/resolve.ts`.
-     */
-    if (needsRecipeLookup.length > 0) {
-      progress('plan', 'Resolving deterministic fix plans');
+      logger.info(`Found ${impactSites.length} impact site(s)`);
 
-      const resolved = await resolveFixPlans({
-        changes: needsRecipeLookup,
-        sites: impactSites,
-        evidence,
-        dependencyChanges: actionable,
-        fileContents,
-        config,
-        logger,
-        cache: config.remediation.fixPlans.cache
-          ? (defaultFixPlanCacheDir() ? fileSystemFixPlanCache(defaultFixPlanCacheDir()!) : noFixPlanCache())
-          : noFixPlanCache(),
-        client:
-          config.remediation.fixPlans.enabled && config.llm.enabled
-            ? ((await connectAnthropic(config, logger)) ?? undefined)
-            : undefined,
-        proposeFromRecipe:
-          config.remediation.communityRecipes && workspace
-            ? (change) =>
-                proposeFixPlanFromRecipe({
-                  change,
-                  candidate: recipes.get(change.id),
-                  dependencyChange: dependencyChangeByKey.get(`${change.workspace ?? ''}::${change.dependency}`),
-                  sites: impactSites,
-                  workspace,
-                  headSha: repo.afterSha,
-                  env: options.env,
-                  logger,
-                })
-            : undefined,
-      });
+      /* Stage 5.5 — codemod: deterministic fixes where they can be proven safe
+       *
+       * Every edit a codemod makes is anchored to one of the impact sites just
+       * localized above — never to "everywhere this word appears in the file" —
+       * so a codemod's result set is a subset of what localization already
+       * proved was relevant to this exact finding. Reuses the same in-memory
+       * file contents `localize` just read; no extra I/O.
+       */
+      const sitesByChange = new Map<string, ImpactSite[]>();
+      for (const site of impactSites) {
+        const existing = sitesByChange.get(site.breakingChangeId);
+        if (existing) existing.push(site);
+        else sitesByChange.set(site.breakingChangeId, [site]);
+      }
 
-      for (const [changeId, assessment] of resolved.accepted) fixPlans.set(changeId, assessment);
-      for (const [changeId, assessment] of resolved.rejected) rejectedFixPlans.set(changeId, assessment);
+      const fileContents = new Map(files.map((f) => [f.path, f.content]));
+      const dependencyChangeByKey = new Map(
+        actionable.map((c) => [`${c.workspace ?? ''}::${c.name}`, c] as const),
+      );
+
+      // Findings the built-in codemod engine declined, in case community
+      // recipes are enabled — the built-in fix always wins when both could
+      // apply, so there is no reason to query a registry for one it already
+      // resolved.
+      const needsRecipeLookup: typeof breakingChanges = [];
+      for (const change of breakingChanges) {
+        const sitesHere = sitesByChange.get(change.id);
+        if (!sitesHere || sitesHere.length === 0) continue;
+
+        const result = attemptCodemod(change, sitesHere, fileContents);
+        if (result) codemods.set(change.id, result);
+        else needsRecipeLookup.push(change);
+      }
+
+      // A community recipe requires a real network call to a third-party
+      // registry, unlike the built-in codemod check above — so, unlike that
+      // check, this only runs when the operator has explicitly opted in.
+      // Bounded concurrency keeps a slow registry from serializing an
+      // otherwise-fast analysis; `findCommunityRecipe` itself never throws.
+      if (config.remediation.communityRecipes && needsRecipeLookup.length > 0) {
+        const found = await mapWithConcurrency(needsRecipeLookup, 4, async (change) => {
+          const dependencyChange = dependencyChangeByKey.get(`${change.workspace ?? ''}::${change.dependency}`);
+          return [change.id, await findCommunityRecipe(change, dependencyChange)] as const;
+        });
+        for (const [changeId, recipe] of found) {
+          if (recipe) recipes.set(changeId, recipe);
+        }
+      }
+
+      /* Stage 5.6 — fix plans: one validated rule per finding, applied everywhere
+       *
+       * Only for findings the built-in engine declined: a codemod Drift derived
+       * unaided could not have been wrong by construction, so there is nothing
+       * a validated plan could add to it and a model call would be spent for
+       * nothing.
+       *
+       * Every proposal source runs through the same gate (`validateFixPlan`),
+       * and the sources are ordered by cost — a cache hit is free, a recipe
+       * costs a sandbox, authoring costs a model call. See `fixplan/resolve.ts`.
+       */
+      if (needsRecipeLookup.length > 0) {
+        progress('plan', 'Resolving deterministic fix plans');
+
+        const resolved = await resolveFixPlans({
+          changes: needsRecipeLookup,
+          sites: impactSites,
+          evidence,
+          dependencyChanges: actionable,
+          fileContents,
+          config,
+          logger,
+          cache: config.remediation.fixPlans.cache
+            ? (defaultFixPlanCacheDir() ? fileSystemFixPlanCache(defaultFixPlanCacheDir()!) : noFixPlanCache())
+            : noFixPlanCache(),
+          client:
+            config.remediation.fixPlans.enabled && config.llm.enabled
+              ? ((await connectAnthropic(config, logger)) ?? undefined)
+              : undefined,
+          proposeFromRecipe:
+            config.remediation.communityRecipes && workspace
+              ? (change) =>
+                  proposeFixPlanFromRecipe({
+                    change,
+                    candidate: recipes.get(change.id),
+                    dependencyChange: dependencyChangeByKey.get(`${change.workspace ?? ''}::${change.dependency}`),
+                    sites: impactSites,
+                    workspace,
+                    headSha: repo.afterSha,
+                    env: options.env,
+                    logger,
+                  })
+              : undefined,
+        });
+
+        for (const [changeId, assessment] of resolved.accepted) fixPlans.set(changeId, assessment);
+        for (const [changeId, assessment] of resolved.rejected) rejectedFixPlans.set(changeId, assessment);
+      }
     }
   } else if (breakingChanges.length > 0) {
     logger.warn('No local checkout available; affected code cannot be located.');
