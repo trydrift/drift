@@ -67,6 +67,7 @@ export function assessMaintenance(input: MaintenanceInput): MaintenanceAssessmen
       statement: `The maintainer has withdrawn ${name} ${input.to}: ${deprecated}`,
       url: registry?.homepage ?? undefined,
       concerning: true,
+      polarity: 'blocks',
     });
   }
 
@@ -75,6 +76,7 @@ export function assessMaintenance(input: MaintenanceInput): MaintenanceAssessmen
       statement: 'The upstream repository is archived. It will not receive further fixes.',
       url: repository.url,
       concerning: true,
+      polarity: 'blocks',
     });
   } else if (repository?.pushedAt) {
     // Stated as a date, not judged. A reader who knows the package decides
@@ -89,6 +91,9 @@ export function assessMaintenance(input: MaintenanceInput): MaintenanceAssessmen
     facts.push({
       statement: `The version currently installed, ${input.from}, has been withdrawn: ${currentVersion.withdrawn}`,
       concerning: true,
+      // A real reason to move: the version in use today is the one that is
+      // bad, not the target, so this argues for taking the upgrade.
+      polarity: 'favors',
     });
   }
 
@@ -144,25 +149,37 @@ function describeRuntimeChange(
   const before = current?.runtime;
   const after = target?.runtime;
   if (!after) return null;
+  if (before && before.requirement === after.requirement) return null;
 
-  if (!before) {
-    return { statement: `The target version requires ${after.name} ${after.requirement}.` };
-  }
-  if (before.requirement === after.requirement) return null;
+  // A brand-new requirement is exactly as checkable against this repository's
+  // declared runtime as a raised one -- the installed version had no floor,
+  // the target does, and that floor either fits this repository or it does
+  // not. Returning early here (as this used to) skipped the check entirely
+  // and could let a genuinely incompatible upgrade through unflagged.
+  const introduced = !before;
+  const statement = introduced
+    ? `The target version requires ${after.name} ${after.requirement}.`
+    : `The required ${after.name} version changed from ${before!.requirement} to ${after.requirement}.`;
 
-  const concerning = raisesMinimum(before.requirement, after.requirement);
-  const statement = `The required ${after.name} version changed from ${before.requirement} to ${after.requirement}.`;
   const verified =
     after.name === 'Node.js'
       ? describeRuntimeVerification(repoRuntime, after.requirement, checkNodeCompatibility)
       : after.name === 'Python'
         ? describeRuntimeVerification(pythonRuntime, after.requirement, checkPythonCompatibility)
         : null;
-  if (verified) return { statement: `${statement} ${verified.statement}`, concerning: verified.concerning };
+  if (verified) {
+    return { statement: `${statement} ${verified.statement}`, concerning: verified.concerning, polarity: verified.polarity };
+  }
 
+  // No repository declaration to check this against. The floor may or may not
+  // have actually gone up (or may be brand new), which is worth surfacing --
+  // but Drift has not confirmed incompatibility, so this must stay context
+  // rather than a blocker or a reason to recommend upgrading.
+  const concerning = introduced || raisesMinimum(before!.requirement, after.requirement);
   return {
     statement: `${statement} Check this against the runtimes this repository builds and deploys on.`,
     concerning,
+    polarity: 'context',
   };
 }
 
@@ -245,14 +262,14 @@ function describeRuntimeVerification(
   repoRuntime: readonly RuntimeDeclaration[],
   requirement: string,
   check: (declarations: readonly RuntimeDeclaration[], requirement: string) => RuntimeCompatibility[],
-): { statement: string; concerning: boolean } | null {
+): { statement: string; concerning: boolean; polarity: 'blocks' | 'context' } | null {
   const results = check(repoRuntime, requirement);
   if (results.length === 0) return null;
 
   const incompatible = results.filter((r) => r.verdict === 'incompatible');
   if (incompatible.length > 0) {
     const where = incompatible.map((r) => `${r.file} (declares ${r.requirement})`).join(', ');
-    return { statement: `This repository does not satisfy it: ${where}.`, concerning: true };
+    return { statement: `This repository does not satisfy it: ${where}.`, concerning: true, polarity: 'blocks' };
   }
 
   const partial = results.filter((r) => r.verdict === 'partial');
@@ -261,9 +278,14 @@ function describeRuntimeVerification(
     return {
       statement: `This repository's declared range is only partially compatible: ${where} allows versions the new floor rejects.`,
       concerning: true,
+      polarity: 'blocks',
     };
   }
 
   const where = [...new Set(results.map((r) => r.file))].join(', ');
-  return { statement: `This repository already satisfies it (${where}).`, concerning: false };
+  return {
+    statement: `This repository already satisfies it (${where}).`,
+    concerning: false,
+    polarity: 'context',
+  };
 }

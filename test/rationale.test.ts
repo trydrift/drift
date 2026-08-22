@@ -681,6 +681,97 @@ describe('the upgrade assessment', () => {
     assert.equal(result.recommendation, 'do-not-upgrade-yet');
   });
 
+  test('a maintenance fact that blocks the upgrade is never safe-to-upgrade or upgrade-recommended', () => {
+    // e.g. this repository's declared runtime does not satisfy the target's
+    // raised floor. `concerning: true` alone must not be read as "recommend
+    // it" -- only `polarity: 'blocks'` may veto, and it must veto hard.
+    const result = assessUpgrade(
+      input({
+        maintenance: {
+          facts: [
+            {
+              statement: 'The required Node.js version changed from >=18 to >=22. This repository does not satisfy it: .nvmrc (declares 18.18.0).',
+              concerning: true,
+              polarity: 'blocks',
+            },
+          ],
+        },
+      }),
+    );
+    assert.notEqual(result.recommendation, 'safe-to-upgrade');
+    assert.notEqual(result.recommendation, 'upgrade-recommended');
+    assert.equal(result.recommendation, 'do-not-upgrade-yet');
+  });
+
+  test('a partially-compatible declared runtime also blocks, not just outright incompatibility', () => {
+    const result = assessUpgrade(
+      input({
+        maintenance: {
+          facts: [
+            {
+              statement: "This repository's declared range is only partially compatible: package.json (declares >=18) allows versions the new floor rejects.",
+              concerning: true,
+              polarity: 'blocks',
+            },
+          ],
+        },
+      }),
+    );
+    assert.notEqual(result.recommendation, 'safe-to-upgrade');
+    assert.notEqual(result.recommendation, 'upgrade-recommended');
+  });
+
+  test('a runtime fact confirming this repository already satisfies the new floor does not block the upgrade', () => {
+    const result = assessUpgrade(
+      input({
+        maintenance: {
+          facts: [
+            {
+              statement: 'The required Node.js version changed from >=18 to >=22. This repository already satisfies it (package.json).',
+              concerning: false,
+              polarity: 'context',
+            },
+          ],
+        },
+      }),
+    );
+    assert.equal(result.recommendation, 'safe-to-upgrade');
+  });
+
+  test('a genuinely positive maintenance fact (installed version withdrawn) can still recommend the upgrade', () => {
+    const result = assessUpgrade(
+      input({
+        maintenance: {
+          facts: [
+            {
+              statement: 'The version currently installed, 1.0.0, has been withdrawn: security issue.',
+              concerning: true,
+              polarity: 'favors',
+            },
+          ],
+        },
+      }),
+    );
+    assert.equal(result.recommendation, 'upgrade-recommended');
+  });
+
+  test('an unverified "check by hand" runtime fact is merely context: it neither blocks nor recommends', () => {
+    const result = assessUpgrade(
+      input({
+        maintenance: {
+          facts: [
+            {
+              statement: 'The required Node.js version changed from >=18 to >=22. Check this against the runtimes this repository builds and deploys on.',
+              concerning: true,
+              polarity: 'context',
+            },
+          ],
+        },
+      }),
+    );
+    assert.equal(result.recommendation, 'safe-to-upgrade');
+  });
+
   test('a benign license change is silent in reasons too, not just the rendered section', () => {
     // renderLicense() suppresses 'changed' from the License section. If
     // assessUpgrade still pushed the statement into `reasons`, it would
@@ -1003,7 +1094,13 @@ describe('assembling the rationale', () => {
       { config, logger, osv: noNetwork },
     );
 
-    assert.equal(rationale!.assessment.recommendation, 'insufficient-evidence');
+    // 'pkg' (vercel/pkg on GitHub) is archived upstream, which is itself a
+    // confirmed, `polarity: 'blocks'` maintenance fact -- a real finding, not
+    // an absence of one -- so it outranks "insufficient evidence" the same
+    // way a known incompatibility would. The gap this test actually exercises
+    // (OSV being unreachable) still has to surface regardless of which
+    // recommendation wins.
+    assert.equal(rationale!.assessment.recommendation, 'do-not-upgrade-yet');
     assert.ok(rationale!.gaps.some((g) => /OSV advisory database could not be reached/.test(g)));
   });
 
@@ -1099,7 +1196,9 @@ describe('assembling the rationale', () => {
     const markdown = renderOne(rationale!);
     const lines = markdown.split('\n').filter(Boolean);
     assert.match(lines[0]!, /^### `pkg` 1\.0\.0 → 2\.0\.0$/);
-    assert.match(lines[1]!, /^\*\*Recommendation: Insufficient evidence\*\*$/);
+    // 'pkg' is archived upstream (see the test above), a confirmed
+    // `polarity: 'blocks'` fact that now outranks "insufficient evidence".
+    assert.match(lines[1]!, /^\*\*Recommendation: Do not upgrade yet\*\*$/);
     assert.match(markdown, /Why Drift concluded this/);
   });
 

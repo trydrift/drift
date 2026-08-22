@@ -80,9 +80,27 @@ export interface MaintenanceFact {
   /**
    * True when this is a reason for concern rather than neutral context.
    *
-   * Drives ordering and the final recommendation; never a score.
+   * Drives display ordering and emphasis only. It must never be read as "this
+   * favors upgrading" -- a fact can be worth flagging in red precisely because
+   * it argues *against* upgrading, which is what `polarity` is for.
    */
   concerning?: boolean;
+  /**
+   * Which way this fact points an upgrade decision, when it points one at all.
+   *
+   * `'favors'` -- a real reason to take the upgrade (the installed version is
+   * itself withdrawn, a security fix, etc).
+   * `'blocks'` -- a real reason this upgrade cannot be taken as-is (the target
+   * is incompatible with this repository's declared runtime, the target is
+   * withdrawn, the upstream is archived). Assessment logic must never let
+   * `safe-to-upgrade` or `upgrade-recommended` stand when a `'blocks'` fact is
+   * present.
+   * Omitted (or `'context'`) -- informational only; must not by itself move the
+   * recommendation in either direction. An unverified "the floor was raised,
+   * check by hand" fact is context, not a blocker: Drift could not confirm
+   * incompatibility, so it must not claim one.
+   */
+  polarity?: 'favors' | 'blocks' | 'context';
 }
 
 export interface MaintenanceAssessment {
