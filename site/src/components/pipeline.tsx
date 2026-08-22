@@ -1,5 +1,6 @@
 import { instrumentSerif } from "@/lib/fonts";
 import { Code, GhBadge, GhCommit, GhIcon, GhPanel, type CodeLine } from "@/components/gh";
+import { BYAM_LLM_REPAIR_STUDY } from "@/lib/external-citations";
 
 /**
  * How a finding is actually made.
@@ -10,11 +11,12 @@ import { Code, GhBadge, GhCommit, GhIcon, GhPanel, type CodeLine } from "@/compo
  * section is specific to the point of being checkable — which file is read,
  * which endpoint is called, what happens when the call fails.
  *
- * Every stage now carries the artefact it produces, drawn the way GitHub draws
- * it: a diff hunk, a surface comparison, an annotation, code-search results, a
- * commit list. The previous version described those artefacts in prose inside
- * rounded cards, which asked a reader to imagine the output of a tool whose
- * entire value is that the output is concrete.
+ * Every stage carries the artefact it produces, drawn the way GitHub draws it:
+ * a diff hunk, a surface comparison, an annotation, code-search results, a
+ * commit list. Those artefacts, the explanatory paragraph, and the chips are
+ * behind a native `<details>` per stage, closed by default — a reader gets the
+ * five-stage flow and one short line per stage without scrolling past five
+ * essays, and the real, checkable artefact is one click (or keystroke) away.
  *
  * One example runs through all five stages, and it is real: w3lib 1.17.0 →
  * 2.4.1 in Scrapy, taken from the recording on this same page
@@ -275,30 +277,55 @@ const CONFIDENCE = [
   },
 ] as const;
 
+/** The default-visible flow — five words, no prose, before any disclosure. */
+const FLOW = [
+  { label: "Dependency moved", caption: "manifest + lockfile" },
+  { label: "API changed", caption: "release notes + API diff" },
+  { label: "Your code uses it", caption: "imports + exact call sites" },
+  { label: "Verify", caption: "build / test" },
+  { label: "Fix", caption: "codemod → fix plan → agent" },
+] as const;
+
 export function Pipeline() {
   return (
     <section id="how" className="scroll-mt-8 pt-16 sm:pt-24">
       <h2 className={`${instrumentSerif.className} text-2xl text-landing sm:text-3xl`}>
         How a Finding Gets Made
       </h2>
-      <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted">
-        Five stages, each independently checkable, with the artefact it produces. The example is
-        real: <code className="font-mono text-[13px] text-brand-text">w3lib</code>{" "}
-        1.17.0 → 2.4.1 in Scrapy, from the recording above. The rules that keep Drift{" "}
-        <em className="not-italic text-foreground">quiet</em> are below the pipeline — the part you
-        can&rsquo;t verify just by reading a finding.
+
+      {/* The whole pipeline, in five words. Nothing below this needs to be
+          read for a visitor to understand the shape of what Drift does —
+          everything past here is progressive disclosure for whoever wants
+          the checkable detail. */}
+      <ol className="mt-5 flex flex-wrap items-center gap-x-1.5 gap-y-3 font-mono text-[11px]">
+        {FLOW.map((step, index) => (
+          <li key={step.label} className="flex items-center gap-1.5">
+            <span className="flex flex-col items-start rounded-lg border border-border bg-surface/70 px-2.5 py-1.5">
+              <span className="text-[12px] font-medium text-foreground">{step.label}</span>
+              <span className="text-faint">{step.caption}</span>
+            </span>
+            {index < FLOW.length - 1 && (
+              <span className="text-faint" aria-hidden>
+                →
+              </span>
+            )}
+          </li>
+        ))}
+      </ol>
+
+      <p className="mt-4 max-w-2xl text-[13px] leading-relaxed text-muted">
+        Real example: <code className="font-mono text-brand-text">w3lib</code> 1.17.0 → 2.4.1 in
+        Scrapy, from the recording above. Each stage below opens to the artefact it actually
+        produced.
       </p>
 
-      <ol className="mt-8 space-y-3">
+      <ol className="mt-6 space-y-2">
         {STAGES.map((stage, index) => (
           <li key={stage.n} className="relative">
-            {/* The spine. Drawn behind the badge and stopped before the last
-                stage, so the flow reads as connected without a line dangling
-                off the end. */}
             {index < STAGES.length - 1 && (
               <span
                 aria-hidden
-                className="absolute left-3.75 top-9 -bottom-3 w-px bg-linear-to-b from-brand/45 to-border"
+                className="absolute left-3.75 top-9 -bottom-2 w-px bg-linear-to-b from-brand/45 to-border"
               />
             )}
 
@@ -307,14 +334,34 @@ export function Pipeline() {
                 {stage.n}
               </span>
 
-              <div className="min-w-0 flex-1 rounded-2xl border border-border bg-surface/50 p-4 sm:p-5">
-                <div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
+              <details className="group min-w-0 flex-1 rounded-2xl border border-border bg-surface/50 open:pb-4 sm:open:pb-5">
+                <summary className="flex cursor-pointer list-none items-center gap-3 p-4 sm:p-5 [&::-webkit-details-marker]:hidden">
+                  <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-1">
+                    <span className="text-sm font-semibold text-foreground">{stage.title}</span>
+                    <span className="text-[13px] text-brand-text">{stage.lead}</span>
+                  </span>
+                  <ChevronIcon className="size-4 shrink-0 text-faint transition-transform group-open:rotate-180" />
+                </summary>
+
+                <div className="grid gap-4 px-4 sm:px-5 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-start">
                   <div className="min-w-0">
-                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                      <h3 className="text-sm font-semibold text-foreground">{stage.title}</h3>
-                      <p className="text-[13px] text-brand-text">{stage.lead}</p>
-                    </div>
-                    <p className="mt-2 text-[13px] leading-relaxed text-muted">{stage.detail}</p>
+                    <p className="text-[13px] leading-relaxed text-muted">{stage.detail}</p>
+                    {stage.n === 5 && (
+                      <p className="mt-2 text-[12px] leading-relaxed text-muted">
+                        Structured context like this measurably helps automated repair — the
+                        strongest tested model in a peer-reviewed study{" "}
+                        <a
+                          href={BYAM_LLM_REPAIR_STUDY.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-brand-text underline decoration-dotted underline-offset-2"
+                          title={BYAM_LLM_REPAIR_STUDY.scope}
+                        >
+                          fully repaired {BYAM_LLM_REPAIR_STUDY.buildRepairRate} of breaking builds
+                        </a>{" "}
+                        when given the erroneous line and the API diff.
+                      </p>
+                    )}
 
                     {stage.chips && (
                       <div className="mt-3 flex flex-wrap gap-1.5">
@@ -336,106 +383,140 @@ export function Pipeline() {
                     {stage.artefact}
                   </div>
                 </div>
-              </div>
+              </details>
             </div>
           </li>
         ))}
       </ol>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
-        <div className="min-w-0 rounded-2xl border border-amber-500/25 bg-amber-500/6 p-5">
-          <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-            When a Source Can&rsquo;t Be Reached
-          </h3>
-          <p className="mt-2 text-[13px] leading-relaxed text-muted">
-            It&rsquo;s recorded as a gap and the package is reported as{" "}
-            <span className="font-medium text-foreground">not verified</span> — never as clean. Zero
-            findings from a complete check and zero findings from a check that never ran are
-            different facts, and you need to know which one you have.
-          </p>
-          <div className="mt-4 overflow-hidden rounded-xl border border-border bg-surface">
-            <div className="flex items-center gap-2 border-b border-border bg-surface-hover/50 px-3 py-2">
-              <span className="size-2 rounded-full bg-amber-500" />
-              <span className="font-mono text-[11px] text-foreground">not verified</span>
+      {/* Verification rules and confidence — real detail, kept out of the
+          default scroll behind one disclosure rather than three separate
+          always-open cards. */}
+      <details className="group mt-4 rounded-2xl border border-border bg-surface/50">
+        <summary className="flex cursor-pointer list-none items-center gap-3 p-4 sm:p-5 [&::-webkit-details-marker]:hidden">
+          <span className="min-w-0 flex-1 text-sm font-semibold text-foreground">
+            Verification rules &amp; confidence
+          </span>
+          <span className="shrink-0 text-[12px] text-muted">
+            what counts as a gap, six silenced patterns, three confidence levels
+          </span>
+          <ChevronIcon className="size-4 shrink-0 text-faint transition-transform group-open:rotate-180" />
+        </summary>
+
+        <div className="px-4 pb-5 sm:px-5">
+          <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+            <div className="min-w-0 rounded-2xl border border-amber-500/25 bg-amber-500/6 p-5">
+              <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                When a Source Can&rsquo;t Be Reached
+              </h3>
+              <p className="mt-2 text-[13px] leading-relaxed text-muted">
+                It&rsquo;s recorded as a gap and the package is reported as{" "}
+                <span className="font-medium text-foreground">not verified</span> — never as clean.
+                Zero findings from a complete check and zero findings from a check that never ran
+                are different facts, and you need to know which one you have.
+              </p>
+              <div className="mt-4 overflow-hidden rounded-xl border border-border bg-surface">
+                <div className="flex items-center gap-2 border-b border-border bg-surface-hover/50 px-3 py-2">
+                  <span className="size-2 rounded-full bg-amber-500" />
+                  <span className="font-mono text-[11px] text-foreground">not verified</span>
+                </div>
+                <p className="px-3 py-2.5 font-mono text-[11px] leading-relaxed text-muted">
+                  Drift found nothing it could check this version against.
+                </p>
+              </div>
             </div>
-            <p className="px-3 py-2.5 font-mono text-[11px] leading-relaxed text-muted">
-              Drift found nothing it could check this version against.
+
+            {/* The other half of trust. A tool is judged as much on what it
+                stays quiet about as on what it finds, and "we filter noise" is
+                not a claim anyone can check — so these are the actual rules,
+                each one shown as the line that would have been reported
+                without it. */}
+            <div className="min-w-0 rounded-2xl border border-border bg-surface/50 p-5">
+              <h3 className="text-sm font-semibold text-foreground">What Drift Refuses to Report</h3>
+              <p className="mt-2 text-[13px] leading-relaxed text-muted">
+                Six lines that match a changed symbol and get no comment — each rule exists because
+                a real run got it wrong without it.
+              </p>
+
+              <div className="mt-4 overflow-hidden rounded-xl border border-border bg-surface">
+                {SILENCES.map((rule, index) => (
+                  <div key={rule.what} className={index > 0 ? "border-t border-border" : undefined}>
+                    <p className="flex items-center gap-1.5 bg-surface-hover/40 px-3 py-1.5 font-mono text-[10.5px] text-faint">
+                      <GhIcon icon="file" className="size-3 shrink-0" />
+                      <span className="min-w-0 truncate">{rule.file}</span>
+                      <span className="ml-auto shrink-0 text-[10px] uppercase tracking-wider">
+                        no comment
+                      </span>
+                    </p>
+                    <div className="overflow-x-auto bg-(--pre-bg) px-3 py-1.5">
+                      <code className="whitespace-pre font-mono text-[11.5px] text-muted/80 line-through decoration-faint/50">
+                        {rule.code}
+                      </code>
+                    </div>
+                    <p className="px-3 py-2 text-[12px] leading-relaxed text-muted">
+                      <span className="font-medium text-foreground">{rule.what}</span> {rule.why}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-border bg-surface/50 p-5">
+            <h3 className="text-sm font-semibold text-foreground">
+              What the Confidence on a Finding Means
+            </h3>
+            <p className="mt-2 max-w-3xl text-[13px] leading-relaxed text-muted">
+              Two separate questions underneath.{" "}
+              <em className="not-italic text-foreground">Did this happen upstream?</em> is answered
+              by the evidence — a computed diff starts high, prose starts medium, and agreement
+              between sources promotes it. <em className="not-italic text-foreground">Does it land
+              here?</em> is answered per line. Drift keeps them apart internally — a certain
+              upstream diff is not a reason to call a repository affected on its own — but rolls
+              them into one score on the report, so the question &ldquo;how sure is Drift,
+              overall?&rdquo; has a plain answer without hiding the breakdown that produced it.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {CONFIDENCE.map((level) => (
+                <div key={level.label} className="rounded-xl border border-border bg-surface p-3.5">
+                  <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-brand-text">
+                    {level.label}
+                  </p>
+                  <p className="mt-1.5 text-[12px] leading-relaxed text-muted">{level.detail}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 max-w-3xl text-[12px] leading-relaxed text-muted">
+              AI-pass findings are capped at medium by construction, so they can never alone clear
+              the bar to open a pull request. They assist recall — they don&rsquo;t get a vote.
+            </p>
+            <p className="mt-3 max-w-3xl text-[12px] leading-relaxed text-muted">
+              And when Drift isn&rsquo;t sure a change lands in your code, it says so in the verdict
+              itself — <span className="font-medium text-foreground">&ldquo;may affect your
+              code&rdquo;</span>, not <span className="font-medium text-foreground">&ldquo;affects
+              your code&rdquo;</span>, for anything short of a directly imported match. Being wrong
+              with the same confidence as being right is the failure mode this whole model exists
+              to avoid.
             </p>
           </div>
         </div>
-
-        {/* The other half of trust. A tool is judged as much on what it stays
-            quiet about as on what it finds, and "we filter noise" is not a
-            claim anyone can check — so these are the actual rules, each one
-            shown as the line that would have been reported without it. */}
-        <div className="min-w-0 rounded-2xl border border-border bg-surface/50 p-5">
-          <h3 className="text-sm font-semibold text-foreground">What Drift Refuses to Report</h3>
-          <p className="mt-2 text-[13px] leading-relaxed text-muted">
-            Six lines that match a changed symbol and get no comment — each rule exists because a
-            real run got it wrong without it.
-          </p>
-
-          <div className="mt-4 overflow-hidden rounded-xl border border-border bg-surface">
-            {SILENCES.map((rule, index) => (
-              <div key={rule.what} className={index > 0 ? "border-t border-border" : undefined}>
-                <p className="flex items-center gap-1.5 bg-surface-hover/40 px-3 py-1.5 font-mono text-[10.5px] text-faint">
-                  <GhIcon icon="file" className="size-3 shrink-0" />
-                  <span className="min-w-0 truncate">{rule.file}</span>
-                  <span className="ml-auto shrink-0 text-[10px] uppercase tracking-wider">
-                    no comment
-                  </span>
-                </p>
-                <div className="overflow-x-auto bg-(--pre-bg) px-3 py-1.5">
-                  <code className="whitespace-pre font-mono text-[11.5px] text-muted/80 line-through decoration-faint/50">
-                    {rule.code}
-                  </code>
-                </div>
-                <p className="px-3 py-2 text-[12px] leading-relaxed text-muted">
-                  <span className="font-medium text-foreground">{rule.what}</span> {rule.why}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4 rounded-2xl border border-border bg-surface/50 p-5">
-        <h3 className="text-sm font-semibold text-foreground">
-          What the Confidence on a Finding Means
-        </h3>
-        <p className="mt-2 max-w-3xl text-[13px] leading-relaxed text-muted">
-          Two separate questions underneath. <em className="not-italic text-foreground">Did
-          this happen upstream?</em> is answered by the evidence — a computed diff starts high,
-          prose starts medium, and agreement between sources promotes it.{" "}
-          <em className="not-italic text-foreground">Does it land here?</em> is answered per line.
-          Drift keeps them apart internally — a certain upstream diff is not a reason to call a
-          repository affected on its own — but rolls them into one score on the report, so the
-          question &ldquo;how sure is Drift, overall?&rdquo; has a plain answer without hiding the
-          breakdown that produced it.
-        </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          {CONFIDENCE.map((level) => (
-            <div key={level.label} className="rounded-xl border border-border bg-surface p-3.5">
-              <p className="font-mono text-[11px] font-semibold uppercase tracking-wider text-brand-text">
-                {level.label}
-              </p>
-              <p className="mt-1.5 text-[12px] leading-relaxed text-muted">{level.detail}</p>
-            </div>
-          ))}
-        </div>
-        <p className="mt-3 max-w-3xl text-[12px] leading-relaxed text-muted">
-          AI-pass findings are capped at medium by construction, so they can never alone clear the
-          bar to open a pull request. They assist recall — they don&rsquo;t get a vote.
-        </p>
-        <p className="mt-3 max-w-3xl text-[12px] leading-relaxed text-muted">
-          And when Drift isn&rsquo;t sure a change lands in your code, it says so in the verdict
-          itself — <span className="font-medium text-foreground">&ldquo;may affect your
-          code&rdquo;</span>, not <span className="font-medium text-foreground">&ldquo;affects your
-          code&rdquo;</span>, for anything short of a directly imported match. Being wrong with the
-          same confidence as being right is the failure mode this whole model exists to avoid.
-        </p>
-      </div>
+      </details>
     </section>
+  );
+}
+
+function ChevronIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden>
+      <path
+        d="m6 9 6 6 6-6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 

@@ -93,6 +93,43 @@ const STEPS: Step[] = [
 
 const STEP_MS = 2600;
 
+/**
+ * The homepage's default-visible version of this section: the three-word
+ * shape of the flow and the trust boundary, not the six-step animated run.
+ * The full `ActionFlow` below is still real and still here — just behind a
+ * `<details>` for whoever wants to watch it.
+ */
+const TRUST_SIGNALS = [
+  "Approval by default",
+  "Never merges",
+  "Guardrails fail closed",
+  "Unverified ≠ safe",
+] as const;
+
+export function ActionSummary() {
+  return (
+    <div>
+      <p className="flex flex-wrap items-center gap-2 font-mono text-sm text-foreground">
+        <span className="rounded-lg border border-border bg-surface px-2.5 py-1">Analyze</span>
+        <span className="text-faint" aria-hidden>→</span>
+        <span className="rounded-lg border border-border bg-surface px-2.5 py-1">Ask</span>
+        <span className="text-faint" aria-hidden>→</span>
+        <span className="rounded-lg border border-border bg-surface px-2.5 py-1">PR</span>
+      </p>
+      <div className="mt-4 flex flex-wrap gap-1.5">
+        {TRUST_SIGNALS.map((signal) => (
+          <span
+            key={signal}
+            className="rounded-full border border-brand/25 bg-brand-soft px-2.5 py-1 text-[12px] font-medium text-brand-text"
+          >
+            {signal}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function ActionFlow() {
   const [active, setActive] = useState(0);
   const [playing, setPlaying] = useState(false);
