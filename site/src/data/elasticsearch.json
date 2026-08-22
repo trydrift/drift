@@ -5,10 +5,10 @@
   "language": "Java",
   "repo": "https://github.com/elastic/elasticsearch-java",
   "blurb": "Elasticsearch's official Java API client.",
-  "capturedAt": "2026-08-21T06:01:40.241Z",
+  "capturedAt": "2026-08-21T20:02:46.434Z",
   "commit": "8be02330d48758e2708a00f18cc87587df2a2520",
-  "engine": "09153dd336cd8676",
-  "durationMs": 597820,
+  "engine": "60b4d3156139a4db",
+  "durationMs": 24372,
   "packagesChecked": 19,
   "manifests": [
     "java-client/build.gradle.kts",
@@ -25,2244 +25,732 @@
   "nestedGitRepos": [],
   "events": [
     {
-      "at": 106,
+      "at": 66,
       "phase": "Looking for manifests",
       "detail": "elastic/elasticsearch-java",
       "done": 0,
       "total": 0
     },
     {
-      "at": 109,
+      "at": 80,
       "phase": "Reading the workspace",
       "detail": "10 packages · gradle-settings, undeclared",
       "done": 0,
       "total": 0
     },
     {
-      "at": 110,
+      "at": 81,
       "phase": "Reading manifest",
       "detail": "java-client/build.gradle.kts",
       "done": 0,
       "total": 0
     },
     {
-      "at": 110,
+      "at": 86,
       "phase": "Reading manifest",
       "detail": "rest5-client/build.gradle.kts",
       "done": 0,
       "total": 0
     },
     {
-      "at": 111,
+      "at": 86,
       "phase": "Reading manifest",
       "detail": "tools/build.gradle.kts",
       "done": 0,
       "total": 0
     },
     {
-      "at": 111,
+      "at": 86,
       "phase": "Reading manifest",
       "detail": "buildSrc/build.gradle.kts",
       "done": 0,
       "total": 0
     },
     {
-      "at": 111,
+      "at": 86,
       "phase": "Reading manifest",
       "detail": "example-transports/build.gradle.kts",
       "done": 0,
       "total": 0
     },
     {
-      "at": 111,
+      "at": 86,
       "phase": "Reading manifest",
       "detail": "examples/esql-article/build.gradle.kts",
       "done": 0,
       "total": 0
     },
     {
-      "at": 111,
+      "at": 86,
       "phase": "Reading manifest",
       "detail": "examples/realworld-app/build.gradle",
       "done": 0,
       "total": 0
     },
     {
-      "at": 111,
+      "at": 86,
       "phase": "Reading manifest",
       "detail": "examples/realworld-app/rw-database/build.gradle",
       "done": 0,
       "total": 0
     },
     {
-      "at": 111,
+      "at": 87,
       "phase": "Reading manifest",
       "detail": "examples/realworld-app/rw-rest/build.gradle",
       "done": 0,
       "total": 0
     },
     {
-      "at": 111,
+      "at": 87,
       "phase": "Reading manifest",
       "detail": "examples/realworld-app/rw-server/build.gradle",
       "done": 0,
       "total": 0
     },
     {
-      "at": 111,
+      "at": 87,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
       "total": 19
     },
     {
-      "at": 111,
+      "at": 90,
       "phase": "Checking registries",
       "detail": "19 direct dependencies",
       "done": 0,
       "total": 19
     },
     {
-      "at": 533,
-      "phase": "Outdated",
-      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0",
+      "at": 553,
+      "phase": "Up to date",
+      "detail": "org.eclipse.parsson:parsson@1.1.9",
       "done": 1,
       "total": 19
     },
     {
-      "at": 555,
+      "at": 553,
       "phase": "Up to date",
-      "detail": "jakarta.json:jakarta.json-api@2.1.3",
+      "detail": "org.eclipse.parsson:parsson@1.1.9",
       "done": 2,
       "total": 19
     },
     {
-      "at": 555,
-      "phase": "Up to date",
-      "detail": "jakarta.json:jakarta.json-api@2.1.3",
+      "at": 554,
+      "phase": "Outdated",
+      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
       "done": 3,
       "total": 19
     },
     {
-      "at": 555,
+      "at": 554,
       "phase": "Outdated",
       "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
       "done": 4,
       "total": 19
     },
     {
-      "at": 555,
+      "at": 584,
       "phase": "Outdated",
-      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
+      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0",
       "done": 5,
       "total": 19
     },
     {
-      "at": 591,
-      "phase": "Up to date",
-      "detail": "org.eclipse.parsson:parsson@1.1.9",
+      "at": 586,
+      "phase": "Outdated",
+      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3",
       "done": 6,
       "total": 19
     },
     {
-      "at": 591,
-      "phase": "Up to date",
-      "detail": "org.eclipse.parsson:parsson@1.1.9",
+      "at": 593,
+      "phase": "Outdated",
+      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
       "done": 7,
       "total": 19
     },
     {
-      "at": 611,
+      "at": 593,
       "phase": "Outdated",
-      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3",
+      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
       "done": 8,
       "total": 19
     },
     {
-      "at": 612,
+      "at": 594,
       "phase": "Outdated",
-      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0",
+      "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.16.0 → 2.19.0",
       "done": 9,
       "total": 19
     },
     {
-      "at": 612,
+      "at": 595,
       "phase": "Outdated",
-      "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.16.0 → 2.19.0",
+      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3",
       "done": 10,
       "total": 19
     },
     {
-      "at": 701,
+      "at": 608,
       "phase": "Outdated",
-      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3",
+      "detail": "javax.xml.bind:jaxb-api 2.3.1 → 2.4.0",
       "done": 11,
       "total": 19
     },
     {
-      "at": 841,
+      "at": 608,
       "phase": "Outdated",
-      "detail": "co.elastic.clients:elasticsearch-java 8.11.4 → 9.0.3",
+      "detail": "io.jsonwebtoken:jjwt 0.9.1 → 0.12.6",
       "done": 12,
       "total": 19
     },
     {
-      "at": 865,
+      "at": 616,
       "phase": "Outdated",
-      "detail": "io.jsonwebtoken:jjwt 0.9.1 → 0.12.6",
+      "detail": "co.elastic.clients:elasticsearch-java 8.11.4 → 9.0.3",
       "done": 13,
       "total": 19
     },
     {
-      "at": 905,
+      "at": 664,
       "phase": "Outdated",
       "detail": "com.github.slugify:slugify 3.0.6 → 3.0.7",
       "done": 14,
       "total": 19
     },
     {
-      "at": 6500,
+      "at": 2381,
       "phase": "Indexing your code",
       "detail": "4318 files indexed · 19 direct dependencies to check",
       "done": 0,
       "total": 19
     },
     {
-      "at": 15239,
-      "phase": "Outdated",
-      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3",
+      "at": 11150,
+      "phase": "Up to date",
+      "detail": "jakarta.json:jakarta.json-api@2.1.3",
       "done": 15,
       "total": 19
     },
     {
-      "at": 15367,
+      "at": 11150,
       "phase": "Up to date",
-      "detail": "com.google.code.findbugs:jsr305@3.0.2",
+      "detail": "jakarta.json:jakarta.json-api@2.1.3",
       "done": 16,
       "total": 19
     },
     {
-      "at": 15369,
+      "at": 11287,
       "phase": "Outdated",
-      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
+      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3",
       "done": 17,
       "total": 19
     },
     {
-      "at": 15369,
-      "phase": "Outdated",
-      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
+      "at": 21794,
+      "phase": "Up to date",
+      "detail": "com.google.code.findbugs:jsr305@3.0.2",
       "done": 18,
       "total": 19
     },
     {
-      "at": 24509,
+      "at": 21854,
       "phase": "Outdated",
-      "detail": "javax.xml.bind:jaxb-api 2.3.1 → 2.4.0",
+      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0",
       "done": 19,
       "total": 19
     },
     {
-      "at": 24511,
+      "at": 21854,
       "phase": "Reading release notes and changelog",
       "detail": "co.elastic.clients:elasticsearch-java 8.11.4 → 9.0.3",
       "done": 0,
       "total": 14
     },
     {
-      "at": 24511,
+      "at": 21854,
       "phase": "Reading release notes and changelog",
       "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0",
       "done": 0,
       "total": 14
     },
     {
-      "at": 24513,
+      "at": 21854,
       "phase": "Reading release notes and changelog",
       "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.16.0 → 2.19.0",
       "done": 0,
       "total": 14
     },
     {
-      "at": 24513,
+      "at": 21854,
       "phase": "Reading release notes and changelog",
       "detail": "com.github.slugify:slugify 3.0.6 → 3.0.7",
       "done": 0,
       "total": 14
     },
     {
-      "at": 24513,
+      "at": 21854,
       "phase": "Reading release notes and changelog",
       "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
       "done": 0,
       "total": 14
     },
     {
-      "at": 24513,
+      "at": 21854,
       "phase": "Reading release notes and changelog",
       "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
       "done": 0,
       "total": 14
     },
     {
-      "at": 24513,
+      "at": 21854,
       "phase": "Reading release notes and changelog",
       "detail": "io.jsonwebtoken:jjwt 0.9.1 → 0.12.6",
       "done": 0,
       "total": 14
     },
     {
-      "at": 24513,
+      "at": 21854,
       "phase": "Reading release notes and changelog",
       "detail": "javax.xml.bind:jaxb-api 2.3.1 → 2.4.0",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25315,
+      "at": 22740,
       "phase": "Comparing the public API surface",
       "detail": "co.elastic.clients:elasticsearch-java 8.11.4 → 9.0.3 · 1 evidence source",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25315,
+      "at": 22741,
       "phase": "No breaking changes to look for",
       "detail": "co.elastic.clients:elasticsearch-java 8.11.4 → 9.0.3",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25325,
+      "at": 22753,
       "phase": "Weighing what this upgrade is worth",
       "detail": "co.elastic.clients:elasticsearch-java 8.11.4 → 9.0.3",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25363,
-      "phase": "Comparing the public API surface",
-      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0 · 1 evidence source",
-      "done": 0,
-      "total": 14
-    },
-    {
-      "at": 25363,
-      "phase": "No breaking changes to look for",
-      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0",
-      "done": 0,
-      "total": 14
-    },
-    {
-      "at": 25374,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0",
-      "done": 0,
-      "total": 14
-    },
-    {
-      "at": 25441,
+      "at": 22774,
       "phase": "Comparing the public API surface",
       "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.16.0 → 2.19.0 · 1 evidence source",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25441,
+      "at": 22774,
       "phase": "No breaking changes to look for",
       "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.16.0 → 2.19.0",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25449,
+      "at": 22776,
       "phase": "Weighing what this upgrade is worth",
       "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.16.0 → 2.19.0",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25500,
+      "at": 22806,
+      "phase": "Comparing the public API surface",
+      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0 · 1 evidence source",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 22806,
+      "phase": "No breaking changes to look for",
+      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 22812,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 22836,
       "phase": "Comparing the public API surface",
       "detail": "com.github.slugify:slugify 3.0.6 → 3.0.7 · 1 evidence source",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25500,
+      "at": 22836,
       "phase": "No breaking changes to look for",
       "detail": "com.github.slugify:slugify 3.0.6 → 3.0.7",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25502,
+      "at": 22838,
       "phase": "Weighing what this upgrade is worth",
       "detail": "com.github.slugify:slugify 3.0.6 → 3.0.7",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25562,
+      "at": 22897,
       "phase": "Comparing the public API surface",
       "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6 · 1 evidence source",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25562,
+      "at": 22897,
       "phase": "No breaking changes to look for",
       "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25564,
+      "at": 22907,
       "phase": "Weighing what this upgrade is worth",
       "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25611,
+      "at": 22932,
       "phase": "Comparing the public API surface",
       "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6 · 1 evidence source",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25611,
+      "at": 22932,
       "phase": "No breaking changes to look for",
       "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25613,
+      "at": 22939,
       "phase": "Weighing what this upgrade is worth",
       "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25649,
-      "phase": "Comparing the public API surface",
-      "detail": "io.jsonwebtoken:jjwt 0.9.1 → 0.12.6 · 1 evidence source",
-      "done": 0,
-      "total": 14
-    },
-    {
-      "at": 25649,
-      "phase": "No breaking changes to look for",
-      "detail": "io.jsonwebtoken:jjwt 0.9.1 → 0.12.6",
-      "done": 0,
-      "total": 14
-    },
-    {
-      "at": 25659,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "io.jsonwebtoken:jjwt 0.9.1 → 0.12.6",
-      "done": 0,
-      "total": 14
-    },
-    {
-      "at": 25684,
+      "at": 22958,
       "phase": "Comparing the public API surface",
       "detail": "javax.xml.bind:jaxb-api 2.3.1 → 2.4.0 · 1 evidence source",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25684,
+      "at": 22958,
       "phase": "No breaking changes to look for",
       "detail": "javax.xml.bind:jaxb-api 2.3.1 → 2.4.0",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25695,
+      "at": 22963,
       "phase": "Weighing what this upgrade is worth",
       "detail": "javax.xml.bind:jaxb-api 2.3.1 → 2.4.0",
       "done": 0,
       "total": 14
     },
     {
-      "at": 25743,
+      "at": 22981,
+      "phase": "Comparing the public API surface",
+      "detail": "io.jsonwebtoken:jjwt 0.9.1 → 0.12.6 · 1 evidence source",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 22981,
+      "phase": "No breaking changes to look for",
+      "detail": "io.jsonwebtoken:jjwt 0.9.1 → 0.12.6",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 22986,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "io.jsonwebtoken:jjwt 0.9.1 → 0.12.6",
+      "done": 0,
+      "total": 14
+    },
+    {
+      "at": 23166,
       "phase": "Checked",
-      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0 · safe for your code · no breaking changes found",
+      "detail": "co.elastic.clients:elasticsearch-java 8.11.4 → 9.0.3 · safe for your code · no breaking changes found — not deeply verified",
       "done": 1,
       "total": 14
     },
     {
-      "at": 25743,
+      "at": 23166,
       "phase": "Reading release notes and changelog",
       "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0",
       "done": 1,
       "total": 14
     },
     {
-      "at": 25751,
+      "at": 23356,
       "phase": "Checked",
-      "detail": "co.elastic.clients:elasticsearch-java 8.11.4 → 9.0.3 · safe for your code · no breaking changes found",
+      "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.16.0 → 2.19.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 2,
       "total": 14
     },
     {
-      "at": 25751,
+      "at": 23356,
       "phase": "Reading release notes and changelog",
       "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
       "done": 2,
       "total": 14
     },
     {
-      "at": 25758,
+      "at": 23357,
       "phase": "Checked",
-      "detail": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.16.0 → 2.19.0 · safe for your code · no breaking changes found",
+      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6 · safe for your code · no breaking changes found — not deeply verified",
       "done": 3,
       "total": 14
     },
     {
-      "at": 25759,
+      "at": 23357,
       "phase": "Reading release notes and changelog",
       "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
       "done": 3,
       "total": 14
     },
     {
-      "at": 25759,
+      "at": 23365,
       "phase": "Checked",
-      "detail": "com.github.slugify:slugify 3.0.6 → 3.0.7 · safe for your code · no breaking changes found",
+      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6 · safe for your code · no breaking changes found — not deeply verified",
       "done": 4,
       "total": 14
     },
     {
-      "at": 25760,
+      "at": 23365,
       "phase": "Reading release notes and changelog",
       "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3",
       "done": 4,
       "total": 14
     },
     {
-      "at": 26096,
-      "phase": "Comparing the public API surface",
-      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0 · 1 evidence source",
-      "done": 4,
-      "total": 14
-    },
-    {
-      "at": 26096,
-      "phase": "No breaking changes to look for",
-      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0",
-      "done": 4,
-      "total": 14
-    },
-    {
-      "at": 26098,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0",
-      "done": 4,
-      "total": 14
-    },
-    {
-      "at": 26116,
-      "phase": "Comparing the public API surface",
-      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3 · 1 evidence source",
-      "done": 4,
-      "total": 14
-    },
-    {
-      "at": 26116,
-      "phase": "No breaking changes to look for",
-      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
-      "done": 4,
-      "total": 14
-    },
-    {
-      "at": 26121,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
-      "done": 4,
-      "total": 14
-    },
-    {
-      "at": 26137,
-      "phase": "Comparing the public API surface",
-      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3 · 1 evidence source",
-      "done": 4,
-      "total": 14
-    },
-    {
-      "at": 26137,
-      "phase": "No breaking changes to look for",
-      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
-      "done": 4,
-      "total": 14
-    },
-    {
-      "at": 26154,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
-      "done": 4,
-      "total": 14
-    },
-    {
-      "at": 26172,
-      "phase": "Comparing the public API surface",
-      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3 · 1 evidence source",
-      "done": 4,
-      "total": 14
-    },
-    {
-      "at": 26172,
-      "phase": "No breaking changes to look for",
-      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3",
-      "done": 4,
-      "total": 14
-    },
-    {
-      "at": 26174,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3",
-      "done": 4,
-      "total": 14
-    },
-    {
-      "at": 26208,
+      "at": 23374,
       "phase": "Checked",
-      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6 · safe for your code · no breaking changes found",
+      "detail": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.17.0 → 2.19.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 5,
       "total": 14
     },
     {
-      "at": 26208,
+      "at": 23374,
       "phase": "Reading release notes and changelog",
       "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3",
       "done": 5,
       "total": 14
     },
     {
-      "at": 26418,
+      "at": 23613,
       "phase": "Checked",
-      "detail": "javax.xml.bind:jaxb-api 2.3.1 → 2.4.0 · safe for your code · no breaking changes found",
+      "detail": "com.github.slugify:slugify 3.0.6 → 3.0.7 · safe for your code · no breaking changes found — not deeply verified",
       "done": 6,
       "total": 14
     },
     {
-      "at": 26418,
+      "at": 23613,
       "phase": "Reading release notes and changelog",
       "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3",
       "done": 6,
       "total": 14
     },
     {
-      "at": 26423,
+      "at": 23614,
       "phase": "Checked",
-      "detail": "commons-logging:commons-logging 1.3.5 → 1.3.6 · safe for your code · no breaking changes found",
+      "detail": "io.jsonwebtoken:jjwt 0.9.1 → 0.12.6 · safe for your code · no breaking changes found — not deeply verified",
       "done": 7,
       "total": 14
     },
     {
-      "at": 26429,
+      "at": 23615,
       "phase": "Checked",
-      "detail": "io.jsonwebtoken:jjwt 0.9.1 → 0.12.6 · safe for your code · no breaking changes found",
+      "detail": "javax.xml.bind:jaxb-api 2.3.1 → 2.4.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 8,
       "total": 14
     },
     {
-      "at": 26430,
+      "at": 23768,
+      "phase": "Comparing the public API surface",
+      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0 · 1 evidence source",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 23769,
+      "phase": "No breaking changes to look for",
+      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 23771,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 23799,
+      "phase": "Comparing the public API surface",
+      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3 · 1 evidence source",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 23799,
+      "phase": "No breaking changes to look for",
+      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 23823,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 23840,
+      "phase": "Comparing the public API surface",
+      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3 · 1 evidence source",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 23840,
+      "phase": "No breaking changes to look for",
+      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 23845,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 23864,
+      "phase": "Comparing the public API surface",
+      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3 · 1 evidence source",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 23864,
+      "phase": "No breaking changes to look for",
+      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 23868,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 23885,
+      "phase": "Comparing the public API surface",
+      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3 · 1 evidence source",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 23885,
+      "phase": "No breaking changes to look for",
+      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 23906,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 24144,
+      "phase": "Comparing the public API surface",
+      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3 · 1 evidence source",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 24144,
+      "phase": "No breaking changes to look for",
+      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 24147,
+      "phase": "Weighing what this upgrade is worth",
+      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3",
+      "done": 8,
+      "total": 14
+    },
+    {
+      "at": 24196,
       "phase": "Checked",
-      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0 · safe for your code · no breaking changes found",
+      "detail": "org.ajoberstar.grgit:grgit-gradle 5.0.0 → 5.3.0 · safe for your code · no breaking changes found — not deeply verified",
       "done": 9,
       "total": 14
     },
     {
-      "at": 26937,
+      "at": 24201,
       "phase": "Checked",
-      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3 · safe for your code · no breaking changes found",
+      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3 · safe for your code · no breaking changes found — not deeply verified",
       "done": 10,
       "total": 14
     },
     {
-      "at": 26939,
+      "at": 24212,
       "phase": "Checked",
-      "detail": "org.springframework.boot:spring-boot-starter-parent 3.2.0 → 3.5.3 · safe for your code · no breaking changes found",
+      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3 · safe for your code · no breaking changes found — not deeply verified",
       "done": 11,
       "total": 14
     },
     {
-      "at": 26940,
+      "at": 24216,
       "phase": "Checked",
-      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3 · safe for your code · no breaking changes found",
+      "detail": "org.springframework.boot:spring-boot-starter 3.2.0 → 3.5.3 · safe for your code · no breaking changes found — not deeply verified",
       "done": 12,
       "total": 14
     },
     {
-      "at": 27293,
-      "phase": "Comparing the public API surface",
-      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3 · 1 evidence source",
-      "done": 12,
-      "total": 14
-    },
-    {
-      "at": 27293,
-      "phase": "No breaking changes to look for",
-      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3",
-      "done": 12,
-      "total": 14
-    },
-    {
-      "at": 27303,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3",
-      "done": 12,
-      "total": 14
-    },
-    {
-      "at": 27353,
-      "phase": "Comparing the public API surface",
-      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3 · 1 evidence source",
-      "done": 12,
-      "total": 14
-    },
-    {
-      "at": 27353,
-      "phase": "No breaking changes to look for",
-      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3",
-      "done": 12,
-      "total": 14
-    },
-    {
-      "at": 27357,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3",
-      "done": 12,
-      "total": 14
-    },
-    {
-      "at": 27557,
+      "at": 24333,
       "phase": "Checked",
-      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3 · safe for your code · no breaking changes found",
+      "detail": "org.springframework.boot:spring-boot-starter-validation 3.2.0 → 3.5.3 · safe for your code · no breaking changes found — not deeply verified",
       "done": 13,
       "total": 14
     },
     {
-      "at": 27774,
+      "at": 24372,
       "phase": "Checked",
-      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3 · safe for your code · no breaking changes found",
+      "detail": "org.springframework.boot:spring-boot-starter-web 3.2.0 → 3.5.3 · safe for your code · no breaking changes found — not deeply verified",
       "done": 14,
       "total": 14
-    },
-    {
-      "at": 39336,
-      "phase": "Preparing a test checkout of java-client",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 39363,
-      "phase": "Preparing a test checkout of rest5-client",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 43453,
-      "phase": "Checking java-client as it is",
-      "detail": "gradle compileTestJava, gradle test, gradle build -x test",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 43453,
-      "phase": "Checking java-client as it is",
-      "detail": "`gradle compileTestJava`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 44625,
-      "phase": "Checking rest5-client as it is",
-      "detail": "gradle compileTestJava, gradle test, gradle build -x test",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 44625,
-      "phase": "Checking rest5-client as it is",
-      "detail": "`gradle compileTestJava`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 49509,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 49509,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 188387,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 188387,
-      "phase": "Checking java-client as it is",
-      "detail": "`gradle test`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 199946,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 238463,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 238568,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 238569,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 238776,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 239368,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 239762,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 353783,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 353783,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 354702,
-      "phase": "Checking java-client as it is",
-      "detail": "`gradle build -x test`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 355708,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 355946,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 355946,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 357502,
-      "phase": "Checking rest5-client as it is",
-      "detail": "`gradle test`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 362356,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 362519,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 363202,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 363354,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 364702,
-      "phase": "Preparing a test checkout of buildSrc",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 365321,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 365930,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 365930,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 366601,
-      "phase": "Checking rest5-client as it is",
-      "detail": "`gradle build -x test`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 371735,
-      "phase": "Checking buildSrc as it is",
-      "detail": "gradle compileTestJava, gradle test, gradle build -x test",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 371735,
-      "phase": "Checking buildSrc as it is",
-      "detail": "`gradle compileTestJava`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 375048,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 375050,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 375057,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 375142,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 375264,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376244,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376244,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376244,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376244,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376244,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376244,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376244,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376244,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376244,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376244,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376244,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376244,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376244,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376244,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376244,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376245,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376246,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376246,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376246,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376246,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376246,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 376246,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 377287,
-      "phase": "Preparing a test checkout of examples/esql-article",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 378668,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 382290,
-      "phase": "Checking examples/esql-article as it is",
-      "detail": "gradle compileTestJava, gradle test, gradle build -x test",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 382290,
-      "phase": "Checking examples/esql-article as it is",
-      "detail": "`gradle compileTestJava`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 387110,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 387114,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 387119,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 387119,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 387119,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 387122,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 387844,
-      "phase": "Checking examples/esql-article as it is",
-      "detail": "`gradle test`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 394630,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 394630,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 394631,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 394631,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 394631,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 394631,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 394631,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 394631,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 394631,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 394631,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 394632,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 394632,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 394632,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 394632,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 394659,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 395106,
-      "phase": "Checking examples/esql-article as it is",
-      "detail": "`gradle build -x test`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 402047,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 402053,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 402667,
-      "phase": "Preparing a test checkout of examples/realworld-app",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 408364,
-      "phase": "Checking examples/realworld-app as it is",
-      "detail": "gradle compileTestJava, gradle test, gradle build -x test",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 408364,
-      "phase": "Checking examples/realworld-app as it is",
-      "detail": "`gradle compileTestJava`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 415049,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 448768,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 448769,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 448769,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 449270,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 450904,
-      "phase": "Checking buildSrc as it is",
-      "detail": "`gradle test`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 464518,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 464521,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 464524,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 464527,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 464629,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 465128,
-      "phase": "Checking buildSrc as it is",
-      "detail": "`gradle build -x test`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 479497,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 479518,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 479607,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 479619,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 479629,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 480428,
-      "phase": "Preparing a test checkout of examples/realworld-app/rw-database",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 488666,
-      "phase": "Checking examples/realworld-app/rw-database as it is",
-      "detail": "gradle compileTestJava, gradle test, gradle build -x test",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 488666,
-      "phase": "Checking examples/realworld-app/rw-database as it is",
-      "detail": "`gradle compileTestJava`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 502681,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 502712,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 502747,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 503380,
-      "phase": "Checking examples/realworld-app/rw-database as it is",
-      "detail": "`gradle test`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 513788,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 513788,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 513788,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 513788,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 513788,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 513789,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 513789,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 513789,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 513790,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 513790,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 513790,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 513796,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 513839,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 514357,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 514563,
-      "phase": "Checking examples/realworld-app/rw-database as it is",
-      "detail": "`gradle build -x test`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 516446,
-      "phase": "Checking examples/realworld-app as it is",
-      "detail": "`gradle test`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 523524,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 523536,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 524186,
-      "phase": "Preparing a test checkout of examples/realworld-app/rw-rest",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 531890,
-      "phase": "Checking examples/realworld-app/rw-rest as it is",
-      "detail": "gradle compileTestJava, gradle test, gradle build -x test",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 531890,
-      "phase": "Checking examples/realworld-app/rw-rest as it is",
-      "detail": "`gradle compileTestJava`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 542285,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 542294,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 542294,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 542295,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 542296,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 542296,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 542296,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 542296,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 542296,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 542297,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 542319,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 542875,
-      "phase": "Checking examples/realworld-app/rw-rest as it is",
-      "detail": "`gradle test`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 545238,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 545266,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 546151,
-      "phase": "Checking examples/realworld-app as it is",
-      "detail": "`gradle build -x test`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 552911,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 552943,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 553698,
-      "phase": "Checking examples/realworld-app/rw-rest as it is",
-      "detail": "`gradle build -x test`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 561317,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 562025,
-      "phase": "Preparing a test checkout of examples/realworld-app/rw-server",
-      "detail": "checking out a clean copy",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 563312,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 563431,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 567775,
-      "phase": "Checking examples/realworld-app/rw-server as it is",
-      "detail": "gradle compileTestJava, gradle test, gradle build -x test",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 567775,
-      "phase": "Checking examples/realworld-app/rw-server as it is",
-      "detail": "`gradle compileTestJava`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 575789,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 575893,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 575901,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 575922,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 575928,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 575928,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 575928,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 575928,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 575928,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 575928,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 575928,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 576503,
-      "phase": "Checking examples/realworld-app/rw-server as it is",
-      "detail": "`gradle test`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 585271,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 585271,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 585280,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 585280,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 585281,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 585281,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 585282,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 585282,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 585284,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 585375,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 585846,
-      "phase": "Checking examples/realworld-app/rw-server as it is",
-      "detail": "`gradle build -x test`",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 595521,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 595521,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 595521,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 595521,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 595521,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 595521,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 595521,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 595525,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
-    },
-    {
-      "at": 595546,
-      "phase": "",
-      "detail": "",
-      "done": 0,
-      "total": 0
     }
   ],
   "candidates": [
@@ -2423,29 +911,6 @@
       "latest": "9.0.3",
       "selected": "9.0.3",
       "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. Drift's Java API helper is missing, so co.elastic.clients:elasticsearch-java's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for co.elastic.clients:elasticsearch-java 9.0.3, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift's Java API helper is missing, so co.elastic.clients:elasticsearch-java's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for co.elastic.clients:elasticsearch-java 9.0.3, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval."
-      ],
-      "breaking": []
-    },
-    {
-      "name": "co.elastic.clients:elasticsearch-java",
-      "ecosystem": "maven",
-      "manifestPath": "examples/realworld-app/rw-database/build.gradle",
-      "workspace": "examples/realworld-app/rw-database",
-      "workspaceName": null,
-      "current": "8.11.4",
-      "latest": "9.0.3",
-      "selected": "9.0.3",
-      "safeLatest": null,
       "status": "clean",
       "risk": "none",
       "summary": "Safe to upgrade. Drift's Java API helper is missing, so co.elastic.clients:elasticsearch-java's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for co.elastic.clients:elasticsearch-java 9.0.3, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
@@ -2604,29 +1069,6 @@
       "impactFiles": 0,
       "evidenceCount": 0,
       "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "com.fasterxml.jackson.dataformat:jackson-dataformat-csv",
-      "ecosystem": "maven",
-      "manifestPath": "examples/esql-article/build.gradle.kts",
-      "workspace": "examples/esql-article",
-      "workspaceName": null,
-      "current": "2.17.0",
-      "latest": "2.19.0",
-      "selected": "2.19.0",
-      "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. Drift's Java API helper is missing, so com.fasterxml.jackson.dataformat:jackson-dataformat-csv's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.19.0, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift's Java API helper is missing, so com.fasterxml.jackson.dataformat:jackson-dataformat-csv's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for com.fasterxml.jackson.dataformat:jackson-dataformat-csv 2.19.0, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval."
-      ],
       "breaking": []
     },
     {
@@ -2809,29 +1251,6 @@
       "latest": "2.19.0",
       "selected": "2.19.0",
       "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. Drift's Java API helper is missing, so com.fasterxml.jackson.datatype:jackson-datatype-jsr310's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.19.0, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift's Java API helper is missing, so com.fasterxml.jackson.datatype:jackson-datatype-jsr310's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.19.0, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval."
-      ],
-      "breaking": []
-    },
-    {
-      "name": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310",
-      "ecosystem": "maven",
-      "manifestPath": "examples/realworld-app/rw-database/build.gradle",
-      "workspace": "examples/realworld-app/rw-database",
-      "workspaceName": null,
-      "current": "2.16.0",
-      "latest": "2.19.0",
-      "selected": "2.19.0",
-      "safeLatest": null,
       "status": "clean",
       "risk": "none",
       "summary": "Safe to upgrade. Drift's Java API helper is missing, so com.fasterxml.jackson.datatype:jackson-datatype-jsr310's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for com.fasterxml.jackson.datatype:jackson-datatype-jsr310 2.19.0, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
@@ -2990,29 +1409,6 @@
       "impactFiles": 0,
       "evidenceCount": 0,
       "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "com.github.slugify:slugify",
-      "ecosystem": "maven",
-      "manifestPath": "examples/realworld-app/rw-database/build.gradle",
-      "workspace": "examples/realworld-app/rw-database",
-      "workspaceName": null,
-      "current": "3.0.6",
-      "latest": "3.0.7",
-      "selected": "3.0.7",
-      "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. Drift's Java API helper is missing, so com.github.slugify:slugify's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for com.github.slugify:slugify 3.0.7, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift's Java API helper is missing, so com.github.slugify:slugify's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for com.github.slugify:slugify 3.0.7, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval."
-      ],
       "breaking": []
     },
     {
@@ -3384,52 +1780,6 @@
       "latest": "1.3.6",
       "selected": "1.3.6",
       "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. Drift's Java API helper is missing, so commons-logging:commons-logging's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for commons-logging:commons-logging 1.3.6, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift's Java API helper is missing, so commons-logging:commons-logging's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for commons-logging:commons-logging 1.3.6, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval."
-      ],
-      "breaking": []
-    },
-    {
-      "name": "commons-logging:commons-logging",
-      "ecosystem": "maven",
-      "manifestPath": "java-client/build.gradle.kts",
-      "workspace": "java-client",
-      "workspaceName": null,
-      "current": "1.3.5",
-      "latest": "1.3.6",
-      "selected": "1.3.6",
-      "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. Drift's Java API helper is missing, so commons-logging:commons-logging's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for commons-logging:commons-logging 1.3.6, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift's Java API helper is missing, so commons-logging:commons-logging's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for commons-logging:commons-logging 1.3.6, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval."
-      ],
-      "breaking": []
-    },
-    {
-      "name": "commons-logging:commons-logging",
-      "ecosystem": "maven",
-      "manifestPath": "rest5-client/build.gradle.kts",
-      "workspace": "rest5-client",
-      "workspaceName": null,
-      "current": "1.3.5",
-      "latest": "1.3.6",
-      "selected": "1.3.6",
-      "safeLatest": null,
       "status": "clean",
       "risk": "none",
       "summary": "Safe to upgrade. Drift's Java API helper is missing, so commons-logging:commons-logging's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for commons-logging:commons-logging 1.3.6, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
@@ -3611,29 +1961,6 @@
       "impactFiles": 0,
       "evidenceCount": 0,
       "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "io.jsonwebtoken:jjwt",
-      "ecosystem": "maven",
-      "manifestPath": "examples/realworld-app/rw-database/build.gradle",
-      "workspace": "examples/realworld-app/rw-database",
-      "workspaceName": null,
-      "current": "0.9.1",
-      "latest": "0.12.6",
-      "selected": "0.12.6",
-      "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. Drift's Java API helper is missing, so io.jsonwebtoken:jjwt's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for io.jsonwebtoken:jjwt 0.12.6, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift's Java API helper is missing, so io.jsonwebtoken:jjwt's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for io.jsonwebtoken:jjwt 0.12.6, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval."
-      ],
       "breaking": []
     },
     {
@@ -3900,29 +2227,6 @@
       "latest": "2.4.0",
       "selected": "2.4.0",
       "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. Drift's Java API helper is missing, so javax.xml.bind:jaxb-api's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for javax.xml.bind:jaxb-api 2.4.0, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift's Java API helper is missing, so javax.xml.bind:jaxb-api's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for javax.xml.bind:jaxb-api 2.4.0, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval."
-      ],
-      "breaking": []
-    },
-    {
-      "name": "javax.xml.bind:jaxb-api",
-      "ecosystem": "maven",
-      "manifestPath": "examples/realworld-app/rw-database/build.gradle",
-      "workspace": "examples/realworld-app/rw-database",
-      "workspaceName": null,
-      "current": "2.3.1",
-      "latest": "2.4.0",
-      "selected": "2.4.0",
-      "safeLatest": null,
       "status": "clean",
       "risk": "none",
       "summary": "Safe to upgrade. Drift's Java API helper is missing, so javax.xml.bind:jaxb-api's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for javax.xml.bind:jaxb-api 2.4.0, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
@@ -4081,29 +2385,6 @@
       "impactFiles": 0,
       "evidenceCount": 0,
       "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "org.ajoberstar.grgit:grgit-gradle",
-      "ecosystem": "maven",
-      "manifestPath": "buildSrc/build.gradle.kts",
-      "workspace": "buildSrc",
-      "workspaceName": null,
-      "current": "5.0.0",
-      "latest": "5.3.0",
-      "selected": "5.3.0",
-      "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. Drift's Java API helper is missing, so org.ajoberstar.grgit:grgit-gradle's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for org.ajoberstar.grgit:grgit-gradle 5.3.0, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift's Java API helper is missing, so org.ajoberstar.grgit:grgit-gradle's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for org.ajoberstar.grgit:grgit-gradle 5.3.0, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval."
-      ],
       "breaking": []
     },
     {
@@ -4517,30 +2798,7 @@
       "latest": "3.5.3",
       "selected": "3.5.3",
       "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. Drift's Java API helper is missing, so org.springframework.boot:spring-boot-starter's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for org.springframework.boot:spring-boot-starter 3.5.3, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift's Java API helper is missing, so org.springframework.boot:spring-boot-starter's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for org.springframework.boot:spring-boot-starter 3.5.3, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval."
-      ],
-      "breaking": []
-    },
-    {
-      "name": "org.springframework.boot:spring-boot-starter",
-      "ecosystem": "maven",
-      "manifestPath": "examples/realworld-app/rw-database/build.gradle",
-      "workspace": "examples/realworld-app/rw-database",
-      "workspaceName": null,
-      "current": "3.2.0",
-      "latest": "3.5.3",
-      "selected": "3.5.3",
-      "safeLatest": null,
-      "status": "checking",
+      "status": "clean",
       "risk": "none",
       "summary": "Safe to upgrade. Drift's Java API helper is missing, so org.springframework.boot:spring-boot-starter's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for org.springframework.boot:spring-boot-starter 3.5.3, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
       "recommendation": "safe-to-upgrade",
@@ -4577,29 +2835,6 @@
       "breaking": []
     },
     {
-      "name": "org.springframework.boot:spring-boot-starter",
-      "ecosystem": "maven",
-      "manifestPath": "examples/realworld-app/rw-server/build.gradle",
-      "workspace": "examples/realworld-app/rw-server",
-      "workspaceName": null,
-      "current": "3.2.0",
-      "latest": "3.5.3",
-      "selected": "3.5.3",
-      "safeLatest": null,
-      "status": "clean",
-      "risk": "none",
-      "summary": "Safe to upgrade. Drift's Java API helper is missing, so org.springframework.boot:spring-boot-starter's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for org.springframework.boot:spring-boot-starter 3.5.3, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift's Java API helper is missing, so org.springframework.boot:spring-boot-starter's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for org.springframework.boot:spring-boot-starter 3.5.3, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval."
-      ],
-      "breaking": []
-    },
-    {
       "name": "org.springframework.boot:spring-boot-starter-parent",
       "ecosystem": "maven",
       "manifestPath": "examples/realworld-app/build.gradle",
@@ -4744,29 +2979,6 @@
       "impactFiles": 0,
       "evidenceCount": 0,
       "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "org.springframework.boot:spring-boot-starter-parent",
-      "ecosystem": "maven",
-      "manifestPath": "examples/realworld-app/build.gradle",
-      "workspace": "examples/realworld-app",
-      "workspaceName": null,
-      "current": "3.2.0",
-      "latest": "3.5.3",
-      "selected": "3.5.3",
-      "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. Drift's Java API helper is missing, so org.springframework.boot:spring-boot-starter-parent's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for org.springframework.boot:spring-boot-starter-parent 3.5.3, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift's Java API helper is missing, so org.springframework.boot:spring-boot-starter-parent's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for org.springframework.boot:spring-boot-starter-parent 3.5.3, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval."
-      ],
       "breaking": []
     },
     {
@@ -4949,29 +3161,6 @@
       "latest": "3.5.3",
       "selected": "3.5.3",
       "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. Drift's Java API helper is missing, so org.springframework.boot:spring-boot-starter-validation's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for org.springframework.boot:spring-boot-starter-validation 3.5.3, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift's Java API helper is missing, so org.springframework.boot:spring-boot-starter-validation's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for org.springframework.boot:spring-boot-starter-validation 3.5.3, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval."
-      ],
-      "breaking": []
-    },
-    {
-      "name": "org.springframework.boot:spring-boot-starter-validation",
-      "ecosystem": "maven",
-      "manifestPath": "examples/realworld-app/rw-database/build.gradle",
-      "workspace": "examples/realworld-app/rw-database",
-      "workspaceName": null,
-      "current": "3.2.0",
-      "latest": "3.5.3",
-      "selected": "3.5.3",
-      "safeLatest": null,
       "status": "clean",
       "risk": "none",
       "summary": "Safe to upgrade. Drift's Java API helper is missing, so org.springframework.boot:spring-boot-starter-validation's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for org.springframework.boot:spring-boot-starter-validation 3.5.3, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
@@ -5130,29 +3319,6 @@
       "impactFiles": 0,
       "evidenceCount": 0,
       "gaps": [],
-      "breaking": []
-    },
-    {
-      "name": "org.springframework.boot:spring-boot-starter-web",
-      "ecosystem": "maven",
-      "manifestPath": "examples/realworld-app/rw-rest/build.gradle",
-      "workspace": "examples/realworld-app/rw-rest",
-      "workspaceName": null,
-      "current": "3.2.0",
-      "latest": "3.5.3",
-      "selected": "3.5.3",
-      "safeLatest": null,
-      "status": "checking",
-      "risk": "none",
-      "summary": "Safe to upgrade. Drift's Java API helper is missing, so org.springframework.boot:spring-boot-starter-web's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for org.springframework.boot:spring-boot-starter-web 3.5.3, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift's Java API helper is missing, so org.springframework.boot:spring-boot-starter-web's classfile API could not be compared directly. No release notes, changelog, or migration guide was reachable for org.springframework.boot:spring-boot-starter-web 3.5.3, and no source repository could be resolved for it. Drift can install the missing `japicmp` helper for you after approval."
-      ],
       "breaking": []
     },
     {
