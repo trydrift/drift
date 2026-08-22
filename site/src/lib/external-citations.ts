@@ -23,6 +23,8 @@
 export const MAVEN_BREAKING_CHANGE_STUDY = {
   /** "11.58% of the ... dependency updates resulted in breaking changes" — the paper's own results. */
   clientBreakRate: "11.58%",
+  /** Same figure as a number, for the 100-unit unaffected/breaking split visualization. */
+  clientBreakRateValue: 11.58,
   /** "almost half of them were introduced during a non-major update" — refined to the paper's exact figure. */
   nonMajorShare: "41.58%",
   title:
