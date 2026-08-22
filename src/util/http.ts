@@ -334,8 +334,22 @@ async function fetchTextUncoalesced(
         });
         return null;
       }
-      // 403 is the opposite: a refusal, usually a rate limit. Never remembered.
-      if (response.status === 403) break;
+      // 403 is usually a refusal, never remembered — but GitHub's own API
+      // documentation says both primary and secondary rate limits can
+      // surface as 403 as well as 429, signalled by `x-ratelimit-remaining:
+      // 0` or a `retry-after` header. Treating every 403 as non-retryable
+      // meant the single most common GitHub rate-limit shape got neither a
+      // retry nor the "rate limited, retrying" status this PR otherwise
+      // added — a 403 without either signal (bad credentials, a private
+      // repository) is still a hard refusal and stays non-retryable.
+      if (response.status === 403) {
+        const rateLimited =
+          response.headers.get('x-ratelimit-remaining') === '0' || response.headers.has('retry-after');
+        if (!rateLimited || attempt === retries) break;
+        options.onRetry?.(attempt + 1, 'rate-limited');
+        await sleep(backoffMs(attempt, response.headers.get('retry-after')));
+        continue;
+      }
 
       const retryable = response.status === 429 || response.status >= 500;
       if (!retryable || attempt === retries) break;

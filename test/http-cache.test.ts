@@ -279,4 +279,72 @@ describe('reporting a retry as it happens', () => {
     await fetchText('https://example.com/h.md', { onRetry: (attempt, reason) => retries.push({ attempt, reason }) });
     assert.deepEqual(retries, []);
   });
+
+  test('a 403 with x-ratelimit-remaining: 0 is GitHub\'s primary rate limit, and is retried', async () => {
+    let calls = 0;
+    globalThis.fetch = (() => {
+      calls += 1;
+      if (calls === 1) {
+        return Promise.resolve(
+          new Response('rate limited', { status: 403, headers: { 'x-ratelimit-remaining': '0' } }),
+        );
+      }
+      return Promise.resolve(new Response('# ok', { status: 200 }));
+    }) as typeof fetch;
+
+    const retries: { attempt: number; reason: string }[] = [];
+    const result = await fetchText('https://api.github.com/repos/o/r', {
+      retries: 1,
+      onRetry: (attempt, reason) => retries.push({ attempt, reason }),
+    });
+    assert.equal(result, '# ok');
+    assert.deepEqual(retries, [{ attempt: 1, reason: 'rate-limited' }]);
+  });
+
+  test('a 403 with a Retry-After header is GitHub\'s secondary rate limit, and is retried', async () => {
+    let calls = 0;
+    globalThis.fetch = (() => {
+      calls += 1;
+      if (calls === 1) {
+        return Promise.resolve(
+          new Response('secondary rate limit', { status: 403, headers: { 'Retry-After': '0' } }),
+        );
+      }
+      return Promise.resolve(new Response('# ok', { status: 200 }));
+    }) as typeof fetch;
+
+    const retries: { attempt: number; reason: string }[] = [];
+    const result = await fetchText('https://api.github.com/repos/o/r2', {
+      retries: 1,
+      onRetry: (attempt, reason) => retries.push({ attempt, reason }),
+    });
+    assert.equal(result, '# ok');
+    assert.deepEqual(retries, [{ attempt: 1, reason: 'rate-limited' }]);
+  });
+
+  test('a 403 with neither rate-limit signal is a genuine refusal, and is never retried', async () => {
+    const refusal = stub(() => new Response('forbidden', { status: 403 }));
+    const retries: unknown[] = [];
+    const result = await fetchText('https://api.github.com/repos/o/private', {
+      retries: 2,
+      onRetry: (attempt, reason) => retries.push({ attempt, reason }),
+    });
+    assert.equal(result, null);
+    assert.deepEqual(retries, []);
+    assert.equal(refusal.calls(), 1);
+  });
+
+  test('a 403 rate limit that never clears is not retried past the configured limit', async () => {
+    const limited = stub(
+      () => new Response('rate limited', { status: 403, headers: { 'x-ratelimit-remaining': '0' } }),
+    );
+    const retries: unknown[] = [];
+    const result = await fetchText('https://api.github.com/repos/o/stuck', {
+      retries: 1,
+      onRetry: (attempt, reason) => retries.push({ attempt, reason }),
+    });
+    assert.equal(result, null);
+    assert.equal(retries.length, 1, 'one retry is attempted, then the configured limit is respected');
+    assert.equal(limited.calls(), 2);
+  });
 });
