@@ -39,7 +39,7 @@ import {
 import { discoverNestedProjects, type NestedProject } from '../detect/nested.js';
 import { gatherEvidence } from '../evidence/index.js';
 import { buildRationale } from '../rationale/index.js';
-import { findNodeDeclarations } from '../rationale/runtime.js';
+import { findNodeDeclarations, findPythonDeclarations } from '../rationale/runtime.js';
 import type { UpgradeRationale } from '../rationale/types.js';
 import type { SurfaceAddition, SurfaceUnavailable, ToolInstallRequest } from '../evidence/surface/types.js';
 import type { ProseSource } from '../evidence/index.js';
@@ -1763,7 +1763,8 @@ async function analyzeUpgrade(args: {
         surfaceCompared,
         surfaceGaps,
         prose,
-        repoRuntime: findNodeDeclarations(files),
+        repoRuntime: findNodeDeclarations(files, args.member),
+        pythonRuntime: findPythonDeclarations(files, args.member),
       },
     ));
 

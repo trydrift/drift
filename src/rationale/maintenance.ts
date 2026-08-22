@@ -3,7 +3,12 @@ import type { Ecosystem } from '../types.js';
 import { normalizeVersion } from '../detect/version.js';
 import type { RegistryInfo, RepositoryStatus, VersionInfo } from '../evidence/registry.js';
 import type { MaintenanceAssessment, MaintenanceFact } from './types.js';
-import { checkNodeCompatibility, type RuntimeDeclaration } from './runtime.js';
+import {
+  checkNodeCompatibility,
+  checkPythonCompatibility,
+  type RuntimeCompatibility,
+  type RuntimeDeclaration,
+} from './runtime.js';
 
 /**
  * Whether this package is still looked after — stated, not scored.
@@ -40,6 +45,15 @@ export interface MaintenanceInput {
    * been gathered, in which case the fact falls back to the generic prompt.
    */
   repoRuntime?: readonly RuntimeDeclaration[];
+  /**
+   * Where this repository declares its own Python version --
+   * `pyproject.toml#project.requires-python`, `setup.cfg`/`setup.py`,
+   * `.python-version`, `runtime.txt`. Kept apart from `repoRuntime` rather
+   * than merged into it: a Python floor like ">=3.9" also parses as a valid
+   * semver range, so feeding it into the Node.js comparator would silently
+   * compare the wrong language's numbers.
+   */
+  pythonRuntime?: readonly RuntimeDeclaration[];
 }
 
 export function assessMaintenance(input: MaintenanceInput): MaintenanceAssessment {
@@ -94,7 +108,12 @@ export function assessMaintenance(input: MaintenanceInput): MaintenanceAssessmen
     facts.push({ statement: `The target version was released ${describeAge(targetVersion.releasedAt, now)}.` });
   }
 
-  const runtimeChange = describeRuntimeChange(currentVersion, targetVersion, input.repoRuntime ?? []);
+  const runtimeChange = describeRuntimeChange(
+    currentVersion,
+    targetVersion,
+    input.repoRuntime ?? [],
+    input.pythonRuntime ?? [],
+  );
   if (runtimeChange) facts.push(runtimeChange);
 
   const releaseLine = describeReleaseLine(input, latestStable);
@@ -120,6 +139,7 @@ function describeRuntimeChange(
   current: VersionInfo | null,
   target: VersionInfo | null,
   repoRuntime: readonly RuntimeDeclaration[],
+  pythonRuntime: readonly RuntimeDeclaration[],
 ): MaintenanceFact | null {
   const before = current?.runtime;
   const after = target?.runtime;
@@ -132,10 +152,12 @@ function describeRuntimeChange(
 
   const concerning = raisesMinimum(before.requirement, after.requirement);
   const statement = `The required ${after.name} version changed from ${before.requirement} to ${after.requirement}.`;
-  // `repoRuntime` is Node-only (see `findNodeDeclarations`); checking a Python
-  // or Go floor against it would compare two languages' version numbers as if
-  // they meant the same thing.
-  const verified = after.name === 'Node.js' ? describeRuntimeVerification(repoRuntime, after.requirement) : null;
+  const verified =
+    after.name === 'Node.js'
+      ? describeRuntimeVerification(repoRuntime, after.requirement, checkNodeCompatibility)
+      : after.name === 'Python'
+        ? describeRuntimeVerification(pythonRuntime, after.requirement, checkPythonCompatibility)
+        : null;
   if (verified) return { statement: `${statement} ${verified.statement}`, concerning: verified.concerning };
 
   return {
@@ -212,15 +234,19 @@ export function describeAge(iso: string, now: Date): string {
 }
 
 /**
- * Turn a raised Node.js floor from something the reader has to go check into
+ * Turn a raised runtime floor from something the reader has to go check into
  * something Drift already checked, wherever it found this repository's own
- * declaration of that floor.
+ * declaration of that floor. The comparator is injected because "does this
+ * declaration satisfy that requirement" means something different per
+ * language — semver subset for Node, PEP 440 interval containment for
+ * Python — while the reporting shape is identical either way.
  */
 function describeRuntimeVerification(
   repoRuntime: readonly RuntimeDeclaration[],
   requirement: string,
+  check: (declarations: readonly RuntimeDeclaration[], requirement: string) => RuntimeCompatibility[],
 ): { statement: string; concerning: boolean } | null {
-  const results = checkNodeCompatibility(repoRuntime, requirement);
+  const results = check(repoRuntime, requirement);
   if (results.length === 0) return null;
 
   const incompatible = results.filter((r) => r.verdict === 'incompatible');

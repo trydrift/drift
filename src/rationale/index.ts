@@ -50,6 +50,8 @@ export interface RationaleContext {
   security?: Map<DependencyChange, SecurityAssessment>;
   /** Where this repository declares its own Node.js version. See {@link RuntimeDeclaration}. */
   repoRuntime?: readonly RuntimeDeclaration[];
+  /** Where this repository declares its own Python version. See {@link RuntimeDeclaration}. */
+  pythonRuntime?: readonly RuntimeDeclaration[];
 }
 
 export interface RationaleInput {
@@ -127,6 +129,7 @@ async function rationaleFor(
         currentVersion,
         targetVersion,
         repoRuntime: ctx.repoRuntime,
+        pythonRuntime: ctx.pythonRuntime,
       })
     : { facts: [] };
 
@@ -376,7 +379,12 @@ function degraded(change: DependencyChange, reason: string): UpgradeRationale {
 export * from './types.js';
 export { assessSecurity, assessSecurityBatch, mergeAliases, cvssBaseScore } from './osv.js';
 export { assessMaintenance, describeAge, raisesMinimum } from './maintenance.js';
-export { checkNodeCompatibility, findNodeDeclarations } from './runtime.js';
+export {
+  checkNodeCompatibility,
+  checkPythonCompatibility,
+  findNodeDeclarations,
+  findPythonDeclarations,
+} from './runtime.js';
 export { assessLicense, isAllowed } from './license.js';
 export { summarizeRelease, classify, bulletLines, improvementsFrom, describeAdditions } from './summary.js';
 export { assessUpgrade, RECOMMENDATION_LABEL } from './assess.js';

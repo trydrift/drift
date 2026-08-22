@@ -241,4 +241,39 @@ describe('the runtime-requirement maintenance fact', () => {
     const fact = result.facts.find((f) => /Go version changed/.test(f.statement));
     assert.match(fact.statement, /Check this against the runtimes this repository builds and deploys on/);
   });
+
+  test('a raised Python floor is verified automatically, the same way Node is', () => {
+    const result = assessMaintenance({
+      ...base,
+      currentVersion: version('>=3.8', 'Python'),
+      targetVersion: version('>=3.9', 'Python'),
+      pythonRuntime: [{ file: 'pyproject.toml', line: 3, requirement: '>=3.11' }],
+    });
+    const fact = result.facts.find((f) => /Python version changed/.test(f.statement));
+    assert.equal(fact.concerning, false);
+    assert.match(fact.statement, /already satisfies it \(pyproject\.toml\)/);
+  });
+
+  test('a Python floor this repository falls short of is concerning, and names the file', () => {
+    const result = assessMaintenance({
+      ...base,
+      currentVersion: version('>=3.6', 'Python'),
+      targetVersion: version('>=3.9', 'Python'),
+      pythonRuntime: [{ file: '.python-version', line: 1, requirement: '3.6' }],
+    });
+    const fact = result.facts.find((f) => /Python version changed/.test(f.statement));
+    assert.equal(fact.concerning, true);
+    assert.match(fact.statement, /does not satisfy it: \.python-version/);
+  });
+
+  test('a Python bump is never checked against this repository’s Node declarations', () => {
+    const result = assessMaintenance({
+      ...base,
+      currentVersion: version('>=3.8', 'Python'),
+      targetVersion: version('>=3.9', 'Python'),
+      repoRuntime: [{ file: 'package.json', line: 1, requirement: '>=3.9' }],
+    });
+    const fact = result.facts.find((f) => /Python version changed/.test(f.statement));
+    assert.match(fact.statement, /Check this against the runtimes this repository builds and deploys on/);
+  });
 });
