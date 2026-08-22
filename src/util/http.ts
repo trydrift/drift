@@ -22,6 +22,15 @@ export interface FetchOptions {
   cacheTtlMs?: number;
   /** A content-addressed fact that should not change once published. */
   immutable?: boolean;
+  /**
+   * Called before each retry, so a caller waiting on this fetch can say why
+   * it is taking a while instead of showing a single frozen label.
+   *
+   * Not part of the cache key: two coalesced callers asking for the same
+   * URL share one in-flight request, so only the first caller's callback
+   * fires — the same way only its `headers` and `timeoutMs` apply.
+   */
+  onRetry?: (attempt: number, reason: 'rate-limited' | 'server-error' | 'network-error') => void;
 }
 
 const DEFAULT_TIMEOUT_MS = 10_000;
@@ -331,11 +340,13 @@ async function fetchTextUncoalesced(
       const retryable = response.status === 429 || response.status >= 500;
       if (!retryable || attempt === retries) break;
 
+      options.onRetry?.(attempt + 1, response.status === 429 ? 'rate-limited' : 'server-error');
       await sleep(backoffMs(attempt, response.headers.get('retry-after')));
     } catch {
       request.end({ status: 0 });
       count('http.error');
       if (attempt === retries) break;
+      options.onRetry?.(attempt + 1, 'network-error');
       await sleep(backoffMs(attempt, null));
     } finally {
       clearTimeout(timer);

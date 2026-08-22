@@ -209,3 +209,42 @@ describe('downloading an immutable archive', () => {
     assert.equal(calls, 1);
   });
 });
+
+describe('reporting a retry as it happens', () => {
+  test('a 429 is reported as rate-limited, before the caller has any other way to know', async () => {
+    stub(() => new Response('slow down', { status: 429 }));
+    const retries: { attempt: number; reason: string }[] = [];
+    await fetchText('https://example.com/e.md', {
+      retries: 1,
+      onRetry: (attempt, reason) => retries.push({ attempt, reason }),
+    });
+    assert.deepEqual(retries, [{ attempt: 1, reason: 'rate-limited' }]);
+  });
+
+  test('a 500 is reported as a server error', async () => {
+    stub(() => new Response('boom', { status: 500 }));
+    const retries: { attempt: number; reason: string }[] = [];
+    await fetchText('https://example.com/f.md', {
+      retries: 1,
+      onRetry: (attempt, reason) => retries.push({ attempt, reason }),
+    });
+    assert.deepEqual(retries, [{ attempt: 1, reason: 'server-error' }]);
+  });
+
+  test('a thrown network error is reported distinctly from an HTTP error', async () => {
+    globalThis.fetch = (() => Promise.reject(new Error('ECONNRESET'))) as typeof fetch;
+    const retries: { attempt: number; reason: string }[] = [];
+    await fetchText('https://example.com/g.md', {
+      retries: 1,
+      onRetry: (attempt, reason) => retries.push({ attempt, reason }),
+    });
+    assert.deepEqual(retries, [{ attempt: 1, reason: 'network-error' }]);
+  });
+
+  test('a call that never retries never reports one', async () => {
+    stub(() => new Response('# ok', { status: 200 }));
+    const retries: unknown[] = [];
+    await fetchText('https://example.com/h.md', { onRetry: (attempt, reason) => retries.push({ attempt, reason }) });
+    assert.deepEqual(retries, []);
+  });
+});

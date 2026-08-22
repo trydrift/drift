@@ -102,6 +102,12 @@ export async function buildRationale(
   });
 }
 
+const RETRY_LABEL = {
+  'rate-limited': 'rate limited',
+  'server-error': 'server error',
+  'network-error': 'network error',
+} as const;
+
 async function rationaleFor(
   change: DependencyChange,
   input: RationaleInput,
@@ -136,7 +142,9 @@ async function rationaleFor(
   const registry = await registryPromise;
   report('Checking repository status');
   const repository = registry?.githubRepo
-    ? await fetchRepositoryStatus(registry.githubRepo, ctx.githubToken).catch(() => null)
+    ? await fetchRepositoryStatus(registry.githubRepo, ctx.githubToken, (attempt, reason) =>
+        report(`Checking repository status (${RETRY_LABEL[reason]}, retrying — attempt ${attempt})`),
+      ).catch(() => null)
     : null;
 
   report('Checking security advisories');
