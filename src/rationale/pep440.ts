@@ -12,10 +12,13 @@
  *
  * Where this cannot be exact, it never guesses in the direction of a false
  * "compatible" verdict: an epoch, a pre/post/dev/local suffix, a bare `!=`,
- * or a clause this cannot parse at all marks the whole specifier set
- * `imprecise`, and `isSubsetInterval` refuses to confirm a subset — never a
- * silent maybe read as a confident yes — against an imprecise interval on
- * either side.
+ * an arbitrary-equality `===` clause, an invalid single-segment `~=X`, a
+ * wildcard attached to an operator that does not support one, a
+ * self-contradictory range that admits no release at all, or a clause this
+ * cannot parse at all marks the whole specifier set `imprecise`, and
+ * `isSubsetInterval` refuses to confirm a subset, and `intersectsInterval`
+ * refuses to confirm the two do *not* overlap — never a silent maybe read as
+ * a confident yes or no — against an imprecise interval on either side.
  */
 
 export interface Bound {
@@ -145,12 +148,30 @@ export function parseSpecifierSet(spec: string): VersionInterval {
       imprecise = true;
       continue;
     }
-    const { release } = token;
+    const { release, wildcard } = token;
+
+    // A trailing `.*` is only valid PEP 440 syntax alongside `==` or `!=`.
+    // `>=3.11.*`, `<=3.11.*`, and `~=3.11.*` are not specifiers PEP 440
+    // defines at all; silently dropping the wildcard and keeping the bound
+    // would treat invalid input as if it had been written correctly.
+    if (wildcard && op !== '==' && op !== '!=') {
+      imprecise = true;
+      continue;
+    }
+
+    // ~=X (a single release segment) is invalid: PEP 440 requires at least
+    // two segments (major.minor) for the compatible-release operator, since
+    // it needs a "last segment" to drop when computing the ceiling.
+    if (op === '~=' && release.length < 2) {
+      imprecise = true;
+      continue;
+    }
+
     // A bare declaration widens to the whole release line it names, the
     // same convention `findNodeDeclarations` uses for a bare Node major —
-    // see the doc comment above. An explicit `==`/`===` only widens when the
+    // see the doc comment above. An explicit `==` only widens when the
     // caller actually wrote the `.*` wildcard.
-    const widen = bare || token.wildcard;
+    const widen = bare || wildcard;
 
     switch (op) {
       case '>=':
@@ -166,11 +187,18 @@ export function parseSpecifierSet(spec: string): VersionInterval {
         max = narrowMax(max, { value: release, inclusive: false });
         break;
       case '==':
-      case '===':
         min = narrowMin(min, { value: release, inclusive: true });
         max = widen
           ? narrowMax(max, { value: nextAtPrecision(release), inclusive: false })
           : narrowMax(max, { value: release, inclusive: true });
+        break;
+      case '===':
+        // PEP 440's arbitrary-equality clause is a literal string comparison
+        // with no version semantics at all — it does not zero-pad, does not
+        // support a wildcard, and `===3.11` is emphatically not the same
+        // claim as `==3.11` (which does admit 3.11.0). There is no interval
+        // this can be represented as without guessing at that string match.
+        imprecise = true;
         break;
       case '~=':
         // ~=3.10 means >=3.10, ==3.* : compatible within the same release up
@@ -190,7 +218,25 @@ export function parseSpecifierSet(spec: string): VersionInterval {
     }
   }
 
+  if (!imprecise && isEmptyInterval(min, max)) {
+    // A self-contradictory constraint (`>=3.12,<3.11`) admits no release at
+    // all. That is a malformed declaration, not a legitimate empty set to
+    // reason about confidently in either direction — it must not be allowed
+    // to manufacture a confident "compatible" (vacuously, nothing to violate)
+    // or "incompatible" verdict downstream.
+    return { min, max, imprecise: true };
+  }
+
   return { min, max, imprecise };
+}
+
+/** Does this [min, max] admit no release at all? */
+function isEmptyInterval(min: Bound | null, max: Bound | null): boolean {
+  if (!min || !max) return false;
+  const cmp = compareTuples(min.value, max.value);
+  if (cmp > 0) return true;
+  if (cmp < 0) return false;
+  return !(min.inclusive && max.inclusive);
 }
 
 function minSatisfies(declared: Bound | null, required: Bound | null): boolean {
@@ -224,8 +270,18 @@ export function isSubsetInterval(declared: VersionInterval, required: VersionInt
   return minSatisfies(declared.min, required.min) && maxSatisfies(declared.max, required.max);
 }
 
-/** Do the two intervals share any release at all? */
+/**
+ * Do the two intervals share any release at all?
+ *
+ * An imprecise interval — including one this module refused to build because
+ * it was self-contradictory — can never confidently be ruled non-overlapping.
+ * `checkPythonCompatibility` falls back to this once `isSubsetInterval` says
+ * no; answering `true` here means that fallback lands on "partial" (check
+ * this yourself) instead of a confident "incompatible" built on a
+ * construct that could not be modeled safely in the first place.
+ */
 export function intersectsInterval(a: VersionInterval, b: VersionInterval): boolean {
+  if (a.imprecise || b.imprecise) return true;
   const min = tighterMin(a.min, b.min);
   const max = tighterMax(a.max, b.max);
   if (!min || !max) return true;

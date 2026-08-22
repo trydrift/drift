@@ -110,6 +110,43 @@ describe('parsing a PEP 440 specifier set into an interval', () => {
   test('unsupported syntax marks the set imprecise rather than being guessed at', () => {
     assert.equal(parseSpecifierSet('not a specifier').imprecise, true);
   });
+
+  test('=== is arbitrary string equality, never read as semantic version equality', () => {
+    // PEP 440: `===X` is a literal string comparison with no zero-padding or
+    // prefix matching. `===3.11` must not be treated as if it admitted 3.11.0
+    // the way `==3.11` legitimately does.
+    assert.equal(parseSpecifierSet('===3.11').imprecise, true);
+  });
+
+  test('~=X with a single release segment is invalid and marks the set imprecise', () => {
+    // PEP 440 requires at least two segments (major.minor) for ~=; there is
+    // no defined meaning for ~=1 (nothing to drop to compute the ceiling).
+    assert.equal(parseSpecifierSet('~=1').imprecise, true);
+  });
+
+  test('~=X.Y with two segments is still valid', () => {
+    assert.equal(parseSpecifierSet('~=1.0').imprecise, false);
+  });
+
+  test('a wildcard attached to an operator that does not support one is invalid', () => {
+    for (const spec of ['>=3.11.*', '<=3.11.*', '>3.11.*', '<3.11.*', '~=3.11.*']) {
+      assert.equal(parseSpecifierSet(spec).imprecise, true, `expected ${spec} to be imprecise`);
+    }
+  });
+
+  test('a self-contradictory range admits no release and is imprecise, not a confident interval', () => {
+    const parsed = parseSpecifierSet('>=3.12,<3.11');
+    assert.equal(parsed.imprecise, true);
+  });
+
+  test('a boundary-contradictory range (exclusive bounds meeting at the same point) is also imprecise', () => {
+    assert.equal(parseSpecifierSet('>3.11,<3.11').imprecise, true);
+    assert.equal(parseSpecifierSet('>=3.11,<3.11').imprecise, true);
+  });
+
+  test('a single-point inclusive range is not empty', () => {
+    assert.equal(parseSpecifierSet('>=3.11,<=3.11').imprecise, false);
+  });
 });
 
 describe('deciding whether one interval satisfies another', () => {
@@ -158,6 +195,20 @@ describe('deciding whether one interval satisfies another', () => {
     const declared = parseSpecifierSet('==3.11');
     assert.equal(isSubsetInterval(declared, parseSpecifierSet('>=3.9,<4')), true);
     assert.equal(isSubsetInterval(declared, parseSpecifierSet('>=3.11.1,<4')), false);
+  });
+
+  test('a self-contradictory declared range never confirms compatibility, even though its bounds happen to satisfy the required floor', () => {
+    // Before the emptiness check, `>=3.12,<3.11` was left `imprecise: false`
+    // with min=[3,12] and max=[3,11]. Its min alone happened to satisfy a
+    // required floor of >=3.9, so isSubsetInterval confidently answered
+    // "compatible" for a declaration that in fact admits no version at all.
+    const declared = parseSpecifierSet('>=3.12,<3.11');
+    const required = parseSpecifierSet('>=3.9');
+    assert.equal(isSubsetInterval(declared, required), false);
+    // Nor should the fallback confidently call it incompatible: an
+    // unrepresentable/contradictory declaration must land on "cannot tell",
+    // not a confident answer in either direction.
+    assert.equal(intersectsInterval(declared, required), true);
   });
 
   test('inclusive and exclusive bounds at the same value are told apart', () => {
