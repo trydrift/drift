@@ -2062,6 +2062,41 @@ test('next steps are buttons, not instructions to retype a command', () => {
   assert.ok(!/[Ss]ay `\/fix`/.test(html), 'the panel still tells people to type a command');
 });
 
+test('scan choices render as conversation answer buttons', () => {
+  const html = renderBody(
+    model({
+      thread: [
+        {
+          id: 'q1',
+          kind: 'question',
+          text: 'How should I scan your dependencies?',
+          options: [
+            {
+              label: 'Quick Scan · Runtime + dev',
+              value: 'quick:runtime+dev',
+              description: 'Static analysis only. Includes runtime, dev, optional and peer dependencies.',
+            },
+            {
+              label: 'Deep Verification · Runtime only',
+              value: 'deep:runtime',
+              description:
+                "Installs candidate upgrades and runs the project's checks. Runtime dependencies only. Substantially slower.",
+            },
+          ],
+          allowFreeText: false,
+        },
+      ],
+      awaitingAnswer: true,
+    }),
+  );
+
+  assert.match(html, /How should I scan your dependencies\?/);
+  assert.match(html, /data-action="answer" data-id="q1" data-value="quick:runtime\+dev"/);
+  assert.match(html, /Quick Scan · Runtime \+ dev/);
+  assert.match(html, /data-action="answer" data-id="q1" data-value="deep:runtime"/);
+  assert.match(html, /Deep Verification · Runtime only/);
+});
+
 /**
  * Quick Scan vs Deep Verification.
  *

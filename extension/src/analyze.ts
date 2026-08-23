@@ -224,33 +224,35 @@ export interface ScanChoices {
   includeDev: boolean;
 }
 
+export interface ScanChoicePromptOption {
+  label: string;
+  value: string;
+  description?: string;
+}
+
+export type ScanChoicePrompt = (
+  question: string,
+  options: ScanChoicePromptOption[],
+) => Promise<string>;
+
 /**
  * Settle "Quick Scan or Deep Verification?" and "runtime only or +dev?" for
- * one scan, asking the developer at most once.
+ * one interactive panel scan, asking the developer at most once.
  *
  * Both questions are independent settings (`drift.analysis.verifyMode`,
  * `drift.analysis.dependencyScope`), each of which can itself be `'ask'` —
- * the default for a new install. Two separate prompts every time a scan
+ * the default for a new install. Two separate questions every time a scan
  * starts would be exactly the kind of friction that gets a feature turned
  * off, so when both still need asking they are asked together, in one
- * QuickPick with four combined choices, rather than as two interruptions in
- * a row. `undefined` means the developer dismissed the prompt — the caller's
- * job is to abort that scan rather than guess.
+ * conversational question with four combined choices. `undefined` means the
+ * developer did not choose — the caller's job is to abort that scan rather
+ * than guess.
  *
  * `drift.analysis.includeDev` (boolean, pre-existing) is honoured only when
  * `drift.analysis.dependencyScope` was never explicitly set — the moment a
  * developer sets the new setting, the old one stops being read for this
  * decision, so there is exactly one place "ask" can come from and no
  * ambiguity about which setting won.
- */
-/**
- * `drift.analysis.dependencyScope`, resolved against the same fallback chain
- * `resolveScanChoices` uses for its prompt — but never itself a source of
- * `'ask'`: this reads only what settings/config already say, explicitly
- * doing no I/O and asking no question, so it is safe to call from a quiet,
- * on-activation scan that must never block on a dialog. `'ask'` is treated
- * exactly like "unset" here (there is nobody to ask), which is what makes
- * this correct for a background scan rather than merely convenient.
  */
 function scopeSetting(config: DriftConfig): 'runtime' | 'runtime+dev' | 'ask' {
   const settings = vscode.workspace.getConfiguration('drift');
@@ -261,22 +263,10 @@ function scopeSetting(config: DriftConfig): 'runtime' | 'runtime+dev' | 'ask' {
       : 'ask';
 }
 
-/**
- * Whether a scan should look at dev/optional/peer dependencies, resolved
- * without ever prompting — for a quiet, on-activation scan
- * (`scanOnStartup`), where `resolveScanChoices`'s interactive prompt would be
- * an interruption nobody asked for. Takes `config` per call, not once for the
- * whole run, because a multi-root workspace's members can each carry their
- * own `drift.yml` and therefore their own `triggerOn.dev` fallback.
- */
-export function resolveDependencyScope(config: DriftConfig): boolean {
-  const scope = scopeSetting(config);
-  if (scope === 'runtime') return false;
-  if (scope === 'runtime+dev') return true;
-  return config.triggerOn.dev;
-}
-
-export async function resolveScanChoices(config: DriftConfig): Promise<ScanChoices | undefined> {
+export async function resolveScanChoices(
+  config: DriftConfig,
+  prompt: ScanChoicePrompt,
+): Promise<ScanChoices | undefined> {
   const settings = vscode.workspace.getConfiguration('drift');
 
   const verifyMode = settings.get<'quick' | 'deep' | 'ask'>('analysis.verifyMode', 'ask');
@@ -290,47 +280,76 @@ export async function resolveScanChoices(config: DriftConfig): Promise<ScanChoic
   }
 
   if (askDeep && askDev) {
-    const picked = await vscode.window.showQuickPick<vscode.QuickPickItem & ScanChoices>(
+    const answer = await prompt(
+      'How should I scan your dependencies?',
       [
-        { label: 'Quick Scan, dev dependencies included', deep: false, includeDev: true, detail: 'Static analysis only. Fastest.' },
-        { label: 'Quick Scan, production dependencies only', deep: false, includeDev: false, detail: 'Static analysis only. Fastest.' },
         {
-          label: 'Deep Verification, dev dependencies included',
-          deep: true,
-          includeDev: true,
-          detail: 'Also installs the upgrade and runs project checks. Much slower.',
+          label: 'Quick Scan · Runtime + dev',
+          value: 'quick:runtime+dev',
+          description: 'Static analysis only. Includes runtime, dev, optional and peer dependencies.',
         },
         {
-          label: 'Deep Verification, production dependencies only',
-          deep: true,
-          includeDev: false,
-          detail: 'Also installs the upgrade and runs project checks. Much slower.',
+          label: 'Quick Scan · Runtime only',
+          value: 'quick:runtime',
+          description: 'Static analysis only. Production/runtime dependencies only.',
+        },
+        {
+          label: 'Deep Verification · Runtime + dev',
+          value: 'deep:runtime+dev',
+          description:
+            "Installs candidate upgrades and runs the project's checks. Includes runtime, dev, optional and peer dependencies. Substantially slower.",
+        },
+        {
+          label: 'Deep Verification · Runtime only',
+          value: 'deep:runtime',
+          description:
+            "Installs candidate upgrades and runs the project's checks. Runtime dependencies only. Substantially slower.",
         },
       ],
-      { title: 'Drift: how should this scan run?', ignoreFocusOut: true },
     );
-    return picked ? { deep: picked.deep, includeDev: picked.includeDev } : undefined;
+    switch (answer) {
+      case 'quick:runtime+dev':
+        return { deep: false, includeDev: true };
+      case 'quick:runtime':
+        return { deep: false, includeDev: false };
+      case 'deep:runtime+dev':
+        return { deep: true, includeDev: true };
+      case 'deep:runtime':
+        return { deep: true, includeDev: false };
+      default:
+        return undefined;
+    }
   }
 
   if (askDeep) {
-    const picked = await vscode.window.showQuickPick<vscode.QuickPickItem & { deep: boolean }>(
+    const answer = await prompt(
+      'How should I scan your dependencies?',
       [
-        { label: 'Quick Scan', deep: false, detail: 'Static analysis only. Fastest.' },
-        { label: 'Deep Verification', deep: true, detail: 'Also installs the upgrade and runs project checks. Much slower.' },
+        { label: 'Quick Scan', value: 'quick', description: 'Static analysis only.' },
+        {
+          label: 'Deep Verification',
+          value: 'deep',
+          description: "Installs candidate upgrades and runs the project's checks. Substantially slower.",
+        },
       ],
-      { title: 'Drift: how should this scan run?', ignoreFocusOut: true },
     );
-    return picked ? { deep: picked.deep, includeDev: dependencyScope === 'runtime+dev' } : undefined;
+    if (answer !== 'quick' && answer !== 'deep') return undefined;
+    return { deep: answer === 'deep', includeDev: dependencyScope === 'runtime+dev' };
   }
 
-  const picked = await vscode.window.showQuickPick<vscode.QuickPickItem & { includeDev: boolean }>(
+  const answer = await prompt(
+    'Which dependencies should this scan look at?',
     [
-      { label: 'Runtime + dev dependencies', includeDev: true, detail: 'More complete, but can take longer.' },
-      { label: 'Runtime dependencies only', includeDev: false, detail: 'Faster.' },
+      {
+        label: 'Runtime + dev dependencies',
+        value: 'runtime+dev',
+        description: 'Includes runtime, dev, optional and peer dependencies.',
+      },
+      { label: 'Runtime dependencies only', value: 'runtime', description: 'Production/runtime dependencies only.' },
     ],
-    { title: 'Drift: which dependencies should this scan look at?', ignoreFocusOut: true },
   );
-  return picked ? { deep: verifyMode === 'deep', includeDev: picked.includeDev } : undefined;
+  if (answer !== 'runtime' && answer !== 'runtime+dev') return undefined;
+  return { deep: verifyMode === 'deep', includeDev: answer === 'runtime+dev' };
 }
 
 export { PARSERS };
