@@ -9,7 +9,9 @@
  *
  * The scan is configured exactly as the capture harness configures it (the
  * CLI's own breadth defaults, a pinned concurrency) so a benchmark number and a
- * recording are measurements of the same work.
+ * recording are measurements of the same work — unless `DRIFT_BENCH_PROFILE`
+ * names one of the profiles below, which trade the CLI's defaults for another
+ * real caller's, so a regression there is caught too.
  */
 
 import { resourceUsage } from 'node:process';
@@ -26,11 +28,73 @@ const root = process.env.DRIFT_BENCH_ROOT;
  */
 const dist = process.env.DRIFT_BENCH_DIST ?? join(repoRoot, 'dist');
 
-const { scanUpgrades } = await import(join(dist, 'upgrade/scan.js'));
+const scanModule = await import(join(dist, 'upgrade/scan.js'));
+const { scanUpgrades } = scanModule;
+// Falls back to the extension's known value when comparing against a `dist`
+// built before this constant existed (a before/after A/B across the commit
+// that introduced it), so that comparison still measures the same breadth
+// rather than failing on an undefined maxSites.
+const QUICK_SCAN_MAX_SITES = scanModule.QUICK_SCAN_MAX_SITES ?? 400;
 const { DriftConfigSchema } = await import(join(dist, 'config/schema.js'));
 const { createLogger } = await import(join(dist, 'util/logger.js'));
 const { configureHttpDiskCache } = await import(join(dist, 'util/http.js'));
 const { createBaselineCache } = await import(join(dist, 'verification/baseline-cache.js'));
+
+/**
+ * Named, reusable scan configurations.
+ *
+ * `legacy` is what this script always ran before these profiles existed —
+ * kept as the default so nothing that already invokes this script without
+ * `DRIFT_BENCH_PROFILE` silently changes what it measures. It was never any
+ * real caller's configuration, though: `includeDev: false` and `maxSites: 40`
+ * match neither the CLI's own default breadth nor the extension's, which is
+ * exactly how a Quick-Scan regression stopped showing up in benchmark output
+ * while the shipped panel got 30x slower. The two profiles below close that
+ * gap by measuring what a real caller actually asks for.
+ */
+const PROFILES = {
+  legacy: {
+    breadth: { includeDev: false, maxSites: 40, maxPackages: 0 },
+    verify: true,
+    // Preserved exactly as this script always ran it: a fixed 8, not the
+    // machine-sized default every real caller actually gets. See the two
+    // profiles below, which do not make this mistake.
+    concurrency: 8,
+  },
+  /**
+   * The VS Code extension's Quick Scan panel, exactly — same `maxSites`
+   * (imported from `src/upgrade/scan.ts`, not copied), same `includeDev`
+   * (the panel's own default is dev-inclusive), verification off (Quick Scan
+   * is static-analysis-only; see `extension/src/ui/home.ts`'s
+   * `verify: { enabled: false }`), and — unlike `legacy` — no fixed
+   * `concurrency`. The extension never sets one either, so both get
+   * `analysisConcurrency(env)`'s machine-sized default. Capping this at a
+   * fixed 8 the way `legacy` does understates exactly the kind of win a
+   * concurrency fix produces, by measuring a concurrency ceiling no real
+   * caller has.
+   */
+  'production-extension-quick': {
+    breadth: { includeDev: true, maxSites: QUICK_SCAN_MAX_SITES, maxPackages: 0 },
+    verify: false,
+  },
+  /**
+   * The same panel with the `drift.analysis.includeDev` setting turned off —
+   * production dependencies only. Isolates how much of Quick Scan's cost is
+   * "more dependencies" versus "the same dependency count, done slower".
+   */
+  'runtime-only-quick': {
+    breadth: { includeDev: false, maxSites: QUICK_SCAN_MAX_SITES, maxPackages: 0 },
+    verify: false,
+  },
+};
+
+const profileName = process.env.DRIFT_BENCH_PROFILE ?? 'legacy';
+const profile = PROFILES[profileName];
+if (!profile) {
+  throw new Error(
+    `DRIFT_BENCH_PROFILE=${profileName} is not one of: ${Object.keys(PROFILES).join(', ')}`,
+  );
+}
 
 configureHttpDiskCache(process.env.DRIFT_BENCH_CACHE);
 
@@ -56,10 +120,11 @@ const result = await scanUpgrades({
   config,
   logger,
   ...(process.env.GITHUB_TOKEN ? { githubToken: process.env.GITHUB_TOKEN } : {}),
-  // The capture harness's own breadth and concurrency, so the two agree.
-  breadth: { includeDev: false, maxSites: 40, maxPackages: 0 },
-  concurrency: 8,
-  verify: { baselineCache },
+  breadth: profile.breadth,
+  ...(profile.concurrency !== undefined ? { concurrency: profile.concurrency } : {}),
+  // Quick Scan profiles never verify — installing, building or testing the
+  // upgrade is exactly the work Quick Scan must not do. See `PROFILES` above.
+  verify: profile.verify ? { baselineCache } : { enabled: false },
   onOutdated: (summary) => {
     outdated = summary.outdated.length;
   },
@@ -104,6 +169,7 @@ const fingerprint = (result.candidates ?? [])
 
 process.stdout.write(
   `\n${JSON.stringify({
+    profile: profileName,
     durationMs: Date.now() - started,
     checked: result.checked ?? 0,
     upToDate: result.upToDate ?? 0,

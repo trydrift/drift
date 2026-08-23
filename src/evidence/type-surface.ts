@@ -1,5 +1,6 @@
 import { fetchJson, fetchText, mapWithConcurrency } from '../util/http.js';
 import { count, measure } from '../util/profile.js';
+import { readComputed, writeComputed } from '../util/artifact-cache.js';
 import type { ModuleIncompatibleUsage, ModuleSystem } from '../types.js';
 
 /**
@@ -187,11 +188,41 @@ export function clearTypeSurfaceCache(): void {
   listings.clear();
 }
 
+/**
+ * Bump when `extractExports`, `resolveAliases`, `resolveInheritedMembers`, or
+ * anything else that turns declaration text into a `SurfaceEntry` changes in a
+ * way that could change their output. Part of the disk-cache key below, so a
+ * fixed parser invalidates every entry it could have got wrong — the same
+ * reason `src/evidence/surface/python.ts` fingerprints its reader, except that
+ * script is a single template string this module cannot hash as cheaply
+ * (2000+ lines of the parser it *is*, not calls into one), so the version is
+ * hand-maintained here instead. No TTL: a published version's declarations
+ * cannot change, so the only way this cache can be wrong is an unbumped parser
+ * change, not staleness.
+ */
+const SURFACE_PARSER_VERSION = 1;
+
+/** Storable form of {@link TypeSurface} — `Map` is not JSON. */
+type StoredSurface = Omit<TypeSurface, 'api'> & { api: [string, SurfaceEntry][] };
+
+function diskCacheKey(packageName: string, version: string, followDependencies: boolean): string {
+  return `npm-surface:v${SURFACE_PARSER_VERSION}:${packageName}@${version}#${followDependencies ? 'deps' : 'own'}`;
+}
+
 async function computeTypeSurface(
   packageName: string,
   version: string,
   options: { followDependencies?: boolean },
 ): Promise<TypeSurface | null> {
+  const followDependencies = options.followDependencies !== false;
+  const key = diskCacheKey(packageName, version, followDependencies);
+  const remembered = await readComputed<StoredSurface>(key);
+  if (remembered) {
+    count('surface.diskCache.hit');
+    return { ...remembered, api: new Map(remembered.api) };
+  }
+  count('surface.diskCache.miss');
+
   const manifest = await fetchManifest(packageName, version);
   const entryPath = await resolveTypesEntry(packageName, version, manifest);
   // No manifest and no declaration fallback is a fact about the fetch, not
@@ -218,14 +249,39 @@ async function computeTypeSurface(
   resolveInheritedMembers(api);
 
   const ownSymbols = api.size;
-  const viaDependencies =
-    !manifest || options.followDependencies === false
-      ? []
+  const dependencyMerge =
+    !manifest || !followDependencies
+      ? { followed: [], attempted: false }
       : await measure('surface-deps', packageName, () => mergeDependencySurfaces(manifest, sources, api));
 
-  return api.size > 0
-    ? { api, entryPath, viaDependencies, ownSymbols, subpaths: subpathsOf(manifest?.exports) }
-    : null;
+  const result: TypeSurface | null =
+    api.size > 0
+      ? { api, entryPath, viaDependencies: dependencyMerge.followed, ownSymbols, subpaths: subpathsOf(manifest?.exports) }
+      : null;
+
+  // Only remembered when nothing about the answer depends on live registry
+  // state. `dependencyMerge.attempted` is true exactly when a `dependencies`
+  // range in the manifest needed resolving against *whatever currently
+  // satisfies it* — a fact about the registry right now, not about
+  // `packageName@version` alone, since a newer release matching the same
+  // range can exist tomorrow (or the same range can fail to resolve today and
+  // succeed on a retry). Caching indefinitely on either outcome — a
+  // successful merge, or an attempt that resolved nothing (a transient
+  // failure, not a fact about this version) — would freeze the wrong answer
+  // in with no TTL to age it back out. `attempted` is deliberately not the
+  // same test as `viaDependencies.length === 0`: a package whose dependency
+  // resolution was attempted but merged zero symbols (every candidate failed
+  // to fetch, say) still has `viaDependencies: []`, and must not be persisted
+  // either — the naive gate would have cached exactly that failure as if it
+  // were a dependency-free package's real answer. Only a surface where
+  // resolution was never required at all — no dependencies declared, none
+  // referenced, or `followDependencies: false` — is safe to remember
+  // indefinitely.
+  if (result && !dependencyMerge.attempted) {
+    await writeComputed(key, { ...result, api: [...result.api] } satisfies StoredSurface);
+  }
+
+  return result;
 }
 
 /** Raised when a published version could not be read at all. */
@@ -550,15 +606,33 @@ const MAX_FOLLOWED_DEPENDENCIES = 8;
  * surface. That is what the developer upgrades when they upgrade the wrapper,
  * and it is the difference between "could not verify" and an answer.
  */
+/**
+ * What merging a package's dependency-followed symbols in actually decided.
+ *
+ * `followed` is what {@link computeTypeSurface} exposes as `viaDependencies` —
+ * the dependencies that contributed at least one symbol. `attempted` is a
+ * separate question a caller deciding whether this result is safe to cache
+ * indefinitely needs answered, and `followed.length === 0` cannot answer it:
+ * that is also true when live range-based resolution was tried and failed
+ * (a transient fetch error, an unreachable dependency), not only when none
+ * was needed at all. Only `attempted === false` means the answer is pure in
+ * `(packageName, version)` — see the write gate in `computeTypeSurface`.
+ */
+interface DependencyMergeResult {
+  followed: string[];
+  attempted: boolean;
+}
+
 async function mergeDependencySurfaces(
   manifest: Manifest | null,
   sources: readonly DeclarationSource[],
   api: SurfaceApi,
-): Promise<string[]> {
+): Promise<DependencyMergeResult> {
   const declared = { ...manifest?.dependencies, ...manifest?.peerDependencies };
-  if (Object.keys(declared).length === 0) return [];
+  if (Object.keys(declared).length === 0) return { followed: [], attempted: false };
 
   const wanted = [...externalReferences(sources, api)].filter(([specifier]) => declared[specifier]);
+  const attempted = wanted.length > 0;
   const followed: string[] = [];
 
   // Read a chunk at a time, and merge that chunk strictly in order.
@@ -607,7 +681,7 @@ async function mergeDependencySurfaces(
     }
   }
 
-  return followed;
+  return { followed, attempted };
 }
 
 /**

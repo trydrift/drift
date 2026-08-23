@@ -282,7 +282,10 @@ result as measured. It's always opt-in per run:
 
 - CLI: pass `--verify` to `drift analyze` or `drift outdated`.
 - VS Code extension: press "Deep Verify" on one package or "Deep Verify All"
-  in the dependency panel, or run `/verify` after `/recent`.
+  in the dependency panel, run `/verify` after `/recent`, or set
+  `drift.analysis.verifyMode` to `deep` (or leave it `ask`, the default for a
+  new install, and choose it when a scan starts) to run every candidate deep
+  from the start instead of a separate follow-up step.
 - GitHub Action: set `verify-mode: deep` (default is `quick`).
 
 `verify.enabled` below is a hard ceiling above all of that, not the trigger
@@ -1109,7 +1112,9 @@ mid-session.
 | `drift.agent.timeoutSeconds` | `600` | Per commit unit |
 | `drift.analysis.runOnStartup` | `true` | Analyse on open, and scan when the panel first opens |
 | `drift.analysis.includePatch` / `includeTransitive` | `false` | Widen `/recent` analysis |
-| `drift.analysis.includeDev` | `true` | Also analyse dev, optional, and peer dependencies |
+| `drift.analysis.includeDev` | `true` | Also analyse dev, optional, and peer dependencies. Read only until `dependencyScope` is set explicitly — see below |
+| `drift.analysis.verifyMode` | `ask` | `quick` \| `deep` \| `ask` — whether a scan (`/scan`, the panel button) stops at static analysis or also installs each candidate and runs this project's own checks, same two modes as the Action's `verify-mode` and the CLI's `--verify`. `ask` (the default for a new install) prompts once per scan; a background scan on activation always runs `quick` without asking |
+| `drift.analysis.dependencyScope` | `ask` | `runtime` \| `runtime+dev` \| `ask` — which dependencies a scan looks at, same values as the Action's `dependency-scope` input. `ask` prompts once per scan (combined with the `verifyMode` prompt into one if both are still `ask`); a background scan on activation always includes dev dependencies without asking. Setting this explicitly stops `includeDev` above from being read for this decision |
 | `drift.analysis.ignore` | `[]` | Package patterns to skip, added to `ignore` in `drift.yml` |
 | `drift.analysis.concurrency` | `0` | Packages checked at once. `0` sizes it from your machine's cores and memory |
 | `drift.ui.showInlineDiagnostics` | `true` | Flag affected lines in the Problems panel |

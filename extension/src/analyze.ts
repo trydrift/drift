@@ -216,4 +216,121 @@ function explicitlySet(settings: vscode.WorkspaceConfiguration, key: string): bo
   );
 }
 
+/** What a scan actually does, once `resolveScanChoices` has settled both questions. */
+export interface ScanChoices {
+  /** `true` — Deep Verification: install each candidate and run this project's own checks. */
+  deep: boolean;
+  /** `true` — also analyse dev, optional, and peer dependencies. */
+  includeDev: boolean;
+}
+
+/**
+ * Settle "Quick Scan or Deep Verification?" and "runtime only or +dev?" for
+ * one scan, asking the developer at most once.
+ *
+ * Both questions are independent settings (`drift.analysis.verifyMode`,
+ * `drift.analysis.dependencyScope`), each of which can itself be `'ask'` —
+ * the default for a new install. Two separate prompts every time a scan
+ * starts would be exactly the kind of friction that gets a feature turned
+ * off, so when both still need asking they are asked together, in one
+ * QuickPick with four combined choices, rather than as two interruptions in
+ * a row. `undefined` means the developer dismissed the prompt — the caller's
+ * job is to abort that scan rather than guess.
+ *
+ * `drift.analysis.includeDev` (boolean, pre-existing) is honoured only when
+ * `drift.analysis.dependencyScope` was never explicitly set — the moment a
+ * developer sets the new setting, the old one stops being read for this
+ * decision, so there is exactly one place "ask" can come from and no
+ * ambiguity about which setting won.
+ */
+/**
+ * `drift.analysis.dependencyScope`, resolved against the same fallback chain
+ * `resolveScanChoices` uses for its prompt — but never itself a source of
+ * `'ask'`: this reads only what settings/config already say, explicitly
+ * doing no I/O and asking no question, so it is safe to call from a quiet,
+ * on-activation scan that must never block on a dialog. `'ask'` is treated
+ * exactly like "unset" here (there is nobody to ask), which is what makes
+ * this correct for a background scan rather than merely convenient.
+ */
+function scopeSetting(config: DriftConfig): 'runtime' | 'runtime+dev' | 'ask' {
+  const settings = vscode.workspace.getConfiguration('drift');
+  return explicitlySet(settings, 'analysis.dependencyScope')
+    ? settings.get<'runtime' | 'runtime+dev' | 'ask'>('analysis.dependencyScope', 'ask')
+    : explicitlySet(settings, 'analysis.includeDev')
+      ? (settings.get<boolean>('analysis.includeDev', config.triggerOn.dev) ? 'runtime+dev' : 'runtime')
+      : 'ask';
+}
+
+/**
+ * Whether a scan should look at dev/optional/peer dependencies, resolved
+ * without ever prompting — for a quiet, on-activation scan
+ * (`scanOnStartup`), where `resolveScanChoices`'s interactive prompt would be
+ * an interruption nobody asked for. Takes `config` per call, not once for the
+ * whole run, because a multi-root workspace's members can each carry their
+ * own `drift.yml` and therefore their own `triggerOn.dev` fallback.
+ */
+export function resolveDependencyScope(config: DriftConfig): boolean {
+  const scope = scopeSetting(config);
+  if (scope === 'runtime') return false;
+  if (scope === 'runtime+dev') return true;
+  return config.triggerOn.dev;
+}
+
+export async function resolveScanChoices(config: DriftConfig): Promise<ScanChoices | undefined> {
+  const settings = vscode.workspace.getConfiguration('drift');
+
+  const verifyMode = settings.get<'quick' | 'deep' | 'ask'>('analysis.verifyMode', 'ask');
+  const dependencyScope = scopeSetting(config);
+
+  const askDeep = verifyMode === 'ask';
+  const askDev = dependencyScope === 'ask';
+
+  if (!askDeep && !askDev) {
+    return { deep: verifyMode === 'deep', includeDev: dependencyScope === 'runtime+dev' };
+  }
+
+  if (askDeep && askDev) {
+    const picked = await vscode.window.showQuickPick<vscode.QuickPickItem & ScanChoices>(
+      [
+        { label: 'Quick Scan, dev dependencies included', deep: false, includeDev: true, detail: 'Static analysis only. Fastest.' },
+        { label: 'Quick Scan, production dependencies only', deep: false, includeDev: false, detail: 'Static analysis only. Fastest.' },
+        {
+          label: 'Deep Verification, dev dependencies included',
+          deep: true,
+          includeDev: true,
+          detail: 'Also installs the upgrade and runs project checks. Much slower.',
+        },
+        {
+          label: 'Deep Verification, production dependencies only',
+          deep: true,
+          includeDev: false,
+          detail: 'Also installs the upgrade and runs project checks. Much slower.',
+        },
+      ],
+      { title: 'Drift: how should this scan run?', ignoreFocusOut: true },
+    );
+    return picked ? { deep: picked.deep, includeDev: picked.includeDev } : undefined;
+  }
+
+  if (askDeep) {
+    const picked = await vscode.window.showQuickPick<vscode.QuickPickItem & { deep: boolean }>(
+      [
+        { label: 'Quick Scan', deep: false, detail: 'Static analysis only. Fastest.' },
+        { label: 'Deep Verification', deep: true, detail: 'Also installs the upgrade and runs project checks. Much slower.' },
+      ],
+      { title: 'Drift: how should this scan run?', ignoreFocusOut: true },
+    );
+    return picked ? { deep: picked.deep, includeDev: dependencyScope === 'runtime+dev' } : undefined;
+  }
+
+  const picked = await vscode.window.showQuickPick<vscode.QuickPickItem & { includeDev: boolean }>(
+    [
+      { label: 'Runtime + dev dependencies', includeDev: true, detail: 'More complete, but can take longer.' },
+      { label: 'Runtime dependencies only', includeDev: false, detail: 'Faster.' },
+    ],
+    { title: 'Drift: which dependencies should this scan look at?', ignoreFocusOut: true },
+  );
+  return picked ? { deep: verifyMode === 'deep', includeDev: picked.includeDev } : undefined;
+}
+
 export { PARSERS };

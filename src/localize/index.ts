@@ -126,6 +126,25 @@ export function localize(
 
   const sites: ImpactSite[] = [];
 
+  /**
+   * `candidateFiles` walks this repository's re-export graph from every
+   * importer of a dependency, up to `maxReExportDepth` edges out — work that
+   * depends only on *which dependency* changed, never on which breaking
+   * change within it. A major bump routinely produces a dozen or more
+   * `BreakingChange`s for the same dependency, and without this cache the
+   * same graph walk ran once per change: identical input, identical output,
+   * paid for again each time. Keyed by dependency name because
+   * `ecosystemsByName`, `moduleMaps` and `maxReExportDepth` are all constant
+   * for the whole call — only the dependency varies the result. The
+   * endpoint-change path (`removed-endpoint`/`changed-endpoint`) returns a
+   * different, kind-dependent shape and is deliberately excluded so it can
+   * never be served from — or poison — this cache.
+   */
+  const candidateFilesCache = new Map<
+    string,
+    { files: FileIndex[]; names: string[]; reach: Reach }
+  >();
+
   for (const change of breakingChanges) {
     // A runtime requirement has no code symbol. Searching source for "Node.js"
     // matches comments and documentation, which is a pure false positive — the
@@ -151,14 +170,22 @@ export function localize(
       continue;
     }
 
-    const { files: candidateFileList, names, reach } = candidateFiles(
-      change,
-      index,
-      ecosystemsByName.get(change.dependency) ?? [],
-      moduleMaps,
-      maxReExportDepth,
-      indexByPath,
-    );
+    const isEndpointChange =
+      change.kind === 'removed-endpoint' || change.kind === 'changed-endpoint';
+    const cached = isEndpointChange ? undefined : candidateFilesCache.get(change.dependency);
+    const { files: candidateFileList, names, reach } =
+      cached ??
+      candidateFiles(
+        change,
+        index,
+        ecosystemsByName.get(change.dependency) ?? [],
+        moduleMaps,
+        maxReExportDepth,
+        indexByPath,
+      );
+    if (!isEndpointChange && !cached) {
+      candidateFilesCache.set(change.dependency, { files: candidateFileList, names, reach });
+    }
     const candidates = candidateFileList.filter(
       (file) => member === undefined || withinMember(file.path, member),
     );

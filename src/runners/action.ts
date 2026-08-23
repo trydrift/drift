@@ -57,6 +57,13 @@ interface ActionInputs {
    * or alerting. See `action.yml`'s `verify-mode` for the full description.
    */
   verifyMode?: 'quick' | 'deep';
+  /**
+   * `runtime+dev` (default) analyses dev/optional/peer dependencies alongside
+   * runtime ones; `runtime` restricts analysis to production dependencies.
+   * Overrides `triggerOn.dev` in drift.yml. See `action.yml`'s
+   * `dependency-scope` for the full description.
+   */
+  dependencyScope?: 'runtime' | 'runtime+dev';
   /** Overrides `codeScanning.granularity` in drift.yml. */
   alertGranularity?: AlertGranularity;
   /**
@@ -122,6 +129,12 @@ export async function runAction(): Promise<number> {
     effectiveConfig = {
       ...effectiveConfig,
       codeScanning: { ...effectiveConfig.codeScanning, granularity: inputs.alertGranularity },
+    };
+  }
+  if (inputs.dependencyScope) {
+    effectiveConfig = {
+      ...effectiveConfig,
+      triggerOn: { ...effectiveConfig.triggerOn, dev: inputs.dependencyScope === 'runtime+dev' },
     };
   }
   const agentResolution = await resolveActionAgent({
@@ -440,6 +453,7 @@ export function readInputs(): ActionInputs {
   const mode = actionInput('mode');
   const scanMode = actionInput('scan-mode');
   const verifyMode = actionInput('verify-mode');
+  const dependencyScope = actionInput('dependency-scope');
   const alertGranularity = actionInput('alert-granularity');
   return {
     repoToken: actionInput('repo-token') ?? process.env.GITHUB_TOKEN ?? '',
@@ -455,6 +469,8 @@ export function readInputs(): ActionInputs {
     configPath: actionInput('config-path') || undefined,
     scanMode: scanMode === 'outdated' ? 'outdated' : scanMode === 'diff' ? 'diff' : undefined,
     verifyMode: verifyMode === 'deep' ? 'deep' : verifyMode === 'quick' ? 'quick' : undefined,
+    dependencyScope:
+      dependencyScope === 'runtime' ? 'runtime' : dependencyScope === 'runtime+dev' ? 'runtime+dev' : undefined,
     alertGranularity:
       alertGranularity === 'package' || alertGranularity === 'breakingChange' || alertGranularity === 'affectedSite'
         ? alertGranularity
