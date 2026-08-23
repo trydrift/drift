@@ -29,6 +29,7 @@ import type { IssueBranchAction } from './issue-actions.js';
 import { openChangeDiff, openPackageVersionDiff, type ChangeDiffRequest } from './version-diff.js';
 import { pruneVersionDiffCache } from '../../src/evidence/version-diff.js';
 import { onDidChangeCodeTheme, warmCodeHighlighter, watchCodeTheme } from './ui/highlight.js';
+import { startRunLog, type RunLogHandle } from '../../src/util/run-log.js';
 
 /**
  * Drift for VS Code.
@@ -41,10 +42,14 @@ import { onDidChangeCodeTheme, warmCodeHighlighter, watchCodeTheme } from './ui/
  */
 
 let output: vscode.LogOutputChannel;
+let runLog: RunLogHandle | undefined;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   output = vscode.window.createOutputChannel('Drift', { log: true });
   context.subscriptions.push(output);
+
+  const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  runLog = startRunLog('vscode-extension-session', workspaceRoot);
 
   const state = new DriftState();
   const session = new DriftSession();
@@ -169,7 +174,8 @@ async function buildRepoRoot(path: string): Promise<RepoRoot> {
 }
 
 export function deactivate(): void {
-  // Everything is registered through context.subscriptions.
+  // Everything else is registered through context.subscriptions.
+  runLog?.finish('ok');
 }
 
 /**
@@ -205,7 +211,9 @@ async function initialise(state: DriftState, home: DriftHomeView): Promise<void>
     return;
   }
 
+  runLog?.event('analyze start', { trigger: 'startup' });
   const result = await runAnalysis({ state });
+  runLog?.event('analyze end', { trigger: 'startup', summary: result.summary });
   const plan = result.plan;
   if (!plan || plan.impactSites.length === 0) return;
 
@@ -277,6 +285,7 @@ function registerCommands(
       return;
     }
 
+    runLog?.event('analyze start', { trigger: 'command' });
     const result = await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
@@ -285,6 +294,7 @@ function registerCommands(
       },
       (progress, token) => runAnalysis({ state, progress, token }),
     );
+    runLog?.event('analyze end', { trigger: 'command', summary: result.summary });
 
     output.info(result.summary);
 
@@ -427,6 +437,7 @@ async function startFix(
     return;
   }
 
+  runLog?.event('fix start', { onlyCommit: onlyCommit ?? 'all' });
   const result = await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
@@ -446,6 +457,7 @@ async function startFix(
           .get<'ask' | 'auto-edit' | 'full-auto'>('session.permission', 'auto-edit'),
       }),
   );
+  runLog?.event('fix end', { onlyCommit: onlyCommit ?? 'all', status: result.status });
 
   output.info(result.message);
   for (const warning of result.warnings) output.warn(warning);
