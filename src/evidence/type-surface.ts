@@ -577,36 +577,34 @@ function npmTarballSource(packageName: string, version: string): Promise<Tarball
   return pending;
 }
 
-/** The npm registry manifest shape this reads: just enough to find one version's tarball URL. */
-interface NpmPackumentForTarball {
-  'dist-tags'?: Record<string, string>;
-  versions?: Record<string, { dist?: { tarball?: string } }>;
-}
-
 /**
- * The published tarball URL for one version, in as few requests as possible.
+ * The published tarball URL for one version, in one small request.
  *
- * Tier 1 asks for the *whole* packument at `registry.npmjs.org/<name>` — the
- * exact URL `src/upgrade/versions.ts`'s `lookupVersions` already fetches for
- * every npm dependency Drift checks, before any evidence gathering starts.
- * Reusing that URL means this costs nothing beyond what the shared HTTP cache
- * already answers for a URL requested twice in the same process; it is not
- * fetched again here for that reason. Tier 2, reached only when tier 1 has no
- * cached answer to reuse (or the packument omits this version, which happens
- * for an unpublished/yanked one), is the single-version manifest — immutable,
- * one request, the same endpoint `src/evidence/version-diff.ts`'s npm fetcher
- * already uses for this exact purpose.
+ * An earlier version of this asked for the *whole* packument at
+ * `registry.npmjs.org/<name>` first, on the theory that it was the same URL
+ * `src/upgrade/versions.ts`'s `lookupVersions` already fetches, so reusing it
+ * would cost nothing beyond the shared HTTP cache. Measured, that theory
+ * cost more than it saved: the full packument lists every version a package
+ * has ever published, with a full manifest each — tens of megabytes for
+ * `typescript`, `next`, `vite` and the rest of this ecosystem's larger
+ * tooling packages — and on a real 111-dependency scan that single change
+ * turned a 31.4s cold run into 38.8s, with `registry.npmjs.org` alone going
+ * from 92.2s to 126.5s of cumulative HTTP time. `lookupVersions`'s own fetch
+ * (a separate, legitimate cost paid once regardless of this function) was
+ * never actually being reused here in a way that offset that.
+ *
+ * The single-version manifest below is what `src/evidence/version-diff.ts`'s
+ * own npm fetcher already uses for this exact purpose: one request, whose
+ * response is exactly one version's `dist.tarball` and nothing about the
+ * other hundreds a popular package may have published. `immutable: true` is
+ * correct for a specific version (`1.2.3` cannot change what it points to)
+ * and is left exactly as this function already had it; `version` here is
+ * sometimes the literal tag `latest` (the `@types/*` fallback), which the
+ * registry resolves natively at this same endpoint — no separate `dist-tags`
+ * lookup is needed for that case either.
  */
 async function resolveTarballUrl(packageName: string, version: string): Promise<string | null> {
   const encoded = encodeURIComponent(packageName).replaceAll('%40', '@');
-
-  const packument = await fetchJson<NpmPackumentForTarball>(
-    `https://registry.npmjs.org/${encoded}`,
-  ).catch(() => null);
-  const resolvedVersion = packument?.versions?.[version] ? version : packument?.['dist-tags']?.[version];
-  const fromPackument = resolvedVersion ? packument?.versions?.[resolvedVersion]?.dist?.tarball : undefined;
-  if (fromPackument) return fromPackument;
-
   const manifest = await fetchJson<{ dist?: { tarball?: string } }>(
     `https://registry.npmjs.org/${encoded}/${encodeURIComponent(version)}`,
     { immutable: true },

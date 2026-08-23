@@ -96,7 +96,15 @@ function npmTarball(files: Record<string, string>): Buffer {
   return Buffer.concat(Object.entries(files).map(([path, content]) => tarEntry(`package/${path}`, content)));
 }
 
-/** Registers the two registry responses a tarball resolution needs: the packument, and the tarball bytes themselves. */
+/**
+ * Registers the two registry responses a tarball resolution needs: the
+ * single-version manifest (`resolveTarballUrl`'s one request — no whole-
+ * packument fetch, deliberately; see that function's own doc comment for
+ * why a full-packument tier 1 was tried and removed), and the tarball bytes
+ * themselves. `version` may be a concrete version or the literal tag
+ * `latest`, matching the endpoint's own behaviour — the `@types/*` fallback
+ * relies on `latest` resolving here with no separate lookup.
+ */
 function serveTarball(
   registry: Map<string, Response | (() => Response)>,
   name: string,
@@ -106,8 +114,8 @@ function serveTarball(
   const encoded = encodeURIComponent(name).replaceAll('%40', '@');
   const tarballUrl = `https://example-registry.test/${encoded}/-/${encoded}-${version}.tgz`;
   registry.set(
-    `https://registry.npmjs.org/${encoded}`,
-    () => json({ 'dist-tags': { latest: version }, versions: { [version]: { dist: { tarball: tarballUrl } } } }),
+    `https://registry.npmjs.org/${encoded}/${encodeURIComponent(version)}`,
+    () => json({ dist: { tarball: tarballUrl } }),
   );
   registry.set(tarballUrl, () => new Response(npmTarball(files), { status: 200 }));
 }
@@ -255,20 +263,23 @@ describe('tarball-backed surface acquisition matches the per-file path it replac
     assert.ok(surface?.api.has('fromDefinitelyTyped'));
   });
 
-  test('a version whose packument omits it falls back to the single-version registry endpoint (tier 2)', async () => {
+  test('the tarball URL is resolved with one small request, never the whole packument', async () => {
+    // Regression coverage for the fix in `resolveTarballUrl`'s doc comment:
+    // an earlier version fetched the whole packument at
+    // `registry.npmjs.org/<name>` first — every version a package has ever
+    // published — before falling back to this single-version endpoint. That
+    // measured as a net *regression* on a real scan (see the doc comment),
+    // so it was removed; this asserts the whole-packument URL is never asked
+    // for at all, not merely that the single-version one also works.
     reset();
     const files = {
       'package.json': JSON.stringify({ name: 'demo', version: '9.9.9', types: 'index.d.ts' }),
-      'index.d.ts': 'export declare function fromTierTwo(): void;\n',
+      'index.d.ts': 'export declare function resolved(): void;\n',
     };
     const tarballUrl = 'https://example-registry.test/demo/-/demo-9.9.9.tgz';
+    const calls: string[] = [];
     stubFetch((url) => {
-      if (url === 'https://registry.npmjs.org/demo') {
-        // The packument answers, but has never heard of this version — as if
-        // it were unpublished, or published after the packument was cached
-        // somewhere upstream.
-        return json({ 'dist-tags': { latest: '1.0.0' }, versions: { '1.0.0': { dist: { tarball: 'unused' } } } });
-      }
+      calls.push(url);
       if (url === 'https://registry.npmjs.org/demo/9.9.9') {
         return json({ dist: { tarball: tarballUrl } });
       }
@@ -277,7 +288,15 @@ describe('tarball-backed surface acquisition matches the per-file path it replac
     });
 
     const surface = await fetchTypeSurface('demo', '9.9.9');
-    assert.ok(surface?.api.has('fromTierTwo'), 'tier 2 (the single-version endpoint) resolved the tarball');
+    assert.ok(surface?.api.has('resolved'), 'the single-version endpoint alone resolved the tarball');
+    assert.ok(
+      calls.includes('https://registry.npmjs.org/demo/9.9.9'),
+      'the single-version endpoint was actually asked',
+    );
+    assert.ok(
+      !calls.includes('https://registry.npmjs.org/demo'),
+      'the whole packument must never be fetched to resolve one version’s tarball',
+    );
   });
 
   test('a tarball that cannot be resolved degrades to the jsDelivr path, not to no evidence', async () => {
