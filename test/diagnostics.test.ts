@@ -577,6 +577,25 @@ describe('HTTP and exec aggregation', () => {
     }
   });
 
+  test('cache-only logical requests do not become fake network attempts', async () => {
+    await withGitRepo(async (root) => {
+      const log = startRunLog({ command: 'drift outdated', mode: 'quick', repoRoot: root });
+      await log.run(async () => {
+        recordHttpRequest({ host: 'example.com', method: 'GET', path: '/a', startOffsetMs: 0, durationMs: 1, status: null, cache: 'memory_hit' });
+        recordHttpRequest({ host: 'example.com', method: 'GET', path: '/b', startOffsetMs: 1, durationMs: 1, status: null, cache: 'disk_hit' });
+        recordHttpRequest({ host: 'example.com', method: 'GET', path: '/c', startOffsetMs: 2, durationMs: 1, status: null, cache: 'coalesced_hit' });
+      });
+      log.finish('ok');
+
+      const contents = await readFile(log.path!, 'utf8');
+      assert.match(contents, /logical_requests: 3/);
+      assert.match(contents, /network_attempts: 0/);
+      assert.match(contents, /max_concurrent_attempts: 0/);
+      assert.ok(!contents.includes('LOW_OBSERVED_CONCURRENCY'));
+      assert.ok(!contents.includes('HTTP network attempts'));
+    });
+  });
+
   test('network summary aggregates by host and reports revalidation/network-required requests, without leaking a token', async () => {
     await withGitRepo(async (root) => {
       const log = startRunLog({ command: 'drift outdated', mode: 'quick', repoRoot: root });
@@ -605,6 +624,7 @@ describe('HTTP and exec aggregation', () => {
         let offset = 0;
         for (let i = 0; i < 20; i++) {
           recordHttpRequest({ host: 'h', method: 'GET', path: `/${i}`, startOffsetMs: offset, durationMs: 10, status: 200, cache: 'miss' });
+          recordHttpAttempt({ host: 'h', method: 'GET', path: `/${i}`, startOffsetMs: offset, durationMs: 10, status: 200 });
           offset += 10; // each request starts exactly when the previous ends
         }
       });
@@ -619,7 +639,9 @@ describe('HTTP and exec aggregation', () => {
       const log = startRunLog({ command: 'drift outdated', mode: 'quick', repoRoot: root });
       await log.run(async () => {
         recordHttpRequest({ host: 'h', method: 'GET', path: '/a', startOffsetMs: 0, durationMs: 100, status: 200, cache: 'miss' });
+        recordHttpAttempt({ host: 'h', method: 'GET', path: '/a', startOffsetMs: 0, durationMs: 100, status: 200 });
         recordHttpRequest({ host: 'h', method: 'GET', path: '/b', startOffsetMs: 50, durationMs: 100, status: 200, cache: 'miss' });
+        recordHttpAttempt({ host: 'h', method: 'GET', path: '/b', startOffsetMs: 50, durationMs: 100, status: 200 });
       });
       log.finish('ok');
       const contents = await readFile(log.path!, 'utf8');
@@ -654,6 +676,7 @@ describe('HTTP and exec aggregation', () => {
         const log = startRunLog({ command: 'drift outdated', mode: 'quick', repoRoot: root });
         await log.run(async () => {
           recordHttpRequest({ host: 'h', method: 'GET', path: '/a', startOffsetMs: 0, durationMs: 10, status: 200, cache: 'miss' });
+          recordHttpAttempt({ host: 'h', method: 'GET', path: '/a', startOffsetMs: 0, durationMs: 10, status: 200 });
         });
         log.finish('ok');
         const contents = await readFile(log.path!, 'utf8');
@@ -700,6 +723,7 @@ describe('HTTP and exec aggregation', () => {
         log.finish('ok');
         const contents = await readFile(log.path!, 'utf8');
         assert.match(contents, /logical_requests: 1/);
+        assert.match(contents, /network_attempts: 3/);
         assert.match(contents, /retries: 2/);
       });
       assert.equal(calls, 3);
@@ -848,6 +872,7 @@ describe('diagnostic flags are evidence-based', () => {
       await log.run(async () => {
         for (let i = 0; i < 10; i++) {
           recordHttpRequest({ host: 'h', method: 'GET', path: `/${i}`, startOffsetMs: 0, durationMs: 100, status: 200, cache: 'miss' });
+          recordHttpAttempt({ host: 'h', method: 'GET', path: `/${i}`, startOffsetMs: 0, durationMs: 100, status: 200 });
         }
       });
       log.finish('ok');
@@ -864,6 +889,7 @@ describe('diagnostic flags are evidence-based', () => {
         let offset = 0;
         for (let i = 0; i < 12; i++) {
           recordHttpRequest({ host: 'h', method: 'GET', path: `/${i}`, startOffsetMs: offset, durationMs: 10, status: 200, cache: 'miss' });
+          recordHttpAttempt({ host: 'h', method: 'GET', path: `/${i}`, startOffsetMs: offset, durationMs: 10, status: 200 });
           offset += 10;
         }
       });
@@ -878,6 +904,7 @@ describe('diagnostic flags are evidence-based', () => {
       const log = startRunLog({ command: 'drift outdated', mode: 'quick', repoRoot: root });
       await log.run(async () => {
         recordHttpRequest({ host: 'slow.example', method: 'GET', path: '/big', startOffsetMs: 0, durationMs: 5000, status: 200, cache: 'miss' });
+        recordHttpAttempt({ host: 'slow.example', method: 'GET', path: '/big', startOffsetMs: 0, durationMs: 5000, status: 200 });
       });
       log.finish('ok');
       const contents = await readFile(log.path!, 'utf8');
@@ -891,6 +918,7 @@ describe('diagnostic flags are evidence-based', () => {
       await log.run(async () => {
         for (let i = 0; i < 3; i++) {
           recordHttpRequest({ host: 'h', method: 'GET', path: '/same', startOffsetMs: i * 10, durationMs: 5, status: 200, cache: 'miss' });
+          recordHttpAttempt({ host: 'h', method: 'GET', path: '/same', startOffsetMs: i * 10, durationMs: 5, status: 200 });
         }
       });
       log.finish('ok');

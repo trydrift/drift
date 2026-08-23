@@ -743,7 +743,7 @@ interface NetworkByHost {
 
 function networkSummary(state: RunState) {
   const requests = state.httpRequests;
-  const attempts = state.httpAttempts.length > 0 ? state.httpAttempts : requests;
+  const attempts = state.httpAttempts;
   const byHost = new Map<string, number[]>();
   for (const r of requests) {
     const list = byHost.get(r.host) ?? [];
