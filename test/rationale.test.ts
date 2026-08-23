@@ -1209,12 +1209,17 @@ describe('assembling the rationale', () => {
       { config, logger, osv: noNetwork, onProgress: (_change, phase) => phases.push(phase) },
     );
 
+    // `prepareRationaleFacts` (workspace-independent: registry, versions,
+    // repository status, security, license) now runs before
+    // `finalizeRationale` (workspace-sensitive: maintenance onward) — see
+    // `src/rationale/index.ts`. License moved earlier because it depends only
+    // on package-level facts, not on this repository's own runtime.
     assert.deepEqual(phases, [
       'Checking package metadata',
       'Checking repository status',
       'Checking security advisories',
-      'Checking maintenance signals',
       'Checking license',
+      'Checking maintenance signals',
     ]);
   });
 });

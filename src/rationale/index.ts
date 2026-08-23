@@ -8,6 +8,8 @@ import {
   fetchRepositoryStatus,
   fetchVersionInfo,
   type RegistryInfo,
+  type RepositoryStatus,
+  type VersionInfo,
 } from '../evidence/registry.js';
 import { mapWithConcurrency } from '../util/http.js';
 import { dependencyEcosystemKey } from '../util/id.js';
@@ -16,8 +18,9 @@ import { assessMaintenance } from './maintenance.js';
 import { assessLicense } from './license.js';
 import { describeAdditions, improvementsFrom, summarizeRelease } from './summary.js';
 import { assessUpgrade } from './assess.js';
-import type { SecurityAssessment, UpgradeRationale } from './types.js';
+import type { LicenseFinding, SecurityAssessment, UpgradeRationale } from './types.js';
 import type { RuntimeDeclaration } from './runtime.js';
+import { startSpan as diagSpan, withSpan as diagWithSpan } from '../util/diagnostics.js';
 
 /**
  * Stage 3b — why this upgrade might be worth taking.
@@ -88,6 +91,19 @@ export interface RationaleContext {
    * uses to show which stage is actually running.
    */
   onProgress?: (change: DependencyChange, phase: string) => void;
+  /**
+   * Already-prepared workspace-independent facts for a change, keyed by the
+   * change object — the counterpart to {@link security} above but for the
+   * whole `prepareRationaleFacts` stage, not only the OSV lookup.
+   *
+   * `scanUpgrades` (`src/upgrade/scan.ts`) computes these once per unique
+   * ecosystem/package/from/to upgrade, alongside (not after) evidence
+   * gathering, and hands the same promise to every workspace row sharing
+   * that exact upgrade. When absent, `rationaleFor` falls back to calling
+   * `prepareRationaleFacts` itself, so every caller outside the shared-scan
+   * path keeps working unchanged.
+   */
+  preparedFacts?: Map<DependencyChange, Promise<PreparedRationaleFacts>>;
 }
 
 export interface RationaleInput {
@@ -95,6 +111,130 @@ export interface RationaleInput {
   evidence: readonly Evidence[];
   breakingChanges: readonly BreakingChange[];
   impactSites: readonly ImpactSite[];
+}
+
+/**
+ * Everything about an upgrade that depends only on the published package —
+ * its registry entry, both versions' own metadata, the upstream repository's
+ * own activity, the security advisories against this exact version range,
+ * and the license verdict — and nothing about any particular workspace that
+ * happens to want this same upgrade.
+ *
+ * This is the half of `rationaleFor`'s work that is genuinely safe to share
+ * across every row asking for the same exact `ecosystem/name/from/to`,
+ * however many workspaces in a monorepo (or however many repositories in one
+ * scan) declare it. The other half — {@link finalizeRationale} — reads a
+ * particular repository's runtime declarations, breaking-change impact
+ * sites, and API surface diff, so it must run once per row even when these
+ * facts are shared.
+ */
+export interface PreparedRationaleFacts {
+  registry: RegistryInfo | null;
+  repository: RepositoryStatus | null;
+  currentVersion: VersionInfo | null;
+  targetVersion: VersionInfo | null;
+  security: SecurityAssessment;
+  license: LicenseFinding;
+}
+
+export interface PrepareRationaleFactsContext {
+  config: DriftConfig;
+  githubToken?: string;
+  osv?: OsvOptions;
+  /** See {@link RationaleContext.security}. */
+  security?: Promise<Map<DependencyChange, SecurityAssessment>>;
+  /**
+   * A single already-in-flight security lookup for this exact change,
+   * preferred over both {@link security} and a fresh `assessSecurity` call
+   * when present. This is the seam `scanUpgrades` uses for scan-wide OSV
+   * batching: one `SecurityLookup` per unique exact upgrade, looked up once,
+   * shared by every row (and every ecosystem/workspace) asking for that same
+   * upgrade.
+   */
+  securityLookup?: Promise<SecurityAssessment>;
+  onProgress?: (phase: string) => void;
+}
+
+const RETRY_LABEL = {
+  'rate-limited': 'rate limited',
+  'server-error': 'server error',
+  'network-error': 'network error',
+} as const;
+
+/**
+ * Stage 3b(i) — the workspace-independent half of a rationale.
+ *
+ * Registry resolution, both versions' own metadata, and the security lookup
+ * are independent of one another and started together rather than one after
+ * another — only the repository-status fetch actually depends on anything
+ * here (the GitHub repo the registry resolves), so it is the one fetch that
+ * has to wait. License depends only on these same package-level facts, so it
+ * belongs here too, not in `finalizeRationale`.
+ *
+ * Safe to call once and share the resulting promise across every workspace
+ * row that declares the exact same `ecosystem/name/from/to` upgrade — see
+ * {@link PreparedRationaleFacts}.
+ */
+export async function prepareRationaleFacts(
+  change: DependencyChange,
+  ctx: PrepareRationaleFactsContext,
+): Promise<PreparedRationaleFacts> {
+  return diagWithSpan(
+    'rationale.prepare',
+    { package: change.name, ecosystem: change.ecosystem, from: change.from, to: change.to },
+    async () => {
+      const { config } = ctx;
+      const from = change.from!;
+      const to = change.to!;
+      const report = (phase: string) => ctx.onProgress?.(phase);
+
+      report('Checking package metadata');
+      const registryPromise = fetchRegistryInfo(change.name, change.ecosystem, to);
+      const currentVersionPromise = fetchVersionInfo(change.name, change.ecosystem, from).catch(() => null);
+      const targetVersionPromise = fetchVersionInfo(change.name, change.ecosystem, to).catch(() => null);
+      const securityPromise: Promise<SecurityAssessment> = config.rationale.security
+        ? ctx.securityLookup ??
+          Promise.resolve(ctx.security)
+            .then((batch) => batch?.get(change))
+            .then((cached) => cached ?? assessSecurity(change.name, change.ecosystem, from, to, ctx.osv ?? {}))
+        : // Switched off, not unreachable. Saying "could not be reached" here sent
+          // developers looking for a network problem behind their own setting.
+          Promise.resolve(
+            unchecked(
+              'Advisory lookup is switched off for this repository (`rationale.security`), so this upgrade’s effect on known vulnerabilities was not checked.',
+            ),
+          );
+
+      const registry = await registryPromise;
+      report('Checking repository status');
+      const repository = registry?.githubRepo
+        ? await fetchRepositoryStatus(registry.githubRepo, ctx.githubToken, (attempt, reason) =>
+            report(`Checking repository status (${RETRY_LABEL[reason]}, retrying — attempt ${attempt})`),
+          ).catch(() => null)
+        : null;
+
+      report('Checking security advisories');
+      const [currentVersion, targetVersion, security] = await Promise.all([
+        currentVersionPromise,
+        targetVersionPromise,
+        securityPromise,
+      ]);
+
+      report('Checking license');
+      const license = await assessLicense({
+        name: change.name,
+        ecosystem: change.ecosystem,
+        from,
+        to,
+        currentVersion,
+        targetVersion,
+        repository,
+        policy: config.licenses,
+      });
+
+      return { registry, repository, currentVersion, targetVersion, security, license };
+    },
+  );
 }
 
 export async function buildRationale(
@@ -131,152 +271,144 @@ export async function buildRationale(
   });
 }
 
-const RETRY_LABEL = {
-  'rate-limited': 'rate limited',
-  'server-error': 'server error',
-  'network-error': 'network error',
-} as const;
-
 async function rationaleFor(
   change: DependencyChange,
   input: RationaleInput,
   ctx: RationaleContext,
 ): Promise<UpgradeRationale> {
-  const { config, logger } = ctx;
-  const from = change.from!;
-  const to = change.to!;
   const report = (phase: string) => ctx.onProgress?.(change, phase);
 
-  // Registry resolution, both versions' own metadata, and the security
-  // lookup are independent of one another and started together rather than
-  // one after another — only the repository-status fetch actually depends on
-  // anything here (the GitHub repo the registry resolves), so it is the one
-  // fetch that has to wait.
-  report('Checking package metadata');
-  const registryPromise = fetchRegistryInfo(change.name, change.ecosystem, to);
-  const currentVersionPromise = fetchVersionInfo(change.name, change.ecosystem, from).catch(() => null);
-  const targetVersionPromise = fetchVersionInfo(change.name, change.ecosystem, to).catch(() => null);
-  const securityPromise: Promise<SecurityAssessment> = config.rationale.security
-    ? Promise.resolve(ctx.security)
-        .then((batch) => batch?.get(change))
-        .then((cached) => cached ?? assessSecurity(change.name, change.ecosystem, from, to, ctx.osv ?? {}))
-    : // Switched off, not unreachable. Saying "could not be reached" here sent
-      // developers looking for a network problem behind their own setting.
-      Promise.resolve(
-        unchecked(
-          'Advisory lookup is switched off for this repository (`rationale.security`), so this upgrade’s effect on known vulnerabilities was not checked.',
-        ),
+  const preparedPromise = ctx.preparedFacts?.get(change);
+  const facts = await (preparedPromise ??
+    prepareRationaleFacts(change, {
+      config: ctx.config,
+      ...(ctx.githubToken ? { githubToken: ctx.githubToken } : {}),
+      ...(ctx.osv ? { osv: ctx.osv } : {}),
+      ...(ctx.security ? { security: ctx.security } : {}),
+      onProgress: report,
+    }));
+
+  return finalizeRationale(change, input, facts, ctx, { shared: preparedPromise !== undefined });
+}
+
+/**
+ * Stage 3b(ii) — the workspace-sensitive half of a rationale.
+ *
+ * Everything here reads something that varies per row even when the upgrade
+ * itself (`ecosystem/name/from/to`) is identical: which runtime this
+ * particular workspace declares, which breaking changes and impact sites its
+ * own source tree produced, which API additions its own surface diff found.
+ * So unlike {@link prepareRationaleFacts}, this must run once per candidate
+ * row — never shared across workspaces, even when they share the exact same
+ * upgrade and the exact same {@link PreparedRationaleFacts}.
+ */
+export async function finalizeRationale(
+  change: DependencyChange,
+  input: RationaleInput,
+  facts: PreparedRationaleFacts,
+  ctx: RationaleContext,
+  opts?: { shared?: boolean },
+): Promise<UpgradeRationale> {
+  return diagWithSpan(
+    'rationale.finalize',
+    {
+      package: change.name,
+      ecosystem: change.ecosystem,
+      from: change.from,
+      to: change.to,
+      shared: opts?.shared ?? ctx.preparedFacts?.has(change) ?? false,
+    },
+    async () => {
+      const { config, logger } = ctx;
+      const from = change.from!;
+      const to = change.to!;
+      const report = (phase: string) => ctx.onProgress?.(change, phase);
+      const { registry, repository, currentVersion, targetVersion, security, license } = facts;
+
+      report('Checking maintenance signals');
+      const maintenance = config.rationale.maintenance
+        ? assessMaintenance({
+            name: change.name,
+            ecosystem: change.ecosystem,
+            from,
+            to,
+            registry,
+            repository,
+            currentVersion,
+            targetVersion,
+            repoRuntime:
+              (change.workspace !== undefined ? ctx.repoRuntimeByWorkspace?.get(change.workspace) : undefined) ??
+              ctx.repoRuntime,
+            pythonRuntime:
+              (change.workspace !== undefined ? ctx.pythonRuntimeByWorkspace?.get(change.workspace) : undefined) ??
+              ctx.pythonRuntime,
+          })
+        : { facts: [] };
+
+      const breakingChanges = input.breakingChanges.filter(
+        (b) => b.dependency === change.name && b.workspace === change.workspace,
       );
+      const relevantIds = new Set(breakingChanges.map((b) => b.id));
+      const impactSites = input.impactSites.filter((s) => relevantIds.has(s.breakingChangeId));
 
-  const registry = await registryPromise;
-  report('Checking repository status');
-  const repository = registry?.githubRepo
-    ? await fetchRepositoryStatus(registry.githubRepo, ctx.githubToken, (attempt, reason) =>
-        report(`Checking repository status (${RETRY_LABEL[reason]}, retrying — attempt ${attempt})`),
-      ).catch(() => null)
-    : null;
+      const key = dependencyEcosystemKey(change);
+      const computed = ctx.additions?.get(key);
+      const surfaceCompared = ctx.surfaceCompared?.has(key) ?? computed !== undefined;
+      const summary = config.rationale.summary
+        ? summarizeRelease({
+            dependency: change.name,
+            evidence: input.evidence,
+            breakingChanges,
+            impactSites,
+            additions: computed?.additions,
+          })
+        : { changes: [], unrelated: 0 };
 
-  report('Checking security advisories');
-  const [currentVersion, targetVersion, security] = await Promise.all([
-    currentVersionPromise,
-    targetVersionPromise,
-    securityPromise,
-  ]);
+      const improvements = [...improvementsFrom(summary)];
+      const additive = computed ? describeAdditions(computed.additions, computed.locator) : null;
+      if (additive) improvements.push(additive);
 
-  report('Checking maintenance signals');
-  const maintenance = config.rationale.maintenance
-    ? assessMaintenance({
-        name: change.name,
-        ecosystem: change.ecosystem,
-        from,
-        to,
+      const prose = ctx.prose?.get(key) ?? ctx.prose?.get(change.name) ?? [];
+      const gaps = collectGaps(change, {
+        surfaceCompared,
+        surfaceGap: ctx.surfaceGaps?.get(key),
+        security,
         registry,
-        repository,
-        currentVersion,
-        targetVersion,
-        repoRuntime:
-          (change.workspace !== undefined ? ctx.repoRuntimeByWorkspace?.get(change.workspace) : undefined) ??
-          ctx.repoRuntime,
-        pythonRuntime:
-          (change.workspace !== undefined ? ctx.pythonRuntimeByWorkspace?.get(change.workspace) : undefined) ??
-          ctx.pythonRuntime,
-      })
-    : { facts: [] };
-
-  report('Checking license');
-  const license = await assessLicense({
-    name: change.name,
-    ecosystem: change.ecosystem,
-    from,
-    to,
-    currentVersion,
-    targetVersion,
-    repository,
-    policy: config.licenses,
-  });
-
-  const breakingChanges = input.breakingChanges.filter(
-    (b) => b.dependency === change.name && b.workspace === change.workspace,
-  );
-  const relevantIds = new Set(breakingChanges.map((b) => b.id));
-  const impactSites = input.impactSites.filter((s) => relevantIds.has(s.breakingChangeId));
-
-  const key = dependencyEcosystemKey(change);
-  const computed = ctx.additions?.get(key);
-  const surfaceCompared = ctx.surfaceCompared?.has(key) ?? computed !== undefined;
-  const summary = config.rationale.summary
-    ? summarizeRelease({
-        dependency: change.name,
         evidence: input.evidence,
+        prose,
+        licenseUnknown: license.verdict === 'unknown',
+      });
+
+      const assessment = assessUpgrade({
+        dependency: change.name,
+        workspace: change.workspace,
         breakingChanges,
         impactSites,
-        additions: computed?.additions,
-      })
-    : { changes: [], unrelated: 0 };
+        evidence: input.evidence,
+        security,
+        maintenance,
+        license,
+        gaps,
+        surfaceCompared,
+        proseRead: prose.length,
+      });
 
-  const improvements = [...improvementsFrom(summary)];
-  const additive = computed ? describeAdditions(computed.additions, computed.locator) : null;
-  if (additive) improvements.push(additive);
+      logger.debug(`${change.name} ${from} → ${to}: ${assessment.recommendation}`);
 
-  const prose = ctx.prose?.get(key) ?? ctx.prose?.get(change.name) ?? [];
-  const gaps = collectGaps(change, {
-    surfaceCompared,
-    surfaceGap: ctx.surfaceGaps?.get(key),
-    security,
-    registry,
-    evidence: input.evidence,
-    prose,
-    licenseUnknown: license.verdict === 'unknown',
-  });
-
-  const assessment = assessUpgrade({
-    dependency: change.name,
-    workspace: change.workspace,
-    breakingChanges,
-    impactSites,
-    evidence: input.evidence,
-    security,
-    maintenance,
-    license,
-    gaps,
-    surfaceCompared,
-    proseRead: prose.length,
-  });
-
-  logger.debug(`${change.name} ${from} → ${to}: ${assessment.recommendation}`);
-
-  return {
-    dependency: change.name,
-    from,
-    to,
-    security,
-    maintenance,
-    improvements,
-    license,
-    summary,
-    assessment,
-    gaps,
-  };
+      return {
+        dependency: change.name,
+        from,
+        to,
+        security,
+        maintenance,
+        improvements,
+        license,
+        summary,
+        assessment,
+        gaps,
+      };
+    },
+  );
 }
 
 /**

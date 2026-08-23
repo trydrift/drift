@@ -38,8 +38,10 @@ import {
 } from '../detect/workspace.js';
 import { discoverNestedProjects, type NestedProject } from '../detect/nested.js';
 import { gatherDependencyEvidence } from '../evidence/index.js';
-import { buildRationale } from '../rationale/index.js';
+import { buildRationale, finalizeRationale, prepareRationaleFacts, type PreparedRationaleFacts } from '../rationale/index.js';
 import { findNodeDeclarations, findPythonDeclarations } from '../rationale/runtime.js';
+import { assessSecurityBatch, type SecurityLookup } from '../rationale/osv.js';
+import type { SecurityAssessment } from '../rationale/types.js';
 import type { UpgradeRationale } from '../rationale/types.js';
 import {
   CONFIDENT_SURFACE_WEIGHT,
@@ -372,6 +374,18 @@ interface PreparedUpstreamEvidence {
   surfaceGaps: Map<string, SurfaceUnavailable>;
   surfaceCompared: Set<string>;
   prose: Map<string, ProseSource[]>;
+  /**
+   * The workspace-independent half of this exact upgrade's rationale —
+   * registry info, both versions' own metadata, repository status, security
+   * advisories, and the license verdict — started *alongside*
+   * `gatherDependencyEvidence` above (not after it) via `Promise.all`, since
+   * neither depends on the other. Every workspace row sharing this exact
+   * `ecosystem/name/from/to` upgrade reuses the same promise here and only
+   * runs its own `finalizeRationale` afterward, which is the part that
+   * actually differs per workspace (runtime compatibility, breaking-change
+   * impact, its own surface diff).
+   */
+  rationaleFacts: Promise<PreparedRationaleFacts>;
 }
 
 /**
@@ -1052,6 +1066,51 @@ export async function scanUpgrades(args: {
   // a repository-wide search behind each one, so this is bounded by the
   // machine rather than by the registries.
   const analysisPhase = span('phase', 'analysis');
+
+  // Scan-wide OSV batching: the full set of unique exact upgrades is already
+  // known here (`outdated`, with each dependency's selected target version),
+  // so one `SecurityLookup` is built per unique `ecosystem/name/from/to` and
+  // the existing batch OSV call is made exactly once for the whole scan,
+  // rather than once per rationale call as it was when Quick Scan called
+  // rationale one candidate at a time. Keyed by `upstreamUpgradeKey`, the same
+  // key `upstreamCache` below shares evidence gathering by, so every
+  // workspace row asking for the same exact upgrade gets the same advisory
+  // result. This does not change OSV interpretation or recommendation
+  // semantics at all — it is purely batching where the call happens.
+  const uniqueUpgradeLookups = new Map<string, SecurityLookup>();
+  for (const { dep, available } of outdated) {
+    const selected = available.safeLatest ?? available.latest;
+    const key = upstreamUpgradeKey({
+      ecosystem: dep.target.manager.ecosystem,
+      name: dep.name,
+      from: dep.current,
+      to: selected,
+    });
+    if (!uniqueUpgradeLookups.has(key)) {
+      uniqueUpgradeLookups.set(key, {
+        name: dep.name,
+        ecosystem: dep.target.manager.ecosystem,
+        from: dep.current,
+        to: selected,
+      });
+    }
+  }
+  const scanSecurityBatch: Promise<Map<string, SecurityAssessment>> | undefined =
+    config.rationale.security && uniqueUpgradeLookups.size > 0
+      ? (async () => {
+          const keys = [...uniqueUpgradeLookups.keys()];
+          const lookups = [...uniqueUpgradeLookups.values()];
+          const result = await diagWithSpan(
+            'security.batch',
+            { upgrades: lookups.length },
+            () => assessSecurityBatch(lookups, {}),
+          );
+          return new Map(keys.map((k, i) => [k, result.get(lookups[i]!)!]));
+        })()
+      : undefined;
+  const scanSecurityFor = (key: string): Promise<SecurityAssessment> | undefined =>
+    scanSecurityBatch?.then((byKey) => byKey.get(key)!);
+
   const upstreamCache = new Map<string, Promise<PreparedUpstreamEvidence>>();
   // Progress fan-out for shared upstream work: every manifest row waiting on
   // the same exact upgrade (same `upstreamUpgradeKey`) subscribes here, so a
@@ -1126,21 +1185,42 @@ export async function scanUpgrades(args: {
     const prose = new Map<string, ProseSource[]>();
     const unsubscribeOwner = onPhase ? subscribeUpstreamProgress(key, onPhase) : undefined;
     publishUpstreamProgress(key, 'Reading release notes and changelog', `${dep.name} ${canonical.from} → ${canonical.to}`);
+    // The rationale facts for this exact upgrade (registry, both versions'
+    // metadata, repository status, security, license) are entirely
+    // independent of the evidence-gathering call below — neither reads the
+    // other's output — so both are started together via `Promise.all` rather
+    // than one after the other. Awaiting evidence first would have made every
+    // rationale's registry/version/security lookups wait behind a changelog
+    // fetch and a type-surface diff that have nothing to do with them.
+    const rationaleFactsPromise = prepareRationaleFacts(canonical, {
+      config,
+      ...(githubToken ? { githubToken } : {}),
+      securityLookup: scanSecurityFor(key),
+      onProgress: (phase) => publishUpstreamProgress(key, phase, `${dep.name} ${canonical.from} → ${canonical.to}`),
+    });
+    // A prepare failure must not sink the shared evidence work (or vice
+    // versa): each is independently best-effort downstream (`buildRationale`
+    // degrades a failed rationale per-candidate; nothing here should turn one
+    // failed advisory lookup into every workspace row losing its evidence).
+    rationaleFactsPromise.catch(() => undefined);
     const promise = diagWithSpan('upstream.analysis', { package: dep.name, ecosystem: canonical.ecosystem, from: canonical.from, to: canonical.to, shared: false }, () =>
-      gatherDependencyEvidence(canonical, {
-        config, logger, ...(githubToken ? { githubToken } : {}), env, workspaceRoot: root,
-        onSurfaceComputed: (change, diff) => {
-          const k = dependencyEcosystemKey(change);
-          if (diff.weight >= CONFIDENT_SURFACE_WEIGHT) surfaceCompared.add(k);
-          additions.set(k, { additions: diff.additions ?? [], locator: diff.locator });
-          publishUpstreamProgress(key, 'Comparing the public API surface', `${dep.name} ${canonical.from} → ${canonical.to}`);
-        },
-        onUnavailableSurface: (change, reason) => surfaceGaps.set(dependencyEcosystemKey(change), reason),
-        onProseConsulted: (change, source) => {
-          const k = dependencyEcosystemKey(change);
-          prose.set(k, [...(prose.get(k) ?? []), source]);
-        },
-      }).then((evidence) => ({ evidence, additions, surfaceGaps, surfaceCompared, prose }))
+      Promise.all([
+        gatherDependencyEvidence(canonical, {
+          config, logger, ...(githubToken ? { githubToken } : {}), env, workspaceRoot: root,
+          onSurfaceComputed: (change, diff) => {
+            const k = dependencyEcosystemKey(change);
+            if (diff.weight >= CONFIDENT_SURFACE_WEIGHT) surfaceCompared.add(k);
+            additions.set(k, { additions: diff.additions ?? [], locator: diff.locator });
+            publishUpstreamProgress(key, 'Comparing the public API surface', `${dep.name} ${canonical.from} → ${canonical.to}`);
+          },
+          onUnavailableSurface: (change, reason) => surfaceGaps.set(dependencyEcosystemKey(change), reason),
+          onProseConsulted: (change, source) => {
+            const k = dependencyEcosystemKey(change);
+            prose.set(k, [...(prose.get(k) ?? []), source]);
+          },
+        }),
+        rationaleFactsPromise,
+      ]).then(([evidence]) => ({ evidence, additions, surfaceGaps, surfaceCompared, prose, rationaleFacts: rationaleFactsPromise }))
     );
     upstreamCache.set(key, promise);
     promise.catch(() => { if (upstreamCache.get(key) === promise) upstreamCache.delete(key); });
@@ -2025,6 +2105,12 @@ async function analyzeUpgrade(args: {
         surfaceCompared,
         surfaceGaps,
         prose,
+        // The shared upstream work's own prepared rationale facts (registry,
+        // versions, repository status, security, license) — started
+        // concurrently with evidence gathering in `prepareUpstream` above, so
+        // `rationaleFor` reuses that promise instead of redoing package-level
+        // lookups this exact upgrade already made.
+        ...(args.prepared ? { preparedFacts: new Map([[change, args.prepared.rationaleFacts]]) } : {}),
         repoRuntime: findNodeDeclarations(files, args.member, args.allMembers),
         pythonRuntime: findPythonDeclarations(files, args.member, args.allMembers),
         // Replaces the single opaque phase above with the actual named stage
