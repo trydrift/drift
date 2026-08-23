@@ -1,6 +1,7 @@
-import { fetchJson, fetchText, mapWithConcurrency } from '../util/http.js';
-import { count, measure } from '../util/profile.js';
+import { fetchJson, fetchText, fetchArchive, mapWithConcurrency } from '../util/http.js';
+import { count, measure, span } from '../util/profile.js';
 import { readComputed, writeComputed } from '../util/artifact-cache.js';
+import { readArchive, type ArchiveEntry } from '../util/archive.js';
 import type { ModuleIncompatibleUsage, ModuleSystem } from '../types.js';
 
 /**
@@ -186,6 +187,7 @@ export function fetchTypeSurface(
 export function clearTypeSurfaceCache(): void {
   surfaces.clear();
   listings.clear();
+  tarballs.clear();
 }
 
 /**
@@ -223,8 +225,16 @@ async function computeTypeSurface(
   }
   count('surface.diskCache.miss');
 
-  const manifest = await fetchManifest(packageName, version);
-  const entryPath = await resolveTypesEntry(packageName, version, manifest);
+  // A tarball read replaces both the manifest fetch and every declaration
+  // fetch below with in-memory lookups against the same download — see
+  // `npmTarballSource`'s doc comment. `null` here (no resolvable tarball URL,
+  // a download that failed, an archive `readArchive` could not parse) means
+  // every read below falls back to exactly the per-file jsDelivr path this
+  // module used before the tarball existed; nothing downstream needs to know
+  // which happened.
+  const tarball = await npmTarballSource(packageName, version);
+  const manifest = tarball ? (readManifestFromTarball(tarball) ?? await fetchManifest(packageName, version)) : await fetchManifest(packageName, version);
+  const entryPath = await resolveTypesEntry(packageName, version, manifest, tarball);
   // No manifest and no declaration fallback is a fact about the fetch, not
   // about the package: a yanked version, a private registry, a CDN that has not
   // mirrored this release. Saying "publishes no declarations" there would be
@@ -234,7 +244,7 @@ async function computeTypeSurface(
   if (!entryPath) return null;
 
   const sources = await measure('surface-sources', packageName, () =>
-    collectDeclarationSources(packageName, version, entryPath),
+    collectDeclarationSources(packageName, version, entryPath, tarball),
   );
   count('surface.declarationFiles', sources.length);
   if (sources.length === 0) return null;
@@ -249,27 +259,35 @@ async function computeTypeSurface(
   resolveInheritedMembers(api);
 
   const ownSymbols = api.size;
-  const viaDependencies =
+  const dependencyMerge =
     !manifest || !followDependencies
-      ? []
+      ? { followed: [], attempted: false }
       : await measure('surface-deps', packageName, () => mergeDependencySurfaces(manifest, sources, api));
 
   const result: TypeSurface | null =
     api.size > 0
-      ? { api, entryPath, viaDependencies, ownSymbols, subpaths: subpathsOf(manifest?.exports) }
+      ? { api, entryPath, viaDependencies: dependencyMerge.followed, ownSymbols, subpaths: subpathsOf(manifest?.exports) }
       : null;
 
   // Only remembered when nothing about the answer depends on live registry
-  // state. `viaDependencies` is non-empty exactly when a `dependencies` range
-  // in the manifest was resolved to *some currently-published* version and
-  // that version's declarations were folded in — a fact about the registry
-  // right now, not about `packageName@version` alone, since a newer release
-  // matching the same range can exist tomorrow. Caching that indefinitely
-  // (there is no TTL here, deliberately) would freeze a wrapper package's
-  // surface to whatever its dependency happened to resolve to on the day this
-  // ran. The package's *own* declarations have no such dependency and are
-  // always safe to remember.
-  if (result && result.viaDependencies.length === 0) {
+  // state. `dependencyMerge.attempted` is true exactly when a `dependencies`
+  // range in the manifest needed resolving against *whatever currently
+  // satisfies it* — a fact about the registry right now, not about
+  // `packageName@version` alone, since a newer release matching the same
+  // range can exist tomorrow (or the same range can fail to resolve today and
+  // succeed on a retry). Caching indefinitely on either outcome — a
+  // successful merge, or an attempt that resolved nothing (a transient
+  // failure, not a fact about this version) — would freeze the wrong answer
+  // in with no TTL to age it back out. `attempted` is deliberately not the
+  // same test as `viaDependencies.length === 0`: a package whose dependency
+  // resolution was attempted but merged zero symbols (every candidate failed
+  // to fetch, say) still has `viaDependencies: []`, and must not be persisted
+  // either — the previous version of this gate would have cached exactly that
+  // failure as if it were a dependency-free package's real answer. Only a
+  // surface where resolution was never required at all — no dependencies
+  // declared, none referenced, or `followDependencies: false` — is safe to
+  // remember indefinitely.
+  if (result && !dependencyMerge.attempted) {
     await writeComputed(key, { ...result, api: [...result.api] } satisfies StoredSurface);
   }
 
@@ -300,6 +318,23 @@ interface Manifest {
 
 function fetchManifest(packageName: string, version: string): Promise<Manifest | null> {
   return fetchJson<Manifest>(`${JSDELIVR_CDN}/${packageName}@${version}/package.json`);
+}
+
+/**
+ * The same `package.json` {@link fetchManifest} would have fetched over the
+ * CDN, read out of an already-downloaded tarball instead. `null` on anything
+ * that would make this an untrustworthy substitute — no `package.json` entry,
+ * or one that does not parse as JSON — so the caller falls back to the CDN
+ * fetch exactly as if no tarball had been available at all.
+ */
+function readManifestFromTarball(tarball: TarballSource): Manifest | null {
+  const content = readFromTarball(tarball, 'package.json');
+  if (!content) return null;
+  try {
+    return JSON.parse(content) as Manifest;
+  } catch {
+    return null;
+  }
 }
 
 export async function diffPackageModuleMetadata(
@@ -504,6 +539,124 @@ function dedupeModuleMetadataChanges(changes: SurfaceChange[]): SurfaceChange[] 
 /* What a published version actually contains                          */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Every file of a published version, read in one download instead of one
+ * request per declaration file.
+ *
+ * `collectDeclarationSources` used to fetch each `.d.ts` from jsDelivr's CDN —
+ * the entry point, then whatever it re-exports, then whatever *those*
+ * re-export, one wave of requests per level because a barrel's targets are
+ * only known after its own content comes back. `fileListing` already turned
+ * "does this path exist" into a memory lookup; this does the same for "what
+ * does this path contain". jsDelivr's npm CDN is itself served from unpacked
+ * npm tarballs — this is the same bytes, read once, with exact content
+ * parity — so nothing is lost by reading the tarball directly instead of
+ * probing the CDN's rendering of it file by file.
+ *
+ * `null` on any failure (no resolvable tarball URL, a download that did not
+ * land, an archive `readArchive` could not parse) — every caller falls back
+ * to the original per-file CDN path, which stays exactly as it was for that
+ * case. This is a faster way to answer the same questions, not a new source
+ * of truth: a tarball miss must degrade, never error out where a probe would
+ * have found the file.
+ */
+interface TarballSource {
+  /** Every entry, keyed by its path relative to the package root (the tarball's own leading `package/` — or whatever the actual top directory is called — stripped). */
+  files: ReadonlyMap<string, ArchiveEntry>;
+}
+
+const tarballs = new Map<string, Promise<TarballSource | null>>();
+
+function npmTarballSource(packageName: string, version: string): Promise<TarballSource | null> {
+  const key = `${packageName}@${version}`;
+  const cached = tarballs.get(key);
+  if (cached) return cached;
+
+  const pending = computeTarballSource(packageName, version).catch(() => null);
+  tarballs.set(key, pending);
+  return pending;
+}
+
+/** The npm registry manifest shape this reads: just enough to find one version's tarball URL. */
+interface NpmPackumentForTarball {
+  'dist-tags'?: Record<string, string>;
+  versions?: Record<string, { dist?: { tarball?: string } }>;
+}
+
+/**
+ * The published tarball URL for one version, in as few requests as possible.
+ *
+ * Tier 1 asks for the *whole* packument at `registry.npmjs.org/<name>` — the
+ * exact URL `src/upgrade/versions.ts`'s `lookupVersions` already fetches for
+ * every npm dependency Drift checks, before any evidence gathering starts.
+ * Reusing that URL means this costs nothing beyond what the shared HTTP cache
+ * already answers for a URL requested twice in the same process; it is not
+ * fetched again here for that reason. Tier 2, reached only when tier 1 has no
+ * cached answer to reuse (or the packument omits this version, which happens
+ * for an unpublished/yanked one), is the single-version manifest — immutable,
+ * one request, the same endpoint `src/evidence/version-diff.ts`'s npm fetcher
+ * already uses for this exact purpose.
+ */
+async function resolveTarballUrl(packageName: string, version: string): Promise<string | null> {
+  const encoded = encodeURIComponent(packageName).replaceAll('%40', '@');
+
+  const packument = await fetchJson<NpmPackumentForTarball>(
+    `https://registry.npmjs.org/${encoded}`,
+  ).catch(() => null);
+  const resolvedVersion = packument?.versions?.[version] ? version : packument?.['dist-tags']?.[version];
+  const fromPackument = resolvedVersion ? packument?.versions?.[resolvedVersion]?.dist?.tarball : undefined;
+  if (fromPackument) return fromPackument;
+
+  const manifest = await fetchJson<{ dist?: { tarball?: string } }>(
+    `https://registry.npmjs.org/${encoded}/${encodeURIComponent(version)}`,
+    { immutable: true },
+  ).catch(() => null);
+  return manifest?.dist?.tarball ?? null;
+}
+
+/** A generous ceiling — this is decompressed in memory, and it is someone else's archive. */
+const MAX_TARBALL_BYTES = 64 * 1024 * 1024;
+
+async function computeTarballSource(packageName: string, version: string): Promise<TarballSource | null> {
+  const handle = span('tarball', packageName);
+  try {
+    const url = await resolveTarballUrl(packageName, version);
+    if (!url) return null;
+
+    const downloaded = await fetchArchive(url, { timeoutMs: 20_000, retries: 2, maxBytes: MAX_TARBALL_BYTES });
+    if (!downloaded.ok) return null;
+
+    const entries = readArchive(downloaded.bytes);
+    const files = new Map<string, ArchiveEntry>();
+    for (const entry of entries) {
+      // Every npm tarball has exactly one top-level directory (`package/` by
+      // convention, though nothing enforces the name) wrapping the package
+      // root; every path Drift asks about is relative to that root, so the
+      // first path segment comes off here rather than at each call site —
+      // the same normalisation `fileListing` already does for jsDelivr's
+      // leading slash.
+      const slash = entry.path.indexOf('/');
+      const relative = slash === -1 ? '' : entry.path.slice(slash + 1);
+      if (relative) files.set(relative, entry);
+    }
+    return { files };
+  } catch {
+    return null;
+  } finally {
+    handle.end();
+  }
+}
+
+function tarballHas(tarball: TarballSource | null, path: string): boolean {
+  return tarball !== null && tarball.files.has(path);
+}
+
+/** `null` when the path is absent from the tarball, distinct from an empty file. */
+function readFromTarball(tarball: TarballSource, path: string): string | null {
+  const entry = tarball.files.get(path);
+  return entry ? entry.read().toString('utf8') : null;
+}
+
 /** One flat file listing per package version, for this process's lifetime. */
 const listings = new Map<string, Promise<ReadonlySet<string> | null>>();
 
@@ -598,15 +751,33 @@ const MAX_FOLLOWED_DEPENDENCIES = 8;
  * surface. That is what the developer upgrades when they upgrade the wrapper,
  * and it is the difference between "could not verify" and an answer.
  */
+/**
+ * What merging a package's dependency-followed symbols in actually decided.
+ *
+ * `followed` is what {@link computeTypeSurface} exposes as `viaDependencies` —
+ * the dependencies that contributed at least one symbol. `attempted` is a
+ * separate question a caller deciding whether this result is safe to cache
+ * indefinitely needs answered, and `followed.length === 0` cannot answer it:
+ * that is also true when live range-based resolution was tried and failed
+ * (a transient fetch error, an unreachable dependency), not only when none
+ * was needed at all. Only `attempted === false` means the answer is pure in
+ * `(packageName, version)` — see the write gate in `computeTypeSurface`.
+ */
+interface DependencyMergeResult {
+  followed: string[];
+  attempted: boolean;
+}
+
 async function mergeDependencySurfaces(
   manifest: Manifest | null,
   sources: readonly DeclarationSource[],
   api: SurfaceApi,
-): Promise<string[]> {
+): Promise<DependencyMergeResult> {
   const declared = { ...manifest?.dependencies, ...manifest?.peerDependencies };
-  if (Object.keys(declared).length === 0) return [];
+  if (Object.keys(declared).length === 0) return { followed: [], attempted: false };
 
   const wanted = [...externalReferences(sources, api)].filter(([specifier]) => declared[specifier]);
+  const attempted = wanted.length > 0;
   const followed: string[] = [];
 
   // Read a chunk at a time, and merge that chunk strictly in order.
@@ -655,7 +826,7 @@ async function mergeDependencySurfaces(
     }
   }
 
-  return followed;
+  return { followed, attempted };
 }
 
 /**
@@ -821,11 +992,14 @@ async function resolveTypesEntry(
   packageName: string,
   version: string,
   pkg: Manifest | null,
+  tarball: TarballSource | null,
 ): Promise<string | null> {
   // Every path this function would otherwise probe for, in the order it would
-  // have probed them. Asked of the listing as one question, so the common case
-  // costs no requests at all beyond the listing itself; a version with no
-  // listing falls back to the same sequential probing as before.
+  // have probed them. Asked of the listing (or, now, the tarball) as one
+  // question, so the common case costs no requests at all beyond the listing
+  // itself; a version with neither falls back to the same sequential probing
+  // as before. The candidate list itself — what counts as "the types entry" —
+  // is identical regardless of which of the three answers it.
   const wanted: string[] = [];
   if (pkg) {
     const declared = pkg.types ?? pkg.typings ?? typesFromExports(pkg.exports);
@@ -839,12 +1013,17 @@ async function resolveTypesEntry(
   }
   wanted.push(...conventionalTypeEntries(packageName));
 
-  const published = await firstPublished(packageName, version, wanted);
-  if (published !== undefined) {
-    if (published) return published;
+  if (tarball) {
+    const found = wanted.find((candidate) => tarballHas(tarball, candidate));
+    if (found) return found;
   } else {
-    for (const candidate of wanted) {
-      if (await exists(packageName, version, candidate)) return candidate;
+    const published = await firstPublished(packageName, version, wanted);
+    if (published !== undefined) {
+      if (published) return published;
+    } else {
+      for (const candidate of wanted) {
+        if (await exists(packageName, version, candidate)) return candidate;
+      }
     }
   }
 
@@ -853,7 +1032,15 @@ async function resolveTypesEntry(
   const dtName = packageName.startsWith('@')
     ? `@types/${packageName.slice(1).replace('/', '__')}`
     : `@types/${packageName}`;
-  if (await exists(dtName, 'latest', 'index.d.ts')) return `@types:${dtName}`;
+  // `latest` is resolved through the same tarball path (`resolveTarballUrl`
+  // reads it off `dist-tags`), so a DefinitelyTyped fallback gets exactly the
+  // same fast path the package's own declarations do.
+  const dtTarball = await npmTarballSource(dtName, 'latest');
+  if (dtTarball) {
+    if (tarballHas(dtTarball, 'index.d.ts')) return `@types:${dtName}`;
+  } else if (await exists(dtName, 'latest', 'index.d.ts')) {
+    return `@types:${dtName}`;
+  }
 
   return null;
 }
@@ -944,24 +1131,37 @@ async function collectDeclarationSources(
   packageName: string,
   version: string,
   entryPath: string,
+  tarball: TarballSource | null,
 ): Promise<DeclarationSource[]> {
   if (entryPath.startsWith('@types:')) {
     const dtName = entryPath.slice('@types:'.length);
-    const content = await fetchText(`${JSDELIVR_CDN}/${dtName}@latest/index.d.ts`);
+    // Memoized per (name, version) in `npmTarballSource` — `resolveTypesEntry`
+    // already resolved this exact tarball to confirm `index.d.ts` exists
+    // there, so this is a cache hit, not a second download.
+    const dtTarball = await npmTarballSource(dtName, 'latest');
+    const content = dtTarball
+      ? readFromTarball(dtTarball, 'index.d.ts')
+      : await fetchText(`${JSDELIVR_CDN}/${dtName}@latest/index.d.ts`);
     return content ? [{ path: 'index.d.ts', content }] : [];
   }
 
-  const listing = await fileListing(packageName, version);
+  const listing = tarball ? null : await fileListing(packageName, version);
 
   // Each re-export expands to five candidate paths rather than two, so the
   // queue holds candidate *groups* and stops at the first that resolves. With
-  // a listing to consult, "which of these five" costs nothing and the group is
-  // one fetch; without one it degrades to probing them in order, as before.
+  // a tarball or a listing to consult, "which of these five" costs nothing and
+  // the group is one read; without either it degrades to probing them in
+  // order over the CDN, as before.
   const sources: DeclarationSource[] = [];
   const seen = new Set<string>();
   const queue: string[][] = [[entryPath]];
 
   const resolveGroup = async (candidates: readonly string[]): Promise<DeclarationSource | null> => {
+    if (tarball) {
+      const path = candidates.find((candidate) => tarballHas(tarball, candidate));
+      const content = path ? readFromTarball(tarball, path) : null;
+      return path && content ? { path, content } : null;
+    }
     const published = listing ? (candidates.find((path) => listing.has(path)) ?? null) : undefined;
     for (const path of published === undefined ? candidates : published ? [published] : []) {
       const content = await fetchText(`${JSDELIVR_CDN}/${packageName}@${version}/${path}`, {

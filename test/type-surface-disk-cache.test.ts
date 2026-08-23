@@ -149,4 +149,77 @@ describe('type surface disk cache', () => {
       "'helper'@2.0.0's own surface has no such dependency and is safe to persist",
     );
   });
+
+  test('a failed dependency fetch never poisons the cache — a later, successful retry still gets a chance', async () => {
+    await reset();
+
+    // 'helper' is declared and referenced, exactly like the test above, but
+    // every request for it fails outright — a transient registry hiccup, not
+    // a fact about 'demo'. `viaDependencies` comes back empty either way
+    // (nothing merged), which is exactly the case the old gate
+    // (`viaDependencies.length === 0`) could not tell apart from "no
+    // dependency needed following at all" — see `DependencyMergeResult` in
+    // `src/evidence/type-surface.ts`.
+    let helperReachable = false;
+    const responder = (url: string) => {
+      if (isMetadataApi(url) && url.includes('/helper/resolved')) {
+        return helperReachable
+          ? new Response(JSON.stringify({ version: '2.0.0' }), { status: 200 })
+          : new Response('', { status: 503 });
+      }
+      if (isMetadataApi(url) && url.includes('demo@1.0.0')) return listing('package.json', 'index.d.ts');
+      if (url.includes('/demo@1.0.0/package.json')) {
+        return new Response(
+          JSON.stringify({ types: 'index.d.ts', dependencies: { helper: '^2.0.0' } }),
+          { status: 200 },
+        );
+      }
+      if (url.includes('/demo@1.0.0/index.d.ts')) {
+        // A local declaration of its own, alongside the re-export — so the
+        // surface is still non-empty (and `computeTypeSurface` still returns
+        // a result to gate) even when 'helper' cannot be reached at all. A
+        // fixture that re-exports nothing else would report zero symbols and
+        // `null` overall regardless of this fix, which would not exercise
+        // the bug: the old gate and the new one only disagree when there is
+        // a result whose `viaDependencies` came back empty for two different
+        // reasons — "nothing to follow" versus "followed and failed".
+        return new Response("export { assist } from 'helper';\nexport declare function ownFn(): void;\n", {
+          status: 200,
+        });
+      }
+      if (isMetadataApi(url) && url.includes('helper@2.0.0')) return listing('package.json', 'index.d.ts');
+      if (url.includes('/helper@2.0.0/package.json')) {
+        return new Response('{"types":"index.d.ts"}', { status: 200 });
+      }
+      if (url.includes('/helper@2.0.0/index.d.ts')) {
+        return new Response('export declare function assist(): void;', { status: 200 });
+      }
+      return new Response('', { status: 404 });
+    };
+    stubFetch(responder);
+
+    const first = await fetchTypeSurface('demo', '1.0.0');
+    assert.ok(first, 'a surface was still assembled from what demo declares itself');
+    assert.ok(first!.api.has('ownFn'), "demo's own declaration was read regardless of helper's failure");
+    assert.equal(first!.viaDependencies.length, 0, "nothing merged — 'helper' could not be reached");
+
+    const poisoned = await readComputed('npm-surface:v1:demo@1.0.0#deps');
+    assert.equal(
+      poisoned,
+      null,
+      'an attempted-but-failed dependency resolution must not be cached as if it were dependency-free',
+    );
+
+    // A later process — same disk cache, empty in-process cache — retries
+    // once the dependency is reachable again.
+    clearTypeSurfaceCache();
+    clearHttpCache();
+    helperReachable = true;
+
+    const second = await fetchTypeSurface('demo', '1.0.0');
+    assert.ok(
+      second!.viaDependencies.some((v) => v.startsWith('helper@')),
+      'the retry got a real chance to succeed, rather than reading back a poisoned "no dependencies" entry',
+    );
+  });
 });
