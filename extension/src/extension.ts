@@ -29,7 +29,7 @@ import type { IssueBranchAction } from './issue-actions.js';
 import { openChangeDiff, openPackageVersionDiff, type ChangeDiffRequest } from './version-diff.js';
 import { pruneVersionDiffCache } from '../../src/evidence/version-diff.js';
 import { onDidChangeCodeTheme, warmCodeHighlighter, watchCodeTheme } from './ui/highlight.js';
-import { redactText, startRunLog, startSpan, type RunLogHandle } from '../../src/util/diagnostics.js';
+import { redactText, startRunLog, withSpan, type RunLogHandle } from '../../src/util/diagnostics.js';
 
 /**
  * Drift for VS Code.
@@ -79,14 +79,11 @@ async function runOperation<T>(
   const log = beginRun(command, repoRoot);
   if (!log) return fn();
   return log.run(async () => {
-    const span = startSpan(spanName, spanMeta);
     try {
-      const result = await fn();
-      span.end();
+      const result = await withSpan(spanName, spanMeta, fn);
       log.finish(classify(result));
       return result;
     } catch (err) {
-      span.fail(err);
       log.finish('threw', { message: redactText(err instanceof Error ? err.message : String(err)) });
       throw err;
     }

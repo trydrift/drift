@@ -85,6 +85,7 @@ import { Checkpoints } from '../checkpoint.js';
 import { DriftReportPanel } from './report.js';
 import { openChangeDiff, openPackageVersionDiff, type ChangeDiffRequest } from '../version-diff.js';
 import { OperationGate } from './scan-start.js';
+import { redactText, startRunLog, withSpan } from '../../../src/util/diagnostics.js';
 import {
   makeNonce,
   renderBody,
@@ -1360,7 +1361,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     resolvedChoices: NonNullable<Awaited<ReturnType<typeof resolveScanChoices>>>,
     options: { quiet?: boolean },
   ): Promise<void> {
-    await this.run(async (token) => {
+    const repoRoot = contexts.length === 1 ? contexts[0]!.root : this.state.activeRoot?.path ?? contexts[0]!.root;
+    const log = startRunLog({
+      command: 'vscode: drift.scanDependencies',
+      mode: resolvedChoices.deep ? 'deep' : 'quick',
+      repoRoot,
+    });
+    const execute = () => this.run(async (token) => {
       this.scanned = true;
       this.clearStale();
       this.state.setCandidates([]);
@@ -1574,6 +1581,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         this.session.say(
           `I can hand ${affected.length === 1 ? 'this' : 'these'} to **${this.agentLabel()}** — say \`/fix\`, or use the button above.`,
         );
+      }
+    });
+    if (!log) return execute();
+    return log.run(async () => {
+      try {
+        await withSpan('dependency.scan', { trigger: options.quiet ? 'autostart' : 'command' }, execute);
+        log.finish('ok');
+      } catch (err) {
+        log.finish('threw', { message: redactText(err instanceof Error ? err.message : String(err)) });
+        throw err;
       }
     });
   }
@@ -1826,7 +1843,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     const step = this.session.step(label, { key: 'verify' });
 
-    await this.run(async (token) => {
+    const repoRoot = (byRoot.size === 1 ? [...byRoot.keys()][0] : undefined) ?? ctx.root;
+    const log = startRunLog({ command: 'vscode: drift.verify', mode: 'deep', repoRoot });
+    const execute = () => this.run(async (token) => {
       for (const [root, { ctx: candidateCtx, candidates }] of byRoot) {
         for (const candidate of candidates) {
           this.candidates.set(candidate.id, { ...candidate, status: 'checking', phase: 'Waiting to be installed and tested' });
@@ -1862,6 +1881,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
             (failed > 0 ? ` · ${failed} breaking` : '') +
             (verified > 0 ? ` · ${verified} safe` : ''),
         );
+      }
+    });
+    if (!log) return execute();
+    return log.run(async () => {
+      try {
+        await withSpan('verification', { trigger: 'command' }, execute);
+        log.finish('ok');
+      } catch (err) {
+        log.finish('threw', { message: redactText(err instanceof Error ? err.message : String(err)) });
+        throw err;
       }
     });
   }
