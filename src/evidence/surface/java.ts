@@ -61,9 +61,17 @@ export const javaSurface: SurfaceProvider = {
     }
 
     await mkdir(request.workdir, { recursive: true });
-    const before = await downloadJar(coordinate, request.from, request.workdir);
+    // The "before" and "after" jars are independent downloads from Maven
+    // Central -- there is no reason the second waits on the first to finish.
+    // Both are fetched concurrently and only one japicmp comparison runs,
+    // once both have landed. Failure precedence is preserved exactly as
+    // before: "before" failing is reported ahead of "after" failing, even
+    // though "after" may now finish (or fail) first.
+    const [before, after] = await Promise.all([
+      downloadJar(coordinate, request.from, request.workdir),
+      downloadJar(coordinate, request.to, request.workdir),
+    ]);
     if (!before.ok) return before.failure;
-    const after = await downloadJar(coordinate, request.to, request.workdir);
     if (!after.ok) return after.failure;
 
     const result = await request.exec(
