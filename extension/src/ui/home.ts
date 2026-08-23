@@ -84,7 +84,7 @@ import { createPullRequestWithGh } from '../gh.js';
 import { Checkpoints } from '../checkpoint.js';
 import { DriftReportPanel } from './report.js';
 import { openChangeDiff, openPackageVersionDiff, type ChangeDiffRequest } from '../version-diff.js';
-import { ScanStartGate } from './scan-start.js';
+import { OperationGate } from './scan-start.js';
 import {
   makeNonce,
   renderBody,
@@ -224,7 +224,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private draft = '';
   private draftToken = 0;
   private scanned = false;
-  private readonly scanStartGate = new ScanStartGate();
+  private readonly operationGate = new OperationGate();
+  private operationGateOwnerEnteringRun = false;
   /**
    * What the last successful upgrade installed.
    *
@@ -557,7 +558,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   }
 
   get busy(): boolean {
-    return this.running !== null;
+    return this.running !== null || this.operationGate.active;
   }
 
   /* ---------------------------------------------------------------- */
@@ -1285,13 +1286,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   }
 
   private async scan(options: { quiet?: boolean } = {}): Promise<void> {
-    if (this.scanStartGate.active) {
-      this.session.notice('info', 'A dependency scan is already waiting for your answer.');
+    if (this.running) {
+      this.session.notice('info', this.busyMessage());
       return;
     }
 
-    if (this.busy) {
-      this.session.notice('info', this.busyMessage());
+    if (this.operationGate.active) {
+      this.session.notice('info', 'A dependency scan is already waiting for your answer.');
       return;
     }
 
@@ -1319,31 +1320,55 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     const multiRoot = contexts.length > 1;
 
     let choices: Awaited<ReturnType<typeof resolveScanChoices>>;
-    const started = await this.scanStartGate.run(async () => {
-      choices = await resolveScanChoices(contexts[0]!.config, (question, choices) =>
-        this.session.ask(question, choices, false),
-      );
-      if (!choices) {
-        this.session.notice('info', 'Scan cancelled.');
+    const reserved = await this.operationGate.run(async () => {
+      const wasCancellable = this.cancellable;
+      this.cancellable = false;
+      this.render();
+      try {
+        choices = await resolveScanChoices(contexts[0]!.config, (question, choices) =>
+          this.session.ask(question, choices, false),
+        );
+        if (!choices) {
+          this.session.notice('info', 'Scan cancelled.');
+          return;
+        }
+
+        const resolvedChoices = choices;
+        this.operationGateOwnerEnteringRun = true;
+        try {
+          await this.runScan(contexts, roots, multiRoot, resolvedChoices, options);
+        } finally {
+          this.operationGateOwnerEnteringRun = false;
+        }
+      } finally {
+        if (!this.running) {
+          this.cancellable = wasCancellable;
+          this.render();
+        }
       }
     });
 
-    if (started === 'already-starting') {
+    if (reserved === 'busy') {
       this.session.notice('info', 'A dependency scan is already waiting for your answer.');
-      return;
     }
-    const resolvedChoices = choices;
-    if (!resolvedChoices) return;
+  }
 
-    this.scanned = true;
-    this.clearStale();
-    this.state.setCandidates([]);
-    const step = this.session.step(
-      multiRoot ? `Checking your dependencies across ${contexts.length} repositories` : 'Checking your dependencies',
-      { key: 'scan' },
-    );
-
+  private async runScan(
+    contexts: readonly WorkspaceContext[],
+    roots: readonly RepoRoot[],
+    multiRoot: boolean,
+    resolvedChoices: NonNullable<Awaited<ReturnType<typeof resolveScanChoices>>>,
+    options: { quiet?: boolean },
+  ): Promise<void> {
     await this.run(async (token) => {
+      this.scanned = true;
+      this.clearStale();
+      this.state.setCandidates([]);
+      const step = this.session.step(
+        multiRoot ? `Checking your dependencies across ${contexts.length} repositories` : 'Checking your dependencies',
+        { key: 'scan' },
+      );
+
       let found: UpgradeCandidate[] = [];
       const nestedGitRepos: NestedProject[] = [];
       /** Dependencies whose version lookup never returned. Never silently dropped. */
@@ -5380,7 +5405,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     work: (token: vscode.CancellationToken) => Promise<void>,
     options: { cancellable?: boolean } = {},
   ): Promise<void> {
-    if (this.running) {
+    if (this.running || (this.operationGate.active && !this.operationGateOwnerEnteringRun)) {
       this.session.notice('info', this.busyMessage());
       return;
     }
