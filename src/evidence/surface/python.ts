@@ -80,9 +80,11 @@ export const pythonSurface: SurfaceProvider = {
     // a very large multiple of three minutes under network failure.
     const deadline = Date.now() + request.timeoutMs;
 
-    const before = await surfaceOf(request, request.from, scriptPath, analyzer, deadline);
+    const [before, after] = await Promise.all([
+      surfaceOf(request, request.from, scriptPath, analyzer, deadline),
+      surfaceOf(request, request.to, scriptPath, analyzer, deadline),
+    ]);
     if (!before.ok) return before.failure;
-    const after = await surfaceOf(request, request.to, scriptPath, analyzer, deadline);
     if (!after.ok) return after.failure;
 
     // PyPI's sdist/wheel is the artifact actually installed; a GitHub tag is

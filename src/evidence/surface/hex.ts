@@ -34,9 +34,8 @@ export const hexSurface: SurfaceProvider = {
   weight: WEIGHT,
 
   async compute(request: SurfaceRequest): Promise<SurfaceOutcome> {
-    const before = await surfaceOf(request, request.from);
+    const [before, after] = await Promise.all([surfaceOf(request, request.from), surfaceOf(request, request.to)]);
     if (!before.ok) return before.failure;
-    const after = await surfaceOf(request, request.to);
     if (!after.ok) return after.failure;
 
     if (before.api.size === 0 && after.api.size === 0) {

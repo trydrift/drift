@@ -129,6 +129,7 @@ type ApiAttempt = { api: GoApi } | { failure: SurfaceOutcome };
  * re-parse twenty thousand declarations to arrive at the same answer.
  */
 const apiCache = new Map<string, GoApi>();
+const apiInFlight = new Map<string, Promise<ApiAttempt>>();
 
 async function apiOf(
   request: SurfaceRequest,
@@ -142,6 +143,24 @@ async function apiOf(
 
   const cached = apiCache.get(cacheKey);
   if (cached) return { api: cached };
+
+  const pending = apiInFlight.get(cacheKey);
+  if (pending) return pending;
+
+  const computation = computeApiOf(request, workdir, version, platforms, requirement, cacheKey);
+  apiInFlight.set(cacheKey, computation);
+  return computation.finally(() => apiInFlight.delete(cacheKey));
+}
+
+async function computeApiOf(
+  request: SurfaceRequest,
+  workdir: string,
+  version: string,
+  platforms: readonly string[],
+  requirement: GoVersionRequirement,
+  cacheKey: string,
+): Promise<ApiAttempt> {
+  const tag = version.startsWith('v') ? version : `v${version}`;
 
   const downloaded = await request.exec(
     'go',
@@ -292,5 +311,6 @@ function firstLine(text: string): string {
 /** Test seam: forget the memoised module APIs and the scratch module. */
 export function resetGoSurfaceCache(): void {
   apiCache.clear();
+  apiInFlight.clear();
   scratch.clear();
 }

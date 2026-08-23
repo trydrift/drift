@@ -346,6 +346,11 @@ async function gatherForChange(change: DependencyChange, ctx: EvidenceContext): 
   return tag(out);
 }
 
+/** Gather evidence tied only to the published dependency upgrade. */
+export async function gatherDependencyEvidence(change: DependencyChange, ctx: EvidenceContext): Promise<Evidence[]> {
+  return gatherForChange(change, ctx);
+}
+
 /**
  * The computed API-surface diff for one dependency move.
  *
