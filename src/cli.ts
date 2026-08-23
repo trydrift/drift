@@ -23,6 +23,7 @@ import { runAction } from './runners/action.js';
 import { main as serveWebhook } from './runners/webhook.js';
 import { sampleTelemetryEvent } from './telemetry.js';
 import { createLogger, type LogLevel, type Logger } from './util/logger.js';
+import { startRunLog } from './util/run-log.js';
 import { paletteFor, supportsRedraw } from './util/terminal.js';
 import { createStatusLine } from './util/status-line.js';
 import { createOutdatedView } from './report/terminal-outdated.js';
@@ -413,7 +414,19 @@ function defaultBaselineCacheDir(): string | null {
 export async function main(argv: string[]): Promise<number> {
   configureHttpDiskCache(defaultHttpCacheDir());
   const [command, ...rest] = argv;
+  const runLog = startRunLog(argv.length ? `drift ${argv.join(' ')}` : 'drift');
 
+  try {
+    const code = await runCommand(command, rest);
+    runLog.finish(code === 0 ? 'ok' : 'error', { exitCode: code });
+    return code;
+  } catch (err) {
+    runLog.finish('threw', { message: (err as Error).message });
+    throw err;
+  }
+}
+
+async function runCommand(command: string | undefined, rest: string[]): Promise<number> {
   switch (command) {
     case 'analyze':
     case 'analyse':
