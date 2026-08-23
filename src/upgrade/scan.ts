@@ -37,7 +37,7 @@ import {
   type WorkspaceLayout,
 } from '../detect/workspace.js';
 import { discoverNestedProjects, type NestedProject } from '../detect/nested.js';
-import { gatherEvidence } from '../evidence/index.js';
+import { gatherDependencyEvidence } from '../evidence/index.js';
 import { buildRationale } from '../rationale/index.js';
 import { findNodeDeclarations, findPythonDeclarations } from '../rationale/runtime.js';
 import type { UpgradeRationale } from '../rationale/types.js';
@@ -54,7 +54,7 @@ import { buildIndex } from '../index/metarag.js';
 import { localize } from '../localize/index.js';
 import { resolveModuleMaps } from '../localize/modules.js';
 import { buildPlan } from '../plan/index.js';
-import { dependencyEcosystemKey } from '../util/id.js';
+import { dependencyEcosystemKey, upstreamUpgradeKey } from '../util/id.js';
 import { compareSeverity, describeSeverity, severityOf, type UpgradeSeverity } from './severity.js';
 import { lookupVersions, versionSourceLabel, type VersionLookup } from './versions.js';
 import { summarize } from './summary.js';
@@ -365,6 +365,14 @@ export interface ScanBreadth {
 }
 
 const DEFAULT_BREADTH: ScanBreadth = { includeDev: true, maxSites: 40, maxPackages: 0 };
+
+interface PreparedUpstreamEvidence {
+  evidence: Awaited<ReturnType<typeof gatherDependencyEvidence>>;
+  additions: Map<string, { additions: SurfaceAddition[]; locator: string }>;
+  surfaceGaps: Map<string, SurfaceUnavailable>;
+  surfaceCompared: Set<string>;
+  prose: Map<string, ProseSource[]>;
+}
 
 /**
  * The breadth the extension's Quick Scan panel actually asks for.
@@ -939,6 +947,7 @@ export async function scanUpgrades(args: {
   // registry's tolerance, not the machine's.
   report('Checking registries', `${deps.length} direct dependenc${deps.length === 1 ? 'y' : 'ies'}`, 0, deps.length);
   const outdated: { dep: ScanDependency; available: Extract<VersionLookup, { outcome: 'upgrade' }> }[] = [];
+  const versionLookups = new Map<string, Promise<VersionLookup>>();
   const lookupPhase = span('phase', 'version-discovery');
   await diagWithSpan('version.discovery', { dependencies: deps.length }, () =>
     inParallel(deps, networkConcurrency(env), async (dep) => {
@@ -947,15 +956,20 @@ export async function scanUpgrades(args: {
     const source = versionSourceLabel(dep.target.manager.ecosystem);
     announce(dep, `Asking ${source} what has been published`);
     const lookupSpan = diagSpan('registry.lookup', { package: dep.name });
-    const available = await measure('versions', dep.target.manager.ecosystem, () =>
-      lookupVersions({
+    const lookupKey = JSON.stringify([dep.target.manager.ecosystem, dep.name, dep.current, dep.range ?? null]);
+    let lookupPromise = versionLookups.get(lookupKey);
+    if (!lookupPromise) {
+      lookupPromise = measure('versions', dep.target.manager.ecosystem, () => lookupVersions({
         name: dep.name,
         ecosystem: dep.target.manager.ecosystem,
         current: dep.current,
         range: dep.range,
         ...(githubToken ? { githubToken } : {}),
-      }),
-    );
+      }));
+      versionLookups.set(lookupKey, lookupPromise);
+      lookupPromise.finally(() => versionLookups.get(lookupKey) === lookupPromise && versionLookups.delete(lookupKey)).catch(() => undefined);
+    }
+    const available = await lookupPromise;
     lookupSpan.end({ outcome: available.outcome });
 
     if (available.outcome === 'up-to-date') {
@@ -1038,12 +1052,55 @@ export async function scanUpgrades(args: {
   // a repository-wide search behind each one, so this is bounded by the
   // machine rather than by the registries.
   const analysisPhase = span('phase', 'analysis');
+  const upstreamCache = new Map<string, Promise<PreparedUpstreamEvidence>>();
+  const prepareUpstream = (dep: ScanDependency, selected: string): Promise<PreparedUpstreamEvidence> => {
+    const canonical: DependencyChange = {
+      name: dep.name,
+      ecosystem: dep.target.manager.ecosystem,
+      from: dep.current,
+      to: selected,
+      kind: dep.kind,
+      bump: classifyBump(dep.current, selected),
+      manifestPath: dep.target.manifestPath,
+      rawFrom: dep.current,
+      rawTo: selected,
+    };
+    const key = upstreamUpgradeKey(canonical);
+    const existing = upstreamCache.get(key);
+    if (existing) {
+      diagSpan('upstream.wait', { package: dep.name, ecosystem: canonical.ecosystem, from: canonical.from, to: canonical.to, shared: true }).end();
+      return existing;
+    }
+    const additions = new Map<string, { additions: SurfaceAddition[]; locator: string }>();
+    const surfaceGaps = new Map<string, SurfaceUnavailable>();
+    const surfaceCompared = new Set<string>();
+    const prose = new Map<string, ProseSource[]>();
+    const promise = diagWithSpan('upstream.analysis', { package: dep.name, ecosystem: canonical.ecosystem, from: canonical.from, to: canonical.to, shared: false }, () =>
+      gatherDependencyEvidence(canonical, {
+        config, logger, ...(githubToken ? { githubToken } : {}), env, workspaceRoot: root,
+        onSurfaceComputed: (change, diff) => {
+          const k = dependencyEcosystemKey(change);
+          if (diff.weight >= CONFIDENT_SURFACE_WEIGHT) surfaceCompared.add(k);
+          additions.set(k, { additions: diff.additions ?? [], locator: diff.locator });
+        },
+        onUnavailableSurface: (change, reason) => surfaceGaps.set(dependencyEcosystemKey(change), reason),
+        onProseConsulted: (change, source) => {
+          const k = dependencyEcosystemKey(change);
+          prose.set(k, [...(prose.get(k) ?? []), source]);
+        },
+      }).then((evidence) => ({ evidence, additions, surfaceGaps, surfaceCompared, prose }))
+    );
+    upstreamCache.set(key, promise);
+    promise.catch(() => { if (upstreamCache.get(key) === promise) upstreamCache.delete(key); });
+    return promise;
+  };
   try {
     await diagWithSpan('analysis', { packages: outdated.length }, () =>
       inParallel(outdated, concurrency, async ({ dep, available }) => {
       if (token?.isCancellationRequested) return;
 
       const selected = available.safeLatest ?? available.latest;
+      const prepared = await prepareUpstream(dep, selected);
       const candidate = await diagWithSpan(
         'package',
         { package: dep.name, ecosystem: dep.target.manager.ecosystem, from: dep.current, to: selected },
@@ -1077,6 +1134,7 @@ export async function scanUpgrades(args: {
             memberName: multiPackage ? memberNames.get(dep.target.dir) : undefined,
             repoRoot: repoLabel ? root : undefined,
             repoLabel,
+            prepared,
             onProgress: (phase, detail) => {
               report(phase, detail, done, outdated.length);
               // The same phase, said on the package's own row. The scan-wide step
@@ -1749,6 +1807,7 @@ async function analyzeUpgrade(args: {
   /** Set when scanning more than one open root, so candidate ids stay unique across them. */
   repoRoot?: string;
   repoLabel?: string;
+  prepared?: PreparedUpstreamEvidence;
   onProgress?: (phase: string, detail: string) => void;
 }): Promise<UpgradeCandidate> {
   const label = `${args.dep.name} ${args.dep.current} → ${args.selected}`;
@@ -1808,7 +1867,9 @@ async function analyzeUpgrade(args: {
     const surfaceCompared = new Set<string>();
     const prose = new Map<string, ProseSource[]>();
 
-    const evidence = await diagWithSpan('evidence', { package: args.dep.name, ecosystem: target.manager.ecosystem }, () => measure('evidence', target.manager.ecosystem, () => gatherEvidence([change], {
+    const evidence = args.prepared?.evidence.map((record) =>
+      args.member === undefined ? record : { ...record, workspace: args.member },
+    ) ?? await diagWithSpan('evidence', { package: args.dep.name, ecosystem: target.manager.ecosystem }, () => measure('evidence', target.manager.ecosystem, () => gatherDependencyEvidence(change, {
       config: args.config,
       logger: args.logger,
       githubToken: args.githubToken,
@@ -1832,6 +1893,14 @@ async function analyzeUpgrade(args: {
         prose.set(key, [...(prose.get(key) ?? []), source]);
       },
     }), { package: args.dep.name }));
+    if (args.prepared) {
+      const canonicalKey = dependencyEcosystemKey(change);
+      const sharedKey = dependencyEcosystemKey({ ...change, workspace: undefined });
+      additions.clear(); const addition = args.prepared.additions.get(sharedKey); if (addition) additions.set(canonicalKey, addition);
+      surfaceGaps.clear(); const gap = args.prepared.surfaceGaps.get(sharedKey); if (gap) surfaceGaps.set(canonicalKey, gap);
+      if (args.prepared.surfaceCompared.has(sharedKey)) surfaceCompared.add(canonicalKey);
+      prose.clear(); const consulted = args.prepared.prose.get(sharedKey); if (consulted) prose.set(canonicalKey, consulted);
+    }
 
     report(
       'Comparing the public API surface',
