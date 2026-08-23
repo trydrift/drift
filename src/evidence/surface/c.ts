@@ -68,9 +68,11 @@ async function compute(ecosystem: Ecosystem, request: SurfaceRequest): Promise<S
     return unavailable(TOOL, 'unsupported-ecosystem', `No source resolver for ${ecosystem}.`);
   }
 
-  const before = await surfaceOf(ecosystem, resolve, request, request.from);
+  const [before, after] = await Promise.all([
+    surfaceOf(ecosystem, resolve, request, request.from),
+    surfaceOf(ecosystem, resolve, request, request.to),
+  ]);
   if (!before.ok) return before.failure;
-  const after = await surfaceOf(ecosystem, resolve, request, request.to);
   if (!after.ok) return after.failure;
 
   // Both versions parsed and neither declared anything. That is a fact about
