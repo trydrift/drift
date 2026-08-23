@@ -1,5 +1,6 @@
 import { fetchJson, fetchText, mapWithConcurrency } from '../util/http.js';
 import { count, measure } from '../util/profile.js';
+import { readComputed, writeComputed } from '../util/artifact-cache.js';
 import type { ModuleIncompatibleUsage, ModuleSystem } from '../types.js';
 
 /**
@@ -187,11 +188,41 @@ export function clearTypeSurfaceCache(): void {
   listings.clear();
 }
 
+/**
+ * Bump when `extractExports`, `resolveAliases`, `resolveInheritedMembers`, or
+ * anything else that turns declaration text into a `SurfaceEntry` changes in a
+ * way that could change their output. Part of the disk-cache key below, so a
+ * fixed parser invalidates every entry it could have got wrong — the same
+ * reason `src/evidence/surface/python.ts` fingerprints its reader, except that
+ * script is a single template string this module cannot hash as cheaply
+ * (2000+ lines of the parser it *is*, not calls into one), so the version is
+ * hand-maintained here instead. No TTL: a published version's declarations
+ * cannot change, so the only way this cache can be wrong is an unbumped parser
+ * change, not staleness.
+ */
+const SURFACE_PARSER_VERSION = 1;
+
+/** Storable form of {@link TypeSurface} — `Map` is not JSON. */
+type StoredSurface = Omit<TypeSurface, 'api'> & { api: [string, SurfaceEntry][] };
+
+function diskCacheKey(packageName: string, version: string, followDependencies: boolean): string {
+  return `npm-surface:v${SURFACE_PARSER_VERSION}:${packageName}@${version}#${followDependencies ? 'deps' : 'own'}`;
+}
+
 async function computeTypeSurface(
   packageName: string,
   version: string,
   options: { followDependencies?: boolean },
 ): Promise<TypeSurface | null> {
+  const followDependencies = options.followDependencies !== false;
+  const key = diskCacheKey(packageName, version, followDependencies);
+  const remembered = await readComputed<StoredSurface>(key);
+  if (remembered) {
+    count('surface.diskCache.hit');
+    return { ...remembered, api: new Map(remembered.api) };
+  }
+  count('surface.diskCache.miss');
+
   const manifest = await fetchManifest(packageName, version);
   const entryPath = await resolveTypesEntry(packageName, version, manifest);
   // No manifest and no declaration fallback is a fact about the fetch, not
@@ -219,13 +250,30 @@ async function computeTypeSurface(
 
   const ownSymbols = api.size;
   const viaDependencies =
-    !manifest || options.followDependencies === false
+    !manifest || !followDependencies
       ? []
       : await measure('surface-deps', packageName, () => mergeDependencySurfaces(manifest, sources, api));
 
-  return api.size > 0
-    ? { api, entryPath, viaDependencies, ownSymbols, subpaths: subpathsOf(manifest?.exports) }
-    : null;
+  const result: TypeSurface | null =
+    api.size > 0
+      ? { api, entryPath, viaDependencies, ownSymbols, subpaths: subpathsOf(manifest?.exports) }
+      : null;
+
+  // Only remembered when nothing about the answer depends on live registry
+  // state. `viaDependencies` is non-empty exactly when a `dependencies` range
+  // in the manifest was resolved to *some currently-published* version and
+  // that version's declarations were folded in — a fact about the registry
+  // right now, not about `packageName@version` alone, since a newer release
+  // matching the same range can exist tomorrow. Caching that indefinitely
+  // (there is no TTL here, deliberately) would freeze a wrapper package's
+  // surface to whatever its dependency happened to resolve to on the day this
+  // ran. The package's *own* declarations have no such dependency and are
+  // always safe to remember.
+  if (result && result.viaDependencies.length === 0) {
+    await writeComputed(key, { ...result, api: [...result.api] } satisfies StoredSurface);
+  }
+
+  return result;
 }
 
 /** Raised when a published version could not be read at all. */

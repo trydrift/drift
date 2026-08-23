@@ -28,7 +28,13 @@ const root = process.env.DRIFT_BENCH_ROOT;
  */
 const dist = process.env.DRIFT_BENCH_DIST ?? join(repoRoot, 'dist');
 
-const { scanUpgrades, QUICK_SCAN_MAX_SITES } = await import(join(dist, 'upgrade/scan.js'));
+const scanModule = await import(join(dist, 'upgrade/scan.js'));
+const { scanUpgrades } = scanModule;
+// Falls back to the extension's known value when comparing against a `dist`
+// built before this constant existed (a before/after A/B across the commit
+// that introduced it), so that comparison still measures the same breadth
+// rather than failing on an undefined maxSites.
+const QUICK_SCAN_MAX_SITES = scanModule.QUICK_SCAN_MAX_SITES ?? 400;
 const { DriftConfigSchema } = await import(join(dist, 'config/schema.js'));
 const { createLogger } = await import(join(dist, 'util/logger.js'));
 const { configureHttpDiskCache } = await import(join(dist, 'util/http.js'));
@@ -50,14 +56,22 @@ const PROFILES = {
   legacy: {
     breadth: { includeDev: false, maxSites: 40, maxPackages: 0 },
     verify: true,
+    // Preserved exactly as this script always ran it: a fixed 8, not the
+    // machine-sized default every real caller actually gets. See the two
+    // profiles below, which do not make this mistake.
+    concurrency: 8,
   },
   /**
    * The VS Code extension's Quick Scan panel, exactly — same `maxSites`
    * (imported from `src/upgrade/scan.ts`, not copied), same `includeDev`
-   * (the panel's own default is dev-inclusive), and verification off, because
-   * Quick Scan is defined as static-analysis-only; see
-   * `extension/src/ui/home.ts`'s `verify: { enabled: false }` and the
-   * "Quick Scan MUST remain static-analysis-only" constraint it documents.
+   * (the panel's own default is dev-inclusive), verification off (Quick Scan
+   * is static-analysis-only; see `extension/src/ui/home.ts`'s
+   * `verify: { enabled: false }`), and — unlike `legacy` — no fixed
+   * `concurrency`. The extension never sets one either, so both get
+   * `analysisConcurrency(env)`'s machine-sized default. Capping this at a
+   * fixed 8 the way `legacy` does understates exactly the kind of win a
+   * concurrency fix produces, by measuring a concurrency ceiling no real
+   * caller has.
    */
   'production-extension-quick': {
     breadth: { includeDev: true, maxSites: QUICK_SCAN_MAX_SITES, maxPackages: 0 },
@@ -107,7 +121,7 @@ const result = await scanUpgrades({
   logger,
   ...(process.env.GITHUB_TOKEN ? { githubToken: process.env.GITHUB_TOKEN } : {}),
   breadth: profile.breadth,
-  concurrency: 8,
+  ...(profile.concurrency !== undefined ? { concurrency: profile.concurrency } : {}),
   // Quick Scan profiles never verify — installing, building or testing the
   // upgrade is exactly the work Quick Scan must not do. See `PROFILES` above.
   verify: profile.verify ? { baselineCache } : { enabled: false },
