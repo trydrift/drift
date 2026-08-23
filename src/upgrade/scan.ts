@@ -1068,8 +1068,16 @@ export async function scanUpgrades(args: {
     const key = upstreamUpgradeKey(canonical);
     const existing = upstreamCache.get(key);
     if (existing) {
-      diagSpan('upstream.wait', { package: dep.name, ecosystem: canonical.ecosystem, from: canonical.from, to: canonical.to, shared: true }).end();
-      return existing;
+      // Wraps the actual await, not a span opened and closed before it: the
+      // whole point is to record how long this caller genuinely waited on
+      // work another caller is doing, which can be the bulk of this
+      // candidate's wall time. `existing` is returned as-is -- reusing the
+      // same promise object, not starting new work.
+      return diagWithSpan(
+        'upstream.wait',
+        { package: dep.name, ecosystem: canonical.ecosystem, from: canonical.from, to: canonical.to, shared: true },
+        () => existing,
+      );
     }
     const additions = new Map<string, { additions: SurfaceAddition[]; locator: string }>();
     const surfaceGaps = new Map<string, SurfaceUnavailable>();
