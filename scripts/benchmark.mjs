@@ -90,6 +90,15 @@ const dist = flag('dist');
 /** Repeat count. Cold runs vary with the network; the median of three is worth the wait. */
 const repeats = Number(flag('repeat', '1')) || 1;
 const outName = flag('out', cold ? 'cold' : 'warm');
+/**
+ * Which of `benchmark-scan.mjs`'s named `PROFILES` to run — e.g.
+ * `production-extension-quick` or `runtime-only-quick`. Unset measures
+ * whatever that script measured before profiles existed (`legacy`), so an
+ * existing invocation's meaning does not change under it.
+ */
+const scanProfile = flag('profile');
+/** Print each run's stage-by-stage `profile-report.mjs` breakdown after the summary table. */
+const showStages = has('stages');
 const outDir = join(repoRoot, 'bench-results');
 const cloneCache = join(tmpdir(), 'drift-capture-clones');
 /**
@@ -167,6 +176,7 @@ async function scanOnce(id, checkout, profilePath) {
       DRIFT_BENCH_ROOT: checkout.dir,
       DRIFT_BENCH_CACHE: httpCache,
       ...(dist ? { DRIFT_BENCH_DIST: dist } : {}),
+      ...(scanProfile ? { DRIFT_BENCH_PROFILE: scanProfile } : {}),
       ...(githubToken ? { GITHUB_TOKEN: githubToken } : {}),
     },
   }).catch((err) => ({ stdout: err.stdout ?? '', stderr: err.stderr ?? String(err), failed: true }));
@@ -219,7 +229,7 @@ const summaryPath = join(outDir, `${outName}.json`);
 await writeFile(summaryPath, `${JSON.stringify(results, null, 2)}\n`, 'utf8');
 
 console.log(`\n${'='.repeat(72)}`);
-console.log(`benchmark: ${outName} (${cold ? 'cold' : 'warm'})`);
+console.log(`benchmark: ${outName} (${cold ? 'cold' : 'warm'})${scanProfile ? ` · profile ${scanProfile}` : ''}`);
 console.log('='.repeat(72));
 for (const r of results) {
   console.log(
@@ -229,3 +239,16 @@ for (const r of results) {
   );
 }
 console.log(`\nwrote ${summaryPath}`);
+
+// Every run above already wrote a full `DRIFT_PROFILE` dump (span-level
+// wall/CPU/HTTP-wait/cache-hit detail — see `src/util/profile.ts`); `--stages`
+// renders each one with `profile-report.mjs` rather than leaving it to a
+// second, separate command per target.
+if (showStages) {
+  for (const r of results) {
+    if (!existsSync(r.profile)) continue;
+    await run(process.execPath, [join(here, 'profile-report.mjs'), r.profile], { maxBuffer: 64 * 1024 * 1024 })
+      .then(({ stdout }) => process.stdout.write(stdout))
+      .catch((err) => process.stderr.write(`[${r.id}] could not render profile: ${err.message}\n`));
+  }
+}

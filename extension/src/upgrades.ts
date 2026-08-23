@@ -15,6 +15,10 @@ import type {
   UpgradeScanResult,
   UpgradeStatus,
 } from '../../src/upgrade/scan.js';
+// Re-exported so callers (and the benchmark suite) share one source for the
+// panel's Quick Scan breadth rather than hand-copying the number — see the
+// constant's own doc comment in `src/upgrade/scan.ts`.
+export { QUICK_SCAN_MAX_SITES } from '../../src/upgrade/scan.js';
 import { envWithShellPath } from './shell-path.js';
 
 /**

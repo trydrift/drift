@@ -60,6 +60,7 @@ import {
   installUpgrade,
   reanalyzeUpgrade,
   scanUpgrades,
+  QUICK_SCAN_MAX_SITES,
   upgradeCommandFor,
   verifyUpgradeCandidates,
   severityOf,
@@ -1357,7 +1358,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
             config: ctx.config,
             breadth: {
               includeDev: ctx.config.triggerOn.dev,
-              maxSites: 400,
+              maxSites: QUICK_SCAN_MAX_SITES,
               maxPackages: 0,
             },
             githubToken: await getRateLimitToken(),

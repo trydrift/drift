@@ -366,6 +366,20 @@ export interface ScanBreadth {
 const DEFAULT_BREADTH: ScanBreadth = { includeDev: true, maxSites: 40, maxPackages: 0 };
 
 /**
+ * The breadth the extension's Quick Scan panel actually asks for.
+ *
+ * Exported so nothing else has to guess or hand-copy these numbers — the
+ * extension's scan trigger (`extension/src/ui/home.ts`) and the
+ * `production-extension-quick` benchmark profile
+ * (`scripts/benchmark-scan.mjs`) both import this constant, so a benchmark
+ * claiming to measure "the real default" cannot silently drift from what the
+ * extension configures. `includeDev` is *not* included here: the extension
+ * reads that from the user's `drift.analysis.includeDev` setting
+ * (`ctx.config.triggerOn.dev`), not from a fixed default.
+ */
+export const QUICK_SCAN_MAX_SITES = 400;
+
+/**
  * Find every manifest in a set of directories and name the tool that owns it.
  *
  * An ambiguous directory still yields a target — Drift picks a candidate so

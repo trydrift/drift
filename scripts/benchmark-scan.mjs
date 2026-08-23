@@ -9,7 +9,9 @@
  *
  * The scan is configured exactly as the capture harness configures it (the
  * CLI's own breadth defaults, a pinned concurrency) so a benchmark number and a
- * recording are measurements of the same work.
+ * recording are measurements of the same work — unless `DRIFT_BENCH_PROFILE`
+ * names one of the profiles below, which trade the CLI's defaults for another
+ * real caller's, so a regression there is caught too.
  */
 
 import { resourceUsage } from 'node:process';
@@ -26,11 +28,59 @@ const root = process.env.DRIFT_BENCH_ROOT;
  */
 const dist = process.env.DRIFT_BENCH_DIST ?? join(repoRoot, 'dist');
 
-const { scanUpgrades } = await import(join(dist, 'upgrade/scan.js'));
+const { scanUpgrades, QUICK_SCAN_MAX_SITES } = await import(join(dist, 'upgrade/scan.js'));
 const { DriftConfigSchema } = await import(join(dist, 'config/schema.js'));
 const { createLogger } = await import(join(dist, 'util/logger.js'));
 const { configureHttpDiskCache } = await import(join(dist, 'util/http.js'));
 const { createBaselineCache } = await import(join(dist, 'verification/baseline-cache.js'));
+
+/**
+ * Named, reusable scan configurations.
+ *
+ * `legacy` is what this script always ran before these profiles existed —
+ * kept as the default so nothing that already invokes this script without
+ * `DRIFT_BENCH_PROFILE` silently changes what it measures. It was never any
+ * real caller's configuration, though: `includeDev: false` and `maxSites: 40`
+ * match neither the CLI's own default breadth nor the extension's, which is
+ * exactly how a Quick-Scan regression stopped showing up in benchmark output
+ * while the shipped panel got 30x slower. The two profiles below close that
+ * gap by measuring what a real caller actually asks for.
+ */
+const PROFILES = {
+  legacy: {
+    breadth: { includeDev: false, maxSites: 40, maxPackages: 0 },
+    verify: true,
+  },
+  /**
+   * The VS Code extension's Quick Scan panel, exactly — same `maxSites`
+   * (imported from `src/upgrade/scan.ts`, not copied), same `includeDev`
+   * (the panel's own default is dev-inclusive), and verification off, because
+   * Quick Scan is defined as static-analysis-only; see
+   * `extension/src/ui/home.ts`'s `verify: { enabled: false }` and the
+   * "Quick Scan MUST remain static-analysis-only" constraint it documents.
+   */
+  'production-extension-quick': {
+    breadth: { includeDev: true, maxSites: QUICK_SCAN_MAX_SITES, maxPackages: 0 },
+    verify: false,
+  },
+  /**
+   * The same panel with the `drift.analysis.includeDev` setting turned off —
+   * production dependencies only. Isolates how much of Quick Scan's cost is
+   * "more dependencies" versus "the same dependency count, done slower".
+   */
+  'runtime-only-quick': {
+    breadth: { includeDev: false, maxSites: QUICK_SCAN_MAX_SITES, maxPackages: 0 },
+    verify: false,
+  },
+};
+
+const profileName = process.env.DRIFT_BENCH_PROFILE ?? 'legacy';
+const profile = PROFILES[profileName];
+if (!profile) {
+  throw new Error(
+    `DRIFT_BENCH_PROFILE=${profileName} is not one of: ${Object.keys(PROFILES).join(', ')}`,
+  );
+}
 
 configureHttpDiskCache(process.env.DRIFT_BENCH_CACHE);
 
@@ -56,10 +106,11 @@ const result = await scanUpgrades({
   config,
   logger,
   ...(process.env.GITHUB_TOKEN ? { githubToken: process.env.GITHUB_TOKEN } : {}),
-  // The capture harness's own breadth and concurrency, so the two agree.
-  breadth: { includeDev: false, maxSites: 40, maxPackages: 0 },
+  breadth: profile.breadth,
   concurrency: 8,
-  verify: { baselineCache },
+  // Quick Scan profiles never verify — installing, building or testing the
+  // upgrade is exactly the work Quick Scan must not do. See `PROFILES` above.
+  verify: profile.verify ? { baselineCache } : { enabled: false },
   onOutdated: (summary) => {
     outdated = summary.outdated.length;
   },
@@ -104,6 +155,7 @@ const fingerprint = (result.candidates ?? [])
 
 process.stdout.write(
   `\n${JSON.stringify({
+    profile: profileName,
     durationMs: Date.now() - started,
     checked: result.checked ?? 0,
     upToDate: result.upToDate ?? 0,
