@@ -157,6 +157,15 @@ export const workspace = {
   getConfiguration: (_section?: string) => ({
     get: <T>(key: string, fallback?: T): T =>
       (__settings.has(key) ? (__settings.get(key) as T) : (fallback as T)),
+    inspect: <T>(key: string) =>
+      __settings.has(key)
+        ? {
+            key,
+            globalValue: __settings.get(key) as T,
+            workspaceValue: undefined,
+            workspaceFolderValue: undefined,
+          }
+        : undefined,
     update: async () => undefined,
   }),
   // Backed by the real filesystem: the code under test reads manifests and
