@@ -763,7 +763,7 @@
   },
   "dependencies": {
     "@octokit/rest": "^22.0.1",
-    "@shikijs/core": "^3.23.0",
+    "@shikijs/core": "^4.4.3",
     "@shikijs/engine-javascript": "^3.23.0",
     "@shikijs/langs": "^3.23.0",
     "@shikijs/themes": "^3.23.0",
