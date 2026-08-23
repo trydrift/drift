@@ -22,9 +22,10 @@
  *  - The final report is rendered fully in memory and promoted into place
  *    with a single `rename()`, so a concurrent reader never observes a
  *    half-written file, and a run that finishes cannot be interleaved with
- *    another run's bytes. A per-repository generation counter additionally
- *    guarantees that an older run finishing *after* a newer one has already
- *    started can never overwrite the newer run's report — see `finish()`.
+ *    another run's bytes. `run.in-progress` is a filesystem-backed ownership
+ *    record with a unique run ID; starting a run and finishing a run both
+ *    take the same repository-local lock, so an older process finishing after
+ *    a newer process started cannot overwrite the newer report.
  *  - A crash-marker file (`run.in-progress`) is written synchronously when a
  *    run starts, so a hard crash before `finish()` still leaves something
  *    behind describing what was running — but it is never the artifact
@@ -36,6 +37,7 @@
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { arch, cpus, platform } from 'node:os';
 import { isAbsolute, join, resolve } from 'node:path';
@@ -165,18 +167,27 @@ export interface HttpRequestRecord {
   host: string;
   method: string;
   path: string;
-  /** Offset from the run's start, on the same monotonic clock as spans — used for concurrency measurement. */
+  /** Offset from the run's start, on the same monotonic clock as spans. */
   startOffsetMs: number;
   durationMs: number;
   status: number | null;
-  /** Whether this logical request avoided a full re-fetch — see the module doc for cache semantics. */
-  cache: 'hit' | 'miss' | 'n/a';
+  cache: 'memory_hit' | 'disk_hit' | 'coalesced_hit' | 'revalidated_304' | 'miss' | 'hit' | 'n/a';
   bytes?: number;
   /** Number of retries actually performed (attempts minus one), not the attempt index of any single try. */
   retries?: number;
   /** Cumulative time spent sleeping between retries, separate from request time itself. */
   backoffMs?: number;
   failure?: string;
+}
+
+export interface HttpAttemptRecord {
+  host: string;
+  method: string;
+  path: string;
+  /** Offset and duration for actual network I/O, excluding retry backoff sleeps. */
+  startOffsetMs: number;
+  durationMs: number;
+  status: number | null;
 }
 
 export interface ExecRecord {
@@ -215,8 +226,9 @@ class RunState {
   readonly startPerf = performance.now();
   readonly spans: SpanRecord[] = [];
   readonly counters = new Map<string, number>();
-  readonly caches = new Map<string, { hits: number; misses: number; writes: number }>();
+  readonly caches = new Map<string, CacheStats>();
   readonly httpRequests: HttpRequestRecord[] = [];
+  readonly httpAttempts: HttpAttemptRecord[] = [];
   readonly execCommands: ExecRecord[] = [];
   nextSpanId = 1;
   finished = false;
@@ -225,7 +237,7 @@ class RunState {
     readonly header: Header,
     readonly path: string | null,
     readonly gitDir: string,
-    readonly generation: number,
+    readonly owner: RunOwner,
   ) {}
 
   now(): number {
@@ -247,9 +259,6 @@ interface RunFrame {
  */
 const als = new AsyncLocalStorage<RunFrame>();
 
-/** The most recent generation started per git dir — see `finish()`. */
-const latestGeneration = new Map<string, number>();
-
 function currentFrame(): RunFrame | undefined {
   return als.getStore();
 }
@@ -269,19 +278,68 @@ export function recordHttpRequest(rec: HttpRequestRecord): void {
   currentFrame()?.state.httpRequests.push(rec);
 }
 
+/** Called by `http.ts` for every actual network attempt; a no-op when no run is active. */
+export function recordHttpAttempt(rec: HttpAttemptRecord): void {
+  currentFrame()?.state.httpAttempts.push(rec);
+}
+
 /** Called by `exec.ts` for every subprocess invocation; a no-op when no run is active. */
 export function recordExecCommand(rec: ExecRecord): void {
   currentFrame()?.state.execCommands.push(rec);
 }
 
+export type CacheEvent =
+  | 'memory_hit'
+  | 'disk_hit'
+  | 'coalesced_hit'
+  | 'revalidated_304'
+  | 'miss'
+  | 'write';
+
+interface CacheStats {
+  hits: number;
+  misses: number;
+  writes: number;
+  memoryHits: number;
+  diskHits: number;
+  coalescedHits: number;
+  revalidated304: number;
+}
+
+function emptyCacheStats(): CacheStats {
+  return { hits: 0, misses: 0, writes: 0, memoryHits: 0, diskHits: 0, coalescedHits: 0, revalidated304: 0 };
+}
+
 /** Called by any cache to report a lookup; a no-op when no run is active. */
-export function noteCache(cacheName: string, hit: boolean, write = false): void {
+export function noteCache(cacheName: string, event: CacheEvent): void;
+export function noteCache(cacheName: string, hit: boolean, write?: boolean): void;
+export function noteCache(cacheName: string, eventOrHit: CacheEvent | boolean, write = false): void {
   const state = currentFrame()?.state;
   if (!state) return;
-  const entry = state.caches.get(cacheName) ?? { hits: 0, misses: 0, writes: 0 };
-  if (hit) entry.hits += 1;
-  else entry.misses += 1;
-  if (write) entry.writes += 1;
+  const entry = state.caches.get(cacheName) ?? emptyCacheStats();
+  if (typeof eventOrHit === 'boolean') {
+    if (eventOrHit) entry.hits += 1;
+    else entry.misses += 1;
+    if (write) entry.writes += 1;
+    state.caches.set(cacheName, entry);
+    return;
+  }
+  if (eventOrHit === 'memory_hit') {
+    entry.memoryHits += 1;
+    entry.hits += 1;
+  } else if (eventOrHit === 'disk_hit') {
+    entry.diskHits += 1;
+    entry.hits += 1;
+  } else if (eventOrHit === 'coalesced_hit') {
+    entry.coalescedHits += 1;
+    entry.hits += 1;
+  } else if (eventOrHit === 'revalidated_304') {
+    entry.revalidated304 += 1;
+  } else if (eventOrHit === 'miss') {
+    entry.misses += 1;
+  } else if (eventOrHit === 'write') {
+    entry.writes += 1;
+  }
   state.caches.set(cacheName, entry);
 }
 
@@ -411,23 +469,66 @@ function headerText(h: Header, startedAtIso: string): string {
   ].join('\n');
 }
 
+interface RunOwner {
+  runId: string;
+  startedAtMs: number;
+}
+
+function ownerText(owner: RunOwner, header: Header): string {
+  return `${JSON.stringify({ schemaVersion: 1, ...owner })}\n${headerText(header, new Date(owner.startedAtMs).toISOString())}`;
+}
+
+function readOwner(path: string): RunOwner | null {
+  try {
+    const firstLine = readFileSync(path, 'utf8').split('\n')[0] ?? '';
+    const parsed = JSON.parse(firstLine) as Partial<RunOwner>;
+    if (typeof parsed.runId !== 'string' || typeof parsed.startedAtMs !== 'number') return null;
+    return { runId: parsed.runId, startedAtMs: parsed.startedAtMs };
+  } catch {
+    return null;
+  }
+}
+
+function sameOwner(a: RunOwner | null, b: RunOwner): boolean {
+  return a?.runId === b.runId && a.startedAtMs === b.startedAtMs;
+}
+
+function withRunLogLock<T>(dir: string, fn: () => T): T {
+  const lock = join(dir, 'run.lock');
+  const deadline = Date.now() + 5000;
+  const sleepArray = new Int32Array(new SharedArrayBuffer(4));
+  for (;;) {
+    try {
+      mkdirSync(lock);
+      break;
+    } catch {
+      if (Date.now() > deadline) throw new Error('Timed out waiting for run log lock');
+      Atomics.wait(sleepArray, 0, 0, 10);
+    }
+  }
+  try {
+    return fn();
+  } finally {
+    rmSync(lock, { recursive: true, force: true });
+  }
+}
+
 /**
  * Start a new run log for `options.repoRoot`. Returns a handle even when the
  * file could not be opened (a read-only checkout, missing permissions) —
  * spans still track in memory so the process behaves identically, they
  * simply never reach disk.
  *
- * Starting a run bumps that repository's generation counter. Only the run
- * holding the latest generation for its repository is allowed to write
- * `run.log` when it finishes — an older run finishing later (a slow
- * operation outlived by a newer one) is a stale write and is dropped rather
- * than clobbering the newer run's report. This is what keeps two overlapping
- * operations against the same repository from producing a mixed file.
+ * Starting a run atomically replaces `run.in-progress` with this run's unique
+ * ownership record. Finishing a run promotes its rendered report only while
+ * that marker still names the same run, under the same filesystem lock used
+ * by starters. That keeps stale reports from overwriting newer runs across
+ * separate Node processes.
  */
 export function startRunLog(options: StartRunOptions): RunLogHandle {
-  const runId = new Date().toISOString();
+  const owner: RunOwner = { runId: randomUUID(), startedAtMs: Date.now() };
   const header: Header = {
-    runId,
+    runId: owner.runId,
     command: options.command,
     mode: options.mode,
     repoRoot: options.repoRoot,
@@ -436,8 +537,6 @@ export function startRunLog(options: StartRunOptions): RunLogHandle {
   };
 
   const gitDir = resolveGitDir(options.repoRoot);
-  const generation = (latestGeneration.get(gitDir) ?? 0) + 1;
-  latestGeneration.set(gitDir, generation);
 
   let dir: string | null = null;
   let path: string | null = null;
@@ -445,17 +544,16 @@ export function startRunLog(options: StartRunOptions): RunLogHandle {
     dir = join(gitDir, 'drift');
     mkdirSync(dir, { recursive: true });
     path = join(dir, 'run.log');
-    // A crash marker, not the artifact — written eagerly so a hard crash
-    // before `finish()` still leaves something. Never read by the guidance
-    // this module gives callers; `run.log` is always the one file to hand
-    // to anyone, and it is left untouched (the previous completed run)
-    // until this run actually finishes.
-    writeFileSync(join(dir, 'run.in-progress'), headerText(header, new Date().toISOString()), 'utf8');
+    withRunLogLock(dir, () => {
+      const markerTmp = join(dir!, `run.in-progress.${process.pid}.${owner.runId}.tmp`);
+      writeFileSync(markerTmp, ownerText(owner, header), 'utf8');
+      renameSync(markerTmp, join(dir!, 'run.in-progress'));
+    });
   } catch {
     path = null;
   }
 
-  const state = new RunState(header, path, gitDir, generation);
+  const state = new RunState(header, path, gitDir, owner);
 
   return {
     path,
@@ -476,19 +574,19 @@ export function startRunLog(options: StartRunOptions): RunLogHandle {
       }
 
       if (!state.path || !dir) return;
-      // A newer run has since started for this repository — this run's
-      // report is stale and must not overwrite the newer one's. The newer
-      // run is either still in flight (in which case `run.in-progress`
-      // already reflects it) or has already finished and written `run.log`
-      // itself; either way, this write is dropped.
-      if (latestGeneration.get(state.gitDir) !== state.generation) return;
-
       try {
         const report = headerText(state.header, new Date(state.startedAtMs).toISOString()) + render(state, status, meta ?? {});
-        const tmp = join(dir, `run.log.${process.pid}.${state.generation}.tmp`);
+        const tmp = join(dir, `run.log.${process.pid}.${state.owner.runId}.tmp`);
         writeFileSync(tmp, report, 'utf8');
-        renameSync(tmp, state.path);
-        rmSync(join(dir, 'run.in-progress'), { force: true });
+        withRunLogLock(dir, () => {
+          const marker = join(dir!, 'run.in-progress');
+          if (!sameOwner(readOwner(marker), state.owner)) {
+            rmSync(tmp, { force: true });
+            return;
+          }
+          renameSync(tmp, state.path!);
+          rmSync(marker, { force: true });
+        });
       } catch {
         // A run log is a diagnostic nicety, not something a run should fail
         // over.
@@ -550,13 +648,35 @@ function stageBreakdown(state: RunState): { name: string; ms: number }[] {
 }
 
 function packageBreakdown(state: RunState): { name: string; ms: number }[] {
-  const byPackage = new Map<string, number>();
+  const byPackage = new Map<string, { start: number; end: number }[]>();
   for (const span of state.spans) {
     if (span.name !== 'package' || span.endMs === null) continue;
     const name = typeof span.meta.package === 'string' ? span.meta.package : 'unknown';
-    byPackage.set(name, (byPackage.get(name) ?? 0) + (span.endMs - span.startMs));
+    const list = byPackage.get(name) ?? [];
+    list.push({ start: span.startMs, end: span.endMs });
+    byPackage.set(name, list);
   }
-  return [...byPackage.entries()].map(([name, ms]) => ({ name, ms })).sort((a, b) => b.ms - a.ms);
+  return [...byPackage.entries()].map(([name, intervals]) => ({ name, ms: unionDuration(intervals) })).sort((a, b) => b.ms - a.ms);
+}
+
+function unionDuration(intervals: { start: number; end: number }[]): number {
+  const sorted = [...intervals].sort((a, b) => a.start - b.start || a.end - b.end);
+  let total = 0;
+  let current: { start: number; end: number } | null = null;
+  for (const interval of sorted) {
+    if (!current) {
+      current = { ...interval };
+      continue;
+    }
+    if (interval.start <= current.end) {
+      current.end = Math.max(current.end, interval.end);
+      continue;
+    }
+    total += current.end - current.start;
+    current = { ...interval };
+  }
+  if (current) total += current.end - current.start;
+  return total;
 }
 
 /** Where the same expensive identity (a surface, a lookup) ran more than once. */
@@ -623,6 +743,7 @@ interface NetworkByHost {
 
 function networkSummary(state: RunState) {
   const requests = state.httpRequests;
+  const attempts = state.httpAttempts.length > 0 ? state.httpAttempts : requests;
   const byHost = new Map<string, number[]>();
   for (const r of requests) {
     const list = byHost.get(r.host) ?? [];
@@ -645,38 +766,44 @@ function networkSummary(state: RunState) {
     })
     .sort((a, b) => b.cumulativeMs - a.cumulativeMs);
 
-  const revalidated = requests.filter((r) => r.cache === 'hit').length;
-  const notRevalidated = requests.filter((r) => r.cache === 'miss').length;
+  const revalidated = requests.filter((r) => r.cache === 'revalidated_304' || (r.cache === 'hit' && r.status === 304)).length;
+  const networkRequired = requests.filter((r) => r.cache === 'miss' || r.cache === 'revalidated_304' || (r.cache === 'hit' && r.status === 304)).length;
   // One retry count per logical request (recorded once, at its final
   // attempt) — never summed per-attempt, which would overcount a
   // twice-retried request as three retries instead of two.
   const retries = requests.reduce((sum, r) => sum + (r.retries ?? 0), 0);
   const backoffMs = requests.reduce((sum, r) => sum + (r.backoffMs ?? 0), 0);
   const cumulativeMs = requests.reduce((sum, r) => sum + r.durationMs, 0);
-  const maxConcurrent = maxOverlap(requests.map((r) => ({ start: r.startOffsetMs, end: r.startOffsetMs + r.durationMs })));
+  const attemptCumulativeMs = attempts.reduce((sum, r) => sum + r.durationMs, 0);
+  const maxConcurrentAttempts = maxOverlap(attempts.map((r) => ({ start: r.startOffsetMs, end: r.startOffsetMs + r.durationMs })));
 
   // The same host+path fetched from the network (not served from cache) more
   // than once in one run — wasted, evidence-backed, no guessing about why.
   const byResource = new Map<string, number>();
   for (const r of requests) {
+    if (r.cache !== 'miss') continue;
     const key = `${r.host}${r.path}`;
     byResource.set(key, (byResource.get(key) ?? 0) + 1);
   }
   const repeatedFetches = [...byResource.entries()].filter(([, count]) => count > 1).sort((a, b) => b[1] - a[1]);
 
   const slowest = [...requests].sort((a, b) => b.durationMs - a.durationMs).slice(0, 5);
+  const slowestAttempts = [...attempts].sort((a, b) => b.durationMs - a.durationMs).slice(0, 5);
 
   return {
     hosts,
     revalidated,
-    notRevalidated,
+    networkRequired,
     retries,
     backoffMs,
     cumulativeMs,
+    attemptCumulativeMs,
     requestCount: requests.length,
-    maxConcurrent,
+    attemptCount: attempts.length,
+    maxConcurrentAttempts,
     repeatedFetches,
     slowest,
+    slowestAttempts,
   };
 }
 
@@ -722,13 +849,15 @@ function render(state: RunState, status: string, finishMeta: Record<string, unkn
   lines.push('');
 
   lines.push('network:');
-  lines.push(`  requests: ${net.requestCount}`);
-  lines.push(`  total_request_time: ${fmtSec(net.cumulativeMs)}`);
-  lines.push(`  max_concurrent: ${net.maxConcurrent}`);
+  lines.push(`  logical_requests: ${net.requestCount}`);
+  lines.push(`  total_logical_request_time: ${fmtSec(net.cumulativeMs)}`);
+  lines.push(`  network_attempts: ${net.attemptCount}`);
+  lines.push(`  total_attempt_time: ${fmtSec(net.attemptCumulativeMs)}`);
+  lines.push(`  max_concurrent_attempts: ${net.maxConcurrentAttempts}`);
   lines.push(`  revalidated_304: ${net.revalidated}`);
-  lines.push(`  fetched: ${net.notRevalidated}`);
+  lines.push(`  network_required_requests: ${net.networkRequired}`);
   lines.push(`  retries: ${net.retries}`);
-  lines.push(`  backoff_time: ${fmtSec(net.backoffMs)}`);
+  lines.push(`  retry_backoff_time: ${fmtSec(net.backoffMs)}`);
   if (net.hosts.length) {
     lines.push('  by host:');
     for (const h of net.hosts) {
@@ -738,8 +867,12 @@ function render(state: RunState, status: string, finishMeta: Record<string, unkn
     }
   }
   if (net.slowest.length) {
-    lines.push('  slowest requests:');
+    lines.push('  slowest logical requests:');
     for (const r of net.slowest) lines.push(`    ${fmtSec(r.durationMs).padStart(8)} ${r.method} ${r.host}${r.path}`);
+  }
+  if (net.slowestAttempts.length) {
+    lines.push('  slowest network attempts:');
+    for (const r of net.slowestAttempts) lines.push(`    ${fmtSec(r.durationMs).padStart(8)} ${r.method} ${r.host}${r.path}`);
   }
   if (net.repeatedFetches.length) {
     lines.push('  repeated fetches (same resource, more than once):');
@@ -765,7 +898,14 @@ function render(state: RunState, status: string, finishMeta: Record<string, unkn
   lines.push('cache:');
   if (state.caches.size === 0) lines.push('  (none recorded)');
   for (const [name, c] of [...state.caches.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-    lines.push(`  ${name}: ${c.hits} hits / ${c.misses} misses${c.writes ? ` / ${c.writes} writes` : ''}`);
+    const categorizedHits = c.memoryHits + c.diskHits + c.coalescedHits;
+    const uncategorizedHits = Math.max(0, c.hits - categorizedHits);
+    const avoided = categorizedHits + uncategorizedHits;
+    const avoidanceDenominator = avoided + c.misses;
+    const avoidanceRate = avoidanceDenominator > 0 ? `${((100 * avoided) / avoidanceDenominator).toFixed(1)}%` : 'n/a';
+    lines.push(
+      `  ${name}: memory_hits=${c.memoryHits} disk_hits=${c.diskHits} coalesced_hits=${c.coalescedHits} uncategorized_hits=${uncategorizedHits} revalidated_304=${c.revalidated304} misses=${c.misses} writes=${c.writes} avoidance_rate=${avoidanceRate}`,
+    );
   }
   lines.push('');
 
@@ -822,7 +962,7 @@ function diagnosticFlags(args: {
   packages: { name: string; ms: number }[];
   net: ReturnType<typeof networkSummary>;
   repeats: { key: string; count: number; ms: number }[];
-  caches: Map<string, { hits: number; misses: number; writes: number }>;
+  caches: Map<string, CacheStats>;
   exec: ExecRecord[];
 }): string[] {
   const flags: string[] = [];
@@ -837,7 +977,7 @@ function diagnosticFlags(args: {
   }
 
   if (packages.length > 0 && net.requestCount / packages.length > HIGH_REQUESTS_PER_PACKAGE) {
-    flags.push(`HIGH_HTTP_REQUEST_COUNT: ${net.requestCount} HTTP requests were issued for ${packages.length} packages`);
+    flags.push(`HIGH_HTTP_REQUEST_COUNT: ${net.requestCount} logical HTTP requests were issued for ${packages.length} packages`);
   }
 
   for (const r of repeats) {
@@ -847,9 +987,10 @@ function diagnosticFlags(args: {
   }
 
   for (const [name, c] of caches) {
-    const total = c.hits + c.misses;
-    if (total >= 5 && c.hits / total < LOW_CACHE_HIT_RATE) {
-      flags.push(`LOW_CACHE_HIT_RATE: ${name} cache hit rate was ${((c.hits / total) * 100).toFixed(1)}%`);
+    const avoided = c.memoryHits + c.diskHits + c.coalescedHits + Math.max(0, c.hits - c.memoryHits - c.diskHits - c.coalescedHits);
+    const total = avoided + c.misses;
+    if (total >= 5 && avoided / total < LOW_CACHE_HIT_RATE) {
+      flags.push(`LOW_CACHE_HIT_RATE: ${name} cache network avoidance rate was ${((avoided / total) * 100).toFixed(1)}%`);
     }
   }
 
@@ -868,12 +1009,12 @@ function diagnosticFlags(args: {
     flags.push(`SLOW_HTTP_REQUEST: ${slowestRequest.method} ${slowestRequest.host}${slowestRequest.path} took ${fmtSec(slowestRequest.durationMs)}`);
   }
 
-  if (net.requestCount >= MIN_REQUESTS_FOR_CONCURRENCY_NOTE && net.maxConcurrent <= 1) {
-    flags.push(`LOW_OBSERVED_CONCURRENCY: ${net.requestCount} HTTP requests were made but the maximum observed concurrency was ${net.maxConcurrent}`);
+  if (net.attemptCount >= MIN_REQUESTS_FOR_CONCURRENCY_NOTE && net.maxConcurrentAttempts <= 1) {
+    flags.push(`LOW_OBSERVED_CONCURRENCY: ${net.attemptCount} HTTP network attempts were made but the maximum observed attempt concurrency was ${net.maxConcurrentAttempts}`);
   }
 
   if (net.retries > HIGH_RETRY_COUNT) {
-    flags.push(`HIGH_RETRY_COUNT: ${net.retries} retries observed across ${net.requestCount} requests (${fmtSec(net.backoffMs)} spent backing off)`);
+    flags.push(`HIGH_RETRY_COUNT: ${net.retries} retries observed across ${net.requestCount} logical requests (${fmtSec(net.backoffMs)} spent backing off)`);
   }
 
   if (net.repeatedFetches.length > 0) {

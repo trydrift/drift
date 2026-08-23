@@ -9,6 +9,7 @@ import {
   hasActiveRun,
   noteCache,
   recordExecCommand,
+  recordHttpAttempt,
   recordHttpRequest,
   redactCommand,
   redactText,
@@ -22,6 +23,41 @@ import {
 import { clearHttpCache, configureHttpDiskCache, fetchText } from '../dist/util/http.js';
 
 const run = promisify(execFile);
+
+async function waitForFile(path: string): Promise<void> {
+  for (let i = 0; i < 200; i++) {
+    try {
+      await readFile(path);
+      return;
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+  }
+  throw new Error(`Timed out waiting for ${path}`);
+}
+
+function childRunScript(): string {
+  return `
+    import { writeFile, readFile } from 'node:fs/promises';
+    import { startRunLog, startSpan } from '${join(process.cwd(), 'dist/util/diagnostics.js')}';
+    const [root, label, started, finishSignal] = process.argv.slice(1);
+    const log = startRunLog({ command: 'drift outdated (' + label + ')', mode: 'quick', repoRoot: root });
+    await log.run(async () => {
+      const span = startSpan('package', { package: 'from-' + label });
+      await writeFile(started, 'started');
+      for (;;) {
+        try {
+          await readFile(finishSignal);
+          break;
+        } catch {
+          await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+      }
+      span.end();
+    });
+    log.finish('ok');
+  `;
+}
 
 async function withGitRepo<T>(fn: (root: string) => Promise<T>): Promise<T> {
   const root = await mkdtemp(join(tmpdir(), 'drift-diag-'));
@@ -288,6 +324,30 @@ describe('concurrency safety', () => {
     });
   });
 
+  test('duplicate package spans use wall-clock union instead of summed overlap', async () => {
+    await withGitRepo(async (root) => {
+      const log = startRunLog({ command: 'drift outdated', mode: 'quick', repoRoot: root });
+      await log.run(() =>
+        Promise.all([
+          withSpan('package', { package: 'dup' }, async () => {
+            await new Promise((r) => setTimeout(r, 30));
+          }),
+          withSpan('package', { package: 'dup' }, async () => {
+            await new Promise((r) => setTimeout(r, 30));
+          }),
+        ]),
+      );
+      log.finish('ok');
+
+      const contents = await readFile(log.path!, 'utf8');
+      const line = contents.split('\n').find((l) => l.trim().startsWith('dup')) ?? '';
+      const match = /(\d+\.\d+)s/.exec(line);
+      assert.ok(match, line);
+      assert.ok(Number(match[1]) < 0.08, line);
+      assert.doesNotMatch(contents, /spanning 1\d\d\.\d%/);
+    });
+  });
+
   test('overlapping runs cannot mix events: A starts, B starts, A finishes after B, run.log is only B', async () => {
     await withGitRepo(async (root) => {
       const runA = startRunLog({ command: 'drift outdated (A)', mode: 'quick', repoRoot: root });
@@ -332,31 +392,91 @@ describe('concurrency safety', () => {
       assert.ok(!contents.includes('(older)'));
     });
   });
+
+  test('cross-process older run cannot overwrite newer run when newer finishes first', async () => {
+    await withGitRepo(async (root) => {
+      const dir = await mkdtemp(join(tmpdir(), 'drift-diag-race-'));
+      try {
+        const aStarted = join(dir, 'a.started');
+        const bStarted = join(dir, 'b.started');
+        const aFinish = join(dir, 'a.finish');
+        const bFinish = join(dir, 'b.finish');
+        const script = childRunScript();
+        const procA = run(process.execPath, ['--input-type=module', '-e', script, root, 'A', aStarted, aFinish]);
+        await waitForFile(aStarted);
+        const procB = run(process.execPath, ['--input-type=module', '-e', script, root, 'B', bStarted, bFinish]);
+        await waitForFile(bStarted);
+
+        await writeFile(bFinish, 'finish');
+        await procB;
+        await writeFile(aFinish, 'finish');
+        await procA;
+
+        const contents = await readFile(join(root, '.git', 'drift', 'run.log'), 'utf8');
+        assert.ok(contents.includes('(B)'));
+        assert.ok(contents.includes('from-B'));
+        assert.ok(!contents.includes('(A)'));
+        assert.ok(!contents.includes('from-A'));
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    });
+  });
+
+  test('cross-process newer run wins when older finishes first too', async () => {
+    await withGitRepo(async (root) => {
+      const dir = await mkdtemp(join(tmpdir(), 'drift-diag-race-'));
+      try {
+        const aStarted = join(dir, 'a.started');
+        const bStarted = join(dir, 'b.started');
+        const aFinish = join(dir, 'a.finish');
+        const bFinish = join(dir, 'b.finish');
+        const script = childRunScript();
+        const procA = run(process.execPath, ['--input-type=module', '-e', script, root, 'A', aStarted, aFinish]);
+        await waitForFile(aStarted);
+        const procB = run(process.execPath, ['--input-type=module', '-e', script, root, 'B', bStarted, bFinish]);
+        await waitForFile(bStarted);
+
+        await writeFile(aFinish, 'finish');
+        await procA;
+        await writeFile(bFinish, 'finish');
+        await procB;
+
+        const contents = await readFile(join(root, '.git', 'drift', 'run.log'), 'utf8');
+        assert.ok(contents.includes('(B)'));
+        assert.ok(contents.includes('from-B'));
+        assert.ok(!contents.includes('(A)'));
+        assert.ok(!contents.includes('from-A'));
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    });
+  });
 });
 
 describe('HTTP and exec aggregation', () => {
-  test('network summary aggregates by host and reports revalidated/fetched, without leaking a token', async () => {
+  test('network summary aggregates by host and reports revalidation/network-required requests, without leaking a token', async () => {
     await withGitRepo(async (root) => {
       const log = startRunLog({ command: 'drift outdated', mode: 'quick', repoRoot: root });
       await log.run(async () => {
         recordHttpRequest({ host: 'registry.npmjs.org', method: 'GET', path: '/react', startOffsetMs: 0, durationMs: 120, status: 200, cache: 'miss' });
-        recordHttpRequest({ host: 'registry.npmjs.org', method: 'GET', path: '/vue', startOffsetMs: 10, durationMs: 400, status: 304, cache: 'hit' });
+        recordHttpRequest({ host: 'registry.npmjs.org', method: 'GET', path: '/vue', startOffsetMs: 10, durationMs: 400, status: 304, cache: 'revalidated_304' });
         recordHttpRequest({ host: 'cdn.jsdelivr.net', method: 'GET', path: '/npm/react/index.d.ts', startOffsetMs: 20, durationMs: 900, status: 200, cache: 'miss' });
       });
       log.finish('ok');
 
       const contents = await readFile(log.path!, 'utf8');
-      assert.match(contents, /requests: 3/);
+      assert.match(contents, /logical_requests: 3/);
       assert.match(contents, /registry\.npmjs\.org\s+requests=2/);
       assert.match(contents, /cdn\.jsdelivr\.net\s+requests=1/);
       assert.match(contents, /revalidated_304: 1/);
-      assert.match(contents, /fetched: 2/);
+      assert.match(contents, /network_required_requests: 3/);
       assert.ok(!contents.toLowerCase().includes('authorization'));
       assert.ok(!contents.toLowerCase().includes('bearer'));
     });
   });
 
-  test('serial (non-overlapping) requests measure max_concurrent as 1', async () => {
+  test('20 serial attempts measure max_concurrent_attempts as 1', async () => {
     await withGitRepo(async (root) => {
       const log = startRunLog({ command: 'drift outdated', mode: 'quick', repoRoot: root });
       await log.run(async () => {
@@ -368,11 +488,11 @@ describe('HTTP and exec aggregation', () => {
       });
       log.finish('ok');
       const contents = await readFile(log.path!, 'utf8');
-      assert.match(contents, /max_concurrent: 1/);
+      assert.match(contents, /max_concurrent_attempts: 1/);
     });
   });
 
-  test('two overlapping requests measure max_concurrent as 2', async () => {
+  test('two overlapping attempts measure max_concurrent_attempts as 2', async () => {
     await withGitRepo(async (root) => {
       const log = startRunLog({ command: 'drift outdated', mode: 'quick', repoRoot: root });
       await log.run(async () => {
@@ -381,7 +501,26 @@ describe('HTTP and exec aggregation', () => {
       });
       log.finish('ok');
       const contents = await readFile(log.path!, 'utf8');
-      assert.match(contents, /max_concurrent: 2/);
+      assert.match(contents, /max_concurrent_attempts: 2/);
+    });
+  });
+
+  test('backoff between attempts does not inflate observed HTTP concurrency', async () => {
+    await withGitRepo(async (root) => {
+      const log = startRunLog({ command: 'drift outdated', mode: 'quick', repoRoot: root });
+      await log.run(async () => {
+        recordHttpRequest({ host: 'h', method: 'GET', path: '/a', startOffsetMs: 0, durationMs: 5200, status: 200, cache: 'miss', retries: 1, backoffMs: 5000 });
+        recordHttpAttempt({ host: 'h', method: 'GET', path: '/a', startOffsetMs: 0, durationMs: 100, status: 503 });
+        recordHttpAttempt({ host: 'h', method: 'GET', path: '/b', startOffsetMs: 1000, durationMs: 100, status: 200 });
+        recordHttpRequest({ host: 'h', method: 'GET', path: '/b', startOffsetMs: 1000, durationMs: 100, status: 200, cache: 'miss' });
+        recordHttpAttempt({ host: 'h', method: 'GET', path: '/a', startOffsetMs: 5100, durationMs: 100, status: 200 });
+      });
+      log.finish('ok');
+      const contents = await readFile(log.path!, 'utf8');
+      assert.match(contents, /logical_requests: 2/);
+      assert.match(contents, /network_attempts: 3/);
+      assert.match(contents, /max_concurrent_attempts: 1/);
+      assert.match(contents, /retry_backoff_time: 5\.00s/);
     });
   });
 
@@ -396,8 +535,8 @@ describe('HTTP and exec aggregation', () => {
         });
         log.finish('ok');
         const contents = await readFile(log.path!, 'utf8');
-        assert.match(contents, /max_concurrent: 1/);
-        assert.ok(!contents.includes('max_concurrent: 16'));
+        assert.match(contents, /max_concurrent_attempts: 1/);
+        assert.ok(!contents.includes('max_concurrent_attempts: 16'));
       });
     } finally {
       if (previous === undefined) delete process.env.DRIFT_NETWORK_CONCURRENCY;
@@ -415,9 +554,9 @@ describe('HTTP and exec aggregation', () => {
       });
       log.finish('ok');
       const contents = await readFile(log.path!, 'utf8');
-      assert.match(contents, /requests: 1/);
+      assert.match(contents, /logical_requests: 1/);
       assert.match(contents, /retries: 2/);
-      assert.match(contents, /backoff_time: 0\.15s/);
+      assert.match(contents, /retry_backoff_time: 0\.15s/);
     });
   });
 
@@ -438,7 +577,7 @@ describe('HTTP and exec aggregation', () => {
         await log.run(() => fetchText('https://example.com/flaky.md', { retries: 2 }));
         log.finish('ok');
         const contents = await readFile(log.path!, 'utf8');
-        assert.match(contents, /requests: 1/);
+        assert.match(contents, /logical_requests: 1/);
         assert.match(contents, /retries: 2/);
       });
       assert.equal(calls, 3);
@@ -489,7 +628,79 @@ describe('HTTP and exec aggregation', () => {
       log.finish('ok');
 
       const contents = await readFile(log.path!, 'utf8');
-      assert.match(contents, /type-surface: 1 hits \/ 2 misses/);
+      assert.match(contents, /type-surface: .*misses=2/);
+    });
+  });
+
+  test('HTTP cache diagnostics distinguish memory, disk, coalesced, stale, 304, misses, and writes', async () => {
+    const realFetch = globalThis.fetch;
+    const cacheDir = await mkdtemp(join(tmpdir(), 'drift-diag-cache-'));
+    configureHttpDiskCache(cacheDir);
+    clearHttpCache();
+    let calls = 0;
+    globalThis.fetch = (async (url: string, init?: RequestInit) => {
+      calls += 1;
+      if (url.endsWith('/coalesced')) {
+        await new Promise((resolve) => setTimeout(resolve, 30));
+        return new Response('coalesced', { status: 200, headers: { etag: '"coalesced"' } });
+      }
+      if (url.endsWith('/revalidate') && init?.headers && new Headers(init.headers).has('if-none-match')) {
+        return new Response(null, { status: 304 });
+      }
+      return new Response(`body-${calls}`, { status: 200, headers: { etag: `"${calls}"` } });
+    }) as typeof fetch;
+    try {
+      await withGitRepo(async (root) => {
+        const log = startRunLog({ command: 'drift outdated', mode: 'quick', repoRoot: root });
+        await log.run(async () => {
+          await fetchText('https://example.com/memory');
+          await fetchText('https://example.com/memory');
+
+          clearHttpCache();
+          await fetchText('https://example.com/memory');
+
+          clearHttpCache();
+          await Promise.all([fetchText('https://example.com/coalesced'), fetchText('https://example.com/coalesced')]);
+
+          await fetchText('https://example.com/stale', { cacheTtlMs: 1 });
+          clearHttpCache();
+          await new Promise((resolve) => setTimeout(resolve, 5));
+          await fetchText('https://example.com/stale', { cacheTtlMs: 1 });
+
+          await fetchText('https://example.com/revalidate');
+          clearHttpCache();
+          await fetchText('https://example.com/revalidate', { cacheTtlMs: 1 });
+        });
+        log.finish('ok');
+        const contents = await readFile(log.path!, 'utf8');
+        assert.match(contents, /http: .*memory_hits=1/);
+        assert.match(contents, /http: .*disk_hits=1/);
+        assert.match(contents, /http: .*coalesced_hits=1/);
+        assert.match(contents, /http: .*revalidated_304=1/);
+        assert.match(contents, /http: .*misses=6/);
+        assert.match(contents, /http: .*writes=6/);
+      });
+    } finally {
+      globalThis.fetch = realFetch;
+      clearHttpCache();
+      configureHttpDiskCache(null);
+      await rm(cacheDir, { recursive: true, force: true });
+    }
+  });
+
+  test('many memory hits produce a healthy HTTP network avoidance rate', async () => {
+    await withGitRepo(async (root) => {
+      const log = startRunLog({ command: 'drift outdated', mode: 'quick', repoRoot: root });
+      await log.run(async () => {
+        for (let i = 0; i < 80; i++) noteCache('http', 'memory_hit');
+        for (let i = 0; i < 20; i++) noteCache('http', 'miss');
+      });
+      log.finish('ok');
+      const contents = await readFile(log.path!, 'utf8');
+      assert.match(contents, /http: .*memory_hits=80/);
+      assert.match(contents, /http: .*misses=20/);
+      assert.match(contents, /avoidance_rate=80\.0%/);
+      assert.ok(!contents.includes('LOW_CACHE_HIT_RATE'));
     });
   });
 
@@ -520,7 +731,7 @@ describe('diagnostic flags are evidence-based', () => {
       log.finish('ok');
       const contents = await readFile(log.path!, 'utf8');
       assert.ok(!contents.includes('HIGH_NETWORK_WAIT'));
-      assert.match(contents, /max_concurrent: 10/);
+      assert.match(contents, /max_concurrent_attempts: 10/);
     });
   });
 
@@ -536,7 +747,7 @@ describe('diagnostic flags are evidence-based', () => {
       });
       log.finish('ok');
       const contents = await readFile(log.path!, 'utf8');
-      assert.match(contents, /LOW_OBSERVED_CONCURRENCY: 12 HTTP requests were made but the maximum observed concurrency was 1/);
+      assert.match(contents, /LOW_OBSERVED_CONCURRENCY: 12 HTTP network attempts were made but the maximum observed attempt concurrency was 1/);
     });
   });
 
