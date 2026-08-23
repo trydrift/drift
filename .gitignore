@@ -9,7 +9,6 @@ dist/
 .DS_Store
 coverage/
 .drift-cache/
-.drift/logs/
 settings.json
 
 # Build output for the landing page (site/).
