@@ -32,8 +32,6 @@ export interface FetchOptions {
    * fires — the same way only its `headers` and `timeoutMs` apply.
    */
   onRetry?: (attempt: number, reason: 'rate-limited' | 'server-error' | 'network-error') => void;
-  /** Internal: fetchJson delegates to fetchText but remains one logical request. */
-  logicalRequest?: boolean;
 }
 
 const DEFAULT_TIMEOUT_MS = 10_000;
@@ -282,8 +280,10 @@ export function fetchJson<T>(url: string, options: FetchOptions = {}): Promise<T
   if (profiling() && inFlight.has(cacheKey)) count('http.cache.coalesced');
   const start = runElapsedMs();
   const joined = inFlight.has(cacheKey);
-  return coalesce(cacheKey, () => fetchAndParseJson<T>(url, cacheKey, options)).then((value) => {
-    recordDiag({ url, method: 'GET', startOffsetMs: start, status: null, cache: joined ? 'coalesced_hit' : 'miss' });
+  const result = coalesce(cacheKey, () => fetchAndParseJson<T>(url, cacheKey, options));
+  if (!joined) return result;
+  return result.then((value) => {
+    recordDiag({ url, method: 'GET', startOffsetMs: start, status: null, cache: 'coalesced_hit' });
     return value;
   });
 }
@@ -295,7 +295,6 @@ async function fetchAndParseJson<T>(
 ): Promise<T | null> {
   const text = await fetchText(url, {
     ...options,
-    logicalRequest: false,
     headers: { Accept: 'application/json', ...options.headers },
   });
   if (text === null) {
@@ -319,16 +318,14 @@ export function fetchText(url: string, options: FetchOptions = {}): Promise<stri
   if (cached.hit) {
     count('http.cache.memory');
     noteCache('http', 'memory_hit');
-    if (options.logicalRequest !== false) {
-      recordDiag({ url, method: 'GET', startOffsetMs: runElapsedMs(), status: null, cache: 'memory_hit' });
-    }
+    recordDiag({ url, method: 'GET', startOffsetMs: runElapsedMs(), status: null, cache: 'memory_hit' });
     return Promise.resolve(cached.value);
   }
   if (profiling() && inFlight.has(cacheKey)) count('http.cache.coalesced');
   const start = runElapsedMs();
   const joined = inFlight.has(cacheKey);
   return coalesce(cacheKey, () => fetchTextUncoalesced(url, cacheKey, options)).then((value) => {
-    if (joined && options.logicalRequest !== false) {
+    if (joined) {
       recordDiag({ url, method: 'GET', startOffsetMs: start, status: null, cache: 'coalesced_hit' });
     }
     return value;
@@ -352,7 +349,7 @@ async function fetchTextUncoalesced(
     count('http.cache.disk');
     noteCache('http', 'disk_hit');
     cacheSet(cacheKey, disk.body);
-    if (options.logicalRequest !== false) recordDiag({ url, method: 'GET', startOffsetMs: runElapsedMs(), status: null, cache: 'disk_hit' });
+    recordDiag({ url, method: 'GET', startOffsetMs: runElapsedMs(), status: null, cache: 'disk_hit' });
     return disk.body;
   }
   // A remembered 404. Only ever written for a definitive absence — see
@@ -369,7 +366,7 @@ async function fetchTextUncoalesced(
     count('http.cache.disk.absent');
     noteCache('http', 'disk_hit');
     cacheSet(cacheKey, null);
-    if (options.logicalRequest !== false) recordDiag({ url, method: 'GET', startOffsetMs: runElapsedMs(), status: null, cache: 'disk_hit' });
+    recordDiag({ url, method: 'GET', startOffsetMs: runElapsedMs(), status: null, cache: 'disk_hit' });
     return null;
   }
   // Everything past this point needs the network — a stale entry requiring

@@ -20,7 +20,7 @@ import {
   startSpan,
   withSpan,
 } from '../dist/util/diagnostics.js';
-import { clearHttpCache, configureHttpDiskCache, fetchText } from '../dist/util/http.js';
+import { clearHttpCache, configureHttpDiskCache, fetchJson, fetchText } from '../dist/util/http.js';
 
 const run = promisify(execFile);
 
@@ -455,6 +455,128 @@ describe('concurrency safety', () => {
 });
 
 describe('HTTP and exec aggregation', () => {
+  test('fetchJson network request is one logical request', async () => {
+    const realFetch = globalThis.fetch;
+    const cacheDir = await mkdtemp(join(tmpdir(), 'drift-diag-json-'));
+    configureHttpDiskCache(cacheDir);
+    clearHttpCache();
+    let calls = 0;
+    globalThis.fetch = (() => {
+      calls += 1;
+      return Promise.resolve(new Response('{"ok":true}', { status: 200 }));
+    }) as typeof fetch;
+    try {
+      await withGitRepo(async (root) => {
+        const log = startRunLog({ command: 'drift outdated', mode: 'quick', repoRoot: root });
+        await log.run(() => fetchJson('https://example.com/data.json'));
+        log.finish('ok');
+        const contents = await readFile(log.path!, 'utf8');
+        assert.match(contents, /logical_requests: 1/);
+        assert.match(contents, /network_attempts: 1/);
+        assert.match(contents, /network_required_requests: 1/);
+        assert.match(contents, /example\.com\s+requests=1/);
+      });
+      assert.equal(calls, 1);
+    } finally {
+      globalThis.fetch = realFetch;
+      clearHttpCache();
+      configureHttpDiskCache(null);
+      await rm(cacheDir, { recursive: true, force: true });
+    }
+  });
+
+  test('fetchJson retries remain one logical request', async () => {
+    const realFetch = globalThis.fetch;
+    const cacheDir = await mkdtemp(join(tmpdir(), 'drift-diag-json-retry-'));
+    configureHttpDiskCache(cacheDir);
+    clearHttpCache();
+    let calls = 0;
+    globalThis.fetch = (() => {
+      calls += 1;
+      return Promise.resolve(calls < 3 ? new Response('retry', { status: 503 }) : new Response('{"ok":true}', { status: 200 }));
+    }) as typeof fetch;
+    try {
+      await withGitRepo(async (root) => {
+        const log = startRunLog({ command: 'drift outdated', mode: 'quick', repoRoot: root });
+        await log.run(() => fetchJson('https://example.com/retry.json', { retries: 2 }));
+        log.finish('ok');
+        const contents = await readFile(log.path!, 'utf8');
+        assert.match(contents, /logical_requests: 1/);
+        assert.match(contents, /network_attempts: 3/);
+        assert.match(contents, /retries: 2/);
+      });
+      assert.equal(calls, 3);
+    } finally {
+      globalThis.fetch = realFetch;
+      clearHttpCache();
+      configureHttpDiskCache(null);
+      await rm(cacheDir, { recursive: true, force: true });
+    }
+  });
+
+  test('concurrent fetchJson calls coalesce without losing the second logical caller', async () => {
+    const realFetch = globalThis.fetch;
+    const cacheDir = await mkdtemp(join(tmpdir(), 'drift-diag-json-coalesce-'));
+    configureHttpDiskCache(cacheDir);
+    clearHttpCache();
+    let calls = 0;
+    globalThis.fetch = (async () => {
+      calls += 1;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      return new Response('{"ok":true}', { status: 200 });
+    }) as typeof fetch;
+    try {
+      await withGitRepo(async (root) => {
+        const log = startRunLog({ command: 'drift outdated', mode: 'quick', repoRoot: root });
+        await log.run(() => Promise.all([fetchJson('https://example.com/coalesce.json'), fetchJson('https://example.com/coalesce.json')]));
+        log.finish('ok');
+        const contents = await readFile(log.path!, 'utf8');
+        assert.match(contents, /logical_requests: 2/);
+        assert.match(contents, /network_attempts: 1/);
+        assert.match(contents, /coalesced_hits=1/);
+      });
+      assert.equal(calls, 1);
+    } finally {
+      globalThis.fetch = realFetch;
+      clearHttpCache();
+      configureHttpDiskCache(null);
+      await rm(cacheDir, { recursive: true, force: true });
+    }
+  });
+
+  test('fetchJson disk cache hit is a logical request without a second network attempt', async () => {
+    const realFetch = globalThis.fetch;
+    const cacheDir = await mkdtemp(join(tmpdir(), 'drift-diag-json-disk-'));
+    configureHttpDiskCache(cacheDir);
+    clearHttpCache();
+    let calls = 0;
+    globalThis.fetch = (() => {
+      calls += 1;
+      return Promise.resolve(new Response('{"ok":true}', { status: 200 }));
+    }) as typeof fetch;
+    try {
+      await withGitRepo(async (root) => {
+        const log = startRunLog({ command: 'drift outdated', mode: 'quick', repoRoot: root });
+        await log.run(async () => {
+          await fetchJson('https://example.com/disk.json');
+          clearHttpCache();
+          await fetchJson('https://example.com/disk.json');
+        });
+        log.finish('ok');
+        const contents = await readFile(log.path!, 'utf8');
+        assert.match(contents, /logical_requests: 2/);
+        assert.match(contents, /network_attempts: 1/);
+        assert.match(contents, /disk_hits=1/);
+      });
+      assert.equal(calls, 1);
+    } finally {
+      globalThis.fetch = realFetch;
+      clearHttpCache();
+      configureHttpDiskCache(null);
+      await rm(cacheDir, { recursive: true, force: true });
+    }
+  });
+
   test('network summary aggregates by host and reports revalidation/network-required requests, without leaking a token', async () => {
     await withGitRepo(async (root) => {
       const log = startRunLog({ command: 'drift outdated', mode: 'quick', repoRoot: root });
