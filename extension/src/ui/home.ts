@@ -12,7 +12,7 @@ import type { RevisionRequest } from '../agents/types.js';
 import { renderPullRequestBody } from '../../../src/report/markdown.js';
 import { inspectLocalRepo, WORKING_TREE } from '../../../src/repo/local-git.js';
 import { DriftConfigSchema, opensPullRequestAsDraft, type DriftConfig } from '../../../src/config/schema.js';
-import { loadWorkspaceConfig, runAnalysis } from '../analyze.js';
+import { loadWorkspaceConfig, runAnalysis, resolveScanChoices } from '../analyze.js';
 import { deepVerify, type AnalysisOptions } from '../../../src/analysis.js';
 import { describeVerification } from '../../../src/verification/apply.js';
 import { envWithShellPath } from '../shell-path.js';
@@ -1311,6 +1311,20 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     // for workspace members within a single repository.
     const multiRoot = contexts.length > 1;
 
+    // A quiet scan (activation's `scanOnStartup`) must never interrupt with a
+    // prompt nobody asked for — it falls back to what Quick Scan has always
+    // meant here: static analysis only, dev dependencies included. An
+    // explicit `/scan` asks at most once for the whole run, whatever
+    // `drift.analysis.verifyMode`/`dependencyScope` still leave unresolved;
+    // see `resolveScanChoices`.
+    const choices = options.quiet
+      ? { deep: false, includeDev: true }
+      : await resolveScanChoices(contexts[0]!.config);
+    if (!choices) {
+      this.session.notice('info', 'Scan cancelled.');
+      return;
+    }
+
     this.scanned = true;
     this.clearStale();
     this.state.setCandidates([]);
@@ -1342,22 +1356,24 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
             root: ctx.root,
             repo: ctx.repo,
             managers,
-            // Quick Scan: the panel's default scan never installs anything or
-            // runs this repository's own checks. Deep Verification is a
-            // separate, explicit action — see `verifyOne`/`verifyAll` — so a
-            // developer sees static results immediately and chooses per
-            // package, or all at once, whether to pay for the real thing.
-            verify: { enabled: false },
+            // Quick Scan (the default outcome of `resolveScanChoices`) never
+            // installs anything or runs this repository's own checks; Deep
+            // Verification — chosen via `drift.analysis.verifyMode` or this
+            // run's prompt, same as `verifyOne`/`verifyAll` do explicitly per
+            // package — pays for the real thing up front instead. Either way
+            // Quick Scan itself, as a mode, never gains installs or checks:
+            // `choices.deep` is what is different here, not what "quick" means.
+            verify: { enabled: choices.deep },
             output: this.output,
             // Every direct dependency, every time. What counts as a dependency
-            // worth checking is a settings question — `drift.analysis.includeDev`
-            // and `includePatch`, already merged into this config — and never a
-            // side effect of how hard the agent was asked to think. A scan that
-            // silently looked at less would report packages as safe because
-            // nothing had looked at them.
+            // worth checking is a settings question — `drift.analysis.dependencyScope`
+            // (or the older `includeDev`/`includePatch`), resolved above into
+            // `choices.includeDev` — and never a side effect of how hard the
+            // agent was asked to think. A scan that silently looked at less
+            // would report packages as safe because nothing had looked at them.
             config: ctx.config,
             breadth: {
-              includeDev: ctx.config.triggerOn.dev,
+              includeDev: choices.includeDev,
               maxSites: QUICK_SCAN_MAX_SITES,
               maxPackages: 0,
             },

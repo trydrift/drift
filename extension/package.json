@@ -521,8 +521,32 @@
         "drift.analysis.includeDev": {
           "type": "boolean",
           "default": true,
-          "description": "Analyse dev, optional, and peer dependencies alongside runtime ones.",
+          "description": "Analyse dev, optional, and peer dependencies alongside runtime ones. Superseded by drift.analysis.dependencyScope once that is explicitly set; kept for anyone who already configured this.",
           "order": 12
+        },
+        "drift.analysis.dependencyScope": {
+          "type": "string",
+          "enum": ["runtime", "runtime+dev", "ask"],
+          "enumDescriptions": [
+            "Scan production dependencies only. Faster.",
+            "Also scan development dependencies. More complete, but can take longer.",
+            "Ask each time a scan starts."
+          ],
+          "default": "ask",
+          "markdownDescription": "Which dependencies a scan looks at — the same `runtime`/`runtime+dev` choice as this Action's `dependency-scope` input. **Ask** is the default for a new install; set this explicitly to stop being asked. If you already set `#drift.analysis.includeDev#` yourself, that keeps working until you set this too — it is not read once this is.",
+          "order": 12.5
+        },
+        "drift.analysis.verifyMode": {
+          "type": "string",
+          "enum": ["quick", "deep", "ask"],
+          "enumDescriptions": [
+            "Static analysis only. Fastest.",
+            "Also installs the upgrade and runs project checks. Much slower.",
+            "Ask each time a scan starts."
+          ],
+          "default": "ask",
+          "markdownDescription": "Whether a scan stops at static analysis (**quick**) or goes on to install each candidate and run this project's own checks (**deep**) — the same two modes as this Action's `verify-mode` input and the CLI's `--verify` flag. **Ask** is the default for a new install. Quick never installs anything, runs a build, or runs tests, regardless of this setting; Deep is what adds it.",
+          "order": 9
         },
         "drift.analysis.concurrency": {
           "type": "number",

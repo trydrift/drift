@@ -216,4 +216,92 @@ function explicitlySet(settings: vscode.WorkspaceConfiguration, key: string): bo
   );
 }
 
+/** What a scan actually does, once `resolveScanChoices` has settled both questions. */
+export interface ScanChoices {
+  /** `true` — Deep Verification: install each candidate and run this project's own checks. */
+  deep: boolean;
+  /** `true` — also analyse dev, optional, and peer dependencies. */
+  includeDev: boolean;
+}
+
+/**
+ * Settle "Quick Scan or Deep Verification?" and "runtime only or +dev?" for
+ * one scan, asking the developer at most once.
+ *
+ * Both questions are independent settings (`drift.analysis.verifyMode`,
+ * `drift.analysis.dependencyScope`), each of which can itself be `'ask'` —
+ * the default for a new install. Two separate prompts every time a scan
+ * starts would be exactly the kind of friction that gets a feature turned
+ * off, so when both still need asking they are asked together, in one
+ * QuickPick with four combined choices, rather than as two interruptions in
+ * a row. `undefined` means the developer dismissed the prompt — the caller's
+ * job is to abort that scan rather than guess.
+ *
+ * `drift.analysis.includeDev` (boolean, pre-existing) is honoured only when
+ * `drift.analysis.dependencyScope` was never explicitly set — the moment a
+ * developer sets the new setting, the old one stops being read for this
+ * decision, so there is exactly one place "ask" can come from and no
+ * ambiguity about which setting won.
+ */
+export async function resolveScanChoices(config: DriftConfig): Promise<ScanChoices | undefined> {
+  const settings = vscode.workspace.getConfiguration('drift');
+
+  const verifyMode = settings.get<'quick' | 'deep' | 'ask'>('analysis.verifyMode', 'ask');
+  const dependencyScope = explicitlySet(settings, 'analysis.dependencyScope')
+    ? settings.get<'runtime' | 'runtime+dev' | 'ask'>('analysis.dependencyScope', 'ask')
+    : explicitlySet(settings, 'analysis.includeDev')
+      ? (settings.get<boolean>('analysis.includeDev', config.triggerOn.dev) ? 'runtime+dev' : 'runtime')
+      : 'ask';
+
+  const askDeep = verifyMode === 'ask';
+  const askDev = dependencyScope === 'ask';
+
+  if (!askDeep && !askDev) {
+    return { deep: verifyMode === 'deep', includeDev: dependencyScope === 'runtime+dev' };
+  }
+
+  if (askDeep && askDev) {
+    const picked = await vscode.window.showQuickPick<vscode.QuickPickItem & ScanChoices>(
+      [
+        { label: 'Quick Scan, dev dependencies included', deep: false, includeDev: true, detail: 'Static analysis only. Fastest.' },
+        { label: 'Quick Scan, production dependencies only', deep: false, includeDev: false, detail: 'Static analysis only. Fastest.' },
+        {
+          label: 'Deep Verification, dev dependencies included',
+          deep: true,
+          includeDev: true,
+          detail: 'Also installs the upgrade and runs project checks. Much slower.',
+        },
+        {
+          label: 'Deep Verification, production dependencies only',
+          deep: true,
+          includeDev: false,
+          detail: 'Also installs the upgrade and runs project checks. Much slower.',
+        },
+      ],
+      { title: 'Drift: how should this scan run?', ignoreFocusOut: true },
+    );
+    return picked ? { deep: picked.deep, includeDev: picked.includeDev } : undefined;
+  }
+
+  if (askDeep) {
+    const picked = await vscode.window.showQuickPick<vscode.QuickPickItem & { deep: boolean }>(
+      [
+        { label: 'Quick Scan', deep: false, detail: 'Static analysis only. Fastest.' },
+        { label: 'Deep Verification', deep: true, detail: 'Also installs the upgrade and runs project checks. Much slower.' },
+      ],
+      { title: 'Drift: how should this scan run?', ignoreFocusOut: true },
+    );
+    return picked ? { deep: picked.deep, includeDev: dependencyScope === 'runtime+dev' } : undefined;
+  }
+
+  const picked = await vscode.window.showQuickPick<vscode.QuickPickItem & { includeDev: boolean }>(
+    [
+      { label: 'Runtime + dev dependencies', includeDev: true, detail: 'More complete, but can take longer.' },
+      { label: 'Runtime dependencies only', includeDev: false, detail: 'Faster.' },
+    ],
+    { title: 'Drift: which dependencies should this scan look at?', ignoreFocusOut: true },
+  );
+  return picked ? { deep: verifyMode === 'deep', includeDev: picked.includeDev } : undefined;
+}
+
 export { PARSERS };
