@@ -1053,7 +1053,41 @@ export async function scanUpgrades(args: {
   // machine rather than by the registries.
   const analysisPhase = span('phase', 'analysis');
   const upstreamCache = new Map<string, Promise<PreparedUpstreamEvidence>>();
-  const prepareUpstream = (dep: ScanDependency, selected: string): Promise<PreparedUpstreamEvidence> => {
+  // Progress fan-out for shared upstream work: every manifest row waiting on
+  // the same exact upgrade (same `upstreamUpgradeKey`) subscribes here, so a
+  // duplicate row shows what the *owner* of the shared work is actually doing
+  // instead of sitting on a stale "Waiting to be checked" for however long the
+  // owner takes. `phase` is the last phase reported for a key, replayed to a
+  // subscriber immediately on join so a late joiner is not left blank until
+  // the next update.
+  const upstreamSubscribers = new Map<string, Set<(phase: string, detail: string) => void>>();
+  const upstreamPhase = new Map<string, [string, string]>();
+  const publishUpstreamProgress = (key: string, phase: string, detail: string): void => {
+    upstreamPhase.set(key, [phase, detail]);
+    for (const cb of upstreamSubscribers.get(key) ?? []) cb(phase, detail);
+  };
+  const subscribeUpstreamProgress = (
+    key: string,
+    cb: (phase: string, detail: string) => void,
+  ): (() => void) => {
+    let set = upstreamSubscribers.get(key);
+    if (!set) {
+      set = new Set();
+      upstreamSubscribers.set(key, set);
+    }
+    set.add(cb);
+    const current = upstreamPhase.get(key);
+    if (current) cb(current[0], current[1]);
+    return () => {
+      set!.delete(cb);
+      if (set!.size === 0) upstreamSubscribers.delete(key);
+    };
+  };
+  const prepareUpstream = (
+    dep: ScanDependency,
+    selected: string,
+    onPhase?: (phase: string, detail: string) => void,
+  ): Promise<PreparedUpstreamEvidence> => {
     const canonical: DependencyChange = {
       name: dep.name,
       ecosystem: dep.target.manager.ecosystem,
@@ -1068,6 +1102,13 @@ export async function scanUpgrades(args: {
     const key = upstreamUpgradeKey(canonical);
     const existing = upstreamCache.get(key);
     if (existing) {
+      // A duplicate row joining shared work in flight: subscribe it to the
+      // owner's progress so it shows what is actually happening instead of a
+      // stale "Waiting to be checked" for however long the owner takes.
+      // `subscribeUpstreamProgress` replays the current phase immediately, so
+      // a late joiner is never left blank. Cleaned up once this wait settles,
+      // win or lose.
+      const unsubscribe = onPhase ? subscribeUpstreamProgress(key, onPhase) : undefined;
       // Wraps the actual await, not a span opened and closed before it: the
       // whole point is to record how long this caller genuinely waited on
       // work another caller is doing, which can be the bulk of this
@@ -1076,13 +1117,15 @@ export async function scanUpgrades(args: {
       return diagWithSpan(
         'upstream.wait',
         { package: dep.name, ecosystem: canonical.ecosystem, from: canonical.from, to: canonical.to, shared: true },
-        () => existing,
+        () => existing.finally(() => unsubscribe?.()),
       );
     }
     const additions = new Map<string, { additions: SurfaceAddition[]; locator: string }>();
     const surfaceGaps = new Map<string, SurfaceUnavailable>();
     const surfaceCompared = new Set<string>();
     const prose = new Map<string, ProseSource[]>();
+    const unsubscribeOwner = onPhase ? subscribeUpstreamProgress(key, onPhase) : undefined;
+    publishUpstreamProgress(key, 'Reading release notes and changelog', `${dep.name} ${canonical.from} → ${canonical.to}`);
     const promise = diagWithSpan('upstream.analysis', { package: dep.name, ecosystem: canonical.ecosystem, from: canonical.from, to: canonical.to, shared: false }, () =>
       gatherDependencyEvidence(canonical, {
         config, logger, ...(githubToken ? { githubToken } : {}), env, workspaceRoot: root,
@@ -1090,6 +1133,7 @@ export async function scanUpgrades(args: {
           const k = dependencyEcosystemKey(change);
           if (diff.weight >= CONFIDENT_SURFACE_WEIGHT) surfaceCompared.add(k);
           additions.set(k, { additions: diff.additions ?? [], locator: diff.locator });
+          publishUpstreamProgress(key, 'Comparing the public API surface', `${dep.name} ${canonical.from} → ${canonical.to}`);
         },
         onUnavailableSurface: (change, reason) => surfaceGaps.set(dependencyEcosystemKey(change), reason),
         onProseConsulted: (change, source) => {
@@ -1100,6 +1144,15 @@ export async function scanUpgrades(args: {
     );
     upstreamCache.set(key, promise);
     promise.catch(() => { if (upstreamCache.get(key) === promise) upstreamCache.delete(key); });
+    // Owner's own subscription (and the key's whole subscriber set/phase
+    // memory) is only needed while this shared work is in flight; once it
+    // settles — success or failure — every waiter's `finally` above has
+    // already unsubscribed itself, so this only needs to drop the owner's own
+    // callback and the now-stale replay state.
+    promise.finally(() => {
+      unsubscribeOwner?.();
+      upstreamPhase.delete(key);
+    });
     return promise;
   };
   try {
@@ -1108,7 +1161,14 @@ export async function scanUpgrades(args: {
       if (token?.isCancellationRequested) return;
 
       const selected = available.safeLatest ?? available.latest;
-      const prepared = await prepareUpstream(dep, selected);
+      const prepared = await prepareUpstream(dep, selected, (phase, detail) => {
+        // Fans the *shared* upstream work's own progress out onto this row,
+        // so a duplicate row waiting on someone else's evidence gathering
+        // shows what is actually happening instead of sitting on a stale
+        // "Waiting to be checked" for however long that takes.
+        report(phase, detail, done, outdated.length);
+        announce(dep, phase);
+      });
       const candidate = await diagWithSpan(
         'package',
         { package: dep.name, ecosystem: dep.target.manager.ecosystem, from: dep.current, to: selected },
