@@ -146,6 +146,27 @@ function remainingMs(deadline: number): number {
   return Math.max(0, deadline - Date.now());
 }
 
+/**
+ * In-flight single-flight cache, keyed identically to the persistent cache
+ * key below. The scan-level exact-upgrade cache only dedupes identical
+ * `(from, to)` pairs; it does nothing for two upgrades of the *same* package
+ * that happen to share only one endpoint (pandas 2.2.2→3.0.5 and pandas
+ * 2.2.3→3.0.5 both need pandas@3.0.5 computed exactly once). The promise is
+ * inserted synchronously, before any `await`, so two concurrent callers for
+ * the same immutable version race into the same computation rather than each
+ * starting their own `python3` process.
+ *
+ * A canonical PyPI success is left in place after completion — it is also
+ * durably written to the persistent cache by `surfaceOf` below, so later,
+ * independent calls hit that instead and this entry is redundant but
+ * harmless. A GitHub-fallback result or a failure is deliberately *removed*
+ * once settled: both are properties of this run's transient state, not of
+ * the version, so a later independent caller must retry PyPI from scratch
+ * rather than inherit a fallback or failure that concurrent callers merely
+ * happened to share while it was still in flight.
+ */
+const inFlightSurfaces = new Map<string, Promise<SurfaceAttempt>>();
+
 async function surfaceOf(
   request: SurfaceRequest,
   version: string,
@@ -154,16 +175,37 @@ async function surfaceOf(
   deadline: number,
 ): Promise<SurfaceAttempt> {
   const key = `python-surface:${analyzer}:${request.name}@${version}`;
-  // Stored as entry pairs: a `Map` is not JSON, and every field of a
-  // `SurfaceEntry` is a string or an array of them, so the round trip is exact.
-  const remembered = await readComputed<[string, SurfaceEntry][]>(key);
-  // Always `false`: a fallback-derived surface is never written under `key`
-  // below, so anything read back from it is guaranteed to be PyPI-derived.
-  if (remembered) return { ok: true, api: new Map(remembered), usedGitHubFallback: false };
 
-  const computed = await computeSurfaceOf(request, version, scriptPath, deadline);
-  if (computed.ok && !computed.usedGitHubFallback) await writeComputed(key, [...computed.api]);
-  return computed;
+  const existing = inFlightSurfaces.get(key);
+  if (existing) return existing;
+
+  const promise = (async (): Promise<SurfaceAttempt> => {
+    // Stored as entry pairs: a `Map` is not JSON, and every field of a
+    // `SurfaceEntry` is a string or an array of them, so the round trip is exact.
+    const remembered = await readComputed<[string, SurfaceEntry][]>(key);
+    // Always `false`: a fallback-derived surface is never written under `key`
+    // below, so anything read back from it is guaranteed to be PyPI-derived.
+    if (remembered) return { ok: true, api: new Map(remembered), usedGitHubFallback: false };
+
+    const computed = await computeSurfaceOf(request, version, scriptPath, deadline);
+    if (computed.ok && !computed.usedGitHubFallback) await writeComputed(key, [...computed.api]);
+    return computed;
+  })();
+  inFlightSurfaces.set(key, promise);
+  promise
+    .then((result) => {
+      // A canonical success may safely stay — it is harmless because the
+      // persistent cache above now serves later calls anyway. A fallback or
+      // failure must not linger, or a later independent call would silently
+      // inherit it instead of retrying PyPI.
+      if (!result.ok || result.usedGitHubFallback) {
+        if (inFlightSurfaces.get(key) === promise) inFlightSurfaces.delete(key);
+      }
+    })
+    .catch(() => {
+      if (inFlightSurfaces.get(key) === promise) inFlightSurfaces.delete(key);
+    });
+  return promise;
 }
 
 async function computeSurfaceOf(
