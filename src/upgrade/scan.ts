@@ -60,6 +60,7 @@ import { lookupVersions, versionSourceLabel, type VersionLookup } from './versio
 import { summarize } from './summary.js';
 import { analysisConcurrency, describeParallelism, networkConcurrency } from '../util/parallelism.js';
 import { count, measure, span } from '../util/profile.js';
+import { startSpan as diagSpan, withSpan as diagWithSpan } from '../util/diagnostics.js';
 import type { BaselineCache } from '../verification/baseline-cache.js';
 import {
   probeUpgrades,
@@ -704,9 +705,11 @@ export async function scanUpgrades(args: {
     );
   }
 
+  const manifestDiscovery = diagSpan('manifest.discovery');
   const { targets, ambiguities } = await discoverTargets(root, dirs, args.managers ?? new Map(), fs);
   if (targets.length === 0) {
     discovery.end({ targets: 0 });
+    manifestDiscovery.end({ targets: 0 });
     scanSpan.end({ checked: 0, candidates: 0 });
     return {
       candidates: [],
@@ -742,6 +745,7 @@ export async function scanUpgrades(args: {
   }
 
   discovery.end({ targets: targets.length });
+  manifestDiscovery.end({ targets: targets.length, manifests: targets.length });
   const enabled = new Set(config.ecosystems);
   // Whether *this repository* is multi-package, not merely whether the
   // targets actually being scanned this run happen to span more than one
@@ -936,11 +940,13 @@ export async function scanUpgrades(args: {
   report('Checking registries', `${deps.length} direct dependenc${deps.length === 1 ? 'y' : 'ies'}`, 0, deps.length);
   const outdated: { dep: ScanDependency; available: Extract<VersionLookup, { outcome: 'upgrade' }> }[] = [];
   const lookupPhase = span('phase', 'version-discovery');
-  await inParallel(deps, networkConcurrency(env), async (dep) => {
+  await diagWithSpan('version.discovery', { dependencies: deps.length }, () =>
+    inParallel(deps, networkConcurrency(env), async (dep) => {
     if (token?.isCancellationRequested) return;
 
     const source = versionSourceLabel(dep.target.manager.ecosystem);
     announce(dep, `Asking ${source} what has been published`);
+    const lookupSpan = diagSpan('registry.lookup', { package: dep.name });
     const available = await measure('versions', dep.target.manager.ecosystem, () =>
       lookupVersions({
         name: dep.name,
@@ -950,6 +956,7 @@ export async function scanUpgrades(args: {
         ...(githubToken ? { githubToken } : {}),
       }),
     );
+    lookupSpan.end({ outcome: available.outcome });
 
     if (available.outcome === 'up-to-date') {
       upToDate += 1;
@@ -989,7 +996,8 @@ export async function scanUpgrades(args: {
     // on it rather than waiting for the verdict to carry them.
     onCandidate?.(outdatedRow(dep, available));
     report('Outdated', `${dep.name} ${dep.current} → ${available.safeLatest ?? available.latest}`, looked, deps.length);
-  });
+    }),
+  );
 
   lookupPhase.end({ checked: deps.length, outdated: outdated.length });
   outdated.sort((a, b) => a.dep.name.localeCompare(b.dep.name));
@@ -1031,48 +1039,54 @@ export async function scanUpgrades(args: {
   // machine rather than by the registries.
   const analysisPhase = span('phase', 'analysis');
   try {
-    await inParallel(outdated, concurrency, async ({ dep, available }) => {
+    await diagWithSpan('analysis', { packages: outdated.length }, () =>
+      inParallel(outdated, concurrency, async ({ dep, available }) => {
       if (token?.isCancellationRequested) return;
 
       const selected = available.safeLatest ?? available.latest;
-      const candidate = await analyzeUpgrade({
-        dep,
-        selected,
-        versions: available.versions,
-        latest: available.latest,
-        safeLatest: available.safeLatest,
-        latestMinor: available.latestMinor,
-        repo,
-        config,
-        githubToken,
-        root,
-        indexing,
-        logger,
-        env,
-        maxSites: breadth.maxSites,
-        member: multiPackage ? dep.target.dir : undefined,
-        // The full ownership universe, not `dirs` (the subset this run is
-        // actually scanning) -- a member left out of a custom `dirs` scan
-        // must still be known here, or its runtime files fall out of
-        // `allMembers` entirely and get attributed to no member, which
-        // `findNodeDeclarations`/`findPythonDeclarations` then treat as
-        // repository-global instead of that member's own business.
-        allMembers: multiPackage ? allMembers : undefined,
-        // Paired with `member` above: a name without a directory would put a
-        // label on every row of a single-package repository, which is one more
-        // thing to read past on every line and never varies.
-        memberName: multiPackage ? memberNames.get(dep.target.dir) : undefined,
-        repoRoot: repoLabel ? root : undefined,
-        repoLabel,
-        onProgress: (phase, detail) => {
-          report(phase, detail, done, outdated.length);
-          // The same phase, said on the package's own row. The scan-wide step
-          // line only ever shows whichever of the packages in flight reported
-          // last, so without this a developer looking at one row can see it is
-          // busy and never what it is busy with.
-          announce(dep, phase);
-        },
-      });
+      const candidate = await diagWithSpan(
+        'package',
+        { package: dep.name, ecosystem: dep.target.manager.ecosystem, from: dep.current, to: selected },
+        () =>
+          analyzeUpgrade({
+            dep,
+            selected,
+            versions: available.versions,
+            latest: available.latest,
+            safeLatest: available.safeLatest,
+            latestMinor: available.latestMinor,
+            repo,
+            config,
+            githubToken,
+            root,
+            indexing,
+            logger,
+            env,
+            maxSites: breadth.maxSites,
+            member: multiPackage ? dep.target.dir : undefined,
+            // The full ownership universe, not `dirs` (the subset this run is
+            // actually scanning) -- a member left out of a custom `dirs` scan
+            // must still be known here, or its runtime files fall out of
+            // `allMembers` entirely and get attributed to no member, which
+            // `findNodeDeclarations`/`findPythonDeclarations` then treat as
+            // repository-global instead of that member's own business.
+            allMembers: multiPackage ? allMembers : undefined,
+            // Paired with `member` above: a name without a directory would put a
+            // label on every row of a single-package repository, which is one more
+            // thing to read past on every line and never varies.
+            memberName: multiPackage ? memberNames.get(dep.target.dir) : undefined,
+            repoRoot: repoLabel ? root : undefined,
+            repoLabel,
+            onProgress: (phase, detail) => {
+              report(phase, detail, done, outdated.length);
+              // The same phase, said on the package's own row. The scan-wide step
+              // line only ever shows whichever of the packages in flight reported
+              // last, so without this a developer looking at one row can see it is
+              // busy and never what it is busy with.
+              announce(dep, phase);
+            },
+          }),
+      );
 
       candidates.push(candidate);
       // Released immediately, but marked `checking` while the upgrade is about to
@@ -1093,14 +1107,16 @@ export async function scanUpgrades(args: {
         done,
         outdated.length,
       );
-    });
+      }),
+    );
 
     analysisPhase.end({ packages: outdated.length });
 
     const verifyPhase = span('phase', 'verification');
     try {
       if (verify.enabled && candidates.length > 0 && !token?.isCancellationRequested) {
-        await verifyUpgradeCandidates({
+        await diagWithSpan('verification', { candidates: candidates.length }, () =>
+          verifyUpgradeCandidates({
           root,
           candidates,
           checks: verify.checks,
@@ -1134,7 +1150,8 @@ export async function scanUpgrades(args: {
             }
           },
           onCandidate,
-        });
+          }),
+        );
       }
     } finally {
       // Every candidate released as `checking` has to be released again, whatever
@@ -1791,7 +1808,7 @@ async function analyzeUpgrade(args: {
     const surfaceCompared = new Set<string>();
     const prose = new Map<string, ProseSource[]>();
 
-    const evidence = await measure('evidence', target.manager.ecosystem, () => gatherEvidence([change], {
+    const evidence = await diagWithSpan('evidence', { package: args.dep.name, ecosystem: target.manager.ecosystem }, () => measure('evidence', target.manager.ecosystem, () => gatherEvidence([change], {
       config: args.config,
       logger: args.logger,
       githubToken: args.githubToken,
@@ -1814,17 +1831,22 @@ async function analyzeUpgrade(args: {
         const key = dependencyEcosystemKey(proseChange);
         prose.set(key, [...(prose.get(key) ?? []), source]);
       },
-    }), { package: args.dep.name });
+    }), { package: args.dep.name }));
 
     report(
       'Comparing the public API surface',
       `${label} · ${evidence.length} evidence source${evidence.length === 1 ? '' : 's'}`,
     );
-    const breakingChanges = await measure('analyze', target.manager.ecosystem, () =>
-      analyze([change], evidence, {
-        config: args.config,
-        logger: args.logger,
-      }),
+    const breakingChanges = await diagWithSpan(
+      'api.diff',
+      { package: args.dep.name, evidenceSources: evidence.length },
+      () =>
+        measure('analyze', target.manager.ecosystem, () =>
+          analyze([change], evidence, {
+            config: args.config,
+            logger: args.logger,
+          }),
+        ),
     );
 
     report(
@@ -1846,6 +1868,7 @@ async function analyzeUpgrade(args: {
     const { files, index } = await args.indexing;
     awaitIndex.end();
     const localizing = span('localize', target.manager.ecosystem, { changes: breakingChanges.length });
+    const localization = diagSpan('localization', { package: args.dep.name, changes: breakingChanges.length, filesConsidered: files.length });
     const impactSites = localize(breakingChanges, [change], index, files, {
       logger: args.logger,
       maxSitesPerChange: args.maxSites ?? 40,
@@ -1853,6 +1876,7 @@ async function analyzeUpgrade(args: {
       ...(moduleMaps ? { moduleMaps } : {}),
     });
     localizing.end({ sites: impactSites.length });
+    localization.end({ sites: impactSites.length });
     report('Weighing what this upgrade is worth', label);
     const [rationale] = await measure('rationale', target.manager.ecosystem, () => buildRationale(
       { changes: [change], evidence, breakingChanges, impactSites },
