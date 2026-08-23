@@ -42,7 +42,7 @@ const SENSITIVE_FLAGS = new Set(['token', 'copilot-token', 'github-token', 'pass
 
 /** Patterns that look like a credential even outside a recognised flag. */
 const SECRET_LIKE_PATTERNS: RegExp[] = [
-  /\bAuthorization\s*:\s*\S+/gi,
+  /\bAuthorization\s*:\s*[^\n]+/gi,
   /\bBearer\s+\S+/gi,
   /\bgh[oprsu]_[A-Za-z0-9]{10,}\b/g, // GitHub PATs/OAuth/refresh/server tokens
   /\bgithub_pat_[A-Za-z0-9_]{10,}\b/g,
