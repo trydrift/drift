@@ -29,7 +29,7 @@ import type { IssueBranchAction } from './issue-actions.js';
 import { openChangeDiff, openPackageVersionDiff, type ChangeDiffRequest } from './version-diff.js';
 import { pruneVersionDiffCache } from '../../src/evidence/version-diff.js';
 import { onDidChangeCodeTheme, warmCodeHighlighter, watchCodeTheme } from './ui/highlight.js';
-import { startRunLog, type RunLogHandle } from '../../src/util/diagnostics.js';
+import { redactText, startRunLog, startSpan, type RunLogHandle } from '../../src/util/diagnostics.js';
 
 /**
  * Drift for VS Code.
@@ -54,6 +54,43 @@ let extensionVersion = '0.0.0';
 function beginRun(command: string, repoRoot: string | undefined | null, mode: 'quick' | 'deep' = 'quick'): RunLogHandle | undefined {
   if (!repoRoot) return undefined;
   return startRunLog({ command: `vscode: ${command}`, mode, repoRoot, driftVersion: extensionVersion });
+}
+
+/**
+ * Run one Drift operation with a repo-local run log guaranteed to finish
+ * regardless of how `fn` exits — success, a thrown error, or a result that
+ * reports its own cancellation. Without this, an operation that throws
+ * (or is cancelled and returns early) would leave no report at all: the
+ * `finish()` call at the bottom of a plain `await fn()` never runs.
+ *
+ * `classify` turns `fn`'s result into the status written to the log (e.g.
+ * "ok" vs "cancelled") — VS Code cancellation is usually a normal return
+ * value, not a thrown error, so it has to be told apart after the fact
+ * rather than caught.
+ */
+async function runOperation<T>(
+  command: string,
+  repoRoot: string | undefined | null,
+  spanName: string,
+  spanMeta: Record<string, unknown> | undefined,
+  fn: () => Promise<T>,
+  classify: (result: T) => string,
+): Promise<T> {
+  const log = beginRun(command, repoRoot);
+  if (!log) return fn();
+  return log.run(async () => {
+    const span = startSpan(spanName, spanMeta);
+    try {
+      const result = await fn();
+      span.end();
+      log.finish(classify(result));
+      return result;
+    } catch (err) {
+      span.fail(err);
+      log.finish('threw', { message: redactText(err instanceof Error ? err.message : String(err)) });
+      throw err;
+    }
+  });
 }
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -221,11 +258,14 @@ async function initialise(state: DriftState, home: DriftHomeView): Promise<void>
     return;
   }
 
-  const startupLog = beginRun('drift.analyze (startup)', state.workspaceRoot);
-  const startupSpan = startupLog?.startSpan('analyze', { trigger: 'startup' });
-  const result = await runAnalysis({ state });
-  startupSpan?.end({ summary: result.summary });
-  startupLog?.finish('ok');
+  const result = await runOperation(
+    'drift.analyze (startup)',
+    state.workspaceRoot,
+    'analyze',
+    { trigger: 'startup' },
+    () => runAnalysis({ state }),
+    () => 'ok',
+  );
   const plan = result.plan;
   if (!plan || plan.impactSites.length === 0) return;
 
@@ -297,18 +337,22 @@ function registerCommands(
       return;
     }
 
-    const log = beginRun('drift.analyze', state.workspaceRoot);
-    const analyzeSpan = log?.startSpan('analyze', { trigger: 'command' });
     const result = await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
         title: 'Drift: analysing dependency changes',
         cancellable: true,
       },
-      (progress, token) => runAnalysis({ state, progress, token }),
+      (progress, token) =>
+        runOperation(
+          'drift.analyze',
+          state.workspaceRoot,
+          'analyze',
+          { trigger: 'command' },
+          () => runAnalysis({ state, progress, token }),
+          () => (token.isCancellationRequested ? 'cancelled' : 'ok'),
+        ),
     );
-    analyzeSpan?.end({ summary: result.summary });
-    log?.finish('ok');
 
     output.info(result.summary);
 
@@ -451,8 +495,6 @@ async function startFix(
     return;
   }
 
-  const log = beginRun('drift.fix', state.workspaceRoot);
-  const fixSpan = log?.startSpan('fix', { onlyCommit: onlyCommit ?? 'all' });
   const result = await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
@@ -460,20 +502,26 @@ async function startFix(
       cancellable: true,
     },
     (progress, token) =>
-      runFix({
-        state,
-        plan,
-        onlyCommit,
-        progress,
-        token,
-        review,
-        permission: vscode.workspace
-          .getConfiguration('drift')
-          .get<'ask' | 'auto-edit' | 'full-auto'>('session.permission', 'auto-edit'),
-      }),
+      runOperation(
+        'drift.fix',
+        state.workspaceRoot,
+        'fix',
+        { onlyCommit: onlyCommit ?? 'all' },
+        () =>
+          runFix({
+            state,
+            plan,
+            onlyCommit,
+            progress,
+            token,
+            review,
+            permission: vscode.workspace
+              .getConfiguration('drift')
+              .get<'ask' | 'auto-edit' | 'full-auto'>('session.permission', 'auto-edit'),
+          }),
+        (fixResult) => fixResult.status,
+      ),
   );
-  fixSpan?.end({ status: result.status });
-  log?.finish(String(result.status));
 
   output.info(result.message);
   for (const warning of result.warnings) output.warn(warning);

@@ -23,7 +23,7 @@ import { runAction } from './runners/action.js';
 import { main as serveWebhook } from './runners/webhook.js';
 import { sampleTelemetryEvent } from './telemetry.js';
 import { createLogger, type LogLevel, type Logger } from './util/logger.js';
-import { countWork, redactCommand, startRunLog, startSpan } from './util/diagnostics.js';
+import { countWork, redactCommand, redactText, startRunLog, startSpan, withSpan } from './util/diagnostics.js';
 import { paletteFor, supportsRedraw } from './util/terminal.js';
 import { createStatusLine } from './util/status-line.js';
 import { createOutdatedView } from './report/terminal-outdated.js';
@@ -440,11 +440,11 @@ export async function main(argv: string[]): Promise<number> {
     : null;
 
   try {
-    const code = await runCommand(command, rest);
+    const code = runLog ? await runLog.run(() => runCommand(command, rest)) : await runCommand(command, rest);
     runLog?.finish(code === 0 ? 'ok' : 'error', { exitCode: code });
     return code;
   } catch (err) {
-    runLog?.finish('threw', { message: (err as Error).message });
+    runLog?.finish('threw', { message: redactText((err as Error).message) });
     throw err;
   }
 }
@@ -873,8 +873,7 @@ async function outdatedCommand(flags: Flags): Promise<number> {
 
   let settledCount = 0;
   let toAnalyse = 0;
-  const upgradeScanSpan = startSpan('upgrade.scan');
-  const result = await scanUpgrades({
+  const result = await withSpan('upgrade.scan', undefined, () => scanUpgrades({
     root: workspace,
     repo,
     config,
@@ -916,8 +915,7 @@ async function outdatedCommand(flags: Flags): Promise<number> {
       view.settled(candidate);
       status.update(`Checked ${settledCount} of ${toAnalyse}`);
     },
-  });
-  upgradeScanSpan.end({ packages: result.candidates.length });
+  }));
   countWork('packages_considered', result.checked);
   countWork('packages_analyzed', result.candidates.length);
   countWork('packages_skipped', result.unchecked.length);
