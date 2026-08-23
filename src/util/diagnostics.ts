@@ -319,6 +319,7 @@ function headerText(h: Header, startedAtIso: string): string {
     `cpu_count: ${cpus().length}`,
     `started: ${startedAtIso}`,
     '',
+    '',
   ].join('\n');
 }
 
