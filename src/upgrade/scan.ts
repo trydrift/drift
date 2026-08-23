@@ -1241,14 +1241,31 @@ export async function scanUpgrades(args: {
       if (token?.isCancellationRequested) return;
 
       const selected = available.safeLatest ?? available.latest;
-      const prepared = await prepareUpstream(dep, selected, (phase, detail) => {
-        // Fans the *shared* upstream work's own progress out onto this row,
-        // so a duplicate row waiting on someone else's evidence gathering
-        // shows what is actually happening instead of sitting on a stale
-        // "Waiting to be checked" for however long that takes.
-        report(phase, detail, done, outdated.length);
-        announce(dep, phase);
-      });
+      // A rejection here is either this row's own shared upstream work
+      // failing, or (when duplicate) another row's owned attempt failing
+      // while this row was only waiting on it. Either way it must not sink
+      // this row's whole analysis, and it must not leave this row's slot in
+      // `inParallel` stuck: `prepared` simply stays `undefined`, and
+      // `analyzeUpgrade` below falls back to doing its own independent
+      // evidence-gathering and rationale-preparation for this one package —
+      // the "later independent execution" that gets to retry, rather than
+      // inheriting the failure `upstreamCache`'s own `.catch` already evicted
+      // it for.
+      let prepared: PreparedUpstreamEvidence | undefined;
+      try {
+        prepared = await prepareUpstream(dep, selected, (phase, detail) => {
+          // Fans the *shared* upstream work's own progress out onto this row,
+          // so a duplicate row waiting on someone else's evidence gathering
+          // shows what is actually happening instead of sitting on a stale
+          // "Waiting to be checked" for however long that takes.
+          report(phase, detail, done, outdated.length);
+          announce(dep, phase);
+        });
+      } catch (err) {
+        logger.debug(
+          `Shared upstream analysis failed for ${dep.name} ${dep.current} → ${selected}: ${(err as Error).message}. Falling back to independent analysis for this row.`,
+        );
+      }
       const candidate = await diagWithSpan(
         'package',
         { package: dep.name, ecosystem: dep.target.manager.ecosystem, from: dep.current, to: selected },
