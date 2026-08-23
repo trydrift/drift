@@ -243,15 +243,44 @@ export interface ScanChoices {
  * decision, so there is exactly one place "ask" can come from and no
  * ambiguity about which setting won.
  */
-export async function resolveScanChoices(config: DriftConfig): Promise<ScanChoices | undefined> {
+/**
+ * `drift.analysis.dependencyScope`, resolved against the same fallback chain
+ * `resolveScanChoices` uses for its prompt — but never itself a source of
+ * `'ask'`: this reads only what settings/config already say, explicitly
+ * doing no I/O and asking no question, so it is safe to call from a quiet,
+ * on-activation scan that must never block on a dialog. `'ask'` is treated
+ * exactly like "unset" here (there is nobody to ask), which is what makes
+ * this correct for a background scan rather than merely convenient.
+ */
+function scopeSetting(config: DriftConfig): 'runtime' | 'runtime+dev' | 'ask' {
   const settings = vscode.workspace.getConfiguration('drift');
-
-  const verifyMode = settings.get<'quick' | 'deep' | 'ask'>('analysis.verifyMode', 'ask');
-  const dependencyScope = explicitlySet(settings, 'analysis.dependencyScope')
+  return explicitlySet(settings, 'analysis.dependencyScope')
     ? settings.get<'runtime' | 'runtime+dev' | 'ask'>('analysis.dependencyScope', 'ask')
     : explicitlySet(settings, 'analysis.includeDev')
       ? (settings.get<boolean>('analysis.includeDev', config.triggerOn.dev) ? 'runtime+dev' : 'runtime')
       : 'ask';
+}
+
+/**
+ * Whether a scan should look at dev/optional/peer dependencies, resolved
+ * without ever prompting — for a quiet, on-activation scan
+ * (`scanOnStartup`), where `resolveScanChoices`'s interactive prompt would be
+ * an interruption nobody asked for. Takes `config` per call, not once for the
+ * whole run, because a multi-root workspace's members can each carry their
+ * own `drift.yml` and therefore their own `triggerOn.dev` fallback.
+ */
+export function resolveDependencyScope(config: DriftConfig): boolean {
+  const scope = scopeSetting(config);
+  if (scope === 'runtime') return false;
+  if (scope === 'runtime+dev') return true;
+  return config.triggerOn.dev;
+}
+
+export async function resolveScanChoices(config: DriftConfig): Promise<ScanChoices | undefined> {
+  const settings = vscode.workspace.getConfiguration('drift');
+
+  const verifyMode = settings.get<'quick' | 'deep' | 'ask'>('analysis.verifyMode', 'ask');
+  const dependencyScope = scopeSetting(config);
 
   const askDeep = verifyMode === 'ask';
   const askDev = dependencyScope === 'ask';

@@ -116,12 +116,15 @@ inputs:
 
   dependency-scope:
     description: >-
-      "runtime+dev" (default) analyses dev, optional, and peer dependencies
-      alongside runtime ones, the same as leaving this unset. "runtime"
-      restricts analysis to production dependencies only, which is faster.
-      Overrides `triggerOn.dev` in drift.yml. There is no "ask" value here —
-      this input always resolves to one of the two above; the interactive
-      choice exists only in the VS Code extension
+      "runtime+dev" analyses dev, optional, and peer dependencies alongside
+      runtime ones. "runtime" restricts analysis to production dependencies
+      only, which is faster. Leaving this unset does not mean "runtime+dev" —
+      it means Drift reads `triggerOn.dev` from drift.yml instead (`true`,
+      i.e. runtime+dev, unless a committed config says otherwise), the same
+      way this input behaved before it existed. Setting either value here
+      overrides that file for this run. There is no "ask" value here — this
+      input always resolves to one of the two above (or is left unset); the
+      interactive choice exists only in the VS Code extension
       (`drift.analysis.dependencyScope`), which has a person to ask.
     required: false
 
