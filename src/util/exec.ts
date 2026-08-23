@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 
 import { count, profiling, span } from './profile.js';
+import { recordExecCommand } from './diagnostics.js';
 
 /**
  * Running local tools.
@@ -65,8 +66,10 @@ function commandLabel(command: string, args: readonly string[]): string {
 
 export const execCommand: Exec = (command, args, options = {}) =>
   new Promise((resolve) => {
-    const process_ = profiling() ? span('exec', commandLabel(command, args)) : null;
+    const label = commandLabel(command, args);
+    const process_ = profiling() ? span('exec', label) : null;
     if (process_) count('exec.spawned');
+    const startMs = Date.now();
     const child = execFile(
       command,
       [...args],
@@ -81,16 +84,32 @@ export const execCommand: Exec = (command, args, options = {}) =>
       (error, stdout, stderr) => {
         process_?.end({ code: error ? 1 : 0 });
         if (!error) {
+          recordExecCommand({
+            label,
+            durationMs: Date.now() - startMs,
+            exitCode: 0,
+            stdoutBytes: stdout.length,
+            stderrBytes: stderr.length,
+          });
           resolve({ code: 0, stdout, stderr });
           return;
         }
 
         const err = error as NodeJS.ErrnoException & { code?: number | string; killed?: boolean };
+        const failure = err.code === 'ENOENT' ? 'not-found' : err.killed ? 'timeout' : 'error';
+        recordExecCommand({
+          label,
+          durationMs: Date.now() - startMs,
+          exitCode: typeof err.code === 'number' ? err.code : null,
+          failure,
+          stdoutBytes: (stdout ?? '').length,
+          stderrBytes: (stderr ?? '').length,
+        });
         resolve({
           code: typeof err.code === 'number' ? err.code : 1,
           stdout: stdout ?? '',
           stderr: stderr ?? String(error.message ?? ''),
-          failure: err.code === 'ENOENT' ? 'not-found' : err.killed ? 'timeout' : 'error',
+          failure,
         });
       },
     );

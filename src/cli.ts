@@ -23,6 +23,7 @@ import { runAction } from './runners/action.js';
 import { main as serveWebhook } from './runners/webhook.js';
 import { sampleTelemetryEvent } from './telemetry.js';
 import { createLogger, type LogLevel, type Logger } from './util/logger.js';
+import { countWork, redactCommand, redactText, startRunLog, startSpan, withSpan } from './util/diagnostics.js';
 import { paletteFor, supportsRedraw } from './util/terminal.js';
 import { createStatusLine } from './util/status-line.js';
 import { createOutdatedView } from './report/terminal-outdated.js';
@@ -410,10 +411,45 @@ function defaultBaselineCacheDir(): string | null {
     : join(homedir(), '.drift', 'cache', 'baseline');
 }
 
+/** Commands that operate on a repository, and so get a repo-local run log. */
+const REPO_COMMANDS = new Set(['analyze', 'analyse', 'outdated', 'fix', 'pr']);
+
+async function gitHeadShort(repoRoot: string): Promise<string> {
+  const result = await execCommand('git', ['rev-parse', '--short', 'HEAD'], { cwd: repoRoot, timeoutMs: 5000 });
+  return result.code === 0 ? result.stdout.trim() : 'unknown';
+}
+
 export async function main(argv: string[]): Promise<number> {
   configureHttpDiskCache(defaultHttpCacheDir());
   const [command, ...rest] = argv;
 
+  // Flags — in particular `--dir` — must be resolved before the run log is
+  // opened, so `cd /tmp && drift analyze --dir ~/code/my-project` writes to
+  // that project's git dir, not to a stray `.drift/` under `/tmp`.
+  const flags = parseFlags(rest);
+  const repoRoot = command && REPO_COMMANDS.has(command) ? resolve(typeof flags.dir === 'string' ? flags.dir : process.cwd()) : null;
+
+  const runLog = repoRoot
+    ? startRunLog({
+        command: redactCommand(argv),
+        mode: flags.verify ? 'deep' : 'quick',
+        repoRoot,
+        gitHead: await gitHeadShort(repoRoot),
+        driftVersion: await packageVersion(),
+      })
+    : null;
+
+  try {
+    const code = runLog ? await runLog.run(() => runCommand(command, rest)) : await runCommand(command, rest);
+    runLog?.finish(code === 0 ? 'ok' : 'error', { exitCode: code });
+    return code;
+  } catch (err) {
+    runLog?.finish('threw', { message: redactText((err as Error).message) });
+    throw err;
+  }
+}
+
+async function runCommand(command: string | undefined, rest: string[]): Promise<number> {
   switch (command) {
     case 'analyze':
     case 'analyse':
@@ -778,6 +814,7 @@ async function outdatedCommand(flags: Flags): Promise<number> {
   const logger = createLogger(logLevel);
 
   const workspace = resolve(typeof flags.dir === 'string' ? flags.dir : process.cwd());
+  const repoDiscovery = startSpan('repository.discovery');
   const token = await resolveGitHubToken(flags);
 
   const slug = typeof flags.repo === 'string' ? flags.repo : await detectRepoSlug(workspace);
@@ -808,6 +845,7 @@ async function outdatedCommand(flags: Flags): Promise<number> {
   });
   for (const problem of problems) logger.warn(problem);
   if (path) logger.info(`Using config from ${path}`);
+  repoDiscovery.end({ repo: slug ?? 'local' });
 
   // Everything the command *produces* goes to stdout; everything about how it
   // is going goes to stderr through the status line. That is what makes
@@ -835,7 +873,7 @@ async function outdatedCommand(flags: Flags): Promise<number> {
 
   let settledCount = 0;
   let toAnalyse = 0;
-  const result = await scanUpgrades({
+  const result = await withSpan('upgrade.scan', undefined, () => scanUpgrades({
     root: workspace,
     repo,
     config,
@@ -877,7 +915,10 @@ async function outdatedCommand(flags: Flags): Promise<number> {
       view.settled(candidate);
       status.update(`Checked ${settledCount} of ${toAnalyse}`);
     },
-  });
+  }));
+  countWork('packages_considered', result.checked);
+  countWork('packages_analyzed', result.candidates.length);
+  countWork('packages_skipped', result.unchecked.length);
   status.stop();
 
   // A read-only scan may guess which manager owns an ambiguous directory and
