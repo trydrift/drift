@@ -7,26 +7,36 @@
  * enough to answer "why did this run take 15 minutes instead of 30 seconds",
  * without anyone having to know a flag exists first.
  *
- * Written to `<repo git dir>/drift/run.log`. Only the most recent run is
- * kept — the file is fully overwritten each time a run starts, so this never
- * grows into a pile of dead files and never needs its own retention policy.
+ * Written to `<repo git dir>/drift/run.log`. Only the most recent *completed*
+ * run is kept.
  *
  * Design:
- *  - Spans are buffered in memory (cheap: a push per start/end), not
- *    appended to disk one line at a time — leaving this enabled everywhere
- *    must not add meaningful overhead to a scan.
- *  - A header is written to disk immediately so a hard crash before
- *    `finish()` still leaves something behind describing what was running.
- *  - `finish()` always renders and writes the full report, even when it is
- *    called from a `catch` block with open spans still on the stack — those
- *    are closed as `status: interrupted` rather than dropped.
+ *  - Attribution is scoped through `AsyncLocalStorage`, not a single mutable
+ *    module-level variable. Two operations against two repositories (or two
+ *    concurrent packages within one operation, via `Promise.all`) each carry
+ *    their own run/parent-span context through every `await`, so neither can
+ *    write into the other's report and neither can appear as the other's
+ *    child span. See `withRun` and `withSpan`.
+ *  - Spans are buffered in memory, not appended to disk one line at a time —
+ *    leaving this enabled everywhere must not add meaningful overhead.
+ *  - The final report is rendered fully in memory and promoted into place
+ *    with a single `rename()`, so a concurrent reader never observes a
+ *    half-written file, and a run that finishes cannot be interleaved with
+ *    another run's bytes. A per-repository generation counter additionally
+ *    guarantees that an older run finishing *after* a newer one has already
+ *    started can never overwrite the newer run's report — see `finish()`.
+ *  - A crash-marker file (`run.in-progress`) is written synchronously when a
+ *    run starts, so a hard crash before `finish()` still leaves something
+ *    behind describing what was running — but it is never the artifact
+ *    handed to anyone; `run.log` is, always.
  *  - Nothing here ever writes a secret to disk. See `redactCommand` /
  *    `sanitizeArgs` below — every piece of text that could plausibly carry a
  *    token (a command summary, an exec argv, an error message) is passed
  *    through redaction before it reaches a span's metadata.
  */
 
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { arch, cpus, platform } from 'node:os';
 import { isAbsolute, join, resolve } from 'node:path';
 
@@ -90,6 +100,11 @@ export function redactCommand(argv: readonly string[]): string {
   return ['drift', ...sanitizeArgs(argv)].join(' ');
 }
 
+/** Redact an arbitrary error into a string safe to write to the log. */
+function redactError(error: unknown): string {
+  return redactText(error instanceof Error ? error.message : String(error));
+}
+
 // ---------------------------------------------------------------------------
 // Git dir resolution (handles a `.git` file, e.g. inside a worktree)
 // ---------------------------------------------------------------------------
@@ -150,11 +165,17 @@ export interface HttpRequestRecord {
   host: string;
   method: string;
   path: string;
+  /** Offset from the run's start, on the same monotonic clock as spans — used for concurrency measurement. */
+  startOffsetMs: number;
   durationMs: number;
   status: number | null;
+  /** Whether this logical request avoided a full re-fetch — see the module doc for cache semantics. */
   cache: 'hit' | 'miss' | 'n/a';
   bytes?: number;
+  /** Number of retries actually performed (attempts minus one), not the attempt index of any single try. */
   retries?: number;
+  /** Cumulative time spent sleeping between retries, separate from request time itself. */
+  backoffMs?: number;
   failure?: string;
 }
 
@@ -168,20 +189,16 @@ export interface ExecRecord {
 }
 
 export interface RunLogHandle {
-  /** Start a (possibly nested) timed span. Must be ended exactly once. */
-  startSpan(name: string, meta?: Record<string, unknown>): SpanHandle;
-  /** Record a running total — packages skipped, files scanned, etc. */
-  count(name: string, by?: number): void;
-  /** Record a cache lookup for the named cache (http, type-surface, baseline, ...). */
-  noteCache(cacheName: string, hit: boolean, write?: boolean): void;
-  /** Record one HTTP request for the network summary. Internal: called from http.ts. */
-  recordHttp(rec: HttpRequestRecord): void;
-  /** Record one subprocess invocation for the external-process summary. Internal: called from exec.ts. */
-  recordExec(rec: ExecRecord): void;
-  /** Close the run, render the report, and write it to disk. Safe to call at most once. */
-  finish(status: string, meta?: Record<string, unknown>): void;
   /** Path the report was (or will be) written to, or null if logging is unavailable. */
   readonly path: string | null;
+  /**
+   * Run `fn` with this run active as the ambient diagnostics context for
+   * every span/HTTP/exec/cache call made during it — including inside
+   * concurrent `Promise.all` work, which each keep their own nested context.
+   */
+  run<T>(fn: () => Promise<T>): Promise<T>;
+  /** Close the run, render the report, and promote it into place. Safe to call at most once. */
+  finish(status: string, meta?: Record<string, unknown>): void;
 }
 
 interface Header {
@@ -193,13 +210,10 @@ interface Header {
   driftVersion: string;
 }
 
-let activeRun: RunState | null = null;
-
 class RunState {
   readonly startedAtMs = Date.now();
   readonly startPerf = performance.now();
   readonly spans: SpanRecord[] = [];
-  readonly openStack: SpanRecord[] = [];
   readonly counters = new Map<string, number>();
   readonly caches = new Map<string, { hits: number; misses: number; writes: number }>();
   readonly httpRequests: HttpRequestRecord[] = [];
@@ -210,6 +224,8 @@ class RunState {
   constructor(
     readonly header: Header,
     readonly path: string | null,
+    readonly gitDir: string,
+    readonly generation: number,
   ) {}
 
   now(): number {
@@ -217,44 +233,73 @@ class RunState {
   }
 }
 
+interface RunFrame {
+  state: RunState;
+  parentId: number | null;
+}
+
+/**
+ * Ambient run/parent-span context, propagated through `await` (including
+ * concurrent `Promise.all` branches) the way a mutable global never can.
+ * This is what makes two overlapping operations — two repos, or two
+ * concurrently-analysed packages within one operation — attribute correctly
+ * instead of cross-contaminating each other's spans and events.
+ */
+const als = new AsyncLocalStorage<RunFrame>();
+
+/** The most recent generation started per git dir — see `finish()`. */
+const latestGeneration = new Map<string, number>();
+
+function currentFrame(): RunFrame | undefined {
+  return als.getStore();
+}
+
+/** Milliseconds since the active run started, or 0 with no active run (mainly for HTTP/exec start offsets). */
+export function runElapsedMs(): number {
+  return currentFrame()?.state.now() ?? 0;
+}
+
+/** True if a run is currently active in this async context (mainly for tests). */
+export function hasActiveRun(): boolean {
+  return currentFrame() !== undefined;
+}
+
 /** Called by `http.ts` for every request; a no-op when no run is active. */
 export function recordHttpRequest(rec: HttpRequestRecord): void {
-  activeRun?.httpRequests.push(rec);
+  currentFrame()?.state.httpRequests.push(rec);
 }
 
 /** Called by `exec.ts` for every subprocess invocation; a no-op when no run is active. */
 export function recordExecCommand(rec: ExecRecord): void {
-  activeRun?.execCommands.push(rec);
+  currentFrame()?.state.execCommands.push(rec);
 }
 
 /** Called by any cache to report a lookup; a no-op when no run is active. */
 export function noteCache(cacheName: string, hit: boolean, write = false): void {
-  if (!activeRun) return;
-  const entry = activeRun.caches.get(cacheName) ?? { hits: 0, misses: 0, writes: 0 };
+  const state = currentFrame()?.state;
+  if (!state) return;
+  const entry = state.caches.get(cacheName) ?? { hits: 0, misses: 0, writes: 0 };
   if (hit) entry.hits += 1;
   else entry.misses += 1;
   if (write) entry.writes += 1;
-  activeRun.caches.set(cacheName, entry);
+  state.caches.set(cacheName, entry);
 }
 
 /** Increment a named counter on the active run; a no-op when no run is active. */
 export function countWork(name: string, by = 1): void {
-  activeRun?.counters.set(name, (activeRun.counters.get(name) ?? 0) + by);
-}
-
-/** Start a span on the active run, or a no-op handle when no run is active. */
-export function startSpan(name: string, meta?: Record<string, unknown>): SpanHandle {
-  return activeRun ? openSpan(activeRun, name, meta) : NOOP_SPAN;
+  const state = currentFrame()?.state;
+  if (!state) return;
+  state.counters.set(name, (state.counters.get(name) ?? 0) + by);
 }
 
 const NOOP_SPAN: SpanHandle = Object.freeze({ end() {}, fail() {} });
 
-function openSpan(state: RunState, name: string, meta?: Record<string, unknown>): SpanHandle {
-  const parent = state.openStack[state.openStack.length - 1] ?? null;
+function openSpan(state: RunState, parentId: number | null, name: string, meta?: Record<string, unknown>): SpanRecord {
+  const parent = parentId !== null ? state.spans.find((s) => s.id === parentId) : undefined;
   const record: SpanRecord = {
     id: state.nextSpanId++,
-    parentId: parent ? parent.id : null,
-    depth: state.openStack.length,
+    parentId,
+    depth: parent ? parent.depth + 1 : 0,
     name,
     startMs: state.now(),
     endMs: null,
@@ -262,32 +307,75 @@ function openSpan(state: RunState, name: string, meta?: Record<string, unknown>)
     status: 'ok',
   };
   state.spans.push(record);
-  state.openStack.push(record);
+  return record;
+}
 
+function closeSpan(record: SpanRecord, state: RunState, outcome: 'ok' | 'error', errorOrMeta?: unknown, meta?: Record<string, unknown>): void {
+  if (record.endMs !== null) return; // already closed — a double end()/fail() must not double-count
+  record.endMs = state.now();
+  if (outcome === 'error') {
+    record.status = 'error';
+    record.error = redactError(errorOrMeta);
+    Object.assign(record.meta, meta);
+  } else {
+    Object.assign(record.meta, errorOrMeta as Record<string, unknown> | undefined);
+  }
+}
+
+/**
+ * Start a (possibly nested) timed span in the current ambient context, or a
+ * no-op handle with no active run. This does *not* itself become the ambient
+ * parent for further spans — only `withSpan` does that, deliberately: a
+ * bare `startSpan`/`end()` pair is for a leaf measurement (one HTTP request,
+ * one subprocess) that has no children of its own to attribute, so there is
+ * no shared mutable "current span stack" anywhere in this module for
+ * concurrent work to corrupt.
+ */
+export function startSpan(name: string, meta?: Record<string, unknown>): SpanHandle {
+  const frame = currentFrame();
+  if (!frame) return NOOP_SPAN;
+  const { state } = frame;
+  const record = openSpan(state, frame.parentId, name, meta);
   let closed = false;
-  const close = () => {
-    const idx = state.openStack.lastIndexOf(record);
-    if (idx !== -1) state.openStack.splice(idx, 1);
-  };
-
   return {
     end(extra) {
       if (closed) return;
       closed = true;
-      record.endMs = state.now();
-      Object.assign(record.meta, extra);
-      close();
+      closeSpan(record, state, 'ok', extra);
     },
     fail(error, extra) {
       if (closed) return;
       closed = true;
-      record.endMs = state.now();
-      record.status = 'error';
-      record.error = redactText(error instanceof Error ? error.message : String(error));
-      Object.assign(record.meta, extra);
-      close();
+      closeSpan(record, state, 'error', error, extra);
     },
   };
+}
+
+/**
+ * Run `fn` as a named span, with `fn`'s own body seeing this span as its
+ * ambient parent — this is the nesting-safe primitive. Concurrent callers
+ * (e.g. several packages analysed via `Promise.all`) each get their own span
+ * and their own child context, because `AsyncLocalStorage` snapshots the
+ * frame per async continuation rather than sharing one mutable "current"
+ * pointer that a sibling could stomp on mid-flight.
+ */
+export async function withSpan<T>(
+  name: string,
+  meta: Record<string, unknown> | undefined,
+  fn: () => Promise<T>,
+): Promise<T> {
+  const frame = currentFrame();
+  if (!frame) return fn();
+  const { state } = frame;
+  const record = openSpan(state, frame.parentId, name, meta);
+  try {
+    const result = await als.run({ state, parentId: record.id }, fn);
+    closeSpan(record, state, 'ok');
+    return result;
+  } catch (err) {
+    closeSpan(record, state, 'error', err);
+    throw err;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -324,11 +412,17 @@ function headerText(h: Header, startedAtIso: string): string {
 }
 
 /**
- * Start a new run log for `options.repoRoot`, replacing whatever the
- * previous run in that repository left behind. Returns a handle even when
- * the file could not be opened (a read-only checkout, missing permissions)
- * — spans still track in memory so the process behaves identically, they
+ * Start a new run log for `options.repoRoot`. Returns a handle even when the
+ * file could not be opened (a read-only checkout, missing permissions) —
+ * spans still track in memory so the process behaves identically, they
  * simply never reach disk.
+ *
+ * Starting a run bumps that repository's generation counter. Only the run
+ * holding the latest generation for its repository is allowed to write
+ * `run.log` when it finishes — an older run finishing later (a slow
+ * operation outlived by a newer one) is a stale write and is dropped rather
+ * than clobbering the newer run's report. This is what keeps two overlapping
+ * operations against the same repository from producing a mixed file.
  */
 export function startRunLog(options: StartRunOptions): RunLogHandle {
   const runId = new Date().toISOString();
@@ -341,59 +435,66 @@ export function startRunLog(options: StartRunOptions): RunLogHandle {
     driftVersion: options.driftVersion ?? '0.0.0',
   };
 
+  const gitDir = resolveGitDir(options.repoRoot);
+  const generation = (latestGeneration.get(gitDir) ?? 0) + 1;
+  latestGeneration.set(gitDir, generation);
+
+  let dir: string | null = null;
   let path: string | null = null;
   try {
-    const dir = join(resolveGitDir(options.repoRoot), 'drift');
+    dir = join(gitDir, 'drift');
     mkdirSync(dir, { recursive: true });
     path = join(dir, 'run.log');
-    writeFileSync(path, headerText(header, new Date().toISOString()), 'utf8');
+    // A crash marker, not the artifact — written eagerly so a hard crash
+    // before `finish()` still leaves something. Never read by the guidance
+    // this module gives callers; `run.log` is always the one file to hand
+    // to anyone, and it is left untouched (the previous completed run)
+    // until this run actually finishes.
+    writeFileSync(join(dir, 'run.in-progress'), headerText(header, new Date().toISOString()), 'utf8');
   } catch {
     path = null;
   }
 
-  const state = new RunState(header, path);
-  activeRun = state;
+  const state = new RunState(header, path, gitDir, generation);
 
   return {
     path,
-    startSpan: (name, meta) => openSpan(state, name, meta),
-    count: (name, by) => countWork(name, by),
-    noteCache: (name, hit, write) => noteCache(name, hit, write),
-    recordHttp: (rec) => recordHttpRequest(rec),
-    recordExec: (rec) => recordExecCommand(rec),
+    run: (fn) => als.run({ state, parentId: null }, fn),
     finish(status, meta) {
       if (state.finished) return;
       state.finished = true;
-      if (activeRun === state) activeRun = null;
 
       // Anything still open (a throw unwinding through nested spans) is
       // closed as interrupted rather than silently dropped, so the report
       // still reflects where the run actually stopped.
       const now = state.now();
-      for (const span of state.openStack) {
-        span.endMs = now;
-        span.status = 'interrupted';
+      for (const span of state.spans) {
+        if (span.endMs === null) {
+          span.endMs = now;
+          span.status = 'interrupted';
+        }
       }
-      state.openStack.length = 0;
 
-      if (!state.path) return;
+      if (!state.path || !dir) return;
+      // A newer run has since started for this repository — this run's
+      // report is stale and must not overwrite the newer one's. The newer
+      // run is either still in flight (in which case `run.in-progress`
+      // already reflects it) or has already finished and written `run.log`
+      // itself; either way, this write is dropped.
+      if (latestGeneration.get(state.gitDir) !== state.generation) return;
+
       try {
-        appendFileSync(
-          state.path,
-          render(state, status, meta ?? {}),
-          'utf8',
-        );
+        const report = headerText(state.header, new Date(state.startedAtMs).toISOString()) + render(state, status, meta ?? {});
+        const tmp = join(dir, `run.log.${process.pid}.${state.generation}.tmp`);
+        writeFileSync(tmp, report, 'utf8');
+        renameSync(tmp, state.path);
+        rmSync(join(dir, 'run.in-progress'), { force: true });
       } catch {
         // A run log is a diagnostic nicety, not something a run should fail
         // over.
       }
     },
   };
-}
-
-/** True if a run is currently active (mainly for tests). */
-export function hasActiveRun(): boolean {
-  return activeRun !== null;
 }
 
 // ---------------------------------------------------------------------------
@@ -439,7 +540,7 @@ function renderTimeline(state: RunState): string {
   return lines.join('\n');
 }
 
-function stageBreakdown(state: RunState, totalMs: number): { name: string; ms: number }[] {
+function stageBreakdown(state: RunState): { name: string; ms: number }[] {
   const topLevel = state.spans.filter((s) => s.parentId === null && s.endMs !== null);
   const byName = new Map<string, number>();
   for (const span of topLevel) byName.set(span.name, (byName.get(span.name) ?? 0) + (span.endMs! - span.startMs));
@@ -451,9 +552,8 @@ function stageBreakdown(state: RunState, totalMs: number): { name: string; ms: n
 function packageBreakdown(state: RunState): { name: string; ms: number }[] {
   const byPackage = new Map<string, number>();
   for (const span of state.spans) {
-    if (span.name !== 'package' && !span.name.startsWith('package ')) continue;
-    if (span.endMs === null) continue;
-    const name = typeof span.meta.package === 'string' ? span.meta.package : span.name.replace(/^package\s+/, '');
+    if (span.name !== 'package' || span.endMs === null) continue;
+    const name = typeof span.meta.package === 'string' ? span.meta.package : 'unknown';
     byPackage.set(name, (byPackage.get(name) ?? 0) + (span.endMs - span.startMs));
   }
   return [...byPackage.entries()].map(([name, ms]) => ({ name, ms })).sort((a, b) => b.ms - a.ms);
@@ -461,7 +561,7 @@ function packageBreakdown(state: RunState): { name: string; ms: number }[] {
 
 /** Where the same expensive identity (a surface, a lookup) ran more than once. */
 function repeatedOperations(state: RunState): { key: string; count: number; ms: number }[] {
-  const REPEAT_TRACKED = new Set(['surface.current', 'surface.target', 'registry.lookup', 'api.diff', 'localization']);
+  const REPEAT_TRACKED = new Set(['surface.current', 'surface.target', 'registry.lookup', 'evidence', 'api.diff', 'localization']);
   const byKey = new Map<string, { count: number; ms: number }>();
   for (const span of state.spans) {
     if (!REPEAT_TRACKED.has(span.name) || span.endMs === null) continue;
@@ -475,6 +575,41 @@ function repeatedOperations(state: RunState): { key: string; count: number; ms: 
     .filter(([, v]) => v.count > 1)
     .map(([key, v]) => ({ key, count: v.count, ms: v.ms }))
     .sort((a, b) => b.ms - a.ms);
+}
+
+/** The same subprocess label (e.g. `git ls-files`) invoked more than once in one run. */
+function repeatedExecCommands(exec: ExecRecord[]): { label: string; count: number; ms: number }[] {
+  const byLabel = new Map<string, { count: number; ms: number }>();
+  for (const e of exec) {
+    const entry = byLabel.get(e.label) ?? { count: 0, ms: 0 };
+    entry.count += 1;
+    entry.ms += e.durationMs;
+    byLabel.set(e.label, entry);
+  }
+  return [...byLabel.entries()]
+    .filter(([, v]) => v.count > 1)
+    .map(([label, v]) => ({ label, count: v.count, ms: v.ms }))
+    .sort((a, b) => b.ms - a.ms);
+}
+
+/** Peak number of overlapping intervals — a real sweep, not a guess from request count or configured concurrency. */
+function maxOverlap(intervals: { start: number; end: number }[]): number {
+  if (intervals.length === 0) return 0;
+  // Ends sort before starts at an identical timestamp, so two genuinely
+  // back-to-back (serial) requests are never counted as overlapping.
+  const events: [number, number][] = [];
+  for (const { start, end } of intervals) {
+    events.push([start, 1]);
+    events.push([Math.max(end, start), -1]);
+  }
+  events.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  let current = 0;
+  let max = 0;
+  for (const [, delta] of events) {
+    current += delta;
+    if (current > max) max = current;
+  }
+  return max;
 }
 
 interface NetworkByHost {
@@ -510,36 +645,51 @@ function networkSummary(state: RunState) {
     })
     .sort((a, b) => b.cumulativeMs - a.cumulativeMs);
 
-  const cacheHits = requests.filter((r) => r.cache === 'hit').length;
-  const cacheMisses = requests.filter((r) => r.cache === 'miss').length;
+  const revalidated = requests.filter((r) => r.cache === 'hit').length;
+  const notRevalidated = requests.filter((r) => r.cache === 'miss').length;
+  // One retry count per logical request (recorded once, at its final
+  // attempt) — never summed per-attempt, which would overcount a
+  // twice-retried request as three retries instead of two.
   const retries = requests.reduce((sum, r) => sum + (r.retries ?? 0), 0);
+  const backoffMs = requests.reduce((sum, r) => sum + (r.backoffMs ?? 0), 0);
   const cumulativeMs = requests.reduce((sum, r) => sum + r.durationMs, 0);
-  const maxConcurrent = maxOverlap(requests.map((r) => [r.durationMs, r.durationMs] as const), state, requests);
+  const maxConcurrent = maxOverlap(requests.map((r) => ({ start: r.startOffsetMs, end: r.startOffsetMs + r.durationMs })));
 
-  return { hosts, cacheHits, cacheMisses, retries, cumulativeMs, requestCount: requests.length, maxConcurrent };
-}
+  // The same host+path fetched from the network (not served from cache) more
+  // than once in one run — wasted, evidence-backed, no guessing about why.
+  const byResource = new Map<string, number>();
+  for (const r of requests) {
+    const key = `${r.host}${r.path}`;
+    byResource.set(key, (byResource.get(key) ?? 0) + 1);
+  }
+  const repeatedFetches = [...byResource.entries()].filter(([, count]) => count > 1).sort((a, b) => b[1] - a[1]);
 
-/** Peak number of HTTP requests in flight at once, via interval-union sweep. */
-function maxOverlap(_unused: unknown, _state: RunState, requests: HttpRequestRecord[]): number {
-  // Requests don't carry absolute start offsets in this record shape (only
-  // duration), so concurrency is approximated conservatively from the
-  // configured network concurrency env var when present, else left at the
-  // observed count capped to a sane default. Exact concurrency would require
-  // threading start/end offsets through every http.ts call site.
-  const configured = process.env.DRIFT_NETWORK_CONCURRENCY;
-  if (configured && Number.isFinite(Number(configured))) return Number(configured);
-  return Math.min(requests.length, 8);
+  const slowest = [...requests].sort((a, b) => b.durationMs - a.durationMs).slice(0, 5);
+
+  return {
+    hosts,
+    revalidated,
+    notRevalidated,
+    retries,
+    backoffMs,
+    cumulativeMs,
+    requestCount: requests.length,
+    maxConcurrent,
+    repeatedFetches,
+    slowest,
+  };
 }
 
 function render(state: RunState, status: string, finishMeta: Record<string, unknown>): string {
   const totalMs = state.now();
   const timeline = renderTimeline(state);
-  const stages = stageBreakdown(state, totalMs);
+  const stages = stageBreakdown(state);
   const packages = packageBreakdown(state);
   const net = networkSummary(state);
   const exec = state.execCommands;
   const execCumulative = exec.reduce((sum, e) => sum + e.durationMs, 0);
   const slowestExec = [...exec].sort((a, b) => b.durationMs - a.durationMs).slice(0, 5);
+  const execRepeats = repeatedExecCommands(exec);
   const repeats = repeatedOperations(state);
 
   const lines: string[] = [];
@@ -575,9 +725,10 @@ function render(state: RunState, status: string, finishMeta: Record<string, unkn
   lines.push(`  requests: ${net.requestCount}`);
   lines.push(`  total_request_time: ${fmtSec(net.cumulativeMs)}`);
   lines.push(`  max_concurrent: ${net.maxConcurrent}`);
-  lines.push(`  cache_hits: ${net.cacheHits}`);
-  lines.push(`  cache_misses: ${net.cacheMisses}`);
+  lines.push(`  revalidated_304: ${net.revalidated}`);
+  lines.push(`  fetched: ${net.notRevalidated}`);
   lines.push(`  retries: ${net.retries}`);
+  lines.push(`  backoff_time: ${fmtSec(net.backoffMs)}`);
   if (net.hosts.length) {
     lines.push('  by host:');
     for (const h of net.hosts) {
@@ -585,6 +736,14 @@ function render(state: RunState, status: string, finishMeta: Record<string, unkn
         `    ${h.host.padEnd(28)} requests=${h.count} cumulative=${fmtSec(h.cumulativeMs)} mean=${fmtMs(h.meanMs)} p95=${fmtMs(h.p95Ms)} slowest=${fmtMs(h.slowestMs)}`,
       );
     }
+  }
+  if (net.slowest.length) {
+    lines.push('  slowest requests:');
+    for (const r of net.slowest) lines.push(`    ${fmtSec(r.durationMs).padStart(8)} ${r.method} ${r.host}${r.path}`);
+  }
+  if (net.repeatedFetches.length) {
+    lines.push('  repeated fetches (same resource, more than once):');
+    for (const [resource, count] of net.repeatedFetches.slice(0, 10)) lines.push(`    ${String(count).padStart(2)}x ${resource}`);
   }
   lines.push('');
 
@@ -594,6 +753,12 @@ function render(state: RunState, status: string, finishMeta: Record<string, unkn
   if (slowestExec.length) {
     lines.push('  slowest:');
     for (const e of slowestExec) lines.push(`    ${fmtSec(e.durationMs).padStart(8)} ${e.label}`);
+  }
+  if (execRepeats.length) {
+    lines.push('  repeated commands:');
+    for (const r of execRepeats.slice(0, 10)) {
+      lines.push(`    ${r.label.padEnd(28)} ${String(r.count).padStart(2)}x   ${fmtSec(r.ms)} cumulative`);
+    }
   }
   lines.push('');
 
@@ -629,12 +794,11 @@ function render(state: RunState, status: string, finishMeta: Record<string, unkn
 // ---------------------------------------------------------------------------
 // Deterministic diagnostic flags
 //
-// Simple, well-commented threshold heuristics — never an LLM. Each one names
-// a shape of problem seen in real Drift regressions, not a guess.
+// Simple, well-commented threshold heuristics — never an LLM, and never a
+// causal claim the recorded numbers don't actually support. Each one states
+// only the evidence: a share, a count, a duration — not a diagnosis of why.
 // ---------------------------------------------------------------------------
 
-/** Network time this many times the total wall-clock is a sign of serial waiting, not concurrency. */
-const HIGH_NETWORK_WAIT_RATIO = 1.5;
 /** A single package eating more than this share of the run is worth naming directly. */
 const HOT_PACKAGE_SHARE = 0.15;
 /** More than this many requests per package considered suggests redundant fetching. */
@@ -645,6 +809,12 @@ const LOW_CACHE_HIT_RATE = 0.3;
 const LOCALIZATION_DOMINANT_SHARE = 0.35;
 /** A single external command over this long is worth calling out on its own. */
 const SLOW_EXTERNAL_PROCESS_MS = 5000;
+/** A single HTTP request over this long is worth naming, independent of the rest of the run. */
+const SLOW_HTTP_REQUEST_MS = 3000;
+/** Enough network requests that "fully serial" is a meaningful, not coincidental, observation. */
+const MIN_REQUESTS_FOR_CONCURRENCY_NOTE = 10;
+/** More than this many retries across the run is worth surfacing on its own. */
+const HIGH_RETRY_COUNT = 5;
 
 function diagnosticFlags(args: {
   totalMs: number;
@@ -658,15 +828,12 @@ function diagnosticFlags(args: {
   const flags: string[] = [];
   const { totalMs, stages, packages, net, repeats, caches, exec } = args;
 
-  if (totalMs > 0 && net.cumulativeMs > totalMs * HIGH_NETWORK_WAIT_RATIO) {
-    flags.push(
-      `HIGH_NETWORK_WAIT: cumulative HTTP time (${fmtSec(net.cumulativeMs)}) is ${(net.cumulativeMs / totalMs).toFixed(1)}x wall-clock time (${fmtSec(totalMs)})`,
-    );
-  }
-
   const hottest = packages[0];
   if (hottest && totalMs > 0 && hottest.ms / totalMs > HOT_PACKAGE_SHARE) {
-    flags.push(`HOT_PACKAGE: ${hottest.name} consumed ${((hottest.ms / totalMs) * 100).toFixed(1)}% of wall-clock duration`);
+    // "Spanned", not "consumed": packages are analysed concurrently, so this
+    // is the fraction of wall-clock time this package's own span covered —
+    // not a claim that removing it would free up that share of the run.
+    flags.push(`HOT_PACKAGE: ${hottest.name} was the slowest package, spanning ${((hottest.ms / totalMs) * 100).toFixed(1)}% of the run's wall-clock time`);
   }
 
   if (packages.length > 0 && net.requestCount / packages.length > HIGH_REQUESTS_PER_PACKAGE) {
@@ -694,6 +861,24 @@ function diagnosticFlags(args: {
   const slowestExec = [...exec].sort((a, b) => b.durationMs - a.durationMs)[0];
   if (slowestExec && slowestExec.durationMs > SLOW_EXTERNAL_PROCESS_MS) {
     flags.push(`SLOW_EXTERNAL_PROCESS: ${slowestExec.label} consumed ${fmtSec(slowestExec.durationMs)}`);
+  }
+
+  const slowestRequest = net.slowest[0];
+  if (slowestRequest && slowestRequest.durationMs > SLOW_HTTP_REQUEST_MS) {
+    flags.push(`SLOW_HTTP_REQUEST: ${slowestRequest.method} ${slowestRequest.host}${slowestRequest.path} took ${fmtSec(slowestRequest.durationMs)}`);
+  }
+
+  if (net.requestCount >= MIN_REQUESTS_FOR_CONCURRENCY_NOTE && net.maxConcurrent <= 1) {
+    flags.push(`LOW_OBSERVED_CONCURRENCY: ${net.requestCount} HTTP requests were made but the maximum observed concurrency was ${net.maxConcurrent}`);
+  }
+
+  if (net.retries > HIGH_RETRY_COUNT) {
+    flags.push(`HIGH_RETRY_COUNT: ${net.retries} retries observed across ${net.requestCount} requests (${fmtSec(net.backoffMs)} spent backing off)`);
+  }
+
+  if (net.repeatedFetches.length > 0) {
+    const [resource, count] = net.repeatedFetches[0]!;
+    flags.push(`REPEATED_NETWORK_FETCH: ${resource} was fetched from the network ${count} times`);
   }
 
   return flags;
