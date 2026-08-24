@@ -278,21 +278,18 @@ export function renderPanel(vm: ViewModel): string {
 
 /** Everything inside `#root`. Swapped in place on every update. */
 export function renderBody(vm: ViewModel): string {
+  return `${renderThread(vm)}\n${renderComposer(vm)}`;
+}
+
+/** The transcript region; safe to replace without touching the composer. */
+export function renderThread(vm: ViewModel): string {
+  return `<div class="thread" id="thread">${renderWelcomeRegion(vm)}${vm.thread.map((item) => renderThreadItem(item, vm)).join('')}</div>`;
+}
+
+/** The welcome area is independently invalidated when the first user turn arrives. */
+export function renderWelcomeRegion(vm: ViewModel): string {
   const started = vm.thread.some((item) => item.kind === 'user');
-
-  return `<div class="thread" id="thread">
-    ${
-      // The introduction comes first, above the dependency check it started.
-      // It is the only thing on screen that says what the panel is for, and a
-      // developer who opens Drift for the first time reads downwards: putting
-      // it under a progress bar means they meet the work before the reason for
-      // it. It stays until the conversation actually starts.
-      started ? '' : renderWelcome(vm, vm.thread.length > 0)
-    }
-    ${vm.thread.map((item) => renderItem(item, vm)).join('')}
-  </div>
-
-  ${renderComposer(vm)}`;
+  return `<div id="welcome-region">${started ? '' : renderWelcome(vm, vm.thread.length > 0)}</div>`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -329,6 +326,10 @@ function renderWelcome(vm: ViewModel, compact = false): string {
 /* ------------------------------------------------------------------ */
 /* Thread items                                                        */
 /* ------------------------------------------------------------------ */
+
+export function renderThreadItem(item: ThreadItem, vm: ViewModel): string {
+  return `<div data-thread-id="${escapeAttr(item.id)}">${renderItem(item, vm)}</div>`;
+}
 
 function renderItem(item: ThreadItem, vm: ViewModel): string {
   switch (item.kind) {
@@ -1844,14 +1845,14 @@ function renderChangeGroup(group: ReviewGroup): string {
  * search across thousands of paths and VS Code's fuzzy path picker is genuinely
  * the better tool for it.
  */
-function renderComposer(vm: ViewModel): string {
+export function renderComposer(vm: ViewModel): string {
   const placeholder = vm.awaitingAnswer
     ? 'Type your answer, or pick an option above…'
     : vm.busy
       ? 'Drift is working…'
       : 'Ask about a dependency, or type / for commands';
 
-  return `<div class="composer ${vm.awaitingAnswer ? 'answering' : ''}">
+  return `<div id="composer-region" class="composer ${vm.awaitingAnswer ? 'answering' : ''}">
     ${
       vm.attachments.length
         ? `<div class="chips">
@@ -4523,11 +4524,59 @@ document.addEventListener('click', (event) => {
 window.addEventListener('message', (event) => {
   const data = event.data;
 
-  if (data?.type === 'render') {
+  if (data?.type === 'full-render') {
     unlockActions();
     capture();
     root.innerHTML = data.body;
     mount();
+    return;
+  }
+  if (data?.type === 'thread-append' && thread) {
+    const bottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 24;
+    thread.insertAdjacentHTML('beforeend', data.html);
+    if (bottom) thread.scrollTop = thread.scrollHeight;
+    typewriter();
+    unlockActions();
+    return;
+  }
+  if (data?.type === 'thread-replace' && thread) {
+    const bottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 24;
+    const id = String(data.id).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    const previous = thread.querySelector('[data-thread-id="' + id + '"]');
+    if (previous) previous.outerHTML = data.html;
+    if (bottom) thread.scrollTop = thread.scrollHeight;
+    typewriter();
+    unlockActions();
+    return;
+  }
+  if (data?.type === 'thread-reset' && thread) {
+    const bottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 24;
+    const template = document.createElement('template');
+    template.innerHTML = data.html;
+    const next = template.content.querySelector('#thread');
+    if (next) thread.innerHTML = next.innerHTML;
+    if (bottom) thread.scrollTop = thread.scrollHeight;
+    typewriter();
+    unlockActions();
+    return;
+  }
+  if (data?.type === 'welcome-replace' && thread) {
+    const current = document.getElementById('welcome-region');
+    if (current) current.outerHTML = data.html;
+    return;
+  }
+  if (data?.type === 'composer-replace') {
+    capture();
+    const current = document.getElementById('composer-region');
+    if (current) current.outerHTML = data.html;
+    // Only the composer was replaced; retain transcript nodes and initialise
+    // the controls it owns without rebuilding the thread.
+    input = document.getElementById('input');
+    commands = document.getElementById('commands');
+    menu = document.getElementById('menu');
+    menuFilter = document.getElementById('menu-filter');
+    if (input) { input.value = ui.draft; grow(); input.addEventListener('keydown', onComposerKey); input.addEventListener('input', () => { ui.draft = input.value; grow(); syncCommands(); vscode.postMessage({ type: 'draft', text: input.value }); }); }
+    unlockActions();
     return;
   }
   if (data?.type === 'openMenu') { openMenu(data.anchor || 'context'); return; }

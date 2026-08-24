@@ -21,6 +21,7 @@ import type { DriftState, RepoRoot } from '../state.js';
 import type { NestedProject } from '../../../src/detect/nested.js';
 import {
   DriftSession,
+  type SessionChange,
   type Attachment,
   type SessionBranchMode,
   type SessionCommitMode,
@@ -86,10 +87,15 @@ import { DriftReportPanel } from './report.js';
 import { openChangeDiff, openPackageVersionDiff, type ChangeDiffRequest } from '../version-diff.js';
 import { OperationGate } from './scan-start.js';
 import { runRepoDiagnostic } from '../run-diagnostics.js';
+import { countWork } from '../../../src/util/diagnostics.js';
 import {
   makeNonce,
   renderBody,
+  renderComposer,
   renderPanel,
+  renderThread,
+  renderThreadItem,
+  renderWelcomeRegion,
   SLASH_COMMANDS,
   type AgentChoice,
   type MenuItem,
@@ -279,12 +285,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     this.history = new DriftHistory(memento);
 
     this.disposables.push(
-      state.onDidChange(() => this.render()),
-      session.onDidChange(() => {
-        this.render();
+      state.onDidChange(() => this.applyStateChange()),
+      session.onDidChange((change) => {
+        this.applySessionChange(change);
         this.autosave();
       }),
-      review.onDidChange(() => this.render()),
+      review.onDidChange(() => this.applyReviewChange()),
       vscode.authentication.onDidChangeSessions((event) => {
         if (event.provider.id === 'github') void this.refreshIdentity();
       }),
@@ -342,7 +348,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     void this.refreshIdentity();
     void this.refreshAgents();
-    this.paint();
+    this.fullRender();
 
     // Warmed now so the context picker has its list in hand the first time it
     // is opened, rather than making the developer wait for a project walk.
@@ -359,7 +365,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   }
 
   dispose(): void {
-    if (this.renderTimer) clearTimeout(this.renderTimer);
+    if (this.patchTimer) clearTimeout(this.patchTimer);
     if (this.saveTimer) clearTimeout(this.saveTimer);
     for (const d of this.disposables) d.dispose();
   }
@@ -403,7 +409,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       webview.onDidReceiveMessage((message: Incoming) => {
         if (message.type === 'ready') {
           surface.ready = true;
-          void webview.postMessage({ type: 'render', body: renderBody(this.viewModel()) });
+          this.fullRender();
           return;
         }
         void this.handle(message);
@@ -676,7 +682,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         }
         this.stopping = true;
         this.running?.cancel();
-        this.paint();
+        this.fullRender();
         return;
       case 'signIn':
         await getGitHubSession({ createIfNone: true });
@@ -5613,7 +5619,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
    * latency between a state change and the screen — the update itself is a
    * message carrying a string of markup, not a document reload.
    */
-  private renderTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Latest high-frequency replacement per item; never serializes the thread. */
+  private readonly pendingThreadUpdates = new Set<string>();
+  private patchTimer: ReturnType<typeof setTimeout> | null = null;
 
   /**
    * Repaint for a reason that has nothing to do with state.
@@ -5623,23 +5631,79 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
    * changed, but every snippet on screen is now painted in the wrong palette.
    */
   rerender(): void {
-    this.render();
+    this.fullRender();
   }
 
+  /** Compatibility entry point for rare structural controller changes. */
   private render(): void {
-    if (this.surfaces.length === 0 || this.renderTimer) return;
-    this.renderTimer = setTimeout(() => {
-      this.renderTimer = null;
-      this.paint();
-    }, 60);
+    this.fullRender();
   }
 
-  private paint(): void {
+  /** Full body replacement is deliberately limited to document/theme/global resets. */
+  private fullRender(): void {
     if (this.surfaces.length === 0) return;
-
     const body = renderBody(this.viewModel());
-    for (const surface of this.surfaces) {
-      if (surface.ready) void surface.webview.postMessage({ type: 'render', body });
+    this.post({ type: 'full-render', body });
+  }
+
+  private post(message: object): void {
+    const patch = message as { type?: string; html?: string; body?: string };
+    const name = patch.type?.replace(/-/g, '_');
+    if (name && (patch.html !== undefined || patch.body !== undefined)) {
+      const payload = patch.html ?? patch.body ?? '';
+      countWork(`ui.${name}.count`);
+      countWork(`ui.${name}.bytes`, Buffer.byteLength(payload, 'utf8'));
+    }
+    for (const surface of this.surfaces) if (surface.ready) void surface.webview.postMessage(message);
+  }
+
+  private applySessionChange(change: SessionChange): void {
+    if (this.surfaces.length === 0) return;
+    if (change.type === 'thread-update') {
+      this.pendingThreadUpdates.add(change.id);
+      if (this.patchTimer) countWork('ui.patch.coalesced');
+      if (!this.patchTimer) {
+        this.patchTimer = setTimeout(() => {
+          this.patchTimer = null;
+          const vm = this.viewModel();
+          for (const id of this.pendingThreadUpdates) {
+            const item = vm.thread.find((entry) => entry.id === id);
+            if (item) this.post({ type: 'thread-replace', id, html: renderThreadItem(item, vm) });
+          }
+          this.pendingThreadUpdates.clear();
+        }, 24);
+      }
+      return;
+    }
+    const vm = this.viewModel();
+    if (change.type === 'thread-append') {
+      const item = vm.thread.find((entry) => entry.id === change.id);
+      if (item) this.post({ type: 'thread-append', id: item.id, html: renderThreadItem(item, vm) });
+      if (item?.kind === 'user') this.post({ type: 'welcome-replace', html: renderWelcomeRegion(vm) });
+      return;
+    }
+    if (change.type === 'thread-reset') {
+      this.post({ type: 'thread-reset', html: renderThread(vm), welcomeHtml: renderWelcomeRegion(vm) });
+      return;
+    }
+    this.post({ type: 'composer-replace', html: renderComposer(vm) });
+  }
+
+  /** State controls live in the composer; package candidates affect only package cards. */
+  private applyStateChange(): void {
+    const vm = this.viewModel();
+    const packages = vm.thread.filter((item) => item.kind === 'packages');
+    if (packages.length) {
+      for (const item of packages) this.post({ type: 'thread-replace', id: item.id, html: renderThreadItem(item, vm) });
+    }
+    this.post({ type: 'composer-replace', html: renderComposer(vm) });
+  }
+
+  /** Review storage is represented only by existing changes cards. */
+  private applyReviewChange(): void {
+    const vm = this.viewModel();
+    for (const item of vm.thread) {
+      if (item.kind === 'changes') this.post({ type: 'thread-replace', id: item.id, html: renderThreadItem(item, vm) });
     }
   }
 

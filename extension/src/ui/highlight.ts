@@ -18,6 +18,7 @@ import langCpp from '@shikijs/langs/cpp';
 import langJson from '@shikijs/langs/json';
 import langYaml from '@shikijs/langs/yaml';
 import { readActiveTextMateTheme } from './code-theme.js';
+import { countWork } from '../../../src/util/diagnostics.js';
 
 /**
  * Syntax highlighting for every snippet Drift renders — a call site, a
@@ -60,6 +61,32 @@ const LANGS = [
 let loaded: Set<string> = new Set();
 let highlighter: HighlighterCore | null = null;
 let warming: Promise<void> | null = null;
+let themeGeneration = 0;
+const MAX_CACHE_ENTRIES = 2_000;
+const MAX_CACHE_BYTES = 16 * 1024 * 1024;
+const cache = new Map<string, string>();
+let cacheBytes = 0;
+
+/** Small, dependency-free counters consumed by the extension diagnostics sink. */
+export const highlightMetrics = { calls: 0, cacheHits: 0, cacheMisses: 0, tokenizeMs: 0 };
+
+function cacheResult(key: string, html: string): void {
+  const old = cache.get(key);
+  if (old !== undefined) cacheBytes -= key.length + old.length;
+  cache.set(key, html);
+  cacheBytes += key.length + html.length;
+  while (cache.size > MAX_CACHE_ENTRIES || cacheBytes > MAX_CACHE_BYTES) {
+    const first = cache.entries().next().value as [string, string] | undefined;
+    if (!first) break;
+    cache.delete(first[0]);
+    cacheBytes -= first[0].length + first[1].length;
+  }
+}
+
+/** Exposed for deterministic architecture tests. */
+export function highlightCacheInfo(): { entries: number; bytes: number } {
+  return { entries: cache.size, bytes: cacheBytes };
+}
 
 const changed = new vscode.EventEmitter<void>();
 
@@ -117,6 +144,9 @@ async function build(): Promise<void> {
     highlighter?.dispose();
     highlighter = created;
     loaded = new Set(created.getLoadedLanguages());
+    themeGeneration += 1;
+    cache.clear();
+    cacheBytes = 0;
     changed.fire();
   } catch {
     // Highlighting is decoration. A grammar or theme that will not load must
@@ -162,12 +192,28 @@ export function watchCodeTheme(): vscode.Disposable {
  * warming up or the language is unknown, so a caller never has to check.
  */
 export function highlightCode(code: string, lang: string = 'typescript'): string {
+  highlightMetrics.calls += 1;
+  countWork('ui.highlight.calls');
   const grammar = loaded.has(lang) ? lang : loaded.has('typescript') ? 'typescript' : null;
   if (!highlighter || !grammar) return escapeHtml(code);
 
+  const key = `${themeGeneration}\0${grammar}\0${code}`;
+  const cached = cache.get(key);
+  if (cached !== undefined) {
+    highlightMetrics.cacheHits += 1;
+    countWork('ui.highlight.cache_hits');
+    // Map insertion order is the LRU order.
+    cache.delete(key);
+    cache.set(key, cached);
+    return cached;
+  }
+  highlightMetrics.cacheMisses += 1;
+  countWork('ui.highlight.cache_misses');
+
   try {
+    const started = performance.now();
     const { tokens } = highlighter.codeToTokens(code, { lang: grammar, theme: THEME_NAME });
-    return tokens
+    const html = tokens
       .map((line) =>
         line
           .map((token) => {
@@ -188,6 +234,11 @@ export function highlightCode(code: string, lang: string = 'typescript'): string
           .join(''),
       )
       .join('\n');
+    const elapsed = performance.now() - started;
+    highlightMetrics.tokenizeMs += elapsed;
+    countWork('ui.highlight.tokenize_ms', Math.round(elapsed));
+    cacheResult(key, html);
+    return html;
   } catch {
     return escapeHtml(code);
   }
