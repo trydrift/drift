@@ -1,0 +1,751 @@
+name: Port PR 85 onto current main
+
+on:
+  push:
+    branches:
+      - feat/persist-typed-diagnostic-logs
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: feat/persist-typed-diagnostic-logs
+          fetch-depth: 0
+
+      - name: Apply guarded feature port
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              p = Path(path)
+              text = p.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{path}: expected exactly one match, found {count}')
+              p.write_text(text.replace(old, new, 1))
+
+          # Keep PR #86's diagnostics payload/rendering intact; change only artifact identity/lifecycle.
+          replace_once(
+              'src/util/diagnostics.ts',
+              """ * A single always-on, repo-local diagnostic run log.
+""",
+              """ * Always-on, repo-local diagnostic run logging.
+""",
+          )
+          replace_once(
+              'src/util/diagnostics.ts',
+              """ * Written to `<repo git dir>/drift/run.log`. Only the most recent *completed*
+ * run is kept.
+""",
+              """ * Typed runs are written as immutable artifacts under `<repo git dir>/drift/`:
+ * `run-<type>-<started-at>-<run-id>.log`. Following a worktree's `.git`
+ * pointer keeps each linked worktree's history independent.
+""",
+          )
+          replace_once(
+              'src/util/diagnostics.ts',
+              """ *  - A repo-local ownership marker prevents an older overlapping process from
+ *    overwriting a newer run's report.
+""",
+              """ *  - Each typed run owns a unique final path and crash marker, so overlapping
+ *    runs never overwrite, suppress, or clean up one another.
+""",
+          )
+          replace_once(
+              'src/util/diagnostics.ts',
+              """interface Header {
+  runId: string;
+  command: string;
+  mode: string;
+""",
+              """interface Header {
+  runId: string;
+  command: string;
+  type?: string;
+  mode: string;
+""",
+          )
+          replace_once(
+              'src/util/diagnostics.ts',
+              """class RunState {
+  readonly startedAtMs = Date.now();
+""",
+              """class RunState {
+  readonly startedAtMs: number;
+""",
+          )
+          replace_once(
+              'src/util/diagnostics.ts',
+              """  constructor(
+    readonly header: Header,
+    readonly path: string | null,
+    readonly gitDir: string,
+    readonly owner: RunOwner,
+  ) {}
+""",
+              """  constructor(
+    readonly header: Header,
+    readonly path: string | null,
+    readonly gitDir: string,
+    readonly owner: RunOwner,
+    readonly markerPath: string | null,
+    readonly legacySingleFile: boolean,
+  ) {
+    this.startedAtMs = owner.startedAtMs;
+  }
+""",
+          )
+          replace_once(
+              'src/util/diagnostics.ts',
+              """export interface StartRunOptions {
+  command: string;
+  mode: string;
+""",
+              """export interface StartRunOptions {
+  command: string;
+  type?: string;
+  mode: string;
+""",
+          )
+          replace_once(
+              'src/util/diagnostics.ts',
+              """    `run_id: ${h.runId}`,
+    `command: ${h.command}`,
+    `mode: ${h.mode}`,
+""",
+              """    `run_id: ${h.runId}`,
+    `command: ${h.command}`,
+    ...(h.type ? [`type: ${h.type}`] : []),
+    `mode: ${h.mode}`,
+""",
+          )
+
+          marker = """export function startRunLog(options: StartRunOptions): RunLogHandle {
+"""
+          helpers = r'''function sanitizeRunType(type: string): string {
+  const sanitized = type
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return sanitized || 'run';
+}
+
+function runTimestamp(startedAtMs: number): string {
+  return new Date(startedAtMs).toISOString().replace(/:/g, '-');
+}
+
+function inferredRunType(command: string, mode: string): string | null {
+  const vscode = /^vscode:\s+drift\.([A-Za-z0-9_-]+)/.exec(command);
+  if (vscode) return vscode[1] ?? null;
+
+  const cli = /^drift\s+(analyze|analyse|outdated|fix|pr)\b/.exec(command);
+  if (!cli) return null;
+
+  const operation = cli[1] === 'analyse' ? 'analyze' : cli[1]!;
+  if (operation === 'outdated') {
+    const includeDev = !/(?:^|\s)--no-dev(?:\s|$)/.test(command);
+    return `${includeDev ? 'dev' : 'runtime'}-${mode}`;
+  }
+  return `${operation}-${mode}`;
+}
+
+function runArtifactBase(type: string, owner: RunOwner): string {
+  return `run-${sanitizeRunType(type)}-${runTimestamp(owner.startedAtMs)}-${owner.runId.slice(0, 8)}`;
+}
+
+'''
+          p = Path('src/util/diagnostics.ts')
+          text = p.read_text()
+          if text.count(marker) != 1:
+              raise SystemExit('src/util/diagnostics.ts: startRunLog marker mismatch')
+          p.write_text(text.replace(marker, helpers + marker, 1))
+
+          old_start = r'''export function startRunLog(options: StartRunOptions): RunLogHandle {
+  const owner: RunOwner = { runId: randomUUID(), startedAtMs: Date.now() };
+  const header: Header = {
+    runId: owner.runId,
+    command: options.command,
+    mode: options.mode,
+    repoRoot: options.repoRoot,
+    gitHead: options.gitHead ?? 'unknown',
+    driftVersion: options.driftVersion ?? '0.0.0',
+  };
+
+  const gitDir = resolveGitDir(options.repoRoot);
+  let dir: string | null = null;
+  let path: string | null = null;
+  try {
+    dir = join(gitDir, 'drift');
+    mkdirSync(dir, { recursive: true });
+    path = join(dir, 'run.log');
+    withRunLogLock(dir, () => {
+      const markerTmp = join(dir!, `run.in-progress.${process.pid}.${owner.runId}.tmp`);
+      writeFileSync(markerTmp, ownerText(owner, header), 'utf8');
+      renameSync(markerTmp, join(dir!, 'run.in-progress'));
+    });
+  } catch {
+    path = null;
+  }
+
+  const state = new RunState(header, path, gitDir, owner);
+  return {
+    path,
+    run: (fn) => als.run({ state, parentId: null }, fn),
+    finish(status, meta) {
+      if (state.finished) return;
+      state.finished = true;
+
+      const now = state.now();
+      for (const span of state.spans) {
+        if (span.endMs === null) {
+          span.endMs = now;
+          span.status = 'interrupted';
+        }
+      }
+
+      if (!state.path || !dir) return;
+      try {
+        const report = headerText(state.header, new Date(state.startedAtMs).toISOString()) + render(state, status, meta ?? {});
+        const tmp = join(dir, `run.log.${process.pid}.${state.owner.runId}.tmp`);
+        writeFileSync(tmp, report, 'utf8');
+        withRunLogLock(dir, () => {
+          const marker = join(dir!, 'run.in-progress');
+          if (!sameOwner(readOwner(marker), state.owner)) {
+            rmSync(tmp, { force: true });
+            return;
+          }
+          renameSync(tmp, state.path!);
+          rmSync(marker, { force: true });
+        });
+      } catch {
+        // Diagnostics must never fail the operation being diagnosed.
+      }
+    },
+  };
+}
+'''
+          new_start = r'''export function startRunLog(options: StartRunOptions): RunLogHandle {
+  const owner: RunOwner = { runId: randomUUID(), startedAtMs: Date.now() };
+  const type = options.type ?? inferredRunType(options.command, options.mode) ?? undefined;
+  const header: Header = {
+    runId: owner.runId,
+    command: options.command,
+    type: type ? sanitizeRunType(type) : undefined,
+    mode: options.mode,
+    repoRoot: options.repoRoot,
+    gitHead: options.gitHead ?? 'unknown',
+    driftVersion: options.driftVersion ?? '0.0.0',
+  };
+
+  const gitDir = resolveGitDir(options.repoRoot);
+  let dir: string | null = null;
+  let path: string | null = null;
+  let markerPath: string | null = null;
+  const legacySingleFile = !header.type;
+  try {
+    dir = join(gitDir, 'drift');
+    mkdirSync(dir, { recursive: true });
+
+    if (header.type) {
+      const base = runArtifactBase(header.type, owner);
+      path = join(dir, `${base}.log`);
+      markerPath = join(dir, `${base}.in-progress`);
+      const markerTmp = `${markerPath}.${process.pid}.tmp`;
+      writeFileSync(markerTmp, ownerText(owner, header), 'utf8');
+      renameSync(markerTmp, markerPath);
+    } else {
+      path = join(dir, 'run.log');
+      markerPath = join(dir, 'run.in-progress');
+      withRunLogLock(dir, () => {
+        const markerTmp = join(dir!, `run.in-progress.${process.pid}.${owner.runId}.tmp`);
+        writeFileSync(markerTmp, ownerText(owner, header), 'utf8');
+        renameSync(markerTmp, markerPath!);
+      });
+    }
+  } catch {
+    path = null;
+    markerPath = null;
+  }
+
+  const state = new RunState(header, path, gitDir, owner, markerPath, legacySingleFile);
+  return {
+    path,
+    run: (fn) => als.run({ state, parentId: null }, fn),
+    finish(status, meta) {
+      if (state.finished) return;
+      state.finished = true;
+
+      const now = state.now();
+      for (const span of state.spans) {
+        if (span.endMs === null) {
+          span.endMs = now;
+          span.status = 'interrupted';
+        }
+      }
+
+      if (!state.path || !dir) return;
+      try {
+        const report = headerText(state.header, new Date(state.startedAtMs).toISOString()) + render(state, status, meta ?? {});
+
+        if (!state.legacySingleFile) {
+          const tmp = `${state.path}.${process.pid}.tmp`;
+          writeFileSync(tmp, report, 'utf8');
+          renameSync(tmp, state.path);
+          if (state.markerPath) rmSync(state.markerPath, { force: true });
+          return;
+        }
+
+        const tmp = join(dir, `run.log.${process.pid}.${state.owner.runId}.tmp`);
+        writeFileSync(tmp, report, 'utf8');
+        withRunLogLock(dir, () => {
+          const marker = join(dir!, 'run.in-progress');
+          if (!sameOwner(readOwner(marker), state.owner)) {
+            rmSync(tmp, { force: true });
+            return;
+          }
+          renameSync(tmp, state.path!);
+          rmSync(marker, { force: true });
+        });
+      } catch {
+        // Diagnostics must never fail the operation being diagnosed.
+      }
+    },
+  };
+}
+'''
+          replace_once('src/util/diagnostics.ts', old_start, new_start)
+
+          # Extension diagnostic wrapper: typed by default, with explicit production overrides.
+          replace_once(
+              'extension/src/run-diagnostics.ts',
+              """    command: string;
+    mode: 'quick' | 'deep';
+""",
+              """    command: string;
+    type?: string;
+    mode: 'quick' | 'deep';
+""",
+          )
+          replace_once(
+              'extension/src/run-diagnostics.ts',
+              """  const log = startRunLog({ command: args.command, mode: args.mode, repoRoot: args.repoRoot });
+""",
+              """  const log = startRunLog({
+    command: args.command,
+    type: args.type ?? `scan-${args.mode}`,
+    mode: args.mode,
+    repoRoot: args.repoRoot,
+  });
+""",
+          )
+
+          replace_once(
+              'extension/src/ui/home.ts',
+              """              command: 'vscode: drift.scanDependencies',
+              mode: resolvedChoices.deep ? 'deep' : 'quick',
+""",
+              """              command: 'vscode: drift.scanDependencies',
+              type: `${includeDev ? 'dev' : 'runtime'}-${deep ? 'deep' : 'quick'}`,
+              mode: deep ? 'deep' : 'quick',
+""",
+          )
+          replace_once(
+              'extension/src/ui/home.ts',
+              """              command: 'vscode: drift.verify',
+              mode: 'deep',
+""",
+              """              command: 'vscode: drift.verify',
+              type: 'verify-deep',
+              mode: 'deep',
+""",
+          )
+
+          replace_once(
+              'extension/src/extension.ts',
+              """ * lifetime. Each operation overwrites the previous run's file, so the log
+ * always reflects only the most recent thing Drift did in that repo.
+""",
+              """ * lifetime. Each operation gets its own typed, timestamped artifact under
+ * the resolved git directory, so repeated and overlapping runs remain available.
+""",
+          )
+
+          # Update the focused extension wrapper tests to locate immutable files rather than run.log.
+          Path('extension/test/run-diagnostics.test.ts').write_text(r'''import { test, describe } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { runRepoDiagnostic } from '../src/run-diagnostics.js';
+import { resolveGitDir, startSpan } from '../../src/util/diagnostics.js';
+
+const run = promisify(execFile);
+
+async function withGitRepo<T>(fn: (root: string) => Promise<T>): Promise<T> {
+  const root = await mkdtemp(join(tmpdir(), 'drift-extension-diag-'));
+  try {
+    await run('git', ['init', '-b', 'main'], { cwd: root });
+    await run('git', ['config', 'user.email', 'test@example.com'], { cwd: root });
+    await run('git', ['config', 'user.name', 'Test'], { cwd: root });
+    return await fn(root);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}
+
+async function completedLogs(root: string): Promise<string[]> {
+  const dir = join(resolveGitDir(root), 'drift');
+  const names = (await readdir(dir)).filter((name) => name.endsWith('.log')).sort();
+  return names.map((name) => join(dir, name));
+}
+
+async function onlyCompletedLog(root: string): Promise<{ path: string; contents: string }> {
+  const logs = await completedLogs(root);
+  assert.equal(logs.length, 1);
+  return { path: logs[0]!, contents: await readFile(logs[0]!, 'utf8') };
+}
+
+describe('runRepoDiagnostic', () => {
+  test('keeps repository diagnostics isolated', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'drift-extension-diag-roots-'));
+    const repoA = join(root, 'a');
+    const repoB = join(root, 'b');
+    try {
+      await run('mkdir', [repoA]);
+      await run('mkdir', [repoB]);
+      for (const repo of [repoA, repoB]) {
+        await run('git', ['init', '-b', 'main'], { cwd: repo });
+        await run('git', ['config', 'user.email', 'test@example.com'], { cwd: repo });
+        await run('git', ['config', 'user.name', 'Test'], { cwd: repo });
+      }
+      await runRepoDiagnostic({ command: 'test:a', mode: 'quick', repoRoot: repoA, spanName: 'dependency.scan' }, async () => {
+        startSpan('package', { package: 'only-a' }).end();
+      });
+      await runRepoDiagnostic({ command: 'test:b', mode: 'quick', repoRoot: repoB, spanName: 'dependency.scan' }, async () => {
+        startSpan('package', { package: 'only-b' }).end();
+      });
+      const logA = (await onlyCompletedLog(repoA)).contents;
+      const logB = (await onlyCompletedLog(repoB)).contents;
+      assert.match(logA, /only-a/);
+      assert.doesNotMatch(logA, /only-b/);
+      assert.match(logB, /only-b/);
+      assert.doesNotMatch(logB, /only-a/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  test('preserves every completed run with a typed timestamped filename', async () => {
+    await withGitRepo(async (root) => {
+      await runRepoDiagnostic(
+        { command: 'test:first', type: 'dev-quick', mode: 'quick', repoRoot: root, spanName: 'scan' },
+        async () => startSpan('package', { package: 'first' }).end(),
+      );
+      await runRepoDiagnostic(
+        { command: 'test:second', type: 'dev-quick', mode: 'quick', repoRoot: root, spanName: 'scan' },
+        async () => startSpan('package', { package: 'second' }).end(),
+      );
+
+      const logs = await completedLogs(root);
+      assert.equal(logs.length, 2);
+      for (const path of logs) {
+        assert.match(
+          path.split('/').pop()!,
+          /^run-dev-quick-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.\d{3}Z-[a-f0-9]{8}\.log$/,
+        );
+      }
+    });
+  });
+
+  test('records cancellation instead of success', async () => {
+    await withGitRepo(async (root) => {
+      await runRepoDiagnostic({ command: 'test', mode: 'quick', repoRoot: root, spanName: 'scan', isCancelled: () => true }, async () => undefined);
+      const { path, contents } = await onlyCompletedLog(root);
+      assert.match(path.split('/').pop()!, /^run-scan-quick-/);
+      assert.match(contents, /status=cancelled/);
+      assert.doesNotMatch(contents, /status=ok/);
+    });
+  });
+
+  test('records and rethrows failures with redacted errors', async () => {
+    await withGitRepo(async (root) => {
+      await assert.rejects(
+        runRepoDiagnostic({ command: 'test', mode: 'quick', repoRoot: root, spanName: 'scan' }, async () => {
+          throw new Error('Bearer secret-token-value');
+        }),
+        /Bearer secret-token-value/,
+      );
+      const { contents } = await onlyCompletedLog(root);
+      assert.match(contents, /status=threw/);
+      assert.match(contents, /REDACTED/);
+      assert.doesNotMatch(contents, /secret-token-value/);
+    });
+  });
+
+  test('records deep mode and type in the header and filename', async () => {
+    await withGitRepo(async (root) => {
+      await runRepoDiagnostic({ command: 'test', mode: 'deep', repoRoot: root, spanName: 'verification' }, async () => undefined);
+      const { path, contents } = await onlyCompletedLog(root);
+      assert.match(path.split('/').pop()!, /^run-scan-deep-/);
+      assert.match(contents, /type: scan-deep/);
+      assert.match(contents, /mode: deep/);
+    });
+  });
+});
+''')
+
+          Path('test/diagnostics-history.test.ts').write_text(r'''import { test, describe } from 'node:test';
+import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { resolveGitDir, startRunLog, startSpan } from '../dist/util/diagnostics.js';
+
+const run = promisify(execFile);
+
+async function withGitRepo<T>(fn: (root: string) => Promise<T>): Promise<T> {
+  const root = await mkdtemp(join(tmpdir(), 'drift-diag-history-'));
+  const git = (args: string[]) => run('git', args, { cwd: root });
+  try {
+    await git(['init', '-b', 'main']);
+    await git(['config', 'user.email', 'test@example.com']);
+    await git(['config', 'user.name', 'Test']);
+    await writeFile(join(root, 'file.txt'), 'hello\n');
+    await git(['add', '-A']);
+    await git(['commit', '-m', 'initial']);
+    return await fn(root);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}
+
+async function entries(root: string): Promise<string[]> {
+  return (await readdir(join(resolveGitDir(root), 'drift'))).sort();
+}
+
+function basename(path: string): string {
+  return path.split(/[\\/]/).pop()!;
+}
+
+describe('typed diagnostic history', () => {
+  test('two overlapping runs keep independent markers and completed logs regardless of finish order', async () => {
+    await withGitRepo(async (root) => {
+      const first = startRunLog({ command: 'test:first', type: 'dev-quick', mode: 'quick', repoRoot: root });
+      const second = startRunLog({ command: 'test:second', type: 'dev-quick', mode: 'quick', repoRoot: root });
+      assert.equal((await entries(root)).filter((name) => name.endsWith('.in-progress')).length, 2);
+
+      await first.run(async () => startSpan('package', { package: 'first' }).end());
+      await second.run(async () => startSpan('package', { package: 'second' }).end());
+      second.finish('ok');
+      assert.equal((await entries(root)).filter((name) => name.endsWith('.in-progress')).length, 1);
+      first.finish('ok');
+
+      const final = await entries(root);
+      assert.equal(final.filter((name) => name.endsWith('.log')).length, 2);
+      assert.equal(final.filter((name) => name.endsWith('.in-progress')).length, 0);
+    });
+  });
+
+  test('same-millisecond runs receive distinct collision-safe paths', async () => {
+    await withGitRepo(async (root) => {
+      const originalNow = Date.now;
+      Date.now = () => Date.UTC(2026, 7, 24, 15, 4, 12, 483);
+      try {
+        const first = startRunLog({ command: 'test:first', type: 'dev-quick', mode: 'quick', repoRoot: root });
+        const second = startRunLog({ command: 'test:second', type: 'dev-quick', mode: 'quick', repoRoot: root });
+        assert.notEqual(first.path, second.path);
+        assert.match(basename(first.path!), /^run-dev-quick-2026-08-24T15-04-12\.483Z-[a-f0-9]{8}\.log$/);
+        assert.match(basename(second.path!), /^run-dev-quick-2026-08-24T15-04-12\.483Z-[a-f0-9]{8}\.log$/);
+        first.finish('ok');
+        second.finish('ok');
+      } finally {
+        Date.now = originalNow;
+      }
+      assert.equal((await entries(root)).filter((name) => name.endsWith('.log')).length, 2);
+    });
+  });
+
+  test('run type is sanitized and recorded in both filename and header', async () => {
+    await withGitRepo(async (root) => {
+      const log = startRunLog({ command: 'test', type: 'Dev / Quick', mode: 'quick', repoRoot: root });
+      assert.match(basename(log.path!), /^run-dev-quick-/);
+      log.finish('ok');
+      assert.match(await readFile(log.path!, 'utf8'), /type: dev-quick/);
+    });
+  });
+
+  test('finish remains idempotent for immutable typed logs', async () => {
+    await withGitRepo(async (root) => {
+      const log = startRunLog({ command: 'test', type: 'scan-quick', mode: 'quick', repoRoot: root });
+      log.finish('ok');
+      const before = await readFile(log.path!, 'utf8');
+      log.finish('error', { note: 'must not be written' });
+      assert.equal(await readFile(log.path!, 'utf8'), before);
+      assert.equal((await entries(root)).filter((name) => name.endsWith('.log')).length, 1);
+    });
+  });
+
+  test('linked worktrees keep independent diagnostic histories', async () => {
+    await withGitRepo(async (root) => {
+      const worktree = `${root}-worktree`;
+      await run('git', ['worktree', 'add', '-b', 'feature', worktree], { cwd: root });
+      try {
+        const mainLog = startRunLog({ command: 'main', type: 'scan-quick', mode: 'quick', repoRoot: root });
+        mainLog.finish('ok');
+        const worktreeLog = startRunLog({ command: 'worktree', type: 'scan-deep', mode: 'deep', repoRoot: worktree });
+        worktreeLog.finish('ok');
+        assert.notEqual(resolveGitDir(root), resolveGitDir(worktree));
+        assert.equal((await entries(root)).filter((name) => name.endsWith('.log')).length, 1);
+        assert.equal((await entries(worktree)).filter((name) => name.endsWith('.log')).length, 1);
+      } finally {
+        await run('git', ['worktree', 'remove', '--force', worktree], { cwd: root }).catch(() => {});
+      }
+    });
+  });
+
+  test('separate processes can finish in either order without suppressing either run', async () => {
+    await withGitRepo(async (root) => {
+      const script = `
+        import { readFile, writeFile } from 'node:fs/promises';
+        import { startRunLog, startSpan } from '${join(process.cwd(), 'dist/util/diagnostics.js')}';
+        const [root, label, ready, release] = process.argv.slice(1);
+        const log = startRunLog({ command: 'child:' + label, type: 'dev-quick', mode: 'quick', repoRoot: root });
+        await log.run(async () => {
+          startSpan('package', { package: label }).end();
+          await writeFile(ready, 'ready');
+          for (;;) {
+            try { await readFile(release); break; }
+            catch { await new Promise((resolve) => setTimeout(resolve, 10)); }
+          }
+        });
+        log.finish('ok');
+      `;
+      const coordination = await mkdtemp(join(tmpdir(), 'drift-diag-history-process-'));
+      try {
+        const aReady = join(coordination, 'a.ready');
+        const bReady = join(coordination, 'b.ready');
+        const aRelease = join(coordination, 'a.release');
+        const bRelease = join(coordination, 'b.release');
+        const child = (label: string, ready: string, release: string) =>
+          run(process.execPath, ['--input-type=module', '-e', script, root, label, ready, release]);
+        const a = child('A', aReady, aRelease);
+        const b = child('B', bReady, bRelease);
+        for (const path of [aReady, bReady]) {
+          for (;;) {
+            try { await readFile(path); break; }
+            catch { await new Promise((resolve) => setTimeout(resolve, 10)); }
+          }
+        }
+        await writeFile(bRelease, 'go');
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        await writeFile(aRelease, 'go');
+        await Promise.all([a, b]);
+        assert.equal((await entries(root)).filter((name) => name.endsWith('.log')).length, 2);
+      } finally {
+        await rm(coordination, { recursive: true, force: true });
+      }
+    });
+  });
+});
+''')
+
+          Path('test/diagnostics-vscode-history.test.ts').write_text(r'''import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { resolveGitDir, startRunLog } from '../dist/util/diagnostics.js';
+
+const run = promisify(execFile);
+
+test('existing vscode analyze operations retain a new typed log on every run', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'drift-vscode-history-'));
+  try {
+    await run('git', ['init', '-b', 'main'], { cwd: root });
+    await run('git', ['config', 'user.email', 'test@example.com'], { cwd: root });
+    await run('git', ['config', 'user.name', 'Test'], { cwd: root });
+    await writeFile(join(root, 'file.txt'), 'hello\n');
+    await run('git', ['add', '-A'], { cwd: root });
+    await run('git', ['commit', '-m', 'initial'], { cwd: root });
+
+    const first = startRunLog({ command: 'vscode: drift.analyze', mode: 'quick', repoRoot: root });
+    first.finish('ok');
+    const second = startRunLog({ command: 'vscode: drift.analyze', mode: 'quick', repoRoot: root });
+    second.finish('ok');
+    assert.notEqual(first.path, second.path);
+    assert.match(first.path!.split(/[\\/]/).pop()!, /^run-analyze-/);
+    assert.match(second.path!.split(/[\\/]/).pop()!, /^run-analyze-/);
+    const logs = (await readdir(join(resolveGitDir(root), 'drift'))).filter((name) => name.endsWith('.log'));
+    assert.equal(logs.length, 2);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+''')
+
+          Path('test/diagnostics-cli-history.test.ts').write_text(r'''import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { redactCommand, resolveGitDir, startRunLog } from '../dist/util/diagnostics.js';
+
+const run = promisify(execFile);
+
+test('CLI repository commands receive typed immutable diagnostic filenames', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'drift-cli-diag-history-'));
+  try {
+    await run('git', ['init', '-b', 'main'], { cwd: root });
+    await run('git', ['config', 'user.email', 'test@example.com'], { cwd: root });
+    await run('git', ['config', 'user.name', 'Test'], { cwd: root });
+    await writeFile(join(root, 'file.txt'), 'hello\n');
+    await run('git', ['add', '-A'], { cwd: root });
+    await run('git', ['commit', '-m', 'initial'], { cwd: root });
+
+    const cases = [
+      { argv: ['analyze'], mode: 'quick', prefix: 'run-analyze-quick-' },
+      { argv: ['analyse'], mode: 'quick', prefix: 'run-analyze-quick-' },
+      { argv: ['outdated'], mode: 'quick', prefix: 'run-dev-quick-' },
+      { argv: ['outdated', '--no-dev', '--verify'], mode: 'deep', prefix: 'run-runtime-deep-' },
+    ] as const;
+
+    for (const entry of cases) {
+      const log = startRunLog({ command: redactCommand(entry.argv), mode: entry.mode, repoRoot: root });
+      assert.match(log.path!.split(/[\\/]/).pop()!, new RegExp(`^${entry.prefix}`));
+      log.finish('ok');
+    }
+    const logs = (await readdir(join(resolveGitDir(root), 'drift'))).filter((name) => name.endsWith('.log'));
+    assert.equal(logs.length, cases.length);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+''')
+
+          Path('.github/workflows/patch-pr85.yml').unlink()
+          PY
+
+      - name: Commit feature port
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git diff --cached --check
+          git commit -m "feat: persist typed diagnostic log for every run"
+          git push origin HEAD:feat/persist-typed-diagnostic-logs
