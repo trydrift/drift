@@ -1,4 +1,4 @@
-import type { Recording } from "./recordings";
+import { normalizeRecording, type Recording } from "./recordings";
 
 import supabase from "@/data/supabase.json";
 import scrapy from "@/data/scrapy.json";
@@ -56,5 +56,5 @@ export function loadRecordings(): Recording[] {
     flexlayout,
     tca,
     cohttp,
-  ] as unknown as Recording[];
+  ].map(normalizeRecording) as Recording[];
 }
