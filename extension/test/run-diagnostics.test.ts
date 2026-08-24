@@ -1,4 +1,4 @@
-import { test, describe } from 'node:test';
+import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { runRepoDiagnostic } from '../src/run-diagnostics.js';
 import { resolveGitDir, startSpan } from '../../src/util/diagnostics.js';
+import { __settings } from './vscode-stub.js';
 
 const run = promisify(execFile);
 
@@ -24,7 +25,7 @@ async function withGitRepo<T>(fn: (root: string) => Promise<T>): Promise<T> {
 
 async function completedLogs(root: string): Promise<string[]> {
   const dir = join(resolveGitDir(root), 'drift');
-  const names = (await readdir(dir)).filter((name) => name.endsWith('.log')).sort();
+  const names = (await readdir(dir).catch(() => [] as string[])).filter((name) => name.endsWith('.log')).sort();
   return names.map((name) => join(dir, name));
 }
 
@@ -34,7 +35,24 @@ async function onlyCompletedLog(root: string): Promise<{ path: string; contents:
   return { path: logs[0]!, contents: await readFile(logs[0]!, 'utf8') };
 }
 
+beforeEach(() => {
+  __settings.clear();
+  __settings.set('diagnostics.recordRuns', true);
+});
+
 describe('runRepoDiagnostic', () => {
+  test('does not record runs by default', async () => {
+    await withGitRepo(async (root) => {
+      __settings.clear();
+      let ran = false;
+      await runRepoDiagnostic({ command: 'test', mode: 'quick', repoRoot: root, spanName: 'scan' }, async () => {
+        ran = true;
+      });
+      assert.equal(ran, true);
+      assert.deepEqual(await completedLogs(root), []);
+    });
+  });
+
   test('keeps repository diagnostics isolated', async () => {
     const root = await mkdtemp(join(tmpdir(), 'drift-extension-diag-roots-'));
     const repoA = join(root, 'a');

@@ -720,6 +720,12 @@
           "markdownDescription": "What one issue/branch covers. **Per package** (the default) is offered on each package's group header; **per change** is offered on each individual finding regardless of this setting.",
           "order": 40
         },
+        "drift.diagnostics.recordRuns": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Record a repo-local diagnostic log for each Drift operation. **Off by default.** Enable this when diagnosing performance or behavior. Logs are secret-redacted, but can include package names, file paths, command metadata, timings, cache activity, and subprocess summaries.",
+          "order": 89
+        },
         "drift.logLevel": {
           "type": "string",
           "default": "info",

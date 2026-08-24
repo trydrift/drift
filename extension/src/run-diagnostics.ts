@@ -1,4 +1,5 @@
 import { redactText, startRunLog, withSpan } from '../../src/util/diagnostics.js';
+import { shouldRecordRuns } from './run-recording.js';
 
 export async function runRepoDiagnostic<T>(
   args: {
@@ -12,6 +13,8 @@ export async function runRepoDiagnostic<T>(
   },
   work: () => Promise<T>,
 ): Promise<T> {
+  if (!shouldRecordRuns()) return work();
+
   const log = startRunLog({
     command: args.command,
     type: args.type ?? `scan-${args.mode}`,

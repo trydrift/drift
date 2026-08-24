@@ -1,11 +1,12 @@
 /**
- * Always-on, repo-local diagnostic run logging.
+ * Repo-local diagnostic run logging.
  *
- * `DRIFT_PROFILE` (see `profile.ts`) is opt-in and detailed — a JSON dump for
- * `scripts/profile-report.mjs`. This is the opposite: on by default, plain
- * text, and written so that handing the file to a human or an AI agent is
- * enough to answer "why did this run take 15 minutes instead of 30 seconds",
- * without anyone having to know a flag exists first.
+ * Recording policy lives at the CLI/extension boundary and is opt-in by
+ * default. This module is the mechanism: once a surface starts a run, it
+ * captures enough plain-text timing and attribution data to answer questions
+ * such as "why did this run take 15 minutes instead of 30 seconds?".
+ * `DRIFT_PROFILE` (see `profile.ts`) remains a separate, more detailed JSON
+ * profiler for `scripts/profile-report.mjs`.
  *
  * Typed runs are written as immutable artifacts under `<repo git dir>/drift/`:
  * `run-<type>-<started-at>-<run-id>.log`. Following a worktree's `.git`
@@ -16,7 +17,7 @@
  *    module-level variable. Concurrent packages and repositories keep their
  *    own run/parent-span context through every `await`.
  *  - Spans are buffered in memory and the final report is promoted into place
- *    with a single rename, so always-on diagnostics do not turn into a stream
+ *    with a single rename, so diagnostics do not turn into a stream
  *    of filesystem writes.
  *  - Each typed run owns a unique final path and crash marker, so overlapping
  *    runs never overwrite, suppress, or clean up one another.

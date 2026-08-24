@@ -24,6 +24,7 @@ import { main as serveWebhook } from './runners/webhook.js';
 import { sampleTelemetryEvent } from './telemetry.js';
 import { createLogger, type LogLevel, type Logger } from './util/logger.js';
 import { countWork, redactCommand, redactText, startRunLog, startSpan, withSpan } from './util/diagnostics.js';
+import { shouldRecordRun } from './util/run-recording.js';
 import { paletteFor, supportsRedraw } from './util/terminal.js';
 import { createStatusLine } from './util/status-line.js';
 import { createOutdatedView } from './report/terminal-outdated.js';
@@ -363,6 +364,12 @@ is already signed in, then — in an interactive terminal, with \`gh\` installed
 but not yet signed in — a browser-based \`gh auth login\`. Pasting a token is
 the last resort, not the first.
 
+Run diagnostics for repository commands:
+  --record-run                 Write a repo-local diagnostic log for this run.
+                               Off by default.
+  --no-record-run              Do not record this run, even when
+                               DRIFT_RECORD_RUNS is enabled.
+
 Environment:
   GITHUB_TOKEN                Token for repository reads/writes. \`fix\` and
                               \`pr\` need write access from somewhere; \`analyze\`
@@ -370,6 +377,8 @@ Environment:
                               login\` over minting one of these. Create one at
                               ${CREATE_TOKEN_URL}
   DRIFT_COPILOT_TOKEN         User-scoped token for the Copilot agent API
+  DRIFT_RECORD_RUNS           1/true records repo-local diagnostic logs for
+                              repository commands. Default: disabled
   DRIFT_TELEMETRY_DISABLED    1/true disables telemetry even if configured
   DO_NOT_TRACK                1 disables telemetry
   ANTHROPIC_API_KEY           Only if llm.enabled is true in drift.yml
@@ -411,7 +420,7 @@ function defaultBaselineCacheDir(): string | null {
     : join(homedir(), '.drift', 'cache', 'baseline');
 }
 
-/** Commands that operate on a repository, and so get a repo-local run log. */
+/** Commands eligible for opt-in repo-local run logging. */
 const REPO_COMMANDS = new Set(['analyze', 'analyse', 'outdated', 'fix', 'pr']);
 
 async function gitHeadShort(repoRoot: string): Promise<string> {
@@ -429,7 +438,7 @@ export async function main(argv: string[]): Promise<number> {
   const flags = parseFlags(rest);
   const repoRoot = command && REPO_COMMANDS.has(command) ? resolve(typeof flags.dir === 'string' ? flags.dir : process.cwd()) : null;
 
-  const runLog = repoRoot
+  const runLog = repoRoot && shouldRecordRun(flags)
     ? startRunLog({
         command: redactCommand(argv),
         mode: flags.verify ? 'deep' : 'quick',
