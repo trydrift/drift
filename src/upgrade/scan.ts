@@ -981,7 +981,21 @@ export async function scanUpgrades(args: {
         ...(githubToken ? { githubToken } : {}),
       }));
       versionLookups.set(lookupKey, lookupPromise);
-      lookupPromise.finally(() => versionLookups.get(lookupKey) === lookupPromise && versionLookups.delete(lookupKey)).catch(() => undefined);
+      // Retained for the rest of this scan on success, evicted on failure --
+      // the same success-keep/failure-evict split `upstreamCache` above
+      // uses. A successful lookup is a fact about the registry that does not
+      // go stale mid-scan, so two identical manifest rows should share it
+      // even when the second one starts after the first has already
+      // finished, not only while they happen to overlap. A failed lookup is
+      // this run's transient state, not a fact about the package, so a later
+      // independent row must retry rather than inherit it -- `lookupVersions`
+      // never rejects (an unreachable registry is a resolved `'unchecked'`
+      // outcome, not a thrown error), so the eviction check is on the
+      // resolved value, not just `.catch`.
+      lookupPromise.then(
+        (result) => { if (result.outcome === 'unchecked' && versionLookups.get(lookupKey) === lookupPromise) versionLookups.delete(lookupKey); },
+        () => { if (versionLookups.get(lookupKey) === lookupPromise) versionLookups.delete(lookupKey); },
+      );
     }
     const available = await lookupPromise;
     lookupSpan.end({ outcome: available.outcome });
