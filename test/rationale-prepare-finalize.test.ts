@@ -189,6 +189,27 @@ describe('prepareRationaleFacts / finalizeRationale', () => {
     assert.ok(rationale.license);
     assert.ok(rationale.security);
   });
+
+  test('buildRationale only batches OSV for changes without prepared facts', async () => {
+    const hits = { registry: 0, repo: 0, osv: 0 };
+    stubNpmAndGithub(hits);
+    const prepared = await prepareRationaleFacts(change, {
+      config: DriftConfigSchema.parse({ rationale: { security: false } }),
+      osv: noNetwork,
+    });
+    const unprepared = { ...change, name: 'other-pkg' };
+    const osv = { fetch: async () => { hits.osv += 1; return { vulns: [] }; } };
+    await buildRationale(
+      { changes: [change, unprepared], evidence: [], breakingChanges: [], impactSites: [] },
+      {
+        config,
+        logger,
+        osv,
+        preparedFacts: new Map([[change, Promise.resolve(prepared)]]),
+      },
+    );
+    assert.equal(hits.osv, 2, 'only the unprepared change should make the two-version OSV lookup');
+  });
 });
 
 describe('scan-wide OSV batching', () => {
@@ -294,6 +315,7 @@ describe('scan-wide rationale sharing end to end', () => {
       // and evidence gathering) is not hit once per workspace — the two rows
       // shared the exact same upstream work.
       assert.ok(hits.registry <= 2, `registry was consulted at most a couple of times, got ${hits.registry}`);
+      assert.equal(hits.osv, 2, 'one scan-wide OSV batch covers the two versions, with no per-row duplicate work');
     } finally {
       globalThis.fetch = realFetch;
       rmSync(root, { recursive: true, force: true });

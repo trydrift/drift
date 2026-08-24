@@ -254,7 +254,8 @@ export async function buildRationale(
   ctx: RationaleContext,
 ): Promise<UpgradeRationale[]> {
   const upgrades = input.changes.filter((change) => change.from && change.to);
-  const lookups: SecurityLookup[] = upgrades.map((change) => ({
+  const unprepared = upgrades.filter((change) => !ctx.preparedFacts?.has(change));
+  const lookups: SecurityLookup[] = unprepared.map((change) => ({
     name: change.name,
     ecosystem: change.ecosystem,
     from: change.from!,
@@ -267,7 +268,7 @@ export async function buildRationale(
   // already answered for every dependency in this call.
   const securityBatchPromise = ctx.config.rationale.security
     ? assessSecurityBatch(lookups, ctx.osv ?? {}).then(
-        (security) => new Map(upgrades.map((change, index) => [change, security.get(lookups[index]!)!])),
+        (security) => new Map(unprepared.map((change, index) => [change, security.get(lookups[index]!)!])),
       )
     : undefined;
 

@@ -67,11 +67,12 @@ export const javaSurface: SurfaceProvider = {
     // once both have landed. Failure precedence is preserved exactly as
     // before: "before" failing is reported ahead of "after" failing, even
     // though "after" may now finish (or fail) first.
-    const [before, after] = await Promise.all([
-      downloadJar(coordinate, request.from, request.workdir),
-      downloadJar(coordinate, request.to, request.workdir),
-    ]);
+    const beforePromise = downloadJar(coordinate, request.from, request.workdir);
+    const afterPromise = downloadJar(coordinate, request.to, request.workdir);
+    afterPromise.catch(() => undefined);
+    const before = await beforePromise;
     if (!before.ok) return before.failure;
+    const after = await afterPromise;
     if (!after.ok) return after.failure;
 
     const result = await request.exec(

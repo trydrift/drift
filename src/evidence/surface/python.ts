@@ -82,11 +82,12 @@ export const pythonSurface: SurfaceProvider = {
     // an earlier owner) rewrite it — see the comment on `inFlightSurfaces`.
     const deadlineMs = Date.now() + request.timeoutMs;
 
-    const [before, after] = await Promise.all([
-      surfaceOf(request, request.from, scriptPath, analyzer, deadlineMs),
-      surfaceOf(request, request.to, scriptPath, analyzer, deadlineMs),
-    ]);
+    const beforePromise = surfaceOf(request, request.from, scriptPath, analyzer, deadlineMs);
+    const afterPromise = surfaceOf(request, request.to, scriptPath, analyzer, deadlineMs);
+    afterPromise.catch(() => undefined);
+    const before = await beforePromise;
     if (!before.ok) return before.failure;
+    const after = await afterPromise;
     if (!after.ok) return after.failure;
 
     // PyPI's sdist/wheel is the artifact actually installed; a GitHub tag is
