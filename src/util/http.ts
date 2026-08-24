@@ -153,6 +153,31 @@ function variantFingerprint(headers?: Record<string, string>): string {
 }
 
 /**
+ * A short non-secret identity for one exact URL + response representation.
+ *
+ * Query strings are deliberately not printed in the run log because they can
+ * carry credentials. Hashing the full URL plus the response-changing header
+ * fingerprint lets a coalesced logical waiter be matched to the physical fetch
+ * it joined without revealing that query string.
+ */
+function diagnosticRequestKey(url: string, headers?: Record<string, string>): string {
+  return createHash('sha256')
+    .update(`${variantFingerprint(headers)}:${url}`)
+    .digest('hex')
+    .slice(0, 10);
+}
+
+function archiveDiagnosticKey(
+  url: string,
+  options: { timeoutMs?: number; retries?: number; maxBytes?: number },
+): string {
+  return createHash('sha256')
+    .update(`${url}|${options.maxBytes ?? ''}|${options.timeoutMs ?? ''}|${options.retries ?? ''}`)
+    .digest('hex')
+    .slice(0, 10);
+}
+
+/**
  * The host a URL is on, for grouping spans.
  *
  * Deliberately not the full URL: a profile of a large scan holds tens of
@@ -176,6 +201,47 @@ function pathOf(url: string): string {
   const slash = rest.indexOf('/');
   const pathAndQuery = slash < 0 ? '' : rest.slice(slash);
   return pathAndQuery.split('?')[0]!;
+}
+
+function elapsedSince(startOffsetMs: number): number {
+  return Math.max(0, runElapsedMs() - startOffsetMs);
+}
+
+function attemptMeta(args: {
+  requestKey: string;
+  path: string;
+  timeoutMs: number;
+  attemptStartOffsetMs: number;
+  abortFiredAtMs: number | null;
+  headersAtMs?: number | null;
+  bodyDoneAtMs?: number | null;
+}): Record<string, string | number | boolean> {
+  const meta: Record<string, string | number | boolean> = {
+    requestKey: args.requestKey,
+    path: args.path,
+    timeoutMs: Math.max(0, Math.round(args.timeoutMs)),
+  };
+  if (args.abortFiredAtMs !== null) {
+    meta.abortTimerFired = true;
+    meta.abortDelayMs = Math.max(
+      0,
+      Math.round(args.abortFiredAtMs - args.attemptStartOffsetMs - args.timeoutMs),
+    );
+  } else {
+    meta.abortTimerFired = false;
+  }
+  if (args.headersAtMs !== undefined && args.headersAtMs !== null) {
+    meta.headersMs = Math.max(0, Math.round(args.headersAtMs - args.attemptStartOffsetMs));
+  }
+  if (
+    args.headersAtMs !== undefined &&
+    args.headersAtMs !== null &&
+    args.bodyDoneAtMs !== undefined &&
+    args.bodyDoneAtMs !== null
+  ) {
+    meta.bodyMs = Math.max(0, Math.round(args.bodyDoneAtMs - args.headersAtMs));
+  }
+  return meta;
 }
 
 /**
@@ -280,9 +346,15 @@ export function fetchJson<T>(url: string, options: FetchOptions = {}): Promise<T
   if (profiling() && inFlight.has(cacheKey)) count('http.cache.coalesced');
   const start = runElapsedMs();
   const joined = inFlight.has(cacheKey);
+  const responseHeaders = { Accept: 'application/json', ...options.headers };
+  const requestKey = diagnosticRequestKey(url, responseHeaders);
+  const coalesced = joined
+    ? span('http-coalesced-json', hostOf(url), { requestKey, path: pathOf(url) })
+    : null;
   const result = coalesce(cacheKey, () => fetchAndParseJson<T>(url, cacheKey, options));
   if (!joined) return result;
   return result.then((value) => {
+    coalesced?.end({ waitMs: Math.round(elapsedSince(start)) });
     recordDiag({ url, method: 'GET', startOffsetMs: start, status: null, cache: 'coalesced_hit' });
     return value;
   });
@@ -293,15 +365,21 @@ async function fetchAndParseJson<T>(
   cacheKey: string,
   options: FetchOptions,
 ): Promise<T | null> {
+  const headers = { Accept: 'application/json', ...options.headers };
   const text = await fetchText(url, {
     ...options,
-    headers: { Accept: 'application/json', ...options.headers },
+    headers,
   });
   if (text === null) {
     cacheSet(cacheKey, null);
     return null;
   }
 
+  const parsing = span('json-parse', hostOf(url), {
+    requestKey: diagnosticRequestKey(url, headers),
+    path: pathOf(url),
+    bytes: text.length,
+  });
   try {
     const parsed = JSON.parse(text) as T;
     cacheSet(cacheKey, parsed);
@@ -309,6 +387,8 @@ async function fetchAndParseJson<T>(
   } catch {
     cacheSet(cacheKey, null);
     return null;
+  } finally {
+    parsing.end();
   }
 }
 
@@ -324,8 +404,13 @@ export function fetchText(url: string, options: FetchOptions = {}): Promise<stri
   if (profiling() && inFlight.has(cacheKey)) count('http.cache.coalesced');
   const start = runElapsedMs();
   const joined = inFlight.has(cacheKey);
+  const requestKey = diagnosticRequestKey(url, options.headers);
+  const coalesced = joined
+    ? span('http-coalesced-text', hostOf(url), { requestKey, path: pathOf(url) })
+    : null;
   return coalesce(cacheKey, () => fetchTextUncoalesced(url, cacheKey, options)).then((value) => {
     if (joined) {
+      coalesced?.end({ waitMs: Math.round(elapsedSince(start)) });
       recordDiag({ url, method: 'GET', startOffsetMs: start, status: null, cache: 'coalesced_hit' });
     }
     return value;
@@ -339,7 +424,9 @@ async function fetchTextUncoalesced(
 ): Promise<string | null> {
   const { timeoutMs = DEFAULT_TIMEOUT_MS, headers = {}, retries = 2 } = options;
   const host = hostOf(url);
-  const diskRead = span('disk-cache', profiling() ? host : '');
+  const requestKey = diagnosticRequestKey(url, headers);
+  const requestPath = pathOf(url);
+  const diskRead = span('disk-cache', host, { requestKey, path: requestPath });
   const disk = await readDiskEntry(cacheKey);
   diskRead.end({ hit: disk !== null });
   const ttl = options.cacheTtlMs ?? DEFAULT_DISK_TTL_MS;
@@ -378,19 +465,32 @@ async function fetchTextUncoalesced(
   const requestStartOffsetMs = runElapsedMs();
   let backoffTotalMs = 0;
   for (let attempt = 0; attempt <= retries; attempt++) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    const request = span('http', profiling() ? host : '', attempt > 0 ? { attempt } : undefined);
     const attemptStartOffsetMs = runElapsedMs();
+    const controller = new AbortController();
+    let abortFiredAtMs: number | null = null;
+    const timer = setTimeout(() => {
+      abortFiredAtMs = runElapsedMs();
+      controller.abort();
+    }, timeoutMs);
+    const request = span('http', host, {
+      requestKey,
+      path: requestPath,
+      timeoutMs,
+      ...(attempt > 0 ? { attempt } : {}),
+    });
     try {
       const response = await fetch(url, {
         signal: controller.signal,
         headers: { 'User-Agent': USER_AGENT, ...conditionalHeaders, ...headers },
         redirect: 'follow',
       });
+      const headersAtMs = runElapsedMs();
 
       if (response.status === 304 && disk) {
-        request.end({ status: 304 });
+        request.end({
+          status: 304,
+          ...attemptMeta({ requestKey, path: requestPath, timeoutMs, attemptStartOffsetMs, abortFiredAtMs, headersAtMs }),
+        });
         recordAttempt({ url, method: 'GET', startOffsetMs: attemptStartOffsetMs, status: 304 });
         recordDiag({
           url,
@@ -411,10 +511,23 @@ async function fetchTextUncoalesced(
 
       if (response.ok) {
         const body = await response.text();
+        const bodyDoneAtMs = runElapsedMs();
         // Closed here rather than when the headers landed: for a packument or a
         // declaration tarball the body is most of the wait, and a span that
         // stopped at the status line would attribute that time to nothing.
-        request.end({ status: response.status, bytes: body.length });
+        request.end({
+          status: response.status,
+          bytes: body.length,
+          ...attemptMeta({
+            requestKey,
+            path: requestPath,
+            timeoutMs,
+            attemptStartOffsetMs,
+            abortFiredAtMs,
+            headersAtMs,
+            bodyDoneAtMs,
+          }),
+        });
         recordAttempt({ url, method: 'GET', startOffsetMs: attemptStartOffsetMs, status: response.status });
         recordDiag({
           url,
@@ -441,7 +554,10 @@ async function fetchTextUncoalesced(
       // 404 is a legitimate answer ("no changelog here"), not a failure to retry
       // — and, being an answer rather than a refusal, one worth writing down.
       if (response.status === 404) {
-        request.end({ status: response.status });
+        request.end({
+          status: response.status,
+          ...attemptMeta({ requestKey, path: requestPath, timeoutMs, attemptStartOffsetMs, abortFiredAtMs, headersAtMs }),
+        });
         recordAttempt({ url, method: 'GET', startOffsetMs: attemptStartOffsetMs, status: response.status });
         recordDiag({
           url,
@@ -475,7 +591,10 @@ async function fetchTextUncoalesced(
         const rateLimited =
           response.headers.get('x-ratelimit-remaining') === '0' || response.headers.has('retry-after');
         if (!rateLimited || attempt === retries) {
-          request.end({ status: response.status });
+          request.end({
+            status: response.status,
+            ...attemptMeta({ requestKey, path: requestPath, timeoutMs, attemptStartOffsetMs, abortFiredAtMs, headersAtMs }),
+          });
           recordAttempt({ url, method: 'GET', startOffsetMs: attemptStartOffsetMs, status: response.status });
           recordDiag({
             url,
@@ -488,7 +607,10 @@ async function fetchTextUncoalesced(
           });
           break;
         }
-        request.end({ status: response.status });
+        request.end({
+          status: response.status,
+          ...attemptMeta({ requestKey, path: requestPath, timeoutMs, attemptStartOffsetMs, abortFiredAtMs, headersAtMs }),
+        });
         recordAttempt({ url, method: 'GET', startOffsetMs: attemptStartOffsetMs, status: response.status });
         options.onRetry?.(attempt + 1, 'rate-limited');
         const wait = backoffMs(attempt, response.headers.get('retry-after'));
@@ -499,7 +621,10 @@ async function fetchTextUncoalesced(
 
       const retryable = response.status === 429 || response.status >= 500;
       if (!retryable || attempt === retries) {
-        request.end({ status: response.status });
+        request.end({
+          status: response.status,
+          ...attemptMeta({ requestKey, path: requestPath, timeoutMs, attemptStartOffsetMs, abortFiredAtMs, headersAtMs }),
+        });
         recordAttempt({ url, method: 'GET', startOffsetMs: attemptStartOffsetMs, status: response.status });
         recordDiag({
           url,
@@ -513,14 +638,20 @@ async function fetchTextUncoalesced(
         break;
       }
 
-      request.end({ status: response.status });
+      request.end({
+        status: response.status,
+        ...attemptMeta({ requestKey, path: requestPath, timeoutMs, attemptStartOffsetMs, abortFiredAtMs, headersAtMs }),
+      });
       recordAttempt({ url, method: 'GET', startOffsetMs: attemptStartOffsetMs, status: response.status });
       options.onRetry?.(attempt + 1, response.status === 429 ? 'rate-limited' : 'server-error');
       const wait = backoffMs(attempt, response.headers.get('retry-after'));
       backoffTotalMs += wait;
       await sleep(wait);
     } catch (err) {
-      request.end({ status: 0 });
+      request.end({
+        status: 0,
+        ...attemptMeta({ requestKey, path: requestPath, timeoutMs, attemptStartOffsetMs, abortFiredAtMs }),
+      });
       recordAttempt({ url, method: 'GET', startOffsetMs: attemptStartOffsetMs, status: null });
       if (attempt === retries) {
         recordDiag({
@@ -606,8 +737,15 @@ export function fetchArchive(
   const inFlightKey = `${cacheKey}|maxBytes=${options.maxBytes ?? ''}|timeoutMs=${options.timeoutMs ?? ''}|retries=${options.retries ?? ''}`;
   const start = runElapsedMs();
   const joined = inFlight.has(inFlightKey);
+  const requestKey = archiveDiagnosticKey(url, options);
+  const coalesced = joined
+    ? span('http-coalesced-archive', hostOf(url), { requestKey, path: pathOf(url) })
+    : null;
   return coalesce(inFlightKey, () => fetchArchiveUncoalesced(url, cacheKey, options)).then((value) => {
-    if (joined) recordDiag({ url, method: 'GET', startOffsetMs: start, status: value.ok ? 200 : value.status, cache: 'coalesced_hit' });
+    if (joined) {
+      coalesced?.end({ waitMs: Math.round(elapsedSince(start)) });
+      recordDiag({ url, method: 'GET', startOffsetMs: start, status: value.ok ? 200 : value.status, cache: 'coalesced_hit' });
+    }
     return value;
   });
 }
@@ -618,6 +756,8 @@ async function fetchArchiveUncoalesced(
   options: { timeoutMs?: number; retries?: number; maxBytes?: number },
 ): Promise<ArchiveResult> {
   const host = hostOf(url);
+  const requestPath = pathOf(url);
+  const requestKey = archiveDiagnosticKey(url, options);
   const path = archivePath(cacheKey);
   const { retries = 2, maxBytes } = options;
 
@@ -671,14 +811,27 @@ async function fetchArchiveUncoalesced(
       return { ok: false, status: 0, error: 'Timed out before this attempt could start.' };
     }
 
-    const request = span('archive', profiling() ? host : '', attempt > 0 ? { attempt } : undefined);
     const attemptStartOffsetMs = runElapsedMs();
+    const request = span('archive', host, {
+      requestKey,
+      path: requestPath,
+      timeoutMs: Math.max(0, Math.round(budget)),
+      ...(attempt > 0 ? { attempt } : {}),
+    });
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), budget);
+    let abortFiredAtMs: number | null = null;
+    const timer = setTimeout(() => {
+      abortFiredAtMs = runElapsedMs();
+      controller.abort();
+    }, budget);
     try {
       const response = await fetch(url, { signal: controller.signal });
+      const headersAtMs = runElapsedMs();
       if (!response.ok) {
-        request.end({ status: response.status });
+        request.end({
+          status: response.status,
+          ...attemptMeta({ requestKey, path: requestPath, timeoutMs: budget, attemptStartOffsetMs, abortFiredAtMs, headersAtMs }),
+        });
         recordAttempt({ url, method: 'GET', startOffsetMs: attemptStartOffsetMs, status: response.status });
         const retryable = response.status === 429 || response.status >= 500;
         const wait = Math.min(backoffMs(attempt, response.headers.get('retry-after')), remaining());
@@ -703,7 +856,12 @@ async function fetchArchiveUncoalesced(
       // caller is willing to hold is not a transient failure to retry past.
       const declaredLength = Number(response.headers.get('content-length'));
       if (maxBytes !== undefined && Number.isFinite(declaredLength) && declaredLength > maxBytes) {
-        request.end({ status: response.status, bytes: declaredLength, oversized: true });
+        request.end({
+          status: response.status,
+          bytes: declaredLength,
+          oversized: true,
+          ...attemptMeta({ requestKey, path: requestPath, timeoutMs: budget, attemptStartOffsetMs, abortFiredAtMs, headersAtMs }),
+        });
         recordAttempt({ url, method: 'GET', startOffsetMs: attemptStartOffsetMs, status: response.status });
         recordDiag({
           url,
@@ -723,8 +881,21 @@ async function fetchArchiveUncoalesced(
       // body is abandoned the moment it crosses the limit rather than fully
       // buffered into memory first and only checked afterward.
       const bytes = await readBounded(response, maxBytes, controller);
+      const bodyDoneAtMs = runElapsedMs();
       if (bytes === 'oversized') {
-        request.end({ status: response.status, oversized: true });
+        request.end({
+          status: response.status,
+          oversized: true,
+          ...attemptMeta({
+            requestKey,
+            path: requestPath,
+            timeoutMs: budget,
+            attemptStartOffsetMs,
+            abortFiredAtMs,
+            headersAtMs,
+            bodyDoneAtMs,
+          }),
+        });
         recordAttempt({ url, method: 'GET', startOffsetMs: attemptStartOffsetMs, status: response.status });
         recordDiag({
           url,
@@ -739,7 +910,19 @@ async function fetchArchiveUncoalesced(
         return { ok: false, status: response.status, error: `Response exceeds the ${maxBytes}-byte limit for this archive.` };
       }
 
-      request.end({ status: response.status, bytes: bytes.length });
+      request.end({
+        status: response.status,
+        bytes: bytes.length,
+        ...attemptMeta({
+          requestKey,
+          path: requestPath,
+          timeoutMs: budget,
+          attemptStartOffsetMs,
+          abortFiredAtMs,
+          headersAtMs,
+          bodyDoneAtMs,
+        }),
+      });
       recordAttempt({ url, method: 'GET', startOffsetMs: attemptStartOffsetMs, status: response.status });
       recordDiag({
         url,
@@ -767,7 +950,10 @@ async function fetchArchiveUncoalesced(
       }
       return { ok: true, bytes };
     } catch (err) {
-      request.end({ status: 0 });
+      request.end({
+        status: 0,
+        ...attemptMeta({ requestKey, path: requestPath, timeoutMs: budget, attemptStartOffsetMs, abortFiredAtMs }),
+      });
       recordAttempt({ url, method: 'GET', startOffsetMs: attemptStartOffsetMs, status: null });
       if (attempt === retries) {
         recordDiag({
