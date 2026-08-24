@@ -27,61 +27,25 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           path = Path('scripts/apply-opt-in-run-diagnostics.mjs')
-          source = path.read_text().replace(
-              'Run diagnostics for `analyze`, `outdated`, `fix`, and `pr`:',
-              'Run diagnostics for repository commands:',
-          )
+          source = path.read_text().replace('Run diagnostics for `analyze`, `outdated`, `fix`, and `pr`:', 'Run diagnostics for repository commands:')
           path.write_text(source)
           PY
           node scripts/apply-opt-in-run-diagnostics.mjs
           python - <<'PY'
           from pathlib import Path
-
           cli = Path('src/cli.ts')
           source = cli.read_text()
-          helper = """/**
- * Run recording is a local diagnostic preference, not repository policy.
- * Explicit CLI flags win over the machine-level environment opt-in.
- */
-export function shouldRecordRun(
-  flags: Readonly<Record<string, string | boolean>>,
-  env: NodeJS.ProcessEnv = process.env,
-): boolean {
-  if (flags['no-record-run'] === true) return false;
-  if (flags['record-run'] === true) return true;
-  const value = env.DRIFT_RECORD_RUNS?.trim().toLowerCase();
-  return value === '1' || value === 'true';
-}
-
-"""
-          if helper not in source:
-              raise SystemExit('inline shouldRecordRun helper not found')
+          helper = "/**\n * Run recording is a local diagnostic preference, not repository policy.\n * Explicit CLI flags win over the machine-level environment opt-in.\n */\nexport function shouldRecordRun(\n  flags: Readonly<Record<string, string | boolean>>,\n  env: NodeJS.ProcessEnv = process.env,\n): boolean {\n  if (flags['no-record-run'] === true) return false;\n  if (flags['record-run'] === true) return true;\n  const value = env.DRIFT_RECORD_RUNS?.trim().toLowerCase();\n  return value === '1' || value === 'true';\n}\n\n"
+          if helper not in source: raise SystemExit('inline shouldRecordRun helper not found')
           source = source.replace(helper, '')
           anchor = "import { countWork, redactCommand, redactText, startRunLog, startSpan, withSpan } from './util/diagnostics.js';\n"
-          if anchor not in source:
-              raise SystemExit('diagnostics import anchor not found')
+          if anchor not in source: raise SystemExit('diagnostics import anchor not found')
           source = source.replace(anchor, anchor + "import { shouldRecordRun } from './util/run-recording.js';\n")
           cli.write_text(source)
-
-          Path('src/util/run-recording.ts').write_text("""/**
- * Decide whether this CLI invocation should create a repo-local run log.
- * Recording is off by default; explicit CLI flags override the machine-level
- * environment preference.
- */
-export function shouldRecordRun(
-  flags: Readonly<Record<string, string | boolean>>,
-  env: NodeJS.ProcessEnv = process.env,
-): boolean {
-  if (flags['no-record-run'] === true) return false;
-  if (flags['record-run'] === true) return true;
-  const value = env.DRIFT_RECORD_RUNS?.trim().toLowerCase();
-  return value === '1' || value === 'true';
-}
-""")
-
+          util = "/**\n * Decide whether this CLI invocation should create a repo-local run log.\n * Recording is off by default; explicit CLI flags override the machine-level\n * environment preference.\n */\nexport function shouldRecordRun(\n  flags: Readonly<Record<string, string | boolean>>,\n  env: NodeJS.ProcessEnv = process.env,\n): boolean {\n  if (flags['no-record-run'] === true) return false;\n  if (flags['record-run'] === true) return true;\n  const value = env.DRIFT_RECORD_RUNS?.trim().toLowerCase();\n  return value === '1' || value === 'true';\n}\n"
+          Path('src/util/run-recording.ts').write_text(util)
           test = Path('test/cli-run-recording.test.ts')
-          test_source = test.read_text().replace("from '../dist/cli.js';", "from '../dist/util/run-recording.js';")
-          test.write_text(test_source)
+          test.write_text(test.read_text().replace("from '../dist/cli.js';", "from '../dist/util/run-recording.js';"))
           PY
 
       - name: Install CLI dependencies
