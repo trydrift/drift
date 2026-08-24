@@ -98,6 +98,43 @@ function diagnosticMeta(
   };
 }
 
+const EVENT_LOOP_SAMPLE_MS = 100;
+const EVENT_LOOP_REPORT_THRESHOLD_MS = 50;
+let eventLoopMonitor: ReturnType<typeof setInterval> | null = null;
+let eventLoopExpectedAt = 0;
+
+/**
+ * Start one event-loop-delay sampler for the lifetime of the scan's root
+ * profiler span. The timer is created inside the diagnostic AsyncLocalStorage
+ * context, so every delayed callback is attributed to the same run without a
+ * global mutable "current run" pointer.
+ *
+ * A delayed callback is the signal we specifically need for the pathological
+ * run that motivated this: if an HTTP request has a 10-second AbortController
+ * timeout but its attempt span lasts several minutes, a 300-second event-loop
+ * lag proves the timer could not fire on schedule. Without this measurement a
+ * slow server and a starved Node event loop are indistinguishable in the log.
+ */
+function startEventLoopMonitor(): () => void {
+  if (eventLoopMonitor || !hasActiveRun()) return () => undefined;
+  eventLoopExpectedAt = performance.now() + EVENT_LOOP_SAMPLE_MS;
+  eventLoopMonitor = setInterval(() => {
+    const at = performance.now();
+    const lagMs = Math.max(0, at - eventLoopExpectedAt);
+    eventLoopExpectedAt = at + EVENT_LOOP_SAMPLE_MS;
+    if (lagMs < EVENT_LOOP_REPORT_THRESHOLD_MS || !hasActiveRun()) return;
+    const lag = startDiagnosticSpan('event-loop.lag', { lagMs: Math.round(lagMs) });
+    lag.end();
+  }, EVENT_LOOP_SAMPLE_MS);
+  eventLoopMonitor.unref();
+
+  return () => {
+    if (!eventLoopMonitor) return;
+    clearInterval(eventLoopMonitor);
+    eventLoopMonitor = null;
+  };
+}
+
 /**
  * Open a span. The returned handle must be closed exactly once.
  *
@@ -112,6 +149,12 @@ export function span(cat: string, name: string, meta?: Record<string, string | n
   const diagnostic: DiagnosticSpanHandle | null = diagnosticsEnabled
     ? startDiagnosticSpan(`work.${cat}`, diagnosticMeta(cat, name, meta))
     : null;
+  // `scan/total` is already the lifetime bracket for scan work, so it also
+  // owns the sampler. This avoids one interval per package/request while still
+  // guaranteeing the whole analysis is covered.
+  const stopEventLoopMonitor = diagnosticsEnabled && cat === 'scan' && name === 'total'
+    ? startEventLoopMonitor()
+    : null;
   let closed = false;
 
   return {
@@ -125,6 +168,7 @@ export function span(cat: string, name: string, meta?: Record<string, string | n
         spans.push({ cat, name, start, end: now(), ...(meta || extra ? { meta: { ...meta, ...extra } } : {}) });
       }
       diagnostic?.end(extra);
+      stopEventLoopMonitor?.();
     },
   };
 }
