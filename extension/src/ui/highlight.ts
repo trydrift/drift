@@ -64,7 +64,8 @@ let warming: Promise<void> | null = null;
 let themeGeneration = 0;
 const MAX_CACHE_ENTRIES = 2_000;
 const MAX_CACHE_BYTES = 16 * 1024 * 1024;
-const cache = new Map<string, string>();
+interface CacheEntry { html: string; bytes: number }
+const cache = new Map<string, CacheEntry>();
 let cacheBytes = 0;
 
 /** Small, dependency-free counters consumed by the extension diagnostics sink. */
@@ -72,14 +73,15 @@ export const highlightMetrics = { calls: 0, cacheHits: 0, cacheMisses: 0, tokeni
 
 function cacheResult(key: string, html: string): void {
   const old = cache.get(key);
-  if (old !== undefined) cacheBytes -= key.length + old.length;
-  cache.set(key, html);
-  cacheBytes += key.length + html.length;
+  if (old !== undefined) cacheBytes -= old.bytes;
+  const entry = { html, bytes: Buffer.byteLength(key, 'utf8') + Buffer.byteLength(html, 'utf8') };
+  cache.set(key, entry);
+  cacheBytes += entry.bytes;
   while (cache.size > MAX_CACHE_ENTRIES || cacheBytes > MAX_CACHE_BYTES) {
-    const first = cache.entries().next().value as [string, string] | undefined;
+    const first = cache.entries().next().value as [string, CacheEntry] | undefined;
     if (!first) break;
     cache.delete(first[0]);
-    cacheBytes -= first[0].length + first[1].length;
+    cacheBytes -= first[1].bytes;
   }
 }
 
@@ -205,7 +207,7 @@ export function highlightCode(code: string, lang: string = 'typescript'): string
     // Map insertion order is the LRU order.
     cache.delete(key);
     cache.set(key, cached);
-    return cached;
+    return cached.html;
   }
   highlightMetrics.cacheMisses += 1;
   countWork('ui.highlight.cache_misses');

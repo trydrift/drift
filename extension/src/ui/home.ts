@@ -348,7 +348,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     void this.refreshIdentity();
     void this.refreshAgents();
-    this.fullRender();
+    this.fullRender('hydrate');
 
     // Warmed now so the context picker has its list in hand the first time it
     // is opened, rather than making the developer wait for a project walk.
@@ -409,7 +409,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       webview.onDidReceiveMessage((message: Incoming) => {
         if (message.type === 'ready') {
           surface.ready = true;
-          this.fullRender();
+          this.fullRender('hydrate');
           return;
         }
         void this.handle(message);
@@ -598,7 +598,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       // normally closes that loop — so the click that triggered this would
       // otherwise leave its button spinning until the client's own 20-second
       // timeout gives up on it.
-      this.render();
+      this.unlockActions();
     }
   }
 
@@ -682,7 +682,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         }
         this.stopping = true;
         this.running?.cancel();
-        this.fullRender();
+        this.sendComposer();
         return;
       case 'signIn':
         await getGitHubSession({ createIfNone: true });
@@ -718,7 +718,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           // this is disabled and spinning until a `render` message tells the
           // panel to let go of it. Nothing else here changes `session` or
           // `state`, so nothing would otherwise fire one.
-          this.render();
+          this.unlockActions();
         }
         return;
       }
@@ -737,7 +737,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
             output: this.output,
           });
         } finally {
-          this.render();
+          this.unlockActions();
         }
         return;
       }
@@ -1330,7 +1330,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     const reserved = await this.operationGate.run(async () => {
       const wasCancellable = this.cancellable;
       this.cancellable = false;
-      this.render();
+      this.sendComposer();
       try {
         choices = await resolveScanChoices(contexts[0]!.config, (question, choices) =>
           this.session.ask(question, choices, false),
@@ -1350,7 +1350,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       } finally {
         if (!this.running) {
           this.cancellable = wasCancellable;
-          this.render();
+          this.sendComposer();
         }
       }
     });
@@ -3901,7 +3901,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
                 : ''
             }`,
       );
-      this.render();
+      this.sendComposer();
     } catch (err) {
       this.session.notice('error', `Could not rewind: ${(err as Error).message}`);
     }
@@ -4559,7 +4559,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         // after it instead.
         if (value.endsWith(' ')) {
           this.setDraft(value);
-          this.render();
+          this.sendComposer();
         } else {
           await this.submit(value);
         }
@@ -4662,7 +4662,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     this.conversationId = entry.id;
     this.session.restore(entry.items, entry.title);
     this.setDraft('');
-    this.render();
+    this.resetThread();
+    this.sendComposer();
     if (options.reveal) await this.reveal();
   }
 
@@ -5256,7 +5257,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private async refreshIdentity(): Promise<void> {
     const session = await getGitHubSession({ createIfNone: false });
     this.signedInLabel = session?.account.label ?? null;
-    this.render();
+    this.sendComposer();
+    this.sendWelcome();
   }
 
   private async refreshAgents(): Promise<void> {
@@ -5264,7 +5266,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     this.agents = ctx
       ? await discoverAgents({ slug: ctx.info?.slug ?? null, baseBranch: ctx.info?.branch ?? 'working-tree' }, { force: true })
       : [];
-    this.render();
+    this.sendComposer();
+    this.sendWelcome();
     await this.refreshModels();
   }
 
@@ -5288,7 +5291,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       }),
     );
 
-    this.render();
+    this.sendComposer();
+    this.sendWelcome();
   }
 
   /**
@@ -5447,7 +5451,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     this.running = source;
     this.cancellable = options.cancellable !== false;
     this.stopping = false;
-    this.render();
+    this.sendComposer();
 
     let failed = false;
     try {
@@ -5474,7 +5478,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       // Anything Drift just did may have moved the branch or rewritten a
       // manifest, so the cached view of the workspace is no longer trustworthy.
       this.contextCache = null;
-      this.render();
+      this.sendComposer();
     }
   }
 
@@ -5508,7 +5512,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     this.staleFiles.add(path);
     this.stale = { reason, label: this.staleLabel(reason) };
-    this.render();
+    this.applyStateChange();
   }
 
   private staleLabel(reason: StaleHint['reason']): string {
@@ -5620,8 +5624,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
    * message carrying a string of markup, not a document reload.
    */
   /** Latest high-frequency replacement per item; never serializes the thread. */
-  private readonly pendingThreadUpdates = new Set<string>();
+  private readonly pendingThreadUpdates = new Map<string, { epoch: number }>();
   private patchTimer: ReturnType<typeof setTimeout> | null = null;
+  private uiEpoch = 0;
+  private readonly lastSentHtml = new Map<string, string>();
 
   /**
    * Repaint for a reason that has nothing to do with state.
@@ -5631,20 +5637,27 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
    * changed, but every snippet on screen is now painted in the wrong palette.
    */
   rerender(): void {
-    this.fullRender();
-  }
-
-  /** Compatibility entry point for rare structural controller changes. */
-  private render(): void {
-    this.fullRender();
+    this.fullRender('theme');
   }
 
   /** Full body replacement is deliberately limited to document/theme/global resets. */
-  private fullRender(): void {
+  private fullRender(reason: 'hydrate' | 'theme'): void {
     if (this.surfaces.length === 0) return;
+    this.invalidatePatchEpoch();
     const body = renderBody(this.viewModel());
-    this.post({ type: 'full-render', body });
+    this.lastSentHtml.clear();
+    countWork(`ui.full_render.reason.${reason}`);
+    this.post({ type: 'full-render', epoch: this.uiEpoch, body });
   }
+
+  private invalidatePatchEpoch(): void { if (this.patchTimer) clearTimeout(this.patchTimer); this.patchTimer = null; this.pendingThreadUpdates.clear(); this.uiEpoch += 1; }
+  private sendHtml(key: string, message: { type: string; html: string; [key: string]: unknown }): void { if (this.lastSentHtml.get(key) === message.html) return; this.lastSentHtml.set(key, message.html); this.post({ ...message, epoch: this.uiEpoch }); }
+  private sendComposer(vm = this.viewModel()): void { this.sendHtml('composer', { type: 'composer-replace', html: renderComposer(vm) }); }
+  private sendWelcome(vm = this.viewModel()): void { this.sendHtml('welcome', { type: 'welcome-replace', html: renderWelcomeRegion(vm) }); }
+  private sendThreadItem(id: string, vm = this.viewModel()): void { const item = vm.thread.find((entry) => entry.id === id); if (item) this.sendHtml(`thread:${id}`, { type: 'thread-replace', id, html: renderThreadItem(item, vm) }); }
+  private appendThreadItem(id: string, vm = this.viewModel()): void { const item = vm.thread.find((entry) => entry.id === id); if (item) { const html = renderThreadItem(item, vm); this.lastSentHtml.set(`thread:${id}`, html); this.post({ type: 'thread-append', epoch: this.uiEpoch, id, html }); } }
+  private resetThread(vm = this.viewModel()): void { this.invalidatePatchEpoch(); for (const key of [...this.lastSentHtml.keys()]) if (key.startsWith('thread:')) this.lastSentHtml.delete(key); this.post({ type: 'thread-reset', epoch: this.uiEpoch, html: renderThread(vm) }); }
+  private unlockActions(): void { this.post({ type: 'actions-unlock', epoch: this.uiEpoch }); }
 
   private post(message: object): void {
     const patch = message as { type?: string; html?: string; body?: string };
@@ -5660,17 +5673,17 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private applySessionChange(change: SessionChange): void {
     if (this.surfaces.length === 0) return;
     if (change.type === 'thread-update') {
-      this.pendingThreadUpdates.add(change.id);
-      if (this.patchTimer) countWork('ui.patch.coalesced');
+      if (this.pendingThreadUpdates.has(change.id)) countWork('ui.patch.coalesced');
+      this.pendingThreadUpdates.set(change.id, { epoch: this.uiEpoch });
       if (!this.patchTimer) {
         this.patchTimer = setTimeout(() => {
           this.patchTimer = null;
           const vm = this.viewModel();
-          for (const id of this.pendingThreadUpdates) {
-            const item = vm.thread.find((entry) => entry.id === id);
-            if (item) this.post({ type: 'thread-replace', id, html: renderThreadItem(item, vm) });
+          const pending = [...this.pendingThreadUpdates]; this.pendingThreadUpdates.clear();
+          for (const [id, queued] of pending) {
+            if (queued.epoch !== this.uiEpoch) continue;
+            this.sendThreadItem(id, vm);
           }
-          this.pendingThreadUpdates.clear();
         }, 24);
       }
       return;
@@ -5678,15 +5691,15 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     const vm = this.viewModel();
     if (change.type === 'thread-append') {
       const item = vm.thread.find((entry) => entry.id === change.id);
-      if (item) this.post({ type: 'thread-append', id: item.id, html: renderThreadItem(item, vm) });
-      if (item?.kind === 'user') this.post({ type: 'welcome-replace', html: renderWelcomeRegion(vm) });
+      if (item) this.appendThreadItem(item.id, vm);
+      if (item?.kind === 'user') this.sendWelcome(vm);
       return;
     }
     if (change.type === 'thread-reset') {
-      this.post({ type: 'thread-reset', html: renderThread(vm), welcomeHtml: renderWelcomeRegion(vm) });
+      this.resetThread(vm); this.sendComposer(vm);
       return;
     }
-    this.post({ type: 'composer-replace', html: renderComposer(vm) });
+    this.sendComposer(vm);
   }
 
   /** State controls live in the composer; package candidates affect only package cards. */
@@ -5694,16 +5707,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     const vm = this.viewModel();
     const packages = vm.thread.filter((item) => item.kind === 'packages');
     if (packages.length) {
-      for (const item of packages) this.post({ type: 'thread-replace', id: item.id, html: renderThreadItem(item, vm) });
+      for (const item of packages) this.sendThreadItem(item.id, vm);
     }
-    this.post({ type: 'composer-replace', html: renderComposer(vm) });
+    this.sendComposer(vm);
   }
 
   /** Review storage is represented only by existing changes cards. */
   private applyReviewChange(): void {
     const vm = this.viewModel();
     for (const item of vm.thread) {
-      if (item.kind === 'changes') this.post({ type: 'thread-replace', id: item.id, html: renderThreadItem(item, vm) });
+      if (item.kind === 'changes') this.sendThreadItem(item.id, vm);
     }
   }
 

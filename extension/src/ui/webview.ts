@@ -328,7 +328,10 @@ function renderWelcome(vm: ViewModel, compact = false): string {
 /* ------------------------------------------------------------------ */
 
 export function renderThreadItem(item: ThreadItem, vm: ViewModel): string {
-  return `<div data-thread-id="${escapeAttr(item.id)}">${renderItem(item, vm)}</div>`;
+  // Each renderer already owns a single visual root.  Mark that root rather
+  // than introducing a patch-only wrapper (which changes layout semantics).
+  const html = renderItem(item, vm);
+  return html.replace(/^<([a-z][^\s/>]*)([^>]*)>/i, `<$1$2 data-thread-id="${escapeAttr(item.id)}">`);
 }
 
 function renderItem(item: ThreadItem, vm: ViewModel): string {
@@ -3904,6 +3907,12 @@ let commands = null;
 let thread = null;
 let menu = null;
 let menuFilter = null;
+let currentEpoch = 0;
+const mountedDetails = new WeakSet();
+const mountedScrollRegions = new WeakSet();
+const mountedInputs = new WeakSet();
+const mountedSliders = new WeakSet();
+const mountedThreads = new WeakSet();
 
 function save() {
   vscode.setState({
@@ -3962,6 +3971,38 @@ function capture() {
     };
   }
   save();
+}
+
+function captureComposerState() {
+  if (input) { ui.draft = input.value; ui.caret = input.selectionStart; ui.focused = document.activeElement === input; }
+  if (menu) ui.menu = { open: !menu.hidden, anchor: menu.dataset.anchor || 'context', query: menuFilter ? menuFilter.value : '' };
+  save();
+}
+
+function captureThreadItemState(element) {
+  for (const detail of element.querySelectorAll('details[data-key]')) ui.disclosures[detail.dataset.key] = detail.open;
+  for (const list of element.querySelectorAll('[data-scroll]')) ui.scrolls[list.dataset.scroll] = { top: list.scrollTop, atBottom: list.scrollHeight - list.scrollTop - list.clientHeight < 16 };
+  save();
+}
+
+function captureThreadState() {
+  if (!thread) return;
+  for (const item of thread.querySelectorAll('[data-thread-id]')) captureThreadItemState(item);
+  ui.scrollTop = thread.scrollTop;
+  ui.atBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 24;
+  save();
+}
+
+function parseOneElement(html) {
+  const template = document.createElement('template');
+  template.innerHTML = html;
+  const nodes = [...template.content.children];
+  return nodes.length === 1 && nodes[0] instanceof HTMLElement ? nodes[0] : null;
+}
+
+function threadItemById(id) {
+  if (!thread) return null;
+  return [...thread.querySelectorAll('[data-thread-id]')].find((element) => element.dataset.threadId === id) || null;
 }
 
 function grow() {
@@ -4054,7 +4095,74 @@ function typewriter() {
 /* Mounting                                                            */
 /* ------------------------------------------------------------------ */
 
-function mount() {
+function mountThreadItem(element) {
+  for (const detail of element.querySelectorAll('details[data-key]')) {
+    const key = detail.dataset.key;
+    if (ui.disclosures[key] !== undefined) detail.open = ui.disclosures[key];
+    if (!mountedDetails.has(detail)) {
+      mountedDetails.add(detail);
+      detail.addEventListener('toggle', () => { ui.disclosures[key] = detail.open; save(); });
+    }
+  }
+  for (const panel of element.querySelectorAll('.step-output')) {
+    const stepId = panel.dataset.key.replace(/^stepout:/, '');
+    showStepOutput(panel, stepId, ui.stepOutputSelection[stepId]);
+  }
+  for (const list of element.querySelectorAll('[data-scroll]')) {
+    const key = list.dataset.scroll;
+    const remembered = ui.scrolls[key];
+    list.scrollTop = !remembered || remembered.atBottom ? list.scrollHeight : remembered.top;
+    if (!mountedScrollRegions.has(list)) {
+      mountedScrollRegions.add(list);
+      list.addEventListener('scroll', () => {
+        ui.scrolls[key] = { top: list.scrollTop, atBottom: list.scrollHeight - list.scrollTop - list.clientHeight < 16 };
+        save();
+      });
+    }
+  }
+}
+
+function mountThread(region = document) {
+  thread = region.querySelector ? region.querySelector('#thread') || document.getElementById('thread') : document.getElementById('thread');
+  if (!thread) return;
+  for (const item of thread.querySelectorAll('[data-thread-id]')) mountThreadItem(item);
+  if (!mountedThreads.has(thread)) {
+    mountedThreads.add(thread);
+    thread.addEventListener('scroll', () => { ui.scrollTop = thread.scrollTop; ui.atBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 24; save(); });
+  }
+  thread.scrollTop = ui.atBottom ? thread.scrollHeight : ui.scrollTop;
+}
+
+function mountComposer(region = document) {
+  input = region.querySelector ? region.querySelector('#input') : document.getElementById('input');
+  commands = region.querySelector ? region.querySelector('#commands') : document.getElementById('commands');
+  menu = region.querySelector ? region.querySelector('#menu') : document.getElementById('menu');
+  menuFilter = region.querySelector ? region.querySelector('#menu-filter') : document.getElementById('menu-filter');
+  if (input) {
+    const token = Number(input.dataset.token);
+    if (token !== ui.draftToken) { ui.draftToken = token; ui.draft = input.value; ui.caret = input.value.length; }
+    else input.value = ui.draft;
+    grow();
+    if (ui.focused) { input.focus(); const caret = typeof ui.caret === 'number' ? Math.min(ui.caret, input.value.length) : input.value.length; input.setSelectionRange(caret, caret); }
+    if (!mountedInputs.has(input)) {
+      mountedInputs.add(input);
+      const remember = () => { ui.caret = input.selectionStart; ui.focused = document.activeElement === input; save(); };
+      input.addEventListener('blur', remember); input.addEventListener('focus', remember); input.addEventListener('keyup', remember); input.addEventListener('click', remember);
+      input.addEventListener('input', () => { ui.draft = input.value; grow(); syncCommands(); remember(); vscode.postMessage({ type: 'draft', text: input.value }); });
+      input.addEventListener('keydown', onComposerKey);
+    }
+  }
+  if (menu && menuFilter) {
+    if (!mountedInputs.has(menuFilter)) { mountedInputs.add(menuFilter); menuFilter.addEventListener('input', syncMenu); menuFilter.addEventListener('keydown', onMenuKey); }
+    if (ui.menu.open) { menu.hidden = false; menuFilter.value = ui.menu.query || ''; anchorMenu(ui.menu.anchor || 'context'); syncMenu(); menuFilter.focus(); menuFilter.setSelectionRange(menuFilter.value.length, menuFilter.value.length); } else syncMenu();
+  }
+  for (const slider of (region.querySelectorAll ? region.querySelectorAll('input[type="range"][data-action="slider"]') : [])) {
+    if (mountedSliders.has(slider)) continue;
+    mountedSliders.add(slider); slider.addEventListener('input', () => previewSlider(slider)); slider.addEventListener('change', () => { const value = (slider.dataset.values || '').split(',')[Number(slider.value)]; if (value) vscode.postMessage({ type: 'menu', id: slider.dataset.id + ':' + value }); });
+  }
+}
+
+function mountDocument() {
   input = document.getElementById('input');
   commands = document.getElementById('commands');
   thread = document.getElementById('thread');
@@ -4064,6 +4172,12 @@ function mount() {
   /* Disclosures. Each carries a stable key; what the developer chose is
      remembered against that key and reapplied, so a package they opened does
      not slam shut when the next one arrives. */
+  /* Document mount is the only broad scan; incremental patches call the
+     region/item functions above and never revisit untouched siblings. */
+  mountComposer();
+  mountThread();
+  typewriter();
+  return;
   for (const element of document.querySelectorAll('details[data-key]')) {
     const key = element.dataset.key;
     const remembered = ui.disclosures[key];
@@ -4527,58 +4641,53 @@ window.addEventListener('message', (event) => {
   if (data?.type === 'full-render') {
     unlockActions();
     capture();
+    currentEpoch = data.epoch;
     root.innerHTML = data.body;
-    mount();
+    mountDocument();
     return;
   }
-  if (data?.type === 'thread-append' && thread) {
+  if (data?.type === 'thread-append' && data.epoch === currentEpoch && thread) {
     const bottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 24;
-    thread.insertAdjacentHTML('beforeend', data.html);
+    const next = parseOneElement(data.html); if (!next) return;
+    thread.append(next); mountThreadItem(next);
     if (bottom) thread.scrollTop = thread.scrollHeight;
-    typewriter();
+    if (next.querySelector('[data-type]')) typewriter();
     unlockActions();
     return;
   }
-  if (data?.type === 'thread-replace' && thread) {
+  if (data?.type === 'thread-replace' && data.epoch === currentEpoch && thread) {
     const bottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 24;
-    const id = String(data.id).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    const previous = thread.querySelector('[data-thread-id="' + id + '"]');
-    if (previous) previous.outerHTML = data.html;
+    const previous = threadItemById(String(data.id)); const next = parseOneElement(data.html);
+    if (!previous || !next) return;
+    captureThreadItemState(previous); previous.replaceWith(next); mountThreadItem(next);
     if (bottom) thread.scrollTop = thread.scrollHeight;
-    typewriter();
+    if (next.querySelector('[data-type]')) typewriter();
     unlockActions();
     return;
   }
   if (data?.type === 'thread-reset' && thread) {
     const bottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 24;
-    const template = document.createElement('template');
-    template.innerHTML = data.html;
-    const next = template.content.querySelector('#thread');
-    if (next) thread.innerHTML = next.innerHTML;
+    captureThreadState(); currentEpoch = data.epoch;
+    const next = parseOneElement(data.html);
+    if (next && next.id === 'thread') { thread.innerHTML = next.innerHTML; mountThread(); }
     if (bottom) thread.scrollTop = thread.scrollHeight;
     typewriter();
     unlockActions();
     return;
   }
-  if (data?.type === 'welcome-replace' && thread) {
+  if (data?.type === 'welcome-replace' && data.epoch === currentEpoch && thread) {
     const current = document.getElementById('welcome-region');
-    if (current) current.outerHTML = data.html;
+    const next = parseOneElement(data.html); if (current && next) current.replaceWith(next);
     return;
   }
-  if (data?.type === 'composer-replace') {
-    capture();
+  if (data?.type === 'composer-replace' && data.epoch === currentEpoch) {
+    captureComposerState();
     const current = document.getElementById('composer-region');
-    if (current) current.outerHTML = data.html;
-    // Only the composer was replaced; retain transcript nodes and initialise
-    // the controls it owns without rebuilding the thread.
-    input = document.getElementById('input');
-    commands = document.getElementById('commands');
-    menu = document.getElementById('menu');
-    menuFilter = document.getElementById('menu-filter');
-    if (input) { input.value = ui.draft; grow(); input.addEventListener('keydown', onComposerKey); input.addEventListener('input', () => { ui.draft = input.value; grow(); syncCommands(); vscode.postMessage({ type: 'draft', text: input.value }); }); }
+    const next = parseOneElement(data.html); if (current && next) { current.replaceWith(next); mountComposer(next); }
     unlockActions();
     return;
   }
+  if (data?.type === 'actions-unlock' && data.epoch === currentEpoch) { unlockActions(); return; }
   if (data?.type === 'openMenu') { openMenu(data.anchor || 'context'); return; }
   if (!input) return;
   if (data?.type === 'insert') {
@@ -4593,7 +4702,7 @@ window.addEventListener('message', (event) => {
   if (data?.type === 'focus') input.focus();
 });
 
-mount();
+mountDocument();
 
 // The host holds the transcript; this tells it there is somewhere to put it.
 // Sent last so a webview restored from a reload is repainted rather than left
