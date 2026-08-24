@@ -21,11 +21,13 @@
  * falls out of the same reduction — which is what says whether a limit is
  * actually being reached or was set for a bottleneck that no longer exists.
  *
- * Off unless `DRIFT_PROFILE` is set. When off, every entry point here is a
- * predictable no-op returning a shared frozen handle: no allocation, no clock
- * read, nothing for the JIT to deoptimise. That matters because the hot paths
- * being measured — one span per HTTP request, per subprocess, per package — are
- * exactly the paths that must not pay for the measurement in normal use.
+ * `DRIFT_PROFILE` still controls the detailed JSON profile written for
+ * `scripts/profile-report.mjs`. The repo-local run diagnostic is different: when
+ * one is active, these same spans are mirrored into it even with
+ * `DRIFT_PROFILE` unset. That keeps the cheap always-on log causally useful
+ * without maintaining a second set of instrumentation around the exact same
+ * operations. With neither facility active, every entry point remains a
+ * predictable no-op returning a shared frozen handle.
  *
  * Usage:
  *
@@ -37,6 +39,12 @@
 
 import { writeFileSync } from 'node:fs';
 import { arch, cpus, platform, totalmem } from 'node:os';
+import {
+  countWork as countDiagnosticWork,
+  hasActiveRun,
+  startSpan as startDiagnosticSpan,
+  type SpanHandle as DiagnosticSpanHandle,
+} from './diagnostics.js';
 
 /** One completed unit of work, in milliseconds since the profile began. */
 export interface ProfileSpan {
@@ -74,6 +82,56 @@ export function profiling(): boolean {
   return enabled;
 }
 
+function diagnosticMeta(
+  cat: string,
+  name: string,
+  meta?: Record<string, string | number | boolean>,
+): Record<string, unknown> {
+  // Several profiler categories use the package name as `name`; preserve that
+  // fact explicitly so the run-log summary can attribute a stall to a package
+  // without knowing each call site's naming convention.
+  const packageNamed = new Set(['surface', 'surface-sources', 'surface-deps', 'evidence']);
+  return {
+    operation: name,
+    ...(packageNamed.has(cat) ? { package: name } : {}),
+    ...meta,
+  };
+}
+
+const EVENT_LOOP_SAMPLE_MS = 100;
+const EVENT_LOOP_REPORT_THRESHOLD_MS = 50;
+
+/**
+ * Start one event-loop-delay sampler for this scan root.
+ *
+ * The timer is intentionally local to the returned closure rather than a
+ * module-global singleton. The diagnostics layer supports two repositories
+ * scanning concurrently in one extension host; each run therefore needs its
+ * own timer created inside its own AsyncLocalStorage context. A global sampler
+ * would silently attribute every stall to whichever repo happened to start
+ * first.
+ *
+ * A delayed callback is the signal we specifically need for the pathological
+ * run that motivated this: if an HTTP request has a 10-second AbortController
+ * timeout but its attempt span lasts several minutes, a 300-second event-loop
+ * lag proves the timer could not fire on schedule. Without this measurement a
+ * slow server and a starved Node event loop are indistinguishable in the log.
+ */
+function startEventLoopMonitor(): () => void {
+  if (!hasActiveRun()) return () => undefined;
+  let expectedAt = performance.now() + EVENT_LOOP_SAMPLE_MS;
+  const timer = setInterval(() => {
+    const at = performance.now();
+    const lagMs = Math.max(0, at - expectedAt);
+    expectedAt = at + EVENT_LOOP_SAMPLE_MS;
+    if (lagMs < EVENT_LOOP_REPORT_THRESHOLD_MS || !hasActiveRun()) return;
+    const lag = startDiagnosticSpan('event-loop.lag', { lagMs: Math.round(lagMs) });
+    lag.end();
+  }, EVENT_LOOP_SAMPLE_MS);
+  timer.unref();
+  return () => clearInterval(timer);
+}
+
 /**
  * Open a span. The returned handle must be closed exactly once.
  *
@@ -81,9 +139,21 @@ export function profiling(): boolean {
  * exists for the cases where start and end are genuinely far apart.
  */
 export function span(cat: string, name: string, meta?: Record<string, string | number | boolean>): ProfileHandle {
-  if (!enabled) return NOOP;
-  const start = now();
+  const diagnosticsEnabled = hasActiveRun();
+  if (!enabled && !diagnosticsEnabled) return NOOP;
+
+  const start = enabled ? now() : 0;
+  const diagnostic: DiagnosticSpanHandle | null = diagnosticsEnabled
+    ? startDiagnosticSpan(`work.${cat}`, diagnosticMeta(cat, name, meta))
+    : null;
+  // `scan/total` is already the lifetime bracket for scan work, so it also
+  // owns the sampler. This avoids one interval per package/request while still
+  // guaranteeing the whole analysis is covered.
+  const stopEventLoopMonitor = diagnosticsEnabled && cat === 'scan' && name === 'total'
+    ? startEventLoopMonitor()
+    : null;
   let closed = false;
+
   return {
     end(extra) {
       // A double `end()` would record the same work twice and inflate both the
@@ -91,7 +161,11 @@ export function span(cat: string, name: string, meta?: Record<string, string | n
       // to make every caller prove it cannot happen.
       if (closed) return;
       closed = true;
-      spans.push({ cat, name, start, end: now(), ...(meta || extra ? { meta: { ...meta, ...extra } } : {}) });
+      if (enabled) {
+        spans.push({ cat, name, start, end: now(), ...(meta || extra ? { meta: { ...meta, ...extra } } : {}) });
+      }
+      diagnostic?.end(extra);
+      stopEventLoopMonitor?.();
     },
   };
 }
@@ -103,7 +177,6 @@ export async function measure<T>(
   work: () => Promise<T>,
   meta?: Record<string, string | number | boolean>,
 ): Promise<T> {
-  if (!enabled) return work();
   const handle = span(cat, name, meta);
   try {
     return await work();
@@ -114,8 +187,8 @@ export async function measure<T>(
 
 /** A running total — request counts, cache hits, install invocations. */
 export function count(name: string, by = 1): void {
-  if (!enabled) return;
-  counters.set(name, (counters.get(name) ?? 0) + by);
+  if (enabled) counters.set(name, (counters.get(name) ?? 0) + by);
+  if (hasActiveRun()) countDiagnosticWork(`profile.${name}`, by);
 }
 
 export interface ProfileDocument {
