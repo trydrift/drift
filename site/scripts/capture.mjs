@@ -89,6 +89,7 @@ const { createLogger } = await import(join(repoRoot, 'dist/util/logger.js'));
 const { configureHttpDiskCache } = await import(join(repoRoot, 'dist/util/http.js'));
 const { deriveOverallConfidence } = await import(join(repoRoot, 'dist/confidence/calibrate.js'));
 const RECORDING_SCHEMA_VERSION = 2;
+import { isSchemaStale, validateRecording } from './recording-validation.mjs';
 
 /**
  * A disk cache, and a GitHub token.
@@ -572,22 +573,6 @@ function slimCandidate(candidate) {
   };
 }
 
-function validateRecording(recording) {
-  if (recording.schemaVersion !== RECORDING_SCHEMA_VERSION) throw new Error('invalid recording schema');
-  const ids = recording.candidates.map((candidate) => candidate.id);
-  if (ids.some((id) => !id) || new Set(ids).size !== ids.length) throw new Error('invalid final candidate IDs');
-  if (recording.candidates.some((candidate) => ['pending', 'checking'].includes(candidate.status))) throw new Error('unfinished final candidate');
-  const live = new Map();
-  for (const event of recording.timeline) {
-    if (event.type === 'candidate-upsert') live.set(event.candidate.id, event.candidate);
-    if (event.type === 'candidate-drop') live.delete(event.id);
-  }
-  if (JSON.stringify([...live.keys()].sort()) !== JSON.stringify([...ids].sort())) throw new Error('timeline/final candidate mismatch');
-  for (const candidate of recording.candidates) {
-    if (JSON.stringify(live.get(candidate.id)) !== JSON.stringify(candidate)) throw new Error(`stale final candidate: ${candidate.id}`);
-  }
-}
-
 function confidenceRank(confidence) {
   return confidence === 'high' ? 2 : confidence === 'medium' ? 1 : 0;
 }
@@ -703,7 +688,7 @@ async function stalenessOf(target) {
     return 'the existing recording could not be read';
   }
 
-  if (existing.schemaVersion !== RECORDING_SCHEMA_VERSION) {
+  if (isSchemaStale(existing, RECORDING_SCHEMA_VERSION)) {
     return `recording schema changed (${existing.schemaVersion ?? 1} -> ${RECORDING_SCHEMA_VERSION})`;
   }
 

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Candidate, ProgressTimelineEvent, Recording, RecordingTimelineEvent } from "@/lib/recordings";
+import { applyTimelineEvent, createReplayAccumulator, visibleCandidates } from "@/lib/replay";
+import type { ReplayAccumulator } from "@/lib/replay";
 
 /**
  * Replay a recorded analysis at the speed it actually ran.
@@ -76,8 +78,7 @@ export function usePlayer(recording: Recording) {
   const frame = useRef(0);
   const last = useRef(0);
   const elapsed = useRef(0);
-  const liveCandidates = useRef<Map<string, Candidate>>(new Map());
-  const candidateOrder = useRef<string[]>([]);
+  const replayState = useRef<ReplayAccumulator>(createReplayAccumulator());
   const stateCursor = useRef(0);
 
   /**
@@ -137,11 +138,15 @@ export function usePlayer(recording: Recording) {
       elapsed: duration.current,
       cursor: recording.timeline.length,
       candidates: recording.candidates,
+      currentProgress: replayState.current.currentProgress,
     });
   }, [recording, stop]);
 
   const start = useCallback(() => {
     stop();
+    elapsed.current = 0;
+    stateCursor.current = 0;
+    replayState.current = createReplayAccumulator();
 
     // Motion here carries information — it is how the page shows that the work
     // takes time and happens in stages — so a viewer who has asked for less of
@@ -155,10 +160,14 @@ export function usePlayer(recording: Recording) {
       return;
     }
 
-    elapsed.current = 0;
     last.current = performance.now();
-    liveCandidates.current.clear(); candidateOrder.current = [];
-    setState({ phase: "running", elapsed: 0, cursor: 0, candidates: [] });
+    setState({
+      phase: "running",
+      elapsed: 0,
+      cursor: 0,
+      candidates: [],
+      currentProgress: undefined,
+    });
 
     const tick = (now: number) => {
       const delta = now - last.current;
@@ -175,12 +184,9 @@ export function usePlayer(recording: Recording) {
       const marks = timeline.current;
       // Cheap because `marks` is sorted and the player only moves forward:
       // this walks from the previous cursor, not from zero.
-      let currentProgress: ProgressTimelineEvent | undefined;
       while (cursor < marks.length && marks[cursor]!.at <= at) {
         const event = recording.timeline[marks[cursor]!.index] as RecordingTimelineEvent;
-        if (event.type === "candidate-upsert") { if (!liveCandidates.current.has(event.candidate.id)) candidateOrder.current.push(event.candidate.id); liveCandidates.current.set(event.candidate.id, event.candidate); }
-        else if (event.type === "candidate-drop") { liveCandidates.current.delete(event.id); candidateOrder.current = candidateOrder.current.filter(id => id !== event.id); }
-        else currentProgress = event;
+        replayState.current = applyTimelineEvent(replayState.current, event);
         cursor += 1;
       }
       stateCursor.current = cursor;
@@ -189,8 +195,8 @@ export function usePlayer(recording: Recording) {
         phase: "running",
         elapsed: at,
         cursor,
-        candidates: recording.legacy ? [] : candidateOrder.current.map(id => liveCandidates.current.get(id)).filter(Boolean) as Candidate[],
-        currentProgress,
+        candidates: recording.legacy ? [] : visibleCandidates(replayState.current),
+        currentProgress: replayState.current.currentProgress,
       });
 
       frame.current = requestAnimationFrame(tick);
@@ -202,9 +208,15 @@ export function usePlayer(recording: Recording) {
   const reset = useCallback(() => {
     stop();
     elapsed.current = 0;
-    liveCandidates.current.clear(); candidateOrder.current = [];
     stateCursor.current = 0;
-    setState({ phase: "idle", elapsed: 0, cursor: 0, candidates: [] });
+    replayState.current = createReplayAccumulator();
+    setState({
+      phase: "idle",
+      elapsed: 0,
+      cursor: 0,
+      candidates: [],
+      currentProgress: undefined,
+    });
   }, [stop]);
 
   // Switching recordings mid-run must not leave the previous one's frames
