@@ -1,0 +1,60 @@
+name: Apply opt-in run diagnostics
+
+on:
+  push:
+    branches:
+      - feat/opt-in-run-diagnostics
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-test:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply deterministic patch
+        run: node scripts/apply-opt-in-run-diagnostics.mjs
+
+      - name: Install CLI dependencies
+        run: npm ci
+
+      - name: Typecheck CLI
+        run: npm run typecheck
+
+      - name: Test CLI
+        run: npm test
+
+      - name: Install extension dependencies
+        working-directory: extension
+        run: npm ci
+
+      - name: Typecheck extension
+        working-directory: extension
+        run: npm run typecheck
+
+      - name: Test extension
+        working-directory: extension
+        run: npm test
+
+      - name: Build extension
+        working-directory: extension
+        run: npm run build
+
+      - name: Commit verified implementation
+        run: |
+          git rm scripts/apply-opt-in-run-diagnostics.mjs .github/workflows/apply-opt-in-run-diagnostics.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/cli.ts src/util/diagnostics.ts test/cli-run-recording.test.ts extension/src/extension.ts extension/src/run-diagnostics.ts extension/src/run-recording.ts extension/package.json extension/test/run-diagnostics.test.ts
+          git commit -m "feat: make run diagnostics opt-in"
+          git push origin HEAD:feat/opt-in-run-diagnostics
