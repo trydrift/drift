@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Recording } from "@/lib/recordings";
+import type { Candidate, ProgressTimelineEvent, Recording, RecordingTimelineEvent } from "@/lib/recordings";
 
 /**
  * Replay a recorded analysis at the speed it actually ran.
@@ -30,8 +30,8 @@ export interface PlayerState {
   elapsed: number;
   /** Index one past the last event that has played. */
   cursor: number;
-  /** Packages resolved so far — drives the list filling in. */
-  resolved: number;
+  candidates: Candidate[];
+  currentProgress?: ProgressTimelineEvent;
 }
 
 /**
@@ -70,12 +70,15 @@ export function usePlayer(recording: Recording) {
     phase: "idle",
     elapsed: 0,
     cursor: 0,
-    resolved: 0,
+    candidates: [],
   });
 
   const frame = useRef(0);
   const last = useRef(0);
   const elapsed = useRef(0);
+  const liveCandidates = useRef<Map<string, Candidate>>(new Map());
+  const candidateOrder = useRef<string[]>([]);
+  const stateCursor = useRef(0);
 
   /**
    * The timeline the player actually walks.
@@ -95,7 +98,7 @@ export function usePlayer(recording: Recording) {
   useEffect(() => {
     let clock = 0;
     let previous = 0;
-    timeline.current = recording.events.map((event, index) => {
+    timeline.current = recording.timeline.map((event, index) => {
       clock += Math.min(event.at - previous, MAX_GAP_MS);
       previous = event.at;
       return { at: clock, index };
@@ -132,8 +135,8 @@ export function usePlayer(recording: Recording) {
     setState({
       phase: "done",
       elapsed: duration.current,
-      cursor: recording.events.length,
-      resolved: recording.candidates.length,
+      cursor: recording.timeline.length,
+      candidates: recording.candidates,
     });
   }, [recording, stop]);
 
@@ -154,7 +157,8 @@ export function usePlayer(recording: Recording) {
 
     elapsed.current = 0;
     last.current = performance.now();
-    setState({ phase: "running", elapsed: 0, cursor: 0, resolved: 0 });
+    liveCandidates.current.clear(); candidateOrder.current = [];
+    setState({ phase: "running", elapsed: 0, cursor: 0, candidates: [] });
 
     const tick = (now: number) => {
       const delta = now - last.current;
@@ -167,22 +171,26 @@ export function usePlayer(recording: Recording) {
         return;
       }
 
-      let cursor = 0;
+      let cursor = stateCursor.current;
       const marks = timeline.current;
       // Cheap because `marks` is sorted and the player only moves forward:
       // this walks from the previous cursor, not from zero.
-      while (cursor < marks.length && marks[cursor]!.at <= at) cursor += 1;
-
-      // Packages appear as the scan reports them finished. The recording's
-      // `done` counter is the honest source: it is what the real run reported,
-      // not a count derived from how far the animation has got.
-      const done = cursor > 0 ? (recording.events[marks[cursor - 1]!.index]?.done ?? 0) : 0;
+      let currentProgress: ProgressTimelineEvent | undefined;
+      while (cursor < marks.length && marks[cursor]!.at <= at) {
+        const event = recording.timeline[marks[cursor]!.index] as RecordingTimelineEvent;
+        if (event.type === "candidate-upsert") { if (!liveCandidates.current.has(event.candidate.id)) candidateOrder.current.push(event.candidate.id); liveCandidates.current.set(event.candidate.id, event.candidate); }
+        else if (event.type === "candidate-drop") { liveCandidates.current.delete(event.id); candidateOrder.current = candidateOrder.current.filter(id => id !== event.id); }
+        else currentProgress = event;
+        cursor += 1;
+      }
+      stateCursor.current = cursor;
 
       setState({
         phase: "running",
         elapsed: at,
         cursor,
-        resolved: Math.min(done, recording.candidates.length),
+        candidates: recording.legacy ? [] : candidateOrder.current.map(id => liveCandidates.current.get(id)).filter(Boolean) as Candidate[],
+        currentProgress,
       });
 
       frame.current = requestAnimationFrame(tick);
@@ -194,7 +202,9 @@ export function usePlayer(recording: Recording) {
   const reset = useCallback(() => {
     stop();
     elapsed.current = 0;
-    setState({ phase: "idle", elapsed: 0, cursor: 0, resolved: 0 });
+    liveCandidates.current.clear(); candidateOrder.current = [];
+    stateCursor.current = 0;
+    setState({ phase: "idle", elapsed: 0, cursor: 0, candidates: [] });
   }, [stop]);
 
   // Switching recordings mid-run must not leave the previous one's frames
@@ -204,14 +214,12 @@ export function usePlayer(recording: Recording) {
     return stop;
   }, [recording, reset, stop]);
 
-  const currentEvent = state.cursor > 0 ? recording.events[timeline.current[state.cursor - 1]?.index ?? 0] : undefined;
-
   return {
     state,
     start,
     reset,
     complete,
-    currentEvent,
+    currentProgress: state.currentProgress,
     speed: baseSpeed * speedMultiplier,
     speedMultiplier,
     setSpeedMultiplier,

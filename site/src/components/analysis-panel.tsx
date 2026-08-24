@@ -87,7 +87,7 @@ function repoFileUrl(recording: Recording, path: string): string {
 }
 
 export function AnalysisPanel({ recording }: { recording: Recording }) {
-  const { state, start, reset, currentEvent, speed, speedMultiplier, setSpeedMultiplier } =
+  const { state, start, reset, currentProgress, speed, speedMultiplier, setSpeedMultiplier } =
     usePlayer(recording);
   const totals = useMemo(() => totalsOf(recording), [recording]);
   const [open, setOpen] = useState<string | null>(null);
@@ -144,7 +144,7 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
 
   const done = state.phase === "done";
   const running = state.phase === "running";
-  const visible = done ? recording.candidates : recording.candidates.slice(0, state.resolved);
+  const visible = done ? recording.candidates : state.candidates;
   const affected = recording.candidates.filter((c) => severityOf(c) === "affected");
   const safe = recording.candidates.filter((c) => {
     const severity = severityOf(c);
@@ -202,14 +202,14 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
           <div className="flex flex-wrap items-center gap-3">
             <span className="size-2.5 shrink-0 rounded-full bg-brand orb" aria-hidden />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-foreground">{currentEvent?.phase ?? "Starting"}</p>
+              <p className="truncate text-sm text-foreground">{currentProgress?.phase ?? "Starting"}</p>
               <p className="truncate font-mono text-[11px] text-faint">
-                {currentEvent?.detail ?? recording.repo.replace("https://github.com/", "")}
+                {currentProgress?.detail ?? recording.repo.replace("https://github.com/", "")}
               </p>
             </div>
             <span className="shrink-0 tabular text-xs text-faint">
-              {currentEvent && currentEvent.total > 0
-                ? `${currentEvent.done}/${currentEvent.total}`
+              {currentProgress && currentProgress.total > 0
+                ? `${currentProgress.done}/${currentProgress.total}`
                 : `${(state.elapsed / 1000).toFixed(1)}s`}
             </span>
             <SpeedControl value={speedMultiplier} onChange={setSpeedMultiplier} />
@@ -272,7 +272,7 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
 
         {/* Progress rail. Determinate once the scan knows its total. */}
         <div className="mt-3 h-0.75 overflow-hidden rounded-full bg-surface-hover">
-          {running && (!currentEvent || currentEvent.total === 0) ? (
+          {running && (!currentProgress || currentProgress.total === 0) ? (
             <div className="indeterminate h-full w-full" />
           ) : (
             <div
@@ -280,8 +280,8 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
               style={{
                 width: done
                   ? "100%"
-                  : currentEvent && currentEvent.total > 0
-                    ? `${Math.round((currentEvent.done / currentEvent.total) * 100)}%`
+                  : currentProgress && currentProgress.total > 0
+                    ? `${Math.round((currentProgress.done / currentProgress.total) * 100)}%`
                     : "0%",
               }}
             />
@@ -314,15 +314,14 @@ export function AnalysisPanel({ recording }: { recording: Recording }) {
         )}
 
         <ul className="divide-y divide-border">
-          {visible.map((candidate, index) => {
-            const rowKey = candidateRowKey(candidate, index);
+          {visible.map((candidate) => {
             return (
               <PackageRow
-                key={rowKey}
+                key={candidate.id}
                 candidate={candidate}
                 recording={recording}
-                expanded={open === rowKey}
-                onToggle={() => setOpen(open === rowKey ? null : rowKey)}
+                expanded={open === candidate.id}
+                onToggle={() => setOpen(open === candidate.id ? null : candidate.id)}
                 onAct={() => setNote(true)}
                 interactive={done}
               />
@@ -410,10 +409,6 @@ function formatDuration(ms: number): string {
   return `${minutes}m ${String(Math.round(seconds % 60)).padStart(2, "0")}s`;
 }
 
-function candidateRowKey(candidate: Candidate, index: number): string {
-  return `${candidate.ecosystem}:${candidate.name}:${candidate.current}:${candidate.selected}:${index}`;
-}
-
 function PackageRow({
   candidate,
   recording,
@@ -469,7 +464,9 @@ function PackageRow({
           {/* Drift's own sentence about this package, not a rephrasing — it is
               already written to lead with what the developer has to do. */}
           <p className="mt-0.5 line-clamp-2 text-xs text-muted sm:line-clamp-1">
-            {describeSeverity(candidate)}
+            {!interactive && (candidate.status === "pending" || candidate.status === "checking") && candidate.phase
+              ? candidate.phase
+              : describeSeverity(candidate)}
           </p>
         </div>
 
