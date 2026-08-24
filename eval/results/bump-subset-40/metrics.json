@@ -17,9 +17,9 @@
       "value": 0.8717948717948718
     },
     "affected-repository identification rate": {
-      "numerator": 7,
+      "numerator": 14,
       "denominator": 39,
-      "value": 0.1794871794871795
+      "value": 0.358974358974359
     },
     "consumer localization rate": {
       "numerator": 7,
@@ -27,9 +27,9 @@
       "value": 0.1794871794871795
     },
     "false-safe verdicts": {
-      "numerator": 16,
+      "numerator": 9,
       "denominator": 39,
-      "value": 0.41025641025641024
+      "value": 0.23076923076923078
     }
   },
   "refusals": [
@@ -58,9 +58,9 @@
         "value": 0.7777777777777778
       },
       "affected-repository identification rate": {
-        "numerator": 0,
+        "numerator": 2,
         "denominator": 9,
-        "value": 0
+        "value": 0.2222222222222222
       },
       "consumer localization rate": {
         "numerator": 0,
@@ -75,9 +75,9 @@
         "value": 0.9375
       },
       "affected-repository identification rate": {
-        "numerator": 3,
+        "numerator": 7,
         "denominator": 16,
-        "value": 0.1875
+        "value": 0.4375
       },
       "consumer localization rate": {
         "numerator": 3,
@@ -92,9 +92,9 @@
         "value": 0.9166666666666666
       },
       "affected-repository identification rate": {
-        "numerator": 4,
+        "numerator": 5,
         "denominator": 12,
-        "value": 0.3333333333333333
+        "value": 0.4166666666666667
       },
       "consumer localization rate": {
         "numerator": 4,
@@ -127,8 +127,8 @@
       "iterations": 2000
     },
     "affected-repository identification rate": {
-      "low": 0.05128205128205128,
-      "high": 0.3076923076923077,
+      "low": 0.20512820512820512,
+      "high": 0.5128205128205128,
       "iterations": 2000
     },
     "consumer localization rate": {
@@ -137,8 +137,8 @@
       "iterations": 2000
     },
     "false-safe verdicts": {
-      "low": 0.2564102564102564,
-      "high": 0.5641025641025641,
+      "low": 0.10256410256410256,
+      "high": 0.358974358974359,
       "iterations": 2000
     }
   },
