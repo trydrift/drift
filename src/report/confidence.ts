@@ -1,5 +1,5 @@
 import type { BreakingChange, Ecosystem, RemediationPlan } from '../types.js';
-import type { AnalysisGap, CheckedSurface, ConfidenceAssessment, ConfidenceScore } from '../confidence/types.js';
+import type { AnalysisGap, CheckedSurface, ConfidenceAssessment, ConfidenceBand, ConfidenceScore } from '../confidence/types.js';
 import { taxonomyOf } from '../confidence/taxonomy.js';
 import { deriveOverallConfidence } from '../confidence/calibrate.js';
 import { dependencyEcosystemKey } from '../util/id.js';
@@ -313,7 +313,27 @@ export function evidenceStrengthLabel(weight: number): string {
  */
 export function overallConfidenceLine(assessment: ConfidenceAssessment): string {
   const overall = deriveOverallConfidence(assessment);
-  return `${bandBadge(overall.band)} **Confidence: ${overall.score}/100 — ${overall.label}**`;
+  return `${bandBadge(overall.band)} **Confidence: ${overallConfidenceText(assessment)}**`;
+}
+
+export function overallConfidenceText(assessment: ConfidenceAssessment): string {
+  const overall = deriveOverallConfidence(assessment);
+  return `${overall.score}/100 — ${overall.label}`;
+}
+
+export interface ConfidenceDisplay {
+  text: string;
+  band: ConfidenceBand;
+  score: number | null;
+  label: string;
+}
+
+export function confidenceDisplay(change: BreakingChange): ConfidenceDisplay {
+  if (change.assessment) {
+    const overall = deriveOverallConfidence(change.assessment);
+    return { text: overallConfidenceText(change.assessment), band: overall.band, score: overall.score, label: overall.label };
+  }
+  return { text: 'Confidence unavailable', band: 'none', score: null, label: 'Confidence unavailable' };
 }
 
 /**

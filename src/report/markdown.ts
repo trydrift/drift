@@ -11,7 +11,7 @@ import type { DriftConfig } from '../config/schema.js';
 import { renderRationale } from './rationale.js';
 import {
   evidenceStrengthLabel,
-  overallConfidenceLine,
+  confidenceDisplay,
   renderCheckedSurfaces,
   renderConfidenceTable,
   renderEligibility,
@@ -197,7 +197,7 @@ function renderBreakingChanges(plan: RemediationPlan): string {
     const siteCount = plan.impactSites.filter((s) => s.breakingChangeId === change.id).length;
     const verdict = verdictFor(change);
 
-    lines.push(`### ${CONFIDENCE_BADGE[change.confidence]} · \`${change.dependency}\` · ${change.kind}`);
+    lines.push(`### ${confidenceDisplay(change).text} · \`${change.dependency}\` · ${change.kind}`);
     lines.push('');
     lines.push(change.summary);
     lines.push('');
@@ -223,8 +223,6 @@ function renderBreakingChanges(plan: RemediationPlan): string {
     if (change.assessment) {
       // The one number a non-expert reads first, ahead of the three-dimension
       // breakdown that follows for anyone who wants to see the working.
-      lines.push(overallConfidenceLine(change.assessment));
-      lines.push('');
       lines.push(renderConfidenceTable(change.assessment));
       lines.push('');
       lines.push(renderEligibility(change.assessment));

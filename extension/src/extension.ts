@@ -14,7 +14,7 @@ import {
   ManifestLensProvider,
   openDependency,
 } from './ui/dependencies.js';
-import { DriftReportPanel } from './ui/report.js';
+import { DriftReportPanel, type FocusTarget } from './ui/report.js';
 import { DriftStatusBar } from './ui/statusbar.js';
 import { configureHttpDiskCache } from '../../src/util/http.js';
 import { discoverAgents, invalidateAgentCache } from './agents/registry.js';
@@ -364,7 +364,7 @@ function registerCommands(
   register('drift.fixAll', () => startFix(state, review, home, undefined));
   register('drift.fixCommit', ((order: number) => startFix(state, review, home, order)) as never);
 
-  register('drift.showReport', () => DriftReportPanel.show(state));
+  register('drift.showReport', ((focus?: FocusTarget) => DriftReportPanel.show(state, focus)) as never);
   register('drift.openDependency', ((id: string) => openDependency(state, id)) as never);
   register('drift.disableEditorSignals', async () => {
     const config = vscode.workspace.getConfiguration('drift');
