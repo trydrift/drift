@@ -100,14 +100,16 @@ function diagnosticMeta(
 
 const EVENT_LOOP_SAMPLE_MS = 100;
 const EVENT_LOOP_REPORT_THRESHOLD_MS = 50;
-let eventLoopMonitor: ReturnType<typeof setInterval> | null = null;
-let eventLoopExpectedAt = 0;
 
 /**
- * Start one event-loop-delay sampler for the lifetime of the scan's root
- * profiler span. The timer is created inside the diagnostic AsyncLocalStorage
- * context, so every delayed callback is attributed to the same run without a
- * global mutable "current run" pointer.
+ * Start one event-loop-delay sampler for this scan root.
+ *
+ * The timer is intentionally local to the returned closure rather than a
+ * module-global singleton. The diagnostics layer supports two repositories
+ * scanning concurrently in one extension host; each run therefore needs its
+ * own timer created inside its own AsyncLocalStorage context. A global sampler
+ * would silently attribute every stall to whichever repo happened to start
+ * first.
  *
  * A delayed callback is the signal we specifically need for the pathological
  * run that motivated this: if an HTTP request has a 10-second AbortController
@@ -116,23 +118,18 @@ let eventLoopExpectedAt = 0;
  * slow server and a starved Node event loop are indistinguishable in the log.
  */
 function startEventLoopMonitor(): () => void {
-  if (eventLoopMonitor || !hasActiveRun()) return () => undefined;
-  eventLoopExpectedAt = performance.now() + EVENT_LOOP_SAMPLE_MS;
-  eventLoopMonitor = setInterval(() => {
+  if (!hasActiveRun()) return () => undefined;
+  let expectedAt = performance.now() + EVENT_LOOP_SAMPLE_MS;
+  const timer = setInterval(() => {
     const at = performance.now();
-    const lagMs = Math.max(0, at - eventLoopExpectedAt);
-    eventLoopExpectedAt = at + EVENT_LOOP_SAMPLE_MS;
+    const lagMs = Math.max(0, at - expectedAt);
+    expectedAt = at + EVENT_LOOP_SAMPLE_MS;
     if (lagMs < EVENT_LOOP_REPORT_THRESHOLD_MS || !hasActiveRun()) return;
     const lag = startDiagnosticSpan('event-loop.lag', { lagMs: Math.round(lagMs) });
     lag.end();
   }, EVENT_LOOP_SAMPLE_MS);
-  eventLoopMonitor.unref();
-
-  return () => {
-    if (!eventLoopMonitor) return;
-    clearInterval(eventLoopMonitor);
-    eventLoopMonitor = null;
-  };
+  timer.unref();
+  return () => clearInterval(timer);
 }
 
 /**
