@@ -40,7 +40,7 @@ import { discoverNestedProjects, type NestedProject } from '../detect/nested.js'
 import { gatherDependencyEvidence } from '../evidence/index.js';
 import { buildRationale, finalizeRationale, prepareRationaleFacts, type PreparedRationaleFacts } from '../rationale/index.js';
 import { findNodeDeclarations, findPythonDeclarations } from '../rationale/runtime.js';
-import { assessSecurityBatch, type SecurityLookup } from '../rationale/osv.js';
+import { assessSecurityBatch, unchecked as uncheckedSecurity, type SecurityLookup } from '../rationale/osv.js';
 import type { SecurityAssessment } from '../rationale/types.js';
 import type { UpgradeRationale } from '../rationale/types.js';
 import {
@@ -368,24 +368,45 @@ export interface ScanBreadth {
 
 const DEFAULT_BREADTH: ScanBreadth = { includeDev: true, maxSites: 40, maxPackages: 0 };
 
-interface PreparedUpstreamEvidence {
+interface UpstreamEvidenceBundle {
   evidence: Awaited<ReturnType<typeof gatherDependencyEvidence>>;
   additions: Map<string, { additions: SurfaceAddition[]; locator: string }>;
   surfaceGaps: Map<string, SurfaceUnavailable>;
   surfaceCompared: Set<string>;
   prose: Map<string, ProseSource[]>;
+}
+
+/**
+ * What shared upstream preparation for one exact upgrade produced for this
+ * row, with evidence and rationale facts tracked as two genuinely
+ * independent outcomes.
+ *
+ * These two used to be joined with `Promise.all` and cached as a single
+ * unit, which meant a rejected rationale-facts lookup (a transient OSV or
+ * registry failure) threw away a *successful* shared evidence computation
+ * for every row waiting on it — turning one failure into N repeated
+ * `gatherDependencyEvidence` calls for duplicate exact upgrades. Each field
+ * here is only present when that half actually succeeded; a caller that
+ * finds one absent falls back to computing just that half itself
+ * (`analyzeUpgrade` for evidence, `rationaleFor`'s own `prepareRationaleFacts`
+ * call for rationale facts), never both, and never by inheriting the other
+ * side's failure.
+ */
+interface PreparedUpstreamEvidence {
+  evidence?: UpstreamEvidenceBundle;
   /**
    * The workspace-independent half of this exact upgrade's rationale —
    * registry info, both versions' own metadata, repository status, security
-   * advisories, and the license verdict — started *alongside*
-   * `gatherDependencyEvidence` above (not after it) via `Promise.all`, since
-   * neither depends on the other. Every workspace row sharing this exact
-   * `ecosystem/name/from/to` upgrade reuses the same promise here and only
-   * runs its own `finalizeRationale` afterward, which is the part that
-   * actually differs per workspace (runtime compatibility, breaking-change
-   * impact, its own surface diff).
+   * advisories, and the license verdict — computed independently of
+   * `evidence` above (neither reads the other's output). Every workspace row
+   * sharing this exact `ecosystem/name/from/to` upgrade reuses the same
+   * promise here and only runs its own `finalizeRationale` afterward, which
+   * is the part that actually differs per workspace (runtime compatibility,
+   * breaking-change impact, its own surface diff). Absent when this exact
+   * upgrade's rationale-facts preparation failed for every row currently
+   * sharing it — `rationaleFor` then prepares its own, independently.
    */
-  rationaleFacts: Promise<PreparedRationaleFacts>;
+  rationaleFacts?: Promise<PreparedRationaleFacts>;
 }
 
 /**
@@ -1111,21 +1132,56 @@ export async function scanUpgrades(args: {
   }
   const scanSecurityBatch: Promise<Map<string, SecurityAssessment>> | undefined =
     config.rationale.security && uniqueUpgradeLookups.size > 0
-      ? (async () => {
+      ? diagWithSpan('security.batch', { upgrades: uniqueUpgradeLookups.size }, async () => {
           const keys = [...uniqueUpgradeLookups.keys()];
           const lookups = [...uniqueUpgradeLookups.values()];
-          const result = await diagWithSpan(
-            'security.batch',
-            { upgrades: lookups.length },
-            () => assessSecurityBatch(lookups, {}),
-          );
-          return new Map(keys.map((k, i) => [k, result.get(lookups[i]!)!]));
-        })()
+          // Security is best-effort everywhere else in this file (a failed
+          // lookup becomes an honest `unchecked` verdict, never a thrown
+          // error) and this scan-wide batch must be no different: an
+          // unexpected rejection here — a bug, a malformed response, not one
+          // of `assessSecurityBatch`'s own already-handled network-failure
+          // paths — must not take every candidate sharing this batch down
+          // with it, and must not surface as a process-level unhandled
+          // rejection if the scan is cancelled before any candidate ever
+          // consumes this promise.
+          try {
+            const result = await assessSecurityBatch(lookups, {});
+            return new Map(
+              keys.map((k, i) => [
+                k,
+                result.get(lookups[i]!) ??
+                  uncheckedSecurity('The OSV advisory batch lookup did not return a result for this upgrade, so its effect on known vulnerabilities is unknown.'),
+              ]),
+            );
+          } catch (err) {
+            const reason = `The OSV advisory batch lookup failed unexpectedly (${(err as Error).message}), so this upgrade's effect on known vulnerabilities is unknown.`;
+            return new Map(keys.map((k) => [k, uncheckedSecurity(reason)]));
+          }
+        })
       : undefined;
+  // Belt-and-suspenders: `scanSecurityBatch`'s own body already never
+  // rejects (every path above resolves to a `Map`), but this is started
+  // eagerly, before any candidate necessarily awaits it — a cancelled scan
+  // with no consumers must never leave this as an unobserved rejection no
+  // matter how the body above is edited in the future.
+  scanSecurityBatch?.catch(() => undefined);
   const scanSecurityFor = (key: string): Promise<SecurityAssessment> | undefined =>
     scanSecurityBatch?.then((byKey) => byKey.get(key)!);
 
-  const upstreamCache = new Map<string, Promise<PreparedUpstreamEvidence>>();
+  // Evidence-gathering and rationale-facts preparation are cached
+  // *independently*, keyed by the same `upstreamUpgradeKey` — deliberately
+  // two maps rather than one entry holding both. A single shared promise for
+  // both (the original design, joined with `Promise.all`) meant a rejected
+  // rationale-facts lookup discarded a successful shared evidence
+  // computation for every row waiting on it, turning one transient OSV/
+  // registry failure into N repeated `gatherDependencyEvidence` calls for
+  // duplicate exact upgrades. With two independent caches, each side keeps
+  // its own success-keep/failure-evict lifecycle — the same pattern
+  // `versionLookups` above uses — so a failure on one side never costs the
+  // other side's already-successful (or still in-flight, and separately
+  // shared) work.
+  const upstreamEvidenceCache = new Map<string, Promise<UpstreamEvidenceBundle>>();
+  const upstreamRationaleCache = new Map<string, Promise<PreparedRationaleFacts>>();
   // Progress fan-out for shared upstream work: every manifest row waiting on
   // the same exact upgrade (same `upstreamUpgradeKey`) subscribes here, so a
   // duplicate row shows what the *owner* of the shared work is actually doing
@@ -1153,7 +1209,13 @@ export async function scanUpgrades(args: {
     if (current) cb(current[0], current[1]);
     return () => {
       set!.delete(cb);
-      if (set!.size === 0) upstreamSubscribers.delete(key);
+      // Phase memory for this key only needs to outlive its last active
+      // subscriber — once nobody is left waiting on this exact upgrade's
+      // shared work, there is nobody left to replay it to.
+      if (set!.size === 0) {
+        upstreamSubscribers.delete(key);
+        upstreamPhase.delete(key);
+      }
     };
   };
   const prepareUpstream = (
@@ -1173,81 +1235,88 @@ export async function scanUpgrades(args: {
       rawTo: selected,
     };
     const key = upstreamUpgradeKey(canonical);
-    const existing = upstreamCache.get(key);
-    if (existing) {
-      // A duplicate row joining shared work in flight: subscribe it to the
-      // owner's progress so it shows what is actually happening instead of a
-      // stale "Waiting to be checked" for however long the owner takes.
-      // `subscribeUpstreamProgress` replays the current phase immediately, so
-      // a late joiner is never left blank. Cleaned up once this wait settles,
-      // win or lose.
-      const unsubscribe = onPhase ? subscribeUpstreamProgress(key, onPhase) : undefined;
-      // Wraps the actual await, not a span opened and closed before it: the
-      // whole point is to record how long this caller genuinely waited on
-      // work another caller is doing, which can be the bulk of this
-      // candidate's wall time. `existing` is returned as-is -- reusing the
-      // same promise object, not starting new work.
-      return diagWithSpan(
-        'upstream.wait',
-        { package: dep.name, ecosystem: canonical.ecosystem, from: canonical.from, to: canonical.to, shared: true },
-        () => existing.finally(() => unsubscribe?.()),
+    const detail = `${dep.name} ${canonical.from} → ${canonical.to}`;
+    // Every call — whether it ends up starting one, both, or neither side of
+    // the shared work below — subscribes its own row to this key's progress,
+    // and unsubscribes once its own wait settles (see the `finally` at the
+    // bottom). A late joiner is replayed the current phase immediately by
+    // `subscribeUpstreamProgress`, so it is never left blank.
+    const unsubscribe = onPhase ? subscribeUpstreamProgress(key, onPhase) : undefined;
+
+    let evidencePromise = upstreamEvidenceCache.get(key);
+    const evidenceShared = evidencePromise !== undefined;
+    if (!evidencePromise) {
+      const additions = new Map<string, { additions: SurfaceAddition[]; locator: string }>();
+      const surfaceGaps = new Map<string, SurfaceUnavailable>();
+      const surfaceCompared = new Set<string>();
+      const prose = new Map<string, ProseSource[]>();
+      publishUpstreamProgress(key, 'Reading release notes and changelog', detail);
+      const started = diagWithSpan(
+        'upstream.analysis',
+        { package: dep.name, ecosystem: canonical.ecosystem, from: canonical.from, to: canonical.to, shared: false },
+        () =>
+          gatherDependencyEvidence(canonical, {
+            config, logger, ...(githubToken ? { githubToken } : {}), env, workspaceRoot: root,
+            onSurfaceComputed: (change, diff) => {
+              const k = dependencyEcosystemKey(change);
+              if (diff.weight >= CONFIDENT_SURFACE_WEIGHT) surfaceCompared.add(k);
+              additions.set(k, { additions: diff.additions ?? [], locator: diff.locator });
+              publishUpstreamProgress(key, 'Comparing the public API surface', detail);
+            },
+            onUnavailableSurface: (change, reason) => surfaceGaps.set(dependencyEcosystemKey(change), reason),
+            onProseConsulted: (change, source) => {
+              const k = dependencyEcosystemKey(change);
+              prose.set(k, [...(prose.get(k) ?? []), source]);
+            },
+          }).then((evidence) => ({ evidence, additions, surfaceGaps, surfaceCompared, prose })),
       );
+      upstreamEvidenceCache.set(key, started);
+      evidencePromise = started;
+      // Success-keep/failure-evict, exactly like `versionLookups` and the
+      // former single `upstreamCache` above: a successful shared evidence
+      // computation stays cached for the rest of the scan (every later row
+      // asking about this exact upgrade reuses it), while a failed one is
+      // evicted so the *next* row to ask retries fresh — instead of every
+      // row currently waiting on it being handed the same permanent
+      // rejection, or a later row inheriting a stale failed promise forever.
+      started.catch(() => { if (upstreamEvidenceCache.get(key) === started) upstreamEvidenceCache.delete(key); });
     }
-    const additions = new Map<string, { additions: SurfaceAddition[]; locator: string }>();
-    const surfaceGaps = new Map<string, SurfaceUnavailable>();
-    const surfaceCompared = new Set<string>();
-    const prose = new Map<string, ProseSource[]>();
-    const unsubscribeOwner = onPhase ? subscribeUpstreamProgress(key, onPhase) : undefined;
-    publishUpstreamProgress(key, 'Reading release notes and changelog', `${dep.name} ${canonical.from} → ${canonical.to}`);
-    // The rationale facts for this exact upgrade (registry, both versions'
-    // metadata, repository status, security, license) are entirely
-    // independent of the evidence-gathering call below — neither reads the
-    // other's output — so both are started together via `Promise.all` rather
-    // than one after the other. Awaiting evidence first would have made every
-    // rationale's registry/version/security lookups wait behind a changelog
-    // fetch and a type-surface diff that have nothing to do with them.
-    const rationaleFactsPromise = prepareRationaleFacts(canonical, {
-      config,
-      ...(githubToken ? { githubToken } : {}),
-      securityLookup: scanSecurityFor(key),
-      onProgress: (phase) => publishUpstreamProgress(key, phase, `${dep.name} ${canonical.from} → ${canonical.to}`),
-    });
-    // A prepare failure must not sink the shared evidence work (or vice
-    // versa): each is independently best-effort downstream (`buildRationale`
-    // degrades a failed rationale per-candidate; nothing here should turn one
-    // failed advisory lookup into every workspace row losing its evidence).
-    rationaleFactsPromise.catch(() => undefined);
-    const promise = diagWithSpan('upstream.analysis', { package: dep.name, ecosystem: canonical.ecosystem, from: canonical.from, to: canonical.to, shared: false }, () =>
-      Promise.all([
-        gatherDependencyEvidence(canonical, {
-          config, logger, ...(githubToken ? { githubToken } : {}), env, workspaceRoot: root,
-          onSurfaceComputed: (change, diff) => {
-            const k = dependencyEcosystemKey(change);
-            if (diff.weight >= CONFIDENT_SURFACE_WEIGHT) surfaceCompared.add(k);
-            additions.set(k, { additions: diff.additions ?? [], locator: diff.locator });
-            publishUpstreamProgress(key, 'Comparing the public API surface', `${dep.name} ${canonical.from} → ${canonical.to}`);
-          },
-          onUnavailableSurface: (change, reason) => surfaceGaps.set(dependencyEcosystemKey(change), reason),
-          onProseConsulted: (change, source) => {
-            const k = dependencyEcosystemKey(change);
-            prose.set(k, [...(prose.get(k) ?? []), source]);
-          },
-        }),
-        rationaleFactsPromise,
-      ]).then(([evidence]) => ({ evidence, additions, surfaceGaps, surfaceCompared, prose, rationaleFacts: rationaleFactsPromise }))
+
+    let rationalePromise = upstreamRationaleCache.get(key);
+    const rationaleShared = rationalePromise !== undefined;
+    if (!rationalePromise) {
+      const started = prepareRationaleFacts(canonical, {
+        config,
+        ...(githubToken ? { githubToken } : {}),
+        securityLookup: scanSecurityFor(key),
+        onProgress: (phase) => publishUpstreamProgress(key, phase, detail),
+      });
+      upstreamRationaleCache.set(key, started);
+      rationalePromise = started;
+      started.catch(() => { if (upstreamRationaleCache.get(key) === started) upstreamRationaleCache.delete(key); });
+    }
+
+    const evidenceForThisCall = evidencePromise;
+    const rationaleForThisCall = rationalePromise;
+    // Wraps the actual await, not a span opened and closed before it: the
+    // whole point is to record how long this caller genuinely waited on
+    // work another caller may be doing, which can be the bulk of this
+    // candidate's wall time. `Promise.allSettled` never itself rejects, so
+    // this cannot leave a dropped, rejecting derivative promise behind the
+    // way a bare `.finally()` on a rejecting promise would — see the
+    // regression test for exactly that failure mode.
+    return diagWithSpan(
+      'upstream.wait',
+      { package: dep.name, ecosystem: canonical.ecosystem, from: canonical.from, to: canonical.to, evidenceShared, rationaleShared },
+      async () => {
+        const [evidenceOutcome, rationaleOutcome] = await Promise.allSettled([evidenceForThisCall, rationaleForThisCall]);
+        unsubscribe?.();
+        return {
+          evidence: evidenceOutcome.status === 'fulfilled' ? evidenceOutcome.value : undefined,
+          rationaleFacts: rationaleOutcome.status === 'fulfilled' ? rationaleForThisCall : undefined,
+        };
+      },
     );
-    upstreamCache.set(key, promise);
-    promise.catch(() => { if (upstreamCache.get(key) === promise) upstreamCache.delete(key); });
-    // Owner's own subscription (and the key's whole subscriber set/phase
-    // memory) is only needed while this shared work is in flight; once it
-    // settles — success or failure — every waiter's `finally` above has
-    // already unsubscribed itself, so this only needs to drop the owner's own
-    // callback and the now-stale replay state.
-    promise.finally(() => {
-      unsubscribeOwner?.();
-      upstreamPhase.delete(key);
-    });
-    return promise;
   };
   try {
     await diagWithSpan('analysis', { packages: outdated.length }, () =>
@@ -1255,16 +1324,17 @@ export async function scanUpgrades(args: {
       if (token?.isCancellationRequested) return;
 
       const selected = available.safeLatest ?? available.latest;
-      // A rejection here is either this row's own shared upstream work
-      // failing, or (when duplicate) another row's owned attempt failing
-      // while this row was only waiting on it. Either way it must not sink
-      // this row's whole analysis, and it must not leave this row's slot in
-      // `inParallel` stuck: `prepared` simply stays `undefined`, and
-      // `analyzeUpgrade` below falls back to doing its own independent
-      // evidence-gathering and rationale-preparation for this one package —
-      // the "later independent execution" that gets to retry, rather than
-      // inheriting the failure `upstreamCache`'s own `.catch` already evicted
-      // it for.
+      // `prepareUpstream` never rejects — evidence and rationale facts are
+      // each settled independently inside it (`Promise.allSettled`), so a
+      // failure on either side becomes an absent field on the resolved
+      // `PreparedUpstreamEvidence`, not a thrown error. `analyzeUpgrade`
+      // below treats each absent field as its own independent fallback:
+      // it gathers evidence itself only if `prepared.evidence` is missing,
+      // and lets `rationaleFor` prepare its own facts only if
+      // `prepared.rationaleFacts` is missing — never both just because one
+      // failed. The `try`/`catch` here is defense in depth for a genuinely
+      // unexpected synchronous throw (e.g. from a progress callback), not
+      // the primary error path.
       let prepared: PreparedUpstreamEvidence | undefined;
       try {
         prepared = await prepareUpstream(dep, selected, (phase, detail) => {
@@ -2046,7 +2116,7 @@ async function analyzeUpgrade(args: {
     const surfaceCompared = new Set<string>();
     const prose = new Map<string, ProseSource[]>();
 
-    const evidence = args.prepared?.evidence.map((record) =>
+    const evidence = args.prepared?.evidence?.evidence.map((record) =>
       args.member === undefined ? record : { ...record, workspace: args.member },
     ) ?? await diagWithSpan('evidence', { package: args.dep.name, ecosystem: target.manager.ecosystem }, () => measure('evidence', target.manager.ecosystem, () => gatherDependencyEvidence(change, {
       config: args.config,
@@ -2072,13 +2142,14 @@ async function analyzeUpgrade(args: {
         prose.set(key, [...(prose.get(key) ?? []), source]);
       },
     }), { package: args.dep.name }));
-    if (args.prepared) {
+    if (args.prepared?.evidence) {
       const canonicalKey = dependencyEcosystemKey(change);
       const sharedKey = dependencyEcosystemKey({ ...change, workspace: undefined });
-      additions.clear(); const addition = args.prepared.additions.get(sharedKey); if (addition) additions.set(canonicalKey, addition);
-      surfaceGaps.clear(); const gap = args.prepared.surfaceGaps.get(sharedKey); if (gap) surfaceGaps.set(canonicalKey, gap);
-      if (args.prepared.surfaceCompared.has(sharedKey)) surfaceCompared.add(canonicalKey);
-      prose.clear(); const consulted = args.prepared.prose.get(sharedKey); if (consulted) prose.set(canonicalKey, consulted);
+      const prep = args.prepared.evidence;
+      additions.clear(); const addition = prep.additions.get(sharedKey); if (addition) additions.set(canonicalKey, addition);
+      surfaceGaps.clear(); const gap = prep.surfaceGaps.get(sharedKey); if (gap) surfaceGaps.set(canonicalKey, gap);
+      if (prep.surfaceCompared.has(sharedKey)) surfaceCompared.add(canonicalKey);
+      prose.clear(); const consulted = prep.prose.get(sharedKey); if (consulted) prose.set(canonicalKey, consulted);
     }
 
     report(
@@ -2141,7 +2212,7 @@ async function analyzeUpgrade(args: {
         // concurrently with evidence gathering in `prepareUpstream` above, so
         // `rationaleFor` reuses that promise instead of redoing package-level
         // lookups this exact upgrade already made.
-        ...(args.prepared ? { preparedFacts: new Map([[change, args.prepared.rationaleFacts]]) } : {}),
+        ...(args.prepared?.rationaleFacts ? { preparedFacts: new Map([[change, args.prepared.rationaleFacts]]) } : {}),
         repoRuntime: findNodeDeclarations(files, args.member, args.allMembers),
         pythonRuntime: findPythonDeclarations(files, args.member, args.allMembers),
         // Replaces the single opaque phase above with the actual named stage

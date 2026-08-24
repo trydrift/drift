@@ -193,10 +193,22 @@ export async function prepareRationaleFacts(
       const currentVersionPromise = fetchVersionInfo(change.name, change.ecosystem, from).catch(() => null);
       const targetVersionPromise = fetchVersionInfo(change.name, change.ecosystem, to).catch(() => null);
       const securityPromise: Promise<SecurityAssessment> = config.rationale.security
-        ? ctx.securityLookup ??
-          Promise.resolve(ctx.security)
-            .then((batch) => batch?.get(change))
-            .then((cached) => cached ?? assessSecurity(change.name, change.ecosystem, from, to, ctx.osv ?? {}))
+        ? (
+            ctx.securityLookup ??
+            Promise.resolve(ctx.security)
+              .then((batch) => batch?.get(change))
+              .then((cached) => cached ?? assessSecurity(change.name, change.ecosystem, from, to, ctx.osv ?? {}))
+          ).catch((err: unknown) =>
+            // Security is best-effort, like every other fact gathered here —
+            // an unexpected rejection from a caller-supplied `securityLookup`
+            // (e.g. `scanUpgrades`' scan-wide OSV batch) must degrade to an
+            // honest "unknown" verdict rather than sinking the whole
+            // `prepareRationaleFacts` call and discarding the registry,
+            // version, repository-status, and license facts alongside it.
+            unchecked(
+              `Advisory lookup failed unexpectedly (${err instanceof Error ? err.message : String(err)}), so this upgrade's effect on known vulnerabilities is unknown.`,
+            ),
+          )
         : // Switched off, not unreachable. Saying "could not be reached" here sent
           // developers looking for a network problem behind their own setting.
           Promise.resolve(

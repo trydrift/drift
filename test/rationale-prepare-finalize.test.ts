@@ -59,10 +59,35 @@ afterEach(() => {
 
 const noNetwork = { fetch: async () => ({ vulns: [] }) };
 
+/**
+ * Exact-hostname (and, where relevant, exact-pathname) URL matching for the
+ * fetch stubs below, rather than `url.includes('registry.npmjs.org')` /
+ * `url.startsWith(...)` substring checks. A substring check is satisfied by
+ * `https://evil.example/registry.npmjs.org` or
+ * `https://registry.npmjs.org.evil.example`, so it is not actually asserting
+ * "this request went to the npm registry" — only "this URL contains this
+ * text somewhere". `new URL(url).hostname` parses the URL properly and
+ * compares the actual host, which is what these stubs mean to check.
+ */
+function urlHost(raw: string): string {
+  try {
+    return new URL(raw).hostname;
+  } catch {
+    return '';
+  }
+}
+function urlPath(raw: string): string {
+  try {
+    return new URL(raw).pathname;
+  } catch {
+    return '';
+  }
+}
+
 function stubNpmAndGithub(hits: { registry: number; repo: number }): void {
   clearHttpCache();
   globalThis.fetch = ((url: string) => {
-    if (url.includes('registry.npmjs.org')) {
+    if (urlHost(url) === 'registry.npmjs.org') {
       hits.registry += 1;
       return Promise.resolve(
         new Response(
@@ -76,7 +101,7 @@ function stubNpmAndGithub(hits: { registry: number; repo: number }): void {
         ),
       );
     }
-    if (url.startsWith('https://api.github.com/repos/acme/pkg') && !url.includes('/releases')) {
+    if (urlHost(url) === 'api.github.com' && urlPath(url) === '/repos/acme/pkg') {
       hits.repo += 1;
       return Promise.resolve(
         new Response(
@@ -232,7 +257,7 @@ describe('scan-wide rationale sharing end to end', () => {
     const hits = { registry: 0, repo: 0, osv: 0 };
     clearHttpCache();
     globalThis.fetch = ((url: string, init?: RequestInit) => {
-      if (url.includes('registry.npmjs.org')) {
+      if (urlHost(url) === 'registry.npmjs.org') {
         hits.registry += 1;
         return Promise.resolve(
           new Response(
@@ -245,7 +270,7 @@ describe('scan-wide rationale sharing end to end', () => {
           ),
         );
       }
-      if (url.includes('api.osv.dev')) {
+      if (urlHost(url) === 'api.osv.dev') {
         hits.osv += 1;
         return Promise.resolve(
           new Response(JSON.stringify({ vulns: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
@@ -334,7 +359,7 @@ describe('E: repository-status fetch overlaps evidence preparation', () => {
 
     clearHttpCache();
     globalThis.fetch = ((url: string) => {
-      if (url.includes('registry.npmjs.org')) {
+      if (urlHost(url) === 'registry.npmjs.org') {
         return Promise.resolve(
           new Response(
             JSON.stringify({
@@ -347,14 +372,14 @@ describe('E: repository-status fetch overlaps evidence preparation', () => {
           ),
         );
       }
-      if (url.includes('/releases')) {
+      if (urlHost(url) === 'api.github.com' && urlPath(url).endsWith('/releases')) {
         started.releases = true;
         releaseGate();
         // Blocks until the *other* branch has also started — proving this
         // one did not have to wait for that branch to finish first.
         return bothStarted.then(() => new Response('[]', { status: 200, headers: { 'Content-Type': 'application/json' } }));
       }
-      if (url.startsWith('https://api.github.com/repos/')) {
+      if (urlHost(url) === 'api.github.com' && urlPath(url).startsWith('/repos/')) {
         started.repoStatus = true;
         repoStatusGate();
         return bothStarted.then(
@@ -403,58 +428,35 @@ describe('E: repository-status fetch overlaps evidence preparation', () => {
 });
 
 describe('scan-level dedupe: identity boundaries and error retry', () => {
-  test('Test C (unit): a rejected prepareRationaleFacts is evicted from a single-flight cache, and a later independent call can retry', async () => {
+  test('Test C: an unexpectedly rejecting securityLookup degrades to an honest unchecked verdict rather than sinking prepareRationaleFacts', async () => {
     stubNpmAndGithub({ registry: 0, repo: 0 });
 
-    // Mirrors the exact single-flight idiom `prepareUpstream` uses in
-    // `src/upgrade/scan.ts` (`upstreamCache.set(key, promise); promise.catch(()
-    // => { if (upstreamCache.get(key) === promise) upstreamCache.delete(key);
-    // })`), applied directly to `prepareRationaleFacts` — the new
-    // workspace-independent stage this change adds. A `SecurityLookup`
-    // promise that this test controls stands in for "something in the
-    // upstream work rejects unexpectedly": the first attempt's OSV lookup
-    // rejects, the second (a later, independent call, after eviction)
-    // succeeds.
-    const cache = new Map<string, ReturnType<typeof prepareRationaleFacts>>();
-    const key = 'npm|pkg|1.0.0|2.0.0';
-    let attempt = 0;
+    // Security is best-effort, like every other fact `prepareRationaleFacts`
+    // gathers: an unexpected rejection from a caller-supplied
+    // `securityLookup` (this is exactly the shape `scanUpgrades`' scan-wide
+    // OSV batch hands in — see `scanSecurityFor` in `src/upgrade/scan.ts`)
+    // must not take the registry/version/license facts down with it. Before
+    // this hardening, a rejecting `securityLookup` rejected the whole
+    // `prepareRationaleFacts` call, which — one layer up, in
+    // `prepareUpstream` — used to also discard a successfully shared
+    // `gatherDependencyEvidence` computation for every duplicate row waiting
+    // on it (see `test/scan-upstream-independent-failure.test.ts`, which now
+    // covers that layer directly with two fully independent caches instead
+    // of relying on this one rejecting).
+    const facts = await prepareRationaleFacts(change, {
+      config: DriftConfigSchema.parse({ rationale: { security: true } }),
+      securityLookup: Promise.reject(new Error('synthetic OSV failure')),
+    });
 
-    const prepare = () => {
-      attempt += 1;
-      const thisAttempt = attempt;
-      const securityLookup =
-        thisAttempt === 1
-          ? Promise.reject(new Error('synthetic OSV failure'))
-          : Promise.resolve({
-              checked: true,
-              current: [],
-              target: [],
-              resolved: [],
-              introduced: [],
-              carried: [],
-              direction: 'unknown' as const,
-            });
-      const p = prepareRationaleFacts(change, {
-        config: DriftConfigSchema.parse({ rationale: { security: true } }),
-        securityLookup,
-      });
-      cache.set(key, p);
-      p.catch(() => {
-        if (cache.get(key) === p) cache.delete(key);
-      });
-      return p;
-    };
-
-    const first = prepare();
-    await assert.rejects(first, /synthetic OSV failure/);
-    // No row should be left pending forever on a promise that will never
-    // settle again — eviction is what lets the next call actually attempt
-    // fresh work instead of reusing (or being stuck behind) a dead promise.
-    assert.equal(cache.has(key), false, 'the rejected promise was evicted from the cache');
-
-    const second = prepare();
-    const facts = await second;
-    assert.equal(facts.security.checked, true, 'a later independent call retried and succeeded');
+    assert.equal(facts.security.checked, false, 'a failed advisory lookup is an honest "unknown", not a thrown error');
+    assert.ok(
+      facts.security.reason?.includes('synthetic OSV failure'),
+      `expected the degraded verdict to carry the failure reason, got: ${JSON.stringify(facts.security.reason)}`,
+    );
+    // Everything else `prepareRationaleFacts` computes is independent of the
+    // security lookup and must still be present.
+    assert.ok(facts.registry, 'registry info was still resolved');
+    assert.ok(facts.license, 'license was still assessed');
   });
 
   test('Test B: identity boundaries — same package different target/source version, different ecosystem, and A→B vs B→A never share; manifest path and dependency kind differences may share', async () => {

@@ -587,10 +587,26 @@ export function fetchArchive(
   url: string,
   options: { timeoutMs?: number; retries?: number; maxBytes?: number } = {},
 ): Promise<ArchiveResult> {
+  // The *persistent* disk-cache identity is URL-only: an archive's bytes are
+  // immutable content, so one cached copy is correct and shareable
+  // regardless of who eventually asks for it (see `fetchArchiveUncoalesced`,
+  // which re-checks `maxBytes` against whatever it reads from disk).
   const cacheKey = `archive:${url}`;
+  // The *in-flight* coalescing identity is not URL-only, deliberately: it
+  // additionally fingerprints every option that changes what a caller is
+  // safe to receive or how long it is willing to wait -- `maxBytes`,
+  // `timeoutMs`, `retries`. Two concurrent callers for the identical URL
+  // only ever share one underlying network fetch when those match; a
+  // caller with a stricter `maxBytes` must never be able to join (and
+  // silently inherit oversized bytes from) a looser caller's already
+  // in-flight download, and neither caller's `timeoutMs` may become the
+  // other's. A caller with different constraints simply starts its own
+  // fetch, which still lands in the one shared disk cache above once it
+  // completes.
+  const inFlightKey = `${cacheKey}|maxBytes=${options.maxBytes ?? ''}|timeoutMs=${options.timeoutMs ?? ''}|retries=${options.retries ?? ''}`;
   const start = runElapsedMs();
-  const joined = inFlight.has(cacheKey);
-  return coalesce(cacheKey, () => fetchArchiveUncoalesced(url, cacheKey, options)).then((value) => {
+  const joined = inFlight.has(inFlightKey);
+  return coalesce(inFlightKey, () => fetchArchiveUncoalesced(url, cacheKey, options)).then((value) => {
     if (joined) recordDiag({ url, method: 'GET', startOffsetMs: start, status: value.ok ? 200 : value.status, cache: 'coalesced_hit' });
     return value;
   });
