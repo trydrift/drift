@@ -1,12 +1,12 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { runRepoDiagnostic } from '../src/run-diagnostics.js';
-import { startSpan } from '../../src/util/diagnostics.js';
+import { resolveGitDir, startSpan } from '../../src/util/diagnostics.js';
 
 const run = promisify(execFile);
 
@@ -20,6 +20,18 @@ async function withGitRepo<T>(fn: (root: string) => Promise<T>): Promise<T> {
   } finally {
     await rm(root, { recursive: true, force: true });
   }
+}
+
+async function completedLogs(root: string): Promise<string[]> {
+  const dir = join(resolveGitDir(root), 'drift');
+  const names = (await readdir(dir)).filter((name) => name.endsWith('.log')).sort();
+  return names.map((name) => join(dir, name));
+}
+
+async function onlyCompletedLog(root: string): Promise<{ path: string; contents: string }> {
+  const logs = await completedLogs(root);
+  assert.equal(logs.length, 1);
+  return { path: logs[0]!, contents: await readFile(logs[0]!, 'utf8') };
 }
 
 describe('runRepoDiagnostic', () => {
@@ -41,8 +53,8 @@ describe('runRepoDiagnostic', () => {
       await runRepoDiagnostic({ command: 'test:b', mode: 'quick', repoRoot: repoB, spanName: 'dependency.scan' }, async () => {
         startSpan('package', { package: 'only-b' }).end();
       });
-      const logA = await readFile(join(repoA, '.git/drift/run.log'), 'utf8');
-      const logB = await readFile(join(repoB, '.git/drift/run.log'), 'utf8');
+      const logA = (await onlyCompletedLog(repoA)).contents;
+      const logB = (await onlyCompletedLog(repoB)).contents;
       assert.match(logA, /only-a/);
       assert.doesNotMatch(logA, /only-b/);
       assert.match(logB, /only-b/);
@@ -52,12 +64,38 @@ describe('runRepoDiagnostic', () => {
     }
   });
 
+  test('preserves every completed run with a typed timestamped filename', async () => {
+    await withGitRepo(async (root) => {
+      await runRepoDiagnostic(
+        { command: 'test:first', type: 'dev-quick', mode: 'quick', repoRoot: root, spanName: 'scan' },
+        async () => startSpan('package', { package: 'first' }).end(),
+      );
+      await runRepoDiagnostic(
+        { command: 'test:second', type: 'dev-quick', mode: 'quick', repoRoot: root, spanName: 'scan' },
+        async () => startSpan('package', { package: 'second' }).end(),
+      );
+
+      const logs = await completedLogs(root);
+      assert.equal(logs.length, 2);
+      for (const path of logs) {
+        assert.match(
+          path.split('/').pop()!,
+          /^run-dev-quick-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.\d{3}Z-[a-f0-9]{8}\.log$/,
+        );
+      }
+      const contents = await Promise.all(logs.map((path) => readFile(path, 'utf8')));
+      assert.ok(contents.some((text) => text.includes('first')));
+      assert.ok(contents.some((text) => text.includes('second')));
+    });
+  });
+
   test('records cancellation instead of success', async () => {
     await withGitRepo(async (root) => {
       await runRepoDiagnostic({ command: 'test', mode: 'quick', repoRoot: root, spanName: 'scan', isCancelled: () => true }, async () => undefined);
-      const log = await readFile(join(root, '.git/drift/run.log'), 'utf8');
-      assert.match(log, /status=cancelled/);
-      assert.doesNotMatch(log, /status=ok/);
+      const { path, contents } = await onlyCompletedLog(root);
+      assert.match(path.split('/').pop()!, /^run-scan-quick-/);
+      assert.match(contents, /status=cancelled/);
+      assert.doesNotMatch(contents, /status=ok/);
     });
   });
 
@@ -69,18 +107,20 @@ describe('runRepoDiagnostic', () => {
         }),
         /Bearer secret-token-value/,
       );
-      const log = await readFile(join(root, '.git/drift/run.log'), 'utf8');
-      assert.match(log, /status=threw/);
-      assert.match(log, /REDACTED/);
-      assert.doesNotMatch(log, /secret-token-value/);
+      const { contents } = await onlyCompletedLog(root);
+      assert.match(contents, /status=threw/);
+      assert.match(contents, /REDACTED/);
+      assert.doesNotMatch(contents, /secret-token-value/);
     });
   });
 
-  test('records deep mode in the header', async () => {
+  test('records deep mode and type in the header and filename', async () => {
     await withGitRepo(async (root) => {
       await runRepoDiagnostic({ command: 'test', mode: 'deep', repoRoot: root, spanName: 'verification' }, async () => undefined);
-      const log = await readFile(join(root, '.git/drift/run.log'), 'utf8');
-      assert.match(log, /mode: deep/);
+      const { path, contents } = await onlyCompletedLog(root);
+      assert.match(path.split('/').pop()!, /^run-scan-deep-/);
+      assert.match(contents, /type: scan-deep/);
+      assert.match(contents, /mode: deep/);
     });
   });
 });

@@ -1393,7 +1393,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           const result = await runRepoDiagnostic(
             {
               command: 'vscode: drift.scanDependencies',
-              mode: resolvedChoices.deep ? 'deep' : 'quick',
+              type: `${includeDev ? 'dev' : 'runtime'}-${deep ? 'deep' : 'quick'}`,
+              mode: deep ? 'deep' : 'quick',
               repoRoot: ctx.root,
               spanName: 'dependency.scan',
               spanMeta: {
@@ -1853,6 +1854,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           await runRepoDiagnostic(
             {
               command: 'vscode: drift.verify',
+              type: 'verify-deep',
               mode: 'deep',
               repoRoot: root,
               spanName: 'verification',

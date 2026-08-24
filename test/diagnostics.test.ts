@@ -158,7 +158,7 @@ describe('path resolution', () => {
     });
   });
 
-  test('running twice leaves exactly one file, containing only the latest run', async () => {
+  test('running twice preserves an immutable log for each run', async () => {
     await withGitRepo(async (root) => {
       const first = startRunLog({ command: 'drift outdated (first)', mode: 'quick', repoRoot: root });
       first.finish('ok');
@@ -166,11 +166,14 @@ describe('path resolution', () => {
       second.finish('ok');
 
       const dir = join(root, '.git', 'drift');
-      const entries = await readdir(dir);
-      assert.deepEqual(entries, ['run.log']);
-      const contents = await readFile(join(dir, 'run.log'), 'utf8');
-      assert.ok(contents.includes('(second)'));
-      assert.ok(!contents.includes('(first)'));
+      const entries = (await readdir(dir)).filter((entry) => entry.endsWith('.log'));
+      assert.equal(entries.length, 2);
+      const firstContents = await readFile(first.path!, 'utf8');
+      const secondContents = await readFile(second.path!, 'utf8');
+      assert.ok(firstContents.includes('(first)'));
+      assert.ok(!firstContents.includes('(second)'));
+      assert.ok(secondContents.includes('(second)'));
+      assert.ok(!secondContents.includes('(first)'));
     });
   });
 
@@ -348,7 +351,7 @@ describe('concurrency safety', () => {
     });
   });
 
-  test('overlapping runs cannot mix events: A starts, B starts, A finishes after B, run.log is only B', async () => {
+  test('overlapping runs keep events isolated when A finishes after B', async () => {
     await withGitRepo(async (root) => {
       const runA = startRunLog({ command: 'drift outdated (A)', mode: 'quick', repoRoot: root });
       const runB = startRunLog({ command: 'drift outdated (B)', mode: 'quick', repoRoot: root });
@@ -367,8 +370,7 @@ describe('concurrency safety', () => {
         }),
       ]);
 
-      // B finishes first, A finishes after — A must not be allowed to
-      // overwrite B's report since B is the newer run.
+      // B finishes first, then A. Each report must remain isolated.
       runB.finish('ok');
       runA.finish('ok');
 
@@ -380,12 +382,12 @@ describe('concurrency safety', () => {
     });
   });
 
-  test('an older run finishing after a newer one never overwrites run.log, even sequentially', async () => {
+  test('sequential overlapping runs keep their reports isolated', async () => {
     await withGitRepo(async (root) => {
       const runA = startRunLog({ command: 'drift outdated (older)', mode: 'quick', repoRoot: root });
       const runB = startRunLog({ command: 'drift outdated (newer)', mode: 'quick', repoRoot: root });
       runB.finish('ok');
-      runA.finish('ok'); // stale — must be dropped
+      runA.finish('ok');
 
       const contents = await readFile(runB.path!, 'utf8');
       assert.ok(contents.includes('(newer)'));
@@ -393,7 +395,7 @@ describe('concurrency safety', () => {
     });
   });
 
-  test('cross-process older run cannot overwrite newer run when newer finishes first', async () => {
+  test('cross-process runs preserve both reports when newer finishes first', async () => {
     await withGitRepo(async (root) => {
       const dir = await mkdtemp(join(tmpdir(), 'drift-diag-race-'));
       try {
@@ -412,18 +414,18 @@ describe('concurrency safety', () => {
         await writeFile(aFinish, 'finish');
         await procA;
 
-        const contents = await readFile(join(root, '.git', 'drift', 'run.log'), 'utf8');
-        assert.ok(contents.includes('(B)'));
-        assert.ok(contents.includes('from-B'));
-        assert.ok(!contents.includes('(A)'));
-        assert.ok(!contents.includes('from-A'));
+        const logs = (await readdir(join(root, '.git', 'drift'))).filter((entry) => entry.endsWith('.log'));
+        assert.equal(logs.length, 2);
+        const contents = await Promise.all(logs.map((entry) => readFile(join(root, '.git', 'drift', entry), 'utf8')));
+        assert.ok(contents.some((text) => text.includes('(A)') && text.includes('from-A')));
+        assert.ok(contents.some((text) => text.includes('(B)') && text.includes('from-B')));
       } finally {
         await rm(dir, { recursive: true, force: true });
       }
     });
   });
 
-  test('cross-process newer run wins when older finishes first too', async () => {
+  test('cross-process runs preserve both reports when older finishes first too', async () => {
     await withGitRepo(async (root) => {
       const dir = await mkdtemp(join(tmpdir(), 'drift-diag-race-'));
       try {
@@ -442,11 +444,11 @@ describe('concurrency safety', () => {
         await writeFile(bFinish, 'finish');
         await procB;
 
-        const contents = await readFile(join(root, '.git', 'drift', 'run.log'), 'utf8');
-        assert.ok(contents.includes('(B)'));
-        assert.ok(contents.includes('from-B'));
-        assert.ok(!contents.includes('(A)'));
-        assert.ok(!contents.includes('from-A'));
+        const logs = (await readdir(join(root, '.git', 'drift'))).filter((entry) => entry.endsWith('.log'));
+        assert.equal(logs.length, 2);
+        const contents = await Promise.all(logs.map((entry) => readFile(join(root, '.git', 'drift', entry), 'utf8')));
+        assert.ok(contents.some((text) => text.includes('(A)') && text.includes('from-A')));
+        assert.ok(contents.some((text) => text.includes('(B)') && text.includes('from-B')));
       } finally {
         await rm(dir, { recursive: true, force: true });
       }
