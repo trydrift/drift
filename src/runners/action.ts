@@ -15,6 +15,7 @@ import {
   type AlertGranularity,
   type SarifFinding,
 } from '../report/sarif.js';
+import { overallConfidenceText } from '../report/confidence.js';
 import { scanUpgrades, type UpgradeCandidate } from '../upgrade/scan.js';
 import { createLogger, type Logger, type LogLevel } from '../util/logger.js';
 import { matchesAny } from '../util/glob.js';
@@ -442,11 +443,17 @@ function renderOutdatedTable(candidates: readonly UpgradeCandidate[]): string {
     return `| ${c.name} | ${DEPENDENCY_KIND_LABELS[c.kind]} | ${version} | ${c.breakingCount} | ${impact} | ${c.risk} |`;
   });
 
-  return [
+  const table = [
     '| Package | Kind | Version | Upstream breaking changes | Locally affected | Risk |',
     '| --- | --- | --- | --- | --- | --- |',
     ...rows,
   ].join('\n');
+  const findings = candidates.flatMap((c) =>
+    (c.plan?.breakingChanges ?? []).map((change) =>
+      `- **${change.assessment ? overallConfidenceText(change.assessment) : 'Confidence unavailable'}** — \`${c.name}\` / \`${change.kind}\`: ${change.summary}`,
+    ),
+  );
+  return findings.length ? `${table}\n\n### Findings\n\n${findings.join('\n')}` : table;
 }
 
 export function readInputs(): ActionInputs {

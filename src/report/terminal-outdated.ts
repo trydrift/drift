@@ -39,6 +39,7 @@ import {
   type GlyphName,
 } from '../util/terminal.js';
 import { registryUrl } from './registry-url.js';
+import { overallConfidenceText } from './confidence.js';
 
 /** How each severity is drawn: its glyph, its colour, and what it is called. */
 interface Facade {
@@ -360,6 +361,13 @@ function detailedEntry(
   line(`  ${c('bold', packageLink(candidate))} ${c('gray', target)}`);
   line(c('gray', `    ${candidate.ecosystem} ${c.glyph('dot')} ${where(candidate)}`));
   if (candidate.summary) line(`    ${wrap(candidate.summary, width - 4, '    ')}`);
+
+  for (const change of candidate.plan?.breakingChanges ?? []) {
+    line(`    ${change.kind}`);
+    line(`    ${change.assessment ? overallConfidenceText(change.assessment) : 'Confidence unavailable'}`);
+    line(`    ${wrap(change.summary, width - 4, '    ')}`);
+    line();
+  }
 
   // What was actually run, and what it said. A prediction and a measurement
   // read identically on the page unless the page says which it is.

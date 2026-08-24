@@ -313,7 +313,12 @@ export function evidenceStrengthLabel(weight: number): string {
  */
 export function overallConfidenceLine(assessment: ConfidenceAssessment): string {
   const overall = deriveOverallConfidence(assessment);
-  return `${bandBadge(overall.band)} **Confidence: ${overall.score}/100 — ${overall.label}**`;
+  return `${bandBadge(overall.band)} **Confidence: ${overallConfidenceText(assessment)}**`;
+}
+
+export function overallConfidenceText(assessment: ConfidenceAssessment): string {
+  const overall = deriveOverallConfidence(assessment);
+  return `${overall.score}/100 — ${overall.label}`;
 }
 
 /**

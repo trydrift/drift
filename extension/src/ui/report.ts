@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 import { join } from 'node:path';
 import type { BreakingChange, Evidence, RemediationPlan } from '../../../src/types.js';
-import { deriveOverallConfidence } from '../../../src/confidence/calibrate.js';
-import { evidenceStrengthLabel } from '../../../src/report/confidence.js';
+import { overallConfidenceText, evidenceStrengthLabel } from '../../../src/report/confidence.js';
 import type { DriftState } from '../state.js';
 import { highlightCode, languageForEcosystem } from './highlight.js';
 
@@ -493,7 +492,7 @@ function renderChangeCard(
   const diff = changeDiffContext(change, plan);
   // The one number a reader sees first — the three-dimension breakdown in
   // `renderConfidenceDetail` stays underneath for anyone who wants the working.
-  const overall = change.assessment ? deriveOverallConfidence(change.assessment) : null;
+  const overallText = change.assessment ? overallConfidenceText(change.assessment) : null;
 
   const siteList = sites.length
     ? `<ul class="sites">
@@ -538,8 +537,8 @@ function renderChangeCard(
   return `
 <article class="card ${focused ? 'focused' : ''}" id="${escapeAttr(change.id)}" ${focused ? 'data-focus="true"' : ''}>
   <div class="card-head">
-    <span class="badge ${overall?.band ?? change.confidence}" title="How confident Drift is overall — did this really happen upstream, does it reach this repository, and did anything confirm it">${
-      overall ? `${overall.score}/100 · ${escapeHtml(overall.label)}` : escapeHtml(change.confidence)
+    <span class="badge ${change.assessment ? 'overall' : change.confidence}" title="How confident Drift is overall — did this really happen upstream, does it reach this repository, and did anything confirm it">${
+      overallText ? escapeHtml(overallText) : escapeHtml(change.confidence)
     }</span>
     <span class="kind">${escapeHtml(change.kind)}</span>
     <code class="dep">${escapeHtml(change.dependency)}</code>
