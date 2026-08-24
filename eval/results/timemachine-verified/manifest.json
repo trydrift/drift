@@ -2,14 +2,14 @@
   "version": "drift-external-run-v1",
   "runId": "timemachine-verified",
   "datasetId": "timemachine",
-  "createdAt": "2026-08-20T23:02:25.365Z",
-  "driftCommit": "4dd1404ab2426dbf0d52b8c6eb3c6266d14970ca",
+  "createdAt": "2026-08-24T16:26:22.141Z",
+  "driftCommit": "6e272ea929ad2807947872d500d445136bbf489e",
   "driftTreeDirty": false,
-  "harnessVersion": "4dd1404ab2426dbf0d52b8c6eb3c6266d14970ca",
+  "harnessVersion": "6e272ea929ad2807947872d500d445136bbf489e",
   "datasetVersion": "9928dbf1af1405433d2c2e40227f39fd831d3863",
-  "command": "/Users/rudy/.nvm/versions/node/v24.19.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts timemachine --experiment verified --run-id timemachine-verified --resume",
-  "node": "v24.19.0",
-  "platform": "darwin",
+  "command": "/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts timemachine --experiment verified --run-id timemachine-verified",
+  "node": "v22.23.2",
+  "platform": "linux",
   "arch": "x64",
-  "notes": "Detection only, on a manifest pair this harness assembles — and that construction is the weakest in this benchmark, so it is stated on every case rather than left to be inferred. The repository is fetched at its exact historical commit; the after-state repins the requirements the project itself declares to the versions the dataset records as resolving at the migration date. It is *not* built from `patch` or `gold_patch`, which are the developer's migration and are ground truth — reading the upgrade out of the fix would hand Drift the answer and call the result detection. Only declared requirements are repinned; the rest of the resolved set is the transitive closure, and writing it into a manifest would invent declarations the project never made.\n\nNo precision and no false-positive rate: every task is a migration that fails, and the corpus contains no migrations that succeed.\n\n**Not installed here: `docker`, `uv`.** TimeMachine's own reproduction is a container per task built against a date-filtered PyPI index, which is what preserves the historical resolution each task depends on. Without it the oracle was not run and no repair question was asked — those outcomes are absent from every case record rather than recorded as failures, because Drift was never asked and did not fail."
+  "notes": "Detection only, on a manifest pair this harness assembles — and that construction is the weakest in this benchmark, so it is stated on every case rather than left to be inferred. The repository is fetched at its exact historical commit; the after-state repins the requirements the project itself declares to the versions the dataset records as resolving at the migration date. It is *not* built from `patch` or `gold_patch`, which are the developer's migration and are ground truth — reading the upgrade out of the fix would hand Drift the answer and call the result detection. Only declared requirements are repinned; the rest of the resolved set is the transitive closure, and writing it into a manifest would invent declarations the project never made.\n\nNo precision and no false-positive rate: every task is a migration that fails, and the corpus contains no migrations that succeed.\n\n**Not installed here: `uv`.** TimeMachine's own reproduction is a container per task built against a date-filtered PyPI index, which is what preserves the historical resolution each task depends on. Without it the oracle was not run and no repair question was asked — those outcomes are absent from every case record rather than recorded as failures, because Drift was never asked and did not fail."
 }

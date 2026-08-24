@@ -15,10 +15,10 @@ What a good result here does *not* establish: Nothing about whether Drift finds 
 | Citation | Dezhen Kong et al., "Towards Better Comprehension of Breaking Changes in the NPM Ecosystem", replication package, Zenodo, DOI 10.5281/zenodo.13857646. |
 | Ecosystem | npm |
 | Benchmark class | upstream-bc-detection |
-| Drift commit | `4a8017f5965881d692320a8133001a05427a6ebf` |
-| Run date | 2026-08-20T17:41:23.626Z |
-| Command | `/Users/rudy/.nvm/versions/node/v24.19.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts kong --experiment rq1-documented --run-id kong-rq1-documented` |
-| Platform | darwin/x64, Node v24.19.0 |
+| Drift commit | `6e272ea929ad2807947872d500d445136bbf489e` |
+| Run date | 2026-08-24T16:18:01.791Z |
+| Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts kong --experiment rq1-documented --run-id kong-rq1-documented` |
+| Platform | linux/x64, Node v22.23.2 |
 
 ## Case accounting
 
@@ -36,7 +36,7 @@ Read this before any rate below.
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| breaking-change detection recall | 23/165 (13.9%) | 9.1–19.4% |
+| breaking-change detection recall | 131/165 (79.4%) | 73.3–85.5% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
@@ -47,13 +47,13 @@ Computed because this corpus supplies real negatives, so a false positive has a 
 
 | | |
 | --- | --- |
-| True positives | 23 |
-| False positives | 11 |
-| True negatives | 16157 |
-| False negatives | 142 |
-| Precision | 23/34 (67.6%) |
-| Recall | 23/165 (13.9%) |
-| F1 | 0.231 |
+| True positives | 131 |
+| False positives | 30 |
+| True negatives | 16138 |
+| False negatives | 34 |
+| Precision | 131/161 (81.4%) |
+| Recall | 131/165 (79.4%) |
+| F1 | 0.804 |
 
 ### Trivial baseline on the same cases
 
@@ -72,11 +72,11 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | breaking-change detection recall |
 | --- | --- |
-| label: documents-breaking-change | 23/165 (13.9%) |
+| label: documents-breaking-change | 131/165 (79.4%) |
 | markerBaselinePredictsBreaking: false | 0/1 (0.0%) |
-| markerBaselinePredictsBreaking: true | 23/164 (14.0%) |
-| messageStatesDetail: false | 6/48 (12.5%) |
-| messageStatesDetail: true | 17/117 (14.5%) |
+| markerBaselinePredictsBreaking: true | 131/164 (79.9%) |
+| messageStatesDetail: false | 17/48 (35.4%) |
+| messageStatesDetail: true | 114/117 (97.4%) |
 
 ## Label mapping coverage
 
@@ -100,13 +100,13 @@ how generously the mapping was written.
 
 | Tool | Version | Needed for |
 | --- | --- | --- |
-| `node` | v24.19.0 | every npm/TypeScript case, and Drift itself |
-| `npm` | 11.12.1 | installing a TypeScript consumer before its build oracle can run |
-| `git` | git version 2.39.5 (Apple Git-154) | checking out an original repository at the exact evaluated commit |
-| `java` | openjdk version "19" 2022-09-20 | any Java case |
-| `mvn` | Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937) | BUMP's Maven oracle, and building Roseau from its replication kit |
-| `docker` | **not installed** | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
-| `python3` | Python 3.14.3 | any Python case |
+| `node` | v22.23.2 | every npm/TypeScript case, and Drift itself |
+| `npm` | 10.9.8 | installing a TypeScript consumer before its build oracle can run |
+| `git` | git version 2.55.0 | checking out an original repository at the exact evaluated commit |
+| `java` | openjdk version "17.0.20" 2026-07-21 | any Java case |
+| `mvn` | Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5) | BUMP's Maven oracle, and building Roseau from its replication kit |
+| `docker` | Docker version 28.0.4, build b8034c0 | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
+| `python3` | Python 3.12.3 | any Python case |
 | `uv` | **not installed** | TimeMachine's documented environment setup |
 | `japicmp` | **not installed** | Drift's Java API-surface diff, which its maven capability declares it requires |
 

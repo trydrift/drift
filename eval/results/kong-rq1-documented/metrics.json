@@ -10,31 +10,31 @@
   "missingRequirements": {},
   "rates": {
     "breaking-change detection recall": {
-      "numerator": 23,
+      "numerator": 131,
       "denominator": 165,
-      "value": 0.1393939393939394
+      "value": 0.793939393939394
     }
   },
   "refusals": [],
   "negativeControls": 16168,
   "confusion": {
-    "tp": 23,
-    "fp": 11,
-    "tn": 16157,
-    "fn": 142
+    "tp": 131,
+    "fp": 30,
+    "tn": 16138,
+    "fn": 34
   },
   "classification": {
     "precision": {
-      "numerator": 23,
-      "denominator": 34,
-      "value": 0.6764705882352942
+      "numerator": 131,
+      "denominator": 161,
+      "value": 0.8136645962732919
     },
     "recall": {
-      "numerator": 23,
+      "numerator": 131,
       "denominator": 165,
-      "value": 0.1393939393939394
+      "value": 0.793939393939394
     },
-    "f1": 0.2311557788944724
+    "f1": 0.8036809815950922
   },
   "baseline": {
     "name": "conventional-commits marker",
@@ -59,16 +59,16 @@
   "breakdown": {
     "label: documents-breaking-change": {
       "breaking-change detection recall": {
-        "numerator": 23,
+        "numerator": 131,
         "denominator": 165,
-        "value": 0.1393939393939394
+        "value": 0.793939393939394
       }
     },
     "markerBaselinePredictsBreaking: true": {
       "breaking-change detection recall": {
-        "numerator": 23,
+        "numerator": 131,
         "denominator": 164,
-        "value": 0.1402439024390244
+        "value": 0.7987804878048781
       }
     },
     "markerBaselinePredictsBreaking: false": {
@@ -80,23 +80,23 @@
     },
     "messageStatesDetail: false": {
       "breaking-change detection recall": {
-        "numerator": 6,
+        "numerator": 17,
         "denominator": 48,
-        "value": 0.125
+        "value": 0.3541666666666667
       }
     },
     "messageStatesDetail: true": {
       "breaking-change detection recall": {
-        "numerator": 17,
+        "numerator": 114,
         "denominator": 117,
-        "value": 0.1452991452991453
+        "value": 0.9743589743589743
       }
     }
   },
   "intervals": {
     "breaking-change detection recall": {
-      "low": 0.09090909090909091,
-      "high": 0.19393939393939394,
+      "low": 0.7333333333333333,
+      "high": 0.8545454545454545,
       "iterations": 2000
     }
   },
