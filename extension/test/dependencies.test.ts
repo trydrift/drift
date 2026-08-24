@@ -68,7 +68,7 @@ describe('dependency scan tree', () => {
     const parent = tree.getTreeItem(dependency!);
     const children = tree.getChildren(dependency!);
     assert.equal(parent.collapsibleState, vscode.TreeItemCollapsibleState.Collapsed);
-    assert.deepEqual(children.map((child) => tree.getTreeItem(child).description), ['Very confident', 'Fairly confident']);
+    assert.deepEqual(children.map((child) => tree.getTreeItem(child).description), ['Confidence unavailable', 'Confidence unavailable']);
     assert.equal(tree.getTreeItem(dependency!).description, '18.3.1 -> 19.0.0');
     tree.dispose();
   });

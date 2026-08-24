@@ -1,6 +1,5 @@
 import type { BreakingChange, Ecosystem, RemediationPlan } from '../types.js';
 import type { AnalysisGap, CheckedSurface, ConfidenceAssessment, ConfidenceBand, ConfidenceScore } from '../confidence/types.js';
-import { OVERALL_LABEL } from '../confidence/types.js';
 import { taxonomyOf } from '../confidence/taxonomy.js';
 import { deriveOverallConfidence } from '../confidence/calibrate.js';
 import { dependencyEcosystemKey } from '../util/id.js';
@@ -334,9 +333,7 @@ export function confidenceDisplay(change: BreakingChange): ConfidenceDisplay {
     const overall = deriveOverallConfidence(change.assessment);
     return { text: overallConfidenceText(change.assessment), band: overall.band, score: overall.score, label: overall.label };
   }
-  const band = change.confidence as ConfidenceBand;
-  const label = OVERALL_LABEL[band];
-  return { text: label ?? 'Confidence unavailable', band: label ? band : 'none', score: null, label: label ?? 'Confidence unavailable' };
+  return { text: 'Confidence unavailable', band: 'none', score: null, label: 'Confidence unavailable' };
 }
 
 /**

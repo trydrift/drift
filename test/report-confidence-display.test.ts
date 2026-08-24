@@ -35,11 +35,14 @@ describe('shared confidence presentation', () => {
     assert.equal(confidenceDisplay(change('low', assessment(0, 'none'))).text, '0/100 — Not enough evidence to say');
   });
 
-  test('uses qualitative legacy confidence without fabricating a score', () => {
-    const display = confidenceDisplay(change('high'));
-    assert.equal(display.text, 'Very confident');
-    assert.equal(display.score, null);
-    assert.equal(display.band, 'high');
-    assert.doesNotMatch(display.text, /\/100/);
+  test('does not present upstream-only confidence as overall confidence', () => {
+    for (const upstreamConfidence of ['high', 'medium', 'low'] as const) {
+      const display = confidenceDisplay(change(upstreamConfidence));
+      assert.equal(display.text, 'Confidence unavailable');
+      assert.equal(display.score, null);
+      assert.equal(display.band, 'none');
+      assert.equal(display.label, 'Confidence unavailable');
+      assert.doesNotMatch(display.text, /\/100/);
+    }
   });
 });

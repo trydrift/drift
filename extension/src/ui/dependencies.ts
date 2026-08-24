@@ -98,7 +98,8 @@ export class DriftDependencyTreeProvider
   }
 
   private findingItem(node: Extract<DependencyNode, { kind: 'finding' }>): vscode.TreeItem {
-    const finding = node.candidate.plan!.breakingChanges.find((entry) => entry.id === node.findingId)!;
+    const finding = node.candidate.plan?.breakingChanges.find((entry) => entry.id === node.findingId);
+    if (!finding) return new vscode.TreeItem('Finding no longer available', vscode.TreeItemCollapsibleState.None);
     const item = new vscode.TreeItem(finding.kind, vscode.TreeItemCollapsibleState.None);
     item.description = confidenceDisplay(finding).text;
     item.tooltip = `${finding.summary}\n\n${item.description}`;
