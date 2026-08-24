@@ -23,7 +23,18 @@ jobs:
           cache: npm
 
       - name: Apply deterministic patch
-        run: node scripts/apply-opt-in-run-diagnostics.mjs
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/apply-opt-in-run-diagnostics.mjs')
+          source = path.read_text()
+          source = source.replace(
+              'Run diagnostics for `analyze`, `outdated`, `fix`, and `pr`:',
+              'Run diagnostics for \\`analyze\\`, \\`outdated\\`, \\`fix\\`, and \\`pr\\`:',
+          )
+          path.write_text(source)
+          PY
+          node scripts/apply-opt-in-run-diagnostics.mjs
 
       - name: Install CLI dependencies
         run: npm ci
