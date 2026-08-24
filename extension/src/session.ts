@@ -201,6 +201,13 @@ export type ThreadItem =
     }
   | { id: string; kind: 'changes'; title: string };
 
+/** The smallest UI region affected by a session mutation. */
+export type SessionChange =
+  | { type: 'thread-append'; id: string }
+  | { type: 'thread-update'; id: string }
+  | { type: 'thread-reset' }
+  | { type: 'composer' };
+
 /**
  * One line of a step's log, and the output it can lead to.
  *
@@ -372,7 +379,7 @@ export class DriftSession {
    */
   private excludedRoots = new Set<string>();
 
-  private readonly emitter = new vscode.EventEmitter<void>();
+  private readonly emitter = new vscode.EventEmitter<SessionChange>();
   readonly onDidChange = this.emitter.event;
 
   dispose(): void {
@@ -400,7 +407,7 @@ export class DriftSession {
     this.rejectPending();
     this.items = [];
     this.explicitTitle = null;
-    this.emitter.fire();
+    this.emitter.fire({ type: 'thread-reset' });
   }
 
   /* ---------------------------------------------------------------- */
@@ -422,13 +429,13 @@ export class DriftSession {
       // nothing would be the one wrong answer Drift must never give.
       this.excludedRoots.add(path);
     }
-    this.emitter.fire();
+    this.emitter.fire({ type: 'composer' });
   }
 
   resetScope(): void {
     if (this.excludedRoots.size === 0) return;
     this.excludedRoots.clear();
-    this.emitter.fire();
+    this.emitter.fire({ type: 'composer' });
   }
 
   /* ---------------------------------------------------------------- */
@@ -483,7 +490,7 @@ export class DriftSession {
       const n = Number(item.id.replace(/^i/, ''));
       if (Number.isFinite(n) && n > this.counter) this.counter = n;
     }
-    this.emitter.fire();
+    this.emitter.fire({ type: 'thread-reset' });
   }
 
   /**
@@ -536,7 +543,7 @@ export class DriftSession {
     const item = this.items.find((entry) => entry.id === itemId);
     if (!item || item.kind !== 'user') return;
     item.checkpoint = checkpoint;
-    this.emitter.fire();
+    this.emitter.fire({ type: 'thread-update', id: itemId });
   }
 
   /**
@@ -551,7 +558,7 @@ export class DriftSession {
     if (at === -1) return;
     this.rejectPending();
     this.items = this.items.slice(0, at);
-    this.emitter.fire();
+    this.emitter.fire({ type: 'thread-reset' });
   }
 
   say(text: string, actions?: MessageAction[]): void {
@@ -595,7 +602,7 @@ export class DriftSession {
       const item = this.items.find((entry) => entry.id === id);
       if (!item || item.kind !== 'step') return;
       Object.assign(item, patch);
-      this.emitter.fire();
+      this.emitter.fire({ type: 'thread-update', id });
     };
 
     let segmentCounter = 0;
@@ -672,7 +679,7 @@ export class DriftSession {
         // not its transcript — the full output is on the `CheckOutcome` and is
         // what the failure report quotes.
         while (lines.length > MAX_STEP_OUTPUT_LINES) lines.shift();
-        this.emitter.fire();
+        this.emitter.fire({ type: 'thread-update', id });
       },
       // Clearing done/total here (not just flipping `state`) matters: `renderStep`
       // keys the "N / M" badge and progress bar off `total > 0` alone, so without
@@ -713,13 +720,13 @@ export class DriftSession {
         if (!group) return;
         group.state = 'active';
         for (const task of group.tasks) if (task.state === 'pending') task.state = 'active';
-        this.emitter.fire();
+        this.emitter.fire({ type: 'thread-update', id });
       },
       note: (groupId, text) => {
         const group = find(groupId);
         if (!group || group.note === text) return;
         group.note = text;
-        this.emitter.fire();
+        this.emitter.fire({ type: 'thread-update', id });
       },
       activity: (groupId, activity) => {
         const group = find(groupId);
@@ -742,7 +749,7 @@ export class DriftSession {
         // that stopped losing an agent's reasoning also means a verbose run
         // produces more rows, and the old cap started evicting real content.
         if (entries.length > 400) entries.shift();
-        this.emitter.fire();
+        this.emitter.fire({ type: 'thread-update', id });
       },
       finish: (groupId, state, changedFiles, reason) => {
         const group = find(groupId);
@@ -765,7 +772,7 @@ export class DriftSession {
           // "unchanged" is honest; ticking it would not be.
           task.state = !task.file || changed.size === 0 ? state : changed.has(task.file) ? 'done' : 'unchanged';
         }
-        this.emitter.fire();
+        this.emitter.fire({ type: 'thread-update', id });
       },
       finishAll: (state) => {
         const item = this.items.find((entry) => entry.id === id);
@@ -779,7 +786,7 @@ export class DriftSession {
             }
           }
         }
-        this.emitter.fire();
+        this.emitter.fire({ type: 'thread-update', id });
       },
     };
   }
@@ -824,14 +831,17 @@ export class DriftSession {
       }
     }
 
-    if (changed) this.emitter.fire();
+    if (changed) this.emitter.fire({ type: 'thread-reset' });
   }
 
   packages(headline: string, ids: readonly string[]): void {
     // Only ever one package list in the thread; a second scan replaces the
     // first rather than leaving two contradictory lists on screen.
+    const removed = this.items.some((item) => item.kind === 'packages');
     this.items = this.items.filter((item) => item.kind !== 'packages');
-    this.push({ id: this.nextId(), kind: 'packages', headline, ids: [...ids] });
+    const item = { id: this.nextId(), kind: 'packages' as const, headline, ids: [...ids] };
+    this.items.push(item);
+    this.emitter.fire(removed ? { type: 'thread-reset' } : { type: 'thread-append', id: item.id });
   }
 
   updatePackages(headline: string, ids: readonly string[]): void {
@@ -842,19 +852,22 @@ export class DriftSession {
     }
     item.headline = headline;
     item.ids = [...ids];
-    this.emitter.fire();
+    this.emitter.fire({ type: 'thread-update', id: item.id });
   }
 
   /** Ensure exactly one live changes card, at the end of the thread. */
   showChanges(title: string): void {
+    const removed = this.items.some((item) => item.kind === 'changes');
     this.items = this.items.filter((item) => item.kind !== 'changes');
-    this.push({ id: this.nextId(), kind: 'changes', title });
+    const item = { id: this.nextId(), kind: 'changes' as const, title };
+    this.items.push(item);
+    this.emitter.fire(removed ? { type: 'thread-reset' } : { type: 'thread-append', id: item.id });
   }
 
   hideChanges(): void {
     const before = this.items.length;
     this.items = this.items.filter((item) => item.kind !== 'changes');
-    if (this.items.length !== before) this.emitter.fire();
+    if (this.items.length !== before) this.emitter.fire({ type: 'thread-reset' });
   }
 
   /* ---------------------------------------------------------------- */
@@ -886,7 +899,7 @@ export class DriftSession {
     if (!item || item.kind !== 'question' || item.answer !== undefined) return false;
 
     item.answer = value;
-    this.emitter.fire();
+    this.emitter.fire({ type: 'thread-update', id });
 
     if (this.pending?.id === id) {
       const { resolve } = this.pending;
@@ -918,17 +931,17 @@ export class DriftSession {
   attach(attachment: Attachment): void {
     if (this.attachments.some((a) => a.kind === attachment.kind && a.value === attachment.value)) return;
     this.attachments.push(attachment);
-    this.emitter.fire();
+    this.emitter.fire({ type: 'composer' });
   }
 
   detach(value: string): void {
     this.attachments = this.attachments.filter((a) => a.value !== value);
-    this.emitter.fire();
+    this.emitter.fire({ type: 'composer' });
   }
 
   clearContext(): void {
     this.attachments = [];
-    this.emitter.fire();
+    this.emitter.fire({ type: 'composer' });
   }
 
   /* ---------------------------------------------------------------- */
@@ -953,12 +966,12 @@ export class DriftSession {
 
   async setBranchMode(mode: SessionBranchMode): Promise<void> {
     await write('git.branchMode', mode);
-    this.emitter.fire();
+    this.emitter.fire({ type: 'composer' });
   }
 
   async setCommitMode(mode: SessionCommitMode): Promise<void> {
     await write('git.commitMode', mode);
-    this.emitter.fire();
+    this.emitter.fire({ type: 'composer' });
   }
 
   /** How hard the given subscription has been asked to think. */
@@ -985,12 +998,12 @@ export class DriftSession {
     if (model) models[agentId] = model;
     else delete models[agentId];
     await config.update('agent.models', models, vscode.ConfigurationTarget.Global);
-    this.emitter.fire();
+    this.emitter.fire({ type: 'composer' });
   }
 
   async setMode(mode: SessionMode): Promise<void> {
     await write('session.mode', mode);
-    this.emitter.fire();
+    this.emitter.fire({ type: 'composer' });
   }
 
   /**
@@ -1019,7 +1032,7 @@ export class DriftSession {
     if (fast) all[agentId] = true;
     else delete all[agentId];
     await config.update('agent.fast', all, vscode.ConfigurationTarget.Global);
-    this.emitter.fire();
+    this.emitter.fire({ type: 'composer' });
   }
 
   async setEffort(agentId: string, effort: SessionEffort): Promise<void> {
@@ -1027,17 +1040,17 @@ export class DriftSession {
     const efforts = { ...(config.get<Record<string, string>>('agent.efforts', {}) ?? {}) };
     efforts[agentId] = effort;
     await config.update('agent.efforts', efforts, vscode.ConfigurationTarget.Global);
-    this.emitter.fire();
+    this.emitter.fire({ type: 'composer' });
   }
 
   async setPermission(permission: SessionPermission): Promise<void> {
     await write('session.permission', permission);
-    this.emitter.fire();
+    this.emitter.fire({ type: 'composer' });
   }
 
   private push(item: ThreadItem): void {
     this.items.push(item);
-    this.emitter.fire();
+    this.emitter.fire({ type: 'thread-append', id: item.id });
   }
 
   private nextId(): string {
