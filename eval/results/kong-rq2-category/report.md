@@ -15,11 +15,10 @@ What a good result here does *not* establish: Nothing about whether Drift finds 
 | Citation | Dezhen Kong et al., "Towards Better Comprehension of Breaking Changes in the NPM Ecosystem", replication package, Zenodo, DOI 10.5281/zenodo.13857646. |
 | Ecosystem | npm |
 | Benchmark class | upstream-bc-detection |
-| Drift commit | `80aa8209d62bf19bcdab50dcd7232377528f4de7` |
-| Run date | 2026-08-20T17:40:43.012Z |
-| Re-scored | 2026-08-20T21:08:51.097Z at `bfcc036fff` — metrics recomputed from the recorded per-case results; the observations above are unchanged |
-| Command | `/Users/rudy/.nvm/versions/node/v24.19.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts kong --experiment rq2-category --run-id kong-rq2-category` |
-| Platform | darwin/x64, Node v24.19.0 |
+| Drift commit | `6e272ea929ad2807947872d500d445136bbf489e` |
+| Run date | 2026-08-24T16:17:53.371Z |
+| Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts kong --experiment rq2-category --run-id kong-rq2-category` |
+| Platform | linux/x64, Node v22.23.2 |
 
 ## Case accounting
 
@@ -37,7 +36,7 @@ Read this before any rate below.
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| breaking-change detection recall | 189/1511 (12.5%) | 10.9–14.2% |
+| breaking-change detection recall | 1144/1511 (75.7%) | 73.5–77.8% |
 | category classification accuracy | 2/134 (1.5%) | 0.0–3.7% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
@@ -52,34 +51,34 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | breaking-change detection recall | category classification accuracy |
 | --- | --- | --- |
-| label: change_behavior | 83/1026 (8.1%) | — |
-| label: change_signature | 27/134 (20.1%) | 2/134 (1.5%) |
-| label: inline | 0/2 (0.0%) | — |
-| label: move class | 1/7 (14.3%) | — |
-| label: move field | 0/1 (0.0%) | — |
-| label: move method | 1/12 (8.3%) | — |
-| label: move module | 0/5 (0.0%) | — |
-| label: move | 0/2 (0.0%) | — |
-| label: remove class | 8/26 (30.8%) | — |
-| label: remove constant | 4/10 (40.0%) | — |
-| label: remove field | 8/27 (29.6%) | — |
-| label: remove interface | 1/2 (50.0%) | — |
-| label: remove method | 36/126 (28.6%) | — |
-| label: remove module | 8/17 (47.1%) | — |
+| label: change_behavior | 770/1026 (75.0%) | — |
+| label: change_signature | 100/134 (74.6%) | 2/134 (1.5%) |
+| label: inline | 2/2 (100.0%) | — |
+| label: move class | 5/7 (71.4%) | — |
+| label: move field | 1/1 (100.0%) | — |
+| label: move method | 11/12 (91.7%) | — |
+| label: move module | 5/5 (100.0%) | — |
+| label: move | 1/2 (50.0%) | — |
+| label: remove class | 20/26 (76.9%) | — |
+| label: remove constant | 7/10 (70.0%) | — |
+| label: remove field | 23/27 (85.2%) | — |
+| label: remove interface | 2/2 (100.0%) | — |
+| label: remove method | 97/126 (77.0%) | — |
+| label: remove module | 12/17 (70.6%) | — |
 | label: remove type | 1/1 (100.0%) | — |
-| label: remove | 0/2 (0.0%) | — |
-| label: rename class | 1/22 (4.5%) | — |
+| label: remove | 1/2 (50.0%) | — |
+| label: rename class | 15/22 (68.2%) | — |
 | label: rename constant | 0/1 (0.0%) | — |
-| label: rename field | 5/29 (17.2%) | — |
-| label: rename interface | 0/4 (0.0%) | — |
-| label: rename method | 5/50 (10.0%) | — |
-| label: rename module | 0/3 (0.0%) | — |
-| label: rename package | 0/1 (0.0%) | — |
-| label: rename | 0/1 (0.0%) | — |
+| label: rename field | 23/29 (79.3%) | — |
+| label: rename interface | 3/4 (75.0%) | — |
+| label: rename method | 41/50 (82.0%) | — |
+| label: rename module | 2/3 (66.7%) | — |
+| label: rename package | 1/1 (100.0%) | — |
+| label: rename | 1/1 (100.0%) | — |
 | markerBaselinePredictsBreaking: false | 0/47 (0.0%) | 0/5 (0.0%) |
-| markerBaselinePredictsBreaking: true | 189/1464 (12.9%) | 2/129 (1.6%) |
-| messageStatesDetail: false | 20/391 (5.1%) | 1/37 (2.7%) |
-| messageStatesDetail: true | 169/1120 (15.1%) | 1/97 (1.0%) |
+| markerBaselinePredictsBreaking: true | 1144/1464 (78.1%) | 2/129 (1.6%) |
+| messageStatesDetail: false | 60/391 (15.3%) | 1/37 (2.7%) |
+| messageStatesDetail: true | 1084/1120 (96.8%) | 1/97 (1.0%) |
 
 ## What is deliberately not reported
 
@@ -116,13 +115,13 @@ how generously the mapping was written.
 
 | Tool | Version | Needed for |
 | --- | --- | --- |
-| `node` | v24.19.0 | every npm/TypeScript case, and Drift itself |
-| `npm` | 11.12.1 | installing a TypeScript consumer before its build oracle can run |
-| `git` | git version 2.39.5 (Apple Git-154) | checking out an original repository at the exact evaluated commit |
-| `java` | openjdk version "19" 2022-09-20 | any Java case |
-| `mvn` | Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937) | BUMP's Maven oracle, and building Roseau from its replication kit |
-| `docker` | **not installed** | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
-| `python3` | Python 3.14.3 | any Python case |
+| `node` | v22.23.2 | every npm/TypeScript case, and Drift itself |
+| `npm` | 10.9.8 | installing a TypeScript consumer before its build oracle can run |
+| `git` | git version 2.55.0 | checking out an original repository at the exact evaluated commit |
+| `java` | openjdk version "17.0.20" 2026-07-21 | any Java case |
+| `mvn` | Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5) | BUMP's Maven oracle, and building Roseau from its replication kit |
+| `docker` | Docker version 28.0.4, build b8034c0 | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
+| `python3` | Python 3.12.3 | any Python case |
 | `uv` | **not installed** | TimeMachine's documented environment setup |
 | `japicmp` | **not installed** | Drift's Java API-surface diff, which its maven capability declares it requires |
 

@@ -17,19 +17,19 @@
       "value": 0.7101449275362319
     },
     "affected-repository identification rate": {
-      "numerator": 39,
+      "numerator": 46,
       "denominator": 69,
-      "value": 0.5652173913043478
+      "value": 0.6666666666666666
     },
     "consumer localization rate": {
-      "numerator": 39,
+      "numerator": 46,
       "denominator": 69,
-      "value": 0.5652173913043478
+      "value": 0.6666666666666666
     },
     "false-safe verdicts": {
-      "numerator": 5,
+      "numerator": 1,
       "denominator": 69,
-      "value": 0.07246376811594203
+      "value": 0.014492753623188406
     }
   },
   "refusals": [
@@ -58,14 +58,14 @@
         "value": 0.7272727272727273
       },
       "affected-repository identification rate": {
-        "numerator": 24,
+        "numerator": 30,
         "denominator": 44,
-        "value": 0.5454545454545454
+        "value": 0.6818181818181818
       },
       "consumer localization rate": {
-        "numerator": 24,
+        "numerator": 30,
         "denominator": 44,
-        "value": 0.5454545454545454
+        "value": 0.6818181818181818
       }
     },
     "label: migration-failure-medium": {
@@ -75,14 +75,14 @@
         "value": 0.6521739130434783
       },
       "affected-repository identification rate": {
-        "numerator": 13,
+        "numerator": 14,
         "denominator": 23,
-        "value": 0.5652173913043478
+        "value": 0.6086956521739131
       },
       "consumer localization rate": {
-        "numerator": 13,
+        "numerator": 14,
         "denominator": 23,
-        "value": 0.5652173913043478
+        "value": 0.6086956521739131
       }
     },
     "label: migration-failure-hard": {
@@ -110,18 +110,18 @@
       "iterations": 2000
     },
     "affected-repository identification rate": {
-      "low": 0.4492753623188406,
-      "high": 0.6811594202898551,
+      "low": 0.5507246376811594,
+      "high": 0.7681159420289855,
       "iterations": 2000
     },
     "consumer localization rate": {
-      "low": 0.4492753623188406,
-      "high": 0.6811594202898551,
+      "low": 0.5507246376811594,
+      "high": 0.7681159420289855,
       "iterations": 2000
     },
     "false-safe verdicts": {
-      "low": 0.014492753623188406,
-      "high": 0.13043478260869565,
+      "low": 0,
+      "high": 0.043478260869565216,
       "iterations": 2000
     }
   },
