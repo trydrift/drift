@@ -78,7 +78,7 @@ export const pythonSurface: SurfaceProvider = {
     // one shared deadline instead of each separately receiving the full
     // budget, which is how a nominal three-minute computation could run for
     // a very large multiple of three minutes under network failure.
-    const deadline = Date.now() + request.timeoutMs;
+    const deadline = new DeadlineRef(Date.now() + request.timeoutMs);
 
     const [before, after] = await Promise.all([
       surfaceOf(request, request.from, scriptPath, analyzer, deadline),
@@ -147,6 +147,34 @@ function remainingMs(deadline: number): number {
 }
 
 /**
+ * A mutable, shared deadline for one single-flighted computation.
+ *
+ * The single-flight cache below lets a late joiner attach to a computation
+ * already started by an earlier caller instead of starting its own. Without
+ * this, the joiner would silently inherit whatever absolute deadline the
+ * *first* caller happened to have — even if the joiner's own timeout budget
+ * has barely been touched. A `DeadlineRef` is created once per outer
+ * `pythonSurface.compute` call and threaded down; when a caller joins an
+ * already in-flight computation, its deadline is folded in via `extend`, so
+ * every remaining step of the shared computation draws down whichever
+ * caller's budget is most generous, recomputed as each new caller joins,
+ * rather than being pinned to the first caller's alone.
+ */
+class DeadlineRef {
+  private value: number;
+  constructor(deadline: number) {
+    this.value = deadline;
+  }
+  get(): number {
+    return this.value;
+  }
+  /** Folds in another caller's deadline, keeping whichever is later. */
+  extend(deadline: number): void {
+    if (deadline > this.value) this.value = deadline;
+  }
+}
+
+/**
  * In-flight single-flight cache, keyed identically to the persistent cache
  * key below. The scan-level exact-upgrade cache only dedupes identical
  * `(from, to)` pairs; it does nothing for two upgrades of the *same* package
@@ -156,29 +184,51 @@ function remainingMs(deadline: number): number {
  * the same immutable version race into the same computation rather than each
  * starting their own `python3` process.
  *
- * A canonical PyPI success is left in place after completion — it is also
- * durably written to the persistent cache by `surfaceOf` below, so later,
- * independent calls hit that instead and this entry is redundant but
- * harmless. A GitHub-fallback result or a failure is deliberately *removed*
- * once settled: both are properties of this run's transient state, not of
- * the version, so a later independent caller must retry PyPI from scratch
- * rather than inherit a fallback or failure that concurrent callers merely
- * happened to share while it was still in flight.
+ * Every entry is removed once its promise settles, regardless of outcome:
+ * the map exists only to let concurrent callers for the same immutable
+ * version join a single computation in flight, not to serve as a second,
+ * unbounded cache. A canonical PyPI success is already durably written to
+ * the persistent cache by `surfaceOf` below, so later, independent calls
+ * hit that cheap on-disk read instead — keeping the settled promise around
+ * would just pin the whole `SurfaceApi` map in memory for the life of the
+ * extension host for no benefit. A GitHub-fallback result or a failure must
+ * not linger either: both are properties of this run's transient state, not
+ * of the version, so a later independent caller must retry PyPI from
+ * scratch rather than inherit a fallback or failure that concurrent callers
+ * merely happened to share while it was still in flight.
  */
-const inFlightSurfaces = new Map<string, Promise<SurfaceAttempt>>();
+interface InFlightSurface {
+  promise: Promise<SurfaceAttempt>;
+  /**
+   * The shared deadline actually driving the in-flight computation — the
+   * *first* caller's own `DeadlineRef` is deliberately not reused here, so
+   * that folding a joiner's later deadline into `sharedDeadline` cannot also
+   * retroactively rewrite what the first caller's own `compute` call sees.
+   */
+  sharedDeadline: DeadlineRef;
+}
+
+const inFlightSurfaces = new Map<string, InFlightSurface>();
 
 async function surfaceOf(
   request: SurfaceRequest,
   version: string,
   scriptPath: string,
   analyzer: string,
-  deadline: number,
+  deadline: DeadlineRef,
 ): Promise<SurfaceAttempt> {
   const key = `python-surface:${analyzer}:${request.name}@${version}`;
 
   const existing = inFlightSurfaces.get(key);
-  if (existing) return existing;
+  if (existing) {
+    // A late joiner folds its own deadline into the shared computation
+    // instead of silently inheriting whatever the first caller's budget
+    // happened to be — see `DeadlineRef`.
+    existing.sharedDeadline.extend(deadline.get());
+    return existing.promise;
+  }
 
+  const sharedDeadline = new DeadlineRef(deadline.get());
   const promise = (async (): Promise<SurfaceAttempt> => {
     // Stored as entry pairs: a `Map` is not JSON, and every field of a
     // `SurfaceEntry` is a string or an array of them, so the round trip is exact.
@@ -187,23 +237,19 @@ async function surfaceOf(
     // below, so anything read back from it is guaranteed to be PyPI-derived.
     if (remembered) return { ok: true, api: new Map(remembered), usedGitHubFallback: false };
 
-    const computed = await computeSurfaceOf(request, version, scriptPath, deadline);
+    const computed = await computeSurfaceOf(request, version, scriptPath, sharedDeadline);
     if (computed.ok && !computed.usedGitHubFallback) await writeComputed(key, [...computed.api]);
     return computed;
   })();
-  inFlightSurfaces.set(key, promise);
+  inFlightSurfaces.set(key, { promise, sharedDeadline });
   promise
-    .then((result) => {
-      // A canonical success may safely stay — it is harmless because the
-      // persistent cache above now serves later calls anyway. A fallback or
-      // failure must not linger, or a later independent call would silently
-      // inherit it instead of retrying PyPI.
-      if (!result.ok || result.usedGitHubFallback) {
-        if (inFlightSurfaces.get(key) === promise) inFlightSurfaces.delete(key);
-      }
-    })
-    .catch(() => {
-      if (inFlightSurfaces.get(key) === promise) inFlightSurfaces.delete(key);
+    .catch(() => undefined)
+    .then(() => {
+      // Always evict on settle, success included: the persistent cache
+      // above already serves later independent calls cheaply, so keeping a
+      // settled promise here would only pin the whole surface map in memory
+      // for the life of the extension host.
+      if (inFlightSurfaces.get(key)?.promise === promise) inFlightSurfaces.delete(key);
     });
   return promise;
 }
@@ -212,9 +258,9 @@ async function computeSurfaceOf(
   request: SurfaceRequest,
   version: string,
   scriptPath: string,
-  deadline: number,
+  deadline: DeadlineRef,
 ): Promise<SurfaceAttempt> {
-  if (remainingMs(deadline) <= 0) {
+  if (remainingMs(deadline.get()) <= 0) {
     // The other version (`from` or `to`) already spent the whole request
     // budget — most likely retrying a download that kept failing. Starting
     // this one anyway would mean a zero-timeout request whose only possible
@@ -230,7 +276,7 @@ async function computeSurfaceOf(
     };
   }
 
-  const source = await sourceArchiveUrl(request.name, version, remainingMs(deadline));
+  const source = await sourceArchiveUrl(request.name, version, remainingMs(deadline.get()));
   if (!source) {
     return {
       ok: false,
@@ -248,7 +294,7 @@ async function computeSurfaceOf(
   let usedGitHubFallback = false;
   try {
     await mkdir(dir, { recursive: true });
-    const downloaded = await fetchArchive(source.url, { timeoutMs: remainingMs(deadline), retries: 2 });
+    const downloaded = await fetchArchive(source.url, { timeoutMs: remainingMs(deadline.get()), retries: 2 });
     if (downloaded.ok) {
       bytes = downloaded.bytes;
     } else {
@@ -262,7 +308,7 @@ async function computeSurfaceOf(
       // then the archive itself) with nothing left of the budget to spend on
       // it — the PyPI failure just recorded is the honest reason either way.
       const fallback =
-        remainingMs(deadline) > 0 ? await githubArchiveFallback(request.name, version, deadline) : null;
+        remainingMs(deadline.get()) > 0 ? await githubArchiveFallback(request.name, version, deadline) : null;
       if (!fallback) {
         return downloaded.status === 0
           ? {
@@ -360,8 +406,8 @@ async function computeSurfaceOf(
   // `exec`'s underlying `child_process` `timeout` option treats `0` as
   // "disabled" rather than "expired" — the opposite of what an exhausted
   // budget must mean here — so this is checked explicitly rather than
-  // handing a possibly-zero `remainingMs(deadline)` straight through.
-  if (remainingMs(deadline) <= 0) {
+  // handing a possibly-zero `remainingMs(deadline.get())` straight through.
+  if (remainingMs(deadline.get()) <= 0) {
     return {
       ok: false,
       failure: unavailable(
@@ -372,7 +418,7 @@ async function computeSurfaceOf(
     };
   }
 
-  const read = await request.exec('python3', [scriptPath, dir], { timeoutMs: remainingMs(deadline) });
+  const read = await request.exec('python3', [scriptPath, dir], { timeoutMs: remainingMs(deadline.get()) });
   if (read.code !== 0) {
     return {
       ok: false,
@@ -456,7 +502,7 @@ const MAX_FALLBACK_ARCHIVE_BYTES = 25 * 1024 * 1024;
  * published — it is a fallback so a transient PyPI failure does not silently
  * drop the surface diff, not a replacement source.
  */
-async function githubArchiveFallback(name: string, version: string, deadline: number): Promise<Buffer | null> {
+async function githubArchiveFallback(name: string, version: string, deadline: DeadlineRef): Promise<Buffer | null> {
   // `deadline` is threaded through rather than a `timeoutMs` snapshot, so
   // every step below — the tags lookup and the eventual archive download —
   // draws down what is actually left of the *outer* budget at the moment it
@@ -464,15 +510,15 @@ async function githubArchiveFallback(name: string, version: string, deadline: nu
   // once at the top of this function.
   const info = await fetchRegistryInfo(name, 'pypi', version);
   if (!info?.githubRepo) return null;
-  if (remainingMs(deadline) <= 0) return null;
+  if (remainingMs(deadline.get()) <= 0) return null;
 
   const tags = await fetchJson<{ name?: string; commit?: { sha?: string } }[]>(
     `https://api.github.com/repos/${info.githubRepo}/tags?per_page=100`,
-    { timeoutMs: remainingMs(deadline) },
+    { timeoutMs: remainingMs(deadline.get()) },
   );
   const tag = matchingTag(tags ?? [], name, version);
   if (!tag) return null;
-  if (remainingMs(deadline) <= 0) return null;
+  if (remainingMs(deadline.get()) <= 0) return null;
 
   // A tag ref is mutable — a maintainer can force-move it to point at a
   // different commit at any time — so downloading by tag name would make the
@@ -485,7 +531,7 @@ async function githubArchiveFallback(name: string, version: string, deadline: nu
   const ref = sha ?? `refs/tags/${tag}`;
 
   const downloaded = await fetchArchive(`https://codeload.github.com/${info.githubRepo}/tar.gz/${ref}`, {
-    timeoutMs: remainingMs(deadline),
+    timeoutMs: remainingMs(deadline.get()),
     retries: 2,
     maxBytes: MAX_FALLBACK_ARCHIVE_BYTES,
   });
