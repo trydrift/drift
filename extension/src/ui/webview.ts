@@ -18,6 +18,7 @@ import type { ReviewGroup, ReviewTotals } from '../review/store.js';
 import type { BreakingChange, Evidence, RemediationPlan } from '../../../src/types.js';
 import type { Vulnerability } from '../../../src/rationale/types.js';
 import type { CheckOutcome } from '../../../src/verification/checks.js';
+import { confidenceDisplay } from '../../../src/report/confidence.js';
 import { highlightCode, languageForEcosystem } from './highlight.js';
 
 /**
@@ -1645,10 +1646,11 @@ function renderBreak(
   const sites = plan.impactSites.filter((site) => site.breakingChangeId === change.id);
   const evidence = plan.evidence.filter((entry) => change.citations.includes(entry.id));
   const diff = diffContextFor(candidate, change.symbols[0]);
+  const confidence = confidenceDisplay(change);
 
   return `<details class="break" data-key="brk:${escapeAttr(change.id)}" ${expanded ? 'open' : ''}>
     <summary>
-      <span class="confidence ${change.confidence}">${escapeHtml(change.confidence)}</span>
+      <span class="confidence ${confidence.band}">${escapeHtml(confidence.text)}</span>
       <span class="break-summary">${inlineMarkdown(change.summary, {})}</span>
     </summary>
     <div class="break-body">
