@@ -53,8 +53,14 @@ test('run log correlates coalesced JSON waits with one timed physical request', 
     assert.equal(physicalFetches, 1);
     const report = await readFile(log.path!, 'utf8');
     assert.match(report, /BEGIN work\.http-coalesced-json .*requestKey=[0-9a-f]{10}/);
-    assert.match(report, /BEGIN work\.http .*requestKey=[0-9a-f]{10} .*timeoutMs=5000/);
-    assert.match(report, /END work\.http .*timeoutMs=5000 .*abortTimerFired=false .*headersMs=/);
+    // Span metadata discovered at settlement is merged into the span before the
+    // report is rendered, so it appears on the BEGIN record with the rest of
+    // that span's metadata; END intentionally stays a compact duration line.
+    assert.match(
+      report,
+      /BEGIN work\.http .*requestKey=[0-9a-f]{10} .*timeoutMs=5000 .*abortTimerFired=false .*headersMs=/,
+    );
+    assert.match(report, /END work\.http duration=\d+ms/);
     assert.match(report, /BEGIN work\.json-parse .*requestKey=[0-9a-f]{10}/);
   } finally {
     globalThis.fetch = realFetch;
