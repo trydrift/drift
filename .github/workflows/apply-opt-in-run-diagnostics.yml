@@ -55,15 +55,7 @@ jobs:
         run: npm run typecheck
 
       - name: Test CLI
-        id: cli_tests
-        run: npm test > cli-test.log 2>&1
-
-      - name: Upload CLI test log
-        if: failure() && steps.cli_tests.outcome == 'failure'
-        uses: actions/upload-artifact@v4
-        with:
-          name: cli-test-log
-          path: cli-test.log
+        run: npm test
 
       - name: Install extension dependencies
         working-directory: extension
@@ -83,7 +75,7 @@ jobs:
 
       - name: Commit verified implementation
         run: |
-          git rm scripts/apply-opt-in-run-diagnostics.mjs .github/workflows/apply-opt-in-run-diagnostics.yml
+          git rm -f scripts/apply-opt-in-run-diagnostics.mjs .github/workflows/apply-opt-in-run-diagnostics.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/cli.ts src/util/diagnostics.ts src/util/run-recording.ts test/cli-run-recording.test.ts extension/src/extension.ts extension/src/run-diagnostics.ts extension/src/run-recording.ts extension/package.json extension/test/run-diagnostics.test.ts
