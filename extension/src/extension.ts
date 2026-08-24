@@ -48,8 +48,8 @@ let extensionVersion = '0.0.0';
  * Start a fresh, repo-local run log for one Drift operation (an analyze, a
  * fix, a dependency scan, a deep verification), bound to the repository it
  * targets — never to a fixed workspace folder or to the extension's whole
- * lifetime. Each operation overwrites the previous run's file, so the log
- * always reflects only the most recent thing Drift did in that repo.
+ * lifetime. Each operation gets its own typed, timestamped artifact under
+ * the resolved git directory, so repeated and overlapping runs remain available.
  */
 function beginRun(command: string, repoRoot: string | undefined | null, mode: 'quick' | 'deep' = 'quick'): RunLogHandle | undefined {
   if (!repoRoot) return undefined;
