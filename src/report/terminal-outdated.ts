@@ -39,7 +39,7 @@ import {
   type GlyphName,
 } from '../util/terminal.js';
 import { registryUrl } from './registry-url.js';
-import { overallConfidenceText } from './confidence.js';
+import { confidenceDisplay } from './confidence.js';
 
 /** How each severity is drawn: its glyph, its colour, and what it is called. */
 interface Facade {
@@ -364,7 +364,7 @@ function detailedEntry(
 
   for (const change of candidate.plan?.breakingChanges ?? []) {
     line(`    ${change.kind}`);
-    line(`    ${change.assessment ? overallConfidenceText(change.assessment) : 'Confidence unavailable'}`);
+    line(`    ${confidenceDisplay(change).text}`);
     line(`    ${wrap(change.summary, width - 4, '    ')}`);
     line();
   }

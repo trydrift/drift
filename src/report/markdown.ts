@@ -11,7 +11,7 @@ import type { DriftConfig } from '../config/schema.js';
 import { renderRationale } from './rationale.js';
 import {
   evidenceStrengthLabel,
-  overallConfidenceText,
+  confidenceDisplay,
   renderCheckedSurfaces,
   renderConfidenceTable,
   renderEligibility,
@@ -197,7 +197,7 @@ function renderBreakingChanges(plan: RemediationPlan): string {
     const siteCount = plan.impactSites.filter((s) => s.breakingChangeId === change.id).length;
     const verdict = verdictFor(change);
 
-    lines.push(`### ${change.assessment ? overallConfidenceText(change.assessment) : CONFIDENCE_BADGE[change.confidence]} · \`${change.dependency}\` · ${change.kind}`);
+    lines.push(`### ${confidenceDisplay(change).text} · \`${change.dependency}\` · ${change.kind}`);
     lines.push('');
     lines.push(change.summary);
     lines.push('');

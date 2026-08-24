@@ -48,6 +48,31 @@ function document(path: string, text: string): vscode.TextDocument {
 }
 
 describe('dependency scan tree', () => {
+  test('expands findings without assigning package-level confidence', () => {
+    const state = new DriftState();
+    state.setCandidates([
+      candidate({
+        name: 'twisted',
+        plan: {
+          breakingChanges: [
+            { id: 'removed-export', kind: 'removed-export', summary: 'util.redirectTo is gone', confidence: 'high' },
+            { id: 'signature-change', kind: 'signature-change', summary: 'Request.write changed', confidence: 'medium' },
+          ],
+        } as never,
+      }),
+    ]);
+
+    const tree = new DriftDependencyTreeProvider(state);
+    const [group] = tree.getChildren();
+    const [dependency] = tree.getChildren(group);
+    const parent = tree.getTreeItem(dependency!);
+    const children = tree.getChildren(dependency!);
+    assert.equal(parent.collapsibleState, vscode.TreeItemCollapsibleState.Collapsed);
+    assert.deepEqual(children.map((child) => tree.getTreeItem(child).description), ['Very confident', 'Fairly confident']);
+    assert.equal(tree.getTreeItem(dependency!).description, '18.3.1 -> 19.0.0');
+    tree.dispose();
+  });
+
   test('groups the last scan by user-facing severity', () => {
     const state = new DriftState();
     state.setCandidates([

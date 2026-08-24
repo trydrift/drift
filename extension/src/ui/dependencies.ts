@@ -4,7 +4,7 @@ import type { UpgradeCandidate } from '../upgrades.js';
 import type { DriftState } from '../state.js';
 import { describeSeverity, severityOf, type UpgradeSeverity } from '../severity.js';
 import { DriftReportPanel } from './report.js';
-import { overallConfidenceText } from '../../../src/report/confidence.js';
+import { confidenceDisplay } from '../../../src/report/confidence.js';
 
 const MANIFESTS = new Set(['package.json', 'go.mod', 'Cargo.toml', 'pom.xml', 'requirements.txt', 'Gemfile']);
 const ORDER: UpgradeSeverity[] = ['affected', 'verification-failed', 'unchecked', 'pending', 'clean', 'error'];
@@ -100,7 +100,7 @@ export class DriftDependencyTreeProvider
   private findingItem(node: Extract<DependencyNode, { kind: 'finding' }>): vscode.TreeItem {
     const finding = node.candidate.plan!.breakingChanges.find((entry) => entry.id === node.findingId)!;
     const item = new vscode.TreeItem(finding.kind, vscode.TreeItemCollapsibleState.None);
-    item.description = finding.assessment ? overallConfidenceText(finding.assessment) : 'Confidence unavailable';
+    item.description = confidenceDisplay(finding).text;
     item.tooltip = `${finding.summary}\n\n${item.description}`;
     item.command = { command: 'drift.showReport', title: 'Open finding', arguments: [{ changeId: finding.id, candidateId: node.candidate.id }] };
     return item;

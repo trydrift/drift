@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { join } from 'node:path';
 import type { BreakingChange, Evidence, RemediationPlan } from '../../../src/types.js';
-import { overallConfidenceText, evidenceStrengthLabel } from '../../../src/report/confidence.js';
+import { confidenceDisplay, evidenceStrengthLabel } from '../../../src/report/confidence.js';
 import type { DriftState } from '../state.js';
 import { highlightCode, languageForEcosystem } from './highlight.js';
 
@@ -123,7 +123,7 @@ type IncomingMessage =
   | { type: 'command'; command: string; args?: unknown[] }
   | { type: 'setting'; key: string; value: unknown };
 
-interface FocusTarget {
+export interface FocusTarget {
   changeId?: string;
   dependency?: string;
   /**
@@ -492,7 +492,7 @@ function renderChangeCard(
   const diff = changeDiffContext(change, plan);
   // The one number a reader sees first — the three-dimension breakdown in
   // `renderConfidenceDetail` stays underneath for anyone who wants the working.
-  const overallText = change.assessment ? overallConfidenceText(change.assessment) : null;
+  const display = confidenceDisplay(change);
 
   const siteList = sites.length
     ? `<ul class="sites">
@@ -537,9 +537,7 @@ function renderChangeCard(
   return `
 <article class="card ${focused ? 'focused' : ''}" id="${escapeAttr(change.id)}" ${focused ? 'data-focus="true"' : ''}>
   <div class="card-head">
-    <span class="badge ${change.assessment ? 'overall' : change.confidence}" title="How confident Drift is overall — did this really happen upstream, does it reach this repository, and did anything confirm it">${
-      overallText ? escapeHtml(overallText) : escapeHtml(change.confidence)
-    }</span>
+    <span class="badge ${display.band}" title="How confident Drift is overall — did this really happen upstream, does it reach this repository, and did anything confirm it">${escapeHtml(display.text)}</span>
     <span class="kind">${escapeHtml(change.kind)}</span>
     <code class="dep">${escapeHtml(change.dependency)}</code>
     ${renderIssueBranchButton('change', change.id)}
