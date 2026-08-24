@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import type { DependencyChange, Ecosystem } from '../types.js';
 import type { Logger } from '../util/logger.js';
 import { readArchive, type ArchiveEntry } from '../util/archive.js';
-import { fetchJson, fetchText } from '../util/http.js';
+import { fetchArchive as fetchCachedArchive, fetchJson, fetchText } from '../util/http.js';
 import { mapWithConcurrency } from '../util/http.js';
 
 /**
@@ -612,21 +612,8 @@ const MAX_ARCHIVE_BYTES = 64 * 1024 * 1024;
 
 async function fetchArchive(url: string, timeoutMs: number): Promise<ArchiveEntry[] | undefined> {
   try {
-    const response = await fetch(url, {
-      signal: AbortSignal.timeout(timeoutMs),
-      headers: { 'User-Agent': 'drift-bot/0.1 (+https://github.com/trydrift/drift)' },
-    });
-    if (!response.ok) return undefined;
-
-    const declared = Number(response.headers.get('content-length') ?? '0');
-    if (declared > MAX_ARCHIVE_BYTES) {
-      void response.body?.cancel();
-      return undefined;
-    }
-
-    const body = Buffer.from(await response.arrayBuffer());
-    if (body.byteLength > MAX_ARCHIVE_BYTES) return undefined;
-    return readArchive(body);
+    const response = await fetchCachedArchive(url, { timeoutMs, retries: 0, maxBytes: MAX_ARCHIVE_BYTES });
+    return response.ok ? readArchive(response.bytes) : undefined;
   } catch {
     return undefined;
   }

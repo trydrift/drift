@@ -13,7 +13,7 @@ import {
   requiredGoVersion,
   type GoVersionRequirement,
 } from './go-toolchain.js';
-import { unavailable, type SurfaceProvider, type SurfaceRequest, type SurfaceOutcome } from './types.js';
+import { raceAgainstBudget, unavailable, type SurfaceProvider, type SurfaceRequest, type SurfaceOutcome } from './types.js';
 
 /**
  * Go exported-API diffing.
@@ -127,8 +127,21 @@ type ApiAttempt = { api: GoApi } | { failure: SurfaceOutcome };
  * Memoised for the lifetime of the process: a scan of a repository that reaches
  * the same version twice, or a re-check of one package after a fix, must not
  * re-parse twenty thousand declarations to arrive at the same answer.
+ *
+ * The in-flight half (`apiInFlight`) used to hand every waiter the exact
+ * promise the *first* caller's `computeApiOf` created — which meant a
+ * concurrent second caller silently inherited the first caller's `exec`,
+ * `env`, PATH/toolchain, and `timeoutMs` too. A module@version's *successful*
+ * exported API is genuinely immutable and shareable (`apiCache` above is
+ * exactly that), but a transient `toolchain-failed` result — a broken PATH,
+ * a `go mod download` that failed under the first caller's environment, a
+ * timeout under the first caller's budget — is a fact about that specific
+ * call, not about the module. A waiter with a healthy `request` of its own
+ * must be able to retry with it instead of inheriting a verdict that was
+ * never about the module version at all.
  */
 const apiCache = new Map<string, GoApi>();
+const apiInFlight = new Map<string, Promise<ApiAttempt>>();
 
 async function apiOf(
   request: SurfaceRequest,
@@ -140,8 +153,66 @@ async function apiOf(
   const tag = version.startsWith('v') ? version : `v${version}`;
   const cacheKey = `${request.name}@${tag}|${platforms.join(',')}`;
 
-  const cached = apiCache.get(cacheKey);
-  if (cached) return { api: cached };
+  for (;;) {
+    const cached = apiCache.get(cacheKey);
+    if (cached) return { api: cached };
+
+    const existing = apiInFlight.get(cacheKey);
+    if (existing) {
+      // Join the computation in flight, but never wait past *this caller's*
+      // own `timeoutMs`, and never touch the owner's own `exec`/`env`/
+      // deadline — this caller only ever races the promise it joined.
+      const outcome = await raceAgainstBudget(existing, request.timeoutMs);
+      if (outcome.timedOut) {
+        return {
+          failure: unavailable(
+            TOOL,
+            'toolchain-failed',
+            `Ran out of time comparing ${request.name} ${tag}'s exported API.`,
+          ),
+        };
+      }
+      if ('failure' in outcome.value && !outcome.value.failure.available && outcome.value.failure.reason === 'toolchain-failed') {
+        // The owner's own exec/env/toolchain or its own timeout is why that
+        // attempt failed — not a fact about this module version (a real
+        // `version-unavailable`, `parse-failed` or `no-public-surface`
+        // verdict is authoritative for every caller and is returned as-is
+        // below). Evict the stale entry (harmless if another caller already
+        // did) and retry as the new owner, using this caller's own
+        // `request` instead of inheriting a verdict that was never about
+        // the module.
+        if (apiInFlight.get(cacheKey) === existing) apiInFlight.delete(cacheKey);
+        continue;
+      }
+      return outcome.value;
+    }
+
+    const computation = computeApiOf(request, workdir, version, platforms, requirement, cacheKey);
+    apiInFlight.set(cacheKey, computation);
+    const evict = () => {
+      if (apiInFlight.get(cacheKey) === computation) apiInFlight.delete(cacheKey);
+    };
+    // Registered through both fulfillment and rejection, rather than
+    // `computation.finally(evict)` — a bare `.finally()` call whose own
+    // returned (rejection-propagating) promise is never observed is exactly
+    // the dropped-promise hazard this whole hardening pass exists to close
+    // elsewhere (see `src/upgrade/scan.ts`). `computeApiOf` is designed to
+    // always resolve, never reject, but this stays correct even if that
+    // ever stops being true.
+    void computation.then(evict, evict);
+    return computation;
+  }
+}
+
+async function computeApiOf(
+  request: SurfaceRequest,
+  workdir: string,
+  version: string,
+  platforms: readonly string[],
+  requirement: GoVersionRequirement,
+  cacheKey: string,
+): Promise<ApiAttempt> {
+  const tag = version.startsWith('v') ? version : `v${version}`;
 
   const downloaded = await request.exec(
     'go',
@@ -292,5 +363,6 @@ function firstLine(text: string): string {
 /** Test seam: forget the memoised module APIs and the scratch module. */
 export function resetGoSurfaceCache(): void {
   apiCache.clear();
+  apiInFlight.clear();
   scratch.clear();
 }

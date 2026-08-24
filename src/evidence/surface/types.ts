@@ -220,4 +220,40 @@ export function unavailable(
   return { available: false, reason, detail, ...(remedy ? { remedy } : {}), ...(install ? { install } : {}), tool };
 }
 
+/**
+ * Wait for `promise`, but never past `budgetMs` of *this caller's own* time.
+ *
+ * Shared by every surface provider's per-version single-flight cache
+ * (`evidence/surface/python.ts`, `evidence/surface/go.ts`): a caller that
+ * joins a computation another caller already owns must never wait past its
+ * own configured budget for it, and must never cancel or otherwise affect
+ * the owner's work just because it stopped waiting — another caller with a
+ * longer budget may still need it. Does not cancel `promise`.
+ */
+export function raceAgainstBudget<T>(
+  promise: Promise<T>,
+  budgetMs: number,
+): Promise<{ timedOut: false; value: T } | { timedOut: true }> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve({ timedOut: true }), Math.max(0, budgetMs));
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve({ timedOut: false, value });
+      },
+      // A single-flight computation here is designed to always resolve,
+      // never reject — every failure path is a value (`{ ok: false, ... }`
+      // or `{ failure: ... }`), not a thrown error. This is defensive
+      // nonetheless: an unexpected rejection must not become an unhandled
+      // rejection just because this particular caller gave up racing it
+      // first, and this caller still has budget of its own, so it is free
+      // to retry independently rather than propagate someone else's crash.
+      () => {
+        clearTimeout(timer);
+        resolve({ timedOut: true });
+      },
+    );
+  });
+}
+
 export type { SurfaceChange };

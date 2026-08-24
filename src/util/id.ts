@@ -57,6 +57,11 @@ export function dependencyEcosystemKey(change: Pick<DependencyChange, 'name' | '
   return `${change.ecosystem} ${dependencyKey(change)}`;
 }
 
+/** Identity of the published upgrade, independent of where it is consumed. */
+export function upstreamUpgradeKey(change: Pick<DependencyChange, 'ecosystem' | 'name' | 'from' | 'to'>): string {
+  return JSON.stringify([change.ecosystem, change.name, change.from ?? null, change.to ?? null]);
+}
+
 /**
  * Strip leading/trailing dashes without an unanchored `-+$`-style regex: a
  * trailing quantifier with no `^` counterpart forces the engine to retry the

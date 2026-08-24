@@ -8,7 +8,7 @@ import { readComputed, writeComputed } from '../../util/artifact-cache.js';
 import { fetchRegistryInfo } from '../registry.js';
 import { diffSurfaces, type SurfaceApi, type SurfaceEntry, type SurfaceKind } from '../type-surface.js';
 import { matchesVersion } from './c.js';
-import { unavailable, type SurfaceProvider, type SurfaceRequest, type SurfaceOutcome } from './types.js';
+import { raceAgainstBudget, unavailable, type SurfaceProvider, type SurfaceRequest, type SurfaceOutcome } from './types.js';
 
 /**
  * Python public-symbol diffing.
@@ -75,14 +75,19 @@ export const pythonSurface: SurfaceProvider = {
     // computation, not a per-attempt allowance to be handed out again at
     // every retry. Below this point every PyPI attempt, GitHub-fallback
     // attempt and parser invocation — for both `from` and `to` — draws down
-    // one shared deadline instead of each separately receiving the full
+    // this one fixed deadline instead of each separately receiving the full
     // budget, which is how a nominal three-minute computation could run for
-    // a very large multiple of three minutes under network failure.
-    const deadline = Date.now() + request.timeoutMs;
+    // a very large multiple of three minutes under network failure. Fixed
+    // for the life of this call: `surfaceOf` never lets a later joiner (or
+    // an earlier owner) rewrite it — see the comment on `inFlightSurfaces`.
+    const deadlineMs = Date.now() + request.timeoutMs;
 
-    const before = await surfaceOf(request, request.from, scriptPath, analyzer, deadline);
+    const beforePromise = surfaceOf(request, request.from, scriptPath, analyzer, deadlineMs);
+    const afterPromise = surfaceOf(request, request.to, scriptPath, analyzer, deadlineMs);
+    afterPromise.catch(() => undefined);
+    const before = await beforePromise;
     if (!before.ok) return before.failure;
-    const after = await surfaceOf(request, request.to, scriptPath, analyzer, deadline);
+    const after = await afterPromise;
     if (!after.ok) return after.failure;
 
     // PyPI's sdist/wheel is the artifact actually installed; a GitHub tag is
@@ -108,7 +113,21 @@ export const pythonSurface: SurfaceProvider = {
 
 type SurfaceAttempt =
   | { ok: true; api: SurfaceApi; usedGitHubFallback: boolean }
-  | { ok: false; failure: SurfaceOutcome };
+  | {
+      ok: false;
+      failure: SurfaceOutcome;
+      /**
+       * Set only in `surfaceOf`, after the fact: true when this failure was
+       * discovered once the *owner's* own deadline had already elapsed —
+       * i.e. this specific attempt ran out of the owner's time, rather than
+       * hitting a genuine, budget-independent problem (no archive published,
+       * an unreadable package, a real 404). A joiner with its own remaining
+       * budget uses this to decide whether the owner's failure is
+       * authoritative for it too, or just an artifact of a shorter budget
+       * it never agreed to share.
+       */
+      budgetExhausted?: boolean;
+    };
 
 /**
  * The parsed public surface of one published version, computed at most once
@@ -144,33 +163,145 @@ function remainingMs(deadline: number): number {
   return Math.max(0, deadline - Date.now());
 }
 
+/**
+ * In-flight single-flight cache, keyed identically to the persistent cache
+ * key below. The scan-level exact-upgrade cache only dedupes identical
+ * `(from, to)` pairs; it does nothing for two upgrades of the *same* package
+ * that happen to share only one endpoint (pandas 2.2.2→3.0.5 and pandas
+ * 2.2.3→3.0.5 both need pandas@3.0.5 computed exactly once). The promise is
+ * inserted synchronously, before any `await`, so two concurrent callers for
+ * the same immutable version race into the same computation rather than each
+ * starting their own `python3` process.
+ *
+ * Every entry is removed once its promise settles, regardless of outcome:
+ * the map exists only to let concurrent callers for the same immutable
+ * version join a single computation in flight, not to serve as a second,
+ * unbounded cache. A canonical PyPI success is already durably written to
+ * the persistent cache by `surfaceOf` below, so later, independent calls
+ * hit that cheap on-disk read instead — keeping the settled promise around
+ * would just pin the whole `SurfaceApi` map in memory for the life of the
+ * extension host for no benefit. A GitHub-fallback result or a failure must
+ * not linger either: both are properties of this run's transient state, not
+ * of the version, so a later independent caller must retry PyPI from
+ * scratch rather than inherit a fallback or failure that concurrent callers
+ * merely happened to share while it was still in flight.
+ *
+ * Deliberately no shared/mutable deadline here (there used to be one, via a
+ * `DeadlineRef` every joiner could `extend()`). That let a late joiner with
+ * a large budget of its own silently rewrite the deadline actually driving
+ * the *owner's* already-running computation — and, symmetrically, meant a
+ * short-budget joiner could never detach from a long-running owner without
+ * also cutting that owner off. `timeoutMs` is documented as the wall-clock
+ * budget for the calling computation; a shared mutable deadline violates
+ * that in both directions at once. Each in-flight entry is now bounded only
+ * by whichever caller *created* it — fixed for that computation's whole
+ * lifetime — and every other caller (including one with a much larger
+ * budget of its own) only ever races that entry's promise against its own,
+ * separate deadline in `surfaceOf` below; it never mutates the entry.
+ */
+interface InFlightSurface {
+  promise: Promise<SurfaceAttempt>;
+}
+
+const inFlightSurfaces = new Map<string, InFlightSurface>();
+
 async function surfaceOf(
   request: SurfaceRequest,
   version: string,
   scriptPath: string,
   analyzer: string,
-  deadline: number,
+  deadlineMs: number,
 ): Promise<SurfaceAttempt> {
   const key = `python-surface:${analyzer}:${request.name}@${version}`;
-  // Stored as entry pairs: a `Map` is not JSON, and every field of a
-  // `SurfaceEntry` is a string or an array of them, so the round trip is exact.
-  const remembered = await readComputed<[string, SurfaceEntry][]>(key);
-  // Always `false`: a fallback-derived surface is never written under `key`
-  // below, so anything read back from it is guaranteed to be PyPI-derived.
-  if (remembered) return { ok: true, api: new Map(remembered), usedGitHubFallback: false };
 
-  const computed = await computeSurfaceOf(request, version, scriptPath, deadline);
-  if (computed.ok && !computed.usedGitHubFallback) await writeComputed(key, [...computed.api]);
-  return computed;
+  for (;;) {
+    const ownBudget = remainingMs(deadlineMs);
+    if (ownBudget <= 0) {
+      return {
+        ok: false,
+        failure: unavailable(
+          TOOL,
+          'toolchain-failed',
+          `Ran out of time comparing ${request.name}'s public symbols before ${version} could be checked.`,
+        ),
+      };
+    }
+
+    const existing = inFlightSurfaces.get(key);
+    if (existing) {
+      // Join the computation in flight, but never wait past *this caller's*
+      // own remaining budget for it, and never touch the deadline actually
+      // driving it — see the comment on `inFlightSurfaces`.
+      const outcome = await raceAgainstBudget(existing.promise, ownBudget);
+      if (outcome.timedOut) {
+        // This caller's own budget ran out while waiting. The owner's
+        // computation is left running untouched for whoever else still
+        // needs it — nothing here cancels it.
+        return {
+          ok: false,
+          failure: unavailable(
+            TOOL,
+            'toolchain-failed',
+            `Ran out of time comparing ${request.name}'s public symbols before ${version} could be checked.`,
+          ),
+        };
+      }
+      if (!outcome.value.ok && outcome.value.budgetExhausted) {
+        // The *owner's* own (shorter) deadline is why that attempt failed —
+        // not a fact about this package version, and not authoritative for
+        // a caller with budget of its own left (checked at the top of this
+        // loop). Evict the stale entry (harmless if another caller already
+        // did) and retry as a fresh owner, bounded by this caller's own
+        // deadline instead of inheriting someone else's.
+        if (inFlightSurfaces.get(key) === existing) inFlightSurfaces.delete(key);
+        continue;
+      }
+      return outcome.value;
+    }
+
+    // No one else is computing this version right now: become the owner,
+    // bounded only by this caller's own deadline — fixed for the life of
+    // this computation, never extended by a later joiner.
+    const promise = (async (): Promise<SurfaceAttempt> => {
+      // Stored as entry pairs: a `Map` is not JSON, and every field of a
+      // `SurfaceEntry` is a string or an array of them, so the round trip is exact.
+      const remembered = await readComputed<[string, SurfaceEntry][]>(key);
+      // Always `false`: a fallback-derived surface is never written under `key`
+      // below, so anything read back from it is guaranteed to be PyPI-derived.
+      if (remembered) return { ok: true, api: new Map(remembered), usedGitHubFallback: false };
+
+      const computed = await computeSurfaceOf(request, version, scriptPath, deadlineMs);
+      if (computed.ok) {
+        if (!computed.usedGitHubFallback) await writeComputed(key, [...computed.api]);
+        return computed;
+      }
+      // A failure discovered once this owner's own deadline had already
+      // passed is this call running out of time, not a fact about the
+      // package — flagged so a joiner with its own remaining budget knows
+      // to retry independently rather than treat it as authoritative.
+      return remainingMs(deadlineMs) <= 0 ? { ...computed, budgetExhausted: true } : computed;
+    })();
+    inFlightSurfaces.set(key, { promise });
+    promise
+      .catch(() => undefined)
+      .then(() => {
+        // Always evict on settle, success included: the persistent cache
+        // above already serves later independent calls cheaply, so keeping a
+        // settled promise here would only pin the whole surface map in memory
+        // for the life of the extension host.
+        if (inFlightSurfaces.get(key)?.promise === promise) inFlightSurfaces.delete(key);
+      });
+    return promise;
+  }
 }
 
 async function computeSurfaceOf(
   request: SurfaceRequest,
   version: string,
   scriptPath: string,
-  deadline: number,
+  deadlineMs: number,
 ): Promise<SurfaceAttempt> {
-  if (remainingMs(deadline) <= 0) {
+  if (remainingMs(deadlineMs) <= 0) {
     // The other version (`from` or `to`) already spent the whole request
     // budget — most likely retrying a download that kept failing. Starting
     // this one anyway would mean a zero-timeout request whose only possible
@@ -186,7 +317,7 @@ async function computeSurfaceOf(
     };
   }
 
-  const source = await sourceArchiveUrl(request.name, version, remainingMs(deadline));
+  const source = await sourceArchiveUrl(request.name, version, remainingMs(deadlineMs));
   if (!source) {
     return {
       ok: false,
@@ -204,7 +335,7 @@ async function computeSurfaceOf(
   let usedGitHubFallback = false;
   try {
     await mkdir(dir, { recursive: true });
-    const downloaded = await fetchArchive(source.url, { timeoutMs: remainingMs(deadline), retries: 2 });
+    const downloaded = await fetchArchive(source.url, { timeoutMs: remainingMs(deadlineMs), retries: 2 });
     if (downloaded.ok) {
       bytes = downloaded.bytes;
     } else {
@@ -218,7 +349,7 @@ async function computeSurfaceOf(
       // then the archive itself) with nothing left of the budget to spend on
       // it — the PyPI failure just recorded is the honest reason either way.
       const fallback =
-        remainingMs(deadline) > 0 ? await githubArchiveFallback(request.name, version, deadline) : null;
+        remainingMs(deadlineMs) > 0 ? await githubArchiveFallback(request.name, version, deadlineMs) : null;
       if (!fallback) {
         return downloaded.status === 0
           ? {
@@ -316,8 +447,8 @@ async function computeSurfaceOf(
   // `exec`'s underlying `child_process` `timeout` option treats `0` as
   // "disabled" rather than "expired" — the opposite of what an exhausted
   // budget must mean here — so this is checked explicitly rather than
-  // handing a possibly-zero `remainingMs(deadline)` straight through.
-  if (remainingMs(deadline) <= 0) {
+  // handing a possibly-zero `remainingMs(deadlineMs)` straight through.
+  if (remainingMs(deadlineMs) <= 0) {
     return {
       ok: false,
       failure: unavailable(
@@ -328,7 +459,7 @@ async function computeSurfaceOf(
     };
   }
 
-  const read = await request.exec('python3', [scriptPath, dir], { timeoutMs: remainingMs(deadline) });
+  const read = await request.exec('python3', [scriptPath, dir], { timeoutMs: remainingMs(deadlineMs) });
   if (read.code !== 0) {
     return {
       ok: false,
@@ -412,23 +543,23 @@ const MAX_FALLBACK_ARCHIVE_BYTES = 25 * 1024 * 1024;
  * published — it is a fallback so a transient PyPI failure does not silently
  * drop the surface diff, not a replacement source.
  */
-async function githubArchiveFallback(name: string, version: string, deadline: number): Promise<Buffer | null> {
-  // `deadline` is threaded through rather than a `timeoutMs` snapshot, so
+async function githubArchiveFallback(name: string, version: string, deadlineMs: number): Promise<Buffer | null> {
+  // `deadlineMs` is threaded through rather than a `timeoutMs` snapshot, so
   // every step below — the tags lookup and the eventual archive download —
   // draws down what is actually left of the *outer* budget at the moment it
   // runs, instead of each independently re-spending a fixed allowance taken
   // once at the top of this function.
   const info = await fetchRegistryInfo(name, 'pypi', version);
   if (!info?.githubRepo) return null;
-  if (remainingMs(deadline) <= 0) return null;
+  if (remainingMs(deadlineMs) <= 0) return null;
 
   const tags = await fetchJson<{ name?: string; commit?: { sha?: string } }[]>(
     `https://api.github.com/repos/${info.githubRepo}/tags?per_page=100`,
-    { timeoutMs: remainingMs(deadline) },
+    { timeoutMs: remainingMs(deadlineMs) },
   );
   const tag = matchingTag(tags ?? [], name, version);
   if (!tag) return null;
-  if (remainingMs(deadline) <= 0) return null;
+  if (remainingMs(deadlineMs) <= 0) return null;
 
   // A tag ref is mutable — a maintainer can force-move it to point at a
   // different commit at any time — so downloading by tag name would make the
@@ -441,7 +572,7 @@ async function githubArchiveFallback(name: string, version: string, deadline: nu
   const ref = sha ?? `refs/tags/${tag}`;
 
   const downloaded = await fetchArchive(`https://codeload.github.com/${info.githubRepo}/tar.gz/${ref}`, {
-    timeoutMs: remainingMs(deadline),
+    timeoutMs: remainingMs(deadlineMs),
     retries: 2,
     maxBytes: MAX_FALLBACK_ARCHIVE_BYTES,
   });

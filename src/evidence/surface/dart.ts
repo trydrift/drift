@@ -35,9 +35,12 @@ export const pubSurface: SurfaceProvider = {
   weight: WEIGHT,
 
   async compute(request: SurfaceRequest): Promise<SurfaceOutcome> {
-    const before = await surfaceOf(request, request.from);
+    const beforePromise = surfaceOf(request, request.from);
+    const afterPromise = surfaceOf(request, request.to);
+    afterPromise.catch(() => undefined);
+    const before = await beforePromise;
     if (!before.ok) return before.failure;
-    const after = await surfaceOf(request, request.to);
+    const after = await afterPromise;
     if (!after.ok) return after.failure;
 
     if (before.api.size === 0 && after.api.size === 0) {
