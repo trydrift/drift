@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import type { DependencyChange, Ecosystem } from '../../types.js';
 import type { Logger } from '../../util/logger.js';
 import { execCommand, type Exec } from '../../util/exec.js';
+import { measure } from '../../util/profile.js';
 import { rustSurface } from './rust.js';
 import { goSurface } from './go.js';
 import { javaSurface } from './java.js';
@@ -61,6 +62,12 @@ const DEFAULT_TIMEOUT_MS = 180_000;
  * Always resolves. Every failure is a stated reason a developer can act on —
  * "japicmp is not installed" and "that version was yanked" lead to different
  * decisions, and collapsing both to "could not check" throws that away.
+ *
+ * The provider call is timed under the package name even when the opt-in JSON
+ * profiler is disabled. `profile.ts` mirrors that span into the always-on run
+ * diagnostic, which closes a visibility gap for Python and the other non-npm
+ * providers: their archive/download/parse work used to sit inside
+ * `upstream.analysis` with no package-level substage saying what consumed it.
  */
 export async function computeSurfaceDiff(
   change: DependencyChange,
@@ -85,18 +92,24 @@ export async function computeSurfaceDiff(
 
   const workdir = await mkdtemp(join(tmpdir(), 'drift-surface-'));
   try {
-    return await provider.compute({
-      name: change.name,
-      from: change.from,
-      to: change.to,
-      exec: options.exec ?? execCommand,
-      workdir,
-      logger: options.logger,
-      ...(options.env ? { env: options.env } : {}),
-      timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
-      ...(options.readRepoFile ? { readRepoFile: options.readRepoFile } : {}),
-      ...(options.autoInstall ? { autoInstall: true } : {}),
-    });
+    return await measure(
+      'surface',
+      change.name,
+      () =>
+        provider.compute({
+          name: change.name,
+          from: change.from!,
+          to: change.to!,
+          exec: options.exec ?? execCommand,
+          workdir,
+          logger: options.logger,
+          ...(options.env ? { env: options.env } : {}),
+          timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+          ...(options.readRepoFile ? { readRepoFile: options.readRepoFile } : {}),
+          ...(options.autoInstall ? { autoInstall: true } : {}),
+        }),
+      { ecosystem: change.ecosystem },
+    );
   } catch (err) {
     // A provider throwing is a bug in Drift, not a fact about the dependency —
     // but it still must not take down a scan of forty other packages.
