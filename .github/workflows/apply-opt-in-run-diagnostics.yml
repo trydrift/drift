@@ -55,7 +55,15 @@ jobs:
         run: npm run typecheck
 
       - name: Test CLI
-        run: npm test
+        id: cli_tests
+        run: npm test > cli-test.log 2>&1
+
+      - name: Upload CLI test log
+        if: failure() && steps.cli_tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-test-log
+          path: cli-test.log
 
       - name: Install extension dependencies
         working-directory: extension
