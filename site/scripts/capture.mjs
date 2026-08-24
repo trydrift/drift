@@ -88,6 +88,8 @@ const { DriftConfigSchema } = await import(join(repoRoot, 'dist/config/schema.js
 const { createLogger } = await import(join(repoRoot, 'dist/util/logger.js'));
 const { configureHttpDiskCache } = await import(join(repoRoot, 'dist/util/http.js'));
 const { deriveOverallConfidence } = await import(join(repoRoot, 'dist/confidence/calibrate.js'));
+const RECORDING_SCHEMA_VERSION = 2;
+import { isSchemaStale, validateRecording } from './recording-validation.mjs';
 
 /**
  * A disk cache, and a GitHub token.
@@ -433,7 +435,7 @@ async function capture(target, prepared, fingerprint) {
   // The recording. `at` is milliseconds since the run began — the browser
   // replays against these, so the cadence on the page is the cadence that
   // actually happened.
-  const events = [];
+  const timeline = [];
   // Progress details name whatever path the run was given, which here is a
   // scratch directory on a laptop. Rewritten to the repository's own name so
   // the recording reads as what it is — an analysis of that project — rather
@@ -444,12 +446,13 @@ async function capture(target, prepared, fingerprint) {
       .join(`${owner}/${name}`)
       .split(workdir)
       .join(`${owner}/${name}`);
-  const mark = (phase, detail, done, total) =>
-    events.push({ at: Date.now() - started, phase: scrub(phase), detail: scrub(detail), done, total });
+  const timestamp = () => Date.now() - started;
+  const markProgress = (phase, detail, done, total) => timeline.push({ type: 'progress', at: timestamp(), phase: scrub(phase), detail: scrub(detail), done, total });
+  const markCandidate = (candidate) => timeline.push({ type: 'candidate-upsert', at: timestamp(), candidate: slimCandidate(candidate) });
+  const markDropped = (id) => timeline.push({ type: 'candidate-drop', at: timestamp(), id });
 
   process.stderr.write(`[${target.id}] scanning for upgrades\n`);
-  const candidates = [];
-  let scan = null;
+  let scan;
   try {
     scan = await scanUpgrades({
       root,
@@ -459,18 +462,18 @@ async function capture(target, prepared, fingerprint) {
       githubToken: githubToken || undefined,
       breadth: { includeDev: false, maxSites: FULL_REPO.maxSites, maxPackages: FULL_REPO.maxPackages },
       concurrency: SCAN_CONCURRENCY,
-      onProgress: ({ phase, detail, done, total }) => mark(phase, detail, done, total),
-      onCandidate: (candidate) => candidates.push(slimCandidate(candidate)),
+      onProgress: ({ phase, detail, done, total }) => markProgress(phase, detail, done, total),
+      onCandidate: (candidate) => markCandidate(candidate),
+      onDropped: (id) => markDropped(id),
     });
-  } catch (err) {
-    process.stderr.write(`[${target.id}] scan failed: ${err.message}\n`);
+  } finally {
+    if (workdir) await rm(workdir, { recursive: true, force: true });
   }
 
-  // Only a throwaway checkout is removed. A cached one is the whole point of
-  // the cache, and is left for the next run to refresh.
-  if (workdir) await rm(workdir, { recursive: true, force: true });
+  const finalCandidates = scan.candidates.map(slimCandidate).sort(byAttention);
 
-  return {
+  const recording = {
+    schemaVersion: RECORDING_SCHEMA_VERSION,
     id: target.id,
     label: target.label,
     ecosystem: target.ecosystem,
@@ -484,12 +487,14 @@ async function capture(target, prepared, fingerprint) {
     // reading the page. See `engine-fingerprint.mjs`.
     engine: fingerprint,
     durationMs: Date.now() - started,
-    packagesChecked: scan?.checked ?? 0,
-    manifests: (scan?.targets ?? []).map((t) => t.manifestPath),
-    nestedGitRepos: (scan?.nestedGitRepos ?? []).map((project) => project.dir),
-    events,
-    candidates: candidates.sort(byAttention),
+    packagesChecked: scan.checked,
+    manifests: scan.targets.map((t) => t.manifestPath),
+    nestedGitRepos: scan.nestedGitRepos.map((project) => project.dir),
+    timeline,
+    candidates: finalCandidates,
   };
+  validateRecording(recording);
+  return recording;
 }
 
 /**
@@ -504,6 +509,7 @@ function slimCandidate(candidate) {
   const evidenceById = new Map((candidate.plan?.evidence ?? []).map((entry) => [entry.id, entry]));
 
   return {
+    id: candidate.id,
     name: candidate.name,
     ecosystem: candidate.ecosystem,
     manifestPath: candidate.manifestPath,
@@ -514,6 +520,7 @@ function slimCandidate(candidate) {
     selected: candidate.selected,
     safeLatest: candidate.safeLatest ?? null,
     status: candidate.status,
+    phase: candidate.phase ?? null,
     risk: candidate.risk,
     summary: candidate.summary,
     recommendation: candidate.recommendation ?? null,
@@ -681,6 +688,10 @@ async function stalenessOf(target) {
     return 'the existing recording could not be read';
   }
 
+  if (isSchemaStale(existing, RECORDING_SCHEMA_VERSION)) {
+    return `recording schema changed (${existing.schemaVersion ?? 1} -> ${RECORDING_SCHEMA_VERSION})`;
+  }
+
   if (existing.engine !== fingerprint) {
     return existing.engine
       ? `recorded by a different engine (${existing.engine} -> ${fingerprint})`
@@ -823,10 +834,11 @@ async function worker() {
     try {
       const prepared = await withDeadline(pending.get(target.id), targetTimeoutMs, target.id);
       const result = await withDeadline(capture(target, prepared, fingerprint), targetTimeoutMs, target.id);
+      validateRecording(result);
       await writeFile(join(outDir, `${target.id}.json`), `${JSON.stringify(result, null, 2)}\n`, 'utf8');
       process.stderr.write(
         `[${target.id}] done — ${result.candidates.length} candidates, ` +
-          `${result.events.length} events, ${(result.durationMs / 1000).toFixed(1)}s\n`,
+          `${result.timeline.length} events, ${(result.durationMs / 1000).toFixed(1)}s\n`,
       );
     } catch (err) {
       failures.push({ id: target.id, reason: err.message });

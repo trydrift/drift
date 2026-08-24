@@ -12,7 +12,10 @@
  * loading state to design around.
  */
 
-export interface ProgressEvent {
+export const RECORDING_SCHEMA_VERSION = 2;
+
+export interface ProgressTimelineEvent {
+  type: "progress";
   /** Milliseconds after the run began. Real elapsed time, not a designed curve. */
   at: number;
   phase: string;
@@ -20,6 +23,7 @@ export interface ProgressEvent {
   done: number;
   total: number;
 }
+export type RecordingTimelineEvent = ProgressTimelineEvent | { type: "candidate-upsert"; at: number; candidate: Candidate } | { type: "candidate-drop"; at: number; id: string };
 
 export interface ImpactSite {
   file: string;
@@ -61,6 +65,7 @@ export interface BreakingChange {
 }
 
 export interface Candidate {
+  id: string;
   name: string;
   ecosystem: string;
   manifestPath?: string;
@@ -71,6 +76,7 @@ export interface Candidate {
   selected: string;
   safeLatest: string | null;
   status: string;
+  phase: string | null;
   risk: string;
   summary: string;
   recommendation: string | null;
@@ -83,6 +89,7 @@ export interface Candidate {
 }
 
 export interface Recording {
+  schemaVersion: number;
   id: string;
   label: string;
   ecosystem: string;
@@ -95,8 +102,19 @@ export interface Recording {
   packagesChecked: number;
   manifests: string[];
   nestedGitRepos?: string[];
-  events: ProgressEvent[];
+  timeline: RecordingTimelineEvent[];
   candidates: Candidate[];
+  legacy?: boolean;
+}
+
+export function normalizeRecording(raw: any): Recording {
+  if (raw?.schemaVersion === 2) return raw as Recording;
+  const candidates = (raw.candidates ?? []).map((candidate: any, index: number) => ({
+    ...candidate,
+    id: candidate.id ?? `legacy:${raw.ecosystem}:${candidate.manifestPath ?? ""}:${candidate.name}:${candidate.current}:${candidate.selected}:${index}`,
+    phase: null,
+  }));
+  return { ...raw, schemaVersion: 1, candidates, timeline: (raw.events ?? []).map((event: any) => ({ type: "progress", ...event })), legacy: true } as Recording;
 }
 
 /**
