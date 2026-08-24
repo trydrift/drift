@@ -12,28 +12,15 @@
  *
  * Design:
  *  - Attribution is scoped through `AsyncLocalStorage`, not a single mutable
- *    module-level variable. Two operations against two repositories (or two
- *    concurrent packages within one operation, via `Promise.all`) each carry
- *    their own run/parent-span context through every `await`, so neither can
- *    write into the other's report and neither can appear as the other's
- *    child span. See `withRun` and `withSpan`.
- *  - Spans are buffered in memory, not appended to disk one line at a time —
- *    leaving this enabled everywhere must not add meaningful overhead.
- *  - The final report is rendered fully in memory and promoted into place
- *    with a single `rename()`, so a concurrent reader never observes a
- *    half-written file, and a run that finishes cannot be interleaved with
- *    another run's bytes. `run.in-progress` is a filesystem-backed ownership
- *    record with a unique run ID; starting a run and finishing a run both
- *    take the same repository-local lock, so an older process finishing after
- *    a newer process started cannot overwrite the newer report.
- *  - A crash-marker file (`run.in-progress`) is written synchronously when a
- *    run starts, so a hard crash before `finish()` still leaves something
- *    behind describing what was running — but it is never the artifact
- *    handed to anyone; `run.log` is, always.
- *  - Nothing here ever writes a secret to disk. See `redactCommand` /
- *    `sanitizeArgs` below — every piece of text that could plausibly carry a
- *    token (a command summary, an exec argv, an error message) is passed
- *    through redaction before it reaches a span's metadata.
+ *    module-level variable. Concurrent packages and repositories keep their
+ *    own run/parent-span context through every `await`.
+ *  - Spans are buffered in memory and the final report is promoted into place
+ *    with a single rename, so always-on diagnostics do not turn into a stream
+ *    of filesystem writes.
+ *  - A repo-local ownership marker prevents an older overlapping process from
+ *    overwriting a newer run's report.
+ *  - Nothing here writes credentials. Free text and command arguments are
+ *    redacted before they reach the report.
  */
 
 import { AsyncLocalStorage } from 'node:async_hooks';
@@ -46,34 +33,22 @@ import { isAbsolute, join, resolve } from 'node:path';
 // Secret redaction
 // ---------------------------------------------------------------------------
 
-/**
- * CLI flags whose value must never be written to the log, wherever they
- * appear in argv — as `--token value` or `--token=value`.
- */
 const SENSITIVE_FLAGS = new Set(['token', 'copilot-token', 'github-token', 'password', 'secret']);
 
-/** Patterns that look like a credential even outside a recognised flag. */
 const SECRET_LIKE_PATTERNS: RegExp[] = [
   /\bAuthorization\s*:\s*[^\n]+/gi,
   /\bBearer\s+\S+/gi,
-  /\bgh[oprsu]_[A-Za-z0-9]{10,}\b/g, // GitHub PATs/OAuth/refresh/server tokens
+  /\bgh[oprsu]_[A-Za-z0-9]{10,}\b/g,
   /\bgithub_pat_[A-Za-z0-9_]{10,}\b/g,
   /\bsk-[A-Za-z0-9]{10,}\b/g,
 ];
 
-/** Redact any credential-shaped substring in free text (error messages, etc). */
 export function redactText(text: string): string {
   let out = text;
   for (const pattern of SECRET_LIKE_PATTERNS) out = out.replace(pattern, '[REDACTED]');
   return out;
 }
 
-/**
- * Redact argv for logging: `--token`-style flags have their value replaced,
- * `--token=value` is collapsed the same way, and everything else is passed
- * through `redactText` as a last line of defense against a stray secret
- * showing up in a positional argument.
- */
 export function sanitizeArgs(args: readonly string[]): string[] {
   const out: string[] = [];
   for (let i = 0; i < args.length; i++) {
@@ -97,37 +72,23 @@ export function sanitizeArgs(args: readonly string[]): string[] {
   return out;
 }
 
-/** Build a safe `drift <command> ...` summary for the log header. */
 export function redactCommand(argv: readonly string[]): string {
   return ['drift', ...sanitizeArgs(argv)].join(' ');
 }
 
-/** Redact an arbitrary error into a string safe to write to the log. */
 function redactError(error: unknown): string {
   return redactText(error instanceof Error ? error.message : String(error));
 }
 
 // ---------------------------------------------------------------------------
-// Git dir resolution (handles a `.git` file, e.g. inside a worktree)
+// Git-dir resolution
 // ---------------------------------------------------------------------------
 
-/**
- * Resolve the directory a repo-local run log should live under, i.e. the
- * real `.git` directory for `repoRoot` — following the `gitdir: <path>`
- * pointer when `.git` is a file rather than a directory, as it is inside a
- * worktree checkout.
- *
- * Falls back to `<repoRoot>/.drift` when there is no `.git` at all (not a
- * git repository), so a run log is still produced.
- */
 export function resolveGitDir(repoRoot: string): string {
   const gitPath = join(repoRoot, '.git');
   try {
     const stat = existsSync(gitPath) ? readFileSync(gitPath, 'utf8') : null;
     if (stat !== null && !existsSync(join(gitPath, 'HEAD'))) {
-      // `.git` exists but is not itself a directory with a HEAD — either a
-      // worktree's `.git` file, or something unexpected. Try to parse it as
-      // one first; if that fails, treat `gitPath` as-is.
       const match = /^gitdir:\s*(.+)\s*$/m.exec(stat);
       if (match) {
         const pointer = match[1]!.trim();
@@ -135,19 +96,17 @@ export function resolveGitDir(repoRoot: string): string {
       }
     }
   } catch {
-    // Fall through to the directory case below.
+    // Fall through to the ordinary repository layout.
   }
   return gitPath;
 }
 
 // ---------------------------------------------------------------------------
-// Span model
+// Span/event model
 // ---------------------------------------------------------------------------
 
 export interface SpanHandle {
-  /** Close the span successfully, merging in any metadata discovered while it ran. */
   end(meta?: Record<string, unknown>): void;
-  /** Close the span as failed. `error` is redacted before being stored. */
   fail(error: unknown, meta?: Record<string, unknown>): void;
 }
 
@@ -167,15 +126,12 @@ export interface HttpRequestRecord {
   host: string;
   method: string;
   path: string;
-  /** Offset from the run's start, on the same monotonic clock as spans. */
   startOffsetMs: number;
   durationMs: number;
   status: number | null;
   cache: 'memory_hit' | 'disk_hit' | 'coalesced_hit' | 'revalidated_304' | 'miss' | 'hit' | 'n/a';
   bytes?: number;
-  /** Number of retries actually performed (attempts minus one), not the attempt index of any single try. */
   retries?: number;
-  /** Cumulative time spent sleeping between retries, separate from request time itself. */
   backoffMs?: number;
   failure?: string;
 }
@@ -184,7 +140,6 @@ export interface HttpAttemptRecord {
   host: string;
   method: string;
   path: string;
-  /** Offset and duration for actual network I/O, excluding retry backoff sleeps. */
   startOffsetMs: number;
   durationMs: number;
   status: number | null;
@@ -200,15 +155,8 @@ export interface ExecRecord {
 }
 
 export interface RunLogHandle {
-  /** Path the report was (or will be) written to, or null if logging is unavailable. */
   readonly path: string | null;
-  /**
-   * Run `fn` with this run active as the ambient diagnostics context for
-   * every span/HTTP/exec/cache call made during it — including inside
-   * concurrent `Promise.all` work, which each keep their own nested context.
-   */
   run<T>(fn: () => Promise<T>): Promise<T>;
-  /** Close the run, render the report, and promote it into place. Safe to call at most once. */
   finish(status: string, meta?: Record<string, unknown>): void;
 }
 
@@ -219,6 +167,11 @@ interface Header {
   repoRoot: string;
   gitHead: string;
   driftVersion: string;
+}
+
+interface RunOwner {
+  runId: string;
+  startedAtMs: number;
 }
 
 class RunState {
@@ -250,40 +203,29 @@ interface RunFrame {
   parentId: number | null;
 }
 
-/**
- * Ambient run/parent-span context, propagated through `await` (including
- * concurrent `Promise.all` branches) the way a mutable global never can.
- * This is what makes two overlapping operations — two repos, or two
- * concurrently-analysed packages within one operation — attribute correctly
- * instead of cross-contaminating each other's spans and events.
- */
 const als = new AsyncLocalStorage<RunFrame>();
 
 function currentFrame(): RunFrame | undefined {
   return als.getStore();
 }
 
-/** Milliseconds since the active run started, or 0 with no active run (mainly for HTTP/exec start offsets). */
 export function runElapsedMs(): number {
   return currentFrame()?.state.now() ?? 0;
 }
 
-/** True if a run is currently active in this async context (mainly for tests). */
 export function hasActiveRun(): boolean {
-  return currentFrame() !== undefined;
+  const frame = currentFrame();
+  return frame !== undefined && !frame.state.finished;
 }
 
-/** Called by `http.ts` for every request; a no-op when no run is active. */
 export function recordHttpRequest(rec: HttpRequestRecord): void {
   currentFrame()?.state.httpRequests.push(rec);
 }
 
-/** Called by `http.ts` for every actual network attempt; a no-op when no run is active. */
 export function recordHttpAttempt(rec: HttpAttemptRecord): void {
   currentFrame()?.state.httpAttempts.push(rec);
 }
 
-/** Called by `exec.ts` for every subprocess invocation; a no-op when no run is active. */
 export function recordExecCommand(rec: ExecRecord): void {
   currentFrame()?.state.execCommands.push(rec);
 }
@@ -310,7 +252,6 @@ function emptyCacheStats(): CacheStats {
   return { hits: 0, misses: 0, writes: 0, memoryHits: 0, diskHits: 0, coalescedHits: 0, revalidated304: 0 };
 }
 
-/** Called by any cache to report a lookup; a no-op when no run is active. */
 export function noteCache(cacheName: string, event: CacheEvent): void;
 export function noteCache(cacheName: string, hit: boolean, write?: boolean): void;
 export function noteCache(cacheName: string, eventOrHit: CacheEvent | boolean, write = false): void {
@@ -343,7 +284,6 @@ export function noteCache(cacheName: string, eventOrHit: CacheEvent | boolean, w
   state.caches.set(cacheName, entry);
 }
 
-/** Increment a named counter on the active run; a no-op when no run is active. */
 export function countWork(name: string, by = 1): void {
   const state = currentFrame()?.state;
   if (!state) return;
@@ -352,7 +292,12 @@ export function countWork(name: string, by = 1): void {
 
 const NOOP_SPAN: SpanHandle = Object.freeze({ end() {}, fail() {} });
 
-function openSpan(state: RunState, parentId: number | null, name: string, meta?: Record<string, unknown>): SpanRecord {
+function openSpan(
+  state: RunState,
+  parentId: number | null,
+  name: string,
+  meta?: Record<string, unknown>,
+): SpanRecord {
   const parent = parentId !== null ? state.spans.find((s) => s.id === parentId) : undefined;
   const record: SpanRecord = {
     id: state.nextSpanId++,
@@ -368,8 +313,14 @@ function openSpan(state: RunState, parentId: number | null, name: string, meta?:
   return record;
 }
 
-function closeSpan(record: SpanRecord, state: RunState, outcome: 'ok' | 'error', errorOrMeta?: unknown, meta?: Record<string, unknown>): void {
-  if (record.endMs !== null) return; // already closed — a double end()/fail() must not double-count
+function closeSpan(
+  record: SpanRecord,
+  state: RunState,
+  outcome: 'ok' | 'error',
+  errorOrMeta?: unknown,
+  meta?: Record<string, unknown>,
+): void {
+  if (record.endMs !== null) return;
   record.endMs = state.now();
   if (outcome === 'error') {
     record.status = 'error';
@@ -380,18 +331,9 @@ function closeSpan(record: SpanRecord, state: RunState, outcome: 'ok' | 'error',
   }
 }
 
-/**
- * Start a (possibly nested) timed span in the current ambient context, or a
- * no-op handle with no active run. This does *not* itself become the ambient
- * parent for further spans — only `withSpan` does that, deliberately: a
- * bare `startSpan`/`end()` pair is for a leaf measurement (one HTTP request,
- * one subprocess) that has no children of its own to attribute, so there is
- * no shared mutable "current span stack" anywhere in this module for
- * concurrent work to corrupt.
- */
 export function startSpan(name: string, meta?: Record<string, unknown>): SpanHandle {
   const frame = currentFrame();
-  if (!frame) return NOOP_SPAN;
+  if (!frame || frame.state.finished) return NOOP_SPAN;
   const { state } = frame;
   const record = openSpan(state, frame.parentId, name, meta);
   let closed = false;
@@ -409,21 +351,13 @@ export function startSpan(name: string, meta?: Record<string, unknown>): SpanHan
   };
 }
 
-/**
- * Run `fn` as a named span, with `fn`'s own body seeing this span as its
- * ambient parent — this is the nesting-safe primitive. Concurrent callers
- * (e.g. several packages analysed via `Promise.all`) each get their own span
- * and their own child context, because `AsyncLocalStorage` snapshots the
- * frame per async continuation rather than sharing one mutable "current"
- * pointer that a sibling could stomp on mid-flight.
- */
 export async function withSpan<T>(
   name: string,
   meta: Record<string, unknown> | undefined,
   fn: () => Promise<T>,
 ): Promise<T> {
   const frame = currentFrame();
-  if (!frame) return fn();
+  if (!frame || frame.state.finished) return fn();
   const { state } = frame;
   const record = openSpan(state, frame.parentId, name, meta);
   try {
@@ -437,11 +371,10 @@ export async function withSpan<T>(
 }
 
 // ---------------------------------------------------------------------------
-// Starting / finishing a run
+// Run ownership / lifecycle
 // ---------------------------------------------------------------------------
 
 export interface StartRunOptions {
-  /** Full, already-redacted command summary, e.g. `drift outdated --dir /repo`. */
   command: string;
   mode: string;
   repoRoot: string;
@@ -467,11 +400,6 @@ function headerText(h: Header, startedAtIso: string): string {
     '',
     '',
   ].join('\n');
-}
-
-interface RunOwner {
-  runId: string;
-  startedAtMs: number;
 }
 
 function ownerText(owner: RunOwner, header: Header): string {
@@ -513,18 +441,6 @@ function withRunLogLock<T>(dir: string, fn: () => T): T {
   }
 }
 
-/**
- * Start a new run log for `options.repoRoot`. Returns a handle even when the
- * file could not be opened (a read-only checkout, missing permissions) —
- * spans still track in memory so the process behaves identically, they
- * simply never reach disk.
- *
- * Starting a run atomically replaces `run.in-progress` with this run's unique
- * ownership record. Finishing a run promotes its rendered report only while
- * that marker still names the same run, under the same filesystem lock used
- * by starters. That keeps stale reports from overwriting newer runs across
- * separate Node processes.
- */
 export function startRunLog(options: StartRunOptions): RunLogHandle {
   const owner: RunOwner = { runId: randomUUID(), startedAtMs: Date.now() };
   const header: Header = {
@@ -537,7 +453,6 @@ export function startRunLog(options: StartRunOptions): RunLogHandle {
   };
 
   const gitDir = resolveGitDir(options.repoRoot);
-
   let dir: string | null = null;
   let path: string | null = null;
   try {
@@ -554,7 +469,6 @@ export function startRunLog(options: StartRunOptions): RunLogHandle {
   }
 
   const state = new RunState(header, path, gitDir, owner);
-
   return {
     path,
     run: (fn) => als.run({ state, parentId: null }, fn),
@@ -562,9 +476,6 @@ export function startRunLog(options: StartRunOptions): RunLogHandle {
       if (state.finished) return;
       state.finished = true;
 
-      // Anything still open (a throw unwinding through nested spans) is
-      // closed as interrupted rather than silently dropped, so the report
-      // still reflects where the run actually stopped.
       const now = state.now();
       for (const span of state.spans) {
         if (span.endMs === null) {
@@ -588,15 +499,14 @@ export function startRunLog(options: StartRunOptions): RunLogHandle {
           rmSync(marker, { force: true });
         });
       } catch {
-        // A run log is a diagnostic nicety, not something a run should fail
-        // over.
+        // Diagnostics must never fail the operation being diagnosed.
       }
     },
   };
 }
 
 // ---------------------------------------------------------------------------
-// Rendering
+// Rendering helpers
 // ---------------------------------------------------------------------------
 
 function fmtMs(ms: number): string {
@@ -614,6 +524,10 @@ function fmtMeta(meta: Record<string, unknown>): string {
   return parts.length ? ` ${parts.join(' ')}` : '';
 }
 
+function durationOf(span: SpanRecord): number {
+  return span.endMs === null ? 0 : span.endMs - span.startMs;
+}
+
 function renderTimeline(state: RunState): string {
   const children = new Map<number | null, SpanRecord[]>();
   for (const span of state.spans) {
@@ -626,37 +540,14 @@ function renderTimeline(state: RunState): string {
   const lines: string[] = [];
   const visit = (span: SpanRecord) => {
     const indent = '  '.repeat(span.depth);
-    const labelMeta = fmtMeta(span.meta);
-    lines.push(`${indent}[+${fmtMs(span.startMs)}] BEGIN ${span.name}${labelMeta}`);
+    lines.push(`${indent}[+${fmtMs(span.startMs)}] BEGIN ${span.name}${fmtMeta(span.meta)}`);
     for (const child of children.get(span.id) ?? []) visit(child);
-    const duration = (span.endMs ?? span.startMs) - span.startMs;
     const statusSuffix =
       span.status === 'ok' ? '' : ` status=${span.status}${span.error ? ` error=${JSON.stringify(span.error)}` : ''}`;
-    lines.push(`${indent}[+${fmtMs(span.endMs ?? span.startMs)}] END ${span.name} duration=${fmtMs(duration)}${statusSuffix}`);
+    lines.push(`${indent}[+${fmtMs(span.endMs ?? span.startMs)}] END ${span.name} duration=${fmtMs(durationOf(span))}${statusSuffix}`);
   };
   for (const top of children.get(null) ?? []) visit(top);
   return lines.join('\n');
-}
-
-function stageBreakdown(state: RunState): { name: string; ms: number }[] {
-  const topLevel = state.spans.filter((s) => s.parentId === null && s.endMs !== null);
-  const byName = new Map<string, number>();
-  for (const span of topLevel) byName.set(span.name, (byName.get(span.name) ?? 0) + (span.endMs! - span.startMs));
-  return [...byName.entries()]
-    .map(([name, ms]) => ({ name, ms }))
-    .sort((a, b) => b.ms - a.ms);
-}
-
-function packageBreakdown(state: RunState): { name: string; ms: number }[] {
-  const byPackage = new Map<string, { start: number; end: number }[]>();
-  for (const span of state.spans) {
-    if (span.name !== 'package' || span.endMs === null) continue;
-    const name = typeof span.meta.package === 'string' ? span.meta.package : 'unknown';
-    const list = byPackage.get(name) ?? [];
-    list.push({ start: span.startMs, end: span.endMs });
-    byPackage.set(name, list);
-  }
-  return [...byPackage.entries()].map(([name, intervals]) => ({ name, ms: unionDuration(intervals) })).sort((a, b) => b.ms - a.ms);
 }
 
 function unionDuration(intervals: { start: number; end: number }[]): number {
@@ -679,7 +570,133 @@ function unionDuration(intervals: { start: number; end: number }[]): number {
   return total;
 }
 
-/** Where the same expensive identity (a surface, a lookup) ran more than once. */
+function intervalsFor(spans: readonly SpanRecord[]): { start: number; end: number }[] {
+  return spans
+    .filter((s): s is SpanRecord & { endMs: number } => s.endMs !== null)
+    .map((s) => ({ start: s.startMs, end: s.endMs }));
+}
+
+/**
+ * Major stages are intentionally selected from inside the command wrapper.
+ * The old implementation considered only root spans, so a VS Code run whose
+ * root was `dependency.scan` always printed one useless line: 100% scan.
+ */
+function stageBreakdown(state: RunState): { name: string; ms: number }[] {
+  const preferred = ['manifest.discovery', 'version.discovery', 'security.batch', 'analysis', 'verification'];
+  const rows = preferred
+    .map((name) => ({
+      name,
+      ms: unionDuration(intervalsFor(state.spans.filter((s) => s.name === name))),
+    }))
+    .filter((row) => row.ms > 0);
+  if (rows.length > 0) return rows.sort((a, b) => b.ms - a.ms);
+
+  const top = state.spans.filter((s) => s.parentId === null && s.endMs !== null);
+  const byName = new Map<string, number>();
+  for (const span of top) byName.set(span.name, (byName.get(span.name) ?? 0) + durationOf(span));
+  return [...byName.entries()].map(([name, ms]) => ({ name, ms })).sort((a, b) => b.ms - a.ms);
+}
+
+/**
+ * A package's critical span begins before its final `package` block. Shared
+ * upstream evidence/rationale preparation can be almost the entire run (as in
+ * the 27-minute `next` case), so excluding it made the summary name pandas as
+ * hottest while next actually held the scan open for 99% of wall time.
+ *
+ * Union, never sum: rationale preparation and upstream analysis run together,
+ * and duplicate workspace rows may overlap too.
+ */
+function packageBreakdown(state: RunState): { name: string; ms: number }[] {
+  const PACKAGE_SPANS = new Set(['upstream.analysis', 'rationale.prepare', 'package']);
+  const byPackage = new Map<string, { start: number; end: number }[]>();
+  for (const span of state.spans) {
+    if (!PACKAGE_SPANS.has(span.name) || span.endMs === null) continue;
+    const name = typeof span.meta.package === 'string' ? span.meta.package : null;
+    if (!name) continue;
+    const list = byPackage.get(name) ?? [];
+    list.push({ start: span.startMs, end: span.endMs });
+    byPackage.set(name, list);
+  }
+  return [...byPackage.entries()]
+    .map(([name, intervals]) => ({ name, ms: unionDuration(intervals) }))
+    .sort((a, b) => b.ms - a.ms);
+}
+
+function spanLabel(span: SpanRecord): string {
+  const operation = typeof span.meta.operation === 'string' ? span.meta.operation : null;
+  const pkg = typeof span.meta.package === 'string' ? span.meta.package : null;
+  const path = typeof span.meta.path === 'string' ? span.meta.path : null;
+  const qualifiers = [operation && operation !== pkg ? operation : null, pkg, path].filter(Boolean);
+  return qualifiers.length ? `${span.name}@${qualifiers.join('@')}` : span.name;
+}
+
+function slowWork(state: RunState): SpanRecord[] {
+  return state.spans
+    .filter((s) => s.name.startsWith('work.') && s.endMs !== null)
+    .sort((a, b) => durationOf(b) - durationOf(a))
+    .slice(0, 12);
+}
+
+interface EventLoopStall {
+  atMs: number;
+  lagMs: number;
+  overlaps: string[];
+}
+
+function eventLoopStalls(state: RunState): EventLoopStall[] {
+  const lags = state.spans
+    .filter((s) => s.name === 'event-loop.lag' && typeof s.meta.lagMs === 'number')
+    .map((s) => ({ atMs: s.startMs, lagMs: Number(s.meta.lagMs) }))
+    .sort((a, b) => b.lagMs - a.lagMs)
+    .slice(0, 10);
+
+  return lags.map(({ atMs, lagMs }) => {
+    const from = Math.max(0, atMs - lagMs);
+    const overlaps = state.spans
+      .filter((s) =>
+        s.name !== 'event-loop.lag' &&
+        s.endMs !== null &&
+        s.startMs <= atMs &&
+        s.endMs >= from,
+      )
+      .sort((a, b) => b.depth - a.depth || durationOf(a) - durationOf(b))
+      .map(spanLabel)
+      .filter((label, index, all) => all.indexOf(label) === index)
+      .slice(0, 8);
+    return { atMs, lagMs, overlaps };
+  });
+}
+
+interface TimeoutOverrun {
+  span: SpanRecord;
+  timeoutMs: number;
+  overrunMs: number;
+}
+
+function timeoutOverruns(state: RunState): TimeoutOverrun[] {
+  return state.spans
+    .filter((s) =>
+      (s.name === 'work.http' || s.name === 'work.archive') &&
+      s.endMs !== null &&
+      typeof s.meta.timeoutMs === 'number' &&
+      durationOf(s) > Number(s.meta.timeoutMs) + 100,
+    )
+    .map((span) => {
+      const timeoutMs = Number(span.meta.timeoutMs);
+      return { span, timeoutMs, overrunMs: durationOf(span) - timeoutMs };
+    })
+    .sort((a, b) => b.overrunMs - a.overrunMs)
+    .slice(0, 10);
+}
+
+function coalescedWaits(state: RunState): SpanRecord[] {
+  return state.spans
+    .filter((s) => s.name.startsWith('work.http-coalesced-') && s.endMs !== null)
+    .sort((a, b) => durationOf(b) - durationOf(a))
+    .slice(0, 10);
+}
+
+/** Where the same expensive identity ran more than once. */
 function repeatedOperations(state: RunState): { key: string; count: number; ms: number }[] {
   const REPEAT_TRACKED = new Set(['surface.current', 'surface.target', 'registry.lookup', 'evidence', 'api.diff', 'localization']);
   const byKey = new Map<string, { count: number; ms: number }>();
@@ -688,40 +705,37 @@ function repeatedOperations(state: RunState): { key: string; count: number; ms: 
     const identity = [span.name, span.meta.package, span.meta.version].filter(Boolean).join('@');
     const entry = byKey.get(identity) ?? { count: 0, ms: 0 };
     entry.count += 1;
-    entry.ms += span.endMs - span.startMs;
+    entry.ms += durationOf(span);
     byKey.set(identity, entry);
   }
   return [...byKey.entries()]
-    .filter(([, v]) => v.count > 1)
-    .map(([key, v]) => ({ key, count: v.count, ms: v.ms }))
+    .filter(([, value]) => value.count > 1)
+    .map(([key, value]) => ({ key, ...value }))
     .sort((a, b) => b.ms - a.ms);
 }
 
-/** The same subprocess label (e.g. `git ls-files`) invoked more than once in one run. */
 function repeatedExecCommands(exec: ExecRecord[]): { label: string; count: number; ms: number }[] {
   const byLabel = new Map<string, { count: number; ms: number }>();
-  for (const e of exec) {
-    const entry = byLabel.get(e.label) ?? { count: 0, ms: 0 };
-    entry.count += 1;
-    entry.ms += e.durationMs;
-    byLabel.set(e.label, entry);
+  for (const entry of exec) {
+    const current = byLabel.get(entry.label) ?? { count: 0, ms: 0 };
+    current.count += 1;
+    current.ms += entry.durationMs;
+    byLabel.set(entry.label, current);
   }
   return [...byLabel.entries()]
-    .filter(([, v]) => v.count > 1)
-    .map(([label, v]) => ({ label, count: v.count, ms: v.ms }))
+    .filter(([, value]) => value.count > 1)
+    .map(([label, value]) => ({ label, ...value }))
     .sort((a, b) => b.ms - a.ms);
 }
 
-/** Peak number of overlapping intervals — a real sweep, not a guess from request count or configured concurrency. */
 function maxOverlap(intervals: { start: number; end: number }[]): number {
   if (intervals.length === 0) return 0;
-  // Ends sort before starts at an identical timestamp, so two genuinely
-  // back-to-back (serial) requests are never counted as overlapping.
   const events: [number, number][] = [];
   for (const { start, end } of intervals) {
     events.push([start, 1]);
     events.push([Math.max(end, start), -1]);
   }
+  // Ends before starts at equal timestamps: back-to-back attempts are not concurrent.
   events.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   let current = 0;
   let max = 0;
@@ -735,7 +749,9 @@ function maxOverlap(intervals: { start: number; end: number }[]): number {
 interface NetworkByHost {
   host: string;
   count: number;
+  physicalCount: number;
   cumulativeMs: number;
+  physicalMs: number;
   meanMs: number;
   p95Ms: number;
   slowestMs: number;
@@ -744,21 +760,32 @@ interface NetworkByHost {
 function networkSummary(state: RunState) {
   const requests = state.httpRequests;
   const attempts = state.httpAttempts;
-  const byHost = new Map<string, number[]>();
-  for (const r of requests) {
-    const list = byHost.get(r.host) ?? [];
-    list.push(r.durationMs);
-    byHost.set(r.host, list);
+  const logicalByHost = new Map<string, number[]>();
+  const physicalByHost = new Map<string, number[]>();
+  for (const request of requests) {
+    const list = logicalByHost.get(request.host) ?? [];
+    list.push(request.durationMs);
+    logicalByHost.set(request.host, list);
   }
-  const hosts: NetworkByHost[] = [...byHost.entries()]
+  for (const attempt of attempts) {
+    const list = physicalByHost.get(attempt.host) ?? [];
+    list.push(attempt.durationMs);
+    physicalByHost.set(attempt.host, list);
+  }
+
+  const hosts: NetworkByHost[] = [...logicalByHost.entries()]
     .map(([host, durations]) => {
       const sorted = [...durations].sort((a, b) => a - b);
+      const physical = physicalByHost.get(host) ?? [];
       const cumulativeMs = sorted.reduce((a, b) => a + b, 0);
+      const physicalMs = physical.reduce((a, b) => a + b, 0);
       const p95 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.95))] ?? 0;
       return {
         host,
         count: sorted.length,
+        physicalCount: physical.length,
         cumulativeMs,
+        physicalMs,
         meanMs: cumulativeMs / sorted.length,
         p95Ms: p95,
         slowestMs: sorted[sorted.length - 1] ?? 0,
@@ -768,27 +795,26 @@ function networkSummary(state: RunState) {
 
   const revalidated = requests.filter((r) => r.cache === 'revalidated_304' || (r.cache === 'hit' && r.status === 304)).length;
   const networkRequired = requests.filter((r) => r.cache === 'miss' || r.cache === 'revalidated_304' || (r.cache === 'hit' && r.status === 304)).length;
-  // One retry count per logical request (recorded once, at its final
-  // attempt) — never summed per-attempt, which would overcount a
-  // twice-retried request as three retries instead of two.
-  const retries = requests.reduce((sum, r) => sum + (r.retries ?? 0), 0);
-  const backoffMs = requests.reduce((sum, r) => sum + (r.backoffMs ?? 0), 0);
-  const cumulativeMs = requests.reduce((sum, r) => sum + r.durationMs, 0);
-  const attemptCumulativeMs = attempts.reduce((sum, r) => sum + r.durationMs, 0);
-  const maxConcurrentAttempts = maxOverlap(attempts.map((r) => ({ start: r.startOffsetMs, end: r.startOffsetMs + r.durationMs })));
+  const retries = requests.reduce((sum, request) => sum + (request.retries ?? 0), 0);
+  const backoffMs = requests.reduce((sum, request) => sum + (request.backoffMs ?? 0), 0);
+  const cumulativeMs = requests.reduce((sum, request) => sum + request.durationMs, 0);
+  const attemptCumulativeMs = attempts.reduce((sum, attempt) => sum + attempt.durationMs, 0);
+  const maxConcurrentAttempts = maxOverlap(
+    attempts.map((attempt) => ({
+      start: attempt.startOffsetMs,
+      end: attempt.startOffsetMs + attempt.durationMs,
+    })),
+  );
 
-  // The same host+path fetched from the network (not served from cache) more
-  // than once in one run — wasted, evidence-backed, no guessing about why.
   const byResource = new Map<string, number>();
-  for (const r of requests) {
-    if (r.cache !== 'miss') continue;
-    const key = `${r.host}${r.path}`;
+  for (const request of requests) {
+    if (request.cache !== 'miss') continue;
+    const key = `${request.host}${request.path}`;
     byResource.set(key, (byResource.get(key) ?? 0) + 1);
   }
-  const repeatedFetches = [...byResource.entries()].filter(([, count]) => count > 1).sort((a, b) => b[1] - a[1]);
-
-  const slowest = [...requests].sort((a, b) => b.durationMs - a.durationMs).slice(0, 5);
-  const slowestAttempts = [...attempts].sort((a, b) => b.durationMs - a.durationMs).slice(0, 5);
+  const repeatedFetches = [...byResource.entries()]
+    .filter(([, count]) => count > 1)
+    .sort((a, b) => b[1] - a[1]);
 
   return {
     hosts,
@@ -802,10 +828,14 @@ function networkSummary(state: RunState) {
     attemptCount: attempts.length,
     maxConcurrentAttempts,
     repeatedFetches,
-    slowest,
-    slowestAttempts,
+    slowest: [...requests].sort((a, b) => b.durationMs - a.durationMs).slice(0, 5),
+    slowestAttempts: [...attempts].sort((a, b) => b.durationMs - a.durationMs).slice(0, 5),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Report
+// ---------------------------------------------------------------------------
 
 function render(state: RunState, status: string, finishMeta: Record<string, unknown>): string {
   const totalMs = state.now();
@@ -813,8 +843,12 @@ function render(state: RunState, status: string, finishMeta: Record<string, unkn
   const stages = stageBreakdown(state);
   const packages = packageBreakdown(state);
   const net = networkSummary(state);
+  const slowWorkSpans = slowWork(state);
+  const stalls = eventLoopStalls(state);
+  const overruns = timeoutOverruns(state);
+  const sharedWaits = coalescedWaits(state);
   const exec = state.execCommands;
-  const execCumulative = exec.reduce((sum, e) => sum + e.durationMs, 0);
+  const execCumulative = exec.reduce((sum, entry) => sum + entry.durationMs, 0);
   const slowestExec = [...exec].sort((a, b) => b.durationMs - a.durationMs).slice(0, 5);
   const execRepeats = repeatedExecCommands(exec);
   const repeats = repeatedOperations(state);
@@ -837,15 +871,72 @@ function render(state: RunState, status: string, finishMeta: Record<string, unkn
 
   lines.push('major stages:');
   if (stages.length === 0) lines.push('  (none recorded)');
-  for (const s of stages) {
-    const pct = totalMs > 0 ? ((s.ms / totalMs) * 100).toFixed(1) : '0.0';
-    lines.push(`  ${s.name.padEnd(28)} ${fmtSec(s.ms).padStart(8)}  ${pct.padStart(5)}%`);
+  for (const stage of stages) {
+    const pct = totalMs > 0 ? ((stage.ms / totalMs) * 100).toFixed(1) : '0.0';
+    lines.push(`  ${stage.name.padEnd(28)} ${fmtSec(stage.ms).padStart(8)}  ${pct.padStart(5)}%`);
   }
   lines.push('');
 
-  lines.push('slowest packages:');
+  lines.push('critical package spans:');
   if (packages.length === 0) lines.push('  (none recorded)');
-  for (const p of packages.slice(0, 10)) lines.push(`  ${p.name.padEnd(28)} ${fmtSec(p.ms).padStart(8)}`);
+  for (const pkg of packages.slice(0, 10)) {
+    const pct = totalMs > 0 ? ((pkg.ms / totalMs) * 100).toFixed(1) : '0.0';
+    lines.push(`  ${pkg.name.padEnd(28)} ${fmtSec(pkg.ms).padStart(8)}  ${pct.padStart(5)}%`);
+  }
+  lines.push('');
+
+  lines.push('slowest work spans:');
+  if (slowWorkSpans.length === 0) lines.push('  (none recorded)');
+  for (const work of slowWorkSpans) {
+    lines.push(`  ${fmtSec(durationOf(work)).padStart(8)} ${spanLabel(work)}${fmtMeta(work.meta)}`);
+  }
+  lines.push('');
+
+  lines.push('event loop:');
+  if (stalls.length === 0) {
+    lines.push('  no stalls >=50ms recorded');
+  } else {
+    lines.push(`  stalls_over_50ms: ${state.spans.filter((s) => s.name === 'event-loop.lag').length}`);
+    lines.push(`  max_lag: ${fmtMs(stalls[0]!.lagMs)}`);
+    lines.push('  worst stalls:');
+    for (const stall of stalls.slice(0, 5)) {
+      lines.push(
+        `    lag=${fmtMs(stall.lagMs)} callback_at=+${fmtMs(stall.atMs)}` +
+          `${stall.overlaps.length ? ` overlapping=${stall.overlaps.join(',')}` : ''}`,
+      );
+    }
+  }
+  lines.push('');
+
+  lines.push('timeout overruns:');
+  if (overruns.length === 0) {
+    lines.push('  (none recorded)');
+  } else {
+    for (const overrun of overruns) {
+      const span = overrun.span;
+      lines.push(
+        `  ${spanLabel(span)} duration=${fmtSec(durationOf(span))} timeout=${fmtMs(overrun.timeoutMs)} overrun=${fmtSec(overrun.overrunMs)}` +
+          ` abort_timer_fired=${String(span.meta.abortTimerFired ?? 'unknown')}` +
+          `${typeof span.meta.abortDelayMs === 'number' ? ` abort_delay=${fmtMs(Number(span.meta.abortDelayMs))}` : ''}` +
+          `${typeof span.meta.headersMs === 'number' ? ` headers=${fmtMs(Number(span.meta.headersMs))}` : ''}` +
+          `${typeof span.meta.bodyMs === 'number' ? ` body=${fmtMs(Number(span.meta.bodyMs))}` : ''}` +
+          `${typeof span.meta.requestKey === 'string' ? ` request_key=${span.meta.requestKey}` : ''}`,
+      );
+    }
+  }
+  lines.push('');
+
+  lines.push('coalesced waits:');
+  if (sharedWaits.length === 0) {
+    lines.push('  (none recorded)');
+  } else {
+    for (const wait of sharedWaits) {
+      lines.push(
+        `  ${fmtSec(durationOf(wait)).padStart(8)} ${spanLabel(wait)}` +
+          `${typeof wait.meta.requestKey === 'string' ? ` request_key=${wait.meta.requestKey}` : ''}`,
+      );
+    }
+  }
   lines.push('');
 
   lines.push('network:');
@@ -860,23 +951,33 @@ function render(state: RunState, status: string, finishMeta: Record<string, unkn
   lines.push(`  retry_backoff_time: ${fmtSec(net.backoffMs)}`);
   if (net.hosts.length) {
     lines.push('  by host:');
-    for (const h of net.hosts) {
+    for (const host of net.hosts) {
       lines.push(
-        `    ${h.host.padEnd(28)} requests=${h.count} cumulative=${fmtSec(h.cumulativeMs)} mean=${fmtMs(h.meanMs)} p95=${fmtMs(h.p95Ms)} slowest=${fmtMs(h.slowestMs)}`,
+        `    ${host.host.padEnd(28)} requests=${host.count} physical_attempts=${host.physicalCount}` +
+          ` cumulative=${fmtSec(host.cumulativeMs)} physical_time=${fmtSec(host.physicalMs)}` +
+          ` mean=${fmtMs(host.meanMs)} p95=${fmtMs(host.p95Ms)} slowest=${fmtMs(host.slowestMs)}`,
       );
     }
   }
   if (net.slowest.length) {
     lines.push('  slowest logical requests:');
-    for (const r of net.slowest) lines.push(`    ${fmtSec(r.durationMs).padStart(8)} ${r.method} ${r.host}${r.path}`);
+    for (const request of net.slowest) {
+      lines.push(
+        `    ${fmtSec(request.durationMs).padStart(8)} ${request.method} ${request.host}${request.path} cache=${request.cache}`,
+      );
+    }
   }
   if (net.slowestAttempts.length) {
     lines.push('  slowest network attempts:');
-    for (const r of net.slowestAttempts) lines.push(`    ${fmtSec(r.durationMs).padStart(8)} ${r.method} ${r.host}${r.path}`);
+    for (const attempt of net.slowestAttempts) {
+      lines.push(`    ${fmtSec(attempt.durationMs).padStart(8)} ${attempt.method} ${attempt.host}${attempt.path}`);
+    }
   }
   if (net.repeatedFetches.length) {
     lines.push('  repeated fetches (same resource, more than once):');
-    for (const [resource, count] of net.repeatedFetches.slice(0, 10)) lines.push(`    ${String(count).padStart(2)}x ${resource}`);
+    for (const [resource, count] of net.repeatedFetches.slice(0, 10)) {
+      lines.push(`    ${String(count).padStart(2)}x ${resource}`);
+    }
   }
   lines.push('');
 
@@ -885,26 +986,29 @@ function render(state: RunState, status: string, finishMeta: Record<string, unkn
   lines.push(`  cumulative_time: ${fmtSec(execCumulative)}`);
   if (slowestExec.length) {
     lines.push('  slowest:');
-    for (const e of slowestExec) lines.push(`    ${fmtSec(e.durationMs).padStart(8)} ${e.label}`);
+    for (const entry of slowestExec) lines.push(`    ${fmtSec(entry.durationMs).padStart(8)} ${entry.label}`);
   }
   if (execRepeats.length) {
     lines.push('  repeated commands:');
-    for (const r of execRepeats.slice(0, 10)) {
-      lines.push(`    ${r.label.padEnd(28)} ${String(r.count).padStart(2)}x   ${fmtSec(r.ms)} cumulative`);
+    for (const repeat of execRepeats.slice(0, 10)) {
+      lines.push(`    ${repeat.label.padEnd(28)} ${String(repeat.count).padStart(2)}x   ${fmtSec(repeat.ms)} cumulative`);
     }
   }
   lines.push('');
 
   lines.push('cache:');
   if (state.caches.size === 0) lines.push('  (none recorded)');
-  for (const [name, c] of [...state.caches.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-    const categorizedHits = c.memoryHits + c.diskHits + c.coalescedHits;
-    const uncategorizedHits = Math.max(0, c.hits - categorizedHits);
+  for (const [name, cache] of [...state.caches.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    const categorizedHits = cache.memoryHits + cache.diskHits + cache.coalescedHits;
+    const uncategorizedHits = Math.max(0, cache.hits - categorizedHits);
     const avoided = categorizedHits + uncategorizedHits;
-    const avoidanceDenominator = avoided + c.misses;
-    const avoidanceRate = avoidanceDenominator > 0 ? `${((100 * avoided) / avoidanceDenominator).toFixed(1)}%` : 'n/a';
+    const denominator = avoided + cache.misses;
+    const avoidanceRate = denominator > 0 ? `${((100 * avoided) / denominator).toFixed(1)}%` : 'n/a';
     lines.push(
-      `  ${name}: memory_hits=${c.memoryHits} disk_hits=${c.diskHits} coalesced_hits=${c.coalescedHits} uncategorized_hits=${uncategorizedHits} revalidated_304=${c.revalidated304} misses=${c.misses} writes=${c.writes} avoidance_rate=${avoidanceRate}`,
+      `  ${name}: memory_hits=${cache.memoryHits} disk_hits=${cache.diskHits}` +
+        ` coalesced_hits=${cache.coalescedHits} uncategorized_hits=${uncategorizedHits}` +
+        ` revalidated_304=${cache.revalidated304} misses=${cache.misses} writes=${cache.writes}` +
+        ` avoidance_rate=${avoidanceRate}`,
     );
   }
   lines.push('');
@@ -918,85 +1022,83 @@ function render(state: RunState, status: string, finishMeta: Record<string, unkn
 
   if (repeats.length) {
     lines.push('repeated operations:');
-    for (const r of repeats) lines.push(`  ${r.key.padEnd(28)} ${String(r.count).padStart(2)} executions   ${fmtSec(r.ms)} cumulative`);
+    for (const repeat of repeats) {
+      lines.push(`  ${repeat.key.padEnd(28)} ${String(repeat.count).padStart(2)} executions   ${fmtSec(repeat.ms)} cumulative`);
+    }
     lines.push('');
   }
 
   lines.push('diagnostic flags:');
-  const flags = diagnosticFlags({ totalMs, stages, packages, net, repeats, caches: state.caches, exec: state.execCommands });
+  const flags = diagnosticFlags({
+    totalMs,
+    packages,
+    net,
+    repeats,
+    caches: state.caches,
+    exec: state.execCommands,
+    stalls,
+    overruns,
+  });
   if (flags.length === 0) lines.push('  (none)');
-  for (const f of flags) lines.push(`  - ${f}`);
+  for (const flag of flags) lines.push(`  - ${flag}`);
   lines.push('');
 
   return lines.join('\n');
 }
 
 // ---------------------------------------------------------------------------
-// Deterministic diagnostic flags
-//
-// Simple, well-commented threshold heuristics — never an LLM, and never a
-// causal claim the recorded numbers don't actually support. Each one states
-// only the evidence: a share, a count, a duration — not a diagnosis of why.
+// Evidence-only flags
 // ---------------------------------------------------------------------------
 
-/** A single package eating more than this share of the run is worth naming directly. */
 const HOT_PACKAGE_SHARE = 0.15;
-/** More than this many requests per package considered suggests redundant fetching. */
 const HIGH_REQUESTS_PER_PACKAGE = 4;
-/** Below this hit rate, a cache that should be warm reads as broken rather than cold. */
 const LOW_CACHE_HIT_RATE = 0.3;
-/** Localization eating more than this share of the run scales with repo size, not package count. */
-const LOCALIZATION_DOMINANT_SHARE = 0.35;
-/** A single external command over this long is worth calling out on its own. */
 const SLOW_EXTERNAL_PROCESS_MS = 5000;
-/** A single HTTP request over this long is worth naming, independent of the rest of the run. */
 const SLOW_HTTP_REQUEST_MS = 3000;
-/** Enough network requests that "fully serial" is a meaningful, not coincidental, observation. */
 const MIN_REQUESTS_FOR_CONCURRENCY_NOTE = 10;
-/** More than this many retries across the run is worth surfacing on its own. */
 const HIGH_RETRY_COUNT = 5;
+const SIGNIFICANT_EVENT_LOOP_LAG_MS = 250;
 
 function diagnosticFlags(args: {
   totalMs: number;
-  stages: { name: string; ms: number }[];
   packages: { name: string; ms: number }[];
   net: ReturnType<typeof networkSummary>;
   repeats: { key: string; count: number; ms: number }[];
   caches: Map<string, CacheStats>;
   exec: ExecRecord[];
+  stalls: EventLoopStall[];
+  overruns: TimeoutOverrun[];
 }): string[] {
   const flags: string[] = [];
-  const { totalMs, stages, packages, net, repeats, caches, exec } = args;
+  const { totalMs, packages, net, repeats, caches, exec, stalls, overruns } = args;
 
   const hottest = packages[0];
   if (hottest && totalMs > 0 && hottest.ms / totalMs > HOT_PACKAGE_SHARE) {
-    // "Spanned", not "consumed": packages are analysed concurrently, so this
-    // is the fraction of wall-clock time this package's own span covered —
-    // not a claim that removing it would free up that share of the run.
-    flags.push(`HOT_PACKAGE: ${hottest.name} was the slowest package, spanning ${((hottest.ms / totalMs) * 100).toFixed(1)}% of the run's wall-clock time`);
+    flags.push(
+      `HOT_PACKAGE: ${hottest.name} held a critical package span for ${((hottest.ms / totalMs) * 100).toFixed(1)}% of the run's wall-clock time`,
+    );
   }
 
   if (packages.length > 0 && net.requestCount / packages.length > HIGH_REQUESTS_PER_PACKAGE) {
     flags.push(`HIGH_HTTP_REQUEST_COUNT: ${net.requestCount} logical HTTP requests were issued for ${packages.length} packages`);
   }
 
-  for (const r of repeats) {
-    if (r.key.startsWith('surface.')) {
-      flags.push(`DUPLICATE_SURFACE_WORK: ${r.key} was computed ${r.count} times (${fmtSec(r.ms)} cumulative)`);
+  for (const repeat of repeats) {
+    if (repeat.key.startsWith('surface.')) {
+      flags.push(`DUPLICATE_SURFACE_WORK: ${repeat.key} was computed ${repeat.count} times (${fmtSec(repeat.ms)} cumulative)`);
     }
   }
 
-  for (const [name, c] of caches) {
-    const avoided = c.memoryHits + c.diskHits + c.coalescedHits + Math.max(0, c.hits - c.memoryHits - c.diskHits - c.coalescedHits);
-    const total = avoided + c.misses;
+  for (const [name, cache] of caches) {
+    const avoided =
+      cache.memoryHits +
+      cache.diskHits +
+      cache.coalescedHits +
+      Math.max(0, cache.hits - cache.memoryHits - cache.diskHits - cache.coalescedHits);
+    const total = avoided + cache.misses;
     if (total >= 5 && avoided / total < LOW_CACHE_HIT_RATE) {
       flags.push(`LOW_CACHE_HIT_RATE: ${name} cache network avoidance rate was ${((avoided / total) * 100).toFixed(1)}%`);
     }
-  }
-
-  const localization = stages.find((s) => s.name === 'localization' || s.name.startsWith('localization'));
-  if (localization && totalMs > 0 && localization.ms / totalMs > LOCALIZATION_DOMINANT_SHARE) {
-    flags.push(`LOCALIZATION_DOMINANT: localization consumed ${((localization.ms / totalMs) * 100).toFixed(1)}% of total run time`);
   }
 
   const slowestExec = [...exec].sort((a, b) => b.durationMs - a.durationMs)[0];
@@ -1006,11 +1108,15 @@ function diagnosticFlags(args: {
 
   const slowestRequest = net.slowest[0];
   if (slowestRequest && slowestRequest.durationMs > SLOW_HTTP_REQUEST_MS) {
-    flags.push(`SLOW_HTTP_REQUEST: ${slowestRequest.method} ${slowestRequest.host}${slowestRequest.path} took ${fmtSec(slowestRequest.durationMs)}`);
+    flags.push(
+      `SLOW_HTTP_REQUEST: ${slowestRequest.method} ${slowestRequest.host}${slowestRequest.path} took ${fmtSec(slowestRequest.durationMs)} (cache=${slowestRequest.cache})`,
+    );
   }
 
   if (net.attemptCount >= MIN_REQUESTS_FOR_CONCURRENCY_NOTE && net.maxConcurrentAttempts <= 1) {
-    flags.push(`LOW_OBSERVED_CONCURRENCY: ${net.attemptCount} HTTP network attempts were made but the maximum observed attempt concurrency was ${net.maxConcurrentAttempts}`);
+    flags.push(
+      `LOW_OBSERVED_CONCURRENCY: ${net.attemptCount} HTTP network attempts were made but the maximum observed attempt concurrency was ${net.maxConcurrentAttempts}`,
+    );
   }
 
   if (net.retries > HIGH_RETRY_COUNT) {
@@ -1020,6 +1126,19 @@ function diagnosticFlags(args: {
   if (net.repeatedFetches.length > 0) {
     const [resource, count] = net.repeatedFetches[0]!;
     flags.push(`REPEATED_NETWORK_FETCH: ${resource} was fetched from the network ${count} times`);
+  }
+
+  if (stalls[0] && stalls[0].lagMs >= SIGNIFICANT_EVENT_LOOP_LAG_MS) {
+    flags.push(
+      `EVENT_LOOP_STALL: the event loop was delayed by ${fmtSec(stalls[0].lagMs)}; see the event-loop section for overlapping work`,
+    );
+  }
+
+  if (overruns[0]) {
+    const { span, timeoutMs, overrunMs } = overruns[0];
+    flags.push(
+      `HTTP_TIMEOUT_OVERRUN: ${spanLabel(span)} exceeded its ${fmtMs(timeoutMs)} timer by ${fmtSec(overrunMs)} (abort_timer_fired=${String(span.meta.abortTimerFired ?? 'unknown')})`,
+    );
   }
 
   return flags;
