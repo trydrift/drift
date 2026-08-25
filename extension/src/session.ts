@@ -834,7 +834,7 @@ export class DriftSession {
     this.push({ id: this.nextId(), kind: 'packages', headline, ids: [...ids] });
   }
 
-  updatePackages(headline: string, ids: readonly string[]): void {
+  updatePackages(headline: string, ids: readonly string[], notify = true): void {
     const item = this.items.find((entry) => entry.kind === 'packages');
     if (!item || item.kind !== 'packages') {
       this.packages(headline, ids);
@@ -842,7 +842,7 @@ export class DriftSession {
     }
     item.headline = headline;
     item.ids = [...ids];
-    this.emitter.fire();
+    if (notify) this.emitter.fire();
   }
 
   /** Ensure exactly one live changes card, at the end of the thread. */

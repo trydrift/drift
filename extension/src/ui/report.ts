@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import type { BreakingChange, Evidence, RemediationPlan } from '../../../src/types.js';
 import { confidenceDisplay, evidenceStrengthLabel } from '../../../src/report/confidence.js';
 import type { DriftState } from '../state.js';
-import { highlightCode, languageForEcosystem } from './highlight.js';
+import { HIGHLIGHT_STYLES, highlightCode, languageForEcosystem } from './highlight.js';
 
 /**
  * The Drift report panel.
@@ -16,6 +16,11 @@ import { highlightCode, languageForEcosystem } from './highlight.js';
  */
 export class DriftReportPanel {
   private static current: DriftReportPanel | undefined;
+  private static extensionUri: vscode.Uri | undefined;
+
+  static configureAssets(extensionUri: vscode.Uri): void {
+    DriftReportPanel.extensionUri = extensionUri;
+  }
 
   private readonly panel: vscode.WebviewPanel;
   private readonly disposables: vscode.Disposable[] = [];
@@ -43,7 +48,11 @@ export class DriftReportPanel {
       'drift.report',
       'Drift Report',
       { viewColumn: column, preserveFocus: true },
-      { enableScripts: true, retainContextWhenHidden: true },
+      {
+        enableScripts: true,
+        retainContextWhenHidden: true,
+        localResourceRoots: DriftReportPanel.extensionUri ? [DriftReportPanel.extensionUri] : [],
+      },
     );
 
     DriftReportPanel.current = new DriftReportPanel(panel, state);
@@ -69,6 +78,9 @@ export class DriftReportPanel {
     this.disposables.push(
       panel.onDidDispose(() => this.dispose()),
       state.onDidChange(() => this.render()),
+      state.onDidChangeCandidates(() => {
+        if (this.focus?.candidateId) this.render();
+      }),
       panel.webview.onDidReceiveMessage((message: IncomingMessage) => this.handle(message)),
     );
   }
@@ -107,7 +119,12 @@ export class DriftReportPanel {
   }
 
   private render(): void {
-    this.panel.webview.html = renderHtml(this.state, this.panel.webview, this.focus);
+    this.panel.webview.html = renderHtml(
+      this.state,
+      this.panel.webview,
+      this.focus,
+      DriftReportPanel.extensionUri,
+    );
   }
 
   private dispose(): void {
@@ -142,9 +159,20 @@ export interface FocusTarget {
 /* Rendering                                                           */
 /* ------------------------------------------------------------------ */
 
-function renderHtml(state: DriftState, webview: vscode.Webview, focus?: FocusTarget): string {
+function renderHtml(
+  state: DriftState,
+  webview: vscode.Webview,
+  focus?: FocusTarget,
+  extensionUri?: vscode.Uri,
+): string {
   const nonce = makeNonce();
   const plan = resolvePlan(state, focus);
+  const clientUri = extensionUri
+    ? webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'dist', 'highlight-client.js')).toString()
+    : undefined;
+  const workerUri = extensionUri
+    ? webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'dist', 'highlight-worker.js')).toString()
+    : undefined;
 
   const body = plan
     ? plan.breakingChanges.length > 0
@@ -158,12 +186,13 @@ function renderHtml(state: DriftState, webview: vscode.Webview, focus?: FocusTar
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Content-Security-Policy"
-      content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
+      content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}' ${clientUri ? webview.cspSource : ''}; worker-src blob:; connect-src ${webview.cspSource};">
 <title>Drift Report</title>
-<style>${STYLES}</style>
+<style>${STYLES}${HIGHLIGHT_STYLES}</style>
 </head>
 <body>
 ${body}
+${clientUri && workerUri ? `<script nonce="${nonce}" src="${escapeAttr(clientUri)}" data-worker-uri="${escapeAttr(workerUri)}"></script>` : ''}
 <script nonce="${nonce}">${SCRIPT}</script>
 </body>
 </html>`;
@@ -1245,6 +1274,7 @@ pre code { background: none; padding: 0; font-size: inherit; }
 
 const SCRIPT = `
 const vscode = acquireVsCodeApi();
+window.DriftHighlight?.mount(document);
 function closeMenus() {
   document.querySelectorAll('.split-menu').forEach((menu) => { menu.hidden = true; });
 }

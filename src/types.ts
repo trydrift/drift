@@ -220,7 +220,7 @@ export interface Evidence {
   locator?: string;
   title: string;
   /** Verbatim excerpt. Never paraphrased — this is what a reviewer audits. */
-  content: string;
+  readonly content: string;
   /** Present on computed sources; absent on prose sources. */
   findings?: StructuredFinding[];
   /**

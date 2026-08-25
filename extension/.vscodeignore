@@ -1,4 +1,4 @@
-# Only dist/extension.js, the manifest, media, README and LICENSE ship.
+# Only production bundles, the manifest, media, README and LICENSE ship.
 src/**
 test/**
 node_modules/**

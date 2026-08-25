@@ -259,6 +259,17 @@ describe('upstream confidence', () => {
     assert.ok(!score.evidence.some((e) => e.code === 'corroborated'), 'identical text is not corroboration');
   });
 
+  test('reuses a large immutable evidence fingerprint across findings', () => {
+    const large = evidence({ content: 'large registry field '.repeat(150_000) });
+    const input = { change: breaking(), evidence: [large] };
+    assessUpstream(input);
+
+    const started = performance.now();
+    for (let index = 0; index < 100; index += 1) assessUpstream(input);
+
+    assert.ok(performance.now() - started < 250, 'cached confidence scoring should not rescan megabytes per finding');
+  });
+
   test('a finding with no citations scores zero', () => {
     const score = assessUpstream({ change: breaking({ citations: [] }), evidence: [] });
     assert.equal(score.score, 0);

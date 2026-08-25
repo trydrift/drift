@@ -58,3 +58,5 @@ eval/results/*/cases.partial.jsonl
 # (eval/src/external/cli.ts's evidenceRoot). Per-run, large, and reproducible
 # from the pinned source the run's manifest records — not worth redistributing.
 eval/results/*/evidence/
+
+*.cpuprofile.txt

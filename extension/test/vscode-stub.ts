@@ -284,8 +284,12 @@ export const window = {
   showQuickPick: async () => undefined,
 };
 
+export const executedCommands: unknown[][] = [];
 export const commands = {
-  executeCommand: async () => undefined,
+  executeCommand: async (...args: unknown[]) => {
+    executedCommands.push(args);
+    return undefined;
+  },
   registerCommand: () => ({ dispose: () => undefined }),
 };
 
