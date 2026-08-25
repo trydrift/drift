@@ -158,6 +158,7 @@ export function parseHeader(content: string): SurfaceEntry[] {
   const lines = source.split('\n');
 
   let depth = 0;
+  const namespaceScopes: { path: string[]; depth: number }[] = [];
   /** Brace depth at which a private namespace opened, or `null` outside one. */
   let privateAt: number | null = null;
   /**
@@ -175,10 +176,15 @@ export function parseHeader(content: string): SurfaceEntry[] {
    */
   let macroPrivate = false;
 
+  const syncNamespaces = (): void => {
+    while (namespaceScopes.length > 0 && depth <= namespaceScopes.at(-1)!.depth) namespaceScopes.pop();
+  };
+
   /** Advance the depth over every line a declaration consumed. */
   const advance = (from: number, to: number): void => {
     for (let i = from; i <= to && i < lines.length; i++) depth += braceDelta(lines[i]!);
     if (privateAt !== null && depth <= privateAt) privateAt = null;
+    syncNamespaces();
   };
 
   for (let i = 0; i < lines.length; i++) {
@@ -201,6 +207,8 @@ export function parseHeader(content: string): SurfaceEntry[] {
     if (namespace) {
       if (namespace[1] && PRIVATE_NAMESPACE.test(namespace[1]) && privateAt === null) {
         privateAt = depth;
+      } else if (namespace[1]) {
+        namespaceScopes.push({ path: namespace[1].split('::').filter(Boolean), depth });
       }
       advance(i, i);
       continue;
@@ -218,7 +226,7 @@ export function parseHeader(content: string): SurfaceEntry[] {
       continue;
     }
 
-    const aggregate = parseAggregate(lines, i);
+    const aggregate = parseAggregate(lines, i, namespaceScopes.flatMap((scope) => scope.path));
     if (aggregate) {
       entries.push(aggregate.entry);
       advance(i, aggregate.endLine);
@@ -235,7 +243,7 @@ export function parseHeader(content: string): SurfaceEntry[] {
       continue;
     }
 
-    const declaration = parseDeclaration(statement.text);
+    const declaration = parseDeclaration(statement.text, namespaceScopes.flatMap((scope) => scope.path));
     if (declaration) entries.push(declaration);
     advance(i, statement.endLine);
     i = statement.endLine;
@@ -316,6 +324,7 @@ function parseMacro(line: string): SurfaceEntry | null {
 function parseAggregate(
   lines: readonly string[],
   start: number,
+  namespacePath: readonly string[],
 ): { entry: SurfaceEntry; endLine: number } | null {
   const head = lines[start]!.trim();
   const match =
@@ -353,12 +362,13 @@ function parseAggregate(
   const trailing = /\}\s*(\w+)\s*;/.exec(tail);
   const name = match[2] ?? trailing?.[1];
   if (!name) return null;
+  const qualifiedName = qualify(namespacePath, name);
 
   return {
     entry: {
-      name,
+      name: qualifiedName,
       kind: kindOfAggregate(keyword),
-      signature: collapse(`${keyword} ${name}`),
+      signature: collapse(`${keyword} ${qualifiedName}`),
       members: aggregateMembers(body.join('\n'), keyword),
       requiredMembers: [],
     },
@@ -425,7 +435,7 @@ function aggregateMembers(body: string, keyword: string): string[] {
     // FastLED came to report seven hundred removed exports for a release that
     // had reorganised some inline code.
     const method = /(\w+)\s*\([^)]*\)\s*(?:const\s*)?(?:noexcept\s*)?[;{=]/.exec(line);
-    if (method?.[1] && !RESERVED.has(method[1])) {
+    if (method?.[1] && !RESERVED.has(method[1]) && !/^operator\b/.test(line)) {
       members.push(method[1]);
       continue;
     }
@@ -449,7 +459,7 @@ function aggregateMembers(body: string, keyword: string): string[] {
  * changed signature would fire on every tidy-up commit. What remains — arity,
  * types, return type, constness — is exactly the set that does break a caller.
  */
-function parseDeclaration(statement: string): SurfaceEntry | null {
+function parseDeclaration(statement: string, namespacePath: readonly string[] = []): SurfaceEntry | null {
   const text = statement.trim().replace(/\s+/g, ' ');
   if (!text || text.startsWith('#')) return null;
 
@@ -461,7 +471,7 @@ function parseDeclaration(statement: string): SurfaceEntry | null {
     const name = pointer?.[1] ?? /(\w+)\s*(?:\[[^\]]*\])?$/.exec(typedef[1]!)?.[1];
     if (!name || RESERVED.has(name)) return null;
     return {
-      name,
+      name: qualify(namespacePath, name),
       kind: 'type',
       signature: collapse(text),
       members: [],
@@ -478,7 +488,7 @@ function parseDeclaration(statement: string): SurfaceEntry | null {
     const name = fn[2]!;
     if (RESERVED.has(name)) return null;
     return {
-      name,
+      name: qualify(namespacePath, name),
       kind: 'function',
       signature: `${returnType} ${name}(${parameterTypes(fn[3]!)})${fn[4] ? ' const' : ''}`,
       members: [],
@@ -491,7 +501,7 @@ function parseDeclaration(statement: string): SurfaceEntry | null {
     const name = variable[2]!;
     if (RESERVED.has(name)) return null;
     return {
-      name,
+      name: qualify(namespacePath, name),
       kind: 'variable',
       signature: collapse(text.replace(/;$/, '')),
       members: [],
@@ -500,6 +510,10 @@ function parseDeclaration(statement: string): SurfaceEntry | null {
   }
 
   return null;
+}
+
+function qualify(namespacePath: readonly string[], name: string): string {
+  return [...namespacePath, name].join('.');
 }
 
 /**

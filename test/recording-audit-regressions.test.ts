@@ -115,10 +115,10 @@ describe('recording audit: C and C++ public surface identity', () => {
 
   test('surviving qualified APIs remain present across releases', () => {
     const before = parseHeaderSurface([
-      { path: 'spdlog/logger.h', content: 'namespace spdlog { class logger { public: void level(); void name(); void sinks(); }; }' },
+      { path: 'spdlog/logger.h', content: 'namespace spdlog {\nclass logger {\n public:\n  void level();\n  void name();\n  void sinks();\n};\n}' },
     ]);
     const after = parseHeaderSurface([
-      { path: 'spdlog/details/logger.h', content: 'namespace spdlog { class logger { public: void level(); void name(); void sinks(); }; }' },
+      { path: 'spdlog/details/logger.h', content: 'namespace spdlog {\nclass logger {\n public:\n  void level();\n  void name();\n  void sinks();\n};\n}' },
     ]);
     assert.deepEqual(diffSurfaces(before, after), []);
   });
