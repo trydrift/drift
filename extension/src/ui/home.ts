@@ -87,6 +87,7 @@ import { openChangeDiff, openPackageVersionDiff, type ChangeDiffRequest } from '
 import { OperationGate } from './scan-start.js';
 import { runRepoDiagnostic } from '../run-diagnostics.js';
 import { countWork, startSpan } from '../../../src/util/diagnostics.js';
+import { chunkDetail, takeCandidateSummaryBatch } from './update-protocol.js';
 import {
   makeNonce,
   renderBody,
@@ -5786,15 +5787,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
   private sendCandidateBatch(surface: Surface): void {
     if (surface.awaitingSequence !== null || surface.pendingBody !== null) return;
-    const operations: { id: string; summary: string }[] = [];
-    let bytes = 0;
-    for (const [id, summary] of surface.pendingCandidates) {
-      const operationBytes = Buffer.byteLength(id) + Buffer.byteLength(summary) + 96;
-      if (operations.length >= 50 || (operations.length > 0 && bytes + operationBytes > 64 * 1024)) break;
-      operations.push({ id, summary });
-      bytes += operationBytes;
-      surface.pendingCandidates.delete(id);
-    }
+    const { operations, bytes } = takeCandidateSummaryBatch(surface.pendingCandidates);
     if (operations.length === 0) return;
     const sequence = ++surface.nextSequence;
     surface.awaitingSequence = sequence;
@@ -5853,7 +5846,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     countWork('extension.detail-requests');
     surface.detailTransfer = {
       requestId,
-      chunks: chunkText(html, 16_000),
+      chunks: chunkDetail(html),
       next: 0,
     };
     this.sendDetailChunk(surface);
@@ -5898,19 +5891,6 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 }
 
 /** 16k UTF-16 units are at most 64KiB as UTF-8, including all-surrogate text. */
-export function chunkText(value: string, characters: number): string[] {
-  if (value.length === 0) return [''];
-  const chunks: string[] = [];
-  for (let offset = 0; offset < value.length;) {
-    let end = Math.min(value.length, offset + characters);
-    const last = value.charCodeAt(end - 1);
-    if (end < value.length && last >= 0xd800 && last <= 0xdbff) end--;
-    chunks.push(value.slice(offset, end));
-    offset = end;
-  }
-  return chunks;
-}
-
 function candidatePresentationOf(candidate: UpgradeCandidate): string {
   if (candidate.status === 'pending' || candidate.status === 'checking' || candidate.status === 'upgrading') {
     return 'checking';
