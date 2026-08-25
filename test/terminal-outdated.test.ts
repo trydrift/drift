@@ -209,6 +209,16 @@ describe('the grouped report', () => {
     assert.ok(!out.includes('Safe to upgrade.'), 'the per-package summary belongs to the groups that need it');
   });
 
+  test('offers the bulk command only when a proven-safe upgrade exists', () => {
+    const { view, text } = harness();
+    view.report([candidate(), affected] as never, () => 'react');
+    assert.ok(text().includes('drift upgrade'));
+
+    const affectedOnly = harness();
+    affectedOnly.view.report([affected] as never, () => 'graphql');
+    assert.ok(!affectedOnly.text().includes('Upgrade all proven-safe packages'));
+  });
+
   test('says what the project’s own checks did when they were actually run', () => {
     // A prediction and a measurement read identically unless the page says
     // which it is.

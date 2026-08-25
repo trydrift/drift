@@ -6,8 +6,16 @@ import { promisify } from 'node:util';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { commitWorkingTreeManifests } from '../dist/repo/local-git.js';
-import { selectCandidate, selectorFor } from '../dist/cli.js';
+import {
+  groupUpgradeCandidates,
+  main,
+  performSafeUpgrades,
+  safeUpgradeCandidates,
+  selectCandidate,
+  selectorFor,
+} from '../dist/cli.js';
 import { createLogger } from '../dist/util/logger.js';
+import type { UpgradeCandidate } from '../src/upgrade/scan.js';
 
 const run = promisify(execFile);
 
@@ -131,7 +139,7 @@ describe('commitWorkingTreeManifests: making an uncommitted upgrade analysable',
  * the scan sorted first is a write to a manifest the developer did not name.
  */
 const candidate = (name: string, manifestPath: string, workspace?: string) =>
-  ({ name, manifestPath, ecosystem: 'npm', packageManager: 'npm', ...(workspace ? { workspace } : {}) }) as never;
+  ({ name, manifestPath, ecosystem: 'npm', packageManager: 'npm', ...(workspace ? { workspace } : {}) }) as unknown as UpgradeCandidate;
 
 describe('CLI package selection in a monorepo', () => {
   const logger = createLogger('error');
@@ -180,5 +188,130 @@ describe('CLI package selection in a monorepo', () => {
   test('an unknown package is reported, not silently skipped', () => {
     const all = [candidate('react', 'package.json')];
     assert.equal(selectCandidate(all, 'vue', logger), null);
+  });
+});
+
+describe('CLI safe bulk upgrade routing', () => {
+  async function runRejected(args: string[]): Promise<string> {
+    const errors: string[] = [];
+    const originalError = console.error;
+    console.error = (...parts: unknown[]) => errors.push(parts.map(String).join(' '));
+    try {
+      assert.equal(await main(['upgrade', ...args, '--repo', 'malformed']), 1);
+    } finally {
+      console.error = originalError;
+    }
+    return errors.join('\n');
+  }
+
+  test('rejects a bare outdated-only flag before starting a scan', async () => {
+    const error = await runRejected(['--upgrade']);
+    assert.match(error, /drift outdated --upgrade/);
+    assert.doesNotMatch(error, /Invalid repository/);
+  });
+
+  test('rejects a valued outdated-only flag by presence, not parsed value', async () => {
+    const error = await runRejected(['--latest', 'false']);
+    assert.match(error, /drift outdated --upgrade/);
+    assert.doesNotMatch(error, /Invalid repository/);
+  });
+});
+
+describe('CLI safe bulk upgrade selection', () => {
+  const candidateWithSeverity = (
+    name: string,
+    severity: 'clean' | 'upstream-only' | 'affected' | 'verification-failed' | 'unchecked' | 'error',
+    manifestPath = 'package.json',
+    packageManager = 'npm',
+  ) => ({
+    ...candidate(name, manifestPath),
+    packageManager,
+    status: severity === 'error' ? 'error' : 'ready',
+    breakingCount: severity === 'upstream-only' || severity === 'affected' ? 1 : 0,
+    impactCount: severity === 'affected' ? 1 : 0,
+    impactFiles: severity === 'affected' ? 1 : 0,
+    gaps: severity === 'unchecked' ? ['no evidence'] : [],
+    verification: severity === 'verification-failed' ? { status: 'failed' } : undefined,
+  }) as never;
+
+  test('selects only candidates Drift proved safe for this repository', () => {
+    const candidates = [
+      candidateWithSeverity('clean', 'clean'),
+      candidateWithSeverity('upstream', 'upstream-only'),
+      candidateWithSeverity('affected', 'affected'),
+      candidateWithSeverity('failed', 'verification-failed'),
+      candidateWithSeverity('unchecked', 'unchecked'),
+      candidateWithSeverity('error', 'error'),
+    ];
+
+    assert.deepEqual(safeUpgradeCandidates(candidates).map((entry) => entry.name), ['clean', 'upstream']);
+  });
+
+  test('groups one manifest and manager into one batch without reordering groups', () => {
+    const candidates = [
+      candidateWithSeverity('a', 'clean', 'package.json', 'npm'),
+      candidateWithSeverity('b', 'clean', 'package.json', 'npm'),
+      candidateWithSeverity('c', 'clean', 'packages/web/package.json', 'npm'),
+      candidateWithSeverity('d', 'clean', 'package.json', 'pnpm'),
+    ];
+
+    assert.deepEqual(
+      groupUpgradeCandidates(candidates).map((group) => group.map((entry) => entry.name)),
+      [['a', 'b'], ['c'], ['d']],
+    );
+  });
+
+  test('uses a batch where possible and otherwise falls back to one package at a time', async () => {
+    const candidates = [
+      candidateWithSeverity('a', 'clean'),
+      candidateWithSeverity('b', 'clean'),
+      candidateWithSeverity('c', 'clean', 'packages/web/package.json'),
+    ];
+    const batches: string[][] = [];
+    const singles: string[] = [];
+
+    const code = await performSafeUpgrades({
+      workspace: '/repo',
+      candidates,
+      result: {} as never,
+      logger: createLogger('error'),
+      resolveManager: async (entry) => entry,
+      installMany: async (_root, group) => {
+        batches.push(group.map((entry) => entry.name));
+        return group.length > 1;
+      },
+      installOne: async (_root, entry) => {
+        singles.push(entry.name);
+      },
+    });
+
+    assert.equal(code, 0);
+    assert.deepEqual(batches, [['a', 'b'], ['c']]);
+    assert.deepEqual(singles, ['c']);
+  });
+
+  test('stops after a failed group without starting later groups', async () => {
+    const candidates = [
+      candidateWithSeverity('a', 'clean', 'one/package.json'),
+      candidateWithSeverity('b', 'clean', 'two/package.json'),
+      candidateWithSeverity('c', 'clean', 'three/package.json'),
+    ];
+    const attempted: string[][] = [];
+
+    const code = await performSafeUpgrades({
+      workspace: '/repo',
+      candidates,
+      result: {} as never,
+      logger: createLogger('error'),
+      resolveManager: async (entry) => entry,
+      installMany: async (_root, group) => {
+        attempted.push(group.map((entry) => entry.name));
+        if (group[0]!.name === 'b') throw new Error('install failed');
+        return true;
+      },
+    });
+
+    assert.equal(code, 1);
+    assert.deepEqual(attempted, [['a'], ['b']]);
   });
 });

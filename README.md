@@ -242,7 +242,11 @@ Progress goes to stderr and the report to stdout, so `drift outdated >
 report.txt` captures a clean report while you watch the scan, and
 `drift outdated | grep` works. Colour and symbols carry emphasis only: every
 verdict is stated in words, so nothing is lost to a pipe, a CI log, or
-`NO_COLOR=1`. `--json` emits the whole scan result instead.
+`NO_COLOR=1`. `--json` emits the whole scan result instead. Once you have read
+the scan, `drift upgrade` installs every upgrade proved safe for your code in
+one batch; it deliberately leaves affected and unchecked packages untouched.
+Use `drift outdated --upgrade <package>` when you want to choose one package
+yourself.
 
 Once you're ready to act on the plan:
 
