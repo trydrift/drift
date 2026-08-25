@@ -86,6 +86,7 @@ import { DriftReportPanel } from './report.js';
 import { openChangeDiff, openPackageVersionDiff, type ChangeDiffRequest } from '../version-diff.js';
 import { OperationGate } from './scan-start.js';
 import { runRepoDiagnostic } from '../run-diagnostics.js';
+import { countWork, startSpan } from '../../../src/util/diagnostics.js';
 import {
   makeNonce,
   renderBody,
@@ -1453,7 +1454,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
               type: `${includeDev ? 'dev' : 'runtime'}-${deep ? 'deep' : 'quick'}`,
               mode: deep ? 'deep' : 'quick',
               repoRoot: ctx.root,
-              spanName: 'dependency.scan',
+              spanName: 'dependency.core-scan',
               spanMeta: {
                 trigger: options.quiet ? 'autostart' : 'command',
                 ...(repoLabel ? { repo: repoLabel } : {}),
@@ -1495,6 +1496,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
               else step.progress(repoLabel ? `${repoLabel}: ${phase}` : phase, detail, done, total);
             },
             onCandidate: (candidate) => {
+              countWork('dependency.candidate-events');
               this.candidates.set(candidate.id, candidate);
               // Replaced, never appended twice. Each candidate is now published
               // at least twice — once as `checking` the moment its analysis
@@ -5695,7 +5697,17 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private paint(): void {
     if (this.surfaces.length === 0) return;
 
+    const span = startSpan('extension.summary-render', {
+      candidates: this.candidates.size,
+      surfaces: this.surfaces.length,
+      heapUsed: process.memoryUsage().heapUsed,
+      rss: process.memoryUsage().rss,
+    });
     const body = renderBody(this.viewModel());
+    const bytes = Buffer.byteLength(body);
+    countWork('extension.summary-render-attempts');
+    countWork('extension.summary-render-bytes', bytes);
+    span.end({ bytes });
     for (const surface of this.surfaces) {
       if (surface.ready) this.sendBody(surface, body);
     }
@@ -5713,18 +5725,29 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     surface.pendingDetailRequests = [];
     surface.pendingCandidates.clear();
     surface.awaitingSequence = sequence;
+    countWork('extension.ui-messages');
+    countWork('extension.ui-payload-bytes', Buffer.byteLength(body));
+    const span = startSpan('extension.post-message', { type: 'render', sequence, bytes: Buffer.byteLength(body) });
     void surface.webview.postMessage({ type: 'render', sequence, body }).then(
       (accepted) => {
+        span.end({ accepted });
         if (accepted) return;
         if (surface.awaitingSequence === sequence) surface.awaitingSequence = null;
       },
       () => {
+        span.fail(new Error('webview rejected render message'));
         if (surface.awaitingSequence === sequence) surface.awaitingSequence = null;
       },
     );
   }
 
   private candidatesChanged(change: CandidateStateChange): void {
+    const span = startSpan('extension.candidate-publication', {
+      revision: change.revision,
+      added: change.added.length,
+      updated: change.updated.length,
+      removed: change.removed.length,
+    });
     let requiresLayout = change.added.length > 0 || change.removed.length > 0;
     for (const id of [...change.added, ...change.updated]) {
       const candidate = this.candidates.get(id);
@@ -5737,6 +5760,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     for (const id of change.removed) this.candidatePresentation.delete(id);
 
     if (requiresLayout) {
+      countWork('extension.candidate-layout-invalidations');
+      span.end({ mode: 'layout' });
       this.render();
       return;
     }
@@ -5755,6 +5780,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       }
       if (surface.awaitingSequence === null) this.sendCandidateBatch(surface);
     }
+    countWork('extension.candidate-upserts', change.updated.length);
+    span.end({ mode: 'patch' });
   }
 
   private sendCandidateBatch(surface: Surface): void {
@@ -5771,13 +5798,24 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     if (operations.length === 0) return;
     const sequence = ++surface.nextSequence;
     surface.awaitingSequence = sequence;
+    countWork('extension.ui-messages');
+    countWork('extension.ui-payload-bytes', bytes);
+    countWork('extension.candidate-batches');
+    const span = startSpan('extension.post-message', {
+      type: 'candidate-batch',
+      sequence,
+      operations: operations.length,
+      bytes,
+    });
     void surface.webview.postMessage({ type: 'candidateBatch', sequence, operations }).then(
       (accepted) => {
+        span.end({ accepted });
         if (accepted) return;
         if (surface.awaitingSequence === sequence) surface.awaitingSequence = null;
         this.render();
       },
       () => {
+        span.fail(new Error('webview rejected candidate batch'));
         if (surface.awaitingSequence === sequence) surface.awaitingSequence = null;
         this.render();
       },
@@ -5794,21 +5832,28 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       return;
     }
     const index = transfer.next++;
+    const chunk = transfer.chunks[index]!;
+    countWork('extension.detail-chunks');
+    countWork('extension.detail-payload-bytes', Buffer.byteLength(chunk));
     void surface.webview.postMessage({
       type: 'candidateDetailChunk',
       requestId: transfer.requestId,
       index,
       total: transfer.chunks.length,
-      chunk: transfer.chunks[index],
+      chunk,
     });
   }
 
   private startDetailTransfer(surface: Surface, id: string, requestId: string): void {
     const candidate = this.candidates.get(id);
     if (!candidate || this.busy) return;
+    const span = startSpan('extension.detail-render', { candidateId: id });
+    const html = renderCandidateBody(candidate);
+    span.end({ bytes: Buffer.byteLength(html) });
+    countWork('extension.detail-requests');
     surface.detailTransfer = {
       requestId,
-      chunks: chunkText(renderCandidateBody(candidate), 16_000),
+      chunks: chunkText(html, 16_000),
       next: 0,
     };
     this.sendDetailChunk(surface);
