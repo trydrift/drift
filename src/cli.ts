@@ -276,6 +276,8 @@ Options for \`outdated\`:
                               Requires verify.enabled: true in drift.yml
                               (the default)
   --log-level <level>         debug | info | warn | error. Default: info
+  --log                       Persist a redacted diagnostic run log under
+                              .git/drift for this run. Off by default
 
 Options for \`analyze\`:
   --repo <owner/name>         Repository to analyse. Default: the git remote
@@ -298,6 +300,8 @@ Options for \`analyze\`:
                               Requires verify.enabled: true in drift.yml
                               (the default)
   --log-level <level>         debug | info | warn | error. Default: info
+  --log                       Persist a redacted diagnostic run log under
+                              .git/drift for this run. Off by default
 
 Options for \`fix\` (accepts every \`analyze\` option too):
   --plan                      Print every deterministic fix plan and stop.
@@ -332,6 +336,8 @@ Options for \`pr\`:
                               possible. Default: $GITHUB_TOKEN, then
                               \`gh auth token\`, then an interactive
                               \`gh auth login\` browser sign-in
+  --log                       Persist a redacted diagnostic run log under
+                              .git/drift for this run. Off by default
 
 \`analyze\` never writes anything: no branches, no issues, no agent tasks — and
 reads the local checkout directly, like the VS Code extension, so it never
@@ -429,7 +435,7 @@ export async function main(argv: string[]): Promise<number> {
   const flags = parseFlags(rest);
   const repoRoot = command && REPO_COMMANDS.has(command) ? resolve(typeof flags.dir === 'string' ? flags.dir : process.cwd()) : null;
 
-  const runLog = repoRoot
+  const runLog = repoRoot && flags.log === true
     ? startRunLog({
         command: redactCommand(argv),
         mode: flags.verify ? 'deep' : 'quick',
