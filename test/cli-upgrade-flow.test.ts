@@ -8,6 +8,7 @@ import { join } from 'node:path';
 import { commitWorkingTreeManifests } from '../dist/repo/local-git.js';
 import {
   groupUpgradeCandidates,
+  main,
   performSafeUpgrades,
   safeUpgradeCandidates,
   selectCandidate,
@@ -186,6 +187,32 @@ describe('CLI package selection in a monorepo', () => {
   test('an unknown package is reported, not silently skipped', () => {
     const all = [candidate('react', 'package.json')];
     assert.equal(selectCandidate(all, 'vue', logger), null);
+  });
+});
+
+describe('CLI safe bulk upgrade routing', () => {
+  async function runRejected(args: string[]): Promise<string> {
+    const errors: string[] = [];
+    const originalError = console.error;
+    console.error = (...parts: unknown[]) => errors.push(parts.map(String).join(' '));
+    try {
+      assert.equal(await main(['upgrade', ...args, '--repo', 'malformed']), 1);
+    } finally {
+      console.error = originalError;
+    }
+    return errors.join('\n');
+  }
+
+  test('rejects a bare outdated-only flag before starting a scan', async () => {
+    const error = await runRejected(['--upgrade']);
+    assert.match(error, /drift outdated --upgrade/);
+    assert.doesNotMatch(error, /Invalid repository/);
+  });
+
+  test('rejects a valued outdated-only flag by presence, not parsed value', async () => {
+    const error = await runRejected(['--latest', 'false']);
+    assert.match(error, /drift outdated --upgrade/);
+    assert.doesNotMatch(error, /Invalid repository/);
   });
 });
 
