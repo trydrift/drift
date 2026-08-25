@@ -874,6 +874,18 @@ function searchFiles(
     const { lines } = view;
 
     for (const symbol of change.symbols) {
+      const derivedOwner = ownerForDerivedSymbol(change, symbol);
+      // A bare member retained as a search candidate is useful for aliases and
+      // destructuring, but it is not identity by itself. It becomes actionable
+      // only when this file explicitly binds the qualified owner from the
+      // dependency. This prevents `TouchListWrapper.StateError` from becoming
+      // Dart core `StateError`, and `basic_cstring_view.c_str` from becoming
+      // every unrelated C++ string call.
+      if (
+        derivedOwner &&
+        (isPrimitiveLeaf(symbol) || !relevantImports.some((record) => record.bindings.includes(derivedOwner)))
+      ) continue;
+
       const matcher = invocationOnly ? invocationMatcherFor(symbol) : matcherFor(symbol);
       if (!matcher) continue;
 
@@ -1090,7 +1102,9 @@ function invocationMatcherFor(symbol: string): RegExp | null {
   // A path-like symbol is a URL or a module specifier, never a callee.
   if (trimmed.startsWith('/') || trimmed.startsWith('@')) return matcherFor(trimmed);
 
-  const escaped = trimmed.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+  const escaped = trimmed
+    .replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
+    .replace(/\\\./g, '(?:\\.|::)');
   const leading = /^\w/.test(trimmed) ? '\\b' : '(?<![\\w$])';
   // A type-argument list may contain nested angle brackets but never a brace,
   // a semicolon, or an assignment — those end the expression instead.
@@ -1374,7 +1388,9 @@ function matcherFor(symbol: string): RegExp | null {
   const trimmed = symbol.trim();
   if (!trimmed || trimmed.length < 2) return null;
 
-  const escaped = trimmed.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+  const escaped = trimmed
+    .replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
+    .replace(/\\\./g, '(?:\\.|::)');
 
   // URL paths: match as a string fragment rather than an identifier, since
   // `/users` is not an identifier in any language.
@@ -1387,6 +1403,21 @@ function matcherFor(symbol: string): RegExp | null {
   const trailing = /\w$/.test(trimmed) ? '\\b' : '(?![\\w$])';
 
   return new RegExp(`${leading}${escaped}${trailing}`);
+}
+
+/** The owner of a qualified symbol when `symbol` is a derived bare leaf. */
+function ownerForDerivedSymbol(change: BreakingChange, symbol: string): string | undefined {
+  if (symbol.includes('.') || symbol.includes('::')) return undefined;
+  for (const candidate of change.symbols) {
+    if (candidate === symbol || (!candidate.includes('.') && !candidate.includes('::'))) continue;
+    const parts = candidate.split(/[.:]+/).filter(Boolean);
+    if (parts.at(-1) === symbol && parts.length >= 2) return parts.at(-2);
+  }
+  return undefined;
+}
+
+function isPrimitiveLeaf(symbol: string): boolean {
+  return /^(?:u?int(?:8|16|32|64|max|ptr)?_t|size_t|ssize_t|ptrdiff_t|wchar_t|char\d*_t)$/.test(symbol);
 }
 
 /**
