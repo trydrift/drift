@@ -87,6 +87,7 @@ import { openChangeDiff, openPackageVersionDiff, type ChangeDiffRequest } from '
 import { OperationGate } from './scan-start.js';
 import { runRepoDiagnostic } from '../run-diagnostics.js';
 import { countWork, startSpan } from '../../../src/util/diagnostics.js';
+import { clearHttpCache } from '../../../src/util/http.js';
 import { chunkDetail, takeCandidateSummaryBatch } from './update-protocol.js';
 import {
   makeNonce,
@@ -1492,7 +1493,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
               },
               isCancelled: () => token.isCancellationRequested,
             },
-            async () => scanUpgrades({
+            async () => scanWithTransientHttpCache({
             root: ctx.root,
             repo: ctx.repo,
             managers,
@@ -5728,11 +5729,14 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private paint(): void {
     if (this.surfaces.length === 0) return;
 
+    const memory = process.memoryUsage();
     const span = startSpan('extension.summary-render', {
       candidates: this.candidates.size,
       surfaces: this.surfaces.length,
-      heapUsed: process.memoryUsage().heapUsed,
-      rss: process.memoryUsage().rss,
+      heapUsed: memory.heapUsed,
+      external: memory.external,
+      arrayBuffers: memory.arrayBuffers,
+      rss: memory.rss,
     });
     const body = renderBody(this.viewModel());
     const bytes = Buffer.byteLength(body);
@@ -6039,6 +6043,30 @@ function candidatePresentationOf(candidate: UpgradeCandidate): string {
   }
   const severity = severityOf(candidate);
   return severity === 'upstream-only' ? 'clean' : severity;
+}
+
+async function scanWithTransientHttpCache(
+  options: Parameters<typeof scanUpgrades>[0],
+): Promise<Awaited<ReturnType<typeof scanUpgrades>>> {
+  try {
+    return await scanUpgrades(options);
+  } finally {
+    const before = process.memoryUsage();
+    const release = startSpan('extension.http-memory-release', {
+      heapUsed: before.heapUsed,
+      external: before.external,
+      arrayBuffers: before.arrayBuffers,
+      rss: before.rss,
+    });
+    clearHttpCache();
+    const after = process.memoryUsage();
+    release.end({
+      heapUsed: after.heapUsed,
+      external: after.external,
+      arrayBuffers: after.arrayBuffers,
+      rss: after.rss,
+    });
+  }
 }
 
 /**
