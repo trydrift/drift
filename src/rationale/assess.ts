@@ -72,6 +72,7 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
 
   const affected = impactSites.length;
   const files = new Set(impactSites.map((site) => site.file)).size;
+  const actionable = impactSites.some((site) => site.confidence === 'high');
   const decisions = input.breakingChanges.filter((change) => NEEDS_A_DECISION.has(change.kind));
   const mechanical = input.breakingChanges.length - decisions.length;
 
@@ -129,7 +130,7 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
 
   /* Then the conclusion those facts support. */
 
-  const recommendation = decide(input, { affected, decisions: decisions.length });
+  const recommendation = decide(input, { affected, decisions: decisions.length, actionable });
   const confidence = judgeConfidence(input);
 
   if (input.gaps.length > 0) {
@@ -146,7 +147,7 @@ export function assessUpgrade(input: AssessmentInput): UpgradeAssessment {
 
 function decide(
   input: AssessmentInput,
-  counts: { affected: number; decisions: number },
+  counts: { affected: number; decisions: number; actionable: boolean },
 ): Recommendation {
   const { security, maintenance, license } = input;
 
@@ -162,6 +163,10 @@ function decide(
   if (maintenance.facts.some((fact) => fact.polarity === 'blocks')) return 'do-not-upgrade-yet';
 
   if (counts.affected > 0) {
+    // Lexical or owner-ambiguous matches are useful leads, but they do not
+    // establish that this repository needs a migration. Only a semantically
+    // resolved (high-confidence) site can support that headline.
+    if (!counts.actionable) return 'upgrade-after-review';
     return counts.decisions > 0 ? 'manual-migration-required' : 'upgrade-after-review';
   }
 
