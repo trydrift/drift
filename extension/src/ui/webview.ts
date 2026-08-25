@@ -20,6 +20,7 @@ import type { Vulnerability } from '../../../src/rationale/types.js';
 import type { CheckOutcome } from '../../../src/verification/checks.js';
 import { confidenceDisplay } from '../../../src/report/confidence.js';
 import { HIGHLIGHT_STYLES, languageForEcosystem, renderHighlightedCode } from './highlight.js';
+import { transcriptScrollAdjustment } from '../webview/thread-patches.js';
 
 /**
  * The panel's markup.
@@ -3865,6 +3866,7 @@ li.task.unchanged .task-label, li.task.skipped .task-label { color: var(--vscode
 const SCRIPT = `
 const vscode = acquireVsCodeApi();
 const root = document.getElementById('root');
+const transcriptScrollAdjustment = ${transcriptScrollAdjustment.toString()};
 
 /* The panel is re-rendered constantly — a scan reports progress many times a
    second — and everything the developer is in the middle of has to survive
@@ -4539,13 +4541,17 @@ window.addEventListener('message', (event) => {
     return;
   }
   if (data?.type === 'thread-replace' && data.epoch === currentEpoch && thread) {
-    const bottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 24;
+    const atBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 24;
     const previous = threadItemById(String(data.id)); const next = parseOneElement(data.html);
     if (!previous || !next) return;
-    const beforeTop = previous.getBoundingClientRect().top;
+    const threadRect = thread.getBoundingClientRect();
+    const previousRect = previous.getBoundingClientRect();
+    const previousHeight = previousRect.height;
     captureThreadItemState(previous); previous.replaceWith(next); mountThreadItem(next);
-    const afterTop = next.getBoundingClientRect().top;
-    if (bottom) thread.scrollTop = thread.scrollHeight; else thread.scrollTop += afterTop - beforeTop;
+    const nextHeight = next.getBoundingClientRect().height;
+    const adjustment = transcriptScrollAdjustment({ atBottom, threadTop: threadRect.top, threadBottom: threadRect.bottom, previousTop: previousRect.top, previousBottom: previousRect.bottom, previousHeight, nextHeight });
+    if (adjustment === 'bottom') thread.scrollTop = thread.scrollHeight;
+    else if (adjustment !== null) thread.scrollTop = Math.max(0, Math.min(thread.scrollTop + adjustment, thread.scrollHeight - thread.clientHeight));
     if (next.querySelector('[data-type]')) typewriter();
     window.DriftHighlight?.mount(next);
     unlockActions();
