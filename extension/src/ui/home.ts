@@ -280,6 +280,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     this.disposables.push(
       state.onDidChange(() => this.render()),
+      state.onDidChangeCandidates(() => this.render()),
       session.onDidChange(() => {
         this.render();
         this.autosave();

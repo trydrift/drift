@@ -22,7 +22,7 @@ export class DriftDependencyTreeProvider
   private readonly sub: vscode.Disposable;
 
   constructor(private readonly state: DriftState) {
-    this.sub = state.onDidChange(() => this.emitter.fire());
+    this.sub = state.onDidChangeCandidates(() => this.emitter.fire());
   }
 
   dispose(): void {
@@ -114,7 +114,7 @@ export class ManifestLensProvider implements vscode.CodeLensProvider, vscode.Dis
   private readonly sub: vscode.Disposable;
 
   constructor(private readonly state: DriftState) {
-    this.sub = state.onDidChange(() => this.emitter.fire());
+    this.sub = state.onDidChangeCandidates(() => this.emitter.fire());
   }
 
   dispose(): void {
@@ -160,15 +160,9 @@ export class ManifestLensProvider implements vscode.CodeLensProvider, vscode.Dis
 }
 
 export class ManifestHoverProvider implements vscode.HoverProvider, vscode.Disposable {
-  private readonly sub: vscode.Disposable;
+  constructor(private readonly state: DriftState) {}
 
-  constructor(private readonly state: DriftState) {
-    this.sub = state.onDidChange(() => undefined);
-  }
-
-  dispose(): void {
-    this.sub.dispose();
-  }
+  dispose(): void {}
 
   provideHover(document: vscode.TextDocument, position: vscode.Position): vscode.Hover | undefined {
     if (!isManifest(document.uri.fsPath)) return undefined;

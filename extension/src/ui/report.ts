@@ -78,6 +78,9 @@ export class DriftReportPanel {
     this.disposables.push(
       panel.onDidDispose(() => this.dispose()),
       state.onDidChange(() => this.render()),
+      state.onDidChangeCandidates(() => {
+        if (this.focus?.candidateId) this.render();
+      }),
       panel.webview.onDidReceiveMessage((message: IncomingMessage) => this.handle(message)),
     );
   }

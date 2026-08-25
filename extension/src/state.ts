@@ -45,14 +45,25 @@ export interface RepoRoot {
   subprojects: NestedProject[];
 }
 
+export interface CandidateStateChange {
+  revision: number;
+  added: string[];
+  updated: string[];
+  removed: string[];
+}
+
 export class DriftState {
   private _status: DriftStatus = { kind: 'idle' };
   private _roots: RepoRoot[] = [];
   private _activeRootPath: string | null = null;
   private _candidates: UpgradeCandidate[] = [];
+  private candidateRevision = 0;
+  private readonly contextValues = new Map<string, unknown>();
 
   private readonly emitter = new vscode.EventEmitter<DriftStatus>();
   readonly onDidChange = this.emitter.event;
+  private readonly candidateEmitter = new vscode.EventEmitter<CandidateStateChange>();
+  readonly onDidChangeCandidates = this.candidateEmitter.event;
 
   get status(): DriftStatus {
     return this._status;
@@ -93,9 +104,16 @@ export class DriftState {
   }
 
   setCandidates(candidates: readonly UpgradeCandidate[]): void {
+    const previous = new Set(this._candidates.map((candidate) => candidate.id));
+    const next = new Set(candidates.map((candidate) => candidate.id));
     this._candidates = [...candidates];
-    this.emitter.fire(this._status);
-    void vscode.commands.executeCommand('setContext', 'drift.hasDependencyScan', this._candidates.length > 0);
+    this.candidateEmitter.fire({
+      revision: ++this.candidateRevision,
+      added: [...next].filter((id) => !previous.has(id)),
+      updated: [...next].filter((id) => previous.has(id)),
+      removed: [...previous].filter((id) => !next.has(id)),
+    });
+    this.setContext('drift.hasDependencyScan', this._candidates.length > 0);
   }
 
   setRoots(roots: readonly RepoRoot[]): void {
@@ -118,7 +136,7 @@ export class DriftState {
     // produced for the *previous* root. Nothing here is per-root, so leaving
     // them in place would let a later "Fix All" apply one repository's plan —
     // file scopes, commit units, everything — inside a different one.
-    this._candidates = [];
+    this.setCandidates([]);
     this.set({ kind: 'idle' });
   }
 
@@ -149,25 +167,24 @@ export class DriftState {
     this.emitter.fire(status);
     // Drives `when` clauses in package.json so menu items appear and disappear
     // in step with real state rather than being always-on and sometimes broken.
-    void vscode.commands.executeCommand('setContext', 'drift.status', status.kind);
-    void vscode.commands.executeCommand(
-      'setContext',
-      'drift.hasFindings',
-      status.kind === 'findings' || status.kind === 'fixing',
-    );
+    this.setContext('drift.status', status.kind);
+    this.setContext('drift.hasFindings', status.kind === 'findings' || status.kind === 'fixing');
     // Only true when something in *this* repository is affected; it gates the
     // "fix" affordances, which are meaningless without a local impact site.
-    void vscode.commands.executeCommand(
-      'setContext',
-      'drift.hasImpact',
-      'plan' in status ? Boolean(status.plan?.impactSites.length) : false,
-    );
-    void vscode.commands.executeCommand('setContext', 'drift.reviewing', status.kind === 'reviewing');
-    void vscode.commands.executeCommand('setContext', 'drift.hasDependencyScan', this._candidates.length > 0);
+    this.setContext('drift.hasImpact', 'plan' in status ? Boolean(status.plan?.impactSites.length) : false);
+    this.setContext('drift.reviewing', status.kind === 'reviewing');
+    this.setContext('drift.hasDependencyScan', this._candidates.length > 0);
+  }
+
+  private setContext(key: string, value: unknown): void {
+    if (this.contextValues.get(key) === value && this.contextValues.has(key)) return;
+    this.contextValues.set(key, value);
+    void vscode.commands.executeCommand('setContext', key, value);
   }
 
   dispose(): void {
     this.emitter.dispose();
+    this.candidateEmitter.dispose();
   }
 }
 
