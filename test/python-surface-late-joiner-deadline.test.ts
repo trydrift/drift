@@ -192,7 +192,7 @@ describe('Python single-flight: each caller owns its own timeoutMs budget', () =
     try {
       // A: a tiny budget that cannot survive the archive request being held
       // open. A becomes the owner of the in-flight computation.
-      const runA = pythonSurface.compute(makeRequest(name, '1.0.0', '2.0.0', 80, wA));
+      const runA = pythonSurface.compute(makeRequest(name, '1.0.0', '2.0.0', 500, wA));
 
       // Deterministic barrier: wait until A has genuinely dispatched its
       // archive request (become the owner) before B joins.
@@ -209,7 +209,7 @@ describe('Python single-flight: each caller owns its own timeoutMs budget', () =
       assert.equal(
         resultA.available,
         false,
-        `A must not be rescued past its own 80ms budget just because B joined with a larger one, got: ${JSON.stringify(resultA)}`,
+        `A must not be rescued past its own 500ms budget just because B joined with a larger one, got: ${JSON.stringify(resultA)}`,
       );
       assert.equal(
         resultB.available,
@@ -285,12 +285,12 @@ describe('Python single-flight: each caller owns its own timeoutMs budget', () =
       });
 
       // B: a tiny budget, joining the same in-flight computation.
-      const resultB = await pythonSurface.compute(makeRequest(name, '1.0.0', '2.0.0', 80, wB));
+      const resultB = await pythonSurface.compute(makeRequest(name, '1.0.0', '2.0.0', 500, wB));
 
       assert.equal(
         resultB.available,
         false,
-        `B must give up on its own 80ms schedule rather than wait indefinitely for A's still-open request, got: ${JSON.stringify(resultB)}`,
+        `B must give up on its own 500ms schedule rather than wait indefinitely for A's still-open request, got: ${JSON.stringify(resultB)}`,
       );
       // B detaching must not have cancelled A's still-useful, still-running
       // computation -- confirmed before the gate is ever released, so this
