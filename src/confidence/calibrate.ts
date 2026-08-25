@@ -76,6 +76,16 @@ const ORIGIN_WEIGHT: Record<string, number> = {
   heuristic: 0.2,
 };
 
+/**
+ * Evidence snapshots are immutable for the lifetime of an analysis. A single
+ * registry or artifact record can support hundreds of findings, and confidence
+ * is recalculated more than once while the plan is assembled. Normalising and
+ * hashing a multi-megabyte record for every finding caused multi-second event
+ * loop stalls, so retain the content fingerprint with the record object.
+ * Weak keys let completed scans and their large evidence strings be collected.
+ */
+const evidenceFingerprints = new WeakMap<Evidence, string>();
+
 export interface UpstreamInput {
   change: BreakingChange;
   evidence: readonly Evidence[];
@@ -176,9 +186,13 @@ function independentOrigins(cited: readonly Evidence[]): Map<string, Evidence[]>
   const seenContent = new Set<string>();
 
   for (const record of cited) {
-    const fingerprint = createHash('sha256')
-      .update(record.content.replace(/\s+/g, ' ').trim().toLowerCase())
-      .digest('hex');
+    let fingerprint = evidenceFingerprints.get(record);
+    if (fingerprint === undefined) {
+      fingerprint = createHash('sha256')
+        .update(record.content.replace(/\s+/g, ' ').trim().toLowerCase())
+        .digest('hex');
+      evidenceFingerprints.set(record, fingerprint);
+    }
 
     if (seenContent.has(fingerprint)) continue;
     seenContent.add(fingerprint);
