@@ -19,7 +19,7 @@ import type { BreakingChange, Evidence, RemediationPlan } from '../../../src/typ
 import type { Vulnerability } from '../../../src/rationale/types.js';
 import type { CheckOutcome } from '../../../src/verification/checks.js';
 import { confidenceDisplay } from '../../../src/report/confidence.js';
-import { highlightCode, languageForEcosystem } from './highlight.js';
+import { HIGHLIGHT_STYLES, highlightCode, languageForEcosystem } from './highlight.js';
 
 /**
  * The panel's markup.
@@ -260,17 +260,29 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
  * script — which, on a panel holding a full scan, is the difference between a
  * click landing instantly and a click landing a second later.
  */
-export function renderPanel(vm: ViewModel): string {
+export interface WebviewAssets {
+  highlightClientUri: string;
+  highlightWorkerUri: string;
+  cspSource: string;
+}
+
+export function renderPanel(vm: ViewModel, assets?: WebviewAssets): string {
+  const assetCsp = assets ? ` ${assets.cspSource}` : '';
+  const workerCsp = assets ? `; worker-src blob:; connect-src ${assets.cspSource}` : '';
+  const client = assets
+    ? `<script nonce="${vm.nonce}" src="${escapeAttr(assets.highlightClientUri)}" data-worker-uri="${escapeAttr(assets.highlightWorkerUri)}"></script>`
+    : '';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${vm.nonce}';">
-<style>${STYLES}</style>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${vm.nonce}'${assetCsp}${workerCsp};">
+<style>${STYLES}${HIGHLIGHT_STYLES}</style>
 </head>
 <body>
   <div id="root">${renderBody(vm)}</div>
+  ${client}
   <script nonce="${vm.nonce}">${SCRIPT}</script>
 </body>
 </html>`;
@@ -4059,6 +4071,7 @@ function mount() {
   thread = document.getElementById('thread');
   menu = document.getElementById('menu');
   menuFilter = document.getElementById('menu-filter');
+  window.DriftHighlight?.reset(root);
 
   /* Disclosures. Each carries a stable key; what the developer chose is
      remembered against that key and reapplied, so a package they opened does

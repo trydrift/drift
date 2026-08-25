@@ -410,7 +410,17 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       }),
     );
 
-    webview.html = renderPanel(this.viewModel());
+    const highlightClientUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, 'dist', 'highlight-client.js'),
+    );
+    const highlightWorkerUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, 'dist', 'highlight-worker.js'),
+    );
+    webview.html = renderPanel(this.viewModel(), {
+      highlightClientUri: highlightClientUri.toString(),
+      highlightWorkerUri: highlightWorkerUri.toString(),
+      cspSource: webview.cspSource,
+    });
   }
 
   private detach(webview: vscode.Webview): void {

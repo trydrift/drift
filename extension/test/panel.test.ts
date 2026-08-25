@@ -9,7 +9,6 @@ import {
   SLASH_COMMANDS,
   type ViewModel,
 } from '../src/ui/webview.js';
-import { warmCodeHighlighter } from '../src/ui/highlight.js';
 import type { TaskGroup } from '../src/session.js';
 import { describeSeverity, severityOf } from '../src/severity.js';
 import type { UpgradeCandidate } from '../src/upgrades.js';
@@ -875,8 +874,7 @@ test('safe upgrades can be taken in one action, unknown ones cannot', () => {
   assert.match(html, /Upgrade all 2/);
 });
 
-test('markdown renders a before/after pair as one comparison with a diff button', async () => {
-  await warmCodeHighlighter();
+test('markdown renders a before/after pair as one comparison with a diff button', () => {
   const html = renderMarkdown('Update call sites.\n  before: old(<tag>)\n  after:  next(value)');
 
   assert.match(html, /<p>Update call sites\.<\/p>/);
@@ -896,11 +894,11 @@ test('markdown renders a before/after pair as one comparison with a diff button'
   assert.doesNotMatch(html, /old\(<tag>\)/);
 });
 
-test('code is tokenised against the editor theme rather than left flat', async () => {
-  await warmCodeHighlighter();
-  // Real TextMate tokenisation colours each token inline, from the theme the
-  // editor is using — the whole point of not hand-rolling a highlighter.
-  assert.match(renderMarkdown('```\nexport const x = 1;\n```'), /<span style="color:#[0-9a-fA-F]{6}">/);
+test('code leaves the extension host as an escaped lazy-highlight placeholder', () => {
+  const html = renderMarkdown('```\nexport const x = 1;\n```');
+  assert.match(html, /data-drift-highlight/);
+  assert.match(html, /data-language="typescript"/);
+  assert.doesNotMatch(html, /style="color:/);
 });
 
 test('a scan whose results have gone stale says so and offers a rescan', () => {

@@ -28,7 +28,6 @@ import { discoverNestedProjects } from '../../src/detect/nested.js';
 import type { IssueBranchAction } from './issue-actions.js';
 import { openChangeDiff, openPackageVersionDiff, type ChangeDiffRequest } from './version-diff.js';
 import { pruneVersionDiffCache } from '../../src/evidence/version-diff.js';
-import { onDidChangeCodeTheme, warmCodeHighlighter, watchCodeTheme } from './ui/highlight.js';
 import { redactText, startRunLog, withSpan, type RunLogHandle } from '../../src/util/diagnostics.js';
 
 /**
@@ -129,6 +128,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Conversations are about a repository, so they are kept per workspace.
     context.workspaceState,
   );
+  DriftReportPanel.configureAssets(context.extensionUri);
 
   context.subscriptions.push(diagnostics, statusBar, reviewUi, home);
 
@@ -162,19 +162,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
 
   registerCommands(context, state, diagnostics, review, reviewUi, home);
-
-  // Code in the panels is tokenised against the user's own colour theme, which
-  // has to be read off disk before anything can be highlighted. The views
-  // render immediately either way and re-render once it is ready, so this is
-  // deliberately not awaited — and it re-runs whenever the theme changes.
-  context.subscriptions.push(
-    watchCodeTheme(),
-    onDidChangeCodeTheme(() => {
-      DriftReportPanel.refresh();
-      home.rerender();
-    }),
-  );
-  void warmCodeHighlighter();
 
   // Sign-in state changes what the agent picker can offer.
   context.subscriptions.push(onDidChangeGitHubAuth(() => invalidateAgentCache()));
