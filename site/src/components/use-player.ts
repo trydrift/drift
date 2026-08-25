@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Candidate, ProgressTimelineEvent, Recording, RecordingTimelineEvent } from "@/lib/recordings";
-import { applyTimelineEvent, createReplayAccumulator, visibleCandidates } from "@/lib/replay";
+import { applyTimelineEvent, createReplayAccumulator, finalReplayState, visibleCandidates } from "@/lib/replay";
 import type { ReplayAccumulator } from "@/lib/replay";
 
 /**
@@ -133,12 +133,13 @@ export function usePlayer(recording: Recording) {
   const complete = useCallback(() => {
     stop();
     elapsed.current = duration.current;
+    const final = finalReplayState(recording.timeline);
     setState({
       phase: "done",
       elapsed: duration.current,
       cursor: recording.timeline.length,
-      candidates: recording.candidates,
-      currentProgress: replayState.current.currentProgress,
+      candidates: visibleCandidates(final),
+      currentProgress: final.currentProgress,
     });
   }, [recording, stop]);
 
@@ -195,7 +196,7 @@ export function usePlayer(recording: Recording) {
         phase: "running",
         elapsed: at,
         cursor,
-        candidates: recording.legacy ? [] : visibleCandidates(replayState.current),
+        candidates: visibleCandidates(replayState.current),
         currentProgress: replayState.current.currentProgress,
       });
 

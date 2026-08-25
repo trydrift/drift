@@ -185,6 +185,7 @@ jobs:
         run: |
           npm ci
           npm run typecheck
+          npm test
           npm run build
 
   # Drift analysing its own dependency changes. The tool should survive being

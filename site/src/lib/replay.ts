@@ -1,4 +1,4 @@
-import type { Candidate, RecordingTimelineEvent, ProgressTimelineEvent } from "./recordings";
+import type { Candidate, RecordingTimelineEvent, ProgressTimelineEvent } from "./recordings.ts";
 
 export interface ReplayAccumulator {
   candidates: Map<string, Candidate>;
@@ -36,4 +36,11 @@ export function visibleCandidates(state: ReplayAccumulator): Candidate[] {
   return state.order
     .map((id) => state.candidates.get(id))
     .filter((candidate): candidate is Candidate => candidate !== undefined);
+}
+
+/** Reconstruct the same final list the extension receives after every update. */
+export function finalReplayState(events: readonly RecordingTimelineEvent[]): ReplayAccumulator {
+  const state = createReplayAccumulator();
+  for (const event of events) applyTimelineEvent(state, event);
+  return state;
 }
