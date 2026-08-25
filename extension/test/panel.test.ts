@@ -9,7 +9,6 @@ import {
   SLASH_COMMANDS,
   type ViewModel,
 } from '../src/ui/webview.js';
-import { warmCodeHighlighter } from '../src/ui/highlight.js';
 import type { TaskGroup } from '../src/session.js';
 import { describeSeverity, severityOf } from '../src/severity.js';
 import type { UpgradeCandidate } from '../src/upgrades.js';
@@ -876,7 +875,6 @@ test('safe upgrades can be taken in one action, unknown ones cannot', () => {
 });
 
 test('markdown renders a before/after pair as one comparison with a diff button', async () => {
-  await warmCodeHighlighter();
   const html = renderMarkdown('Update call sites.\n  before: old(<tag>)\n  after:  next(value)');
 
   assert.match(html, /<p>Update call sites\.<\/p>/);
@@ -888,19 +886,16 @@ test('markdown renders a before/after pair as one comparison with a diff button'
   assert.match(html, /<div class="compare">/);
   assert.match(html, /data-action="openFindingDiff"/);
 
-  // Syntax highlighting wraps tokens in their own <span>, so the escaped
-  // source text is asserted with the tags stripped rather than as one run.
-  const text = html.replace(/<[^>]+>/g, '');
-  assert.match(text, /old\(&lt;tag&gt;\)/);
-  assert.match(text, /next\(value\)/);
+  assert.match(html, /data-drift-highlight/);
+  assert.match(html, /old\(&lt;tag&gt;\)/);
+  assert.match(html, /next\(value\)/);
   assert.doesNotMatch(html, /old\(<tag>\)/);
 });
 
-test('code is tokenised against the editor theme rather than left flat', async () => {
-  await warmCodeHighlighter();
-  // Real TextMate tokenisation colours each token inline, from the theme the
-  // editor is using — the whole point of not hand-rolling a highlighter.
-  assert.match(renderMarkdown('```\nexport const x = 1;\n```'), /<span style="color:#[0-9a-fA-F]{6}">/);
+test('code is emitted as safe webview-highlightable markup', () => {
+  const html = renderMarkdown('```\nexport const x = 1;\n```');
+  assert.match(html, /<code class="hljs" data-drift-highlight data-lang="typescript">export const x = 1;<\/code>/);
+  assert.doesNotMatch(html, /<span/);
 });
 
 test('a scan whose results have gone stale says so and offers a rescan', () => {

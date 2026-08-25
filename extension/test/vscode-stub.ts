@@ -145,6 +145,10 @@ export class WorkspaceEdit {
 export const Uri = {
   file: (path: string) => ({ fsPath: path, path, scheme: 'file', toString: () => `file://${path}` }),
   parse: (value: string) => ({ toString: () => value, fsPath: value, path: value }),
+  joinPath: (base: { fsPath?: string; path?: string }, ...parts: string[]) => {
+    const path = [base.fsPath ?? base.path ?? '', ...parts].join('/').replace(/\/+/g, '/');
+    return { fsPath: path, path, scheme: 'file', toString: () => `file://${path}` };
+  },
 };
 
 /** Settings the tests need; overridable per test. */
@@ -256,6 +260,7 @@ export const window = {
     const panel = {
       webview: {
         cspSource: 'vscode-webview://test',
+        asWebviewUri: (uri: { toString(): string }) => uri,
         html: '',
         onDidReceiveMessage: (listener: (message: unknown) => void) => {
           messageListeners.push(listener);

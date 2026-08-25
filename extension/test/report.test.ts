@@ -248,6 +248,7 @@ describe('report rendering', () => {
 describe('report panel focus (end-to-end through openDependency)', () => {
   test('clicking a candidate opens its own plan, not the global one', async () => {
     DriftReportPanel.__resetForTest();
+    DriftReportPanel.configureAssets(vscode.Uri.file('/extension'));
     const state = new DriftState();
     state.set({ kind: 'clean', summary: 'nothing breaking', at: Date.now(), plan: cleanPlan() });
     const c = candidate({ plan: plan() });
@@ -264,6 +265,7 @@ describe('report panel focus (end-to-end through openDependency)', () => {
 
   test('the selected candidate survives a state.onDidChange re-render', async () => {
     DriftReportPanel.__resetForTest();
+    DriftReportPanel.configureAssets(vscode.Uri.file('/extension'));
     const state = new DriftState();
     state.set({ kind: 'clean', summary: 'nothing breaking', at: Date.now(), plan: cleanPlan() });
     const c = candidate({ plan: plan() });
@@ -284,6 +286,7 @@ describe('report panel focus (end-to-end through openDependency)', () => {
 
   test('drift.showReport with no candidate still shows the global plan', async () => {
     DriftReportPanel.__resetForTest();
+    DriftReportPanel.configureAssets(vscode.Uri.file('/extension'));
     const state = new DriftState();
     state.set({ kind: 'findings', plan: plan(), at: Date.now() });
 
