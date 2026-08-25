@@ -6,10 +6,10 @@
   "language": "Swift",
   "repo": "https://github.com/layoutBox/FlexLayout",
   "blurb": "A Swift flexbox layout library, with the Podfile that pins its pods.",
-  "capturedAt": "2026-08-25T18:26:51.382Z",
+  "capturedAt": "2026-08-25T22:05:57.480Z",
   "commit": "b1fcc81828e4b735c79d4c3fac35ef0754be0060",
-  "engine": "833292abc0cde7ce",
-  "durationMs": 2495,
+  "engine": "0295bac6900cfde3",
+  "durationMs": 3405,
   "packagesChecked": 5,
   "manifests": [
     "Package.swift",
@@ -19,7 +19,7 @@
   "timeline": [
     {
       "type": "progress",
-      "at": 84,
+      "at": 2052,
       "phase": "Looking for manifests",
       "detail": "layoutBox/FlexLayout",
       "done": 0,
@@ -27,7 +27,7 @@
     },
     {
       "type": "progress",
-      "at": 97,
+      "at": 2091,
       "phase": "Reading manifest",
       "detail": "Package.swift",
       "done": 0,
@@ -35,7 +35,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 97,
+      "at": 2092,
       "candidate": {
         "id": "Package.swift#facebook/yoga@3.2.1",
         "name": "facebook/yoga",
@@ -62,7 +62,7 @@
     },
     {
       "type": "progress",
-      "at": 97,
+      "at": 2092,
       "phase": "Reading manifest",
       "detail": "Podfile",
       "done": 0,
@@ -70,7 +70,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 98,
+      "at": 2094,
       "candidate": {
         "id": "Podfile#Yoga@3.2.1",
         "name": "Yoga",
@@ -97,7 +97,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 98,
+      "at": 2094,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -124,7 +124,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 98,
+      "at": 2094,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -151,7 +151,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 98,
+      "at": 2094,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -178,7 +178,7 @@
     },
     {
       "type": "progress",
-      "at": 98,
+      "at": 2094,
       "phase": "Indexing your code",
       "detail": "Walking source files",
       "done": 0,
@@ -186,7 +186,7 @@
     },
     {
       "type": "progress",
-      "at": 98,
+      "at": 2094,
       "phase": "Checking registries",
       "detail": "5 direct dependencies",
       "done": 0,
@@ -194,7 +194,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 98,
+      "at": 2095,
       "candidate": {
         "id": "Package.swift#facebook/yoga@3.2.1",
         "name": "facebook/yoga",
@@ -221,7 +221,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 98,
+      "at": 2095,
       "candidate": {
         "id": "Podfile#Yoga@3.2.1",
         "name": "Yoga",
@@ -248,7 +248,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 98,
+      "at": 2095,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -275,7 +275,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 98,
+      "at": 2095,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -302,7 +302,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 99,
+      "at": 2096,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -328,56 +328,26 @@
       }
     },
     {
-      "type": "progress",
-      "at": 523,
-      "phase": "Indexing your code",
-      "detail": "59 files indexed · 5 direct dependencies to check",
-      "done": 0,
-      "total": 5
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 725,
-      "candidate": {
-        "id": "Package.swift#facebook/yoga@3.2.1",
-        "name": "facebook/yoga",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "3.2.1",
-        "latest": "2016.12.26",
-        "selected": "2016.12.26",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
+      "type": "candidate-drop",
+      "at": 2248,
+      "id": "Package.swift#facebook/yoga@3.2.1"
     },
     {
       "type": "progress",
-      "at": 725,
-      "phase": "Outdated",
-      "detail": "facebook/yoga 3.2.1 → 2016.12.26",
+      "at": 2248,
+      "phase": "Up to date",
+      "detail": "facebook/yoga@3.2.1",
       "done": 1,
       "total": 5
     },
     {
       "type": "candidate-drop",
-      "at": 729,
+      "at": 2249,
       "id": "Podfile#Yoga@3.2.1"
     },
     {
       "type": "progress",
-      "at": 729,
+      "at": 2249,
       "phase": "Up to date",
       "detail": "Yoga@3.2.1",
       "done": 2,
@@ -385,42 +355,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 824,
-      "candidate": {
-        "id": "Podfile#SwiftLint@0.55.1",
-        "name": "SwiftLint",
-        "ecosystem": "cocoapods",
-        "manifestPath": "Podfile",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "0.55.1",
-        "latest": "0.65.1",
-        "selected": "0.65.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Waiting to be checked",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 824,
-      "phase": "Outdated",
-      "detail": "SwiftLint 0.55.1 → 0.65.1",
-      "done": 3,
-      "total": 5
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 907,
+      "at": 2249,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -447,15 +382,15 @@
     },
     {
       "type": "progress",
-      "at": 907,
+      "at": 2249,
       "phase": "Outdated",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
-      "done": 4,
+      "done": 3,
       "total": 5
     },
     {
       "type": "candidate-upsert",
-      "at": 1284,
+      "at": 2250,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -482,93 +417,58 @@
     },
     {
       "type": "progress",
-      "at": 1284,
+      "at": 2250,
       "phase": "Outdated",
       "detail": "PinLayout 1.10.5 → 1.10.6",
+      "done": 4,
+      "total": 5
+    },
+    {
+      "type": "candidate-upsert",
+      "at": 2251,
+      "candidate": {
+        "id": "Podfile#SwiftLint@0.55.1",
+        "name": "SwiftLint",
+        "ecosystem": "cocoapods",
+        "manifestPath": "Podfile",
+        "workspace": null,
+        "workspaceName": null,
+        "current": "0.55.1",
+        "latest": "0.65.1",
+        "selected": "0.65.1",
+        "safeLatest": null,
+        "status": "pending",
+        "phase": "Waiting to be checked",
+        "risk": "unknown",
+        "summary": "",
+        "recommendation": null,
+        "breakingCount": 0,
+        "impactCount": 0,
+        "impactFiles": 0,
+        "evidenceCount": 0,
+        "gaps": [],
+        "breaking": []
+      }
+    },
+    {
+      "type": "progress",
+      "at": 2251,
+      "phase": "Outdated",
+      "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 5,
       "total": 5
     },
     {
       "type": "progress",
-      "at": 1285,
-      "phase": "Reading release notes and changelog",
-      "detail": "facebook/yoga 3.2.1 → 2016.12.26",
-      "done": 0,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1285,
-      "candidate": {
-        "id": "Package.swift#facebook/yoga@3.2.1",
-        "name": "facebook/yoga",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "3.2.1",
-        "latest": "3.2.1",
-        "selected": "3.2.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1285,
-      "phase": "Checking package metadata",
-      "detail": "facebook/yoga 3.2.1 → 2016.12.26",
-      "done": 0,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1285,
-      "candidate": {
-        "id": "Package.swift#facebook/yoga@3.2.1",
-        "name": "facebook/yoga",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "3.2.1",
-        "latest": "3.2.1",
-        "selected": "3.2.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking package metadata",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1285,
+      "at": 2251,
       "phase": "Reading release notes and changelog",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1285,
+      "at": 2251,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -595,15 +495,15 @@
     },
     {
       "type": "progress",
-      "at": 1286,
+      "at": 2251,
       "phase": "Checking package metadata",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1286,
+      "at": 2251,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -630,15 +530,15 @@
     },
     {
       "type": "progress",
-      "at": 1286,
+      "at": 2251,
       "phase": "Reading release notes and changelog",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1286,
+      "at": 2251,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -665,15 +565,15 @@
     },
     {
       "type": "progress",
-      "at": 1286,
+      "at": 2251,
       "phase": "Checking package metadata",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1286,
+      "at": 2251,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -700,15 +600,15 @@
     },
     {
       "type": "progress",
-      "at": 1286,
+      "at": 2251,
       "phase": "Reading release notes and changelog",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1286,
+      "at": 2251,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -735,15 +635,15 @@
     },
     {
       "type": "progress",
-      "at": 1286,
+      "at": 2251,
       "phase": "Checking package metadata",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1286,
+      "at": 2251,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -770,50 +670,15 @@
     },
     {
       "type": "progress",
-      "at": 1287,
-      "phase": "Checking repository status",
-      "detail": "facebook/yoga 3.2.1 → 2016.12.26",
-      "done": 0,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 1287,
-      "candidate": {
-        "id": "Package.swift#facebook/yoga@3.2.1",
-        "name": "facebook/yoga",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "3.2.1",
-        "latest": "3.2.1",
-        "selected": "3.2.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking repository status",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 1287,
+      "at": 2251,
       "phase": "Checking repository status",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1287,
+      "at": 2251,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -840,15 +705,15 @@
     },
     {
       "type": "progress",
-      "at": 1287,
+      "at": 2251,
       "phase": "Checking security advisories",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1287,
+      "at": 2251,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -875,15 +740,15 @@
     },
     {
       "type": "progress",
-      "at": 1287,
+      "at": 2251,
       "phase": "Checking repository status",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1287,
+      "at": 2251,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -910,15 +775,15 @@
     },
     {
       "type": "progress",
-      "at": 1287,
+      "at": 2251,
       "phase": "Checking security advisories",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1287,
+      "at": 2251,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -945,15 +810,15 @@
     },
     {
       "type": "progress",
-      "at": 1287,
+      "at": 2251,
       "phase": "Checking repository status",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1287,
+      "at": 2252,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -980,15 +845,15 @@
     },
     {
       "type": "progress",
-      "at": 1287,
+      "at": 2252,
       "phase": "Checking security advisories",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1287,
+      "at": 2252,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -1015,15 +880,15 @@
     },
     {
       "type": "progress",
-      "at": 1636,
+      "at": 2252,
       "phase": "Checking license",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1636,
+      "at": 2252,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -1050,15 +915,15 @@
     },
     {
       "type": "progress",
-      "at": 1636,
+      "at": 2252,
       "phase": "Checking license",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1636,
+      "at": 2252,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -1085,15 +950,15 @@
     },
     {
       "type": "progress",
-      "at": 1636,
+      "at": 2252,
       "phase": "Checking license",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1636,
+      "at": 2252,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -1120,15 +985,15 @@
     },
     {
       "type": "progress",
-      "at": 1636,
+      "at": 2252,
       "phase": "Reading release notes and changelog",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1636,
+      "at": 2252,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -1155,15 +1020,15 @@
     },
     {
       "type": "progress",
-      "at": 1636,
+      "at": 2252,
       "phase": "Comparing the public API surface",
       "detail": "FlexLayout 2.2.1 → 2.2.3 · 1 evidence source",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1636,
+      "at": 2252,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -1190,15 +1055,15 @@
     },
     {
       "type": "progress",
-      "at": 1636,
+      "at": 2252,
       "phase": "Reading release notes and changelog",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1636,
+      "at": 2252,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -1225,15 +1090,15 @@
     },
     {
       "type": "progress",
-      "at": 1636,
+      "at": 2252,
       "phase": "Comparing the public API surface",
       "detail": "PinLayout 1.10.5 → 1.10.6 · 1 evidence source",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1636,
+      "at": 2252,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -1260,15 +1125,15 @@
     },
     {
       "type": "progress",
-      "at": 1636,
+      "at": 2252,
       "phase": "Reading release notes and changelog",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1636,
+      "at": 2252,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -1295,15 +1160,15 @@
     },
     {
       "type": "progress",
-      "at": 1636,
+      "at": 2252,
       "phase": "Comparing the public API surface",
       "detail": "SwiftLint 0.55.1 → 0.65.1 · 1 evidence source",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1636,
+      "at": 2252,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -1330,15 +1195,15 @@
     },
     {
       "type": "progress",
-      "at": 1636,
+      "at": 2252,
       "phase": "No breaking changes to look for",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1636,
+      "at": 2252,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -1365,15 +1230,15 @@
     },
     {
       "type": "progress",
-      "at": 1636,
+      "at": 2252,
       "phase": "No breaking changes to look for",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1636,
+      "at": 2252,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -1400,15 +1265,15 @@
     },
     {
       "type": "progress",
-      "at": 1636,
+      "at": 2252,
       "phase": "No breaking changes to look for",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1637,
+      "at": 2252,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -1435,15 +1300,23 @@
     },
     {
       "type": "progress",
-      "at": 1637,
+      "at": 3385,
+      "phase": "Indexing your code",
+      "detail": "59 files indexed · 5 direct dependencies to check",
+      "done": 0,
+      "total": 5
+    },
+    {
+      "type": "progress",
+      "at": 3398,
       "phase": "Weighing what this upgrade is worth",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1637,
+      "at": 3398,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -1470,15 +1343,15 @@
     },
     {
       "type": "progress",
-      "at": 1637,
+      "at": 3398,
       "phase": "Weighing what this upgrade is worth",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1637,
+      "at": 3398,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -1505,15 +1378,15 @@
     },
     {
       "type": "progress",
-      "at": 1637,
+      "at": 3398,
       "phase": "Weighing what this upgrade is worth",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1637,
+      "at": 3398,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -1540,15 +1413,15 @@
     },
     {
       "type": "progress",
-      "at": 1637,
+      "at": 3400,
       "phase": "Checking maintenance signals",
       "detail": "FlexLayout 2.2.1 → 2.2.3",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1637,
+      "at": 3400,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -1575,15 +1448,15 @@
     },
     {
       "type": "progress",
-      "at": 1638,
+      "at": 3402,
       "phase": "Checking maintenance signals",
       "detail": "PinLayout 1.10.5 → 1.10.6",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1638,
+      "at": 3402,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -1610,15 +1483,15 @@
     },
     {
       "type": "progress",
-      "at": 1639,
+      "at": 3403,
       "phase": "Checking maintenance signals",
       "detail": "SwiftLint 0.55.1 → 0.65.1",
       "done": 0,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1639,
+      "at": 3404,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -1645,7 +1518,7 @@
     },
     {
       "type": "candidate-upsert",
-      "at": 1639,
+      "at": 3405,
       "candidate": {
         "id": "Podfile#FlexLayout@2.2.1",
         "name": "FlexLayout",
@@ -1675,15 +1548,15 @@
     },
     {
       "type": "progress",
-      "at": 1639,
+      "at": 3405,
       "phase": "Checked",
       "detail": "FlexLayout 2.2.1 → 2.2.3 · not verified · drift found nothing it could check this version against",
       "done": 1,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1639,
+      "at": 3405,
       "candidate": {
         "id": "Podfile#PinLayout@1.10.5",
         "name": "PinLayout",
@@ -1713,15 +1586,15 @@
     },
     {
       "type": "progress",
-      "at": 1639,
+      "at": 3405,
       "phase": "Checked",
       "detail": "PinLayout 1.10.5 → 1.10.6 · not verified · drift found nothing it could check this version against",
       "done": 2,
-      "total": 4
+      "total": 3
     },
     {
       "type": "candidate-upsert",
-      "at": 1639,
+      "at": 3405,
       "candidate": {
         "id": "Podfile#SwiftLint@0.55.1",
         "name": "SwiftLint",
@@ -1751,321 +1624,14 @@
     },
     {
       "type": "progress",
-      "at": 1639,
+      "at": 3405,
       "phase": "Checked",
       "detail": "SwiftLint 0.55.1 → 0.65.1 · not verified · drift found nothing it could check this version against",
       "done": 3,
-      "total": 4
-    },
-    {
-      "type": "progress",
-      "at": 2300,
-      "phase": "Checking security advisories",
-      "detail": "facebook/yoga 3.2.1 → 2016.12.26",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2300,
-      "candidate": {
-        "id": "Package.swift#facebook/yoga@3.2.1",
-        "name": "facebook/yoga",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "3.2.1",
-        "latest": "3.2.1",
-        "selected": "3.2.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking security advisories",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2301,
-      "phase": "Checking license",
-      "detail": "facebook/yoga 3.2.1 → 2016.12.26",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2301,
-      "candidate": {
-        "id": "Package.swift#facebook/yoga@3.2.1",
-        "name": "facebook/yoga",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "3.2.1",
-        "latest": "3.2.1",
-        "selected": "3.2.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking license",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2495,
-      "phase": "Reading release notes and changelog",
-      "detail": "facebook/yoga 3.2.1 → 2016.12.26",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2495,
-      "candidate": {
-        "id": "Package.swift#facebook/yoga@3.2.1",
-        "name": "facebook/yoga",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "3.2.1",
-        "latest": "3.2.1",
-        "selected": "3.2.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Reading release notes and changelog",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2495,
-      "phase": "Comparing the public API surface",
-      "detail": "facebook/yoga 3.2.1 → 2016.12.26 · 1 evidence source",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2495,
-      "candidate": {
-        "id": "Package.swift#facebook/yoga@3.2.1",
-        "name": "facebook/yoga",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "3.2.1",
-        "latest": "3.2.1",
-        "selected": "3.2.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Comparing the public API surface",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2495,
-      "phase": "No breaking changes to look for",
-      "detail": "facebook/yoga 3.2.1 → 2016.12.26",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2495,
-      "candidate": {
-        "id": "Package.swift#facebook/yoga@3.2.1",
-        "name": "facebook/yoga",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "3.2.1",
-        "latest": "3.2.1",
-        "selected": "3.2.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "No breaking changes to look for",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2495,
-      "phase": "Weighing what this upgrade is worth",
-      "detail": "facebook/yoga 3.2.1 → 2016.12.26",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2495,
-      "candidate": {
-        "id": "Package.swift#facebook/yoga@3.2.1",
-        "name": "facebook/yoga",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "3.2.1",
-        "latest": "3.2.1",
-        "selected": "3.2.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Weighing what this upgrade is worth",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2495,
-      "phase": "Checking maintenance signals",
-      "detail": "facebook/yoga 3.2.1 → 2016.12.26",
-      "done": 3,
-      "total": 4
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2495,
-      "candidate": {
-        "id": "Package.swift#facebook/yoga@3.2.1",
-        "name": "facebook/yoga",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "3.2.1",
-        "latest": "3.2.1",
-        "selected": "3.2.1",
-        "safeLatest": null,
-        "status": "pending",
-        "phase": "Checking maintenance signals",
-        "risk": "unknown",
-        "summary": "",
-        "recommendation": null,
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 0,
-        "gaps": [],
-        "breaking": []
-      }
-    },
-    {
-      "type": "candidate-upsert",
-      "at": 2495,
-      "candidate": {
-        "id": "Package.swift#facebook/yoga@3.2.1",
-        "name": "facebook/yoga",
-        "ecosystem": "swift",
-        "manifestPath": "Package.swift",
-        "workspace": null,
-        "workspaceName": null,
-        "current": "3.2.1",
-        "latest": "2016.12.26",
-        "selected": "2016.12.26",
-        "safeLatest": null,
-        "status": "clean",
-        "phase": null,
-        "risk": "none",
-        "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for facebook/yoga 2016.12.26.",
-        "recommendation": "safe-to-upgrade",
-        "breakingCount": 0,
-        "impactCount": 0,
-        "impactFiles": 0,
-        "evidenceCount": 1,
-        "gaps": [
-          "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for facebook/yoga 2016.12.26."
-        ],
-        "breaking": []
-      }
-    },
-    {
-      "type": "progress",
-      "at": 2495,
-      "phase": "Checked",
-      "detail": "facebook/yoga 3.2.1 → 2016.12.26 · safe for your code · no breaking changes found — not deeply verified",
-      "done": 4,
-      "total": 4
+      "total": 3
     }
   ],
   "candidates": [
-    {
-      "id": "Package.swift#facebook/yoga@3.2.1",
-      "name": "facebook/yoga",
-      "ecosystem": "swift",
-      "manifestPath": "Package.swift",
-      "workspace": null,
-      "workspaceName": null,
-      "current": "3.2.1",
-      "latest": "2016.12.26",
-      "selected": "2016.12.26",
-      "safeLatest": null,
-      "status": "clean",
-      "phase": null,
-      "risk": "none",
-      "summary": "Safe to upgrade. Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for facebook/yoga 2016.12.26.",
-      "recommendation": "safe-to-upgrade",
-      "breakingCount": 0,
-      "impactCount": 0,
-      "impactFiles": 0,
-      "evidenceCount": 1,
-      "gaps": [
-        "Drift has no computed API-surface diff for swift; this upgrade rests on prose evidence alone. No release notes, changelog, or migration guide was reachable for facebook/yoga 2016.12.26."
-      ],
-      "breaking": []
-    },
     {
       "id": "Podfile#FlexLayout@2.2.1",
       "name": "FlexLayout",

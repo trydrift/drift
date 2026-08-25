@@ -145,7 +145,7 @@ function validateOwnerEvidence(change) {
 }
 
 function validateKnownSurvivors(recording, candidate) {
-  const text = JSON.stringify(candidate.breaking ?? []);
+  const text = JSON.stringify((candidate.breaking ?? []).filter((change) => change.kind === 'removed-export'));
   const checks = recording.id === 'trantor'
     ? ['logger.level', 'logger.name', 'logger.sinks', 'SSL_get_error', 'OPENSSL_cleanup', 'RUN_ALL_TESTS']
     : recording.id === 'esphome'
