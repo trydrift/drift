@@ -220,8 +220,17 @@ interface Surface {
   awaitingSequence: number | null;
   pendingBody: string | null;
   pendingCandidates: Map<string, string>;
-  detailTransfer: { requestId: string; chunks: string[]; next: number } | null;
+  detailTransfer: {
+    id: string;
+    requestId: string;
+    section?: string;
+    chunks: string[];
+    next: number;
+    awaitingIndex: number | null;
+    retries: number;
+  } | null;
   pendingDetailRequests: { id: string; requestId: string; section?: string }[];
+  detailAckTimer: ReturnType<typeof setTimeout> | null;
   ackTimer: ReturnType<typeof setTimeout> | null;
   resyncAttempted: boolean;
   stalled: boolean;
@@ -424,6 +433,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       pendingCandidates: new Map(),
       detailTransfer: null,
       pendingDetailRequests: [],
+      detailAckTimer: null,
       ackTimer: null,
       resyncAttempted: false,
       stalled: false,
@@ -433,6 +443,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     this.disposables.push(
       webview.onDidReceiveMessage((message: Incoming) => {
         if (message.type === 'ready') {
+          this.cancelDetailTransfer(surface);
           surface.ready = true;
           if (surface.ackTimer) clearTimeout(surface.ackTimer);
           surface.ackTimer = null;
@@ -457,22 +468,17 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           return;
         }
         if (message.type === 'candidateDetailRequest') {
-          if (surface.detailTransfer) {
-            if (surface.pendingDetailRequests.length < 8) {
-              surface.pendingDetailRequests.push({
-                id: message.id,
-                requestId: message.requestId,
-                ...(message.section ? { section: message.section } : {}),
-              });
-            }
-          } else {
-            this.startDetailTransfer(surface, message.id, message.requestId, message.section);
-          }
+          this.queueDetailRequest(surface, message);
           return;
         }
         if (message.type === 'detailChunkAck') {
           const transfer = surface.detailTransfer;
-          if (!transfer || transfer.requestId !== message.requestId || transfer.next - 1 !== message.index) return;
+          if (!transfer || transfer.requestId !== message.requestId || transfer.awaitingIndex !== message.index) return;
+          if (surface.detailAckTimer) clearTimeout(surface.detailAckTimer);
+          surface.detailAckTimer = null;
+          transfer.awaitingIndex = null;
+          transfer.next = message.index + 1;
+          transfer.retries = 0;
           this.sendDetailChunk(surface);
           return;
         }
@@ -496,6 +502,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private detach(webview: vscode.Webview): void {
     const surface = this.surfaces.find((entry) => entry.webview === webview);
     if (surface?.ackTimer) clearTimeout(surface.ackTimer);
+    if (surface) this.cancelDetailTransfer(surface);
     this.surfaces = this.surfaces.filter((surface) => surface.webview !== webview);
   }
 
@@ -5750,8 +5757,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       return;
     }
     const sequence = ++surface.nextSequence;
-    surface.detailTransfer = null;
-    surface.pendingDetailRequests = [];
+    this.cancelDetailTransfer(surface);
     surface.pendingCandidates.clear();
     surface.awaitingSequence = sequence;
     this.armAckTimeout(surface, sequence);
@@ -5786,6 +5792,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       updated: change.updated.length,
       removed: change.removed.length,
     });
+    const invalidated = new Set([...change.updated, ...change.removed]);
+    for (const surface of this.surfaces) {
+      surface.pendingDetailRequests = surface.pendingDetailRequests.filter((request) => !invalidated.has(request.id));
+      if (surface.detailTransfer && invalidated.has(surface.detailTransfer.id)) this.cancelDetailTransfer(surface, true);
+    }
     let requiresLayout = change.added.length > 0 || change.removed.length > 0;
     for (const id of [...change.added, ...change.updated]) {
       const candidate = this.candidates.get(id);
@@ -5884,15 +5895,16 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
   private sendDetailChunk(surface: Surface): void {
     const transfer = surface.detailTransfer;
-    if (!transfer) return;
+    if (!transfer || transfer.awaitingIndex !== null) return;
     if (transfer.next >= transfer.chunks.length) {
-      surface.detailTransfer = null;
-      const pending = surface.pendingDetailRequests.shift();
-      if (pending) this.startDetailTransfer(surface, pending.id, pending.requestId, pending.section);
+      this.cancelDetailTransfer(surface, true);
       return;
     }
-    const index = transfer.next++;
+    const index = transfer.next;
     const chunk = transfer.chunks[index]!;
+    transfer.awaitingIndex = index;
+    if (surface.detailAckTimer) clearTimeout(surface.detailAckTimer);
+    surface.detailAckTimer = setTimeout(() => this.retryDetailChunk(surface, transfer, index), 2_000);
     countWork('extension.detail-chunks');
     countWork('extension.detail-payload-bytes', Buffer.byteLength(chunk));
     void surface.webview.postMessage({
@@ -5901,7 +5913,62 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       index,
       total: transfer.chunks.length,
       chunk,
+    }).then(
+      (accepted) => {
+        if (!accepted) this.retryDetailChunk(surface, transfer, index, 100);
+      },
+      () => this.retryDetailChunk(surface, transfer, index, 100),
+    );
+  }
+
+  private queueDetailRequest(
+    surface: Surface,
+    request: { id: string; requestId: string; section?: string },
+  ): void {
+    if (
+      surface.detailTransfer?.requestId === request.requestId
+      || surface.pendingDetailRequests.some((pending) => pending.requestId === request.requestId)
+    ) return;
+    if (!surface.detailTransfer) {
+      this.startDetailTransfer(surface, request.id, request.requestId, request.section);
+      return;
+    }
+    if (surface.pendingDetailRequests.length < 8) {
+      surface.pendingDetailRequests.push(request);
+      return;
+    }
+    void surface.webview.postMessage({
+      type: 'candidateDetailRetry',
+      ...request,
+      retryAfterMs: 250,
     });
+  }
+
+  private retryDetailChunk(surface: Surface, transfer: NonNullable<Surface['detailTransfer']>, index: number, delay = 250): void {
+    if (surface.detailTransfer !== transfer || transfer.awaitingIndex !== index) return;
+    if (surface.detailAckTimer) clearTimeout(surface.detailAckTimer);
+    transfer.awaitingIndex = null;
+    transfer.retries += 1;
+    // One timer and one message remain in flight regardless of how long the
+    // renderer is unavailable. A duplicate chunk is safe: the webview ACKs it
+    // again without appending it twice.
+    const backoff = Math.min(2_000, delay * Math.max(1, transfer.retries));
+    surface.detailAckTimer = setTimeout(() => {
+      surface.detailAckTimer = null;
+      this.sendDetailChunk(surface);
+    }, backoff);
+  }
+
+  private cancelDetailTransfer(surface: Surface, startNext = false): void {
+    if (surface.detailAckTimer) clearTimeout(surface.detailAckTimer);
+    surface.detailAckTimer = null;
+    surface.detailTransfer = null;
+    if (!startNext) {
+      surface.pendingDetailRequests = [];
+      return;
+    }
+    const pending = surface.pendingDetailRequests.shift();
+    if (pending) this.startDetailTransfer(surface, pending.id, pending.requestId, pending.section);
   }
 
   private startDetailTransfer(surface: Surface, id: string, requestId: string, section?: string): void {
@@ -5916,9 +5983,13 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     span.end({ bytes: Buffer.byteLength(html) });
     countWork('extension.detail-requests');
     surface.detailTransfer = {
+      id,
       requestId,
+      ...(section ? { section } : {}),
       chunks: chunkDetail(html),
       next: 0,
+      awaitingIndex: null,
+      retries: 0,
     };
     this.sendDetailChunk(surface);
   }
