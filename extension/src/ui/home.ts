@@ -1496,6 +1496,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
                 ...(repoLabel ? { repo: repoLabel } : {}),
               },
               isCancelled: () => token.isCancellationRequested,
+              enabled: vscode.workspace.getConfiguration('drift').get<boolean>('diagnostics.enabled', false),
             },
             async () => scanWithTransientHttpCache({
             root: ctx.root,
@@ -1956,6 +1957,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
               spanName: 'verification',
               spanMeta: { trigger: 'command', packages: candidates.length },
               isCancelled: () => token.isCancellationRequested,
+              enabled: vscode.workspace.getConfiguration('drift').get<boolean>('diagnostics.enabled', false),
             },
             () => verifyUpgradeCandidates({
             root,
