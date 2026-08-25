@@ -40,6 +40,7 @@ import type { FixAgent } from './agents/types.js';
 import { planForCommits } from './remediation/partition.js';
 import {
   installUpgrade,
+  installUpgrades,
   reanalyzeUpgrade,
   scanUpgrades,
   upgradeCommandFor,
@@ -230,6 +231,7 @@ drift — dependency changes, proven and fixed
 Usage:
   drift analyze [options]     Analyse a local repository and print the report
   drift outdated [options]    Scan for available upgrades, not just past ones
+  drift upgrade [options]     Install every upgrade proven safe for this code
   drift fix [options]         Analyse, then apply the fixes and push a branch
   drift pr [options]          Push the current branch and open a pull request
   drift diff <eco> <pkg> <from> <to>
@@ -244,11 +246,27 @@ Usage:
   drift telemetry print       Print the exact telemetry event shape
   drift --version             Print the version
 
-Options for \`outdated\`:
+Options shared by \`outdated\` and \`upgrade\`:
   --repo <owner/name>         Repository label for output. Default: git remote
   --dir <path>                Local checkout to scan.    Default: cwd
   --no-dev                    Skip dev/optional/peer dependencies (checked by
                               default alongside runtime ones)
+  --token <token>             Optional, only to raise the public API rate
+                              limit. Default: $GITHUB_TOKEN, then \`gh auth token\`
+  --config <path>             Config file. Default: .github/drift.yml
+  --verify                    Deep Verification: after the static (Quick
+                              Scan) report, install each candidate in a
+                              throwaway worktree and run this project's own
+                              checks before reporting it. Off by default —
+                              a scan without it reports static predictions
+                              only, clearly labelled as not deeply verified.
+                              Requires verify.enabled: true in drift.yml
+                              (the default)
+  --log-level <level>         debug | info | warn | error. Default: info
+  --log                       Persist a redacted diagnostic run log under
+                              .git/drift for this run. Off by default
+
+Additional options for \`outdated\`:
   --upgrade <selector>        Install the recommended version for one package
                               found by the scan (writes the manifest/lockfile
                               locally — run \`drift fix\` afterwards). The
@@ -263,21 +281,7 @@ Options for \`outdated\`:
                               force flag (\`npm install --force\`). This does
                               NOT change which version is installed; only
                               --latest does that. Alias: --force
-  --token <token>             Optional, only to raise the public API rate
-                              limit. Default: $GITHUB_TOKEN, then \`gh auth token\`
-  --config <path>             Config file. Default: .github/drift.yml
   --json                      Emit the full scan result as JSON
-  --verify                    Deep Verification: after the static (Quick
-                              Scan) report, install each candidate in a
-                              throwaway worktree and run this project's own
-                              checks before reporting it. Off by default —
-                              a scan without it reports static predictions
-                              only, clearly labelled as not deeply verified.
-                              Requires verify.enabled: true in drift.yml
-                              (the default)
-  --log-level <level>         debug | info | warn | error. Default: info
-  --log                       Persist a redacted diagnostic run log under
-                              .git/drift for this run. Off by default
 
 Options for \`analyze\`:
   --repo <owner/name>         Repository to analyse. Default: the git remote
@@ -345,7 +349,9 @@ needs a token. \`outdated\` is the same idea aimed the other direction: instead
 of a commit range that already changed a manifest, it checks every direct
 dependency against its registry for a version that could — the same "Scan
 Dependencies" check the extension runs. It never writes either, except when
-given --upgrade, and even then only a local manifest/lockfile edit.
+given --upgrade, and even then only a local manifest/lockfile edit. \`upgrade\`
+does the same scan, then makes those local edits for every upgrade Drift proved
+safe for this repository; it leaves affected and unchecked packages alone.
 \`fix\` applies the plan in an isolated git worktree — your working tree is
 never touched — using, per commit, Drift's own deterministic codemod, then a
 validated fix plan, then an AI agent, in that order; it pushes a branch and
@@ -418,7 +424,7 @@ function defaultBaselineCacheDir(): string | null {
 }
 
 /** Commands that operate on a repository, and so get a repo-local run log. */
-const REPO_COMMANDS = new Set(['analyze', 'analyse', 'outdated', 'fix', 'pr']);
+const REPO_COMMANDS = new Set(['analyze', 'analyse', 'outdated', 'upgrade', 'fix', 'pr']);
 
 async function gitHeadShort(repoRoot: string): Promise<string> {
   const result = await execCommand('git', ['rev-parse', '--short', 'HEAD'], { cwd: repoRoot, timeoutMs: 5000 });
@@ -462,6 +468,8 @@ async function runCommand(command: string | undefined, rest: string[]): Promise<
       return analyzeCommand(parseFlags(rest));
     case 'outdated':
       return outdatedCommand(parseFlags(rest));
+    case 'upgrade':
+      return upgradeCommand(parseFlags(rest));
     case 'fix':
       return fixCommand(parseFlags(rest));
     case 'pr':
@@ -815,7 +823,7 @@ function describeUnavailable(reason: Extract<IssueBranchOutcome, { kind: 'unavai
  * not chosen to install yet. See `verification/upgrade-probe.ts` for what
  * that worktree does and does not have access to.
  */
-async function outdatedCommand(flags: Flags): Promise<number> {
+async function outdatedCommand(flags: Flags, options: { installSafe?: boolean } = {}): Promise<number> {
   const logLevel = (typeof flags['log-level'] === 'string' ? flags['log-level'] : 'info') as LogLevel;
   const logger = createLogger(logLevel);
 
@@ -953,6 +961,10 @@ async function outdatedCommand(flags: Flags): Promise<number> {
     });
   }
 
+  if (options.installSafe) {
+    return performSafeUpgrades({ workspace, candidates: result.candidates, result, logger });
+  }
+
   if (flags.json) {
     console.log(JSON.stringify(result, null, 2));
     return result.candidates.some((c) => severityOf(c) === 'affected' || severityOf(c) === 'verification-failed')
@@ -1009,6 +1021,114 @@ async function outdatedCommand(flags: Flags): Promise<number> {
     (c) => severityOf(c) === 'affected' || severityOf(c) === 'verification-failed',
   ).length;
   return affected > 0 ? 1 : 0;
+}
+
+/**
+ * Scan, then install only the upgrades that carry the same verdict as the
+ * extension's `/upgrade-all`: clean upstream changes, or upstream breaking
+ * changes this repository does not use. An explicit package selection remains
+ * `drift outdated --upgrade <selector>`; this command is deliberately not an
+ * unrestricted alias for npm update.
+ */
+async function upgradeCommand(flags: Flags): Promise<number> {
+  const unsupported = ['upgrade', 'latest', 'force-install', 'force', 'json'].find((flag) =>
+    Object.prototype.hasOwnProperty.call(flags, flag),
+  );
+  if (unsupported) {
+    console.error(
+      '`drift upgrade` installs only the scan’s safe selected versions. ' +
+        'Use `drift outdated --upgrade <selector>` for package-specific upgrades, --latest, or --force-install; ' +
+        'use `drift outdated --json` for JSON output.',
+    );
+    return 1;
+  }
+  return outdatedCommand(flags, { installSafe: true });
+}
+
+/** The candidates that bulk upgrade is entitled to change without another decision. */
+export function safeUpgradeCandidates(candidates: readonly UpgradeCandidate[]): UpgradeCandidate[] {
+  return candidates.filter((candidate) => {
+    const severity = severityOf(candidate);
+    return severity === 'clean' || severity === 'upstream-only';
+  });
+}
+
+/** Keep scan order while giving each manifest/manager pair one batch attempt. */
+export function groupUpgradeCandidates(candidates: readonly UpgradeCandidate[]): UpgradeCandidate[][] {
+  const groups = new Map<string, UpgradeCandidate[]>();
+  for (const candidate of candidates) {
+    const key = `${candidate.manifestPath}\u0000${candidate.packageManager}`;
+    const group = groups.get(key);
+    if (group) group.push(candidate);
+    else groups.set(key, [candidate]);
+  }
+  return [...groups.values()];
+}
+
+export async function performSafeUpgrades(args: {
+  workspace: string;
+  candidates: readonly UpgradeCandidate[];
+  result: UpgradeScanResult;
+  logger: Logger;
+  installMany?: (root: string, candidates: readonly UpgradeCandidate[]) => Promise<boolean>;
+  installOne?: (root: string, candidate: UpgradeCandidate) => Promise<void>;
+  resolveManager?: (
+    candidate: UpgradeCandidate,
+    result: UpgradeScanResult,
+    logger: Logger,
+  ) => Promise<UpgradeCandidate | null>;
+}): Promise<number> {
+  const safe = safeUpgradeCandidates(args.candidates);
+  const skipped = args.candidates.filter((candidate) => !safe.includes(candidate));
+
+  if (safe.length === 0) {
+    console.log('\nNo upgrades were proven safe to install. Affected, unchecked, and failed candidates were left unchanged.\n');
+    return 0;
+  }
+
+  const installed: UpgradeCandidate[] = [];
+  const resolveManager = args.resolveManager ?? resolveManagerForWrite;
+  const installMany = args.installMany ?? ((root, candidates) => installUpgrades(root, candidates));
+  const installOne = args.installOne ?? ((root, candidate) => installUpgrade(root, candidate));
+  for (const group of groupUpgradeCandidates(safe)) {
+    const resolved: UpgradeCandidate[] = [];
+    for (const candidate of group) {
+      const choice = await resolveManager(candidate, args.result, args.logger);
+      if (!choice) return 1;
+      resolved.push(choice);
+    }
+
+    try {
+      args.logger.info(`Upgrading ${resolved.map((candidate) => `${candidate.name}@${candidate.selected}`).join(', ')}`);
+      const batched = await installMany(args.workspace, resolved);
+      if (!batched) {
+        for (const candidate of resolved) await installOne(args.workspace, candidate);
+      }
+      installed.push(...resolved);
+    } catch (err) {
+      args.logger.error(
+        `Could not upgrade ${resolved.map((candidate) => candidate.name).join(', ')}: ` +
+          `${err instanceof Error ? err.message : String(err)}. Later upgrades were not attempted.`,
+      );
+      return 1;
+    }
+  }
+
+  const paths = [...new Set(installed.map((candidate) => candidate.manifestPath))];
+  const skippedBySeverity = new Map<string, number>();
+  for (const candidate of skipped) {
+    const severity = severityOf(candidate);
+    skippedBySeverity.set(severity, (skippedBySeverity.get(severity) ?? 0) + 1);
+  }
+  const skippedSummary = [...skippedBySeverity]
+    .map(([severity, count]) => `${count} ${severity}`)
+    .join(', ');
+  console.log(
+    `\nUpgraded ${installed.length} proven-safe package${installed.length === 1 ? '' : 's'} in ${paths.join(', ')}.` +
+      (skippedSummary ? ` Left ${skipped.length} non-safe package${skipped.length === 1 ? '' : 's'} unchanged (${skippedSummary}).` : '') +
+      ' The edits are uncommitted — run `drift fix` to analyse them, apply needed fixes, and open a pull request.\n',
+  );
+  return 0;
 }
 
 /**

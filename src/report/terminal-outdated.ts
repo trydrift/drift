@@ -312,7 +312,11 @@ export function createOutdatedView(options: {
 
       line();
       const actionable = (groups.get('affected')?.length ?? 0) + (groups.get('verification-failed')?.length ?? 0);
+      const safe = (groups.get('clean')?.length ?? 0) + (groups.get('upstream-only')?.length ?? 0);
       const first = candidates.find((candidate) => severityOf(candidate) === 'affected') ?? candidates[0];
+      if (safe > 0) {
+        line(c('gray', `${c.glyph('dot')} Upgrade all proven-safe packages:  ${c('cyan', 'drift upgrade')}`));
+      }
       if (first) {
         line(c('gray', `${c.glyph('dot')} Upgrade one:  ${c('cyan', `drift outdated --upgrade ${selectorFor(first)}`)}`));
       }
