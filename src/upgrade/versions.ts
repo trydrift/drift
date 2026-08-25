@@ -167,7 +167,10 @@ async function lookup(request: VersionLookupRequest): Promise<VersionLookup> {
 
   const newer = normalized.filter((version) => semver.gt(version, comparisonCurrent)).sort(semver.rcompare);
 
-  const latest = published.latest ?? newer.find((v) => !semver.prerelease(v)) ?? newer[0];
+  const latest =
+    ecosystem === 'swift'
+      ? normalized.filter((version) => !semver.prerelease(version)).sort(semver.rcompare)[0] ?? normalized[0]
+      : published.latest ?? newer.find((v) => !semver.prerelease(v)) ?? newer[0];
   if (!latest || !semver.gt(latest, comparisonCurrent)) return { outcome: 'up-to-date' };
 
   // Computed over every published version, never over the truncated list the

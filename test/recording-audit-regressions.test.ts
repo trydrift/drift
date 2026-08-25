@@ -122,6 +122,16 @@ describe('recording audit: C and C++ public surface identity', () => {
     ]);
     assert.deepEqual(diffSurfaces(before, after), []);
   });
+
+  test('attributes do not hide surviving GoogleTest callables', () => {
+    const before = parseHeaderSurface([{ path: 'gtest/gtest.h', content: 'int RUN_ALL_TESTS();\n' }]);
+    const after = parseHeaderSurface([{
+      path: 'gtest/gtest.h',
+      content: '[[nodiscard]] int RUN_ALL_TESTS();\ninline int RUN_ALL_TESTS() { return 0; }\n',
+    }]);
+    assert.ok(after.has('RUN_ALL_TESTS'));
+    assert.equal(diffSurfaces(before, after).some((change) => change.symbol === 'RUN_ALL_TESTS'), false);
+  });
 });
 
 describe('recording audit: owner-aware localization', () => {

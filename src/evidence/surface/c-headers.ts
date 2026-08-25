@@ -460,7 +460,10 @@ function aggregateMembers(body: string, keyword: string): string[] {
  * types, return type, constness — is exactly the set that does break a caller.
  */
 function parseDeclaration(statement: string, namespacePath: readonly string[] = []): SurfaceEntry | null {
-  const text = statement.trim().replace(/\s+/g, ' ');
+  const text = statement
+    .trim()
+    .replace(/^(?:\[\[[^\]]*\]\]\s*)+/, '')
+    .replace(/\s+/g, ' ');
   if (!text || text.startsWith('#')) return null;
 
   const typedef = /^typedef\s+(.+?)\s*;$/.exec(text);
