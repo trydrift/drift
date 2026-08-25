@@ -51,7 +51,7 @@ let extensionVersion = '0.0.0';
  * the resolved git directory, so repeated and overlapping runs remain available.
  */
 function beginRun(command: string, repoRoot: string | undefined | null, mode: 'quick' | 'deep' = 'quick'): RunLogHandle | undefined {
-  if (!repoRoot) return undefined;
+  if (!repoRoot || !vscode.workspace.getConfiguration('drift').get<boolean>('diagnostics.enabled', false)) return undefined;
   return startRunLog({ command: `vscode: ${command}`, mode, repoRoot, driftVersion: extensionVersion });
 }
 

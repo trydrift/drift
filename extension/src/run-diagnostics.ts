@@ -9,9 +9,12 @@ export async function runRepoDiagnostic<T>(
     spanName: string;
     spanMeta?: Record<string, unknown>;
     isCancelled?: () => boolean;
+    enabled?: boolean;
   },
   work: () => Promise<T>,
 ): Promise<T> {
+  if (!args.enabled) return withSpan(args.spanName, args.spanMeta, work);
+
   const log = startRunLog({
     command: args.command,
     type: args.type ?? `scan-${args.mode}`,
