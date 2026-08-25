@@ -64,7 +64,7 @@ function observe(root: ParentNode, includeObserved = false): void {
     }
   }, { rootMargin: '160px' });
   const selector = includeObserved
-    ? '[data-drift-highlight]'
+    ? '[data-drift-highlight]:not([data-highlight-done="true"])'
     : '[data-drift-highlight]:not([data-highlight-observed])';
   root.querySelectorAll<HTMLElement>(selector).forEach((element) => {
     element.dataset.highlightObserved = 'true';

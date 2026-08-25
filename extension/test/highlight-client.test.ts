@@ -15,6 +15,7 @@ class FakeDocument {
   readonly currentScript = { dataset: { workerUri: 'worker.js' } };
   readonly elements: FakeElement[] = [];
   querySelectorAll(selector: string): FakeElement[] {
+    if (selector.includes('data-highlight-done')) return this.elements.filter((element) => element.dataset.highlightDone !== 'true');
     if (selector.includes(':not(')) return this.elements.filter((element) => !element.dataset.highlightObserved);
     return [...this.elements];
   }
@@ -69,11 +70,15 @@ test('highlighting re-observes resets and retries saturation and worker failures
   const client = (globalThis as unknown as { DriftHighlight: { mount(root: FakeDocument): void; reset(root: FakeDocument): void } }).DriftHighlight;
 
   const resetTargets = [new FakeElement('first'), new FakeElement('second'), new FakeElement('third')];
+  const completed = new FakeElement('already highlighted');
+  completed.dataset.highlightDone = 'true';
   document.elements.push(...resetTargets);
   client.mount(document as never);
   assert.equal(FakeObserver.latest.observed.size, 3);
+  document.elements.push(completed);
   client.reset(document as never);
   assert.equal(FakeObserver.latest.observed.size, 3, 'marked but unfinished elements must be observed again');
+  assert.equal(FakeObserver.latest.observed.has(completed), false, 'completed elements must not be re-observed');
 
   FakeObserver.latest.intersect(resetTargets[0]!);
   await tick();
