@@ -1226,7 +1226,7 @@ export function renderCandidateSummary(candidate: UpgradeCandidate, showRepo = f
 }
 
 /** Rendered only after the corresponding package disclosure is opened. */
-export function renderCandidateBody(candidate: UpgradeCandidate): string {
+export function renderCandidateBody(candidate: UpgradeCandidate, lazySections = false): string {
   const waiting = candidate.status === 'pending';
   const busy = waiting || candidate.status === 'checking' || candidate.status === 'upgrading';
   const target = versionLabel(candidate, candidate.selected);
@@ -1257,7 +1257,7 @@ export function renderCandidateBody(candidate: UpgradeCandidate): string {
         }
       </div>`}
 
-      ${candidate.plan ? renderCandidateDetail(candidate, candidate.plan) : ''}
+      ${candidate.plan ? renderCandidateDetail(candidate, candidate.plan, lazySections) : ''}
 
       <div class="pkg-actions">
         ${
@@ -1632,7 +1632,7 @@ function toolRequestReason(id: string): string {
   return 'Optional helper: lets Drift gather stronger evidence for this upgrade.';
 }
 
-function renderCandidateDetail(candidate: UpgradeCandidate, plan: RemediationPlan): string {
+function renderCandidateDetail(candidate: UpgradeCandidate, plan: RemediationPlan, lazySections = false): string {
   const matched = plan.breakingChanges.filter((change) =>
     plan.impactSites.some((site) => site.breakingChangeId === change.id),
   );
@@ -1641,14 +1641,14 @@ function renderCandidateDetail(candidate: UpgradeCandidate, plan: RemediationPla
   );
 
   return `<div class="detail">
-    ${matched.map((change) => renderBreak(candidate, change, plan, true)).join('')}
+    ${matched.map((change) => renderBreak(candidate, change, plan, !lazySections, lazySections)).join('')}
 
     ${
       unmatched.length
         ? `<details class="sub" data-key="unmatched:${escapeAttr(candidate.name)}">
             <summary>${unmatched.length} upstream change${unmatched.length === 1 ? '' : 's'} that ${unmatched.length === 1 ? 'does' : 'do'} not touch your code</summary>
             <p class="hint">Drift found ${unmatched.length === 1 ? 'this' : 'these'} in the release notes, then searched this repository for the affected APIs and found nothing. Listed so you can check the reasoning, not because there is anything to do.</p>
-            ${unmatched.map((change) => renderBreak(candidate, change, plan, false)).join('')}
+            ${unmatched.map((change) => renderBreak(candidate, change, plan, false, lazySections)).join('')}
           </details>`
         : ''
     }
@@ -1657,7 +1657,7 @@ function renderCandidateDetail(candidate: UpgradeCandidate, plan: RemediationPla
       plan.evidence.length
         ? `<details class="sub" data-key="evidence:${escapeAttr(candidate.name)}">
             <summary>Evidence Drift read <small>${plan.evidence.length} source${plan.evidence.length === 1 ? '' : 's'}</small></summary>
-            ${renderEvidence(candidate, plan.evidence)}
+            ${renderEvidence(candidate, plan.evidence, lazySections)}
           </details>`
         : ''
     }
@@ -1669,11 +1669,22 @@ function renderBreak(
   change: BreakingChange,
   plan: RemediationPlan,
   expanded: boolean,
+  lazy = false,
 ): string {
   const sites = plan.impactSites.filter((site) => site.breakingChangeId === change.id);
   const evidence = plan.evidence.filter((entry) => change.citations.includes(entry.id));
   const diff = diffContextFor(candidate, change.symbols[0]);
   const confidence = confidenceDisplay(change);
+
+  if (lazy) {
+    return `<details class="break" data-key="brk:${escapeAttr(change.id)}" data-detail-section="break:${escapeAttr(change.id)}" ${expanded ? 'open' : ''}>
+      <summary>
+        <span class="confidence ${confidence.band}">${escapeHtml(confidence.text)}</span>
+        <span class="break-summary">${inlineMarkdown(change.summary, {})}</span>
+      </summary>
+      <div class="break-body lazy-detail" data-section-body><p class="muted">Open this change to load remediation and evidence.</p></div>
+    </details>`;
+  }
 
   return `<details class="break" data-key="brk:${escapeAttr(change.id)}" ${expanded ? 'open' : ''}>
     <summary>
@@ -1738,11 +1749,16 @@ function diffContextFor(candidate: UpgradeCandidate, symbol?: string): DiffConte
  * actually has — fetches the two published versions and opens them in the
  * editor's own diff view, rather than asking the reader to go find them.
  */
-function renderEvidence(candidate: UpgradeCandidate, evidence: readonly Evidence[]): string {
+function renderEvidence(candidate: UpgradeCandidate, evidence: readonly Evidence[], lazy = false): string {
   return `<div class="evidence">
     ${evidence
-      .map(
-        (entry) => `<details data-key="ev:${escapeAttr(entry.id)}">
+      .map((entry) => renderEvidenceEntry(candidate, entry, lazy))
+      .join('')}
+  </div>`;
+}
+
+function renderEvidenceEntry(candidate: UpgradeCandidate, entry: Evidence, lazy = false): string {
+  return `<details data-key="ev:${escapeAttr(entry.id)}"${lazy ? ` data-detail-section="evidence:${escapeAttr(entry.id)}"` : ''}>
           <summary>
             <span class="source">${escapeHtml(entry.source)}</span>
             ${
@@ -1756,17 +1772,28 @@ function renderEvidence(candidate: UpgradeCandidate, evidence: readonly Evidence
                 : ''
             }
           </summary>
-          <div class="markdown quote">${renderMarkdown(entry.content, {
+          ${lazy ? `<div class="markdown quote lazy-detail" data-section-body><p class="muted">Open this source to load its excerpt.</p></div>` : `<div class="markdown quote">${renderMarkdown(entry.content, {
             ...(entry.url ? { baseUrl: entry.url } : {}),
             // Every before/after inside this record belongs to the same
             // package, so each pair offers the same "view diff" the findings
             // above do.
             diff: diffContextFor(candidate),
-          })}</div>
-        </details>`,
-      )
-      .join('')}
-  </div>`;
+          })}</div>`}
+        </details>`;
+}
+
+export function renderCandidateSection(candidate: UpgradeCandidate, section: string): string | null {
+  const plan = candidate.plan;
+  if (!plan) return null;
+  if (section.startsWith('break:')) {
+    const change = plan.breakingChanges.find((entry) => entry.id === section.slice('break:'.length));
+    return change ? renderBreak(candidate, change, plan, true, false) : null;
+  }
+  if (section.startsWith('evidence:')) {
+    const evidence = plan.evidence.find((entry) => entry.id === section.slice('evidence:'.length));
+    return evidence ? renderEvidenceEntry(candidate, evidence, false) : null;
+  }
+  return null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -4212,6 +4239,8 @@ function mount() {
 }
 
 function mountDisclosure(element) {
+  if (element.dataset.driftMounted === 'true') return;
+  element.dataset.driftMounted = 'true';
   const key = element.dataset.key;
   const remembered = ui.disclosures[key];
   if (remembered !== undefined) element.open = remembered;
@@ -4224,12 +4253,24 @@ function mountDisclosure(element) {
 }
 
 function requestCandidateDetail(details) {
-  const target = details.querySelector(':scope > [data-candidate-detail]');
+  const candidateTarget = details.querySelector(':scope > [data-candidate-detail]');
+  const sectionTarget = details.dataset.detailSection
+    ? details.querySelector(':scope > [data-section-body]')
+    : null;
+  const target = candidateTarget || (sectionTarget ? details : null);
   if (!target || target.dataset.detailDeferred === 'true' || target.dataset.detailRequest) return;
+  const candidate = details.closest('[data-candidate-id]');
+  const candidateId = candidateTarget?.dataset.candidateDetail || candidate?.dataset.candidateId;
+  if (!candidateId) return;
   const requestId = String(++nextDetailRequest);
   target.dataset.detailRequest = requestId;
   detailChunks.set(requestId, []);
-  vscode.postMessage({ type: 'candidateDetailRequest', id: target.dataset.candidateDetail, requestId });
+  vscode.postMessage({
+    type: 'candidateDetailRequest',
+    id: candidateId,
+    requestId,
+    section: details.dataset.detailSection,
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -4599,7 +4640,16 @@ window.addEventListener('message', (event) => {
     if (chunks.length === data.total) {
       const target = document.querySelector('[data-detail-request="' + data.requestId + '"]');
       if (target) {
-        target.outerHTML = chunks.join('');
+        const template = document.createElement('template');
+        template.innerHTML = chunks.join('');
+        const replacement = template.content.firstElementChild;
+        if (replacement) {
+          if (target instanceof HTMLDetailsElement && replacement instanceof HTMLDetailsElement) {
+            replacement.open = target.open;
+          }
+          target.replaceWith(replacement);
+        }
+        for (const element of root.querySelectorAll('details[data-key]')) mountDisclosure(element);
         window.DriftHighlight?.reset(root);
       }
       detailChunks.delete(data.requestId);

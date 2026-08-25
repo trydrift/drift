@@ -92,6 +92,7 @@ import {
   makeNonce,
   renderBody,
   renderCandidateBody,
+  renderCandidateSection,
   renderCandidateSummary,
   renderPanel,
   SLASH_COMMANDS,
@@ -119,7 +120,7 @@ import {
 type Incoming =
   | { type: 'ready' }
   | { type: 'uiAck'; sequence: number }
-  | { type: 'candidateDetailRequest'; id: string; requestId: string }
+  | { type: 'candidateDetailRequest'; id: string; requestId: string; section?: string }
   | { type: 'detailChunkAck'; requestId: string; index: number }
   | { type: 'submit'; text: string }
   | { type: 'draft'; text: string }
@@ -220,7 +221,7 @@ interface Surface {
   pendingBody: string | null;
   pendingCandidates: Map<string, string>;
   detailTransfer: { requestId: string; chunks: string[]; next: number } | null;
-  pendingDetailRequests: { id: string; requestId: string }[];
+  pendingDetailRequests: { id: string; requestId: string; section?: string }[];
   ackTimer: ReturnType<typeof setTimeout> | null;
   resyncAttempted: boolean;
   stalled: boolean;
@@ -458,10 +459,14 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
         if (message.type === 'candidateDetailRequest') {
           if (surface.detailTransfer) {
             if (surface.pendingDetailRequests.length < 8) {
-              surface.pendingDetailRequests.push({ id: message.id, requestId: message.requestId });
+              surface.pendingDetailRequests.push({
+                id: message.id,
+                requestId: message.requestId,
+                ...(message.section ? { section: message.section } : {}),
+              });
             }
           } else {
-            this.startDetailTransfer(surface, message.id, message.requestId);
+            this.startDetailTransfer(surface, message.id, message.requestId, message.section);
           }
           return;
         }
@@ -5883,7 +5888,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     if (transfer.next >= transfer.chunks.length) {
       surface.detailTransfer = null;
       const pending = surface.pendingDetailRequests.shift();
-      if (pending) this.startDetailTransfer(surface, pending.id, pending.requestId);
+      if (pending) this.startDetailTransfer(surface, pending.id, pending.requestId, pending.section);
       return;
     }
     const index = transfer.next++;
@@ -5899,11 +5904,15 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     });
   }
 
-  private startDetailTransfer(surface: Surface, id: string, requestId: string): void {
+  private startDetailTransfer(surface: Surface, id: string, requestId: string, section?: string): void {
     const candidate = this.candidates.get(id);
     if (!candidate || this.busy) return;
-    const span = startSpan('extension.detail-render', { candidateId: id });
-    const html = renderCandidateBody(candidate);
+    const span = startSpan('extension.detail-render', { candidateId: id, ...(section ? { section } : {}) });
+    const html = section ? renderCandidateSection(candidate, section) : renderCandidateBody(candidate, true);
+    if (html === null) {
+      span.end({ missing: true });
+      return;
+    }
     span.end({ bytes: Buffer.byteLength(html) });
     countWork('extension.detail-requests');
     surface.detailTransfer = {

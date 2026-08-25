@@ -4,6 +4,8 @@ import {
   crossesMajor,
   linkifyPaths,
   renderBody,
+  renderCandidateBody,
+  renderCandidateSection,
   renderMarkdown,
   renderPanel,
   SLASH_COMMANDS,
@@ -1149,6 +1151,40 @@ test('the live scan renders candidate summaries without eager evidence bodies', 
 
   assert.match(html, /data-candidate-detail="lodash@4\.17\.21-&gt;5\.0\.0"/);
   assert.doesNotMatch(html, /DETAIL_SENTINEL/);
+});
+
+test('candidate outlines defer individual remediation and evidence sections', () => {
+  const p = plan({
+    breakingChanges: [
+      {
+        id: 'break-one',
+        kind: 'signature-change',
+        summary: 'Signature changed',
+        remediation: 'REMEDIATION_SENTINEL',
+        symbols: ['run'],
+        citations: ['evidence-one'],
+        confidence: 'high',
+      } as never,
+    ],
+    evidence: [
+      {
+        id: 'evidence-one',
+        source: 'changelog',
+        dependency: 'lodash',
+        title: 'Migration notes',
+        content: 'EVIDENCE_SENTINEL',
+        weight: 0.8,
+      },
+    ],
+  });
+  const c = candidate({ plan: p });
+  const outline = renderCandidateBody(c, true);
+
+  assert.match(outline, /data-detail-section="break:break-one"/);
+  assert.match(outline, /data-detail-section="evidence:evidence-one"/);
+  assert.doesNotMatch(outline, /REMEDIATION_SENTINEL|EVIDENCE_SENTINEL/);
+  assert.match(renderCandidateSection(c, 'break:break-one') ?? '', /REMEDIATION_SENTINEL/);
+  assert.match(renderCandidateSection(c, 'evidence:evidence-one') ?? '', /EVIDENCE_SENTINEL/);
 });
 
 test('a markdown link folded into the one-line verdict renders as a link, not literal brackets', () => {
