@@ -221,6 +221,9 @@ interface Surface {
   pendingCandidates: Map<string, string>;
   detailTransfer: { requestId: string; chunks: string[]; next: number } | null;
   pendingDetailRequests: { id: string; requestId: string }[];
+  ackTimer: ReturnType<typeof setTimeout> | null;
+  resyncAttempted: boolean;
+  stalled: boolean;
 }
 
 export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -420,6 +423,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       pendingCandidates: new Map(),
       detailTransfer: null,
       pendingDetailRequests: [],
+      ackTimer: null,
+      resyncAttempted: false,
+      stalled: false,
     };
     this.surfaces.push(surface);
 
@@ -427,11 +433,21 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       webview.onDidReceiveMessage((message: Incoming) => {
         if (message.type === 'ready') {
           surface.ready = true;
+          if (surface.ackTimer) clearTimeout(surface.ackTimer);
+          surface.ackTimer = null;
+          surface.awaitingSequence = null;
+          surface.pendingBody = null;
+          surface.pendingCandidates.clear();
+          surface.stalled = false;
+          surface.resyncAttempted = false;
           this.sendBody(surface, renderBody(this.viewModel()));
           return;
         }
         if (message.type === 'uiAck') {
           if (surface.awaitingSequence !== message.sequence) return;
+          if (surface.ackTimer) clearTimeout(surface.ackTimer);
+          surface.ackTimer = null;
+          surface.resyncAttempted = false;
           surface.awaitingSequence = null;
           const pending = surface.pendingBody;
           surface.pendingBody = null;
@@ -473,6 +489,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   }
 
   private detach(webview: vscode.Webview): void {
+    const surface = this.surfaces.find((entry) => entry.webview === webview);
+    if (surface?.ackTimer) clearTimeout(surface.ackTimer);
     this.surfaces = this.surfaces.filter((surface) => surface.webview !== webview);
   }
 
@@ -5716,6 +5734,11 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
   /** Keep exactly one renderer update in flight; intermediate revisions collapse. */
   private sendBody(surface: Surface, body: string): void {
+    if (surface.stalled) {
+      surface.pendingBody = body;
+      surface.pendingCandidates.clear();
+      return;
+    }
     if (surface.awaitingSequence !== null) {
       surface.pendingBody = body;
       surface.pendingCandidates.clear();
@@ -5726,6 +5749,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     surface.pendingDetailRequests = [];
     surface.pendingCandidates.clear();
     surface.awaitingSequence = sequence;
+    this.armAckTimeout(surface, sequence);
     countWork('extension.ui-messages');
     countWork('extension.ui-payload-bytes', Buffer.byteLength(body));
     const span = startSpan('extension.post-message', { type: 'render', sequence, bytes: Buffer.byteLength(body) });
@@ -5733,11 +5757,19 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       (accepted) => {
         span.end({ accepted });
         if (accepted) return;
-        if (surface.awaitingSequence === sequence) surface.awaitingSequence = null;
+        if (surface.awaitingSequence === sequence) {
+          surface.awaitingSequence = null;
+          if (surface.ackTimer) clearTimeout(surface.ackTimer);
+          surface.ackTimer = null;
+        }
       },
       () => {
         span.fail(new Error('webview rejected render message'));
-        if (surface.awaitingSequence === sequence) surface.awaitingSequence = null;
+        if (surface.awaitingSequence === sequence) {
+          surface.awaitingSequence = null;
+          if (surface.ackTimer) clearTimeout(surface.ackTimer);
+          surface.ackTimer = null;
+        }
       },
     );
   }
@@ -5786,11 +5818,12 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   }
 
   private sendCandidateBatch(surface: Surface): void {
-    if (surface.awaitingSequence !== null || surface.pendingBody !== null) return;
+    if (surface.stalled || surface.awaitingSequence !== null || surface.pendingBody !== null) return;
     const { operations, bytes } = takeCandidateSummaryBatch(surface.pendingCandidates);
     if (operations.length === 0) return;
     const sequence = ++surface.nextSequence;
     surface.awaitingSequence = sequence;
+    this.armAckTimeout(surface, sequence);
     countWork('extension.ui-messages');
     countWork('extension.ui-payload-bytes', bytes);
     countWork('extension.candidate-batches');
@@ -5804,15 +5837,44 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       (accepted) => {
         span.end({ accepted });
         if (accepted) return;
-        if (surface.awaitingSequence === sequence) surface.awaitingSequence = null;
+        if (surface.awaitingSequence === sequence) {
+          surface.awaitingSequence = null;
+          if (surface.ackTimer) clearTimeout(surface.ackTimer);
+          surface.ackTimer = null;
+        }
         this.render();
       },
       () => {
         span.fail(new Error('webview rejected candidate batch'));
-        if (surface.awaitingSequence === sequence) surface.awaitingSequence = null;
+        if (surface.awaitingSequence === sequence) {
+          surface.awaitingSequence = null;
+          if (surface.ackTimer) clearTimeout(surface.ackTimer);
+          surface.ackTimer = null;
+        }
         this.render();
       },
     );
+  }
+
+  private armAckTimeout(surface: Surface, sequence: number): void {
+    if (surface.ackTimer) clearTimeout(surface.ackTimer);
+    surface.ackTimer = setTimeout(() => {
+      if (surface.awaitingSequence !== sequence) return;
+      surface.awaitingSequence = null;
+      surface.ackTimer = null;
+      surface.pendingCandidates.clear();
+      const latest = renderBody(this.viewModel());
+      if (!surface.resyncAttempted) {
+        surface.resyncAttempted = true;
+        surface.pendingBody = null;
+        this.sendBody(surface, latest);
+      } else {
+        // A second missing application acknowledgement means the renderer is
+        // not consuming. Retain one latest state and wait for a webview reload.
+        surface.stalled = true;
+        surface.pendingBody = latest;
+      }
+    }, 2_000);
   }
 
   private sendDetailChunk(surface: Surface): void {
