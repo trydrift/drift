@@ -62,15 +62,20 @@ test('candidate churn has a scoped event and does not repeat unchanged context R
   executedCommands.length = 0;
   const state = new DriftState();
   let globalChanges = 0;
-  let candidateChanges = 0;
+  const candidateChanges: { added: string[]; updated: string[]; removed: string[] }[] = [];
   state.onDidChange(() => globalChanges++);
-  state.onDidChangeCandidates(() => candidateChanges++);
+  state.onDidChangeCandidates((change) => candidateChanges.push(change));
 
-  state.setCandidates([{ id: 'react' } as never]);
-  state.setCandidates([{ id: 'react' } as never]);
+  const react = { id: 'react' } as never;
+  const lodash = { id: 'lodash' } as never;
+  state.setCandidates([react, lodash]);
+  state.setCandidates([react, { id: 'lodash' } as never]);
 
   assert.equal(globalChanges, 0);
-  assert.equal(candidateChanges, 2);
+  assert.deepEqual(candidateChanges.map(({ added, updated, removed }) => ({ added, updated, removed })), [
+    { added: ['react', 'lodash'], updated: [], removed: [] },
+    { added: [], updated: ['lodash'], removed: [] },
+  ]);
   assert.equal(
     executedCommands.filter(
       (args) => args[0] === 'setContext' && args[1] === 'drift.hasDependencyScan' && args[2] === true,

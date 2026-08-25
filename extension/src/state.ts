@@ -104,14 +104,18 @@ export class DriftState {
   }
 
   setCandidates(candidates: readonly UpgradeCandidate[]): void {
-    const previous = new Set(this._candidates.map((candidate) => candidate.id));
-    const next = new Set(candidates.map((candidate) => candidate.id));
+    const previous = new Map(this._candidates.map((candidate) => [candidate.id, candidate]));
+    const next = new Map(candidates.map((candidate) => [candidate.id, candidate]));
     this._candidates = [...candidates];
     this.candidateEmitter.fire({
       revision: ++this.candidateRevision,
-      added: [...next].filter((id) => !previous.has(id)),
-      updated: [...next].filter((id) => previous.has(id)),
-      removed: [...previous].filter((id) => !next.has(id)),
+      added: [...next.keys()].filter((id) => !previous.has(id)),
+      // Scan candidates are immutable snapshots. The scan replaces only the
+      // candidate whose phase or result changed, while preserving every other
+      // object in the sorted array. Comparing those snapshot identities keeps
+      // one package update from being amplified into N summary renders.
+      updated: [...next].filter(([id, candidate]) => previous.has(id) && previous.get(id) !== candidate).map(([id]) => id),
+      removed: [...previous.keys()].filter((id) => !next.has(id)),
     });
     this.setContext('drift.hasDependencyScan', this._candidates.length > 0);
   }
