@@ -50,4 +50,13 @@ describe('extension package exclusions', () => {
       assert.match(ignore, new RegExp(pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
     }
   });
+
+  test('ships both highlighting bundles and keeps Shiki out of the host', () => {
+    const build = readFileSync('esbuild.mjs', 'utf8');
+    const manifest = readFileSync('package.json', 'utf8');
+    assert.match(build, /dist\/highlight-client\.js/);
+    assert.match(build, /dist\/highlight-worker\.js/);
+    assert.doesNotMatch(ignore, /dist\/highlight-(?:client|worker)\.js/);
+    assert.doesNotMatch(manifest, /@shikijs/);
+  });
 });

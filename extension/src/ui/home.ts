@@ -5890,7 +5890,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   }
 }
 
-/** 16k UTF-16 units are at most 64KiB as UTF-8, including all-surrogate text. */
+/** Layout bucket used to decide whether a row can be patched in place. */
 function candidatePresentationOf(candidate: UpgradeCandidate): string {
   if (candidate.status === 'pending' || candidate.status === 'checking' || candidate.status === 'upgrading') {
     return 'checking';
