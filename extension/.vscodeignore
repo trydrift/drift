@@ -1,4 +1,4 @@
-# Only dist/extension.js, the manifest, media, README and LICENSE ship.
+# The production bundles in dist/ ship with the manifest, media, README and LICENSE.
 src/**
 test/**
 node_modules/**
@@ -16,3 +16,4 @@ dist/report-themed.html
 dist/report.png
 **/*.map
 **/*.vsix
+!dist/highlight-client.js

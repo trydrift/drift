@@ -21,6 +21,7 @@ const options = {
   // `typeof __dirname` check that always takes the __dirname branch in this
   // CJS bundle — esbuild's "empty-import-meta" warning is a false positive.
   logOverride: { 'empty-import-meta': 'silent' },
+  metafile: true,
 };
 
 /**
@@ -46,10 +47,38 @@ const workerOptions = {
   logLevel: 'info',
 };
 
+const highlightOptions = {
+  entryPoints: ['src/webview/highlight-client.ts'],
+  bundle: true,
+  platform: 'browser',
+  target: 'es2022',
+  format: 'iife',
+  splitting: false,
+  outfile: 'dist/highlight-client.js',
+  minify: !process.argv.includes('--watch'),
+  sourcemap: process.argv.includes('--watch'),
+  logLevel: 'info',
+  metafile: true,
+};
+
+function assertBundleBoundary(result) {
+  if (Object.keys(result.metafile.inputs).some((input) => input.includes('node_modules/highlight.js/'))) {
+    throw new Error('highlight.js must only be bundled into dist/highlight-client.js, not the VS Code Extension Host.');
+  }
+}
+
+function assertHighlightClient(result) {
+  if (!Object.keys(result.metafile.inputs).some((input) => input.includes('node_modules/highlight.js/'))) {
+    throw new Error('dist/highlight-client.js must bundle highlight.js.');
+  }
+}
+
 if (process.argv.includes('--watch')) {
-  const [ctx, workerCtx] = await Promise.all([context(options), context(workerOptions)]);
-  await Promise.all([ctx.watch(), workerCtx.watch()]);
+  const [ctx, workerCtx, highlightCtx] = await Promise.all([context(options), context(workerOptions), context(highlightOptions)]);
+  await Promise.all([ctx.watch(), workerCtx.watch(), highlightCtx.watch()]);
   console.log('watching…');
 } else {
-  await Promise.all([build(options), build(workerOptions)]);
+  const [extension, , highlight] = await Promise.all([build(options), build(workerOptions), build(highlightOptions)]);
+  assertBundleBoundary(extension);
+  assertHighlightClient(highlight);
 }

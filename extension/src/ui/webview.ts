@@ -19,7 +19,7 @@ import type { BreakingChange, Evidence, RemediationPlan } from '../../../src/typ
 import type { Vulnerability } from '../../../src/rationale/types.js';
 import type { CheckOutcome } from '../../../src/verification/checks.js';
 import { confidenceDisplay } from '../../../src/report/confidence.js';
-import { highlightCode, languageForEcosystem } from './highlight.js';
+import { HIGHLIGHT_STYLES, languageForEcosystem, renderHighlightedCode } from './highlight.js';
 
 /**
  * The panel's markup.
@@ -260,17 +260,20 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
  * script — which, on a panel holding a full scan, is the difference between a
  * click landing instantly and a click landing a second later.
  */
-export function renderPanel(vm: ViewModel): string {
+export interface WebviewAssets { cspSource: string; highlightClientUri: string }
+
+export function renderPanel(vm: ViewModel, assets: WebviewAssets = { cspSource: '', highlightClientUri: '' }): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${vm.nonce}';">
-<style>${STYLES}</style>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${vm.nonce}' ${assets.cspSource};">
+<style>${HIGHLIGHT_STYLES}\n${STYLES}</style>
 </head>
 <body>
   <div id="root">${renderBody(vm)}</div>
+  <script nonce="${vm.nonce}" src="${assets.highlightClientUri}"></script>
   <script nonce="${vm.nonce}">${SCRIPT}</script>
 </body>
 </html>`;
@@ -1682,7 +1685,7 @@ function renderBreak(
               .slice(0, 20)
               .map(
                 (site) =>
-                  `<li><a data-action="openFile" data-file="${escapeAttr(site.file)}" data-line="${site.line}"><code>${escapeHtml(site.file)}:${site.line}</code></a><code class="excerpt">${highlightCode(site.excerpt, diff.language)}</code></li>`,
+                  `<li><a data-action="openFile" data-file="${escapeAttr(site.file)}" data-line="${site.line}"><code>${escapeHtml(site.file)}:${site.line}</code></a>${renderHighlightedCode(site.excerpt, diff.language, 'excerpt')}</li>`,
               )
               .join('')}${sites.length > 20 ? `<li class="hint">…and ${sites.length - 20} more</li>` : ''}</ul>`
           : ''
@@ -2168,7 +2171,7 @@ export function renderMarkdown(text: string, options: MarkdownOptions = {}): str
 
     if (line.startsWith('```')) {
       if (inCode) {
-        out.push(`<pre><code>${highlightCode(code.join('\n'), options.diff?.language)}</code></pre>`);
+        out.push(`<pre>${renderHighlightedCode(code.join('\n'), options.diff?.language)}</pre>`);
         code = [];
         inCode = false;
       } else {
@@ -2242,7 +2245,7 @@ export function renderMarkdown(text: string, options: MarkdownOptions = {}): str
   }
 
   if (inCode && code.length) {
-    out.push(`<pre><code>${highlightCode(code.join('\n'), options.diff?.language)}</code></pre>`);
+    out.push(`<pre>${renderHighlightedCode(code.join('\n'), options.diff?.language)}</pre>`);
   }
   out.push(flushPending(), closeList());
   return out.filter(Boolean).join('');
@@ -2267,10 +2270,7 @@ export function renderBeforeAfter(before: string, after: string, context: DiffCo
 }
 
 function codeFigure(label: string, code: string, language: string | undefined): string {
-  return `<figure class="code-compare"><figcaption>${escapeHtml(label)}</figcaption><pre><code>${highlightCode(
-    code,
-    language,
-  )}</code></pre></figure>`;
+  return `<figure class="code-compare"><figcaption>${escapeHtml(label)}</figcaption><pre>${renderHighlightedCode(code, language)}</pre></figure>`;
 }
 
 /**
@@ -2515,8 +2515,8 @@ svg.i { vertical-align: -2px; flex: 0 0 auto; }
 code {
   font-family: var(--vscode-editor-font-family);
   font-size: .92em;
-  /* Explicit rather than left to inherit: a token span from \`highlightCode()\`
-     can sit inside this element and set its own colour, but plain, unhighlighted
+  /* Explicit rather than left to inherit: a syntax token span can sit inside
+     this element and set its own colour, but plain, unhighlighted
      code — every inline \`\` \`backtick\` \`\` span in prose — has none, and must
      not end up reading whatever colour happened to cascade in from a container
      that was never meant to set it. */
@@ -4058,8 +4058,12 @@ function typewriter() {
   let shown = ui.typed[key] === undefined ? 0 : ui.typed[key];
   if (shown === -1 || shown >= total || total === 0) {
     ui.typed[key] = -1;
+    delete last.dataset.highlightDefer;
+    window.DriftHighlight?.mount(last);
     return;
   }
+
+  last.dataset.highlightDefer = 'true';
 
   const reveal = (count) => {
     let left = count;
@@ -4087,6 +4091,8 @@ function typewriter() {
       clearInterval(typing);
       typing = null;
       save();
+      delete last.dataset.highlightDefer;
+      window.DriftHighlight?.mount(last);
     }
   }, 16);
 }
@@ -4177,131 +4183,7 @@ function mountDocument() {
   mountComposer();
   mountThread();
   typewriter();
-  return;
-  for (const element of document.querySelectorAll('details[data-key]')) {
-    const key = element.dataset.key;
-    const remembered = ui.disclosures[key];
-    if (remembered !== undefined) element.open = remembered;
-    element.addEventListener('toggle', () => {
-      ui.disclosures[key] = element.open;
-      save();
-    });
-  }
-
-  /* Step output: which phase's segment is showing. Unset (or 'live') means
-     "whichever one is newest" and keeps following the run; picking a tab pins
-     the view to that phase until "Live" is clicked again or the step ends. */
-  for (const panel of document.querySelectorAll('.step-output')) {
-    const stepId = panel.dataset.key.replace(/^stepout:/, '');
-    showStepOutput(panel, stepId, ui.stepOutputSelection[stepId]);
-  }
-
-  /* The activity drawers scroll on their own now that they are capped, so they
-     need the transcript's rule applied individually: follow the newest line
-     while the reader is at the bottom, and hold still the moment they scroll
-     up to read something — otherwise every re-render during a live fix would
-     yank them back down mid-sentence. */
-  for (const list of document.querySelectorAll('[data-scroll]')) {
-    const key = list.dataset.scroll;
-    const remembered = ui.scrolls[key];
-    if (!remembered || remembered.atBottom) list.scrollTop = list.scrollHeight;
-    else list.scrollTop = remembered.top;
-    list.addEventListener('scroll', () => {
-      ui.scrolls[key] = {
-        top: list.scrollTop,
-        atBottom: list.scrollHeight - list.scrollTop - list.clientHeight < 16,
-      };
-      save();
-    });
-  }
-
-  /* Follow new content when already at the bottom, hold position otherwise —
-     the rule every chat UI uses. */
-  if (thread) {
-    thread.scrollTop = ui.atBottom ? thread.scrollHeight : ui.scrollTop;
-    thread.addEventListener('scroll', () => {
-      ui.scrollTop = thread.scrollTop;
-      ui.atBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 24;
-      save();
-    });
-  }
-
-  if (input) {
-    /* The host owns the draft only when it says so. It stamps a token whenever
-       it sets the text itself — after a submit, after a rewind — and otherwise
-       whatever is in the box belongs to the developer, who may have typed a
-       character while this render was in flight. */
-    const token = Number(input.dataset.token);
-    if (token !== ui.draftToken) {
-      ui.draftToken = token;
-      ui.draft = input.value;
-      ui.caret = input.value.length;
-    } else {
-      input.value = ui.draft;
-    }
-
-    grow();
-
-    if (ui.focused) {
-      input.focus();
-      const caret = typeof ui.caret === 'number' ? Math.min(ui.caret, input.value.length) : input.value.length;
-      input.setSelectionRange(caret, caret);
-    }
-
-    const remember = () => {
-      ui.caret = input.selectionStart;
-      ui.focused = document.activeElement === input;
-      save();
-    };
-
-    input.addEventListener('blur', remember);
-    input.addEventListener('focus', remember);
-    input.addEventListener('keyup', remember);
-    input.addEventListener('click', remember);
-
-    input.addEventListener('input', () => {
-      ui.draft = input.value;
-      grow();
-      syncCommands();
-      remember();
-      vscode.postMessage({ type: 'draft', text: input.value });
-    });
-
-    input.addEventListener('keydown', onComposerKey);
-  }
-
-  if (menu && menuFilter) {
-    menuFilter.addEventListener('input', syncMenu);
-    menuFilter.addEventListener('keydown', onMenuKey);
-
-    /* Still open, still filtered, still anchored where it was. A menu that
-       blinks out from under the pointer every time a package arrives is
-       unusable, and packages arrive for as long as a scan runs. */
-    if (ui.menu.open) {
-      menu.hidden = false;
-      menuFilter.value = ui.menu.query || '';
-      anchorMenu(ui.menu.anchor || 'context');
-      syncMenu();
-      menuFilter.focus();
-      menuFilter.setSelectionRange(menuFilter.value.length, menuFilter.value.length);
-    } else {
-      syncMenu();
-    }
-  }
-
-  // Before the first paint of this body, so the untyped tail never flashes.
-  typewriter();
-
-  for (const slider of document.querySelectorAll('input[type="range"][data-action="slider"]')) {
-    slider.addEventListener('input', () => previewSlider(slider));
-    // Committed on release, not on every pixel: each commit is a settings
-    // write, and the label already moves live.
-    slider.addEventListener('change', () => {
-      const values = (slider.dataset.values || '').split(',');
-      const value = values[Number(slider.value)];
-      if (value) vscode.postMessage({ type: 'menu', id: slider.dataset.id + ':' + value });
-    });
-  }
+  window.DriftHighlight?.reset(document.getElementById('root') || document.body);
 }
 
 /* ------------------------------------------------------------------ */
@@ -4652,6 +4534,7 @@ window.addEventListener('message', (event) => {
     thread.append(next); mountThreadItem(next);
     if (bottom) thread.scrollTop = thread.scrollHeight;
     if (next.querySelector('[data-type]')) typewriter();
+    window.DriftHighlight?.mount(next);
     unlockActions();
     return;
   }
@@ -4659,9 +4542,12 @@ window.addEventListener('message', (event) => {
     const bottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 24;
     const previous = threadItemById(String(data.id)); const next = parseOneElement(data.html);
     if (!previous || !next) return;
+    const beforeTop = previous.getBoundingClientRect().top;
     captureThreadItemState(previous); previous.replaceWith(next); mountThreadItem(next);
-    if (bottom) thread.scrollTop = thread.scrollHeight;
+    const afterTop = next.getBoundingClientRect().top;
+    if (bottom) thread.scrollTop = thread.scrollHeight; else thread.scrollTop += afterTop - beforeTop;
     if (next.querySelector('[data-type]')) typewriter();
+    window.DriftHighlight?.mount(next);
     unlockActions();
     return;
   }
@@ -4672,6 +4558,7 @@ window.addEventListener('message', (event) => {
     if (next && next.id === 'thread') { thread.innerHTML = next.innerHTML; mountThread(); }
     if (bottom) thread.scrollTop = thread.scrollHeight;
     typewriter();
+    window.DriftHighlight?.reset(document.getElementById('root') || document.body);
     unlockActions();
     return;
   }

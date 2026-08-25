@@ -223,36 +223,58 @@
             "id": "drift.getStarted.scan",
             "title": "Scan Dependencies",
             "description": "Scan every direct dependency for an available upgrade, and see which ones would affect your code.",
-            "completionEvents": ["onCommand:drift.scanDependencies"],
-            "media": { "markdown": "media/walkthrough-scan.md" }
+            "completionEvents": [
+              "onCommand:drift.scanDependencies"
+            ],
+            "media": {
+              "markdown": "media/walkthrough-scan.md"
+            }
           },
           {
             "id": "drift.getStarted.evidence",
             "title": "Read the Evidence",
             "description": "Open the report to see which upstream changes matter to this codebase.",
-            "completionEvents": ["onCommand:drift.showReport"],
-            "media": { "markdown": "media/walkthrough-evidence.md" }
+            "completionEvents": [
+              "onCommand:drift.showReport"
+            ],
+            "media": {
+              "markdown": "media/walkthrough-evidence.md"
+            }
           },
           {
             "id": "drift.getStarted.fix",
             "title": "Fix the Affected Code",
             "description": "Drift uses a deterministic transform first, an enabled community recipe second, and your selected AI agent only for what remains.",
-            "completionEvents": ["onCommand:drift.fixAll"],
-            "media": { "markdown": "media/walkthrough-fix.md" }
+            "completionEvents": [
+              "onCommand:drift.fixAll"
+            ],
+            "media": {
+              "markdown": "media/walkthrough-fix.md"
+            }
           },
           {
             "id": "drift.getStarted.review",
             "title": "Review Keep or Undo",
             "description": "Use editor CodeLens actions and lightbulbs to keep or undo each proposed hunk.",
-            "completionEvents": ["onCommand:drift.reviewChanges", "onCommand:drift.keepAllChanges", "onCommand:drift.undoAllChanges"],
-            "media": { "markdown": "media/walkthrough-review.md" }
+            "completionEvents": [
+              "onCommand:drift.reviewChanges",
+              "onCommand:drift.keepAllChanges",
+              "onCommand:drift.undoAllChanges"
+            ],
+            "media": {
+              "markdown": "media/walkthrough-review.md"
+            }
           },
           {
             "id": "drift.getStarted.ship",
             "title": "Ship the Branch",
             "description": "Push the reviewed fix branch. Drift opens the pull request with the GitHub CLI when you have one signed in, and falls back to GitHub's own pull request page when you do not.",
-            "completionEvents": ["onCommand:drift.pushBranch"],
-            "media": { "markdown": "media/walkthrough-ship.md" }
+            "completionEvents": [
+              "onCommand:drift.pushBranch"
+            ],
+            "media": {
+              "markdown": "media/walkthrough-ship.md"
+            }
           }
         ]
       }
@@ -526,7 +548,11 @@
         },
         "drift.analysis.dependencyScope": {
           "type": "string",
-          "enum": ["runtime", "runtime+dev", "ask"],
+          "enum": [
+            "runtime",
+            "runtime+dev",
+            "ask"
+          ],
           "enumDescriptions": [
             "Scan production dependencies only. Faster.",
             "Also scan development dependencies. More complete, but can take longer.",
@@ -538,7 +564,11 @@
         },
         "drift.analysis.verifyMode": {
           "type": "string",
-          "enum": ["quick", "deep", "ask"],
+          "enum": [
+            "quick",
+            "deep",
+            "ask"
+          ],
           "enumDescriptions": [
             "Static analysis only. Fastest.",
             "Also installs the upgrade and runs project checks. Much slower.",
@@ -763,11 +793,7 @@
   },
   "dependencies": {
     "@octokit/rest": "^22.0.1",
-    "@shikijs/core": "^3.23.0",
-    "@shikijs/engine-javascript": "^3.23.0",
-    "@shikijs/langs": "^3.23.0",
-    "@shikijs/themes": "^3.23.0",
-    "@shikijs/types": "^3.23.0",
+    "highlight.js": "11.12.0",
     "semver": "^7.6.3",
     "yaml": "^2.7.0",
     "zod": "^4.4.3"

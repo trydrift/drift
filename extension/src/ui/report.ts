@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import type { BreakingChange, Evidence, RemediationPlan } from '../../../src/types.js';
 import { confidenceDisplay, evidenceStrengthLabel } from '../../../src/report/confidence.js';
 import type { DriftState } from '../state.js';
-import { highlightCode, languageForEcosystem } from './highlight.js';
+import { HIGHLIGHT_STYLES, languageForEcosystem, renderHighlightedCode } from './highlight.js';
 
 /**
  * The Drift report panel.
@@ -16,6 +16,7 @@ import { highlightCode, languageForEcosystem } from './highlight.js';
  */
 export class DriftReportPanel {
   private static current: DriftReportPanel | undefined;
+  private static extensionUri: vscode.Uri | undefined;
 
   private readonly panel: vscode.WebviewPanel;
   private readonly disposables: vscode.Disposable[] = [];
@@ -29,7 +30,10 @@ export class DriftReportPanel {
    */
   private focus: FocusTarget | undefined;
 
+  static configureAssets(extensionUri: vscode.Uri): void { DriftReportPanel.extensionUri = extensionUri; }
+
   static show(state: DriftState, focus?: string | FocusTarget): void {
+    if (!DriftReportPanel.extensionUri) throw new Error('DriftReportPanel.configureAssets() must be called before opening a report');
     const column = vscode.window.activeTextEditor?.viewColumn ?? vscode.ViewColumn.One;
     const target = typeof focus === 'string' ? { changeId: focus } : focus;
 
@@ -43,7 +47,7 @@ export class DriftReportPanel {
       'drift.report',
       'Drift Report',
       { viewColumn: column, preserveFocus: true },
-      { enableScripts: true, retainContextWhenHidden: true },
+      { enableScripts: true, retainContextWhenHidden: true, localResourceRoots: [vscode.Uri.joinPath(DriftReportPanel.extensionUri, 'dist')] },
     );
 
     DriftReportPanel.current = new DriftReportPanel(panel, state);
@@ -58,6 +62,7 @@ export class DriftReportPanel {
   static __resetForTest(): void {
     DriftReportPanel.current?.dispose();
     DriftReportPanel.current = undefined;
+    DriftReportPanel.extensionUri = undefined;
   }
 
   private constructor(
@@ -107,7 +112,12 @@ export class DriftReportPanel {
   }
 
   private render(): void {
-    this.panel.webview.html = renderHtml(this.state, this.panel.webview, this.focus);
+    const extensionUri = DriftReportPanel.extensionUri;
+    if (!extensionUri) throw new Error('DriftReportPanel assets are not configured');
+    this.panel.webview.html = renderHtml(this.state, this.panel.webview, this.focus, {
+      cspSource: this.panel.webview.cspSource,
+      highlightClientUri: this.panel.webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, 'dist', 'highlight-client.js')).toString(),
+    });
   }
 
   private dispose(): void {
@@ -142,7 +152,7 @@ export interface FocusTarget {
 /* Rendering                                                           */
 /* ------------------------------------------------------------------ */
 
-function renderHtml(state: DriftState, webview: vscode.Webview, focus?: FocusTarget): string {
+function renderHtml(state: DriftState, webview: vscode.Webview, focus: FocusTarget | undefined, assets: { cspSource: string; highlightClientUri: string }): string {
   const nonce = makeNonce();
   const plan = resolvePlan(state, focus);
 
@@ -158,12 +168,13 @@ function renderHtml(state: DriftState, webview: vscode.Webview, focus?: FocusTar
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Content-Security-Policy"
-      content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
+      content="default-src 'none'; style-src ${assets.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}' ${assets.cspSource};">
 <title>Drift Report</title>
-<style>${STYLES}</style>
+<style>${HIGHLIGHT_STYLES}\n${STYLES}</style>
 </head>
 <body>
 ${body}
+<script nonce="${nonce}" src="${assets.highlightClientUri}"></script>
 <script nonce="${nonce}">${SCRIPT}</script>
 </body>
 </html>`;
@@ -504,7 +515,7 @@ function renderChangeCard(
                 <span class="path">${escapeHtml(s.file)}</span><span class="line">:${s.line}</span>
               </a>
               ${s.enclosingSymbol ? `<span class="in">in ${escapeHtml(s.enclosingSymbol)}</span>` : ''}
-              <code class="excerpt">${highlightCode(s.excerpt, diff.language)}</code>
+              ${renderHighlightedCode(s.excerpt, diff.language, 'excerpt')}
             </li>`,
           )
           .join('')}
@@ -725,10 +736,7 @@ function renderBeforeAfter(before: string, after: string, context: DiffContext):
 }
 
 function codeFigure(label: string, code: string, language: string | undefined): string {
-  return `<figure class="code-compare"><figcaption>${escapeHtml(label)}</figcaption><pre><code>${highlightCode(
-    code,
-    language,
-  )}</code></pre></figure>`;
+  return `<figure class="code-compare"><figcaption>${escapeHtml(label)}</figcaption><pre>${renderHighlightedCode(code, language)}</pre></figure>`;
 }
 
 function renderDiffButton(before: string, after: string, context: DiffContext): string {
@@ -838,7 +846,7 @@ function renderMarkdown(text: string, options: MarkdownOptions = {}): string {
 
     if (line.startsWith('```')) {
       if (inCode) {
-        blocks.push(`<pre><code>${highlightCode(code.join('\n'), options.diff?.language)}</code></pre>`);
+        blocks.push(`<pre>${renderHighlightedCode(code.join('\n'), options.diff?.language)}</pre>`);
         code = [];
         inCode = false;
       } else {
@@ -912,7 +920,7 @@ function renderMarkdown(text: string, options: MarkdownOptions = {}): string {
   }
 
   if (inCode && code.length) {
-    blocks.push(`<pre><code>${highlightCode(code.join('\n'), options.diff?.language)}</code></pre>`);
+    blocks.push(`<pre>${renderHighlightedCode(code.join('\n'), options.diff?.language)}</pre>`);
   }
   blocks.push(flushPending(), closeList());
   return blocks.filter(Boolean).join('');
@@ -1308,6 +1316,7 @@ const focused = document.querySelector('[data-focus="true"]');
 if (focused) {
   requestAnimationFrame(() => focused.scrollIntoView({ block: 'center' }));
 }
+window.DriftHighlight?.reset(document.body);
 `;
 
 /**
@@ -1320,5 +1329,5 @@ if (focused) {
 export function __renderForTest(state: DriftState, focus?: string | { changeId?: string; dependency?: string; candidateId?: string }): string {
   const fakeWebview = { cspSource: 'vscode-webview://test' } as unknown as vscode.Webview;
   const target = typeof focus === 'string' ? { changeId: focus } : focus;
-  return renderHtml(state, fakeWebview, target);
+  return renderHtml(state, fakeWebview, target, { cspSource: fakeWebview.cspSource, highlightClientUri: 'highlight-client.js' });
 }

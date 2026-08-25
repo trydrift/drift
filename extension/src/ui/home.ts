@@ -416,7 +416,10 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       }),
     );
 
-    webview.html = renderPanel(this.viewModel());
+    webview.html = renderPanel(this.viewModel(), {
+      cspSource: webview.cspSource,
+      highlightClientUri: webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'dist', 'highlight-client.js')).toString(),
+    });
   }
 
   private detach(webview: vscode.Webview): void {
@@ -5512,6 +5515,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     this.staleFiles.add(path);
     this.stale = { reason, label: this.staleLabel(reason) };
+    this.sendPackageItems();
     this.applyStateChange();
   }
 
@@ -5629,19 +5633,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private uiEpoch = 0;
   private readonly lastSentHtml = new Map<string, string>();
 
-  /**
-   * Repaint for a reason that has nothing to do with state.
-   *
-   * The one caller is the syntax highlighter finishing its build, or rebuilding
-   * against a theme the user just switched to: nothing about the analysis
-   * changed, but every snippet on screen is now painted in the wrong palette.
-   */
-  rerender(): void {
-    this.fullRender('theme');
-  }
-
-  /** Full body replacement is deliberately limited to document/theme/global resets. */
-  private fullRender(reason: 'hydrate' | 'theme'): void {
+  /** Full body replacement is deliberately limited to initial hydration. */
+  private fullRender(reason: 'hydrate'): void {
     if (this.surfaces.length === 0) return;
     this.invalidatePatchEpoch();
     const body = renderBody(this.viewModel());
@@ -5656,7 +5649,8 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private sendWelcome(vm = this.viewModel()): void { this.sendHtml('welcome', { type: 'welcome-replace', html: renderWelcomeRegion(vm) }); }
   private sendThreadItem(id: string, vm = this.viewModel()): void { const item = vm.thread.find((entry) => entry.id === id); if (item) this.sendHtml(`thread:${id}`, { type: 'thread-replace', id, html: renderThreadItem(item, vm) }); }
   private appendThreadItem(id: string, vm = this.viewModel()): void { const item = vm.thread.find((entry) => entry.id === id); if (item) { const html = renderThreadItem(item, vm); this.lastSentHtml.set(`thread:${id}`, html); this.post({ type: 'thread-append', epoch: this.uiEpoch, id, html }); } }
-  private resetThread(vm = this.viewModel()): void { this.invalidatePatchEpoch(); for (const key of [...this.lastSentHtml.keys()]) if (key.startsWith('thread:')) this.lastSentHtml.delete(key); this.post({ type: 'thread-reset', epoch: this.uiEpoch, html: renderThread(vm) }); }
+  private resetThread(vm = this.viewModel()): void { this.invalidatePatchEpoch(); for (const key of [...this.lastSentHtml.keys()]) if (key.startsWith('thread:') || key === 'welcome') this.lastSentHtml.delete(key); this.post({ type: 'thread-reset', epoch: this.uiEpoch, html: renderThread(vm) }); }
+  private sendPackageItems(vm = this.viewModel()): void { for (const item of vm.thread) if (item.kind === 'packages') this.sendThreadItem(item.id, vm); }
   private unlockActions(): void { this.post({ type: 'actions-unlock', epoch: this.uiEpoch }); }
 
   private post(message: object): void {
@@ -5702,14 +5696,9 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
     this.sendComposer(vm);
   }
 
-  /** State controls live in the composer; package candidates affect only package cards. */
+  /** Generic state controls live in the composer; package updates are session-owned. */
   private applyStateChange(): void {
-    const vm = this.viewModel();
-    const packages = vm.thread.filter((item) => item.kind === 'packages');
-    if (packages.length) {
-      for (const item of packages) this.sendThreadItem(item.id, vm);
-    }
-    this.sendComposer(vm);
+    this.sendComposer();
   }
 
   /** Review storage is represented only by existing changes cards. */
