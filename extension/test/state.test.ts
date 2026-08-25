@@ -2,6 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { DriftState } from '../src/state.js';
 import type { RemediationPlan } from '../../src/types.js';
+import { executedCommands } from './vscode-stub.js';
 
 /**
  * Switching the active root in a multi-root workspace must not leave a plan,
@@ -55,4 +56,30 @@ describe('DriftState root switching', () => {
 
     assert.ok(state.plan);
   });
+});
+
+test('candidate churn has a scoped event and does not repeat unchanged context RPC', () => {
+  executedCommands.length = 0;
+  const state = new DriftState();
+  let globalChanges = 0;
+  const candidateChanges: { added: string[]; updated: string[]; removed: string[] }[] = [];
+  state.onDidChange(() => globalChanges++);
+  state.onDidChangeCandidates((change) => candidateChanges.push(change));
+
+  const react = { id: 'react' } as never;
+  const lodash = { id: 'lodash' } as never;
+  state.setCandidates([react, lodash]);
+  state.setCandidates([react, { id: 'lodash' } as never]);
+
+  assert.equal(globalChanges, 0);
+  assert.deepEqual(candidateChanges.map(({ added, updated, removed }) => ({ added, updated, removed })), [
+    { added: ['react', 'lodash'], updated: [], removed: [] },
+    { added: [], updated: ['lodash'], removed: [] },
+  ]);
+  assert.equal(
+    executedCommands.filter(
+      (args) => args[0] === 'setContext' && args[1] === 'drift.hasDependencyScan' && args[2] === true,
+    ).length,
+    1,
+  );
 });

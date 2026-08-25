@@ -15,10 +15,10 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Frank Reyes et al., "BUMP: A Benchmark of Reproducible Breaking Dependency Updates", arXiv:2401.09906; data at https://github.com/chains-project/bump, archive at DOI 10.5281/zenodo.10041883. |
 | Ecosystem | maven |
 | Benchmark class | consumer-impact |
-| Drift commit | `aa6d136b48f5c9c317e566a296e3893cbdc817ec` |
-| Run date | 2026-08-20T22:37:33.741Z |
-| Command | `/Users/rudy/.nvm/versions/node/v24.19.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts bump --limit 40 --seed 20260819 --run-id bump-subset-40` |
-| Platform | darwin/x64, Node v24.19.0 |
+| Drift commit | `6e272ea929ad2807947872d500d445136bbf489e` |
+| Run date | 2026-08-24T16:56:25.088Z |
+| Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts bump --limit 40 --seed 20260819 --run-id bump-subset-40` |
+| Platform | linux/x64, Node v22.23.2 |
 
 ## Case accounting
 
@@ -42,10 +42,10 @@ Every exclusion, with its reason:
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| affected-repository identification rate | 7/39 (17.9%) | 5.1–30.8% |
+| affected-repository identification rate | 14/39 (35.9%) | 20.5–51.3% |
 | consumer localization rate | 7/39 (17.9%) | 5.1–30.8% |
 | dependency-update detection rate | 34/39 (87.2%) | 76.9–97.4% |
-| false-safe verdicts | 16/39 (41.0%) | 25.6–56.4% |
+| false-safe verdicts | 9/39 (23.1%) | 10.3–35.9% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
@@ -57,10 +57,10 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | affected-repository identification rate | consumer localization rate | dependency-update detection rate |
 | --- | --- | --- | --- |
-| label: COMPILATION_FAILURE | 4/12 (33.3%) | 4/12 (33.3%) | 11/12 (91.7%) |
+| label: COMPILATION_FAILURE | 5/12 (41.7%) | 4/12 (33.3%) | 11/12 (91.7%) |
 | label: DEPENDENCY_LOCK_FAILURE | 0/2 (0.0%) | 0/2 (0.0%) | 1/2 (50.0%) |
-| label: ENFORCER_FAILURE | 0/9 (0.0%) | 0/9 (0.0%) | 7/9 (77.8%) |
-| label: TEST_FAILURE | 3/16 (18.8%) | 3/16 (18.8%) | 15/16 (93.8%) |
+| label: ENFORCER_FAILURE | 2/9 (22.2%) | 0/9 (0.0%) | 7/9 (77.8%) |
+| label: TEST_FAILURE | 7/16 (43.8%) | 3/16 (18.8%) | 15/16 (93.8%) |
 
 ## What is deliberately not reported
 
@@ -95,13 +95,13 @@ how generously the mapping was written.
 
 | Tool | Version | Needed for |
 | --- | --- | --- |
-| `node` | v24.19.0 | every npm/TypeScript case, and Drift itself |
-| `npm` | 11.12.1 | installing a TypeScript consumer before its build oracle can run |
-| `git` | git version 2.39.5 (Apple Git-154) | checking out an original repository at the exact evaluated commit |
-| `java` | openjdk version "19" 2022-09-20 | any Java case |
-| `mvn` | Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937) | BUMP's Maven oracle, and building Roseau from its replication kit |
-| `docker` | **not installed** | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
-| `python3` | Python 3.14.3 | any Python case |
+| `node` | v22.23.2 | every npm/TypeScript case, and Drift itself |
+| `npm` | 10.9.8 | installing a TypeScript consumer before its build oracle can run |
+| `git` | git version 2.55.0 | checking out an original repository at the exact evaluated commit |
+| `java` | openjdk version "21.0.12" 2026-07-21 LTS | any Java case |
+| `mvn` | Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5) | BUMP's Maven oracle, and building Roseau from its replication kit |
+| `docker` | Docker version 28.0.4, build b8034c0 | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
+| `python3` | Python 3.12.3 | any Python case |
 | `uv` | **not installed** | TimeMachine's documented environment setup |
 | `japicmp` | SYNOPSIS | Drift's Java API-surface diff, which its maven capability declares it requires |
 

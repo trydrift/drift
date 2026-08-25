@@ -1,5 +1,5 @@
 /**
- * A single always-on, repo-local diagnostic run log.
+ * Always-on, repo-local diagnostic run logging.
  *
  * `DRIFT_PROFILE` (see `profile.ts`) is opt-in and detailed — a JSON dump for
  * `scripts/profile-report.mjs`. This is the opposite: on by default, plain
@@ -7,8 +7,9 @@
  * enough to answer "why did this run take 15 minutes instead of 30 seconds",
  * without anyone having to know a flag exists first.
  *
- * Written to `<repo git dir>/drift/run.log`. Only the most recent *completed*
- * run is kept.
+ * Typed runs are written as immutable artifacts under `<repo git dir>/drift/`:
+ * `run-<type>-<started-at>-<run-id>.log`. Following a worktree's `.git`
+ * pointer keeps each linked worktree's history independent.
  *
  * Design:
  *  - Attribution is scoped through `AsyncLocalStorage`, not a single mutable
@@ -17,8 +18,8 @@
  *  - Spans are buffered in memory and the final report is promoted into place
  *    with a single rename, so always-on diagnostics do not turn into a stream
  *    of filesystem writes.
- *  - A repo-local ownership marker prevents an older overlapping process from
- *    overwriting a newer run's report.
+ *  - Each typed run owns a unique final path and crash marker, so overlapping
+ *    runs never overwrite, suppress, or clean up one another.
  *  - Nothing here writes credentials. Free text and command arguments are
  *    redacted before they reach the report.
  */
@@ -163,6 +164,7 @@ export interface RunLogHandle {
 interface Header {
   runId: string;
   command: string;
+  type?: string;
   mode: string;
   repoRoot: string;
   gitHead: string;
@@ -175,7 +177,7 @@ interface RunOwner {
 }
 
 class RunState {
-  readonly startedAtMs = Date.now();
+  readonly startedAtMs: number;
   readonly startPerf = performance.now();
   readonly spans: SpanRecord[] = [];
   readonly counters = new Map<string, number>();
@@ -191,7 +193,11 @@ class RunState {
     readonly path: string | null,
     readonly gitDir: string,
     readonly owner: RunOwner,
-  ) {}
+    readonly markerPath: string | null,
+    readonly legacySingleFile: boolean,
+  ) {
+    this.startedAtMs = owner.startedAtMs;
+  }
 
   now(): number {
     return performance.now() - this.startPerf;
@@ -376,6 +382,7 @@ export async function withSpan<T>(
 
 export interface StartRunOptions {
   command: string;
+  type?: string;
   mode: string;
   repoRoot: string;
   gitHead?: string;
@@ -389,6 +396,7 @@ function headerText(h: Header, startedAtIso: string): string {
     '',
     `run_id: ${h.runId}`,
     `command: ${h.command}`,
+    ...(h.type ? [`type: ${h.type}`] : []),
     `mode: ${h.mode}`,
     `repo_root: ${h.repoRoot}`,
     `git_head: ${h.gitHead}`,
@@ -441,11 +449,45 @@ function withRunLogLock<T>(dir: string, fn: () => T): T {
   }
 }
 
+function sanitizeRunType(type: string): string {
+  const sanitized = type
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return sanitized || 'run';
+}
+
+function runTimestamp(startedAtMs: number): string {
+  return new Date(startedAtMs).toISOString().replace(/:/g, '-');
+}
+
+function inferredRunType(command: string, mode: string): string | null {
+  const vscode = /^vscode:\s+drift\.([A-Za-z0-9_-]+)/.exec(command);
+  if (vscode) return vscode[1] ?? null;
+
+  const cli = /^drift\s+(analyze|analyse|outdated|fix|pr)\b/.exec(command);
+  if (!cli) return null;
+
+  const operation = cli[1] === 'analyse' ? 'analyze' : cli[1]!;
+  if (operation === 'outdated') {
+    const includeDev = !/(?:^|\s)--no-dev(?:\s|$)/.test(command);
+    return `${includeDev ? 'dev' : 'runtime'}-${mode}`;
+  }
+  return `${operation}-${mode}`;
+}
+
+function runArtifactBase(type: string, owner: RunOwner): string {
+  return `run-${sanitizeRunType(type)}-${runTimestamp(owner.startedAtMs)}-${owner.runId.slice(0, 8)}`;
+}
+
 export function startRunLog(options: StartRunOptions): RunLogHandle {
   const owner: RunOwner = { runId: randomUUID(), startedAtMs: Date.now() };
+  const type = options.type ?? inferredRunType(options.command, options.mode) ?? undefined;
   const header: Header = {
     runId: owner.runId,
     command: options.command,
+    type: type ? sanitizeRunType(type) : undefined,
     mode: options.mode,
     repoRoot: options.repoRoot,
     gitHead: options.gitHead ?? 'unknown',
@@ -455,20 +497,34 @@ export function startRunLog(options: StartRunOptions): RunLogHandle {
   const gitDir = resolveGitDir(options.repoRoot);
   let dir: string | null = null;
   let path: string | null = null;
+  let markerPath: string | null = null;
+  const legacySingleFile = !header.type;
   try {
     dir = join(gitDir, 'drift');
     mkdirSync(dir, { recursive: true });
-    path = join(dir, 'run.log');
-    withRunLogLock(dir, () => {
-      const markerTmp = join(dir!, `run.in-progress.${process.pid}.${owner.runId}.tmp`);
+
+    if (header.type) {
+      const base = runArtifactBase(header.type, owner);
+      path = join(dir, `${base}.log`);
+      markerPath = join(dir, `${base}.in-progress`);
+      const markerTmp = `${markerPath}.${process.pid}.tmp`;
       writeFileSync(markerTmp, ownerText(owner, header), 'utf8');
-      renameSync(markerTmp, join(dir!, 'run.in-progress'));
-    });
+      renameSync(markerTmp, markerPath);
+    } else {
+      path = join(dir, 'run.log');
+      markerPath = join(dir, 'run.in-progress');
+      withRunLogLock(dir, () => {
+        const markerTmp = join(dir!, `run.in-progress.${process.pid}.${owner.runId}.tmp`);
+        writeFileSync(markerTmp, ownerText(owner, header), 'utf8');
+        renameSync(markerTmp, markerPath!);
+      });
+    }
   } catch {
     path = null;
+    markerPath = null;
   }
 
-  const state = new RunState(header, path, gitDir, owner);
+  const state = new RunState(header, path, gitDir, owner, markerPath, legacySingleFile);
   return {
     path,
     run: (fn) => als.run({ state, parentId: null }, fn),
@@ -487,6 +543,15 @@ export function startRunLog(options: StartRunOptions): RunLogHandle {
       if (!state.path || !dir) return;
       try {
         const report = headerText(state.header, new Date(state.startedAtMs).toISOString()) + render(state, status, meta ?? {});
+
+        if (!state.legacySingleFile) {
+          const tmp = `${state.path}.${process.pid}.tmp`;
+          writeFileSync(tmp, report, 'utf8');
+          renameSync(tmp, state.path);
+          if (state.markerPath) rmSync(state.markerPath, { force: true });
+          return;
+        }
+
         const tmp = join(dir, `run.log.${process.pid}.${state.owner.runId}.tmp`);
         writeFileSync(tmp, report, 'utf8');
         withRunLogLock(dir, () => {

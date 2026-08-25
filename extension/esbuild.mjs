@@ -46,10 +46,41 @@ const workerOptions = {
   logLevel: 'info',
 };
 
+const highlightClientOptions = {
+  entryPoints: ['src/webview/highlight-client.ts'],
+  bundle: true,
+  platform: 'browser',
+  target: 'es2022',
+  format: 'iife',
+  outfile: 'dist/highlight-client.js',
+  minify: !process.argv.includes('--watch'),
+  sourcemap: process.argv.includes('--watch'),
+  logLevel: 'info',
+};
+
+const highlightWorkerOptions = {
+  entryPoints: ['src/webview/highlight-worker.ts'],
+  bundle: true,
+  platform: 'browser',
+  target: 'es2022',
+  format: 'iife',
+  outfile: 'dist/highlight-worker.js',
+  minify: !process.argv.includes('--watch'),
+  sourcemap: process.argv.includes('--watch'),
+  logLevel: 'info',
+};
+
 if (process.argv.includes('--watch')) {
-  const [ctx, workerCtx] = await Promise.all([context(options), context(workerOptions)]);
-  await Promise.all([ctx.watch(), workerCtx.watch()]);
+  const contexts = await Promise.all(
+    [options, workerOptions, highlightClientOptions, highlightWorkerOptions].map((entry) => context(entry)),
+  );
+  await Promise.all(contexts.map((entry) => entry.watch()));
   console.log('watching…');
 } else {
-  await Promise.all([build(options), build(workerOptions)]);
+  await Promise.all([
+    build(options),
+    build(workerOptions),
+    build(highlightClientOptions),
+    build(highlightWorkerOptions),
+  ]);
 }

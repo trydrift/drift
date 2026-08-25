@@ -2,14 +2,14 @@
   "version": "drift-external-run-v1",
   "runId": "bump-subset-40",
   "datasetId": "bump",
-  "createdAt": "2026-08-20T22:37:33.741Z",
-  "driftCommit": "aa6d136b48f5c9c317e566a296e3893cbdc817ec",
+  "createdAt": "2026-08-24T16:56:25.088Z",
+  "driftCommit": "6e272ea929ad2807947872d500d445136bbf489e",
   "driftTreeDirty": false,
-  "harnessVersion": "aa6d136b48f5c9c317e566a296e3893cbdc817ec",
+  "harnessVersion": "6e272ea929ad2807947872d500d445136bbf489e",
   "datasetVersion": "324d5513aa5ca40b5cb32de5b816a58fa60bd7bb",
-  "command": "/Users/rudy/.nvm/versions/node/v24.19.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts bump --limit 40 --seed 20260819 --run-id bump-subset-40",
-  "node": "v24.19.0",
-  "platform": "darwin",
+  "command": "/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts bump --limit 40 --seed 20260819 --run-id bump-subset-40",
+  "node": "v22.23.2",
+  "platform": "linux",
   "arch": "x64",
-  "notes": "Detection only, and the commit pair is real. BUMP records the commit that changed the version in `pom.xml`, so its parent is the pre-update state — this run diffs the two revisions a developer actually received rather than a bump the harness applied. Drift reads `pom.xml` directly, so nothing has to be built for the manifest diff, evidence retrieval and localization to run exactly as they do for a user.\n\nNo precision and no false-positive rate: every record is a reproduced *breaking* update, and the corpus contains no non-breaking control updates to measure one against.\n\n**No container runtime is available on the machine that produced this run.** BUMP's authority on whether a build fails is its published `<sha>-pre` and `<sha>-breaking` images, so the Maven oracle was not run and no repair question was asked. Those outcomes are absent from every case record rather than recorded as failures — an absent key means the question was not asked, where `false` would mean Drift tried and did not manage it. Each case artifact carries both image references so a reader with Docker can run the authoritative reproduction from it."
+  "notes": "Detection only, and the commit pair is real. BUMP records the commit that changed the version in `pom.xml`, so its parent is the pre-update state — this run diffs the two revisions a developer actually received rather than a bump the harness applied. Drift reads `pom.xml` directly, so nothing has to be built for the manifest diff, evidence retrieval and localization to run exactly as they do for a user.\n\nNo precision and no false-positive rate: every record is a reproduced *breaking* update, and the corpus contains no non-breaking control updates to measure one against."
 }

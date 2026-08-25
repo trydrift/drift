@@ -5,32 +5,31 @@
   "selected": 63,
   "attempted": 63,
   "notRun": 0,
-  "scored": 58,
+  "scored": 61,
   "excluded": {
-    "source-unavailable": 2,
-    "reproduction-failed": 3
+    "source-unavailable": 2
   },
   "missingRequirements": {},
   "rates": {
     "dependency-update detection rate": {
-      "numerator": 58,
-      "denominator": 58,
+      "numerator": 61,
+      "denominator": 61,
       "value": 1
     },
     "affected-repository identification rate": {
-      "numerator": 38,
-      "denominator": 58,
-      "value": 0.6551724137931034
+      "numerator": 49,
+      "denominator": 61,
+      "value": 0.8032786885245902
     },
     "consumer localization rate": {
-      "numerator": 38,
-      "denominator": 58,
-      "value": 0.6551724137931034
+      "numerator": 39,
+      "denominator": 61,
+      "value": 0.639344262295082
     },
     "false-safe verdicts": {
-      "numerator": 17,
-      "denominator": 58,
-      "value": 0.29310344827586204
+      "numerator": 9,
+      "denominator": 61,
+      "value": 0.14754098360655737
     }
   },
   "refusals": [
@@ -54,36 +53,36 @@
   "breakdown": {
     "label: known-breaking-upgrade": {
       "dependency-update detection rate": {
+        "numerator": 61,
+        "denominator": 61,
+        "value": 1
+      },
+      "affected-repository identification rate": {
+        "numerator": 49,
+        "denominator": 61,
+        "value": 0.8032786885245902
+      },
+      "consumer localization rate": {
+        "numerator": 39,
+        "denominator": 61,
+        "value": 0.639344262295082
+      }
+    },
+    "versionToIsRange: true": {
+      "dependency-update detection rate": {
         "numerator": 58,
         "denominator": 58,
         "value": 1
       },
       "affected-repository identification rate": {
-        "numerator": 38,
+        "numerator": 46,
         "denominator": 58,
-        "value": 0.6551724137931034
+        "value": 0.7931034482758621
       },
       "consumer localization rate": {
-        "numerator": 38,
+        "numerator": 36,
         "denominator": 58,
-        "value": 0.6551724137931034
-      }
-    },
-    "versionToIsRange: true": {
-      "dependency-update detection rate": {
-        "numerator": 55,
-        "denominator": 55,
-        "value": 1
-      },
-      "affected-repository identification rate": {
-        "numerator": 35,
-        "denominator": 55,
-        "value": 0.6363636363636364
-      },
-      "consumer localization rate": {
-        "numerator": 35,
-        "denominator": 55,
-        "value": 0.6363636363636364
+        "value": 0.6206896551724138
       }
     },
     "versionToIsRange: false": {
@@ -111,18 +110,18 @@
       "iterations": 2000
     },
     "affected-repository identification rate": {
-      "low": 0.5344827586206896,
-      "high": 0.7758620689655172,
+      "low": 0.6885245901639344,
+      "high": 0.9016393442622951,
       "iterations": 2000
     },
     "consumer localization rate": {
-      "low": 0.5344827586206896,
-      "high": 0.7758620689655172,
+      "low": 0.5245901639344263,
+      "high": 0.7704918032786885,
       "iterations": 2000
     },
     "false-safe verdicts": {
-      "low": 0.1896551724137931,
-      "high": 0.41379310344827586,
+      "low": 0.06557377049180328,
+      "high": 0.2459016393442623,
       "iterations": 2000
     }
   },

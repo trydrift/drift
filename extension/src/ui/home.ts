@@ -17,7 +17,7 @@ import { deepVerify, type AnalysisOptions } from '../../../src/analysis.js';
 import { describeVerification } from '../../../src/verification/apply.js';
 import { envWithShellPath } from '../shell-path.js';
 import { clearedByCompiler, runFix, type FixResult } from '../fix.js';
-import type { DriftState, RepoRoot } from '../state.js';
+import type { CandidateStateChange, DriftState, RepoRoot } from '../state.js';
 import type { NestedProject } from '../../../src/detect/nested.js';
 import {
   DriftSession,
@@ -86,9 +86,15 @@ import { DriftReportPanel } from './report.js';
 import { openChangeDiff, openPackageVersionDiff, type ChangeDiffRequest } from '../version-diff.js';
 import { OperationGate } from './scan-start.js';
 import { runRepoDiagnostic } from '../run-diagnostics.js';
+import { countWork, startSpan } from '../../../src/util/diagnostics.js';
+import { clearHttpCache } from '../../../src/util/http.js';
+import { chunkDetail, takeCandidateSummaryBatch } from './update-protocol.js';
 import {
   makeNonce,
   renderBody,
+  renderCandidateBody,
+  renderCandidateSection,
+  renderCandidateSummary,
   renderPanel,
   SLASH_COMMANDS,
   type AgentChoice,
@@ -114,6 +120,9 @@ import {
 
 type Incoming =
   | { type: 'ready' }
+  | { type: 'uiAck'; sequence: number }
+  | { type: 'candidateDetailRequest'; id: string; requestId: string; section?: string }
+  | { type: 'detailChunkAck'; requestId: string; index: number }
   | { type: 'submit'; text: string }
   | { type: 'draft'; text: string }
   | { type: 'answer'; id: string; value: string }
@@ -208,6 +217,25 @@ interface Surface {
   webview: vscode.Webview;
   /** Set once the document's script has announced itself. */
   ready: boolean;
+  nextSequence: number;
+  awaitingSequence: number | null;
+  pendingBody: string | null;
+  pendingCandidates: Map<string, string>;
+  detailTransfer: {
+    id: string;
+    requestId: string;
+    section?: string;
+    chunks: string[];
+    next: number;
+    awaitingIndex: number | null;
+    retries: number;
+  } | null;
+  pendingDetailRequests: { id: string; requestId: string; section?: string }[];
+  detailAckTimer: ReturnType<typeof setTimeout> | null;
+  ackTimer: ReturnType<typeof setTimeout> | null;
+  resyncAttempted: boolean;
+  postFailures: number;
+  stalled: boolean;
 }
 
 export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -215,6 +243,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private badge: vscode.ViewBadge | undefined;
   private surfaces: Surface[] = [];
   private candidates = new Map<string, UpgradeCandidate>();
+  private candidatePresentation = new Map<string, string>();
   private agents: DiscoveredAgent[] = [];
   /** Models each subscription is currently offering, keyed by agent id. */
   private models = new Map<string, AgentModel[]>();
@@ -280,6 +309,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
 
     this.disposables.push(
       state.onDidChange(() => this.render()),
+      state.onDidChangeCandidates((change) => this.candidatesChanged(change)),
       session.onDidChange(() => {
         this.render();
         this.autosave();
@@ -396,24 +426,88 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
    * in the panel felt like it was thinking about it.
    */
   private attach(webview: vscode.Webview): void {
-    const surface: Surface = { webview, ready: false };
+    const surface: Surface = {
+      webview,
+      ready: false,
+      nextSequence: 0,
+      awaitingSequence: null,
+      pendingBody: null,
+      pendingCandidates: new Map(),
+      detailTransfer: null,
+      pendingDetailRequests: [],
+      detailAckTimer: null,
+      ackTimer: null,
+      resyncAttempted: false,
+      postFailures: 0,
+      stalled: false,
+    };
     this.surfaces.push(surface);
 
     this.disposables.push(
       webview.onDidReceiveMessage((message: Incoming) => {
         if (message.type === 'ready') {
+          this.cancelDetailTransfer(surface);
           surface.ready = true;
-          void webview.postMessage({ type: 'render', body: renderBody(this.viewModel()) });
+          if (surface.ackTimer) clearTimeout(surface.ackTimer);
+          surface.ackTimer = null;
+          surface.awaitingSequence = null;
+          surface.pendingBody = null;
+          surface.pendingCandidates.clear();
+          surface.stalled = false;
+          surface.resyncAttempted = false;
+          surface.postFailures = 0;
+          this.sendBody(surface, renderBody(this.viewModel()));
+          return;
+        }
+        if (message.type === 'uiAck') {
+          if (surface.awaitingSequence !== message.sequence) return;
+          if (surface.ackTimer) clearTimeout(surface.ackTimer);
+          surface.ackTimer = null;
+          surface.resyncAttempted = false;
+          surface.postFailures = 0;
+          surface.awaitingSequence = null;
+          const pending = surface.pendingBody;
+          surface.pendingBody = null;
+          if (pending !== null) this.sendBody(surface, pending);
+          else if (surface.pendingCandidates.size > 0) this.sendCandidateBatch(surface);
+          return;
+        }
+        if (message.type === 'candidateDetailRequest') {
+          this.queueDetailRequest(surface, message);
+          return;
+        }
+        if (message.type === 'detailChunkAck') {
+          const transfer = surface.detailTransfer;
+          if (!transfer || transfer.requestId !== message.requestId || transfer.awaitingIndex !== message.index) return;
+          if (surface.detailAckTimer) clearTimeout(surface.detailAckTimer);
+          surface.detailAckTimer = null;
+          transfer.awaitingIndex = null;
+          transfer.next = message.index + 1;
+          transfer.retries = 0;
+          this.sendDetailChunk(surface);
           return;
         }
         void this.handle(message);
       }),
     );
 
-    webview.html = renderPanel(this.viewModel());
+    const highlightClientUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, 'dist', 'highlight-client.js'),
+    );
+    const highlightWorkerUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, 'dist', 'highlight-worker.js'),
+    );
+    webview.html = renderPanel(this.viewModel(), {
+      highlightClientUri: highlightClientUri.toString(),
+      highlightWorkerUri: highlightWorkerUri.toString(),
+      cspSource: webview.cspSource,
+    });
   }
 
   private detach(webview: vscode.Webview): void {
+    const surface = this.surfaces.find((entry) => entry.webview === webview);
+    if (surface?.ackTimer) clearTimeout(surface.ackTimer);
+    if (surface) this.cancelDetailTransfer(surface);
     this.surfaces = this.surfaces.filter((surface) => surface.webview !== webview);
   }
 
@@ -1393,16 +1487,17 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           const result = await runRepoDiagnostic(
             {
               command: 'vscode: drift.scanDependencies',
-              mode: resolvedChoices.deep ? 'deep' : 'quick',
+              type: `${includeDev ? 'dev' : 'runtime'}-${deep ? 'deep' : 'quick'}`,
+              mode: deep ? 'deep' : 'quick',
               repoRoot: ctx.root,
-              spanName: 'dependency.scan',
+              spanName: 'dependency.core-scan',
               spanMeta: {
                 trigger: options.quiet ? 'autostart' : 'command',
                 ...(repoLabel ? { repo: repoLabel } : {}),
               },
               isCancelled: () => token.isCancellationRequested,
             },
-            async () => scanUpgrades({
+            async () => scanWithTransientHttpCache({
             root: ctx.root,
             repo: ctx.repo,
             managers,
@@ -1437,6 +1532,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
               else step.progress(repoLabel ? `${repoLabel}: ${phase}` : phase, detail, done, total);
             },
             onCandidate: (candidate) => {
+              countWork('dependency.candidate-events');
               this.candidates.set(candidate.id, candidate);
               // Replaced, never appended twice. Each candidate is now published
               // at least twice — once as `checking` the moment its analysis
@@ -1453,6 +1549,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
               this.session.updatePackages(
                 headline(found, checked, unlooked.length),
                 [...found].sort(bySeverity).map((c) => c.id),
+                false,
               );
               this.state.setCandidates([...found].sort(bySeverity));
             },
@@ -1853,6 +1950,7 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
           await runRepoDiagnostic(
             {
               command: 'vscode: drift.verify',
+              type: 'verify-deep',
               mode: 'deep',
               repoRoot: root,
               spanName: 'verification',
@@ -5635,10 +5733,290 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
   private paint(): void {
     if (this.surfaces.length === 0) return;
 
+    const memory = process.memoryUsage();
+    const span = startSpan('extension.summary-render', {
+      candidates: this.candidates.size,
+      surfaces: this.surfaces.length,
+      heapUsed: memory.heapUsed,
+      external: memory.external,
+      arrayBuffers: memory.arrayBuffers,
+      rss: memory.rss,
+    });
     const body = renderBody(this.viewModel());
+    const bytes = Buffer.byteLength(body);
+    countWork('extension.summary-render-attempts');
+    countWork('extension.summary-render-bytes', bytes);
+    span.end({ bytes });
     for (const surface of this.surfaces) {
-      if (surface.ready) void surface.webview.postMessage({ type: 'render', body });
+      if (surface.ready) this.sendBody(surface, body);
     }
+  }
+
+  /** Keep exactly one renderer update in flight; intermediate revisions collapse. */
+  private sendBody(surface: Surface, body: string): void {
+    if (surface.stalled) {
+      surface.pendingBody = body;
+      surface.pendingCandidates.clear();
+      return;
+    }
+    if (surface.awaitingSequence !== null) {
+      surface.pendingBody = body;
+      surface.pendingCandidates.clear();
+      return;
+    }
+    const sequence = ++surface.nextSequence;
+    this.cancelDetailTransfer(surface);
+    surface.pendingCandidates.clear();
+    surface.awaitingSequence = sequence;
+    this.armAckTimeout(surface, sequence);
+    countWork('extension.ui-messages');
+    countWork('extension.ui-payload-bytes', Buffer.byteLength(body));
+    const span = startSpan('extension.post-message', { type: 'render', sequence, bytes: Buffer.byteLength(body) });
+    void surface.webview.postMessage({ type: 'render', sequence, body }).then(
+      (accepted) => {
+        span.end({ accepted });
+        if (accepted) return;
+        this.recoverSummaryPost(surface, sequence, surface.pendingBody ?? body);
+      },
+      () => {
+        span.fail(new Error('webview rejected render message'));
+        this.recoverSummaryPost(surface, sequence, surface.pendingBody ?? body);
+      },
+    );
+  }
+
+  private candidatesChanged(change: CandidateStateChange): void {
+    const span = startSpan('extension.candidate-publication', {
+      revision: change.revision,
+      added: change.added.length,
+      updated: change.updated.length,
+      removed: change.removed.length,
+    });
+    const invalidated = new Set([...change.updated, ...change.removed]);
+    for (const surface of this.surfaces) {
+      surface.pendingDetailRequests = surface.pendingDetailRequests.filter((request) => !invalidated.has(request.id));
+      if (surface.detailTransfer && invalidated.has(surface.detailTransfer.id)) this.cancelDetailTransfer(surface, true);
+    }
+    let requiresLayout = change.added.length > 0 || change.removed.length > 0;
+    for (const id of [...change.added, ...change.updated]) {
+      const candidate = this.candidates.get(id);
+      if (!candidate) continue;
+      const presentation = candidatePresentationOf(candidate);
+      const previous = this.candidatePresentation.get(id);
+      if (previous !== undefined && previous !== presentation) requiresLayout = true;
+      this.candidatePresentation.set(id, presentation);
+    }
+    for (const id of change.removed) this.candidatePresentation.delete(id);
+
+    if (requiresLayout) {
+      countWork('extension.candidate-layout-invalidations');
+      span.end({ mode: 'layout' });
+      this.render();
+      return;
+    }
+
+    const showRepo = new Set([...this.candidates.values()].map((candidate) => candidate.repoRoot).filter(Boolean)).size > 1;
+    for (const surface of this.surfaces) {
+      if (!surface.ready) continue;
+      for (const id of change.updated) {
+        const candidate = this.candidates.get(id);
+        if (candidate) {
+          surface.pendingCandidates.set(
+            id,
+            renderCandidateSummary(candidate, showRepo, this.busy),
+          );
+        }
+      }
+      if (surface.awaitingSequence === null) this.sendCandidateBatch(surface);
+    }
+    countWork('extension.candidate-upserts', change.updated.length);
+    span.end({ mode: 'patch' });
+  }
+
+  private sendCandidateBatch(surface: Surface): void {
+    if (surface.stalled || surface.awaitingSequence !== null || surface.pendingBody !== null) return;
+    const { operations, bytes } = takeCandidateSummaryBatch(surface.pendingCandidates);
+    if (operations.length === 0) return;
+    const sequence = ++surface.nextSequence;
+    surface.awaitingSequence = sequence;
+    this.armAckTimeout(surface, sequence);
+    countWork('extension.ui-messages');
+    countWork('extension.ui-payload-bytes', bytes);
+    countWork('extension.candidate-batches');
+    const span = startSpan('extension.post-message', {
+      type: 'candidate-batch',
+      sequence,
+      operations: operations.length,
+      bytes,
+    });
+    void surface.webview.postMessage({ type: 'candidateBatch', sequence, operations }).then(
+      (accepted) => {
+        span.end({ accepted });
+        if (accepted) return;
+        this.recoverSummaryPost(surface, sequence, renderBody(this.viewModel()));
+      },
+      () => {
+        span.fail(new Error('webview rejected candidate batch'));
+        this.recoverSummaryPost(surface, sequence, renderBody(this.viewModel()));
+      },
+    );
+  }
+
+  private recoverSummaryPost(surface: Surface, sequence: number, latest: string): void {
+    if (surface.awaitingSequence !== sequence) return;
+    if (surface.ackTimer) clearTimeout(surface.ackTimer);
+    surface.ackTimer = null;
+    surface.pendingBody = latest;
+    surface.pendingCandidates.clear();
+    surface.postFailures += 1;
+    if (surface.postFailures >= 2) {
+      surface.awaitingSequence = null;
+      surface.stalled = true;
+      return;
+    }
+
+    // Keep the failed sequence reserved during the short retry delay so state
+    // changes continue to collapse into `pendingBody` instead of overtaking it.
+    surface.ackTimer = setTimeout(() => {
+      if (surface.awaitingSequence !== sequence) return;
+      surface.awaitingSequence = null;
+      surface.ackTimer = null;
+      const body = surface.pendingBody;
+      surface.pendingBody = null;
+      if (body !== null) this.sendBody(surface, body);
+    }, 250);
+  }
+
+  private armAckTimeout(surface: Surface, sequence: number): void {
+    if (surface.ackTimer) clearTimeout(surface.ackTimer);
+    surface.ackTimer = setTimeout(() => {
+      if (surface.awaitingSequence !== sequence) return;
+      surface.awaitingSequence = null;
+      surface.ackTimer = null;
+      surface.pendingCandidates.clear();
+      const latest = renderBody(this.viewModel());
+      if (!surface.resyncAttempted) {
+        surface.resyncAttempted = true;
+        surface.pendingBody = null;
+        this.sendBody(surface, latest);
+      } else {
+        // A second missing application acknowledgement means the renderer is
+        // not consuming. Retain one latest state and wait for a webview reload.
+        surface.stalled = true;
+        surface.pendingBody = latest;
+      }
+    }, 2_000);
+  }
+
+  private sendDetailChunk(surface: Surface): void {
+    const transfer = surface.detailTransfer;
+    if (!transfer || transfer.awaitingIndex !== null) return;
+    if (transfer.next >= transfer.chunks.length) {
+      this.cancelDetailTransfer(surface, true);
+      return;
+    }
+    const index = transfer.next;
+    const chunk = transfer.chunks[index]!;
+    transfer.awaitingIndex = index;
+    if (surface.detailAckTimer) clearTimeout(surface.detailAckTimer);
+    surface.detailAckTimer = setTimeout(() => this.retryDetailChunk(surface, transfer, index), 2_000);
+    countWork('extension.detail-chunks');
+    countWork('extension.detail-payload-bytes', Buffer.byteLength(chunk));
+    void surface.webview.postMessage({
+      type: 'candidateDetailChunk',
+      requestId: transfer.requestId,
+      index,
+      total: transfer.chunks.length,
+      chunk,
+    }).then(
+      (accepted) => {
+        if (!accepted) this.retryDetailChunk(surface, transfer, index, 100);
+      },
+      () => this.retryDetailChunk(surface, transfer, index, 100),
+    );
+  }
+
+  private queueDetailRequest(
+    surface: Surface,
+    request: { id: string; requestId: string; section?: string },
+  ): void {
+    if (
+      surface.detailTransfer?.requestId === request.requestId
+      || surface.pendingDetailRequests.some((pending) => pending.requestId === request.requestId)
+    ) return;
+    if (!surface.detailTransfer) {
+      this.startDetailTransfer(surface, request.id, request.requestId, request.section);
+      return;
+    }
+    if (surface.pendingDetailRequests.length < 8) {
+      surface.pendingDetailRequests.push(request);
+      return;
+    }
+    void surface.webview.postMessage({
+      type: 'candidateDetailRetry',
+      ...request,
+      retryAfterMs: 250,
+    });
+  }
+
+  private retryDetailChunk(surface: Surface, transfer: NonNullable<Surface['detailTransfer']>, index: number, delay = 250): void {
+    if (surface.detailTransfer !== transfer || transfer.awaitingIndex !== index) return;
+    if (surface.detailAckTimer) clearTimeout(surface.detailAckTimer);
+    transfer.awaitingIndex = null;
+    transfer.retries += 1;
+    // One timer and one message remain in flight regardless of how long the
+    // renderer is unavailable. A duplicate chunk is safe: the webview ACKs it
+    // again without appending it twice.
+    const backoff = Math.min(2_000, delay * Math.max(1, transfer.retries));
+    surface.detailAckTimer = setTimeout(() => {
+      surface.detailAckTimer = null;
+      this.sendDetailChunk(surface);
+    }, backoff);
+  }
+
+  private cancelDetailTransfer(surface: Surface, startNext = false): void {
+    if (surface.detailAckTimer) clearTimeout(surface.detailAckTimer);
+    surface.detailAckTimer = null;
+    surface.detailTransfer = null;
+    if (!startNext) {
+      surface.pendingDetailRequests = [];
+      return;
+    }
+    const pending = surface.pendingDetailRequests.shift();
+    if (pending) this.startDetailTransfer(surface, pending.id, pending.requestId, pending.section);
+  }
+
+  private startDetailTransfer(surface: Surface, id: string, requestId: string, section?: string): void {
+    const candidate = this.candidates.get(id);
+    if (!candidate) return;
+    if (this.busy) {
+      void surface.webview.postMessage({
+        type: 'candidateDetailRetry',
+        id,
+        requestId,
+        ...(section ? { section } : {}),
+        retryAfterMs: 1_000,
+      });
+      return;
+    }
+    const span = startSpan('extension.detail-render', { candidateId: id, ...(section ? { section } : {}) });
+    const html = section ? renderCandidateSection(candidate, section) : renderCandidateBody(candidate, true);
+    if (html === null) {
+      span.end({ missing: true });
+      return;
+    }
+    span.end({ bytes: Buffer.byteLength(html) });
+    countWork('extension.detail-requests');
+    surface.detailTransfer = {
+      id,
+      requestId,
+      ...(section ? { section } : {}),
+      chunks: chunkDetail(html),
+      next: 0,
+      awaitingIndex: null,
+      retries: 0,
+    };
+    this.sendDetailChunk(surface);
   }
 
   private viewModel(): ViewModel {
@@ -5674,7 +6052,41 @@ export class DriftHomeView implements vscode.WebviewViewProvider, vscode.Disposa
       // Scopes the typewriter's bookkeeping to one conversation, so reopening an
       // old thread does not retype a message it already typed months ago.
       conversationId: this.conversationId,
+      lazyCandidateDetails: true,
     };
+  }
+}
+
+/** Layout bucket used to decide whether a row can be patched in place. */
+function candidatePresentationOf(candidate: UpgradeCandidate): string {
+  if (candidate.status === 'pending' || candidate.status === 'checking' || candidate.status === 'upgrading') {
+    return 'checking';
+  }
+  const severity = severityOf(candidate);
+  return severity === 'upstream-only' ? 'clean' : severity;
+}
+
+async function scanWithTransientHttpCache(
+  options: Parameters<typeof scanUpgrades>[0],
+): Promise<Awaited<ReturnType<typeof scanUpgrades>>> {
+  try {
+    return await scanUpgrades(options);
+  } finally {
+    const before = process.memoryUsage();
+    const release = startSpan('extension.http-memory-release', {
+      heapUsed: before.heapUsed,
+      external: before.external,
+      arrayBuffers: before.arrayBuffers,
+      rss: before.rss,
+    });
+    clearHttpCache();
+    const after = process.memoryUsage();
+    release.end({
+      heapUsed: after.heapUsed,
+      external: after.external,
+      arrayBuffers: after.arrayBuffers,
+      rss: after.rss,
+    });
   }
 }
 

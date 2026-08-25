@@ -14,7 +14,7 @@ import {
   ManifestLensProvider,
   openDependency,
 } from './ui/dependencies.js';
-import { DriftReportPanel } from './ui/report.js';
+import { DriftReportPanel, type FocusTarget } from './ui/report.js';
 import { DriftStatusBar } from './ui/statusbar.js';
 import { configureHttpDiskCache } from '../../src/util/http.js';
 import { discoverAgents, invalidateAgentCache } from './agents/registry.js';
@@ -28,7 +28,6 @@ import { discoverNestedProjects } from '../../src/detect/nested.js';
 import type { IssueBranchAction } from './issue-actions.js';
 import { openChangeDiff, openPackageVersionDiff, type ChangeDiffRequest } from './version-diff.js';
 import { pruneVersionDiffCache } from '../../src/evidence/version-diff.js';
-import { onDidChangeCodeTheme, warmCodeHighlighter, watchCodeTheme } from './ui/highlight.js';
 import { redactText, startRunLog, withSpan, type RunLogHandle } from '../../src/util/diagnostics.js';
 
 /**
@@ -48,8 +47,8 @@ let extensionVersion = '0.0.0';
  * Start a fresh, repo-local run log for one Drift operation (an analyze, a
  * fix, a dependency scan, a deep verification), bound to the repository it
  * targets — never to a fixed workspace folder or to the extension's whole
- * lifetime. Each operation overwrites the previous run's file, so the log
- * always reflects only the most recent thing Drift did in that repo.
+ * lifetime. Each operation gets its own typed, timestamped artifact under
+ * the resolved git directory, so repeated and overlapping runs remain available.
  */
 function beginRun(command: string, repoRoot: string | undefined | null, mode: 'quick' | 'deep' = 'quick'): RunLogHandle | undefined {
   if (!repoRoot) return undefined;
@@ -129,6 +128,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     // Conversations are about a repository, so they are kept per workspace.
     context.workspaceState,
   );
+  DriftReportPanel.configureAssets(context.extensionUri);
 
   context.subscriptions.push(diagnostics, statusBar, reviewUi, home);
 
@@ -162,19 +162,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
 
   registerCommands(context, state, diagnostics, review, reviewUi, home);
-
-  // Code in the panels is tokenised against the user's own colour theme, which
-  // has to be read off disk before anything can be highlighted. The views
-  // render immediately either way and re-render once it is ready, so this is
-  // deliberately not awaited — and it re-runs whenever the theme changes.
-  context.subscriptions.push(
-    watchCodeTheme(),
-    onDidChangeCodeTheme(() => {
-      DriftReportPanel.refresh();
-      home.rerender();
-    }),
-  );
-  void warmCodeHighlighter();
 
   // Sign-in state changes what the agent picker can offer.
   context.subscriptions.push(onDidChangeGitHubAuth(() => invalidateAgentCache()));
@@ -364,7 +351,7 @@ function registerCommands(
   register('drift.fixAll', () => startFix(state, review, home, undefined));
   register('drift.fixCommit', ((order: number) => startFix(state, review, home, order)) as never);
 
-  register('drift.showReport', () => DriftReportPanel.show(state));
+  register('drift.showReport', ((focus?: FocusTarget) => DriftReportPanel.show(state, focus)) as never);
   register('drift.openDependency', ((id: string) => openDependency(state, id)) as never);
   register('drift.disableEditorSignals', async () => {
     const config = vscode.workspace.getConfiguration('drift');

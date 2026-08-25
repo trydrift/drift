@@ -16,6 +16,7 @@
 
 import { resourceUsage } from 'node:process';
 import { join } from 'node:path';
+import { createHash } from 'node:crypto';
 
 const repoRoot = process.cwd();
 const root = process.env.DRIFT_BENCH_ROOT;
@@ -159,8 +160,23 @@ const fingerprint = (result.candidates ?? [])
     verification: c.verification?.status ?? null,
     gaps: [...(c.gaps ?? [])].sort(),
     breaking: [...(c.plan?.breakingChanges ?? [])]
-      .map((b) => ({ kind: b.kind, summary: b.summary, symbols: [...b.symbols].sort(), confidence: b.confidence }))
+      .map((b) => ({
+        id: b.id,
+        kind: b.kind,
+        summary: b.summary,
+        symbols: [...b.symbols].sort(),
+        confidence: b.confidence,
+        citations: [...b.citations].sort(),
+      }))
       .sort((a, b) => a.summary.localeCompare(b.summary)),
+    evidence: [...(c.plan?.evidence ?? [])]
+      .map((e) => ({
+        id: e.id,
+        source: e.source,
+        url: e.url ?? null,
+        contentHash: createHash('sha256').update(e.content).digest('hex'),
+      }))
+      .sort((a, b) => a.id.localeCompare(b.id)),
     sites: [...(c.plan?.impactSites ?? [])]
       .map((s) => `${s.file}:${s.line}:${s.matchedSymbol}:${s.confidence}`)
       .sort(),

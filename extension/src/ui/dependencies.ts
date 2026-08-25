@@ -4,13 +4,15 @@ import type { UpgradeCandidate } from '../upgrades.js';
 import type { DriftState } from '../state.js';
 import { describeSeverity, severityOf, type UpgradeSeverity } from '../severity.js';
 import { DriftReportPanel } from './report.js';
+import { confidenceDisplay } from '../../../src/report/confidence.js';
 
 const MANIFESTS = new Set(['package.json', 'go.mod', 'Cargo.toml', 'pom.xml', 'requirements.txt', 'Gemfile']);
 const ORDER: UpgradeSeverity[] = ['affected', 'verification-failed', 'unchecked', 'pending', 'clean', 'error'];
 
 type DependencyNode =
   | { kind: 'group'; severity: UpgradeSeverity; candidates: UpgradeCandidate[] }
-  | { kind: 'candidate'; candidate: UpgradeCandidate };
+  | { kind: 'candidate'; candidate: UpgradeCandidate }
+  | { kind: 'finding'; candidate: UpgradeCandidate; findingId: string };
 
 export class DriftDependencyTreeProvider
   implements vscode.TreeDataProvider<DependencyNode>, vscode.Disposable
@@ -20,7 +22,7 @@ export class DriftDependencyTreeProvider
   private readonly sub: vscode.Disposable;
 
   constructor(private readonly state: DriftState) {
-    this.sub = state.onDidChange(() => this.emitter.fire());
+    this.sub = state.onDidChangeCandidates(() => this.emitter.fire());
   }
 
   dispose(): void {
@@ -33,6 +35,13 @@ export class DriftDependencyTreeProvider
       return [...element.candidates]
         .sort((a, b) => a.name.localeCompare(b.name))
         .map((candidate) => ({ kind: 'candidate', candidate }));
+    }
+    if (element?.kind === 'candidate') {
+      return (element.candidate.plan?.breakingChanges ?? []).map((finding) => ({
+        kind: 'finding' as const,
+        candidate: element.candidate,
+        findingId: finding.id,
+      }));
     }
     if (element) return [];
 
@@ -64,9 +73,12 @@ export class DriftDependencyTreeProvider
       return item;
     }
 
+    if (element.kind === 'finding') return this.findingItem(element);
+
     const candidate = element.candidate;
     const severity = inFlight(candidate) ? 'pending' : severityOf(candidate);
-    const item = new vscode.TreeItem(candidate.name, vscode.TreeItemCollapsibleState.None);
+    const findings = candidate.plan?.breakingChanges ?? [];
+    const item = new vscode.TreeItem(candidate.name, findings.length ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.None);
     // A package still being looked at says what is happening to it. `pending`
     // has no target version to point at at all; a re-check or an install has
     // one, but it is a version being tested rather than a verdict, so the row
@@ -84,6 +96,16 @@ export class DriftDependencyTreeProvider
     };
     return item;
   }
+
+  private findingItem(node: Extract<DependencyNode, { kind: 'finding' }>): vscode.TreeItem {
+    const finding = node.candidate.plan?.breakingChanges.find((entry) => entry.id === node.findingId);
+    if (!finding) return new vscode.TreeItem('Finding no longer available', vscode.TreeItemCollapsibleState.None);
+    const item = new vscode.TreeItem(finding.kind, vscode.TreeItemCollapsibleState.None);
+    item.description = confidenceDisplay(finding).text;
+    item.tooltip = `${finding.summary}\n\n${item.description}`;
+    item.command = { command: 'drift.showReport', title: 'Open finding', arguments: [{ changeId: finding.id, candidateId: node.candidate.id }] };
+    return item;
+  }
 }
 
 export class ManifestLensProvider implements vscode.CodeLensProvider, vscode.Disposable {
@@ -92,7 +114,7 @@ export class ManifestLensProvider implements vscode.CodeLensProvider, vscode.Dis
   private readonly sub: vscode.Disposable;
 
   constructor(private readonly state: DriftState) {
-    this.sub = state.onDidChange(() => this.emitter.fire());
+    this.sub = state.onDidChangeCandidates(() => this.emitter.fire());
   }
 
   dispose(): void {
@@ -138,15 +160,9 @@ export class ManifestLensProvider implements vscode.CodeLensProvider, vscode.Dis
 }
 
 export class ManifestHoverProvider implements vscode.HoverProvider, vscode.Disposable {
-  private readonly sub: vscode.Disposable;
+  constructor(private readonly state: DriftState) {}
 
-  constructor(private readonly state: DriftState) {
-    this.sub = state.onDidChange(() => undefined);
-  }
-
-  dispose(): void {
-    this.sub.dispose();
-  }
+  dispose(): void {}
 
   provideHover(document: vscode.TextDocument, position: vscode.Position): vscode.Hover | undefined {
     if (!isManifest(document.uri.fsPath)) return undefined;

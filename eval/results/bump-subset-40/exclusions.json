@@ -2,7 +2,7 @@
   {
     "caseId": "13fd75e233a5cb2771a6cb186c0decaed6d6545a",
     "kind": "source-unavailable",
-    "reason": "commit 13fd75e233a5cb2771a6cb186c0decaed6d6545a could not be fetched from artipie/docker-adapter: Command failed: git fetch --quiet --depth 2 origin 13fd75e233a5cb2771a6cb186c0decaed6d6545a\nremote: Repository not found.\nfatal: repository 'https://github.com/artipie/docker-adapter.git/' not found\n",
+    "reason": "commit 13fd75e233a5cb2771a6cb186c0decaed6d6545a could not be fetched from artipie/docker-adapter: Command failed: git fetch --quiet --depth 2 origin 13fd75e233a5cb2771a6cb186c0decaed6d6545a\nfatal: could not read Username for 'https://github.com': No such device or address\n",
     "missingRequirement": null,
     "provenance": {
       "dataset": "bump",

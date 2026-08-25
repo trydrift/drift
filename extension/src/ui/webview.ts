@@ -18,7 +18,8 @@ import type { ReviewGroup, ReviewTotals } from '../review/store.js';
 import type { BreakingChange, Evidence, RemediationPlan } from '../../../src/types.js';
 import type { Vulnerability } from '../../../src/rationale/types.js';
 import type { CheckOutcome } from '../../../src/verification/checks.js';
-import { highlightCode, languageForEcosystem } from './highlight.js';
+import { confidenceDisplay } from '../../../src/report/confidence.js';
+import { HIGHLIGHT_STYLES, highlightCode, languageForEcosystem } from './highlight.js';
 
 /**
  * The panel's markup.
@@ -175,6 +176,8 @@ export interface ViewModel {
    * occasionally swallowed the last keystroke of a fast typist.
    */
   draftToken: number;
+  /** Host-backed views load package evidence only when its disclosure opens. */
+  lazyCandidateDetails?: boolean;
   /** Namespaces the typewriter's per-message bookkeeping. */
   conversationId: string;
 }
@@ -259,17 +262,29 @@ export const SLASH_COMMANDS: readonly SlashCommand[] = [
  * script — which, on a panel holding a full scan, is the difference between a
  * click landing instantly and a click landing a second later.
  */
-export function renderPanel(vm: ViewModel): string {
+export interface WebviewAssets {
+  highlightClientUri: string;
+  highlightWorkerUri: string;
+  cspSource: string;
+}
+
+export function renderPanel(vm: ViewModel, assets?: WebviewAssets): string {
+  const assetCsp = assets ? ` ${assets.cspSource}` : '';
+  const workerCsp = assets ? `; worker-src blob:; connect-src ${assets.cspSource}` : '';
+  const client = assets
+    ? `<script nonce="${vm.nonce}" src="${escapeAttr(assets.highlightClientUri)}" data-worker-uri="${escapeAttr(assets.highlightWorkerUri)}"></script>`
+    : '';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${vm.nonce}';">
-<style>${STYLES}</style>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${vm.nonce}'${assetCsp}${workerCsp};">
+<style>${STYLES}${HIGHLIGHT_STYLES}</style>
 </head>
 <body>
   <div id="root">${renderBody(vm)}</div>
+  ${client}
   <script nonce="${vm.nonce}">${SCRIPT}</script>
 </body>
 </html>`;
@@ -1048,7 +1063,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
         affected.length
           ? `<section class="pkg-group">
               <h4 class="pkg-subhead affected">${ICON_ALERT}<span>Affects your code</span><small>${affected.length}</small></h4>
-              <div class="pkg-list">${affected.map((c) => renderCandidate(c, affected.length === 1, showRepo)).join('')}</div>
+              <div class="pkg-list">${affected.map((c) => renderCandidate(c, affected.length === 1, showRepo, vm.lazyCandidateDetails, vm.busy)).join('')}</div>
               ${
                 affected.length > 1
                   ? `<div class="pkg-group-foot"><button class="primary wide" data-action="fixAll">Upgrade and fix all ${affected.length} with ${escapeHtml(vm.agentLabel)}</button><button class="wide" data-action="fileIssueAll" title="Create one GitHub issue per affected dependency, so the work is tracked even if nobody fixes it today">Create ${affected.length} issues</button></div>`
@@ -1062,7 +1077,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
         verificationFailed.length
           ? `<section class="pkg-group">
               <h4 class="pkg-subhead error">${ICON_ALERT}<span>Verified breaking</span><small>${verificationFailed.length}</small></h4>
-              <div class="pkg-list">${verificationFailed.map((c) => renderCandidate(c, verificationFailed.length === 1, showRepo)).join('')}</div>
+              <div class="pkg-list">${verificationFailed.map((c) => renderCandidate(c, verificationFailed.length === 1, showRepo, vm.lazyCandidateDetails, vm.busy)).join('')}</div>
             </section>`
           : ''
       }
@@ -1075,7 +1090,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
         unchecked.length
           ? `<section class="pkg-group">
               <h4 class="pkg-subhead unchecked">${ICON_ALERT}<span>Could not verify</span><small>${unchecked.length}</small></h4>
-              <div class="pkg-list">${unchecked.map((c) => renderCandidate(c, unchecked.length === 1, showRepo)).join('')}</div>
+              <div class="pkg-list">${unchecked.map((c) => renderCandidate(c, unchecked.length === 1, showRepo, vm.lazyCandidateDetails, vm.busy)).join('')}</div>
             </section>`
           : ''
       }
@@ -1088,7 +1103,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
         checking.length
           ? `<section class="pkg-group">
               <h4 class="pkg-subhead unchecked"><span class="spinner"></span><span>Checking your packages</span><small>${checking.length}</small></h4>
-              <div class="pkg-list">${checking.map((c) => renderCandidate(c, checking.length === 1, showRepo)).join('')}</div>
+              <div class="pkg-list">${checking.map((c) => renderCandidate(c, checking.length === 1, showRepo, vm.lazyCandidateDetails, vm.busy)).join('')}</div>
             </section>`
           : ''
       }
@@ -1097,7 +1112,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
         safe.length
           ? `<details class="pkg-group" data-key="grp:safe">
               <summary><h4 class="pkg-subhead clean">${ICON_CHEVRON_RIGHT}${ICON_CHECK}<span>Safe to upgrade</span><small>${safe.length}</small></h4></summary>
-              <div class="pkg-list">${safe.map((c) => renderCandidate(c, false, showRepo)).join('')}</div>
+              <div class="pkg-list">${safe.map((c) => renderCandidate(c, false, showRepo, vm.lazyCandidateDetails, vm.busy)).join('')}</div>
               ${
                 // The counterpart to "Fix all". These are the upgrades with
                 // nothing to decide — no code here touches what changed — so the
@@ -1115,7 +1130,7 @@ function renderPackages(item: Extract<ThreadItem, { kind: 'packages' }>, vm: Vie
         failed.length
           ? `<details class="pkg-group" data-key="grp:failed">
               <summary><h4 class="pkg-subhead error">${ICON_CHEVRON_RIGHT}${ICON_ERROR}<span>Could not check</span><small>${failed.length}</small></h4></summary>
-              <div class="pkg-list">${failed.map((c) => renderCandidate(c, false, showRepo)).join('')}</div>
+              <div class="pkg-list">${failed.map((c) => renderCandidate(c, false, showRepo, vm.lazyCandidateDetails, vm.busy)).join('')}</div>
             </details>`
           : ''
       }
@@ -1172,21 +1187,20 @@ function workspaceTag(candidate: UpgradeCandidate, showRepo: boolean): string {
   return `<span class="pkg-tags">${ecosystem}${repoTag}${memberTag}</span>`;
 }
 
-function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = false): string {
+function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = false, lazyDetails = false, deferDetails = false): string {
   const severity = severityOf(candidate);
   // `pending` is the row a manifest produced before anything looked at it: it
   // has a name and an installed version and nothing else, so everything below
   // that would describe a *result* is left out rather than rendered as zeroes.
   const waiting = candidate.status === 'pending';
   const busy = waiting || candidate.status === 'checking' || candidate.status === 'upgrading';
-  const target = versionLabel(candidate, candidate.selected);
 
   // Keyed by the manifest as well as the name. One package can legitimately
   // appear once per manifest that declares it, and keying on the name alone
   // made those rows share a single remembered open/closed state — so opening
   // the root's `zod` also opened `extension/`'s, which reads as the list having
   // duplicated a row rather than as two packages that genuinely both exist.
-  return `<details class="pkg ${severity}" data-key="pkg:${escapeAttr(`${candidate.manifestPath}#${candidate.name}`)}" ${open ? 'open' : ''}>
+  return `<details class="pkg ${severity}" data-candidate-id="${escapeAttr(candidate.id)}" data-key="pkg:${escapeAttr(`${candidate.manifestPath}#${candidate.name}`)}" ${open ? 'open' : ''}>
     <summary>
       <span class="dot ${severity}"></span>
       <span class="pkg-name">
@@ -1201,7 +1215,22 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
       }</span>
     </summary>
 
-    <div class="pkg-body">
+    ${lazyDetails
+      ? `<div class="pkg-body lazy-detail" data-candidate-detail="${escapeAttr(candidate.id)}"${deferDetails ? ' data-detail-deferred="true"' : ''}><p class="muted">Open this package to load its evidence.</p></div>`
+      : renderCandidateBody(candidate)}
+  </details>`;
+}
+
+export function renderCandidateSummary(candidate: UpgradeCandidate, showRepo = false, deferDetails = false): string {
+  return renderCandidate(candidate, false, showRepo, true, deferDetails);
+}
+
+/** Rendered only after the corresponding package disclosure is opened. */
+export function renderCandidateBody(candidate: UpgradeCandidate, lazySections = false): string {
+  const waiting = candidate.status === 'pending';
+  const busy = waiting || candidate.status === 'checking' || candidate.status === 'upgrading';
+  const target = versionLabel(candidate, candidate.selected);
+  return `<div class="pkg-body">
       ${
         // Nothing to say yet, and an empty paragraph where the verdict will go
         // is worse than none — it reserves space for a sentence that reads as
@@ -1228,7 +1257,7 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
         }
       </div>`}
 
-      ${candidate.plan ? renderCandidateDetail(candidate, candidate.plan) : ''}
+      ${candidate.plan ? renderCandidateDetail(candidate, candidate.plan, lazySections) : ''}
 
       <div class="pkg-actions">
         ${
@@ -1248,8 +1277,7 @@ function renderCandidate(candidate: UpgradeCandidate, open: boolean, showRepo = 
         <button data-action="fileIssuePackage" data-id="${escapeAttr(candidate.id)}" title="Create a GitHub issue tracking this upgrade instead of acting on it now">Create issue</button>`
         }
       </div>
-    </div>
-  </details>`;
+    </div>`;
 }
 
 /**
@@ -1604,7 +1632,7 @@ function toolRequestReason(id: string): string {
   return 'Optional helper: lets Drift gather stronger evidence for this upgrade.';
 }
 
-function renderCandidateDetail(candidate: UpgradeCandidate, plan: RemediationPlan): string {
+function renderCandidateDetail(candidate: UpgradeCandidate, plan: RemediationPlan, lazySections = false): string {
   const matched = plan.breakingChanges.filter((change) =>
     plan.impactSites.some((site) => site.breakingChangeId === change.id),
   );
@@ -1613,14 +1641,14 @@ function renderCandidateDetail(candidate: UpgradeCandidate, plan: RemediationPla
   );
 
   return `<div class="detail">
-    ${matched.map((change) => renderBreak(candidate, change, plan, true)).join('')}
+    ${matched.map((change) => renderBreak(candidate, change, plan, !lazySections, lazySections)).join('')}
 
     ${
       unmatched.length
         ? `<details class="sub" data-key="unmatched:${escapeAttr(candidate.name)}">
             <summary>${unmatched.length} upstream change${unmatched.length === 1 ? '' : 's'} that ${unmatched.length === 1 ? 'does' : 'do'} not touch your code</summary>
             <p class="hint">Drift found ${unmatched.length === 1 ? 'this' : 'these'} in the release notes, then searched this repository for the affected APIs and found nothing. Listed so you can check the reasoning, not because there is anything to do.</p>
-            ${unmatched.map((change) => renderBreak(candidate, change, plan, false)).join('')}
+            ${unmatched.map((change) => renderBreak(candidate, change, plan, false, lazySections)).join('')}
           </details>`
         : ''
     }
@@ -1629,7 +1657,7 @@ function renderCandidateDetail(candidate: UpgradeCandidate, plan: RemediationPla
       plan.evidence.length
         ? `<details class="sub" data-key="evidence:${escapeAttr(candidate.name)}">
             <summary>Evidence Drift read <small>${plan.evidence.length} source${plan.evidence.length === 1 ? '' : 's'}</small></summary>
-            ${renderEvidence(candidate, plan.evidence)}
+            ${renderEvidence(candidate, plan.evidence, lazySections)}
           </details>`
         : ''
     }
@@ -1641,14 +1669,26 @@ function renderBreak(
   change: BreakingChange,
   plan: RemediationPlan,
   expanded: boolean,
+  lazy = false,
 ): string {
   const sites = plan.impactSites.filter((site) => site.breakingChangeId === change.id);
   const evidence = plan.evidence.filter((entry) => change.citations.includes(entry.id));
   const diff = diffContextFor(candidate, change.symbols[0]);
+  const confidence = confidenceDisplay(change);
+
+  if (lazy) {
+    return `<details class="break" data-key="brk:${escapeAttr(change.id)}" data-detail-section="break:${escapeAttr(change.id)}" ${expanded ? 'open' : ''}>
+      <summary>
+        <span class="confidence ${confidence.band}">${escapeHtml(confidence.text)}</span>
+        <span class="break-summary">${inlineMarkdown(change.summary, {})}</span>
+      </summary>
+      <div class="break-body lazy-detail" data-section-body><p class="muted">Open this change to load remediation and evidence.</p></div>
+    </details>`;
+  }
 
   return `<details class="break" data-key="brk:${escapeAttr(change.id)}" ${expanded ? 'open' : ''}>
     <summary>
-      <span class="confidence ${change.confidence}">${escapeHtml(change.confidence)}</span>
+      <span class="confidence ${confidence.band}">${escapeHtml(confidence.text)}</span>
       <span class="break-summary">${inlineMarkdown(change.summary, {})}</span>
     </summary>
     <div class="break-body">
@@ -1709,11 +1749,16 @@ function diffContextFor(candidate: UpgradeCandidate, symbol?: string): DiffConte
  * actually has — fetches the two published versions and opens them in the
  * editor's own diff view, rather than asking the reader to go find them.
  */
-function renderEvidence(candidate: UpgradeCandidate, evidence: readonly Evidence[]): string {
+function renderEvidence(candidate: UpgradeCandidate, evidence: readonly Evidence[], lazy = false): string {
   return `<div class="evidence">
     ${evidence
-      .map(
-        (entry) => `<details data-key="ev:${escapeAttr(entry.id)}">
+      .map((entry) => renderEvidenceEntry(candidate, entry, lazy))
+      .join('')}
+  </div>`;
+}
+
+function renderEvidenceEntry(candidate: UpgradeCandidate, entry: Evidence, lazy = false): string {
+  return `<details data-key="ev:${escapeAttr(entry.id)}"${lazy ? ` data-detail-section="evidence:${escapeAttr(entry.id)}"` : ''}>
           <summary>
             <span class="source">${escapeHtml(entry.source)}</span>
             ${
@@ -1727,17 +1772,28 @@ function renderEvidence(candidate: UpgradeCandidate, evidence: readonly Evidence
                 : ''
             }
           </summary>
-          <div class="markdown quote">${renderMarkdown(entry.content, {
+          ${lazy ? `<div class="markdown quote lazy-detail" data-section-body><p class="muted">Open this source to load its excerpt.</p></div>` : `<div class="markdown quote">${renderMarkdown(entry.content, {
             ...(entry.url ? { baseUrl: entry.url } : {}),
             // Every before/after inside this record belongs to the same
             // package, so each pair offers the same "view diff" the findings
             // above do.
             diff: diffContextFor(candidate),
-          })}</div>
-        </details>`,
-      )
-      .join('')}
-  </div>`;
+          })}</div>`}
+        </details>`;
+}
+
+export function renderCandidateSection(candidate: UpgradeCandidate, section: string): string | null {
+  const plan = candidate.plan;
+  if (!plan) return null;
+  if (section.startsWith('break:')) {
+    const change = plan.breakingChanges.find((entry) => entry.id === section.slice('break:'.length));
+    return change ? renderBreak(candidate, change, plan, true, false) : null;
+  }
+  if (section.startsWith('evidence:')) {
+    const evidence = plan.evidence.find((entry) => entry.id === section.slice('evidence:'.length));
+    return evidence ? renderEvidenceEntry(candidate, evidence, false) : null;
+  }
+  return null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -3890,6 +3946,8 @@ const ui = {
      — resumes the animation instead of restarting it. */
   typed: {},
 };
+let nextDetailRequest = 0;
+const detailChunks = new Map();
 
 Object.assign(ui, vscode.getState() || {});
 /* State saved before these keys existed would otherwise leave them undefined. */
@@ -4057,19 +4115,12 @@ function mount() {
   thread = document.getElementById('thread');
   menu = document.getElementById('menu');
   menuFilter = document.getElementById('menu-filter');
+  window.DriftHighlight?.reset(root);
 
   /* Disclosures. Each carries a stable key; what the developer chose is
      remembered against that key and reapplied, so a package they opened does
      not slam shut when the next one arrives. */
-  for (const element of document.querySelectorAll('details[data-key]')) {
-    const key = element.dataset.key;
-    const remembered = ui.disclosures[key];
-    if (remembered !== undefined) element.open = remembered;
-    element.addEventListener('toggle', () => {
-      ui.disclosures[key] = element.open;
-      save();
-    });
-  }
+  for (const element of document.querySelectorAll('details[data-key]')) mountDisclosure(element);
 
   /* Step output: which phase's segment is showing. Unset (or 'live') means
      "whichever one is newest" and keeps following the run; picking a tab pins
@@ -4185,6 +4236,41 @@ function mount() {
       if (value) vscode.postMessage({ type: 'menu', id: slider.dataset.id + ':' + value });
     });
   }
+}
+
+function mountDisclosure(element) {
+  if (element.dataset.driftMounted === 'true') return;
+  element.dataset.driftMounted = 'true';
+  const key = element.dataset.key;
+  const remembered = ui.disclosures[key];
+  if (remembered !== undefined) element.open = remembered;
+  element.addEventListener('toggle', () => {
+    ui.disclosures[key] = element.open;
+    save();
+    if (element.open) requestCandidateDetail(element);
+  });
+  if (element.open) requestCandidateDetail(element);
+}
+
+function requestCandidateDetail(details) {
+  const candidateTarget = details.querySelector(':scope > [data-candidate-detail]');
+  const sectionTarget = details.dataset.detailSection
+    ? details.querySelector(':scope > [data-section-body]')
+    : null;
+  const target = candidateTarget || (sectionTarget ? details : null);
+  if (!target || target.dataset.detailDeferred === 'true' || target.dataset.detailRequest) return;
+  const candidate = details.closest('[data-candidate-id]');
+  const candidateId = candidateTarget?.dataset.candidateDetail || candidate?.dataset.candidateId;
+  if (!candidateId) return;
+  const requestId = String(++nextDetailRequest);
+  target.dataset.detailRequest = requestId;
+  detailChunks.set(requestId, []);
+  vscode.postMessage({
+    type: 'candidateDetailRequest',
+    id: candidateId,
+    requestId,
+    section: details.dataset.detailSection,
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -4526,6 +4612,69 @@ window.addEventListener('message', (event) => {
     capture();
     root.innerHTML = data.body;
     mount();
+    vscode.postMessage({ type: 'uiAck', sequence: data.sequence });
+    return;
+  }
+  if (data?.type === 'candidateBatch') {
+    for (const operation of data.operations || []) {
+      const current = document.querySelector('[data-candidate-id="' + CSS.escape(operation.id) + '"]');
+      if (!current) continue;
+      const wasOpen = current.open;
+      const template = document.createElement('template');
+      template.innerHTML = operation.summary;
+      const replacement = template.content.firstElementChild;
+      if (!replacement) continue;
+      replacement.open = wasOpen;
+      current.replaceWith(replacement);
+      mountDisclosure(replacement);
+    }
+    window.DriftHighlight?.reset(root);
+    vscode.postMessage({ type: 'uiAck', sequence: data.sequence });
+    return;
+  }
+  if (data?.type === 'candidateDetailChunk') {
+    const chunks = detailChunks.get(data.requestId);
+    if (!chunks) return;
+    if (data.index < chunks.length) {
+      // The host did not receive the first ACK. Confirm the duplicate without
+      // appending it again so its bounded retry loop can advance.
+      vscode.postMessage({ type: 'detailChunkAck', requestId: data.requestId, index: data.index });
+      return;
+    }
+    if (data.index !== chunks.length) return;
+    chunks.push(data.chunk);
+    vscode.postMessage({ type: 'detailChunkAck', requestId: data.requestId, index: data.index });
+    if (chunks.length === data.total) {
+      const target = document.querySelector('[data-detail-request="' + data.requestId + '"]');
+      if (target) {
+        const template = document.createElement('template');
+        template.innerHTML = chunks.join('');
+        const replacement = template.content.firstElementChild;
+        if (replacement) {
+          if (target instanceof HTMLDetailsElement && replacement instanceof HTMLDetailsElement) {
+            replacement.open = target.open;
+          }
+          target.replaceWith(replacement);
+        }
+        for (const element of root.querySelectorAll('details[data-key]')) mountDisclosure(element);
+        window.DriftHighlight?.reset(root);
+      }
+      detailChunks.delete(data.requestId);
+    }
+    return;
+  }
+  if (data?.type === 'candidateDetailRetry') {
+    window.setTimeout(() => {
+      const target = document.querySelector('[data-detail-request="' + data.requestId + '"]');
+      const disclosure = target?.closest('details');
+      if (!target || (disclosure && !disclosure.open)) return;
+      vscode.postMessage({
+        type: 'candidateDetailRequest',
+        id: data.id,
+        requestId: data.requestId,
+        section: data.section,
+      });
+    }, Math.max(50, Number(data.retryAfterMs) || 250));
     return;
   }
   if (data?.type === 'openMenu') { openMenu(data.anchor || 'context'); return; }

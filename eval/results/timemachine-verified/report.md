@@ -15,10 +15,10 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | Tohoku NLP, TimeMachine-bench, https://github.com/tohoku-nlp/timemachine-bench |
 | Ecosystem | pypi |
 | Benchmark class | consumer-impact |
-| Drift commit | `4dd1404ab2426dbf0d52b8c6eb3c6266d14970ca` |
-| Run date | 2026-08-20T23:02:25.365Z |
-| Command | `/Users/rudy/.nvm/versions/node/v24.19.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts timemachine --experiment verified --run-id timemachine-verified --resume` |
-| Platform | darwin/x64, Node v24.19.0 |
+| Drift commit | `6e272ea929ad2807947872d500d445136bbf489e` |
+| Run date | 2026-08-24T16:26:22.141Z |
+| Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts timemachine --experiment verified --run-id timemachine-verified` |
+| Platform | linux/x64, Node v22.23.2 |
 
 ## Case accounting
 
@@ -42,10 +42,10 @@ Every exclusion, with its reason:
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| affected-repository identification rate | 39/69 (56.5%) | 44.9–68.1% |
-| consumer localization rate | 39/69 (56.5%) | 44.9–68.1% |
+| affected-repository identification rate | 46/69 (66.7%) | 55.1–76.8% |
+| consumer localization rate | 46/69 (66.7%) | 55.1–76.8% |
 | dependency-update detection rate | 49/69 (71.0%) | 59.4–81.2% |
-| false-safe verdicts | 5/69 (7.2%) | 1.4–13.0% |
+| false-safe verdicts | 1/69 (1.4%) | 0.0–4.3% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
@@ -57,9 +57,9 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | affected-repository identification rate | consumer localization rate | dependency-update detection rate |
 | --- | --- | --- | --- |
-| label: migration-failure-easy | 24/44 (54.5%) | 24/44 (54.5%) | 32/44 (72.7%) |
+| label: migration-failure-easy | 30/44 (68.2%) | 30/44 (68.2%) | 32/44 (72.7%) |
 | label: migration-failure-hard | 2/2 (100.0%) | 2/2 (100.0%) | 2/2 (100.0%) |
-| label: migration-failure-medium | 13/23 (56.5%) | 13/23 (56.5%) | 15/23 (65.2%) |
+| label: migration-failure-medium | 14/23 (60.9%) | 14/23 (60.9%) | 15/23 (65.2%) |
 
 ## What is deliberately not reported
 
@@ -94,15 +94,15 @@ how generously the mapping was written.
 
 | Tool | Version | Needed for |
 | --- | --- | --- |
-| `node` | v24.19.0 | every npm/TypeScript case, and Drift itself |
-| `npm` | 11.12.1 | installing a TypeScript consumer before its build oracle can run |
-| `git` | git version 2.39.5 (Apple Git-154) | checking out an original repository at the exact evaluated commit |
-| `java` | openjdk version "19" 2022-09-20 | any Java case |
-| `mvn` | Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937) | BUMP's Maven oracle, and building Roseau from its replication kit |
-| `docker` | **not installed** | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
-| `python3` | Python 3.14.3 | any Python case |
+| `node` | v22.23.2 | every npm/TypeScript case, and Drift itself |
+| `npm` | 10.9.8 | installing a TypeScript consumer before its build oracle can run |
+| `git` | git version 2.55.0 | checking out an original repository at the exact evaluated commit |
+| `java` | openjdk version "17.0.20" 2026-07-21 | any Java case |
+| `mvn` | Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5) | BUMP's Maven oracle, and building Roseau from its replication kit |
+| `docker` | Docker version 28.0.4, build b8034c0 | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
+| `python3` | Python 3.12.3 | any Python case |
 | `uv` | **not installed** | TimeMachine's documented environment setup |
-| `japicmp` | SYNOPSIS | Drift's Java API-surface diff, which its maven capability declares it requires |
+| `japicmp` | **not installed** | Drift's Java API-surface diff, which its maven capability declares it requires |
 
 ## Reproduction
 

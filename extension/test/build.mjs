@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs';
+import { existsSync, readdirSync, rmSync } from 'node:fs';
 import { build } from 'esbuild';
 
 /**
@@ -8,6 +8,12 @@ import { build } from 'esbuild';
  *
  * `vscode` is aliased to a stub so extension code runs under plain Node.
  */
+if (existsSync('dist')) {
+  for (const name of readdirSync('dist', { withFileTypes: true })) {
+    if (name.isFile() && name.name.endsWith('.test.cjs')) rmSync(`dist/${name.name}`);
+  }
+}
+
 await build({
   entryPoints: ['test/harness.ts'],
   bundle: true,

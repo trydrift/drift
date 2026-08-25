@@ -15,10 +15,10 @@ What a good result here does *not* establish: No precision and no false-positive
 | Citation | xeol-io, swe-bump-bench, https://github.com/xeol-io/swe-bump-bench |
 | Ecosystem | npm |
 | Benchmark class | consumer-impact |
-| Drift commit | `49c081ee5712d59ed3e006b0586145450b1a5ef6` |
-| Run date | 2026-08-20T19:09:44.578Z |
-| Command | `/Users/rudy/.nvm/versions/node/v24.19.0/bin/node /Users/rudy/Desktop/Developer/Drift/eval/src/external/cli.ts swe-bump --run-id swe-bump-detection` |
-| Platform | darwin/x64, Node v24.19.0 |
+| Drift commit | `6e272ea929ad2807947872d500d445136bbf489e` |
+| Run date | 2026-08-24T17:08:03.602Z |
+| Command | `/opt/hostedtoolcache/node/22.23.2/x64/bin/node /home/runner/work/drift/drift/eval/src/external/cli.ts swe-bump --run-id swe-bump-detection` |
+| Platform | linux/x64, Node v22.23.2 |
 
 ## Case accounting
 
@@ -28,25 +28,24 @@ Read this before any rate below.
 | --- | --- |
 | Available in the dataset | 63 |
 | Selected for this run (all) | 63 |
-| Scored | 58 |
-| Excluded | 5 |
+| Scored | 61 |
+| Excluded | 2 |
 | Negative/control cases among the scored | 0 |
 
 Every exclusion, with its reason:
 
 | Reason | Cases |
 | --- | --- |
-| `reproduction-failed` | 3 |
 | `source-unavailable` | 2 |
 
 ## Results
 
 | Question | Result | 95% interval |
 | --- | --- | --- |
-| affected-repository identification rate | 38/58 (65.5%) | 53.4–77.6% |
-| consumer localization rate | 38/58 (65.5%) | 53.4–77.6% |
-| dependency-update detection rate | 58/58 (100.0%) | 100.0–100.0% |
-| false-safe verdicts | 17/58 (29.3%) | 19.0–41.4% |
+| affected-repository identification rate | 49/61 (80.3%) | 68.9–90.2% |
+| consumer localization rate | 39/61 (63.9%) | 52.5–77.0% |
+| dependency-update detection rate | 61/61 (100.0%) | 100.0–100.0% |
+| false-safe verdicts | 9/61 (14.8%) | 6.6–24.6% |
 
 Intervals are a case-level bootstrap, resampled over cases rather than trials, and are omitted below twenty
 cases — an interval from four cases is arithmetically valid and rhetorically dishonest.
@@ -58,9 +57,9 @@ hides both directions of the interesting result, so it is never the only number 
 
 | Slice | affected-repository identification rate | consumer localization rate | dependency-update detection rate |
 | --- | --- | --- | --- |
-| label: known-breaking-upgrade | 38/58 (65.5%) | 38/58 (65.5%) | 58/58 (100.0%) |
+| label: known-breaking-upgrade | 49/61 (80.3%) | 39/61 (63.9%) | 61/61 (100.0%) |
 | versionToIsRange: false | 3/3 (100.0%) | 3/3 (100.0%) | 3/3 (100.0%) |
-| versionToIsRange: true | 35/55 (63.6%) | 35/55 (63.6%) | 55/55 (100.0%) |
+| versionToIsRange: true | 46/58 (79.3%) | 36/58 (62.1%) | 58/58 (100.0%) |
 
 ## What is deliberately not reported
 
@@ -95,13 +94,13 @@ how generously the mapping was written.
 
 | Tool | Version | Needed for |
 | --- | --- | --- |
-| `node` | v24.19.0 | every npm/TypeScript case, and Drift itself |
-| `npm` | 11.12.1 | installing a TypeScript consumer before its build oracle can run |
-| `git` | git version 2.39.5 (Apple Git-154) | checking out an original repository at the exact evaluated commit |
-| `java` | openjdk version "19" 2022-09-20 | any Java case |
-| `mvn` | Apache Maven 3.9.9 (8e8579a9e76f7d015ee5ec7bfcdc97d260186937) | BUMP's Maven oracle, and building Roseau from its replication kit |
-| `docker` | **not installed** | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
-| `python3` | Python 3.14.3 | any Python case |
+| `node` | v22.23.2 | every npm/TypeScript case, and Drift itself |
+| `npm` | 10.9.8 | installing a TypeScript consumer before its build oracle can run |
+| `git` | git version 2.55.0 | checking out an original repository at the exact evaluated commit |
+| `java` | openjdk version "17.0.20" 2026-07-21 | any Java case |
+| `mvn` | Apache Maven 3.9.16 (2bdd9fddda4b155ebf8000e807eb73fd829a51d5) | BUMP's Maven oracle, and building Roseau from its replication kit |
+| `docker` | Docker version 28.0.4, build b8034c0 | BUMP's published pre/breaking images and TimeMachine's date-filtered PyPI infrastructure |
+| `python3` | Python 3.12.3 | any Python case |
 | `uv` | **not installed** | TimeMachine's documented environment setup |
 | `japicmp` | **not installed** | Drift's Java API-surface diff, which its maven capability declares it requires |
 

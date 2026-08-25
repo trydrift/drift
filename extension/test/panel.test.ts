@@ -4,12 +4,13 @@ import {
   crossesMajor,
   linkifyPaths,
   renderBody,
+  renderCandidateBody,
+  renderCandidateSection,
   renderMarkdown,
   renderPanel,
   SLASH_COMMANDS,
   type ViewModel,
 } from '../src/ui/webview.js';
-import { warmCodeHighlighter } from '../src/ui/highlight.js';
 import type { TaskGroup } from '../src/session.js';
 import { describeSeverity, severityOf } from '../src/severity.js';
 import type { UpgradeCandidate } from '../src/upgrades.js';
@@ -875,8 +876,7 @@ test('safe upgrades can be taken in one action, unknown ones cannot', () => {
   assert.match(html, /Upgrade all 2/);
 });
 
-test('markdown renders a before/after pair as one comparison with a diff button', async () => {
-  await warmCodeHighlighter();
+test('markdown renders a before/after pair as one comparison with a diff button', () => {
   const html = renderMarkdown('Update call sites.\n  before: old(<tag>)\n  after:  next(value)');
 
   assert.match(html, /<p>Update call sites\.<\/p>/);
@@ -896,11 +896,11 @@ test('markdown renders a before/after pair as one comparison with a diff button'
   assert.doesNotMatch(html, /old\(<tag>\)/);
 });
 
-test('code is tokenised against the editor theme rather than left flat', async () => {
-  await warmCodeHighlighter();
-  // Real TextMate tokenisation colours each token inline, from the theme the
-  // editor is using — the whole point of not hand-rolling a highlighter.
-  assert.match(renderMarkdown('```\nexport const x = 1;\n```'), /<span style="color:#[0-9a-fA-F]{6}">/);
+test('code leaves the extension host as an escaped lazy-highlight placeholder', () => {
+  const html = renderMarkdown('```\nexport const x = 1;\n```');
+  assert.match(html, /data-drift-highlight/);
+  assert.match(html, /data-language="typescript"/);
+  assert.doesNotMatch(html, /style="color:/);
 });
 
 test('a scan whose results have gone stale says so and offers a rescan', () => {
@@ -1137,6 +1137,54 @@ test('evidence content from a third party is escaped, not injected', () => {
 
   assert.ok(!html.includes('<img src=x'), 'raw markup must not survive rendering');
   assert.match(html, /&lt;img src=x/);
+});
+
+test('the live scan renders candidate summaries without eager evidence bodies', () => {
+  const c = candidate({ summary: 'DETAIL_SENTINEL', plan: plan() });
+  const html = renderPanel(
+    model({
+      lazyCandidateDetails: true,
+      thread: [{ id: 'i1', kind: 'packages', headline: 'One result.', ids: [c.id] }],
+      candidates: { [c.id]: c },
+    }),
+  );
+
+  assert.match(html, /data-candidate-detail="lodash@4\.17\.21-&gt;5\.0\.0"/);
+  assert.doesNotMatch(html, /DETAIL_SENTINEL/);
+});
+
+test('candidate outlines defer individual remediation and evidence sections', () => {
+  const p = plan({
+    breakingChanges: [
+      {
+        id: 'break-one',
+        kind: 'signature-change',
+        summary: 'Signature changed',
+        remediation: 'REMEDIATION_SENTINEL',
+        symbols: ['run'],
+        citations: ['evidence-one'],
+        confidence: 'high',
+      } as never,
+    ],
+    evidence: [
+      {
+        id: 'evidence-one',
+        source: 'changelog',
+        dependency: 'lodash',
+        title: 'Migration notes',
+        content: 'EVIDENCE_SENTINEL',
+        weight: 0.8,
+      },
+    ],
+  });
+  const c = candidate({ plan: p });
+  const outline = renderCandidateBody(c, true);
+
+  assert.match(outline, /data-detail-section="break:break-one"/);
+  assert.match(outline, /data-detail-section="evidence:evidence-one"/);
+  assert.doesNotMatch(outline, /REMEDIATION_SENTINEL|EVIDENCE_SENTINEL/);
+  assert.match(renderCandidateSection(c, 'break:break-one') ?? '', /REMEDIATION_SENTINEL/);
+  assert.match(renderCandidateSection(c, 'evidence:evidence-one') ?? '', /EVIDENCE_SENTINEL/);
 });
 
 test('a markdown link folded into the one-line verdict renders as a link, not literal brackets', () => {
